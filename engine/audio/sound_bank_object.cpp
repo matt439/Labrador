@@ -3,16 +3,16 @@
 using namespace DirectX;
 
 SoundBankObject::SoundBankObject(const std::string& sound_bank_name,
-                                 ResourceManager* resource_manager) :
+                                 const AudioResources* audio_resources) :
 	_sound_bank_name(sound_bank_name),
-	_resource_manager(resource_manager)
+	_audio_resources(audio_resources)
 
 {
 
 }
 SoundBank* SoundBankObject::get_sound_bank() const
 {
-	return this->_resource_manager->get_sound_bank(this->_sound_bank_name);
+	return this->_audio_resources->get_sound_bank(this->_sound_bank_name);
 }
 SoundBank* SoundBankObject::get_sb() const
 {

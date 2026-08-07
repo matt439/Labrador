@@ -2,14 +2,14 @@
 #define DRAWOBJECT_H
 
 #include "engine/math/colour.h"
-#include "engine/assets/resource_manager.h"
+#include "engine/render/render_resources.h"
 
 class DrawObject
 {
 public:
 	virtual ~DrawObject() = default;
 	DrawObject() = default;
-	DrawObject(ResourceManager* resource_manager,
+	DrawObject(RenderResources* render_resources,
 		const MattMath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
 		const MattMath::Vector2F& origin = MattMath::Vector2F::ZERO,
@@ -17,7 +17,7 @@ public:
 		float layer_depth = 0.0f);
 
 protected:
-	virtual ResourceManager* get_resource_manager() const;
+	virtual RenderResources* get_render_resources() const;
 	virtual const MattMath::Colour& get_colour() const;
 	virtual float get_draw_rotation() const;
 	virtual const MattMath::Vector2F& get_origin() const;
@@ -33,7 +33,7 @@ protected:
 	void set_draw_rotation_by_rectangle_rotated(const MattMath::RectangleRotated& rect);
 
 private:
-	ResourceManager* _resource_manager = nullptr;
+	RenderResources* _render_resources = nullptr;
 	MattMath::Colour _colour = colour_consts::WHITE;
 	float _draw_rotation = 0.0f;
 	MattMath::Vector2F _origin = MattMath::Vector2F::ZERO;

@@ -2,19 +2,19 @@
 #define DRAWER_H
 
 #include "SpriteBatch.h"
-#include "engine/assets/resource_manager.h"
+#include "engine/render/render_resources.h"
 #include "engine/render/rotation_origin.h"
 #include "engine/math/matt_math.h"
 
 class Drawer
 {
 public:
-	Drawer(ResourceManager* resource_manager,
+	Drawer(RenderResources* render_resources,
 		const float* dt);
-	void set_resource_manager(ResourceManager* resource_manager);
+	void set_render_resources(RenderResources* render_resources);
 	void set_dt(const float* dt);
 protected:
-	ResourceManager* get_resource_manager() const;
+	RenderResources* get_render_resources() const;
 	float get_dt() const;
 	MattMath::RectangleI calculate_draw_rectangle(
 		const MattMath::RectangleI& rec,
@@ -27,7 +27,7 @@ protected:
 		const MattMath::Vector2F& size,
 		rotation_origin origin);
 private:
-	ResourceManager* _resource_manager = nullptr;
+	RenderResources* _render_resources = nullptr;
 	const float* _dt = nullptr;
 };
 

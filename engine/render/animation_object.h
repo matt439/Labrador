@@ -11,7 +11,7 @@ public:
 	AnimationObject(const float* dt,
 		const std::string& sheet_name,
 		const std::string& animation_strip_name,
-		ResourceManager* resource_manager,
+		RenderResources* render_resources,
 		const MattMath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
 		const MattMath::Vector2F& origin = MattMath::Vector2F::ZERO,

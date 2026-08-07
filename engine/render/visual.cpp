@@ -6,13 +6,13 @@ using namespace DirectX;
 Visual::Visual(const std::string& sheet_name,
 	const std::string& frame_name,
 	const RectangleF& rectangle,
-	ResourceManager* resource_manager,
+	RenderResources* render_resources,
 	const Colour& color,
 	float rotation,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
-	TextureObject(sheet_name, frame_name, resource_manager,
+	TextureObject(sheet_name, frame_name, render_resources,
 		color, rotation, origin, effects, layer_depth),
 	_rectangle(rectangle)
 {
@@ -21,13 +21,13 @@ Visual::Visual(const std::string& sheet_name,
 Visual::Visual(const std::string& sheet_name,
 	const std::string& frame_name,
 	const RectangleRotated& rect_rotated,
-	ResourceManager* resource_manager,
+	RenderResources* render_resources,
 	const Colour& color,
 	float rotation,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
-	TextureObject(sheet_name, frame_name, resource_manager,
+	TextureObject(sheet_name, frame_name, render_resources,
 		color, rotation, origin, effects, layer_depth)
 {
 	this->_rectangle = rect_rotated.get_rectangle_rotated_to_axis();

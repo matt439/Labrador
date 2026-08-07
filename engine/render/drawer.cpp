@@ -3,25 +3,25 @@
 using namespace DirectX;
 using namespace MattMath;
 
-Drawer::Drawer(ResourceManager* resource_manager,
+Drawer::Drawer(RenderResources* render_resources,
     const float* dt) :
-    _resource_manager(resource_manager),
+    _render_resources(render_resources),
     _dt(dt)
 {
 }
 
-void Drawer::set_resource_manager(ResourceManager* resource_manager)
+void Drawer::set_render_resources(RenderResources* render_resources)
 {
-    this->_resource_manager = resource_manager;
+    this->_render_resources = render_resources;
 }
 void Drawer::set_dt(const float* dt)
 {
     this->_dt = dt;
 }
 
-ResourceManager* Drawer::get_resource_manager() const
+RenderResources* Drawer::get_render_resources() const
 {
-    return this->_resource_manager;
+    return this->_render_resources;
 }
 
 float Drawer::get_dt() const

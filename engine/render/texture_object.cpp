@@ -5,13 +5,13 @@ using namespace MattMath;
 
 TextureObject::TextureObject(const std::string& sheet_name,
 	const std::string& frame_name,
-	ResourceManager* resource_manager,
+	RenderResources* render_resources,
 	const Colour& color,
 	float rotation,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
-	SpriteSheetObject(sheet_name, frame_name, resource_manager,
+	SpriteSheetObject(sheet_name, frame_name, render_resources,
 		color, rotation, origin, effects, layer_depth)
 {
 

@@ -11,7 +11,7 @@ find_package(directxtk CONFIG REQUIRED)
 
 add_library(ArtAttackEngine STATIC
     assets/json_loader.cpp
-    assets/resource_manager.cpp
+    audio/audio_resources.cpp
     audio/sound_bank.cpp
     audio/sound_bank_object.cpp
     collision/partitioner.cpp
@@ -26,6 +26,7 @@ add_library(ArtAttackEngine STATIC
     render/device_resources.cpp
     render/draw_object.cpp
     render/drawer.cpp
+    render/render_resources.cpp
     render/resolution_manager.cpp
     render/sprite_frame.cpp
     render/sprite_sheet.cpp

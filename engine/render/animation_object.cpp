@@ -6,14 +6,14 @@ using namespace MattMath;
 AnimationObject::AnimationObject(const float* dt,
 	const std::string& sheet_name,
 	const std::string& animation_strip_name,
-	ResourceManager* resource_manager,
+	RenderResources* render_resources,
 	const Colour& color,
 	float rotation,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
 	SpriteSheetObject(sheet_name, animation_strip_name,
-		resource_manager, color, rotation, origin, effects,
+		render_resources, color, rotation, origin, effects,
 		layer_depth),
 	_dt(dt)
 {

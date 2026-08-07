@@ -1,8 +1,7 @@
-#ifndef RESOURCE_MANAGER_H
-#define RESOURCE_MANAGER_H
+#ifndef RENDER_RESOURCES_H
+#define RENDER_RESOURCES_H
 
-#include "engine/assets/registry.h"
-#include "engine/audio/sound_bank.h"
+#include "engine/core/registry.h"
 #include "engine/render/sprite_sheet.h"
 #include <d3d11_1.h>
 #include <wrl/client.h>
@@ -21,24 +20,17 @@ struct RegistryHandle<Microsoft::WRL::ComPtr<Resource>>
 	}
 };
 
-// The engine's asset cache: named resources in, borrowed pointers out.
+// Everything drawing reads from, cached by name: the textures the GPU holds,
+// the fonts built from them, and the sheets that index them. Named resources
+// in, borrowed pointers out - the loader that fills it decides what a name
+// means and where the bytes came from.
 //
-// Every kind is a Registry, so all of them share one lookup contract and the
-// caches differ only in what they hold. A game with resource types of its own
-// keeps them in its own Registry rather than here - the engine loads, caches
-// and hands back; what a resource means is the game's business.
-//
-// Known deviation from the module table in ARCHITECTURE.md: `assets` is meant
-// to depend on core, math and rapidjson alone, and this header reaches into
-// render (SpriteSheet) and audio (SoundBank) - so every module holding a
-// ResourceManager* reaches back through it. The typed caches belong in the
-// modules that own their types, leaving `assets` only the Registry mechanism
-// and the loading. That split touches every drawable's constructor, so it is
-// an increment of its own rather than a rider on this one.
-class ResourceManager
+// Not to be confused with DX::DeviceResources, which owns the device and swap
+// chain themselves.
+class RenderResources
 {
 public:
-	ResourceManager() = default;
+	RenderResources() = default;
 
 	// The getters are const and non-mutating: they are called per-draw from
 	// thread-pool workers, so they must not touch the maps. Each throws
@@ -58,14 +50,8 @@ public:
 	void add_sprite_sheet(const std::string& sprite_sheet_name,
 		std::unique_ptr<SpriteSheet> sprite_sheet);
 
-	void add_sound_bank(const std::string& sound_bank_name,
-		std::unique_ptr<SoundBank> sound_bank);
-
-	SoundBank* get_sound_bank(const std::string& sound_bank_name) const;
-
 	void reset_all_sprite_fonts();
 	void reset_all_textures();
-	void reset_all_sounds();
 
 private:
 	Registry<ID3D11ShaderResourceView,
@@ -73,6 +59,5 @@ private:
 
 	Registry<DirectX::SpriteFont> _sprite_fonts{ "SpriteFont" };
 	Registry<SpriteSheet> _sprite_sheets{ "SpriteSheet" };
-	Registry<SoundBank> _sound_banks{ "SoundBank" };
 };
-#endif // !RESOURCE_MANAGER_H
+#endif // !RENDER_RESOURCES_H

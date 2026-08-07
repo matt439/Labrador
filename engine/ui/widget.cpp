@@ -140,7 +140,7 @@ MTexture::MTexture(const std::string& name,
 	const std::string& sheet_name,
 	const std::string& frame_name,
 	const RectangleF& rectangle,
-	ResourceManager* resource_manager,
+	RenderResources* render_resources,
 	const Colour& color,
 	bool hidden,
 	float rotation,
@@ -149,7 +149,7 @@ MTexture::MTexture(const std::string& name,
 	float layer_depth) :
 	MWidget(name, hidden),
 	TextureObject(sheet_name, frame_name,
-		resource_manager, color, rotation, origin, effects, layer_depth),
+		render_resources, color, rotation, origin, effects, layer_depth),
 	_rectangle(rectangle)
 {
 
@@ -235,7 +235,7 @@ MText::MText(const std::string& name,
 	const std::string& text,
 	const std::string& font_name,
 	const Vector2F& position,
-	ResourceManager* resource_manager,
+	RenderResources* render_resources,
 	const Colour& color,
 	bool hidden,
 	float scale,
@@ -245,7 +245,7 @@ MText::MText(const std::string& name,
 	float layer_depth) :
 	MWidget(name, hidden),
 	Text(text, font_name, position,
-		resource_manager, color,
+		render_resources, color,
 		scale, rotation, origin, effects, layer_depth)
 {
 
@@ -294,7 +294,7 @@ MTextDropShadow::MTextDropShadow(const std::string& name,
 	const std::string& text,
 	const std::string& font_name,
 	const Vector2F& position,
-	ResourceManager* resource_manager,
+	RenderResources* render_resources,
 	const Colour& color,
 	const Colour& shadow_color,
 	const Vector2F& shadow_offset,
@@ -307,7 +307,7 @@ MTextDropShadow::MTextDropShadow(const std::string& name,
 	float layer_depth) :
 	MWidget(name, hidden),
 	TextDropShadow(text, font_name, position,
-		resource_manager, color, shadow_color, shadow_offset,
+		render_resources, color, shadow_color, shadow_offset,
 		scale, shadow_scale, rotation, origin, effects, layer_depth)
 {
 

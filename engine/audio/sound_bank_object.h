@@ -2,13 +2,15 @@
 #define SOUNDBANKOBJECT_H
 
 #include "engine/audio/sound_bank.h"
-#include "engine/assets/resource_manager.h"
+#include "engine/audio/audio_resources.h"
+#include <string>
 
 class SoundBankObject
 {
 public:
 	SoundBankObject() = default;
-	SoundBankObject(const std::string& sound_bank_name, ResourceManager* resource_manager);
+	SoundBankObject(const std::string& sound_bank_name,
+		const AudioResources* audio_resources);
 protected:
 	SoundBank* get_sound_bank() const;
 	SoundBank* get_sb() const;
@@ -32,6 +34,6 @@ protected:
 	void set_sound_bank_name(const std::string& sound_bank_name);
 private:
 	std::string _sound_bank_name = "";
-	ResourceManager* _resource_manager = nullptr;
+	const AudioResources* _audio_resources = nullptr;
 };
 #endif // !SOUNDBANKOBJECT_H

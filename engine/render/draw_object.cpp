@@ -3,13 +3,13 @@
 using namespace DirectX;
 using namespace MattMath;
 
-DrawObject::DrawObject(ResourceManager* resource_manager,
+DrawObject::DrawObject(RenderResources* render_resources,
 	const Colour& color,
 	float rotation,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
-	_resource_manager(resource_manager),
+	_render_resources(render_resources),
 	_colour(color),
 	_draw_rotation(rotation),
 	_origin(origin),
@@ -18,9 +18,9 @@ DrawObject::DrawObject(ResourceManager* resource_manager,
 {
 
 }
-ResourceManager* DrawObject::get_resource_manager() const
+RenderResources* DrawObject::get_render_resources() const
 {
-	return this->_resource_manager;
+	return this->_render_resources;
 }
 const Colour& DrawObject::get_colour() const
 {

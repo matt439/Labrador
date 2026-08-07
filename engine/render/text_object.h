@@ -10,7 +10,7 @@ public:
 	TextObject(const std::string& text,
 		const std::string& font_name,
 		const MattMath::Vector2F& position,
-		ResourceManager* resource_manager,
+		RenderResources* render_resources,
 		const MattMath::Colour& color = colour_consts::WHITE,
 		float scale = 1.0f,
 		float rotation = 0.0f,

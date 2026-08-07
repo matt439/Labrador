@@ -6,14 +6,14 @@ using namespace DirectX;
 Text::Text(const std::string& text,
 	const std::string& font_name,
 	const Vector2F& position,
-	ResourceManager* resource_manager,
+	RenderResources* render_resources,
 	const Colour& color,
 	float scale,
 	float rotation,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
-	TextObject(text, font_name, position, resource_manager,
+	TextObject(text, font_name, position, render_resources,
 		color, scale, rotation, origin, effects, layer_depth)
 {
 

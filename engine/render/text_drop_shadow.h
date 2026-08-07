@@ -10,7 +10,7 @@ public:
 	TextDropShadow(const std::string& text,
 				const std::string& font_name,
 				const MattMath::Vector2F& position,
-				ResourceManager* resource_manager,
+				RenderResources* render_resources,
 				const MattMath::Colour& color = colour_consts::WHITE,
 				const MattMath::Colour& shadow_color = colour_consts::BLACK,
 				const MattMath::Vector2F& shadow_offset = { 2.0f, 2.0f },
