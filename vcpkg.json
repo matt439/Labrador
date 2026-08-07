@@ -1,0 +1,14 @@
+{
+  "name": "artattack",
+  "version-string": "0.1.0",
+  "dependencies": [
+    {
+      "name": "directxtk",
+      "features": [
+        "xaudio2redist"
+      ]
+    },
+    "doctest"
+  ],
+  "builtin-baseline": "d92484ed3c5020c6679d095ad3e5add907887b62"
+}

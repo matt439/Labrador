@@ -366,3 +366,5 @@ FodyWeavers.xsd
 *.wav
 *.xwb
 *.mp3
+# CMake out-of-source build tree
+out/
