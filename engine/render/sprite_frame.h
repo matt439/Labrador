@@ -1,5 +1,4 @@
-#ifndef SPRITEFRAME_H
-#define SPRITEFRAME_H
+#pragma once
 
 #include "engine/math/matt_math.h"
 
@@ -29,5 +28,3 @@ private:
 	void set_source_rectangle(const MattMath::Vector2F& position,
 		const MattMath::Vector2F& size);
 };
-
-#endif // !SPRITEFRAME_H

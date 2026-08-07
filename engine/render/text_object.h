@@ -1,5 +1,4 @@
-#ifndef TEXTOBJECT_H
-#define TEXTOBJECT_H
+#pragma once
 
 #include "engine/render/draw_object.h"
 
@@ -55,4 +54,3 @@ private:
 	MattMath::Vector2F _position = MattMath::Vector2F::ZERO;
 	float _scale = 1.0f;
 };
-#endif // !TEXTOBJECT_H

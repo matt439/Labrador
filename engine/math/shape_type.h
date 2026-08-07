@@ -1,5 +1,4 @@
-#ifndef SHAPE_TYPE_H
-#define SHAPE_TYPE_H
+#pragma once
 
 enum class shape_type
 {
@@ -10,5 +9,3 @@ enum class shape_type
 	RECTANGLE_ROTATED,
 	NONE
 };
-
-#endif // !SHAPE_TYPE_H

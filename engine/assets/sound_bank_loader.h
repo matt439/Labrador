@@ -1,5 +1,4 @@
-#ifndef SOUND_BANK_LOADER_H
-#define SOUND_BANK_LOADER_H
+#pragma once
 
 #include "engine/audio/sound_bank.h"
 #include <Audio.h>
@@ -18,5 +17,3 @@ namespace sound_bank_loader
 	std::unique_ptr<SoundBank> load(const char* json_path,
 		std::unique_ptr<DirectX::WaveBank> wave_bank);
 }
-
-#endif // !SOUND_BANK_LOADER_H

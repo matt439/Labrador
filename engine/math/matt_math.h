@@ -1,5 +1,4 @@
-#ifndef MATTMATH_H
-#define MATTMATH_H
+#pragma once
 
 #include "SimpleMath.h"
 #include "engine/math/shape_type.h"
@@ -1148,5 +1147,3 @@ namespace MattMath
 
 	typedef RectangleRotated OBB;
 }
-
-#endif // !MATTMATH_H

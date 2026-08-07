@@ -1,5 +1,4 @@
-#ifndef HANDLE_H
-#define HANDLE_H
+#pragma once
 
 // A name that has already been resolved.
 //
@@ -35,5 +34,3 @@ public:
 private:
 	int _index = -1;
 };
-
-#endif // !HANDLE_H

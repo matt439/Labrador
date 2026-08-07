@@ -1,5 +1,4 @@
-#ifndef DRAWER_H
-#define DRAWER_H
+#pragma once
 
 #include "SpriteBatch.h"
 #include "engine/render/render_resources.h"
@@ -30,5 +29,3 @@ private:
 	RenderResources* _render_resources = nullptr;
 	const float* _dt = nullptr;
 };
-
-#endif // !DRAWER_H

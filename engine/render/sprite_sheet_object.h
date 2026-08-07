@@ -1,5 +1,4 @@
-#ifndef SPRITESHEETOBJECT_H
-#define SPRITESHEETOBJECT_H
+#pragma once
 
 #include "engine/render/draw_object.h"
 
@@ -37,4 +36,3 @@ protected:
 private:
 	RenderResources::SpriteSheetHandle _sheet;
 };
-#endif // !SPRITESHEETOBJECT_H

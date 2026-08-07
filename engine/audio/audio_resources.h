@@ -1,5 +1,4 @@
-#ifndef AUDIO_RESOURCES_H
-#define AUDIO_RESOURCES_H
+#pragma once
 
 #include "engine/core/registry.h"
 #include "engine/audio/sound_bank.h"
@@ -38,4 +37,3 @@ public:
 private:
 	Registry<SoundBank> _sound_banks{ "SoundBank" };
 };
-#endif // !AUDIO_RESOURCES_H

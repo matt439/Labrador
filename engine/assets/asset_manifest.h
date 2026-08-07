@@ -1,5 +1,4 @@
-#ifndef ASSET_MANIFEST_H
-#define ASSET_MANIFEST_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -38,5 +37,3 @@ struct AssetManifest
 	// to exist before another can be sequenced by moving a line.
 	std::vector<AssetEntry> entries;
 };
-
-#endif // !ASSET_MANIFEST_H

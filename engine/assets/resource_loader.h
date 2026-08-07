@@ -1,5 +1,4 @@
-#ifndef RESOURCE_LOADER_H
-#define RESOURCE_LOADER_H
+#pragma once
 
 #include "engine/assets/asset_manifest.h"
 #include "engine/audio/audio_resources.h"
@@ -114,5 +113,3 @@ private:
 	void reload_sprite_sheet_texture(const std::string& directory,
 		const std::string& name) const;
 };
-
-#endif // !RESOURCE_LOADER_H

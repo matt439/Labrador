@@ -1,5 +1,4 @@
-#ifndef MH_H
-#define MH_H
+#pragma once
 
 #include "engine/core/i_game_object.h"
 #include "engine/render/texture_object.h"
@@ -163,5 +162,3 @@ public:
 	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override;
 	void set_colour(const MattMath::Colour& colour) override;
 };
-
-#endif // !MH_H

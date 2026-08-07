@@ -1,5 +1,4 @@
-#ifndef THREAD_POOL_H
-#define THREAD_POOL_H
+#pragma once
 
 #include <windows.h>
 #include <exception>
@@ -51,5 +50,3 @@ private:
     std::mutex _exception_mutex;
     std::exception_ptr _first_exception;
 };
-
-#endif // !THREAD_POOL_H

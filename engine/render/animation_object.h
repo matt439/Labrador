@@ -1,5 +1,4 @@
-#ifndef ANIMATIONOBJECT_H
-#define ANIMATIONOBJECT_H
+#pragma once
 
 #include "engine/render/sprite_sheet_object.h"
 #include "engine/render/animated_sprite.h"
@@ -72,4 +71,3 @@ private:
 	const AnimationStrip& get_animation_strip() const;
 	const RECT* get_source_rectangle() const;
 };
-#endif // !ANIMATIONOBJECT_H

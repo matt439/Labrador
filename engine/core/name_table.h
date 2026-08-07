@@ -1,5 +1,4 @@
-#ifndef NAME_TABLE_H
-#define NAME_TABLE_H
+#pragma once
 
 #include "engine/core/handle.h"
 #include <map>
@@ -83,5 +82,3 @@ private:
 	std::map<std::string, int> _indices;
 	std::vector<Element> _elements;
 };
-
-#endif // !NAME_TABLE_H

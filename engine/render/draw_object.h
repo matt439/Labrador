@@ -1,5 +1,4 @@
-#ifndef DRAWOBJECT_H
-#define DRAWOBJECT_H
+#pragma once
 
 #include "engine/math/colour.h"
 #include "engine/render/render_resources.h"
@@ -40,4 +39,3 @@ private:
 	DirectX::SpriteEffects _effects = DirectX::SpriteEffects_None;
 	float _layer_depth = 0.0f;
 };
-#endif // !DRAWOBJECT_H

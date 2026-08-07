@@ -1,5 +1,4 @@
-#ifndef HELLO_STATE_H
-#define HELLO_STATE_H
+#pragma once
 
 #include "engine/app/application.h"
 #include "engine/core/state.h"
@@ -34,5 +33,3 @@ private:
 
 	MattMath::Vector2F _position = { 0.0f, 0.0f };
 };
-
-#endif // !HELLO_STATE_H

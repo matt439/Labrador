@@ -1,5 +1,4 @@
-#ifndef VIEWPORTMANAGER_H
-#define VIEWPORTMANAGER_H
+#pragma once
 
 #include "engine/render/screen_layout.h"
 #include "engine/render/resolution_manager.h"
@@ -63,5 +62,3 @@ private:
 	MattMath::Viewport get_fullscreen_viewport() const;
 
 };
-
-#endif // !VIEWPORT_H

@@ -1,9 +1,7 @@
-#ifndef CONNECTION_STATE_H
-#define CONNECTION_STATE_H
+#pragma once
 
 enum class connection_state
 {
     CONNECTED,
     DISCONNECTED
 };
-#endif // !CONNECTION_STATE_H

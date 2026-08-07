@@ -1,5 +1,4 @@
-#ifndef ANIMATEDSPRITE_H
-#define ANIMATEDSPRITE_H
+#pragma once
 
 #include "engine/render/sprite_sheet.h"
 #include "SpriteBatch.h"
@@ -47,4 +46,3 @@ private:
 	bool _paused = false;
 	float _time_elapsed = 0.0f;
 };
-#endif // !ANIMATEDSPRITE_H

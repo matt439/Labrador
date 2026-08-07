@@ -1,5 +1,4 @@
-#ifndef SOUNDBANKOBJECT_H
-#define SOUNDBANKOBJECT_H
+#pragma once
 
 #include "engine/audio/sound_bank.h"
 #include "engine/audio/audio_resources.h"
@@ -54,4 +53,3 @@ private:
 	AudioResources::SoundBankHandle _sound_bank;
 	const AudioResources* _audio_resources = nullptr;
 };
-#endif // !SOUNDBANKOBJECT_H

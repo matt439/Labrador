@@ -1,5 +1,4 @@
-#ifndef ASSET_MANIFEST_LOADER_H
-#define ASSET_MANIFEST_LOADER_H
+#pragma once
 
 #include "engine/assets/asset_manifest.h"
 
@@ -30,5 +29,3 @@ namespace asset_manifest_loader
 	// checked rather than assumed (T6).
 	AssetManifest load(const char* json_path);
 }
-
-#endif // !ASSET_MANIFEST_LOADER_H

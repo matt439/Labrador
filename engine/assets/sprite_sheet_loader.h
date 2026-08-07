@@ -1,5 +1,4 @@
-#ifndef SPRITE_SHEET_LOADER_H
-#define SPRITE_SHEET_LOADER_H
+#pragma once
 
 #include "engine/render/sprite_sheet.h"
 #include <d3d11_1.h>
@@ -17,5 +16,3 @@ namespace sprite_sheet_loader
 	std::unique_ptr<SpriteSheet> load(const char* json_path,
 		ID3D11ShaderResourceView* texture);
 }
-
-#endif // !SPRITE_SHEET_LOADER_H

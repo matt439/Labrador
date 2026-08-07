@@ -1,5 +1,4 @@
-#ifndef TEXT_H
-#define TEXT_H
+#pragma once
 
 #include "engine/render/text_object.h"
 
@@ -23,4 +22,3 @@ public:
 	void set_scale(float scale) override;
 	void set_position(const MattMath::Vector2F& position) override;
 };
-#endif // !TEXT_H

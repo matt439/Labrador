@@ -1,5 +1,4 @@
-#ifndef SCREEN_LAYOUT_H
-#define SCREEN_LAYOUT_H
+#pragma once
 
 enum class screen_layout
 {
@@ -8,5 +7,3 @@ enum class screen_layout
     THREE_PLAYER,
     FOUR_PLAYER
 };
-
-#endif // !SCREEN_LAYOUT_H

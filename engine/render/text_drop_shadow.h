@@ -1,5 +1,4 @@
-#ifndef TEXTDROPSHADOW_H
-#define TEXTDROPSHADOW_H
+#pragma once
 
 #include "engine/render/text.h"
 
@@ -37,4 +36,3 @@ private:
 	MattMath::Colour _shadow_color = colour_consts::BLACK;
 	float _shadow_scale = 1.0f;
 };
-#endif // !TEXTDROPSHADOW_H

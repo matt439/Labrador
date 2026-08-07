@@ -1,5 +1,4 @@
-#ifndef STATE_H
-#define STATE_H
+#pragma once
 
 class StateContext;
 
@@ -17,4 +16,3 @@ protected:
 private:
 	StateContext* _context = nullptr;
 };
-#endif // !STATE_H

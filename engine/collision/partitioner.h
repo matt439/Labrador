@@ -1,5 +1,4 @@
-#ifndef PARTITIONER_H
-#define PARTITIONER_H
+#pragma once
 
 #include <vector>
 
@@ -14,5 +13,3 @@ public:
 	std::vector<std::pair<int, int>>
 		partition(size_t num_elements, int num_partitions) const;
 };
-
-#endif // !PARTITIONER_H

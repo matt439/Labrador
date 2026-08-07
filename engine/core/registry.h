@@ -1,5 +1,4 @@
-#ifndef REGISTRY_H
-#define REGISTRY_H
+#pragma once
 
 #include "engine/core/handle.h"
 #include <map>
@@ -155,5 +154,3 @@ private:
 	std::map<std::string, int> _indices;
 	std::vector<entry> _entries;
 };
-
-#endif // !REGISTRY_H

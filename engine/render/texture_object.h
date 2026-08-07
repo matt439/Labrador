@@ -1,5 +1,4 @@
-#ifndef TEXTUREOBJECT_H
-#define TEXTUREOBJECT_H
+#pragma once
 
 #include "engine/render/sprite_sheet_object.h"
 
@@ -73,4 +72,3 @@ protected:
 private:
 	SpriteSheet::frame_handle _frame;
 };
-#endif // !TEXTUREOBJECT_H

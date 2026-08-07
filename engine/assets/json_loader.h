@@ -1,5 +1,4 @@
-#ifndef JSON_LOADER_H
-#define JSON_LOADER_H
+#pragma once
 
 #include <rapidjson/document.h>
 
@@ -12,5 +11,3 @@ namespace json_loader
 	// always valid - callers never have to test HasParseError().
 	rapidjson::Document parse_file(const char* path);
 }
-
-#endif // !JSON_LOADER_H

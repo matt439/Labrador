@@ -1,5 +1,4 @@
-#ifndef ROTATION_ORIGIN_H
-#define ROTATION_ORIGIN_H
+#pragma once
 
 enum class rotation_origin
 {
@@ -8,5 +7,3 @@ enum class rotation_origin
     LEFT_CENTER,
     NO_ROTATION
 };
-
-#endif // !ROTATION_ORIGIN_H

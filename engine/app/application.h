@@ -1,5 +1,4 @@
-#ifndef APPLICATION_H
-#define APPLICATION_H
+#pragma once
 
 #include "engine/assets/resource_loader.h"
 #include "engine/audio/audio_resources.h"
@@ -191,5 +190,3 @@ private:
 	static LRESULT CALLBACK window_proc(HWND window, UINT message,
 		WPARAM w_param, LPARAM l_param);
 };
-
-#endif // !APPLICATION_H

@@ -1,5 +1,4 @@
-#ifndef STATECONTEXT_H
-#define STATECONTEXT_H
+#pragma once
 
 #include "engine/core/state.h"
 #include <memory>
@@ -15,5 +14,3 @@ public:
 private:
 	std::unique_ptr<State> _state = nullptr;
 };
-
-#endif // !STATECONTEXTGENERIC_H

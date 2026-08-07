@@ -1,5 +1,4 @@
-#ifndef COLOUR_H
-#define COLOUR_H
+#pragma once
 
 #include "engine/math/matt_math.h"
 
@@ -465,5 +464,3 @@ namespace colour_consts
 		return colour_consts::WHITE;
 	}
 }
-
-#endif // !COLOUR_H

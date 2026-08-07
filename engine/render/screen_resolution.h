@@ -1,5 +1,4 @@
-#ifndef SCREEN_RESOLUTION_H
-#define SCREEN_RESOLUTION_H
+#pragma once
 
 enum class screen_resolution
 {
@@ -9,5 +8,3 @@ enum class screen_resolution
     S_3840_2160,
     MAX = S_3840_2160
 };
-
-#endif // !SCREEN_RESOLUTION_H

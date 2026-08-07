@@ -1,5 +1,4 @@
-#ifndef RENDER_RESOURCES_H
-#define RENDER_RESOURCES_H
+#pragma once
 
 #include "engine/core/registry.h"
 #include "engine/render/sprite_sheet.h"
@@ -89,4 +88,3 @@ private:
 	Registry<DirectX::SpriteFont> _sprite_fonts{ "SpriteFont" };
 	Registry<SpriteSheet> _sprite_sheets{ "SpriteSheet" };
 };
-#endif // !RENDER_RESOURCES_H

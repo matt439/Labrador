@@ -1,5 +1,4 @@
-#ifndef SOUNDBANK_H
-#define SOUNDBANK_H
+#pragma once
 
 #include <Audio.h>
 #include <memory>
@@ -70,5 +69,3 @@ private:
 
 	static void clamp_levels(float& volume, float& pitch, float& pan);
 };
-
-#endif // !SOUNDBANK_H

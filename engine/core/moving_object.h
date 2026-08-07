@@ -1,5 +1,4 @@
-#ifndef MOVINGOBJECT_H
-#define MOVINGOBJECT_H
+#pragma once
 
 #include "engine/math/matt_math.h"
 
@@ -56,5 +55,3 @@ private:
 	float _rotation = 0.0f;
 
 };
-
-#endif // !MOVINGOBJECT_H

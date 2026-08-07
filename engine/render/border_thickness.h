@@ -1,5 +1,4 @@
-#ifndef BORDER_THICKNESS
-#define BORDER_THICKNESS
+#pragma once
 
 struct BorderThickness
 {
@@ -8,5 +7,3 @@ struct BorderThickness
 	float right = 0.0f;
 	float bottom = 0.0f;
 };
-
-#endif // !BORDER_THICKNESS

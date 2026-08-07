@@ -1,5 +1,4 @@
-#ifndef RESOLUTIONMANAGER_H
-#define RESOLUTIONMANAGER_H
+#pragma once
 
 #include <string>
 #include "engine/math/matt_math.h"
@@ -35,4 +34,3 @@ private:
     screen_resolution convert_ivec_to_resolution(
         const MattMath::Vector2I& vec) const;
 };
-#endif // !RESOLUTION_H

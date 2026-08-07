@@ -1,10 +1,7 @@
-#ifndef DIMENSION_H
-#define DIMENSION_H
+#pragma once
 
 enum class dimension
 {
     X,
     Y
 };
-
-#endif // !DIMENSION_H

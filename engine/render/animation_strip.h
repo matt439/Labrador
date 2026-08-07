@@ -1,5 +1,4 @@
-#ifndef ANIMATIONSTRIP_H
-#define ANIMATIONSTRIP_H
+#pragma once
 
 #include "engine/math/matt_math.h"
 
@@ -25,4 +24,3 @@ private:
 	std::vector<RECT> calculate_all_frame_rects() const;
 	RECT calculate_frame(int frame_index) const;
 };
-#endif // !ANIMATIONSTRIP_H

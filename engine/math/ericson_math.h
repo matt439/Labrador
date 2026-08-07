@@ -1,5 +1,4 @@
-#ifndef ERICSONMATH_H
-#define ERICSONMATH_H
+#pragma once
 
 // Real-Time Collision Detection
 // Christer Ericson
@@ -142,4 +141,3 @@ namespace EricsonMath
 		MattMath::Point2F& q);
 
 }
-#endif // !ERICSONMATH_H

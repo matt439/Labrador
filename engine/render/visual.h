@@ -1,5 +1,4 @@
-#ifndef VISUAL_H
-#define VISUAL_H
+#pragma once
 
 #include "engine/core/i_game_object.h"
 #include "engine/render/texture_object.h"
@@ -39,4 +38,3 @@ public:
 protected:
 	MattMath::RectangleF _rectangle = MattMath::RectangleF::ZERO;
 };
-#endif // !VISUAL_H

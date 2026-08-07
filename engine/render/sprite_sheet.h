@@ -1,5 +1,4 @@
-#ifndef SPRITESHEET_H
-#define SPRITESHEET_H
+#pragma once
 
 #include "engine/core/name_table.h"
 #include "engine/render/sprite_frame.h"
@@ -90,4 +89,3 @@ private:
 	NameTable<AnimationStrip> _animation_strips{ "animation strip" };
 	ID3D11ShaderResourceView* _texture = nullptr;
 };
-#endif // !SPRITESHEET_H

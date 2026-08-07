@@ -1,5 +1,4 @@
-#ifndef  COLLISION_TOOLS_H
-#define COLLISION_TOOLS_H
+#pragma once
 
 #include "engine/math/matt_math.h"
 #include "engine/math/shape_type.h"
@@ -97,5 +96,3 @@ private:
         const MattMath::Shape* collidee,
         const MattMath::Vector2F& collision_direction);
 };
-
-#endif // ! COLLISION_TOOLS_H
