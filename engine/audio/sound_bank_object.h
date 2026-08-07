@@ -5,6 +5,14 @@
 #include "engine/audio/audio_resources.h"
 #include <string>
 
+// Anything that makes noise, inherited for the plumbing: it holds the bank
+// handle and forwards the calls, so a subclass writes play_wave(x) instead of
+// audio_resources->get_sound_bank(handle)->play_wave(x).
+//
+// Names go in at construction and handles come out; the play calls take
+// handles only. A subclass therefore resolves what it can make a noise with
+// once, in its constructor, and keeps the handles as members - which is why
+// the resolve helpers are here and the name-taking play calls are not.
 class SoundBankObject
 {
 public:
@@ -13,31 +21,36 @@ public:
 		const AudioResources* audio_resources);
 protected:
 	SoundBank* get_sound_bank() const;
-	SoundBank* get_sb() const;
 
-	void play_wave(const std::string& wave_name,
+	// Load-time. Each throws std::out_of_range naming what was asked for if
+	// the bank does not have it, so a misspelt sound fails while the menu is
+	// being built rather than staying silent on the press that wanted it.
+	SoundBank::WaveHandle resolve_wave(const std::string& wave_name) const;
+	SoundBank::EffectHandle resolve_effect(const std::string& effect_name) const;
+
+	void play_wave(SoundBank::WaveHandle wave,
 		float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f) const;
-	void play_effect(const std::string& effect_name,
-		bool loop = false, float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f) const;
-	void stop_effect(const std::string& effect_name, bool immediate = false) const;
-	void pause_effect(const std::string& effect_name) const;
-	void resume_effect(const std::string& effect_name) const;
-	void set_effect_volume(const std::string& effect_name, float volume) const;
-	void set_effect_pitch(const std::string& effect_name, float pitch) const;
-	void set_effect_pan(const std::string& effect_name, float pan) const;
-	DirectX::SoundState get_effect_state(const std::string& effect_name) const;
-	bool is_effect_looping(const std::string& effect_name) const;
+	void play_effect(SoundBank::EffectHandle effect,
+		bool loop = false, float volume = 1.0f, float pitch = 0.0f,
+		float pan = 0.0f) const;
+	void stop_effect(SoundBank::EffectHandle effect,
+		bool immediate = false) const;
+	void pause_effect(SoundBank::EffectHandle effect) const;
+	void resume_effect(SoundBank::EffectHandle effect) const;
+	void set_effect_volume(SoundBank::EffectHandle effect, float volume) const;
+	void set_effect_pitch(SoundBank::EffectHandle effect, float pitch) const;
+	void set_effect_pan(SoundBank::EffectHandle effect, float pan) const;
+	DirectX::SoundState get_effect_state(SoundBank::EffectHandle effect) const;
+	bool is_effect_looping(SoundBank::EffectHandle effect) const;
 
-	DirectX::SoundEffectInstance* get_sound_effect_instance(const std::string& instance_name) const;
-	DirectX::SoundEffectInstance* get_sei(const std::string& instance_name) const;
-	
+	// Points this object at a different bank. Every handle resolved from the
+	// old one is meaningless against the new one, so a caller doing this
+	// re-resolves everything it holds.
 	void set_sound_bank(const std::string& sound_bank_name);
 private:
-	// The bank name is resolved once, at construction. The effect and wave
-	// names passed to the calls above are still names, and SoundBank still
-	// searches for them - that is the audio half of this and has not been done
-	// yet. It is off the frame loop, though: these fire on menu input, not
-	// every frame.
+	// The bank name is resolved once, at construction, and so is everything
+	// played out of it: a handle is an index, where a name is a map descent
+	// and a string compare per node.
 	AudioResources::SoundBankHandle _sound_bank;
 	const AudioResources* _audio_resources = nullptr;
 };

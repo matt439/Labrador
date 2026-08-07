@@ -14,60 +14,64 @@ SoundBank* SoundBankObject::get_sound_bank() const
 {
 	return this->_audio_resources->get_sound_bank(this->_sound_bank);
 }
-SoundBank* SoundBankObject::get_sb() const
+
+SoundBank::WaveHandle SoundBankObject::resolve_wave(
+	const std::string& wave_name) const
 {
-	return this->get_sound_bank();
+	return this->get_sound_bank()->resolve_wave(wave_name);
+}
+SoundBank::EffectHandle SoundBankObject::resolve_effect(
+	const std::string& effect_name) const
+{
+	return this->get_sound_bank()->resolve_effect(effect_name);
 }
 
-void SoundBankObject::play_wave(const std::string& wave_name, float volume, float pitch, float pan) const
+void SoundBankObject::play_wave(SoundBank::WaveHandle wave, float volume,
+	float pitch, float pan) const
 {
-	this->get_sb()->play_wave(wave_name, volume, pitch, pan);
+	this->get_sound_bank()->play_wave(wave, volume, pitch, pan);
 }
-void SoundBankObject::play_effect(const std::string& effect_name,
+void SoundBankObject::play_effect(SoundBank::EffectHandle effect,
 	bool loop, float volume, float pitch, float pan) const
 {
-	this->get_sb()->play_effect(effect_name, loop, volume, pitch, pan);
+	this->get_sound_bank()->play_effect(effect, loop, volume, pitch, pan);
 }
-void SoundBankObject::stop_effect(const std::string& effect_name, bool immediate) const
+void SoundBankObject::stop_effect(SoundBank::EffectHandle effect,
+	bool immediate) const
 {
-	this->get_sb()->stop_effect(effect_name, immediate);
+	this->get_sound_bank()->stop_effect(effect, immediate);
 }
-void SoundBankObject::pause_effect(const std::string& effect_name) const
+void SoundBankObject::pause_effect(SoundBank::EffectHandle effect) const
 {
-	this->get_sb()->pause_effect(effect_name);
+	this->get_sound_bank()->pause_effect(effect);
 }
-void SoundBankObject::resume_effect(const std::string& effect_name) const
+void SoundBankObject::resume_effect(SoundBank::EffectHandle effect) const
 {
-	this->get_sb()->resume_effect(effect_name);
+	this->get_sound_bank()->resume_effect(effect);
 }
-void SoundBankObject::set_effect_volume(const std::string& effect_name, float volume) const
+void SoundBankObject::set_effect_volume(SoundBank::EffectHandle effect,
+	float volume) const
 {
-	this->get_sb()->set_effect_volume(effect_name, volume);
+	this->get_sound_bank()->set_effect_volume(effect, volume);
 }
-void SoundBankObject::set_effect_pitch(const std::string& effect_name, float pitch) const
+void SoundBankObject::set_effect_pitch(SoundBank::EffectHandle effect,
+	float pitch) const
 {
-	this->get_sb()->set_effect_pitch(effect_name, pitch);
+	this->get_sound_bank()->set_effect_pitch(effect, pitch);
 }
-void SoundBankObject::set_effect_pan(const std::string& effect_name, float pan) const
+void SoundBankObject::set_effect_pan(SoundBank::EffectHandle effect,
+	float pan) const
 {
-	this->get_sb()->set_effect_pan(effect_name, pan);
+	this->get_sound_bank()->set_effect_pan(effect, pan);
 }
-SoundState SoundBankObject::get_effect_state(const std::string& effect_name) const
+SoundState SoundBankObject::get_effect_state(
+	SoundBank::EffectHandle effect) const
 {
-	return this->get_sb()->get_effect_state(effect_name);
+	return this->get_sound_bank()->get_effect_state(effect);
 }
-bool SoundBankObject::is_effect_looping(const std::string& effect_name) const
+bool SoundBankObject::is_effect_looping(SoundBank::EffectHandle effect) const
 {
-	return this->get_sb()->is_effect_looping(effect_name);
-}
-
-SoundEffectInstance* SoundBankObject::get_sound_effect_instance(const std::string& instance_name) const
-{
-	return this->get_sb()->get_sound_effect_instance(instance_name);
-}
-SoundEffectInstance* SoundBankObject::get_sei(const std::string& instance_name) const
-{
-	return this->get_sound_effect_instance(instance_name);
+	return this->get_sound_bank()->is_effect_looping(effect);
 }
 
 void SoundBankObject::set_sound_bank(const std::string& sound_bank_name)

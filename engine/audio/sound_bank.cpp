@@ -5,97 +5,103 @@ using namespace DirectX;
 using namespace MattMath;
 
 SoundBank::SoundBank(std::unique_ptr<WaveBank> wave_bank,
-	std::map<std::string, std::unique_ptr<SoundEffectInstance>> instances) :
+	Registry<SoundEffectInstance> instances) :
 	_wave_bank(std::move(wave_bank)),
 	_sound_effect_instances(std::move(instances))
 {
 
 }
 
-void SoundBank::play_wave(const std::string& wave_name, float volume, float pitch, float pan) const
+SoundBank::WaveHandle SoundBank::resolve_wave(
+	const std::string& wave_name) const
 {
-	clamp_levels(volume, pitch, pan);
-	try
+	// WaveBank::Find returns -1 for a name the bank does not have, which is
+	// also what an unresolved Handle holds - so this has to be caught here
+	// rather than handed on as a handle that looks fine until it is read.
+	const int index = this->_wave_bank->Find(wave_name.c_str());
+	if (index < 0)
 	{
-		this->_wave_bank->Play(wave_name.c_str(), volume, pitch, pan);
+		throw std::out_of_range(
+			"Wave '" + wave_name + "' is not in this sound bank.");
 	}
-	catch (const std::out_of_range&)
-	{
-		throw std::out_of_range("Wave with name " + wave_name + " not found");
-	}
+	return WaveHandle(index);
 }
 
-void SoundBank::play_effect(const std::string& effect_name, bool loop, float volume,
+SoundBank::EffectHandle SoundBank::resolve_effect(
+	const std::string& effect_name) const
+{
+	return this->_sound_effect_instances.resolve(effect_name);
+}
+
+void SoundBank::play_wave(WaveHandle wave, float volume, float pitch,
+	float pan) const
+{
+	if (!wave.valid())
+	{
+		throw std::out_of_range(
+			"A wave was played through an unresolved handle.");
+	}
+
+	clamp_levels(volume, pitch, pan);
+	this->_wave_bank->Play(static_cast<unsigned int>(wave.index()),
+		volume, pitch, pan);
+}
+
+void SoundBank::play_effect(EffectHandle effect, bool loop, float volume,
 	float pitch, float pan) const
 {
 	clamp_levels(volume, pitch, pan);
-	SoundEffectInstance* sei = this->get_sound_effect_instance(effect_name);
-	sei->SetVolume(volume);
-	sei->SetPitch(pitch);
-	sei->SetPan(pan);
-	sei->Play(loop);
+	SoundEffectInstance* instance = this->get_sound_effect_instance(effect);
+	instance->SetVolume(volume);
+	instance->SetPitch(pitch);
+	instance->SetPan(pan);
+	instance->Play(loop);
 }
-void SoundBank::stop_effect(const std::string& effect_name, bool immediate) const
+void SoundBank::stop_effect(EffectHandle effect, bool immediate) const
 {
-	this->get_sound_effect_instance(effect_name)->Stop(immediate);
+	this->get_sound_effect_instance(effect)->Stop(immediate);
 }
-void SoundBank::pause_effect(const std::string& effect_name) const
+void SoundBank::pause_effect(EffectHandle effect) const
 {
-	this->get_sound_effect_instance(effect_name)->Pause();
+	this->get_sound_effect_instance(effect)->Pause();
 }
-void SoundBank::resume_effect(const std::string& effect_name) const
+void SoundBank::resume_effect(EffectHandle effect) const
 {
-	this->get_sound_effect_instance(effect_name)->Resume();
+	this->get_sound_effect_instance(effect)->Resume();
 }
-void SoundBank::set_effect_volume(const std::string& effect_name, float volume) const
+void SoundBank::set_effect_volume(EffectHandle effect, float volume) const
 {
 	volume = clamp(volume, 0.0f, 1.0f);
-	this->get_sound_effect_instance(effect_name)->SetVolume(volume);
+	this->get_sound_effect_instance(effect)->SetVolume(volume);
 }
-void SoundBank::set_effect_pitch(const std::string& effect_name, float pitch) const
+void SoundBank::set_effect_pitch(EffectHandle effect, float pitch) const
 {
 	pitch = clamp(pitch, -1.0f, 1.0f);
-	this->get_sound_effect_instance(effect_name)->SetPitch(pitch);
+	this->get_sound_effect_instance(effect)->SetPitch(pitch);
 }
-void SoundBank::set_effect_pan(const std::string& effect_name, float pan) const
+void SoundBank::set_effect_pan(EffectHandle effect, float pan) const
 {
 	pan = clamp(pan, -1.0f, 1.0f);
-	this->get_sound_effect_instance(effect_name)->SetPan(pan);
+	this->get_sound_effect_instance(effect)->SetPan(pan);
 }
-SoundState SoundBank::get_effect_state(const std::string& effect_name) const
+SoundState SoundBank::get_effect_state(EffectHandle effect) const
 {
-	return this->get_sound_effect_instance(effect_name)->GetState();
+	return this->get_sound_effect_instance(effect)->GetState();
 }
-bool SoundBank::is_effect_looping(const std::string& effect_name) const
+bool SoundBank::is_effect_looping(EffectHandle effect) const
 {
-	return this->get_sound_effect_instance(effect_name)->IsLooped();
+	return this->get_sound_effect_instance(effect)->IsLooped();
 }
-SoundEffectInstance* SoundBank::get_sound_effect_instance(const std::string& instance_name) const
+SoundEffectInstance* SoundBank::get_sound_effect_instance(
+	EffectHandle effect) const
 {
-	try
-	{
-		return this->_sound_effect_instances.at(instance_name).get();
-	}
-	catch (const std::out_of_range&)
-	{
-		throw std::out_of_range("SoundEffectInstance with name " + instance_name + " not found");
-	}
-}
-SoundEffectInstance* SoundBank::get_sei(const std::string& instance_name) const
-{
-	return this->get_sound_effect_instance(instance_name);
+	// A bounds check and an indexed load, and the registry's own throw naming
+	// the instance if the handle was never resolved.
+	return this->_sound_effect_instances.get(effect);
 }
 void SoundBank::clamp_levels(float& volume, float& pitch, float& pan)
 {
 	volume = clamp(volume, 0.0f, 1.0f);
 	pitch = clamp(pitch, -1.0f, 1.0f);
 	pan = clamp(pan, -1.0f, 1.0f);
-}
-void SoundBank::reset_all_instances()
-{
-	for (auto& sei : this->_sound_effect_instances)
-	{
-		sei.second->Stop(true);
-		sei.second.reset();
-	}
 }

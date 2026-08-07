@@ -1,6 +1,5 @@
 #include "engine/assets/sound_bank_loader.h"
 #include "engine/assets/json_loader.h"
-#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -33,17 +32,17 @@ namespace
 		}
 	}
 
-	std::map<std::string, std::unique_ptr<SoundEffectInstance>> decode_instances(
+	Registry<SoundEffectInstance> decode_instances(
 		WaveBank& wave_bank, const Value& waves_json,
 		const Value& instances_json, bool instance_for_each_wave)
 	{
-		std::map<std::string, std::unique_ptr<SoundEffectInstance>> instances;
+		Registry<SoundEffectInstance> instances("SoundEffectInstance");
 
 		if (instance_for_each_wave)
 		{
 			for (const std::string& wave : decode_wave_names(waves_json))
 			{
-				instances[wave] = create_instance(wave_bank, wave);
+				instances.add(wave, create_instance(wave_bank, wave));
 			}
 		}
 
@@ -52,12 +51,15 @@ namespace
 			std::string name = effect["name"].GetString();
 			std::string wave = effect["wave"].GetString();
 
-			if (instances.find(name) != instances.end())
+			// Registry::add refills a name's slot rather than rejecting it, so
+			// the duplicate check has to happen here: two definitions claiming
+			// one name is a content bug, not an overwrite.
+			if (instances.contains(name))
 			{
 				throw std::runtime_error(
 					"SoundEffectInstance with name " + name + " already exists");
 			}
-			instances[name] = create_instance(wave_bank, wave);
+			instances.add(name, create_instance(wave_bank, wave));
 		}
 		return instances;
 	}
