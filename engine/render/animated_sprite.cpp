@@ -1,7 +1,7 @@
 #include "engine/render/animated_sprite.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 AnimatedSprite::AnimatedSprite(SpriteSheet* sprite_sheet,
 	const std::string& animation_strip_name,

@@ -1,7 +1,7 @@
 #include "engine/render/text_object.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 TextObject::TextObject(const std::string& text,
 	const std::string& font_name,

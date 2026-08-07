@@ -17,9 +17,9 @@ public:
 		const std::string& sheet_name,
 		const std::string& animation_strip_name,
 		RenderResources* render_resources,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin = MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f);
 protected:
@@ -40,25 +40,25 @@ protected:
 		const std::string& animation_strip);
 
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::RectangleI& destination_rectangle) const;
+		const mattmath::RectangleI& destination_rectangle) const;
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::RectangleF& destination_rectangle) const;
-	virtual void draw(DirectX::SpriteBatch* sprite_batch, const MattMath::Vector2F& position,
+		const mattmath::RectangleF& destination_rectangle) const;
+	virtual void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Vector2F& position,
 		float scale = 1.0f) const;
 
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::RectangleF& destination_rectangle,
-		const MattMath::Camera& camera) const;
+		const mattmath::RectangleF& destination_rectangle,
+		const mattmath::Camera& camera) const;
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::Vector2F& position,
-		const MattMath::Camera& camera, float scale = 1.0f) const;
+		const mattmath::Vector2F& position,
+		const mattmath::Camera& camera, float scale = 1.0f) const;
 
 	// See TextureObject::draw_with - lets a caller vary colour and effects per
 	// draw without assigning them to this shared object first.
 	void draw_with(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::RectangleF& destination_rectangle,
-		const MattMath::Camera& camera,
-		const MattMath::Colour& colour,
+		const mattmath::RectangleF& destination_rectangle,
+		const mattmath::Camera& camera,
+		const mattmath::Colour& colour,
 		DirectX::SpriteEffects effects) const;
 
 private:

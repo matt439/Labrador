@@ -15,9 +15,9 @@ public:
 	TextureObject(const std::string& sheet_name,
 		const std::string& frame_name,
 		RenderResources* render_resources,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin = MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f);
 
@@ -38,18 +38,18 @@ protected:
 	void set_frame(const std::string& frame_name);
 
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::RectangleI& destination_rectangle) const;
+		const mattmath::RectangleI& destination_rectangle) const;
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::RectangleF& destination_rectangle) const;
+		const mattmath::RectangleF& destination_rectangle) const;
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::Vector2F& position, float scale = 1.0f) const;
+		const mattmath::Vector2F& position, float scale = 1.0f) const;
 
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::RectangleF& destination_rectangle,
-		const MattMath::Camera& camera) const;
+		const mattmath::RectangleF& destination_rectangle,
+		const mattmath::Camera& camera) const;
 	virtual void draw(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::Vector2F& position,
-		const MattMath::Camera& camera, float scale = 1.0f) const;
+		const mattmath::Vector2F& position,
+		const mattmath::Camera& camera, float scale = 1.0f) const;
 
 	// Draws without reading any of the per-draw members, so callers can compute
 	// frame / colour / origin / effects / rotation into locals instead of
@@ -61,11 +61,11 @@ protected:
 	// free/allocate on one control block, i.e. heap corruption. The frame is a
 	// handle now, so passing it costs a register rather than a string copy.
 	void draw_with(DirectX::SpriteBatch* sprite_batch,
-		const MattMath::RectangleF& destination_rectangle,
-		const MattMath::Camera& camera,
+		const mattmath::RectangleF& destination_rectangle,
+		const mattmath::Camera& camera,
 		SpriteSheet::frame_handle frame,
-		const MattMath::Colour& colour,
-		const MattMath::Vector2F& origin,
+		const mattmath::Colour& colour,
+		const mattmath::Vector2F& origin,
 		DirectX::SpriteEffects effects,
 		float rotation) const;
 

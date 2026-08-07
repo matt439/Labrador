@@ -1,6 +1,6 @@
 #include "engine/render/text.h"
 
-using namespace MattMath;
+using namespace mattmath;
 using namespace DirectX;
 
 Text::Text(const std::string& text,

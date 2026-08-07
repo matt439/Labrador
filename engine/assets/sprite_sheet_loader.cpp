@@ -1,7 +1,7 @@
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/assets/json_loader.h"
 
-using namespace MattMath;
+using namespace mattmath;
 using namespace rapidjson;
 
 namespace

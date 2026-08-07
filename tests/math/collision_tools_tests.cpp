@@ -2,7 +2,7 @@
 #include "engine/math/collision_tools.h"
 #include <cmath>
 
-using namespace MattMath;
+using namespace mattmath;
 
 namespace
 {

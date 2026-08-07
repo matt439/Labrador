@@ -1,6 +1,6 @@
 #include "engine/math/ericson_math.h"
 
-using namespace MattMath;
+using namespace mattmath;
 using namespace EricsonMath;
 
 ////Vector::Vector(float x, float y) :

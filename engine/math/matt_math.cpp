@@ -5,12 +5,12 @@
 
 using namespace DirectX;
 
-namespace MattMath
+namespace mattmath
 {
 
 #pragma region Misc
 
-	//float MattMath::min_value(float a, float b)
+	//float mattmath::min_value(float a, float b)
 	//{
 	//	if (a < b)
 	//	{
@@ -21,7 +21,7 @@ namespace MattMath
 	//		return b;
 	//	}
 	//}
-	//float MattMath::max_value(float a, float b)
+	//float mattmath::max_value(float a, float b)
 	//{
 	//	if (a > b)
 	//	{
@@ -32,7 +32,7 @@ namespace MattMath
 	//		return b;
 	//	}
 	//}
-	float MattMath::clamp(float value, float min, float max)
+	float mattmath::clamp(float value, float min, float max)
 	{
 		if (value < min)
 		{
@@ -47,7 +47,7 @@ namespace MattMath
 			return value;
 		}
 	}
-	void MattMath::clamp_ref(float& value, float min, float max)
+	void mattmath::clamp_ref(float& value, float min, float max)
 	{
 		if (value < min)
 		{
@@ -58,7 +58,7 @@ namespace MattMath
 			value = max;
 		}
 	}
-	int MattMath::clamp(int value, int min, int max)
+	int mattmath::clamp(int value, int min, int max)
 	{
 		if (value < min)
 		{
@@ -73,7 +73,7 @@ namespace MattMath
 			return value;
 		}
 	}
-	void MattMath::clamp_ref(int& value, int min, int max)
+	void mattmath::clamp_ref(int& value, int min, int max)
 	{
 		if (value < min)
 		{
@@ -84,31 +84,31 @@ namespace MattMath
 			value = max;
 		}
 	}
-	int MattMath::sign(const Vector2F& p1,
+	int mattmath::sign(const Vector2F& p1,
 		const Vector2F& p2, const Vector2F& p3)
 	{
 		return static_cast<int>((p1.x - p3.x) * (p2.y - p3.y) -
 			(p2.x - p3.x) * (p1.y - p3.y));
 	}
 
-	bool MattMath::are_equal(float a, float b, float epsilon)
+	bool mattmath::are_equal(float a, float b, float epsilon)
 	{
 		return fabs(a - b) < epsilon;
 	}
-	bool MattMath::are_equal(const Vector2F& a, const Vector2F& b, float epsilon)
+	bool mattmath::are_equal(const Vector2F& a, const Vector2F& b, float epsilon)
 	{
 		return are_equal(a.x, b.x, epsilon) && are_equal(a.y, b.y, epsilon);
 	}
-	float MattMath::to_radians(float degrees)
+	float mattmath::to_radians(float degrees)
 	{
 		return degrees * (PI / 180.0f);
 	}
-	float MattMath::to_degrees(float radians)
+	float mattmath::to_degrees(float radians)
 	{
 		return radians * (180.0f / PI);
 	}
 
-	float MattMath::lerp(float a, float b, float t)
+	float mattmath::lerp(float a, float b, float t)
 	{
 		return a + (b - a) * t;
 	}
@@ -155,22 +155,22 @@ namespace MattMath
 
 #pragma region Global Intersect Functions
 
-	bool MattMath::shapes_intersect(const Shape* a, const Shape* b)
+	bool mattmath::shapes_intersect(const Shape* a, const Shape* b)
 	{
 		return a->intersects(b);
 	}
 
-	bool MattMath::shapes_intersect(const Shape& a, const Shape& b)
+	bool mattmath::shapes_intersect(const Shape& a, const Shape& b)
 	{
 		return a.intersects(b);
 	}
 
-	bool MattMath::shapes_AABB_intersect(const Shape* a, const Shape* b)
+	bool mattmath::shapes_AABB_intersect(const Shape* a, const Shape* b)
 	{
 		return a->get_bounding_box().intersects(b->get_bounding_box());
 	}
 
-	bool MattMath::shapes_AABB_intersect(const Shape& a, const Shape& b)
+	bool mattmath::shapes_AABB_intersect(const Shape& a, const Shape& b)
 	{
 		return a.get_bounding_box().intersects(b.get_bounding_box());
 	}
@@ -180,18 +180,18 @@ namespace MattMath
 		return EricsonMath::test_AABB_AABB(a, b);
 	}
 
-	bool MattMath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle,
+	bool mattmath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle,
 		Point2F& point)
 	{
 		return EricsonMath::test_circle_AABB(circle, rectangle, point);
 	}
 
-	bool MattMath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle)
+	bool mattmath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle)
 	{
 		return EricsonMath::test_circle_AABB(circle, rectangle);
 	}
 
-	bool MattMath::rectangle_triangle_intersect(const RectangleF& rectangle, const Triangle& triangle)
+	bool mattmath::rectangle_triangle_intersect(const RectangleF& rectangle, const Triangle& triangle)
 	{
 		// AABB vs AABB
 		if (!rectangle.intersects(triangle.get_bounding_box()))
@@ -229,7 +229,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::rectangle_quad_intersect(const RectangleF& rectangle, const Quad& quad)
+	bool mattmath::rectangle_quad_intersect(const RectangleF& rectangle, const Quad& quad)
 	{
 		// get the triangles of the quad
 		std::vector<Triangle> triangles = quad.get_triangles();
@@ -245,12 +245,12 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::rectangle_segment_intersect(const RectangleF& rectangle, const Segment& segment)
+	bool mattmath::rectangle_segment_intersect(const RectangleF& rectangle, const Segment& segment)
 	{
 		return EricsonMath::test_segment_AABB(segment.point_0, segment.point_1, rectangle);
 	}
 
-	bool MattMath::rectangle_point_intersect(const RectangleF& rectangle, const Point2F& point)
+	bool mattmath::rectangle_point_intersect(const RectangleF& rectangle, const Point2F& point)
 	{
 		return point.x >= rectangle.x &&
 			point.x <= rectangle.x + rectangle.width &&
@@ -258,7 +258,7 @@ namespace MattMath
 			point.y <= rectangle.y + rectangle.height;
 	}
 
-	bool MattMath::rectangle_rotated_rectangle_intersect(const RectangleF& rect,
+	bool mattmath::rectangle_rotated_rectangle_intersect(const RectangleF& rect,
 		const RectangleRotated& rotated_rect)
 	{
 		// check if the rectangles' bounding boxes intersect
@@ -298,26 +298,26 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::circles_intersect(const Circle& a, const Circle& b)
+	bool mattmath::circles_intersect(const Circle& a, const Circle& b)
 	{
 		return Vector2F::distance(a.center, b.center) <=
 			a.radius + b.radius;
 	}
 
-	bool MattMath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle, Point2F& point)
+	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle, Point2F& point)
 	{
 		return EricsonMath::test_circle_triangle(circle, triangle.get_point_0(),
 			triangle.get_point_1(), triangle.get_point_2(), point);
 	}
 
-	bool MattMath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle)
+	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle)
 	{
 		Point2F point;
 		return EricsonMath::test_circle_triangle(circle, triangle.get_point_0(),
 			triangle.get_point_1(), triangle.get_point_2(), point);
 	}
 
-	bool MattMath::circle_quad_intersect(const Circle& circle, const Quad& quad)
+	bool mattmath::circle_quad_intersect(const Circle& circle, const Quad& quad)
 	{
 		std::vector<Triangle> triangles = quad.get_triangles();
 
@@ -331,7 +331,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::circle_segment_intersect(const Circle& circle, const Segment& segment, Point2F& point)
+	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment, Point2F& point)
 	{
 		float t;
 		EricsonMath::closest_pt_point_segment(circle.center,
@@ -340,18 +340,18 @@ namespace MattMath
 		return Vector2F::distance(circle.center, point) <= circle.radius;
 	}
 
-	bool MattMath::circle_segment_intersect(const Circle& circle, const Segment& segment)
+	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment)
 	{
 		Point2F point;
 		return circle_segment_intersect(circle, segment, point);
 	}
 
-	bool MattMath::circle_point_intersect(const Circle& circle, const Point2F& point)
+	bool mattmath::circle_point_intersect(const Circle& circle, const Point2F& point)
 	{
 		return Vector2F::distance(circle.center, point) <= circle.radius;
 	}
 
-	bool MattMath::circle_rectangle_rotated_intersect(const Circle& circle,
+	bool mattmath::circle_rectangle_rotated_intersect(const Circle& circle,
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the circle intersects the rectangle's bounding box
@@ -379,7 +379,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::triangles_intersect(const Triangle& a, const Triangle& b)
+	bool mattmath::triangles_intersect(const Triangle& a, const Triangle& b)
 	{
 		// check if any of the points are contained within each other
 		for (int i = 0; i < 3; i++)
@@ -407,7 +407,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::triangle_quad_intersect(const Triangle& triangle, const Quad& quad)
+	bool mattmath::triangle_quad_intersect(const Triangle& triangle, const Quad& quad)
 	{
 		// get the triangles of the quad
 		std::vector<Triangle> triangles = quad.get_triangles();
@@ -424,7 +424,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::triangle_segment_intersect(const Triangle& triangle, const Segment& segment)
+	bool mattmath::triangle_segment_intersect(const Triangle& triangle, const Segment& segment)
 	{
 		// check if the segment's end points are contained within the triangle
 		if (triangle.contains(segment.point_0) || triangle.contains(segment.point_1))
@@ -445,13 +445,13 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::triangle_point_intersect(const Triangle& triangle, const Point2F& point)
+	bool mattmath::triangle_point_intersect(const Triangle& triangle, const Point2F& point)
 	{
 		return EricsonMath::test_point_triangle(point, triangle.points[0],
 			triangle.points[1], triangle.points[2]);
 	}
 
-	bool MattMath::triangle_rectangle_rotated_intersect(const Triangle& triangle,
+	bool mattmath::triangle_rectangle_rotated_intersect(const Triangle& triangle,
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the triangle intersects the rectangle's bounding box
@@ -490,7 +490,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::quads_intersect(const Quad& a, const Quad& b)
+	bool mattmath::quads_intersect(const Quad& a, const Quad& b)
 	{
 		// get the triangles of each quad
 		std::vector<Triangle> a_triangles = a.get_triangles();
@@ -511,7 +511,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::quad_segment_intersect(const Quad& quad, const Segment& segment)
+	bool mattmath::quad_segment_intersect(const Quad& quad, const Segment& segment)
 	{
 		// get the triangles of the quad
 		std::vector<Triangle> triangles = quad.get_triangles();
@@ -528,7 +528,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::quad_point_intersect(const Quad& quad, const Point2F& point)
+	bool mattmath::quad_point_intersect(const Quad& quad, const Point2F& point)
 	{
 		// check if the point is contained within any of the quad's triangles
 		std::vector<Triangle> triangles = quad.get_triangles();
@@ -543,7 +543,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::quad_rectangle_rotated_intersect(const Quad& quad,
+	bool mattmath::quad_rectangle_rotated_intersect(const Quad& quad,
 		const RectangleRotated& rect_rotated)
 	{
 		// get the triangles of the quad
@@ -561,7 +561,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::segments_intersect(const Segment& a, const Segment& b, float& t, Point2F& p)
+	bool mattmath::segments_intersect(const Segment& a, const Segment& b, float& t, Point2F& p)
 	{
 		if (a == b)
 		{
@@ -574,14 +574,14 @@ namespace MattMath
 			b.point_0, b.point_1, t, p);
 	}
 
-	bool MattMath::segments_intersect(const Segment& a, const Segment& b)
+	bool mattmath::segments_intersect(const Segment& a, const Segment& b)
 	{
 		float t;
 		Point2F p;
 		return segments_intersect(a, b, t, p);
 	}
 
-	bool MattMath::segment_rectangle_rotated_intersect(const Segment& segment,
+	bool mattmath::segment_rectangle_rotated_intersect(const Segment& segment,
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the segment intersects the rectangle's bounding box
@@ -609,7 +609,7 @@ namespace MattMath
 		return false;
 	}
 
-	bool MattMath::point_rectangle_rotated_intersect(const Point2F& point,
+	bool mattmath::point_rectangle_rotated_intersect(const Point2F& point,
 		const RectangleRotated& rect_rotated)
 	{
 		Quad quad = rect_rotated.get_quad();
@@ -617,7 +617,7 @@ namespace MattMath
 		return quad_point_intersect(quad, point);
 	}
 
-	bool MattMath::rectangles_rotated_intersect(const RectangleRotated& a,
+	bool mattmath::rectangles_rotated_intersect(const RectangleRotated& a,
 		const RectangleRotated& b)
 	{
 		// check if the rectangles' bounding boxes intersect
@@ -983,7 +983,7 @@ namespace MattMath
 		this->x += horizontal_amount;
 		this->y += vertical_amount;
 	}
-	void RectangleF::offset(const MattMath::Vector2F& amount)
+	void RectangleF::offset(const mattmath::Vector2F& amount)
 	{
 		this->x += amount.x;
 		this->y += amount.y;
@@ -1494,31 +1494,31 @@ namespace MattMath
 		this->y = vector.y;
 	}
 	const Vector2I Vector2I::ZERO = { 0, 0 };
-	Vector2I MattMath::operator+ (const Vector2I& V1, const Vector2I& V2)
+	Vector2I mattmath::operator+ (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x + V2.x, V1.y + V2.y);
 	}
-	Vector2I MattMath::operator- (const Vector2I& V1, const Vector2I& V2)
+	Vector2I mattmath::operator- (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x - V2.x, V1.y - V2.y);
 	}
-	Vector2I MattMath::operator* (const Vector2I& V1, const Vector2I& V2)
+	Vector2I mattmath::operator* (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x * V2.x, V1.y * V2.y);
 	}
-	Vector2I MattMath::operator* (const Vector2I& V, int S)
+	Vector2I mattmath::operator* (const Vector2I& V, int S)
 	{
 		return Vector2I(V.x * S, V.y * S);
 	}
-	Vector2I MattMath::operator/ (const Vector2I& V1, const Vector2I& V2)
+	Vector2I mattmath::operator/ (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x / V2.x, V1.y / V2.y);
 	}
-	Vector2I MattMath::operator/ (const Vector2I& V, int S)
+	Vector2I mattmath::operator/ (const Vector2I& V, int S)
 	{
 		return Vector2I(V.x / S, V.y / S);
 	}
-	Vector2I MattMath::operator* (int S, const Vector2I& V)
+	Vector2I mattmath::operator* (int S, const Vector2I& V)
 	{
 		return Vector2I(V.x * S, V.y * S);
 	}
@@ -1927,31 +1927,31 @@ namespace MattMath
 	const Vector2F Vector2F::DIRECTION_UP_LEFT = Vector2F::unit_vector(Vector2F::DIRECTION_UP + Vector2F::DIRECTION_LEFT);
 
 
-	Vector2F MattMath::operator+ (const Vector2F& V1, const Vector2F& V2)
+	Vector2F mattmath::operator+ (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x + V2.x, V1.y + V2.y);
 	}
-	Vector2F MattMath::operator- (const Vector2F& V1, const Vector2F& V2)
+	Vector2F mattmath::operator- (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x - V2.x, V1.y - V2.y);
 	}
-	Vector2F MattMath::operator* (const Vector2F& V1, const Vector2F& V2)
+	Vector2F mattmath::operator* (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x * V2.x, V1.y * V2.y);
 	}
-	Vector2F MattMath::operator* (const Vector2F& V, float S)
+	Vector2F mattmath::operator* (const Vector2F& V, float S)
 	{
 		return Vector2F(V.x * S, V.y * S);
 	}
-	Vector2F MattMath::operator/ (const Vector2F& V1, const Vector2F& V2)
+	Vector2F mattmath::operator/ (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x / V2.x, V1.y / V2.y);
 	}
-	Vector2F MattMath::operator/ (const Vector2F& V, float S)
+	Vector2F mattmath::operator/ (const Vector2F& V, float S)
 	{
 		return Vector2F(V.x / S, V.y / S);
 	}
-	Vector2F MattMath::operator* (float S, const Vector2F& V)
+	Vector2F mattmath::operator* (float S, const Vector2F& V)
 	{
 		return Vector2F(V.x * S, V.y * S);
 	}
@@ -2241,7 +2241,7 @@ namespace MattMath
 		this->clamp_colours();
 		return *this;
 	}
-	Colour& Colour::operator=(const MattMath::Vector4F& vector)
+	Colour& Colour::operator=(const mattmath::Vector4F& vector)
 	{
 		this->r = vector.x;
 		this->g = vector.y;
@@ -2453,31 +2453,31 @@ namespace MattMath
 		this->b = clamp(this->b, 0.0f, 1.0f);
 		this->a = clamp(this->a, 0.0f, 1.0f);
 	}
-	Colour MattMath::operator+ (const Colour& V1, const Colour& V2)
+	Colour mattmath::operator+ (const Colour& V1, const Colour& V2)
 	{
 		return Colour(V1.r + V2.r, V1.g + V2.g, V1.b + V2.b, V1.a + V2.a);
 	}
-	Colour MattMath::operator- (const Colour& V1, const Colour& V2)
+	Colour mattmath::operator- (const Colour& V1, const Colour& V2)
 	{
 		return Colour(V1.r - V2.r, V1.g - V2.g, V1.b - V2.b, V1.a - V2.a);
 	}
-	Colour MattMath::operator* (const Colour& V1, const Colour& V2)
+	Colour mattmath::operator* (const Colour& V1, const Colour& V2)
 	{
 		return Colour(V1.r * V2.r, V1.g * V2.g, V1.b * V2.b, V1.a * V2.a);
 	}
-	Colour MattMath::operator* (const Colour& V, float S)
+	Colour mattmath::operator* (const Colour& V, float S)
 	{
 		return Colour(V.r * S, V.g * S, V.b * S, V.a * S);
 	}
-	Colour MattMath::operator/ (const Colour& V1, const Colour& V2)
+	Colour mattmath::operator/ (const Colour& V1, const Colour& V2)
 	{
 		return Colour(V1.r / V2.r, V1.g / V2.g, V1.b / V2.b, V1.a / V2.a);
 	}
-	Colour MattMath::operator/ (const Colour& V, float S)
+	Colour mattmath::operator/ (const Colour& V, float S)
 	{
 		return Colour(V.r / S, V.g / S, V.b / S, V.a / S);
 	}
-	Colour MattMath::operator* (float S, const Colour& V)
+	Colour mattmath::operator* (float S, const Colour& V)
 	{
 		return Colour(V.r * S, V.g * S, V.b * S, V.a * S);
 	}
@@ -2645,7 +2645,7 @@ namespace MattMath
 		{
 			return false;
 		}
-		return MattMath::determinant(*this) != 0.0f;
+		return mattmath::determinant(*this) != 0.0f;
 	}
 	//bool MatrixF::is_row_echelon_form() const
 	//{
@@ -2681,32 +2681,32 @@ namespace MattMath
 	}
 	MatrixF& MatrixF::operator+=(const MatrixF& other)
 	{
-		*this = MattMath::add(*this, other);
+		*this = mattmath::add(*this, other);
 		return *this;
 	}
 	MatrixF& MatrixF::operator-=(const MatrixF& other)
 	{
-		*this = MattMath::subtract(*this, other);
+		*this = mattmath::subtract(*this, other);
 		return *this;
 	}
 	MatrixF& MatrixF::operator*=(const MatrixF& other)
 	{
-		*this = MattMath::multiply(*this, other);
+		*this = mattmath::multiply(*this, other);
 		return *this;
 	}
 	MatrixF& MatrixF::operator/=(const MatrixF& other)
 	{
-		*this = MattMath::divide(*this, other);
+		*this = mattmath::divide(*this, other);
 		return *this;
 	}
 	MatrixF& MatrixF::operator*=(float other)
 	{
-		*this = MattMath::multiply(*this, other);
+		*this = mattmath::multiply(*this, other);
 		return *this;
 	}
 	MatrixF& MatrixF::operator/=(float other)
 	{
-		*this = MattMath::divide(*this, other);
+		*this = mattmath::divide(*this, other);
 		return *this;
 	}
 	bool MatrixF::row_valid(int row) const
@@ -2721,27 +2721,27 @@ namespace MattMath
 	{
 		return row * this->columns_ + column;
 	}
-	MatrixF MattMath::operator+ (const MatrixF& a, const MatrixF& b)
+	MatrixF mattmath::operator+ (const MatrixF& a, const MatrixF& b)
 	{
-		return MattMath::add(a, b);
+		return mattmath::add(a, b);
 	}
-	MatrixF MattMath::operator- (const MatrixF& a, const MatrixF& b)
+	MatrixF mattmath::operator- (const MatrixF& a, const MatrixF& b)
 	{
-		return MattMath::subtract(a, b);
+		return mattmath::subtract(a, b);
 	}
-	MatrixF MattMath::operator* (const MatrixF& a, const MatrixF& b)
+	MatrixF mattmath::operator* (const MatrixF& a, const MatrixF& b)
 	{
-		return MattMath::multiply(a, b);
+		return mattmath::multiply(a, b);
 	}
-	MatrixF MattMath::operator/ (const MatrixF& a, const MatrixF& b)
+	MatrixF mattmath::operator/ (const MatrixF& a, const MatrixF& b)
 	{
-		return MattMath::divide(a, b);
+		return mattmath::divide(a, b);
 	}
-	bool MattMath::equal_dimensions(const MatrixF& a, const MatrixF& b)
+	bool mattmath::equal_dimensions(const MatrixF& a, const MatrixF& b)
 	{
 		return a.get_dimensions() == b.get_dimensions();
 	}
-	MatrixF MattMath::add(const MatrixF& a, const MatrixF& b)
+	MatrixF mattmath::add(const MatrixF& a, const MatrixF& b)
 	{
 		// Check if the dimensions are the same
 		if (!equal_dimensions(a, b))
@@ -2760,7 +2760,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	MatrixF MattMath::subtract(const MatrixF& a, const MatrixF& b)
+	MatrixF mattmath::subtract(const MatrixF& a, const MatrixF& b)
 	{
 		// Check if the dimensions are the same
 		if (!equal_dimensions(a, b))
@@ -2779,7 +2779,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	MatrixF MattMath::multiply(const MatrixF& a, const MatrixF& b)
+	MatrixF mattmath::multiply(const MatrixF& a, const MatrixF& b)
 	{
 		// check if the dimensions are correct
 		if (a.get_columns() != b.get_rows())
@@ -2801,7 +2801,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	MatrixF MattMath::divide(const MatrixF& a, const MatrixF& b)
+	MatrixF mattmath::divide(const MatrixF& a, const MatrixF& b)
 	{
 		// check if the dimensions are correct
 		if (a.get_columns() != b.get_rows())
@@ -2823,7 +2823,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	MatrixF MattMath::multiply(const MatrixF& a, float b)
+	MatrixF mattmath::multiply(const MatrixF& a, float b)
 	{
 		int rows = a.get_rows();
 		int columns = a.get_columns();
@@ -2837,7 +2837,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	MatrixF MattMath::divide(const MatrixF& a, float b)
+	MatrixF mattmath::divide(const MatrixF& a, float b)
 	{
 		int rows = a.get_rows();
 		int columns = a.get_columns();
@@ -2851,7 +2851,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	MatrixF MattMath::gaussian_elimination(const MatrixF& matrix)
+	MatrixF mattmath::gaussian_elimination(const MatrixF& matrix)
 	{
 		MatrixF result = matrix;
 		int rows = result.get_rows();
@@ -2905,7 +2905,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	MatrixF MattMath::transpose(const MatrixF& matrix)
+	MatrixF mattmath::transpose(const MatrixF& matrix)
 	{
 		int rows = matrix.get_rows();
 		int columns = matrix.get_columns();
@@ -2919,10 +2919,10 @@ namespace MattMath
 		}
 		return result;
 	}
-	//MatrixF MattMath::inverse(const MatrixF& matrix)
+	//MatrixF mattmath::inverse(const MatrixF& matrix)
 	//{
 	//}
-	MatrixF MattMath::identity(int size)
+	MatrixF mattmath::identity(int size)
 	{
 		MatrixF result(size, size);
 		for (int i = 0; i < size; i++)
@@ -2931,7 +2931,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	MatrixF MattMath::zero(int rows, int columns)
+	MatrixF mattmath::zero(int rows, int columns)
 	{
 		MatrixF result(rows, columns);
 		for (int i = 0; i < rows; i++)
@@ -2943,7 +2943,7 @@ namespace MattMath
 		}
 		return result;
 	}
-	float MattMath::determinant(const MatrixF& matrix)
+	float mattmath::determinant(const MatrixF& matrix)
 	{
 		if (!matrix.is_square())
 		{
@@ -2984,10 +2984,10 @@ namespace MattMath
 			return result;
 		}
 	}
-	//std::vector<MatrixF> MattMath::eigenvectors(const MatrixF& matrix)
+	//std::vector<MatrixF> mattmath::eigenvectors(const MatrixF& matrix)
 	//{
 	//}
-	//std::vector<float> MattMath::eigenvalues(const MatrixF& matrix)
+	//std::vector<float> mattmath::eigenvalues(const MatrixF& matrix)
 	//{
 	//}
 
@@ -3118,31 +3118,31 @@ namespace MattMath
 		this->z /= other;
 		return *this;
 	}
-	Vector3F MattMath::operator+ (const Vector3F& V1, const Vector3F& V2)
+	Vector3F mattmath::operator+ (const Vector3F& V1, const Vector3F& V2)
 	{
 		return Vector3F(V1.x + V2.x, V1.y + V2.y, V1.z + V2.z);
 	}
-	Vector3F MattMath::operator- (const Vector3F& V1, const Vector3F& V2)
+	Vector3F mattmath::operator- (const Vector3F& V1, const Vector3F& V2)
 	{
 		return Vector3F(V1.x - V2.x, V1.y - V2.y, V1.z - V2.z);
 	}
-	Vector3F MattMath::operator* (const Vector3F& V1, const Vector3F& V2)
+	Vector3F mattmath::operator* (const Vector3F& V1, const Vector3F& V2)
 	{
 		return Vector3F(V1.x * V2.x, V1.y * V2.y, V1.z * V2.z);
 	}
-	Vector3F MattMath::operator* (const Vector3F& V, float S)
+	Vector3F mattmath::operator* (const Vector3F& V, float S)
 	{
 		return Vector3F(V.x * S, V.y * S, V.z * S);
 	}
-	Vector3F MattMath::operator/ (const Vector3F& V1, const Vector3F& V2)
+	Vector3F mattmath::operator/ (const Vector3F& V1, const Vector3F& V2)
 	{
 		return Vector3F(V1.x / V2.x, V1.y / V2.y, V1.z / V2.z);
 	}
-	Vector3F MattMath::operator/ (const Vector3F& V, float S)
+	Vector3F mattmath::operator/ (const Vector3F& V, float S)
 	{
 		return Vector3F(V.x / S, V.y / S, V.z / S);
 	}
-	Vector3F MattMath::operator* (float S, const Vector3F& V)
+	Vector3F mattmath::operator* (float S, const Vector3F& V)
 	{
 		return Vector3F(V.x * S, V.y * S, V.z * S);
 	}
@@ -3271,7 +3271,7 @@ namespace MattMath
 		this->maxDepth = viewport.MaxDepth;
 		return *this;
 	}
-	Viewport& Viewport::operator=(const MattMath::RectangleF& rectangle)
+	Viewport& Viewport::operator=(const mattmath::RectangleF& rectangle)
 	{
 		this->x = rectangle.x;
 		this->y = rectangle.y;
@@ -3279,7 +3279,7 @@ namespace MattMath
 		this->height = rectangle.height;
 		return *this;
 	}
-	Viewport& Viewport::operator=(const MattMath::RectangleI& rectangle)
+	Viewport& Viewport::operator=(const mattmath::RectangleI& rectangle)
 	{
 		this->x = static_cast<float>(rectangle.x);
 		this->y = static_cast<float>(rectangle.y);
@@ -3328,7 +3328,7 @@ namespace MattMath
 	}
 	RectangleF Circle::get_bounding_box() const
 	{
-		return MattMath::RectangleF(this->center.x - this->radius,
+		return mattmath::RectangleF(this->center.x - this->radius,
 					this->center.y - this->radius,
 					this->radius * 2.0f, this->radius * 2.0f);
 
@@ -4608,4 +4608,4 @@ namespace MattMath
 
 #pragma endregion RectangleRotated
 
-} // namespace MattMath
+} // namespace mattmath

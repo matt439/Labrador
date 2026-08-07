@@ -31,5 +31,5 @@ private:
 	std::unique_ptr<Text> greeting_ = nullptr;
 	std::unique_ptr<Text> hint_ = nullptr;
 
-	MattMath::Vector2F position_ = { 0.0f, 0.0f };
+	mattmath::Vector2F position_ = { 0.0f, 0.0f };
 };

@@ -12,7 +12,7 @@ namespace viewport_consts
 	constexpr float DIVIDER_THICKNESS = 2.0f;
 	const std::string DIVIDER_SHEET_NAME = "sprite_sheet_1";
 	const std::string DIVIDER_FRAME_NAME = "pixel";
-	const MattMath::Colour DIVIDER_COLOUR = colour_consts::BLACK;
+	const mattmath::Colour DIVIDER_COLOUR = colour_consts::BLACK;
 }
 
 class ViewportManager
@@ -35,14 +35,14 @@ public:
 	void apply_player_viewport(int player_num,
 		ID3D11DeviceContext* context) const;
 
-	MattMath::Viewport get_player_viewport(int player_num) const;
+	mattmath::Viewport get_player_viewport(int player_num) const;
 
-	std::vector<MattMath::Viewport> get_all_viewports() const;
+	std::vector<mattmath::Viewport> get_all_viewports() const;
 
-	MattMath::RectangleF get_camera_adjusted_player_viewport_rect(
-		int player_num, const MattMath::Camera& camera) const;
+	mattmath::RectangleF get_camera_adjusted_player_viewport_rect(
+		int player_num, const mattmath::Camera& camera) const;
 
-	std::vector<MattMath::RectangleF> get_viewport_dividers() const;
+	std::vector<mattmath::RectangleF> get_viewport_dividers() const;
 
 	D3D11_VIEWPORT get_fullscreen_d3d11_viewport() const;
 
@@ -55,10 +55,10 @@ private:
 	int get_player_count_from_layout(screen_layout layout) const;
 
 	D3D11_VIEWPORT calculate_d3d11_viewport(screen_layout layout,
-		int player_num, const MattMath::Vector2F& screen_size) const;
-	MattMath::Viewport calculate_viewport(screen_layout layout,
-		int player_num, const MattMath::Vector2F& screen_size) const;
+		int player_num, const mattmath::Vector2F& screen_size) const;
+	mattmath::Viewport calculate_viewport(screen_layout layout,
+		int player_num, const mattmath::Vector2F& screen_size) const;
 
-	MattMath::Viewport get_fullscreen_viewport() const;
+	mattmath::Viewport get_fullscreen_viewport() const;
 
 };

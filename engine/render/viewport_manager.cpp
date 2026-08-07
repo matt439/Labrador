@@ -1,7 +1,7 @@
 #include "engine/render/viewport_manager.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 using namespace viewport_consts;
 
 ViewportManager::ViewportManager(ResolutionManager* resolution_manager,
@@ -108,7 +108,7 @@ int ViewportManager::get_player_count_from_layout(screen_layout layout) const
     }
 }
 
-std::vector<MattMath::RectangleF> ViewportManager::get_viewport_dividers() const
+std::vector<mattmath::RectangleF> ViewportManager::get_viewport_dividers() const
 {
     std::vector<RectangleF> result = std::vector<RectangleF>();
     const Vector2F res = this->resolution_manager_->get_resolution_vec();

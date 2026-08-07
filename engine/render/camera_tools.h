@@ -20,12 +20,12 @@ namespace camera_consts
 class CameraTools
 {
 public:
-    MattMath::Camera calculate_camera(
-        const MattMath::Vector2F& player_center,
-        const MattMath::Vector2F& viewport_size,
-        const MattMath::Camera& prev_camera,
-        const MattMath::RectangleF& camera_bounds) const;
+    mattmath::Camera calculate_camera(
+        const mattmath::Vector2F& player_center,
+        const mattmath::Vector2F& viewport_size,
+        const mattmath::Camera& prev_camera,
+        const mattmath::RectangleF& camera_bounds) const;
 private:
     static BorderThickness calculate_camera_scroll_border(
-        const MattMath::Vector2F& viewport_size);
+        const mattmath::Vector2F& viewport_size);
 };

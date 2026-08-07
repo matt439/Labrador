@@ -1,7 +1,7 @@
 #include "engine/ui/widget.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 #pragma region MObject
 
@@ -95,7 +95,7 @@ void MContainer::update()
 		child.second->update();
 	}
 }
-void MContainer::draw(SpriteBatch* sprite_batch, const MattMath::Camera& camera)
+void MContainer::draw(SpriteBatch* sprite_batch, const mattmath::Camera& camera)
 {
 	for (auto const& child : this->children_)
 	{
@@ -109,7 +109,7 @@ void MContainer::draw(SpriteBatch* sprite_batch)
 		child.second->draw(sprite_batch);
 	}
 }
-bool MContainer::is_visible_in_viewport(const MattMath::RectangleF& view) const
+bool MContainer::is_visible_in_viewport(const mattmath::RectangleF& view) const
 {
 	for (auto const& child : this->children_)
 	{

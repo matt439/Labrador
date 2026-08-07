@@ -2,7 +2,7 @@
 #include <stdexcept>
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 SoundBank::SoundBank(std::unique_ptr<WaveBank> wave_bank,
 	Registry<SoundEffectInstance> instances) :

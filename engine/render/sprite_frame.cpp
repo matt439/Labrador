@@ -1,6 +1,6 @@
 #include "engine/render/sprite_frame.h"
 
-using namespace MattMath;
+using namespace mattmath;
 
 SpriteFrame::SpriteFrame(const RectangleI& source_rectangle,
 	const Vector2F& origin,

@@ -1,6 +1,6 @@
 #include "engine/core/moving_object.h"
 
-using namespace MattMath;
+using namespace mattmath;
 
 MovingObject::MovingObject(const Vector2F& velocity,
 	float rotation,

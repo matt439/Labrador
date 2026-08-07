@@ -1,6 +1,6 @@
 #include "engine/math/collision_tools.h"
 
-using namespace MattMath;
+using namespace mattmath;
 
 Vector2F CollisionTools::opposite_direction(
     const Vector2F& direction)

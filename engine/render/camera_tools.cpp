@@ -2,7 +2,7 @@
 
 using namespace DirectX;
 using namespace camera_consts;
-using namespace MattMath;
+using namespace mattmath;
 
 Camera CameraTools::calculate_camera(
 	const Vector2F& player_center,

@@ -45,43 +45,43 @@ public:
 	// so nothing here may mutate the frame or strip tables.
 	void draw(DirectX::SpriteBatch* sprite_batch,
 		frame_handle frame,
-		const MattMath::Vector2F& position,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::Vector2F& position,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin =
-			MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin =
+			mattmath::Vector2F::ZERO,
 		float scale = 1.0f,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f) const;
 
 	void draw(DirectX::SpriteBatch* sprite_batch,
 		frame_handle frame,
-		const MattMath::RectangleI& destination_rectangle,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::RectangleI& destination_rectangle,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin =
-			MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin =
+			mattmath::Vector2F::ZERO,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f) const;
 
 	void draw(DirectX::SpriteBatch* sprite_batch,
 		const RECT* source_rect,
-		const MattMath::Vector2F& position,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::Vector2F& position,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin =
-		MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin =
+		mattmath::Vector2F::ZERO,
 		float scale = 1.0f,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f) const;
 
 	void draw(DirectX::SpriteBatch* sprite_batch,
 		const RECT* source_rect,
-		const MattMath::RectangleI& destination_rectangle,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::RectangleI& destination_rectangle,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin =
-		MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin =
+		mattmath::Vector2F::ZERO,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f) const;
 private:

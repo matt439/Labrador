@@ -1,7 +1,7 @@
 #include "engine/render/drawer.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 Drawer::Drawer(RenderResources* render_resources,
     const float* dt) :

@@ -8,17 +8,17 @@ public:
 	Text() = default;
 	Text(const std::string& text,
 		const std::string& font_name,
-		const MattMath::Vector2F& position,
+		const mattmath::Vector2F& position,
 		RenderResources* render_resources,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		float scale = 1.0f,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin = MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f);
 
 	void set_text(const std::string& text) override;
-	void set_colour(const MattMath::Colour& colour) override;
+	void set_colour(const mattmath::Colour& colour) override;
 	void set_scale(float scale) override;
-	void set_position(const MattMath::Vector2F& position) override;
+	void set_position(const mattmath::Vector2F& position) override;
 };

@@ -1,7 +1,7 @@
 #include "engine/render/animation_strip.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 AnimationStrip::AnimationStrip(const RectangleI& first_frame,
 	int frame_count, float frame_time, bool looping) :

@@ -54,7 +54,7 @@ void Application::initialize(HINSTANCE instance, int show_command)
 #endif
 	this->audio_engine_ = std::make_unique<AudioEngine>(audio_flags);
 
-	const MattMath::Vector2I size =
+	const mattmath::Vector2I size =
 		this->resolution_manager_->get_resolution_ivec();
 	this->device_resources_->SetWindow(this->window_, size.x, size.y);
 	this->device_resources_->CreateDeviceResources();
@@ -91,7 +91,7 @@ void Application::create_window(HINSTANCE instance, int show_command)
 		throw std::runtime_error("Could not register the window class.");
 	}
 
-	const MattMath::Vector2I size =
+	const mattmath::Vector2I size =
 		this->resolution_manager_->get_resolution_ivec();
 
 	// The Application pointer rides in as the create parameter and is stashed
@@ -215,7 +215,7 @@ void Application::set_resolution(screen_resolution resolution)
 	this->options_.resolution = resolution;
 	this->resolution_manager_->set_resolution(resolution);
 
-	const MattMath::Vector2I size =
+	const mattmath::Vector2I size =
 		this->resolution_manager_->get_resolution_ivec();
 	SetWindowPos(this->window_, HWND_TOP, 0, 0, size.x, size.y,
 		SWP_NOMOVE | SWP_NOZORDER);
@@ -238,7 +238,7 @@ void Application::set_fullscreen(bool fullscreen)
 		SetWindowLongPtr(this->window_, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 		SetWindowLongPtr(this->window_, GWL_EXSTYLE, 0);
 
-		const MattMath::Vector2I size =
+		const mattmath::Vector2I size =
 			this->resolution_manager_->get_resolution_ivec();
 		ShowWindow(this->window_, SW_SHOWNORMAL);
 		SetWindowPos(this->window_, HWND_TOP, 0, 0, size.x, size.y,

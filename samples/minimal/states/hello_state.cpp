@@ -3,7 +3,7 @@
 #include <SpriteBatch.h>
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 namespace
 {

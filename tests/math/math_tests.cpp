@@ -4,7 +4,7 @@
 #include <cfloat>
 #include <stdexcept>
 
-using namespace MattMath;
+using namespace mattmath;
 using namespace EricsonMath;
 
 namespace MathTestConstants

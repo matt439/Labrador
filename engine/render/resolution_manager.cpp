@@ -1,6 +1,6 @@
 #include "engine/render/resolution_manager.h"
 
-using namespace MattMath;
+using namespace mattmath;
 
 Vector2I ResolutionManager::get_resolution_ivec() const
 {

@@ -1,7 +1,7 @@
 #include "engine/render/texture_object.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 TextureObject::TextureObject(const std::string& sheet_name,
 	const std::string& frame_name,

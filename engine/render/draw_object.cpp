@@ -1,7 +1,7 @@
 #include "engine/render/draw_object.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 DrawObject::DrawObject(RenderResources* render_resources,
 	const Colour& color,

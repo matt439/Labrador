@@ -1,7 +1,7 @@
 #include "engine/render/sprite_sheet.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 SpriteSheet::SpriteSheet(ID3D11ShaderResourceView* texture,
 	NameTable<SpriteFrame> sprite_frames,

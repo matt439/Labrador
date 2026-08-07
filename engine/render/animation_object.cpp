@@ -1,7 +1,7 @@
 #include "engine/render/animation_object.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 AnimationObject::AnimationObject(const float* dt,
 	const std::string& sheet_name,

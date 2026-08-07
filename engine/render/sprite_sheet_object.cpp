@@ -1,7 +1,7 @@
 #include "engine/render/sprite_sheet_object.h"
 
 using namespace DirectX;
-using namespace MattMath;
+using namespace mattmath;
 
 SpriteSheetObject::SpriteSheetObject(const std::string& sheet_name,
 	RenderResources* render_resources,

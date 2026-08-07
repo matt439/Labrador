@@ -6,7 +6,7 @@ class AnimationStrip
 {
 public:
 	AnimationStrip() = default;
-	AnimationStrip(const MattMath::RectangleI& first_frame,
+	AnimationStrip(const mattmath::RectangleI& first_frame,
 		int frame_count, float frame_time, bool looping);
 
 	const RECT* get_frame_rect(int frame_index) const;
@@ -16,7 +16,7 @@ public:
 
 private:
 	std::vector<RECT> frame_rects_;
-	MattMath::RectangleI first_frame_ = { 0, 0, 0, 0 };
+	mattmath::RectangleI first_frame_ = { 0, 0, 0, 0 };
 	int frame_count_ = 0;
 	float frame_time_ = 0.0f;
 	bool looping_ = false;

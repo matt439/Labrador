@@ -1,6 +1,6 @@
 #include "engine/render/text_drop_shadow.h"
 
-using namespace MattMath;
+using namespace mattmath;
 using namespace DirectX;
 
 TextDropShadow::TextDropShadow(const std::string& text,

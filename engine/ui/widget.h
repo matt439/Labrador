@@ -11,17 +11,17 @@ public:
 	explicit MObject(const std::string& name, bool hidden = false);
 	const std::string& get_name() const;
 
-	void draw(DirectX::SpriteBatch* sprite_batch, const MattMath::Viewport& viewport);
+	void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Viewport& viewport);
 
 	void set_hidden(bool hidden);
 	bool get_hidden() const;
 
-	virtual void scale_size_and_position(const MattMath::Vector2F& scale) = 0;
+	virtual void scale_size_and_position(const mattmath::Vector2F& scale) = 0;
 
 	void update() override = 0;
-	void draw(DirectX::SpriteBatch* sprite_batch, const MattMath::Camera& camera) override = 0;
+	void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Camera& camera) override = 0;
 	void draw(DirectX::SpriteBatch* sprite_batch) override = 0;
-	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override = 0;
+	bool is_visible_in_viewport(const mattmath::RectangleF& view) const override = 0;
 private:
 	std::string name_ = "error_name";
 	bool hidden_ = false;
@@ -40,15 +40,15 @@ public:
 	std::vector<std::pair<std::string, MObject*>> get_children();
 
 	void scale_objects_to_new_resolution(
-		const MattMath::Vector2F& prev_resolution,
-		const MattMath::Vector2F& new_resolution);
+		const mattmath::Vector2F& prev_resolution,
+		const mattmath::Vector2F& new_resolution);
 
-	void scale_size_and_position(const MattMath::Vector2F& scale) override;
+	void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
 	void update() override;
-	void draw(DirectX::SpriteBatch* sprite_batch, const MattMath::Camera& camera) override;
+	void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Camera& camera) override;
 	void draw(DirectX::SpriteBatch* sprite_batch) override;
-	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override;
+	bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
 private:
 	std::vector<std::pair<std::string, MObject*>> children_;
 };
@@ -60,14 +60,14 @@ public:
 	explicit MWidget(const std::string& name, bool hidden = false);
 	~MWidget() override = default;
 
-	void scale_size_and_position(const MattMath::Vector2F& scale) override = 0;
+	void scale_size_and_position(const mattmath::Vector2F& scale) override = 0;
 
 	void update() override = 0;
-	void draw(DirectX::SpriteBatch* sprite_batch, const MattMath::Camera& camera) override = 0;
+	void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Camera& camera) override = 0;
 	void draw(DirectX::SpriteBatch* sprite_batch) override = 0;
-	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override = 0;
+	bool is_visible_in_viewport(const mattmath::RectangleF& view) const override = 0;
 
-	virtual void set_colour(const MattMath::Colour& colour) = 0;
+	virtual void set_colour(const mattmath::Colour& colour) = 0;
 };
 
 class MTexture final : public MWidget, public TextureObject
@@ -77,35 +77,35 @@ public:
 	MTexture(const std::string& name,
 		const std::string& sheet_name,
 		const std::string& frame_name,
-		const MattMath::RectangleF& rectangle,
+		const mattmath::RectangleF& rectangle,
 		RenderResources* render_resources,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		bool hidden = false,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin = MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f);
 
-	void scale_size_and_position(const MattMath::Vector2F& scale) override;
+	void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
 	void update() override;
-	void draw(DirectX::SpriteBatch* sprite_batch, const MattMath::Camera& camera) override;
+	void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Camera& camera) override;
 	void draw(DirectX::SpriteBatch* sprite_batch) override;
-	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override;
+	bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
 
 	void set_texture(const std::string& sheet_name, const std::string& frame_name);
 	void set_sprite_frame(const std::string& frame_name);
-	void set_colour(const MattMath::Colour& colour) override;
-	void set_position(const MattMath::Vector2F& position);
-	void set_position_at_center(const MattMath::Vector2F& position);
+	void set_colour(const mattmath::Colour& colour) override;
+	void set_position(const mattmath::Vector2F& position);
+	void set_position_at_center(const mattmath::Vector2F& position);
 	void set_width(float width);
 	void set_height(float height);
-	void set_size(const MattMath::Vector2F& size);
-	void set_position_from_top_right_origin(const MattMath::Vector2F& position);
+	void set_size(const mattmath::Vector2F& size);
+	void set_position_from_top_right_origin(const mattmath::Vector2F& position);
 
-	const MattMath::RectangleF& get_rectangle() const;
+	const mattmath::RectangleF& get_rectangle() const;
 private:
-	MattMath::RectangleF rectangle_ = MattMath::RectangleF::ZERO;
+	mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;
 };
 
 class MText final : public MWidget, public Text
@@ -115,23 +115,23 @@ public:
 	MText(const std::string& name,
 		const std::string& text,
 		const std::string& font_name,
-		const MattMath::Vector2F& position,
+		const mattmath::Vector2F& position,
 		RenderResources* render_resources,
-		const MattMath::Colour& color = colour_consts::WHITE,
+		const mattmath::Colour& color = colour_consts::WHITE,
 		bool hidden = false,
 		float scale = 1.0f,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin = MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f);
 
-	void scale_size_and_position(const MattMath::Vector2F& scale) override;
+	void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
 	void update() override;
-	void draw(DirectX::SpriteBatch* sprite_batch, const MattMath::Camera& camera) override;
+	void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Camera& camera) override;
 	void draw(DirectX::SpriteBatch* sprite_batch) override;
-	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override;
-	void set_colour(const MattMath::Colour& colour) override;
+	bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
+	void set_colour(const mattmath::Colour& colour) override;
 };
 
 class MTextDropShadow final : public MWidget, public TextDropShadow
@@ -141,24 +141,24 @@ public:
 	MTextDropShadow(const std::string& name,
 		const std::string& text,
 		const std::string& font_name,
-		const MattMath::Vector2F& position,
+		const mattmath::Vector2F& position,
 		RenderResources* render_resources,
-		const MattMath::Colour& color = colour_consts::WHITE,
-		const MattMath::Colour& shadow_color = colour_consts::BLACK,
-		const MattMath::Vector2F& shadow_offset = { 2.0f, 2.0f },
+		const mattmath::Colour& color = colour_consts::WHITE,
+		const mattmath::Colour& shadow_color = colour_consts::BLACK,
+		const mattmath::Vector2F& shadow_offset = { 2.0f, 2.0f },
 		bool hidden = false,
 		float scale = 1.0f,
 		float shadow_scale = 1.0f,
 		float rotation = 0.0f,
-		const MattMath::Vector2F& origin = MattMath::Vector2F::ZERO,
+		const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f);
 
-	void scale_size_and_position(const MattMath::Vector2F& scale) override;
+	void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
 	void update() override;
-	void draw(DirectX::SpriteBatch* sprite_batch, const MattMath::Camera& camera) override;
+	void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Camera& camera) override;
 	void draw(DirectX::SpriteBatch* sprite_batch) override;
-	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override;
-	void set_colour(const MattMath::Colour& colour) override;
+	bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
+	void set_colour(const mattmath::Colour& colour) override;
 };

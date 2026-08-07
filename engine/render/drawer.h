@@ -15,15 +15,15 @@ public:
 protected:
 	RenderResources* get_render_resources() const;
 	float get_dt() const;
-	MattMath::RectangleI calculate_draw_rectangle(
-		const MattMath::RectangleI& rec,
-		const MattMath::Vector3F& camera);
-	MattMath::RectangleI calculate_draw_rectangle(
-		const MattMath::Vector2F& position,
-		const MattMath::Vector2F& size,
-		const MattMath::Vector3F& camera);
-	MattMath::Vector2F calculate_sprite_origin(
-		const MattMath::Vector2F& size,
+	mattmath::RectangleI calculate_draw_rectangle(
+		const mattmath::RectangleI& rec,
+		const mattmath::Vector3F& camera);
+	mattmath::RectangleI calculate_draw_rectangle(
+		const mattmath::Vector2F& position,
+		const mattmath::Vector2F& size,
+		const mattmath::Vector3F& camera);
+	mattmath::Vector2F calculate_sprite_origin(
+		const mattmath::Vector2F& size,
 		rotation_origin origin);
 private:
 	RenderResources* render_resources_ = nullptr;

@@ -1,6 +1,6 @@
 #include "engine/render/visual.h"
 
-using namespace MattMath;
+using namespace mattmath;
 using namespace DirectX;
 
 Visual::Visual(const std::string& sheet_name,

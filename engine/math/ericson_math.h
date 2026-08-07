@@ -73,71 +73,71 @@ namespace EricsonMath
 
 	constexpr float EPSILON = 0.000001f;
 
-	bool test_AABB_AABB(const MattMath::RectangleF& a,
-		const MattMath::RectangleF& b);
+	bool test_AABB_AABB(const mattmath::RectangleF& a,
+		const mattmath::RectangleF& b);
 
-	bool test_circle_circle(const MattMath::Circle& a,
-		const MattMath::Circle& b);
+	bool test_circle_circle(const mattmath::Circle& a,
+		const mattmath::Circle& b);
 
-	MattMath::Point2F closest_pt_point_triangle(
-		const MattMath::Point2F& p,
-		const MattMath::Point2F& a, const MattMath::Point2F& b,
-		const MattMath::Point2F& c);
+	mattmath::Point2F closest_pt_point_triangle(
+		const mattmath::Point2F& p,
+		const mattmath::Point2F& a, const mattmath::Point2F& b,
+		const mattmath::Point2F& c);
 
 	float clamp(float n, float min, float max);
 
-	bool test_circle_AABB(const MattMath::Circle& s,
-		const MattMath::RectangleF& b);
+	bool test_circle_AABB(const mattmath::Circle& s,
+		const mattmath::RectangleF& b);
 
-	bool test_circle_AABB(const MattMath::Circle& s,
-		const MattMath::RectangleF& b, MattMath::Point2F& p);
+	bool test_circle_AABB(const mattmath::Circle& s,
+		const mattmath::RectangleF& b, mattmath::Point2F& p);
 
-	float sq_dist_point_AABB(const MattMath::Point2F& p,
-		const MattMath::RectangleF& b);
+	float sq_dist_point_AABB(const mattmath::Point2F& p,
+		const mattmath::RectangleF& b);
 
-	void closest_pt_point_AABB(const MattMath::Point2F& p,
-		const MattMath::RectangleF& b, MattMath::Point2F& q);
+	void closest_pt_point_AABB(const mattmath::Point2F& p,
+		const mattmath::RectangleF& b, mattmath::Point2F& q);
 
-	//static float sq_dist_point_AABB(const MattMath::Point2F& p,
-	//	const MattMath::RectangleF& b);
+	//static float sq_dist_point_AABB(const mattmath::Point2F& p,
+	//	const mattmath::RectangleF& b);
 
-	bool test_circle_triangle(const MattMath::Circle& s,
-		const MattMath::Point2F& a, const MattMath::Point2F& b,
-		const MattMath::Point2F& c, MattMath::Point2F& p);
+	bool test_circle_triangle(const mattmath::Circle& s,
+		const mattmath::Point2F& a, const mattmath::Point2F& b,
+		const mattmath::Point2F& c, mattmath::Point2F& p);
 
-	//static bool test_triangle_AABB(const MattMath::Point2F& v0,
-	//	const MattMath::Point2F& v1, const MattMath::Point2F& v2,
-	//	const MattMath::RectangleF& b);
+	//static bool test_triangle_AABB(const mattmath::Point2F& v0,
+	//	const mattmath::Point2F& v1, const mattmath::Point2F& v2,
+	//	const mattmath::RectangleF& b);
 
-	bool intersect_moving_AABB_AABB(const MattMath::AABB& a,
-		const MattMath::AABB& b,
-		const MattMath::Vector2F& va,
-		const MattMath::Vector2F& vb,
+	bool intersect_moving_AABB_AABB(const mattmath::AABB& a,
+		const mattmath::AABB& b,
+		const mattmath::Vector2F& va,
+		const mattmath::Vector2F& vb,
 		float& tfirst, float& tlast);
 
-	bool test_segment_AABB(const MattMath::Point2F& p0,
-		const MattMath::Point2F p1, const MattMath::AABB& b);
+	bool test_segment_AABB(const mattmath::Point2F& p0,
+		const mattmath::Point2F p1, const mattmath::AABB& b);
 
-	float signed_2D_tri_area(const MattMath::Point2F& a,
-		const MattMath::Point2F& b, const MattMath::Point2F& c);
+	float signed_2D_tri_area(const mattmath::Point2F& a,
+		const mattmath::Point2F& b, const mattmath::Point2F& c);
 
-	bool test_2D_segment_segment(const MattMath::Point2F& a,
-		const MattMath::Point2F& b, const MattMath::Point2F& c,
-		const MattMath::Point2F& d, float& t, MattMath::Point2F& p);
+	bool test_2D_segment_segment(const mattmath::Point2F& a,
+		const mattmath::Point2F& b, const mattmath::Point2F& c,
+		const mattmath::Point2F& d, float& t, mattmath::Point2F& p);
 
-	void barycentric(const MattMath::Point2F& a,
-		const MattMath::Point2F& b, const MattMath::Point2F& c,
-		const MattMath::Point2F& p, float& u, float& v, float& w);
+	void barycentric(const mattmath::Point2F& a,
+		const mattmath::Point2F& b, const mattmath::Point2F& c,
+		const mattmath::Point2F& p, float& u, float& v, float& w);
 
-	bool test_point_triangle(const MattMath::Point2F& p,
-		const MattMath::Point2F& a, const MattMath::Point2F& b,
-		const MattMath::Point2F& c);
+	bool test_point_triangle(const mattmath::Point2F& p,
+		const mattmath::Point2F& a, const mattmath::Point2F& b,
+		const mattmath::Point2F& c);
 
-	void closest_pt_point_segment(const MattMath::Point2F& c, const MattMath::Point2F& a,
-		const MattMath::Point2F& b, float& t, MattMath::Point2F& d);
+	void closest_pt_point_segment(const mattmath::Point2F& c, const mattmath::Point2F& a,
+		const mattmath::Point2F& b, float& t, mattmath::Point2F& d);
 
 	// Given point p, return point q on (or in) OBB b, closest to p
-	void closest_pt_point_OBB(const MattMath::Point2F& p, const MattMath::OBB& b,
-		MattMath::Point2F& q);
+	void closest_pt_point_OBB(const mattmath::Point2F& p, const mattmath::OBB& b,
+		mattmath::Point2F& q);
 
 }
