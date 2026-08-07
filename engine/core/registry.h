@@ -1,80 +1,159 @@
 #ifndef REGISTRY_H
 #define REGISTRY_H
 
+#include "engine/core/handle.h"
 #include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
-// How a resource is reached through the handle that owns it. The primary
-// template covers everything spelling it get() - unique_ptr, shared_ptr - and
-// COM's ComPtr spells it Get(), so the D3D-facing code specialises this where
-// COM is already in scope rather than dragging <wrl/client.h> in here.
-template <typename Handle>
-struct RegistryHandle
+// How a resource is reached through the smart pointer that owns it. The
+// primary template covers everything spelling it get() - unique_ptr,
+// shared_ptr - and COM's ComPtr spells it Get(), so the D3D-facing code
+// specialises this where COM is already in scope rather than dragging
+// <wrl/client.h> in here.
+template <typename Storage>
+struct RegistryStorage
 {
-	static auto pointer(const Handle& handle) { return handle.get(); }
+	static auto pointer(const Storage& storage) { return storage.get(); }
 };
 
 // A store of named resources, and one lookup contract for every kind of
-// resource: get() either returns something live or throws saying what was
-// missing. It never returns nullptr and never inserts on a miss, so a
+// resource: whichever way you ask, you get something live or a throw naming
+// what was missing. It never returns nullptr and never inserts on a miss, so a
 // misspelt name fails where it is written rather than null-dereferencing a
 // frame later somewhere else.
+//
+// There are two ways to ask, and the difference between them is the point:
+//
+//     resolve(name) -> Handle       once, at load
+//     get(handle)   -> Resource*    per frame - no string, no map, no compare
+//
+// Per-frame code touches no string-keyed map (PHILOSOPHY T7, T8), so per-frame
+// code never sees a name. get(name) remains for load-time callers that have
+// one and want the resource immediately.
+//
+// A name owns its slot for the registry's lifetime. Releasing a resource -
+// what a device loss does to textures and fonts - empties the slot but keeps
+// the mapping, so a handle resolved before the loss still names the right
+// resource once the reload refills it. That is the whole reason a handle is a
+// slot index and not a pointer: the pointer changes across a device restore
+// and the slot does not.
 //
 // The registry holds names, not meanings. What a name refers to is the
 // caller's business - which is what lets a game keep its own resource types
 // in one of these without the engine having to learn their vocabulary.
-template <typename Resource, typename Handle = std::unique_ptr<Resource>>
+template <typename Resource, typename Storage = std::unique_ptr<Resource>>
 class Registry
 {
 public:
+	using handle = Handle<Resource>;
+
 	// `kind` names the resource type in error messages: "Texture",
 	// "SpriteFont". It is stored, not copied, so it must outlive the
 	// registry - pass a literal.
 	explicit Registry(const char* kind) : _kind(kind) {}
 
-	void add(const std::string& name, Handle resource)
+	// Fills the name's slot, claiming one if the name is new. Re-adding a name
+	// reuses its slot rather than appending, which is what keeps handles valid
+	// across a reload.
+	void add(const std::string& name, Storage resource)
 	{
-		this->_resources[name] = std::move(resource);
+		const auto it = this->_indices.find(name);
+		if (it != this->_indices.end())
+		{
+			this->_entries[static_cast<size_t>(it->second)].resource =
+				std::move(resource);
+			return;
+		}
+
+		const int index = static_cast<int>(this->_entries.size());
+		this->_indices.emplace(name, index);
+		this->_entries.push_back(entry{ std::move(resource), name });
 	}
 
-	// Never returns nullptr: an absent or released resource throws
-	// std::out_of_range naming both the kind and the name asked for.
-	Resource* get(const std::string& name) const
+	// The load-time half. Throws std::out_of_range if nothing ever added the
+	// name: resolving a name no loader produced is a content bug, and this is
+	// the line that should report it.
+	//
+	// Resolving is deliberately separate from reading, so a name can be turned
+	// into a handle once and the handle kept for the object's lifetime.
+	handle resolve(const std::string& name) const
 	{
-		const auto it = this->_resources.find(name);
-		if (it == this->_resources.end())
+		const auto it = this->_indices.find(name);
+		if (it == this->_indices.end())
 		{
 			throw std::out_of_range(
 				std::string(this->_kind) + " '" + name + "' was never loaded.");
 		}
+		return handle(it->second);
+	}
 
-		Resource* resource = RegistryHandle<Handle>::pointer(it->second);
+	// The per-frame half: a bounds check and an indexed load. Never returns
+	// nullptr - an unresolved handle, or one whose slot has been released,
+	// throws instead.
+	Resource* get(handle resource_handle) const
+	{
+		const size_t index = static_cast<size_t>(resource_handle.index());
+		if (!resource_handle.valid() || index >= this->_entries.size())
+		{
+			throw std::out_of_range(std::string(this->_kind) +
+				" was read through an unresolved handle.");
+		}
+
+		const entry& slot = this->_entries[index];
+		Resource* resource = RegistryStorage<Storage>::pointer(slot.resource);
 		if (resource == nullptr)
 		{
-			throw std::out_of_range(
-				std::string(this->_kind) + " '" + name + "' has been released.");
+			throw std::out_of_range(std::string(this->_kind) + " '" +
+				slot.name + "' has been released.");
 		}
 		return resource;
 	}
 
-	bool contains(const std::string& name) const
+	Resource* get(const std::string& name) const
 	{
-		return this->_resources.find(name) != this->_resources.end();
+		return this->get(this->resolve(name));
 	}
 
-	// Erase rather than null out: a key mapped to nullptr is indistinguishable
-	// from a loaded resource at every call site that only checks for presence.
-	void clear() { this->_resources.clear(); }
+	// True only if the name is loaded now. A name whose slot has been released
+	// reads as absent, because a released resource is indistinguishable from a
+	// loaded one at every call site that only checks for presence.
+	bool contains(const std::string& name) const
+	{
+		const auto it = this->_indices.find(name);
+		return it != this->_indices.end() &&
+			RegistryStorage<Storage>::pointer(
+				this->_entries[static_cast<size_t>(it->second)].resource) !=
+			nullptr;
+	}
 
-	auto begin() { return this->_resources.begin(); }
-	auto end() { return this->_resources.end(); }
+	// Empties every slot and keeps every name, so handles survive the round
+	// trip through a device loss. Until the reload refills them, get() on any
+	// of these throws saying the resource was released - which is the honest
+	// answer and the one that names itself (T6).
+	void release_all()
+	{
+		for (entry& slot : this->_entries)
+		{
+			slot.resource = Storage{};
+		}
+	}
 
 private:
+	// The name is kept beside the resource purely so a throw can say which
+	// resource it was about. Nothing on the draw path reads it.
+	struct entry
+	{
+		Storage resource;
+		std::string name;
+	};
+
 	const char* _kind = nullptr;
-	std::map<std::string, Handle> _resources;
+	std::map<std::string, int> _indices;
+	std::vector<entry> _entries;
 };
 
 #endif // !REGISTRY_H

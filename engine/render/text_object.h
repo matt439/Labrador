@@ -3,6 +3,13 @@
 
 #include "engine/render/draw_object.h"
 
+// A string drawn in one font.
+//
+// The font name is resolved to a handle at construction. A handle rather than
+// a cached SpriteFont*, because fonts are device resources: a device loss
+// destroys and rebuilds every one of them, and a pointer taken before the loss
+// would be dangling after it. The handle names the registry slot, and the
+// reload refills that same slot.
 class TextObject : public DrawObject
 {
 public:
@@ -32,19 +39,19 @@ public:
 		const MattMath::Vector2F& position,
 		float scale) const;
 
-protected:	
+protected:
 	const std::string& get_text() const;
-	const std::string& get_font_name() const;
+	RenderResources::FontHandle get_font() const;
 	const MattMath::Vector2F& get_position() const;
 	float get_scale() const;
 
 	virtual void set_text(const std::string& text);
-	void set_font_name(const std::string& font_name);
+	void set_font(const std::string& font_name);
 	virtual void set_position(const MattMath::Vector2F& position);
 	virtual void set_scale(float scale);
 private:
 	std::string _text = "";
-	std::string _font_name = "";
+	RenderResources::FontHandle _font;
 	MattMath::Vector2F _position = MattMath::Vector2F::ZERO;
 	float _scale = 1.0f;
 };

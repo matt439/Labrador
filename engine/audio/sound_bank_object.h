@@ -31,9 +31,14 @@ protected:
 	DirectX::SoundEffectInstance* get_sound_effect_instance(const std::string& instance_name) const;
 	DirectX::SoundEffectInstance* get_sei(const std::string& instance_name) const;
 	
-	void set_sound_bank_name(const std::string& sound_bank_name);
+	void set_sound_bank(const std::string& sound_bank_name);
 private:
-	std::string _sound_bank_name = "";
+	// The bank name is resolved once, at construction. The effect and wave
+	// names passed to the calls above are still names, and SoundBank still
+	// searches for them - that is the audio half of this and has not been done
+	// yet. It is off the frame loop, though: these fire on menu input, not
+	// every frame.
+	AudioResources::SoundBankHandle _sound_bank;
 	const AudioResources* _audio_resources = nullptr;
 };
 #endif // !SOUNDBANKOBJECT_H

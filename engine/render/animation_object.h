@@ -4,6 +4,12 @@
 #include "engine/render/sprite_sheet_object.h"
 #include "engine/render/animated_sprite.h"
 
+// A playing animation out of a sprite sheet.
+//
+// Like TextureObject, the element name is resolved once and kept as a handle -
+// and it matters more here, because the strip is read on the update path as
+// well as the draw path: once for the frame advance, again for the source
+// rectangle, every frame, for every animated object in the level.
 class AnimationObject : public SpriteSheetObject
 {
 public:
@@ -28,6 +34,9 @@ protected:
 	bool is_paused() const;
 
 	void set_frame_index(int frame_index);
+
+	// Moves sheet and strip together - a strip handle resolved against one
+	// sheet indexes nothing meaningful in another.
 	void set_animation_strip_and_reset(const std::string& sprite_sheet,
 		const std::string& animation_strip);
 
@@ -55,11 +64,12 @@ protected:
 
 private:
 	const float* _dt = nullptr;
+	SpriteSheet::strip_handle _strip;
 	int _frame_index = 0;
 	bool _paused = false;
 	float _time_elapsed = 0.0f;
 	float _frame_time = 0.0f;
-	const AnimationStrip* get_animation_strip() const;
+	const AnimationStrip& get_animation_strip() const;
 	const RECT* get_source_rectangle() const;
 };
 #endif // !ANIMATIONOBJECT_H

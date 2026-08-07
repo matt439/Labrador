@@ -167,12 +167,11 @@ bool MTexture::is_visible_in_viewport(const RectangleF& view) const
 void MTexture::set_texture(const std::string& sheet_name,
 	const std::string& frame_name)
 {
-	this->set_sprite_sheet_name(sheet_name);
-	this->set_element_name(frame_name);
+	this->set_frame(sheet_name, frame_name);
 }
 void MTexture::set_sprite_frame(const std::string& frame_name)
 {
-	this->set_element_name(frame_name);
+	this->set_frame(frame_name);
 }
 void MTexture::set_colour(const Colour& colour)
 {

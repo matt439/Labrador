@@ -3,12 +3,23 @@
 
 #include "engine/render/draw_object.h"
 
+// A drawable that draws out of one sprite sheet.
+//
+// It holds a handle to that sheet, not its name. The name is resolved once,
+// here in the constructor, because the alternative is what this class used to
+// do: a std::map<std::string, ...> descent per draw, per drawable, from every
+// render worker at once (PHILOSOPHY T7, T8).
+//
+// What a sheet *element* is depends on the subclass - a frame for
+// TextureObject, an animation strip for AnimationObject - so the element
+// handle lives down there. The sheet lives up here because both need it and
+// because an element handle only means anything against the sheet it was
+// resolved from. Those two therefore change together: see set_sprite_sheet.
 class SpriteSheetObject : public DrawObject
 {
 public:
 	SpriteSheetObject() = default;
 	SpriteSheetObject(const std::string& sheet_name,
-		const std::string& element_name,
 		RenderResources* render_resources,
 		const MattMath::Colour& color = colour_consts::WHITE,
 		float rotation = 0.0f,
@@ -16,13 +27,14 @@ public:
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f);
 protected:
-	virtual const std::string& get_sprite_sheet_name() const;
-	virtual const std::string& get_element_name() const;
-	virtual SpriteSheet* get_sprite_sheet() const;
-	virtual void set_sprite_sheet_name(const std::string& sheet_name);
-	virtual void set_element_name(const std::string& element_name);
+	SpriteSheet* get_sprite_sheet() const;
+
+	// Re-points this object at another sheet. Every element handle a subclass
+	// is holding refers to the old sheet and is meaningless against the new
+	// one, so a subclass calls this only from a setter that re-resolves its
+	// element in the same breath - never on its own.
+	void set_sprite_sheet(const std::string& sheet_name);
 private:
-	std::string _sheet_name = "";
-	std::string _element_name = "";
+	RenderResources::SpriteSheetHandle _sheet;
 };
 #endif // !SPRITESHEETOBJECT_H

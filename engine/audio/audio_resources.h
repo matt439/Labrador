@@ -13,10 +13,18 @@
 class AudioResources
 {
 public:
+	using SoundBankHandle = Handle<SoundBank>;
+
 	AudioResources() = default;
+
+	// Load-time. Throws std::out_of_range naming the bank if nothing loaded
+	// it. Same bargain as RenderResources: resolve a name once, keep the
+	// handle, and never search by name again.
+	SoundBankHandle resolve_sound_bank(const std::string& sound_bank_name) const;
 
 	// Const and non-mutating, like every other registry getter: throws
 	// std::out_of_range naming the bank if it is absent or released.
+	SoundBank* get_sound_bank(SoundBankHandle sound_bank) const;
 	SoundBank* get_sound_bank(const std::string& sound_bank_name) const;
 
 	void add_sound_bank(const std::string& sound_bank_name,

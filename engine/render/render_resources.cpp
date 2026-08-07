@@ -2,15 +2,60 @@
 
 using namespace DirectX;
 
-// Every getter here forwards to a Registry, so the three-part contract - the
-// key must exist, the resource must not have been released by a reset_all_*
-// call, and a failure must name what was missing - is written once rather than
-// once per cache.
+// Every accessor here forwards to a Registry, so the contract - resolve once
+// by name, read many times by handle, and fail loudly naming what was missing
+// either way - is written once rather than once per cache.
+
+RenderResources::TextureHandle RenderResources::resolve_texture(
+	const std::string& texture_name) const
+{
+	return this->_textures.resolve(texture_name);
+}
+
+RenderResources::FontHandle RenderResources::resolve_sprite_font(
+	const std::string& font_name) const
+{
+	return this->_sprite_fonts.resolve(font_name);
+}
+
+RenderResources::SpriteSheetHandle RenderResources::resolve_sprite_sheet(
+	const std::string& sprite_sheet_name) const
+{
+	return this->_sprite_sheets.resolve(sprite_sheet_name);
+}
+
+ID3D11ShaderResourceView* RenderResources::get_texture(
+	TextureHandle texture) const
+{
+	return this->_textures.get(texture);
+}
+
+SpriteFont* RenderResources::get_sprite_font(FontHandle font) const
+{
+	return this->_sprite_fonts.get(font);
+}
+
+SpriteSheet* RenderResources::get_sprite_sheet(
+	SpriteSheetHandle sprite_sheet) const
+{
+	return this->_sprite_sheets.get(sprite_sheet);
+}
 
 ID3D11ShaderResourceView* RenderResources::get_texture(
 	const std::string& texture_name) const
 {
 	return this->_textures.get(texture_name);
+}
+
+SpriteFont* RenderResources::get_sprite_font(const std::string& font_name) const
+{
+	return this->_sprite_fonts.get(font_name);
+}
+
+SpriteSheet* RenderResources::get_sprite_sheet(
+	const std::string& sprite_sheet_name) const
+{
+	return this->_sprite_sheets.get(sprite_sheet_name);
 }
 
 void RenderResources::add_texture(const std::string& texture_name,
@@ -19,21 +64,10 @@ void RenderResources::add_texture(const std::string& texture_name,
 	this->_textures.add(texture_name, texture);
 }
 
-SpriteFont* RenderResources::get_sprite_font(const std::string& font_name) const
-{
-	return this->_sprite_fonts.get(font_name);
-}
-
 void RenderResources::add_sprite_font(const std::string& font_name,
 	std::unique_ptr<SpriteFont> font)
 {
 	this->_sprite_fonts.add(font_name, std::move(font));
-}
-
-SpriteSheet* RenderResources::get_sprite_sheet(
-	const std::string& sprite_sheet_name) const
-{
-	return this->_sprite_sheets.get(sprite_sheet_name);
 }
 
 void RenderResources::add_sprite_sheet(const std::string& sprite_sheet_name,
@@ -44,10 +78,10 @@ void RenderResources::add_sprite_sheet(const std::string& sprite_sheet_name,
 
 void RenderResources::reset_all_sprite_fonts()
 {
-	this->_sprite_fonts.clear();
+	this->_sprite_fonts.release_all();
 }
 
 void RenderResources::reset_all_textures()
 {
-	this->_textures.clear();
+	this->_textures.release_all();
 }

@@ -12,18 +12,19 @@ AnimationObject::AnimationObject(const float* dt,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
-	SpriteSheetObject(sheet_name, animation_strip_name,
-		render_resources, color, rotation, origin, effects,
-		layer_depth),
-	_dt(dt)
+	SpriteSheetObject(sheet_name, render_resources, color, rotation,
+		origin, effects, layer_depth),
+	_dt(dt),
+	// The base is complete by now, so its sheet is there to resolve against.
+	_strip(SpriteSheetObject::get_sprite_sheet()->
+		resolve_animation_strip(animation_strip_name))
 {
-	this->_frame_time = this->get_animation_strip()->get_frame_time();
+	this->_frame_time = this->get_animation_strip().get_frame_time();
 }
 
-const AnimationStrip* AnimationObject::get_animation_strip() const
+const AnimationStrip& AnimationObject::get_animation_strip() const
 {
-	return this->get_sprite_sheet()->get_animation_strip(
-		this->get_element_name());
+	return this->get_sprite_sheet()->get_animation_strip(this->_strip);
 }
 
 void AnimationObject::draw(SpriteBatch* sprite_batch,
@@ -101,15 +102,15 @@ void AnimationObject::update()
 	{
 		return;
 	}
-	const AnimationStrip* animation_strip = this->get_animation_strip();
+	const AnimationStrip& animation_strip = this->get_animation_strip();
 	this->_time_elapsed += *this->_dt;
 	float frame_time = this->_frame_time;
 	if (this->_time_elapsed > frame_time)
 	{
 		this->_frame_index++;
-		if (this->_frame_index >= animation_strip->get_frame_count())
+		if (this->_frame_index >= animation_strip.get_frame_count())
 		{
-			if (animation_strip->get_looping())
+			if (animation_strip.get_looping())
 			{
 				this->_frame_index = 0;
 			}
@@ -143,7 +144,7 @@ void AnimationObject::pause()
 void AnimationObject::set_frame_index(int frame_index)
 {
 	if (frame_index < 0 ||
-		frame_index >= this->get_animation_strip()->get_frame_count())
+		frame_index >= this->get_animation_strip().get_frame_count())
 	{
 		throw std::exception("Invalid frame index.");
 	}
@@ -155,14 +156,15 @@ bool AnimationObject::is_paused() const
 }
 const RECT* AnimationObject::get_source_rectangle() const
 {
-	return this->get_animation_strip()->get_frame_rect(this->_frame_index);
+	return this->get_animation_strip().get_frame_rect(this->_frame_index);
 
 }
 void AnimationObject::set_animation_strip_and_reset(const std::string& sprite_sheet,
 	const std::string& animation_strip)
 {
-	this->set_sprite_sheet_name(sprite_sheet);
-	this->set_element_name(animation_strip);
+	this->set_sprite_sheet(sprite_sheet);
+	this->_strip = this->get_sprite_sheet()->resolve_animation_strip(
+		animation_strip);
 	this->set_frame_time_to_default();
 	this->reset();
 }
@@ -172,5 +174,5 @@ void AnimationObject::set_frame_time(float frame_time)
 }
 void AnimationObject::set_frame_time_to_default()
 {
-	this->_frame_time = this->get_animation_strip()->get_frame_time();
+	this->_frame_time = this->get_animation_strip().get_frame_time();
 }

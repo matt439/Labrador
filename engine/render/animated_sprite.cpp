@@ -103,8 +103,11 @@ void AnimatedSprite::set_animation_strip(SpriteSheet* sprite_sheet,
 	const std::string& animation_strip_name)
 {
 	this->_sprite_sheet = sprite_sheet;
-	this->_animation_strip =
-		sprite_sheet->get_animation_strip(animation_strip_name);
+	// Resolved here and kept as a pointer rather than a handle: this class
+	// already holds the sheet, and a sheet's strip table is built once by the
+	// loader and never grows, so the reference stays good for its lifetime.
+	this->_animation_strip = &sprite_sheet->get_animation_strip(
+		sprite_sheet->resolve_animation_strip(animation_strip_name));
 }
 void AnimatedSprite::set_frame_index(int frame_index)
 {

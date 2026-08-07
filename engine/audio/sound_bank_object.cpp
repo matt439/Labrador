@@ -4,7 +4,7 @@ using namespace DirectX;
 
 SoundBankObject::SoundBankObject(const std::string& sound_bank_name,
                                  const AudioResources* audio_resources) :
-	_sound_bank_name(sound_bank_name),
+	_sound_bank(audio_resources->resolve_sound_bank(sound_bank_name)),
 	_audio_resources(audio_resources)
 
 {
@@ -12,7 +12,7 @@ SoundBankObject::SoundBankObject(const std::string& sound_bank_name,
 }
 SoundBank* SoundBankObject::get_sound_bank() const
 {
-	return this->_audio_resources->get_sound_bank(this->_sound_bank_name);
+	return this->_audio_resources->get_sound_bank(this->_sound_bank);
 }
 SoundBank* SoundBankObject::get_sb() const
 {
@@ -70,7 +70,8 @@ SoundEffectInstance* SoundBankObject::get_sei(const std::string& instance_name) 
 	return this->get_sound_effect_instance(instance_name);
 }
 
-void SoundBankObject::set_sound_bank_name(const std::string& sound_bank_name)
+void SoundBankObject::set_sound_bank(const std::string& sound_bank_name)
 {
-	this->_sound_bank_name = sound_bank_name;
+	this->_sound_bank = this->_audio_resources->resolve_sound_bank(
+		sound_bank_name);
 }

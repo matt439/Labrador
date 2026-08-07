@@ -11,10 +11,30 @@ TextureObject::TextureObject(const std::string& sheet_name,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
-	SpriteSheetObject(sheet_name, frame_name, render_resources,
-		color, rotation, origin, effects, layer_depth)
+	SpriteSheetObject(sheet_name, render_resources,
+		color, rotation, origin, effects, layer_depth),
+	// The base is complete by now, so its sheet is there to resolve against.
+	_frame(SpriteSheetObject::get_sprite_sheet()->
+		resolve_sprite_frame(frame_name))
 {
 
+}
+
+SpriteSheet::frame_handle TextureObject::get_frame() const
+{
+	return this->_frame;
+}
+
+void TextureObject::set_frame(const std::string& sheet_name,
+	const std::string& frame_name)
+{
+	this->set_sprite_sheet(sheet_name);
+	this->_frame = this->get_sprite_sheet()->resolve_sprite_frame(frame_name);
+}
+
+void TextureObject::set_frame(const std::string& frame_name)
+{
+	this->_frame = this->get_sprite_sheet()->resolve_sprite_frame(frame_name);
 }
 
 void TextureObject::draw(SpriteBatch* sprite_batch,
@@ -23,7 +43,7 @@ void TextureObject::draw(SpriteBatch* sprite_batch,
 	SpriteSheet* sprite_sheet = SpriteSheetObject::get_sprite_sheet();
 
 	sprite_sheet->draw(sprite_batch,
-						this->get_element_name(),
+						this->_frame,
 						destination_rectangle,
 						this->get_colour(),
 						this->get_draw_rotation(),
@@ -40,9 +60,9 @@ void TextureObject::draw(SpriteBatch* sprite_batch,
 	const Vector2F& position, float scale) const
 {
 	SpriteSheet* sprite_sheet = SpriteSheetObject::get_sprite_sheet();
-	
+
 	sprite_sheet->draw(sprite_batch,
-						this->get_element_name(),
+						this->_frame,
 						position,
 						this->get_colour(),
 						this->get_draw_rotation(),
@@ -70,7 +90,7 @@ void TextureObject::draw(SpriteBatch* sprite_batch,
 void TextureObject::draw_with(SpriteBatch* sprite_batch,
 	const RectangleF& destination_rectangle,
 	const Camera& camera,
-	const std::string& element_name,
+	SpriteSheet::frame_handle frame,
 	const Colour& colour,
 	const Vector2F& origin,
 	SpriteEffects effects,
@@ -79,7 +99,7 @@ void TextureObject::draw_with(SpriteBatch* sprite_batch,
 	SpriteSheet* sprite_sheet = SpriteSheetObject::get_sprite_sheet();
 
 	sprite_sheet->draw(sprite_batch,
-		element_name,
+		frame,
 		camera.calculate_view_rectangle(destination_rectangle).get_rectangle_i(),
 		colour,
 		rotation,

@@ -6,9 +6,9 @@ using namespace rapidjson;
 
 namespace
 {
-	std::map<std::string, SpriteFrame> decode_sprite_frames(const Value& json)
+	NameTable<SpriteFrame> decode_sprite_frames(const Value& json)
 	{
-		std::map<std::string, SpriteFrame> sprite_frames;
+		NameTable<SpriteFrame> sprite_frames("sprite frame");
 		for (auto& frame : json.GetArray())
 		{
 			std::string name = frame["name"].GetString();
@@ -28,15 +28,14 @@ namespace
 			{
 				rotated = frame["rotated"].GetBool();
 			}
-			sprite_frames[name] = SpriteFrame(source_rectangle, origin, rotated);
+			sprite_frames.add(name, SpriteFrame(source_rectangle, origin, rotated));
 		}
 		return sprite_frames;
 	}
 
-	std::map<std::string, std::unique_ptr<AnimationStrip>>
-		decode_animation_strips(const Value& json)
+	NameTable<AnimationStrip> decode_animation_strips(const Value& json)
 	{
-		std::map<std::string, std::unique_ptr<AnimationStrip>> animation_strips;
+		NameTable<AnimationStrip> animation_strips("animation strip");
 		for (auto& strip : json.GetArray())
 		{
 			std::string name = strip["name"].GetString();
@@ -48,8 +47,8 @@ namespace
 			int frame_count = strip["frame_count"].GetInt();
 			float frame_time = strip["frame_time"].GetFloat();
 			bool looping = strip["looping"].GetBool();
-			animation_strips[name] = std::make_unique<AnimationStrip>(
-				first_frame, frame_count, frame_time, looping);
+			animation_strips.add(name, AnimationStrip(
+				first_frame, frame_count, frame_time, looping));
 		}
 		return animation_strips;
 	}
