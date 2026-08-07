@@ -40,11 +40,11 @@ namespace artattack
 	{
 		// do nothing
 	}
-	void Visual::draw(SpriteBatch* sprite_batch, const Camera& camera)
+	void Visual::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
 	}
-	void Visual::draw(SpriteBatch* sprite_batch)
+	void Visual::draw(SpriteBatch* sprite_batch) const
 	{
 		this->TextureObject::draw(sprite_batch, this->rectangle_);
 	}

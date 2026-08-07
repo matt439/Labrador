@@ -16,7 +16,7 @@ namespace artattack
 	{
 		return this->name_;
 	}
-	void MObject::draw(SpriteBatch* sprite_batch, const Viewport& viewport)
+	void MObject::draw(SpriteBatch* sprite_batch, const Viewport& viewport) const
 	{
 		this->draw(sprite_batch, Camera(viewport));
 	}
@@ -97,14 +97,15 @@ namespace artattack
 			child.second->update();
 		}
 	}
-	void MContainer::draw(SpriteBatch* sprite_batch, const mattmath::Camera& camera)
+	void MContainer::draw(SpriteBatch* sprite_batch,
+		const mattmath::Camera& camera) const
 	{
 		for (auto const& child : this->children_)
 		{
 			child.second->draw(sprite_batch, camera);
 		}
 	}
-	void MContainer::draw(SpriteBatch* sprite_batch)
+	void MContainer::draw(SpriteBatch* sprite_batch) const
 	{
 		for (auto const& child : this->children_)
 		{
@@ -183,7 +184,7 @@ namespace artattack
 	{
 		this->rectangle_.scale_size_and_position(scale);
 	}
-	void MTexture::draw(SpriteBatch* sprite_batch, const Camera& camera)
+	void MTexture::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())
 		{
@@ -191,7 +192,7 @@ namespace artattack
 		}
 		this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
 	}
-	void MTexture::draw(SpriteBatch* sprite_batch)
+	void MTexture::draw(SpriteBatch* sprite_batch) const
 	{
 		if (this->hidden())
 		{
@@ -256,7 +257,7 @@ namespace artattack
 		this->set_position(this->position() * scale);
 		this->set_scale(this->scale() * scale.x);
 	}
-	void MText::draw(SpriteBatch* sprite_batch, const Camera& camera)
+	void MText::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())
 		{
@@ -264,7 +265,7 @@ namespace artattack
 		}
 		this->Text::draw(sprite_batch, camera);
 	}
-	void MText::draw(SpriteBatch* sprite_batch)
+	void MText::draw(SpriteBatch* sprite_batch) const
 	{
 		if (this->hidden())
 		{
@@ -321,7 +322,7 @@ namespace artattack
 		this->set_shadow_offset(this->shadow_offset() * scale);
 		this->set_shadow_scale(this->shadow_scale() * scale.x);
 	}
-	void MTextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera)
+	void MTextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())
 		{
@@ -329,7 +330,7 @@ namespace artattack
 		}
 		this->TextDropShadow::draw(sprite_batch, camera);
 	}
-	void MTextDropShadow::draw(SpriteBatch* sprite_batch)
+	void MTextDropShadow::draw(SpriteBatch* sprite_batch) const
 	{
 		if (this->hidden())
 		{

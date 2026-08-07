@@ -1,7 +1,7 @@
 # Review remediation status
 
 Tracks what has been fixed from the review in [README.md](README.md), and what has not.
-Last updated 2026-08-07.
+Last updated 2026-08-08.
 
 **Critical findings: 31 of 36 fixed, 1 partial, 4 outstanding.**
 
@@ -66,12 +66,30 @@ was already unbuildable and remains so.)
 
 ### Note on #16 (partial)
 
-Two defects were merged under this finding. The **data race** is fixed: no
-`draw()` in the project assigns a member any more, verified by an audit of
-every draw body. The **redundancy** is not: `draw_player_view_level` still
-walks the entire world in every task rather than its own slice, so an N-player
-match does N times the visibility work. That is wasted time, not undefined
-behaviour.
+Two defects were merged under this finding. The **data race** is fixed, and as
+of the const pass it is fixed in the sense that survives someone editing the
+code: `IGameObject::draw` and every override of it are `const`, so a `draw()`
+that assigns a member is now a compile error rather than something an audit has
+to keep catching. `Weapon::draw`, `InterfaceGameplay::draw_gameplay_interface`
+and the three `Drawer` helpers are const for the same reason — none of them is
+an `IGameObject`, but all sit under the same per-view fan-out, and `Level`
+holds them by `unique_ptr`, which does not pass its own constness on to what it
+points at.
+
+Making the signatures const also fixed a live dispatch bug it exposed:
+`TextDropShadow::draw` was non-const while `TextObject::draw` was const, so it
+never overrode anything — it *hid* the base. A `TextDropShadow` drawn through a
+`Text&` silently lost its shadow.
+
+The **redundancy** is not fixed: `draw_player_view_level` still walks the entire
+world in every task rather than its own slice, so an N-player match does N times
+the visibility work. That is wasted time, not undefined behaviour.
+
+Worth recording for whoever writes `Scene`: the parallelism axis here is
+**views, not objects**. Workers do not own disjoint slices — every worker draws
+every object, so the pure-read contract is the *only* thing making this sound.
+PHILOSOPHY's tenet still says workers own disjoint slices, which does not
+describe this renderer.
 
 ---
 
