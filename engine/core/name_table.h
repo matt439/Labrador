@@ -7,78 +7,81 @@
 #include <utility>
 #include <vector>
 
-// Named elements stored by value, resolved to handles once and then read by
-// index. The same names-in, handles-out bargain as Registry, for the case
-// where the elements are part of a larger asset rather than assets in their
-// own right: a sprite sheet's frames and animation strips.
-//
-// Registry is the one to reach for when the entries have independent
-// lifetimes - when something can be released and reloaded underneath a live
-// handle. A NameTable is filled once by a loader and is const thereafter, so
-// it stores elements directly: one allocation for the lot, contiguous, and no
-// indirection on the read.
-//
-// Because it never grows after loading, references into it are stable, which
-// is what lets a caller hold a `const Element&` (or a pointer into one, as
-// SpriteFrame's RECT is) across a frame.
-template <typename Element>
-class NameTable
+namespace artattack
 {
-public:
-	// `kind` names the element type in error messages: "sprite frame",
-	// "animation strip". Stored, not copied - pass a literal.
-	explicit NameTable(const char* kind) : kind_(kind) {}
-
-	// Load-time only. A repeated name replaces the earlier element and keeps
-	// its index, so no handle resolved from this table is ever left dangling.
-	void add(const std::string& name, Element element)
+	// Named elements stored by value, resolved to handles once and then read by
+	// index. The same names-in, handles-out bargain as Registry, for the case
+	// where the elements are part of a larger asset rather than assets in their
+	// own right: a sprite sheet's frames and animation strips.
+	//
+	// Registry is the one to reach for when the entries have independent
+	// lifetimes - when something can be released and reloaded underneath a live
+	// handle. A NameTable is filled once by a loader and is const thereafter, so
+	// it stores elements directly: one allocation for the lot, contiguous, and no
+	// indirection on the read.
+	//
+	// Because it never grows after loading, references into it are stable, which
+	// is what lets a caller hold a `const Element&` (or a pointer into one, as
+	// SpriteFrame's RECT is) across a frame.
+	template <typename Element>
+	class NameTable
 	{
-		const auto it = this->indices_.find(name);
-		if (it != this->indices_.end())
+	public:
+		// `kind` names the element type in error messages: "sprite frame",
+		// "animation strip". Stored, not copied - pass a literal.
+		explicit NameTable(const char* kind) : kind_(kind) {}
+
+		// Load-time only. A repeated name replaces the earlier element and keeps
+		// its index, so no handle resolved from this table is ever left dangling.
+		void add(const std::string& name, Element element)
 		{
-			this->elements_[static_cast<size_t>(it->second)] =
-				std::move(element);
-			return;
+			const auto it = this->indices_.find(name);
+			if (it != this->indices_.end())
+			{
+				this->elements_[static_cast<size_t>(it->second)] =
+					std::move(element);
+				return;
+			}
+
+			this->indices_.emplace(name, static_cast<int>(this->elements_.size()));
+			this->elements_.push_back(std::move(element));
 		}
 
-		this->indices_.emplace(name, static_cast<int>(this->elements_.size()));
-		this->elements_.push_back(std::move(element));
-	}
-
-	// Throws std::out_of_range naming the element and the kind if the table
-	// has no such name - a sheet asked for a frame it does not contain is a
-	// content bug, and it should say so at load rather than draw nothing.
-	Handle<Element> resolve(const std::string& name) const
-	{
-		const auto it = this->indices_.find(name);
-		if (it == this->indices_.end())
+		// Throws std::out_of_range naming the element and the kind if the table
+		// has no such name - a sheet asked for a frame it does not contain is a
+		// content bug, and it should say so at load rather than draw nothing.
+		Handle<Element> resolve(const std::string& name) const
 		{
-			throw std::out_of_range(std::string("no ") + this->kind_ +
-				" named '" + name + "'");
+			const auto it = this->indices_.find(name);
+			if (it == this->indices_.end())
+			{
+				throw std::out_of_range(std::string("no ") + this->kind_ +
+					" named '" + name + "'");
+			}
+			return Handle<Element>(it->second);
 		}
-		return Handle<Element>(it->second);
-	}
 
-	// The per-frame read: a bounds check and an index. Throws rather than
-	// return a reference to nothing.
-	const Element& get(Handle<Element> element_handle) const
-	{
-		const size_t index = static_cast<size_t>(element_handle.index());
-		if (!element_handle.valid() || index >= this->elements_.size())
+		// The per-frame read: a bounds check and an index. Throws rather than
+		// return a reference to nothing.
+		const Element& get(Handle<Element> element_handle) const
 		{
-			throw std::out_of_range(std::string("unresolved ") + this->kind_ +
-				" handle");
+			const size_t index = static_cast<size_t>(element_handle.index());
+			if (!element_handle.valid() || index >= this->elements_.size())
+			{
+				throw std::out_of_range(std::string("unresolved ") + this->kind_ +
+					" handle");
+			}
+			return this->elements_[index];
 		}
-		return this->elements_[index];
-	}
 
-	bool contains(const std::string& name) const
-	{
-		return this->indices_.find(name) != this->indices_.end();
-	}
+		bool contains(const std::string& name) const
+		{
+			return this->indices_.find(name) != this->indices_.end();
+		}
 
-private:
-	const char* kind_ = nullptr;
-	std::map<std::string, int> indices_;
-	std::vector<Element> elements_;
-};
+	private:
+		const char* kind_ = nullptr;
+		std::map<std::string, int> indices_;
+		std::vector<Element> elements_;
+	};
+}

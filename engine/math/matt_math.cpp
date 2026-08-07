@@ -177,18 +177,18 @@ namespace mattmath
 
 	bool rectangles_intersect(const RectangleF& a, const RectangleF& b)
 	{
-		return EricsonMath::test_AABB_AABB(a, b);
+		return test_AABB_AABB(a, b);
 	}
 
 	bool mattmath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle,
 		Point2F& point)
 	{
-		return EricsonMath::test_circle_AABB(circle, rectangle, point);
+		return test_circle_AABB(circle, rectangle, point);
 	}
 
 	bool mattmath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle)
 	{
-		return EricsonMath::test_circle_AABB(circle, rectangle);
+		return test_circle_AABB(circle, rectangle);
 	}
 
 	bool mattmath::rectangle_triangle_intersect(const RectangleF& rectangle, const Triangle& triangle)
@@ -247,7 +247,7 @@ namespace mattmath
 
 	bool mattmath::rectangle_segment_intersect(const RectangleF& rectangle, const Segment& segment)
 	{
-		return EricsonMath::test_segment_AABB(segment.point_0, segment.point_1, rectangle);
+		return test_segment_AABB(segment.point_0, segment.point_1, rectangle);
 	}
 
 	bool mattmath::rectangle_point_intersect(const RectangleF& rectangle, const Point2F& point)
@@ -306,14 +306,14 @@ namespace mattmath
 
 	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle, Point2F& point)
 	{
-		return EricsonMath::test_circle_triangle(circle, triangle.point_0(),
+		return test_circle_triangle(circle, triangle.point_0(),
 			triangle.point_1(), triangle.point_2(), point);
 	}
 
 	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle)
 	{
 		Point2F point;
-		return EricsonMath::test_circle_triangle(circle, triangle.point_0(),
+		return test_circle_triangle(circle, triangle.point_0(),
 			triangle.point_1(), triangle.point_2(), point);
 	}
 
@@ -334,7 +334,7 @@ namespace mattmath
 	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment, Point2F& point)
 	{
 		float t;
-		EricsonMath::closest_pt_point_segment(circle.center(),
+		closest_pt_point_segment(circle.center(),
 			segment.point_0, segment.point_1, t, point);
 
 		return Vector2F::distance(circle.center(), point) <= circle.radius();
@@ -447,7 +447,7 @@ namespace mattmath
 
 	bool mattmath::triangle_point_intersect(const Triangle& triangle, const Point2F& point)
 	{
-		return EricsonMath::test_point_triangle(point, triangle.points[0],
+		return test_point_triangle(point, triangle.points[0],
 			triangle.points[1], triangle.points[2]);
 	}
 
@@ -570,7 +570,7 @@ namespace mattmath
 			return true;
 		}
 		
-		return EricsonMath::test_2D_segment_segment(a.point_0, a.point_1,
+		return test_2D_segment_segment(a.point_0, a.point_1,
 			b.point_0, b.point_1, t, p);
 	}
 

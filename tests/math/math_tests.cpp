@@ -5,7 +5,6 @@
 #include <stdexcept>
 
 using namespace mattmath;
-using namespace EricsonMath;
 
 namespace MathTestConstants
 {

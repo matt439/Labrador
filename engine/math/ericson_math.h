@@ -7,7 +7,7 @@
 #include "engine/math/matt_math.h"
 #include <cmath>
 
-namespace EricsonMath
+namespace mattmath
 {
 	//struct Vector
 	//{
@@ -71,8 +71,6 @@ namespace EricsonMath
 	//static float SqDistPointAABB(Point p, AABB b);
 	//static float Dot(Vector a, Vector b);
 
-	constexpr float EPSILON = 0.000001f;
-
 	bool test_AABB_AABB(const mattmath::RectangleF& a,
 		const mattmath::RectangleF& b);
 
@@ -83,8 +81,6 @@ namespace EricsonMath
 		const mattmath::Point2F& p,
 		const mattmath::Point2F& a, const mattmath::Point2F& b,
 		const mattmath::Point2F& c);
-
-	float clamp(float n, float min, float max);
 
 	bool test_circle_AABB(const mattmath::Circle& s,
 		const mattmath::RectangleF& b);

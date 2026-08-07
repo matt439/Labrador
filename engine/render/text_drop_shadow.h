@@ -2,37 +2,40 @@
 
 #include "engine/render/text.h"
 
-class TextDropShadow : public Text
+namespace artattack
 {
-public:
-	TextDropShadow() = default;
-	TextDropShadow(const std::string& text,
-				const std::string& font_name,
-				const mattmath::Vector2F& position,
-				RenderResources* render_resources,
-				const mattmath::Colour& color = colour_consts::WHITE,
-				const mattmath::Colour& shadow_color = colour_consts::BLACK,
-				const mattmath::Vector2F& shadow_offset = { 2.0f, 2.0f },
-				float scale = 1.0f,
-				float shadow_scale = 1.0f,
-				float rotation = 0.0f,
-				const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-				DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
-				float layer_depth = 0.0f);
+	class TextDropShadow : public Text
+	{
+	public:
+		TextDropShadow() = default;
+		TextDropShadow(const std::string& text,
+					const std::string& font_name,
+					const mattmath::Vector2F& position,
+					RenderResources* render_resources,
+					const mattmath::Colour& color = colour_consts::WHITE,
+					const mattmath::Colour& shadow_color = colour_consts::BLACK,
+					const mattmath::Vector2F& shadow_offset = { 2.0f, 2.0f },
+					float scale = 1.0f,
+					float shadow_scale = 1.0f,
+					float rotation = 0.0f,
+					const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+					DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
+					float layer_depth = 0.0f);
 
-	virtual void draw(DirectX::SpriteBatch* sprite_batc, const mattmath::Camera& camera);
-	virtual void draw(DirectX::SpriteBatch* sprite_batc);
+		virtual void draw(DirectX::SpriteBatch* sprite_batc, const mattmath::Camera& camera);
+		virtual void draw(DirectX::SpriteBatch* sprite_batc);
 
-	mattmath::Vector2F shadow_offset() const;
-	mattmath::Colour shadow_color() const;
-	float shadow_scale() const;
+		mattmath::Vector2F shadow_offset() const;
+		mattmath::Colour shadow_color() const;
+		float shadow_scale() const;
 
-	void set_shadow_offset(const mattmath::Vector2F& offset);
-	void set_shadow_color(const mattmath::Colour& color);
-	void set_shadow_scale(float scale);
+		void set_shadow_offset(const mattmath::Vector2F& offset);
+		void set_shadow_color(const mattmath::Colour& color);
+		void set_shadow_scale(float scale);
 
-private:
-	mattmath::Vector2F shadow_offset_ = { 2.0f, 2.0f };
-	mattmath::Colour shadow_color_ = colour_consts::BLACK;
-	float shadow_scale_ = 1.0f;
-};
+	private:
+		mattmath::Vector2F shadow_offset_ = { 2.0f, 2.0f };
+		mattmath::Colour shadow_color_ = colour_consts::BLACK;
+		float shadow_scale_ = 1.0f;
+	};
+}

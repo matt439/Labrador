@@ -2,6 +2,7 @@
 #include "engine/core/registry.h"
 #include <memory>
 #include <string>
+using namespace artattack;
 
 namespace
 {

@@ -1,24 +1,27 @@
 #include "engine/core/state_context.h"
 
-void StateContext::update() const
+namespace artattack
 {
-	if (this->state_ == nullptr)
+	void StateContext::update() const
 	{
-		return;
+		if (this->state_ == nullptr)
+		{
+			return;
+		}
+		this->state_->update();
 	}
-	this->state_->update();
-}
-void StateContext::draw() const
-{
-	if (this->state_ == nullptr)
+	void StateContext::draw() const
 	{
-		return;
+		if (this->state_ == nullptr)
+		{
+			return;
+		}
+		this->state_->draw();
 	}
-	this->state_->draw();
-}
-void StateContext::transition_to(std::unique_ptr<State> state)
-{
-	this->state_ = std::move(state);
-	this->state_->set_context(this);
-	this->state_->init();
+	void StateContext::transition_to(std::unique_ptr<State> state)
+	{
+		this->state_ = std::move(state);
+		this->state_->set_context(this);
+		this->state_->init();
+	}
 }

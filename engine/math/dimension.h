@@ -1,7 +1,10 @@
 #pragma once
 
-enum class Dimension
+namespace mattmath
 {
-    x,
-    y
-};
+    enum class Dimension
+    {
+        x,
+        y
+    };
+}

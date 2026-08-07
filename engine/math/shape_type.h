@@ -1,11 +1,14 @@
 #pragma once
 
-enum class ShapeType
+namespace mattmath
 {
-	rectangle,
-	circle,
-	triangle,
-	quad,
-	rectangle_rotated,
-	none
-};
+	enum class ShapeType
+	{
+		rectangle,
+		circle,
+		triangle,
+		quad,
+		rectangle_rotated,
+		none
+	};
+}

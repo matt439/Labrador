@@ -1,9 +1,12 @@
 #pragma once
 
-struct BorderThickness
+namespace artattack
 {
-	float left = 0.0f;
-	float top = 0.0f;;
-	float right = 0.0f;
-	float bottom = 0.0f;
-};
+	struct BorderThickness
+	{
+		float left = 0.0f;
+		float top = 0.0f;;
+		float right = 0.0f;
+		float bottom = 0.0f;
+	};
+}

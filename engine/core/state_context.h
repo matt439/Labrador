@@ -3,14 +3,17 @@
 #include "engine/core/state.h"
 #include <memory>
 
-class StateContext
+namespace artattack
 {
-public:
-	virtual ~StateContext() = default;
-	StateContext() = default;
-	void update() const;
-	void draw() const;
-	void transition_to(std::unique_ptr<State> state);
-private:
-	std::unique_ptr<State> state_ = nullptr;
-};
+	class StateContext
+	{
+	public:
+		virtual ~StateContext() = default;
+		StateContext() = default;
+		void update() const;
+		void draw() const;
+		void transition_to(std::unique_ptr<State> state);
+	private:
+		std::unique_ptr<State> state_ = nullptr;
+	};
+}

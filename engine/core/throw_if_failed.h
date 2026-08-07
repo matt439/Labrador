@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <exception>
 
-namespace DX
+namespace artattack
 {
     // Helper class for COM exceptions
     class com_exception : public std::exception

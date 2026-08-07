@@ -1,9 +1,12 @@
 #pragma once
 
-enum class RotationOrigin
+namespace artattack
 {
-    center,
-    top_left,
-    left_center,
-    no_rotation
-};
+    enum class RotationOrigin
+    {
+        center,
+        top_left,
+        left_center,
+        no_rotation
+    };
+}

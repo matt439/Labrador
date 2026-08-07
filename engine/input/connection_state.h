@@ -1,7 +1,10 @@
 #pragma once
 
-enum class ConnectionState
+namespace artattack
 {
-    connected,
-    disconnected
-};
+    enum class ConnectionState
+    {
+        connected,
+        disconnected
+    };
+}

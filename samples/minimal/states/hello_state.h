@@ -13,23 +13,23 @@
 //
 // It borrows the Application rather than owning anything: the shell created
 // every service before this was constructed and outlives it.
-class HelloState : public State
+class HelloState : public artattack::State
 {
 public:
-	explicit HelloState(Application* app);
+	explicit HelloState(artattack::Application* app);
 
 	void init() override;
 	void update() override;
 	void draw() override;
 
 private:
-	Application* app_ = nullptr;
+	artattack::Application* app_ = nullptr;
 
 	// Built in init() rather than the constructor, because a Text resolves its
 	// font name against RenderResources - and that only has the font once the
 	// manifest has been walked.
-	std::unique_ptr<Text> greeting_ = nullptr;
-	std::unique_ptr<Text> hint_ = nullptr;
+	std::unique_ptr<artattack::Text> greeting_ = nullptr;
+	std::unique_ptr<artattack::Text> hint_ = nullptr;
 
 	mattmath::Vector2F position_ = { 0.0f, 0.0f };
 };

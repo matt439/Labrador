@@ -2,7 +2,7 @@
 
 #include "engine/assets/asset_manifest.h"
 
-namespace asset_manifest_loader
+namespace artattack
 {
 	// Reads the manifest at `json_path`.
 	//
@@ -27,5 +27,5 @@ namespace asset_manifest_loader
 	// parsed, and naming the path and the offending group if the document is
 	// the wrong shape. A manifest is hand-edited data, so every read here is
 	// checked rather than assumed (T6).
-	AssetManifest load(const char* json_path);
+	AssetManifest read_asset_manifest(const char* json_path);
 }

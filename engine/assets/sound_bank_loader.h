@@ -4,7 +4,7 @@
 #include <Audio.h>
 #include <memory>
 
-namespace sound_bank_loader
+namespace artattack
 {
 	// Reads the bank definition at `json_path` and builds a SoundBank playing
 	// from `wave_bank`, whose ownership it takes. The effect instances are
@@ -14,6 +14,6 @@ namespace sound_bank_loader
 	// Throws std::runtime_error naming the path if the file cannot be read or
 	// parsed, and std::out_of_range naming the wave if a definition names one
 	// the bank does not contain (T6).
-	std::unique_ptr<SoundBank> load(const char* json_path,
+	std::unique_ptr<SoundBank> read_sound_bank(const char* json_path,
 		std::unique_ptr<DirectX::WaveBank> wave_bank);
 }

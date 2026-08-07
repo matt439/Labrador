@@ -4,6 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+using namespace artattack;
 
 namespace
 {
@@ -49,7 +50,7 @@ namespace
 	AssetManifest load(const std::string& contents)
 	{
 		const TempManifest manifest(contents);
-		return asset_manifest_loader::load(manifest.path().c_str());
+		return read_asset_manifest(manifest.path().c_str());
 	}
 }
 
@@ -105,7 +106,7 @@ namespace AssetManifestLoaderTests
 			const TempManifest file(R"({ "assets": [] })");
 
 			const AssetManifest manifest =
-				asset_manifest_loader::load(file.path().c_str());
+				read_asset_manifest(file.path().c_str());
 
 			CHECK(manifest.source_path == file.path());
 			CHECK(manifest.entries.empty());
@@ -129,7 +130,7 @@ namespace AssetManifestLoaderTests
 		TEST_CASE("a missing file names the path")
 		{
 			CHECK_THROWS_AS(
-				asset_manifest_loader::load("./no_such_manifest.json"),
+				read_asset_manifest("./no_such_manifest.json"),
 				std::runtime_error);
 		}
 
@@ -200,7 +201,7 @@ namespace AssetManifestLoaderTests
 
 			try
 			{
-				asset_manifest_loader::load(file.path().c_str());
+				read_asset_manifest(file.path().c_str());
 				FAIL("expected a throw");
 			}
 			catch (const std::runtime_error& error)

@@ -4,6 +4,7 @@
 
 using namespace DirectX;
 using namespace mattmath;
+using namespace artattack;
 
 namespace
 {
@@ -64,7 +65,7 @@ void HelloState::draw()
 	// main thread; with one string there is nothing to spread, so this uses
 	// worker 0 and executes its list immediately. A game with a scene's worth
 	// of objects fans the same shape across every context the shell created.
-	DX::DeviceResources* device = this->app_->device_resources();
+	artattack::DeviceResources* device = this->app_->device_resources();
 	ID3D11DeviceContext* deferred = device->deferred_context(0);
 	SpriteBatch* sprite_batch = this->app_->sprite_batches()->at(0);
 

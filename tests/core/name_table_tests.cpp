@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 #include "engine/core/name_table.h"
 #include <string>
+using namespace artattack;
 
 namespace
 {

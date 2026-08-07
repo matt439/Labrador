@@ -13,6 +13,7 @@
 #include <exception>
 #include <cstdio>
 #include <memory>
+using namespace artattack;
 
 int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 	_In_ int show_command)

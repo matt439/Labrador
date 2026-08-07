@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-namespace DX
+namespace artattack
 {
     // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
     interface IDeviceNotify
