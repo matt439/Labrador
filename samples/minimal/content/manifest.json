@@ -1,0 +1,11 @@
+{
+    "assets": [
+        {
+            "kind": "font",
+            "directory": "./fonts/",
+            "names": [
+                "courier_new_bold_16"
+            ]
+        }
+    ]
+}
