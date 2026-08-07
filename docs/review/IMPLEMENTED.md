@@ -15,7 +15,7 @@ engine/game split has been done.
 | `0c7eaff` | Input identity, paintable faces, device-lost recovery, draw path |
 | `5b75b31` | All `/W4` warnings cleared, `TreatWarningAsError` enabled |
 | `9a48f5d` | `draw()` made a pure read across every renderable |
-| `d49ecb5` | `draw()` made `const`, so that is enforced by the compiler |
+| `ca4d228` | `draw()` made `const`, so that is enforced by the compiler |
 
 Verified after each commit: `Debug|x64` and `Release|x64` build clean with
 warnings as errors, 38/38 unit tests pass, and the game launches and runs.
@@ -43,7 +43,7 @@ was already unbuildable and remains so.)
 | 13 | Collision interface identifies objects with this game's content enum | **Outstanding** | — |
 | 14 | `player_inputs` compacted but indexed by player ordinal (OOB) | Fixed | `0c7eaff` |
 | 15 | `Level` indexes the compacted input vector by ordinal | Fixed | `0c7eaff` |
-| 16 | Every render worker draws every object, and `draw()` mutates it | **Partial** | `9a48f5d`, `d49ecb5` |
+| 16 | Every render worker draws every object, and `draw()` mutates it | **Partial** | `9a48f5d`, `ca4d228` |
 | 17 | `draw_zoom_out_level_component` mutates ViewportManager, touches immediate context | Fixed | `0c7eaff` |
 | 18 | `Level` is both the scene abstraction and the paint-battle ruleset | **Outstanding** | — |
 | 19 | Level JSON parsed through a 1-byte heap buffer | Fixed | `73da0a2` |
