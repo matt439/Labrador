@@ -16,4 +16,6 @@ target_compile_options(artattack_settings INTERFACE
 target_compile_definitions(artattack_settings INTERFACE
     UNICODE _UNICODE
     WIN32 _WINDOWS
+    NOMINMAX             # std::min/max, never the Windows.h macros
+    WIN32_LEAN_AND_MEAN
 )
