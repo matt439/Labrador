@@ -92,12 +92,14 @@ being load-bearing.
 ├── game/                   the paint-shooter — first client
 │   ├── states/             menu flow, gameplay flow
 │   ├── objects/            entities implementing the engine interfaces
-│   └── content/            JSON definitions, levels, textures, sounds
+│   └── content/            the manifest, and everything it names: JSON
+│                           definitions, levels, textures, sounds
 ├── samples/
 │   └── minimal/            the second client, and the new-project template
-├── tests/
-│   ├── math/
-│   └── engine/
+├── tests/                  one folder per module under test
+│   ├── assets/
+│   ├── core/
+│   └── math/
 ├── external/               third-party source: rapidjson, DirectXTK
 └── docs/
     ├── design/             philosophies, conventions, this document
