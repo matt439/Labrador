@@ -4,21 +4,24 @@
 #include "engine/render/sprite_frame.h"
 #include "engine/math/colour.h"
 #include "SpriteBatch.h"
-#include "rapidjson/document.h"
 #include <map>
+#include <memory>
+#include <string>
 #include "engine/render/animation_strip.h"
 
 class SpriteSheet
 {	
 public:
-	explicit SpriteSheet(ID3D11ShaderResourceView* texture);
+	// Built by sprite_sheet_loader (engine/assets/) from an already-parsed
+	// definition: the sheet indexes and draws, it does not read files.
+	SpriteSheet(ID3D11ShaderResourceView* texture,
+		std::map<std::string, SpriteFrame> sprite_frames,
+		std::map<std::string, std::unique_ptr<AnimationStrip>> animation_strips);
 
 	const AnimationStrip* get_animation_strip(const std::string& name) const;
 
 	// Throws std::out_of_range naming the frame if it is not in the sheet.
 	const SpriteFrame& get_sprite_frame(const std::string& name) const;
-
-	void load_from_json(const char* json_path);
 
 	// Points the sheet at a newly created texture after a device restore. The
 	// frame and animation-strip tables are device-independent and survive, so
@@ -73,10 +76,5 @@ private:
 	std::map<std::string, SpriteFrame> _sprite_frames;
 	std::map<std::string, std::unique_ptr<AnimationStrip>> _animation_strips;
 	ID3D11ShaderResourceView* _texture = nullptr;
-
-	static std::map<std::string, SpriteFrame>
-		decode_sprite_frames_json(const rapidjson::Value& json);
-	static std::map<std::string, std::unique_ptr<AnimationStrip>>
-		decode_animation_strips_json(const rapidjson::Value& json);
 };
 #endif // !SPRITESHEET_H

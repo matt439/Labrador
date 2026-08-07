@@ -80,7 +80,7 @@ being load-bearing.
 ├── cmake/                  the shared settings target, helper modules
 ├── engine/                 the product
 │   ├── math/               MattMath — depends on nothing
-│   ├── core/               game loop, fixed-step timing, Scene, states, services
+│   ├── core/               game loop, fixed-step timing, Scene, states, services, registries
 │   ├── render/             renderer interface, cameras, viewports
 │   │   └── d3d11/          the D3D11/DirectXTK backend, behind the interface
 │   ├── collision/          broad phase, narrow phase, manifolds, resolution
@@ -88,7 +88,7 @@ being load-bearing.
 │   │   └── xinput/         the XInput backend
 │   ├── audio/              playback, mixing
 │   ├── ui/                 widgets, focus, controller navigation
-│   └── assets/             JSON loading, registries, manifest, factories
+│   └── assets/             JSON loading, resource loaders, manifest, factories
 ├── game/                   the paint-shooter — first client
 │   ├── states/             menu flow, gameplay flow
 │   ├── objects/            entities implementing the engine interfaces
@@ -130,12 +130,20 @@ already is (T5). That option is held, not spent.
 | `input` | core, math — XInput inside `xinput/` only |
 | `audio` | core, math — the audio backend at its edge only |
 | `ui` | core, math, render, input |
-| `assets` | core, math, rapidjson |
+| `assets` | core, math, render, audio, rapidjson |
 
 Dependencies point one way — toward `math` — and never sideways in a
-cycle. `core` is the only module everything may lean on; `ui` is the only
-module allowed to lean on two peers, because widgets genuinely are
-rendering plus input.
+cycle. `core` is the only module everything may lean on. Two modules lean
+on peers, for opposite reasons: `ui`, because widgets genuinely are
+rendering plus input, and `assets`, because a loader has to know what it
+is building.
+
+Nothing points back at `assets`, and that is what keeps its arrows from
+closing into a cycle. Resource types are passive: a sprite sheet is
+handed its frame table and a sound bank its effect instances, already
+parsed. No type on the draw path reads a file, so `rapidjson` reaches
+`assets` and stops there — drawing a sprite does not compile a JSON
+parser.
 
 ## A game project
 

@@ -11,6 +11,8 @@ find_package(directxtk CONFIG REQUIRED)
 
 add_library(ArtAttackEngine STATIC
     assets/json_loader.cpp
+    assets/sound_bank_loader.cpp
+    assets/sprite_sheet_loader.cpp
     audio/audio_resources.cpp
     audio/sound_bank.cpp
     audio/sound_bank_object.cpp
