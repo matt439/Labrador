@@ -223,8 +223,8 @@ that outranks it.
 
 ### Targets and layout
 
-Three build targets, one dependency direction, one shared `.props` for
-compiler settings:
+Three build targets, one dependency direction, one shared
+compiler-settings target (CMake — see ARCHITECTURE.md, The build):
 
 | Target | Type | Directory | Depends on |
 |---|---|---|---|
