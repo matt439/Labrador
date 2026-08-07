@@ -1,9 +1,9 @@
 #pragma once
 
-enum class screen_layout
+enum class ScreenLayout
 {
-    ONE_PLAYER,
-    TWO_PLAYER,
-    THREE_PLAYER,
-    FOUR_PLAYER
+    one_player,
+    two_player,
+    three_player,
+    four_player
 };

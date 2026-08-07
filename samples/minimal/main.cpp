@@ -25,7 +25,7 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 		// literal's encoding depends on how the compiler was told to read the
 		// source.
 		options.window_title = L"ArtAttack - minimal sample";
-		options.resolution = screen_resolution::S_1280_720;
+		options.resolution = ScreenResolution::s_1280_720;
 
 		Application app(std::move(options));
 		app.initialize(instance, show_command);

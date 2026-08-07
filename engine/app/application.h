@@ -32,7 +32,7 @@ struct ApplicationOptions
 	std::wstring window_class_name = L"ArtAttackWindowClass";
 	std::wstring window_title = L"ArtAttack";
 
-	screen_resolution resolution = screen_resolution::S_1280_720;
+	ScreenResolution resolution = ScreenResolution::s_1280_720;
 	bool fullscreen = false;
 
 	// The fixed step the simulation advances at. Rendering is not capped by it.
@@ -94,7 +94,7 @@ public:
 	// Resizes the window and re-points the resolution manager at the new size.
 	// The game decides which resolution and when - it is reading its own
 	// options menu - and the engine owns what that means to a window.
-	void set_resolution(screen_resolution resolution);
+	void set_resolution(ScreenResolution resolution);
 
 	// Switches between a borderless full-screen window and an ordinary one.
 	void set_fullscreen(bool fullscreen);

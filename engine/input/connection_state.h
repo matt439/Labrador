@@ -1,7 +1,7 @@
 #pragma once
 
-enum class connection_state
+enum class ConnectionState
 {
-    CONNECTED,
-    DISCONNECTED
+    connected,
+    disconnected
 };

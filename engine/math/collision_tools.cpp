@@ -240,8 +240,8 @@ bool CollisionTools::resolve_object_collision(Shape* collider, const Shape* coll
     Vector2F unit_direction = Vector2F::unit_vector(collision_direction);
 	Vector2F collider_center = collider->get_bounding_box().get_center();
 
-    if (collider->get_shape_type() == shape_type::RECTANGLE &&
-        collidee->get_shape_type() == shape_type::RECTANGLE)
+    if (collider->get_shape_type() == ShapeType::rectangle &&
+        collidee->get_shape_type() == ShapeType::rectangle)
     {
         resolve_object_AABB_collision(collider, collidee, unit_direction);
     }

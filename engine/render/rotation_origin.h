@@ -1,9 +1,9 @@
 #pragma once
 
-enum class rotation_origin
+enum class RotationOrigin
 {
-    CENTER,
-    TOP_LEFT,
-    LEFT_CENTER,
-    NO_ROTATION
+    center,
+    top_left,
+    left_center,
+    no_rotation
 };

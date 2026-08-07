@@ -1,10 +1,10 @@
 #pragma once
 
-enum class screen_resolution
+enum class ScreenResolution
 {
-    S_1280_720,
-    S_1920_1080,
-    S_2560_1440,
-    S_3840_2160,
-    MAX = S_3840_2160
+    s_1280_720,
+    s_1920_1080,
+    s_2560_1440,
+    s_3840_2160,
+    max = s_3840_2160
 };

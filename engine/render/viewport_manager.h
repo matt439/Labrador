@@ -21,8 +21,8 @@ public:
 	ViewportManager(ResolutionManager* resolution_manager,
 		DX::DeviceResources* device_resources);
 
-	void set_layout(screen_layout layout);
-	screen_layout get_layout() const { return layout_; }
+	void set_layout(ScreenLayout layout);
+	ScreenLayout get_layout() const { return layout_; }
 
 	// Every overload takes the context to apply to. There used to be a
 	// one-argument version that reached for the IMMEDIATE context and a cached
@@ -50,13 +50,13 @@ private:
 	ResolutionManager* resolution_manager_ = nullptr;
 	DX::DeviceResources* device_resources_ = nullptr;
 
-	screen_layout layout_ = screen_layout::ONE_PLAYER;
+	ScreenLayout layout_ = ScreenLayout::one_player;
 
-	int get_player_count_from_layout(screen_layout layout) const;
+	int get_player_count_from_layout(ScreenLayout layout) const;
 
-	D3D11_VIEWPORT calculate_d3d11_viewport(screen_layout layout,
+	D3D11_VIEWPORT calculate_d3d11_viewport(ScreenLayout layout,
 		int player_num, const mattmath::Vector2F& screen_size) const;
-	mattmath::Viewport calculate_viewport(screen_layout layout,
+	mattmath::Viewport calculate_viewport(ScreenLayout layout,
 		int player_num, const mattmath::Vector2F& screen_size) const;
 
 	mattmath::Viewport get_fullscreen_viewport() const;

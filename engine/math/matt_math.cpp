@@ -121,15 +121,15 @@ namespace mattmath
 	{
 		switch (other->get_shape_type())
 		{
-		case shape_type::RECTANGLE:
+		case ShapeType::rectangle:
 			return this->intersects(*dynamic_cast<const RectangleF*>(other));
-		case shape_type::CIRCLE:
+		case ShapeType::circle:
 			return this->intersects(*dynamic_cast<const Circle*>(other));
-		case shape_type::TRIANGLE:
+		case ShapeType::triangle:
 			return this->intersects(*dynamic_cast<const Triangle*>(other));
-		case shape_type::QUAD:
+		case ShapeType::quad:
 			return this->intersects(*dynamic_cast<const Quad*>(other));
-		case shape_type::RECTANGLE_ROTATED:
+		case ShapeType::rectangle_rotated:
 			return this->intersects(*dynamic_cast<const RectangleRotated*>(other));
 		default:
 			throw std::invalid_argument("Shape type not recognized");
@@ -721,9 +721,9 @@ namespace mattmath
 	{
 		return *this;
 	}
-	shape_type RectangleF::get_shape_type() const
+	ShapeType RectangleF::get_shape_type() const
 	{
-		return shape_type::RECTANGLE;
+		return ShapeType::rectangle;
 	}
 	std::unique_ptr<Shape> RectangleF::clone() const
 	{
@@ -1660,32 +1660,32 @@ namespace mattmath
 	{
 		return this->x * this->x + this->y * this->y;
 	}
-	direction Vector2F::get_direction() const
+	Direction Vector2F::get_direction() const
 	{
 		if (are_equal(this->x, 0.0f) && are_equal(this->y, 0.0f))
 		{
-			return direction::NONE;
+			return Direction::none;
 		}
 		else if (are_equal(this->x, 0.0f))
 		{
 			if (this->y > 0.0f)
 			{
-				return direction::DOWN;
+				return Direction::down;
 			}
 			else
 			{
-				return direction::UP;
+				return Direction::up;
 			}
 		}
 		else if (are_equal(this->y, 0.0f))
 		{
 			if (this->x > 0.0f)
 			{
-				return direction::RIGHT;
+				return Direction::right;
 			}
 			else
 			{
-				return direction::LEFT;
+				return Direction::left;
 			}
 		}
 		else
@@ -1694,22 +1694,22 @@ namespace mattmath
 			{
 				if (this->y > 0.0f)
 				{
-					return direction::DOWN_RIGHT;
+					return Direction::down_right;
 				}
 				else
 				{
-					return direction::UP_RIGHT;
+					return Direction::up_right;
 				}
 			}
 			else
 			{
 				if (this->y > 0.0f)
 				{
-					return direction::DOWN_LEFT;
+					return Direction::down_left;
 				}
 				else
 				{
-					return direction::UP_LEFT;
+					return Direction::up_left;
 				}
 			}
 		}
@@ -3333,9 +3333,9 @@ namespace mattmath
 					this->radius * 2.0f, this->radius * 2.0f);
 
 	}
-	shape_type Circle::get_shape_type() const
+	ShapeType Circle::get_shape_type() const
 	{
-		return shape_type::CIRCLE;
+		return ShapeType::circle;
 	}
 
 	void Circle::offset(const Vector2F& offset)
@@ -3451,9 +3451,9 @@ namespace mattmath
 
 		return RectangleF(x1, y1, x2 - x1, y2 - y1);
 	}
-	shape_type Triangle::get_shape_type() const
+	ShapeType Triangle::get_shape_type() const
 	{
-		return shape_type::TRIANGLE;
+		return ShapeType::triangle;
 	}
 	void Triangle::offset(const Vector2F& offset)
 	{
@@ -3802,9 +3802,9 @@ namespace mattmath
 		return RectangleF(x1, y1, x2 - x1, y2 - y1);
 	}
 
-	shape_type Quad::get_shape_type() const
+	ShapeType Quad::get_shape_type() const
 	{
-		return shape_type::QUAD;
+		return ShapeType::quad;
 	}
 
 	void Quad::offset(const Vector2F& offset)
@@ -4252,9 +4252,9 @@ namespace mattmath
 
 		return RectangleF(x1, y1, x2 - x1, y2 - y1);
 	}
-	shape_type RectangleRotated::get_shape_type() const
+	ShapeType RectangleRotated::get_shape_type() const
 	{
-		return shape_type::RECTANGLE_ROTATED;
+		return ShapeType::rectangle_rotated;
 	}
 	bool RectangleRotated::intersects(const RectangleF& rect) const
 	{

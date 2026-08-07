@@ -24,7 +24,7 @@ protected:
 		const mattmath::Vector3F& camera);
 	mattmath::Vector2F calculate_sprite_origin(
 		const mattmath::Vector2F& size,
-		rotation_origin origin);
+		RotationOrigin origin);
 private:
 	RenderResources* render_resources_ = nullptr;
 	const float* dt_ = nullptr;

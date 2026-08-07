@@ -1,11 +1,11 @@
 #pragma once
 
-enum class shape_type
+enum class ShapeType
 {
-	RECTANGLE,
-	CIRCLE,
-	TRIANGLE,
-	QUAD,
-	RECTANGLE_ROTATED,
-	NONE
+	rectangle,
+	circle,
+	triangle,
+	quad,
+	rectangle_rotated,
+	none
 };

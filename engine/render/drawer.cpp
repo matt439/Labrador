@@ -52,15 +52,15 @@ RectangleI Drawer::calculate_draw_rectangle(const Vector2F& position,
 }
 
 Vector2F Drawer::calculate_sprite_origin(
-    const Vector2F& size, rotation_origin origin)
+    const Vector2F& size, RotationOrigin origin)
 {
     switch (origin)
     {
-    case rotation_origin::CENTER:
+    case RotationOrigin::center:
         return Vector2F(size) / 2.0f;
-    case rotation_origin::LEFT_CENTER:
+    case RotationOrigin::left_center:
         return { 0.0f, size.y / 2.0f };
-    default: // rotation_origin::TOP_LEFT
+    default: // RotationOrigin::top_left
         return Vector2F::ZERO;
     }
 }

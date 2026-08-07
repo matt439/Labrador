@@ -10,23 +10,23 @@
 
 namespace mattmath
 {
-	enum class direction
+	enum class Direction
 	{
-		NONE,
-		UP,
-		DOWN,
-		LEFT,
-		RIGHT,
-		UP_LEFT,
-		UP_RIGHT,
-		DOWN_LEFT,
-		DOWN_RIGHT,
+		none,
+		up,
+		down,
+		left,
+		right,
+		up_left,
+		up_right,
+		down_left,
+		down_right,
 	};
 
 	//enum class vector_type
 	//{
-	//	ROW,
-	//	COLUMN,
+	//	row,
+	//	column,
 	//};
 	
 	struct Vector2I;
@@ -70,7 +70,7 @@ namespace mattmath
 	{
 		virtual ~Shape() = default;
 		virtual RectangleF get_bounding_box() const = 0;
-		virtual shape_type get_shape_type() const = 0;
+		virtual ShapeType get_shape_type() const = 0;
 		virtual bool intersects(const RectangleF& rect) const = 0;
 		virtual bool intersects(const Circle& circle) const = 0;
 		virtual bool intersects(const Triangle& triangle) const = 0;
@@ -203,7 +203,7 @@ namespace mattmath
 		//RectangleF(const mattmath::Segment& center_line, float thickness);
 
 		RectangleF get_bounding_box() const override;
-		shape_type get_shape_type() const override;
+		ShapeType get_shape_type() const override;
 		std::unique_ptr<Shape> clone() const override;
 
 		float get_x() const;
@@ -438,7 +438,7 @@ namespace mattmath
 
 		float length() const;
 		float length_squared() const;
-		mattmath::direction get_direction() const;
+		mattmath::Direction get_direction() const;
 
 		float dot(const Vector2F& other) const;
 		Vector2F cross(const Vector2F& other) const;
@@ -829,7 +829,7 @@ namespace mattmath
 		Circle(float x, float y, float radius);
 
 		mattmath::RectangleF get_bounding_box() const override;
-		shape_type get_shape_type() const override;
+		ShapeType get_shape_type() const override;
 		void offset(const mattmath::Vector2F& amount) override;
 		std::unique_ptr<Shape> clone() const override;
 		std::vector<Segment> get_edges() const override;
@@ -866,7 +866,7 @@ namespace mattmath
 		Triangle(float x0, float y0, float x1, float y1, float x2, float y2);
 
 		mattmath::RectangleF get_bounding_box() const override;
-		shape_type get_shape_type() const override;
+		ShapeType get_shape_type() const override;
 		void offset(const mattmath::Vector2F& amount) override;
 		std::unique_ptr<Shape> clone() const override;
 		void inflate(float amount) override;
@@ -944,7 +944,7 @@ namespace mattmath
 			const DirectX::SimpleMath::Vector2& point4);
 
 		mattmath::RectangleF get_bounding_box() const override;
-		shape_type get_shape_type() const override;
+		ShapeType get_shape_type() const override;
 		void offset(const mattmath::Vector2F& amount) override;
 		std::unique_ptr<Shape> clone() const override;
 		void inflate(float amount) override;
@@ -1066,7 +1066,7 @@ namespace mattmath
 		RectangleRotated(const mattmath::Segment& center_line, float thickness);
 
 		RectangleF get_bounding_box() const override;
-		shape_type get_shape_type() const override;
+		ShapeType get_shape_type() const override;
 		bool intersects(const RectangleF& rect) const override;
 		bool intersects(const Circle& circle) const override;;
 		bool intersects(const Triangle& triangle) const override;

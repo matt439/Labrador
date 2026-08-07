@@ -210,7 +210,7 @@ void Application::quit() const
 	}
 }
 
-void Application::set_resolution(screen_resolution resolution)
+void Application::set_resolution(ScreenResolution resolution)
 {
 	this->options_.resolution = resolution;
 	this->resolution_manager_->set_resolution(resolution);

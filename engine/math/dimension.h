@@ -1,7 +1,7 @@
 #pragma once
 
-enum class dimension
+enum class Dimension
 {
-    X,
-    Y
+    x,
+    y
 };
