@@ -10,6 +10,7 @@ find_package(xaudio2redist CONFIG REQUIRED)
 find_package(directxtk CONFIG REQUIRED)
 
 add_library(ArtAttackEngine STATIC
+    app/application.cpp
     assets/asset_manifest_loader.cpp
     assets/json_loader.cpp
     assets/resource_loader.cpp

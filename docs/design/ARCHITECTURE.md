@@ -88,7 +88,9 @@ being load-bearing.
 │   │   └── xinput/         the XInput backend
 │   ├── audio/              playback, mixing
 │   ├── ui/                 widgets, focus, controller navigation
-│   └── assets/             JSON loading, resource loaders, manifest, factories
+│   ├── assets/             JSON loading, resource loaders, manifest, factories
+│   └── app/                the application shell: window, device, services,
+│                           main loop, state stack
 ├── game/                   the paint-shooter — first client
 │   ├── states/             menu flow, gameplay flow
 │   ├── objects/            entities implementing the engine interfaces
@@ -133,6 +135,7 @@ already is (T5). That option is held, not spent.
 | `audio` | core, math — the audio backend at its edge only |
 | `ui` | core, math, render, input |
 | `assets` | core, math, render, audio, rapidjson |
+| `app` | everything |
 
 Dependencies point one way — toward `math` — and never sideways in a
 cycle. `core` is the only module everything may lean on. Two modules lean
@@ -146,6 +149,14 @@ handed its frame table and a sound bank its effect instances, already
 parsed. No type on the draw path reads a file, so `rapidjson` reaches
 `assets` and stops there — drawing a sprite does not compile a JSON
 parser.
+
+`app` sits at the top and is the one module allowed to depend on all of
+them, because assembling them is the whole of its job: it opens the
+window, creates the device, constructs every service once, runs the loop
+and owns the state stack. Nothing in the engine may point back at it —
+that is the rule that keeps "depends on everything" from meaning "cycle
+with everything", and it is what lets a game link the engine and use as
+little of `app` as it likes.
 
 ## A game project
 
