@@ -58,8 +58,8 @@ public:
 	bool is_effect_looping(EffectHandle effect) const;
 
 private:
-	std::unique_ptr<DirectX::WaveBank> _wave_bank = nullptr;
-	Registry<DirectX::SoundEffectInstance> _sound_effect_instances;
+	std::unique_ptr<DirectX::WaveBank> wave_bank_ = nullptr;
+	Registry<DirectX::SoundEffectInstance> sound_effect_instances_;
 
 	// The raw DirectXTK voice, for this class alone. It used to be public, and
 	// handing one out let a caller do anything to a voice the bank believes it

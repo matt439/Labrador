@@ -22,7 +22,7 @@ public:
 		DX::DeviceResources* device_resources);
 
 	void set_layout(screen_layout layout);
-	screen_layout get_layout() const { return _layout; }
+	screen_layout get_layout() const { return layout_; }
 
 	// Every overload takes the context to apply to. There used to be a
 	// one-argument version that reached for the IMMEDIATE context and a cached
@@ -47,10 +47,10 @@ public:
 	D3D11_VIEWPORT get_fullscreen_d3d11_viewport() const;
 
 private:
-	ResolutionManager* _resolution_manager = nullptr;
-	DX::DeviceResources* _device_resources = nullptr;
+	ResolutionManager* resolution_manager_ = nullptr;
+	DX::DeviceResources* device_resources_ = nullptr;
 
-	screen_layout _layout = screen_layout::ONE_PLAYER;
+	screen_layout layout_ = screen_layout::ONE_PLAYER;
 
 	int get_player_count_from_layout(screen_layout layout) const;
 

@@ -12,23 +12,23 @@ using Microsoft::WRL::ComPtr;
 ResourceLoader::ResourceLoader(RenderResources* render_resources,
 	AudioResources* audio_resources, ID3D11Device1* device,
 	DirectX::AudioEngine* audio_engine) :
-	_render_resources(render_resources),
-	_audio_resources(audio_resources),
-	_device(device),
-	_audio_engine(audio_engine)
+	render_resources_(render_resources),
+	audio_resources_(audio_resources),
+	device_(device),
+	audio_engine_(audio_engine)
 {
 	this->register_builtin_kinds();
 }
 
 void ResourceLoader::set_device(ID3D11Device1* device)
 {
-	this->_device = device;
+	this->device_ = device;
 }
 
 void ResourceLoader::register_kind(const std::string& kind,
 	AssetKind asset_kind)
 {
-	this->_kinds[kind] = std::move(asset_kind);
+	this->kinds_[kind] = std::move(asset_kind);
 }
 
 // The four kinds the engine can build without being told anything about the
@@ -73,8 +73,8 @@ void ResourceLoader::load_manifest(AssetManifest manifest)
 {
 	for (const AssetEntry& entry : manifest.entries)
 	{
-		const auto kind = this->_kinds.find(entry.kind);
-		if (kind == this->_kinds.end())
+		const auto kind = this->kinds_.find(entry.kind);
+		if (kind == this->kinds_.end())
 		{
 			throw std::out_of_range("Asset '" + entry.name + "' in '" +
 				manifest.source_path + "' is of kind '" + entry.kind +
@@ -86,16 +86,16 @@ void ResourceLoader::load_manifest(AssetManifest manifest)
 	// Kept only once the walk has finished, so the loader never holds a
 	// manifest it did not load - a restore replaying a half-loaded one would
 	// reload assets that were never there.
-	this->_manifest = std::move(manifest);
+	this->manifest_ = std::move(manifest);
 }
 
 void ResourceLoader::reload_device_resources() const
 {
 	// The manifest was walked once already, so every kind in it resolves -
 	// load_manifest threw if one did not.
-	for (const AssetEntry& entry : this->_manifest.entries)
+	for (const AssetEntry& entry : this->manifest_.entries)
 	{
-		const AssetKind& kind = this->_kinds.at(entry.kind);
+		const AssetKind& kind = this->kinds_.at(entry.kind);
 		if (kind.reload_device)
 		{
 			kind.reload_device(entry.directory, entry.name);
@@ -111,12 +111,12 @@ void ResourceLoader::load_texture(const std::string& directory,
 	ComPtr<ID3D11ShaderResourceView> texture_view;
 	ComPtr<ID3D11Resource> resource;
 	DX::ThrowIfFailed(
-		CreateDDSTextureFromFile(this->_device,
+		CreateDDSTextureFromFile(this->device_,
 			std::wstring(texture_path.begin(), texture_path.end()).c_str(),
 			resource.GetAddressOf(),
 			texture_view.ReleaseAndGetAddressOf()));
 
-	this->_render_resources->add_texture(name, texture_view.Get());
+	this->render_resources_->add_texture(name, texture_view.Get());
 }
 
 void ResourceLoader::load_sprite_font(const std::string& directory,
@@ -126,8 +126,8 @@ void ResourceLoader::load_sprite_font(const std::string& directory,
 
 	try
 	{
-		this->_render_resources->add_sprite_font(name,
-			std::make_unique<SpriteFont>(this->_device,
+		this->render_resources_->add_sprite_font(name,
+			std::make_unique<SpriteFont>(this->device_,
 				std::wstring(font_path.begin(), font_path.end()).c_str()));
 	}
 	catch (const std::exception&)
@@ -145,9 +145,9 @@ void ResourceLoader::load_sprite_sheet(const std::string& directory,
 	// asset with two files, and the manifest names it once.
 	this->load_texture(directory, name);
 
-	this->_render_resources->add_sprite_sheet(name,
+	this->render_resources_->add_sprite_sheet(name,
 		sprite_sheet_loader::load((directory + name + ".json").c_str(),
-			this->_render_resources->get_texture(name)));
+			this->render_resources_->get_texture(name)));
 }
 
 void ResourceLoader::reload_sprite_sheet_texture(const std::string& directory,
@@ -155,8 +155,8 @@ void ResourceLoader::reload_sprite_sheet_texture(const std::string& directory,
 {
 	this->load_texture(directory, name);
 
-	this->_render_resources->get_sprite_sheet(name)->set_texture(
-		this->_render_resources->get_texture(name));
+	this->render_resources_->get_sprite_sheet(name)->set_texture(
+		this->render_resources_->get_texture(name));
 }
 
 void ResourceLoader::load_sound_bank(const std::string& directory,
@@ -167,7 +167,7 @@ void ResourceLoader::load_sound_bank(const std::string& directory,
 	std::unique_ptr<WaveBank> wave_bank;
 	try
 	{
-		wave_bank = std::make_unique<WaveBank>(this->_audio_engine,
+		wave_bank = std::make_unique<WaveBank>(this->audio_engine_,
 			std::wstring(wave_bank_path.begin(),
 				wave_bank_path.end()).c_str());
 	}
@@ -178,7 +178,7 @@ void ResourceLoader::load_sound_bank(const std::string& directory,
 			"Failed to load wave bank: " + wave_bank_path);
 	}
 
-	this->_audio_resources->add_sound_bank(name,
+	this->audio_resources_->add_sound_bank(name,
 		sound_bank_loader::load((directory + name + ".json").c_str(),
 			std::move(wave_bank)));
 }

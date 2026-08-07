@@ -963,8 +963,8 @@ namespace MattMathTests
 
 		TEST_CASE("test_rectangle_rotated_rejects_invalid")
 		{
-			// is_valid() consults edges_valid(), which reads _points. When
-			// _points was still all-zero at validation time these degenerate
+			// is_valid() consults edges_valid(), which reads points_. When
+			// points_ was still all-zero at validation time these degenerate
 			// cases were accepted.
 
 			// zero-length segment: no direction, so no valid axes

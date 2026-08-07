@@ -4,15 +4,15 @@ using namespace DirectX;
 
 SoundBankObject::SoundBankObject(const std::string& sound_bank_name,
                                  const AudioResources* audio_resources) :
-	_sound_bank(audio_resources->resolve_sound_bank(sound_bank_name)),
-	_audio_resources(audio_resources)
+	sound_bank_(audio_resources->resolve_sound_bank(sound_bank_name)),
+	audio_resources_(audio_resources)
 
 {
 
 }
 SoundBank* SoundBankObject::get_sound_bank() const
 {
-	return this->_audio_resources->get_sound_bank(this->_sound_bank);
+	return this->audio_resources_->get_sound_bank(this->sound_bank_);
 }
 
 SoundBank::WaveHandle SoundBankObject::resolve_wave(
@@ -76,6 +76,6 @@ bool SoundBankObject::is_effect_looping(SoundBank::EffectHandle effect) const
 
 void SoundBankObject::set_sound_bank(const std::string& sound_bank_name)
 {
-	this->_sound_bank = this->_audio_resources->resolve_sound_bank(
+	this->sound_bank_ = this->audio_resources_->resolve_sound_bank(
 		sound_bank_name);
 }

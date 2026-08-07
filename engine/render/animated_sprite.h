@@ -39,10 +39,10 @@ public:
 	void set_frame_index(int frame_index);
 
 private:
-	const float* _dt = nullptr;
-	SpriteSheet* _sprite_sheet = nullptr;
-	const AnimationStrip* _animation_strip = nullptr;
-	int _frame_index = 0;
-	bool _paused = false;
-	float _time_elapsed = 0.0f;
+	const float* dt_ = nullptr;
+	SpriteSheet* sprite_sheet_ = nullptr;
+	const AnimationStrip* animation_strip_ = nullptr;
+	int frame_index_ = 0;
+	bool paused_ = false;
+	float time_elapsed_ = 0.0f;
 };

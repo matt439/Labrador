@@ -6,13 +6,13 @@ using namespace MattMath;
 #pragma region MObject
 
 MObject::MObject(const std::string& name, bool hidden) :
-	_name(name), _hidden(hidden)
+	name_(name), hidden_(hidden)
 {
 
 }
 const std::string& MObject::get_name() const
 {
-	return this->_name;
+	return this->name_;
 }
 void MObject::draw(SpriteBatch* sprite_batch, const Viewport& viewport)
 {
@@ -20,11 +20,11 @@ void MObject::draw(SpriteBatch* sprite_batch, const Viewport& viewport)
 }
 void MObject::set_hidden(bool hidden)
 {
-	this->_hidden = hidden;
+	this->hidden_ = hidden;
 }
 bool MObject::get_hidden() const
 {
-	return this->_hidden;
+	return this->hidden_;
 }
 
 #pragma endregion MObject
@@ -38,41 +38,41 @@ MContainer::MContainer(const std::string& name) :
 }
 void MContainer::add_child(MObject* child)
 {
-	this->_children.push_back(std::make_pair(child->get_name(), child));
+	this->children_.push_back(std::make_pair(child->get_name(), child));
 }
 void MContainer::remove_child(const std::string& name)
 {
-	for (auto it = this->_children.begin(); it != this->_children.end(); ++it)
+	for (auto it = this->children_.begin(); it != this->children_.end(); ++it)
 	{
 		if (it->first == name)
 		{
-			this->_children.erase(it);
+			this->children_.erase(it);
 			return;
 		}
 	}
 }
 void MContainer::remove_child(const MObject* child)
 {
-	for (auto it = this->_children.begin(); it != this->_children.end(); ++it)
+	for (auto it = this->children_.begin(); it != this->children_.end(); ++it)
 	{
 		if (it->second == child)
 		{
-			this->_children.erase(it);
+			this->children_.erase(it);
 			return;
 		}
 	}
 }
 void MContainer::remove_all_children()
 {
-	this->_children.clear();
+	this->children_.clear();
 }
 size_t MContainer::get_child_count() const
 {
-	return this->_children.size();
+	return this->children_.size();
 }
 std::vector<std::pair<std::string, MObject*>> MContainer::get_children()
 {
-	return this->_children;
+	return this->children_;
 }
 void MContainer::scale_objects_to_new_resolution(
 	const Vector2F& prev_resolution,
@@ -83,35 +83,35 @@ void MContainer::scale_objects_to_new_resolution(
 }
 void MContainer::scale_size_and_position(const Vector2F& scale)
 {
-	for (auto const& child : this->_children)
+	for (auto const& child : this->children_)
 	{
 		child.second->scale_size_and_position(scale);
 	}
 }
 void MContainer::update()
 {
-	for (auto const& child : this->_children)
+	for (auto const& child : this->children_)
 	{
 		child.second->update();
 	}
 }
 void MContainer::draw(SpriteBatch* sprite_batch, const MattMath::Camera& camera)
 {
-	for (auto const& child : this->_children)
+	for (auto const& child : this->children_)
 	{
 		child.second->draw(sprite_batch, camera);
 	}
 }
 void MContainer::draw(SpriteBatch* sprite_batch)
 {
-	for (auto const& child : this->_children)
+	for (auto const& child : this->children_)
 	{
 		child.second->draw(sprite_batch);
 	}
 }
 bool MContainer::is_visible_in_viewport(const MattMath::RectangleF& view) const
 {
-	for (auto const& child : this->_children)
+	for (auto const& child : this->children_)
 	{
 		if (child.second->is_visible_in_viewport(view))
 		{
@@ -150,7 +150,7 @@ MTexture::MTexture(const std::string& name,
 	MWidget(name, hidden),
 	TextureObject(sheet_name, frame_name,
 		render_resources, color, rotation, origin, effects, layer_depth),
-	_rectangle(rectangle)
+	rectangle_(rectangle)
 {
 
 }
@@ -162,7 +162,7 @@ bool MTexture::is_visible_in_viewport(const RectangleF& view) const
 {
 	// This called itself - infinite recursion, and /W4 has been reporting it
 	// as C4717 the whole time. Test the widget's own rectangle, as Visual does.
-	return this->_rectangle.intersects(view);
+	return this->rectangle_.intersects(view);
 }
 void MTexture::set_texture(const std::string& sheet_name,
 	const std::string& frame_name)
@@ -179,7 +179,7 @@ void MTexture::set_colour(const Colour& colour)
 }
 void MTexture::scale_size_and_position(const Vector2F& scale)
 {
-	this->_rectangle.scale_size_and_position(scale);
+	this->rectangle_.scale_size_and_position(scale);
 }
 void MTexture::draw(SpriteBatch* sprite_batch, const Camera& camera)
 {
@@ -187,7 +187,7 @@ void MTexture::draw(SpriteBatch* sprite_batch, const Camera& camera)
 	{
 		return;
 	}
-	this->TextureObject::draw(sprite_batch, this->_rectangle, camera);
+	this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
 }
 void MTexture::draw(SpriteBatch* sprite_batch)
 {
@@ -195,35 +195,35 @@ void MTexture::draw(SpriteBatch* sprite_batch)
 	{
 		return;
 	}
-	this->TextureObject::draw(sprite_batch, this->_rectangle);
+	this->TextureObject::draw(sprite_batch, this->rectangle_);
 }
 const RectangleF& MTexture::get_rectangle() const
 {
-	return this->_rectangle;
+	return this->rectangle_;
 }
 void MTexture::set_position(const Vector2F& position)
 {
-	this->_rectangle.set_position(position);
+	this->rectangle_.set_position(position);
 }
 void MTexture::set_position_at_center(const Vector2F& position)
 {
-	this->_rectangle.set_position_at_center(position);
+	this->rectangle_.set_position_at_center(position);
 }
 void MTexture::set_width(float width)
 {
-	this->_rectangle.set_width(width);
+	this->rectangle_.set_width(width);
 }
 void MTexture::set_height(float height)
 {
-	this->_rectangle.set_height(height);
+	this->rectangle_.set_height(height);
 }
 void MTexture::set_size(const Vector2F& size)
 {
-	this->_rectangle.set_size(size);
+	this->rectangle_.set_size(size);
 }
 void MTexture::set_position_from_top_right_origin(const Vector2F& position)
 {
-	this->_rectangle.set_position_from_top_right(position);
+	this->rectangle_.set_position_from_top_right(position);
 }
 
 #pragma endregion MTexture

@@ -6,7 +6,7 @@ using namespace MattMath;
 AnimatedSprite::AnimatedSprite(SpriteSheet* sprite_sheet,
 	const std::string& animation_strip_name,
 	const float* dt) :
-	_dt(dt)
+	dt_(dt)
 {
 	this->set_animation_strip(sprite_sheet, animation_strip_name);
 }
@@ -20,9 +20,9 @@ void AnimatedSprite::draw(SpriteBatch* sprite_batch,
 	float layer_depth) const
 {
 	const RECT* source_rect =
-		this->_animation_strip->get_frame_rect(this->_frame_index);
+		this->animation_strip_->get_frame_rect(this->frame_index_);
 
-	this->_sprite_sheet->draw(
+	this->sprite_sheet_->draw(
 		sprite_batch,
 		source_rect,
 		destination_rectangle,
@@ -42,9 +42,9 @@ void AnimatedSprite::draw(SpriteBatch* sprite_batch,
 	float layer_depth) const
 {
 	const RECT* source_rect =
-		this->_animation_strip->get_frame_rect(this->_frame_index);
+		this->animation_strip_->get_frame_rect(this->frame_index_);
 
-	this->_sprite_sheet->draw(
+	this->sprite_sheet_->draw(
 		sprite_batch,
 		source_rect,
 		position,
@@ -57,68 +57,68 @@ void AnimatedSprite::draw(SpriteBatch* sprite_batch,
 }
 void AnimatedSprite::update()
 {
-	if (this->_paused)
+	if (this->paused_)
 	{
 		return;
 	}
-	this->_time_elapsed += *this->_dt;
-	float frame_time = this->_animation_strip->get_frame_time();
-	if (this->_time_elapsed > frame_time)
+	this->time_elapsed_ += *this->dt_;
+	float frame_time = this->animation_strip_->get_frame_time();
+	if (this->time_elapsed_ > frame_time)
 	{
-		this->_frame_index++;
-		if (this->_frame_index >= this->_animation_strip->get_frame_count())
+		this->frame_index_++;
+		if (this->frame_index_ >= this->animation_strip_->get_frame_count())
 		{
-			if (this->_animation_strip->get_looping())
+			if (this->animation_strip_->get_looping())
 			{
-				this->_frame_index = 0;
+				this->frame_index_ = 0;
 			}
 			else
 			{
-				this->_frame_index--;
-				this->_paused = true;
+				this->frame_index_--;
+				this->paused_ = true;
 			}
 		}
-		this->_time_elapsed -= frame_time;
+		this->time_elapsed_ -= frame_time;
 	}
 }
 void AnimatedSprite::reset()
 {
-	this->_frame_index = 0;
-	this->_time_elapsed = 0.0f;
+	this->frame_index_ = 0;
+	this->time_elapsed_ = 0.0f;
 }
 void AnimatedSprite::stop()
 {
-	this->_paused = true;
+	this->paused_ = true;
 	this->reset();
 }
 void AnimatedSprite::play()
 {
-	this->_paused = false;
+	this->paused_ = false;
 }
 void AnimatedSprite::pause()
 {
-	this->_paused = true;
+	this->paused_ = true;
 }
 void AnimatedSprite::set_animation_strip(SpriteSheet* sprite_sheet,
 	const std::string& animation_strip_name)
 {
-	this->_sprite_sheet = sprite_sheet;
+	this->sprite_sheet_ = sprite_sheet;
 	// Resolved here and kept as a pointer rather than a handle: this class
 	// already holds the sheet, and a sheet's strip table is built once by the
 	// loader and never grows, so the reference stays good for its lifetime.
-	this->_animation_strip = &sprite_sheet->get_animation_strip(
+	this->animation_strip_ = &sprite_sheet->get_animation_strip(
 		sprite_sheet->resolve_animation_strip(animation_strip_name));
 }
 void AnimatedSprite::set_frame_index(int frame_index)
 {
 	if (frame_index < 0 ||
-		frame_index >= this->_animation_strip->get_frame_count())
+		frame_index >= this->animation_strip_->get_frame_count())
 	{
 		throw std::exception("Invalid frame index.");
 	}
-	this->_frame_index = frame_index;
+	this->frame_index_ = frame_index;
 }
 bool AnimatedSprite::is_paused() const
 {
-	return this->_paused;
+	return this->paused_;
 }

@@ -441,10 +441,10 @@ void DeviceResources::HandleDeviceLost()
     // Deferred contexts belong to the device that created them. They must go
     // with it, and be rebuilt below, or the renderer would keep recording into
     // contexts owned by a removed device.
-    _deferred_contexts_owned.clear();
-    if (_deferred_contexts != nullptr)
+    deferred_contexts_owned_.clear();
+    if (deferred_contexts_ != nullptr)
     {
-        _deferred_contexts->clear();
+        deferred_contexts_->clear();
     }
 
 #ifdef _DEBUG
@@ -462,9 +462,9 @@ void DeviceResources::HandleDeviceLost()
 
     CreateDeviceResources();
 
-    if (_deferred_context_count > 0)
+    if (deferred_context_count_ > 0)
     {
-        create_deferred_contexts(_deferred_context_count);
+        create_deferred_contexts(deferred_context_count_);
     }
 
     CreateWindowSizeDependentResources();
@@ -738,10 +738,10 @@ void DeviceResources::UpdateColorSpace()
 
 void DeviceResources::create_deferred_contexts(int num)
 {
-    this->_deferred_context_count = num;
+    this->deferred_context_count_ = num;
 
-    this->_deferred_contexts_owned.clear();
-    this->_deferred_contexts = std::make_unique<std::vector<ID3D11DeviceContext*>>();
+    this->deferred_contexts_owned_.clear();
+    this->deferred_contexts_ = std::make_unique<std::vector<ID3D11DeviceContext*>>();
 
     for (int i = 0; i < num; i++)
     {
@@ -752,24 +752,24 @@ void DeviceResources::create_deferred_contexts(int num)
         {
             throw std::runtime_error("Failed to create deferred context.");
         }
-        this->_deferred_contexts->push_back(deferred_context.Get());
-        this->_deferred_contexts_owned.push_back(std::move(deferred_context));
+        this->deferred_contexts_->push_back(deferred_context.Get());
+        this->deferred_contexts_owned_.push_back(std::move(deferred_context));
     }
 }
 
 std::vector<ID3D11DeviceContext*>* DeviceResources::get_deferred_contexts() const noexcept
 {
-    return this->_deferred_contexts.get();
+    return this->deferred_contexts_.get();
 }
 
 ID3D11DeviceContext*
 DeviceResources::get_deferred_context(int index) const
 {
-    if (this->_deferred_contexts == nullptr ||
+    if (this->deferred_contexts_ == nullptr ||
         index < 0 ||
-        static_cast<size_t>(index) >= this->_deferred_contexts->size())
+        static_cast<size_t>(index) >= this->deferred_contexts_->size())
     {
         throw std::out_of_range("Invalid index.");
     }
-    return this->_deferred_contexts->at(static_cast<size_t>(index));
+    return this->deferred_contexts_->at(static_cast<size_t>(index));
 }

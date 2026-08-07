@@ -3,23 +3,23 @@
 AudioResources::SoundBankHandle AudioResources::resolve_sound_bank(
 	const std::string& sound_bank_name) const
 {
-	return this->_sound_banks.resolve(sound_bank_name);
+	return this->sound_banks_.resolve(sound_bank_name);
 }
 
 SoundBank* AudioResources::get_sound_bank(SoundBankHandle sound_bank) const
 {
-	return this->_sound_banks.get(sound_bank);
+	return this->sound_banks_.get(sound_bank);
 }
 
 SoundBank* AudioResources::get_sound_bank(
 	const std::string& sound_bank_name) const
 {
-	return this->_sound_banks.get(sound_bank_name);
+	return this->sound_banks_.get(sound_bank_name);
 }
 
 void AudioResources::add_sound_bank(const std::string& sound_bank_name,
 	std::unique_ptr<SoundBank> sound_bank)
 {
-	this->_sound_banks.add(sound_bank_name, std::move(sound_bank));
+	this->sound_banks_.add(sound_bank_name, std::move(sound_bank));
 }
 

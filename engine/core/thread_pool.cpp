@@ -1,37 +1,37 @@
 #include "engine/core/thread_pool.h"
 
 ThreadPool::ThreadPool(int min_num_threads, int max_num_threads) :
-    _min_num_threads(min_num_threads),
-    _max_num_threads(max_num_threads)
+    min_num_threads_(min_num_threads),
+    max_num_threads_(max_num_threads)
 {
-    InitializeThreadpoolEnvironment(&_callback_environment);
-    _pool = CreateThreadpool(nullptr);
-    if (!_pool)
+    InitializeThreadpoolEnvironment(&callback_environment_);
+    pool_ = CreateThreadpool(nullptr);
+    if (!pool_)
     {
         throw std::runtime_error("Failed to create thread pool.");
     }
-    SetThreadpoolThreadMaximum(_pool,
+    SetThreadpoolThreadMaximum(pool_,
         static_cast<DWORD>(max_num_threads)); // Set maximum number of threads
 
-    SetThreadpoolThreadMinimum(_pool,
+    SetThreadpoolThreadMinimum(pool_,
         static_cast<DWORD>(min_num_threads)); // Set minimum number of threads
 
-    _cleanup_group = CreateThreadpoolCleanupGroup();
-    if (!_cleanup_group)
+    cleanup_group_ = CreateThreadpoolCleanupGroup();
+    if (!cleanup_group_)
     {
-        CloseThreadpool(_pool);
+        CloseThreadpool(pool_);
         throw std::runtime_error("Failed to create cleanup group.");
     }
-    SetThreadpoolCallbackPool(&_callback_environment, _pool);
-    SetThreadpoolCallbackCleanupGroup(&_callback_environment, _cleanup_group, nullptr);
+    SetThreadpoolCallbackPool(&callback_environment_, pool_);
+    SetThreadpoolCallbackCleanupGroup(&callback_environment_, cleanup_group_, nullptr);
 }
 
 ThreadPool::~ThreadPool()
 {
-    CloseThreadpoolCleanupGroupMembers(_cleanup_group, FALSE, nullptr);
-    CloseThreadpoolCleanupGroup(_cleanup_group);
-    CloseThreadpool(_pool);
-    DestroyThreadpoolEnvironment(&_callback_environment);
+    CloseThreadpoolCleanupGroupMembers(cleanup_group_, FALSE, nullptr);
+    CloseThreadpoolCleanupGroup(cleanup_group_);
+    CloseThreadpool(pool_);
+    DestroyThreadpoolEnvironment(&callback_environment_);
 }
 
 void ThreadPool::add_task(std::function<void()> task)
@@ -39,13 +39,13 @@ void ThreadPool::add_task(std::function<void()> task)
     auto item = std::make_unique<task_item>(task_item{ std::move(task), this });
 
     PTP_WORK work = CreateThreadpoolWork(work_callback, item.get(),
-        &_callback_environment);
+        &callback_environment_);
     if (!work)
     {
         // item is still owned here, so the failure does not leak the callable.
         throw std::runtime_error("Failed to create thread pool work object.");
     }
-    _work_items.push_back(work);
+    work_items_.push_back(work);
 
     // The callback owns the item from the moment it is submitted.
     item.release();
@@ -54,18 +54,18 @@ void ThreadPool::add_task(std::function<void()> task)
 
 void ThreadPool::wait_for_tasks_to_complete()
 {
-    for (PTP_WORK work : _work_items)
+    for (PTP_WORK work : work_items_)
     {
         WaitForThreadpoolWorkCallbacks(work, FALSE);
         CloseThreadpoolWork(work);
     }
-    _work_items.clear();
+    work_items_.clear();
 
     std::exception_ptr failure;
     {
-        std::lock_guard<std::mutex> lock(_exception_mutex);
-        failure = _first_exception;
-        _first_exception = nullptr;
+        std::lock_guard<std::mutex> lock(exception_mutex_);
+        failure = first_exception_;
+        first_exception_ = nullptr;
     }
     if (failure)
     {
@@ -91,19 +91,19 @@ void CALLBACK ThreadPool::work_callback(PTP_CALLBACK_INSTANCE,
 
 void ThreadPool::record_exception(std::exception_ptr exception)
 {
-    std::lock_guard<std::mutex> lock(_exception_mutex);
-    if (!_first_exception)
+    std::lock_guard<std::mutex> lock(exception_mutex_);
+    if (!first_exception_)
     {
-        _first_exception = exception;
+        first_exception_ = exception;
     }
 }
 
 int ThreadPool::get_min_num_threads() const
 {
-    return this->_min_num_threads;
+    return this->min_num_threads_;
 }
 
 int ThreadPool::get_max_num_threads() const
 {
-    return this->_max_num_threads;
+    return this->max_num_threads_;
 }

@@ -50,6 +50,6 @@ private:
 	// The bank name is resolved once, at construction, and so is everything
 	// played out of it: a handle is an index, where a name is a map descent
 	// and a string compare per node.
-	AudioResources::SoundBankHandle _sound_bank;
-	const AudioResources* _audio_resources = nullptr;
+	AudioResources::SoundBankHandle sound_bank_;
+	const AudioResources* audio_resources_ = nullptr;
 };

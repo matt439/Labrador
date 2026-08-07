@@ -27,22 +27,22 @@ class NameTable
 public:
 	// `kind` names the element type in error messages: "sprite frame",
 	// "animation strip". Stored, not copied - pass a literal.
-	explicit NameTable(const char* kind) : _kind(kind) {}
+	explicit NameTable(const char* kind) : kind_(kind) {}
 
 	// Load-time only. A repeated name replaces the earlier element and keeps
 	// its index, so no handle resolved from this table is ever left dangling.
 	void add(const std::string& name, Element element)
 	{
-		const auto it = this->_indices.find(name);
-		if (it != this->_indices.end())
+		const auto it = this->indices_.find(name);
+		if (it != this->indices_.end())
 		{
-			this->_elements[static_cast<size_t>(it->second)] =
+			this->elements_[static_cast<size_t>(it->second)] =
 				std::move(element);
 			return;
 		}
 
-		this->_indices.emplace(name, static_cast<int>(this->_elements.size()));
-		this->_elements.push_back(std::move(element));
+		this->indices_.emplace(name, static_cast<int>(this->elements_.size()));
+		this->elements_.push_back(std::move(element));
 	}
 
 	// Throws std::out_of_range naming the element and the kind if the table
@@ -50,10 +50,10 @@ public:
 	// content bug, and it should say so at load rather than draw nothing.
 	Handle<Element> resolve(const std::string& name) const
 	{
-		const auto it = this->_indices.find(name);
-		if (it == this->_indices.end())
+		const auto it = this->indices_.find(name);
+		if (it == this->indices_.end())
 		{
-			throw std::out_of_range(std::string("no ") + this->_kind +
+			throw std::out_of_range(std::string("no ") + this->kind_ +
 				" named '" + name + "'");
 		}
 		return Handle<Element>(it->second);
@@ -64,21 +64,21 @@ public:
 	const Element& get(Handle<Element> element_handle) const
 	{
 		const size_t index = static_cast<size_t>(element_handle.index());
-		if (!element_handle.valid() || index >= this->_elements.size())
+		if (!element_handle.valid() || index >= this->elements_.size())
 		{
-			throw std::out_of_range(std::string("unresolved ") + this->_kind +
+			throw std::out_of_range(std::string("unresolved ") + this->kind_ +
 				" handle");
 		}
-		return this->_elements[index];
+		return this->elements_[index];
 	}
 
 	bool contains(const std::string& name) const
 	{
-		return this->_indices.find(name) != this->_indices.end();
+		return this->indices_.find(name) != this->indices_.end();
 	}
 
 private:
-	const char* _kind = nullptr;
-	std::map<std::string, int> _indices;
-	std::vector<Element> _elements;
+	const char* kind_ = nullptr;
+	std::map<std::string, int> indices_;
+	std::vector<Element> elements_;
 };

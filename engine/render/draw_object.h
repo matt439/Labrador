@@ -32,10 +32,10 @@ protected:
 	void set_draw_rotation_by_rectangle_rotated(const MattMath::RectangleRotated& rect);
 
 private:
-	RenderResources* _render_resources = nullptr;
-	MattMath::Colour _colour = colour_consts::WHITE;
-	float _draw_rotation = 0.0f;
-	MattMath::Vector2F _origin = MattMath::Vector2F::ZERO;
-	DirectX::SpriteEffects _effects = DirectX::SpriteEffects_None;
-	float _layer_depth = 0.0f;
+	RenderResources* render_resources_ = nullptr;
+	MattMath::Colour colour_ = colour_consts::WHITE;
+	float draw_rotation_ = 0.0f;
+	MattMath::Vector2F origin_ = MattMath::Vector2F::ZERO;
+	DirectX::SpriteEffects effects_ = DirectX::SpriteEffects_None;
+	float layer_depth_ = 0.0f;
 };

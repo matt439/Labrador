@@ -34,5 +34,5 @@ protected:
 	// element in the same breath - never on its own.
 	void set_sprite_sheet(const std::string& sheet_name);
 private:
-	RenderResources::SpriteSheetHandle _sheet;
+	RenderResources::SpriteSheetHandle sheet_;
 };

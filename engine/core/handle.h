@@ -23,14 +23,14 @@ public:
 
 	// Explicit, and only meaningful to the table that owns the slot. Callers
 	// get handles from resolve(), not from arithmetic.
-	explicit Handle(int index) : _index(index) {}
+	explicit Handle(int index) : index_(index) {}
 
-	bool valid() const { return this->_index >= 0; }
-	int index() const { return this->_index; }
+	bool valid() const { return this->index_ >= 0; }
+	int index() const { return this->index_; }
 
-	friend bool operator==(Handle a, Handle b) { return a._index == b._index; }
-	friend bool operator!=(Handle a, Handle b) { return a._index != b._index; }
+	friend bool operator==(Handle a, Handle b) { return a.index_ == b.index_; }
+	friend bool operator!=(Handle a, Handle b) { return a.index_ != b.index_; }
 
 private:
-	int _index = -1;
+	int index_ = -1;
 };

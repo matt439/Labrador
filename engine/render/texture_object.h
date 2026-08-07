@@ -70,5 +70,5 @@ protected:
 		float rotation) const;
 
 private:
-	SpriteSheet::frame_handle _frame;
+	SpriteSheet::frame_handle frame_;
 };

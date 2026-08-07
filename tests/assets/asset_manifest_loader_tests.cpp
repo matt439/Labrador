@@ -15,24 +15,24 @@ namespace
 	public:
 		explicit TempManifest(const std::string& contents)
 		{
-			this->_path = std::filesystem::temp_directory_path() /
+			this->path_ = std::filesystem::temp_directory_path() /
 				("artattack_manifest_test_" + std::to_string(next_id()) +
 					".json");
 
-			std::ofstream file(this->_path, std::ios::binary);
+			std::ofstream file(this->path_, std::ios::binary);
 			file << contents;
 		}
 
 		~TempManifest()
 		{
 			std::error_code ignored;
-			std::filesystem::remove(this->_path, ignored);
+			std::filesystem::remove(this->path_, ignored);
 		}
 
 		TempManifest(const TempManifest&) = delete;
 		TempManifest& operator=(const TempManifest&) = delete;
 
-		std::string path() const { return this->_path.string(); }
+		std::string path() const { return this->path_.string(); }
 
 	private:
 		// Every case gets its own file, so a leftover from a crashed run cannot
@@ -43,7 +43,7 @@ namespace
 			return ++id;
 		}
 
-		std::filesystem::path _path;
+		std::filesystem::path path_;
 	};
 
 	AssetManifest load(const std::string& contents)

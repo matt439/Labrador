@@ -15,10 +15,10 @@ TextObject::TextObject(const std::string& text,
 	float layer_depth) :
 	DrawObject(render_resources, color,
 		rotation, origin, effects, layer_depth),
-	_text(text),
-	_font(render_resources->resolve_sprite_font(font_name)),
-	_position(position),
-	_scale(scale)
+	text_(text),
+	font_(render_resources->resolve_sprite_font(font_name)),
+	position_(position),
+	scale_(scale)
 {
 
 }
@@ -26,14 +26,14 @@ TextObject::TextObject(const std::string& text,
 void TextObject::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 {
 	const SpriteFont* sprite_font =
-		this->get_render_resources()->get_sprite_font(this->_font);
+		this->get_render_resources()->get_sprite_font(this->font_);
 
-	Vector2F view_pos = camera.calculate_view_position(this->_position);
-	float view_scale = camera.calculate_view_scale(this->_scale);
+	Vector2F view_pos = camera.calculate_view_position(this->position_);
+	float view_scale = camera.calculate_view_scale(this->scale_);
 
 	sprite_font->DrawString(
 		sprite_batch,
-		this->_text.c_str(),
+		this->text_.c_str(),
 		view_pos.get_xm_vector(),
 		this->get_colour().get_xm_vector(),
 		this->get_draw_rotation(),
@@ -46,16 +46,16 @@ void TextObject::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 void TextObject::draw(SpriteBatch* sprite_batch) const
 {
 	const SpriteFont* sprite_font =
-		this->get_render_resources()->get_sprite_font(this->_font);
+		this->get_render_resources()->get_sprite_font(this->font_);
 
 	sprite_font->DrawString(
 		sprite_batch,
-		this->_text.c_str(),
-		this->_position.get_xm_vector(),
+		this->text_.c_str(),
+		this->position_.get_xm_vector(),
 		this->get_colour().get_xm_vector(),
 		this->get_draw_rotation(),
 		this->get_origin().get_xm_vector(),
-		this->_scale,
+		this->scale_,
 		this->get_effects(),
 		this->get_layer_depth());
 }
@@ -67,11 +67,11 @@ void TextObject::draw_with(SpriteBatch* sprite_batch,
 	float scale) const
 {
 	const SpriteFont* sprite_font =
-		this->get_render_resources()->get_sprite_font(this->_font);
+		this->get_render_resources()->get_sprite_font(this->font_);
 
 	sprite_font->DrawString(
 		sprite_batch,
-		this->_text.c_str(),
+		this->text_.c_str(),
 		camera.calculate_view_position(position).get_xm_vector(),
 		colour.get_xm_vector(),
 		this->get_draw_rotation(),
@@ -83,33 +83,33 @@ void TextObject::draw_with(SpriteBatch* sprite_batch,
 
 const std::string& TextObject::get_text() const
 {
-	return this->_text;
+	return this->text_;
 }
 RenderResources::FontHandle TextObject::get_font() const
 {
-	return this->_font;
+	return this->font_;
 }
 const Vector2F& TextObject::get_position() const
 {
-	return this->_position;
+	return this->position_;
 }
 float TextObject::get_scale() const
 {
-	return this->_scale;
+	return this->scale_;
 }
 void TextObject::set_text(const std::string& text)
 {
-	this->_text = text;
+	this->text_ = text;
 }
 void TextObject::set_font(const std::string& font_name)
 {
-	this->_font = this->get_render_resources()->resolve_sprite_font(font_name);
+	this->font_ = this->get_render_resources()->resolve_sprite_font(font_name);
 }
 void TextObject::set_position(const Vector2F& position)
 {
-	this->_position = position;
+	this->position_ = position;
 }
 void TextObject::set_scale(float scale)
 {
-	this->_scale = scale;
+	this->scale_ = scale;
 }

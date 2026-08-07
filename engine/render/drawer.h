@@ -26,6 +26,6 @@ protected:
 		const MattMath::Vector2F& size,
 		rotation_origin origin);
 private:
-	RenderResources* _render_resources = nullptr;
-	const float* _dt = nullptr;
+	RenderResources* render_resources_ = nullptr;
+	const float* dt_ = nullptr;
 };

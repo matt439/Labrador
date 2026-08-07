@@ -18,9 +18,9 @@ TextDropShadow::TextDropShadow(const std::string& text,
 	float layer_depth) :
 	Text(text, font_name, position, render_resources,
 	     color, scale, rotation, origin, effects, layer_depth),
-	_shadow_offset(shadow_offset),
-	_shadow_color(shadow_color),
-	_shadow_scale(shadow_scale)
+	shadow_offset_(shadow_offset),
+	shadow_color_(shadow_color),
+	shadow_scale_(shadow_scale)
 {
 
 }
@@ -31,9 +31,9 @@ void TextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera)
 	// data race: the render workers all run draw() on the same object, so one
 	// thread could restore the originals while another was mid-shadow.
 	this->TextObject::draw_with(sprite_batch, camera,
-		this->_shadow_color,
-		this->get_position() + this->_shadow_offset,
-		this->_shadow_scale);
+		this->shadow_color_,
+		this->get_position() + this->shadow_offset_,
+		this->shadow_scale_);
 
 	this->TextObject::draw(sprite_batch, camera);
 }
@@ -43,25 +43,25 @@ void TextDropShadow::draw(SpriteBatch* sprite_batch)
 }
 Vector2F TextDropShadow::get_shadow_offset() const
 {
-	return this->_shadow_offset;
+	return this->shadow_offset_;
 }
 Colour TextDropShadow::get_shadow_color() const
 {
-	return this->_shadow_color;
+	return this->shadow_color_;
 }
 float TextDropShadow::get_shadow_scale() const
 {
-	return this->_shadow_scale;
+	return this->shadow_scale_;
 }
 void TextDropShadow::set_shadow_offset(const Vector2F& offset)
 {
-	this->_shadow_offset = offset;
+	this->shadow_offset_ = offset;
 }
 void TextDropShadow::set_shadow_color(const Colour& color)
 {
-	this->_shadow_color = color;
+	this->shadow_color_ = color;
 }
 void TextDropShadow::set_shadow_scale(float scale)
 {
-	this->_shadow_scale = scale;
+	this->shadow_scale_ = scale;
 }

@@ -15,11 +15,11 @@ public:
 	bool get_looping() const;
 
 private:
-	std::vector<RECT> _frame_rects;
-	MattMath::RectangleI _first_frame = { 0, 0, 0, 0 };
-	int _frame_count = 0;
-	float _frame_time = 0.0f;
-	bool _looping = false;
+	std::vector<RECT> frame_rects_;
+	MattMath::RectangleI first_frame_ = { 0, 0, 0, 0 };
+	int frame_count_ = 0;
+	float frame_time_ = 0.0f;
+	bool looping_ = false;
 
 	std::vector<RECT> calculate_all_frame_rects() const;
 	RECT calculate_frame(int frame_index) const;

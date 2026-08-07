@@ -1141,22 +1141,22 @@ namespace MattMath
 	//template<typename T>
 	//Matrix<T>::Matrix(int rows, int columns)
 	//{
-	//	this->_rows = rows;
-	//	this->_columns = columns;
-	//	this->_elements = std::vector<T>(rows * columns);
+	//	this->rows_ = rows;
+	//	this->columns_ = columns;
+	//	this->elements_ = std::vector<T>(rows * columns);
 	//}
 	//
 	//template<typename T>
 	//Matrix<T>::Matrix(int rows, int columns, const std::vector<T>& elements)
 	//{
-	//	this->_rows = rows;
-	//	this->_columns = columns;
+	//	this->rows_ = rows;
+	//	this->columns_ = columns;
 	//	if (rows * columns != elements.size())
 	//	{
 	//		throw std::invalid_argument(
 	//			"Number of elements does not match the dimensions of the matrix");
 	//	}
-	//	this->_elements = elements;
+	//	this->elements_ = elements;
 	//}
 	//
 	//template<typename T>
@@ -1164,15 +1164,15 @@ namespace MattMath
 	//{
 	//	if (type == vector_type::ROW)
 	//	{
-	//		this->_rows = 1;
-	//		this->_columns = size;
+	//		this->rows_ = 1;
+	//		this->columns_ = size;
 	//	}
 	//	else
 	//	{
-	//		this->_rows = size;
-	//		this->_columns = 1;
+	//		this->rows_ = size;
+	//		this->columns_ = 1;
 	//	}
-	//	this->_elements = std::vector<T>(size);
+	//	this->elements_ = std::vector<T>(size);
 	//}
 	//
 	//template<typename T>
@@ -1180,20 +1180,20 @@ namespace MattMath
 	//{
 	//	if (type == vector_type::ROW)
 	//	{
-	//		this->_rows = 1;
-	//		this->_columns = size;
+	//		this->rows_ = 1;
+	//		this->columns_ = size;
 	//	}
 	//	else
 	//	{
-	//		this->_rows = size;
-	//		this->_columns = 1;
+	//		this->rows_ = size;
+	//		this->columns_ = 1;
 	//	}
 	//	if (size != elements.size())
 	//	{
 	//		throw std::invalid_argument(
 	//			"Number of elements does not match the dimensions of the matrix");
 	//	}
-	//	this->_elements = elements;
+	//	this->elements_ = elements;
 	//}
 	//
 	//template<typename T>
@@ -1205,7 +1205,7 @@ namespace MattMath
 	//		throw std::invalid_argument("Row or column is not valid");
 	//	}
 	//	int index = calculate_index(row, column);
-	//	return this->_elements[index];
+	//	return this->elements_[index];
 	//}
 	//
 	//template<typename T>
@@ -1217,45 +1217,45 @@ namespace MattMath
 	//		throw std::invalid_argument("Row or column is not valid");
 	//	}
 	//	int index = calculate_index(row, column);
-	//	this->_elements[index] = value;
+	//	this->elements_[index] = value;
 	//}
 	//
 	//template<typename T>
 	//int Matrix<T>::get_rows() const
 	//{
-	//	return this->_rows;
+	//	return this->rows_;
 	//}
 	//
 	//template<typename T>
 	//int Matrix<T>::get_columns() const
 	//{
-	//	return this->_columns;
+	//	return this->columns_;
 	//}
 	//
 	//template<typename T>
 	//bool Matrix<T>::is_square() const
 	//{
-	//	return this->_rows == this->_columns;
+	//	return this->rows_ == this->columns_;
 	//}
 	//
 	//template<typename T>
 	//bool Matrix<T>::equal_size(const Matrix<T>& other) const
 	//{
-	//	return this->_rows == other.get_rows() && this->_columns == other.get_columns();
+	//	return this->rows_ == other.get_rows() && this->columns_ == other.get_columns();
 	//}
 	//
 	//template<typename T>
 	//Matrix<T> Matrix<T>::rotate_pi_radians() const
 	//{
 	//	// create a new matrix with the same dimensions
-	//	Matrix<T> rotated_matrix(this->_rows, this->_columns);
+	//	Matrix<T> rotated_matrix(this->rows_, this->columns_);
 	//
 	//	// rotate the matrix by 180 degrees
-	//	for (int i = 0; i < this->_rows; i++)
+	//	for (int i = 0; i < this->rows_; i++)
 	//	{
-	//		for (int j = 0; j < this->_columns; j++)
+	//		for (int j = 0; j < this->columns_; j++)
 	//		{
-	//			rotated_matrix(i, j) = this->_elements[(this->_rows - i - 1) * this->_columns + (this->_columns - j - 1)];
+	//			rotated_matrix(i, j) = this->elements_[(this->rows_ - i - 1) * this->columns_ + (this->columns_ - j - 1)];
 	//		}
 	//	}
 	//
@@ -1277,19 +1277,19 @@ namespace MattMath
 	//template<typename T>
 	//bool Matrix<T>::row_valid(int row) const
 	//{
-	//	return row >= 0 && row < this->_rows;
+	//	return row >= 0 && row < this->rows_;
 	//}
 	//
 	//template<typename T>
 	//bool Matrix<T>::column_valid(int column) const
 	//{
-	//	return column >= 0 && column < this->_columns;
+	//	return column >= 0 && column < this->columns_;
 	//}
 	//
 	//template<typename T>
 	//int Matrix<T>::calculate_index(int row, int column) const
 	//{
-	//	return row * this->_columns + column;
+	//	return row * this->columns_ + column;
 	//}
 	//
 	//template<typename T>
@@ -1301,7 +1301,7 @@ namespace MattMath
 	//		throw std::invalid_argument("Row or column is not valid");
 	//	}
 	//	int index = calculate_index(row, column);
-	//	return this->_elements[index];
+	//	return this->elements_[index];
 	//}
 
 #pragma endregion Matrix
@@ -2488,19 +2488,19 @@ namespace MattMath
 
 	MatrixF::MatrixF(int rows, int columns)
 	{
-		this->_rows = rows;
-		this->_columns = columns;
+		this->rows_ = rows;
+		this->columns_ = columns;
 	}
 	MatrixF::MatrixF(int rows, int columns, const std::vector<float>& elements)
 	{
-		this->_rows = rows;
-		this->_columns = columns;
+		this->rows_ = rows;
+		this->columns_ = columns;
 		if (rows * columns != elements.size())
 		{
 			throw std::invalid_argument(
 				"Number of elements does not match the dimensions of the matrix");
 		}
-		this->_elements = elements;
+		this->elements_ = elements;
 	}
 	float MatrixF::get_element(int row, int column) const
 	{
@@ -2510,7 +2510,7 @@ namespace MattMath
 			throw std::invalid_argument("Row or column is not valid");
 		}
 		int index = calculate_index(row, column);
-		return this->_elements[index];
+		return this->elements_[index];
 	}
 	void MatrixF::set_element(int row, int column, float value)
 	{
@@ -2520,24 +2520,24 @@ namespace MattMath
 			throw std::invalid_argument("Row or column is not valid");
 		}
 		int index = calculate_index(row, column);
-		this->_elements[index] = value;
+		this->elements_[index] = value;
 	}
 
 	int MatrixF::get_rows() const
 	{
-		return this->_rows;
+		return this->rows_;
 	}
 	int MatrixF::get_columns() const
 	{
-		return this->_columns;
+		return this->columns_;
 	}
 	Vector2I MatrixF::get_dimensions() const
 	{
-		return Vector2I(this->_columns, this->_rows);
+		return Vector2I(this->columns_, this->rows_);
 	}
 	bool MatrixF::is_square() const
 	{
-		return this->_rows == this->_columns;
+		return this->rows_ == this->columns_;
 	}
 	bool MatrixF::is_identity() const
 	{
@@ -2545,9 +2545,9 @@ namespace MattMath
 		{
 			return false;
 		}
-		for (int i = 0; i < this->_rows; i++)
+		for (int i = 0; i < this->rows_; i++)
 		{
-			for (int j = 0; j < this->_columns; j++)
+			for (int j = 0; j < this->columns_; j++)
 			{
 				if (i == j)
 				{
@@ -2573,9 +2573,9 @@ namespace MattMath
 		{
 			return false;
 		}
-		for (int i = 0; i < this->_rows; i++)
+		for (int i = 0; i < this->rows_; i++)
 		{
-			for (int j = 0; j < this->_columns; j++)
+			for (int j = 0; j < this->columns_; j++)
 			{
 				if (this->get_element(i, j) != this->get_element(j, i))
 				{
@@ -2591,9 +2591,9 @@ namespace MattMath
 		{
 			return false;
 		}
-		for (int i = 0; i < this->_rows; i++)
+		for (int i = 0; i < this->rows_; i++)
 		{
-			for (int j = 0; j < this->_columns; j++)
+			for (int j = 0; j < this->columns_; j++)
 			{
 				if (i != j && this->get_element(i, j) != 0.0f)
 				{
@@ -2609,7 +2609,7 @@ namespace MattMath
 		{
 			return false;
 		}
-		for (int i = 0; i < this->_rows; i++)
+		for (int i = 0; i < this->rows_; i++)
 		{
 			for (int j = 0; j < i; j++)
 			{
@@ -2627,9 +2627,9 @@ namespace MattMath
 		{
 			return false;
 		}
-		for (int i = 0; i < this->_rows; i++)
+		for (int i = 0; i < this->rows_; i++)
 		{
-			for (int j = i + 1; j < this->_columns; j++)
+			for (int j = i + 1; j < this->columns_; j++)
 			{
 				if (this->get_element(i, j) != 0.0f)
 				{
@@ -2711,15 +2711,15 @@ namespace MattMath
 	}
 	bool MatrixF::row_valid(int row) const
 	{
-		return row >= 0 && row < this->_rows;
+		return row >= 0 && row < this->rows_;
 	}
 	bool MatrixF::column_valid(int column) const
 	{
-		return column >= 0 && column < this->_columns;
+		return column >= 0 && column < this->columns_;
 	}
 	int MatrixF::calculate_index(int row, int column) const
 	{
-		return row * this->_columns + column;
+		return row * this->columns_ + column;
 	}
 	MatrixF MattMath::operator+ (const MatrixF& a, const MatrixF& b)
 	{
@@ -4195,15 +4195,15 @@ namespace MattMath
 	RectangleRotated::RectangleRotated(const Point2F& center,
 		const Vector2F& x_axis, const Vector2F& y_axis,
 		const Vector2F& hw_extents) :
-		_center(center), _x_axis(x_axis), _y_axis(y_axis), _hw_extents(hw_extents)
+		center_(center), x_axis_(x_axis), y_axis_(y_axis), hw_extents_(hw_extents)
 	{
-		this->_x_axis.normalize();
-		this->_y_axis.normalize();
+		this->x_axis_.normalize();
+		this->y_axis_.normalize();
 
-		// Points first: is_valid() -> edges_valid() reads _points, so
+		// Points first: is_valid() -> edges_valid() reads points_, so
 		// validating before this line checked four zero corners and could
 		// never reject anything.
-		this->_points = this->calculate_points();
+		this->points_ = this->calculate_points();
 
 		if (!this->is_valid())
 		{
@@ -4219,16 +4219,16 @@ namespace MattMath
 				"RectangleRotated: centre line has zero length, so it has no direction");
 		}
 
-		this->_center = center_line.get_center();
+		this->center_ = center_line.get_center();
 		// Segment::get_direction() returns point_1 - point_0 un-normalised,
 		// but axes_valid() requires a unit axis - without this the constructor
 		// threw for every segment whose length was not 1.
-		this->_x_axis = center_line.get_direction();
-		this->_x_axis.normalize();
-		this->_y_axis = Vector2F::normal(this->_x_axis);
-		this->_hw_extents = Vector2F(center_line.get_length() / 2.0f + thickness, thickness);
+		this->x_axis_ = center_line.get_direction();
+		this->x_axis_.normalize();
+		this->y_axis_ = Vector2F::normal(this->x_axis_);
+		this->hw_extents_ = Vector2F(center_line.get_length() / 2.0f + thickness, thickness);
 
-		this->_points = this->calculate_points();
+		this->points_ = this->calculate_points();
 
 		if (!this->is_valid())
 		{
@@ -4238,17 +4238,17 @@ namespace MattMath
 
 	RectangleF RectangleRotated::get_bounding_box() const
 	{
-		float x1 = std::min(std::min(std::min(this->_points[0].x, this->_points[1].x),
-			this->_points[2].x), this->_points[3].x);
+		float x1 = std::min(std::min(std::min(this->points_[0].x, this->points_[1].x),
+			this->points_[2].x), this->points_[3].x);
 
-		float x2 = std::max(std::max(std::max(this->_points[0].x, this->_points[1].x),
-			this->_points[2].x), this->_points[3].x);
+		float x2 = std::max(std::max(std::max(this->points_[0].x, this->points_[1].x),
+			this->points_[2].x), this->points_[3].x);
 
-		float y1 = std::min(std::min(std::min(this->_points[0].y, this->_points[1].y),
-			this->_points[2].y), this->_points[3].y);
+		float y1 = std::min(std::min(std::min(this->points_[0].y, this->points_[1].y),
+			this->points_[2].y), this->points_[3].y);
 
-		float y2 = std::max(std::max(std::max(this->_points[0].y, this->_points[1].y),
-			this->_points[2].y), this->_points[3].y);
+		float y2 = std::max(std::max(std::max(this->points_[0].y, this->points_[1].y),
+			this->points_[2].y), this->points_[3].y);
 
 		return RectangleF(x1, y1, x2 - x1, y2 - y1);
 	}
@@ -4290,9 +4290,9 @@ namespace MattMath
 	}
 	void RectangleRotated::offset(const Vector2F& amount)
 	{
-		this->_center += amount;
+		this->center_ += amount;
 
-		this->_points = this->calculate_points();
+		this->points_ = this->calculate_points();
 
 	}
 	std::unique_ptr<Shape> RectangleRotated::clone() const
@@ -4301,7 +4301,7 @@ namespace MattMath
 	}
 	Point2F RectangleRotated::get_center() const
 	{
-		return this->_center;
+		return this->center_;
 	}
 	std::vector<Segment> RectangleRotated::get_edges() const
 	{
@@ -4318,97 +4318,97 @@ namespace MattMath
 	{
 		// Validate the candidate before committing it. Assigning first and
 		// throwing afterwards left the object holding the rejected value.
-		const Vector2F inflated = this->_hw_extents + Vector2F(amount, amount);
+		const Vector2F inflated = this->hw_extents_ + Vector2F(amount, amount);
 		if (inflated.x <= 0.0f || inflated.y <= 0.0f)
 		{
 			throw std::invalid_argument("Half widths are not valid");
 		}
 
-		this->_hw_extents = inflated;
-		this->_points = this->calculate_points();
+		this->hw_extents_ = inflated;
+		this->points_ = this->calculate_points();
 	}
 
 	Point2F RectangleRotated::get_x_axis() const
 	{
-		return this->_x_axis;
+		return this->x_axis_;
 	}
 	Point2F RectangleRotated::get_y_axis() const
 	{
-		return this->_y_axis;
+		return this->y_axis_;
 	}
 	Point2F RectangleRotated::get_axis(int axis) const
 	{
 		if (axis == 0)
 		{
-			return this->_x_axis;
+			return this->x_axis_;
 		}
 		else if (axis == 1)
 		{
-			return this->_y_axis;
+			return this->y_axis_;
 		}
 
 		throw std::invalid_argument("Axis must be 0 or 1");
 	}
 	Point2F RectangleRotated::get_half_extents() const
 	{
-		return this->_hw_extents;
+		return this->hw_extents_;
 	}
 	float RectangleRotated::get_half_x_width() const
 	{
-		return this->_hw_extents.x;
+		return this->hw_extents_.x;
 	}
 	float RectangleRotated::get_half_y_width() const
 	{
-		return this->_hw_extents.y;
+		return this->hw_extents_.y;
 	}
 	float RectangleRotated::get_half_width(int axis) const
 	{
 		if (axis == 0)
 		{
-			return this->_hw_extents.x;
+			return this->hw_extents_.x;
 		}
 		else if (axis == 1)
 		{
-			return this->_hw_extents.y;
+			return this->hw_extents_.y;
 		}
 
 		throw std::invalid_argument("Axis must be 0 or 1");
 	}
 	void RectangleRotated::set_center(const Point2F& center)
 	{
-		this->_center = center;
+		this->center_ = center;
 
-		this->_points = this->calculate_points();
+		this->points_ = this->calculate_points();
 	}
 	// Each setter validates the candidate value before committing it, so a
 	// rejected argument leaves the rectangle exactly as it was. Assigning to
 	// the member first and throwing afterwards left the object corrupt: it
-	// held the bad value and a stale _points cache.
+	// held the bad value and a stale points_ cache.
 	void RectangleRotated::set_x_axis(const Point2F& x_axis)
 	{
 		const Vector2F candidate = x_axis.normalized();
 
 		if (!are_equal(candidate.length(), 1.0f, EPSILON) ||
-			!are_equal(Vector2F::dot(candidate, this->_y_axis), 0.0f, EPSILON))
+			!are_equal(Vector2F::dot(candidate, this->y_axis_), 0.0f, EPSILON))
 		{
 			throw std::invalid_argument("Axes are not valid");
 		}
 
-		this->_x_axis = candidate;
-		this->_points = this->calculate_points();
+		this->x_axis_ = candidate;
+		this->points_ = this->calculate_points();
 	}
 	void RectangleRotated::set_y_axis(const Point2F& y_axis)
 	{
 		const Vector2F candidate = y_axis.normalized();
 
 		if (!are_equal(candidate.length(), 1.0f, EPSILON) ||
-			!are_equal(Vector2F::dot(this->_x_axis, candidate), 0.0f, EPSILON))
+			!are_equal(Vector2F::dot(this->x_axis_, candidate), 0.0f, EPSILON))
 		{
 			throw std::invalid_argument("Axes are not valid");
 		}
 
-		this->_y_axis = candidate;
-		this->_points = this->calculate_points();
+		this->y_axis_ = candidate;
+		this->points_ = this->calculate_points();
 	}
 	void RectangleRotated::set_half_extents(const Point2F& hw_extents)
 	{
@@ -4417,8 +4417,8 @@ namespace MattMath
 			throw std::invalid_argument("Half widths are not valid");
 		}
 
-		this->_hw_extents = hw_extents;
-		this->_points = this->calculate_points();
+		this->hw_extents_ = hw_extents;
+		this->points_ = this->calculate_points();
 	}
 	void RectangleRotated::set_half_x_width(float half_x_width)
 	{
@@ -4427,8 +4427,8 @@ namespace MattMath
 			throw std::invalid_argument("Half widths are not valid");
 		}
 
-		this->_hw_extents.x = half_x_width;
-		this->_points = this->calculate_points();
+		this->hw_extents_.x = half_x_width;
+		this->points_ = this->calculate_points();
 	}
 	void RectangleRotated::set_half_y_width(float half_y_width)
 	{
@@ -4437,44 +4437,44 @@ namespace MattMath
 			throw std::invalid_argument("Half widths are not valid");
 		}
 
-		this->_hw_extents.y = half_y_width;
-		this->_points = this->calculate_points();
+		this->hw_extents_.y = half_y_width;
+		this->points_ = this->calculate_points();
 	}
 	Point2F RectangleRotated::get_point_0() const
 	{
-		return this->_points[0];
+		return this->points_[0];
 	}
 	Point2F RectangleRotated::get_point_1() const
 	{
-		return this->_points[1];
+		return this->points_[1];
 	}
 	Point2F RectangleRotated::get_point_2() const
 	{
-		return this->_points[2];
+		return this->points_[2];
 	}
 	Point2F RectangleRotated::get_point_3() const
 	{
-		return this->_points[3];
+		return this->points_[3];
 	}
 	const std::vector<Point2F>& RectangleRotated::get_points() const
 	{
-		return this->_points;
+		return this->points_;
 	}
 	Segment RectangleRotated::get_edge_0() const
 	{
-		return Segment(this->_points[0], this->_points[1]);
+		return Segment(this->points_[0], this->points_[1]);
 	}
 	Segment RectangleRotated::get_edge_1() const
 	{
-		return Segment(this->_points[1], this->_points[2]);
+		return Segment(this->points_[1], this->points_[2]);
 	}
 	Segment RectangleRotated::get_edge_2() const
 	{
-		return Segment(this->_points[2], this->_points[3]);
+		return Segment(this->points_[2], this->points_[3]);
 	}
 	Segment RectangleRotated::get_edge_3() const
 	{
-		return Segment(this->_points[3], this->_points[0]);
+		return Segment(this->points_[3], this->points_[0]);
 	}
 	Quad RectangleRotated::get_quad() const
 	{
@@ -4484,11 +4484,11 @@ namespace MattMath
 	}
 	RectangleF RectangleRotated::get_rectangle_rotated_to_axis() const
 	{
-		return RectangleF(this->_center, this->_hw_extents.x, this->_hw_extents.y);
+		return RectangleF(this->center_, this->hw_extents_.x, this->hw_extents_.y);
 	}
 	float RectangleRotated::get_angle() const
 	{
-		return Vector2F::angle_between(this->_x_axis, Vector2F::DIRECTION_RIGHT);
+		return Vector2F::angle_between(this->x_axis_, Vector2F::DIRECTION_RIGHT);
 	}
 	bool RectangleRotated::is_valid() const
 	{
@@ -4510,7 +4510,7 @@ namespace MattMath
 
 	std::vector<Point2F> RectangleRotated::calculate_points() const
 	{
-		return calculate_points(this->_center, this->_x_axis, this->_y_axis, this->_hw_extents);
+		return calculate_points(this->center_, this->x_axis_, this->y_axis_, this->hw_extents_);
 	}
 
 	std::vector<Point2F> RectangleRotated::calculate_points(const Point2F& center,
@@ -4542,7 +4542,7 @@ namespace MattMath
 	bool RectangleRotated::half_widths_valid() const
 	{
 		// check that half width and half height are positive
-		if (_hw_extents.x <= 0.0f || _hw_extents.y <= 0.0f)
+		if (hw_extents_.x <= 0.0f || hw_extents_.y <= 0.0f)
 		{
 			return false;
 		}
@@ -4552,14 +4552,14 @@ namespace MattMath
 	bool RectangleRotated::axes_valid() const
 	{
 		// check if x_axis and y_axis are unit vectors
-		if (!are_equal(_x_axis.length(), 1.0f, EPSILON) ||
-			!are_equal(_y_axis.length(), 1.0f, EPSILON))
+		if (!are_equal(x_axis_.length(), 1.0f, EPSILON) ||
+			!are_equal(y_axis_.length(), 1.0f, EPSILON))
 		{
 			return false;
 		}
 		
 		// check if x_axis and y_axis are perpendicular
-		if (!are_equal(Vector2F::dot(_x_axis, _y_axis), 0.0f, EPSILON))
+		if (!are_equal(Vector2F::dot(x_axis_, y_axis_), 0.0f, EPSILON))
 		{
 			return false;
 		}

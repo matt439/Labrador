@@ -85,16 +85,16 @@ public:
 	void set_device(ID3D11Device1* device);
 
 private:
-	RenderResources* _render_resources = nullptr;
-	AudioResources* _audio_resources = nullptr;
-	ID3D11Device1* _device = nullptr;
-	DirectX::AudioEngine* _audio_engine = nullptr;
+	RenderResources* render_resources_ = nullptr;
+	AudioResources* audio_resources_ = nullptr;
+	ID3D11Device1* device_ = nullptr;
+	DirectX::AudioEngine* audio_engine_ = nullptr;
 
-	std::map<std::string, AssetKind> _kinds;
+	std::map<std::string, AssetKind> kinds_;
 
 	// What was loaded, kept for the replay above. Empty until load_manifest,
 	// so a device restore before the first load rebuilds nothing.
-	AssetManifest _manifest;
+	AssetManifest manifest_;
 
 	void register_builtin_kinds();
 

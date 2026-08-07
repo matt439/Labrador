@@ -40,13 +40,13 @@ private:
 
     void record_exception(std::exception_ptr exception);
 
-    int _min_num_threads = -1;
-    int _max_num_threads = -1;
-    std::vector<PTP_WORK> _work_items;
-    TP_CALLBACK_ENVIRON _callback_environment = {};
-    PTP_POOL _pool = nullptr;
-    PTP_CLEANUP_GROUP _cleanup_group = nullptr;
+    int min_num_threads_ = -1;
+    int max_num_threads_ = -1;
+    std::vector<PTP_WORK> work_items_;
+    TP_CALLBACK_ENVIRON callback_environment_ = {};
+    PTP_POOL pool_ = nullptr;
+    PTP_CLEANUP_GROUP cleanup_group_ = nullptr;
 
-    std::mutex _exception_mutex;
-    std::exception_ptr _first_exception;
+    std::mutex exception_mutex_;
+    std::exception_ptr first_exception_;
 };

@@ -5,28 +5,28 @@ using namespace MattMath;
 
 Drawer::Drawer(RenderResources* render_resources,
     const float* dt) :
-    _render_resources(render_resources),
-    _dt(dt)
+    render_resources_(render_resources),
+    dt_(dt)
 {
 }
 
 void Drawer::set_render_resources(RenderResources* render_resources)
 {
-    this->_render_resources = render_resources;
+    this->render_resources_ = render_resources;
 }
 void Drawer::set_dt(const float* dt)
 {
-    this->_dt = dt;
+    this->dt_ = dt;
 }
 
 RenderResources* Drawer::get_render_resources() const
 {
-    return this->_render_resources;
+    return this->render_resources_;
 }
 
 float Drawer::get_dt() const
 {
-    return *this->_dt;
+    return *this->dt_;
 }
 
 RectangleI Drawer::calculate_draw_rectangle(const RectangleI& rec,

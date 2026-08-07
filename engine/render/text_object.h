@@ -49,8 +49,8 @@ protected:
 	virtual void set_position(const MattMath::Vector2F& position);
 	virtual void set_scale(float scale);
 private:
-	std::string _text = "";
-	RenderResources::FontHandle _font;
-	MattMath::Vector2F _position = MattMath::Vector2F::ZERO;
-	float _scale = 1.0f;
+	std::string text_ = "";
+	RenderResources::FontHandle font_;
+	MattMath::Vector2F position_ = MattMath::Vector2F::ZERO;
+	float scale_ = 1.0f;
 };

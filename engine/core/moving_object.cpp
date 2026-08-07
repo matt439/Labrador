@@ -5,118 +5,118 @@ using namespace MattMath;
 MovingObject::MovingObject(const Vector2F& velocity,
 	float rotation,
 	const Vector2F& dx) :
-	_velocity(velocity),
-	_dx(dx),
-	_rotation(rotation)
+	velocity_(velocity),
+	dx_(dx),
+	rotation_(rotation)
 {
 
 }
 
 const Vector2F& MovingObject::get_velocity() const
 {
-	return this->_velocity;
+	return this->velocity_;
 }
 float MovingObject::get_velocity_x() const
 {
-	return this->_velocity.x;
+	return this->velocity_.x;
 }
 float MovingObject::get_velocity_y() const
 {
-	return this->_velocity.y;
+	return this->velocity_.y;
 }
 void MovingObject::set_velocity(const Vector2F& velocity)
 {
-	this->_velocity = velocity;
+	this->velocity_ = velocity;
 }
 void MovingObject::set_velocity_x(float x)
 {
-	this->_velocity.x = x;
+	this->velocity_.x = x;
 }
 void MovingObject::set_velocity_y(float y)
 {
-	this->_velocity.y = y;
+	this->velocity_.y = y;
 }
 void MovingObject::alter_velocity(const Vector2F& velocity)
 {
-	this->_velocity += velocity;
+	this->velocity_ += velocity;
 }
 void MovingObject::alter_velocity_x(float x)
 {
-	this->_velocity.x += x;
+	this->velocity_.x += x;
 }
 void MovingObject::alter_velocity_y(float y)
 {
-	this->_velocity.y += y;
+	this->velocity_.y += y;
 }
 Vector2F MovingObject::get_unit_velocity() const
 {
-	return this->_velocity.normalized();
+	return this->velocity_.normalized();
 }
 float MovingObject::get_velocity_magnitude() const
 {
-	return this->_velocity.length();
+	return this->velocity_.length();
 }
 float MovingObject::get_velocity_angle() const
 {
-	return atan2(this->_velocity.y, this->_velocity.x);
+	return atan2(this->velocity_.y, this->velocity_.x);
 }
 const Vector2F& MovingObject::get_dx() const
 {
-	return this->_dx;
+	return this->dx_;
 }
 float MovingObject::get_dx_x() const
 {
-	return this->_dx.x;
+	return this->dx_.x;
 }
 float MovingObject::get_dx_y() const
 {
-	return this->_dx.y;
+	return this->dx_.y;
 }
 void MovingObject::set_dx(const Vector2F& dx)
 {
-	this->_dx = dx;
+	this->dx_ = dx;
 }
 void MovingObject::set_dx_x(float x)
 {
-	this->_dx.x = x;
+	this->dx_.x = x;
 }
 void MovingObject::set_dx_y(float y)
 {
-	this->_dx.y = y;
+	this->dx_.y = y;
 }
 void MovingObject::alter_dx(const Vector2F& dx)
 {
-	this->_dx += dx;
+	this->dx_ += dx;
 }
 void MovingObject::alter_dx_x(float x)
 {
-	this->_dx.x += x;
+	this->dx_.x += x;
 }
 void MovingObject::alter_dx_y(float y)
 {
-	this->_dx.y += y;
+	this->dx_.y += y;
 }
 Vector2F MovingObject::get_unit_dx() const
 {
-	return this->_dx.normalized();
+	return this->dx_.normalized();
 }
 float MovingObject::get_dx_magnitude() const
 {
-	return this->_dx.length();
+	return this->dx_.length();
 }
 float MovingObject::get_dx_angle() const
 {
-	return atan2(this->_dx.y, this->_dx.x);
+	return atan2(this->dx_.y, this->dx_.x);
 }
 float MovingObject::get_rotation() const
 {
-	return this->_rotation;
+	return this->rotation_;
 }
 void MovingObject::set_rotation(float rotation)
 {
-	this->_rotation = rotation;
+	this->rotation_ = rotation;
 }
 void MovingObject::alter_rotation(float rotation)
 {
-	this->_rotation += rotation;
+	this->rotation_ += rotation;
 }

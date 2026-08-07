@@ -23,13 +23,13 @@ public:
 	void draw() override;
 
 private:
-	Application* _app = nullptr;
+	Application* app_ = nullptr;
 
 	// Built in init() rather than the constructor, because a Text resolves its
 	// font name against RenderResources - and that only has the font once the
 	// manifest has been walked.
-	std::unique_ptr<Text> _greeting = nullptr;
-	std::unique_ptr<Text> _hint = nullptr;
+	std::unique_ptr<Text> greeting_ = nullptr;
+	std::unique_ptr<Text> hint_ = nullptr;
 
-	MattMath::Vector2F _position = { 0.0f, 0.0f };
+	MattMath::Vector2F position_ = { 0.0f, 0.0f };
 };

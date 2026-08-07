@@ -326,10 +326,10 @@ namespace MattMath
 		const T& operator()(int row, int column) const;
 
 	private:
-		int _rows = 0;
-		int _columns = 0;
-		std::vector<T> _elements;
-		T** _matrix = nullptr;
+		int rows_ = 0;
+		int columns_ = 0;
+		std::vector<T> elements_;
+		T** matrix_ = nullptr;
 		bool row_valid(int row) const;
 		bool column_valid(int column) const;
 		int calculate_index(int row, int column) const;
@@ -730,9 +730,9 @@ namespace MattMath
 		MatrixF& operator/=(float other);
 
 	private:
-		int _rows = 0;
-		int _columns = 0;
-		std::vector<float> _elements;
+		int rows_ = 0;
+		int columns_ = 0;
+		std::vector<float> elements_;
 		bool row_valid(int row) const;
 		bool column_valid(int column) const;
 		int calculate_index(int row, int column) const;
@@ -1123,12 +1123,12 @@ namespace MattMath
 		bool operator!=(const RectangleRotated& other) const;
 
 	private:
-		Point2F _center = Point2F::ZERO;
-		Vector2F _x_axis = Vector2F::DIRECTION_RIGHT;
-		Vector2F _y_axis = Vector2F::DIRECTION_UP;
-		Vector2F _hw_extents = Vector2F::ZERO;
+		Point2F center_ = Point2F::ZERO;
+		Vector2F x_axis_ = Vector2F::DIRECTION_RIGHT;
+		Vector2F y_axis_ = Vector2F::DIRECTION_UP;
+		Vector2F hw_extents_ = Vector2F::ZERO;
 
-		std::vector<Point2F> _points = { Point2F::ZERO, Point2F::ZERO,
+		std::vector<Point2F> points_ = { Point2F::ZERO, Point2F::ZERO,
 					Point2F::ZERO, Point2F::ZERO };
 
 		std::vector<Point2F> calculate_points() const;

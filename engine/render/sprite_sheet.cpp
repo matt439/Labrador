@@ -6,38 +6,38 @@ using namespace MattMath;
 SpriteSheet::SpriteSheet(ID3D11ShaderResourceView* texture,
 	NameTable<SpriteFrame> sprite_frames,
 	NameTable<AnimationStrip> animation_strips) :
-	_sprite_frames(std::move(sprite_frames)),
-	_animation_strips(std::move(animation_strips)),
-	_texture(texture)
+	sprite_frames_(std::move(sprite_frames)),
+	animation_strips_(std::move(animation_strips)),
+	texture_(texture)
 {
 
 }
 
 void SpriteSheet::set_texture(ID3D11ShaderResourceView* texture)
 {
-	this->_texture = texture;
+	this->texture_ = texture;
 }
 
 SpriteSheet::frame_handle SpriteSheet::resolve_sprite_frame(
 	const std::string& name) const
 {
-	return this->_sprite_frames.resolve(name);
+	return this->sprite_frames_.resolve(name);
 }
 
 SpriteSheet::strip_handle SpriteSheet::resolve_animation_strip(
 	const std::string& name) const
 {
-	return this->_animation_strips.resolve(name);
+	return this->animation_strips_.resolve(name);
 }
 
 const SpriteFrame& SpriteSheet::get_sprite_frame(frame_handle frame) const
 {
-	return this->_sprite_frames.get(frame);
+	return this->sprite_frames_.get(frame);
 }
 
 const AnimationStrip& SpriteSheet::get_animation_strip(strip_handle strip) const
 {
-	return this->_animation_strips.get(strip);
+	return this->animation_strips_.get(strip);
 }
 
 void SpriteSheet::draw(SpriteBatch* sprite_batch,
@@ -51,7 +51,7 @@ void SpriteSheet::draw(SpriteBatch* sprite_batch,
 	float layer_depth) const
 {
 	sprite_batch->Draw(
-		this->_texture,
+		this->texture_,
 		position.get_xm_vector(),
 		this->get_sprite_frame(frame).get_source_rectangle(),
 		color.get_xm_vector(),
@@ -72,7 +72,7 @@ void SpriteSheet::draw(SpriteBatch* sprite_batch,
 	float layer_depth) const
 {
 	sprite_batch->Draw(
-		this->_texture,
+		this->texture_,
 		destination_rectangle.get_win_rect(),
 		this->get_sprite_frame(frame).get_source_rectangle(),
 		color.get_xm_vector(),
@@ -93,7 +93,7 @@ void SpriteSheet::draw(SpriteBatch* sprite_batch,
 	float layer_depth) const
 {
 	sprite_batch->Draw(
-		this->_texture,
+		this->texture_,
 		position.get_xm_vector(),
 		source_rect,
 		color.get_xm_vector(),
@@ -114,7 +114,7 @@ void SpriteSheet::draw(SpriteBatch* sprite_batch,
 	float layer_depth) const
 {
 	sprite_batch->Draw(
-		this->_texture,
+		this->texture_,
 		destination_rectangle.get_win_rect(),
 		source_rect,
 		color.get_xm_vector(),

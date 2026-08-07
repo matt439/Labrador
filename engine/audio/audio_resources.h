@@ -35,5 +35,5 @@ public:
 	// where SoundBank drops its instances before the wave bank they play from.
 
 private:
-	Registry<SoundBank> _sound_banks{ "SoundBank" };
+	Registry<SoundBank> sound_banks_{ "SoundBank" };
 };

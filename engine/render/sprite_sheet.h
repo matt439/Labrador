@@ -85,7 +85,7 @@ public:
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f) const;
 private:
-	NameTable<SpriteFrame> _sprite_frames{ "sprite frame" };
-	NameTable<AnimationStrip> _animation_strips{ "animation strip" };
-	ID3D11ShaderResourceView* _texture = nullptr;
+	NameTable<SpriteFrame> sprite_frames_{ "sprite frame" };
+	NameTable<AnimationStrip> animation_strips_{ "animation strip" };
+	ID3D11ShaderResourceView* texture_ = nullptr;
 };

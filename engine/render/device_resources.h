@@ -140,8 +140,8 @@ namespace DX
         // Owning handles, plus a raw mirror for the existing accessors. The
         // contexts used to be raw pointers that were never Released and never
         // recreated on device loss.
-        std::vector<Microsoft::WRL::ComPtr<ID3D11DeviceContext>> _deferred_contexts_owned;
-        std::unique_ptr<std::vector<ID3D11DeviceContext*>> _deferred_contexts = nullptr;
-        int _deferred_context_count = 0;
+        std::vector<Microsoft::WRL::ComPtr<ID3D11DeviceContext>> deferred_contexts_owned_;
+        std::unique_ptr<std::vector<ID3D11DeviceContext*>> deferred_contexts_ = nullptr;
+        int deferred_context_count_ = 0;
     };
 }

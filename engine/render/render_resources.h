@@ -83,8 +83,8 @@ public:
 
 private:
 	Registry<ID3D11ShaderResourceView,
-		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> _textures{ "Texture" };
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> textures_{ "Texture" };
 
-	Registry<DirectX::SpriteFont> _sprite_fonts{ "SpriteFont" };
-	Registry<SpriteSheet> _sprite_sheets{ "SpriteSheet" };
+	Registry<DirectX::SpriteFont> sprite_fonts_{ "SpriteFont" };
+	Registry<SpriteSheet> sprite_sheets_{ "SpriteSheet" };
 };

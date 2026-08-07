@@ -14,5 +14,5 @@ public:
 protected:
 	StateContext* get_context() const;
 private:
-	StateContext* _context = nullptr;
+	StateContext* context_ = nullptr;
 };

@@ -53,24 +53,24 @@ public:
 	// `kind` names the resource type in error messages: "Texture",
 	// "SpriteFont". It is stored, not copied, so it must outlive the
 	// registry - pass a literal.
-	explicit Registry(const char* kind) : _kind(kind) {}
+	explicit Registry(const char* kind) : kind_(kind) {}
 
 	// Fills the name's slot, claiming one if the name is new. Re-adding a name
 	// reuses its slot rather than appending, which is what keeps handles valid
 	// across a reload.
 	void add(const std::string& name, Storage resource)
 	{
-		const auto it = this->_indices.find(name);
-		if (it != this->_indices.end())
+		const auto it = this->indices_.find(name);
+		if (it != this->indices_.end())
 		{
-			this->_entries[static_cast<size_t>(it->second)].resource =
+			this->entries_[static_cast<size_t>(it->second)].resource =
 				std::move(resource);
 			return;
 		}
 
-		const int index = static_cast<int>(this->_entries.size());
-		this->_indices.emplace(name, index);
-		this->_entries.push_back(entry{ std::move(resource), name });
+		const int index = static_cast<int>(this->entries_.size());
+		this->indices_.emplace(name, index);
+		this->entries_.push_back(entry{ std::move(resource), name });
 	}
 
 	// The load-time half. Throws std::out_of_range if nothing ever added the
@@ -81,11 +81,11 @@ public:
 	// into a handle once and the handle kept for the object's lifetime.
 	handle resolve(const std::string& name) const
 	{
-		const auto it = this->_indices.find(name);
-		if (it == this->_indices.end())
+		const auto it = this->indices_.find(name);
+		if (it == this->indices_.end())
 		{
 			throw std::out_of_range(
-				std::string(this->_kind) + " '" + name + "' was never loaded.");
+				std::string(this->kind_) + " '" + name + "' was never loaded.");
 		}
 		return handle(it->second);
 	}
@@ -96,17 +96,17 @@ public:
 	Resource* get(handle resource_handle) const
 	{
 		const size_t index = static_cast<size_t>(resource_handle.index());
-		if (!resource_handle.valid() || index >= this->_entries.size())
+		if (!resource_handle.valid() || index >= this->entries_.size())
 		{
-			throw std::out_of_range(std::string(this->_kind) +
+			throw std::out_of_range(std::string(this->kind_) +
 				" was read through an unresolved handle.");
 		}
 
-		const entry& slot = this->_entries[index];
+		const entry& slot = this->entries_[index];
 		Resource* resource = RegistryStorage<Storage>::pointer(slot.resource);
 		if (resource == nullptr)
 		{
-			throw std::out_of_range(std::string(this->_kind) + " '" +
+			throw std::out_of_range(std::string(this->kind_) + " '" +
 				slot.name + "' has been released.");
 		}
 		return resource;
@@ -122,10 +122,10 @@ public:
 	// loaded one at every call site that only checks for presence.
 	bool contains(const std::string& name) const
 	{
-		const auto it = this->_indices.find(name);
-		return it != this->_indices.end() &&
+		const auto it = this->indices_.find(name);
+		return it != this->indices_.end() &&
 			RegistryStorage<Storage>::pointer(
-				this->_entries[static_cast<size_t>(it->second)].resource) !=
+				this->entries_[static_cast<size_t>(it->second)].resource) !=
 			nullptr;
 	}
 
@@ -135,7 +135,7 @@ public:
 	// answer and the one that names itself (T6).
 	void release_all()
 	{
-		for (entry& slot : this->_entries)
+		for (entry& slot : this->entries_)
 		{
 			slot.resource = Storage{};
 		}
@@ -150,7 +150,7 @@ private:
 		std::string name;
 	};
 
-	const char* _kind = nullptr;
-	std::map<std::string, int> _indices;
-	std::vector<entry> _entries;
+	const char* kind_ = nullptr;
+	std::map<std::string, int> indices_;
+	std::vector<entry> entries_;
 };

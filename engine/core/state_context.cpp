@@ -2,23 +2,23 @@
 
 void StateContext::update() const
 {
-	if (this->_state == nullptr)
+	if (this->state_ == nullptr)
 	{
 		return;
 	}
-	this->_state->update();
+	this->state_->update();
 }
 void StateContext::draw() const
 {
-	if (this->_state == nullptr)
+	if (this->state_ == nullptr)
 	{
 		return;
 	}
-	this->_state->draw();
+	this->state_->draw();
 }
 void StateContext::transition_to(std::unique_ptr<State> state)
 {
-	this->_state = std::move(state);
-	this->_state->set_context(this);
-	this->_state->init();
+	this->state_ = std::move(state);
+	this->state_->set_context(this);
+	this->state_->init();
 }

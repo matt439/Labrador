@@ -137,31 +137,31 @@ private:
 	// Members destruct in reverse declaration order. DirectXTK requires the
 	// AudioEngine to outlive every WaveBank and SoundEffectInstance - their
 	// destructors unregister themselves from it - and AudioResources owns the
-	// SoundBanks that own those. So _audio_engine is declared FIRST and dies
+	// SoundBanks that own those. So audio_engine_ is declared FIRST and dies
 	// LAST.
-	std::unique_ptr<DirectX::AudioEngine> _audio_engine = nullptr;
+	std::unique_ptr<DirectX::AudioEngine> audio_engine_ = nullptr;
 
-	ApplicationOptions _options;
-	HWND _window = nullptr;
-	std::unique_ptr<DX::DeviceResources> _device_resources = nullptr;
-	DX::StepTimer _timer = DX::StepTimer();
+	ApplicationOptions options_;
+	HWND window_ = nullptr;
+	std::unique_ptr<DX::DeviceResources> device_resources_ = nullptr;
+	DX::StepTimer timer_ = DX::StepTimer();
 
-	std::unique_ptr<AudioResources> _audio_resources = nullptr;
-	std::unique_ptr<RenderResources> _render_resources = nullptr;
-	std::unique_ptr<ResourceLoader> _resource_loader = nullptr;
-	std::unique_ptr<ResolutionManager> _resolution_manager = nullptr;
-	std::unique_ptr<ViewportManager> _viewport_manager = nullptr;
-	std::unique_ptr<ThreadPool> _thread_pool = nullptr;
-	std::unique_ptr<Partitioner> _partitioner = nullptr;
-	std::unique_ptr<DirectX::GamePad> _gamepad = nullptr;
-	std::unique_ptr<float> _dt = nullptr;
+	std::unique_ptr<AudioResources> audio_resources_ = nullptr;
+	std::unique_ptr<RenderResources> render_resources_ = nullptr;
+	std::unique_ptr<ResourceLoader> resource_loader_ = nullptr;
+	std::unique_ptr<ResolutionManager> resolution_manager_ = nullptr;
+	std::unique_ptr<ViewportManager> viewport_manager_ = nullptr;
+	std::unique_ptr<ThreadPool> thread_pool_ = nullptr;
+	std::unique_ptr<Partitioner> partitioner_ = nullptr;
+	std::unique_ptr<DirectX::GamePad> gamepad_ = nullptr;
+	std::unique_ptr<float> dt_ = nullptr;
 
-	std::unique_ptr<DirectX::CommonStates> _common_states = nullptr;
-	std::vector<std::unique_ptr<DirectX::SpriteBatch>> _sprite_batches;
-	std::vector<DirectX::SpriteBatch*> _sprite_batch_ptrs;
+	std::unique_ptr<DirectX::CommonStates> common_states_ = nullptr;
+	std::vector<std::unique_ptr<DirectX::SpriteBatch>> sprite_batches_;
+	std::vector<DirectX::SpriteBatch*> sprite_batch_ptrs_;
 
-	bool _com_initialized = false;
-	bool _content_loaded = false;
+	bool com_initialized_ = false;
+	bool content_loaded_ = false;
 
 	// The window forwards these; nothing else calls them.
 	void tick();

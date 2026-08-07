@@ -9,58 +9,58 @@ DrawObject::DrawObject(RenderResources* render_resources,
 	const Vector2F& origin,
 	SpriteEffects effects,
 	float layer_depth) :
-	_render_resources(render_resources),
-	_colour(color),
-	_draw_rotation(rotation),
-	_origin(origin),
-	_effects(effects),
-	_layer_depth(layer_depth)
+	render_resources_(render_resources),
+	colour_(color),
+	draw_rotation_(rotation),
+	origin_(origin),
+	effects_(effects),
+	layer_depth_(layer_depth)
 {
 
 }
 RenderResources* DrawObject::get_render_resources() const
 {
-	return this->_render_resources;
+	return this->render_resources_;
 }
 const Colour& DrawObject::get_colour() const
 {
-	return this->_colour;
+	return this->colour_;
 }
 float DrawObject::get_draw_rotation() const
 {
-	return this->_draw_rotation;
+	return this->draw_rotation_;
 }
 const Vector2F& DrawObject::get_origin() const
 {
-	return this->_origin;
+	return this->origin_;
 }
 SpriteEffects DrawObject::get_effects() const
 {
-	return this->_effects;
+	return this->effects_;
 }
 float DrawObject::get_layer_depth() const
 {
-	return this->_layer_depth;
+	return this->layer_depth_;
 }
 void DrawObject::set_colour(const Colour& colour)
 {
-	this->_colour = colour;
+	this->colour_ = colour;
 }
 void DrawObject::set_draw_rotation(float rotation)
 {
-	this->_draw_rotation = rotation;
+	this->draw_rotation_ = rotation;
 }
 void DrawObject::set_origin(const Vector2F& origin)
 {
-	this->_origin = origin;
+	this->origin_ = origin;
 }
 void DrawObject::set_effects(SpriteEffects effects)
 {
-	this->_effects = effects;
+	this->effects_ = effects;
 }
 void DrawObject::set_layer_depth(float layer_depth)
 {
-	this->_layer_depth = layer_depth;
+	this->layer_depth_ = layer_depth;
 }
 void DrawObject::set_draw_rotation_by_rectangle_rotated(const RectangleRotated& /*rect*/)
 {

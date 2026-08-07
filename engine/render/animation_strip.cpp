@@ -5,51 +5,51 @@ using namespace MattMath;
 
 AnimationStrip::AnimationStrip(const RectangleI& first_frame,
 	int frame_count, float frame_time, bool looping) :
-	_first_frame(first_frame),
-	_frame_count(frame_count),
-	_frame_time(frame_time),
-	_looping(looping)
+	first_frame_(first_frame),
+	frame_count_(frame_count),
+	frame_time_(frame_time),
+	looping_(looping)
 {
-	this->_frame_rects = this->calculate_all_frame_rects();
+	this->frame_rects_ = this->calculate_all_frame_rects();
 }
 
 RECT AnimationStrip::calculate_frame(int frame_index) const
 {
-	if (frame_index < 0 || frame_index >= this->_frame_count)
+	if (frame_index < 0 || frame_index >= this->frame_count_)
 	{
 		throw std::exception("frame_index out of range");
 	}
-	RectangleI frame = this->_first_frame;
+	RectangleI frame = this->first_frame_;
 	frame.offset(frame_index * frame.width, 0);
 	return frame.get_win_rect();
 }
 
 const RECT* AnimationStrip::get_frame_rect(int frame_index) const
 {
-	if (frame_index < 0 || frame_index >= this->_frame_count)
+	if (frame_index < 0 || frame_index >= this->frame_count_)
 	{
 		throw std::exception("frame_index out of range");
 	}
-	return &this->_frame_rects[frame_index];
+	return &this->frame_rects_[frame_index];
 }
 
 int AnimationStrip::get_frame_count() const
 {
-	return this->_frame_count;
+	return this->frame_count_;
 }
 float AnimationStrip::get_frame_time() const
 {
-	return this->_frame_time;
+	return this->frame_time_;
 }
 bool AnimationStrip::get_looping() const
 {
-	return this->_looping;
+	return this->looping_;
 }
 
 std::vector<RECT> AnimationStrip::calculate_all_frame_rects() const
 {
 	std::vector<RECT> rects;
-	for (int i = 0; i < this->_frame_count; i++)
+	for (int i = 0; i < this->frame_count_; i++)
 	{
 		rects.push_back(this->calculate_frame(i));
 	}

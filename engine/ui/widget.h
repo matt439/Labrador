@@ -23,8 +23,8 @@ public:
 	void draw(DirectX::SpriteBatch* sprite_batch) override = 0;
 	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override = 0;
 private:
-	std::string _name = "error_name";
-	bool _hidden = false;
+	std::string name_ = "error_name";
+	bool hidden_ = false;
 };
 
 class MContainer final : public MObject
@@ -50,7 +50,7 @@ public:
 	void draw(DirectX::SpriteBatch* sprite_batch) override;
 	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override;
 private:
-	std::vector<std::pair<std::string, MObject*>> _children;
+	std::vector<std::pair<std::string, MObject*>> children_;
 };
 
 class MWidget : public MObject
@@ -105,7 +105,7 @@ public:
 
 	const MattMath::RectangleF& get_rectangle() const;
 private:
-	MattMath::RectangleF _rectangle = MattMath::RectangleF::ZERO;
+	MattMath::RectangleF rectangle_ = MattMath::RectangleF::ZERO;
 };
 
 class MText final : public MWidget, public Text

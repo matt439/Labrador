@@ -50,8 +50,8 @@ protected:
 	virtual void alter_rotation(float rotation);
 
 private:
-	MattMath::Vector2F _velocity = MattMath::Vector2F::ZERO;
-	MattMath::Vector2F _dx = MattMath::Vector2F::ZERO;
-	float _rotation = 0.0f;
+	MattMath::Vector2F velocity_ = MattMath::Vector2F::ZERO;
+	MattMath::Vector2F dx_ = MattMath::Vector2F::ZERO;
+	float rotation_ = 0.0f;
 
 };

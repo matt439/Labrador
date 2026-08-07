@@ -14,7 +14,7 @@ Visual::Visual(const std::string& sheet_name,
 	float layer_depth) :
 	TextureObject(sheet_name, frame_name, render_resources,
 		color, rotation, origin, effects, layer_depth),
-	_rectangle(rectangle)
+	rectangle_(rectangle)
 {
 }
 
@@ -30,7 +30,7 @@ Visual::Visual(const std::string& sheet_name,
 	TextureObject(sheet_name, frame_name, render_resources,
 		color, rotation, origin, effects, layer_depth)
 {
-	this->_rectangle = rect_rotated.get_rectangle_rotated_to_axis();
+	this->rectangle_ = rect_rotated.get_rectangle_rotated_to_axis();
 }
 
 
@@ -40,13 +40,13 @@ void Visual::update()
 }
 void Visual::draw(SpriteBatch* sprite_batch, const Camera& camera)
 {
-	this->TextureObject::draw(sprite_batch, this->_rectangle, camera);
+	this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
 }
 void Visual::draw(SpriteBatch* sprite_batch)
 {
-	this->TextureObject::draw(sprite_batch, this->_rectangle);
+	this->TextureObject::draw(sprite_batch, this->rectangle_);
 }
 bool Visual::is_visible_in_viewport(const RectangleF& view) const
 {
-	return this->_rectangle.intersects(view);
+	return this->rectangle_.intersects(view);
 }

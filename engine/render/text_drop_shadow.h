@@ -32,7 +32,7 @@ public:
 	void set_shadow_scale(float scale);
 
 private:
-	MattMath::Vector2F _shadow_offset = { 2.0f, 2.0f };
-	MattMath::Colour _shadow_color = colour_consts::BLACK;
-	float _shadow_scale = 1.0f;
+	MattMath::Vector2F shadow_offset_ = { 2.0f, 2.0f };
+	MattMath::Colour shadow_color_ = colour_consts::BLACK;
+	float shadow_scale_ = 1.0f;
 };

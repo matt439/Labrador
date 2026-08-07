@@ -6,14 +6,14 @@ using namespace viewport_consts;
 
 ViewportManager::ViewportManager(ResolutionManager* resolution_manager,
     DX::DeviceResources* device_resources) :
-    _resolution_manager(resolution_manager),
-    _device_resources(device_resources)
+    resolution_manager_(resolution_manager),
+    device_resources_(device_resources)
 {
 }
 
 Viewport ViewportManager::get_fullscreen_viewport() const
 {
-    Vector2F res = this->_resolution_manager->get_resolution_vec();
+    Vector2F res = this->resolution_manager_->get_resolution_vec();
     return { 0.0f, 0.0f, res.x, res.y };
 }
 
@@ -43,7 +43,7 @@ void ViewportManager::apply_player_viewport(int player_num,
     ID3D11DeviceContext* context) const
 {
     D3D11_VIEWPORT vp = this->calculate_d3d11_viewport(
-        this->_layout, player_num, this->_resolution_manager->get_resolution_vec());
+        this->layout_, player_num, this->resolution_manager_->get_resolution_vec());
     context->RSSetViewports(1, &vp);
 }
 
@@ -52,7 +52,7 @@ void ViewportManager::apply_player_viewport(int player_num,
     SpriteBatch* sprite_batch) const
 {
     D3D11_VIEWPORT vp = this->calculate_d3d11_viewport(
-        this->_layout, player_num, this->_resolution_manager->get_resolution_vec());
+        this->layout_, player_num, this->resolution_manager_->get_resolution_vec());
     context->RSSetViewports(1, &vp);
     sprite_batch->SetViewport(vp);
 }
@@ -66,19 +66,19 @@ D3D11_VIEWPORT ViewportManager::calculate_d3d11_viewport(screen_layout layout,
 
 void ViewportManager::set_layout(screen_layout layout)
 {
-    this->_layout = layout;
+    this->layout_ = layout;
 }
 
 Viewport ViewportManager::get_player_viewport(int player_num) const
 {
     return this->calculate_viewport(
-        this->_layout, player_num, this->_resolution_manager->get_resolution_vec());
+        this->layout_, player_num, this->resolution_manager_->get_resolution_vec());
 }
 
 std::vector<Viewport> ViewportManager::get_all_viewports() const
 {
     std::vector<Viewport> result;
-    int player_count = this->get_player_count_from_layout(this->_layout);
+    int player_count = this->get_player_count_from_layout(this->layout_);
     for (int i = 0; i < player_count; i++)
     {
         result.push_back(this->get_player_viewport(i));
@@ -111,8 +111,8 @@ int ViewportManager::get_player_count_from_layout(screen_layout layout) const
 std::vector<MattMath::RectangleF> ViewportManager::get_viewport_dividers() const
 {
     std::vector<RectangleF> result = std::vector<RectangleF>();
-    const Vector2F res = this->_resolution_manager->get_resolution_vec();
-    screen_layout layout = this->_layout;
+    const Vector2F res = this->resolution_manager_->get_resolution_vec();
+    screen_layout layout = this->layout_;
 
     if (layout == screen_layout::ONE_PLAYER)
     {

@@ -9,79 +9,79 @@ using namespace DirectX;
 RenderResources::TextureHandle RenderResources::resolve_texture(
 	const std::string& texture_name) const
 {
-	return this->_textures.resolve(texture_name);
+	return this->textures_.resolve(texture_name);
 }
 
 RenderResources::FontHandle RenderResources::resolve_sprite_font(
 	const std::string& font_name) const
 {
-	return this->_sprite_fonts.resolve(font_name);
+	return this->sprite_fonts_.resolve(font_name);
 }
 
 RenderResources::SpriteSheetHandle RenderResources::resolve_sprite_sheet(
 	const std::string& sprite_sheet_name) const
 {
-	return this->_sprite_sheets.resolve(sprite_sheet_name);
+	return this->sprite_sheets_.resolve(sprite_sheet_name);
 }
 
 ID3D11ShaderResourceView* RenderResources::get_texture(
 	TextureHandle texture) const
 {
-	return this->_textures.get(texture);
+	return this->textures_.get(texture);
 }
 
 SpriteFont* RenderResources::get_sprite_font(FontHandle font) const
 {
-	return this->_sprite_fonts.get(font);
+	return this->sprite_fonts_.get(font);
 }
 
 SpriteSheet* RenderResources::get_sprite_sheet(
 	SpriteSheetHandle sprite_sheet) const
 {
-	return this->_sprite_sheets.get(sprite_sheet);
+	return this->sprite_sheets_.get(sprite_sheet);
 }
 
 ID3D11ShaderResourceView* RenderResources::get_texture(
 	const std::string& texture_name) const
 {
-	return this->_textures.get(texture_name);
+	return this->textures_.get(texture_name);
 }
 
 SpriteFont* RenderResources::get_sprite_font(const std::string& font_name) const
 {
-	return this->_sprite_fonts.get(font_name);
+	return this->sprite_fonts_.get(font_name);
 }
 
 SpriteSheet* RenderResources::get_sprite_sheet(
 	const std::string& sprite_sheet_name) const
 {
-	return this->_sprite_sheets.get(sprite_sheet_name);
+	return this->sprite_sheets_.get(sprite_sheet_name);
 }
 
 void RenderResources::add_texture(const std::string& texture_name,
 	ID3D11ShaderResourceView* texture)
 {
-	this->_textures.add(texture_name, texture);
+	this->textures_.add(texture_name, texture);
 }
 
 void RenderResources::add_sprite_font(const std::string& font_name,
 	std::unique_ptr<SpriteFont> font)
 {
-	this->_sprite_fonts.add(font_name, std::move(font));
+	this->sprite_fonts_.add(font_name, std::move(font));
 }
 
 void RenderResources::add_sprite_sheet(const std::string& sprite_sheet_name,
 	std::unique_ptr<SpriteSheet> sprite_sheet)
 {
-	this->_sprite_sheets.add(sprite_sheet_name, std::move(sprite_sheet));
+	this->sprite_sheets_.add(sprite_sheet_name, std::move(sprite_sheet));
 }
 
 void RenderResources::reset_all_sprite_fonts()
 {
-	this->_sprite_fonts.release_all();
+	this->sprite_fonts_.release_all();
 }
 
 void RenderResources::reset_all_textures()
 {
-	this->_textures.release_all();
+	this->textures_.release_all();
 }

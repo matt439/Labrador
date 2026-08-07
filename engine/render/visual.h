@@ -36,5 +36,5 @@ public:
 	bool is_visible_in_viewport(const MattMath::RectangleF& view) const override;
 
 protected:
-	MattMath::RectangleF _rectangle = MattMath::RectangleF::ZERO;
+	MattMath::RectangleF rectangle_ = MattMath::RectangleF::ZERO;
 };

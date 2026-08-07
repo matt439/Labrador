@@ -12,5 +12,5 @@ public:
 	void draw() const;
 	void transition_to(std::unique_ptr<State> state);
 private:
-	std::unique_ptr<State> _state = nullptr;
+	std::unique_ptr<State> state_ = nullptr;
 };

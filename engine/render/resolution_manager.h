@@ -21,7 +21,7 @@ public:
         screen_resolution resolution);
 
 private:
-    screen_resolution _resolution = screen_resolution::S_1280_720;
+    screen_resolution resolution_ = screen_resolution::S_1280_720;
 
     MattMath::Vector2I convert_resolution_to_ivec(
         screen_resolution resolution) const;

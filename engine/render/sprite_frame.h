@@ -17,11 +17,11 @@ public:
 		bool rotated = false);
 	const RECT* get_source_rectangle() const;
 private:
-	RECT _source_rectangle = { 0, 0, 0, 0 };
+	RECT source_rectangle_ = { 0, 0, 0, 0 };
 
-	MattMath::RectangleI _source_rectangle2 = MattMath::RectangleI::ZERO;
-	MattMath::Vector2F _origin = MattMath::Vector2F::ZERO;
-	bool _rotated = false;
+	MattMath::RectangleI source_rectangle2_ = MattMath::RectangleI::ZERO;
+	MattMath::Vector2F origin_ = MattMath::Vector2F::ZERO;
+	bool rotated_ = false;
 
 	void set_source_rectangle(
 		const MattMath::RectangleI& source_rectangle);

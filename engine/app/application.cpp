@@ -8,21 +8,21 @@
 using namespace DirectX;
 
 Application::Application(ApplicationOptions options) :
-	_options(std::move(options))
+	options_(std::move(options))
 {
 	// Renders only 2D, so no depth buffer.
-	this->_device_resources = std::make_unique<DX::DeviceResources>(
+	this->device_resources_ = std::make_unique<DX::DeviceResources>(
 		DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_UNKNOWN);
-	this->_device_resources->RegisterDeviceNotify(this);
+	this->device_resources_->RegisterDeviceNotify(this);
 }
 
 Application::~Application()
 {
-	if (this->_audio_engine)
+	if (this->audio_engine_)
 	{
-		this->_audio_engine->Suspend();
+		this->audio_engine_->Suspend();
 	}
-	if (this->_com_initialized)
+	if (this->com_initialized_)
 	{
 		CoUninitialize();
 	}
@@ -41,10 +41,10 @@ void Application::initialize(HINSTANCE instance, int show_command)
 	{
 		throw std::runtime_error("CoInitializeEx failed.");
 	}
-	this->_com_initialized = true;
+	this->com_initialized_ = true;
 
-	this->_resolution_manager = std::make_unique<ResolutionManager>();
-	this->_resolution_manager->set_resolution(this->_options.resolution);
+	this->resolution_manager_ = std::make_unique<ResolutionManager>();
+	this->resolution_manager_->set_resolution(this->options_.resolution);
 
 	this->create_window(instance, show_command);
 
@@ -52,25 +52,25 @@ void Application::initialize(HINSTANCE instance, int show_command)
 #ifdef _DEBUG
 	audio_flags |= AudioEngine_Debug;
 #endif
-	this->_audio_engine = std::make_unique<AudioEngine>(audio_flags);
+	this->audio_engine_ = std::make_unique<AudioEngine>(audio_flags);
 
 	const MattMath::Vector2I size =
-		this->_resolution_manager->get_resolution_ivec();
-	this->_device_resources->SetWindow(this->_window, size.x, size.y);
-	this->_device_resources->CreateDeviceResources();
-	this->_device_resources->create_deferred_contexts(
-		this->_options.max_threads);
+		this->resolution_manager_->get_resolution_ivec();
+	this->device_resources_->SetWindow(this->window_, size.x, size.y);
+	this->device_resources_->CreateDeviceResources();
+	this->device_resources_->create_deferred_contexts(
+		this->options_.max_threads);
 
 	this->create_services();
 	this->create_device_dependent_resources();
 
-	this->_device_resources->CreateWindowSizeDependentResources();
+	this->device_resources_->CreateWindowSizeDependentResources();
 
-	this->_gamepad = std::make_unique<GamePad>();
+	this->gamepad_ = std::make_unique<GamePad>();
 
-	this->_timer.SetFixedTimeStep(true);
-	this->_timer.SetTargetElapsedSeconds(
-		1.0 / static_cast<double>(this->_options.target_fps));
+	this->timer_.SetFixedTimeStep(true);
+	this->timer_.SetTargetElapsedSeconds(
+		1.0 / static_cast<double>(this->options_.target_fps));
 }
 
 void Application::create_window(HINSTANCE instance, int show_command)
@@ -83,7 +83,7 @@ void Application::create_window(HINSTANCE instance, int show_command)
 	window_class.hIcon = LoadIconW(instance, L"IDI_ICON");
 	window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
 	window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-	window_class.lpszClassName = this->_options.window_class_name.c_str();
+	window_class.lpszClassName = this->options_.window_class_name.c_str();
 	window_class.hIconSm = LoadIconW(instance, L"IDI_ICON");
 
 	if (RegisterClassExW(&window_class) == 0)
@@ -92,35 +92,35 @@ void Application::create_window(HINSTANCE instance, int show_command)
 	}
 
 	const MattMath::Vector2I size =
-		this->_resolution_manager->get_resolution_ivec();
+		this->resolution_manager_->get_resolution_ivec();
 
 	// The Application pointer rides in as the create parameter and is stashed
 	// in the window's user data by WM_CREATE, so window_proc can find it
 	// without a global.
-	if (this->_options.fullscreen)
+	if (this->options_.fullscreen)
 	{
-		this->_window = CreateWindowExW(WS_EX_TOPMOST,
-			this->_options.window_class_name.c_str(),
-			this->_options.window_title.c_str(), WS_POPUP,
+		this->window_ = CreateWindowExW(WS_EX_TOPMOST,
+			this->options_.window_class_name.c_str(),
+			this->options_.window_title.c_str(), WS_POPUP,
 			CW_USEDEFAULT, CW_USEDEFAULT, size.x, size.y,
 			nullptr, nullptr, instance, this);
 	}
 	else
 	{
-		this->_window = CreateWindowExW(0,
-			this->_options.window_class_name.c_str(),
-			this->_options.window_title.c_str(), WS_OVERLAPPEDWINDOW,
+		this->window_ = CreateWindowExW(0,
+			this->options_.window_class_name.c_str(),
+			this->options_.window_title.c_str(), WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT, CW_USEDEFAULT, size.x, size.y,
 			nullptr, nullptr, instance, this);
 	}
 
-	if (this->_window == nullptr)
+	if (this->window_ == nullptr)
 	{
 		throw std::runtime_error("Could not create the window.");
 	}
 
-	ShowWindow(this->_window,
-		this->_options.fullscreen ? SW_SHOWMAXIMIZED : show_command);
+	ShowWindow(this->window_,
+		this->options_.fullscreen ? SW_SHOWMAXIMIZED : show_command);
 }
 
 // Services outlive the D3D device. They are created exactly once, here, and
@@ -129,57 +129,57 @@ void Application::create_window(HINSTANCE instance, int show_command)
 // device restore turned the entire object graph into dangling pointers.
 void Application::create_services()
 {
-	this->_thread_pool = std::make_unique<ThreadPool>(
-		this->_options.min_threads, this->_options.max_threads);
+	this->thread_pool_ = std::make_unique<ThreadPool>(
+		this->options_.min_threads, this->options_.max_threads);
 
-	this->_render_resources = std::make_unique<RenderResources>();
-	this->_audio_resources = std::make_unique<AudioResources>();
+	this->render_resources_ = std::make_unique<RenderResources>();
+	this->audio_resources_ = std::make_unique<AudioResources>();
 
-	this->_resource_loader = std::make_unique<ResourceLoader>(
-		this->_render_resources.get(), this->_audio_resources.get(),
-		this->_device_resources->GetD3DDevice(), this->_audio_engine.get());
+	this->resource_loader_ = std::make_unique<ResourceLoader>(
+		this->render_resources_.get(), this->audio_resources_.get(),
+		this->device_resources_->GetD3DDevice(), this->audio_engine_.get());
 
-	this->_viewport_manager = std::make_unique<ViewportManager>(
-		this->_resolution_manager.get(), this->_device_resources.get());
+	this->viewport_manager_ = std::make_unique<ViewportManager>(
+		this->resolution_manager_.get(), this->device_resources_.get());
 
-	this->_partitioner = std::make_unique<Partitioner>();
+	this->partitioner_ = std::make_unique<Partitioner>();
 
-	this->_dt = std::make_unique<float>(0.0f);
+	this->dt_ = std::make_unique<float>(0.0f);
 }
 
 void Application::create_device_dependent_resources()
 {
-	ID3D11Device1* device = this->_device_resources->GetD3DDevice();
+	ID3D11Device1* device = this->device_resources_->GetD3DDevice();
 
-	this->_sprite_batches.resize(
-		static_cast<size_t>(this->_options.max_threads));
-	this->_sprite_batch_ptrs.resize(
-		static_cast<size_t>(this->_options.max_threads));
-	for (int i = 0; i < this->_options.max_threads; i++)
+	this->sprite_batches_.resize(
+		static_cast<size_t>(this->options_.max_threads));
+	this->sprite_batch_ptrs_.resize(
+		static_cast<size_t>(this->options_.max_threads));
+	for (int i = 0; i < this->options_.max_threads; i++)
 	{
-		this->_sprite_batches[static_cast<size_t>(i)] =
+		this->sprite_batches_[static_cast<size_t>(i)] =
 			std::make_unique<SpriteBatch>(
-				this->_device_resources->get_deferred_context(i));
-		this->_sprite_batch_ptrs[static_cast<size_t>(i)] =
-			this->_sprite_batches[static_cast<size_t>(i)].get();
+				this->device_resources_->get_deferred_context(i));
+		this->sprite_batch_ptrs_[static_cast<size_t>(i)] =
+			this->sprite_batches_[static_cast<size_t>(i)].get();
 	}
 
-	this->_common_states = std::make_unique<CommonStates>(device);
+	this->common_states_ = std::make_unique<CommonStates>(device);
 
 	// Reload the GPU-side assets into the existing RenderResources, so every
 	// borrowed SpriteSheet* and SoundBank* stays valid.
-	this->_resource_loader->set_device(device);
-	if (this->_content_loaded)
+	this->resource_loader_->set_device(device);
+	if (this->content_loaded_)
 	{
-		this->_resource_loader->reload_device_resources();
+		this->resource_loader_->reload_device_resources();
 	}
 }
 
 void Application::load_manifest(const std::string& manifest_path)
 {
-	this->_resource_loader->load_manifest(
+	this->resource_loader_->load_manifest(
 		asset_manifest_loader::load(manifest_path.c_str()));
-	this->_content_loaded = true;
+	this->content_loaded_ = true;
 }
 
 int Application::run(std::unique_ptr<State> first_state)
@@ -204,91 +204,91 @@ int Application::run(std::unique_ptr<State> first_state)
 
 void Application::quit() const
 {
-	if (this->_window != nullptr)
+	if (this->window_ != nullptr)
 	{
-		DestroyWindow(this->_window);
+		DestroyWindow(this->window_);
 	}
 }
 
 void Application::set_resolution(screen_resolution resolution)
 {
-	this->_options.resolution = resolution;
-	this->_resolution_manager->set_resolution(resolution);
+	this->options_.resolution = resolution;
+	this->resolution_manager_->set_resolution(resolution);
 
 	const MattMath::Vector2I size =
-		this->_resolution_manager->get_resolution_ivec();
-	SetWindowPos(this->_window, HWND_TOP, 0, 0, size.x, size.y,
+		this->resolution_manager_->get_resolution_ivec();
+	SetWindowPos(this->window_, HWND_TOP, 0, 0, size.x, size.y,
 		SWP_NOMOVE | SWP_NOZORDER);
 }
 
 void Application::set_fullscreen(bool fullscreen)
 {
-	this->_options.fullscreen = fullscreen;
+	this->options_.fullscreen = fullscreen;
 
 	if (fullscreen)
 	{
-		SetWindowLongPtr(this->_window, GWL_STYLE, WS_POPUP);
-		SetWindowLongPtr(this->_window, GWL_EXSTYLE, WS_EX_TOPMOST);
-		SetWindowPos(this->_window, HWND_TOP, 0, 0, 0, 0,
+		SetWindowLongPtr(this->window_, GWL_STYLE, WS_POPUP);
+		SetWindowLongPtr(this->window_, GWL_EXSTYLE, WS_EX_TOPMOST);
+		SetWindowPos(this->window_, HWND_TOP, 0, 0, 0, 0,
 			SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-		ShowWindow(this->_window, SW_SHOWMAXIMIZED);
+		ShowWindow(this->window_, SW_SHOWMAXIMIZED);
 	}
 	else
 	{
-		SetWindowLongPtr(this->_window, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-		SetWindowLongPtr(this->_window, GWL_EXSTYLE, 0);
+		SetWindowLongPtr(this->window_, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+		SetWindowLongPtr(this->window_, GWL_EXSTYLE, 0);
 
 		const MattMath::Vector2I size =
-			this->_resolution_manager->get_resolution_ivec();
-		ShowWindow(this->_window, SW_SHOWNORMAL);
-		SetWindowPos(this->_window, HWND_TOP, 0, 0, size.x, size.y,
+			this->resolution_manager_->get_resolution_ivec();
+		ShowWindow(this->window_, SW_SHOWNORMAL);
+		SetWindowPos(this->window_, HWND_TOP, 0, 0, size.x, size.y,
 			SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 	}
 }
 
 void Application::tick()
 {
-	this->_timer.Tick([&]() { this->update(); });
+	this->timer_.Tick([&]() { this->update(); });
 	this->render();
 }
 
 void Application::update()
 {
-	*this->_dt = static_cast<float>(this->_timer.GetElapsedSeconds());
+	*this->dt_ = static_cast<float>(this->timer_.GetElapsedSeconds());
 	StateContext::update();
-	std::ignore = this->_audio_engine->Update();
+	std::ignore = this->audio_engine_->Update();
 }
 
 void Application::render()
 {
 	// Nothing to draw before the first update has run.
-	if (this->_timer.GetFrameCount() == 0)
+	if (this->timer_.GetFrameCount() == 0)
 	{
 		return;
 	}
 
 	this->clear();
 
-	this->_device_resources->PIXBeginEvent(L"Render");
+	this->device_resources_->PIXBeginEvent(L"Render");
 	this->draw();
-	this->_device_resources->PIXEndEvent();
+	this->device_resources_->PIXEndEvent();
 
-	this->_device_resources->Present();
+	this->device_resources_->Present();
 }
 
 void Application::clear() const
 {
-	this->_device_resources->PIXBeginEvent(L"Clear");
+	this->device_resources_->PIXBeginEvent(L"Clear");
 
-	ID3D11DeviceContext1* context = this->_device_resources->GetD3DDeviceContext();
-	auto deferred_contexts = this->_device_resources->get_deferred_contexts();
+	ID3D11DeviceContext1* context = this->device_resources_->GetD3DDeviceContext();
+	auto deferred_contexts = this->device_resources_->get_deferred_contexts();
 	ID3D11RenderTargetView* render_target =
-		this->_device_resources->GetRenderTargetView();
+		this->device_resources_->GetRenderTargetView();
 
 	context->ClearRenderTargetView(render_target, Colors::Black);
 	context->OMSetRenderTargets(1, &render_target, nullptr);
 
-	auto const viewport = this->_device_resources->GetScreenViewport();
+	auto const viewport = this->device_resources_->GetScreenViewport();
 	context->RSSetViewports(1, &viewport);
 
 	// Every worker draws into its own deferred context, so each needs the
@@ -299,80 +299,80 @@ void Application::clear() const
 		deferred_context->RSSetViewports(1, &viewport);
 	}
 
-	this->_device_resources->PIXEndEvent();
+	this->device_resources_->PIXEndEvent();
 }
 
 void Application::on_activated() const
 {
-	if (this->_gamepad)
+	if (this->gamepad_)
 	{
-		this->_gamepad->Resume();
+		this->gamepad_->Resume();
 	}
 }
 
 void Application::on_deactivated() const
 {
-	if (this->_gamepad)
+	if (this->gamepad_)
 	{
-		this->_gamepad->Suspend();
+		this->gamepad_->Suspend();
 	}
 }
 
 void Application::on_suspending() const
 {
-	if (this->_gamepad)
+	if (this->gamepad_)
 	{
-		this->_gamepad->Suspend();
+		this->gamepad_->Suspend();
 	}
-	if (this->_audio_engine)
+	if (this->audio_engine_)
 	{
-		this->_audio_engine->Suspend();
+		this->audio_engine_->Suspend();
 	}
 }
 
 void Application::on_resuming()
 {
-	this->_timer.ResetElapsedTime();
-	if (this->_gamepad)
+	this->timer_.ResetElapsedTime();
+	if (this->gamepad_)
 	{
-		this->_gamepad->Resume();
+		this->gamepad_->Resume();
 	}
-	if (this->_audio_engine)
+	if (this->audio_engine_)
 	{
-		this->_audio_engine->Resume();
+		this->audio_engine_->Resume();
 	}
 }
 
 void Application::on_window_moved() const
 {
-	auto const bounds = this->_device_resources->GetOutputSize();
-	this->_device_resources->WindowSizeChanged(bounds.right, bounds.bottom);
+	auto const bounds = this->device_resources_->GetOutputSize();
+	this->device_resources_->WindowSizeChanged(bounds.right, bounds.bottom);
 }
 
 void Application::on_display_change() const
 {
-	this->_device_resources->UpdateColorSpace();
+	this->device_resources_->UpdateColorSpace();
 }
 
 void Application::on_window_size_changed(int width, int height)
 {
-	std::ignore = this->_device_resources->WindowSizeChanged(width, height);
+	std::ignore = this->device_resources_->WindowSizeChanged(width, height);
 }
 
 void Application::OnDeviceLost()
 {
 	// Only D3D objects. Audio is not a device resource, and tearing down the
 	// sound banks here left every object holding a freed SoundBank*.
-	for (auto& sprite_batch : this->_sprite_batches)
+	for (auto& sprite_batch : this->sprite_batches_)
 	{
 		sprite_batch.reset();
 	}
-	this->_sprite_batch_ptrs.assign(this->_sprite_batch_ptrs.size(), nullptr);
+	this->sprite_batch_ptrs_.assign(this->sprite_batch_ptrs_.size(), nullptr);
 
-	this->_common_states.reset();
+	this->common_states_.reset();
 
-	this->_render_resources->reset_all_textures();
-	this->_render_resources->reset_all_sprite_fonts();
+	this->render_resources_->reset_all_textures();
+	this->render_resources_->reset_all_sprite_fonts();
 }
 
 void Application::OnDeviceRestored()
@@ -382,55 +382,55 @@ void Application::OnDeviceRestored()
 
 DX::DeviceResources* Application::device_resources() const
 {
-	return this->_device_resources.get();
+	return this->device_resources_.get();
 }
 RenderResources* Application::render_resources() const
 {
-	return this->_render_resources.get();
+	return this->render_resources_.get();
 }
 AudioResources* Application::audio_resources() const
 {
-	return this->_audio_resources.get();
+	return this->audio_resources_.get();
 }
 ResourceLoader* Application::resource_loader() const
 {
-	return this->_resource_loader.get();
+	return this->resource_loader_.get();
 }
 ResolutionManager* Application::resolution_manager() const
 {
-	return this->_resolution_manager.get();
+	return this->resolution_manager_.get();
 }
 ViewportManager* Application::viewport_manager() const
 {
-	return this->_viewport_manager.get();
+	return this->viewport_manager_.get();
 }
 ThreadPool* Application::thread_pool() const
 {
-	return this->_thread_pool.get();
+	return this->thread_pool_.get();
 }
 const Partitioner* Application::partitioner() const
 {
-	return this->_partitioner.get();
+	return this->partitioner_.get();
 }
 GamePad* Application::gamepad() const
 {
-	return this->_gamepad.get();
+	return this->gamepad_.get();
 }
 HWND Application::window() const
 {
-	return this->_window;
+	return this->window_;
 }
 CommonStates* Application::common_states() const
 {
-	return this->_common_states.get();
+	return this->common_states_.get();
 }
 std::vector<SpriteBatch*>* Application::sprite_batches() const
 {
-	return const_cast<std::vector<SpriteBatch*>*>(&this->_sprite_batch_ptrs);
+	return const_cast<std::vector<SpriteBatch*>*>(&this->sprite_batch_ptrs_);
 }
 const float* Application::dt() const
 {
-	return this->_dt.get();
+	return this->dt_.get();
 }
 
 // Every message either forwards to the Application or is Windows housekeeping.
@@ -533,8 +533,8 @@ LRESULT CALLBACK Application::window_proc(HWND window, UINT message,
 		if (l_param && app)
 		{
 			auto info = reinterpret_cast<MINMAXINFO*>(l_param);
-			info->ptMinTrackSize.x = app->_options.min_window_width;
-			info->ptMinTrackSize.y = app->_options.min_window_height;
+			info->ptMinTrackSize.x = app->options_.min_window_width;
+			info->ptMinTrackSize.y = app->options_.min_window_height;
 		}
 		break;
 

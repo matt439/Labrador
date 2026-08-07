@@ -6,8 +6,8 @@ using namespace MattMath;
 
 SoundBank::SoundBank(std::unique_ptr<WaveBank> wave_bank,
 	Registry<SoundEffectInstance> instances) :
-	_wave_bank(std::move(wave_bank)),
-	_sound_effect_instances(std::move(instances))
+	wave_bank_(std::move(wave_bank)),
+	sound_effect_instances_(std::move(instances))
 {
 
 }
@@ -18,7 +18,7 @@ SoundBank::WaveHandle SoundBank::resolve_wave(
 	// WaveBank::Find returns -1 for a name the bank does not have, which is
 	// also what an unresolved Handle holds - so this has to be caught here
 	// rather than handed on as a handle that looks fine until it is read.
-	const int index = this->_wave_bank->Find(wave_name.c_str());
+	const int index = this->wave_bank_->Find(wave_name.c_str());
 	if (index < 0)
 	{
 		throw std::out_of_range(
@@ -30,7 +30,7 @@ SoundBank::WaveHandle SoundBank::resolve_wave(
 SoundBank::EffectHandle SoundBank::resolve_effect(
 	const std::string& effect_name) const
 {
-	return this->_sound_effect_instances.resolve(effect_name);
+	return this->sound_effect_instances_.resolve(effect_name);
 }
 
 void SoundBank::play_wave(WaveHandle wave, float volume, float pitch,
@@ -43,7 +43,7 @@ void SoundBank::play_wave(WaveHandle wave, float volume, float pitch,
 	}
 
 	clamp_levels(volume, pitch, pan);
-	this->_wave_bank->Play(static_cast<unsigned int>(wave.index()),
+	this->wave_bank_->Play(static_cast<unsigned int>(wave.index()),
 		volume, pitch, pan);
 }
 
@@ -97,7 +97,7 @@ SoundEffectInstance* SoundBank::get_sound_effect_instance(
 {
 	// A bounds check and an indexed load, and the registry's own throw naming
 	// the instance if the handle was never resolved.
-	return this->_sound_effect_instances.get(effect);
+	return this->sound_effect_instances_.get(effect);
 }
 void SoundBank::clamp_levels(float& volume, float& pitch, float& pan)
 {

@@ -4,43 +4,43 @@ using namespace MattMath;
 
 Vector2I ResolutionManager::get_resolution_ivec() const
 {
-	return this->convert_resolution_to_ivec(this->_resolution);
+	return this->convert_resolution_to_ivec(this->resolution_);
 }
 
 Vector2F ResolutionManager::get_resolution_vec() const
 {
-    Vector2F result = this->convert_resolution_to_vec(this->_resolution);
+    Vector2F result = this->convert_resolution_to_vec(this->resolution_);
     return result;
 }
 
 std::string ResolutionManager::get_resolution_string() const
 {
-	return this->convert_resolution_to_string(this->_resolution);
+	return this->convert_resolution_to_string(this->resolution_);
 }
 
 screen_resolution ResolutionManager::get_resolution() const
 {
-	return this->_resolution;
+	return this->resolution_;
 }
 
 void ResolutionManager::set_resolution(screen_resolution resolution)
 {
-	this->_resolution = resolution;
+	this->resolution_ = resolution;
 }
 
 void ResolutionManager::set_resolution(const std::string& resolution)
 {
-	this->_resolution = this->convert_string_to_resolution(resolution);
+	this->resolution_ = this->convert_string_to_resolution(resolution);
 }
 
 void ResolutionManager::set_resolution(const Vector2F& resolution)
 {
-    this->_resolution = this->convert_vec_to_resolution(resolution);
+    this->resolution_ = this->convert_vec_to_resolution(resolution);
 }
 
 void ResolutionManager::set_resolution(const Vector2I& resolution)
 {
-    this->_resolution = this->convert_ivec_to_resolution(resolution);
+    this->resolution_ = this->convert_ivec_to_resolution(resolution);
 }
 
 Vector2I ResolutionManager::convert_resolution_to_ivec(

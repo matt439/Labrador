@@ -62,12 +62,12 @@ protected:
 		DirectX::SpriteEffects effects) const;
 
 private:
-	const float* _dt = nullptr;
-	SpriteSheet::strip_handle _strip;
-	int _frame_index = 0;
-	bool _paused = false;
-	float _time_elapsed = 0.0f;
-	float _frame_time = 0.0f;
+	const float* dt_ = nullptr;
+	SpriteSheet::strip_handle strip_;
+	int frame_index_ = 0;
+	bool paused_ = false;
+	float time_elapsed_ = 0.0f;
+	float frame_time_ = 0.0f;
 	const AnimationStrip& get_animation_strip() const;
 	const RECT* get_source_rectangle() const;
 };
