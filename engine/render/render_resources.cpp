@@ -24,35 +24,35 @@ RenderResources::SpriteSheetHandle RenderResources::resolve_sprite_sheet(
 	return this->sprite_sheets_.resolve(sprite_sheet_name);
 }
 
-ID3D11ShaderResourceView* RenderResources::get_texture(
+ID3D11ShaderResourceView* RenderResources::texture(
 	TextureHandle texture) const
 {
 	return this->textures_.get(texture);
 }
 
-SpriteFont* RenderResources::get_sprite_font(FontHandle font) const
+SpriteFont* RenderResources::sprite_font(FontHandle font) const
 {
 	return this->sprite_fonts_.get(font);
 }
 
-SpriteSheet* RenderResources::get_sprite_sheet(
+SpriteSheet* RenderResources::sprite_sheet(
 	SpriteSheetHandle sprite_sheet) const
 {
 	return this->sprite_sheets_.get(sprite_sheet);
 }
 
-ID3D11ShaderResourceView* RenderResources::get_texture(
+ID3D11ShaderResourceView* RenderResources::texture(
 	const std::string& texture_name) const
 {
 	return this->textures_.get(texture_name);
 }
 
-SpriteFont* RenderResources::get_sprite_font(const std::string& font_name) const
+SpriteFont* RenderResources::sprite_font(const std::string& font_name) const
 {
 	return this->sprite_fonts_.get(font_name);
 }
 
-SpriteSheet* RenderResources::get_sprite_sheet(
+SpriteSheet* RenderResources::sprite_sheet(
 	const std::string& sprite_sheet_name) const
 {
 	return this->sprite_sheets_.get(sprite_sheet_name);

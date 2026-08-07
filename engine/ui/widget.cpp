@@ -10,7 +10,7 @@ MObject::MObject(const std::string& name, bool hidden) :
 {
 
 }
-const std::string& MObject::get_name() const
+const std::string& MObject::name() const
 {
 	return this->name_;
 }
@@ -22,7 +22,7 @@ void MObject::set_hidden(bool hidden)
 {
 	this->hidden_ = hidden;
 }
-bool MObject::get_hidden() const
+bool MObject::hidden() const
 {
 	return this->hidden_;
 }
@@ -38,7 +38,7 @@ MContainer::MContainer(const std::string& name) :
 }
 void MContainer::add_child(MObject* child)
 {
-	this->children_.push_back(std::make_pair(child->get_name(), child));
+	this->children_.push_back(std::make_pair(child->name(), child));
 }
 void MContainer::remove_child(const std::string& name)
 {
@@ -66,11 +66,11 @@ void MContainer::remove_all_children()
 {
 	this->children_.clear();
 }
-size_t MContainer::get_child_count() const
+size_t MContainer::child_count() const
 {
 	return this->children_.size();
 }
-std::vector<std::pair<std::string, MObject*>> MContainer::get_children()
+std::vector<std::pair<std::string, MObject*>> MContainer::children()
 {
 	return this->children_;
 }
@@ -183,7 +183,7 @@ void MTexture::scale_size_and_position(const Vector2F& scale)
 }
 void MTexture::draw(SpriteBatch* sprite_batch, const Camera& camera)
 {
-	if (this->get_hidden())
+	if (this->hidden())
 	{
 		return;
 	}
@@ -191,13 +191,13 @@ void MTexture::draw(SpriteBatch* sprite_batch, const Camera& camera)
 }
 void MTexture::draw(SpriteBatch* sprite_batch)
 {
-	if (this->get_hidden())
+	if (this->hidden())
 	{
 		return;
 	}
 	this->TextureObject::draw(sprite_batch, this->rectangle_);
 }
-const RectangleF& MTexture::get_rectangle() const
+const RectangleF& MTexture::rectangle() const
 {
 	return this->rectangle_;
 }
@@ -251,12 +251,12 @@ MText::MText(const std::string& name,
 }
 void MText::scale_size_and_position(const Vector2F& scale)
 {
-	this->set_position(this->get_position() * scale);
-	this->set_scale(this->get_scale() * scale.x);
+	this->set_position(this->position() * scale);
+	this->set_scale(this->scale() * scale.x);
 }
 void MText::draw(SpriteBatch* sprite_batch, const Camera& camera)
 {
-	if (this->get_hidden())
+	if (this->hidden())
 	{
 		return;
 	}
@@ -264,7 +264,7 @@ void MText::draw(SpriteBatch* sprite_batch, const Camera& camera)
 }
 void MText::draw(SpriteBatch* sprite_batch)
 {
-	if (this->get_hidden())
+	if (this->hidden())
 	{
 		return;
 	}
@@ -314,14 +314,14 @@ MTextDropShadow::MTextDropShadow(const std::string& name,
 
 void MTextDropShadow::scale_size_and_position(const Vector2F& scale)
 {
-	this->set_position(this->get_position() * scale);
-	this->set_scale(this->get_scale() * scale.x);
-	this->set_shadow_offset(this->get_shadow_offset() * scale);
-	this->set_shadow_scale(this->get_shadow_scale() * scale.x);
+	this->set_position(this->position() * scale);
+	this->set_scale(this->scale() * scale.x);
+	this->set_shadow_offset(this->shadow_offset() * scale);
+	this->set_shadow_scale(this->shadow_scale() * scale.x);
 }
 void MTextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera)
 {
-	if (this->get_hidden())
+	if (this->hidden())
 	{
 		return;
 	}
@@ -329,7 +329,7 @@ void MTextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera)
 }
 void MTextDropShadow::draw(SpriteBatch* sprite_batch)
 {
-	if (this->get_hidden())
+	if (this->hidden())
 	{
 		return;
 	}

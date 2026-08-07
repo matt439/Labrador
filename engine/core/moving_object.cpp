@@ -12,15 +12,15 @@ MovingObject::MovingObject(const Vector2F& velocity,
 
 }
 
-const Vector2F& MovingObject::get_velocity() const
+const Vector2F& MovingObject::velocity() const
 {
 	return this->velocity_;
 }
-float MovingObject::get_velocity_x() const
+float MovingObject::velocity_x() const
 {
 	return this->velocity_.x;
 }
-float MovingObject::get_velocity_y() const
+float MovingObject::velocity_y() const
 {
 	return this->velocity_.y;
 }
@@ -48,27 +48,27 @@ void MovingObject::alter_velocity_y(float y)
 {
 	this->velocity_.y += y;
 }
-Vector2F MovingObject::get_unit_velocity() const
+Vector2F MovingObject::unit_velocity() const
 {
 	return this->velocity_.normalized();
 }
-float MovingObject::get_velocity_magnitude() const
+float MovingObject::velocity_magnitude() const
 {
 	return this->velocity_.length();
 }
-float MovingObject::get_velocity_angle() const
+float MovingObject::velocity_angle() const
 {
 	return atan2(this->velocity_.y, this->velocity_.x);
 }
-const Vector2F& MovingObject::get_dx() const
+const Vector2F& MovingObject::dx() const
 {
 	return this->dx_;
 }
-float MovingObject::get_dx_x() const
+float MovingObject::dx_x() const
 {
 	return this->dx_.x;
 }
-float MovingObject::get_dx_y() const
+float MovingObject::dx_y() const
 {
 	return this->dx_.y;
 }
@@ -96,19 +96,19 @@ void MovingObject::alter_dx_y(float y)
 {
 	this->dx_.y += y;
 }
-Vector2F MovingObject::get_unit_dx() const
+Vector2F MovingObject::unit_dx() const
 {
 	return this->dx_.normalized();
 }
-float MovingObject::get_dx_magnitude() const
+float MovingObject::dx_magnitude() const
 {
 	return this->dx_.length();
 }
-float MovingObject::get_dx_angle() const
+float MovingObject::dx_angle() const
 {
 	return atan2(this->dx_.y, this->dx_.x);
 }
-float MovingObject::get_rotation() const
+float MovingObject::rotation() const
 {
 	return this->rotation_;
 }

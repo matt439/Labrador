@@ -39,10 +39,10 @@ public:
 		float scale) const;
 
 protected:
-	const std::string& get_text() const;
-	RenderResources::FontHandle get_font() const;
-	const mattmath::Vector2F& get_position() const;
-	float get_scale() const;
+	const std::string& text() const;
+	RenderResources::FontHandle font() const;
+	const mattmath::Vector2F& position() const;
+	float scale() const;
 
 	virtual void set_text(const std::string& text);
 	void set_font(const std::string& font_name);

@@ -23,9 +23,9 @@ public:
 	virtual void draw(DirectX::SpriteBatch* sprite_batc, const mattmath::Camera& camera);
 	virtual void draw(DirectX::SpriteBatch* sprite_batc);
 
-	mattmath::Vector2F get_shadow_offset() const;
-	mattmath::Colour get_shadow_color() const;
-	float get_shadow_scale() const;
+	mattmath::Vector2F shadow_offset() const;
+	mattmath::Colour shadow_color() const;
+	float shadow_scale() const;
 
 	void set_shadow_offset(const mattmath::Vector2F& offset);
 	void set_shadow_color(const mattmath::Colour& color);

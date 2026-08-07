@@ -23,7 +23,7 @@ HelloState::HelloState(Application* app) : app_(app)
 void HelloState::init()
 {
 	const Vector2F resolution =
-		this->app_->resolution_manager()->get_resolution_vec();
+		this->app_->resolution_manager()->resolution_vec();
 	this->position_ = Vector2F(resolution.x * 0.5f - 120.0f,
 		resolution.y * 0.5f);
 
@@ -65,7 +65,7 @@ void HelloState::draw()
 	// worker 0 and executes its list immediately. A game with a scene's worth
 	// of objects fans the same shape across every context the shell created.
 	DX::DeviceResources* device = this->app_->device_resources();
-	ID3D11DeviceContext* deferred = device->get_deferred_context(0);
+	ID3D11DeviceContext* deferred = device->deferred_context(0);
 	SpriteBatch* sprite_batch = this->app_->sprite_batches()->at(0);
 
 	sprite_batch->Begin(SpriteSortMode_Deferred);

@@ -6,12 +6,12 @@ AudioResources::SoundBankHandle AudioResources::resolve_sound_bank(
 	return this->sound_banks_.resolve(sound_bank_name);
 }
 
-SoundBank* AudioResources::get_sound_bank(SoundBankHandle sound_bank) const
+SoundBank* AudioResources::sound_bank(SoundBankHandle sound_bank) const
 {
 	return this->sound_banks_.get(sound_bank);
 }
 
-SoundBank* AudioResources::get_sound_bank(
+SoundBank* AudioResources::sound_bank(
 	const std::string& sound_bank_name) const
 {
 	return this->sound_banks_.get(sound_bank_name);

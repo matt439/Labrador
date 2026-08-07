@@ -30,12 +30,12 @@ SpriteSheet::strip_handle SpriteSheet::resolve_animation_strip(
 	return this->animation_strips_.resolve(name);
 }
 
-const SpriteFrame& SpriteSheet::get_sprite_frame(frame_handle frame) const
+const SpriteFrame& SpriteSheet::sprite_frame(frame_handle frame) const
 {
 	return this->sprite_frames_.get(frame);
 }
 
-const AnimationStrip& SpriteSheet::get_animation_strip(strip_handle strip) const
+const AnimationStrip& SpriteSheet::animation_strip(strip_handle strip) const
 {
 	return this->animation_strips_.get(strip);
 }
@@ -52,11 +52,11 @@ void SpriteSheet::draw(SpriteBatch* sprite_batch,
 {
 	sprite_batch->Draw(
 		this->texture_,
-		position.get_xm_vector(),
-		this->get_sprite_frame(frame).get_source_rectangle(),
-		color.get_xm_vector(),
+		position.xm_vector(),
+		this->sprite_frame(frame).source_rectangle(),
+		color.xm_vector(),
 		rotation,
-		origin.get_xm_vector(),
+		origin.xm_vector(),
 		scale,
 		effects,
 		layer_depth);
@@ -73,11 +73,11 @@ void SpriteSheet::draw(SpriteBatch* sprite_batch,
 {
 	sprite_batch->Draw(
 		this->texture_,
-		destination_rectangle.get_win_rect(),
-		this->get_sprite_frame(frame).get_source_rectangle(),
-		color.get_xm_vector(),
+		destination_rectangle.win_rect(),
+		this->sprite_frame(frame).source_rectangle(),
+		color.xm_vector(),
 		rotation,
-		origin.get_xm_vector(),
+		origin.xm_vector(),
 		effects,
 		layer_depth);
 }
@@ -94,11 +94,11 @@ void SpriteSheet::draw(SpriteBatch* sprite_batch,
 {
 	sprite_batch->Draw(
 		this->texture_,
-		position.get_xm_vector(),
+		position.xm_vector(),
 		source_rect,
-		color.get_xm_vector(),
+		color.xm_vector(),
 		rotation,
-		origin.get_xm_vector(),
+		origin.xm_vector(),
 		scale,
 		effects,
 		layer_depth);
@@ -115,11 +115,11 @@ void SpriteSheet::draw(SpriteBatch* sprite_batch,
 {
 	sprite_batch->Draw(
 		this->texture_,
-		destination_rectangle.get_win_rect(),
+		destination_rectangle.win_rect(),
 		source_rect,
-		color.get_xm_vector(),
+		color.xm_vector(),
 		rotation,
-		origin.get_xm_vector(),
+		origin.xm_vector(),
 		effects,
 		layer_depth);
 }

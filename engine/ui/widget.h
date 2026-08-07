@@ -9,12 +9,12 @@ class MObject : public IGameObject
 public:
 	MObject() = default;
 	explicit MObject(const std::string& name, bool hidden = false);
-	const std::string& get_name() const;
+	const std::string& name() const;
 
 	void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Viewport& viewport);
 
 	void set_hidden(bool hidden);
-	bool get_hidden() const;
+	bool hidden() const;
 
 	virtual void scale_size_and_position(const mattmath::Vector2F& scale) = 0;
 
@@ -36,8 +36,8 @@ public:
 	void remove_child(const std::string& name);
 	void remove_child(const MObject* child);
 	void remove_all_children();
-	size_t get_child_count() const;
-	std::vector<std::pair<std::string, MObject*>> get_children();
+	size_t child_count() const;
+	std::vector<std::pair<std::string, MObject*>> children();
 
 	void scale_objects_to_new_resolution(
 		const mattmath::Vector2F& prev_resolution,
@@ -103,7 +103,7 @@ public:
 	void set_size(const mattmath::Vector2F& size);
 	void set_position_from_top_right_origin(const mattmath::Vector2F& position);
 
-	const mattmath::RectangleF& get_rectangle() const;
+	const mattmath::RectangleF& rectangle() const;
 private:
 	mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;
 };

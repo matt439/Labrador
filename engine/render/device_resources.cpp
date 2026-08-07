@@ -757,13 +757,13 @@ void DeviceResources::create_deferred_contexts(int num)
     }
 }
 
-std::vector<ID3D11DeviceContext*>* DeviceResources::get_deferred_contexts() const noexcept
+std::vector<ID3D11DeviceContext*>* DeviceResources::deferred_contexts() const noexcept
 {
     return this->deferred_contexts_.get();
 }
 
 ID3D11DeviceContext*
-DeviceResources::get_deferred_context(int index) const
+DeviceResources::deferred_context(int index) const
 {
     if (this->deferred_contexts_ == nullptr ||
         index < 0 ||

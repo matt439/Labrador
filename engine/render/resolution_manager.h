@@ -8,10 +8,10 @@ class ResolutionManager
 {
 public:
     ResolutionManager() = default;
-    mattmath::Vector2I get_resolution_ivec() const;
-    mattmath::Vector2F get_resolution_vec() const;
-    std::string get_resolution_string() const;
-    ScreenResolution get_resolution() const;
+    mattmath::Vector2I resolution_ivec() const;
+    mattmath::Vector2F resolution_vec() const;
+    std::string resolution_string() const;
+    ScreenResolution resolution() const;
     void set_resolution(ScreenResolution resolution);
     void set_resolution(const std::string& resolution);
     void set_resolution(const mattmath::Vector2F& resolution);

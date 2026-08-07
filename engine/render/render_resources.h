@@ -55,16 +55,16 @@ public:
 	// Per-draw, and const and non-mutating because they are called from
 	// thread-pool workers. Each throws std::out_of_range if the handle is
 	// unresolved or its slot has been released.
-	ID3D11ShaderResourceView* get_texture(TextureHandle texture) const;
-	DirectX::SpriteFont* get_sprite_font(FontHandle font) const;
-	SpriteSheet* get_sprite_sheet(SpriteSheetHandle sprite_sheet) const;
+	ID3D11ShaderResourceView* texture(TextureHandle texture) const;
+	DirectX::SpriteFont* sprite_font(FontHandle font) const;
+	SpriteSheet* sprite_sheet(SpriteSheetHandle sprite_sheet) const;
 
 	// The by-name reads, for load-time callers that have a name and want the
 	// resource now - the loader seating a texture into its sheet, say. Nothing
 	// on the draw path may use these.
-	ID3D11ShaderResourceView* get_texture(const std::string& texture_name) const;
-	DirectX::SpriteFont* get_sprite_font(const std::string& font_name) const;
-	SpriteSheet* get_sprite_sheet(const std::string& sprite_sheet_name) const;
+	ID3D11ShaderResourceView* texture(const std::string& texture_name) const;
+	DirectX::SpriteFont* sprite_font(const std::string& font_name) const;
+	SpriteSheet* sprite_sheet(const std::string& sprite_sheet_name) const;
 
 	void add_texture(const std::string& texture_name,
 		ID3D11ShaderResourceView* texture);

@@ -20,7 +20,7 @@ void AnimatedSprite::draw(SpriteBatch* sprite_batch,
 	float layer_depth) const
 {
 	const RECT* source_rect =
-		this->animation_strip_->get_frame_rect(this->frame_index_);
+		this->animation_strip_->frame_rect(this->frame_index_);
 
 	this->sprite_sheet_->draw(
 		sprite_batch,
@@ -42,7 +42,7 @@ void AnimatedSprite::draw(SpriteBatch* sprite_batch,
 	float layer_depth) const
 {
 	const RECT* source_rect =
-		this->animation_strip_->get_frame_rect(this->frame_index_);
+		this->animation_strip_->frame_rect(this->frame_index_);
 
 	this->sprite_sheet_->draw(
 		sprite_batch,
@@ -62,13 +62,13 @@ void AnimatedSprite::update()
 		return;
 	}
 	this->time_elapsed_ += *this->dt_;
-	float frame_time = this->animation_strip_->get_frame_time();
+	float frame_time = this->animation_strip_->frame_time();
 	if (this->time_elapsed_ > frame_time)
 	{
 		this->frame_index_++;
-		if (this->frame_index_ >= this->animation_strip_->get_frame_count())
+		if (this->frame_index_ >= this->animation_strip_->frame_count())
 		{
-			if (this->animation_strip_->get_looping())
+			if (this->animation_strip_->looping())
 			{
 				this->frame_index_ = 0;
 			}
@@ -106,13 +106,13 @@ void AnimatedSprite::set_animation_strip(SpriteSheet* sprite_sheet,
 	// Resolved here and kept as a pointer rather than a handle: this class
 	// already holds the sheet, and a sheet's strip table is built once by the
 	// loader and never grows, so the reference stays good for its lifetime.
-	this->animation_strip_ = &sprite_sheet->get_animation_strip(
+	this->animation_strip_ = &sprite_sheet->animation_strip(
 		sprite_sheet->resolve_animation_strip(animation_strip_name));
 }
 void AnimatedSprite::set_frame_index(int frame_index)
 {
 	if (frame_index < 0 ||
-		frame_index >= this->animation_strip_->get_frame_count())
+		frame_index >= this->animation_strip_->frame_count())
 	{
 		throw std::exception("Invalid frame index.");
 	}

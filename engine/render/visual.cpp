@@ -30,7 +30,7 @@ Visual::Visual(const std::string& sheet_name,
 	TextureObject(sheet_name, frame_name, render_resources,
 		color, rotation, origin, effects, layer_depth)
 {
-	this->rectangle_ = rect_rotated.get_rectangle_rotated_to_axis();
+	this->rectangle_ = rect_rotated.rectangle_rotated_to_axis();
 }
 
 

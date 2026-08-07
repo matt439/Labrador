@@ -68,6 +68,6 @@ private:
 	bool paused_ = false;
 	float time_elapsed_ = 0.0f;
 	float frame_time_ = 0.0f;
-	const AnimationStrip& get_animation_strip() const;
-	const RECT* get_source_rectangle() const;
+	const AnimationStrip& animation_strip() const;
+	const RECT* source_rectangle() const;
 };

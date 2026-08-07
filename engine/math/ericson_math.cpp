@@ -282,10 +282,10 @@ using namespace EricsonMath;
 bool EricsonMath::test_AABB_AABB(const RectangleF& a,
 	const RectangleF& b)
 {
-	Vector2F a_min = a.get_top_left();
-	Vector2F a_max = a.get_bottom_right();
-	Vector2F b_min = b.get_top_left();
-	Vector2F b_max = b.get_bottom_right();
+	Vector2F a_min = a.top_left();
+	Vector2F a_max = a.bottom_right();
+	Vector2F b_min = b.top_left();
+	Vector2F b_max = b.bottom_right();
 	
 	// Exit with no intersection if separated along an axis
 	if (a_max.x < b_min.x || a_min.x > b_max.x) return 0;
@@ -297,10 +297,10 @@ bool EricsonMath::test_AABB_AABB(const RectangleF& a,
 bool EricsonMath::test_circle_circle(const Circle& a, const Circle& b)
 {
 	// Calculate squared distance between centers
-	Vector2F d = a.center - b.center;
+	Vector2F d = a.center() - b.center();
 	float dist2 = Vector2F::dot(d, d);
 	// Spheres intersect if squared distance is less than squared sum of radii
-	float radiusSum = a.radius + b.radius;
+	float radiusSum = a.radius() + b.radius();
 	return dist2 <= radiusSum * radiusSum;
 }
 
@@ -367,10 +367,10 @@ float EricsonMath::clamp(float n, float min, float max)
 bool EricsonMath::test_circle_AABB(const Circle& s, const RectangleF& b)
 {
 	// Compute squared distance between sphere center and AABB
-	float sqDist = sq_dist_point_AABB(s.center, b);
+	float sqDist = sq_dist_point_AABB(s.center(), b);
 	// Sphere and AABB intersect if the (squared) distance
 	// between them is less than the (squared) sphere radius
-	return sqDist <= s.radius * s.radius;
+	return sqDist <= s.radius() * s.radius();
 }
 
 // Returns true if sphere s intersects AABB b, false otherwise.
@@ -379,19 +379,19 @@ bool EricsonMath::test_circle_AABB(const Circle& s,
 	const RectangleF& b, Point2F& p)
 {
 	// Find point p on AABB closest to sphere center
-	closest_pt_point_AABB(s.center, b, p);
+	closest_pt_point_AABB(s.center(), b, p);
 	// Sphere and AABB intersect if the (squared) distance from sphere
 	// center to point p is less than the (squared) sphere radius
-	Vector2F v = p - s.center;
-	return Vector2F::dot(v, v) <= s.radius * s.radius;
+	Vector2F v = p - s.center();
+	return Vector2F::dot(v, v) <= s.radius() * s.radius();
 }
 
 // Computes the square distance between a point p and an AABB b
 float EricsonMath::sq_dist_point_AABB(const Point2F& p, const RectangleF& b)
 {
 	float sqDist = 0.0f;
-	Vector2F b_min = b.get_top_left();
-	Vector2F b_max = b.get_bottom_right();
+	Vector2F b_min = b.top_left();
+	Vector2F b_max = b.bottom_right();
 
 	// For each axis count any excess distance outside box extents
 	float v = p.x;
@@ -422,8 +422,8 @@ void EricsonMath::closest_pt_point_AABB(const Point2F& p,
 {
 	// For each coordinate axis, if the point coordinate value is
 	// outside box, clamp it to the box, else keep it as is
-	Vector2F b_min = b.get_top_left();
-	Vector2F b_max = b.get_bottom_right();
+	Vector2F b_min = b.top_left();
+	Vector2F b_max = b.bottom_right();
 	float v = p.x;
 	if (v < b_min.x)
 	{
@@ -452,8 +452,8 @@ void EricsonMath::closest_pt_point_AABB(const Point2F& p,
 //{
 //	float sqDist = 0.0f;
 //
-//	Vector2F b_min = b.get_top_left();
-//	Vector2F b_max = b.get_bottom_right();
+//	Vector2F b_min = b.top_left();
+//	Vector2F b_max = b.bottom_right();
 //	float v = p.x;
 //	if (v < b_min.x)
 //	{
@@ -483,11 +483,11 @@ bool EricsonMath::test_circle_triangle(const Circle& s, const Point2F& a,
 	const Point2F& b, const Point2F& c, Point2F& p)
 {
 	// Find point P on triangle ABC closest to sphere center
-	p = closest_pt_point_triangle(s.center, a, b, c);
+	p = closest_pt_point_triangle(s.center(), a, b, c);
 	// Sphere and triangle intersect if the (squared) distance from sphere
 	// center to point p is less than the (squared) sphere radius
-	Vector2F v = p - s.center;
-	return Vector2F::dot(v, v) <= s.radius * s.radius;
+	Vector2F v = p - s.center();
+	return Vector2F::dot(v, v) <= s.radius() * s.radius();
 }
 
 //bool EricsonMath::test_triangle_AABB(const Point2F& v0,
@@ -563,10 +563,10 @@ bool EricsonMath::intersect_moving_AABB_AABB(const AABB& a, const AABB& b,
 	//	if (tfirst > tlast) return 0;
 	//}
 
-	Vector2F a_min = a.get_top_left();
-	Vector2F a_max = a.get_bottom_right();
-	Vector2F b_min = b.get_top_left();
-	Vector2F b_max = b.get_bottom_right();
+	Vector2F a_min = a.top_left();
+	Vector2F a_max = a.bottom_right();
+	Vector2F b_min = b.top_left();
+	Vector2F b_max = b.bottom_right();
 
 	if (v.x < 0.0f) {
 		if (b_max.x < a_min.x)
@@ -643,8 +643,8 @@ bool EricsonMath::intersect_moving_AABB_AABB(const AABB& a, const AABB& b,
 bool EricsonMath::test_segment_AABB(const Point2F& p0,
 	const Point2F p1, const AABB& b)
 {
-	Vector2F b_min = b.get_top_left();
-	Vector2F b_max = b.get_bottom_right();
+	Vector2F b_min = b.top_left();
+	Vector2F b_max = b.bottom_right();
 	
 	Point2F c = (b_min + b_max) * 0.5f; // Box center-point
 	Vector2F e = b_max - c; // Box halflength extents
@@ -767,21 +767,21 @@ void EricsonMath::closest_pt_point_segment(const Point2F& c, const Point2F& a,
 
 void EricsonMath::closest_pt_point_OBB(const Point2F& p, const OBB& b, Point2F& q)
 {
-	Vector2F d = p - b.get_center();
+	Vector2F d = p - b.center();
 	// Start result at center of box; make steps from there
-	q = b.get_center();
+	q = b.center();
 	// For each OBB axis... (2 in 2D - the textbook version this came from is 3D,
-	// and OBB::get_axis throws for any index above 1)
+	// and OBB::axis throws for any index above 1)
 	for (int i = 0; i < 2; i++)
 	{
 		// ...project d onto that axis to get the distance
 		// along the axis of d from the box center
-		float dist = Vector2F::dot(d, b.get_axis(i));
+		float dist = Vector2F::dot(d, b.axis(i));
 		// If distance farther than the box extents, clamp to the box
-		if (dist > b.get_half_width(i)) dist = b.get_half_width(i);
-		if (dist < -b.get_half_width(i)) dist = -b.get_half_width(i);
+		if (dist > b.half_width(i)) dist = b.half_width(i);
+		if (dist < -b.half_width(i)) dist = -b.half_width(i);
 		// Step that distance along the axis to get world coordinate
-		q += dist * b.get_axis(i);
+		q += dist * b.axis(i);
 	}
 }
 

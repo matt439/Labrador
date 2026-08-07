@@ -18,7 +18,7 @@ SpriteFrame::SpriteFrame(const Vector2F& position, const Vector2F& size,
 	this->rotated_ = rotated;
 }
 
-const RECT* SpriteFrame::get_source_rectangle() const
+const RECT* SpriteFrame::source_rectangle() const
 {
 	return &this->source_rectangle_;
 }
@@ -26,12 +26,12 @@ const RECT* SpriteFrame::get_source_rectangle() const
 
 void SpriteFrame::set_source_rectangle(const RectangleI& source_rectangle)
 {
-	this->source_rectangle_ = source_rectangle.get_win_rect();
+	this->source_rectangle_ = source_rectangle.win_rect();
 }
 
 void SpriteFrame::set_source_rectangle(const Vector2F& position,
 	const Vector2F& size)
 {
 	auto source_rectan = RectangleI(position, size);
-	this->source_rectangle_ = source_rectan.get_win_rect();
+	this->source_rectangle_ = source_rectan.win_rect();
 }

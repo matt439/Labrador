@@ -98,12 +98,12 @@ void ThreadPool::record_exception(std::exception_ptr exception)
     }
 }
 
-int ThreadPool::get_min_num_threads() const
+int ThreadPool::min_num_threads() const
 {
     return this->min_num_threads_;
 }
 
-int ThreadPool::get_max_num_threads() const
+int ThreadPool::max_num_threads() const
 {
     return this->max_num_threads_;
 }

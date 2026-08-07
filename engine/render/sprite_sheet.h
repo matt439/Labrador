@@ -32,8 +32,8 @@ public:
 	strip_handle resolve_animation_strip(const std::string& name) const;
 
 	// Per-frame. No name, no map: an index into a contiguous table.
-	const SpriteFrame& get_sprite_frame(frame_handle frame) const;
-	const AnimationStrip& get_animation_strip(strip_handle strip) const;
+	const SpriteFrame& sprite_frame(frame_handle frame) const;
+	const AnimationStrip& animation_strip(strip_handle strip) const;
 
 	// Points the sheet at a newly created texture after a device restore. The
 	// frame and animation-strip tables are device-independent and survive, so

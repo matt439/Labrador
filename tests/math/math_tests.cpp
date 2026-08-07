@@ -95,9 +95,9 @@ namespace EricsonMathTests
 		TEST_CASE("test_closest_pt_point_triangle")
 		{
 			Triangle t(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f));
-			Point2F t0 = t.get_point_0();
-			Point2F t1 = t.get_point_1();
-			Point2F t2 = t.get_point_2();
+			Point2F t0 = t.point_0();
+			Point2F t1 = t.point_1();
+			Point2F t2 = t.point_2();
 			Point2F closest;
 
 			Point2F p = Point2F(5.0f, 5.0f);
@@ -928,7 +928,7 @@ namespace MattMathTests
 		TEST_CASE("test_rectangle_rotated_segment_constructor")
 		{
 			// The (Segment, thickness) overload is what paint trails and thick
-			// line segments use. Segment::get_direction() is un-normalised, so
+			// line segments use. Segment::direction() is un-normalised, so
 			// this used to throw for every segment not exactly 1 unit long.
 			const float thickness = 2.0f;
 			Segment s(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f));
@@ -937,27 +937,27 @@ namespace MattMathTests
 			CHECK(rr.is_valid());
 
 			// centre is the segment midpoint
-			CHECK(are_equal(rr.get_center().x, 5.0f, EPSILON_F_100));
-			CHECK(are_equal(rr.get_center().y, 0.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.center().x, 5.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.center().y, 0.0f, EPSILON_F_100));
 
 			// x axis runs along the segment and is a unit vector
-			CHECK(are_equal(rr.get_x_axis().length(), 1.0f, EPSILON_F_100));
-			CHECK(are_equal(rr.get_y_axis().length(), 1.0f, EPSILON_F_100));
-			CHECK(are_equal(rr.get_x_axis().x, 1.0f, EPSILON_F_100));
-			CHECK(are_equal(rr.get_x_axis().y, 0.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.x_axis().length(), 1.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.y_axis().length(), 1.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.x_axis().x, 1.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.x_axis().y, 0.0f, EPSILON_F_100));
 
 			// half extents: half the length plus the thickness along the
 			// segment, the thickness across it
-			CHECK(are_equal(rr.get_half_x_width(),
+			CHECK(are_equal(rr.half_x_width(),
 				5.0f + thickness, EPSILON_F_100));
-			CHECK(are_equal(rr.get_half_y_width(),
+			CHECK(are_equal(rr.half_y_width(),
 				thickness, EPSILON_F_100));
 
 			// a diagonal segment stays valid and picks up the right angle
 			Segment diagonal(Point2F(0.0f, 0.0f), Point2F(10.0f, 10.0f));
 			RectangleRotated rr_diagonal(diagonal, 1.0f);
 			CHECK(rr_diagonal.is_valid());
-			CHECK(are_equal(rr_diagonal.get_x_axis().length(),
+			CHECK(are_equal(rr_diagonal.x_axis().length(),
 				1.0f, EPSILON_F_100));
 		}
 
@@ -989,25 +989,25 @@ namespace MattMathTests
 				Vector2F::DIRECTION_DOWN, Vector2F(5.0f, 5.0f));
 
 			CHECK_THROWS_AS([&] { rr.set_half_x_width(-1.0f); }(), std::invalid_argument);
-			CHECK(are_equal(rr.get_half_x_width(), 5.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.half_x_width(), 5.0f, EPSILON_F_100));
 			CHECK(rr.is_valid());
 
 			CHECK_THROWS_AS([&] { rr.set_half_extents(Vector2F(0.0f, 0.0f)); }(), std::invalid_argument);
-			CHECK(are_equal(rr.get_half_x_width(), 5.0f, EPSILON_F_100));
-			CHECK(are_equal(rr.get_half_y_width(), 5.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.half_x_width(), 5.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.half_y_width(), 5.0f, EPSILON_F_100));
 
 			CHECK_THROWS_AS([&] { rr.set_x_axis(Vector2F::DIRECTION_DOWN_RIGHT); }(), std::invalid_argument);
-			CHECK(are_equal(rr.get_x_axis().x, 1.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.x_axis().x, 1.0f, EPSILON_F_100));
 			CHECK(rr.is_valid());
 
 			CHECK_THROWS_AS([&] { rr.inflate(-10.0f); }(), std::invalid_argument);
-			CHECK(are_equal(rr.get_half_x_width(), 5.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.half_x_width(), 5.0f, EPSILON_F_100));
 			CHECK(rr.is_valid());
 
 			// a valid inflate still works, and keeps the corner cache in sync
 			rr.inflate(1.0f);
-			CHECK(are_equal(rr.get_half_x_width(), 6.0f, EPSILON_F_100));
-			CHECK(are_equal(rr.get_point_2().x, 6.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.half_x_width(), 6.0f, EPSILON_F_100));
+			CHECK(are_equal(rr.point_2().x, 6.0f, EPSILON_F_100));
 			CHECK(rr.is_valid());
 		}
 	};

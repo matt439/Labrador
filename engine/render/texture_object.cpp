@@ -14,13 +14,13 @@ TextureObject::TextureObject(const std::string& sheet_name,
 	SpriteSheetObject(sheet_name, render_resources,
 		color, rotation, origin, effects, layer_depth),
 	// The base is complete by now, so its sheet is there to resolve against.
-	frame_(SpriteSheetObject::get_sprite_sheet()->
+	frame_(SpriteSheetObject::sprite_sheet()->
 		resolve_sprite_frame(frame_name))
 {
 
 }
 
-SpriteSheet::frame_handle TextureObject::get_frame() const
+SpriteSheet::frame_handle TextureObject::frame() const
 {
 	return this->frame_;
 }
@@ -29,47 +29,47 @@ void TextureObject::set_frame(const std::string& sheet_name,
 	const std::string& frame_name)
 {
 	this->set_sprite_sheet(sheet_name);
-	this->frame_ = this->get_sprite_sheet()->resolve_sprite_frame(frame_name);
+	this->frame_ = this->sprite_sheet()->resolve_sprite_frame(frame_name);
 }
 
 void TextureObject::set_frame(const std::string& frame_name)
 {
-	this->frame_ = this->get_sprite_sheet()->resolve_sprite_frame(frame_name);
+	this->frame_ = this->sprite_sheet()->resolve_sprite_frame(frame_name);
 }
 
 void TextureObject::draw(SpriteBatch* sprite_batch,
 	const RectangleI& destination_rectangle) const
 {
-	SpriteSheet* sprite_sheet = SpriteSheetObject::get_sprite_sheet();
+	SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
 
 	sprite_sheet->draw(sprite_batch,
 						this->frame_,
 						destination_rectangle,
-						this->get_colour(),
-						this->get_draw_rotation(),
-						this->get_origin(),
-						this->get_effects(),
-						this->get_layer_depth());
+						this->colour(),
+						this->draw_rotation(),
+						this->origin(),
+						this->effects(),
+						this->layer_depth());
 }
 void TextureObject::draw(SpriteBatch* sprite_batch,
 	const RectangleF& destination_rectangle)const
 {
-	this->draw(sprite_batch, destination_rectangle.get_rectangle_i());
+	this->draw(sprite_batch, destination_rectangle.rectangle_i());
 }
 void TextureObject::draw(SpriteBatch* sprite_batch,
 	const Vector2F& position, float scale) const
 {
-	SpriteSheet* sprite_sheet = SpriteSheetObject::get_sprite_sheet();
+	SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
 
 	sprite_sheet->draw(sprite_batch,
 						this->frame_,
 						position,
-						this->get_colour(),
-						this->get_draw_rotation(),
-						this->get_origin(),
+						this->colour(),
+						this->draw_rotation(),
+						this->origin(),
 						scale,
-						this->get_effects(),
-						this->get_layer_depth());
+						this->effects(),
+						this->layer_depth());
 }
 void TextureObject::draw(SpriteBatch* sprite_batch,
 	const RectangleF& destination_rectangle,
@@ -96,14 +96,14 @@ void TextureObject::draw_with(SpriteBatch* sprite_batch,
 	SpriteEffects effects,
 	float rotation) const
 {
-	SpriteSheet* sprite_sheet = SpriteSheetObject::get_sprite_sheet();
+	SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
 
 	sprite_sheet->draw(sprite_batch,
 		frame,
-		camera.calculate_view_rectangle(destination_rectangle).get_rectangle_i(),
+		camera.calculate_view_rectangle(destination_rectangle).rectangle_i(),
 		colour,
 		rotation,
 		origin,
 		effects,
-		this->get_layer_depth());
+		this->layer_depth());
 }

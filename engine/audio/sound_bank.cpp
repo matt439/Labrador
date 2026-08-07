@@ -51,7 +51,7 @@ void SoundBank::play_effect(EffectHandle effect, bool loop, float volume,
 	float pitch, float pan) const
 {
 	clamp_levels(volume, pitch, pan);
-	SoundEffectInstance* instance = this->get_sound_effect_instance(effect);
+	SoundEffectInstance* instance = this->sound_effect_instance(effect);
 	instance->SetVolume(volume);
 	instance->SetPitch(pitch);
 	instance->SetPan(pan);
@@ -59,40 +59,40 @@ void SoundBank::play_effect(EffectHandle effect, bool loop, float volume,
 }
 void SoundBank::stop_effect(EffectHandle effect, bool immediate) const
 {
-	this->get_sound_effect_instance(effect)->Stop(immediate);
+	this->sound_effect_instance(effect)->Stop(immediate);
 }
 void SoundBank::pause_effect(EffectHandle effect) const
 {
-	this->get_sound_effect_instance(effect)->Pause();
+	this->sound_effect_instance(effect)->Pause();
 }
 void SoundBank::resume_effect(EffectHandle effect) const
 {
-	this->get_sound_effect_instance(effect)->Resume();
+	this->sound_effect_instance(effect)->Resume();
 }
 void SoundBank::set_effect_volume(EffectHandle effect, float volume) const
 {
 	volume = clamp(volume, 0.0f, 1.0f);
-	this->get_sound_effect_instance(effect)->SetVolume(volume);
+	this->sound_effect_instance(effect)->SetVolume(volume);
 }
 void SoundBank::set_effect_pitch(EffectHandle effect, float pitch) const
 {
 	pitch = clamp(pitch, -1.0f, 1.0f);
-	this->get_sound_effect_instance(effect)->SetPitch(pitch);
+	this->sound_effect_instance(effect)->SetPitch(pitch);
 }
 void SoundBank::set_effect_pan(EffectHandle effect, float pan) const
 {
 	pan = clamp(pan, -1.0f, 1.0f);
-	this->get_sound_effect_instance(effect)->SetPan(pan);
+	this->sound_effect_instance(effect)->SetPan(pan);
 }
-SoundState SoundBank::get_effect_state(EffectHandle effect) const
+SoundState SoundBank::effect_state(EffectHandle effect) const
 {
-	return this->get_sound_effect_instance(effect)->GetState();
+	return this->sound_effect_instance(effect)->GetState();
 }
 bool SoundBank::is_effect_looping(EffectHandle effect) const
 {
-	return this->get_sound_effect_instance(effect)->IsLooped();
+	return this->sound_effect_instance(effect)->IsLooped();
 }
-SoundEffectInstance* SoundBank::get_sound_effect_instance(
+SoundEffectInstance* SoundBank::sound_effect_instance(
 	EffectHandle effect) const
 {
 	// A bounds check and an indexed load, and the registry's own throw naming

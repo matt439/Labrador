@@ -32,7 +32,7 @@ void TextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera)
 	// thread could restore the originals while another was mid-shadow.
 	this->TextObject::draw_with(sprite_batch, camera,
 		this->shadow_color_,
-		this->get_position() + this->shadow_offset_,
+		this->position() + this->shadow_offset_,
 		this->shadow_scale_);
 
 	this->TextObject::draw(sprite_batch, camera);
@@ -41,15 +41,15 @@ void TextDropShadow::draw(SpriteBatch* sprite_batch)
 {
 	this->draw(sprite_batch, Camera::DEFAULT_CAMERA);
 }
-Vector2F TextDropShadow::get_shadow_offset() const
+Vector2F TextDropShadow::shadow_offset() const
 {
 	return this->shadow_offset_;
 }
-Colour TextDropShadow::get_shadow_color() const
+Colour TextDropShadow::shadow_color() const
 {
 	return this->shadow_color_;
 }
-float TextDropShadow::get_shadow_scale() const
+float TextDropShadow::shadow_scale() const
 {
 	return this->shadow_scale_;
 }

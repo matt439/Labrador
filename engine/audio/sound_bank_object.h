@@ -6,7 +6,7 @@
 
 // Anything that makes noise, inherited for the plumbing: it holds the bank
 // handle and forwards the calls, so a subclass writes play_wave(x) instead of
-// audio_resources->get_sound_bank(handle)->play_wave(x).
+// audio_resources->sound_bank(handle)->play_wave(x).
 //
 // Names go in at construction and handles come out; the play calls take
 // handles only. A subclass therefore resolves what it can make a noise with
@@ -19,7 +19,7 @@ public:
 	SoundBankObject(const std::string& sound_bank_name,
 		const AudioResources* audio_resources);
 protected:
-	SoundBank* get_sound_bank() const;
+	SoundBank* sound_bank() const;
 
 	// Load-time. Each throws std::out_of_range naming what was asked for if
 	// the bank does not have it, so a misspelt sound fails while the menu is
@@ -39,7 +39,7 @@ protected:
 	void set_effect_volume(SoundBank::EffectHandle effect, float volume) const;
 	void set_effect_pitch(SoundBank::EffectHandle effect, float pitch) const;
 	void set_effect_pan(SoundBank::EffectHandle effect, float pan) const;
-	DirectX::SoundState get_effect_state(SoundBank::EffectHandle effect) const;
+	DirectX::SoundState effect_state(SoundBank::EffectHandle effect) const;
 	bool is_effect_looping(SoundBank::EffectHandle effect) const;
 
 	// Points this object at a different bank. Every handle resolved from the

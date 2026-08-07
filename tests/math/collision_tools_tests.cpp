@@ -28,7 +28,7 @@ namespace CollisionToolsTests
 				CollisionTools::calculate_object_collision_direction(&rect1, &rect2);
 
 			Vector2F direction_expected = Vector2F::unit_vector(
-				rect2.get_center() - rect1.get_center());
+				rect2.center() - rect1.center());
 
 			check_equal(direction.x, direction_expected.x, EPSILON_F);
 			check_equal(direction.y, direction_expected.y, EPSILON_F);
@@ -48,7 +48,7 @@ namespace CollisionToolsTests
 			direction = CollisionTools::calculate_object_collision_direction(&rect3, &rect4);
 
 			direction_expected = Vector2F::unit_vector(
-				rect4.get_center() - rect3.get_center());
+				rect4.center() - rect3.center());
 
 			check_equal(direction.x, direction_expected.x, EPSILON_F);
 			check_equal(direction.y, direction_expected.y, EPSILON_F);
@@ -71,7 +71,7 @@ namespace CollisionToolsTests
 			Vector2F direction = CollisionTools::calculate_object_collision_direction(&rect1, &tri1);
 
 			Vector2F direction_expected = Vector2F::unit_vector(
-				tri1.get_center() - rect1.get_center());
+				tri1.center() - rect1.center());
 
 			check_equal(direction.x, direction_expected.x, EPSILON_F);
 			check_equal(direction.y, direction_expected.y, EPSILON_F);

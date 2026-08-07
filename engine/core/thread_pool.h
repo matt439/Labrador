@@ -23,8 +23,8 @@ public:
     // terminate the process with no diagnostic.
     void wait_for_tasks_to_complete();
 
-    int get_min_num_threads() const;
-    int get_max_num_threads() const;
+    int min_num_threads() const;
+    int max_num_threads() const;
 
 private:
     // Owns the callable for the lifetime of one submission, plus the back

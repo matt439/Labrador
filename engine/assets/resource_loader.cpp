@@ -147,7 +147,7 @@ void ResourceLoader::load_sprite_sheet(const std::string& directory,
 
 	this->render_resources_->add_sprite_sheet(name,
 		sprite_sheet_loader::load((directory + name + ".json").c_str(),
-			this->render_resources_->get_texture(name)));
+			this->render_resources_->texture(name)));
 }
 
 void ResourceLoader::reload_sprite_sheet_texture(const std::string& directory,
@@ -155,8 +155,8 @@ void ResourceLoader::reload_sprite_sheet_texture(const std::string& directory,
 {
 	this->load_texture(directory, name);
 
-	this->render_resources_->get_sprite_sheet(name)->set_texture(
-		this->render_resources_->get_texture(name));
+	this->render_resources_->sprite_sheet(name)->set_texture(
+		this->render_resources_->texture(name));
 }
 
 void ResourceLoader::load_sound_bank(const std::string& directory,

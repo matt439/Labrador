@@ -2,23 +2,23 @@
 
 using namespace mattmath;
 
-Vector2I ResolutionManager::get_resolution_ivec() const
+Vector2I ResolutionManager::resolution_ivec() const
 {
 	return this->convert_resolution_to_ivec(this->resolution_);
 }
 
-Vector2F ResolutionManager::get_resolution_vec() const
+Vector2F ResolutionManager::resolution_vec() const
 {
     Vector2F result = this->convert_resolution_to_vec(this->resolution_);
     return result;
 }
 
-std::string ResolutionManager::get_resolution_string() const
+std::string ResolutionManager::resolution_string() const
 {
 	return this->convert_resolution_to_string(this->resolution_);
 }
 
-ScreenResolution ResolutionManager::get_resolution() const
+ScreenResolution ResolutionManager::resolution() const
 {
 	return this->resolution_;
 }

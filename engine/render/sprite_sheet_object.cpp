@@ -17,13 +17,13 @@ SpriteSheetObject::SpriteSheetObject(const std::string& sheet_name,
 
 }
 
-SpriteSheet* SpriteSheetObject::get_sprite_sheet() const
+SpriteSheet* SpriteSheetObject::sprite_sheet() const
 {
-	return this->get_render_resources()->get_sprite_sheet(this->sheet_);
+	return this->render_resources()->sprite_sheet(this->sheet_);
 }
 
 void SpriteSheetObject::set_sprite_sheet(const std::string& sheet_name)
 {
-	this->sheet_ = this->get_render_resources()->resolve_sprite_sheet(
+	this->sheet_ = this->render_resources()->resolve_sprite_sheet(
 		sheet_name);
 }

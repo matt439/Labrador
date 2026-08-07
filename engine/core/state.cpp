@@ -4,7 +4,7 @@ void State::set_context(StateContext* context)
 {
 	this->context_ = context;
 }
-StateContext* State::get_context() const
+StateContext* State::context() const
 {
 	return this->context_;
 }

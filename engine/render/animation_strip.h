@@ -9,10 +9,10 @@ public:
 	AnimationStrip(const mattmath::RectangleI& first_frame,
 		int frame_count, float frame_time, bool looping);
 
-	const RECT* get_frame_rect(int frame_index) const;
-	int get_frame_count() const;
-	float get_frame_time() const;
-	bool get_looping() const;
+	const RECT* frame_rect(int frame_index) const;
+	int frame_count() const;
+	float frame_time() const;
+	bool looping() const;
 
 private:
 	std::vector<RECT> frame_rects_;

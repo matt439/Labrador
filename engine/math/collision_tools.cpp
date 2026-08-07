@@ -11,7 +11,7 @@ Vector2F CollisionTools::opposite_direction(
 void CollisionTools::move_object_by_direction_relative_to_size(Shape* obj,
     const Vector2F& movement_direction, float relative_amount)
 {
-    RectangleF obj_aabb = obj->get_bounding_box();
+    RectangleF obj_aabb = obj->bounding_box();
 
     float relative_width = obj_aabb.width * relative_amount;
     float relative_height = obj_aabb.height * relative_amount;
@@ -31,7 +31,7 @@ void CollisionTools::move_object_by_direction_relative_to_size(Shape* obj,
 bool CollisionTools::bracket_object_collision(bool colliding, int i, Shape* collider,
     const Vector2F& collider_direction)
 {
-    RectangleF collider_aabb = collider->get_bounding_box();
+    RectangleF collider_aabb = collider->bounding_box();
 
     if (colliding)
     {
@@ -54,7 +54,7 @@ bool CollisionTools::bracket_object_collision(bool colliding, int i, Shape* coll
 bool CollisionTools::bracket_object_collision_generic(Shape* collider, const Shape* collidee,
     const Vector2F& collider_direction, int iterations)
 {
-    RectangleF collider_aabb = collider->get_bounding_box();
+    RectangleF collider_aabb = collider->bounding_box();
 
     for (int i = 1; i <= iterations; i++)
     {
@@ -91,8 +91,8 @@ Vector2F CollisionTools::calculate_containing_collision_direction(
     const Shape* collider, const Shape* collidee)
 {
     // calculate the direction of the greatest distance between the two shapes
-	Point2F collider_center = collider->get_center();
-	Point2F collidee_center = collidee->get_center();
+	Point2F collider_center = collider->center();
+	Point2F collidee_center = collidee->center();
 
     float x_distance = collider_center.x - collidee_center.x;
 
@@ -108,8 +108,8 @@ Vector2F CollisionTools::calculate_containing_collision_direction(
 Vector2F CollisionTools::shape_shape_collision_direction(
     const Shape* collider, const Shape* collidee)
 {
-	Point2F collider_center = collider->get_center();
-	Point2F collidee_center = collidee->get_center();
+	Point2F collider_center = collider->center();
+	Point2F collidee_center = collidee->center();
 
 	Vector2F direction = collidee_center - collider_center;
 
@@ -135,13 +135,13 @@ Vector2F CollisionTools::calculate_object_collision_direction(const Shape* colli
 Vector2F CollisionTools::calculate_object_collision_direction_by_edge(
     const Shape* collider, const Shape* collidee)
 {
-    RectangleF collider_aabb = collider->get_bounding_box();
-    RectangleF collidee_aabb = collidee->get_bounding_box();
+    RectangleF collider_aabb = collider->bounding_box();
+    RectangleF collidee_aabb = collidee->bounding_box();
     
-    Segment collider_top_edge = collider_aabb.get_top_edge();
-    Segment collider_left_edge = collider_aabb.get_left_edge();
-    Segment collider_right_edge = collider_aabb.get_right_edge();
-    Segment collider_bottom_edge = collider_aabb.get_bottom_edge();
+    Segment collider_top_edge = collider_aabb.top_edge();
+    Segment collider_left_edge = collider_aabb.left_edge();
+    Segment collider_right_edge = collider_aabb.right_edge();
+    Segment collider_bottom_edge = collider_aabb.bottom_edge();
 
     bool left_edge = collidee_aabb.intersects(collider_left_edge);
     bool right_edge = collidee_aabb.intersects(collider_right_edge);
@@ -175,14 +175,14 @@ Vector2F CollisionTools::calculate_object_collision_direction_by_edge(
     if (left_edge && right_edge)
     {
         // check if the collider is more to the left or right of the collidee
-        return compare_point_collision_depth_horizontal(collider->get_center(),
-            collidee->get_center());
+        return compare_point_collision_depth_horizontal(collider->center(),
+            collidee->center());
     }
     if (top_edge && bottom_edge)
     {
         // check if the collider is more to the top or bottom of the collidee
-        return compare_point_collision_depth_vertical(collider->get_center(),
-            collidee->get_center());
+        return compare_point_collision_depth_vertical(collider->center(),
+            collidee->center());
     }
     if (left_edge && top_edge)
     {
@@ -210,8 +210,8 @@ void CollisionTools::resolve_object_AABB_collision(Shape* collider,
     const Vector2F& collision_direction)
 {
     // get the intersection rectangle
-    RectangleF inter = RectangleF::intersection(collider->get_bounding_box(),
-        collidee->get_bounding_box());
+    RectangleF inter = RectangleF::intersection(collider->bounding_box(),
+        collidee->bounding_box());
 
     Vector2F amount = { inter.width, inter.height };
 
@@ -238,10 +238,10 @@ bool CollisionTools::resolve_object_collision(Shape* collider, const Shape* coll
     }
 
     Vector2F unit_direction = Vector2F::unit_vector(collision_direction);
-	Vector2F collider_center = collider->get_bounding_box().get_center();
+	Vector2F collider_center = collider->bounding_box().center();
 
-    if (collider->get_shape_type() == ShapeType::rectangle &&
-        collidee->get_shape_type() == ShapeType::rectangle)
+    if (collider->shape_type() == ShapeType::rectangle &&
+        collidee->shape_type() == ShapeType::rectangle)
     {
         resolve_object_AABB_collision(collider, collidee, unit_direction);
     }
@@ -253,7 +253,7 @@ bool CollisionTools::resolve_object_collision(Shape* collider, const Shape* coll
     }
 
 	// calculate the amount moved
-	Vector2F new_center = collider->get_bounding_box().get_center();
+	Vector2F new_center = collider->bounding_box().center();
 	amount = new_center - collider_center;
 
     return true;

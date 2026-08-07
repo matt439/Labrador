@@ -95,9 +95,9 @@ namespace DX
         // loss - contexts belong to the device that made them, and using ones
         // from a removed device is invalid.
         void create_deferred_contexts(int num);
-        std::vector<ID3D11DeviceContext*>* get_deferred_contexts() const noexcept;
+        std::vector<ID3D11DeviceContext*>* deferred_contexts() const noexcept;
         // Throws std::out_of_range for an invalid index, so not noexcept.
-        ID3D11DeviceContext* get_deferred_context(int index) const;
+        ID3D11DeviceContext* deferred_context(int index) const;
 
     private:
         void CreateFactory();

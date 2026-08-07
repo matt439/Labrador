@@ -50,21 +50,21 @@ Camera CameraTools::calculate_camera(
 	}
 	else
 	{
-		if (camera_rectangle.get_left() < camera_bounds.get_left())
+		if (camera_rectangle.left() < camera_bounds.left())
 		{
-			new_cam.translation.x += camera_bounds.get_left() - camera_rectangle.get_left();
+			new_cam.translation.x += camera_bounds.left() - camera_rectangle.left();
 		}
-		else if (camera_rectangle.get_right() > camera_bounds.get_right())
+		else if (camera_rectangle.right() > camera_bounds.right())
 		{
-			new_cam.translation.x += camera_bounds.get_right() - camera_rectangle.get_right();
+			new_cam.translation.x += camera_bounds.right() - camera_rectangle.right();
 		}
-		if (camera_rectangle.get_top() < camera_bounds.get_top())
+		if (camera_rectangle.top() < camera_bounds.top())
 		{
-			new_cam.translation.y += camera_bounds.get_top() - camera_rectangle.get_top();
+			new_cam.translation.y += camera_bounds.top() - camera_rectangle.top();
 		}
-		else if (camera_rectangle.get_bottom() > camera_bounds.get_bottom())
+		else if (camera_rectangle.bottom() > camera_bounds.bottom())
 		{
-			new_cam.translation.y += camera_bounds.get_bottom() - camera_rectangle.get_bottom();
+			new_cam.translation.y += camera_bounds.bottom() - camera_rectangle.bottom();
 		}
 		return new_cam;
 	}

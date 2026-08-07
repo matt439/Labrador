@@ -23,8 +23,8 @@ public:
 
 	// Const and non-mutating, like every other registry getter: throws
 	// std::out_of_range naming the bank if it is absent or released.
-	SoundBank* get_sound_bank(SoundBankHandle sound_bank) const;
-	SoundBank* get_sound_bank(const std::string& sound_bank_name) const;
+	SoundBank* sound_bank(SoundBankHandle sound_bank) const;
+	SoundBank* sound_bank(const std::string& sound_bank_name) const;
 
 	void add_sound_bank(const std::string& sound_bank_name,
 		std::unique_ptr<SoundBank> sound_bank);

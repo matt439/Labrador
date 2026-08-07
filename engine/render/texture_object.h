@@ -22,7 +22,7 @@ public:
 		float layer_depth = 0.0f);
 
 protected:
-	SpriteSheet::frame_handle get_frame() const;
+	SpriteSheet::frame_handle frame() const;
 
 	// Both setters resolve, and the two-argument one moves sheet and frame
 	// together because a frame handle taken from one sheet indexes nothing

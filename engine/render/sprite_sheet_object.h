@@ -26,7 +26,7 @@ public:
 		DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 		float layer_depth = 0.0f);
 protected:
-	SpriteSheet* get_sprite_sheet() const;
+	SpriteSheet* sprite_sheet() const;
 
 	// Re-points this object at another sheet. Every element handle a subclass
 	// is holding refers to the old sheet and is meaningless against the new

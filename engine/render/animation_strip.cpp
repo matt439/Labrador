@@ -21,10 +21,10 @@ RECT AnimationStrip::calculate_frame(int frame_index) const
 	}
 	RectangleI frame = this->first_frame_;
 	frame.offset(frame_index * frame.width, 0);
-	return frame.get_win_rect();
+	return frame.win_rect();
 }
 
-const RECT* AnimationStrip::get_frame_rect(int frame_index) const
+const RECT* AnimationStrip::frame_rect(int frame_index) const
 {
 	if (frame_index < 0 || frame_index >= this->frame_count_)
 	{
@@ -33,15 +33,15 @@ const RECT* AnimationStrip::get_frame_rect(int frame_index) const
 	return &this->frame_rects_[frame_index];
 }
 
-int AnimationStrip::get_frame_count() const
+int AnimationStrip::frame_count() const
 {
 	return this->frame_count_;
 }
-float AnimationStrip::get_frame_time() const
+float AnimationStrip::frame_time() const
 {
 	return this->frame_time_;
 }
-bool AnimationStrip::get_looping() const
+bool AnimationStrip::looping() const
 {
 	return this->looping_;
 }

@@ -19,12 +19,12 @@ void Drawer::set_dt(const float* dt)
     this->dt_ = dt;
 }
 
-RenderResources* Drawer::get_render_resources() const
+RenderResources* Drawer::render_resources() const
 {
     return this->render_resources_;
 }
 
-float Drawer::get_dt() const
+float Drawer::dt() const
 {
     return *this->dt_;
 }

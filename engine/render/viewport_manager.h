@@ -22,7 +22,7 @@ public:
 		DX::DeviceResources* device_resources);
 
 	void set_layout(ScreenLayout layout);
-	ScreenLayout get_layout() const { return layout_; }
+	ScreenLayout layout() const { return layout_; }
 
 	// Every overload takes the context to apply to. There used to be a
 	// one-argument version that reached for the IMMEDIATE context and a cached
@@ -35,16 +35,16 @@ public:
 	void apply_player_viewport(int player_num,
 		ID3D11DeviceContext* context) const;
 
-	mattmath::Viewport get_player_viewport(int player_num) const;
+	mattmath::Viewport player_viewport(int player_num) const;
 
-	std::vector<mattmath::Viewport> get_all_viewports() const;
+	std::vector<mattmath::Viewport> all_viewports() const;
 
-	mattmath::RectangleF get_camera_adjusted_player_viewport_rect(
+	mattmath::RectangleF camera_adjusted_player_viewport_rect(
 		int player_num, const mattmath::Camera& camera) const;
 
-	std::vector<mattmath::RectangleF> get_viewport_dividers() const;
+	std::vector<mattmath::RectangleF> viewport_dividers() const;
 
-	D3D11_VIEWPORT get_fullscreen_d3d11_viewport() const;
+	D3D11_VIEWPORT fullscreen_d3d11_viewport() const;
 
 private:
 	ResolutionManager* resolution_manager_ = nullptr;
@@ -52,13 +52,13 @@ private:
 
 	ScreenLayout layout_ = ScreenLayout::one_player;
 
-	int get_player_count_from_layout(ScreenLayout layout) const;
+	int player_count_from_layout(ScreenLayout layout) const;
 
 	D3D11_VIEWPORT calculate_d3d11_viewport(ScreenLayout layout,
 		int player_num, const mattmath::Vector2F& screen_size) const;
 	mattmath::Viewport calculate_viewport(ScreenLayout layout,
 		int player_num, const mattmath::Vector2F& screen_size) const;
 
-	mattmath::Viewport get_fullscreen_viewport() const;
+	mattmath::Viewport fullscreen_viewport() const;
 
 };

@@ -18,27 +18,27 @@ DrawObject::DrawObject(RenderResources* render_resources,
 {
 
 }
-RenderResources* DrawObject::get_render_resources() const
+RenderResources* DrawObject::render_resources() const
 {
 	return this->render_resources_;
 }
-const Colour& DrawObject::get_colour() const
+const Colour& DrawObject::colour() const
 {
 	return this->colour_;
 }
-float DrawObject::get_draw_rotation() const
+float DrawObject::draw_rotation() const
 {
 	return this->draw_rotation_;
 }
-const Vector2F& DrawObject::get_origin() const
+const Vector2F& DrawObject::origin() const
 {
 	return this->origin_;
 }
-SpriteEffects DrawObject::get_effects() const
+SpriteEffects DrawObject::effects() const
 {
 	return this->effects_;
 }
-float DrawObject::get_layer_depth() const
+float DrawObject::layer_depth() const
 {
 	return this->layer_depth_;
 }

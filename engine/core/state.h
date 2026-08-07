@@ -12,7 +12,7 @@ public:
 	virtual void init() = 0;
 	void set_context(StateContext* context);
 protected:
-	StateContext* get_context() const;
+	StateContext* context() const;
 private:
 	StateContext* context_ = nullptr;
 };

@@ -54,7 +54,7 @@ public:
 	void set_effect_volume(EffectHandle effect, float volume) const;
 	void set_effect_pitch(EffectHandle effect, float pitch) const;
 	void set_effect_pan(EffectHandle effect, float pan) const;
-	DirectX::SoundState get_effect_state(EffectHandle effect) const;
+	DirectX::SoundState effect_state(EffectHandle effect) const;
 	bool is_effect_looping(EffectHandle effect) const;
 
 private:
@@ -64,7 +64,7 @@ private:
 	// The raw DirectXTK voice, for this class alone. It used to be public, and
 	// handing one out let a caller do anything to a voice the bank believes it
 	// owns - including outliving it.
-	DirectX::SoundEffectInstance* get_sound_effect_instance(
+	DirectX::SoundEffectInstance* sound_effect_instance(
 		EffectHandle effect) const;
 
 	static void clamp_levels(float& volume, float& pitch, float& pan);

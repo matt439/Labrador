@@ -13,8 +13,8 @@ public:
 	void set_render_resources(RenderResources* render_resources);
 	void set_dt(const float* dt);
 protected:
-	RenderResources* get_render_resources() const;
-	float get_dt() const;
+	RenderResources* render_resources() const;
+	float dt() const;
 	mattmath::RectangleI calculate_draw_rectangle(
 		const mattmath::RectangleI& rec,
 		const mattmath::Vector3F& camera);

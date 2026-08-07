@@ -55,7 +55,7 @@ void Application::initialize(HINSTANCE instance, int show_command)
 	this->audio_engine_ = std::make_unique<AudioEngine>(audio_flags);
 
 	const mattmath::Vector2I size =
-		this->resolution_manager_->get_resolution_ivec();
+		this->resolution_manager_->resolution_ivec();
 	this->device_resources_->SetWindow(this->window_, size.x, size.y);
 	this->device_resources_->CreateDeviceResources();
 	this->device_resources_->create_deferred_contexts(
@@ -92,7 +92,7 @@ void Application::create_window(HINSTANCE instance, int show_command)
 	}
 
 	const mattmath::Vector2I size =
-		this->resolution_manager_->get_resolution_ivec();
+		this->resolution_manager_->resolution_ivec();
 
 	// The Application pointer rides in as the create parameter and is stashed
 	// in the window's user data by WM_CREATE, so window_proc can find it
@@ -159,7 +159,7 @@ void Application::create_device_dependent_resources()
 	{
 		this->sprite_batches_[static_cast<size_t>(i)] =
 			std::make_unique<SpriteBatch>(
-				this->device_resources_->get_deferred_context(i));
+				this->device_resources_->deferred_context(i));
 		this->sprite_batch_ptrs_[static_cast<size_t>(i)] =
 			this->sprite_batches_[static_cast<size_t>(i)].get();
 	}
@@ -216,7 +216,7 @@ void Application::set_resolution(ScreenResolution resolution)
 	this->resolution_manager_->set_resolution(resolution);
 
 	const mattmath::Vector2I size =
-		this->resolution_manager_->get_resolution_ivec();
+		this->resolution_manager_->resolution_ivec();
 	SetWindowPos(this->window_, HWND_TOP, 0, 0, size.x, size.y,
 		SWP_NOMOVE | SWP_NOZORDER);
 }
@@ -239,7 +239,7 @@ void Application::set_fullscreen(bool fullscreen)
 		SetWindowLongPtr(this->window_, GWL_EXSTYLE, 0);
 
 		const mattmath::Vector2I size =
-			this->resolution_manager_->get_resolution_ivec();
+			this->resolution_manager_->resolution_ivec();
 		ShowWindow(this->window_, SW_SHOWNORMAL);
 		SetWindowPos(this->window_, HWND_TOP, 0, 0, size.x, size.y,
 			SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
@@ -281,7 +281,7 @@ void Application::clear() const
 	this->device_resources_->PIXBeginEvent(L"Clear");
 
 	ID3D11DeviceContext1* context = this->device_resources_->GetD3DDeviceContext();
-	auto deferred_contexts = this->device_resources_->get_deferred_contexts();
+	auto deferred_contexts = this->device_resources_->deferred_contexts();
 	ID3D11RenderTargetView* render_target =
 		this->device_resources_->GetRenderTargetView();
 

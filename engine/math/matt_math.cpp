@@ -119,7 +119,7 @@ namespace mattmath
 
 	bool Shape::intersects(const Shape* other) const
 	{
-		switch (other->get_shape_type())
+		switch (other->shape_type())
 		{
 		case ShapeType::rectangle:
 			return this->intersects(*dynamic_cast<const RectangleF*>(other));
@@ -143,7 +143,7 @@ namespace mattmath
 
 	bool Shape::AABB_intersects(const Shape* other) const
 	{
-		return this->get_bounding_box().intersects(other->get_bounding_box());
+		return this->bounding_box().intersects(other->bounding_box());
 	}
 
 	bool Shape::AABB_intersects(const Shape& other) const
@@ -167,12 +167,12 @@ namespace mattmath
 
 	bool mattmath::shapes_AABB_intersect(const Shape* a, const Shape* b)
 	{
-		return a->get_bounding_box().intersects(b->get_bounding_box());
+		return a->bounding_box().intersects(b->bounding_box());
 	}
 
 	bool mattmath::shapes_AABB_intersect(const Shape& a, const Shape& b)
 	{
-		return a.get_bounding_box().intersects(b.get_bounding_box());
+		return a.bounding_box().intersects(b.bounding_box());
 	}
 
 	bool rectangles_intersect(const RectangleF& a, const RectangleF& b)
@@ -194,30 +194,30 @@ namespace mattmath
 	bool mattmath::rectangle_triangle_intersect(const RectangleF& rectangle, const Triangle& triangle)
 	{
 		// AABB vs AABB
-		if (!rectangle.intersects(triangle.get_bounding_box()))
+		if (!rectangle.intersects(triangle.bounding_box()))
 		{
 			return false;
 		}
 
 		// check if the rectangle contains any of the triangle's points
-		if (rectangle.contains(triangle.get_point_0()) ||
-			rectangle.contains(triangle.get_point_1()) ||
-			rectangle.contains(triangle.get_point_2()))
+		if (rectangle.contains(triangle.point_0()) ||
+			rectangle.contains(triangle.point_1()) ||
+			rectangle.contains(triangle.point_2()))
 		{
 			return true;
 		}
 
 		// check if the triangle contains any of the rectangle's points
-		if (triangle.contains(rectangle.get_top_left()) ||
-			triangle.contains(rectangle.get_top_right()) ||
-			triangle.contains(rectangle.get_bottom_left()) ||
-			triangle.contains(rectangle.get_bottom_right()))
+		if (triangle.contains(rectangle.top_left()) ||
+			triangle.contains(rectangle.top_right()) ||
+			triangle.contains(rectangle.bottom_left()) ||
+			triangle.contains(rectangle.bottom_right()))
 		{
 			return true;
 		}
 
 		// check if any of the triangle's edges intersect the rectangle
-		std::vector<Segment> edges = triangle.get_edges();
+		std::vector<Segment> edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
 			if (rectangle.intersects(edge))
@@ -232,7 +232,7 @@ namespace mattmath
 	bool mattmath::rectangle_quad_intersect(const RectangleF& rectangle, const Quad& quad)
 	{
 		// get the triangles of the quad
-		std::vector<Triangle> triangles = quad.get_triangles();
+		std::vector<Triangle> triangles = quad.triangles();
 
 		// check each triangle against the rectangle
 		for (const Triangle& triangle : triangles)
@@ -262,31 +262,31 @@ namespace mattmath
 		const RectangleRotated& rotated_rect)
 	{
 		// check if the rectangles' bounding boxes intersect
-		if (!rect.intersects(rotated_rect.get_bounding_box()))
+		if (!rect.intersects(rotated_rect.bounding_box()))
 		{
 			return false;
 		}
 
 		// check if the rotated rectangle contains any of the rectangle's points
-		if (rotated_rect.contains(rect.get_top_left()) ||
-			rotated_rect.contains(rect.get_top_right()) ||
-			rotated_rect.contains(rect.get_bottom_left()) ||
-			rotated_rect.contains(rect.get_bottom_right()))
+		if (rotated_rect.contains(rect.top_left()) ||
+			rotated_rect.contains(rect.top_right()) ||
+			rotated_rect.contains(rect.bottom_left()) ||
+			rotated_rect.contains(rect.bottom_right()))
 		{
 			return true;
 		}
 
 		// check if the rectangle contains any of the rotated rectangle's points
-		if (rect.contains(rotated_rect.get_point_0()) ||
-			rect.contains(rotated_rect.get_point_1()) ||
-			rect.contains(rotated_rect.get_point_2()) ||
-			rect.contains(rotated_rect.get_point_3()))
+		if (rect.contains(rotated_rect.point_0()) ||
+			rect.contains(rotated_rect.point_1()) ||
+			rect.contains(rotated_rect.point_2()) ||
+			rect.contains(rotated_rect.point_3()))
 		{
 			return true;
 		}
 
 		// check if any of the rotated rectangle's edges intersect the rectangle
-		std::vector<Segment> edges = rotated_rect.get_edges();
+		std::vector<Segment> edges = rotated_rect.edges();
 		for (const Segment& edge : edges)
 		{
 			if (rect.intersects(edge))
@@ -300,26 +300,26 @@ namespace mattmath
 
 	bool mattmath::circles_intersect(const Circle& a, const Circle& b)
 	{
-		return Vector2F::distance(a.center, b.center) <=
-			a.radius + b.radius;
+		return Vector2F::distance(a.center(), b.center()) <=
+			a.radius() + b.radius();
 	}
 
 	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle, Point2F& point)
 	{
-		return EricsonMath::test_circle_triangle(circle, triangle.get_point_0(),
-			triangle.get_point_1(), triangle.get_point_2(), point);
+		return EricsonMath::test_circle_triangle(circle, triangle.point_0(),
+			triangle.point_1(), triangle.point_2(), point);
 	}
 
 	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle)
 	{
 		Point2F point;
-		return EricsonMath::test_circle_triangle(circle, triangle.get_point_0(),
-			triangle.get_point_1(), triangle.get_point_2(), point);
+		return EricsonMath::test_circle_triangle(circle, triangle.point_0(),
+			triangle.point_1(), triangle.point_2(), point);
 	}
 
 	bool mattmath::circle_quad_intersect(const Circle& circle, const Quad& quad)
 	{
-		std::vector<Triangle> triangles = quad.get_triangles();
+		std::vector<Triangle> triangles = quad.triangles();
 
 		for (const Triangle& triangle : triangles)
 		{
@@ -334,10 +334,10 @@ namespace mattmath
 	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment, Point2F& point)
 	{
 		float t;
-		EricsonMath::closest_pt_point_segment(circle.center,
+		EricsonMath::closest_pt_point_segment(circle.center(),
 			segment.point_0, segment.point_1, t, point);
 
-		return Vector2F::distance(circle.center, point) <= circle.radius;
+		return Vector2F::distance(circle.center(), point) <= circle.radius();
 	}
 
 	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment)
@@ -348,26 +348,26 @@ namespace mattmath
 
 	bool mattmath::circle_point_intersect(const Circle& circle, const Point2F& point)
 	{
-		return Vector2F::distance(circle.center, point) <= circle.radius;
+		return Vector2F::distance(circle.center(), point) <= circle.radius();
 	}
 
 	bool mattmath::circle_rectangle_rotated_intersect(const Circle& circle,
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the circle intersects the rectangle's bounding box
-		if (!circle.intersects(rect_rotated.get_bounding_box()))
+		if (!circle.intersects(rect_rotated.bounding_box()))
 		{
 			return false;
 		}
 
 		// check if circle's center is contained within the rectangle
-		if (rect_rotated.contains(circle.center))
+		if (rect_rotated.contains(circle.center()))
 		{
 			return true;
 		}
 
 		// check if the circle intersects any of the rectangle's edges
-		std::vector<Segment> edges = rect_rotated.get_edges();
+		std::vector<Segment> edges = rect_rotated.edges();
 		for (const Segment& edge : edges)
 		{
 			if (circle_segment_intersect(circle, edge))
@@ -391,8 +391,8 @@ namespace mattmath
 		}
 
 		// get edges of each triangle
-		std::vector<Segment> a_edges = a.get_edges();
-		std::vector<Segment> b_edges = b.get_edges();
+		std::vector<Segment> a_edges = a.edges();
+		std::vector<Segment> b_edges = b.edges();
 
 		// check if any of the edges intersect
 		for (int i = 0; i < 2; i++)
@@ -410,7 +410,7 @@ namespace mattmath
 	bool mattmath::triangle_quad_intersect(const Triangle& triangle, const Quad& quad)
 	{
 		// get the triangles of the quad
-		std::vector<Triangle> triangles = quad.get_triangles();
+		std::vector<Triangle> triangles = quad.triangles();
 
 		// check each triangle against the quad's triangles
 		for (const Triangle& quad_triangle : triangles)
@@ -433,7 +433,7 @@ namespace mattmath
 		}
 
 		// check if the segment intersects any of the triangle's edges
-		std::vector<Segment> edges = triangle.get_edges();
+		std::vector<Segment> edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
 			if (segments_intersect(edge, segment))
@@ -455,16 +455,16 @@ namespace mattmath
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the triangle intersects the rectangle's bounding box
-		if (!triangle.intersects(rect_rotated.get_bounding_box()))
+		if (!triangle.intersects(rect_rotated.bounding_box()))
 		{
 			return false;
 		}
 
 		// check if the triangle contains any of the rectangle's points
-		if (triangle.contains(rect_rotated.get_point_0()) ||
-			triangle.contains(rect_rotated.get_point_1()) ||
-			triangle.contains(rect_rotated.get_point_2()) ||
-			triangle.contains(rect_rotated.get_point_3()))
+		if (triangle.contains(rect_rotated.point_0()) ||
+			triangle.contains(rect_rotated.point_1()) ||
+			triangle.contains(rect_rotated.point_2()) ||
+			triangle.contains(rect_rotated.point_3()))
 		{
 			return true;
 		}
@@ -478,7 +478,7 @@ namespace mattmath
 		}
 
 		// check if any of the triangle's edges intersect the rectangle
-		std::vector<Segment> edges = triangle.get_edges();
+		std::vector<Segment> edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
 			if (rect_rotated.intersects(edge))
@@ -493,8 +493,8 @@ namespace mattmath
 	bool mattmath::quads_intersect(const Quad& a, const Quad& b)
 	{
 		// get the triangles of each quad
-		std::vector<Triangle> a_triangles = a.get_triangles();
-		std::vector<Triangle> b_triangles = b.get_triangles();
+		std::vector<Triangle> a_triangles = a.triangles();
+		std::vector<Triangle> b_triangles = b.triangles();
 
 		// check each triangle of one quad against the other
 		for (const Triangle& a_triangle : a_triangles)
@@ -514,7 +514,7 @@ namespace mattmath
 	bool mattmath::quad_segment_intersect(const Quad& quad, const Segment& segment)
 	{
 		// get the triangles of the quad
-		std::vector<Triangle> triangles = quad.get_triangles();
+		std::vector<Triangle> triangles = quad.triangles();
 
 		// check each triangle against the segment
 		for (const Triangle& triangle : triangles)
@@ -531,7 +531,7 @@ namespace mattmath
 	bool mattmath::quad_point_intersect(const Quad& quad, const Point2F& point)
 	{
 		// check if the point is contained within any of the quad's triangles
-		std::vector<Triangle> triangles = quad.get_triangles();
+		std::vector<Triangle> triangles = quad.triangles();
 		for (const Triangle& triangle : triangles)
 		{
 			if (triangle.contains(point))
@@ -547,7 +547,7 @@ namespace mattmath
 		const RectangleRotated& rect_rotated)
 	{
 		// get the triangles of the quad
-		std::vector<Triangle> triangles = quad.get_triangles();
+		std::vector<Triangle> triangles = quad.triangles();
 
 		// check each triangle against the rotated rectangle
 		for (const Triangle& triangle : triangles)
@@ -585,7 +585,7 @@ namespace mattmath
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the segment intersects the rectangle's bounding box
-		if (!segment.intersects(rect_rotated.get_bounding_box()))
+		if (!segment.intersects(rect_rotated.bounding_box()))
 		{
 			return false;
 		}
@@ -597,7 +597,7 @@ namespace mattmath
 		}
 
 		// check if the segment intersects any of the rectangle's edges
-		std::vector<Segment> edges = rect_rotated.get_edges();
+		std::vector<Segment> edges = rect_rotated.edges();
 		for (const Segment& edge : edges)
 		{
 			if (segments_intersect(segment, edge))
@@ -612,7 +612,7 @@ namespace mattmath
 	bool mattmath::point_rectangle_rotated_intersect(const Point2F& point,
 		const RectangleRotated& rect_rotated)
 	{
-		Quad quad = rect_rotated.get_quad();
+		Quad quad = rect_rotated.quad();
 
 		return quad_point_intersect(quad, point);
 	}
@@ -621,31 +621,31 @@ namespace mattmath
 		const RectangleRotated& b)
 	{
 		// check if the rectangles' bounding boxes intersect
-		if (!a.intersects(b.get_bounding_box()))
+		if (!a.intersects(b.bounding_box()))
 		{
 			return false;
 		}
 
 		// check if any of the points of one rectangle are contained within the other
-		if (a.contains(b.get_point_0()) ||
-			a.contains(b.get_point_1()) ||
-			a.contains(b.get_point_2()) ||
-			a.contains(b.get_point_3()))
+		if (a.contains(b.point_0()) ||
+			a.contains(b.point_1()) ||
+			a.contains(b.point_2()) ||
+			a.contains(b.point_3()))
 		{
 			return true;
 		}
 
-		if (b.contains(a.get_point_0()) ||
-			b.contains(a.get_point_1()) ||
-			b.contains(a.get_point_2()) ||
-			b.contains(a.get_point_3()))
+		if (b.contains(a.point_0()) ||
+			b.contains(a.point_1()) ||
+			b.contains(a.point_2()) ||
+			b.contains(a.point_3()))
 		{
 			return true;
 		}
 
 		// check if any of the edges of one rectangle intersect the other
-		std::vector<Segment> a_edges = a.get_edges();
-		std::vector<Segment> b_edges = b.get_edges();
+		std::vector<Segment> a_edges = a.edges();
+		std::vector<Segment> b_edges = b.edges();
 
 		for (const Segment& edge : a_edges)
 		{
@@ -708,8 +708,8 @@ namespace mattmath
 	}
 	//RectangleF::RectangleF(const Segment& center_line, float thickness)
 	//{
-	//	Vector2F center = center_line.get_center();
-	//	Vector2F direction = center_line.get_direction();
+	//	Vector2F center = center_line.center();
+	//	Vector2F direction = center_line.direction();
 	//	Vector2F perpendicular = Vector2F(-direction.y, direction.x);
 	//	Vector2F half_thickness = perpendicular * thickness / 2.0f;
 	//	this->x = center.x - half_thickness.x;
@@ -717,11 +717,11 @@ namespace mattmath
 	//	this->width = thickness;
 	//	this->height = thickness;
 	//}
-	RectangleF RectangleF::get_bounding_box() const
+	RectangleF RectangleF::bounding_box() const
 	{
 		return *this;
 	}
-	ShapeType RectangleF::get_shape_type() const
+	ShapeType RectangleF::shape_type() const
 	{
 		return ShapeType::rectangle;
 	}
@@ -729,113 +729,97 @@ namespace mattmath
 	{
 		return std::make_unique<RectangleF>(*this);
 	}
-	float RectangleF::get_x() const
-	{
-		return this->x;
-	}
-	float RectangleF::get_y() const
-	{
-		return this->y;
-	}
-	float RectangleF::get_width() const
-	{
-		return this->width;
-	}
-	float RectangleF::get_height() const
-	{
-		return this->height;
-	}
-	Vector2F RectangleF::get_center() const
+	Vector2F RectangleF::center() const
 	{
 		return Vector2F(this->x + this->width / 2.0f,
 					this->y + this->height / 2.0f);
 	}
-	Vector2F RectangleF::get_position() const
+	Vector2F RectangleF::position() const
 	{
 		return Vector2F(this->x, this->y);
 	}
-	Vector2F RectangleF::get_size() const
+	Vector2F RectangleF::size() const
 	{
 		return Vector2F(this->width, this->height);
 	}
-	float RectangleF::get_left() const
+	float RectangleF::left() const
 	{
 		return this->x;
 	}
-	float RectangleF::get_right() const
+	float RectangleF::right() const
 	{
 		return this->x + this->width;
 	}
-	float RectangleF::get_top() const
+	float RectangleF::top() const
 	{
 		return this->y;
 	}
-	float RectangleF::get_bottom() const
+	float RectangleF::bottom() const
 	{
 		return this->y + this->height;
 	}
-	Vector2F RectangleF::get_top_left() const
+	Vector2F RectangleF::top_left() const
 	{
 		return Vector2F(this->x, this->y);
 	}
-	Vector2F RectangleF::get_bottom_right() const
+	Vector2F RectangleF::bottom_right() const
 	{
 		return Vector2F(this->x + this->width, this->y + this->height);
 	}
-	Vector2F RectangleF::get_top_right() const
+	Vector2F RectangleF::top_right() const
 	{
 		return Vector2F(this->x + this->width, this->y);
 	}
-	Vector2F RectangleF::get_bottom_left() const
+	Vector2F RectangleF::bottom_left() const
 	{
 		return Vector2F(this->x, this->y + this->height);
 	}
-	Segment RectangleF::get_top_edge() const
+	Segment RectangleF::top_edge() const
 	{
-		return Segment(this->get_top_left(), this->get_top_right());
+		return Segment(this->top_left(), this->top_right());
 	}
-	Segment RectangleF::get_bottom_edge() const
+	Segment RectangleF::bottom_edge() const
 	{
-		return Segment(this->get_bottom_left(), this->get_bottom_right());
+		return Segment(this->bottom_left(), this->bottom_right());
 	}
-	Segment RectangleF::get_left_edge() const
+	Segment RectangleF::left_edge() const
 	{
-		return Segment(this->get_top_left(), this->get_bottom_left());
+		return Segment(this->top_left(), this->bottom_left());
 	}
-	Segment RectangleF::get_right_edge() const
+	Segment RectangleF::right_edge() const
 	{
-		return Segment(this->get_top_right(), this->get_bottom_right());
+		return Segment(this->top_right(), this->bottom_right());
 	}
-	std::vector<Segment> RectangleF::get_edges() const
+	std::vector<Segment> RectangleF::edges() const
 	{
 		std::vector<Segment> edges = 
 		{
-			this->get_top_edge(),
-			this->get_bottom_edge(),
-			this->get_left_edge(),
-			this->get_right_edge()
+			this->top_edge(),
+			this->bottom_edge(),
+			this->left_edge(),
+			this->right_edge()
 		};
 		return edges;
 	}
-	float RectangleF::get_area() const
+	float RectangleF::area() const
 	{
 		return this->width * this->height;
 	}
-	RectangleI RectangleF::get_rectangle_i() const
+	RectangleI RectangleF::rectangle_i() const
 	{
 		return RectangleI(static_cast<int>(this->x),
 			static_cast<int>(this->y),
 			static_cast<int>(this->width),
 			static_cast<int>(this->height));
 	}
-	SimpleMath::Rectangle RectangleF::get_sm_rectangle() const
+	SimpleMath::Rectangle RectangleF::sm_rectangle() const
 	{
 		return SimpleMath::Rectangle(static_cast<long>(this->x),
 					static_cast<long>(this->y),
 					static_cast<long>(this->width),
 					static_cast<long>(this->height));
 	}
-	RECT RectangleF::get_win_rect() const
+	RECT RectangleF::win_rect() const
 	{
 		RECT result = {
 			static_cast<long>(this->x),
@@ -968,7 +952,7 @@ namespace mattmath
 	}
 	void RectangleF::scale_at_center(float horizontal_scale, float vertical_scale)
 	{
-		Vector2F center = this->get_center();
+		Vector2F center = this->center();
 		this->x = center.x - this->width * horizontal_scale / 2.0f;
 		this->y = center.y - this->height * vertical_scale / 2.0f;
 		this->width *= horizontal_scale;
@@ -1197,7 +1181,7 @@ namespace mattmath
 	//}
 	//
 	//template<typename T>
-	//T Matrix<T>::get_element(int row, int column) const
+	//T Matrix<T>::element(int row, int column) const
 	//{
 	//	// check if the row and column are valid
 	//	if (!row_valid(row) || !column_valid(column))
@@ -1221,13 +1205,13 @@ namespace mattmath
 	//}
 	//
 	//template<typename T>
-	//int Matrix<T>::get_rows() const
+	//int Matrix<T>::rows() const
 	//{
 	//	return this->rows_;
 	//}
 	//
 	//template<typename T>
-	//int Matrix<T>::get_columns() const
+	//int Matrix<T>::columns() const
 	//{
 	//	return this->columns_;
 	//}
@@ -1241,7 +1225,7 @@ namespace mattmath
 	//template<typename T>
 	//bool Matrix<T>::equal_size(const Matrix<T>& other) const
 	//{
-	//	return this->rows_ == other.get_rows() && this->columns_ == other.get_columns();
+	//	return this->rows_ == other.rows() && this->columns_ == other.columns();
 	//}
 	//
 	//template<typename T>
@@ -1265,13 +1249,13 @@ namespace mattmath
 	//template<typename T>
 	//T& Matrix<T>::operator()(int row, int column)
 	//{
-	//	return this->get_element_ref(row, column);
+	//	return this->element_ref(row, column);
 	//}
 	//
 	//template<typename T>
 	//const T& Matrix<T>::operator()(int row, int column) const
 	//{
-	//	return this->get_element(row, column);
+	//	return this->element(row, column);
 	//}
 	//
 	//template<typename T>
@@ -1293,7 +1277,7 @@ namespace mattmath
 	//}
 	//
 	//template<typename T>
-	//T& Matrix<T>::get_element_ref(int row, int column)
+	//T& Matrix<T>::element_ref(int row, int column)
 	//{
 	//	// check if the row and column are valid
 	//	if (!row_valid(row) || !column_valid(column))
@@ -1327,22 +1311,22 @@ namespace mattmath
 	//}
 	//
 	//template<typename T>
-	//int Vector<T>::get_size() const
+	//int Vector<T>::size() const
 	//{
-	//	if (this->get_vector_type() == vector_type::ROW)
+	//	if (this->vector_type() == vector_type::ROW)
 	//	{
-	//		return this->get_columns();
+	//		return this->columns();
 	//	}
 	//	else
 	//	{
-	//		return this->get_rows();
+	//		return this->rows();
 	//	}
 	//}
 	//
 	//template<typename T>
-	//vector_type Vector<T>::get_vector_type() const
+	//vector_type Vector<T>::vector_type() const
 	//{
-	//	if (this->get_rows() == 1)
+	//	if (this->rows() == 1)
 	//	{
 	//		return vector_type::ROW;
 	//	}
@@ -1355,13 +1339,13 @@ namespace mattmath
 	//template<typename T>
 	//T& Vector<T>::operator[](int index)
 	//{
-	//	return this->get_element_ref(index, 0);
+	//	return this->element_ref(index, 0);
 	//}
 	//
 	//template<typename T>
 	//const T& Vector<T>::operator[](int index) const
 	//{
-	//	return this->get_element(index, 0);
+	//	return this->element(index, 0);
 	//}
 
 #pragma endregion Vector
@@ -1389,12 +1373,12 @@ namespace mattmath
 		this->y = vector.y;
 	}
 
-	SimpleMath::Vector2 Vector2I::get_sm_vector() const
+	SimpleMath::Vector2 Vector2I::sm_vector() const
 	{
 		return SimpleMath::Vector2(static_cast<float>(this->x),
 					static_cast<float>(this->y));
 	}
-	XMINT2 Vector2I::get_xm_vector() const
+	XMINT2 Vector2I::xm_vector() const
 	{
 		return XMINT2(this->x, this->y);
 	}
@@ -1552,11 +1536,11 @@ namespace mattmath
 		this->x = static_cast<float>(vector.x);
 		this->y = static_cast<float>(vector.y);
 	}
-	SimpleMath::Vector2 Vector2F::get_sm_vector() const
+	SimpleMath::Vector2 Vector2F::sm_vector() const
 	{
 		return SimpleMath::Vector2(this->x, this->y);
 	}
-	XMFLOAT2 Vector2F::get_xm_vector() const
+	XMFLOAT2 Vector2F::xm_vector() const
 	{
 		return XMFLOAT2(this->x, this->y);
 	}
@@ -1660,7 +1644,7 @@ namespace mattmath
 	{
 		return this->x * this->x + this->y * this->y;
 	}
-	Direction Vector2F::get_direction() const
+	Direction Vector2F::direction() const
 	{
 		if (are_equal(this->x, 0.0f) && are_equal(this->y, 0.0f))
 		{
@@ -2012,46 +1996,46 @@ namespace mattmath
 		this->height = rectangle.bottom - rectangle.top;
 	}
 
-	int RectangleI::get_left() const
+	int RectangleI::left() const
 	{
 		return this->x;
 	}
-	int RectangleI::get_top() const
+	int RectangleI::top() const
 	{
 		return this->y;
 	}
-	int RectangleI::get_right() const
+	int RectangleI::right() const
 	{
 		return this->x + this->width;
 	}
-	int RectangleI::get_bottom() const
+	int RectangleI::bottom() const
 	{
 		return this->y + this->height;
 	}
-	Vector2I RectangleI::get_position() const
+	Vector2I RectangleI::position() const
 	{
 		return Vector2I(this->x, this->y);
 	}
-	Vector2I RectangleI::get_size() const
+	Vector2I RectangleI::size() const
 	{
 		return Vector2I(this->width, this->height);
 	}
-	Vector2I RectangleI::get_top_left() const
+	Vector2I RectangleI::top_left() const
 	{
 		return Vector2I(this->x, this->y);
 	}
-	Vector2I RectangleI::get_bottom_right() const
+	Vector2I RectangleI::bottom_right() const
 	{
 		return Vector2I(this->x + this->width, this->y + this->height);
 	}
-	DirectX::SimpleMath::Rectangle RectangleI::get_sm_rectangle() const
+	DirectX::SimpleMath::Rectangle RectangleI::sm_rectangle() const
 	{
 		return SimpleMath::Rectangle(static_cast<long>(this->x),
 			static_cast<long>(this->y),
 			static_cast<long>(this->width),
 			static_cast<long>(this->height));
 	}
-	RECT RectangleI::get_win_rect() const
+	RECT RectangleI::win_rect() const
 	{
 		RECT result = {
 			static_cast<long>(this->x),
@@ -2185,7 +2169,7 @@ namespace mattmath
 	{
 		return !(*this == other);
 	}
-	XMVECTOR Vector4F::get_xm_vector() const
+	XMVECTOR Vector4F::xm_vector() const
 	{
 		XMVECTOR result = XMVectorSet(this->x, this->y, this->z, this->w);
 		return result;
@@ -2315,19 +2299,19 @@ namespace mattmath
 		this->clamp_colours();
 		return *this;
 	}
-	float Colour::get_red() const
+	float Colour::red() const
 	{
 		return this->r;
 	}
-	float Colour::get_green() const
+	float Colour::green() const
 	{
 		return this->g;
 	}
-	float Colour::get_blue() const
+	float Colour::blue() const
 	{
 		return this->b;
 	}
-	float Colour::get_alpha() const
+	float Colour::alpha() const
 	{
 		return this->a;
 	}
@@ -2438,11 +2422,11 @@ namespace mattmath
 	{
 		this->a = 0.0f;
 	}
-	DirectX::SimpleMath::Color Colour::get_sm_colour() const
+	DirectX::SimpleMath::Color Colour::sm_colour() const
 	{
 		return DirectX::SimpleMath::Color(this->r, this->g, this->b, this->a);
 	}
-	DirectX::XMVECTOR Colour::get_xm_vector() const
+	DirectX::XMVECTOR Colour::xm_vector() const
 	{
 		return DirectX::XMVectorSet(this->r, this->g, this->b, this->a);
 	}
@@ -2502,7 +2486,7 @@ namespace mattmath
 		}
 		this->elements_ = elements;
 	}
-	float MatrixF::get_element(int row, int column) const
+	float MatrixF::element(int row, int column) const
 	{
 		// check if the row and column are valid
 		if (!row_valid(row) || !column_valid(column))
@@ -2523,15 +2507,15 @@ namespace mattmath
 		this->elements_[index] = value;
 	}
 
-	int MatrixF::get_rows() const
+	int MatrixF::rows() const
 	{
 		return this->rows_;
 	}
-	int MatrixF::get_columns() const
+	int MatrixF::columns() const
 	{
 		return this->columns_;
 	}
-	Vector2I MatrixF::get_dimensions() const
+	Vector2I MatrixF::dimensions() const
 	{
 		return Vector2I(this->columns_, this->rows_);
 	}
@@ -2551,14 +2535,14 @@ namespace mattmath
 			{
 				if (i == j)
 				{
-					if (this->get_element(i, j) != 1.0f)
+					if (this->element(i, j) != 1.0f)
 					{
 						return false;
 					}
 				}
 				else
 				{
-					if (this->get_element(i, j) != 0.0f)
+					if (this->element(i, j) != 0.0f)
 					{
 						return false;
 					}
@@ -2577,7 +2561,7 @@ namespace mattmath
 		{
 			for (int j = 0; j < this->columns_; j++)
 			{
-				if (this->get_element(i, j) != this->get_element(j, i))
+				if (this->element(i, j) != this->element(j, i))
 				{
 					return false;
 				}
@@ -2595,7 +2579,7 @@ namespace mattmath
 		{
 			for (int j = 0; j < this->columns_; j++)
 			{
-				if (i != j && this->get_element(i, j) != 0.0f)
+				if (i != j && this->element(i, j) != 0.0f)
 				{
 					return false;
 				}
@@ -2613,7 +2597,7 @@ namespace mattmath
 		{
 			for (int j = 0; j < i; j++)
 			{
-				if (this->get_element(i, j) != 0.0f)
+				if (this->element(i, j) != 0.0f)
 				{
 					return false;
 				}
@@ -2631,7 +2615,7 @@ namespace mattmath
 		{
 			for (int j = i + 1; j < this->columns_; j++)
 			{
-				if (this->get_element(i, j) != 0.0f)
+				if (this->element(i, j) != 0.0f)
 				{
 					return false;
 				}
@@ -2657,8 +2641,8 @@ namespace mattmath
 	//}
 	bool MatrixF::operator==(const MatrixF& other) const
 	{
-		Vector2I dimensions = this->get_dimensions();
-		Vector2I other_dimensions = other.get_dimensions();
+		Vector2I dimensions = this->dimensions();
+		Vector2I other_dimensions = other.dimensions();
 		if (dimensions != other_dimensions)
 		{
 			return false;
@@ -2667,7 +2651,7 @@ namespace mattmath
 		{
 			for (int j = 0; j < dimensions.y; j++)
 			{
-				if (this->get_element(i, j) != other.get_element(i, j))
+				if (this->element(i, j) != other.element(i, j))
 				{
 					return false;
 				}
@@ -2739,7 +2723,7 @@ namespace mattmath
 	}
 	bool mattmath::equal_dimensions(const MatrixF& a, const MatrixF& b)
 	{
-		return a.get_dimensions() == b.get_dimensions();
+		return a.dimensions() == b.dimensions();
 	}
 	MatrixF mattmath::add(const MatrixF& a, const MatrixF& b)
 	{
@@ -2748,14 +2732,14 @@ namespace mattmath
 		{
 			throw std::invalid_argument("Matrix dimensions are not the same");
 		}
-		int rows = a.get_rows();
-		int columns = a.get_columns();
+		int rows = a.rows();
+		int columns = a.columns();
 		MatrixF result(rows, columns);
 		for (int i = 0; i < rows; i++)
 		{
 			for (int j = 0; j < columns; j++)
 			{
-				result.set_element(i, j, a.get_element(i, j) + b.get_element(i, j));
+				result.set_element(i, j, a.element(i, j) + b.element(i, j));
 			}
 		}
 		return result;
@@ -2767,14 +2751,14 @@ namespace mattmath
 		{
 			throw std::invalid_argument("Matrix dimensions are not the same");
 		}
-		int rows = a.get_rows();
-		int columns = a.get_columns();
+		int rows = a.rows();
+		int columns = a.columns();
 		MatrixF result(rows, columns);
 		for (int i = 0; i < rows; i++)
 		{
 			for (int j = 0; j < columns; j++)
 			{
-				result.set_element(i, j, a.get_element(i, j) - b.get_element(i, j));
+				result.set_element(i, j, a.element(i, j) - b.element(i, j));
 			}
 		}
 		return result;
@@ -2782,19 +2766,19 @@ namespace mattmath
 	MatrixF mattmath::multiply(const MatrixF& a, const MatrixF& b)
 	{
 		// check if the dimensions are correct
-		if (a.get_columns() != b.get_rows())
+		if (a.columns() != b.rows())
 		{
 			throw std::invalid_argument("Matrix dimensions are not correct");
 		}
-		MatrixF result(a.get_rows(), b.get_columns());
-		for (int i = 0; i < a.get_rows(); i++)
+		MatrixF result(a.rows(), b.columns());
+		for (int i = 0; i < a.rows(); i++)
 		{
-			for (int j = 0; j < b.get_columns(); j++)
+			for (int j = 0; j < b.columns(); j++)
 			{
 				float sum = 0.0f;
-				for (int k = 0; k < a.get_columns(); k++)
+				for (int k = 0; k < a.columns(); k++)
 				{
-					sum += a.get_element(i, k) * b.get_element(k, j);
+					sum += a.element(i, k) * b.element(k, j);
 				}
 				result.set_element(i, j, sum);
 			}
@@ -2804,19 +2788,19 @@ namespace mattmath
 	MatrixF mattmath::divide(const MatrixF& a, const MatrixF& b)
 	{
 		// check if the dimensions are correct
-		if (a.get_columns() != b.get_rows())
+		if (a.columns() != b.rows())
 		{
 			throw std::invalid_argument("Matrix dimensions are not correct");
 		}
-		MatrixF result(a.get_rows(), b.get_columns());
-		for (int i = 0; i < a.get_rows(); i++)
+		MatrixF result(a.rows(), b.columns());
+		for (int i = 0; i < a.rows(); i++)
 		{
-			for (int j = 0; j < b.get_columns(); j++)
+			for (int j = 0; j < b.columns(); j++)
 			{
 				float sum = 0.0f;
-				for (int k = 0; k < a.get_columns(); k++)
+				for (int k = 0; k < a.columns(); k++)
 				{
-					sum += a.get_element(i, k) / b.get_element(k, j);
+					sum += a.element(i, k) / b.element(k, j);
 				}
 				result.set_element(i, j, sum);
 			}
@@ -2825,28 +2809,28 @@ namespace mattmath
 	}
 	MatrixF mattmath::multiply(const MatrixF& a, float b)
 	{
-		int rows = a.get_rows();
-		int columns = a.get_columns();
+		int rows = a.rows();
+		int columns = a.columns();
 		MatrixF result(rows, columns);
 		for (int i = 0; i < rows; i++)
 		{
 			for (int j = 0; j < columns; j++)
 			{
-				result.set_element(i, j, a.get_element(i, j) * b);
+				result.set_element(i, j, a.element(i, j) * b);
 			}
 		}
 		return result;
 	}
 	MatrixF mattmath::divide(const MatrixF& a, float b)
 	{
-		int rows = a.get_rows();
-		int columns = a.get_columns();
+		int rows = a.rows();
+		int columns = a.columns();
 		MatrixF result(rows, columns);
 		for (int i = 0; i < rows; i++)
 		{
 			for (int j = 0; j < columns; j++)
 			{
-				result.set_element(i, j, a.get_element(i, j) / b);
+				result.set_element(i, j, a.element(i, j) / b);
 			}
 		}
 		return result;
@@ -2854,8 +2838,8 @@ namespace mattmath
 	MatrixF mattmath::gaussian_elimination(const MatrixF& matrix)
 	{
 		MatrixF result = matrix;
-		int rows = result.get_rows();
-		int columns = result.get_columns();
+		int rows = result.rows();
+		int columns = result.columns();
 		int i = 0;
 		int j = 0;
 		while (i < rows && j < columns)
@@ -2864,38 +2848,38 @@ namespace mattmath
 			int pivot_row = i;
 			for (int k = i + 1; k < rows; k++)
 			{
-				if (std::abs(result.get_element(k, j)) > std::abs(result.get_element(pivot_row, j)))
+				if (std::abs(result.element(k, j)) > std::abs(result.element(pivot_row, j)))
 				{
 					pivot_row = k;
 				}
 			}
-			if (result.get_element(pivot_row, j) != 0.0f)
+			if (result.element(pivot_row, j) != 0.0f)
 			{
 				// Swap the rows
 				if (pivot_row != i)
 				{
 					for (int k = 0; k < columns; k++)
 					{
-						float temp = result.get_element(i, k);
-						result.set_element(i, k, result.get_element(pivot_row, k));
+						float temp = result.element(i, k);
+						result.set_element(i, k, result.element(pivot_row, k));
 						result.set_element(pivot_row, k, temp);
 					}
 				}
 				// Make the pivot 1
-				float pivot = result.get_element(i, j);
+				float pivot = result.element(i, j);
 				for (int k = 0; k < columns; k++)
 				{
-					result.set_element(i, k, result.get_element(i, k) / pivot);
+					result.set_element(i, k, result.element(i, k) / pivot);
 				}
 				// Make the other elements in the column 0
 				for (int k = 0; k < rows; k++)
 				{
 					if (k != i)
 					{
-						float factor = result.get_element(k, j);
+						float factor = result.element(k, j);
 						for (int l = 0; l < columns; l++)
 						{
-							result.set_element(k, l, result.get_element(k, l) - factor * result.get_element(i, l));
+							result.set_element(k, l, result.element(k, l) - factor * result.element(i, l));
 						}
 					}
 				}
@@ -2907,14 +2891,14 @@ namespace mattmath
 	}
 	MatrixF mattmath::transpose(const MatrixF& matrix)
 	{
-		int rows = matrix.get_rows();
-		int columns = matrix.get_columns();
+		int rows = matrix.rows();
+		int columns = matrix.columns();
 		MatrixF result(columns, rows);
 		for (int i = 0; i < rows; i++)
 		{
 			for (int j = 0; j < columns; j++)
 			{
-				result.set_element(j, i, matrix.get_element(i, j));
+				result.set_element(j, i, matrix.element(i, j));
 			}
 		}
 		return result;
@@ -2949,15 +2933,15 @@ namespace mattmath
 		{
 			throw std::invalid_argument("Matrix is not square");
 		}
-		int size = matrix.get_rows();
+		int size = matrix.rows();
 		if (size == 1)
 		{
-			return matrix.get_element(0, 0);
+			return matrix.element(0, 0);
 		}
 		else if (size == 2)
 		{
-			return matrix.get_element(0, 0) * matrix.get_element(1, 1) -
-				matrix.get_element(0, 1) * matrix.get_element(1, 0);
+			return matrix.element(0, 0) * matrix.element(1, 1) -
+				matrix.element(0, 1) * matrix.element(1, 0);
 		}
 		else
 		{
@@ -2971,15 +2955,15 @@ namespace mattmath
 					{
 						if (k < i)
 						{
-							submatrix.set_element(j - 1, k, matrix.get_element(j, k));
+							submatrix.set_element(j - 1, k, matrix.element(j, k));
 						}
 						else if (k > i)
 						{
-							submatrix.set_element(j - 1, k - 1, matrix.get_element(j, k));
+							submatrix.set_element(j - 1, k - 1, matrix.element(j, k));
 						}
 					}
 				}
-				result += matrix.get_element(0, i) * determinant(submatrix) * ((i % 2 == 0) ? 1 : -1);
+				result += matrix.element(0, i) * determinant(submatrix) * ((i % 2 == 0) ? 1 : -1);
 			}
 			return result;
 		}
@@ -3204,12 +3188,12 @@ namespace mattmath
 		this->minDepth = viewport.MinDepth;
 		this->maxDepth = viewport.MaxDepth;
 	}
-	SimpleMath::Viewport Viewport::get_sm_viewport() const
+	SimpleMath::Viewport Viewport::sm_viewport() const
 	{
 		return SimpleMath::Viewport(this->x, this->y, this->width, this->height,
 			this->minDepth, this->maxDepth);
 	}
-	D3D11_VIEWPORT Viewport::get_d3d_viewport() const
+	D3D11_VIEWPORT Viewport::d3d_viewport() const
 	{
 		D3D11_VIEWPORT result = {
 			this->x,
@@ -3221,23 +3205,23 @@ namespace mattmath
 		};
 		return result;
 	}
-	const D3D11_VIEWPORT* Viewport::get_d3d_viewport_ptr() const
+	const D3D11_VIEWPORT* Viewport::d3d_viewport_ptr() const
 	{
 		return reinterpret_cast<const D3D11_VIEWPORT*>(this);
 	}
-	RectangleF Viewport::get_rectangle() const
+	RectangleF Viewport::rectangle() const
 	{
 		return RectangleF(this->x, this->y, this->width, this->height);
 	}
-	//RectangleF Viewport::get_rectangle(float minDepth, float maxDepth) const
+	//RectangleF Viewport::rectangle(float minDepth, float maxDepth) const
 	//{
 	//	return RectangleF(this->x, this->y, this->width, this->height);
 	//}
-	Vector2F Viewport::get_position() const
+	Vector2F Viewport::position() const
 	{
 		return Vector2F(this->x, this->y);
 	}
-	Vector2F Viewport::get_size() const
+	Vector2F Viewport::size() const
 	{
 		return Vector2F(this->width, this->height);
 	}
@@ -3314,33 +3298,33 @@ namespace mattmath
 #pragma region Circle
 
 	Circle::Circle(const Vector2F& center, float radius) :
-		center(center), radius(radius)
+		center_(center), radius_(radius)
 	{
 	}
 	Circle::Circle(const DirectX::SimpleMath::Vector2& center, float radius) :
-		center(center), radius(radius)
+		center_(center), radius_(radius)
 	{
 	}
 	Circle::Circle(float x, float y, float radius)
 	{
-		this->center = Vector2F(x, y);
-		this->radius = radius;
+		this->center_ = Vector2F(x, y);
+		this->radius_ = radius;
 	}
-	RectangleF Circle::get_bounding_box() const
+	RectangleF Circle::bounding_box() const
 	{
-		return mattmath::RectangleF(this->center.x - this->radius,
-					this->center.y - this->radius,
-					this->radius * 2.0f, this->radius * 2.0f);
+		return mattmath::RectangleF(this->center_.x - this->radius_,
+					this->center_.y - this->radius_,
+					this->radius_ * 2.0f, this->radius_ * 2.0f);
 
 	}
-	ShapeType Circle::get_shape_type() const
+	ShapeType Circle::shape_type() const
 	{
 		return ShapeType::circle;
 	}
 
 	void Circle::offset(const Vector2F& offset)
 	{
-		this->center += offset;
+		this->center_ += offset;
 	}
 
 	std::unique_ptr<Shape> Circle::clone() const
@@ -3348,7 +3332,7 @@ namespace mattmath
 		return std::make_unique<Circle>(*this);
 	}
 
-	std::vector<Segment> Circle::get_edges() const
+	std::vector<Segment> Circle::edges() const
 	{
 		// Circles have no edges
 		return std::vector<Segment>();
@@ -3356,13 +3340,13 @@ namespace mattmath
 
 	void Circle::inflate(float amount)
 	{
-		this->radius += amount;
+		this->radius_ += amount;
 	}
 
 	bool Circle::operator==(const Circle& other) const
 	{
-		return this->center == other.center &&
-			this->radius == other.radius;
+		return this->center_ == other.center_ &&
+			this->radius_ == other.radius_;
 	}
 	bool Circle::operator!=(const Circle& other) const
 	{
@@ -3370,7 +3354,7 @@ namespace mattmath
 	}
 	//bool Circle::contains(const Vector2F& point) const
 	//{
-	//	return Vector2F::distance(this->center, point) <= this->radius;
+	//	return Vector2F::distance(this->center_, point) <= this->radius_;
 	//}
 	bool Circle::intersects(const RectangleF& other) const
 	{
@@ -3404,9 +3388,13 @@ namespace mattmath
 	{
 		return this->intersects(point);
 	}
-	Point2F Circle::get_center() const
+	Point2F Circle::center() const
 	{
-		return this->center;
+		return this->center_;
+	}
+	float Circle::radius() const
+	{
+		return this->radius_;
 	}
 
 #pragma endregion Circle
@@ -3435,7 +3423,7 @@ namespace mattmath
 		this->points[1] = Vector2F(x1, y1);
 		this->points[2] = Vector2F(x2, y2);
 	}
-	RectangleF Triangle::get_bounding_box() const
+	RectangleF Triangle::bounding_box() const
 	{
 		float x1 = std::min(std::min(this->points[0].x, this->points[1].x),
 			this->points[2].x);
@@ -3451,7 +3439,7 @@ namespace mattmath
 
 		return RectangleF(x1, y1, x2 - x1, y2 - y1);
 	}
-	ShapeType Triangle::get_shape_type() const
+	ShapeType Triangle::shape_type() const
 	{
 		return ShapeType::triangle;
 	}
@@ -3467,7 +3455,7 @@ namespace mattmath
 	}
 	void Triangle::inflate(float amount)
 	{
-		Vector2F center = this->get_center();
+		Vector2F center = this->center();
 		Vector2F edge0 = this->points[0] - center;
 		Vector2F edge1 = this->points[1] - center;
 		Vector2F edge2 = this->points[2] - center;
@@ -3481,67 +3469,63 @@ namespace mattmath
 		this->points[2] = center + edge2 * (this->points[2] - center).length() + edge2 * amount;
 
 	}
-	const Vector2F& Triangle::get_point_0() const
+	const Vector2F& Triangle::point_0() const
 	{
 		return this->points[0];
 	}
-	const Vector2F& Triangle::get_point_1() const
+	const Vector2F& Triangle::point_1() const
 	{
 		return this->points[1];
 	}
-	const Vector2F& Triangle::get_point_2() const
+	const Vector2F& Triangle::point_2() const
 	{
 		return this->points[2];
 	}
-	std::vector<Vector2F> Triangle::get_points() const
-	{
-		return { this->points[0], this->points[1], this->points[2] };
-	}
-	Segment Triangle::get_edge_0() const
+	Segment Triangle::edge_0() const
 	{
 		return Segment(this->points[0], this->points[1]);
 	}
-	Segment Triangle::get_edge_1() const
+	Segment Triangle::edge_1() const
 	{
 		return Segment(this->points[1], this->points[2]);
 	}
-	Segment Triangle::get_edge_2() const
+	Segment Triangle::edge_2() const
 	{
 		return Segment(this->points[2], this->points[0]);
 	}
-	std::vector<Segment> Triangle::get_edges() const
+	std::vector<Segment> Triangle::edges() const
 	{
 		std::vector<Segment> segments =
 		{
-			this->get_edge_0(),
-			this->get_edge_1(),
-			this->get_edge_2()
+			this->edge_0(),
+			this->edge_1(),
+			this->edge_2()
 		};
 		return segments;
 	}
-	float Triangle::get_angle_0() const
+	float Triangle::angle_0() const
 	{
-		return Vector2F::angle_between(this->get_edge_0().get_direction(),
-			this->get_edge_2().get_direction());
+		return Vector2F::angle_between(this->edge_0().direction(),
+			this->edge_2().direction());
 
 	}
-	float Triangle::get_angle_1() const
+	float Triangle::angle_1() const
 	{
-		return Vector2F::angle_between(this->get_edge_1().get_direction(),
-			this->get_edge_0().get_direction());
+		return Vector2F::angle_between(this->edge_1().direction(),
+			this->edge_0().direction());
 	}
-	float Triangle::get_angle_2() const
+	float Triangle::angle_2() const
 	{
-		return Vector2F::angle_between(this->get_edge_2().get_direction(),
-			this->get_edge_1().get_direction());
+		return Vector2F::angle_between(this->edge_2().direction(),
+			this->edge_1().direction());
 	}
-	std::vector<float> Triangle::get_angles() const
+	std::vector<float> Triangle::angles() const
 	{
 		std::vector<float> angles =
 		{
-			this->get_angle_0(),
-			this->get_angle_1(),
-			this->get_angle_2()
+			this->angle_0(),
+			this->angle_1(),
+			this->angle_2()
 		};
 		return angles;
 	}
@@ -3596,7 +3580,7 @@ namespace mattmath
 		return this->intersects(point);
 	}
 
-	Point2F Triangle::get_center() const
+	Point2F Triangle::center() const
 	{
 		return (this->points[0] + this->points[1] + this->points[2]) / 3.0f;
 	}
@@ -3640,7 +3624,7 @@ namespace mattmath
 
 	}
 
-	Segment TriangleRightAxisAligned::get_hypotenuse() const
+	Segment TriangleRightAxisAligned::hypotenuse() const
 	{
 		int hypotenuse = this->find_hypotenuse(*this);
 		if (hypotenuse == -1)
@@ -3648,9 +3632,9 @@ namespace mattmath
 			throw std::invalid_argument("Triangle is not a right triangle");
 		}
 
-		return this->get_edges()[hypotenuse];
+		return this->edges()[hypotenuse];
 	}
-	float TriangleRightAxisAligned::get_hypotenuse_gradient() const
+	float TriangleRightAxisAligned::hypotenuse_gradient() const
 	{
 		int hypotenuse = this->find_hypotenuse(*this);
 		if (hypotenuse == -1)
@@ -3675,15 +3659,15 @@ namespace mattmath
 	int TriangleRightAxisAligned::find_hypotenuse(const Triangle& tri) const
 	{
 		// find the hypotenuse
-		if (are_equal(tri.get_angle_0(), PI_OVER_2))
+		if (are_equal(tri.angle_0(), PI_OVER_2))
 		{
 			return 0;
 		}
-		else if (are_equal(tri.get_angle_1(), PI_OVER_2))
+		else if (are_equal(tri.angle_1(), PI_OVER_2))
 		{
 			return 1;
 		}
-		else if (are_equal(tri.get_angle_2(), PI_OVER_2))
+		else if (are_equal(tri.angle_2(), PI_OVER_2))
 		{
 			return 2;
 		}
@@ -3712,10 +3696,10 @@ namespace mattmath
 		const Vector2F& point2,
 		const Vector2F& point3)
 	{
-		this->points[0] = point0;
-		this->points[1] = point1;
-		this->points[2] = point2;
-		this->points[3] = point3;
+		this->points_[0] = point0;
+		this->points_[1] = point1;
+		this->points_[2] = point2;
+		this->points_[3] = point3;
 
 		if (!this->is_valid())
 		{
@@ -3730,10 +3714,10 @@ namespace mattmath
 			throw std::invalid_argument("Quad must have 4 points");
 		}
 
-		this->points[0] = points[0];
-		this->points[1] = points[1];
-		this->points[2] = points[2];
-		this->points[3] = points[3];
+		this->points_[0] = points[0];
+		this->points_[1] = points[1];
+		this->points_[2] = points[2];
+		this->points_[3] = points[3];
 
 		if (!this->is_valid())
 		{
@@ -3743,10 +3727,10 @@ namespace mattmath
 
 	Quad::Quad(const RectangleF& rectangle)
 	{
-		this->points[0] = Vector2F(rectangle.x, rectangle.y);
-		this->points[1] = Vector2F(rectangle.x + rectangle.width, rectangle.y);
-		this->points[2] = Vector2F(rectangle.x + rectangle.width, rectangle.y + rectangle.height);
-		this->points[3] = Vector2F(rectangle.x, rectangle.y + rectangle.height);
+		this->points_[0] = Vector2F(rectangle.x, rectangle.y);
+		this->points_[1] = Vector2F(rectangle.x + rectangle.width, rectangle.y);
+		this->points_[2] = Vector2F(rectangle.x + rectangle.width, rectangle.y + rectangle.height);
+		this->points_[3] = Vector2F(rectangle.x, rectangle.y + rectangle.height);
 
 		if (!this->is_valid())
 		{
@@ -3756,12 +3740,12 @@ namespace mattmath
 
 	Quad::Quad(const RectangleRotated& rectangle)
 	{
-		Quad q = rectangle.get_quad();
+		Quad q = rectangle.quad();
 
-		this->points[0] = q.get_point_0();
-		this->points[1] = q.get_point_1();
-		this->points[2] = q.get_point_2();
-		this->points[3] = q.get_point_3();
+		this->points_[0] = q.point_0();
+		this->points_[1] = q.point_1();
+		this->points_[2] = q.point_2();
+		this->points_[3] = q.point_3();
 
 		if (!this->is_valid())
 		{
@@ -3774,10 +3758,10 @@ namespace mattmath
 		const DirectX::SimpleMath::Vector2& point2,
 		const DirectX::SimpleMath::Vector2& point3)
 	{
-		this->points[0] = point0;
-		this->points[1] = point1;
-		this->points[2] = point2;
-		this->points[3] = point3;
+		this->points_[0] = point0;
+		this->points_[1] = point1;
+		this->points_[2] = point2;
+		this->points_[3] = point3;
 
 		if (!this->is_valid())
 		{
@@ -3785,34 +3769,34 @@ namespace mattmath
 		}
 	}
 
-	RectangleF Quad::get_bounding_box() const
+	RectangleF Quad::bounding_box() const
 	{
-		float x1 = std::min(std::min(std::min(this->points[0].x, this->points[1].x),
-			this->points[2].x), this->points[3].x);
+		float x1 = std::min(std::min(std::min(this->points_[0].x, this->points_[1].x),
+			this->points_[2].x), this->points_[3].x);
 
-		float x2 = std::max(std::max(std::max(this->points[0].x, this->points[1].x),
-			this->points[2].x), this->points[3].x);
+		float x2 = std::max(std::max(std::max(this->points_[0].x, this->points_[1].x),
+			this->points_[2].x), this->points_[3].x);
 
-		float y1 = std::min(std::min(std::min(this->points[0].y, this->points[1].y),
-			this->points[2].y), this->points[3].y);
+		float y1 = std::min(std::min(std::min(this->points_[0].y, this->points_[1].y),
+			this->points_[2].y), this->points_[3].y);
 
-		float y2 = std::max(std::max(std::max(this->points[0].y, this->points[1].y),
-			this->points[2].y), this->points[3].y);
+		float y2 = std::max(std::max(std::max(this->points_[0].y, this->points_[1].y),
+			this->points_[2].y), this->points_[3].y);
 
 		return RectangleF(x1, y1, x2 - x1, y2 - y1);
 	}
 
-	ShapeType Quad::get_shape_type() const
+	ShapeType Quad::shape_type() const
 	{
 		return ShapeType::quad;
 	}
 
 	void Quad::offset(const Vector2F& offset)
 	{
-		this->points[0] += offset;
-		this->points[1] += offset;
-		this->points[2] += offset;
-		this->points[3] += offset;
+		this->points_[0] += offset;
+		this->points_[1] += offset;
+		this->points_[2] += offset;
+		this->points_[3] += offset;
 	}
 
 	std::unique_ptr<Shape> Quad::clone() const
@@ -3822,27 +3806,27 @@ namespace mattmath
 
 	void Quad::inflate(float amount)
 	{
-		Vector2F center = this->get_center();
-		Vector2F edge0 = this->points[0] - center;
-		Vector2F edge1 = this->points[1] - center;
-		Vector2F edge2 = this->points[2] - center;
-		Vector2F edge3 = this->points[3] - center;
+		Vector2F center = this->center();
+		Vector2F edge0 = this->points_[0] - center;
+		Vector2F edge1 = this->points_[1] - center;
+		Vector2F edge2 = this->points_[2] - center;
+		Vector2F edge3 = this->points_[3] - center;
 
 		edge0.normalize();
 		edge1.normalize();
 		edge2.normalize();
 		edge3.normalize();
 
-		this->points[0] = center + edge0 * (this->points[0] - center).length() + edge0 * amount;
-		this->points[1] = center + edge1 * (this->points[1] - center).length() + edge1 * amount;
-		this->points[2] = center + edge2 * (this->points[2] - center).length() + edge2 * amount;
-		this->points[3] = center + edge3 * (this->points[3] - center).length() + edge3 * amount;
+		this->points_[0] = center + edge0 * (this->points_[0] - center).length() + edge0 * amount;
+		this->points_[1] = center + edge1 * (this->points_[1] - center).length() + edge1 * amount;
+		this->points_[2] = center + edge2 * (this->points_[2] - center).length() + edge2 * amount;
+		this->points_[3] = center + edge3 * (this->points_[3] - center).length() + edge3 * amount;
 	}
 
 	bool Quad::is_valid() const
 	{
 		// check if the edges intersect
-		std::vector<Segment> edges = this->get_edges();
+		std::vector<Segment> edges = this->edges();
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -3858,40 +3842,40 @@ namespace mattmath
 		return true;
 	}
 
-	const Point2F& Quad::get_point_0() const
+	const Point2F& Quad::point_0() const
 	{
-		return this->points[0];
+		return this->points_[0];
 	}
 
-	const Point2F& Quad::get_point_1() const
+	const Point2F& Quad::point_1() const
 	{
-		return this->points[1];
+		return this->points_[1];
 	}
 
-	const Point2F& Quad::get_point_2() const
+	const Point2F& Quad::point_2() const
 	{
-		return this->points[2];
+		return this->points_[2];
 	}
 
-	const Point2F& Quad::get_point_3() const
+	const Point2F& Quad::point_3() const
 	{
-		return this->points[3];
+		return this->points_[3];
 	}
 
-	std::vector<Point2F> Quad::get_points() const
+	std::vector<Point2F> Quad::points() const
 	{
 		return
 		{
-			this->points[0],
-			this->points[1],
-			this->points[2],
-			this->points[3]
+			this->points_[0],
+			this->points_[1],
+			this->points_[2],
+			this->points_[3]
 		};
 	}
 
 	void Quad::set_point_0(const Point2F& point)
 	{
-		this->points[0] = point;
+		this->points_[0] = point;
 
 		if (!this->is_valid())
 		{
@@ -3901,7 +3885,7 @@ namespace mattmath
 
 	void Quad::set_point_1(const Point2F& point)
 	{
-		this->points[1] = point;
+		this->points_[1] = point;
 
 		if (!this->is_valid())
 		{
@@ -3911,7 +3895,7 @@ namespace mattmath
 
 	void Quad::set_point_2(const Point2F& point)
 	{
-		this->points[2] = point;
+		this->points_[2] = point;
 
 		if (!this->is_valid())
 		{
@@ -3921,7 +3905,7 @@ namespace mattmath
 
 	void Quad::set_point_3(const Point2F& point)
 	{
-		this->points[3] = point;
+		this->points_[3] = point;
 
 		if (!this->is_valid())
 		{
@@ -3929,64 +3913,64 @@ namespace mattmath
 		}
 	}
 
-	Segment Quad::get_edge_0() const
+	Segment Quad::edge_0() const
 	{
-		return Segment(this->points[0], this->points[1]);
+		return Segment(this->points_[0], this->points_[1]);
 	}
 
-	Segment Quad::get_edge_1() const
+	Segment Quad::edge_1() const
 	{
-		return Segment(this->points[1], this->points[2]);
+		return Segment(this->points_[1], this->points_[2]);
 	}
 
-	Segment Quad::get_edge_2() const
+	Segment Quad::edge_2() const
 	{
-		return Segment(this->points[2], this->points[3]);
+		return Segment(this->points_[2], this->points_[3]);
 	}
 
-	Segment Quad::get_edge_3() const
+	Segment Quad::edge_3() const
 	{
-		return Segment(this->points[3], this->points[0]);
+		return Segment(this->points_[3], this->points_[0]);
 	}
 
-	std::vector<Segment> Quad::get_edges() const
+	std::vector<Segment> Quad::edges() const
 	{
 		std::vector<Segment> edges =
 		{
-			this->get_edge_0(),
-			this->get_edge_1(),
-			this->get_edge_2(),
-			this->get_edge_3()
+			this->edge_0(),
+			this->edge_1(),
+			this->edge_2(),
+			this->edge_3()
 		};
 		return edges;
 	}
 
-	Triangle Quad::get_triangle_0() const
+	Triangle Quad::triangle_0() const
 	{
-		return Triangle(this->points[0], this->points[1], this->points[2]);
+		return Triangle(this->points_[0], this->points_[1], this->points_[2]);
 	}
 
-	Triangle Quad::get_triangle_1() const
+	Triangle Quad::triangle_1() const
 	{
-		return Triangle(this->points[0], this->points[2], this->points[3]);
+		return Triangle(this->points_[0], this->points_[2], this->points_[3]);
 	}
 
-	std::vector<Triangle> Quad::get_triangles() const
+	std::vector<Triangle> Quad::triangles() const
 	{
 		std::vector<Triangle> triangles =
 		{
-			this->get_triangle_0(),
-			this->get_triangle_1()
+			this->triangle_0(),
+			this->triangle_1()
 		};
 		return triangles;
 	}
 
 	bool Quad::operator==(const Quad& other) const
 	{
-		return this->points[0] == other.points[0] &&
-			this->points[1] == other.points[1] &&
-			this->points[2] == other.points[2] &&
-			this->points[3] == other.points[3];
+		return this->points_[0] == other.points_[0] &&
+			this->points_[1] == other.points_[1] &&
+			this->points_[2] == other.points_[2] &&
+			this->points_[3] == other.points_[3];
 	}
 
 	bool Quad::operator!=(const Quad& other) const
@@ -4034,9 +4018,9 @@ namespace mattmath
 		return this->intersects(point);
 	}
 
-	Point2F Quad::get_center() const
+	Point2F Quad::center() const
 	{
-		return (this->points[0] + this->points[1] + this->points[2] + this->points[3]) / 4.0f;
+		return (this->points_[0] + this->points_[1] + this->points_[2] + this->points_[3]) / 4.0f;
 	}
 
 #pragma endregion Quad
@@ -4069,15 +4053,15 @@ namespace mattmath
 		return other.intersects(*this);
 
 	}
-	Vector2F Segment::get_direction() const
+	Vector2F Segment::direction() const
 	{
 		return this->point_1 - this->point_0;
 	}
-	float Segment::get_length() const
+	float Segment::length() const
 	{
-		return this->get_direction().length();
+		return this->direction().length();
 	}
-	Point2F Segment::get_center() const
+	Point2F Segment::center() const
 	{
 		return (this->point_0 + this->point_1) / 2.0f;
 	}
@@ -4213,20 +4197,20 @@ namespace mattmath
 	RectangleRotated::RectangleRotated(const Segment& center_line,
 		float thickness)
 	{
-		if (center_line.get_length() == 0.0f)
+		if (center_line.length() == 0.0f)
 		{
 			throw std::invalid_argument(
 				"RectangleRotated: centre line has zero length, so it has no direction");
 		}
 
-		this->center_ = center_line.get_center();
-		// Segment::get_direction() returns point_1 - point_0 un-normalised,
+		this->center_ = center_line.center();
+		// Segment::direction() returns point_1 - point_0 un-normalised,
 		// but axes_valid() requires a unit axis - without this the constructor
 		// threw for every segment whose length was not 1.
-		this->x_axis_ = center_line.get_direction();
+		this->x_axis_ = center_line.direction();
 		this->x_axis_.normalize();
 		this->y_axis_ = Vector2F::normal(this->x_axis_);
-		this->hw_extents_ = Vector2F(center_line.get_length() / 2.0f + thickness, thickness);
+		this->hw_extents_ = Vector2F(center_line.length() / 2.0f + thickness, thickness);
 
 		this->points_ = this->calculate_points();
 
@@ -4236,7 +4220,7 @@ namespace mattmath
 		}
 	}
 
-	RectangleF RectangleRotated::get_bounding_box() const
+	RectangleF RectangleRotated::bounding_box() const
 	{
 		float x1 = std::min(std::min(std::min(this->points_[0].x, this->points_[1].x),
 			this->points_[2].x), this->points_[3].x);
@@ -4252,7 +4236,7 @@ namespace mattmath
 
 		return RectangleF(x1, y1, x2 - x1, y2 - y1);
 	}
-	ShapeType RectangleRotated::get_shape_type() const
+	ShapeType RectangleRotated::shape_type() const
 	{
 		return ShapeType::rectangle_rotated;
 	}
@@ -4299,18 +4283,18 @@ namespace mattmath
 	{
 		return std::make_unique<RectangleRotated>(*this);
 	}
-	Point2F RectangleRotated::get_center() const
+	Point2F RectangleRotated::center() const
 	{
 		return this->center_;
 	}
-	std::vector<Segment> RectangleRotated::get_edges() const
+	std::vector<Segment> RectangleRotated::edges() const
 	{
 		std::vector<Segment> edges =
 		{
-			this->get_edge_0(),
-			this->get_edge_1(),
-			this->get_edge_2(),
-			this->get_edge_3()
+			this->edge_0(),
+			this->edge_1(),
+			this->edge_2(),
+			this->edge_3()
 		};
 		return edges;
 	}
@@ -4328,15 +4312,15 @@ namespace mattmath
 		this->points_ = this->calculate_points();
 	}
 
-	Point2F RectangleRotated::get_x_axis() const
+	Point2F RectangleRotated::x_axis() const
 	{
 		return this->x_axis_;
 	}
-	Point2F RectangleRotated::get_y_axis() const
+	Point2F RectangleRotated::y_axis() const
 	{
 		return this->y_axis_;
 	}
-	Point2F RectangleRotated::get_axis(int axis) const
+	Point2F RectangleRotated::axis(int axis) const
 	{
 		if (axis == 0)
 		{
@@ -4349,19 +4333,19 @@ namespace mattmath
 
 		throw std::invalid_argument("Axis must be 0 or 1");
 	}
-	Point2F RectangleRotated::get_half_extents() const
+	Point2F RectangleRotated::half_extents() const
 	{
 		return this->hw_extents_;
 	}
-	float RectangleRotated::get_half_x_width() const
+	float RectangleRotated::half_x_width() const
 	{
 		return this->hw_extents_.x;
 	}
-	float RectangleRotated::get_half_y_width() const
+	float RectangleRotated::half_y_width() const
 	{
 		return this->hw_extents_.y;
 	}
-	float RectangleRotated::get_half_width(int axis) const
+	float RectangleRotated::half_width(int axis) const
 	{
 		if (axis == 0)
 		{
@@ -4440,53 +4424,53 @@ namespace mattmath
 		this->hw_extents_.y = half_y_width;
 		this->points_ = this->calculate_points();
 	}
-	Point2F RectangleRotated::get_point_0() const
+	Point2F RectangleRotated::point_0() const
 	{
 		return this->points_[0];
 	}
-	Point2F RectangleRotated::get_point_1() const
+	Point2F RectangleRotated::point_1() const
 	{
 		return this->points_[1];
 	}
-	Point2F RectangleRotated::get_point_2() const
+	Point2F RectangleRotated::point_2() const
 	{
 		return this->points_[2];
 	}
-	Point2F RectangleRotated::get_point_3() const
+	Point2F RectangleRotated::point_3() const
 	{
 		return this->points_[3];
 	}
-	const std::vector<Point2F>& RectangleRotated::get_points() const
+	const std::vector<Point2F>& RectangleRotated::points() const
 	{
 		return this->points_;
 	}
-	Segment RectangleRotated::get_edge_0() const
+	Segment RectangleRotated::edge_0() const
 	{
 		return Segment(this->points_[0], this->points_[1]);
 	}
-	Segment RectangleRotated::get_edge_1() const
+	Segment RectangleRotated::edge_1() const
 	{
 		return Segment(this->points_[1], this->points_[2]);
 	}
-	Segment RectangleRotated::get_edge_2() const
+	Segment RectangleRotated::edge_2() const
 	{
 		return Segment(this->points_[2], this->points_[3]);
 	}
-	Segment RectangleRotated::get_edge_3() const
+	Segment RectangleRotated::edge_3() const
 	{
 		return Segment(this->points_[3], this->points_[0]);
 	}
-	Quad RectangleRotated::get_quad() const
+	Quad RectangleRotated::quad() const
 	{
 		auto points = this->calculate_points();
 
 		return Quad(points);
 	}
-	RectangleF RectangleRotated::get_rectangle_rotated_to_axis() const
+	RectangleF RectangleRotated::rectangle_rotated_to_axis() const
 	{
 		return RectangleF(this->center_, this->hw_extents_.x, this->hw_extents_.y);
 	}
-	float RectangleRotated::get_angle() const
+	float RectangleRotated::angle() const
 	{
 		return Vector2F::angle_between(this->x_axis_, Vector2F::DIRECTION_RIGHT);
 	}
@@ -4530,11 +4514,11 @@ namespace mattmath
 	std::vector<Point2F> RectangleRotated::calculate_points(const Segment& center_line,
 		float thickness) const
 	{
-		Vector2F center = center_line.get_center();
-		Vector2F x_axis = center_line.get_direction();
+		Vector2F center = center_line.center();
+		Vector2F x_axis = center_line.direction();
 		x_axis.normalize();
 		Vector2F y_axis = Vector2F::normal(x_axis);
-		Vector2F hw_extents = Vector2F(center_line.get_length() / 2.0f + thickness, thickness);
+		Vector2F hw_extents = Vector2F(center_line.length() / 2.0f + thickness, thickness);
 
 		return calculate_points(center, x_axis, y_axis, hw_extents);
 	}
@@ -4568,7 +4552,7 @@ namespace mattmath
 	}
 	bool RectangleRotated::edges_valid() const
 	{
-		std::vector<Segment> edges = this->get_edges();
+		std::vector<Segment> edges = this->edges();
 		if (edges.size() != 4)
 		{
 			throw std::invalid_argument("RectangleRotated must have 4 edges");
@@ -4580,9 +4564,9 @@ namespace mattmath
 		// that were perfectly square.
 		for (size_t i = 0; i < 4; i++)
 		{
-			const Vector2F direction_a = edges[i].get_direction().normalized();
+			const Vector2F direction_a = edges[i].direction().normalized();
 			const Vector2F direction_b =
-				edges[(i + 1) % 4].get_direction().normalized();
+				edges[(i + 1) % 4].direction().normalized();
 
 			if (!are_equal(Vector2F::dot(direction_a, direction_b), 0.0f, EPSILON))
 			{
@@ -4592,12 +4576,12 @@ namespace mattmath
 
 		// Opposite edges must match in length, to a tolerance that scales with
 		// the edges themselves for the same reason.
-		const float length_0 = edges[0].get_length();
-		const float length_1 = edges[1].get_length();
+		const float length_0 = edges[0].length();
+		const float length_1 = edges[1].length();
 
-		if (std::fabs(length_0 - edges[2].get_length()) >
+		if (std::fabs(length_0 - edges[2].length()) >
 				EPSILON * std::max(1.0f, length_0) ||
-			std::fabs(length_1 - edges[3].get_length()) >
+			std::fabs(length_1 - edges[3].length()) >
 				EPSILON * std::max(1.0f, length_1))
 		{
 			return false;

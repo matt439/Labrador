@@ -16,12 +16,12 @@ public:
 		float layer_depth = 0.0f);
 
 protected:
-	virtual RenderResources* get_render_resources() const;
-	virtual const mattmath::Colour& get_colour() const;
-	virtual float get_draw_rotation() const;
-	virtual const mattmath::Vector2F& get_origin() const;
-	virtual DirectX::SpriteEffects get_effects() const;
-	virtual float get_layer_depth() const;
+	virtual RenderResources* render_resources() const;
+	virtual const mattmath::Colour& colour() const;
+	virtual float draw_rotation() const;
+	virtual const mattmath::Vector2F& origin() const;
+	virtual DirectX::SpriteEffects effects() const;
+	virtual float layer_depth() const;
 
 	virtual void set_colour(const mattmath::Colour& colour);
 	virtual void set_draw_rotation(float rotation);

@@ -11,22 +11,22 @@ ViewportManager::ViewportManager(ResolutionManager* resolution_manager,
 {
 }
 
-Viewport ViewportManager::get_fullscreen_viewport() const
+Viewport ViewportManager::fullscreen_viewport() const
 {
-    Vector2F res = this->resolution_manager_->get_resolution_vec();
+    Vector2F res = this->resolution_manager_->resolution_vec();
     return { 0.0f, 0.0f, res.x, res.y };
 }
 
-D3D11_VIEWPORT ViewportManager::get_fullscreen_d3d11_viewport() const
+D3D11_VIEWPORT ViewportManager::fullscreen_d3d11_viewport() const
 {
-    Viewport vp = this->get_fullscreen_viewport();
-    return vp.get_d3d_viewport();
+    Viewport vp = this->fullscreen_viewport();
+    return vp.d3d_viewport();
 }
 
-RectangleF ViewportManager::get_camera_adjusted_player_viewport_rect(
+RectangleF ViewportManager::camera_adjusted_player_viewport_rect(
     int player_num, const Camera& camera) const
 {
-    Viewport vp = this->get_player_viewport(player_num);
+    Viewport vp = this->player_viewport(player_num);
     const float scale = camera.scale;
     const Vector2F& translation = camera.translation;
 
@@ -43,7 +43,7 @@ void ViewportManager::apply_player_viewport(int player_num,
     ID3D11DeviceContext* context) const
 {
     D3D11_VIEWPORT vp = this->calculate_d3d11_viewport(
-        this->layout_, player_num, this->resolution_manager_->get_resolution_vec());
+        this->layout_, player_num, this->resolution_manager_->resolution_vec());
     context->RSSetViewports(1, &vp);
 }
 
@@ -52,7 +52,7 @@ void ViewportManager::apply_player_viewport(int player_num,
     SpriteBatch* sprite_batch) const
 {
     D3D11_VIEWPORT vp = this->calculate_d3d11_viewport(
-        this->layout_, player_num, this->resolution_manager_->get_resolution_vec());
+        this->layout_, player_num, this->resolution_manager_->resolution_vec());
     context->RSSetViewports(1, &vp);
     sprite_batch->SetViewport(vp);
 }
@@ -61,7 +61,7 @@ D3D11_VIEWPORT ViewportManager::calculate_d3d11_viewport(ScreenLayout layout,
     int player_num, const Vector2F& screen_size) const
 {
     Viewport vp = this->calculate_viewport(layout, player_num, screen_size);
-    return vp.get_d3d_viewport();
+    return vp.d3d_viewport();
 }
 
 void ViewportManager::set_layout(ScreenLayout layout)
@@ -69,29 +69,29 @@ void ViewportManager::set_layout(ScreenLayout layout)
     this->layout_ = layout;
 }
 
-Viewport ViewportManager::get_player_viewport(int player_num) const
+Viewport ViewportManager::player_viewport(int player_num) const
 {
     return this->calculate_viewport(
-        this->layout_, player_num, this->resolution_manager_->get_resolution_vec());
+        this->layout_, player_num, this->resolution_manager_->resolution_vec());
 }
 
-std::vector<Viewport> ViewportManager::get_all_viewports() const
+std::vector<Viewport> ViewportManager::all_viewports() const
 {
     std::vector<Viewport> result;
-    int player_count = this->get_player_count_from_layout(this->layout_);
+    int player_count = this->player_count_from_layout(this->layout_);
     for (int i = 0; i < player_count; i++)
     {
-        result.push_back(this->get_player_viewport(i));
+        result.push_back(this->player_viewport(i));
     }
     // Add a 4th viewport if there are 3 players
     if (player_count == 3)
     {
-        result.push_back(this->get_player_viewport(4));
+        result.push_back(this->player_viewport(4));
     }
     return result;
 }
 
-int ViewportManager::get_player_count_from_layout(ScreenLayout layout) const
+int ViewportManager::player_count_from_layout(ScreenLayout layout) const
 {
     switch (layout)
     {
@@ -108,10 +108,10 @@ int ViewportManager::get_player_count_from_layout(ScreenLayout layout) const
     }
 }
 
-std::vector<mattmath::RectangleF> ViewportManager::get_viewport_dividers() const
+std::vector<mattmath::RectangleF> ViewportManager::viewport_dividers() const
 {
     std::vector<RectangleF> result = std::vector<RectangleF>();
-    const Vector2F res = this->resolution_manager_->get_resolution_vec();
+    const Vector2F res = this->resolution_manager_->resolution_vec();
     ScreenLayout layout = this->layout_;
 
     if (layout == ScreenLayout::one_player)

@@ -15,7 +15,7 @@ public:
 		const mattmath::Vector2F& origin =
 			mattmath::Vector2F::ZERO,
 		bool rotated = false);
-	const RECT* get_source_rectangle() const;
+	const RECT* source_rectangle() const;
 private:
 	RECT source_rectangle_ = { 0, 0, 0, 0 };
 
