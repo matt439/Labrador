@@ -13,19 +13,30 @@ add_library(ArtAttackEngine STATIC
     assets/json_loader.cpp
     assets/resource_manager.cpp
     audio/sound_bank.cpp
+    audio/sound_bank_object.cpp
     collision/partitioner.cpp
     core/moving_object.cpp
     core/state.cpp
     core/state_context.cpp
     core/thread_pool.cpp
     render/animated_sprite.cpp
+    render/animation_object.cpp
     render/animation_strip.cpp
     render/camera_tools.cpp
     render/device_resources.cpp
+    render/draw_object.cpp
+    render/drawer.cpp
     render/resolution_manager.cpp
     render/sprite_frame.cpp
     render/sprite_sheet.cpp
+    render/sprite_sheet_object.cpp
+    render/text.cpp
+    render/text_drop_shadow.cpp
+    render/text_object.cpp
+    render/texture_object.cpp
     render/viewport_manager.cpp
+    render/visual.cpp
+    ui/widget.cpp
 )
 target_include_directories(ArtAttackEngine PUBLIC
     "${CMAKE_SOURCE_DIR}"

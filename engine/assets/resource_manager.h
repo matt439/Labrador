@@ -27,6 +27,14 @@ struct RegistryHandle<Microsoft::WRL::ComPtr<Resource>>
 // caches differ only in what they hold. A game with resource types of its own
 // keeps them in its own Registry rather than here - the engine loads, caches
 // and hands back; what a resource means is the game's business.
+//
+// Known deviation from the module table in ARCHITECTURE.md: `assets` is meant
+// to depend on core, math and rapidjson alone, and this header reaches into
+// render (SpriteSheet) and audio (SoundBank) - so every module holding a
+// ResourceManager* reaches back through it. The typed caches belong in the
+// modules that own their types, leaving `assets` only the Registry mechanism
+// and the loading. That split touches every drawable's constructor, so it is
+// an increment of its own rather than a rider on this one.
 class ResourceManager
 {
 public:

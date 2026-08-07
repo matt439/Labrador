@@ -2,6 +2,7 @@
 #define IGAMEOBJECT_H
 
 #include "engine/math/matt_math.h"
+#include <SpriteBatch.h>
 
 class IGameObject
 {
