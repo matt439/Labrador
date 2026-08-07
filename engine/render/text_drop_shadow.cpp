@@ -26,7 +26,7 @@ namespace artattack
 	{
 
 	}
-	void TextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera)
+	void TextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		// Pass the shadow's colour, offset position and scale rather than assigning
 		// them to this object and restoring them afterwards. The save/restore was a
@@ -39,7 +39,7 @@ namespace artattack
 
 		this->TextObject::draw(sprite_batch, camera);
 	}
-	void TextDropShadow::draw(SpriteBatch* sprite_batch)
+	void TextDropShadow::draw(SpriteBatch* sprite_batch) const
 	{
 		this->draw(sprite_batch, Camera::DEFAULT_CAMERA);
 	}

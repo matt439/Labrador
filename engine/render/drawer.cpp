@@ -32,7 +32,7 @@ namespace artattack
     }
 
     RectangleI Drawer::calculate_draw_rectangle(const RectangleI& rec,
-        const Vector3F& camera)
+        const Vector3F& camera) const
     {
         return this->calculate_draw_rectangle(
             Vector2F(static_cast<float>(rec.x), static_cast<float>(rec.y)),
@@ -41,7 +41,7 @@ namespace artattack
     }
 
     RectangleI Drawer::calculate_draw_rectangle(const Vector2F& position,
-        const Vector2F& size, const Vector3F& camera)
+        const Vector2F& size, const Vector3F& camera) const
     {
         Vector2F draw_pos = (position - Vector2F(camera.x, camera.y)) * camera.z;
         Vector2F draw_size = Vector2F(size) * camera.z;
@@ -54,7 +54,7 @@ namespace artattack
     }
 
     Vector2F Drawer::calculate_sprite_origin(
-        const Vector2F& size, RotationOrigin origin)
+        const Vector2F& size, RotationOrigin origin) const
     {
         switch (origin)
         {

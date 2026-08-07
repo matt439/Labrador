@@ -1,7 +1,7 @@
 # Review remediation status
 
 Tracks what has been fixed from the review in [README.md](README.md), and what has not.
-Last updated 2026-08-07.
+Last updated 2026-08-08.
 
 **Critical findings: 31 of 36 fixed, 1 partial, 4 outstanding.**
 
@@ -15,6 +15,7 @@ engine/game split has been done.
 | `0c7eaff` | Input identity, paintable faces, device-lost recovery, draw path |
 | `5b75b31` | All `/W4` warnings cleared, `TreatWarningAsError` enabled |
 | `9a48f5d` | `draw()` made a pure read across every renderable |
+| `d49ecb5` | `draw()` made `const`, so that is enforced by the compiler |
 
 Verified after each commit: `Debug|x64` and `Release|x64` build clean with
 warnings as errors, 38/38 unit tests pass, and the game launches and runs.
@@ -42,7 +43,7 @@ was already unbuildable and remains so.)
 | 13 | Collision interface identifies objects with this game's content enum | **Outstanding** | — |
 | 14 | `player_inputs` compacted but indexed by player ordinal (OOB) | Fixed | `0c7eaff` |
 | 15 | `Level` indexes the compacted input vector by ordinal | Fixed | `0c7eaff` |
-| 16 | Every render worker draws every object, and `draw()` mutates it | **Partial** | `9a48f5d` |
+| 16 | Every render worker draws every object, and `draw()` mutates it | **Partial** | `9a48f5d`, `d49ecb5` |
 | 17 | `draw_zoom_out_level_component` mutates ViewportManager, touches immediate context | Fixed | `0c7eaff` |
 | 18 | `Level` is both the scene abstraction and the paint-battle ruleset | **Outstanding** | — |
 | 19 | Level JSON parsed through a 1-byte heap buffer | Fixed | `73da0a2` |
@@ -66,12 +67,30 @@ was already unbuildable and remains so.)
 
 ### Note on #16 (partial)
 
-Two defects were merged under this finding. The **data race** is fixed: no
-`draw()` in the project assigns a member any more, verified by an audit of
-every draw body. The **redundancy** is not: `draw_player_view_level` still
-walks the entire world in every task rather than its own slice, so an N-player
-match does N times the visibility work. That is wasted time, not undefined
-behaviour.
+Two defects were merged under this finding. The **data race** is fixed, and as
+of the const pass it is fixed in the sense that survives someone editing the
+code: `IGameObject::draw` and every override of it are `const`, so a `draw()`
+that assigns a member is now a compile error rather than something an audit has
+to keep catching. `Weapon::draw`, `InterfaceGameplay::draw_gameplay_interface`
+and the three `Drawer` helpers are const for the same reason — none of them is
+an `IGameObject`, but all sit under the same per-view fan-out, and `Level`
+holds them by `unique_ptr`, which does not pass its own constness on to what it
+points at.
+
+Making the signatures const also fixed a live dispatch bug it exposed:
+`TextDropShadow::draw` was non-const while `TextObject::draw` was const, so it
+never overrode anything — it *hid* the base. A `TextDropShadow` drawn through a
+`Text&` silently lost its shadow.
+
+The **redundancy** is not fixed: `draw_player_view_level` still walks the entire
+world in every task rather than its own slice, so an N-player match does N times
+the visibility work. That is wasted time, not undefined behaviour.
+
+Worth recording for whoever writes `Scene`: the parallelism axis here is
+**views, not objects**. Workers do not own disjoint slices — every worker draws
+every object, so the pure-read contract is the *only* thing making this sound.
+PHILOSOPHY's tenet still says workers own disjoint slices, which does not
+describe this renderer.
 
 ---
 

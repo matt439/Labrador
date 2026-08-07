@@ -22,8 +22,13 @@ namespace artattack
 					DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 					float layer_depth = 0.0f);
 
-		virtual void draw(DirectX::SpriteBatch* sprite_batc, const mattmath::Camera& camera);
-		virtual void draw(DirectX::SpriteBatch* sprite_batc);
+		// const, like every draw below it - and here const also buys correctness
+		// rather than only safety. While these were non-const they did not
+		// override TextObject::draw(...) const at all, they *hid* it, so a
+		// TextDropShadow reached through a Text& drew its text with no shadow.
+		void draw(DirectX::SpriteBatch* sprite_batch,
+			const mattmath::Camera& camera) const override;
+		void draw(DirectX::SpriteBatch* sprite_batch) const override;
 
 		mattmath::Vector2F shadow_offset() const;
 		mattmath::Colour shadow_color() const;
