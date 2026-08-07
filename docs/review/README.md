@@ -2,6 +2,10 @@
 
 > Read-only review by 99 agents across ~28,000 lines / 197 first-party source files.
 > `external/rapidjson` and `packages/` excluded as vendored third-party.
+>
+> **This document is the review as written, and is not updated as findings are
+> fixed.** For what has since been remediated, see [IMPLEMENTED.md](IMPLEMENTED.md)
+> — 31 of the 36 critical findings are fixed as of 2026-08-07.
 
 **879 findings** — 40 critical · 233 high · 404 medium · 202 low.
 
