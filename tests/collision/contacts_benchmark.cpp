@@ -78,6 +78,15 @@ namespace
 		return n * (n - 1) / 2;
 	}
 
+	// One sweep's outcome: what it cost, and what it found. The contact count
+	// is not part of SweepCounts because it is already contacts.size() - this
+	// exists so a helper can hand back both without returning the vector.
+	struct SweepResult
+	{
+		SweepCounts counts;
+		size_t contacts = 0;
+	};
+
 	// `scene` is a std::string, not a const char*: doctest's MessageBuilder
 	// takes a char pointer through its bool overload and prints "1". String
 	// literals are arrays and stream correctly, which is what makes the bug
@@ -152,19 +161,27 @@ TEST_CASE("benchmark: a paint-tile grid with players and projectiles")
 	report("tile grid", static_cast<long long>(objects.size()), counts,
 		contacts.size());
 
-	// Quadratic in the object count, and blind to where anything is.
-	CHECK(counts.pairs_enumerated ==
-		every_pair_of(static_cast<long long>(objects.size())));
+	// All-pairs would enumerate 1,148,370 here. The sweep enumerates 66,210:
+	// each column of tiles reaches the rest of its own column and all of the
+	// next, and stops. Exact, and derived - 49 columns contributing
+	// 435 + 900 each, the last column 435, plus 360 bullet-tile pairs.
+	CHECK(counts.pairs_enumerated == 66210);
+	CHECK(counts.pairs_enumerated * 17 < every_pair_of(
+		static_cast<long long>(objects.size())));
 
-	// The layer filter is already a broad phase for the static half: no tile
-	// can collide with another tile, and that alone removes 98% of the pairs.
-	// What it cannot remove is the reason a broad phase is still wanted -
-	// every bullet is measured against all 1500 tiles, though it can only
-	// reach the four it is standing on.
+	// The prize. Every bullet used to be measured against all 1500 tiles; it
+	// is now measured against the 30 in its own column, because nothing else
+	// begins before its 8-unit interval ends. 18,048 box tests down to 360.
 	CHECK(counts.bound_tests ==
-		static_cast<long long>(TILE_COUNT) * BULLET_COUNT
-		+ static_cast<long long>(PLAYER_COUNT) * BULLET_COUNT);
-	CHECK(counts.bound_tests * 60 < counts.pairs_enumerated);
+		static_cast<long long>(TILE_ROWS) * BULLET_COUNT);
+
+	// Worth noticing rather than fixing: of the 66,210 pairs the sweep offers,
+	// 65,850 are tile against tile and die on the layer filter. The sweep is
+	// re-deriving something the layer bits already knew. A broad phase that
+	// indexed only objects that can collide with something would start from
+	// 360, and that is a later question - it needs an index per layer group,
+	// which is a design decision and not a loop change.
+	CHECK(counts.pairs_enumerated - counts.bound_tests == 65850);
 
 	// One tile per bullet survives the box test; nothing else is near anything.
 	CHECK(counts.narrow_tests == BULLET_COUNT);
@@ -203,28 +220,40 @@ TEST_CASE("benchmark: mutually eligible objects, none of them touching")
 
 	report("scattered", COUNT, counts, contacts.size());
 
-	CHECK(counts.pairs_enumerated == every_pair_of(COUNT));
-
-	// Nothing is filtered, so a bounding box is tested for every pair: 319,600
-	// box tests to discover that nothing in the scene touches anything.
-	CHECK(counts.bound_tests == every_pair_of(COUNT));
+	// Zero. Not "fewer" - zero. Every object's interval ends 160 units before
+	// the next one begins, so the sweep's break fires on the first comparison
+	// every time and no pair is ever offered to a filter. This is the case
+	// all-pairs handled worst: 319,600 box tests to discover that nothing in
+	// the scene touches anything.
+	CHECK(counts.pairs_enumerated == 0);
+	CHECK(counts.bound_tests == 0);
 	CHECK(counts.narrow_tests == 0);
 	CHECK(contacts.empty());
+
+	// The comparison the sweep replaced, kept as an assertion so the scale of
+	// it stays visible rather than becoming a story about the old days.
+	CHECK(every_pair_of(COUNT) == 319600);
 }
 
-TEST_CASE("benchmark: the cost is quadratic, and doubling the scene quadruples it")
+TEST_CASE("benchmark: doubling a dense scene doubles the work, it does not quadruple it")
 {
-	// Stated as a test rather than left as folklore. Twice the objects for
-	// four times the work is the property a broad phase changes; when one
-	// lands, this ratio drops and this assertion is where that shows up.
+	// A scene the sweep cannot simply prune away: objects 40 wide every 20
+	// units, so each one genuinely overlaps its two forward neighbours and
+	// stops. That is the honest test of the exponent - the scattered case
+	// above collapses to zero, which proves the break works but measures
+	// nothing about how the cost grows.
+	//
+	// Twice the objects for twice the work. All-pairs gave twice the objects
+	// for four times the work, and that change of exponent is the whole
+	// reason a broad phase exists.
 	const auto sweep = [](int count)
 	{
 		std::vector<BenchObject> storage;
 		storage.reserve(count);
 		for (int i = 0; i < count; i++)
 		{
-			const float x = i * 200.0f;
-			storage.emplace_back(RectangleF(x, 0.0f, x + 40.0f, 40.0f),
+			const float x = i * 20.0f;
+			storage.emplace_back(RectangleF(x, 0.0f, 40.0f, 40.0f),
 				LOOSE, LOOSE);
 		}
 
@@ -238,21 +267,36 @@ TEST_CASE("benchmark: the cost is quadratic, and doubling the scene quadruples i
 		std::vector<Contact> contacts;
 		SweepCounts counts;
 		find_contacts(objects, contacts, counts);
-		return counts;
+		return SweepResult{ counts, contacts.size() };
 	};
 
 	// Not `small` and `large`: the Windows SDK defines `small` as `char`.
-	const SweepCounts half_scene = sweep(200);
-	const SweepCounts full_scene = sweep(400);
+	const SweepResult half = sweep(200);
+	const SweepResult full = sweep(400);
+	const SweepCounts& half_scene = half.counts;
+	const SweepCounts& full_scene = full.counts;
 
 	MESSAGE("200 objects: " << half_scene.bound_tests
 		<< " bound tests; 400 objects: " << full_scene.bound_tests
 		<< " bound tests");
 
-	CHECK(half_scene.bound_tests == every_pair_of(200));
-	CHECK(full_scene.bound_tests == every_pair_of(400));
+	// Each object reaches its next two neighbours and no further, so the count
+	// is 2n - 3 exactly: (n - 1) adjacent pairs plus (n - 2) once-removed.
+	CHECK(half_scene.bound_tests == 2 * 200 - 3);
+	CHECK(full_scene.bound_tests == 2 * 400 - 3);
 
 	const double ratio = static_cast<double>(full_scene.bound_tests)
 		/ static_cast<double>(half_scene.bound_tests);
-	CHECK(ratio == doctest::Approx(4.0).epsilon(0.02));
+	CHECK(ratio == doctest::Approx(2.0).epsilon(0.02));
+
+	// And it is linear against the object count, not against the pair count:
+	// 797 box tests where all-pairs would have run 79,800.
+	CHECK(full_scene.bound_tests * 100 < every_pair_of(400));
+
+	// The once-removed neighbours touch exactly, at a shared edge. They pass
+	// the bounding-box filter, which is closed, and are then rejected by
+	// narrow_phase, which is open - so touching is not overlapping, and only
+	// the n - 1 genuinely overlapping pairs become contacts.
+	CHECK(full_scene.narrow_tests == 2 * 400 - 3);
+	CHECK(full.contacts == 400 - 1);
 }

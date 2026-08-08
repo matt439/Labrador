@@ -44,10 +44,11 @@ namespace artattack
 	// be a defect rather than a curiosity; this is what a test can hold.
 	struct SweepCounts
 	{
-		// Pairs the enumeration offered to the filters, counting only pairs
-		// where both objects were live. This is the number a broad phase
-		// exists to reduce, and today it is n * (n - 1) / 2 - every pair of
-		// every object, however far apart.
+		// Pairs the broad phase offered to the filters, counting only pairs
+		// where both objects were live. Before the sweep existed this was
+		// n * (n - 1) / 2 - every pair of every object, however far apart -
+		// and the gap between that figure and this one is what the broad
+		// phase is worth on a given scene.
 		long long pairs_enumerated = 0;
 
 		// Bounding-volume tests actually run: pairs that got past layer and
@@ -67,15 +68,26 @@ namespace artattack
 	// vector across frames allocates nothing after the first busy frame -
 	// which is the point of taking it by reference rather than returning it.
 	//
-	// Three filters, cheapest first: layer/mask, then the shapes' bounding
-	// boxes, then narrow_phase. Objects already flagged for deletion take part
-	// in nothing.
+	// Four filters, cheapest first: a broad-phase sweep, then layer/mask, then
+	// the shapes' bounding boxes, then narrow_phase. Objects already flagged
+	// for deletion take part in nothing.
 	//
-	// The pair enumeration is still all-pairs. That is the honest state of it:
-	// PHILOSOPHY promises a broad phase that prunes pairs, and this function
-	// is where one goes - the signature does not change when it arrives,
-	// because "which pairs are worth measuring" is exactly the question the
-	// two cheap filters above already answer badly.
+	// The broad phase is a one-axis sort and sweep (Ericson, Real-Time
+	// Collision Detection, 7.5). Every live object's bounding box is reduced
+	// to a flat POD interval once per frame, the array is sorted on the
+	// interval minimum, and each object is then compared only with those that
+	// begin before it ends. A grid was the alternative and was rejected on
+	// this content: level geometry runs from a 20-unit paint tile to a
+	// level-spanning platform, and no single cell size serves both.
+	//
+	// The axis is chosen each frame as the one whose object centres are more
+	// spread out, so a tall level sweeps vertically without being told to.
+	//
+	// **The order of `contacts` is unspecified**, and depends on the sweep.
+	// Every overlapping pair appears exactly once and each Contact names its
+	// participants in the order the caller listed them, so `a` and `normal`
+	// mean what they always meant - but do not index this vector expecting a
+	// particular pair, and do not let a test do it either.
 	//
 	// What it replaces: two hand-written nested loops that tested (player,
 	// object) and then (object, player) and then (object, object) with both
