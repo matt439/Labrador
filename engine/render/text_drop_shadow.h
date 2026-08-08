@@ -8,7 +8,7 @@ namespace artattack
 	{
 	public:
 		TextDropShadow() = default;
-		TextDropShadow(const std::string& text,
+		TextDropShadow(const std::wstring& text,
 					const std::string& font_name,
 					const mattmath::Vector2F& position,
 					RenderResources* render_resources,

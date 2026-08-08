@@ -8,7 +8,7 @@ namespace artattack
 	{
 	public:
 		Text() = default;
-		Text(const std::string& text,
+		Text(const std::wstring& text,
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
 			RenderResources* render_resources,
@@ -19,7 +19,7 @@ namespace artattack
 			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
 
-		void set_text(const std::string& text) override;
+		void set_text(const std::wstring& text) override;
 		void set_colour(const mattmath::Colour& colour) override;
 		void set_scale(float scale) override;
 		void set_position(const mattmath::Vector2F& position) override;

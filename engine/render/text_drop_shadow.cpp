@@ -5,7 +5,7 @@ using namespace DirectX;
 
 namespace artattack
 {
-	TextDropShadow::TextDropShadow(const std::string& text,
+	TextDropShadow::TextDropShadow(const std::wstring& text,
 		const std::string& font_name,
 		const Vector2F& position,
 		RenderResources* render_resources,

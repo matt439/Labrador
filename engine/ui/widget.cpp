@@ -224,7 +224,7 @@ namespace artattack
 #pragma region MText
 
 	MText::MText(const std::string& name,
-		const std::string& text,
+		const std::wstring& text,
 		const std::string& font_name,
 		const Vector2F& position,
 		RenderResources* render_resources,
@@ -277,7 +277,7 @@ namespace artattack
 #pragma region MTextDropShadow
 
 	MTextDropShadow::MTextDropShadow(const std::string& name,
-		const std::string& text,
+		const std::wstring& text,
 		const std::string& font_name,
 		const Vector2F& position,
 		RenderResources* render_resources,

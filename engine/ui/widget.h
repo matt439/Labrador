@@ -116,7 +116,7 @@ namespace artattack
 	public:
 		MText() = default;
 		MText(const std::string& name,
-			const std::string& text,
+			const std::wstring& text,
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
 			RenderResources* render_resources,
@@ -142,7 +142,7 @@ namespace artattack
 	public:
 		MTextDropShadow() = default;
 		MTextDropShadow(const std::string& name,
-			const std::string& text,
+			const std::wstring& text,
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
 			RenderResources* render_resources,

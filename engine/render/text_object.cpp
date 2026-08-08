@@ -5,7 +5,7 @@ using namespace mattmath;
 
 namespace artattack
 {
-	TextObject::TextObject(const std::string& text,
+	TextObject::TextObject(const std::wstring& text,
 		const std::string& font_name,
 		const Vector2F& position,
 		RenderResources* render_resources,
@@ -83,7 +83,7 @@ namespace artattack
 			this->layer_depth());
 	}
 
-	const std::string& TextObject::text() const
+	const std::wstring& TextObject::text() const
 	{
 		return this->text_;
 	}
@@ -99,7 +99,7 @@ namespace artattack
 	{
 		return this->scale_;
 	}
-	void TextObject::set_text(const std::string& text)
+	void TextObject::set_text(const std::wstring& text)
 	{
 		this->text_ = text;
 		this->remeasure();

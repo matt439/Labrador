@@ -5,7 +5,7 @@ using namespace DirectX;
 
 namespace artattack
 {
-	Text::Text(const std::string& text,
+	Text::Text(const std::wstring& text,
 		const std::string& font_name,
 		const Vector2F& position,
 		RenderResources* render_resources,
@@ -20,7 +20,7 @@ namespace artattack
 	{
 
 	}
-	void Text::set_text(const std::string& text)
+	void Text::set_text(const std::wstring& text)
 	{
 		this->TextObject::set_text(text);
 	}

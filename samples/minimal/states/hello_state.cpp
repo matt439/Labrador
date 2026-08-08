@@ -30,11 +30,11 @@ void HelloState::init()
 
 	RenderResources* resources = this->app_->render_resources();
 
-	this->greeting_ = std::make_unique<Text>("Hello from the engine.",
+	this->greeting_ = std::make_unique<Text>(L"Hello from the engine.",
 		font_name, this->position_, resources, colour_consts::WHITE);
 
 	this->hint_ = std::make_unique<Text>(
-		"Left stick moves it. B quits.", font_name,
+		L"Left stick moves it. B quits.", font_name,
 		Vector2F(24.0f, resolution.y - 40.0f), resources,
 		colour_consts::DARK_GRAY);
 }

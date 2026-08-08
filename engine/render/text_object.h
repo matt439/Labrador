@@ -6,6 +6,13 @@ namespace artattack
 {
 	// A string drawn in one font.
 	//
+	// Text is held wide. DirectXTK's narrow DrawString and MeasureString
+	// overloads convert through a utfBuffer owned by the shared SpriteFont -
+	// allocated, and possibly reallocated, from inside a const method. Every
+	// render worker draws the whole HUD through the same SpriteFont, so the
+	// narrow overloads are a data race on the draw path. widen() in
+	// text_encoding.h is where narrow content comes across, once.
+	//
 	// The font name is resolved to a handle at construction. A handle rather than
 	// a cached SpriteFont*, because fonts are device resources: a device loss
 	// destroys and rebuilds every one of them, and a pointer taken before the loss
@@ -15,7 +22,7 @@ namespace artattack
 	{
 	public:
 		TextObject() = default;
-		TextObject(const std::string& text,
+		TextObject(const std::wstring& text,
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
 			RenderResources* render_resources,
@@ -63,17 +70,17 @@ namespace artattack
 			float scale) const;
 
 	protected:
-		const std::string& text() const;
+		const std::wstring& text() const;
 		RenderResources::FontHandle font() const;
 		const mattmath::Vector2F& position() const;
 		float scale() const;
 
-		virtual void set_text(const std::string& text);
+		virtual void set_text(const std::wstring& text);
 		void set_font(const std::string& font_name);
 		virtual void set_position(const mattmath::Vector2F& position);
 		virtual void set_scale(float scale);
 	private:
-		std::string text_ = "";
+		std::wstring text_ = L"";
 		RenderResources::FontHandle font_;
 		mattmath::Vector2F position_ = mattmath::Vector2F::ZERO;
 		float scale_ = 1.0f;

@@ -67,9 +67,11 @@ was already unbuildable and remains so.)
 
 ### Note on #16 (partial)
 
-Two defects were merged under this finding. The **data race** is fixed, and as
-of the const pass it is fixed in the sense that survives someone editing the
-code: `IGameObject::draw` and every override of it are `const`, so a `draw()`
+Two defects were merged under this finding.
+
+The **data race in ArtAttack's own types** is fixed, and as of the const pass it
+is fixed in the sense that survives someone editing the code:
+`IGameObject::draw` and every override of it are `const`, so a `draw()`
 that assigns a member is now a compile error rather than something an audit has
 to keep catching. `Weapon::draw`, `InterfaceGameplay::draw_gameplay_interface`
 and the three `Drawer` helpers are const for the same reason — none of them is
@@ -81,6 +83,18 @@ Making the signatures const also fixed a live dispatch bug it exposed:
 `TextDropShadow::draw` was non-const while `TextObject::draw` was const, so it
 never overrode anything — it *hid* the base. A `TextDropShadow` drawn through a
 `Text&` silently lost its shadow.
+
+**The const pass did not end the race, and this line said it had.** A pure read
+of ArtAttack's types still raced one level deeper, inside DirectXTK: every text
+draw passed `const char*`, and the narrow `SpriteFont::DrawString` converts
+through a `utfBuffer` owned by the shared `SpriteFont` — allocated, and
+sometimes reallocated, from inside a `const` method. `Level::draw_active_level`
+fans out one worker per player and each worker draws the whole HUD, so that
+buffer had every render thread in it at once. Text is now held as
+`std::wstring` and every call site uses the wide overloads, which touch no
+shared buffer; `widen()` in `engine/render/text_encoding.h` is the single place
+narrow content comes across, off the draw path. The race is fixed as of that
+change.
 
 The **redundancy** is not fixed: `draw_player_view_level` still walks the entire
 world in every task rather than its own slice, so an N-player match does N times

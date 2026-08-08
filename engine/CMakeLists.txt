@@ -37,6 +37,7 @@ add_library(ArtAttackEngine STATIC
     render/sprite_sheet_object.cpp
     render/text.cpp
     render/text_drop_shadow.cpp
+    render/text_encoding.cpp
     render/text_object.cpp
     render/texture_object.cpp
     render/viewport_manager.cpp
