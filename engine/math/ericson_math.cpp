@@ -362,6 +362,69 @@ namespace mattmath
 	}
 
 
+	float signed_area(std::span<const Point2F> polygon)
+	{
+		if (polygon.size() < 3)
+		{
+			return 0.0f;
+		}
+
+		// Relative to the first vertex, so the products are the size of the
+		// polygon and not the size of the world. The terms for the first and
+		// last edges are identically zero this way, which is why the loop can
+		// skip them.
+		const Point2F& origin = polygon[0];
+
+		float twice_area = 0.0f;
+		for (size_t i = 1; i + 1 < polygon.size(); i++)
+		{
+			twice_area += Vector2F::cross(polygon[i] - origin,
+				polygon[i + 1] - origin);
+		}
+
+		return twice_area * 0.5f;
+	}
+
+	bool point_in_convex_polygon(std::span<const Point2F> polygon,
+		const Point2F& p)
+	{
+		if (polygon.size() < 3)
+		{
+			return false;
+		}
+
+		bool any_left = false;
+		bool any_right = false;
+
+		for (size_t i = 0; i < polygon.size(); i++)
+		{
+			const Point2F& from = polygon[i];
+			const Point2F& to = polygon[(i + 1) % polygon.size()];
+
+			// Signed area of the edge and the point. Differences first, so
+			// this stays exact at world coordinates.
+			const float side = Vector2F::cross(to - from, p - from);
+
+			if (side > 0.0f)
+			{
+				any_left = true;
+			}
+			else if (side < 0.0f)
+			{
+				any_right = true;
+			}
+
+			// Sides disagree, so the point is outside this edge no matter
+			// which way the caller wound the polygon.
+			if (any_left && any_right)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	// Test if segments ab and cd overlap. If they do, compute and return
 	// intersection t value along ab and intersection position p
 	bool test_2D_segment_segment(const Point2F& a,

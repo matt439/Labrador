@@ -6,6 +6,7 @@
 
 #include "engine/math/matt_math.h"
 #include <cmath>
+#include <span>
 
 namespace mattmath
 {
@@ -127,6 +128,51 @@ namespace mattmath
 	// world-scale coordinates long before the signs are in doubt.
 	float signed_2D_tri_area(const mattmath::Point2F& a,
 		const mattmath::Point2F& b, const mattmath::Point2F& c);
+
+	// The signed area enclosed by a polygon given as its vertices in order,
+	// closing automatically from the last back to the first. Positive for one
+	// winding and negative for the other; zero when the polygon encloses
+	// nothing, which includes every degenerate case - fewer than three
+	// vertices, repeated vertices, all vertices collinear.
+	//
+	// This is Newell's method (12.4.2) with two dimensions removed. Newell
+	// derives a polygon's normal by summing a term over every edge rather than
+	// taking one cross product of two edges, which is what makes it robust
+	// when edges are nearly parallel. In 2D the x and y components of that sum
+	// vanish identically and only the z term survives, which is twice the
+	// shoelace area - so the robust formulation and the schoolbook one turn
+	// out to be the same sum, and it costs one multiply-subtract per edge.
+	//
+	// Vertices are taken relative to the first before anything is multiplied.
+	// Without that the products are the size of the world squared - near 3e7
+	// out where the levels run, where consecutive floats are 2 apart - and the
+	// sum must then cancel back down to the size of the polygon. The error
+	// that survives is set by the coordinates, not by the shape, so it is a
+	// rounding artefact on a large polygon and comparable to the answer on a
+	// small one: a 13.3-unit square at (6232.75, 5408.46) comes out as 176.0
+	// against a true 176.88. Working relative to a vertex makes every product
+	// the size of the polygon instead.
+	float signed_area(std::span<const mattmath::Point2F> polygon);
+
+	// Whether a point lies inside a convex polygon, treating the boundary as
+	// inside.
+	//
+	// The test is one signed area per edge: a point is inside a convex shape
+	// exactly when it is on the same side of every edge (9.1, step 1). No
+	// division, no allocation, no triangulation, and it terminates early on
+	// the first edge that disagrees.
+	//
+	// Winding-agnostic by construction - it asks whether the signs agree, not
+	// whether they are positive - because nothing in this library constrains
+	// the order a caller lists vertices in. A point exactly on an edge or a
+	// vertex produces a zero, which agrees with either sign and so counts as
+	// inside.
+	//
+	// Convexity is a precondition and is NOT checked; a concave polygon will
+	// report false for points that are genuinely inside it. Fewer than three
+	// vertices encloses nothing and is always false.
+	bool point_in_convex_polygon(std::span<const mattmath::Point2F> polygon,
+		const mattmath::Point2F& p);
 
 	bool test_2D_segment_segment(const mattmath::Point2F& a,
 		const mattmath::Point2F& b, const mattmath::Point2F& c,

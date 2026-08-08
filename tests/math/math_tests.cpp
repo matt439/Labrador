@@ -1,7 +1,9 @@
 #include <doctest/doctest.h>
 #include "engine/math/matt_math.h"
 #include "engine/math/ericson_math.h"
+#include <array>
 #include <cfloat>
+#include <span>
 #include <stdexcept>
 
 using namespace mattmath;
@@ -53,6 +55,130 @@ namespace EricsonMathTests
 			p = Point2F(10.0f + FLT_EPSILON, 10.0f + FLT_EPSILON);
 			closest_pt_point_AABB(p, a, closest);
 			CHECK(closest == Point2F(10.0f, 10.0f));
+		}
+		TEST_CASE("signed_area measures a polygon, and its sign is the winding")
+		{
+			const std::array<Point2F, 4> square = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f) };
+			const std::array<Point2F, 4> reversed = {
+				Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f),
+				Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f) };
+
+			CHECK(signed_area(square) == 100.0f);
+			CHECK(signed_area(reversed) == -100.0f);
+
+			// The polygon closes itself; the caller does not repeat the first
+			// vertex at the end.
+			const std::array<Point2F, 3> triangle = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f) };
+			CHECK(signed_area(triangle) == 50.0f);
+
+			// Which is half of what the triangle predicate reports, since that
+			// one returns twice the area.
+			CHECK(signed_area(triangle) ==
+				signed_2D_tri_area(triangle[0], triangle[1], triangle[2]) / 2.0f);
+		}
+		TEST_CASE("signed_area is zero for everything that encloses nothing")
+		{
+			const std::array<Point2F, 2> segment = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f) };
+			CHECK(signed_area(segment) == 0.0f);
+			CHECK(signed_area(std::span<const Point2F>{}) == 0.0f);
+
+			// Collinear, and a repeated vertex.
+			const std::array<Point2F, 3> flat = {
+				Point2F(0.0f, 0.0f), Point2F(5.0f, 0.0f), Point2F(10.0f, 0.0f) };
+			const std::array<Point2F, 3> doubled = {
+				Point2F(3.0f, 3.0f), Point2F(3.0f, 3.0f), Point2F(9.0f, 9.0f) };
+			CHECK(signed_area(flat) == 0.0f);
+			CHECK(signed_area(doubled) == 0.0f);
+		}
+		TEST_CASE("signed_area stays exact at the coordinates the game runs at")
+		{
+			// Out where the levels are, the raw coordinates form products near
+			// 3e7, and consecutive floats up there are 2 apart. Summing four
+			// of those and cancelling down to the area of a small shape leaves
+			// an error set by the size of the world rather than the size of
+			// the shape - this square comes out as 176.0 computed that way,
+			// against a true 176.88. Taken relative to the first vertex, every
+			// product is the size of the polygon and the answer is exactly the
+			// width times the height.
+			//
+			// Round coordinates hide this: a 40-unit tile at (6200, 5000) has
+			// products that are all exactly representable, so both
+			// formulations agree and prove nothing.
+			constexpr float X = 6232.75f;
+			constexpr float Y = 5408.46f;
+			constexpr float SIDE = 13.3f;
+
+			const std::array<Point2F, 4> tile = {
+				Point2F(X, Y), Point2F(X + SIDE, Y),
+				Point2F(X + SIDE, Y + SIDE), Point2F(X, Y + SIDE) };
+
+			// The side lengths the corners actually store, once each sum has
+			// been rounded to a float.
+			const float width = tile[1].x - tile[0].x;
+			const float height = tile[2].y - tile[1].y;
+
+			CHECK(signed_area(tile) == width * height);
+			CHECK(signed_area(tile) != 176.0f);
+		}
+		TEST_CASE("signed_area of a quad agrees with the cross of its diagonals")
+		{
+			// Ericson notes the quad case collapses to one cross product of
+			// the diagonals rather than a term per edge. The identity is real
+			// but the direction matters: it is cross(A - C, B - D), and
+			// cross(C - A, B - D) gives twice the area negated.
+			const std::array<Point2F, 4> quad = {
+				Point2F(1.0f, 2.0f), Point2F(9.0f, 1.0f),
+				Point2F(11.0f, 7.0f), Point2F(2.0f, 8.0f) };
+
+			const float twice = 2.0f * signed_area(quad);
+
+			CHECK(twice == Vector2F::cross(quad[0] - quad[2], quad[1] - quad[3]));
+			CHECK(-twice == Vector2F::cross(quad[2] - quad[0], quad[1] - quad[3]));
+		}
+		TEST_CASE("point_in_convex_polygon takes the boundary as inside")
+		{
+			const std::array<Point2F, 4> square = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f) };
+
+			CHECK(point_in_convex_polygon(square, Point2F(5.0f, 5.0f)));
+			CHECK(point_in_convex_polygon(square, Point2F(5.0f, 0.0f)));
+			CHECK(point_in_convex_polygon(square, Point2F(0.0f, 0.0f)));
+
+			CHECK_FALSE(point_in_convex_polygon(square, Point2F(15.0f, 5.0f)));
+			CHECK_FALSE(point_in_convex_polygon(square, Point2F(-1.0f, 5.0f)));
+
+			// Diagonally past a corner: outside, though it is beyond only one
+			// of the two edges that meet there by a whole unit.
+			CHECK_FALSE(point_in_convex_polygon(square, Point2F(11.0f, 11.0f)));
+		}
+		TEST_CASE("point_in_convex_polygon does not care which way the caller wound it")
+		{
+			const std::array<Point2F, 3> forwards = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f) };
+			const std::array<Point2F, 3> backwards = {
+				Point2F(0.0f, 10.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f) };
+
+			const Point2F inside(2.0f, 2.0f);
+			const Point2F outside(9.0f, 9.0f);
+
+			CHECK(point_in_convex_polygon(forwards, inside));
+			CHECK(point_in_convex_polygon(backwards, inside));
+			CHECK_FALSE(point_in_convex_polygon(forwards, outside));
+			CHECK_FALSE(point_in_convex_polygon(backwards, outside));
+		}
+		TEST_CASE("point_in_convex_polygon rejects what encloses nothing")
+		{
+			const std::array<Point2F, 2> segment = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f) };
+
+			CHECK_FALSE(point_in_convex_polygon(segment, Point2F(5.0f, 0.0f)));
+			CHECK_FALSE(point_in_convex_polygon(std::span<const Point2F>{},
+				Point2F(0.0f, 0.0f)));
 		}
 		TEST_CASE("test_signed_2D_tri_area")
 		{
