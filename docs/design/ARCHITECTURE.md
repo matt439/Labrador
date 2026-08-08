@@ -12,8 +12,23 @@ describes the destination, not the current codebase.
 Three build targets plus tests, one dependency direction, one shared
 compiler-settings target (see the target table in PHILOSOPHY.md).
 An arrow reads "links against"; no arrow ever points the other way — an
-engine file including a game header fails to compile, and that is the
+engine file including a game header fails the build, and that is the
 feature (T5).
+
+It fails on a check and not on the compiler, and that is worth stating
+plainly rather than leaving to be discovered. Includes are written from
+the repository root, so an engine file says
+`#include "engine/render/renderer.h"` — which means the engine's own
+include root has to be the directory *above* `engine/`, and in this
+repository that directory also holds `game/`. No include path admits the
+first spelling and refuses `#include "game/objects/level.h"` while the
+two are siblings. So `cmake/check_engine_includes.cmake` is the wall, it
+runs on every build, and it fails the build with the offending file and
+line. What replaces it with a compiler error is the repo split — engine
+and samples in one repository, the paint-shooter in its own, consuming
+the engine as a submodule — and the include roots are relative
+(`CMAKE_CURRENT_SOURCE_DIR`, never `CMAKE_SOURCE_DIR`) so that split is a
+move rather than a build rewrite.
 
 ```mermaid
 flowchart TD
@@ -79,9 +94,10 @@ being load-bearing.
 ├── vcpkg.json              the bought edge, declared (T9)
 ├── cmake/                  the shared settings target, helper modules
 ├── engine/                 the product
-│   ├── math/               MattMath — depends on nothing
+│   ├── math/               MattMath — depends on nothing, and links
+│   │                       nothing: no DirectXTK, no D3D11, no Windows
 │   ├── core/               game loop, fixed-step timing, states, services, registries
-│   ├── render/             the Renderer, cameras, viewports
+│   ├── render/             the Renderer, cameras, viewports, colours
 │   │   └── d3d11/          the D3D11/DirectXTK backend, behind the Renderer
 │   ├── collision/          contacts, narrow phase, manifolds, resolution
 │   │                       (the pair sweep is still all-pairs; a broad
@@ -110,7 +126,8 @@ being load-bearing.
 │   ├── render/
 │   ├── scene/
 │   └── ui/
-├── external/               third-party source: rapidjson, DirectXTK
+├── external/               third-party source: rapidjson. DirectXTK is not
+│                           here — it is a vcpkg package (vcpkg.json)
 └── docs/
     ├── design/             philosophies, conventions, this document
     └── review/             findings against the current code
@@ -146,7 +163,7 @@ already is (T5). That option is held, not spent.
 
 | Module | May depend on |
 |---|---|
-| `math` | nothing |
+| `math` | nothing — and it links nothing, which is what makes this true |
 | `core` | math |
 | `collision` | core, math |
 | `render` | core, math — D3D11/DirectXTK inside `d3d11/` only |
@@ -176,7 +193,12 @@ closing into a cycle. Resource types are passive: a sprite sheet is
 handed its frame table and a sound bank its effect instances, already
 parsed. No type on the draw path reads a file, so `rapidjson` reaches
 `assets` and stops there — drawing a sprite does not compile a JSON
-parser.
+parser. It is a `SYSTEM PRIVATE` include on the engine, so it stops at
+the engine's own edge too: a client that parses nothing never sees it.
+A client that *does* asks for rapidjson itself, and both of the two that
+do — the game and `tests/assets` — say so in their own build files. That
+duplication ends when `assets/json_loader.h` stops returning a
+`rapidjson::Document`, at which point `PRIVATE` means what it says.
 
 **One backend still lives outside its folder, and it is named here rather
 than left to be discovered.** `assets/resource_loader.cpp` creates

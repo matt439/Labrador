@@ -871,6 +871,48 @@ lines below them.
 
 #### E1 — MattMath's real dependencies, and the module walls
 
+> **Landed, in four commits — and two of the four items below were wrong about
+> the code. Recorded here because the rest of this document is worth reading
+> with them in mind.**
+>
+> **Item 1 was too small.** It budgeted for moving `d3d_viewport()` and the
+> `RECT` conversions, and expected MattMath to keep linking DirectXTK because
+> the library "currently wraps" it. Counting callers first said otherwise:
+> across all forty-six DirectX-typed constructors, accessors and assignment
+> operators in `matt_math.h`, thirty-nine had **zero callers anywhere**, and
+> every one of the seven live ones was in a single file,
+> `engine/render/d3d11/renderer.cpp`. Every DirectX-typed constructor
+> duplicated a `Vector2F` or `RectangleF` one that already existed, so nothing
+> lost an entry point. All forty-six are gone, five free functions in the
+> backend replace them, and MattMath links nothing at all. The general lesson,
+> and it applies to E2: **count the callers before budgeting the move.**
+>
+> **Item 4 cannot be done before the repo split, and the reason is
+> structural.** "Engine sees only itself; game and sample receive the root
+> through the engine's `INTERFACE`" is not reachable while `engine/` and
+> `game/` are siblings: includes are written from the repository root
+> (CONVENTIONS), so the engine's own include root *must* be the directory
+> above `engine/` — which is the directory that also holds `game/`. No include
+> path admits `"engine/render/renderer.h"` and refuses `"game/objects/level.h"`
+> from there. What E1 did instead is the prerequisite: the include roots are
+> `CMAKE_CURRENT_SOURCE_DIR`-relative, so the engine now configures and builds
+> under a foreign top-level project (verified, not assumed), and the split is a
+> move rather than a build rewrite. A6's grep stays as the wall until then, and
+> ARCHITECTURE says so rather than describing a compiler error that does not
+> happen.
+>
+> Items 2 and 3 landed as written. Three entries from §4 closed with them:
+> `d3d_viewport_ptr()`'s `reinterpret_cast`, `DIVIDER_COLOUR`'s
+> dynamic-initialisation order, and `colour_consts`' 301 internal-linkage
+> objects per translation unit — the palette is `static const Colour` members
+> defined once, constant-initialised.
+>
+> Two defects were found by the move rather than by the review.
+> `Colour::set_from_hex` threw `std::invalid_argument` on a right-length string
+> whose digits were not hex, straight past the `else` that promises opaque
+> black; and `saturate`/`desaturate` had byte-identical bodies. Both are fixed,
+> with tests, in `tests/render/colour_tests.cpp`.
+
 **What changes.** Four things that are one build edit and one set of moves:
 
 1. **Strip the backend conversions out of `mattmath::Viewport`.**
