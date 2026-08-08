@@ -251,6 +251,11 @@ namespace artattack
 		}
 	}
 
+	void Application::reset_elapsed_time()
+	{
+		this->timer_.ResetElapsedTime();
+	}
+
 	void Application::tick()
 	{
 		this->timer_.Tick([&]() { this->update(); });

@@ -111,6 +111,16 @@ namespace artattack
 		// Switches between a borderless full-screen window and an ordinary one.
 		void set_fullscreen(bool fullscreen);
 
+		// Tells the clock that the time just spent was not gameplay.
+		//
+		// The step is fixed, so a long blocking call - loading a level, reading
+		// a save - is not one enormous dt. It is a backlog, and the next tick
+		// pays it off by running update() as many times as it takes, at full
+		// speed, on a world that has not been drawn yet. The paint-shooter used
+		// to swallow the first frame after a build and hope, which cost it a
+		// frame and fixed nothing beyond it.
+		void reset_elapsed_time();
+
 		// The services. Every one of these is null until initialize() has run -
 		// which is what ApplicationOptions is for: anything the game needs to say
 		// before there is a window to say it to belongs in the options, not in a

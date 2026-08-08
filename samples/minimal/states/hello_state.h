@@ -5,7 +5,8 @@
 #include "engine/render/text.h"
 #include <memory>
 
-// One screen: a line of text that follows the left stick, and B to quit.
+// One screen: a line of text that follows the left stick, and B to quit -
+// which asks first, by putting a second state on top of this one.
 //
 // A state is the whole of what a game is to the engine (PHILOSOPHY, Structural
 // types) - there is no IGame to implement. The engine calls init() once, then
@@ -21,6 +22,13 @@ public:
 	void init() override;
 	void update(float dt) override;
 	void draw(artattack::Renderer& renderer) const override;
+
+	// Something is above this state, or has just left. update() stops being
+	// called either way - the stack sees to that - so these are for what a game
+	// does *besides* stepping: a paused mix, a dimmed world, a saved
+	// checkpoint. Dimming is what this one has.
+	void on_suspend() override;
+	void on_resume() override;
 
 private:
 	artattack::Application* app_ = nullptr;

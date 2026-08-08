@@ -1,5 +1,8 @@
 #include "samples/minimal/states/hello_state.h"
 
+#include "engine/core/state_context.h"
+#include "samples/minimal/states/confirm_state.h"
+
 using namespace DirectX;
 using namespace mattmath;
 using namespace artattack;
@@ -44,7 +47,19 @@ void HelloState::update(float dt)
 	{
 		if (pad.IsBPressed())
 		{
-			this->app_->quit();
+			// Ask, rather than quit. The result type is named here and matched
+			// at the pop; the question knows nothing about this state, and the
+			// callback runs once, when it closes, rather than being a flag read
+			// on every frame until something sets it.
+			this->context()->push<bool>(
+				std::make_unique<ConfirmState>(this->app_, L"Really quit?"),
+				[this](const bool& quit)
+				{
+					if (quit)
+					{
+						this->app_->quit();
+					}
+				});
 			return;
 		}
 
@@ -52,6 +67,16 @@ void HelloState::update(float dt)
 		this->position_.y -= pad.thumbSticks.leftY * move_speed * dt;
 		this->greeting_->set_position(this->position_);
 	}
+}
+
+void HelloState::on_suspend()
+{
+	this->greeting_->set_colour(colour_consts::DIM_GRAY);
+}
+
+void HelloState::on_resume()
+{
+	this->greeting_->set_colour(colour_consts::WHITE);
 }
 
 void HelloState::draw(Renderer& renderer) const

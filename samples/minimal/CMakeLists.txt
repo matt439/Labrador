@@ -16,6 +16,7 @@ find_package(directxtk CONFIG REQUIRED)
 # mechanism ever drifts back into the paint-shooter, this stops building.
 add_executable(ArtAttackSample WIN32
     main.cpp
+    states/confirm_state.cpp
     states/hello_state.cpp
 )
 target_link_libraries(ArtAttackSample PRIVATE
