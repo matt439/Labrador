@@ -368,3 +368,7 @@ FodyWeavers.xsd
 *.mp3
 # CMake out-of-source build tree
 out/
+
+# Claude Code's scratch git worktrees. Scoped to worktrees/ rather than the
+# whole of .claude/, so project-level settings can still be committed.
+.claude/worktrees/
