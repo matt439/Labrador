@@ -70,6 +70,52 @@ TEST_CASE("left and right in a column find nothing, and do not wrap into it")
 	CHECK(nearest_in_direction(rows[1], Direction::right, rows) == -1);
 }
 
+TEST_CASE("a ragged-right column still has no left or right")
+{
+	// The mode-select page: left-aligned labels of wildly different widths.
+	// Their centres are nowhere near each other, so a centre-based walk sends
+	// "right" from Standard to Team Deathmatch one row down. Menus do not do
+	// that.
+	const std::vector<RectangleF> rows = {
+		RectangleF(150.0f, 400.0f, 220.0f, 60.0f),  // 0: "Standard"
+		RectangleF(150.0f, 500.0f, 480.0f, 60.0f),  // 1: "Team Deathmatch"
+		RectangleF(150.0f, 600.0f, 330.0f, 60.0f),  // 2: "Deathmatch"
+		RectangleF(150.0f, 700.0f, 210.0f, 60.0f),  // 3: "Practice"
+		RectangleF(150.0f, 800.0f, 120.0f, 60.0f),  // 4: "Back"
+	};
+
+	CHECK(nearest_in_direction(rows[0], Direction::right, rows) == -1);
+	CHECK(nearest_in_direction(rows[0], Direction::left, rows) == -1);
+	CHECK(nearest_in_direction(rows[4], Direction::right, rows) == -1);
+
+	// Up and down are unaffected by the ragged edge.
+	CHECK(nearest_in_direction(rows[0], Direction::down, rows) == 1);
+	CHECK(nearest_in_direction(rows[4], Direction::down, rows) == 0);
+	CHECK(nearest_in_direction(rows[0], Direction::up, rows) == 4);
+}
+
+TEST_CASE("rows that overlap slightly still navigate")
+{
+	// The end-of-match menu spaces its rows 85 apart in a 48pt font. If that
+	// font's line spacing comes out at 95, every row overlaps its neighbour by
+	// 10 - and a rule that demanded a clean gap would stop the menu dead
+	// rather than degrade. Half the smaller box is the margin.
+	const std::vector<RectangleF> rows = {
+		RectangleF(700.0f, 230.0f, 400.0f, 95.0f),
+		RectangleF(700.0f, 315.0f, 400.0f, 95.0f),
+		RectangleF(700.0f, 400.0f, 400.0f, 95.0f),
+	};
+
+	CHECK(nearest_in_direction(rows[0], Direction::down, rows) == 1);
+	CHECK(nearest_in_direction(rows[1], Direction::down, rows) == 2);
+	CHECK(nearest_in_direction(rows[2], Direction::down, rows) == 0);
+	CHECK(nearest_in_direction(rows[0], Direction::up, rows) == 2);
+
+	// Still no sideways movement: the rows overlap completely in x.
+	CHECK(nearest_in_direction(rows[1], Direction::left, rows) == -1);
+	CHECK(nearest_in_direction(rows[1], Direction::right, rows) == -1);
+}
+
 TEST_CASE("a grid goes down, not down-and-across")
 {
 	const std::vector<RectangleF> cells = grid();
