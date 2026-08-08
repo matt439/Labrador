@@ -16,10 +16,6 @@ namespace artattack
 	{
 		return this->name_;
 	}
-	void UiObject::draw(SpriteBatch* sprite_batch, const Viewport& viewport) const
-	{
-		this->draw(sprite_batch, Camera(viewport));
-	}
 	void UiObject::set_hidden(bool hidden)
 	{
 		this->hidden_ = hidden;
@@ -75,20 +71,6 @@ namespace artattack
 	std::vector<std::pair<std::string, UiObject*>> UiContainer::children()
 	{
 		return this->children_;
-	}
-	void UiContainer::scale_objects_to_new_resolution(
-		const Vector2F& prev_resolution,
-		const Vector2F& new_resolution)
-	{
-		Vector2F scale_factor = new_resolution / prev_resolution;
-		this->scale_size_and_position(scale_factor);
-	}
-	void UiContainer::scale_size_and_position(const Vector2F& scale)
-	{
-		for (auto const& child : this->children_)
-		{
-			child.second->scale_size_and_position(scale);
-		}
 	}
 	void UiContainer::update(float dt)
 	{
@@ -197,10 +179,6 @@ namespace artattack
 	{
 		this->SpriteSheetObject::set_colour(colour);
 	}
-	void UiTexture::scale_size_and_position(const Vector2F& scale)
-	{
-		this->rectangle_.scale_size_and_position(scale);
-	}
 	void UiTexture::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())
@@ -261,11 +239,6 @@ namespace artattack
 	{
 
 	}
-	void UiText::scale_size_and_position(const Vector2F& scale)
-	{
-		this->set_position(this->position() * scale);
-		this->set_scale(this->scale() * scale.x);
-	}
 	void UiText::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())
@@ -318,13 +291,6 @@ namespace artattack
 
 	}
 
-	void UiTextDropShadow::scale_size_and_position(const Vector2F& scale)
-	{
-		this->set_position(this->position() * scale);
-		this->set_scale(this->scale() * scale.x);
-		this->set_shadow_offset(this->shadow_offset() * scale);
-		this->set_shadow_scale(this->shadow_scale() * scale.x);
-	}
 	void UiTextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())

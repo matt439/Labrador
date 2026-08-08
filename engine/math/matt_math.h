@@ -262,9 +262,6 @@ namespace mattmath
 		void offset(const mattmath::Vector2F& amount) override;
 		void scale(float horizontal_amount, float vertical_amount);
 		void scale(const mattmath::Vector2F& amount);
-		void scale_size_and_position(float horizontal_amount,
-			float vertical_amount);
-		void scale_size_and_position(const mattmath::Vector2F& amount);
 		void set_position(const mattmath::Vector2F& position);
 		void set_position(float x, float y);
 		void set_position_at_center(const mattmath::Vector2F& position);

@@ -6,6 +6,24 @@
 
 namespace artattack
 {
+	// A named, hideable thing in a user interface.
+	//
+	// NO RESCALE. This class used to require every widget to implement
+	// scale_size_and_position(), and UiContainer shipped a
+	// scale_objects_to_new_resolution() that walked the tree applying it. That
+	// is a layout policy, and an engine base class is not where a game's
+	// answer to "what happens at 1280x720" belongs (T1). It was also
+	// destructive: the factor was recorded nowhere, so after the walk there was
+	// no authoritative geometry left to write against, and any later absolute
+	// setter wrote design-space units into a rescaled widget. The results
+	// screen did exactly that every frame - its team bars were 1.5x too wide
+	// for the box they sat in at the default resolution, because the box had
+	// been shrunk and the bars had not.
+	//
+	// A widget now holds one geometry, in whatever space the game authored it
+	// in, and nothing ever rewrites it. The mapping to the screen is a Camera
+	// the caller passes to draw() - which is the parameter that was already
+	// there.
 	class UiObject : public GameObject
 	{
 	public:
@@ -13,13 +31,8 @@ namespace artattack
 		explicit UiObject(const std::string& name, bool hidden = false);
 		const std::string& name() const;
 
-		void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Viewport& viewport) const;
-
 		void set_hidden(bool hidden);
 		bool hidden() const;
-
-		virtual void scale_size_and_position(const mattmath::Vector2F& scale) = 0;
 
 		void update(float dt) override = 0;
 		void draw(DirectX::SpriteBatch* sprite_batch,
@@ -42,12 +55,6 @@ namespace artattack
 		size_t child_count() const;
 		std::vector<std::pair<std::string, UiObject*>> children();
 
-		void scale_objects_to_new_resolution(
-			const mattmath::Vector2F& prev_resolution,
-			const mattmath::Vector2F& new_resolution);
-
-		void scale_size_and_position(const mattmath::Vector2F& scale) override;
-
 		void update(float dt) override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
@@ -62,8 +69,6 @@ namespace artattack
 		UiWidget() = default;
 		explicit UiWidget(const std::string& name, bool hidden = false);
 		~UiWidget() override = default;
-
-		void scale_size_and_position(const mattmath::Vector2F& scale) override = 0;
 
 		void update(float dt) override = 0;
 		void draw(DirectX::SpriteBatch* sprite_batch,
@@ -88,8 +93,6 @@ namespace artattack
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
-
-		void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
 		void update(float dt) override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
@@ -128,8 +131,6 @@ namespace artattack
 			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
 
-		void scale_size_and_position(const mattmath::Vector2F& scale) override;
-
 		void update(float dt) override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
@@ -156,8 +157,6 @@ namespace artattack
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
-
-		void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
 		void update(float dt) override;
 		void draw(DirectX::SpriteBatch* sprite_batch,

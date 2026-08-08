@@ -925,21 +925,6 @@ namespace mattmath
 		this->width *= amount.x;
 		this->height *= amount.y;
 	}
-	void RectangleF::scale_size_and_position(float horizontal_amount,
-		float vertical_amount)
-	{
-		this->x *= horizontal_amount;
-		this->y *= vertical_amount;
-		this->width *= horizontal_amount;
-		this->height *= vertical_amount;
-	}
-	void RectangleF::scale_size_and_position(const Vector2F& amount)
-	{
-		this->x *= amount.x;
-		this->y *= amount.y;
-		this->width *= amount.x;
-		this->height *= amount.y;
-	}
 	void RectangleF::set_position(const Vector2F& position)
 	{
 		this->x = position.x;

@@ -28,11 +28,6 @@ public:
 
 	mattmath::RectangleF bounds() const override { return this->bounds_; }
 
-	void scale_size_and_position(const mattmath::Vector2F& scale) override
-	{
-		this->bounds_.scale_size_and_position(scale);
-	}
-
 	void set_colour(const mattmath::Colour& colour) override
 	{
 		this->colour_ = colour;
