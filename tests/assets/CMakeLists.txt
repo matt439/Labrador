@@ -2,14 +2,13 @@ find_package(doctest CONFIG REQUIRED)
 
 add_executable(AssetsTests
     asset_manifest_loader_tests.cpp
+    json_tests.cpp
     test_main.cpp
 )
-# These tests read a rapidjson::Document out of the loaders, which is still
-# the assets module's public JSON type, so they ask for rapidjson themselves -
-# the engine stopped passing it on. See engine/CMakeLists.txt.
-target_include_directories(AssetsTests SYSTEM PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../external/rapidjson/include"
-)
+# No rapidjson here. These tests used to ask for it themselves, because the
+# assets module's public JSON type was a rapidjson::Document; it is JsonValue
+# now, and this target is the check that a client of the engine's loaders needs
+# nothing but the engine.
 target_link_libraries(AssetsTests PRIVATE
     ArtAttackEngine
     doctest::doctest

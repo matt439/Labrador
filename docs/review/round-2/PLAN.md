@@ -841,6 +841,48 @@ different character with nothing on screen to say why.
 
 #### D3 — Guard the asset loaders
 
+> **Landed — and it was not an `engine/assets/` item, because the header it
+> was filed against was the *game's* JSON entry point too.**
+>
+> **The remedy as filed does not reach the defect.** "Make the guarded readers
+> the public API" reads as promoting three static functions out of
+> `asset_manifest_loader.cpp`. It cannot be that: they take
+> `const rapidjson::Value&`, so promoting them keeps rapidjson in a public
+> header and `PRIVATE` stays a fiction. What the item actually wanted was a
+> *type* — `JsonValue` and `JsonDocument` in `engine/assets/json.h`, whose only
+> rapidjson is a `void*` recovered inside `json.cpp`. Every accessor checks the
+> receiver's kind as well as the member's, and throws naming the file and the
+> position in it: `'./levels/turbulence.json': collision_objects[17] has no
+> 'colour'`. `tests/assets` dropping its own rapidjson include is the check
+> that the leak is closed, and it is a build-file line rather than an assertion.
+>
+> **The scope was in `game/`, not `engine/`.** `json_loader.h` was included by
+> five `.cpp` files and only three were the engine's; the loader whose reads
+> were least checked and whose file is most hand-edited was
+> `game/objects/level_object_builder.cpp`, with 55 unguarded accessor calls
+> against level JSON. `LevelLoadedInfo` said so in its own comment — "the rest
+> of this class still reaches into the document unchecked, that is the loaders'
+> standing validation debt, and it is not paid here" — and that comment is what
+> the item was really filed against. `save.cpp` keeps rapidjson, and always
+> will: the save file is the one JSON this project writes, and `assets` only
+> reads.
+>
+> **One thing was found by doing it rather than by the review.** The game's own
+> rejections — an unknown colour name, an unknown object or collision type —
+> named neither the file nor which object, and two of them threw
+> `std::exception`, which is MSVC-only. `JsonValue::where()` exists for that: a
+> caller with its own reason to reject what it read gets the same sentence
+> pointing at the same place. Fixing the reads without fixing those would have
+> left a level file that says which key is missing but not which object had the
+> unknown colour.
+>
+> The three fold-ins landed as written. The dead `catch` was real: DirectXTK's
+> `WaveBank::CreateInstance` answers null, so a definition naming a missing wave
+> had been registering a null instance that failed later, elsewhere. One filed
+> finding in these files is deliberately left: `resource_loader.cpp` reports
+> "the content names something that is not there" as `out_of_range` twice and
+> `runtime_error` twice, and picking one is an API decision rather than a guard.
+
 **What changes.** `engine/assets/sprite_sheet_loader.cpp:11-67` and
 `engine/assets/sound_bank_loader.cpp:14-82` read JSON through rapidjson's
 asserting accessors, which `NDEBUG` disarms — so a hand-edited content file is a

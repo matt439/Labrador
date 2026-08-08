@@ -12,8 +12,8 @@ namespace artattack
 	// is why the wave bank is handed in rather than fetched back out.
 	//
 	// Throws std::runtime_error naming the path if the file cannot be read or
-	// parsed, and std::out_of_range naming the wave if a definition names one
-	// the bank does not contain (T6).
+	// parsed or is the wrong shape, and std::out_of_range naming the path and
+	// the wave if a definition names one the bank does not contain (T6).
 	std::unique_ptr<SoundBank> read_sound_bank(const char* json_path,
 		std::unique_ptr<DirectX::WaveBank> wave_bank);
 }

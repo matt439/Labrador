@@ -193,12 +193,26 @@ closing into a cycle. Resource types are passive: a sprite sheet is
 handed its frame table and a sound bank its effect instances, already
 parsed. No type on the draw path reads a file, so `rapidjson` reaches
 `assets` and stops there — drawing a sprite does not compile a JSON
-parser. It is a `SYSTEM PRIVATE` include on the engine, so it stops at
-the engine's own edge too: a client that parses nothing never sees it.
-A client that *does* asks for rapidjson itself, and both of the two that
-do — the game and `tests/assets` — say so in their own build files. That
-duplication ends when `assets/json_loader.h` stops returning a
-`rapidjson::Document`, at which point `PRIVATE` means what it says.
+parser. It is a `SYSTEM PRIVATE` include on the engine, and that is now
+literally true rather than nearly true: `assets/json.h` hands out
+`JsonDocument` and `JsonValue`, whose only rapidjson is a `void*`
+recovered inside `json.cpp`, so no engine header names the parser and no
+client needs it to include one. `tests/assets` used to ask for rapidjson
+on its own account and no longer does, which is the check. The game still
+does, for one reason that will not go away: the save file is the one JSON
+this project *writes*, and `assets` only reads.
+
+`JsonValue` is also the module's answer to a question every loader had
+answered separately, or not at all. rapidjson's accessors assert on a
+missing key or a wrong type, `NDEBUG` disarms the assert, and content
+files are the one input a person types by hand — so an unchecked read is
+a stopped debug build and a null dereference in a shipped one. Every
+accessor on `JsonValue` checks, and throws naming the file and the
+position in it (`'./levels/turbulence.json': collision_objects[17] has no
+'colour'`), which is T6 applied to the input most likely to be wrong.
+`where()` hands the same position to a caller with its own reason to
+reject what it read — an unknown colour name is a content mistake exactly
+like a missing key.
 
 **One backend still lives outside its folder, and it is named here rather
 than left to be discovered.** `assets/resource_loader.cpp` creates

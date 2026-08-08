@@ -12,7 +12,7 @@ find_package(directxtk CONFIG REQUIRED)
 add_library(ArtAttackEngine STATIC
     app/application.cpp
     assets/asset_manifest_loader.cpp
-    assets/json_loader.cpp
+    assets/json.cpp
     assets/resource_loader.cpp
     assets/sound_bank_loader.cpp
     assets/sprite_sheet_loader.cpp
@@ -75,12 +75,11 @@ target_include_directories(ArtAttackEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/.
 # parses nothing still had a JSON parser's headers on its command line, and
 # their warnings were measured against /W4 /WX.
 #
-# The duplication this leaves is deliberate and temporary: assets/json_loader.h
-# still hands out a rapidjson::Document, so a client of *that* header needs
-# rapidjson itself, and game/ and tests/assets/ ask for it themselves. D3 is
-# the item that makes the guarded readers the public API; when it lands this
-# stops being a usage requirement the engine is declining to propagate and
-# becomes a private implementation detail, which is what PRIVATE should mean.
+# PRIVATE now means what it says: assets/json.h hands out JsonDocument and
+# JsonValue, whose only rapidjson is a void* recovered inside json.cpp, so no
+# engine header names the parser and no client needs it to include one. A
+# client that parses files of its own asks for rapidjson on its own account -
+# which the game does, for the save file it writes.
 target_include_directories(ArtAttackEngine SYSTEM PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
 )

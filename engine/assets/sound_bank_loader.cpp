@@ -1,67 +1,65 @@
 #include "engine/assets/sound_bank_loader.h"
-#include "engine/assets/json_loader.h"
+#include "engine/assets/json.h"
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 using namespace DirectX;
-using namespace rapidjson;
 
 namespace artattack
 {
 	namespace
 	{
-		std::vector<std::string> decode_wave_names(const Value& json)
-		{
-			std::vector<std::string> wave_names;
-			for (auto& wave : json.GetArray())
-			{
-				wave_names.push_back(wave.GetString());
-			}
-			return wave_names;
-		}
-
 		std::unique_ptr<SoundEffectInstance> create_instance(
-			WaveBank& wave_bank, const std::string& wave_name)
+			WaveBank& wave_bank, const std::string& wave_name,
+			const std::string& source_path)
 		{
-			try
+			// WaveBank::CreateInstance answers null for a name the bank does not
+			// hold - it does not throw. The catch that used to be here had
+			// therefore never run, and a definition naming a missing wave
+			// registered a null instance that failed later, somewhere else, at
+			// the first attempt to play it.
+			std::unique_ptr<SoundEffectInstance> instance =
+				wave_bank.CreateInstance(wave_name.c_str());
+			if (!instance)
 			{
-				return wave_bank.CreateInstance(wave_name.c_str());
+				throw std::out_of_range("'" + source_path +
+					"': the wave bank has no wave named '" + wave_name + "'");
 			}
-			catch (const std::out_of_range&)
-			{
-				throw std::out_of_range("Wave with name " + wave_name + " not found");
-			}
+			return instance;
 		}
 
-		Registry<SoundEffectInstance> decode_instances(
-			WaveBank& wave_bank, const Value& waves_json,
-			const Value& instances_json, bool instance_for_each_wave)
+		Registry<SoundEffectInstance> decode_instances(WaveBank& wave_bank,
+			const JsonValue& root, const std::string& source_path)
 		{
 			Registry<SoundEffectInstance> instances("SoundEffectInstance");
 
-			if (instance_for_each_wave)
+			const JsonValue waves = root.array("waves");
+			if (root.boolean("create_effect_instance_for_each_wave"))
 			{
-				for (const std::string& wave : decode_wave_names(waves_json))
+				for (size_t index = 0; index < waves.size(); ++index)
 				{
-					instances.add(wave, create_instance(wave_bank, wave));
+					const std::string wave = waves.at(index).as_string();
+					instances.add(wave,
+						create_instance(wave_bank, wave, source_path));
 				}
 			}
 
-			for (auto& effect : instances_json.GetArray())
+			const JsonValue effects = root.array("sound_effect_instances");
+			for (size_t index = 0; index < effects.size(); ++index)
 			{
-				std::string name = effect["name"].GetString();
-				std::string wave = effect["wave"].GetString();
+				const JsonValue effect = effects.at(index);
+				const std::string name = effect.string("name");
 
 				// Registry::add refills a name's slot rather than rejecting it, so
 				// the duplicate check has to happen here: two definitions claiming
 				// one name is a content bug, not an overwrite.
 				if (instances.contains(name))
 				{
-					throw std::runtime_error(
-						"SoundEffectInstance with name " + name + " already exists");
+					throw std::runtime_error("'" + source_path +
+						"': two sound effect instances are named '" + name + "'");
 				}
-				instances.add(name, create_instance(wave_bank, wave));
+				instances.add(name, create_instance(wave_bank,
+					effect.string("wave"), source_path));
 			}
 			return instances;
 		}
@@ -70,12 +68,10 @@ namespace artattack
 	std::unique_ptr<SoundBank> read_sound_bank(const char* json_path,
 		std::unique_ptr<WaveBank> wave_bank)
 	{
-		const Document doc = read_json_file(json_path);
+		const JsonDocument document = read_json_file(json_path);
 
-		auto instances = decode_instances(*wave_bank,
-			doc["waves"],
-			doc["sound_effect_instances"],
-			doc["create_effect_instance_for_each_wave"].GetBool());
+		auto instances = decode_instances(*wave_bank, document.root(),
+			document.source_path());
 
 		return std::make_unique<SoundBank>(std::move(wave_bank),
 			std::move(instances));

@@ -11,7 +11,8 @@ namespace artattack
 	// compiles a JSON parser to draw a sprite.
 	//
 	// Throws std::runtime_error naming the path if the file cannot be read or
-	// parsed, and whatever rapidjson throws if the document is the wrong shape.
+	// parsed, and naming the path and the offending frame or strip if the
+	// document is the wrong shape (T6).
 	std::unique_ptr<SpriteSheet> read_sprite_sheet(const char* json_path,
 		TextureHandle texture);
 }
