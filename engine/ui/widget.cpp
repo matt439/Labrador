@@ -105,13 +105,6 @@ namespace artattack
 			child.second->draw(sprite_batch, camera);
 		}
 	}
-	void MContainer::draw(SpriteBatch* sprite_batch) const
-	{
-		for (auto const& child : this->children_)
-		{
-			child.second->draw(sprite_batch);
-		}
-	}
 	bool MContainer::is_visible_in_viewport(const mattmath::RectangleF& view) const
 	{
 		for (auto const& child : this->children_)
@@ -192,14 +185,6 @@ namespace artattack
 		}
 		this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
 	}
-	void MTexture::draw(SpriteBatch* sprite_batch) const
-	{
-		if (this->hidden())
-		{
-			return;
-		}
-		this->TextureObject::draw(sprite_batch, this->rectangle_);
-	}
 	const RectangleF& MTexture::rectangle() const
 	{
 		return this->rectangle_;
@@ -265,15 +250,6 @@ namespace artattack
 		}
 		this->Text::draw(sprite_batch, camera);
 	}
-	void MText::draw(SpriteBatch* sprite_batch) const
-	{
-		if (this->hidden())
-		{
-			return;
-		}
-		this->Text::draw(sprite_batch);
-
-	}
 	void MText::update()
 	{
 		// do nothing
@@ -329,15 +305,6 @@ namespace artattack
 			return;
 		}
 		this->TextDropShadow::draw(sprite_batch, camera);
-	}
-	void MTextDropShadow::draw(SpriteBatch* sprite_batch) const
-	{
-		if (this->hidden())
-		{
-			return;
-		}
-		this->TextDropShadow::draw(sprite_batch);
-
 	}
 	void MTextDropShadow::update()
 	{

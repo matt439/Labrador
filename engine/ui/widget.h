@@ -24,7 +24,6 @@ namespace artattack
 		void update() override = 0;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override = 0;
-		void draw(DirectX::SpriteBatch* sprite_batch) const override = 0;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override = 0;
 	private:
 		std::string name_ = "error_name";
@@ -52,7 +51,6 @@ namespace artattack
 		void update() override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
-		void draw(DirectX::SpriteBatch* sprite_batch) const override;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
 	private:
 		std::vector<std::pair<std::string, MObject*>> children_;
@@ -70,7 +68,6 @@ namespace artattack
 		void update() override = 0;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override = 0;
-		void draw(DirectX::SpriteBatch* sprite_batch) const override = 0;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override = 0;
 
 		virtual void set_colour(const mattmath::Colour& colour) = 0;
@@ -97,7 +94,6 @@ namespace artattack
 		void update() override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
-		void draw(DirectX::SpriteBatch* sprite_batch) const override;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
 
 		void set_texture(const std::string& sheet_name, const std::string& frame_name);
@@ -137,7 +133,6 @@ namespace artattack
 		void update() override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
-		void draw(DirectX::SpriteBatch* sprite_batch) const override;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
 		void set_colour(const mattmath::Colour& colour) override;
 	};
@@ -167,7 +162,6 @@ namespace artattack
 		void update() override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
-		void draw(DirectX::SpriteBatch* sprite_batch) const override;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
 		void set_colour(const mattmath::Colour& colour) override;
 	};

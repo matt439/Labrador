@@ -25,9 +25,14 @@ namespace artattack
 	public:
 		virtual ~IGameObject() = default;
 		virtual void update() = 0;
+		// One draw, always with a camera. There was a second, camera-less
+		// overload; nothing ever called it through this interface, and by the
+		// time it was deleted Player's copy of it had silently drifted - it had
+		// stopped early-outing on death, dropped a whole sprite layer and lost
+		// the facing flip. A camera-less draw is just Camera::DEFAULT_CAMERA,
+		// which is the identity, so callers wanting screen space pass it.
 		virtual void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const = 0;
-		virtual void draw(DirectX::SpriteBatch* sprite_batch) const = 0;
 		virtual bool is_visible_in_viewport(const mattmath::RectangleF& view) const = 0;
 	};
 }

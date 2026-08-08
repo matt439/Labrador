@@ -44,10 +44,6 @@ namespace artattack
 	{
 		this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
 	}
-	void Visual::draw(SpriteBatch* sprite_batch) const
-	{
-		this->TextureObject::draw(sprite_batch, this->rectangle_);
-	}
 	bool Visual::is_visible_in_viewport(const RectangleF& view) const
 	{
 		return this->rectangle_.intersects(view);
