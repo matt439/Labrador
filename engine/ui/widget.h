@@ -4,6 +4,7 @@
 #include "engine/render/texture_object.h"
 #include "engine/render/text_drop_shadow.h"
 #include "engine/render/colour.h"
+#include "engine/render/camera.h"
 
 namespace artattack
 {

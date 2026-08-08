@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 #include "engine/render/colour.h"
+#include "engine/render/camera.h"
+#include "engine/render/viewport.h"
 
 // The renderer seam.
 //
@@ -121,7 +123,7 @@ namespace artattack
 		// RSSetViewports/SetViewport were the only backend part of that class -
 		// camera_adjusted_player_viewport_rect and the layout arithmetic beside
 		// it are pure and stay where they are.
-		void set_viewport(const mattmath::Viewport& viewport);
+		void set_viewport(const Viewport& viewport);
 
 		// World to view, for every draw recorded after it.
 		//
@@ -141,7 +143,7 @@ namespace artattack
 		// The identity is Camera::DEFAULT_CAMERA, which is what a list starts
 		// with, so a caller that only ever wanted screen space never mentions
 		// a camera at all.
-		void set_camera(const mattmath::Camera& camera);
+		void set_camera(const Camera& camera);
 
 		// Applies to every draw recorded after it. Changing it mid-list is
 		// legal and costs a flush, so group by filter if it matters.

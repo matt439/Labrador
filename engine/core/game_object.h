@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/math/matt_math.h"
+#include "engine/render/camera.h"
 
 namespace artattack
 {

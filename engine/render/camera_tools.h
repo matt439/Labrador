@@ -2,16 +2,17 @@
 
 #include "engine/render/border_thickness.h"
 #include "engine/math/matt_math.h"
+#include "engine/render/camera.h"
 
 namespace artattack
 {
     class CameraTools
     {
     public:
-        mattmath::Camera calculate_camera(
+        Camera calculate_camera(
             const mattmath::Vector2F& player_center,
             const mattmath::Vector2F& viewport_size,
-            const mattmath::Camera& prev_camera,
+            const Camera& prev_camera,
             const mattmath::RectangleF& camera_bounds) const;
 
         // The dead zone the player moves inside before the camera follows,
