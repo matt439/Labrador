@@ -10,67 +10,26 @@
 
 namespace mattmath
 {
-	//struct Vector
-	//{
-	//	float x = 0.0f;
-	//	float y = 0.0f;
-
-	//	Vector() = default;
-	//	Vector(float x, float y);
-	//	Vector(float f);
-
-	//	Vector operator+(const Vector& rhs) const;
-	//	Vector operator-(const Vector& rhs) const;
-	//	Vector operator*(float rhs) const;
-	//	Vector operator/(float rhs) const;
-	//	Vector& operator+=(const Vector& rhs);
-	//	Vector& operator-=(const Vector& rhs);
-	//	Vector& operator*=(float rhs);
-	//	Vector& operator/=(float rhs);
-	//	Vector& operator*=(const Vector& rhs);
-	//	Vector& operator/=(const Vector& rhs);
-
-	//	Vector operator=(float rhs[2]);
-	//};
-	//typedef Vector Point;
-	//struct AABB
-	//{
-	//	Point min = Point(); // Minimum x, y values of AABB
-	//	Point max = Point(); // Maximum x, y values of AABB
-
-	//	AABB() = default;
-	//	AABB(Point min, Point max);
-	//	AABB(float min_x, float min_y, float max_x, float max_y);
-
-	//};
-	//struct Sphere
-	//{
-	//	Point c = Point(); // Sphere center
-	//	float r = 0.0f; // Sphere radius
-
-	//	Sphere() = default;
-	//	Sphere(Point c, float r);
-	//	Sphere(float center_x, float center_y, float radius);
-	//};
-	//struct OBB {
-	//	Point c; // OBB center point
-	//	Vector u[2]; // Local x-, y-, and z-axes
-	//	Vector e; // Positive halfwidth extents of OBB along each axis
-	//};
-
-	//static Vector operator*(float lhs, const Vector& rhs);
-
-
-	//static int TestAABBAABB(AABB a, AABB b);
-	//static int TestSphereSphere(Sphere a, Sphere b);
-	//static Point ClosestPtPointTriangle(Point p, Point a, Point b, Point c);
-	//static float Clamp(float n, float min, float max);
-	//static int TestSphereAABB(Sphere s, AABB b);
-	//static int TestSphereAABB(Sphere s, AABB b, Point& p);
-	//static float SqDistPointAABB(Point p, AABB b);
-	//static void ClosestPtPointAABB(Point p, AABB b, Point& q);
-	//static float SqDistPointAABB(Point p, AABB b);
-	//static float Dot(Vector a, Vector b);
+	// Routines ported from the book, in 2D, keeping its names and its comments
+	// where they still apply.
+	//
+	// The originals are 3D and most of them lose a dimension mechanically: an
+	// AABB drops a slab, a sphere becomes a circle, a triangle stays a triangle.
+	// Where a routine does not translate it is absent rather than half-ported,
+	// and where the 2D form differs in substance - the separating-axis set,
+	// which is complete in 2D and is not in 3D - the difference is documented
+	// at the point of use. See engine/collision/narrow_phase.h.
+	//
+	// The book's own Vector, Point, AABB, Sphere and OBB declarations used to
+	// sit here commented out, next to a list of its function signatures as
+	// printed. They are gone: mattmath supplies every one of those types, the
+	// declarations below are the ported forms, and a commented-out parallel
+	// vocabulary is a second definition waiting to disagree with the first.
+	//
+	// The file also ended on a bare `// 132`, marking the page the original
+	// porting effort stopped at. Pages 133 to 551 have since been read - see
+	// docs/review/rtcd/ - so the marker meant nothing any more and went with
+	// them.
 
 	bool test_AABB_AABB(const mattmath::RectangleF& a,
 		const mattmath::RectangleF& b);
@@ -95,16 +54,18 @@ namespace mattmath
 	void closest_pt_point_AABB(const mattmath::Point2F& p,
 		const mattmath::RectangleF& b, mattmath::Point2F& q);
 
-	//static float sq_dist_point_AABB(const mattmath::Point2F& p,
-	//	const mattmath::RectangleF& b);
-
 	bool test_circle_triangle(const mattmath::Circle& s,
 		const mattmath::Point2F& a, const mattmath::Point2F& b,
 		const mattmath::Point2F& c, mattmath::Point2F& p);
 
-	//static bool test_triangle_AABB(const mattmath::Point2F& v0,
-	//	const mattmath::Point2F& v1, const mattmath::Point2F& v2,
-	//	const mattmath::RectangleF& b);
+	// Triangle against AABB (5.2.9) is deliberately absent, not pending. In 3D
+	// it is a thirteen-axis separating-axis test worth writing by hand; in 2D
+	// the axis set collapses to the box's two normals plus the triangle's
+	// three, which is exactly what narrow_phase already runs for any pair of
+	// convex polygons. Porting it would add a second implementation of a test
+	// the engine has, differing only in that this one could not report a
+	// penetration depth. Its commented-out body lived here for a long time and
+	// is gone; the decision is the thing worth keeping.
 
 	bool intersect_moving_AABB_AABB(const mattmath::AABB& a,
 		const mattmath::AABB& b,
