@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/render/sprite_sheet_object.h"
+#include "engine/render/colour.h"
 
 namespace artattack
 {
@@ -17,7 +18,7 @@ namespace artattack
 		AnimationObject(const std::string& sheet_name,
 			const std::string& animation_strip_name,
 			RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
+			const Colour& color = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
@@ -49,7 +50,7 @@ namespace artattack
 		// draw without assigning them to this shared object first.
 		void draw_with(DrawList& draw_list,
 			const mattmath::RectangleF& destination_rectangle,
-			const mattmath::Colour& colour,
+			const Colour& colour,
 			SpriteFlip flip) const;
 
 	private:

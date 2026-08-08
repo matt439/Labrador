@@ -3,6 +3,7 @@
 #include "engine/core/game_object.h"
 #include "engine/render/texture_object.h"
 #include "engine/math/matt_math.h"
+#include "engine/render/colour.h"
 
 namespace artattack
 {
@@ -14,7 +15,7 @@ namespace artattack
 			const std::string& frame_name,
 			const mattmath::RectangleF& rectangle,
 			RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
+			const Colour& color = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
@@ -24,7 +25,7 @@ namespace artattack
 			const std::string& frame_name,
 			const mattmath::RectangleRotated& rect_rotated,
 			RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
+			const Colour& color = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,

@@ -3,7 +3,7 @@
 #include "engine/render/screen_layout.h"
 #include "engine/render/resolution_manager.h"
 #include "engine/math/matt_math.h"
-#include "engine/math/colour.h"
+#include "engine/render/colour.h"
 
 namespace artattack
 {
@@ -16,7 +16,7 @@ namespace artattack
 		// these to fill them.
 		static inline const std::string DIVIDER_SHEET_NAME = "sprite_sheet_1";
 		static inline const std::string DIVIDER_FRAME_NAME = "pixel";
-		static inline const mattmath::Colour DIVIDER_COLOUR = colour_consts::BLACK;
+		static inline const Colour DIVIDER_COLOUR = Colour::black;
 
 		// Takes no DeviceResources. It held one and no member function ever
 		// read it, and it was the only thing standing between this class and

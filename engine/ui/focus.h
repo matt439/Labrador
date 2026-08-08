@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/math/colour.h"
+#include "engine/render/colour.h"
 #include "engine/ui/button.h"
 #include "engine/ui/navigation.h"
 
@@ -17,8 +17,8 @@ namespace artattack
 	// game's, and it has the focus change to hang it on.
 	struct FocusStyle
 	{
-		mattmath::Colour focused = colour_consts::WHITE;
-		mattmath::Colour unfocused = colour_consts::GRAY;
+		Colour focused = Colour::white;
+		Colour unfocused = Colour::gray;
 	};
 
 	// A set of focusable widgets, which one each input slot is on, and the

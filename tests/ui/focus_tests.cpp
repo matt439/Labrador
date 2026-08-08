@@ -12,8 +12,8 @@ namespace
 	FocusStyle test_style()
 	{
 		FocusStyle style;
-		style.focused = colour_consts::RED;
-		style.unfocused = colour_consts::BLUE;
+		style.focused = artattack::Colour::red;
+		style.unfocused = artattack::Colour::blue;
 		return style;
 	}
 }
@@ -41,14 +41,14 @@ TEST_CASE("moving focus repaints both widgets")
 	group.add(&play);
 	group.add(&options);
 
-	CHECK(play.colour() == colour_consts::RED);
-	CHECK(options.colour() == colour_consts::BLUE);
+	CHECK(play.colour() == artattack::Colour::red);
+	CHECK(options.colour() == artattack::Colour::blue);
 
 	CHECK(group.move(0, Direction::down));
 
 	CHECK(group.focused(0) == &options);
-	CHECK(play.colour() == colour_consts::BLUE);
-	CHECK(options.colour() == colour_consts::RED);
+	CHECK(play.colour() == artattack::Colour::blue);
+	CHECK(options.colour() == artattack::Colour::red);
 }
 
 TEST_CASE("move reports whether focus actually moved")
@@ -150,8 +150,8 @@ TEST_CASE("a widget stays painted focused while any slot is still on it")
 	CHECK(group.focused(1) == &shared);
 	// Incremental repainting - unpaint what I left, paint what I entered -
 	// would have blanked `shared` here even though slot 1 is on it.
-	CHECK(shared.colour() == colour_consts::RED);
-	CHECK(other.colour() == colour_consts::RED);
+	CHECK(shared.colour() == artattack::Colour::red);
+	CHECK(other.colour() == artattack::Colour::red);
 }
 
 TEST_CASE("changing the style repaints from the current focus")
@@ -166,8 +166,8 @@ TEST_CASE("changing the style repaints from the current focus")
 
 	group.set_style(test_style());
 
-	CHECK(a.colour() == colour_consts::BLUE);
-	CHECK(b.colour() == colour_consts::RED);
+	CHECK(a.colour() == artattack::Colour::blue);
+	CHECK(b.colour() == artattack::Colour::red);
 }
 
 TEST_CASE("a slot index outside the group throws rather than clamping")

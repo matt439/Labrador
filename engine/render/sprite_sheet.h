@@ -4,7 +4,7 @@
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_frame.h"
 #include "engine/render/animation_strip.h"
-#include "engine/math/colour.h"
+#include "engine/render/colour.h"
 #include <string>
 
 namespace artattack
@@ -58,7 +58,7 @@ namespace artattack
 		void draw(DrawList& draw_list,
 			frame_handle frame,
 			const mattmath::RectangleF& destination,
-			const mattmath::Colour& colour = colour_consts::WHITE,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
@@ -67,7 +67,7 @@ namespace artattack
 		void draw(DrawList& draw_list,
 			frame_handle frame,
 			const mattmath::Vector2F& position,
-			const mattmath::Colour& colour = colour_consts::WHITE,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			float scale = 1.0f,
@@ -80,7 +80,7 @@ namespace artattack
 		void draw(DrawList& draw_list,
 			const mattmath::RectangleI& source,
 			const mattmath::RectangleF& destination,
-			const mattmath::Colour& colour = colour_consts::WHITE,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
@@ -89,7 +89,7 @@ namespace artattack
 		void draw(DrawList& draw_list,
 			const mattmath::RectangleI& source,
 			const mattmath::Vector2F& position,
-			const mattmath::Colour& colour = colour_consts::WHITE,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			float scale = 1.0f,

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/render/draw_object.h"
+#include "engine/render/colour.h"
 
 namespace artattack
 {
@@ -26,7 +27,7 @@ namespace artattack
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
 			RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
+			const Colour& color = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
@@ -39,7 +40,7 @@ namespace artattack
 		// members, drawing, and assigning them back - a save/restore that is a
 		// data race the moment two render workers run it on the same object.
 		void draw_with(DrawList& draw_list,
-			const mattmath::Colour& colour,
+			const Colour& colour,
 			const mattmath::Vector2F& position,
 			float scale) const;
 

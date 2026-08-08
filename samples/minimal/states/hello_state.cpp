@@ -37,12 +37,12 @@ void HelloState::init()
 
 	this->greeting_ = this->scene_->add(std::make_unique<Label>(
 		L"Hello from the engine.", font_name, this->position_, resources,
-		colour_consts::WHITE));
+		artattack::Colour::white));
 
 	this->hint_ = this->scene_->add(std::make_unique<Label>(
 		L"Left stick moves it. B quits.", font_name,
 		Vector2F(24.0f, resolution.y - 40.0f), resources,
-		colour_consts::DARK_GRAY));
+		artattack::Colour::dark_gray));
 
 	// Every add is pending until a tick ends, so that a weapon firing mid-tick
 	// cannot invalidate the loop walking the objects. Nothing has ticked yet
@@ -94,12 +94,12 @@ void HelloState::update(float dt)
 
 void HelloState::on_suspend()
 {
-	this->greeting_->set_colour(colour_consts::DIM_GRAY);
+	this->greeting_->set_colour(artattack::Colour::dim_gray);
 }
 
 void HelloState::on_resume()
 {
-	this->greeting_->set_colour(colour_consts::WHITE);
+	this->greeting_->set_colour(artattack::Colour::white);
 }
 
 void HelloState::draw(Renderer& renderer) const

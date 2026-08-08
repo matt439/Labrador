@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/ui/widget.h"
+#include "engine/render/colour.h"
 
 // A widget that is nothing but a rectangle and a colour.
 //
@@ -27,14 +28,14 @@ public:
 
 	mattmath::RectangleF bounds() const override { return this->bounds_; }
 
-	void set_colour(const mattmath::Colour& colour) override
+	void set_colour(const artattack::Colour& colour) override
 	{
 		this->colour_ = colour;
 	}
 
-	const mattmath::Colour& colour() const { return this->colour_; }
+	const artattack::Colour& colour() const { return this->colour_; }
 
 private:
 	mattmath::RectangleF bounds_;
-	mattmath::Colour colour_ = colour_consts::BLACK;
+	artattack::Colour colour_ = artattack::Colour::black;
 };

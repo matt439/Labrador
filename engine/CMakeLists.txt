@@ -30,6 +30,7 @@ add_library(ArtAttackEngine STATIC
     render/animation_object.cpp
     render/animation_strip.cpp
     render/camera_tools.cpp
+    render/colour.cpp
     render/d3d11/device_resources.cpp
     render/d3d11/render_resources.cpp
     render/d3d11/renderer.cpp

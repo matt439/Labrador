@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include "engine/render/colour.h"
 
 // The renderer seam.
 //
@@ -161,7 +162,7 @@ namespace artattack
 		void draw_sprite(TextureHandle texture,
 			const mattmath::RectangleI& source,
 			const mattmath::RectangleF& destination,
-			const mattmath::Colour& tint,
+			const Colour& tint,
 			float rotation,
 			const mattmath::Vector2F& origin,
 			SpriteFlip flip,
@@ -185,7 +186,7 @@ namespace artattack
 		void draw_text(FontHandle font,
 			const std::wstring& text,
 			const mattmath::Vector2F& position,
-			const mattmath::Colour& tint,
+			const Colour& tint,
 			float scale,
 			float rotation,
 			const mattmath::Vector2F& origin,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/math/colour.h"
+#include "engine/render/colour.h"
 #include "engine/render/render_resources.h"
 
 namespace artattack
@@ -11,7 +11,7 @@ namespace artattack
 		virtual ~DrawObject() = default;
 		DrawObject() = default;
 		DrawObject(RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
+			const Colour& color = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
@@ -19,13 +19,13 @@ namespace artattack
 
 	protected:
 		virtual RenderResources* render_resources() const;
-		virtual const mattmath::Colour& colour() const;
+		virtual const Colour& colour() const;
 		virtual float draw_rotation() const;
 		virtual const mattmath::Vector2F& origin() const;
 		virtual SpriteFlip flip() const;
 		virtual float layer_depth() const;
 
-		virtual void set_colour(const mattmath::Colour& colour);
+		virtual void set_colour(const Colour& colour);
 		virtual void set_draw_rotation(float rotation);
 		virtual void set_origin(const mattmath::Vector2F& origin);
 		virtual void set_flip(SpriteFlip flip);
@@ -35,7 +35,7 @@ namespace artattack
 
 	private:
 		RenderResources* render_resources_ = nullptr;
-		mattmath::Colour colour_ = colour_consts::WHITE;
+		Colour colour_ = Colour::white;
 		float draw_rotation_ = 0.0f;
 		mattmath::Vector2F origin_ = mattmath::Vector2F::ZERO;
 		SpriteFlip flip_ = SpriteFlip::none;

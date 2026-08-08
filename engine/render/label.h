@@ -2,6 +2,7 @@
 
 #include "engine/core/game_object.h"
 #include "engine/render/text.h"
+#include "engine/render/colour.h"
 
 namespace artattack
 {
@@ -28,7 +29,7 @@ namespace artattack
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
 			RenderResources* render_resources,
-			const mattmath::Colour& colour = colour_consts::WHITE,
+			const Colour& colour = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,

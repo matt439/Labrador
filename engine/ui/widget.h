@@ -3,6 +3,7 @@
 #include "engine/core/game_object.h"
 #include "engine/render/texture_object.h"
 #include "engine/render/text_drop_shadow.h"
+#include "engine/render/colour.h"
 
 namespace artattack
 {
@@ -72,7 +73,7 @@ namespace artattack
 		void draw(DrawList& draw_list) const override = 0;
 		mattmath::RectangleF bounds() const override = 0;
 
-		virtual void set_colour(const mattmath::Colour& colour) = 0;
+		virtual void set_colour(const Colour& colour) = 0;
 	};
 
 	class UiTexture final : public UiWidget, public TextureObject
@@ -84,7 +85,7 @@ namespace artattack
 			const std::string& frame_name,
 			const mattmath::RectangleF& rectangle,
 			RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
+			const Colour& color = Colour::white,
 			bool hidden = false,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
@@ -97,7 +98,7 @@ namespace artattack
 
 		void set_texture(const std::string& sheet_name, const std::string& frame_name);
 		void set_sprite_frame(const std::string& frame_name);
-		void set_colour(const mattmath::Colour& colour) override;
+		void set_colour(const Colour& colour) override;
 		void set_position(const mattmath::Vector2F& position);
 		void set_position_at_center(const mattmath::Vector2F& position);
 		void set_width(float width);
@@ -119,7 +120,7 @@ namespace artattack
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
 			RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
+			const Colour& color = Colour::white,
 			bool hidden = false,
 			float scale = 1.0f,
 			float rotation = 0.0f,
@@ -129,7 +130,7 @@ namespace artattack
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
-		void set_colour(const mattmath::Colour& colour) override;
+		void set_colour(const Colour& colour) override;
 	};
 
 	class UiTextDropShadow final : public UiWidget, public TextDropShadow
@@ -141,8 +142,8 @@ namespace artattack
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
 			RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
-			const mattmath::Colour& shadow_color = colour_consts::BLACK,
+			const Colour& color = Colour::white,
+			const Colour& shadow_color = Colour::black,
 			const mattmath::Vector2F& shadow_offset = { 2.0f, 2.0f },
 			bool hidden = false,
 			float scale = 1.0f,
@@ -154,6 +155,6 @@ namespace artattack
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
-		void set_colour(const mattmath::Colour& colour) override;
+		void set_colour(const Colour& colour) override;
 	};
 }

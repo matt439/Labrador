@@ -45,7 +45,6 @@ namespace mattmath
 	struct Segment;
 	struct RectangleF;
 	struct Camera;
-	struct Colour;
 	struct RectangleRotated;
 
 	constexpr float PI = 3.14159265358979323846f;
@@ -557,68 +556,6 @@ namespace mattmath
 		bool operator==(const Vector4F& other) const;
 		bool operator!=(const Vector4F& other) const;
 	};
-
-	struct Colour
-	{
-		float r = 0.0f;
-		float g = 0.0f;
-		float b = 0.0f;
-		float a = 0.0f;
-		
-		Colour() = default;
-		Colour(const Colour&) = default;
-		Colour(float r, float g, float b);
-		Colour(float r, float g, float b, float a);
-		Colour(int r, int g, int b, int a = 255);
-		Colour(const std::string& hex);
-
-		Colour& operator=(const mattmath::Vector4F& vector);
-
-		bool operator==(const Colour& other) const;
-		bool operator!=(const Colour& other) const;
-
-		Colour& operator+=(const Colour& other);
-		Colour& operator-=(const Colour& other);
-		Colour& operator*=(const Colour& other);
-		Colour& operator*=(float f);
-		Colour& operator/=(const Colour& other);
-		Colour& operator/=(float f);
-
-		float red() const;
-		float green() const;
-		float blue() const;
-		float alpha() const;
-
-		void set_red(float red);
-		void set_green(float green);
-		void set_blue(float blue);
-		void set_alpha(float alpha);
-
-		void set(float red, float green, float blue, float alpha = 1.0f);
-		void set_from_int_rgba(int r, int g, int b, int a = 255);
-		void set_from_hex(const std::string& hex);
-
-		void saturate(float amount);
-		void desaturate(float amount);
-
-		void brighten(float amount);
-		void darken(float amount);
-
-		void invert();
-
-		void make_opaque();
-		void make_transparent();
-
-		void clamp_colours();
-	};
-
-	Colour operator+ (const Colour& V1, const Colour& V2);
-	Colour operator- (const Colour& V1, const Colour& V2);
-	Colour operator* (const Colour& V1, const Colour& V2);
-	Colour operator* (const Colour& V, float S);
-	Colour operator/ (const Colour& V1, const Colour& V2);
-	Colour operator/ (const Colour& V, float S);
-	Colour operator* (float S, const Colour& V);
 
 	struct Vector3F
 	{

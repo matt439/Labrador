@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/render/sprite_sheet_object.h"
+#include "engine/render/colour.h"
 
 namespace artattack
 {
@@ -24,7 +25,7 @@ namespace artattack
 		TextureObject(const std::string& sheet_name,
 			const std::string& frame_name,
 			RenderResources* render_resources,
-			const mattmath::Colour& color = colour_consts::WHITE,
+			const Colour& color = Colour::white,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
@@ -63,7 +64,7 @@ namespace artattack
 		void draw_with(DrawList& draw_list,
 			const mattmath::RectangleF& destination_rectangle,
 			SpriteSheet::frame_handle frame,
-			const mattmath::Colour& colour,
+			const Colour& colour,
 			const mattmath::Vector2F& origin,
 			SpriteFlip flip,
 			float rotation) const;
