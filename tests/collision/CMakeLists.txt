@@ -7,6 +7,7 @@ add_executable(CollisionTests
     partitioner_tests.cpp
     resolve_tests.cpp
     test_main.cpp
+    tunnelling_tests.cpp
 )
 target_link_libraries(CollisionTests PRIVATE
     ArtAttackEngine
