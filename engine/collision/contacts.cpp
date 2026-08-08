@@ -63,11 +63,28 @@ namespace artattack
 				continue;
 			}
 
-			contact.a->on_contact(*contact.b, contact.normal,
-				contact.penetration);
+			// Measured again, here, because a response moves things.
+			//
+			// A player standing on the seam between two floor tiles has two
+			// contacts of equal depth. Separating from the first ends the
+			// second, and handing over the depth that was true before it
+			// would push them out twice - a visible pop at every tile seam.
+			// The stored manifold is what the frame looked like before
+			// anything responded, which is the right thing for a caller
+			// inspecting the list and the wrong thing for the caller acting
+			// on it.
+			const std::optional<Manifold> manifold =
+				narrow_phase(*contact.a->shape(), *contact.b->shape());
+			if (!manifold.has_value())
+			{
+				continue;
+			}
+
+			contact.a->on_contact(*contact.b, manifold->normal,
+				manifold->penetration);
 			contact.b->on_contact(*contact.a,
-				Vector2F(-contact.normal.x, -contact.normal.y),
-				contact.penetration);
+				Vector2F(-manifold->normal.x, -manifold->normal.y),
+				manifold->penetration);
 		}
 	}
 }

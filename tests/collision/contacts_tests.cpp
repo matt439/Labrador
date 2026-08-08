@@ -2,6 +2,7 @@
 
 #include "engine/collision/collision_object.h"
 #include "engine/collision/contacts.h"
+#include "engine/collision/resolve.h"
 
 #include <vector>
 
@@ -60,10 +61,16 @@ namespace
 			{
 				this->for_deletion_ = true;
 			}
+			if (this->separate_on_contact_)
+			{
+				this->rectangle_.offset(artattack::separation(normal, penetration));
+			}
 		}
 
 		const std::vector<Received>& received() const { return this->received_; }
+		const RectangleF& rectangle() const { return this->rectangle_; }
 		void retire_on_contact() { this->retire_on_contact_ = true; }
+		void separate_on_contact() { this->separate_on_contact_ = true; }
 
 	private:
 		RectangleF rectangle_;
@@ -72,6 +79,7 @@ namespace
 		CollisionTag tag_ = 0;
 		bool for_deletion_ = false;
 		bool retire_on_contact_ = false;
+		bool separate_on_contact_ = false;
 		std::vector<Received> received_;
 	};
 
@@ -179,6 +187,31 @@ TEST_CASE("both participants are told, once each, with opposite normals")
 
 	CHECK(player.received()[0].penetration == doctest::Approx(2.0f));
 	CHECK(wall.received()[0].penetration == doctest::Approx(2.0f));
+}
+
+TEST_CASE("a contact an earlier response already separated is dropped")
+{
+	// A player standing on the seam between two floor tiles: two contacts, the
+	// same depth on each. Separating from the first ends the second, and
+	// applying the depth that was true before it would push them out twice -
+	// a visible pop at every tile seam, which is why the depth is measured
+	// again at dispatch rather than taken from the list.
+	TestObject player(RectangleF(95.0f, 100.0f, 20.0f, 100.0f), PLAYER, WALL);
+	TestObject left(RectangleF(0.0f, 196.0f, 100.0f, 40.0f), WALL, PLAYER);
+	TestObject right(RectangleF(100.0f, 196.0f, 100.0f, 40.0f), WALL, PLAYER);
+	player.separate_on_contact();
+
+	CollisionObject* objects[] = { &player, &left, &right };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts);
+
+	REQUIRE(contacts.size() == 2);
+
+	dispatch_contacts(contacts);
+
+	// Pushed up by the 4 they overlapped, once - not by 8.
+	CHECK(player.rectangle().top() == doctest::Approx(96.0f));
+	CHECK(player.received().size() == 1);
 }
 
 TEST_CASE("a contact is dropped when an earlier response retired a participant")

@@ -7,7 +7,6 @@ find_package(xaudio2redist CONFIG REQUIRED)
 find_package(directxtk CONFIG REQUIRED)
 
 add_library(MattMath STATIC
-    collision_tools.cpp
     ericson_math.cpp
     matt_math.cpp
 )

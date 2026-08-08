@@ -83,7 +83,9 @@ being load-bearing.
 │   ├── core/               game loop, fixed-step timing, Scene, states, services, registries
 │   ├── render/             the Renderer, cameras, viewports
 │   │   └── d3d11/          the D3D11/DirectXTK backend, behind the Renderer
-│   ├── collision/          broad phase, narrow phase, manifolds, resolution
+│   ├── collision/          contacts, narrow phase, manifolds, resolution
+│   │                       (the pair sweep is still all-pairs; a broad
+│   │                       phase goes behind find_contacts)
 │   ├── input/              devices, action mapping
 │   │   └── xinput/         the XInput backend
 │   ├── audio/              playback, mixing
@@ -133,7 +135,7 @@ held, not spent — the same escalation as promoting a folder to a library.
 
 A module is a folder inside `engine/`, not a build target. The walls
 between modules are include discipline — every include names its module
-(`#include "engine/collision/broad_phase.h"`, see
+(`#include "engine/collision/narrow_phase.h"`, see
 [CONVENTIONS.md](CONVENTIONS.md)) — and review enforces the direction
 below. If a wall ever needs to be load-bearing, the escalation path is
 known and cheap: promote the folder to a static library, as MattMath

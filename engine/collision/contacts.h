@@ -54,10 +54,19 @@ namespace artattack
 	// Tells both participants of every contact, once each, with the normal
 	// oriented for the object receiving it.
 	//
-	// A contact whose participant was retired by an earlier response in the
-	// same frame is dropped - a projectile that hits a wall does not go on to
-	// hit the player behind it. That rule used to be a `continue` inside the
-	// sweep, so whether it applied depended on iteration order; here it
-	// applies to both sides of every pair.
+	// Two things a response does are accounted for here, because they are
+	// properties of dispatching a list rather than of any one response:
+	//
+	//   - A response can retire an object, and a retired object's remaining
+	//     contacts are dropped. A projectile that hits a wall does not go on
+	//     to hit the player behind it. That rule used to be a `continue`
+	//     inside the sweep, so whether it applied depended on which of two
+	//     nested loops reached the pair; here it applies to both sides of
+	//     every pair.
+	//   - A response can move an object, so every pair is measured again
+	//     immediately before it is dispatched, and a pair an earlier response
+	//     has already separated is dropped. The depths in the list describe
+	//     the frame before anything responded to it, which is what a caller
+	//     inspecting the list wants and not what a caller acting on it does.
 	void dispatch_contacts(std::span<const Contact> contacts);
 }
