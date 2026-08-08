@@ -217,6 +217,28 @@ TEST_CASE("one move still separates the pair out where the levels actually are")
 	}
 }
 
+TEST_CASE("a collinear triangle contains nothing, so it contacts nothing")
+{
+	// Triangle's constructor validates nothing, so a triangle with no interior
+	// is constructible today. Its three edge normals are all parallel and all
+	// perfectly well formed, so skipping degenerate edges does not catch it:
+	// projected onto any of them the triangle is a single point, and both ways
+	// off the axis are positive whenever the box straddles that line. It
+	// reported a confident overlap against a shape with no area.
+	const Triangle flat(Point2F(0.0f, 0.0f), Point2F(5.0f, 0.0f),
+		Point2F(10.0f, 0.0f));
+	const RectangleF box(-5.0f, -5.0f, 20.0f, 20.0f);
+
+	CHECK_FALSE(narrow_phase(flat, box).has_value());
+	CHECK_FALSE(narrow_phase(box, flat).has_value());
+
+	// A very thin triangle is a real shape, not a degenerate one, and is
+	// still measured.
+	const Triangle thin(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+		Point2F(0.0f, 0.01f));
+	CHECK(narrow_phase(thin, box).has_value());
+}
+
 TEST_CASE("a NaN coordinate reports no contact, rather than a NaN one")
 {
 	// The axis test decides overlap by asking whether both ways off the axis

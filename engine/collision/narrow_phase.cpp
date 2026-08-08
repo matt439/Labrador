@@ -1,7 +1,10 @@
 #include "engine/collision/narrow_phase.h"
 
+#include "engine/math/ericson_math.h"
+
 #include <algorithm>
 #include <limits>
+#include <span>
 #include <stdexcept>
 
 using mattmath::RectangleF;
@@ -164,6 +167,29 @@ namespace artattack
 			}
 		}
 
+		// Whether the polygon encloses anything at all.
+		//
+		// Degenerate edges are already skipped when the axes are built, but
+		// that is not enough on its own: three collinear points produce three
+		// perfectly good non-zero edge normals, all parallel. Projected onto
+		// any of them the shape is a single point, so both ways off the axis
+		// are positive whenever the other shape straddles that line, and the
+		// pair reports a confident overlap against a triangle with no
+		// interior.
+		//
+		// Zero area is exactly the condition, and it is checked exactly:
+		// a very thin triangle is a real shape and the separating-axis test
+		// handles it correctly. mattmath::Triangle permits a collinear one -
+		// its constructor validates nothing - so this is caught here rather
+		// than being assumed away.
+		bool has_interior(const Polygon& polygon)
+		{
+			const std::span<const mattmath::Point2F> points(
+				polygon.points, static_cast<size_t>(polygon.count));
+
+			return mattmath::signed_area(points) != 0.0f;
+		}
+
 		// What one candidate axis has to say about the pair.
 		struct AxisTest
 		{
@@ -237,10 +263,11 @@ namespace artattack
 		const Polygon polygon_b = polygon_from(b);
 
 		if (polygon_a.count < 3 || polygon_b.count < 3
-			|| polygon_a.axis_count == 0 || polygon_b.axis_count == 0)
+			|| polygon_a.axis_count == 0 || polygon_b.axis_count == 0
+			|| !has_interior(polygon_a) || !has_interior(polygon_b))
 		{
-			// No axes means every edge was degenerate, so the shape has no
-			// interior and nothing can be inside it.
+			// Nothing can overlap a shape that encloses no area, and a shape
+			// with no axes has no edges worth testing.
 			return std::nullopt;
 		}
 

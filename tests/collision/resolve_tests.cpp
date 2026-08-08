@@ -2,6 +2,10 @@
 
 #include "engine/collision/resolve.h"
 
+#include <cmath>
+#include <limits>
+#include <stdexcept>
+
 using artattack::separation;
 using artattack::separation_along;
 using artattack::slide;
@@ -40,14 +44,48 @@ TEST_CASE("separation along the normal itself is just separation")
 	CHECK(along.y == doctest::Approx(direct.y));
 }
 
-TEST_CASE("no travel along an axis perpendicular to the normal separates anything")
+TEST_CASE("an axis that cannot separate the pair is refused, not answered")
 {
-	// Reported as zero rather than as a division by a vanishing dot product,
-	// which is an infinity the caller would apply to a position.
-	const Vector2F move =
-		separation_along(Vector2F::DIRECTION_RIGHT, 10.0f, Vector2F::DIRECTION_DOWN);
+	// Perpendicular: no distance along this axis closes any of the overlap.
+	// This used to return zero, which reads as a translation and is not one.
+	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_RIGHT, 10.0f,
+		Vector2F::DIRECTION_DOWN), std::invalid_argument);
 
-	CHECK(move == Vector2F::ZERO);
+	// And the case that made returning zero dangerous rather than merely
+	// unhelpful: near-perpendicular passed the old guard, because it only
+	// rejected a dot product below 1e-4. A dot of 1.0001e-4 returned a
+	// translation ten thousand times the penetration - a silent teleport out
+	// of the primitive whose whole job is safe arithmetic.
+	const float tiny = 1.0001e-4f;
+	const Vector2F almost_perpendicular =
+		Vector2F(tiny, std::sqrt(1.0f - tiny * tiny));
+
+	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_RIGHT, 1.0f,
+		almost_perpendicular), std::invalid_argument);
+
+	// The bound is on the answer as much as on the input: anything accepted
+	// travels at most ten times the overlap it closes.
+	const Vector2F oblique = Vector2F(0.2f, std::sqrt(1.0f - 0.04f));
+	const Vector2F move = separation_along(Vector2F::DIRECTION_RIGHT, 1.0f,
+		oblique);
+	CHECK(move.length() <= 10.0f);
+}
+
+TEST_CASE("separation_along checks the preconditions its header states")
+{
+	// The header always said `axis` must be unit length and never looked.
+	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_DOWN, 5.0f,
+		Vector2F(0.0f, 3.0f)), std::invalid_argument);
+	CHECK_THROWS_AS(separation_along(Vector2F(0.0f, 3.0f), 5.0f,
+		Vector2F::DIRECTION_DOWN), std::invalid_argument);
+
+	// A manifold promises a positive penetration; zero and NaN are both
+	// broken contracts rather than quiet no-ops.
+	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_DOWN, 0.0f,
+		Vector2F::DIRECTION_DOWN), std::invalid_argument);
+	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_DOWN,
+		std::numeric_limits<float>::quiet_NaN(), Vector2F::DIRECTION_DOWN),
+		std::invalid_argument);
 }
 
 TEST_CASE("a floor takes the fall and leaves the run alone")
