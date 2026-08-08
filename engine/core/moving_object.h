@@ -4,6 +4,20 @@
 
 namespace artattack
 {
+	// A velocity and a rotation, with the accessors that are called.
+	//
+	// It used to carry 27 virtual protected accessors around twenty bytes of
+	// state, with one real override between them - three whole families
+	// (unit_*, *_magnitude, *_angle, alter_*) that nothing had ever called,
+	// each one virtual, on the base class of every player and projectile in
+	// the game. They are gone, and so is the third member: dx_ was a
+	// displacement written and read inside a single call chain, so
+	// Projectile::update_movement returns it now and Player keeps it in a
+	// local.
+	//
+	// Not virtual. Nothing overrode any of these, and a virtual accessor on
+	// the object the simulation touches most is a cost with no client
+	// (PHILOSOPHY, T8).
 	class MovingObject
 	{
 	public:
@@ -11,50 +25,25 @@ namespace artattack
 		MovingObject() = default;
 
 		explicit MovingObject(const mattmath::Vector2F& velocity,
-			float rotation = 0.0f,
-			const mattmath::Vector2F& dx = mattmath::Vector2F::ZERO);
+			float rotation = 0.0f);
 
 	protected:
-		virtual const mattmath::Vector2F& velocity() const;
-		virtual float velocity_x() const;
-		virtual float velocity_y() const;
+		const mattmath::Vector2F& velocity() const;
+		float velocity_x() const;
+		float velocity_y() const;
 
-		virtual void set_velocity(const mattmath::Vector2F& velocity);
-		virtual void set_velocity_x(float x);
-		virtual void set_velocity_y(float y);
+		void set_velocity(const mattmath::Vector2F& velocity);
+		void set_velocity_x(float x);
+		void set_velocity_y(float y);
 
-		virtual void alter_velocity(const mattmath::Vector2F& velocity);
-		virtual void alter_velocity_x(float x);
-		virtual void alter_velocity_y(float y);
+		void alter_velocity_x(float x);
+		void alter_velocity_y(float y);
 
-		virtual mattmath::Vector2F unit_velocity() const;
-		virtual float velocity_magnitude() const;
-		virtual float velocity_angle() const;
-
-		virtual const mattmath::Vector2F& dx() const;
-		virtual float dx_x() const;
-		virtual float dx_y() const;
-
-		virtual void set_dx(const mattmath::Vector2F& dx);
-		virtual void set_dx_x(float x);
-		virtual void set_dx_y(float y);
-
-		virtual void alter_dx(const mattmath::Vector2F& dx);
-		virtual void alter_dx_x(float x);
-		virtual void alter_dx_y(float y);
-
-		virtual mattmath::Vector2F unit_dx() const;
-		virtual float dx_magnitude() const;
-		virtual float dx_angle() const;
-
-		virtual float rotation() const;
-		virtual void set_rotation(float rotation);
-		virtual void alter_rotation(float rotation);
+		float rotation() const;
+		void set_rotation(float rotation);
 
 	private:
 		mattmath::Vector2F velocity_ = mattmath::Vector2F::ZERO;
-		mattmath::Vector2F dx_ = mattmath::Vector2F::ZERO;
 		float rotation_ = 0.0f;
-
 	};
 }

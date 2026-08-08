@@ -29,7 +29,6 @@ add_library(ArtAttackEngine STATIC
     render/camera_tools.cpp
     render/device_resources.cpp
     render/draw_object.cpp
-    render/drawer.cpp
     render/render_resources.cpp
     render/resolution_manager.cpp
     render/sprite_frame.cpp
