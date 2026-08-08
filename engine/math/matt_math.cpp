@@ -3,7 +3,6 @@
 
 #include <stdexcept>
 
-using namespace DirectX;
 
 namespace mattmath
 {
@@ -655,27 +654,6 @@ namespace mattmath
 		this->width = size.x;
 		this->height = size.y;
 	}
-	RectangleF::RectangleF(const SimpleMath::Vector2& position, const SimpleMath::Vector2& size)
-	{
-		this->x = position.x;
-		this->y = position.y;
-		this->width = size.x;
-		this->height = size.y;
-	}
-	RectangleF::RectangleF(const SimpleMath::Rectangle& rectangle)
-	{
-		this->x = static_cast<float>(rectangle.x);
-		this->y = static_cast<float>(rectangle.y);
-		this->width = static_cast<float>(rectangle.width);
-		this->height = static_cast<float>(rectangle.height);
-	}
-	RectangleF::RectangleF(const RECT& rectangle)
-	{
-		this->x = static_cast<float>(rectangle.left);
-		this->y = static_cast<float>(rectangle.top);
-		this->width = static_cast<float>(rectangle.right - rectangle.left);
-		this->height = static_cast<float>(rectangle.bottom - rectangle.top);
-	}
 	RectangleF::RectangleF(const Vector2F& center, float horiz_half_width,
 		float vert_half_height)
 	{
@@ -778,23 +756,6 @@ namespace mattmath
 			static_cast<int>(this->y),
 			static_cast<int>(this->width),
 			static_cast<int>(this->height));
-	}
-	SimpleMath::Rectangle RectangleF::sm_rectangle() const
-	{
-		return SimpleMath::Rectangle(static_cast<long>(this->x),
-					static_cast<long>(this->y),
-					static_cast<long>(this->width),
-					static_cast<long>(this->height));
-	}
-	RECT RectangleF::win_rect() const
-	{
-		RECT result = {
-			static_cast<long>(this->x),
-			static_cast<long>(this->y),
-			static_cast<long>(this->x + this->width),
-			static_cast<long>(this->y + this->height)
-		};
-		return result;
 	}
 	bool RectangleF::operator==(const RectangleF& other) const
 	{
@@ -1060,39 +1021,6 @@ namespace mattmath
 		this->x = static_cast<int>(vector.x);
 		this->y = static_cast<int>(vector.y);
 	}
-	Vector2I::Vector2I(const SimpleMath::Vector2& vector)
-	{
-		this->x = static_cast<int>(vector.x);
-		this->y = static_cast<int>(vector.y);
-	}
-	Vector2I::Vector2I(const XMINT2& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
-	}
-
-	SimpleMath::Vector2 Vector2I::sm_vector() const
-	{
-		return SimpleMath::Vector2(static_cast<float>(this->x),
-					static_cast<float>(this->y));
-	}
-	XMINT2 Vector2I::xm_vector() const
-	{
-		return XMINT2(this->x, this->y);
-	}
-
-	Vector2I& Vector2I::operator=(const SimpleMath::Vector2& vector)
-	{
-		this->x = static_cast<int>(vector.x);
-		this->y = static_cast<int>(vector.y);
-		return *this;
-	}
-	Vector2I& Vector2I::operator=(const XMINT2& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
-		return *this;
-	}
 	bool Vector2I::operator==(const Vector2I& other) const
 	{
 		return this->x == other.x && this->y == other.y;
@@ -1147,25 +1075,10 @@ namespace mattmath
 		this->x *= horizontal_amount;
 		this->y *= vertical_amount;
 	}
-	void Vector2I::scale(const DirectX::SimpleMath::Vector2& amount)
-	{
-		this->x *= static_cast<int>(amount.x);
-		this->y *= static_cast<int>(amount.y);
-	}
 	void Vector2I::set(int new_x, int new_y)
 	{
 		this->x = new_x;
 		this->y = new_y;
-	}
-	void Vector2I::set(const SimpleMath::Vector2& vector)
-	{
-		this->x = static_cast<int>(vector.x);
-		this->y = static_cast<int>(vector.y);
-	}
-	void Vector2I::set(const XMINT2& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
 	}
 	const Vector2I Vector2I::ZERO = { 0, 0 };
 	Vector2I mattmath::operator+ (const Vector2I& V1, const Vector2I& V2)
@@ -1211,40 +1124,10 @@ namespace mattmath
 		this->x = x;
 		this->y = y;
 	}
-	Vector2F::Vector2F(const SimpleMath::Vector2& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
-	}
-	Vector2F::Vector2F(const XMFLOAT2& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
-	}
 	Vector2F::Vector2F(const Vector2I& vector)
 	{
 		this->x = static_cast<float>(vector.x);
 		this->y = static_cast<float>(vector.y);
-	}
-	SimpleMath::Vector2 Vector2F::sm_vector() const
-	{
-		return SimpleMath::Vector2(this->x, this->y);
-	}
-	XMFLOAT2 Vector2F::xm_vector() const
-	{
-		return XMFLOAT2(this->x, this->y);
-	}
-	Vector2F& Vector2F::operator=(const SimpleMath::Vector2& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
-		return *this;
-	}
-	Vector2F& Vector2F::operator=(const XMFLOAT2& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
-		return *this;
 	}
 	bool Vector2F::operator==(const Vector2F& other) const
 	{
@@ -1620,14 +1503,6 @@ namespace mattmath
 		this->width = static_cast<int>(size.x);
 		this->height = static_cast<int>(size.y);
 	}
-	RectangleI::RectangleI(const SimpleMath::Vector2& position,
-		const SimpleMath::Vector2& size)
-	{
-		this->x = static_cast<int>(position.x);
-		this->y = static_cast<int>(position.y);
-		this->width = static_cast<int>(size.x);
-		this->height = static_cast<int>(size.y);
-	}
 	RectangleI::RectangleI(RectangleF rectangle)
 	{
 		this->x = static_cast<int>(rectangle.x);
@@ -1635,21 +1510,6 @@ namespace mattmath
 		this->width = static_cast<int>(rectangle.width);
 		this->height = static_cast<int>(rectangle.height);
 	}
-	RectangleI::RectangleI(const SimpleMath::Rectangle& rectangle)
-	{
-		this->x = rectangle.x;
-		this->y = rectangle.y;
-		this->width = rectangle.width;
-		this->height = rectangle.height;
-	}
-	RectangleI::RectangleI(const RECT& rectangle)
-	{
-		this->x = rectangle.left;
-		this->y = rectangle.top;
-		this->width = rectangle.right - rectangle.left;
-		this->height = rectangle.bottom - rectangle.top;
-	}
-
 	int RectangleI::left() const
 	{
 		return this->x;
@@ -1681,23 +1541,6 @@ namespace mattmath
 	Vector2I RectangleI::bottom_right() const
 	{
 		return Vector2I(this->x + this->width, this->y + this->height);
-	}
-	DirectX::SimpleMath::Rectangle RectangleI::sm_rectangle() const
-	{
-		return SimpleMath::Rectangle(static_cast<long>(this->x),
-			static_cast<long>(this->y),
-			static_cast<long>(this->width),
-			static_cast<long>(this->height));
-	}
-	RECT RectangleI::win_rect() const
-	{
-		RECT result = {
-			static_cast<long>(this->x),
-			static_cast<long>(this->y),
-			static_cast<long>(this->x + this->width),
-			static_cast<long>(this->y + this->height)
-		};
-		return result;
 	}
 	bool RectangleI::operator==(const RectangleI& other) const
 	{
@@ -1797,21 +1640,6 @@ namespace mattmath
 		this->z = z;
 		this->w = w;
 	}
-	Vector4F::Vector4F(const XMFLOAT4& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
-		this->z = vector.z;
-		this->w = vector.w;
-	}
-	Vector4F& Vector4F::operator=(const XMFLOAT4& vector)
-	{
-		this->x = vector.x;
-		this->y = vector.y;
-		this->z = vector.z;
-		this->w = vector.w;
-		return *this;
-	}
 	bool Vector4F::operator==(const Vector4F& other) const
 	{
 		return this->x == other.x &&
@@ -1823,12 +1651,6 @@ namespace mattmath
 	{
 		return !(*this == other);
 	}
-	XMVECTOR Vector4F::xm_vector() const
-	{
-		XMVECTOR result = XMVectorSet(this->x, this->y, this->z, this->w);
-		return result;
-	}
-
 #pragma endregion Vector4F
 
 #pragma region Colour
@@ -1843,16 +1665,6 @@ namespace mattmath
 	{
 		this->clamp_colours();
 	}
-	Colour::Colour(const DirectX::XMFLOAT4& vector) :
-		r(vector.x), g(vector.y), b(vector.z), a(vector.w)
-	{
-		this->clamp_colours();
-	}
-	Colour::Colour(const DirectX::SimpleMath::Color& color) :
-		r(color.R()), g(color.G()), b(color.B()), a(color.A())
-	{
-		this->clamp_colours();
-	}
 	Colour::Colour(int r, int g, int b, int a)
 	{
 		this->set_from_int_rgba(r, g, b, a);
@@ -1860,24 +1672,6 @@ namespace mattmath
 	Colour::Colour(const std::string& hex)
 	{
 		this->set_from_hex(hex);
-	}
-	Colour& Colour::operator=(const DirectX::XMFLOAT4& vector)
-	{
-		this->r = vector.x;
-		this->g = vector.y;
-		this->b = vector.z;
-		this->a = vector.w;
-		this->clamp_colours();
-		return *this;
-	}
-	Colour& Colour::operator=(const DirectX::SimpleMath::Color& colour)
-	{
-		this->r = colour.R();
-		this->g = colour.G();
-		this->b = colour.B();
-		this->a = colour.A();
-		this->clamp_colours();
-		return *this;
 	}
 	Colour& Colour::operator=(const mattmath::Vector4F& vector)
 	{
@@ -2076,14 +1870,6 @@ namespace mattmath
 	{
 		this->a = 0.0f;
 	}
-	DirectX::SimpleMath::Color Colour::sm_colour() const
-	{
-		return DirectX::SimpleMath::Color(this->r, this->g, this->b, this->a);
-	}
-	DirectX::XMVECTOR Colour::xm_vector() const
-	{
-		return DirectX::XMVectorSet(this->r, this->g, this->b, this->a);
-	}
 	void Colour::clamp_colours()
 	{
 		this->r = clamp(this->r, 0.0f, 1.0f);
@@ -2220,15 +2006,6 @@ namespace mattmath
 	{
 
 	}
-	Viewport::Viewport(const SimpleMath::Viewport& viewport)
-	{
-		this->x = viewport.x;
-		this->y = viewport.y;
-		this->width = viewport.width;
-		this->height = viewport.height;
-		this->minDepth = viewport.minDepth;
-		this->maxDepth = viewport.maxDepth;
-	}
 	Viewport::Viewport(const RectangleF& rectangle,
 		float minDepth, float maxDepth)
 	{
@@ -2249,36 +2026,6 @@ namespace mattmath
 		this->minDepth = minDepth;
 		this->maxDepth = maxDepth;
 	}
-	Viewport::Viewport(const D3D11_VIEWPORT& viewport)
-	{
-		this->x = viewport.TopLeftX;
-		this->y = viewport.TopLeftY;
-		this->width = viewport.Width;
-		this->height = viewport.Height;
-		this->minDepth = viewport.MinDepth;
-		this->maxDepth = viewport.MaxDepth;
-	}
-	SimpleMath::Viewport Viewport::sm_viewport() const
-	{
-		return SimpleMath::Viewport(this->x, this->y, this->width, this->height,
-			this->minDepth, this->maxDepth);
-	}
-	D3D11_VIEWPORT Viewport::d3d_viewport() const
-	{
-		D3D11_VIEWPORT result = {
-			this->x,
-			this->y,
-			this->width,
-			this->height,
-			this->minDepth,
-			this->maxDepth
-		};
-		return result;
-	}
-	const D3D11_VIEWPORT* Viewport::d3d_viewport_ptr() const
-	{
-		return reinterpret_cast<const D3D11_VIEWPORT*>(this);
-	}
 	RectangleF Viewport::rectangle() const
 	{
 		return RectangleF(this->x, this->y, this->width, this->height);
@@ -2295,26 +2042,6 @@ namespace mattmath
 	{
 		return Vector2F(this->width, this->height);
 	}
-	Viewport& Viewport::operator=(const SimpleMath::Viewport& viewport)
-	{
-		this->x = viewport.x;
-		this->y = viewport.y;
-		this->width = viewport.width;
-		this->height = viewport.height;
-		this->minDepth = viewport.minDepth;
-		this->maxDepth = viewport.maxDepth;
-		return *this;
-	}
-	Viewport& Viewport::operator=(const D3D11_VIEWPORT& viewport)
-	{
-		this->x = viewport.TopLeftX;
-		this->y = viewport.TopLeftY;
-		this->width = viewport.Width;
-		this->height = viewport.Height;
-		this->minDepth = viewport.MinDepth;
-		this->maxDepth = viewport.MaxDepth;
-		return *this;
-	}
 	Viewport& Viewport::operator=(const mattmath::RectangleF& rectangle)
 	{
 		this->x = rectangle.x;
@@ -2329,14 +2056,6 @@ namespace mattmath
 		this->y = static_cast<float>(rectangle.y);
 		this->width = static_cast<float>(rectangle.width);
 		this->height = static_cast<float>(rectangle.height);
-		return *this;
-	}
-	Viewport& Viewport::operator=(const RECT& rect)
-	{
-		this->x = static_cast<float>(rect.left);
-		this->y = static_cast<float>(rect.top);
-		this->width = static_cast<float>(rect.right - rect.left);
-		this->height = static_cast<float>(rect.bottom - rect.top);
 		return *this;
 	}
 	bool Viewport::operator==(const Viewport& other) const
@@ -2358,10 +2077,6 @@ namespace mattmath
 #pragma region Circle
 
 	Circle::Circle(const Vector2F& center, float radius) :
-		center_(center), radius_(radius)
-	{
-	}
-	Circle::Circle(const DirectX::SimpleMath::Vector2& center, float radius) :
 		center_(center), radius_(radius)
 	{
 	}
@@ -2464,14 +2179,6 @@ namespace mattmath
 	Triangle::Triangle(const Vector2F& point0,
 		const Vector2F& point1,
 		const Vector2F& point2)
-	{
-		this->points[0] = point0;
-		this->points[1] = point1;
-		this->points[2] = point2;
-	}
-	Triangle::Triangle(const DirectX::SimpleMath::Vector2& point0,
-		const DirectX::SimpleMath::Vector2& point1,
-		const DirectX::SimpleMath::Vector2& point2)
 	{
 		this->points[0] = point0;
 		this->points[1] = point1;
@@ -2669,15 +2376,6 @@ namespace mattmath
 	}
 
 	TriangleRightAxisAligned::TriangleRightAxisAligned(
-		const DirectX::SimpleMath::Vector2& top,
-		const DirectX::SimpleMath::Vector2& left,
-		const DirectX::SimpleMath::Vector2& right) :
-		Triangle(top, left, right)
-	{
-
-	}
-
-	TriangleRightAxisAligned::TriangleRightAxisAligned(
 		float x0, float y0, float x1, float y1, float x2, float y2) :
 		Triangle(x0, y0, x1, y1, x2, y2)
 	{
@@ -2806,22 +2504,6 @@ namespace mattmath
 		this->points_[1] = q.point_1();
 		this->points_[2] = q.point_2();
 		this->points_[3] = q.point_3();
-
-		if (!this->is_valid())
-		{
-			throw std::invalid_argument("Quad is not valid");
-		}
-	}
-
-	Quad::Quad(const DirectX::SimpleMath::Vector2& point0,
-		const DirectX::SimpleMath::Vector2& point1,
-		const DirectX::SimpleMath::Vector2& point2,
-		const DirectX::SimpleMath::Vector2& point3)
-	{
-		this->points_[0] = point0;
-		this->points_[1] = point1;
-		this->points_[2] = point2;
-		this->points_[3] = point3;
 
 		if (!this->is_valid())
 		{

@@ -1,8 +1,14 @@
 #pragma once
 
-#include "SimpleMath.h"
+// MattMath depends on nothing (docs/design/ARCHITECTURE.md, the module
+// table). It used to carry a conversion to and from the matching DirectXTK
+// or D3D11 type on nearly every value here - SimpleMath::Vector2, XMFLOAT2,
+// SimpleMath::Rectangle, RECT, SimpleMath::Color, D3D11_VIEWPORT. Counted,
+// the whole set had one consumer: engine/render/d3d11/renderer.cpp. So they
+// live there now, as free functions at the backend's edge, and the library
+// that is supposed to depend on nothing does.
+
 #include "engine/math/shape_type.h"
-#include <d3d11.h>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -194,10 +200,6 @@ namespace mattmath
 		RectangleF(float x, float y, float width, float height);
 		RectangleF(const mattmath::Vector2F& position,
 							const mattmath::Vector2F& size);
-		RectangleF(const DirectX::SimpleMath::Vector2& position,
-						const DirectX::SimpleMath::Vector2& size);
-		RectangleF(const DirectX::SimpleMath::Rectangle& rectangle);
-		RectangleF(const RECT& rectangle);
 		RectangleF(const mattmath::Vector2F& center, float horiz_half_width,
 			float vert_half_height);
 		//RectangleF(const mattmath::Segment& center_line, float thickness);
@@ -224,11 +226,7 @@ namespace mattmath
 		std::vector<mattmath::Segment> edges() const override;
 		float area() const;
 		mattmath::RectangleI rectangle_i() const;
-		DirectX::SimpleMath::Rectangle sm_rectangle() const;
-		RECT win_rect() const;
 
-		//RectangleF& operator=(const DirectX::SimpleMath::Rectangle& rectangle);
-		//RectangleF& operator=(const RECT& rectangle);
 		bool operator==(const RectangleF& other) const;
 		bool operator!=(const RectangleF& other) const;
 
@@ -354,14 +352,7 @@ namespace mattmath
 		Vector2I(const Vector2I&) = default;
 		Vector2I(int x, int y);
 		Vector2I(const mattmath::Vector2F& vector);
-		Vector2I(const DirectX::SimpleMath::Vector2& vector);
-		Vector2I(const DirectX::XMINT2& vector);
 
-		DirectX::SimpleMath::Vector2 sm_vector() const;
-		DirectX::XMINT2 xm_vector() const;
-
-		Vector2I& operator=(const DirectX::SimpleMath::Vector2& vector);
-		Vector2I& operator=(const DirectX::XMINT2& vector);
 		bool operator==(const Vector2I& other) const;
 		bool operator!=(const Vector2I& other) const;
 
@@ -377,10 +368,7 @@ namespace mattmath
 
 		void offset(int horizontal_amount, int vertical_amount);
 		void scale(int horizontal_amount, int vertical_amount);
-		void scale(const DirectX::SimpleMath::Vector2& amount);
 		void set(int x, int y);
-		void set(const DirectX::SimpleMath::Vector2& vector);
-		void set(const DirectX::XMINT2& vector);
 
 		static const Vector2I ZERO;
 	};
@@ -402,15 +390,8 @@ namespace mattmath
 		Vector2F(const Vector2F&) = default;
 		Vector2F(float f);
 		Vector2F(float x, float y);
-		Vector2F(const DirectX::SimpleMath::Vector2& vector);
-		Vector2F(const DirectX::XMFLOAT2& vector);
 		Vector2F(const mattmath::Vector2I& vector);
 
-		DirectX::SimpleMath::Vector2 sm_vector() const;
-		DirectX::XMFLOAT2 xm_vector() const;
-
-		Vector2F& operator=(const DirectX::SimpleMath::Vector2& vector);
-		Vector2F& operator=(const DirectX::XMFLOAT2& vector);
 		bool operator==(const Vector2F& other) const;
 		bool operator!=(const Vector2F& other) const;
 
@@ -524,11 +505,7 @@ namespace mattmath
 			const mattmath::Vector2I& size);
 		RectangleI(const mattmath::Vector2F& position,
 			const mattmath::Vector2F& size);
-		RectangleI(const DirectX::SimpleMath::Vector2& position,
-			const DirectX::SimpleMath::Vector2& size);
 		RectangleI(mattmath::RectangleF rectangle);
-		RectangleI(const DirectX::SimpleMath::Rectangle& rectangle);
-		RectangleI(const RECT& rectangle);
 
 		int left() const;
 		int top() const;
@@ -540,9 +517,6 @@ namespace mattmath
 
 		mattmath::Vector2I top_left() const;
 		mattmath::Vector2I bottom_right() const;
-
-		DirectX::SimpleMath::Rectangle sm_rectangle() const;
-		RECT win_rect() const;
 
 		bool operator==(const RectangleI& other) const;
 		bool operator!=(const RectangleI& other) const;
@@ -579,13 +553,9 @@ namespace mattmath
 		Vector4F() = default;
 		Vector4F(const Vector4F&) = default;
 		Vector4F(float x, float y, float z, float w);
-		Vector4F(const DirectX::XMFLOAT4& vector);
 
-		Vector4F& operator=(const DirectX::XMFLOAT4& vector);
 		bool operator==(const Vector4F& other) const;
 		bool operator!=(const Vector4F& other) const;
-
-		DirectX::XMVECTOR xm_vector() const;
 	};
 
 	struct Colour
@@ -599,13 +569,9 @@ namespace mattmath
 		Colour(const Colour&) = default;
 		Colour(float r, float g, float b);
 		Colour(float r, float g, float b, float a);
-		Colour(const DirectX::XMFLOAT4& vector);
-		Colour(const DirectX::SimpleMath::Color& colour);
 		Colour(int r, int g, int b, int a = 255);
 		Colour(const std::string& hex);
 
-		Colour& operator=(const DirectX::XMFLOAT4& vector);
-		Colour& operator=(const DirectX::SimpleMath::Color& colour);
 		Colour& operator=(const mattmath::Vector4F& vector);
 
 		bool operator==(const Colour& other) const;
@@ -642,9 +608,6 @@ namespace mattmath
 
 		void make_opaque();
 		void make_transparent();
-
-		DirectX::SimpleMath::Color sm_colour() const;
-		DirectX::XMVECTOR xm_vector() const;
 
 		void clamp_colours();
 	};
@@ -700,16 +663,10 @@ namespace mattmath
 		Viewport(const Viewport&) = default;
 		Viewport(float x, float y, float width, float height,
 			float minDepth = 0.0f, float maxDepth = 1.0f);
-		Viewport(const DirectX::SimpleMath::Viewport& viewport);
 		Viewport(const mattmath::RectangleF& rectangle,
 			float minDepth = 0.0f, float maxDepth = 1.0f);
 		Viewport(const mattmath::RectangleI& rectangle,
 			float minDepth = 0.0f, float maxDepth = 1.0f);
-		Viewport(const D3D11_VIEWPORT& viewport);
-
-		DirectX::SimpleMath::Viewport sm_viewport() const;
-		D3D11_VIEWPORT d3d_viewport() const;
-		const D3D11_VIEWPORT* d3d_viewport_ptr() const;
 
 		mattmath::RectangleF rectangle() const;
 		//mattmath::RectangleF rectangle(float minDepth, float maxDepth) const;
@@ -717,12 +674,9 @@ namespace mattmath
 		mattmath::Vector2F size() const;
 
 		//Viewport& operator=(const Viewport& viewport);
-		Viewport& operator=(const DirectX::SimpleMath::Viewport& viewport);
-		Viewport& operator=(const D3D11_VIEWPORT& viewport);
 		Viewport& operator=(const mattmath::RectangleF& rectangle);
 		Viewport& operator=(const mattmath::RectangleI& rectangle);
-		Viewport& operator=(const RECT& rect);
-		
+
 		bool operator==(const Viewport& other) const;
 		bool operator!=(const Viewport& other) const;
 	};
@@ -736,7 +690,6 @@ namespace mattmath
 		Circle() = default;
 		Circle(const Circle&) = default;
 		Circle(const mattmath::Vector2F& center, float radius);
-		Circle(const DirectX::SimpleMath::Vector2& center, float radius);
 		Circle(float x, float y, float radius);
 
 		mattmath::RectangleF bounding_box() const override;
@@ -776,9 +729,6 @@ namespace mattmath
 		Triangle(const mattmath::Vector2F& point0,
 			const mattmath::Vector2F& point1,
 			const mattmath::Vector2F& point2);
-		Triangle(const DirectX::SimpleMath::Vector2& point0,
-			const DirectX::SimpleMath::Vector2& point1,
-			const DirectX::SimpleMath::Vector2& point2);
 		Triangle(float x0, float y0, float x1, float y1, float x2, float y2);
 
 		mattmath::RectangleF bounding_box() const override;
@@ -825,9 +775,6 @@ namespace mattmath
 		TriangleRightAxisAligned(const TriangleRightAxisAligned&) = default;
 		TriangleRightAxisAligned(const mattmath::Vector2F& top,
 			const mattmath::Vector2F& left, const mattmath::Vector2F& right);
-		TriangleRightAxisAligned(const DirectX::SimpleMath::Vector2& top,
-			const DirectX::SimpleMath::Vector2& left,
-			const DirectX::SimpleMath::Vector2& right);
 		TriangleRightAxisAligned(float x0, float y0, float x1, float y1,
 			float x2, float y2);
 
@@ -853,10 +800,6 @@ namespace mattmath
 		Quad(const std::vector<Point2F>& points);
 		Quad(const RectangleF& rectangle);
 		Quad(const RectangleRotated& rectangle);
-		Quad(const DirectX::SimpleMath::Vector2& point1, 
-			const DirectX::SimpleMath::Vector2& point2,
-			const DirectX::SimpleMath::Vector2& point3,
-			const DirectX::SimpleMath::Vector2& point4);
 
 		mattmath::RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;

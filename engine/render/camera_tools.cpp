@@ -2,7 +2,6 @@
 
 #include <algorithm>
 
-using namespace DirectX;
 using namespace mattmath;
 
 namespace artattack

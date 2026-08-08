@@ -14,6 +14,42 @@ namespace artattack
 {
 	namespace
 	{
+		// Where the engine's values become the backend's. Every one of these
+		// used to be a member of the mattmath type - Viewport::d3d_viewport(),
+		// RectangleF::win_rect(), Colour::xm_vector() - which is what put
+		// <d3d11.h> and SimpleMath.h in a library documented as depending on
+		// nothing. This file was their only caller, so this is where they go.
+		// A second backend writes its own four; it does not inherit these.
+		D3D11_VIEWPORT to_d3d_viewport(const Viewport& viewport)
+		{
+			return { viewport.x, viewport.y, viewport.width, viewport.height,
+				viewport.minDepth, viewport.maxDepth };
+		}
+
+		RECT to_rect(const RectangleF& rectangle)
+		{
+			return { static_cast<long>(rectangle.left()),
+				static_cast<long>(rectangle.top()),
+				static_cast<long>(rectangle.right()),
+				static_cast<long>(rectangle.bottom()) };
+		}
+
+		RECT to_rect(const RectangleI& rectangle)
+		{
+			return { rectangle.left(), rectangle.top(),
+				rectangle.right(), rectangle.bottom() };
+		}
+
+		XMFLOAT2 to_xm(const Vector2F& vector)
+		{
+			return { vector.x, vector.y };
+		}
+
+		XMVECTOR to_xm(const Colour& colour)
+		{
+			return XMVectorSet(colour.r, colour.g, colour.b, colour.a);
+		}
+
 		SpriteEffects to_sprite_effects(SpriteFlip flip)
 		{
 			switch (flip)
@@ -85,7 +121,7 @@ namespace artattack
 		// from, and on a deferred context it cannot read the first back.
 		this->view_->close_batch();
 
-		const D3D11_VIEWPORT d3d_viewport = viewport.d3d_viewport();
+		const D3D11_VIEWPORT d3d_viewport = to_d3d_viewport(viewport);
 		this->view_->context->RSSetViewports(1, &d3d_viewport);
 		this->view_->batch->SetViewport(d3d_viewport);
 	}
@@ -118,17 +154,17 @@ namespace artattack
 	{
 		this->view_->open_batch();
 
-		const RECT source_rect = source.win_rect();
+		const RECT source_rect = to_rect(source);
 		const RECT destination_rect =
-			this->view_->camera.calculate_view_rectangle(destination).win_rect();
+			to_rect(this->view_->camera.calculate_view_rectangle(destination));
 
 		this->view_->batch->Draw(
 			this->view_->owner->resources->impl()->texture(texture),
 			destination_rect,
 			&source_rect,
-			tint.xm_vector(),
+			to_xm(tint),
 			rotation,
-			origin.xm_vector(),
+			to_xm(origin),
 			to_sprite_effects(flip),
 			layer_depth);
 	}
@@ -150,10 +186,10 @@ namespace artattack
 		this->view_->owner->resources->impl()->sprite_font(font)->DrawString(
 			this->view_->batch.get(),
 			text.c_str(),
-			this->view_->camera.calculate_view_position(position).xm_vector(),
-			tint.xm_vector(),
+			to_xm(this->view_->camera.calculate_view_position(position)),
+			to_xm(tint),
 			rotation,
-			origin.xm_vector(),
+			to_xm(origin),
 			this->view_->camera.calculate_view_scale(scale),
 			SpriteEffects_None,
 			layer_depth);
