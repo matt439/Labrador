@@ -24,7 +24,44 @@ namespace artattack
 
 			Vector2F points[MAX_POINTS];
 			int count = 0;
+
+			// The candidate axes this shape contributes: its edge normals,
+			// unit length, with duplicates already removed.
+			//
+			// Opposite edges of a rectangle are antiparallel, so their normals
+			// differ only in sign - and testing an axis against its own
+			// negative is provably inert. Projecting on -n negates and swaps
+			// the interval, which swaps `forwards` and `backwards`, so the
+			// smaller of the two is the same number and the normal comes back
+			// correctly signed either way. The duplicate can therefore never
+			// win the strict comparison in narrow_phase, and dropping it costs
+			// nothing and saves half the work on the pair type that is
+			// essentially all of this game's collision traffic.
+			Vector2F axes[MAX_POINTS];
+			int axis_count = 0;
 		};
+
+		// Fills `axes` from the first `edge_count` edges. Degenerate edges
+		// contribute nothing: normalized() reports a zero-length vector as
+		// zero rather than inventing (1, 0) for it, which is how a repeated
+		// vertex is skipped instead of supplying a bogus axis.
+		void fill_axes(Polygon& polygon, int edge_count)
+		{
+			for (int i = 0; i < edge_count; i++)
+			{
+				const Vector2F edge =
+					polygon.points[(i + 1) % polygon.count] - polygon.points[i];
+
+				const Vector2F axis = Vector2F(-edge.y, edge.x).normalized();
+				if (axis == Vector2F::ZERO)
+				{
+					continue;
+				}
+
+				polygon.axes[polygon.axis_count] = axis;
+				polygon.axis_count++;
+			}
+		}
 
 		// The downcasts are safe because shape_type() is the discriminator
 		// every Shape implements, and they are static because this runs per
@@ -45,6 +82,14 @@ namespace artattack
 				polygon.points[2] = box.bottom_right();
 				polygon.points[3] = box.bottom_left();
 				polygon.count = 4;
+
+				// Known at compile time, and already unit. An axis-aligned
+				// rectangle's edge normals are the cardinal directions
+				// whatever its size or position, so this pair costs no
+				// subtractions and, more to the point, no square roots.
+				polygon.axes[0] = Vector2F(1.0f, 0.0f);
+				polygon.axes[1] = Vector2F(0.0f, 1.0f);
+				polygon.axis_count = 2;
 				return polygon;
 			}
 			case ShapeType::triangle:
@@ -54,6 +99,10 @@ namespace artattack
 				polygon.points[1] = triangle.point_1();
 				polygon.points[2] = triangle.point_2();
 				polygon.count = 3;
+
+				// No two edges of a triangle are parallel unless it is
+				// degenerate, so all three normals are distinct.
+				fill_axes(polygon, 3);
 				return polygon;
 			}
 			case ShapeType::quad:
@@ -64,17 +113,31 @@ namespace artattack
 				polygon.points[2] = quad.point_2();
 				polygon.points[3] = quad.point_3();
 				polygon.count = 4;
+
+				// A general convex quad has four distinct normals. It is
+				// convex - Quad's constructor enforces that, and the
+				// separating-axis theorem decides nothing otherwise.
+				fill_axes(polygon, 4);
 				return polygon;
 			}
 			case ShapeType::rectangle_rotated:
 			{
-				const mattmath::Quad quad(
-					static_cast<const mattmath::RectangleRotated&>(shape));
-				polygon.points[0] = quad.point_0();
-				polygon.points[1] = quad.point_1();
-				polygon.points[2] = quad.point_2();
-				polygon.points[3] = quad.point_3();
+				// Read straight off the shape. This used to build a
+				// mattmath::Quad from it, inside the one function whose
+				// comment above boasts about avoiding a heap allocation per
+				// shape per pair per frame - and that constructor allocates
+				// and validates twice over.
+				const auto& rotated =
+					static_cast<const mattmath::RectangleRotated&>(shape);
+				polygon.points[0] = rotated.point_0();
+				polygon.points[1] = rotated.point_1();
+				polygon.points[2] = rotated.point_2();
+				polygon.points[3] = rotated.point_3();
 				polygon.count = 4;
+
+				// Still a rectangle, so still two distinct axes - they are
+				// simply no longer the cardinal ones.
+				fill_axes(polygon, 2);
 				return polygon;
 			}
 			case ShapeType::circle:
@@ -137,7 +200,15 @@ namespace artattack
 			const float forwards = b_max - a_min;
 			const float backwards = a_max - b_min;
 
-			if (forwards <= 0.0f || backwards <= 0.0f)
+			// Stated as "both ways out are positive", not as "neither is
+			// non-positive". The two agree for real numbers and disagree for
+			// NaN, which fails every comparison: the rejecting form fell
+			// through to "not separated" and handed back a NaN penetration,
+			// which then went into a manifold and out to a resolver as a
+			// distance to move something. Written this way, a NaN reports a
+			// separating axis, and one separating axis means no contact.
+			const bool overlapping = forwards > 0.0f && backwards > 0.0f;
+			if (!overlapping)
 			{
 				return AxisTest{};
 			}
@@ -165,8 +236,11 @@ namespace artattack
 		const Polygon polygon_a = polygon_from(a);
 		const Polygon polygon_b = polygon_from(b);
 
-		if (polygon_a.count < 3 || polygon_b.count < 3)
+		if (polygon_a.count < 3 || polygon_b.count < 3
+			|| polygon_a.axis_count == 0 || polygon_b.axis_count == 0)
 		{
+			// No axes means every edge was degenerate, so the shape has no
+			// interior and nothing can be inside it.
 			return std::nullopt;
 		}
 
@@ -176,22 +250,10 @@ namespace artattack
 		const Polygon* const polygons[2] = { &polygon_a, &polygon_b };
 		for (const Polygon* polygon : polygons)
 		{
-			for (int i = 0; i < polygon->count; i++)
+			for (int i = 0; i < polygon->axis_count; i++)
 			{
-				const Vector2F edge =
-					polygon->points[(i + 1) % polygon->count] - polygon->points[i];
-
-				// The edge's normal, normalised. normalized() reports a
-				// zero-length vector as zero rather than inventing (1, 0) for
-				// it, which is how a degenerate edge is skipped instead of
-				// contributing a bogus axis.
-				const Vector2F axis = Vector2F(-edge.y, edge.x).normalized();
-				if (axis == Vector2F::ZERO)
-				{
-					continue;
-				}
-
-				const AxisTest test = test_axis(polygon_a, polygon_b, axis);
+				const AxisTest test =
+					test_axis(polygon_a, polygon_b, polygon->axes[i]);
 				if (test.separated)
 				{
 					// One separating axis is a proof of no contact, so this is

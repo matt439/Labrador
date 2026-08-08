@@ -3,6 +3,7 @@
 #include "engine/collision/narrow_phase.h"
 #include "engine/collision/resolve.h"
 
+#include <limits>
 #include <optional>
 #include <stdexcept>
 
@@ -10,7 +11,9 @@ using artattack::Manifold;
 using artattack::narrow_phase;
 using artattack::separation;
 using mattmath::Circle;
+using mattmath::Point2F;
 using mattmath::RectangleF;
+using mattmath::RectangleRotated;
 using mattmath::Triangle;
 using mattmath::Vector2F;
 
@@ -172,4 +175,45 @@ TEST_CASE("one move separates the pair, wherever the overlap is")
 			REQUIRE(separating(moving, fixed));
 		}
 	}
+}
+
+TEST_CASE("a NaN coordinate reports no contact, rather than a NaN one")
+{
+	// The axis test decides overlap by asking whether both ways off the axis
+	// are positive. Written as "neither is non-positive" it reached the
+	// overlapping branch by falling through, because every comparison against
+	// NaN is false - so a poisoned coordinate produced a manifold carrying a
+	// NaN penetration, which a resolver would then apply to a position and
+	// spread to everything that object later touched.
+	const float nan = std::numeric_limits<float>::quiet_NaN();
+	const RectangleF good(0.0f, 0.0f, 10.0f, 10.0f);
+
+	CHECK_FALSE(narrow_phase(RectangleF(nan, 0.0f, 10.0f, 10.0f), good)
+		.has_value());
+	CHECK_FALSE(narrow_phase(good, RectangleF(nan, 0.0f, 10.0f, 10.0f))
+		.has_value());
+
+	// A NaN extent, not only a NaN position.
+	CHECK_FALSE(narrow_phase(RectangleF(0.0f, 0.0f, nan, 10.0f), good)
+		.has_value());
+}
+
+TEST_CASE("a rotated rectangle is measured without being turned into a Quad")
+{
+	// Two distinct axes, read off the shape's own corners. This pair used to
+	// build a mattmath::Quad per shape per pair, which allocates and validates
+	// twice over - inside the function whose comment says it carries points in
+	// an array precisely to avoid a heap allocation per shape per pair.
+	const float diagonal = 0.70710678f;
+	const RectangleRotated tilted(Point2F(0.0f, 0.0f),
+		Point2F(diagonal, diagonal), Point2F(-diagonal, diagonal),
+		Point2F(10.0f, 10.0f));
+
+	const std::optional<Manifold> hit =
+		narrow_phase(tilted, RectangleF(-2.0f, -2.0f, 4.0f, 4.0f));
+	REQUIRE(hit.has_value());
+	CHECK(hit->penetration > 0.0f);
+
+	CHECK_FALSE(narrow_phase(tilted,
+		RectangleF(100.0f, 100.0f, 4.0f, 4.0f)).has_value());
 }

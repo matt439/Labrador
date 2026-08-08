@@ -483,6 +483,39 @@ namespace MattMathTests
 			CHECK(area != 0.0f);
 			CHECK(static_cast<int>(area) == 0);
 		}
+		TEST_CASE("a Quad must be convex, not merely non-self-intersecting")
+		{
+			// A dart: the square with one corner pushed back through the
+			// opposite diagonal. No two of its edges cross, so the old
+			// simplicity test accepted it - and then the separating-axis
+			// theorem, which only decides convex shapes, produced a confident
+			// wrong manifold for it.
+			CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(2.0f, 2.0f), Point2F(0.0f, 10.0f)),
+				std::invalid_argument);
+
+			// A bowtie, which the old test also caught, since its edges do
+			// cross.
+			CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f)),
+				std::invalid_argument);
+
+			// Degenerate: three points on a line, and a repeated vertex. Both
+			// put a zero on one side of a diagonal, and a zero is not strictly
+			// opposite anything.
+			CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(5.0f, 0.0f),
+				Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f)),
+				std::invalid_argument);
+			CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(0.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f)),
+				std::invalid_argument);
+
+			// Convex quads are still fine, wound either way.
+			CHECK_NOTHROW(Quad(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f)));
+			CHECK_NOTHROW(Quad(Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f),
+				Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f)));
+		}
 		TEST_CASE("test_8_cardinal_direction")
 		{
 			Point2F p(0.0f, 0.0f);

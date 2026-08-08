@@ -2871,21 +2871,50 @@ namespace mattmath
 
 	bool Quad::is_valid() const
 	{
-		// check if the edges intersect
-		std::vector<Segment> edges = this->edges();
+		// Convex, which is a stronger claim than the edges not crossing.
+		//
+		// Both consumers need convexity and neither needs simplicity: the
+		// narrow phase runs the separating-axis theorem, which is only a
+		// decision procedure for convex shapes, and triangles() splits on a
+		// diagonal that lies outside a concave quad. A dart - four points with
+		// one pushed back through the opposite diagonal - has no two edges
+		// crossing, so it passed the old test and then received a confident
+		// wrong manifold.
+		//
+		// A quad is convex exactly when its diagonals properly cross
+		// (Ericson, 3.7.1): each diagonal must have the other's endpoints
+		// strictly on opposite sides of it. Four signed areas, no allocation,
+		// against six segment tests over a heap-allocated vector of edges.
+		//
+		// Strictness is what rejects the degenerate cases - three collinear
+		// points, or a repeated vertex, put a zero on one side and a zero is
+		// not strictly opposite anything.
+		//
+		// This also removes a trap. The old test asked whether any two edges
+		// intersect, and adjacent edges share a vertex; it only passed at all
+		// because segments_intersect excludes its endpoints. Closing that
+		// boundary - which is an open item against segments_intersect - would
+		// have made every Quad in the tree throw on construction.
+		const Point2F& a = this->points_[0];
+		const Point2F& b = this->points_[1];
+		const Point2F& c = this->points_[2];
+		const Point2F& d = this->points_[3];
 
-		for (int i = 0; i < 4; i++)
+		const auto strictly_opposite = [](float lhs, float rhs)
 		{
-			for (int j = i + 1; j < 4; j++)
-			{
-				if (edges[i].intersects(edges[j]))
-				{
-					return false;
-				}
-			}
+			return (lhs > 0.0f && rhs < 0.0f) || (lhs < 0.0f && rhs > 0.0f);
+		};
+
+		// a and c on opposite sides of diagonal bd
+		if (!strictly_opposite(Vector2F::cross(d - b, a - b),
+			Vector2F::cross(d - b, c - b)))
+		{
+			return false;
 		}
 
-		return true;
+		// b and d on opposite sides of diagonal ac
+		return strictly_opposite(Vector2F::cross(c - a, b - a),
+			Vector2F::cross(c - a, d - a));
 	}
 
 	const Point2F& Quad::point_0() const
