@@ -71,11 +71,11 @@ Two defects were merged under this finding.
 
 The **data race in ArtAttack's own types** is fixed, and as of the const pass it
 is fixed in the sense that survives someone editing the code:
-`IGameObject::draw` and every override of it are `const`, so a `draw()`
+`GameObject::draw` and every override of it are `const`, so a `draw()`
 that assigns a member is now a compile error rather than something an audit has
 to keep catching. `Weapon::draw`, `InterfaceGameplay::draw_gameplay_interface`
 and the three `Drawer` helpers are const for the same reason — none of them is
-an `IGameObject`, but all sit under the same per-view fan-out, and `Level`
+a `GameObject`, but all sit under the same per-view fan-out, and `Level`
 holds them by `unique_ptr`, which does not pass its own constness on to what it
 points at.
 
@@ -103,8 +103,10 @@ the visibility work. That is wasted time, not undefined behaviour.
 Worth recording for whoever writes `Scene`: the parallelism axis here is
 **views, not objects**. Workers do not own disjoint slices — every worker draws
 every object, so the pure-read contract is the *only* thing making this sound.
-PHILOSOPHY's tenet still says workers own disjoint slices, which does not
-describe this renderer.
+PHILOSOPHY used to say workers own disjoint slices; it was wrong about the
+destination and not merely about the present, and it now says views. The
+constraint is restated where the code will have to satisfy it, on `DrawList`
+in `engine/render/renderer.h`.
 
 ---
 
@@ -118,7 +120,7 @@ while the game shipped `fast`.
 
 **Bugs `/W4` was already reporting but nobody read** (`5b75b31`):
 
-- `MTexture::is_visible_in_viewport` called itself — C4717 said "recursive on
+- `UiTexture::is_visible_in_viewport` called itself — C4717 said "recursive on
   all control paths, function will cause runtime stack overflow".
 - `GameData::get_thread_pool` had a committed duplicated `return` (C4702).
 - `Level::get_level_end_info` caught `std::bad_cast` around a **pointer**

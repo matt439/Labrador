@@ -368,8 +368,12 @@ engine API to depend on.
   (`draw_sprite(texture, src, dst, tint, rotation, origin, depth)`). The
   D3D11/DirectXTK backend is one implementation behind it — the same seam
   serves headless testing today and a second platform later.
-- Parallel rendering is sound because drawing is a pure read; render workers
-  own disjoint slices of the scene.
+- Parallel rendering is sound because drawing is a pure read. The axis of
+  parallelism is **views, not objects**: a worker owns one view and draws
+  every object into it, so several workers enter `draw()` on the *same*
+  object at the same time. Disjoint slices would make the pure read a
+  convenience; view parallelism makes it the load-bearing guarantee, and
+  `const draw()` is how the compiler holds new code to it.
 - Objects expose bounds; the scene culls. Visibility is not each object's
   job.
 

@@ -81,8 +81,8 @@ being load-bearing.
 ├── engine/                 the product
 │   ├── math/               MattMath — depends on nothing
 │   ├── core/               game loop, fixed-step timing, Scene, states, services, registries
-│   ├── render/             renderer interface, cameras, viewports
-│   │   └── d3d11/          the D3D11/DirectXTK backend, behind the interface
+│   ├── render/             the Renderer, cameras, viewports
+│   │   └── d3d11/          the D3D11/DirectXTK backend, behind the Renderer
 │   ├── collision/          broad phase, narrow phase, manifolds, resolution
 │   ├── input/              devices, action mapping
 │   │   └── xinput/         the XInput backend
@@ -100,8 +100,10 @@ being load-bearing.
 │   └── minimal/            the second client, and the new-project template
 ├── tests/                  one folder per module under test
 │   ├── assets/
+│   ├── collision/
 │   ├── core/
-│   └── math/
+│   ├── math/
+│   └── render/
 ├── external/               third-party source: rapidjson, DirectXTK
 └── docs/
     ├── design/             philosophies, conventions, this document
@@ -114,6 +116,17 @@ Platform-specific code
 lives only in the backend subfolders (`render/d3d11/`, `input/xinput/`),
 behind engine-owned interfaces, so a second platform is an addition, not
 a rewrite.
+
+Those interfaces are **concrete classes with one implementation selected
+at build time, not abstract bases with vtables.** `Renderer` is declared
+once in `engine/render/renderer.h`; a backend folder defines it. The two
+things the seam exists for — headless tests and an eventual second
+platform — are both served by build-time selection, and neither needs two
+backends live in one process. A virtual call per sprite is a tax on the
+frame loop that T8 does not permit, and a compile-time choice fails at
+link rather than at run time (T5). Promoting a concrete class to an
+interface later is mechanical and changes no call site, so that option is
+held, not spent — the same escalation as promoting a folder to a library.
 
 ## Modules
 
