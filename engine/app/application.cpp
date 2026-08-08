@@ -95,7 +95,8 @@ namespace artattack
 
 		this->create_services();
 
-		this->gamepad_ = std::make_unique<GamePad>();
+		this->gamepad_reader_ = std::make_unique<GamepadReader>();
+		this->gamepads_ = std::make_unique<Gamepads>(this->gamepad_reader_.get());
 
 		this->timer_.SetFixedTimeStep(true);
 		this->timer_.SetTargetElapsedSeconds(
@@ -264,6 +265,11 @@ namespace artattack
 
 	void Application::update()
 	{
+		// Before anything reads it, and on every frame whatever is running.
+		// That is what makes "down now, up last frame" true - see gamepads.h
+		// for the two hand-primed edge detectors this replaced.
+		this->gamepads_->poll();
+
 		StateContext::update(
 			static_cast<float>(this->timer_.GetElapsedSeconds()));
 		std::ignore = this->audio_engine_->Update();
@@ -293,25 +299,25 @@ namespace artattack
 
 	void Application::on_activated() const
 	{
-		if (this->gamepad_)
+		if (this->gamepad_reader_)
 		{
-			this->gamepad_->Resume();
+			this->gamepad_reader_->resume();
 		}
 	}
 
 	void Application::on_deactivated() const
 	{
-		if (this->gamepad_)
+		if (this->gamepad_reader_)
 		{
-			this->gamepad_->Suspend();
+			this->gamepad_reader_->suspend();
 		}
 	}
 
 	void Application::on_suspending() const
 	{
-		if (this->gamepad_)
+		if (this->gamepad_reader_)
 		{
-			this->gamepad_->Suspend();
+			this->gamepad_reader_->suspend();
 		}
 		if (this->audio_engine_)
 		{
@@ -322,9 +328,9 @@ namespace artattack
 	void Application::on_resuming()
 	{
 		this->timer_.ResetElapsedTime();
-		if (this->gamepad_)
+		if (this->gamepad_reader_)
 		{
-			this->gamepad_->Resume();
+			this->gamepad_reader_->resume();
 		}
 		if (this->audio_engine_)
 		{
@@ -403,9 +409,9 @@ namespace artattack
 	{
 		return this->partitioner_.get();
 	}
-	GamePad* Application::gamepad() const
+	Gamepads* Application::gamepads() const
 	{
-		return this->gamepad_.get();
+		return this->gamepads_.get();
 	}
 	HWND Application::window() const
 	{

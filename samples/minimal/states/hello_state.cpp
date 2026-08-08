@@ -15,6 +15,12 @@ namespace
 	const std::string font_name = "courier_new_bold_16";
 
 	constexpr float move_speed = 400.0f;
+
+	// How far the stick has to move before it counts. One number, applied
+	// once, by the thing that knows what the stick is for - which is what
+	// engine/input/gamepad.h asks for and what the pad API's own deadzone
+	// modes take away.
+	constexpr float stick_deadzone = 0.2f;
 }
 
 HelloState::HelloState(Application* app) : app_(app)
@@ -58,10 +64,10 @@ void HelloState::init()
 
 void HelloState::update(float dt)
 {
-	const GamePad::State pad = this->app_->gamepad()->GetState(0);
-	if (pad.IsConnected())
+	const Gamepads& pads = *this->app_->gamepads();
+	if (pads.connected(0))
 	{
-		if (pad.IsBPressed())
+		if (pads.pressed(0, GamepadButton::b))
 		{
 			// Ask, rather than quit. The result type is named here and matched
 			// at the pop; the question knows nothing about this state, and the
@@ -79,8 +85,13 @@ void HelloState::update(float dt)
 			return;
 		}
 
-		this->position_.x += pad.thumbSticks.leftX * move_speed * dt;
-		this->position_.y -= pad.thumbSticks.leftY * move_speed * dt;
+		// The stick is already in this engine's convention - +y is down, the
+		// same as every rectangle and viewport - and already has a deadzone
+		// applied, once, with the magnitude rescaled so a small push moves
+		// slowly instead of jumping to the threshold.
+		const Vector2F stick = apply_deadzone(pads.state(0).left_stick,
+			stick_deadzone);
+		this->position_ += stick * (move_speed * dt);
 		this->greeting_->set_position(this->position_);
 	}
 

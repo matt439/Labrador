@@ -34,9 +34,4 @@ private:
 	std::wstring question_;
 
 	std::unique_ptr<artattack::Text> prompt_ = nullptr;
-
-	// A pressed button is only an answer once it has been released and pressed
-	// again: the B that opened this question is still down on the frame it
-	// opens, and without this that same press answers it.
-	bool ready_ = false;
 };

@@ -6,6 +6,7 @@
 #include "engine/core/state_context.h"
 #include "engine/core/step_timer.h"
 #include "engine/core/thread_pool.h"
+#include "engine/input/gamepads.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resolution_manager.h"
@@ -13,7 +14,6 @@
 #include "engine/render/viewport_manager.h"
 #include "engine/math/matt_math.h"
 #include <Audio.h>
-#include <GamePad.h>
 #include <Windows.h>
 #include <memory>
 #include <string>
@@ -140,7 +140,7 @@ namespace artattack
 		ViewportManager* viewport_manager() const;
 		ThreadPool* thread_pool() const;
 		const Partitioner* partitioner() const;
-		DirectX::GamePad* gamepad() const;
+		Gamepads* gamepads() const;
 		HWND window() const;
 
 	private:
@@ -165,7 +165,9 @@ namespace artattack
 		std::unique_ptr<ViewportManager> viewport_manager_ = nullptr;
 		std::unique_ptr<ThreadPool> thread_pool_ = nullptr;
 		std::unique_ptr<Partitioner> partitioner_ = nullptr;
-		std::unique_ptr<DirectX::GamePad> gamepad_ = nullptr;
+		// Reader first, so it outlives the Gamepads that borrows it.
+		std::unique_ptr<GamepadReader> gamepad_reader_ = nullptr;
+		std::unique_ptr<Gamepads> gamepads_ = nullptr;
 
 		bool com_initialized_ = false;
 		bool content_loaded_ = false;

@@ -122,6 +122,7 @@ being load-bearing.
 │   ├── assets/
 │   ├── collision/
 │   ├── core/
+│   ├── input/
 │   ├── math/
 │   ├── render/
 │   ├── scene/

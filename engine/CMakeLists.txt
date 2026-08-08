@@ -27,6 +27,9 @@ add_library(ArtAttackEngine STATIC
     core/state.cpp
     core/state_context.cpp
     core/thread_pool.cpp
+    input/gamepad.cpp
+    input/gamepads.cpp
+    input/xinput/gamepad_reader.cpp
     render/animation_object.cpp
     render/animation_strip.cpp
     render/camera.cpp

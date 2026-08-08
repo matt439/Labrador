@@ -813,6 +813,53 @@ split-screen exists nowhere, so a second game gets none of it.
 
 #### D2 — `engine/input/`
 
+> **Landed. The duplication was the symptom; the polling boundary was the
+> defect.**
+>
+> **Two copies were never the real cost.** The item reads as a de-duplication
+> — one module instead of `player_input.cpp` and `menu_input.cpp`. But each
+> copy also owned its own previous-frame store, and each advanced it only on
+> the frames its owner happened to be running: gameplay's while a match was up,
+> the menu's while a menu was. An edge is "down now, up last frame", so both
+> were wrong at every transition, and both had grown a `prime()` with a
+> paragraph of comment describing a bug it had shipped. Four hand-written
+> `prime()` calls in `game_states.cpp` were the running total. `Application`
+> polls once per frame, before any state updates, and all four go — not because
+> they were consolidated but because the thing they compensated for stopped
+> existing.
+>
+> **The two copies had already disagreed about the physical stick.** One asked
+> the pad API for a circular deadzone and the other for none, so the same
+> stick position meant two different things depending on which was reading. The
+> module asks for none and applies the deadzone once, in engine code, with the
+> magnitude rescaled — which is also the filed double-deadzone fix, and the two
+> turn out to be the same fix.
+>
+> **The sample is the acceptance test again, and it lost a member.**
+> `ConfirmState` carried a `bool ready_` and a comment: the B that opened the
+> question is still down on the frame it opens, so it had to be released before
+> it counted. With a real press edge that member is gone — a state no longer
+> has to notice the transition it was created by. `DirectX::GamePad` has left
+> `application.h`, `game_data.h`, both sample states and the game's precompiled
+> header; it survives in `engine/input/xinput/gamepad_reader.cpp` and nowhere
+> else.
+>
+> **`ConnectionState` is deleted rather than used, and that is the honest
+> answer.** It was a two-valued enum written in two files and read in none — a
+> `bool` with ceremony. `Gamepads` reports `connected`, `just_connected` and
+> `just_disconnected`, which is the mechanism a real player-to-pad binding
+> needs; the binding itself is game policy this item does not have the standing
+> to decide, so the weld is documented at `PlayerInputData::connected` rather
+> than quietly half-fixed.
+>
+> **What is deliberately not built:** the action map. ARCHITECTURE gives this
+> module "devices and action mapping" and this is the devices half. Neither
+> client has a rebinding screen, so a data-driven binding table would be T1's
+> speculative framework. `tests/input/` is new, and it is a folder that could
+> not have existed before: the edge logic is free functions over two
+> `GamepadState` values, so testing it needs no controller plugged into the
+> machine running the tests.
+
 **What changes.** `engine/input/` is one enum
 (`engine/input/connection_state.h:1-10`) and the real input API is a raw
 `DirectX::GamePad*` on `engine/app/application.h:17`, `:123`, `:158`. Device

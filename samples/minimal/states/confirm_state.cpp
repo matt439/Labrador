@@ -30,26 +30,21 @@ void ConfirmState::init()
 
 void ConfirmState::update(float /*dt*/)
 {
-	const GamePad::State pad = this->app_->gamepad()->GetState(0);
-	if (!pad.IsConnected())
-	{
-		return;
-	}
+	const Gamepads& pads = *this->app_->gamepads();
 
-	if (!this->ready_)
-	{
-		this->ready_ = !pad.IsAPressed() && !pad.IsBPressed();
-		return;
-	}
-
+	// pressed(), not held(): the B that opened this question is still down on
+	// the frame it opens, and the engine polls every frame whatever is running,
+	// so that B was down last frame too and is not a press here. A state does
+	// not have to notice the transition it was created by.
+	//
 	// Popping from inside update() is the ordinary case, and it is safe: the
 	// stack defers it until this call has returned, so the object whose
 	// update() is running is never destroyed underneath it.
-	if (pad.IsAPressed())
+	if (pads.pressed(0, GamepadButton::a))
 	{
 		this->context()->pop(true);
 	}
-	else if (pad.IsBPressed())
+	else if (pads.pressed(0, GamepadButton::b))
 	{
 		this->context()->pop(false);
 	}
