@@ -20,10 +20,10 @@ namespace artattack
 	// AnimationObject and TextObject exist to take those locals. Anything
 	// varying per *frame* - the animation clip, the facing - is chosen in
 	// update(), which runs once, on one thread.
-	class IGameObject
+	class GameObject
 	{
 	public:
-		virtual ~IGameObject() = default;
+		virtual ~GameObject() = default;
 		// dt arrives as a parameter rather than being read off a member.
 		// update() taking nothing meant every object that needed the frame time
 		// had to hold a const float* to the shell's dt and be handed it at
@@ -52,7 +52,7 @@ namespace artattack
 		//
 		// It is the input a broad phase wants too: "what overlaps this view"
 		// and "which pairs overlap each other" are one query against one
-		// structure. ICollisionGameObject::shape() stays the fine half of that
+		// structure. CollisionObject::shape() stays the fine half of that
 		// pair; this is the coarse half.
 		//
 		// Note what is no longer expressible: an object cannot report itself

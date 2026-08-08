@@ -14,13 +14,13 @@
 namespace artattack
 {
     // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
-    interface IDeviceNotify
+    interface DeviceNotify
     {
         virtual void OnDeviceLost() = 0;
         virtual void OnDeviceRestored() = 0;
 
     protected:
-        ~IDeviceNotify() = default;
+        ~DeviceNotify() = default;
     };
 
     // Controls all the DirectX device resources.
@@ -49,7 +49,7 @@ namespace artattack
         void SetWindow(HWND window, int width, int height) noexcept;
         bool WindowSizeChanged(int width, int height);
         void HandleDeviceLost();
-        void RegisterDeviceNotify(IDeviceNotify* deviceNotify) noexcept { m_deviceNotify = deviceNotify; }
+        void RegisterDeviceNotify(DeviceNotify* deviceNotify) noexcept { m_deviceNotify = deviceNotify; }
         void Present();
         void UpdateColorSpace();
 
@@ -134,8 +134,8 @@ namespace artattack
         // DeviceResources options (see flags above)
         unsigned int                                    m_options;
 
-        // The IDeviceNotify can be held directly as it owns the DeviceResources.
-        IDeviceNotify*                                  m_deviceNotify;
+        // The DeviceNotify can be held directly as it owns the DeviceResources.
+        DeviceNotify*                                   m_deviceNotify;
 
         // Owning handles, plus a raw mirror for the existing accessors. The
         // contexts used to be raw pointers that were never Released and never

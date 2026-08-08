@@ -3,46 +3,46 @@
 using namespace DirectX;
 using namespace mattmath;
 
-#pragma region MObject
+#pragma region UiObject
 
 namespace artattack
 {
-	MObject::MObject(const std::string& name, bool hidden) :
+	UiObject::UiObject(const std::string& name, bool hidden) :
 		name_(name), hidden_(hidden)
 	{
 
 	}
-	const std::string& MObject::name() const
+	const std::string& UiObject::name() const
 	{
 		return this->name_;
 	}
-	void MObject::draw(SpriteBatch* sprite_batch, const Viewport& viewport) const
+	void UiObject::draw(SpriteBatch* sprite_batch, const Viewport& viewport) const
 	{
 		this->draw(sprite_batch, Camera(viewport));
 	}
-	void MObject::set_hidden(bool hidden)
+	void UiObject::set_hidden(bool hidden)
 	{
 		this->hidden_ = hidden;
 	}
-	bool MObject::hidden() const
+	bool UiObject::hidden() const
 	{
 		return this->hidden_;
 	}
 
-#pragma endregion MObject
+#pragma endregion UiObject
 
-#pragma region MContainer
+#pragma region UiContainer
 
-	MContainer::MContainer(const std::string& name) :
-		MObject(name)
+	UiContainer::UiContainer(const std::string& name) :
+		UiObject(name)
 	{
 
 	}
-	void MContainer::add_child(MObject* child)
+	void UiContainer::add_child(UiObject* child)
 	{
 		this->children_.push_back(std::make_pair(child->name(), child));
 	}
-	void MContainer::remove_child(const std::string& name)
+	void UiContainer::remove_child(const std::string& name)
 	{
 		for (auto it = this->children_.begin(); it != this->children_.end(); ++it)
 		{
@@ -53,7 +53,7 @@ namespace artattack
 			}
 		}
 	}
-	void MContainer::remove_child(const MObject* child)
+	void UiContainer::remove_child(const UiObject* child)
 	{
 		for (auto it = this->children_.begin(); it != this->children_.end(); ++it)
 		{
@@ -64,40 +64,40 @@ namespace artattack
 			}
 		}
 	}
-	void MContainer::remove_all_children()
+	void UiContainer::remove_all_children()
 	{
 		this->children_.clear();
 	}
-	size_t MContainer::child_count() const
+	size_t UiContainer::child_count() const
 	{
 		return this->children_.size();
 	}
-	std::vector<std::pair<std::string, MObject*>> MContainer::children()
+	std::vector<std::pair<std::string, UiObject*>> UiContainer::children()
 	{
 		return this->children_;
 	}
-	void MContainer::scale_objects_to_new_resolution(
+	void UiContainer::scale_objects_to_new_resolution(
 		const Vector2F& prev_resolution,
 		const Vector2F& new_resolution)
 	{
 		Vector2F scale_factor = new_resolution / prev_resolution;
 		this->scale_size_and_position(scale_factor);
 	}
-	void MContainer::scale_size_and_position(const Vector2F& scale)
+	void UiContainer::scale_size_and_position(const Vector2F& scale)
 	{
 		for (auto const& child : this->children_)
 		{
 			child.second->scale_size_and_position(scale);
 		}
 	}
-	void MContainer::update(float dt)
+	void UiContainer::update(float dt)
 	{
 		for (auto const& child : this->children_)
 		{
 			child.second->update(dt);
 		}
 	}
-	void MContainer::draw(SpriteBatch* sprite_batch,
+	void UiContainer::draw(SpriteBatch* sprite_batch,
 		const mattmath::Camera& camera) const
 	{
 		for (auto const& child : this->children_)
@@ -105,7 +105,7 @@ namespace artattack
 			child.second->draw(sprite_batch, camera);
 		}
 	}
-	RectangleF MContainer::bounds() const
+	RectangleF UiContainer::bounds() const
 	{
 		// The union of the children's, which is the recursive definition the
 		// predicate form could only approximate by asking every child in turn.
@@ -122,22 +122,22 @@ namespace artattack
 		return result;
 	}
 
-#pragma endregion MContainer
+#pragma endregion UiContainer
 
-#pragma region MWidget
+#pragma region UiWidget
 
 
-	MWidget::MWidget(const std::string& name, bool hidden) :
-		MObject(name, hidden)
+	UiWidget::UiWidget(const std::string& name, bool hidden) :
+		UiObject(name, hidden)
 	{
 
 	}
 
-#pragma endregion MWidget
+#pragma endregion UiWidget
 
-#pragma region MTexture
+#pragma region UiTexture
 
-	MTexture::MTexture(const std::string& name,
+	UiTexture::UiTexture(const std::string& name,
 		const std::string& sheet_name,
 		const std::string& frame_name,
 		const RectangleF& rectangle,
@@ -148,41 +148,41 @@ namespace artattack
 		const Vector2F& origin,
 		SpriteEffects effects,
 		float layer_depth) :
-		MWidget(name, hidden),
+		UiWidget(name, hidden),
 		TextureObject(sheet_name, frame_name,
 			render_resources, color, rotation, origin, effects, layer_depth),
 		rectangle_(rectangle)
 	{
 
 	}
-	void MTexture::update(float /*dt*/)
+	void UiTexture::update(float /*dt*/)
 	{
 		return;
 	}
-	RectangleF MTexture::bounds() const
+	RectangleF UiTexture::bounds() const
 	{
 		// This used to call itself - infinite recursion, and /W4 had been
 		// reporting it as C4717 the whole time.
 		return this->rectangle_;
 	}
-	void MTexture::set_texture(const std::string& sheet_name,
+	void UiTexture::set_texture(const std::string& sheet_name,
 		const std::string& frame_name)
 	{
 		this->set_frame(sheet_name, frame_name);
 	}
-	void MTexture::set_sprite_frame(const std::string& frame_name)
+	void UiTexture::set_sprite_frame(const std::string& frame_name)
 	{
 		this->set_frame(frame_name);
 	}
-	void MTexture::set_colour(const Colour& colour)
+	void UiTexture::set_colour(const Colour& colour)
 	{
 		this->SpriteSheetObject::set_colour(colour);
 	}
-	void MTexture::scale_size_and_position(const Vector2F& scale)
+	void UiTexture::scale_size_and_position(const Vector2F& scale)
 	{
 		this->rectangle_.scale_size_and_position(scale);
 	}
-	void MTexture::draw(SpriteBatch* sprite_batch, const Camera& camera) const
+	void UiTexture::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())
 		{
@@ -190,40 +190,40 @@ namespace artattack
 		}
 		this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
 	}
-	const RectangleF& MTexture::rectangle() const
+	const RectangleF& UiTexture::rectangle() const
 	{
 		return this->rectangle_;
 	}
-	void MTexture::set_position(const Vector2F& position)
+	void UiTexture::set_position(const Vector2F& position)
 	{
 		this->rectangle_.set_position(position);
 	}
-	void MTexture::set_position_at_center(const Vector2F& position)
+	void UiTexture::set_position_at_center(const Vector2F& position)
 	{
 		this->rectangle_.set_position_at_center(position);
 	}
-	void MTexture::set_width(float width)
+	void UiTexture::set_width(float width)
 	{
 		this->rectangle_.set_width(width);
 	}
-	void MTexture::set_height(float height)
+	void UiTexture::set_height(float height)
 	{
 		this->rectangle_.set_height(height);
 	}
-	void MTexture::set_size(const Vector2F& size)
+	void UiTexture::set_size(const Vector2F& size)
 	{
 		this->rectangle_.set_size(size);
 	}
-	void MTexture::set_position_from_top_right_origin(const Vector2F& position)
+	void UiTexture::set_position_from_top_right_origin(const Vector2F& position)
 	{
 		this->rectangle_.set_position_from_top_right(position);
 	}
 
-#pragma endregion MTexture
+#pragma endregion UiTexture
 
-#pragma region MText
+#pragma region UiText
 
-	MText::MText(const std::string& name,
+	UiText::UiText(const std::string& name,
 		const std::wstring& text,
 		const std::string& font_name,
 		const Vector2F& position,
@@ -235,19 +235,19 @@ namespace artattack
 		const Vector2F& origin,
 		SpriteEffects effects,
 		float layer_depth) :
-		MWidget(name, hidden),
+		UiWidget(name, hidden),
 		Text(text, font_name, position,
 			render_resources, color,
 			scale, rotation, origin, effects, layer_depth)
 	{
 
 	}
-	void MText::scale_size_and_position(const Vector2F& scale)
+	void UiText::scale_size_and_position(const Vector2F& scale)
 	{
 		this->set_position(this->position() * scale);
 		this->set_scale(this->scale() * scale.x);
 	}
-	void MText::draw(SpriteBatch* sprite_batch, const Camera& camera) const
+	void UiText::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())
 		{
@@ -255,11 +255,11 @@ namespace artattack
 		}
 		this->Text::draw(sprite_batch, camera);
 	}
-	void MText::update(float /*dt*/)
+	void UiText::update(float /*dt*/)
 	{
 		// do nothing
 	}
-	RectangleF MText::bounds() const
+	RectangleF UiText::bounds() const
 	{
 		// Was "TODO: implement text bounding box; return true". The TODO was
 		// only ever answerable once the interface asked for an extent instead
@@ -267,16 +267,16 @@ namespace artattack
 		// honest box.
 		return this->text_bounds();
 	}
-	void MText::set_colour(const Colour& colour)
+	void UiText::set_colour(const Colour& colour)
 	{
 		this->Text::set_colour(colour);
 	}
 
-#pragma endregion MText
+#pragma endregion UiText
 
-#pragma region MTextDropShadow
+#pragma region UiTextDropShadow
 
-	MTextDropShadow::MTextDropShadow(const std::string& name,
+	UiTextDropShadow::UiTextDropShadow(const std::string& name,
 		const std::wstring& text,
 		const std::string& font_name,
 		const Vector2F& position,
@@ -291,7 +291,7 @@ namespace artattack
 		const Vector2F& origin,
 		SpriteEffects effects,
 		float layer_depth) :
-		MWidget(name, hidden),
+		UiWidget(name, hidden),
 		TextDropShadow(text, font_name, position,
 			render_resources, color, shadow_color, shadow_offset,
 			scale, shadow_scale, rotation, origin, effects, layer_depth)
@@ -299,14 +299,14 @@ namespace artattack
 
 	}
 
-	void MTextDropShadow::scale_size_and_position(const Vector2F& scale)
+	void UiTextDropShadow::scale_size_and_position(const Vector2F& scale)
 	{
 		this->set_position(this->position() * scale);
 		this->set_scale(this->scale() * scale.x);
 		this->set_shadow_offset(this->shadow_offset() * scale);
 		this->set_shadow_scale(this->shadow_scale() * scale.x);
 	}
-	void MTextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera) const
+	void UiTextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera) const
 	{
 		if (this->hidden())
 		{
@@ -314,11 +314,11 @@ namespace artattack
 		}
 		this->TextDropShadow::draw(sprite_batch, camera);
 	}
-	void MTextDropShadow::update(float /*dt*/)
+	void UiTextDropShadow::update(float /*dt*/)
 	{
 		return;
 	}
-	RectangleF MTextDropShadow::bounds() const
+	RectangleF UiTextDropShadow::bounds() const
 	{
 		// Both draws, not just the text: the shadow is offset and can carry its
 		// own scale, so it is measured at its own position rather than assumed
@@ -328,10 +328,10 @@ namespace artattack
 			this->text_bounds_at(this->position() + this->shadow_offset(),
 				this->shadow_scale()));
 	}
-	void MTextDropShadow::set_colour(const Colour& colour)
+	void UiTextDropShadow::set_colour(const Colour& colour)
 	{
 		this->TextDropShadow::set_colour(colour);
 	}
 
-#pragma endregion MTextDropShadow
+#pragma endregion UiTextDropShadow
 }

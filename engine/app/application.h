@@ -78,7 +78,7 @@ namespace artattack
 	// The first state is constructed last on purpose: states build drawables, and
 	// a drawable resolves handles against resources that do not exist until the
 	// manifest has been walked.
-	class Application : public IDeviceNotify, public StateContext
+	class Application : public DeviceNotify, public StateContext
 	{
 	public:
 		explicit Application(ApplicationOptions options);
@@ -195,7 +195,7 @@ namespace artattack
 		// Only the objects the device owns. Re-run on every restore.
 		void create_device_dependent_resources();
 
-		// IDeviceNotify
+		// DeviceNotify
 		void OnDeviceLost() override;
 		void OnDeviceRestored() override;
 

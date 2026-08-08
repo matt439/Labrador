@@ -1,16 +1,16 @@
 #pragma once
 
-#include "engine/core/i_game_object.h"
+#include "engine/core/game_object.h"
 #include "engine/render/texture_object.h"
 #include "engine/render/text_drop_shadow.h"
 
 namespace artattack
 {
-	class MObject : public IGameObject
+	class UiObject : public GameObject
 	{
 	public:
-		MObject() = default;
-		explicit MObject(const std::string& name, bool hidden = false);
+		UiObject() = default;
+		explicit UiObject(const std::string& name, bool hidden = false);
 		const std::string& name() const;
 
 		void draw(DirectX::SpriteBatch* sprite_batch,
@@ -30,17 +30,17 @@ namespace artattack
 		bool hidden_ = false;
 	};
 
-	class MContainer final : public MObject
+	class UiContainer final : public UiObject
 	{
 	public:
-		MContainer() = default;
-		explicit MContainer(const std::string& name);
-		void add_child(MObject* child);
+		UiContainer() = default;
+		explicit UiContainer(const std::string& name);
+		void add_child(UiObject* child);
 		void remove_child(const std::string& name);
-		void remove_child(const MObject* child);
+		void remove_child(const UiObject* child);
 		void remove_all_children();
 		size_t child_count() const;
-		std::vector<std::pair<std::string, MObject*>> children();
+		std::vector<std::pair<std::string, UiObject*>> children();
 
 		void scale_objects_to_new_resolution(
 			const mattmath::Vector2F& prev_resolution,
@@ -53,15 +53,15 @@ namespace artattack
 			const mattmath::Camera& camera) const override;
 		mattmath::RectangleF bounds() const override;
 	private:
-		std::vector<std::pair<std::string, MObject*>> children_;
+		std::vector<std::pair<std::string, UiObject*>> children_;
 	};
 
-	class MWidget : public MObject
+	class UiWidget : public UiObject
 	{
 	public:
-		MWidget() = default;
-		explicit MWidget(const std::string& name, bool hidden = false);
-		~MWidget() override = default;
+		UiWidget() = default;
+		explicit UiWidget(const std::string& name, bool hidden = false);
+		~UiWidget() override = default;
 
 		void scale_size_and_position(const mattmath::Vector2F& scale) override = 0;
 
@@ -73,11 +73,11 @@ namespace artattack
 		virtual void set_colour(const mattmath::Colour& colour) = 0;
 	};
 
-	class MTexture final : public MWidget, public TextureObject
+	class UiTexture final : public UiWidget, public TextureObject
 	{
 	public:
-		MTexture() = default;
-		MTexture(const std::string& name,
+		UiTexture() = default;
+		UiTexture(const std::string& name,
 			const std::string& sheet_name,
 			const std::string& frame_name,
 			const mattmath::RectangleF& rectangle,
@@ -111,11 +111,11 @@ namespace artattack
 		mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;
 	};
 
-	class MText final : public MWidget, public Text
+	class UiText final : public UiWidget, public Text
 	{
 	public:
-		MText() = default;
-		MText(const std::string& name,
+		UiText() = default;
+		UiText(const std::string& name,
 			const std::wstring& text,
 			const std::string& font_name,
 			const mattmath::Vector2F& position,
@@ -137,11 +137,11 @@ namespace artattack
 		void set_colour(const mattmath::Colour& colour) override;
 	};
 
-	class MTextDropShadow final : public MWidget, public TextDropShadow
+	class UiTextDropShadow final : public UiWidget, public TextDropShadow
 	{
 	public:
-		MTextDropShadow() = default;
-		MTextDropShadow(const std::string& name,
+		UiTextDropShadow() = default;
+		UiTextDropShadow(const std::string& name,
 			const std::wstring& text,
 			const std::string& font_name,
 			const mattmath::Vector2F& position,

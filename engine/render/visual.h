@@ -1,12 +1,12 @@
 #pragma once
 
-#include "engine/core/i_game_object.h"
+#include "engine/core/game_object.h"
 #include "engine/render/texture_object.h"
 #include "engine/math/matt_math.h"
 
 namespace artattack
 {
-	class Visual final : public IGameObject, public TextureObject
+	class Visual final : public GameObject, public TextureObject
 	{
 	public:
 		Visual() = default;
