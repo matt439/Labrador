@@ -34,7 +34,7 @@ namespace artattack
 		void draw(DirectX::SpriteBatch* sprite_batch,
 					const mattmath::Camera& camera) const override;
 
-		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
+		mattmath::RectangleF bounds() const override;
 
 	protected:
 		mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;

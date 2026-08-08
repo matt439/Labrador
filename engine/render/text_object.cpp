@@ -22,7 +22,7 @@ namespace artattack
 		position_(position),
 		scale_(scale)
 	{
-
+		this->remeasure();
 	}
 
 	void TextObject::draw(SpriteBatch* sprite_batch, const Camera& camera) const
@@ -102,10 +102,31 @@ namespace artattack
 	void TextObject::set_text(const std::string& text)
 	{
 		this->text_ = text;
+		this->remeasure();
 	}
 	void TextObject::set_font(const std::string& font_name)
 	{
 		this->font_ = this->render_resources()->resolve_sprite_font(font_name);
+		this->remeasure();
+	}
+	void TextObject::remeasure()
+	{
+		const SpriteFont* sprite_font =
+			this->render_resources()->sprite_font(this->font_);
+		const XMVECTOR size = sprite_font->MeasureString(this->text_.c_str());
+		this->measured_size_ =
+			Vector2F(XMVectorGetX(size), XMVectorGetY(size));
+	}
+	RectangleF TextObject::text_bounds() const
+	{
+		return this->text_bounds_at(this->position_, this->scale_);
+	}
+	RectangleF TextObject::text_bounds_at(const Vector2F& position,
+		float scale) const
+	{
+		const Vector2F size = this->measured_size_ * scale;
+		const Vector2F top_left = position - this->origin() * scale;
+		return { top_left, size };
 	}
 	void TextObject::set_position(const Vector2F& position)
 	{

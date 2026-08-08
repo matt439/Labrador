@@ -40,6 +40,28 @@ namespace artattack
 			const mattmath::Vector2F& position,
 			float scale) const;
 
+		// The box this string occupies, for whoever has to cull or index it.
+		//
+		// The measurement is cached rather than taken here, because this is on
+		// the culling path and MeasureString walks the string: it would be a
+		// per-object, per-view, per-frame walk of every label on screen. Only
+		// the text and the font change it, so it is retaken in exactly those
+		// two setters; position, scale and origin are arithmetic on top.
+		//
+		// Cached across device loss deliberately. The SpriteFont object is
+		// rebuilt, but it is rebuilt from the same font, so the metrics are
+		// the same - it is the pointer that goes stale, not the measurement.
+		//
+		// Ignores draw_rotation(): the box is the unrotated one. Nothing
+		// rotates text today, and a rotated string wants its rotated AABB.
+		mattmath::RectangleF text_bounds() const;
+
+		// The same box for a hypothetical draw at another position and scale,
+		// so TextDropShadow can size its shadow exactly rather than assuming
+		// the shadow matches the text.
+		mattmath::RectangleF text_bounds_at(const mattmath::Vector2F& position,
+			float scale) const;
+
 	protected:
 		const std::string& text() const;
 		RenderResources::FontHandle font() const;
@@ -55,5 +77,9 @@ namespace artattack
 		RenderResources::FontHandle font_;
 		mattmath::Vector2F position_ = mattmath::Vector2F::ZERO;
 		float scale_ = 1.0f;
+
+		// Unscaled size of text_ in font_. See text_bounds().
+		mattmath::Vector2F measured_size_ = mattmath::Vector2F::ZERO;
+		void remeasure();
 	};
 }

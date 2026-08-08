@@ -105,16 +105,21 @@ namespace artattack
 			child.second->draw(sprite_batch, camera);
 		}
 	}
-	bool MContainer::is_visible_in_viewport(const mattmath::RectangleF& view) const
+	RectangleF MContainer::bounds() const
 	{
+		// The union of the children's, which is the recursive definition the
+		// predicate form could only approximate by asking every child in turn.
+		// An empty container occupies nothing.
+		if (this->children_.empty())
+		{
+			return RectangleF::ZERO;
+		}
+		RectangleF result = this->children_.front().second->bounds();
 		for (auto const& child : this->children_)
 		{
-			if (child.second->is_visible_in_viewport(view))
-			{
-				return true;
-			}
+			result = RectangleF::union_of(result, child.second->bounds());
 		}
-		return false;
+		return result;
 	}
 
 #pragma endregion MContainer
@@ -154,11 +159,11 @@ namespace artattack
 	{
 		return;
 	}
-	bool MTexture::is_visible_in_viewport(const RectangleF& view) const
+	RectangleF MTexture::bounds() const
 	{
-		// This called itself - infinite recursion, and /W4 has been reporting it
-		// as C4717 the whole time. Test the widget's own rectangle, as Visual does.
-		return this->rectangle_.intersects(view);
+		// This used to call itself - infinite recursion, and /W4 had been
+		// reporting it as C4717 the whole time.
+		return this->rectangle_;
 	}
 	void MTexture::set_texture(const std::string& sheet_name,
 		const std::string& frame_name)
@@ -254,10 +259,13 @@ namespace artattack
 	{
 		// do nothing
 	}
-	bool MText::is_visible_in_viewport(const RectangleF& /*view*/) const
+	RectangleF MText::bounds() const
 	{
-		// TODO: implement text bounding box
-		return true;
+		// Was "TODO: implement text bounding box; return true". The TODO was
+		// only ever answerable once the interface asked for an extent instead
+		// of a yes/no - there is no honest "true" to return, but there is an
+		// honest box.
+		return this->text_bounds();
 	}
 	void MText::set_colour(const Colour& colour)
 	{
@@ -310,10 +318,15 @@ namespace artattack
 	{
 		return;
 	}
-	bool MTextDropShadow::is_visible_in_viewport(const RectangleF& /*view*/) const
+	RectangleF MTextDropShadow::bounds() const
 	{
-		// TODO: implement text bounding box
-		return true;
+		// Both draws, not just the text: the shadow is offset and can carry its
+		// own scale, so it is measured at its own position rather than assumed
+		// to sit inside the text's box.
+		return RectangleF::union_of(
+			this->text_bounds(),
+			this->text_bounds_at(this->position() + this->shadow_offset(),
+				this->shadow_scale()));
 	}
 	void MTextDropShadow::set_colour(const Colour& colour)
 	{

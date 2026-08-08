@@ -40,6 +40,24 @@ namespace artattack
 		// which is the identity, so callers wanting screen space pass it.
 		virtual void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const = 0;
-		virtual bool is_visible_in_viewport(const mattmath::RectangleF& view) const = 0;
+		// The object's drawn extent, in world space.
+		//
+		// This replaced is_visible_in_viewport(view), which asked the object
+		// "are you inside this box?". That phrasing can only ever be answered
+		// one object at a time against one box at a time, so culling was fixed
+		// at a virtual call per object per view and no amount of work inside
+		// the renderer could beat it. Reporting the extent instead lets the
+		// caller build an index once and query it - the same information, but
+		// indexable rather than only interrogable.
+		//
+		// It is the input a broad phase wants too: "what overlaps this view"
+		// and "which pairs overlap each other" are one query against one
+		// structure. ICollisionGameObject::shape() stays the fine half of that
+		// pair; this is the coarse half.
+		//
+		// Note what is no longer expressible: an object cannot report itself
+		// invisible. Whether anything is drawn is now a property of draw(),
+		// not of the extent.
+		virtual mattmath::RectangleF bounds() const = 0;
 	};
 }
