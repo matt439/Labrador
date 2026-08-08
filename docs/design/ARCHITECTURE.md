@@ -103,7 +103,8 @@ being load-bearing.
 │   ├── collision/
 │   ├── core/
 │   ├── math/
-│   └── render/
+│   ├── render/
+│   └── ui/
 ├── external/               third-party source: rapidjson, DirectXTK
 └── docs/
     ├── design/             philosophies, conventions, this document

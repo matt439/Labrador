@@ -100,6 +100,14 @@ namespace artattack
 	void UiContainer::draw(SpriteBatch* sprite_batch,
 		const mattmath::Camera& camera) const
 	{
+		// Every other widget in this header early-outs on hidden(); this one
+		// did not, so set_hidden(true) on a container did nothing at all and
+		// the caller had no way to tell. Hiding a subtree is the only reason
+		// a container would carry the flag.
+		if (this->hidden())
+		{
+			return;
+		}
 		for (auto const& child : this->children_)
 		{
 			child.second->draw(sprite_batch, camera);
@@ -110,14 +118,25 @@ namespace artattack
 		// The union of the children's, which is the recursive definition the
 		// predicate form could only approximate by asking every child in turn.
 		// An empty container occupies nothing.
-		if (this->children_.empty())
-		{
-			return RectangleF::ZERO;
-		}
-		RectangleF result = this->children_.front().second->bounds();
+		//
+		// Empty-boxed children are skipped rather than unioned. RectangleF::ZERO
+		// is a point at the world origin, so an empty nested container used to
+		// drag its parent's box all the way back to (0,0) - a parent of one
+		// label at (900,400) and one empty container reported a box from the
+		// origin to the label. Culling reads this, and so does the navigation
+		// walk, which is why the harmless-looking union is not harmless.
+		RectangleF result = RectangleF::ZERO;
+		bool any = false;
 		for (auto const& child : this->children_)
 		{
-			result = RectangleF::union_of(result, child.second->bounds());
+			const RectangleF child_bounds = child.second->bounds();
+			if (child_bounds.width <= 0.0f || child_bounds.height <= 0.0f)
+			{
+				continue;
+			}
+			result = any ? RectangleF::union_of(result, child_bounds)
+				: child_bounds;
+			any = true;
 		}
 		return result;
 	}

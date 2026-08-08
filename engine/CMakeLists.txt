@@ -41,6 +41,9 @@ add_library(ArtAttackEngine STATIC
     render/texture_object.cpp
     render/viewport_manager.cpp
     render/visual.cpp
+    ui/button.cpp
+    ui/focus.cpp
+    ui/navigation.cpp
     ui/widget.cpp
 )
 target_include_directories(ArtAttackEngine PUBLIC
