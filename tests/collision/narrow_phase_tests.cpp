@@ -177,6 +177,46 @@ TEST_CASE("one move separates the pair, wherever the overlap is")
 	}
 }
 
+TEST_CASE("one move still separates the pair out where the levels actually are")
+{
+	// The same sweep as above, translated to the coordinates the game runs at.
+	//
+	// Every other collision test in this file sits within 100 units of the
+	// origin, where floats are dense and everything works. Levels run to
+	// around 6200, where consecutive floats are 4.88e-4 apart - which is
+	// larger than mattmath::EPSILON (1e-4), so the engine's general tolerance
+	// is exact equality wearing a costume out here.
+	//
+	// This is the measurement that decides whether resolution needs a contact
+	// skin - a small extra push so a resting object does not re-collide with
+	// what it is standing on every frame. The honest way to answer that is to
+	// run the arithmetic at the magnitudes it will see, rather than to add a
+	// fudge factor speculatively and never learn whether it was needed (T3).
+	// 6200 is where this game's levels end. The larger origins are headroom,
+	// and they are here so that the answer is a bound rather than a lucky
+	// coincidence at one magnitude.
+	const float origins[] = { 6000.0f, 60000.0f, 600000.0f };
+
+	for (const float origin : origins)
+	{
+		const RectangleF fixed(origin, origin, 80.0f, 20.0f);
+
+		for (int x = -100; x <= 100; x += 5)
+		{
+			for (int y = -60; y <= 60; y += 5)
+			{
+				const RectangleF moving(origin + static_cast<float>(x),
+					origin + static_cast<float>(y), 20.0f, 80.0f);
+
+				CAPTURE(origin);
+				CAPTURE(x);
+				CAPTURE(y);
+				REQUIRE(separating(moving, fixed));
+			}
+		}
+	}
+}
+
 TEST_CASE("a NaN coordinate reports no contact, rather than a NaN one")
 {
 	// The axis test decides overlap by asking whether both ways off the axis
