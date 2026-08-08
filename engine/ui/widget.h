@@ -21,7 +21,7 @@ namespace artattack
 
 		virtual void scale_size_and_position(const mattmath::Vector2F& scale) = 0;
 
-		void update() override = 0;
+		void update(float dt) override = 0;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override = 0;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override = 0;
@@ -48,7 +48,7 @@ namespace artattack
 
 		void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
-		void update() override;
+		void update(float dt) override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
@@ -65,7 +65,7 @@ namespace artattack
 
 		void scale_size_and_position(const mattmath::Vector2F& scale) override = 0;
 
-		void update() override = 0;
+		void update(float dt) override = 0;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override = 0;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override = 0;
@@ -91,7 +91,7 @@ namespace artattack
 
 		void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
-		void update() override;
+		void update(float dt) override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
@@ -130,7 +130,7 @@ namespace artattack
 
 		void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
-		void update() override;
+		void update(float dt) override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;
@@ -159,7 +159,7 @@ namespace artattack
 
 		void scale_size_and_position(const mattmath::Vector2F& scale) override;
 
-		void update() override;
+		void update(float dt) override;
 		void draw(DirectX::SpriteBatch* sprite_batch,
 			const mattmath::Camera& camera) const override;
 		bool is_visible_in_viewport(const mattmath::RectangleF& view) const override;

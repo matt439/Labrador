@@ -10,13 +10,10 @@ namespace artattack
 	class Drawer
 	{
 	public:
-		Drawer(RenderResources* render_resources,
-			const float* dt);
+		explicit Drawer(RenderResources* render_resources);
 		void set_render_resources(RenderResources* render_resources);
-		void set_dt(const float* dt);
 	protected:
 		RenderResources* render_resources() const;
-		float dt() const;
 		// const because they are on the draw path and are pure functions of
 		// their arguments - none of the three reads a member. Non-const here
 		// was only an omission, but it is the kind that lets the next person
@@ -34,6 +31,5 @@ namespace artattack
 			RotationOrigin origin) const;
 	private:
 		RenderResources* render_resources_ = nullptr;
-		const float* dt_ = nullptr;
 	};
 }

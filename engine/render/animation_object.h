@@ -1,7 +1,6 @@
 #pragma once
 
 #include "engine/render/sprite_sheet_object.h"
-#include "engine/render/animated_sprite.h"
 
 namespace artattack
 {
@@ -15,8 +14,7 @@ namespace artattack
 	{
 	public:
 		AnimationObject() = default;
-		AnimationObject(const float* dt,
-			const std::string& sheet_name,
+		AnimationObject(const std::string& sheet_name,
 			const std::string& animation_strip_name,
 			RenderResources* render_resources,
 			const mattmath::Colour& color = colour_consts::WHITE,
@@ -25,7 +23,7 @@ namespace artattack
 			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
 	protected:
-		virtual void update();
+		virtual void update(float dt);
 		void reset();
 		void stop();
 		void play();
@@ -64,7 +62,6 @@ namespace artattack
 			DirectX::SpriteEffects effects) const;
 
 	private:
-		const float* dt_ = nullptr;
 		SpriteSheet::strip_handle strip_;
 		int frame_index_ = 0;
 		bool paused_ = false;

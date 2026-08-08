@@ -36,7 +36,7 @@ namespace artattack
 	}
 
 
-	void Visual::update()
+	void Visual::update(float /*dt*/)
 	{
 		// do nothing
 	}

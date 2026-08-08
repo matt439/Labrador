@@ -90,11 +90,11 @@ namespace artattack
 			child.second->scale_size_and_position(scale);
 		}
 	}
-	void MContainer::update()
+	void MContainer::update(float dt)
 	{
 		for (auto const& child : this->children_)
 		{
-			child.second->update();
+			child.second->update(dt);
 		}
 	}
 	void MContainer::draw(SpriteBatch* sprite_batch,
@@ -150,7 +150,7 @@ namespace artattack
 	{
 
 	}
-	void MTexture::update()
+	void MTexture::update(float /*dt*/)
 	{
 		return;
 	}
@@ -250,7 +250,7 @@ namespace artattack
 		}
 		this->Text::draw(sprite_batch, camera);
 	}
-	void MText::update()
+	void MText::update(float /*dt*/)
 	{
 		// do nothing
 	}
@@ -306,7 +306,7 @@ namespace artattack
 		}
 		this->TextDropShadow::draw(sprite_batch, camera);
 	}
-	void MTextDropShadow::update()
+	void MTextDropShadow::update(float /*dt*/)
 	{
 		return;
 	}

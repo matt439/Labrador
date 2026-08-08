@@ -24,7 +24,6 @@ add_library(ArtAttackEngine STATIC
     core/state.cpp
     core/state_context.cpp
     core/thread_pool.cpp
-    render/animated_sprite.cpp
     render/animation_object.cpp
     render/animation_strip.cpp
     render/camera_tools.cpp

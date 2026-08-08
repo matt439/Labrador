@@ -5,8 +5,7 @@ using namespace mattmath;
 
 namespace artattack
 {
-	AnimationObject::AnimationObject(const float* dt,
-		const std::string& sheet_name,
+	AnimationObject::AnimationObject(const std::string& sheet_name,
 		const std::string& animation_strip_name,
 		RenderResources* render_resources,
 		const Colour& color,
@@ -16,7 +15,6 @@ namespace artattack
 		float layer_depth) :
 		SpriteSheetObject(sheet_name, render_resources, color, rotation,
 			origin, effects, layer_depth),
-		dt_(dt),
 		// The base is complete by now, so its sheet is there to resolve against.
 		strip_(SpriteSheetObject::sprite_sheet()->
 			resolve_animation_strip(animation_strip_name))
@@ -98,14 +96,14 @@ namespace artattack
 			this->layer_depth());
 	}
 
-	void AnimationObject::update()
+	void AnimationObject::update(float dt)
 	{
 		if (this->paused_)
 		{
 			return;
 		}
 		const AnimationStrip& animation_strip = this->animation_strip();
-		this->time_elapsed_ += *this->dt_;
+		this->time_elapsed_ += dt;
 		float frame_time = this->frame_time_;
 		if (this->time_elapsed_ > frame_time)
 		{

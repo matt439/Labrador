@@ -5,10 +5,8 @@ using namespace mattmath;
 
 namespace artattack
 {
-    Drawer::Drawer(RenderResources* render_resources,
-        const float* dt) :
-        render_resources_(render_resources),
-        dt_(dt)
+    Drawer::Drawer(RenderResources* render_resources) :
+        render_resources_(render_resources)
     {
     }
 
@@ -16,19 +14,10 @@ namespace artattack
     {
         this->render_resources_ = render_resources;
     }
-    void Drawer::set_dt(const float* dt)
-    {
-        this->dt_ = dt;
-    }
 
     RenderResources* Drawer::render_resources() const
     {
         return this->render_resources_;
-    }
-
-    float Drawer::dt() const
-    {
-        return *this->dt_;
     }
 
     RectangleI Drawer::calculate_draw_rectangle(const RectangleI& rec,

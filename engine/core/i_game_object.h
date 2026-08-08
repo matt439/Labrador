@@ -24,7 +24,14 @@ namespace artattack
 	{
 	public:
 		virtual ~IGameObject() = default;
-		virtual void update() = 0;
+		// dt arrives as a parameter rather than being read off a member.
+		// update() taking nothing meant every object that needed the frame time
+		// had to hold a const float* to the shell's dt and be handed it at
+		// construction - which put that pointer in eleven classes, in the
+		// constructors of everything that built one, and in the builders above
+		// those. It also made the object outlive-the-pointer question real:
+		// device loss used to reallocate the float behind it.
+		virtual void update(float dt) = 0;
 		// One draw, always with a camera. There was a second, camera-less
 		// overload; nothing ever called it through this interface, and by the
 		// time it was deleted Player's copy of it had silently drifted - it had
