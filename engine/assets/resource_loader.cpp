@@ -1,14 +1,14 @@
 #include "engine/assets/resource_loader.h"
 #include "engine/assets/sound_bank_loader.h"
 #include "engine/assets/sprite_sheet_loader.h"
-#include "engine/core/throw_if_failed.h"
 // The deliberate include renderer.h describes: this is the file that creates
 // textures and fonts on a device, so it is the one place outside
 // engine/render/<backend>/ that is allowed to name one.
 #include "engine/render/d3d11/backend.h"
 #include <DDSTextureLoader.h>
-#include <stdexcept>
 #include <wrl/client.h>
+#include <cstdio>
+#include <stdexcept>
 
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
@@ -117,11 +117,22 @@ namespace artattack
 
 		ComPtr<ID3D11ShaderResourceView> texture_view;
 		ComPtr<ID3D11Resource> resource;
-		ThrowIfFailed(
-			CreateDDSTextureFromFile(this->device_,
-				std::wstring(texture_path.begin(), texture_path.end()).c_str(),
-				resource.GetAddressOf(),
-				texture_view.ReleaseAndGetAddressOf()));
+		const HRESULT result = CreateDDSTextureFromFile(this->device_,
+			std::wstring(texture_path.begin(), texture_path.end()).c_str(),
+			resource.GetAddressOf(),
+			texture_view.ReleaseAndGetAddressOf());
+		if (FAILED(result))
+		{
+			// ThrowIfFailed's message is the HRESULT and nothing else, so the
+			// commonest failure here - a texture named in the manifest that is
+			// not on disk - arrived as eight hex digits. The font loader twenty
+			// lines below has always named its file; this now does too (T6).
+			char hresult[16] = {};
+			std::snprintf(hresult, sizeof(hresult), "0x%08X",
+				static_cast<unsigned int>(result));
+			throw std::runtime_error("Failed to load texture: " + texture_path +
+				" (" + hresult + ")");
+		}
 
 		this->render_resources_->impl()->add_texture(name, texture_view.Get());
 	}
