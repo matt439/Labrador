@@ -3,20 +3,22 @@
 #include "engine/render/screen_layout.h"
 #include "engine/render/resolution_manager.h"
 #include "engine/math/matt_math.h"
-#include "engine/render/colour.h"
+#include "engine/render/camera.h"
+#include "engine/render/viewport.h"
 
 namespace artattack
 {
 	class ViewportManager
 	{
 	public:
-		// How a split-screen divider is drawn. They live on the class that shapes
-		// the dividers rather than in a `consts` namespace of strays (CONVENTIONS,
-		// Constants and enumerators); a game asks for the rectangles and then for
-		// these to fill them.
-		static inline const std::string DIVIDER_SHEET_NAME = "sprite_sheet_1";
-		static inline const std::string DIVIDER_FRAME_NAME = "pixel";
-		static inline const Colour DIVIDER_COLOUR = Colour::black;
+		// How a split-screen divider is *drawn* is not here any more. It was
+		// three constants naming "sprite_sheet_1", the frame "pixel" and a
+		// colour - the paint-shooter's own asset names, inside a module that
+		// is not allowed to know this game exists, and DIVIDER_COLOUR was an
+		// inline variable initialised from a constant in another translation
+		// unit, so its value depended on initialisation order. viewport_dividers()
+		// hands out rectangles; what fills them is the game's business, and its
+		// one caller now says so itself.
 
 		// Takes no DeviceResources. It held one and no member function ever
 		// read it, and it was the only thing standing between this class and
@@ -33,16 +35,16 @@ namespace artattack
 		// SpriteBatch::SetViewport apiece, and they are DrawList::set_viewport
 		// now - which is why this class no longer names a graphics type and can
 		// be constructed in a test.
-		mattmath::Viewport player_viewport(int player_num) const;
+		Viewport player_viewport(int player_num) const;
 
-		std::vector<mattmath::Viewport> all_viewports() const;
+		std::vector<Viewport> all_viewports() const;
 
 		mattmath::RectangleF camera_adjusted_player_viewport_rect(
-			int player_num, const mattmath::Camera& camera) const;
+			int player_num, const Camera& camera) const;
 
 		std::vector<mattmath::RectangleF> viewport_dividers() const;
 
-		mattmath::Viewport fullscreen_viewport() const;
+		Viewport fullscreen_viewport() const;
 
 	private:
 		static constexpr float DIVIDER_THICKNESS = 2.0f;
@@ -54,7 +56,7 @@ namespace artattack
 		int player_count_from_layout(ScreenLayout layout) const;
 		int viewport_count_from_layout(ScreenLayout layout) const;
 
-		mattmath::Viewport calculate_viewport(ScreenLayout layout,
+		Viewport calculate_viewport(ScreenLayout layout,
 			int player_num, const mattmath::Vector2F& screen_size) const;
 	};
 }

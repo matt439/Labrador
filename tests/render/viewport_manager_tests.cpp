@@ -7,7 +7,7 @@
 using artattack::ResolutionManager;
 using artattack::ScreenLayout;
 using artattack::ViewportManager;
-using mattmath::Viewport;
+using artattack::Viewport;
 
 namespace
 {

@@ -4,7 +4,7 @@
 
 using artattack::BorderThickness;
 using artattack::CameraTools;
-using mattmath::Camera;
+using artattack::Camera;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
 

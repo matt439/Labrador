@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <vector>
+#include "engine/render/camera.h"
 
 // The D3D11 backend, for the two callers that have to name it.
 //
@@ -90,7 +91,7 @@ namespace artattack
 		std::unique_ptr<DirectX::SpriteBatch> batch;
 
 		// Reset at the top of every frame, not carried across one.
-		mattmath::Camera camera = mattmath::Camera::DEFAULT_CAMERA;
+		Camera camera = Camera::DEFAULT_CAMERA;
 		TextureFilter filter = TextureFilter::point;
 		bool batch_open = false;
 

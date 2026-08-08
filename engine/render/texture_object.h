@@ -2,6 +2,7 @@
 
 #include "engine/render/sprite_sheet_object.h"
 #include "engine/render/colour.h"
+#include "engine/render/camera.h"
 
 namespace artattack
 {

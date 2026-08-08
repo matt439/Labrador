@@ -44,7 +44,6 @@ namespace mattmath
 	struct Quad;
 	struct Segment;
 	struct RectangleF;
-	struct Camera;
 	struct RectangleRotated;
 
 	constexpr float PI = 3.14159265358979323846f;
@@ -586,38 +585,6 @@ namespace mattmath
 	Vector3F operator/ (const Vector3F& V, float S);
 	Vector3F operator* (float S, const Vector3F& V);
 
-	struct Viewport
-	{
-	public:
-		float x = 0.0f;
-		float y = 0.0f;
-		float width = 0.0f;
-		float height = 0.0f;
-		float minDepth = 0.0f;
-		float maxDepth = 1.0f;
-
-		Viewport() {}
-		Viewport(const Viewport&) = default;
-		Viewport(float x, float y, float width, float height,
-			float minDepth = 0.0f, float maxDepth = 1.0f);
-		Viewport(const mattmath::RectangleF& rectangle,
-			float minDepth = 0.0f, float maxDepth = 1.0f);
-		Viewport(const mattmath::RectangleI& rectangle,
-			float minDepth = 0.0f, float maxDepth = 1.0f);
-
-		mattmath::RectangleF rectangle() const;
-		//mattmath::RectangleF rectangle(float minDepth, float maxDepth) const;
-		mattmath::Vector2F position() const;
-		mattmath::Vector2F size() const;
-
-		//Viewport& operator=(const Viewport& viewport);
-		Viewport& operator=(const mattmath::RectangleF& rectangle);
-		Viewport& operator=(const mattmath::RectangleI& rectangle);
-
-		bool operator==(const Viewport& other) const;
-		bool operator!=(const Viewport& other) const;
-	};
-
 	struct Circle : public Shape
 	{
 		// Private, unlike the other shapes' data, because Shape's polymorphic
@@ -811,46 +778,6 @@ namespace mattmath
 		//bool intersects(const mattmath::Circle& other) const;
 		//bool intersects(const mattmath::Triangle& other) const;
 	};
-	struct Camera
-	{
-		mattmath::Vector2F translation = mattmath::Vector2F::ZERO;
-		float scale = 1.0f;
-
-		Camera() = default;
-		Camera(const Camera&) = default;
-		Camera(const mattmath::Vector2F& translation, float scale);
-		Camera(float x, float y, float scale);
-		Camera(const mattmath::Viewport& viewport, float scale = 1.0f);
-
-		bool operator==(const Camera& other) const;
-		bool operator!=(const Camera& other) const;
-
-		mattmath::RectangleF calculate_view_rectangle(
-			const mattmath::RectangleF& world_rectangle) const;
-		void calculate_view_rectangle(
-			mattmath::RectangleF& rectangle) const;
-		static mattmath::RectangleF calculate_view_rectangle(
-			const mattmath::RectangleF& world_rectangle,
-			const Camera& camera);
-		static void calculate_view_rectangle(
-			const mattmath::RectangleF& world_rectangle,
-			const Camera& camera,
-			mattmath::RectangleF& view_rectangle);
-
-		static Camera calculate_intermediate_camera(
-			const Camera& first, const Camera& last, float amount);
-
-		static Camera calculate_camera_from_view_rectangle(
-			const mattmath::RectangleF& view_rectangle,
-			const mattmath::RectangleF& world_rectangle);
-
-		mattmath::Vector2F calculate_view_position(
-			const mattmath::Vector2F& world_position) const;
-		float calculate_view_scale(float world_scale) const;
-
-		static const Camera DEFAULT_CAMERA;
-	};
-
 	struct RectangleRotated : public Shape
 	{
 		RectangleRotated() = default;

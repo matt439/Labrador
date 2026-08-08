@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include "engine/render/camera.h"
+#include "engine/render/viewport.h"
 
 namespace artattack
 {
@@ -69,8 +71,8 @@ namespace artattack
 		// information, and the view list had to exist before the fold could.
 		struct View
 		{
-			mattmath::Viewport viewport;
-			mattmath::Camera camera = mattmath::Camera::DEFAULT_CAMERA;
+			Viewport viewport;
+			Camera camera = Camera::DEFAULT_CAMERA;
 		};
 
 		// Whatever the game draws over a view once the world is in it: a HUD, a
@@ -155,8 +157,8 @@ namespace artattack
 		// read from every worker at once. A camera that follows a player is
 		// therefore chosen where the player moved, in update().
 		void clear_views();
-		void add_view(const mattmath::Viewport& viewport,
-			const mattmath::Camera& camera = mattmath::Camera::DEFAULT_CAMERA);
+		void add_view(const Viewport& viewport,
+			const Camera& camera = Camera::DEFAULT_CAMERA);
 
 		int view_count() const;
 

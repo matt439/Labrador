@@ -29,6 +29,7 @@ add_library(ArtAttackEngine STATIC
     core/thread_pool.cpp
     render/animation_object.cpp
     render/animation_strip.cpp
+    render/camera.cpp
     render/camera_tools.cpp
     render/colour.cpp
     render/d3d11/device_resources.cpp
@@ -45,6 +46,7 @@ add_library(ArtAttackEngine STATIC
     render/text_encoding.cpp
     render/text_object.cpp
     render/texture_object.cpp
+    render/viewport.cpp
     render/viewport_manager.cpp
     render/visual.cpp
     scene/scene.cpp

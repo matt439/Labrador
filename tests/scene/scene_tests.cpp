@@ -12,10 +12,10 @@ using artattack::CollisionObject;
 using artattack::CollisionTag;
 using artattack::GameObject;
 using artattack::Scene;
-using mattmath::Camera;
+using artattack::Camera;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
-using mattmath::Viewport;
+using artattack::Viewport;
 
 namespace
 {
