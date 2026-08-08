@@ -1,6 +1,5 @@
 #include "engine/render/texture_object.h"
 
-using namespace DirectX;
 using namespace mattmath;
 
 namespace artattack
@@ -11,10 +10,10 @@ namespace artattack
 		const Colour& color,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) :
 		SpriteSheetObject(sheet_name, render_resources,
-			color, rotation, origin, effects, layer_depth),
+			color, rotation, origin, flip, layer_depth),
 		// The base is complete by now, so its sheet is there to resolve against.
 		frame_(SpriteSheetObject::sprite_sheet()->
 			resolve_sprite_frame(frame_name))
@@ -39,74 +38,48 @@ namespace artattack
 		this->frame_ = this->sprite_sheet()->resolve_sprite_frame(frame_name);
 	}
 
-	void TextureObject::draw(SpriteBatch* sprite_batch,
-		const RectangleI& destination_rectangle) const
+	void TextureObject::draw(DrawList& draw_list,
+		const RectangleF& destination_rectangle) const
 	{
-		SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
+		SpriteSheetObject::sprite_sheet()->draw(draw_list,
+			this->frame_,
+			destination_rectangle,
+			this->colour(),
+			this->draw_rotation(),
+			this->origin(),
+			this->flip(),
+			this->layer_depth());
+	}
 
-		sprite_sheet->draw(sprite_batch,
-							this->frame_,
-							destination_rectangle,
-							this->colour(),
-							this->draw_rotation(),
-							this->origin(),
-							this->effects(),
-							this->layer_depth());
-	}
-	void TextureObject::draw(SpriteBatch* sprite_batch,
-		const RectangleF& destination_rectangle)const
-	{
-		this->draw(sprite_batch, destination_rectangle.rectangle_i());
-	}
-	void TextureObject::draw(SpriteBatch* sprite_batch,
+	void TextureObject::draw(DrawList& draw_list,
 		const Vector2F& position, float scale) const
 	{
-		SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
-
-		sprite_sheet->draw(sprite_batch,
-							this->frame_,
-							position,
-							this->colour(),
-							this->draw_rotation(),
-							this->origin(),
-							scale,
-							this->effects(),
-							this->layer_depth());
-	}
-	void TextureObject::draw(SpriteBatch* sprite_batch,
-		const RectangleF& destination_rectangle,
-		const Camera& camera) const
-	{
-		RectangleF rect = camera.calculate_view_rectangle(destination_rectangle);
-		this->draw(sprite_batch, rect);
-	}
-	void TextureObject::draw(SpriteBatch* sprite_batch,
-		const Vector2F& position,
-		const Camera& camera, float scale) const
-	{
-		Vector2F view_pos = camera.calculate_view_position(position);
-		float view_scale = camera.calculate_view_scale(scale);
-		this->draw(sprite_batch, view_pos, view_scale);
+		SpriteSheetObject::sprite_sheet()->draw(draw_list,
+			this->frame_,
+			position,
+			this->colour(),
+			this->draw_rotation(),
+			this->origin(),
+			scale,
+			this->flip(),
+			this->layer_depth());
 	}
 
-	void TextureObject::draw_with(SpriteBatch* sprite_batch,
+	void TextureObject::draw_with(DrawList& draw_list,
 		const RectangleF& destination_rectangle,
-		const Camera& camera,
 		SpriteSheet::frame_handle frame,
 		const Colour& colour,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float rotation) const
 	{
-		SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
-
-		sprite_sheet->draw(sprite_batch,
+		SpriteSheetObject::sprite_sheet()->draw(draw_list,
 			frame,
-			camera.calculate_view_rectangle(destination_rectangle).rectangle_i(),
+			destination_rectangle,
 			colour,
 			rotation,
 			origin,
-			effects,
+			flip,
 			this->layer_depth());
 	}
 }

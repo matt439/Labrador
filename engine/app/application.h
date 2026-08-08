@@ -6,16 +6,14 @@
 #include "engine/core/state_context.h"
 #include "engine/core/step_timer.h"
 #include "engine/core/thread_pool.h"
-#include "engine/render/device_resources.h"
 #include "engine/render/render_resources.h"
+#include "engine/render/renderer.h"
 #include "engine/render/resolution_manager.h"
 #include "engine/render/screen_resolution.h"
 #include "engine/render/viewport_manager.h"
 #include "engine/math/matt_math.h"
 #include <Audio.h>
-#include <CommonStates.h>
 #include <GamePad.h>
-#include <SpriteBatch.h>
 #include <Windows.h>
 #include <memory>
 #include <string>
@@ -40,8 +38,10 @@ namespace artattack
 		// The fixed step the simulation advances at. Rendering is not capped by it.
 		int target_fps = 60;
 
-		// The render thread pool. max_threads also sizes the deferred contexts and
-		// sprite batches, so it is the widest the renderer can ever go.
+		// The render thread pool. max_threads is also the renderer's view
+		// capacity - the widest the frame can ever fan out - because a backend
+		// that records into per-thread contexts has to make them before any
+		// frame starts.
 		int min_threads = 1;
 		int max_threads = 16;
 
@@ -122,7 +122,7 @@ namespace artattack
 		//
 		// Borrowed, every one: the Application owns them and outlives the states
 		// it runs.
-		DeviceResources* device_resources() const;
+		Renderer* renderer() const;
 		RenderResources* render_resources() const;
 		AudioResources* audio_resources() const;
 		ResourceLoader* resource_loader() const;
@@ -132,16 +132,6 @@ namespace artattack
 		const Partitioner* partitioner() const;
 		DirectX::GamePad* gamepad() const;
 		HWND window() const;
-
-		// Recreated on device loss, so these change identity across one. The
-		// vector's own address is stable; only the pointers inside it move.
-		DirectX::CommonStates* common_states() const;
-		std::vector<DirectX::SpriteBatch*>* sprite_batches() const;
-
-		// Seconds the last fixed step covered. A pointer because the objects that
-		// read it are built once and outlive any particular frame; the value
-		// behind it is rewritten every update.
-		const float* dt() const;
 
 	private:
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE.
@@ -155,7 +145,7 @@ namespace artattack
 
 		ApplicationOptions options_;
 		HWND window_ = nullptr;
-		std::unique_ptr<DeviceResources> device_resources_ = nullptr;
+		std::unique_ptr<Renderer> renderer_ = nullptr;
 		StepTimer timer_ = StepTimer();
 
 		std::unique_ptr<AudioResources> audio_resources_ = nullptr;
@@ -166,11 +156,6 @@ namespace artattack
 		std::unique_ptr<ThreadPool> thread_pool_ = nullptr;
 		std::unique_ptr<Partitioner> partitioner_ = nullptr;
 		std::unique_ptr<DirectX::GamePad> gamepad_ = nullptr;
-		std::unique_ptr<float> dt_ = nullptr;
-
-		std::unique_ptr<DirectX::CommonStates> common_states_ = nullptr;
-		std::vector<std::unique_ptr<DirectX::SpriteBatch>> sprite_batches_;
-		std::vector<DirectX::SpriteBatch*> sprite_batch_ptrs_;
 
 		bool com_initialized_ = false;
 		bool content_loaded_ = false;
@@ -179,7 +164,6 @@ namespace artattack
 		void tick();
 		void update();
 		void render();
-		void clear() const;
 
 		void on_activated() const;
 		void on_deactivated() const;
@@ -192,12 +176,9 @@ namespace artattack
 		void create_window(HINSTANCE instance, int show_command);
 		void create_services();
 
-		// Only the objects the device owns. Re-run on every restore.
-		void create_device_dependent_resources();
-
 		// DeviceNotify
-		void OnDeviceLost() override;
-		void OnDeviceRestored() override;
+		void on_device_lost() override;
+		void on_device_restored() override;
 
 		static LRESULT CALLBACK window_proc(HWND window, UINT message,
 			WPARAM w_param, LPARAM l_param);

@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "engine/core/state_context.h"
+#include "engine/render/renderer.h"
 
 #include <algorithm>
 #include <functional>
@@ -8,6 +9,7 @@
 #include <string>
 #include <vector>
 
+using artattack::Renderer;
 using artattack::State;
 using artattack::StateContext;
 
@@ -35,7 +37,7 @@ namespace
 				this->on_init_();
 			}
 		}
-		void update() override
+		void update(float /*dt*/) override
 		{
 			this->log_->push_back(this->name_ + ":update-enter");
 			if (this->on_update_)
@@ -48,7 +50,7 @@ namespace
 			this->touched_ = true;
 			this->log_->push_back(this->name_ + ":update-exit");
 		}
-		void draw() override
+		void draw(Renderer& /*renderer*/) const override
 		{
 			this->log_->push_back(this->name_ + ":draw");
 		}
@@ -83,6 +85,9 @@ TEST_CASE("transition_to outside update takes effect immediately")
 {
 	std::vector<std::string> log;
 	StateContext context;
+	// Constructible with no device: the seam's whole point, and this test
+	// is the first thing in the tree to depend on it.
+	Renderer renderer;
 
 	context.transition_to(std::make_unique<RecordingState>("a", &log));
 
@@ -90,7 +95,7 @@ TEST_CASE("transition_to outside update takes effect immediately")
 	// update. Every nested StateContext in the game is built this way.
 	CHECK(log == std::vector<std::string>{"a:init"});
 
-	context.draw();
+	context.draw(renderer);
 	CHECK(log.back() == "a:draw");
 }
 
@@ -98,6 +103,9 @@ TEST_CASE("a state transitioning from its own update survives the call")
 {
 	std::vector<std::string> log;
 	StateContext context;
+	// Constructible with no device: the seam's whole point, and this test
+	// is the first thing in the tree to depend on it.
+	Renderer renderer;
 
 	auto outgoing = std::make_unique<RecordingState>("a", &log);
 	RecordingState* outgoing_raw = outgoing.get();
@@ -108,7 +116,7 @@ TEST_CASE("a state transitioning from its own update survives the call")
 			context.transition_to(std::make_unique<RecordingState>("b", &log));
 		});
 
-	context.update();
+	context.update(0.0f);
 
 	// The whole point: "a" finished its own update() before it was destroyed.
 	CHECK(ran_before(log, "a:update-enter", "a:update-exit"));
@@ -118,7 +126,7 @@ TEST_CASE("a state transitioning from its own update survives the call")
 	// returns, so the draw that follows in the same frame draws "b".
 	CHECK(ran_before(log, "a:dtor", "b:init"));
 	log.clear();
-	context.draw();
+	context.draw(renderer);
 	CHECK(log == std::vector<std::string>{"b:draw"});
 }
 
@@ -126,6 +134,9 @@ TEST_CASE("the last transition in one update wins")
 {
 	std::vector<std::string> log;
 	StateContext context;
+	// Constructible with no device: the seam's whole point, and this test
+	// is the first thing in the tree to depend on it.
+	Renderer renderer;
 
 	auto outgoing = std::make_unique<RecordingState>("a", &log);
 	RecordingState* outgoing_raw = outgoing.get();
@@ -138,14 +149,14 @@ TEST_CASE("the last transition in one update wins")
 		});
 
 	log.clear();
-	context.update();
+	context.update(0.0f);
 
 	// "b" never became live, so it never ran init().
 	CHECK(std::find(log.begin(), log.end(), "b:init") == log.end());
 	CHECK(std::find(log.begin(), log.end(), "c:init") != log.end());
 
 	log.clear();
-	context.draw();
+	context.draw(renderer);
 	CHECK(log == std::vector<std::string>{"c:draw"});
 }
 
@@ -153,6 +164,9 @@ TEST_CASE("a state transitioning from its own init survives the call")
 {
 	std::vector<std::string> log;
 	StateContext context;
+	// Constructible with no device: the seam's whole point, and this test
+	// is the first thing in the tree to depend on it.
+	Renderer renderer;
 
 	auto first = std::make_unique<RecordingState>("a", &log);
 	RecordingState* first_raw = first.get();
@@ -168,13 +182,16 @@ TEST_CASE("a state transitioning from its own init survives the call")
 	CHECK(ran_before(log, "a:dtor", "b:init"));
 
 	log.clear();
-	context.draw();
+	context.draw(renderer);
 	CHECK(log == std::vector<std::string>{"b:draw"});
 }
 
 TEST_CASE("an empty context updates and draws without a state")
 {
 	StateContext context;
-	context.update();
-	context.draw();
+	// Constructible with no device: the seam's whole point, and this test
+	// is the first thing in the tree to depend on it.
+	Renderer renderer;
+	context.update(0.0f);
+	context.draw(renderer);
 }

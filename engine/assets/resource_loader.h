@@ -33,9 +33,9 @@ namespace artattack
 		// it, which is what keeps borrowed pointers into those alive.
 		//
 		// It is a second function rather than a flag because rebuilding is not
-		// always re-loading: a font is remade outright, while a sprite sheet only
-		// re-seats its texture and keeps the frame and strip tables that every
-		// handle resolved against it indexes into.
+		// always re-loading: a sprite sheet's device half is its texture, and
+		// the frame and strip tables that every handle indexes into are not
+		// rebuilt at all.
 		struct AssetKind
 		{
 			LoadAsset load;
@@ -107,12 +107,6 @@ namespace artattack
 		void load_sprite_sheet(const std::string& directory,
 			const std::string& name) const;
 		void load_sound_bank(const std::string& directory,
-			const std::string& name) const;
-
-		// Reloads the sheet's .dds and points the existing SpriteSheet at it. The
-		// frame and animation-strip tables are device-independent, so they are left
-		// alone and every cached SpriteSheet*/AnimationStrip* stays valid.
-		void reload_sprite_sheet_texture(const std::string& directory,
 			const std::string& name) const;
 	};
 }

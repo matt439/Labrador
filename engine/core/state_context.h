@@ -10,8 +10,8 @@ namespace artattack
 	public:
 		virtual ~StateContext() = default;
 		StateContext() = default;
-		void update();
-		void draw() const;
+		void update(float dt);
+		void draw(Renderer& renderer) const;
 
 		// Replaces the current state. Safe to call from inside the current
 		// state's own update().

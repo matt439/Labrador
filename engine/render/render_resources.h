@@ -1,45 +1,46 @@
 #pragma once
 
-#include "engine/core/registry.h"
+#include "engine/core/handle.h"
+#include "engine/render/renderer.h"
 #include "engine/render/sprite_sheet.h"
-#include <d3d11_1.h>
-#include <wrl/client.h>
-#include <SpriteFont.h>
+#include "engine/math/matt_math.h"
+
 #include <memory>
 #include <string>
 
 namespace artattack
 {
-	// COM spells the accessor Get(), so teach the registry to unwrap a ComPtr
-	// here, where COM is already in scope.
-	template <typename Resource>
-	struct RegistryStorage<Microsoft::WRL::ComPtr<Resource>>
-	{
-		static Resource* pointer(const Microsoft::WRL::ComPtr<Resource>& storage)
-		{
-			return storage.Get();
-		}
-	};
-
 	// Everything drawing reads from, cached by name: the textures the GPU holds,
 	// the fonts built from them, and the sheets that index them. Named resources
-	// in, borrowed pointers out - the loader that fills it decides what a name
-	// means and where the bytes came from.
+	// in, handles out - the loader that fills it decides what a name means and
+	// where the bytes came from.
 	//
-	// Not to be confused with DeviceResources, which owns the device and swap
-	// chain themselves.
+	// BEHIND THE SEAM, and this is why the pimpl. The public API here was
+	// already handles, but the storage was ComPtr<ID3D11ShaderResourceView> and
+	// SpriteFont, so every translation unit that resolved a name compiled
+	// <SpriteFont.h> - which meant a headless test could not construct a
+	// TextObject even after draw() was clean, because TextObject's *constructor*
+	// resolves a font and measures a string. Renderer holds an Impl the backend
+	// defines; so does this, for the same reason and in the same folder.
+	//
+	// The load-time half - add_texture, add_sprite_font, the device-loss resets -
+	// is not here at all. It is on Impl, in engine/render/<backend>/backend.h,
+	// because every one of those calls names a backend type in its signature.
+	// The resource factory includes that header deliberately; nothing else does.
 	class RenderResources
 	{
 	public:
-		// A name that has been resolved. Drawables store these, not names: a
-		// handle is an index, so reading through one costs a bounds check and a
-		// load, where a name costs a std::map descent and a string compare per
-		// node - per draw, per drawable, from every render worker.
-		using TextureHandle = Handle<ID3D11ShaderResourceView>;
-		using FontHandle = Handle<DirectX::SpriteFont>;
+		// A sheet is engine data - frame rectangles and strip timings over a
+		// texture handle - so unlike Texture and Font it is a real type here.
 		using SpriteSheetHandle = Handle<SpriteSheet>;
 
-		RenderResources() = default;
+		RenderResources();
+		~RenderResources();
+
+		RenderResources(RenderResources&&) noexcept;
+		RenderResources& operator=(RenderResources&&) noexcept;
+		RenderResources(const RenderResources&) = delete;
+		RenderResources& operator=(const RenderResources&) = delete;
 
 		// Load-time. Each throws std::out_of_range naming the resource if nothing
 		// has loaded it, so a misspelt name in a definition file fails while the
@@ -48,46 +49,43 @@ namespace artattack
 		// A handle outlives a device loss. It names a slot, and reload_device_
 		// resources() refills slots rather than making new ones, so a drawable
 		// resolved before the loss draws the right thing after it - which a cached
-		// ID3D11ShaderResourceView* or SpriteFont* would not, both being remade.
+		// texture or font pointer would not, both being remade.
 		TextureHandle resolve_texture(const std::string& texture_name) const;
 		FontHandle resolve_sprite_font(const std::string& font_name) const;
 		SpriteSheetHandle resolve_sprite_sheet(
 			const std::string& sprite_sheet_name) const;
 
-		// Per-draw, and const and non-mutating because they are called from
-		// thread-pool workers. Each throws std::out_of_range if the handle is
-		// unresolved or its slot has been released.
-		ID3D11ShaderResourceView* texture(TextureHandle texture) const;
-		DirectX::SpriteFont* sprite_font(FontHandle font) const;
-		SpriteSheet* sprite_sheet(SpriteSheetHandle sprite_sheet) const;
+		// Per-draw, and const because they are called from render workers. Throws
+		// std::out_of_range if the handle is unresolved.
+		//
+		// A sheet is not a device resource - a device loss takes its texture, and
+		// the texture is a handle - so this one never reports "released".
+		const SpriteSheet* sprite_sheet(SpriteSheetHandle sprite_sheet) const;
 
-		// The by-name reads, for load-time callers that have a name and want the
-		// resource now - the loader seating a texture into its sheet, say. Nothing
-		// on the draw path may use these.
-		ID3D11ShaderResourceView* texture(const std::string& texture_name) const;
-		DirectX::SpriteFont* sprite_font(const std::string& font_name) const;
-		SpriteSheet* sprite_sheet(const std::string& sprite_sheet_name) const;
+		// The by-name read, for load-time callers that have a name and want the
+		// sheet now. Nothing on the draw path may use it.
+		const SpriteSheet* sprite_sheet(const std::string& sprite_sheet_name) const;
 
-		void add_texture(const std::string& texture_name,
-			ID3D11ShaderResourceView* texture);
+		// The unscaled extent of `text` in `font`.
+		//
+		// MEASUREMENT IS EAGER, and it lives here rather than on Renderer
+		// because measuring needs the font table and this is the font table.
+		// The alternative - a cache inside TextObject filled on first read -
+		// is unsound rather than merely slower: text_bounds() is const and
+		// every view worker enters it on the same object at the same time, so
+		// a mutable cache filled on first read is a data race by construction.
+		//
+		// So a TextObject measures in its constructor, on one thread, through
+		// exactly the pointer it already holds.
+		mattmath::Vector2F measure_text(FontHandle font,
+			const std::wstring& text) const;
 
-		void add_sprite_font(const std::string& font_name,
-			std::unique_ptr<DirectX::SpriteFont> font);
-
-		void add_sprite_sheet(const std::string& sprite_sheet_name,
-			std::unique_ptr<SpriteSheet> sprite_sheet);
-
-		// Device loss. The resources go; the names, and therefore every handle
-		// resolved from them, stay. Reading one before the reload refills it
-		// throws saying it was released.
-		void reset_all_sprite_fonts();
-		void reset_all_textures();
+		// The tables, for the resource factory that fills them. Declared in the
+		// backend's own header rather than here - see the class comment.
+		class Impl;
+		Impl* impl() const { return this->impl_.get(); }
 
 	private:
-		Registry<ID3D11ShaderResourceView,
-			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> textures_{ "Texture" };
-
-		Registry<DirectX::SpriteFont> sprite_fonts_{ "SpriteFont" };
-		Registry<SpriteSheet> sprite_sheets_{ "SpriteSheet" };
+		std::unique_ptr<Impl> impl_;
 	};
 }

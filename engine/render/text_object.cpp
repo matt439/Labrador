@@ -1,6 +1,5 @@
 #include "engine/render/text_object.h"
 
-using namespace DirectX;
 using namespace mattmath;
 
 namespace artattack
@@ -13,10 +12,9 @@ namespace artattack
 		float scale,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
 		float layer_depth) :
 		DrawObject(render_resources, color,
-			rotation, origin, effects, layer_depth),
+			rotation, origin, SpriteFlip::none, layer_depth),
 		text_(text),
 		font_(render_resources->resolve_sprite_font(font_name)),
 		position_(position),
@@ -25,61 +23,30 @@ namespace artattack
 		this->remeasure();
 	}
 
-	void TextObject::draw(SpriteBatch* sprite_batch, const Camera& camera) const
+	void TextObject::draw(DrawList& draw_list) const
 	{
-		const SpriteFont* sprite_font =
-			this->render_resources()->sprite_font(this->font_);
-
-		Vector2F view_pos = camera.calculate_view_position(this->position_);
-		float view_scale = camera.calculate_view_scale(this->scale_);
-
-		sprite_font->DrawString(
-			sprite_batch,
-			this->text_.c_str(),
-			view_pos.xm_vector(),
-			this->colour().xm_vector(),
-			this->draw_rotation(),
-			this->origin().xm_vector(),
-			view_scale,
-			this->effects(),
-			this->layer_depth());
-	}
-
-	void TextObject::draw(SpriteBatch* sprite_batch) const
-	{
-		const SpriteFont* sprite_font =
-			this->render_resources()->sprite_font(this->font_);
-
-		sprite_font->DrawString(
-			sprite_batch,
-			this->text_.c_str(),
-			this->position_.xm_vector(),
-			this->colour().xm_vector(),
-			this->draw_rotation(),
-			this->origin().xm_vector(),
+		draw_list.draw_text(this->font_,
+			this->text_,
+			this->position_,
+			this->colour(),
 			this->scale_,
-			this->effects(),
+			this->draw_rotation(),
+			this->origin(),
 			this->layer_depth());
 	}
 
-	void TextObject::draw_with(SpriteBatch* sprite_batch,
-		const Camera& camera,
+	void TextObject::draw_with(DrawList& draw_list,
 		const Colour& colour,
 		const Vector2F& position,
 		float scale) const
 	{
-		const SpriteFont* sprite_font =
-			this->render_resources()->sprite_font(this->font_);
-
-		sprite_font->DrawString(
-			sprite_batch,
-			this->text_.c_str(),
-			camera.calculate_view_position(position).xm_vector(),
-			colour.xm_vector(),
+		draw_list.draw_text(this->font_,
+			this->text_,
+			position,
+			colour,
+			scale,
 			this->draw_rotation(),
-			this->origin().xm_vector(),
-			camera.calculate_view_scale(scale),
-			this->effects(),
+			this->origin(),
 			this->layer_depth());
 	}
 
@@ -87,7 +54,7 @@ namespace artattack
 	{
 		return this->text_;
 	}
-	RenderResources::FontHandle TextObject::font() const
+	FontHandle TextObject::font() const
 	{
 		return this->font_;
 	}
@@ -111,11 +78,11 @@ namespace artattack
 	}
 	void TextObject::remeasure()
 	{
-		const SpriteFont* sprite_font =
-			this->render_resources()->sprite_font(this->font_);
-		const XMVECTOR size = sprite_font->MeasureString(this->text_.c_str());
+		// The font table measures, because the font table is the only thing
+		// that has the font. This is the whole of what a headless backend has
+		// to answer for a TextObject to be constructible without a device.
 		this->measured_size_ =
-			Vector2F(XMVectorGetX(size), XMVectorGetY(size));
+			this->render_resources()->measure_text(this->font_, this->text_);
 	}
 	RectangleF TextObject::text_bounds() const
 	{

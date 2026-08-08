@@ -1,7 +1,6 @@
 #include "engine/render/visual.h"
 
 using namespace mattmath;
-using namespace DirectX;
 
 namespace artattack
 {
@@ -12,10 +11,10 @@ namespace artattack
 		const Colour& color,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) :
 		TextureObject(sheet_name, frame_name, render_resources,
-			color, rotation, origin, effects, layer_depth),
+			color, rotation, origin, flip, layer_depth),
 		rectangle_(rectangle)
 	{
 	}
@@ -27,10 +26,10 @@ namespace artattack
 		const Colour& color,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) :
 		TextureObject(sheet_name, frame_name, render_resources,
-			color, rotation, origin, effects, layer_depth)
+			color, rotation, origin, flip, layer_depth)
 	{
 		this->rectangle_ = rect_rotated.rectangle_rotated_to_axis();
 	}
@@ -40,9 +39,9 @@ namespace artattack
 	{
 		// do nothing
 	}
-	void Visual::draw(SpriteBatch* sprite_batch, const Camera& camera) const
+	void Visual::draw(DrawList& draw_list) const
 	{
-		this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
+		this->TextureObject::draw(draw_list, this->rectangle_);
 	}
 	RectangleF Visual::bounds() const
 	{

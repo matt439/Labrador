@@ -2,6 +2,10 @@
 #include "engine/assets/sound_bank_loader.h"
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/core/throw_if_failed.h"
+// The deliberate include renderer.h describes: this is the file that creates
+// textures and fonts on a device, so it is the one place outside
+// engine/render/<backend>/ that is allowed to name one.
+#include "engine/render/d3d11/backend.h"
 #include <DDSTextureLoader.h>
 #include <stdexcept>
 #include <wrl/client.h>
@@ -47,16 +51,17 @@ namespace artattack
 		this->register_kind("texture", { texture, texture });
 		this->register_kind("font", { font, font });
 
+		// A sheet's reload is its texture's reload and nothing else. It used to
+		// need a third function that re-seated the new ID3D11ShaderResourceView*
+		// into the existing SpriteSheet by hand; the sheet holds a TextureHandle
+		// now, the reload refills that handle's slot, and the sheet is untouched.
 		this->register_kind("sprite_sheet",
 			{
 				[this](const std::string& directory, const std::string& name)
 				{
 					this->load_sprite_sheet(directory, name);
 				},
-				[this](const std::string& directory, const std::string& name)
-				{
-					this->reload_sprite_sheet_texture(directory, name);
-				}
+				texture
 			});
 
 		// A sound bank is not a device resource, and every live object holds a
@@ -118,7 +123,7 @@ namespace artattack
 				resource.GetAddressOf(),
 				texture_view.ReleaseAndGetAddressOf()));
 
-		this->render_resources_->add_texture(name, texture_view.Get());
+		this->render_resources_->impl()->add_texture(name, texture_view.Get());
 	}
 
 	void ResourceLoader::load_sprite_font(const std::string& directory,
@@ -128,7 +133,7 @@ namespace artattack
 
 		try
 		{
-			this->render_resources_->add_sprite_font(name,
+			this->render_resources_->impl()->add_sprite_font(name,
 				std::make_unique<SpriteFont>(this->device_,
 					std::wstring(font_path.begin(), font_path.end()).c_str()));
 		}
@@ -147,18 +152,9 @@ namespace artattack
 		// asset with two files, and the manifest names it once.
 		this->load_texture(directory, name);
 
-		this->render_resources_->add_sprite_sheet(name,
+		this->render_resources_->impl()->add_sprite_sheet(name,
 			read_sprite_sheet((directory + name + ".json").c_str(),
-				this->render_resources_->texture(name)));
-	}
-
-	void ResourceLoader::reload_sprite_sheet_texture(const std::string& directory,
-		const std::string& name) const
-	{
-		this->load_texture(directory, name);
-
-		this->render_resources_->sprite_sheet(name)->set_texture(
-			this->render_resources_->texture(name));
+				this->render_resources_->resolve_texture(name)));
 	}
 
 	void ResourceLoader::load_sound_bank(const std::string& directory,

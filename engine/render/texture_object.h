@@ -10,6 +10,13 @@ namespace artattack
 	// is kept is a handle: an index into that sheet's frame table. Drawing is then
 	// two indexed loads - the sheet out of its registry slot, the frame out of the
 	// sheet - with no string touched on the way.
+	//
+	// NO CAMERA PARAMETER. Every one of these used to come in two versions, one
+	// taking a Camera and one not, and the camera-taking version's whole body was
+	// a call to Camera::calculate_view_rectangle before the draw. The list holds
+	// the camera now (renderer.h, DrawList::set_camera), so a caller wanting
+	// screen space sets nothing and a caller wanting a player's view sets it once
+	// for the range rather than passing it down through every signature.
 	class TextureObject : public SpriteSheetObject
 	{
 	public:
@@ -20,7 +27,7 @@ namespace artattack
 			const mattmath::Colour& color = colour_consts::WHITE,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
+			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
 	protected:
@@ -39,22 +46,13 @@ namespace artattack
 			const std::string& frame_name);
 		void set_frame(const std::string& frame_name);
 
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::RectangleI& destination_rectangle) const;
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
+		virtual void draw(DrawList& draw_list,
 			const mattmath::RectangleF& destination_rectangle) const;
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
+		virtual void draw(DrawList& draw_list,
 			const mattmath::Vector2F& position, float scale = 1.0f) const;
 
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::RectangleF& destination_rectangle,
-			const mattmath::Camera& camera) const;
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Vector2F& position,
-			const mattmath::Camera& camera, float scale = 1.0f) const;
-
 		// Draws without reading any of the per-draw members, so callers can compute
-		// frame / colour / origin / effects / rotation into locals instead of
+		// frame / colour / origin / flip / rotation into locals instead of
 		// assigning them to this object first.
 		//
 		// Level::draw_active_level runs draw() on the SAME object from every render
@@ -62,13 +60,12 @@ namespace artattack
 		// data race - and back when the element was a std::string it was concurrent
 		// free/allocate on one control block, i.e. heap corruption. The frame is a
 		// handle now, so passing it costs a register rather than a string copy.
-		void draw_with(DirectX::SpriteBatch* sprite_batch,
+		void draw_with(DrawList& draw_list,
 			const mattmath::RectangleF& destination_rectangle,
-			const mattmath::Camera& camera,
 			SpriteSheet::frame_handle frame,
 			const mattmath::Colour& colour,
 			const mattmath::Vector2F& origin,
-			DirectX::SpriteEffects effects,
+			SpriteFlip flip,
 			float rotation) const;
 
 	private:

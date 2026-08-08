@@ -14,13 +14,17 @@
 namespace artattack
 {
     // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
-    interface DeviceNotify
+    //
+    // Named D3DDeviceNotify rather than DeviceNotify, which is now the seam's
+    // (engine/render/renderer.h) and is what a game implements. Renderer::Impl
+    // implements this one and forwards; nothing outside this folder sees it.
+    interface D3DDeviceNotify
     {
         virtual void OnDeviceLost() = 0;
         virtual void OnDeviceRestored() = 0;
 
     protected:
-        ~DeviceNotify() = default;
+        ~D3DDeviceNotify() = default;
     };
 
     // Controls all the DirectX device resources.
@@ -49,7 +53,7 @@ namespace artattack
         void SetWindow(HWND window, int width, int height) noexcept;
         bool WindowSizeChanged(int width, int height);
         void HandleDeviceLost();
-        void RegisterDeviceNotify(DeviceNotify* deviceNotify) noexcept { m_deviceNotify = deviceNotify; }
+        void RegisterDeviceNotify(D3DDeviceNotify* deviceNotify) noexcept { m_deviceNotify = deviceNotify; }
         void Present();
         void UpdateColorSpace();
 
@@ -134,8 +138,8 @@ namespace artattack
         // DeviceResources options (see flags above)
         unsigned int                                    m_options;
 
-        // The DeviceNotify can be held directly as it owns the DeviceResources.
-        DeviceNotify*                                   m_deviceNotify;
+        // The notify can be held directly as it owns the DeviceResources.
+        D3DDeviceNotify*                                m_deviceNotify;
 
         // Owning handles, plus a raw mirror for the existing accessors. The
         // contexts used to be raw pointers that were never Released and never

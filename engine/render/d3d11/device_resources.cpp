@@ -3,7 +3,7 @@
 //                       (requires DirectX 11.1 Runtime)
 //
 
-#include "engine/render/device_resources.h"
+#include "engine/render/d3d11/device_resources.h"
 #include "engine/core/throw_if_failed.h"
 
 #include <DirectXMath.h>

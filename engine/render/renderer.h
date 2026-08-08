@@ -4,7 +4,7 @@
 #include "engine/math/matt_math.h"
 
 #include <memory>
-#include <string_view>
+#include <string>
 
 // The renderer seam.
 //
@@ -46,6 +46,10 @@
 
 namespace artattack
 {
+	// The table a DrawList resolves handles against. Declared, not included:
+	// render_resources.h includes this file, for the handle types below.
+	class RenderResources;
+
 	// Phantom payloads. A handle is an index into the table that produced it
 	// (handle.h), and these say which table. The backend decides what a Texture
 	// and a Font actually are; nothing outside engine/render/<backend>/ needs
@@ -171,8 +175,15 @@ namespace artattack
 		// method, under a fan-out where every worker draws the whole HUD. Wide
 		// in, wide all the way down; there is no narrow overload to fall back
 		// to and there should not be one.
+		//
+		// A wstring and not a wstring_view, which is what this said first.
+		// Every font API underneath takes a null-terminated pointer - DirectXTK
+		// has no (begin, end) DrawString - so a view would have to be copied
+		// into a terminated buffer per draw, which is an allocation on the
+		// frame path bought to make one call site prettier. Every caller in the
+		// tree holds a wstring already.
 		void draw_text(FontHandle font,
-			std::wstring_view text,
+			const std::wstring& text,
 			const mattmath::Vector2F& position,
 			const mattmath::Colour& tint,
 			float scale,
@@ -239,6 +250,20 @@ namespace artattack
 		// Borrowed; the shell owns it and outlives the renderer.
 		void set_device_notify(DeviceNotify* device_notify);
 
+		// The table the draw lists resolve handles against. Borrowed, like the
+		// notify above.
+		//
+		// draw_sprite takes a TextureHandle, and the only thing that can turn
+		// one back into whatever this backend calls a texture is the table that
+		// issued it. The alternative was for the caller to resolve first and
+		// hand the resolved resource in - which is the backend's own type, in a
+		// game file's hands, which is the seam undone on the first call.
+		//
+		// Separate from create_device because the order is fixed the other way:
+		// the resource factory needs a device before it can load anything into
+		// a table, so the table cannot exist when the device is made.
+		void set_resources(const RenderResources* resources);
+
 		// begin_frame clears the back buffer and resets every view's
 		// recording; end_frame presents.
 		void begin_frame();
@@ -291,16 +316,16 @@ namespace artattack
 	};
 }
 
-// STILL OPEN, and the sample did not settle these because it does not exercise
-// them:
+// STILL OPEN:
 //
 //  - The null backend's home and how CMake selects it. engine/render/null/
 //    linked into tests/render/, or an option on ArtAttackEngine. The first
 //    keeps one library configuration and is probably right. Until it exists,
 //    tests/render/ covers only the pure arithmetic it already covered.
 //
-//  - Whether RenderResources should be split the same way. Its public API is
-//    handles and measurements now, but its storage is still D3D11 types, so a
-//    null backend needs a second RenderResources as well as a second Renderer.
-//    That is one more pimpl, and it is the thing standing between here and a
-//    headless test that constructs a TextObject.
+//    What the D3D11 implementation settled is the *shape* a second backend has
+//    to fill, and it is three translation units, not one: renderer.cpp,
+//    render_resources.cpp, and the resource factory that reads files onto the
+//    device (engine/assets/resource_loader.cpp, which names DDSTextureLoader
+//    and SpriteFont and is therefore backend code living outside the folder).
+//    Moving it is what the null backend's first day looks like.

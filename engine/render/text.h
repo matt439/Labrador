@@ -16,7 +16,6 @@ namespace artattack
 			float scale = 1.0f,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
 
 		void set_text(const std::wstring& text) override;

@@ -1,6 +1,5 @@
 #include "engine/render/draw_object.h"
 
-using namespace DirectX;
 using namespace mattmath;
 
 namespace artattack
@@ -9,13 +8,13 @@ namespace artattack
 		const Colour& color,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) :
 		render_resources_(render_resources),
 		colour_(color),
 		draw_rotation_(rotation),
 		origin_(origin),
-		effects_(effects),
+		flip_(flip),
 		layer_depth_(layer_depth)
 	{
 
@@ -36,9 +35,9 @@ namespace artattack
 	{
 		return this->origin_;
 	}
-	SpriteEffects DrawObject::effects() const
+	SpriteFlip DrawObject::flip() const
 	{
-		return this->effects_;
+		return this->flip_;
 	}
 	float DrawObject::layer_depth() const
 	{
@@ -56,9 +55,9 @@ namespace artattack
 	{
 		this->origin_ = origin;
 	}
-	void DrawObject::set_effects(SpriteEffects effects)
+	void DrawObject::set_flip(SpriteFlip flip)
 	{
-		this->effects_ = effects;
+		this->flip_ = flip;
 	}
 	void DrawObject::set_layer_depth(float layer_depth)
 	{

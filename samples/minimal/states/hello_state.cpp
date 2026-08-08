@@ -1,7 +1,5 @@
 #include "samples/minimal/states/hello_state.h"
 
-#include <SpriteBatch.h>
-
 using namespace DirectX;
 using namespace mattmath;
 using namespace artattack;
@@ -39,7 +37,7 @@ void HelloState::init()
 		colour_consts::DARK_GRAY);
 }
 
-void HelloState::update()
+void HelloState::update(float dt)
 {
 	const GamePad::State pad = this->app_->gamepad()->GetState(0);
 	if (pad.IsConnected())
@@ -50,36 +48,25 @@ void HelloState::update()
 			return;
 		}
 
-		// dt is a pointer because the objects reading it outlive any one
-		// frame; the shell rewrites the value behind it every fixed step.
-		const float dt = *this->app_->dt();
 		this->position_.x += pad.thumbSticks.leftX * move_speed * dt;
 		this->position_.y -= pad.thumbSticks.leftY * move_speed * dt;
 		this->greeting_->set_position(this->position_);
 	}
 }
 
-void HelloState::draw()
+void HelloState::draw(Renderer& renderer) const
 {
-	// Drawing goes through a deferred context so it can be recorded off the
-	// main thread; with one string there is nothing to spread, so this uses
-	// worker 0 and executes its list immediately. A game with a scene's worth
-	// of objects fans the same shape across every context the shell created.
-	artattack::DeviceResources* device = this->app_->device_resources();
-	ID3D11DeviceContext* deferred = device->deferred_context(0);
-	SpriteBatch* sprite_batch = this->app_->sprite_batches()->at(0);
+	// One view: the whole window, in screen space. A split-screen game says
+	// set_view_count(players) here and fills each one; the shape does not
+	// otherwise change, which is the point of the seam.
+	//
+	// Nothing below names a graphics type. There is no deferred context to
+	// index, no sprite batch to Begin and End, and no command list to finish,
+	// execute and Release - which was five of the eleven lines this function
+	// used to be, and three caller obligations stated nowhere in the tree.
+	renderer.set_view_count(1);
+	DrawList list = renderer.view(0);
 
-	sprite_batch->Begin(SpriteSortMode_Deferred);
-	this->greeting_->draw(sprite_batch);
-	this->hint_->draw(sprite_batch);
-	sprite_batch->End();
-
-	ID3D11CommandList* commands = nullptr;
-	if (FAILED(deferred->FinishCommandList(FALSE, &commands)))
-	{
-		throw std::runtime_error("HelloState::draw - FinishCommandList failed");
-	}
-
-	device->GetD3DDeviceContext()->ExecuteCommandList(commands, FALSE);
-	commands->Release();
+	this->greeting_->draw(list);
+	this->hint_->draw(list);
 }

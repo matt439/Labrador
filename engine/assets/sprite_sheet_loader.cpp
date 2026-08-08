@@ -57,7 +57,7 @@ namespace artattack
 	}
 
 	std::unique_ptr<SpriteSheet> read_sprite_sheet(const char* json_path,
-		ID3D11ShaderResourceView* texture)
+		TextureHandle texture)
 	{
 		const Document doc = read_json_file(json_path);
 

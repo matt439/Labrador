@@ -19,8 +19,8 @@ public:
 	explicit HelloState(artattack::Application* app);
 
 	void init() override;
-	void update() override;
-	void draw() override;
+	void update(float dt) override;
+	void draw(artattack::Renderer& renderer) const override;
 
 private:
 	artattack::Application* app_ = nullptr;

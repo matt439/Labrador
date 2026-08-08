@@ -20,8 +20,7 @@ public:
 
 	void update(float /*dt*/) override {}
 
-	void draw(DirectX::SpriteBatch* /*sprite_batch*/,
-		const mattmath::Camera& /*camera*/) const override
+	void draw(artattack::DrawList& /*draw_list*/) const override
 	{
 		// Never called by anything under test; a focus group draws nothing.
 	}

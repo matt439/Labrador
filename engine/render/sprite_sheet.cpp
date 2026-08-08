@@ -1,11 +1,25 @@
 #include "engine/render/sprite_sheet.h"
 
-using namespace DirectX;
 using namespace mattmath;
 
 namespace artattack
 {
-	SpriteSheet::SpriteSheet(ID3D11ShaderResourceView* texture,
+	namespace
+	{
+		// A position-and-scale draw is a destination-rectangle draw whose size
+		// came from the source. The old code handed both forms to SpriteBatch,
+		// which computed exactly this; the seam takes one destination rectangle,
+		// so the arithmetic surfaces here instead of being done twice inside two
+		// backends.
+		RectangleF destination_from(const RectangleI& source,
+			const Vector2F& position, float scale)
+		{
+			return { position, Vector2F(static_cast<float>(source.width) * scale,
+				static_cast<float>(source.height) * scale) };
+		}
+	}
+
+	SpriteSheet::SpriteSheet(TextureHandle texture,
 		NameTable<SpriteFrame> sprite_frames,
 		NameTable<AnimationStrip> animation_strips) :
 		sprite_frames_(std::move(sprite_frames)),
@@ -13,11 +27,6 @@ namespace artattack
 		texture_(texture)
 	{
 
-	}
-
-	void SpriteSheet::set_texture(ID3D11ShaderResourceView* texture)
-	{
-		this->texture_ = texture;
 	}
 
 	SpriteSheet::frame_handle SpriteSheet::resolve_sprite_frame(
@@ -42,87 +51,63 @@ namespace artattack
 		return this->animation_strips_.get(strip);
 	}
 
-	void SpriteSheet::draw(SpriteBatch* sprite_batch,
+	TextureHandle SpriteSheet::texture() const
+	{
+		return this->texture_;
+	}
+
+	void SpriteSheet::draw(DrawList& draw_list,
+		frame_handle frame,
+		const RectangleF& destination,
+		const Colour& colour,
+		float rotation,
+		const Vector2F& origin,
+		SpriteFlip flip,
+		float layer_depth) const
+	{
+		this->draw(draw_list, this->sprite_frame(frame).source_rectangle(),
+			destination, colour, rotation, origin, flip, layer_depth);
+	}
+
+	void SpriteSheet::draw(DrawList& draw_list,
 		frame_handle frame,
 		const Vector2F& position,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		float scale,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) const
 	{
-		sprite_batch->Draw(
-			this->texture_,
-			position.xm_vector(),
-			this->sprite_frame(frame).source_rectangle(),
-			color.xm_vector(),
-			rotation,
-			origin.xm_vector(),
-			scale,
-			effects,
-			layer_depth);
+		this->draw(draw_list, this->sprite_frame(frame).source_rectangle(),
+			position, colour, rotation, origin, scale, flip, layer_depth);
 	}
 
-	void SpriteSheet::draw(SpriteBatch* sprite_batch,
-		frame_handle frame,
-		const RectangleI& destination_rectangle,
-		const Colour& color,
+	void SpriteSheet::draw(DrawList& draw_list,
+		const RectangleI& source,
+		const RectangleF& destination,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) const
 	{
-		sprite_batch->Draw(
-			this->texture_,
-			destination_rectangle.win_rect(),
-			this->sprite_frame(frame).source_rectangle(),
-			color.xm_vector(),
-			rotation,
-			origin.xm_vector(),
-			effects,
-			layer_depth);
+		draw_list.draw_sprite(this->texture_, source, destination, colour,
+			rotation, origin, flip, layer_depth);
 	}
 
-	void SpriteSheet::draw(SpriteBatch* sprite_batch,
-		const RECT* source_rect,
+	void SpriteSheet::draw(DrawList& draw_list,
+		const RectangleI& source,
 		const Vector2F& position,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		float scale,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) const
 	{
-		sprite_batch->Draw(
-			this->texture_,
-			position.xm_vector(),
-			source_rect,
-			color.xm_vector(),
-			rotation,
-			origin.xm_vector(),
-			scale,
-			effects,
-			layer_depth);
-	}
-
-	void SpriteSheet::draw(SpriteBatch* sprite_batch,
-		const RECT* source_rect,
-		const RectangleI& destination_rectangle,
-		const Colour& color,
-		float rotation,
-		const Vector2F& origin,
-		SpriteEffects effects,
-		float layer_depth) const
-	{
-		sprite_batch->Draw(
-			this->texture_,
-			destination_rectangle.win_rect(),
-			source_rect,
-			color.xm_vector(),
-			rotation,
-			origin.xm_vector(),
-			effects,
-			layer_depth);
+		draw_list.draw_sprite(this->texture_, source,
+			destination_from(source, position, scale), colour, rotation, origin,
+			flip, layer_depth);
 	}
 }

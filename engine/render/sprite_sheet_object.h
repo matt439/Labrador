@@ -25,10 +25,10 @@ namespace artattack
 			const mattmath::Colour& color = colour_consts::WHITE,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
+			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 	protected:
-		SpriteSheet* sprite_sheet() const;
+		const SpriteSheet* sprite_sheet() const;
 
 		// Re-points this object at another sheet. Every element handle a subclass
 		// is holding refers to the old sheet and is meaningless against the new

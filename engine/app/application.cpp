@@ -1,5 +1,8 @@
 #include "engine/app/application.h"
 #include "engine/assets/asset_manifest_loader.h"
+// The one place the shell has to name the backend: a window handle and a
+// device belong to a platform, and this is the file that owns both.
+#include "engine/render/d3d11/backend.h"
 #include <DirectXMath.h>
 #include <objbase.h>
 #include <stdexcept>
@@ -40,10 +43,8 @@ namespace artattack
 		// so a bad number is a message rather than a first-frame crash.
 		this->options_.validate();
 
-		// Renders only 2D, so no depth buffer.
-		this->device_resources_ = std::make_unique<DeviceResources>(
-			DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_UNKNOWN);
-		this->device_resources_->RegisterDeviceNotify(this);
+		this->renderer_ = std::make_unique<Renderer>();
+		this->renderer_->set_device_notify(this);
 	}
 
 	Application::~Application()
@@ -86,15 +87,13 @@ namespace artattack
 
 		const mattmath::Vector2I size =
 			this->resolution_manager_->resolution_ivec();
-		this->device_resources_->SetWindow(this->window_, size.x, size.y);
-		this->device_resources_->CreateDeviceResources();
-		this->device_resources_->create_deferred_contexts(
+
+		// max_threads is the view capacity: the widest this frame may ever fan
+		// out, which is what sizes the per-view recording state.
+		this->renderer_->create_device(this->window_, size.x, size.y,
 			this->options_.max_threads);
 
 		this->create_services();
-		this->create_device_dependent_resources();
-
-		this->device_resources_->CreateWindowSizeDependentResources();
 
 		this->gamepad_ = std::make_unique<GamePad>();
 
@@ -165,44 +164,20 @@ namespace artattack
 		this->render_resources_ = std::make_unique<RenderResources>();
 		this->audio_resources_ = std::make_unique<AudioResources>();
 
+		// The draw lists resolve handles against the table, so the renderer has
+		// to be told where it is. It could not be told at create_device time:
+		// the loader needs a device before it can put anything in a table.
+		this->renderer_->set_resources(this->render_resources_.get());
+
 		this->resource_loader_ = std::make_unique<ResourceLoader>(
 			this->render_resources_.get(), this->audio_resources_.get(),
-			this->device_resources_->GetD3DDevice(), this->audio_engine_.get());
+			this->renderer_->impl()->device_resources.GetD3DDevice(),
+			this->audio_engine_.get());
 
 		this->viewport_manager_ = std::make_unique<ViewportManager>(
 			this->resolution_manager_.get());
 
 		this->partitioner_ = std::make_unique<Partitioner>();
-
-		this->dt_ = std::make_unique<float>(0.0f);
-	}
-
-	void Application::create_device_dependent_resources()
-	{
-		ID3D11Device1* device = this->device_resources_->GetD3DDevice();
-
-		this->sprite_batches_.resize(
-			static_cast<size_t>(this->options_.max_threads));
-		this->sprite_batch_ptrs_.resize(
-			static_cast<size_t>(this->options_.max_threads));
-		for (int i = 0; i < this->options_.max_threads; i++)
-		{
-			this->sprite_batches_[static_cast<size_t>(i)] =
-				std::make_unique<SpriteBatch>(
-					this->device_resources_->deferred_context(i));
-			this->sprite_batch_ptrs_[static_cast<size_t>(i)] =
-				this->sprite_batches_[static_cast<size_t>(i)].get();
-		}
-
-		this->common_states_ = std::make_unique<CommonStates>(device);
-
-		// Reload the GPU-side assets into the existing RenderResources, so every
-		// borrowed SpriteSheet* and SoundBank* stays valid.
-		this->resource_loader_->set_device(device);
-		if (this->content_loaded_)
-		{
-			this->resource_loader_->reload_device_resources();
-		}
 	}
 
 	void Application::load_manifest(const std::string& manifest_path)
@@ -284,8 +259,8 @@ namespace artattack
 
 	void Application::update()
 	{
-		*this->dt_ = static_cast<float>(this->timer_.GetElapsedSeconds());
-		StateContext::update();
+		StateContext::update(
+			static_cast<float>(this->timer_.GetElapsedSeconds()));
 		std::ignore = this->audio_engine_->Update();
 	}
 
@@ -297,39 +272,18 @@ namespace artattack
 			return;
 		}
 
-		this->clear();
+		// The whole frame, and the only place it is spelt out. The state
+		// declares its views and fills them; recording, executing and releasing
+		// the per-view command lists is submit()'s business, in one copy,
+		// behind the seam.
+		this->renderer_->begin_frame();
 
-		this->device_resources_->PIXBeginEvent(L"Render");
-		this->draw();
-		this->device_resources_->PIXEndEvent();
+		this->renderer_->begin_marker(L"Render");
+		StateContext::draw(*this->renderer_);
+		this->renderer_->submit();
+		this->renderer_->end_marker();
 
-		this->device_resources_->Present();
-	}
-
-	void Application::clear() const
-	{
-		this->device_resources_->PIXBeginEvent(L"Clear");
-
-		ID3D11DeviceContext1* context = this->device_resources_->GetD3DDeviceContext();
-		auto deferred_contexts = this->device_resources_->deferred_contexts();
-		ID3D11RenderTargetView* render_target =
-			this->device_resources_->GetRenderTargetView();
-
-		context->ClearRenderTargetView(render_target, Colors::Black);
-		context->OMSetRenderTargets(1, &render_target, nullptr);
-
-		auto const viewport = this->device_resources_->GetScreenViewport();
-		context->RSSetViewports(1, &viewport);
-
-		// Every worker draws into its own deferred context, so each needs the
-		// same target and viewport bound before the frame fans out.
-		for (auto& deferred_context : *deferred_contexts)
-		{
-			deferred_context->OMSetRenderTargets(1, &render_target, nullptr);
-			deferred_context->RSSetViewports(1, &viewport);
-		}
-
-		this->device_resources_->PIXEndEvent();
+		this->renderer_->end_frame();
 	}
 
 	void Application::on_activated() const
@@ -375,44 +329,46 @@ namespace artattack
 
 	void Application::on_window_moved() const
 	{
-		auto const bounds = this->device_resources_->GetOutputSize();
-		this->device_resources_->WindowSizeChanged(bounds.right, bounds.bottom);
+		const mattmath::Vector2F size = this->renderer_->back_buffer_size();
+		std::ignore = this->renderer_->window_size_changed(
+			static_cast<int>(size.x), static_cast<int>(size.y));
 	}
 
 	void Application::on_display_change() const
 	{
-		this->device_resources_->UpdateColorSpace();
+		this->renderer_->impl()->device_resources.UpdateColorSpace();
 	}
 
 	void Application::on_window_size_changed(int width, int height)
 	{
-		std::ignore = this->device_resources_->WindowSizeChanged(width, height);
+		std::ignore = this->renderer_->window_size_changed(width, height);
 	}
 
-	void Application::OnDeviceLost()
+	void Application::on_device_lost()
 	{
-		// Only D3D objects. Audio is not a device resource, and tearing down the
-		// sound banks here left every object holding a freed SoundBank*.
-		for (auto& sprite_batch : this->sprite_batches_)
+		// Only the resources the device holds. Audio is not one, and tearing
+		// down the sound banks here left every object holding a freed
+		// SoundBank*. The sprite batches and the sampler states belong to the
+		// renderer, which has already released them by the time this is called.
+		this->render_resources_->impl()->release_all_textures();
+		this->render_resources_->impl()->release_all_sprite_fonts();
+	}
+
+	void Application::on_device_restored()
+	{
+		// Reload the GPU-side assets into the existing RenderResources, so every
+		// borrowed SpriteSheet* and SoundBank* stays valid.
+		this->resource_loader_->set_device(
+			this->renderer_->impl()->device_resources.GetD3DDevice());
+		if (this->content_loaded_)
 		{
-			sprite_batch.reset();
+			this->resource_loader_->reload_device_resources();
 		}
-		this->sprite_batch_ptrs_.assign(this->sprite_batch_ptrs_.size(), nullptr);
-
-		this->common_states_.reset();
-
-		this->render_resources_->reset_all_textures();
-		this->render_resources_->reset_all_sprite_fonts();
 	}
 
-	void Application::OnDeviceRestored()
+	Renderer* Application::renderer() const
 	{
-		this->create_device_dependent_resources();
-	}
-
-	DeviceResources* Application::device_resources() const
-	{
-		return this->device_resources_.get();
+		return this->renderer_.get();
 	}
 	RenderResources* Application::render_resources() const
 	{
@@ -449,18 +405,6 @@ namespace artattack
 	HWND Application::window() const
 	{
 		return this->window_;
-	}
-	CommonStates* Application::common_states() const
-	{
-		return this->common_states_.get();
-	}
-	std::vector<SpriteBatch*>* Application::sprite_batches() const
-	{
-		return const_cast<std::vector<SpriteBatch*>*>(&this->sprite_batch_ptrs_);
-	}
-	const float* Application::dt() const
-	{
-		return this->dt_.get();
 	}
 
 	// Every message either forwards to the Application or is Windows housekeeping.

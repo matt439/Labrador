@@ -1,6 +1,5 @@
 #include "engine/render/viewport_manager.h"
 
-using namespace DirectX;
 using namespace mattmath;
 
 namespace artattack
@@ -14,12 +13,6 @@ namespace artattack
     {
         Vector2F res = this->resolution_manager_->resolution_vec();
         return { 0.0f, 0.0f, res.x, res.y };
-    }
-
-    D3D11_VIEWPORT ViewportManager::fullscreen_d3d11_viewport() const
-    {
-        Viewport vp = this->fullscreen_viewport();
-        return vp.d3d_viewport();
     }
 
     RectangleF ViewportManager::camera_adjusted_player_viewport_rect(
@@ -38,31 +31,6 @@ namespace artattack
         return result;
     }
 
-    void ViewportManager::apply_player_viewport(int player_num,
-        ID3D11DeviceContext* context) const
-    {
-        D3D11_VIEWPORT vp = this->calculate_d3d11_viewport(
-            this->layout_, player_num, this->resolution_manager_->resolution_vec());
-        context->RSSetViewports(1, &vp);
-    }
-
-    void ViewportManager::apply_player_viewport(int player_num,
-        ID3D11DeviceContext* context,
-        SpriteBatch* sprite_batch) const
-    {
-        D3D11_VIEWPORT vp = this->calculate_d3d11_viewport(
-            this->layout_, player_num, this->resolution_manager_->resolution_vec());
-        context->RSSetViewports(1, &vp);
-        sprite_batch->SetViewport(vp);
-    }
-
-    D3D11_VIEWPORT ViewportManager::calculate_d3d11_viewport(ScreenLayout layout,
-        int player_num, const Vector2F& screen_size) const
-    {
-        Viewport vp = this->calculate_viewport(layout, player_num, screen_size);
-        return vp.d3d_viewport();
-    }
-
     void ViewportManager::set_layout(ScreenLayout layout)
     {
         this->layout_ = layout;
@@ -77,7 +45,7 @@ namespace artattack
     // Every viewport the layout covers the screen with, which is not the same
     // as one per player: a three-player split leaves a quadrant nobody is in,
     // and a caller drawing the whole screen still has to draw it. Callers
-    // index apply_player_viewport() by position in this vector, so the counts
+    // index set_viewport() by position in this vector, so the counts
     // and the indices have to be the same ones calculate_viewport() knows.
     std::vector<Viewport> ViewportManager::all_viewports() const
     {

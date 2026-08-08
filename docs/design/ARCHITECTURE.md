@@ -164,6 +164,18 @@ parsed. No type on the draw path reads a file, so `rapidjson` reaches
 `assets` and stops there — drawing a sprite does not compile a JSON
 parser.
 
+**One backend still lives outside its folder, and it is named here rather
+than left to be discovered.** `assets/resource_loader.cpp` creates
+textures and fonts on a device, so it includes
+`render/d3d11/backend.h` and spells `DDSTextureLoader` and `SpriteFont`
+directly. That is the resource factory's job and not the renderer's — a
+`Renderer` that could load a file from disk would be a worse seam — but it
+does mean a second backend is three translation units, not one, and that
+the third of them is in `assets/`. `app/application.cpp` is the only other
+file outside `render/d3d11/` that includes it, because a window handle and
+a swap chain belong to a platform and the shell owns both. A third would
+be a mistake.
+
 `app` sits at the top and is the one module allowed to depend on all of
 them, because assembling them is the whole of its job: it opens the
 window, creates the device, constructs every service once, runs the loop

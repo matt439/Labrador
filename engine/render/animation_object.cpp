@@ -1,6 +1,8 @@
 #include "engine/render/animation_object.h"
 
-using namespace DirectX;
+#include <stdexcept>
+#include <string>
+
 using namespace mattmath;
 
 namespace artattack
@@ -11,10 +13,10 @@ namespace artattack
 		const Colour& color,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) :
 		SpriteSheetObject(sheet_name, render_resources, color, rotation,
-			origin, effects, layer_depth),
+			origin, flip, layer_depth),
 		// The base is complete by now, so its sheet is there to resolve against.
 		strip_(SpriteSheetObject::sprite_sheet()->
 			resolve_animation_strip(animation_strip_name))
@@ -27,72 +29,44 @@ namespace artattack
 		return this->sprite_sheet()->animation_strip(this->strip_);
 	}
 
-	void AnimationObject::draw(SpriteBatch* sprite_batch,
-		const RectangleI& destination_rectangle) const
+	void AnimationObject::draw(DrawList& draw_list,
+		const RectangleF& destination_rectangle) const
 	{
-		SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
-
-		sprite_sheet->draw(sprite_batch,
+		SpriteSheetObject::sprite_sheet()->draw(draw_list,
 			this->source_rectangle(),
 			destination_rectangle,
 			this->colour(),
 			this->draw_rotation(),
 			this->origin(),
-			this->effects(),
+			this->flip(),
 			this->layer_depth());
 	}
-	void AnimationObject::draw(SpriteBatch* sprite_batch,
-		const RectangleF& destination_rectangle) const
-	{
-		this->draw(sprite_batch, destination_rectangle.rectangle_i());
-	}
-	void AnimationObject::draw(SpriteBatch* sprite_batch,
+	void AnimationObject::draw(DrawList& draw_list,
 		const Vector2F& position, float scale) const
 	{
-		SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
-
-		sprite_sheet->draw(sprite_batch,
+		SpriteSheetObject::sprite_sheet()->draw(draw_list,
 			this->source_rectangle(),
 			position,
 			this->colour(),
 			this->draw_rotation(),
 			this->origin(),
 			scale,
-			this->effects(),
+			this->flip(),
 			this->layer_depth());
-
-	}
-	void AnimationObject::draw(SpriteBatch* sprite_batch,
-		const RectangleF& destination_rectangle,
-		const Camera& camera) const
-	{
-		RectangleF rect = camera.calculate_view_rectangle(destination_rectangle);
-		this->draw(sprite_batch, rect);
-	}
-	void AnimationObject::draw(SpriteBatch* sprite_batch,
-		const Vector2F& position,
-		const Camera& camera, float scale) const
-	{
-		Vector2F view_pos = camera.calculate_view_position(position);
-		float view_scale = camera.calculate_view_scale(scale);
-		this->draw(sprite_batch, view_pos, view_scale);
 	}
 
-	void AnimationObject::draw_with(SpriteBatch* sprite_batch,
+	void AnimationObject::draw_with(DrawList& draw_list,
 		const RectangleF& destination_rectangle,
-		const Camera& camera,
 		const Colour& colour,
-		SpriteEffects effects) const
+		SpriteFlip flip) const
 	{
-		SpriteSheet* sprite_sheet = SpriteSheetObject::sprite_sheet();
-
-		sprite_sheet->draw(sprite_batch,
+		SpriteSheetObject::sprite_sheet()->draw(draw_list,
 			this->source_rectangle(),
-			camera.calculate_view_rectangle(destination_rectangle).rectangle_i(),
+			destination_rectangle,
 			colour,
 			this->draw_rotation(),
 			this->origin(),
-			effects,
+			flip,
 			this->layer_depth());
 	}
 
@@ -146,7 +120,9 @@ namespace artattack
 		if (frame_index < 0 ||
 			frame_index >= this->animation_strip().frame_count())
 		{
-			throw std::exception("Invalid frame index.");
+			throw std::out_of_range("Animation frame index " +
+				std::to_string(frame_index) + " is outside a strip of " +
+				std::to_string(this->animation_strip().frame_count()) + ".");
 		}
 		this->frame_index_ = frame_index;
 	}
@@ -154,10 +130,9 @@ namespace artattack
 	{
 		return this->paused_;
 	}
-	const RECT* AnimationObject::source_rectangle() const
+	const RectangleI& AnimationObject::source_rectangle() const
 	{
 		return this->animation_strip().frame_rect(this->frame_index_);
-
 	}
 	void AnimationObject::set_animation_strip_and_reset(const std::string& sprite_sheet,
 		const std::string& animation_strip)

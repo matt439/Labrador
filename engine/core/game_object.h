@@ -1,10 +1,16 @@
 #pragma once
 
 #include "engine/math/matt_math.h"
-#include <SpriteBatch.h>
 
 namespace artattack
 {
+	// Declared, not included, and that is the point of the whole exercise.
+	// This header used to open with <SpriteBatch.h>, which is what put nine of
+	// the engine's translation units out of a headless test's reach and made
+	// `core | math` (ARCHITECTURE's module table) false at exactly one line.
+	// A reference parameter needs no definition; whoever implements draw()
+	// includes engine/render/renderer.h, and core still depends on math alone.
+	class DrawList;
 	// Anything the level can update and draw.
 	//
 	// draw() is const, and that is the whole contract that makes parallel
@@ -32,14 +38,22 @@ namespace artattack
 		// those. It also made the object outlive-the-pointer question real:
 		// device loss used to reallocate the float behind it.
 		virtual void update(float dt) = 0;
-		// One draw, always with a camera. There was a second, camera-less
+		// One draw, into one view's recording. There was a second, camera-less
 		// overload; nothing ever called it through this interface, and by the
 		// time it was deleted Player's copy of it had silently drifted - it had
 		// stopped early-outing on death, dropped a whole sprite layer and lost
-		// the facing flip. A camera-less draw is just Camera::DEFAULT_CAMERA,
-		// which is the identity, so callers wanting screen space pass it.
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera) const = 0;
+		// the facing flip.
+		//
+		// The camera used to be the second parameter. It is on the DrawList
+		// now (engine/render/renderer.h, DrawList::set_camera): every one of
+		// these implementations either handed it straight down or called
+		// Camera::calculate_view_rectangle with it, and the caller that knows
+		// which view this is is the caller that should say so - once for a
+		// range of draws, not once per object per draw.
+		//
+		// This is the line that used to make engine/core include <SpriteBatch.h>
+		// and put nine translation units out of a headless test's reach.
+		virtual void draw(DrawList& draw_list) const = 0;
 		// The object's drawn extent, in world space.
 		//
 		// This replaced is_visible_in_viewport(view), which asked the object

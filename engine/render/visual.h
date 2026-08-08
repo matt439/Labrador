@@ -17,7 +17,7 @@ namespace artattack
 			const mattmath::Colour& color = colour_consts::WHITE,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
+			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
 		Visual(const std::string& sheet_name,
@@ -27,12 +27,11 @@ namespace artattack
 			const mattmath::Colour& color = colour_consts::WHITE,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
+			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
 		void update(float dt) override;
-		void draw(DirectX::SpriteBatch* sprite_batch,
-					const mattmath::Camera& camera) const override;
+		void draw(DrawList& draw_list) const override;
 
 		mattmath::RectangleF bounds() const override;
 

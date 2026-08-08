@@ -17,17 +17,16 @@ namespace artattack
 			const mattmath::Vector2F& origin =
 				mattmath::Vector2F::ZERO,
 			bool rotated = false);
-		const RECT* source_rectangle() const;
-	private:
-		RECT source_rectangle_ = { 0, 0, 0, 0 };
 
-		mattmath::RectangleI source_rectangle2_ = mattmath::RectangleI::ZERO;
+		// A RectangleI rather than the RECT* this used to hand out. The RECT
+		// was here only because SpriteBatch::Draw wanted one; the frame kept
+		// both forms of the same rectangle so it had a stable address to
+		// return, and the two could drift. The seam takes a RectangleI, so the
+		// duplicate is gone and the conversion happens once, in the backend.
+		const mattmath::RectangleI& source_rectangle() const;
+	private:
+		mattmath::RectangleI source_rectangle_ = mattmath::RectangleI::ZERO;
 		mattmath::Vector2F origin_ = mattmath::Vector2F::ZERO;
 		bool rotated_ = false;
-
-		void set_source_rectangle(
-			const mattmath::RectangleI& source_rectangle);
-		void set_source_rectangle(const mattmath::Vector2F& position,
-			const mattmath::Vector2F& size);
 	};
 }

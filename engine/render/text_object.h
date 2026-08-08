@@ -14,7 +14,7 @@ namespace artattack
 	// text_encoding.h is where narrow content comes across, once.
 	//
 	// The font name is resolved to a handle at construction. A handle rather than
-	// a cached SpriteFont*, because fonts are device resources: a device loss
+	// a cached font pointer, because fonts are device resources: a device loss
 	// destroys and rebuilds every one of them, and a pointer taken before the loss
 	// would be dangling after it. The handle names the registry slot, and the
 	// reload refills that same slot.
@@ -30,34 +30,32 @@ namespace artattack
 			float scale = 1.0f,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
 
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera) const;
-		virtual void draw(DirectX::SpriteBatch* sprite_batch) const;
+		virtual void draw(DrawList& draw_list) const;
 
 		// Draws with the given colour, position and scale without storing any of
 		// them. TextDropShadow used to draw its shadow by assigning those three
 		// members, drawing, and assigning them back - a save/restore that is a
 		// data race the moment two render workers run it on the same object.
-		void draw_with(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera,
+		void draw_with(DrawList& draw_list,
 			const mattmath::Colour& colour,
 			const mattmath::Vector2F& position,
 			float scale) const;
 
 		// The box this string occupies, for whoever has to cull or index it.
 		//
-		// The measurement is cached rather than taken here, because this is on
-		// the culling path and MeasureString walks the string: it would be a
-		// per-object, per-view, per-frame walk of every label on screen. Only
-		// the text and the font change it, so it is retaken in exactly those
-		// two setters; position, scale and origin are arithmetic on top.
+		// The measurement is taken in the constructor and in the two setters
+		// that can change it, never here. Measuring walks the string, and this
+		// is on the culling path: taking it here would be a per-object,
+		// per-view, per-frame walk of every label on screen. Caching it lazily
+		// instead is not an option - this method is const and every view worker
+		// enters it on the same object at the same time, so a mutable cache
+		// filled on first read is a data race by construction.
 		//
-		// Cached across device loss deliberately. The SpriteFont object is
-		// rebuilt, but it is rebuilt from the same font, so the metrics are
-		// the same - it is the pointer that goes stale, not the measurement.
+		// Cached across device loss deliberately. The font object is rebuilt,
+		// but it is rebuilt from the same font, so the metrics are the same -
+		// it is the pointer that goes stale, not the measurement.
 		//
 		// Ignores draw_rotation(): the box is the unrotated one. Nothing
 		// rotates text today, and a rotated string wants its rotated AABB.
@@ -71,7 +69,7 @@ namespace artattack
 
 	protected:
 		const std::wstring& text() const;
-		RenderResources::FontHandle font() const;
+		FontHandle font() const;
 		const mattmath::Vector2F& position() const;
 		float scale() const;
 
@@ -81,7 +79,7 @@ namespace artattack
 		virtual void set_scale(float scale);
 	private:
 		std::wstring text_ = L"";
-		RenderResources::FontHandle font_;
+		FontHandle font_;
 		mattmath::Vector2F position_ = mattmath::Vector2F::ZERO;
 		float scale_ = 1.0f;
 

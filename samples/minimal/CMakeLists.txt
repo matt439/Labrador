@@ -20,7 +20,6 @@ add_executable(ArtAttackSample WIN32
 )
 target_link_libraries(ArtAttackSample PRIVATE
     ArtAttackEngine
-    Microsoft::DirectXTK
     artattack_settings
 )
 

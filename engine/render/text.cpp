@@ -1,7 +1,6 @@
 #include "engine/render/text.h"
 
 using namespace mattmath;
-using namespace DirectX;
 
 namespace artattack
 {
@@ -13,10 +12,9 @@ namespace artattack
 		float scale,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
 		float layer_depth) :
 		TextObject(text, font_name, position, render_resources,
-			color, scale, rotation, origin, effects, layer_depth)
+			color, scale, rotation, origin, layer_depth)
 	{
 
 	}

@@ -1,6 +1,5 @@
 #include "engine/render/sprite_sheet_object.h"
 
-using namespace DirectX;
 using namespace mattmath;
 
 namespace artattack
@@ -10,16 +9,16 @@ namespace artattack
 		const Colour& color,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) :
 		DrawObject(render_resources, color, rotation, origin,
-			effects, layer_depth),
+			flip, layer_depth),
 		sheet_(render_resources->resolve_sprite_sheet(sheet_name))
 	{
 
 	}
 
-	SpriteSheet* SpriteSheetObject::sprite_sheet() const
+	const SpriteSheet* SpriteSheetObject::sprite_sheet() const
 	{
 		return this->render_resources()->sprite_sheet(this->sheet_);
 	}

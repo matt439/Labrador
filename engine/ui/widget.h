@@ -21,9 +21,9 @@ namespace artattack
 	// been shrunk and the bars had not.
 	//
 	// A widget now holds one geometry, in whatever space the game authored it
-	// in, and nothing ever rewrites it. The mapping to the screen is a Camera
-	// the caller passes to draw() - which is the parameter that was already
-	// there.
+	// in, and nothing ever rewrites it. The mapping to the screen is a Camera,
+	// and it is set on the draw list once for the whole menu rather than passed
+	// to every widget in turn (renderer.h, DrawList::set_camera).
 	class UiObject : public GameObject
 	{
 	public:
@@ -35,8 +35,7 @@ namespace artattack
 		bool hidden() const;
 
 		void update(float dt) override = 0;
-		void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera) const override = 0;
+		void draw(DrawList& draw_list) const override = 0;
 		mattmath::RectangleF bounds() const override = 0;
 	private:
 		std::string name_ = "error_name";
@@ -56,8 +55,7 @@ namespace artattack
 		std::vector<std::pair<std::string, UiObject*>> children();
 
 		void update(float dt) override;
-		void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera) const override;
+		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
 	private:
 		std::vector<std::pair<std::string, UiObject*>> children_;
@@ -71,8 +69,7 @@ namespace artattack
 		~UiWidget() override = default;
 
 		void update(float dt) override = 0;
-		void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera) const override = 0;
+		void draw(DrawList& draw_list) const override = 0;
 		mattmath::RectangleF bounds() const override = 0;
 
 		virtual void set_colour(const mattmath::Colour& colour) = 0;
@@ -91,12 +88,11 @@ namespace artattack
 			bool hidden = false,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
+			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
 		void update(float dt) override;
-		void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera) const override;
+		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
 
 		void set_texture(const std::string& sheet_name, const std::string& frame_name);
@@ -128,12 +124,10 @@ namespace artattack
 			float scale = 1.0f,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
 
 		void update(float dt) override;
-		void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera) const override;
+		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
 		void set_colour(const mattmath::Colour& colour) override;
 	};
@@ -155,12 +149,10 @@ namespace artattack
 			float shadow_scale = 1.0f,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
 			float layer_depth = 0.0f);
 
 		void update(float dt) override;
-		void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Camera& camera) const override;
+		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
 		void set_colour(const mattmath::Colour& colour) override;
 	};

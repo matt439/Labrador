@@ -20,7 +20,7 @@ namespace artattack
 			const mattmath::Colour& color = colour_consts::WHITE,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			DirectX::SpriteEffects effects = DirectX::SpriteEffects_None,
+			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 	protected:
 		virtual void update(float dt);
@@ -39,27 +39,18 @@ namespace artattack
 		void set_animation_strip_and_reset(const std::string& sprite_sheet,
 			const std::string& animation_strip);
 
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::RectangleI& destination_rectangle) const;
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
+		// No camera parameter; see TextureObject.
+		virtual void draw(DrawList& draw_list,
 			const mattmath::RectangleF& destination_rectangle) const;
-		virtual void draw(DirectX::SpriteBatch* sprite_batch, const mattmath::Vector2F& position,
-			float scale = 1.0f) const;
+		virtual void draw(DrawList& draw_list,
+			const mattmath::Vector2F& position, float scale = 1.0f) const;
 
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::RectangleF& destination_rectangle,
-			const mattmath::Camera& camera) const;
-		virtual void draw(DirectX::SpriteBatch* sprite_batch,
-			const mattmath::Vector2F& position,
-			const mattmath::Camera& camera, float scale = 1.0f) const;
-
-		// See TextureObject::draw_with - lets a caller vary colour and effects per
+		// See TextureObject::draw_with - lets a caller vary colour and flip per
 		// draw without assigning them to this shared object first.
-		void draw_with(DirectX::SpriteBatch* sprite_batch,
+		void draw_with(DrawList& draw_list,
 			const mattmath::RectangleF& destination_rectangle,
-			const mattmath::Camera& camera,
 			const mattmath::Colour& colour,
-			DirectX::SpriteEffects effects) const;
+			SpriteFlip flip) const;
 
 	private:
 		SpriteSheet::strip_handle strip_;
@@ -68,6 +59,6 @@ namespace artattack
 		float time_elapsed_ = 0.0f;
 		float frame_time_ = 0.0f;
 		const AnimationStrip& animation_strip() const;
-		const RECT* source_rectangle() const;
+		const mattmath::RectangleI& source_rectangle() const;
 	};
 }

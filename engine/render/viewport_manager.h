@@ -2,10 +2,8 @@
 
 #include "engine/render/screen_layout.h"
 #include "engine/render/resolution_manager.h"
-#include "engine/render/device_resources.h"
 #include "engine/math/matt_math.h"
 #include "engine/math/colour.h"
-#include "SpriteBatch.h"
 
 namespace artattack
 {
@@ -30,17 +28,11 @@ namespace artattack
 		void set_layout(ScreenLayout layout);
 		ScreenLayout layout() const { return layout_; }
 
-		// Every overload takes the context to apply to. There used to be a
-		// one-argument version that reached for the IMMEDIATE context and a cached
-		// SpriteBatch*, which render workers were calling - ID3D11DeviceContext is
-		// not thread-safe, and the deferred contexts exist precisely so that
-		// workers never touch the immediate one.
-		void apply_player_viewport(int player_num,
-			ID3D11DeviceContext* context,
-			DirectX::SpriteBatch* sprite_batch) const;
-		void apply_player_viewport(int player_num,
-			ID3D11DeviceContext* context) const;
-
+		// Pure arithmetic, all of it. The two apply_player_viewport overloads
+		// that used to live here were three lines of RSSetViewports and
+		// SpriteBatch::SetViewport apiece, and they are DrawList::set_viewport
+		// now - which is why this class no longer names a graphics type and can
+		// be constructed in a test.
 		mattmath::Viewport player_viewport(int player_num) const;
 
 		std::vector<mattmath::Viewport> all_viewports() const;
@@ -50,7 +42,7 @@ namespace artattack
 
 		std::vector<mattmath::RectangleF> viewport_dividers() const;
 
-		D3D11_VIEWPORT fullscreen_d3d11_viewport() const;
+		mattmath::Viewport fullscreen_viewport() const;
 
 	private:
 		static constexpr float DIVIDER_THICKNESS = 2.0f;
@@ -62,12 +54,7 @@ namespace artattack
 		int player_count_from_layout(ScreenLayout layout) const;
 		int viewport_count_from_layout(ScreenLayout layout) const;
 
-		D3D11_VIEWPORT calculate_d3d11_viewport(ScreenLayout layout,
-			int player_num, const mattmath::Vector2F& screen_size) const;
 		mattmath::Viewport calculate_viewport(ScreenLayout layout,
 			int player_num, const mattmath::Vector2F& screen_size) const;
-
-		mattmath::Viewport fullscreen_viewport() const;
-
 	};
 }

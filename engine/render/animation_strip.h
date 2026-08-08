@@ -11,19 +11,22 @@ namespace artattack
 		AnimationStrip(const mattmath::RectangleI& first_frame,
 			int frame_count, float frame_time, bool looping);
 
-		const RECT* frame_rect(int frame_index) const;
+		// By value, and a RectangleI rather than a RECT*: see
+		// SpriteFrame::source_rectangle. Throws std::out_of_range for a frame
+		// index this strip does not have.
+		const mattmath::RectangleI& frame_rect(int frame_index) const;
 		int frame_count() const;
 		float frame_time() const;
 		bool looping() const;
 
 	private:
-		std::vector<RECT> frame_rects_;
-		mattmath::RectangleI first_frame_ = { 0, 0, 0, 0 };
+		std::vector<mattmath::RectangleI> frame_rects_;
+		mattmath::RectangleI first_frame_ = mattmath::RectangleI::ZERO;
 		int frame_count_ = 0;
 		float frame_time_ = 0.0f;
 		bool looping_ = false;
 
-		std::vector<RECT> calculate_all_frame_rects() const;
-		RECT calculate_frame(int frame_index) const;
+		std::vector<mattmath::RectangleI> calculate_all_frame_rects() const;
+		mattmath::RectangleI calculate_frame(int frame_index) const;
 	};
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "engine/render/sprite_sheet.h"
-#include <d3d11_1.h>
 #include <memory>
 
 namespace artattack
@@ -14,5 +13,5 @@ namespace artattack
 	// Throws std::runtime_error naming the path if the file cannot be read or
 	// parsed, and whatever rapidjson throws if the document is the wrong shape.
 	std::unique_ptr<SpriteSheet> read_sprite_sheet(const char* json_path,
-		ID3D11ShaderResourceView* texture);
+		TextureHandle texture);
 }

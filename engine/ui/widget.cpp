@@ -1,6 +1,5 @@
 #include "engine/ui/widget.h"
 
-using namespace DirectX;
 using namespace mattmath;
 
 #pragma region UiObject
@@ -79,8 +78,7 @@ namespace artattack
 			child.second->update(dt);
 		}
 	}
-	void UiContainer::draw(SpriteBatch* sprite_batch,
-		const mattmath::Camera& camera) const
+	void UiContainer::draw(DrawList& draw_list) const
 	{
 		// Every other widget in this header early-outs on hidden(); this one
 		// did not, so set_hidden(true) on a container did nothing at all and
@@ -92,7 +90,7 @@ namespace artattack
 		}
 		for (auto const& child : this->children_)
 		{
-			child.second->draw(sprite_batch, camera);
+			child.second->draw(draw_list);
 		}
 	}
 	RectangleF UiContainer::bounds() const
@@ -147,11 +145,11 @@ namespace artattack
 		bool hidden,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
+		SpriteFlip flip,
 		float layer_depth) :
 		UiWidget(name, hidden),
 		TextureObject(sheet_name, frame_name,
-			render_resources, color, rotation, origin, effects, layer_depth),
+			render_resources, color, rotation, origin, flip, layer_depth),
 		rectangle_(rectangle)
 	{
 
@@ -179,13 +177,13 @@ namespace artattack
 	{
 		this->SpriteSheetObject::set_colour(colour);
 	}
-	void UiTexture::draw(SpriteBatch* sprite_batch, const Camera& camera) const
+	void UiTexture::draw(DrawList& draw_list) const
 	{
 		if (this->hidden())
 		{
 			return;
 		}
-		this->TextureObject::draw(sprite_batch, this->rectangle_, camera);
+		this->TextureObject::draw(draw_list, this->rectangle_);
 	}
 	const RectangleF& UiTexture::rectangle() const
 	{
@@ -230,22 +228,21 @@ namespace artattack
 		float scale,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
 		float layer_depth) :
 		UiWidget(name, hidden),
 		Text(text, font_name, position,
 			render_resources, color,
-			scale, rotation, origin, effects, layer_depth)
+			scale, rotation, origin, layer_depth)
 	{
 
 	}
-	void UiText::draw(SpriteBatch* sprite_batch, const Camera& camera) const
+	void UiText::draw(DrawList& draw_list) const
 	{
 		if (this->hidden())
 		{
 			return;
 		}
-		this->Text::draw(sprite_batch, camera);
+		this->Text::draw(draw_list);
 	}
 	void UiText::update(float /*dt*/)
 	{
@@ -281,23 +278,22 @@ namespace artattack
 		float shadow_scale,
 		float rotation,
 		const Vector2F& origin,
-		SpriteEffects effects,
 		float layer_depth) :
 		UiWidget(name, hidden),
 		TextDropShadow(text, font_name, position,
 			render_resources, color, shadow_color, shadow_offset,
-			scale, shadow_scale, rotation, origin, effects, layer_depth)
+			scale, shadow_scale, rotation, origin, layer_depth)
 	{
 
 	}
 
-	void UiTextDropShadow::draw(SpriteBatch* sprite_batch, const Camera& camera) const
+	void UiTextDropShadow::draw(DrawList& draw_list) const
 	{
 		if (this->hidden())
 		{
 			return;
 		}
-		this->TextDropShadow::draw(sprite_batch, camera);
+		this->TextDropShadow::draw(draw_list);
 	}
 	void UiTextDropShadow::update(float /*dt*/)
 	{

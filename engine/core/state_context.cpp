@@ -2,7 +2,7 @@
 
 namespace artattack
 {
-	void StateContext::update()
+	void StateContext::update(float dt)
 	{
 		if (this->state_ == nullptr)
 		{
@@ -10,20 +10,20 @@ namespace artattack
 		}
 
 		this->deferring_ = true;
-		this->state_->update();
+		this->state_->update(dt);
 		this->deferring_ = false;
 
 		// After update() returns, so the outgoing state is destroyed with
 		// nothing of its own on the stack.
 		this->apply_pending();
 	}
-	void StateContext::draw() const
+	void StateContext::draw(Renderer& renderer) const
 	{
 		if (this->state_ == nullptr)
 		{
 			return;
 		}
-		this->state_->draw();
+		this->state_->draw(renderer);
 	}
 	void StateContext::transition_to(std::unique_ptr<State> state)
 	{
