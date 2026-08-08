@@ -27,6 +27,39 @@ namespace artattack
 		float penetration = 0.0f;
 	};
 
+	// What one sweep did, in work units rather than in time.
+	//
+	// These are the terms of Ericson's hierarchy cost model (Real-Time
+	// Collision Detection, 6.1.2): the total cost of a query is the number of
+	// bounding-volume tests times what one costs, plus the number of primitive
+	// tests times what one of those costs. The counts are the half of that
+	// product an algorithm controls; the per-test costs are the half a
+	// profiler measures.
+	//
+	// They are reported because they are *pinnable*. A wall-clock figure
+	// cannot be asserted on in a test - it moves with the machine, the build
+	// type and the weather - but "this scene enumerates 499,500 pairs" is an
+	// integer, and a broad phase that fails to reduce it has failed
+	// observably. PHILOSOPHY (Performance) asks that a throughput regression
+	// be a defect rather than a curiosity; this is what a test can hold.
+	struct SweepCounts
+	{
+		// Pairs the enumeration offered to the filters, counting only pairs
+		// where both objects were live. This is the number a broad phase
+		// exists to reduce, and today it is n * (n - 1) / 2 - every pair of
+		// every object, however far apart.
+		long long pairs_enumerated = 0;
+
+		// Bounding-volume tests actually run: pairs that got past layer and
+		// mask filtering and reached Shape::AABB_intersects. Ericson's Nv.
+		long long bound_tests = 0;
+
+		// Primitive tests actually run: pairs whose bounds overlapped and so
+		// reached narrow_phase. Ericson's Np, and much the more expensive of
+		// the two.
+		long long narrow_tests = 0;
+	};
+
 	// Fills `contacts` with every overlapping pair among `objects`, each pair
 	// once.
 	//
@@ -50,6 +83,17 @@ namespace artattack
 	// depended on which loop reached it first.
 	void find_contacts(std::span<CollisionObject* const> objects,
 		std::vector<Contact>& contacts);
+
+	// The same sweep, reporting what it cost. `counts` is overwritten, not
+	// accumulated, so a caller measuring several frames adds them up itself.
+	//
+	// There is one implementation and the two-argument form calls this one
+	// with a discarded total. That costs three integer increments per pair on
+	// a path that already makes a virtual call and tests two boxes, which is
+	// worth paying: two implementations of a sweep would drift, and the
+	// version under test would stop being the version that ships (T4).
+	void find_contacts(std::span<CollisionObject* const> objects,
+		std::vector<Contact>& contacts, SweepCounts& counts);
 
 	// Tells both participants of every contact, once each, with the normal
 	// oriented for the object receiving it.

@@ -10,7 +10,15 @@ namespace artattack
 	void find_contacts(std::span<CollisionObject* const> objects,
 		std::vector<Contact>& contacts)
 	{
+		SweepCounts discarded;
+		find_contacts(objects, contacts, discarded);
+	}
+
+	void find_contacts(std::span<CollisionObject* const> objects,
+		std::vector<Contact>& contacts, SweepCounts& counts)
+	{
 		contacts.clear();
+		counts = SweepCounts{};
 
 		for (size_t i = 0; i < objects.size(); i++)
 		{
@@ -30,17 +38,21 @@ namespace artattack
 					continue;
 				}
 
+				counts.pairs_enumerated++;
+
 				if (!layers_collide(a->layer(), a->mask(),
 					b->layer(), b->mask()))
 				{
 					continue;
 				}
 
+				counts.bound_tests++;
 				if (!a->shape()->AABB_intersects(b->shape()))
 				{
 					continue;
 				}
 
+				counts.narrow_tests++;
 				const std::optional<Manifold> manifold =
 					narrow_phase(*a->shape(), *b->shape());
 				if (!manifold.has_value())
