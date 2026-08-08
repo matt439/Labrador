@@ -1,0 +1,209 @@
+#include <doctest/doctest.h>
+
+#include "engine/collision/collision_object.h"
+#include "engine/collision/contacts.h"
+
+#include <vector>
+
+using artattack::CollisionLayer;
+using artattack::CollisionMask;
+using artattack::CollisionObject;
+using artattack::CollisionTag;
+using artattack::Contact;
+using artattack::dispatch_contacts;
+using artattack::find_contacts;
+using mattmath::RectangleF;
+using mattmath::Vector2F;
+
+namespace
+{
+	constexpr CollisionLayer PLAYER = 1u << 0;
+	constexpr CollisionLayer WALL = 1u << 1;
+	constexpr CollisionLayer BULLET = 1u << 2;
+
+	class TestObject : public CollisionObject
+	{
+	public:
+		struct Received
+		{
+			const CollisionObject* other = nullptr;
+			Vector2F normal;
+			float penetration = 0.0f;
+		};
+
+		TestObject(const RectangleF& rectangle, CollisionLayer layer,
+			CollisionMask mask, CollisionTag tag = 0) :
+			rectangle_(rectangle), layer_(layer), mask_(mask), tag_(tag)
+		{
+		}
+
+		void update(float /*dt*/) override {}
+		void draw(artattack::DrawList& /*draw_list*/) const override {}
+		RectangleF bounds() const override { return this->rectangle_; }
+
+		const mattmath::Shape* shape() const override { return &this->rectangle_; }
+		CollisionLayer layer() const override { return this->layer_; }
+		CollisionMask mask() const override { return this->mask_; }
+		CollisionTag tag() const override { return this->tag_; }
+
+		bool for_deletion() const override { return this->for_deletion_; }
+		void set_for_deletion(bool for_deletion) override
+		{
+			this->for_deletion_ = for_deletion;
+		}
+
+		void on_contact(const CollisionObject& other, const Vector2F& normal,
+			float penetration) override
+		{
+			this->received_.push_back(Received{ &other, normal, penetration });
+			if (this->retire_on_contact_)
+			{
+				this->for_deletion_ = true;
+			}
+		}
+
+		const std::vector<Received>& received() const { return this->received_; }
+		void retire_on_contact() { this->retire_on_contact_ = true; }
+
+	private:
+		RectangleF rectangle_;
+		CollisionLayer layer_ = 0;
+		CollisionMask mask_ = 0;
+		CollisionTag tag_ = 0;
+		bool for_deletion_ = false;
+		bool retire_on_contact_ = false;
+		std::vector<Received> received_;
+	};
+
+	bool names(const Contact& contact, const CollisionObject& x,
+		const CollisionObject& y)
+	{
+		return (contact.a == &x && contact.b == &y) ||
+			(contact.a == &y && contact.b == &x);
+	}
+}
+
+TEST_CASE("an overlapping pair is reported once, not twice and not against itself")
+{
+	// Three objects all in the same place. Three pairs, so three contacts -
+	// the nested loops this replaces produced six, plus three self-pairs that
+	// only an identity check kept out.
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL | BULLET);
+	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), WALL, PLAYER | BULLET);
+	TestObject c(RectangleF(4.0f, 4.0f, 10.0f, 10.0f), BULLET, PLAYER | WALL);
+
+	CollisionObject* objects[] = { &a, &b, &c };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts);
+
+	REQUIRE(contacts.size() == 3);
+	CHECK(names(contacts[0], a, b));
+	CHECK(names(contacts[1], a, c));
+	CHECK(names(contacts[2], b, c));
+}
+
+TEST_CASE("either side can veto a pair")
+{
+	// A responds to walls; B is a wall that responds to nothing. The filter
+	// it replaces asked one participant only, so which answer counted came
+	// down to which of two nested loops reached the pair first.
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL);
+	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), WALL, 0);
+
+	CollisionObject* objects[] = { &a, &b };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts);
+
+	CHECK(contacts.empty());
+}
+
+TEST_CASE("objects in unrelated layers overlapping in space are not a contact")
+{
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL);
+	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), BULLET, WALL);
+
+	CollisionObject* objects[] = { &a, &b };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts);
+
+	CHECK(contacts.empty());
+}
+
+TEST_CASE("an object already flagged for deletion takes part in nothing")
+{
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL);
+	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), WALL, PLAYER);
+	b.set_for_deletion(true);
+
+	CollisionObject* objects[] = { &a, &b };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts);
+
+	CHECK(contacts.empty());
+}
+
+TEST_CASE("the contact vector is cleared before it is filled")
+{
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL);
+	TestObject b(RectangleF(100.0f, 100.0f, 10.0f, 10.0f), WALL, PLAYER);
+
+	std::vector<Contact> contacts(7);
+	CollisionObject* objects[] = { &a, &b };
+	find_contacts(objects, contacts);
+
+	CHECK(contacts.empty());
+}
+
+TEST_CASE("both participants are told, once each, with opposite normals")
+{
+	// The bug this closes: the dispatch fired both objects' responses off one
+	// object's predicate, so a player's response to a projectile ran because
+	// the *projectile* thought they were touching - and then the reversed
+	// pass ran both again.
+	TestObject player(RectangleF(0.0f, 0.0f, 10.0f, 100.0f), PLAYER, WALL);
+	TestObject wall(RectangleF(8.0f, 0.0f, 100.0f, 100.0f), WALL, PLAYER);
+
+	CollisionObject* objects[] = { &player, &wall };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts);
+	dispatch_contacts(contacts);
+
+	REQUIRE(player.received().size() == 1);
+	REQUIRE(wall.received().size() == 1);
+
+	CHECK(player.received()[0].other == &wall);
+	CHECK(wall.received()[0].other == &player);
+
+	CHECK(player.received()[0].normal == Vector2F::DIRECTION_RIGHT);
+	CHECK(wall.received()[0].normal == Vector2F::DIRECTION_LEFT);
+
+	CHECK(player.received()[0].penetration == doctest::Approx(2.0f));
+	CHECK(wall.received()[0].penetration == doctest::Approx(2.0f));
+}
+
+TEST_CASE("a contact is dropped when an earlier response retired a participant")
+{
+	// A bullet that hits a wall does not go on to hit the player standing
+	// behind it. That rule used to be a `continue` inside the sweep, so
+	// whether it held depended on which nested loop reached the pair; here it
+	// holds for both sides of every pair.
+	TestObject bullet(RectangleF(50.0f, 50.0f, 10.0f, 10.0f),
+		BULLET, WALL | PLAYER);
+	TestObject wall(RectangleF(0.0f, 0.0f, 100.0f, 55.0f), WALL, BULLET);
+	TestObject player(RectangleF(0.0f, 58.0f, 100.0f, 50.0f), PLAYER, BULLET);
+	bullet.retire_on_contact();
+
+	CollisionObject* objects[] = { &bullet, &wall, &player };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts);
+
+	// Both overlaps are found: the sweep measures the frame as it stood at
+	// the start of it, and the list is a value nothing has responded to yet.
+	REQUIRE(contacts.size() == 2);
+
+	dispatch_contacts(contacts);
+
+	CHECK(bullet.received().size() == 1);
+	CHECK(wall.received().size() == 1);
+	CHECK(player.received().empty());
+}
