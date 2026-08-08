@@ -15,7 +15,7 @@ target: when code moves, it moves toward this.
 
 Two kinds of content:
 
-- **The trade-offs (T1–T11)** — pairs of things we want that conflict, each
+- **The trade-offs (T1–T12)** — pairs of things we want that conflict, each
   with a chosen side. The right-hand side is always genuinely valuable, so
   each entry also names the price we accept and the point past which leaning
   further becomes malpractice.
@@ -209,6 +209,39 @@ style on the engine's users: T11 governs the engine's own code and
 everything it ships, while game code meets the engine at small interfaces
 and chooses its own grammar behind them — full OOP or full performance
 (see The object model).
+
+### T12. The language over a dialect
+
+The engine is written in the C++ a C++ programmer already knows. No macro
+that reads like a keyword, no code generator standing between the source and
+the compiler, no parallel vocabulary shadowing the language's own. A stranger
+reading an engine header meets classes, templates and the standard library,
+and nothing they must learn *this engine* to parse — which matters most
+precisely because there is no scripting layer to hide behind (T10): if the
+only language is C++, it had better be C++.
+
+Unreal is the anti-example, and a fair one. `UCLASS()`, `UPROPERTY()` and
+`GENERATED_BODY()` are not C++ but annotations for a separate tool that emits
+the real code; `TArray`, `TMap` and `FString` are a second standard library
+sitting beside the first; and the prefix on every type name (CONVENTIONS,
+Never) exists to tell you which dialect you are currently in. That machinery
+buys an enormous amount. It also means reading the source is not sufficient to
+know what the source does.
+
+**The price:** everything reflection would have handed over free is either
+written by hand or absent — automatic serialisation, property editors,
+network replication, hot reload. The engine already declines all four (The
+object model; Tests and toolchain; Non-goals), so T12 is less a new bill than
+the name of one already paid. Real ergonomics go with them: an assertion macro
+can carry a file and a line, but nothing can carry a field's name.
+
+**Not a licence for:** banning the preprocessor. `#pragma once`, platform
+`#if`s and an assertion macro are the language's own tools used as intended;
+the line is that a macro may not invent syntax, hide control flow, or change
+the meaning of a name that already had one. Nor for refusing to build types —
+`Handle`, `Registry` and `NameTable` are ordinary C++ a reader can follow to
+their definitions. Adding vocabulary is what the language is for. Replacing
+its own is what this rules out.
 
 ---
 
