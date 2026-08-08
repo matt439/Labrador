@@ -94,6 +94,17 @@ Almost everything below falls out of one rule:
   before the second platform arrives.
 - One primary type per header. Small types that exist only to serve it —
   a return struct, an options bag — may ride along.
+- No huge files. Deliberately no line count: length is a symptom, not the
+  defect, and the number that would be right for a table of constants is
+  wrong for a class with intricate control flow. A file is too big when a
+  reader can no longer hold what it does in their head — and the cause is
+  almost always a type that grew past one job, so the fix is usually to
+  split the type, not the file. Growth is the signal worth watching: a
+  `.cpp` that gains a section a month is asking to become two. This is a
+  guideline review raises, not a check the build fails, because a
+  threshold crisp enough to enforce mechanically would be wrong often
+  enough to need suppressing — and zero suppressions is a promise kept
+  elsewhere (Tests and toolchain, PHILOSOPHY.md).
 - `#pragma once`, not include guards: no name to get wrong, nothing to
   collide (T5).
 - Include paths are written from the repository root, so every include
