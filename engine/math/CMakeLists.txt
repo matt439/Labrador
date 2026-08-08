@@ -8,5 +8,7 @@ add_library(MattMath STATIC
     ericson_math.cpp
     matt_math.cpp
 )
-target_include_directories(MattMath PUBLIC "${CMAKE_SOURCE_DIR}")
+# Relative to this file, not to the top-level project: see the note in
+# engine/CMakeLists.txt.
+target_include_directories(MattMath PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 target_link_libraries(MattMath PRIVATE artattack_settings)

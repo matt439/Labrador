@@ -55,9 +55,34 @@ add_library(ArtAttackEngine STATIC
     ui/navigation.cpp
     ui/widget.cpp
 )
-target_include_directories(ArtAttackEngine PUBLIC
-    "${CMAKE_SOURCE_DIR}"
-    "${CMAKE_SOURCE_DIR}/external/rapidjson/include"
+# The include root, relative to this file and not to the top-level project.
+# CMAKE_SOURCE_DIR is whoever ran cmake, so the moment the engine is consumed
+# as a submodule - the stated repo topology - it points at the *consumer's*
+# root and every "engine/..." include stops resolving. CMAKE_CURRENT_SOURCE_DIR
+# is this directory whatever is above it.
+#
+# It is the directory *above* engine/ because includes are written from the
+# repository root (CONVENTIONS, Files), so an engine file says
+# "engine/render/renderer.h" and means it. That is also why this cannot yet be
+# the wall ARCHITECTURE describes: the same root holds game/, so an engine file
+# including a game header still resolves. What closes that is the repo split
+# this path change is a prerequisite for - engine/ and samples/ in one
+# repository with no game/ beside them - and until then the enforcement is the
+# check_engine_includes target, which runs on every build.
+target_include_directories(ArtAttackEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+# rapidjson is PRIVATE and SYSTEM. It used to be PUBLIC, so a sample that
+# parses nothing still had a JSON parser's headers on its command line, and
+# their warnings were measured against /W4 /WX.
+#
+# The duplication this leaves is deliberate and temporary: assets/json_loader.h
+# still hands out a rapidjson::Document, so a client of *that* header needs
+# rapidjson itself, and game/ and tests/assets/ ask for it themselves. D3 is
+# the item that makes the guarded readers the public API; when it lands this
+# stops being a usage requirement the engine is declining to propagate and
+# becomes a private implementation detail, which is what PRIVATE should mean.
+target_include_directories(ArtAttackEngine SYSTEM PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
 )
 target_link_libraries(ArtAttackEngine
     PUBLIC MattMath Microsoft::DirectXTK d3d11 dxgi dxguid
