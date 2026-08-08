@@ -22,4 +22,15 @@ namespace artattack
 
 		return axis * (-penetration / along);
 	}
+
+	Vector2F slide(const Vector2F& velocity, const Vector2F& normal)
+	{
+		const float into_surface = Vector2F::dot(velocity, normal);
+		if (into_surface <= 0.0f)
+		{
+			return velocity;
+		}
+
+		return velocity - normal * into_surface;
+	}
 }

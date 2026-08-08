@@ -31,4 +31,32 @@ namespace artattack
 	// translation along it separates the pair however far it goes.
 	mattmath::Vector2F separation_along(const mattmath::Vector2F& normal,
 		float penetration, const mattmath::Vector2F& axis);
+
+	// `velocity` with the component that drives it into the surface removed,
+	// and the component along the surface left alone. `normal` must be unit
+	// length, and points the same way as it does everywhere else here: from
+	// the object being moved towards the thing it hit.
+	//
+	// Any vector splits uniquely into a part along a direction and a part
+	// perpendicular to it (Ericson, Real-Time Collision Detection, 3.3.3).
+	// For a unit normal the first part is normal * dot(velocity, normal), so
+	// the second - the part a slope should leave untouched - is one
+	// subtraction. In 2D there is only one perpendicular direction, so the
+	// answer is unambiguous without a basis, a trig call or a square root.
+	//
+	// A velocity already moving away from the surface is returned unchanged.
+	// dot(velocity, normal) <= 0 means the contact is not what is stopping
+	// this object, and a resolver that clamps anyway deletes a jump on the
+	// frame it starts.
+	//
+	// This is what a slope contact wants instead of zeroing an axis. Zeroing
+	// the vertical component of a velocity on a ramp deletes the whole climb
+	// rate, so running up a slope is slower than running along the flat and
+	// landing on one stops dead rather than sliding; the tangential speed the
+	// player expects to keep is exactly the part this keeps. As with
+	// separation(), the engine offers the arithmetic and never performs it -
+	// whether a contact should cost an object its speed is a gameplay
+	// question.
+	mattmath::Vector2F slide(const mattmath::Vector2F& velocity,
+		const mattmath::Vector2F& normal);
 }

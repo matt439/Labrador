@@ -62,12 +62,6 @@ namespace mattmath
 			value = max;
 		}
 	}
-	int mattmath::sign(const Vector2F& p1,
-		const Vector2F& p2, const Vector2F& p3)
-	{
-		return static_cast<int>((p1.x - p3.x) * (p2.y - p3.y) -
-			(p2.x - p3.x) * (p1.y - p3.y));
-	}
 
 	bool mattmath::are_equal(float a, float b, float epsilon)
 	{
@@ -1356,10 +1350,6 @@ namespace mattmath
 	{
 		return this->x * other.x + this->y * other.y;
 	}
-	Vector2F Vector2F::cross(const Vector2F& other) const
-	{
-		return Vector2F(this->x * other.y, this->y * other.x);
-	}
 	Vector2F Vector2F::normalized() const
 	{
 		float length = this->length();
@@ -1479,6 +1469,10 @@ namespace mattmath
 	float Vector2F::dot(const Vector2F& a, const Vector2F& b)
 	{
 		return a.x * b.x + a.y * b.y;
+	}
+	float Vector2F::cross(const Vector2F& a, const Vector2F& b)
+	{
+		return a.x * b.y - a.y * b.x;
 	}
 	Vector2F Vector2F::min_vec(const Vector2F& a, const Vector2F& b)
 	{

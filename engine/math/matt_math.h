@@ -54,9 +54,6 @@ namespace mattmath
 	int clamp(int value, int min, int max);
 	void clamp_ref(int& value, int min, int max);
 
-	int sign(const mattmath::Vector2F& p1,
-		const mattmath::Vector2F& p2, const mattmath::Vector2F& p3);
-
 	bool are_equal(float a, float b, float epsilon = EPSILON);
 	bool are_equal(const mattmath::Vector2F& a, const mattmath::Vector2F& b,
 		float epsilon = 0.0001f);
@@ -434,8 +431,7 @@ namespace mattmath
 		mattmath::Direction direction() const;
 
 		float dot(const Vector2F& other) const;
-		Vector2F cross(const Vector2F& other) const;
-		
+
 		// Zero-length in, zero-length out. A zero vector has no direction, and
 		// returning zero lets the caller detect that; dividing by the length
 		// produced NaN, which then propagated silently through velocities and
@@ -476,6 +472,30 @@ namespace mattmath
 		static float distance_squared(const Vector2F& a, const Vector2F& b);
 
 		static float dot(const Vector2F& a, const Vector2F& b);
+
+		// The 2D cross product: a scalar, not a vector. In three dimensions
+		// the cross product of two vectors is the third axis; in two there is
+		// no third axis, and what survives is its signed length,
+		// a.x * b.y - a.y * b.x.
+		//
+		// It is the signed area of the parallelogram a and b span, so its
+		// magnitude measures how far from parallel they are - the exact
+		// counterpart of dot() measuring how far from perpendicular. Its sign
+		// is the orientation test: positive when b lies counter-clockwise of
+		// a, negative when clockwise, and zero when the two are parallel,
+		// which is the only reliable way to ask that question.
+		//
+		// Comparing three points is this on their differences:
+		// cross(b - a, c - a) is twice the signed area of triangle abc, and
+		// is positive exactly when abc winds counter-clockwise. That
+		// composite is Ericson's ORIENT2D; ericson_math.h spells it
+		// signed_2D_tri_area.
+		//
+		// Beware the y-down screen convention: "counter-clockwise" above is
+		// stated in maths axes. On screen, where y grows downward, a positive
+		// result reads as clockwise. The sign is consistent either way - it
+		// is the word that flips.
+		static float cross(const Vector2F& a, const Vector2F& b);
 
 		static Vector2F min_vec(const Vector2F& a, const Vector2F& b);
 		static Vector2F max_vec(const Vector2F& a, const Vector2F& b);

@@ -114,6 +114,17 @@ namespace mattmath
 	bool test_segment_AABB(const mattmath::Point2F& p0,
 		const mattmath::Point2F p1, const mattmath::AABB& b);
 
+	// Twice the signed area of triangle abc. This is the book's ORIENT2D
+	// predicate, and it is exactly mattmath::Vector2F::cross(b - a, c - a) -
+	// see that function for what the sign means and for the y-down caveat.
+	// Written out here in the subtracted form the book uses, which needs no
+	// temporaries.
+	//
+	// Zero means the three points are collinear. Callers wanting only the
+	// orientation should compare this against zero, or compare two of these
+	// results for equal sign - never multiply two of them together, which
+	// squares the magnitudes and overflows to zero or infinity on
+	// world-scale coordinates long before the signs are in doubt.
 	float signed_2D_tri_area(const mattmath::Point2F& a,
 		const mattmath::Point2F& b, const mattmath::Point2F& c);
 
