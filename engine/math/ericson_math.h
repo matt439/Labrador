@@ -178,14 +178,26 @@ namespace mattmath
 		const mattmath::Point2F& b, const mattmath::Point2F& c,
 		const mattmath::Point2F& d, float& t, mattmath::Point2F& p);
 
-	void barycentric(const mattmath::Point2F& a,
-		const mattmath::Point2F& b, const mattmath::Point2F& c,
-		const mattmath::Point2F& p, float& u, float& v, float& w);
-
+	// Whether p lies in triangle abc, boundary included, for either winding.
+	//
+	// This is point_in_convex_polygon over three vertices, and it is written
+	// that way rather than duplicated so the engine has one definition of
+	// "inside" (5.4.2, pp.203-206). The barycentric form it replaces divided
+	// by the triangle's determinant, which is zero for a collinear triangle -
+	// and every comparison against the resulting NaN was false, so a
+	// degenerate triangle reported "outside" for every point in the plane
+	// rather than reporting anything a caller could act on.
 	bool test_point_triangle(const mattmath::Point2F& p,
 		const mattmath::Point2F& a, const mattmath::Point2F& b,
 		const mattmath::Point2F& c);
 
+	// The point d on segment ab closest to c, and the t with d = a + t(b - a).
+	//
+	// A degenerate segment - a and b the same point - returns that point with
+	// t = 0 rather than dividing by its zero length. The division is deferred
+	// until both clamps have been decided, so it runs only where the divisor
+	// is known positive (5.1.2, p.129), which also makes the two clamped
+	// cases cheaper than the form on the previous page.
 	void closest_pt_point_segment(const mattmath::Point2F& c, const mattmath::Point2F& a,
 		const mattmath::Point2F& b, float& t, mattmath::Point2F& d);
 

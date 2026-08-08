@@ -1436,14 +1436,6 @@ namespace mattmath
 		return Vector2F(vec.x * cos_angle - vec.y * sin_angle,
 			vec.x * sin_angle + vec.y * cos_angle);
 	}
-	void Vector2F::rotate_vector_by_ref(Vector2F& vec, float angle)
-	{
-		float cos_angle = std::cos(angle);
-		float sin_angle = std::sin(angle);
-
-		vec.x = vec.x * cos_angle - vec.y * sin_angle;
-		vec.y = vec.x * sin_angle + vec.y * cos_angle;
-	}
 	float Vector2F::angle_between(const Vector2F& a, const Vector2F& b)
 	{
 		return std::acos(Vector2F::dot(a, b) / (a.length() * b.length()));

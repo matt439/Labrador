@@ -26,11 +26,22 @@ namespace mattmath
 		Vector2F b_min = b.top_left();
 		Vector2F b_max = b.bottom_right();
 	
-		// Exit with no intersection if separated along an axis
-		if (a_max.x < b_min.x || a_min.x > b_max.x) return 0;
-		if (a_max.y < b_min.y || a_min.y > b_max.y) return 0;
-		// Overlapping on all axes means AABBs are intersecting
-		return 1;
+		// Stated as "overlapping on both axes", not as "not separated on
+		// either". The two are the same for real numbers and are not the same
+		// for NaN: every comparison against NaN is false, so the rejecting
+		// form fell through to `return true` and one NaN coordinate produced a
+		// box that intersected everything. This form makes the accept branch
+		// something a comparison has to actually reach, so a NaN reports no
+		// intersection - which is the failure a caller can survive
+		// (11.2.2, pp.436-437).
+		//
+		// The bounds stay closed: boxes that share only an edge intersect, and
+		// contacts.cpp relies on that filter being closed while narrow_phase
+		// is open.
+		const bool overlap_x = a_min.x <= b_max.x && b_min.x <= a_max.x;
+		const bool overlap_y = a_min.y <= b_max.y && b_min.y <= a_max.y;
+
+		return overlap_x && overlap_y;
 	}
 
 	bool test_circle_circle(const Circle& a, const Circle& b)
@@ -459,43 +470,46 @@ namespace mattmath
 
 	// Compute barycentric coordinates (u, v, w) for
 	// point p with respect to triangle (a, b, c)
-	void barycentric(const Point2F& a,
-		const Point2F& b, const Point2F& c,
-		const Point2F& p, float& u, float& v, float& w)
-	{
-		Vector2F v0 = b - a, v1 = c - a, v2 = p - a;
-		float d00 = Vector2F::dot(v0, v0);
-		float d01 = Vector2F::dot(v0, v1);
-		float d11 = Vector2F::dot(v1, v1);
-		float d20 = Vector2F::dot(v2, v0);
-		float d21 = Vector2F::dot(v2, v1);
-		float denom = d00 * d11 - d01 * d01;
-		v = (d11 * d20 - d01 * d21) / denom;
-		w = (d00 * d21 - d01 * d20) / denom;
-		u = 1.0f - v - w;
-	}
-
-	// Test if point p is contained in triangle (a, b, c)
-	bool  test_point_triangle(const Point2F& p,
+	bool test_point_triangle(const Point2F& p,
 		const Point2F& a, const Point2F& b, const Point2F& c)
 	{
-		float u, v, w;
-		barycentric(a, b, c, p, u, v, w);
-		return v >= 0.0f && w >= 0.0f && (v + w) <= 1.0f;
+		const Point2F vertices[3] = { a, b, c };
+		return point_in_convex_polygon(vertices, p);
 	}
 
-	// Given segment ab and point c, computes closest point d on ab.
-	// Also returns t for the position of d, d(t) = a + t*(b - a)
 	void closest_pt_point_segment(const Point2F& c, const Point2F& a,
 		const Point2F& b, float& t, Point2F& d)
 	{
-		Vector2F ab = b - a;
-		// Project c onto ab, computing parameterized position d(t) = a + t*(b � a)
-		t = Vector2F::dot(c - a, ab) / Vector2F::dot(ab, ab);
-		// If outside segment, clamp t (and therefore d) to the closest endpoint
-		if (t < 0.0f) t = 0.0f;
-		if (t > 1.0f) t = 1.0f;
-		// Compute projected position from the clamped t
+		const Vector2F ab = b - a;
+
+		// The projection, with the divide by dot(ab, ab) deferred. Both clamps
+		// can be decided on the undivided value, so the division happens only
+		// where it is known to be safe - and only in the one case that needs
+		// it (5.1.2, p.129, which supersedes the listing on the page before).
+		const float projection = Vector2F::dot(c - a, ab);
+		if (projection <= 0.0f)
+		{
+			t = 0.0f;
+			d = a;
+			return;
+		}
+
+		// Never negative: it is the squared length of ab. Zero exactly when
+		// the segment is a point, and that case has already returned above,
+		// because dot(c - a, (0, 0)) is zero and zero is not greater than
+		// zero. That is the whole fix - the previous form divided first and
+		// handed back (NaN, NaN) for a degenerate segment, and since NaN
+		// fails every comparison, both clamps declined to catch it and the
+		// caller read the result as "no intersection".
+		const float length_squared = Vector2F::dot(ab, ab);
+		if (projection >= length_squared)
+		{
+			t = 1.0f;
+			d = b;
+			return;
+		}
+
+		t = projection / length_squared;
 		d = a + t * ab;
 	}
 

@@ -3,6 +3,8 @@
 #include "engine/math/ericson_math.h"
 #include <array>
 #include <cfloat>
+#include <cmath>
+#include <limits>
 #include <span>
 #include <stdexcept>
 
@@ -179,6 +181,79 @@ namespace EricsonMathTests
 			CHECK_FALSE(point_in_convex_polygon(segment, Point2F(5.0f, 0.0f)));
 			CHECK_FALSE(point_in_convex_polygon(std::span<const Point2F>{},
 				Point2F(0.0f, 0.0f)));
+		}
+		TEST_CASE("a zero-length segment is its own closest point, not a NaN")
+		{
+			// Reachable: circle_segment_intersect forwards straight into this,
+			// with edges pulled from a shape. The old form divided by the
+			// segment's zero length first, and NaN fails every comparison, so
+			// both clamps declined to catch it and the caller compared
+			// NaN <= radius - false - and reported no intersection.
+			const Point2F point(3.0f, 4.0f);
+			const Point2F degenerate(10.0f, 10.0f);
+
+			float t = -1.0f;
+			Point2F closest;
+			closest_pt_point_segment(point, degenerate, degenerate, t, closest);
+
+			CHECK(t == 0.0f);
+			CHECK(closest == degenerate);
+			CHECK_FALSE(std::isnan(closest.x));
+			CHECK_FALSE(std::isnan(closest.y));
+		}
+		TEST_CASE("a collinear triangle contains nothing, and says so")
+		{
+			// The barycentric form divided by the triangle's determinant,
+			// which is zero here, so every comparison against the resulting
+			// NaN was false and the answer was "outside" for every point in
+			// the plane - including the ones lying on the degenerate triangle
+			// itself. Now the point on it is inside and the one off it is not.
+			const Point2F a(0.0f, 0.0f);
+			const Point2F b(5.0f, 0.0f);
+			const Point2F c(10.0f, 0.0f);
+
+			CHECK(test_point_triangle(Point2F(2.0f, 0.0f), a, b, c));
+			CHECK_FALSE(test_point_triangle(Point2F(2.0f, 3.0f), a, b, c));
+		}
+		TEST_CASE("test_point_triangle does not depend on the winding")
+		{
+			const Point2F a(0.0f, 0.0f);
+			const Point2F b(10.0f, 0.0f);
+			const Point2F c(0.0f, 10.0f);
+			const Point2F inside(2.0f, 2.0f);
+			const Point2F outside(9.0f, 9.0f);
+
+			CHECK(test_point_triangle(inside, a, b, c));
+			CHECK(test_point_triangle(inside, a, c, b));
+			CHECK_FALSE(test_point_triangle(outside, a, b, c));
+			CHECK_FALSE(test_point_triangle(outside, a, c, b));
+
+			// The boundary is inside, which is what the barycentric form's
+			// v >= 0 && w >= 0 && v + w <= 1 also said.
+			CHECK(test_point_triangle(Point2F(5.0f, 0.0f), a, b, c));
+			CHECK(test_point_triangle(a, a, b, c));
+		}
+		TEST_CASE("a NaN coordinate makes test_AABB_AABB report no intersection")
+		{
+			// It used to report the opposite. The rejecting form - "return
+			// false if separated on either axis, otherwise true" - reaches its
+			// accept branch by falling through, and NaN fails every
+			// comparison, so a single bad coordinate produced a box that
+			// intersected everything in the level. This routine is live behind
+			// Level::is_object_out_of_bounds.
+			const float nan = std::numeric_limits<float>::quiet_NaN();
+			const RectangleF good(0.0f, 0.0f, 10.0f, 10.0f);
+			const RectangleF poisoned(nan, 0.0f, 10.0f, 10.0f);
+
+			CHECK_FALSE(test_AABB_AABB(poisoned, good));
+			CHECK_FALSE(test_AABB_AABB(good, poisoned));
+
+			// Ordinary answers are unchanged, including the closed boundary
+			// that contacts.cpp depends on: boxes sharing only an edge still
+			// intersect.
+			CHECK(test_AABB_AABB(good, RectangleF(5.0f, 5.0f, 10.0f, 10.0f)));
+			CHECK(test_AABB_AABB(good, RectangleF(10.0f, 0.0f, 10.0f, 10.0f)));
+			CHECK_FALSE(test_AABB_AABB(good, RectangleF(11.0f, 0.0f, 10.0f, 10.0f)));
 		}
 		TEST_CASE("test_signed_2D_tri_area")
 		{

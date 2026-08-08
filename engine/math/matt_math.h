@@ -461,7 +461,6 @@ namespace mattmath
 		bool abs_x_greater_than_y() const;
 
 		static Vector2F rotate_vector(const Vector2F& vec, float angle);
-		static void rotate_vector_by_ref(Vector2F& vec, float angle);
 
 		static float angle_between(const Vector2F& a, const Vector2F& b);
 
