@@ -6,20 +6,14 @@
 #include <memory>
 #include <string_view>
 
-// The renderer seam: declarations and the reasoning behind them, and no
-// implementation yet.
-//
-// This file exists before the work that fills it in because the seam is the
-// only change in the plan measured in weeks, and a seam that misses a
-// constraint gets cut twice. Everything below is either a decision that has
-// been made or a question that is still open, and it says which.
+// The renderer seam.
 //
 // WHAT THE SEAM IS FOR. Two things, and only two: headless tests, and an
-// eventual second platform. Today nine of ArtAttackEngine's translation units
-// are untestable on one include - <SpriteBatch.h> at the top of
-// engine/core/game_object.h - and tests/ has an assets, a core, a math and a
-// collision folder because those are the modules that do not transitively
-// reach it. Neither purpose needs two backends live in one process.
+// eventual second platform. Before this file, nine of ArtAttackEngine's
+// translation units were untestable on one include - <SpriteBatch.h> at the
+// top of engine/core/game_object.h - which is why tests/ has an assets, a
+// core, a math, a collision and a ui folder and had no render one. Neither
+// purpose needs two backends live in one process.
 //
 // CONCRETE CLASS, NOT AN ABSTRACT BASE. Renderer is a class with one
 // implementation chosen at build time, not an interface with a vtable.
@@ -32,41 +26,28 @@
 //     not.
 //   - T5: a compile-time choice fails at link, not at run time. Asking for a
 //     backend that was not built is a missing symbol.
-//   - Both purposes are served by build-time selection: a null implementation
-//     linked into tests/render/, and a second backend added as a sibling
-//     folder under engine/render/.
 //   - If a real client ever needs runtime selection, promoting a concrete
 //     class to an interface is mechanical and no call site changes. That
 //     option is held, not spent - the same escalation ARCHITECTURE.md:122-126
 //     describes for promoting a folder to a library.
 //
-// HOW ONE HEADER SERVES TWO BACKENDS. Renderer holds a pimpl; each backend
-// defines Renderer::Impl in its own translation unit under
-// engine/render/<backend>/. DrawList is a non-owning handle to per-view state
-// the backend owns, so it stays trivially copyable and passing one costs
-// nothing. The per-draw cost is a single out-of-line call, which is what
-// SpriteBatch::Draw already is.
+// HOW ONE HEADER SERVES TWO BACKENDS. Renderer holds a pimpl and DrawList
+// holds a raw pointer to per-view state the backend owns; each backend
+// defines Renderer::Impl and DrawList::View in its own translation unit under
+// engine/render/<backend>/. DrawList stays trivially copyable, so passing one
+// costs nothing, and the per-draw cost is a single out-of-line call - which is
+// what SpriteBatch::Draw already is.
 //
 // WHAT IS DELIBERATELY ABSENT. No ID3D11* type, no DirectX:: type, no
-// SpriteBatch, no sampler-state pointer, no device accessor. GetD3DDevice is
-// not a renderer concern - creating a texture from a file is a resource
-// factory's job, and RenderResources already speaks in handles
-// (render_resources.h:38), so only the handle's payload type changes when the
-// backend does.
-//
-// DEFINITION OF DONE, AND IT IS A GREP.
-//   1. samples/minimal/states/hello_state.cpp contains no ID3D11 identifier.
-//   2. It contains no <SpriteBatch.h> and no DirectX:: name.
-//   3. It contains no *this->app_->dt().
-//   4. samples/minimal/CMakeLists.txt names no Microsoft::DirectXTK.
-// The sample is 85 lines and it currently teaches Direct3D 11 rather than this
-// engine. Port it first: it is the acceptance test for whether the seam is
-// real, not the last thing to be updated once the engine compiles.
+// SpriteBatch, no sampler-state pointer, no device accessor. Creating a
+// texture from a file is a resource factory's job, not a renderer's, and
+// RenderResources already speaks in handles - so only the handle's payload
+// type changes when the backend does.
 
 namespace artattack
 {
 	// Phantom payloads. A handle is an index into the table that produced it
-	// (handle.h), and these say which table. The backend defines what a Texture
+	// (handle.h), and these say which table. The backend decides what a Texture
 	// and a Font actually are; nothing outside engine/render/<backend>/ needs
 	// to know, which is the whole point.
 	class Texture;
@@ -84,15 +65,15 @@ namespace artattack
 		both,
 	};
 
-	// CONSTRAINT 3: sampler state lives inside the seam.
+	// CONSTRAINT: sampler state lives inside the seam.
 	//
-	// Today two objects cache CommonStates::PointClamp() as a raw
-	// ID3D11SamplerState* handed in at construction (level.h:149,
-	// level_builder.h:39) and hold it across device loss, which frees the
-	// CommonStates that owns it. The fix is not to document the loan. It is
-	// that the API never names a sampler object at all: the caller says what it
-	// wants the filtering to look like and the backend owns the state that
-	// produces it, recreated with the device like everything else.
+	// Two objects used to cache CommonStates::PointClamp() as a raw
+	// ID3D11SamplerState* handed in at construction and hold it across device
+	// loss, which frees the CommonStates that owns it. The fix is not to
+	// document the loan. It is that the API never names a sampler object at
+	// all: the caller says what it wants the filtering to look like and the
+	// backend owns the state that produces it, recreated with the device like
+	// everything else.
 	//
 	// point is what the paint-shooter wants everywhere - it is a pixel-art
 	// game and linear filtering is what makes tile seams shimmer.
@@ -104,24 +85,19 @@ namespace artattack
 
 	// A recording target for one view.
 	//
-	// CONSTRAINT 1: the unit of work is a view, not an object.
+	// CONSTRAINT: the unit of work is a view, not an object.
 	//
 	// This is the single most important thing about the seam and the thing the
-	// current code gets wrong in two places. The render workers do NOT own
-	// disjoint slices of the object list - the parallelism axis is views, so
-	// every worker enters draw() on the SAME object at the same time. That is
-	// why draw() is const, and it is why the const pass had to happen first.
+	// old code got wrong in two places. The render workers do NOT own disjoint
+	// slices of the object list - the parallelism axis is views, so every
+	// worker enters draw() on the SAME object at the same time. That is why
+	// draw() is const, and it is why the const pass had to happen first.
 	//
-	// PHILOSOPHY.md:371-372 currently says workers own disjoint slices. It is
-	// wrong, and E3 amends it - it is wrong about the destination, not just
-	// about the present.
-	//
-	// Level fans out one worker per player (level.cpp:401 in the pre-A5 tree)
-	// and MenuPage fans out one worker per widget (menu_page.cpp:143), indexing
-	// deferred contexts and sprite batches by widget ordinal - which caps every
-	// menu at however many contexts the shell happened to create. Two
-	// hand-written fan-outs, already diverged, one of them wrong. After the seam
-	// there is one, and it is here.
+	// Level fanned out one worker per player and MenuPage fanned out one worker
+	// per widget, indexing deferred contexts and sprite batches by widget
+	// ordinal - which capped every menu at however many contexts the shell
+	// happened to create. Two hand-written fan-outs, already diverged, one of
+	// them wrong. There is one now, and it is here.
 	//
 	// A DrawList is obtained from Renderer::view(i) and is valid until the next
 	// Renderer::submit(). It is a handle, not an owner: copying one is free and
@@ -129,32 +105,55 @@ namespace artattack
 	class DrawList
 	{
 	public:
+		DrawList() = default;
+
+		// Whether this list can be drawn into. A default-constructed one cannot;
+		// every list from Renderer::view() can.
+		bool valid() const { return this->view_ != nullptr; }
+
 		// Restricts subsequent draws to this viewport, in back-buffer pixels.
 		// Absorbs ViewportManager::apply_player_viewport, whose three lines of
-		// RSSetViewports/SetViewport are the only backend part of that class -
+		// RSSetViewports/SetViewport were the only backend part of that class -
 		// camera_adjusted_player_viewport_rect and the layout arithmetic beside
 		// it are pure and stay where they are.
 		void set_viewport(const mattmath::Viewport& viewport);
+
+		// World to view, for every draw recorded after it.
+		//
+		// DECIDED HERE, and it was the largest open question on this file: the
+		// camera lives on the list rather than in every draw signature. Every
+		// drawable used to take one and do the conversion itself, and the whole
+		// of that conversion was nine lines across three files
+		// (texture_object.cpp, text_object.cpp, animation_object.cpp) - every
+		// other draw() in the engine and the game carried a Camera parameter
+		// only to hand it down. Twenty override sites lost a parameter.
+		//
+		// It is per range and not per view because one view genuinely has two:
+		// the paint-shooter draws the world through the player's camera and the
+		// HUD over it in screen space, into the same viewport, on the same
+		// frame. Changing it mid-list is therefore ordinary, not exceptional.
+		//
+		// The identity is Camera::DEFAULT_CAMERA, which is what a list starts
+		// with, so a caller that only ever wanted screen space never mentions
+		// a camera at all.
+		void set_camera(const mattmath::Camera& camera);
 
 		// Applies to every draw recorded after it. Changing it mid-list is
 		// legal and costs a flush, so group by filter if it matters.
 		void set_filter(TextureFilter filter);
 
-		// CONSTRAINT 2: sort depth is per draw, not per object.
+		// CONSTRAINT: sort depth is per draw, not per object.
 		//
 		// layer_depth is a parameter here for the same reason the tint and the
 		// flip are: the same sprite drawn into two views at two depths must be
-		// expressible. TextureObject::draw_with (texture_object.cpp:92-111)
-		// takes every other varying quantity as a local and then reads
-		// this->layer_depth() off the shared object on the last line, inside
-		// the function built to take locals. Under the view fan-out that is
-		// the one member every worker reads while another view wants a
-		// different value, and it is inexpressible rather than merely racy.
+		// expressible. TextureObject::draw_with took every other varying
+		// quantity as a local and then read this->layer_depth() off the shared
+		// object on the last line, inside the function built to take locals.
+		// Under the view fan-out that is the one member every worker reads
+		// while another view wants a different value, and it is inexpressible
+		// rather than merely racy.
 		//
-		// This is PHILOSOPHY.md:367-370's parameter list, with the source
-		// rectangle carried by the frame handle rather than passed separately,
-		// because a sprite sheet frame is exactly a texture plus a source
-		// rectangle and the two are resolved together.
+		// destination is in world space; the list's current camera maps it.
 		void draw_sprite(TextureHandle texture,
 			const mattmath::RectangleI& source,
 			const mattmath::RectangleF& destination,
@@ -164,14 +163,14 @@ namespace artattack
 			SpriteFlip flip,
 			float layer_depth);
 
-		// CONSTRAINT 6: the text entry point is wide.
+		// CONSTRAINT: the text entry point is wide.
 		//
-		// Landed already, in A3. DirectXTK's narrow DrawString and
-		// MeasureString convert through SpriteFont::Impl::ConvertUTF8, which
-		// lazily allocates and may reallocate a utfBuffer owned by the shared
-		// SpriteFont - from a const method, under a fan-out where every worker
-		// draws the whole HUD. Wide in, wide all the way down; there is no
-		// narrow overload to fall back to and there should not be one.
+		// DirectXTK's narrow DrawString and MeasureString convert through
+		// SpriteFont::Impl::ConvertUTF8, which lazily allocates and may
+		// reallocate a utfBuffer owned by the shared SpriteFont - from a const
+		// method, under a fan-out where every worker draws the whole HUD. Wide
+		// in, wide all the way down; there is no narrow overload to fall back
+		// to and there should not be one.
 		void draw_text(FontHandle font,
 			std::wstring_view text,
 			const mattmath::Vector2F& position,
@@ -180,13 +179,37 @@ namespace artattack
 			float rotation,
 			const mattmath::Vector2F& origin,
 			float layer_depth);
+
+	private:
+		friend class Renderer;
+
+		// Per-view recording state. Defined by the backend, never by a caller.
+		class View;
+
+		explicit DrawList(View* view) : view_(view) {}
+
+		View* view_ = nullptr;
+	};
+
+	// Told when the device goes away and comes back.
+	//
+	// Not a graphics type: a game object that has to rebuild something after a
+	// device loss implements this and knows nothing about what was lost.
+	class DeviceNotify
+	{
+	public:
+		virtual void on_device_lost() = 0;
+		virtual void on_device_restored() = 0;
+
+	protected:
+		~DeviceNotify() = default;
 	};
 
 	// The frame.
 	//
 	// One per process. Owns the device, the swap chain, the per-view recording
 	// state, the sampler states, and the command-list lifetime - which is to
-	// say, everything the game currently hand-writes.
+	// say, everything the game used to hand-write.
 	class Renderer
 	{
 	public:
@@ -198,52 +221,50 @@ namespace artattack
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
-		// Absorbs Application::clear() (application.cpp:309-333) and
-		// DeviceResources::Present(). begin_frame clears the back buffer and
-		// resets every view's recording; end_frame presents.
+		// The shell hands the renderer its window, and says how many views the
+		// frame may ever fan out to - which sizes the recording state, because
+		// a backend that records into per-thread contexts has to make them
+		// before any frame starts.
+		//
+		// void* rather than HWND because this is the file a second backend
+		// implements, and a window handle is not a graphics type: it is this
+		// platform's window. The backend casts it back.
+		void create_device(void* native_window, int width, int height,
+			int view_capacity);
+
+		// Returns whether anything was rebuilt, which is the signal the shell
+		// wants for "re-run the layout".
+		bool window_size_changed(int width, int height);
+
+		// Borrowed; the shell owns it and outlives the renderer.
+		void set_device_notify(DeviceNotify* device_notify);
+
+		// begin_frame clears the back buffer and resets every view's
+		// recording; end_frame presents.
 		void begin_frame();
 		void end_frame();
 
 		// The scene declares how many views this frame has, then fills them.
-		// The count comes off the game's view list, which is why Scene cannot
-		// be built until it owns one explicitly (PLAN.md C1): today the count
-		// is player_objects_->size(), each viewport comes off a Player and each
-		// camera comes off the same Player, so folding the player list into a
-		// single registered-object list would delete the renderer's only source
-		// of view information.
+		// Throws std::out_of_range above the capacity create_device was given,
+		// and std::out_of_range for a view index outside the current count -
+		// asking for a view nobody set up used to return a fullscreen pane and
+		// draw a whole extra pass (T6).
 		void set_view_count(int count);
 		int view_count() const;
 		DrawList view(int index) const;
 
-		// CONSTRAINT 4: command-list lifetime is RAII and inside the seam.
+		// CONSTRAINT: command-list lifetime is RAII and inside the seam.
 		//
 		// Records every view's list, executes them in view order and releases
-		// them. Today this protocol - record, FinishCommandList,
-		// ExecuteCommandList, Release - is hand-written in four places
-		// (level.cpp:494 and :558, menu_page.cpp:120 and :164-165,
-		// hello_state.cpp:77-84), each of which must pre-size a vector,
-		// pre-fill it with null and Release every non-null entry, three caller
-		// obligations stated nowhere in the tree. Two of the four already
-		// disagree about RestoreContextState (TRUE in one place, FALSE in
-		// another). After this there is one copy and it is not the caller's.
+		// them. This protocol - record, FinishCommandList, ExecuteCommandList,
+		// Release - was hand-written in four places, each of which had to
+		// pre-size a vector, pre-fill it with null and Release every non-null
+		// entry, three caller obligations stated nowhere in the tree. Two of
+		// the four already disagreed about RestoreContextState. There is one
+		// copy now and it is not the caller's.
 		//
 		// Called once per frame, between begin_frame and end_frame.
 		void submit();
-
-		// CONSTRAINT 5: font metrics are an engine type, answerable headlessly.
-		//
-		// TextObject's *constructor* measures (text_object.cpp:25 -> :112-118),
-		// so text is unconstructible without a device, not merely undrawable -
-		// which is why the countdown box is a hardcoded 400x600 guess
-		// (level.h:40-41) sitting 94px off centre while the real measurement
-		// exists and nothing reads it (E2).
-		//
-		// The null backend answers this from font metrics read off disk. That
-		// is the whole reason it is on Renderer rather than behind the device:
-		// a test that constructs a TextObject and asserts on its bounds must
-		// work, and today it cannot.
-		mattmath::Vector2F measure(FontHandle font,
-			std::wstring_view text) const;
 
 		// Back-buffer size in pixels. Replaces DeviceResources::GetOutputSize
 		// and GetScreenViewport, which is all the layout arithmetic in
@@ -252,38 +273,34 @@ namespace artattack
 
 		// Debug markers. The only three of DeviceResources' seventeen graphics
 		// accessors that survive into the seam unchanged; twelve of the other
-		// fourteen have no caller anywhere in the repository.
+		// fourteen had no caller anywhere in the repository.
 		void begin_marker(const wchar_t* name);
 		void end_marker();
 		void set_marker(const wchar_t* name);
 
-	private:
+		// The device, for the resource factory that has to create textures and
+		// fonts against it. Declared in the backend's own header rather than
+		// here, so that reaching for it is a deliberate include of
+		// engine/render/<backend>/ and not something a game file can do by
+		// accident.
 		class Impl;
+		Impl* impl() const { return this->impl_.get(); }
+
+	private:
 		std::unique_ptr<Impl> impl_;
 	};
 }
 
-// STILL OPEN, and B1 decides each of these against the sample first:
-//
-//  - Where TextObject gets its measurement. measure() needs a Renderer, and
-//    TextObject measures in its constructor. Either the constructor takes a
-//    Renderer&, or measurement moves to first use and text_bounds() stops
-//    being free. The second is a per-cull cost on the path that culls, so it
-//    is probably the first - but the sample is what proves it.
-//
-//  - Whether set_view_count/view(i) is the right shape, or whether a view is a
-//    value the scene hands in (viewport plus camera) and DrawList comes back.
-//    The second reads better and makes the view list explicit, which is what
-//    C1 needs anyway. Settle it while porting MenuPage, which is the caller
-//    that currently gets the unit of work wrong.
-//
-//  - Where the camera goes. Every draw today takes a Camera and converts world
-//    to view coordinates inside the drawable. That conversion is per-sprite
-//    arithmetic the seam could own once per view instead, which would remove
-//    Camera from every draw signature in the engine. It is the largest
-//    remaining simplification and it is not free to get wrong, so it is filed
-//    here rather than assumed.
+// STILL OPEN, and the sample did not settle these because it does not exercise
+// them:
 //
 //  - The null backend's home and how CMake selects it. engine/render/null/
 //    linked into tests/render/, or an option on ArtAttackEngine. The first
-//    keeps one library configuration and is probably right.
+//    keeps one library configuration and is probably right. Until it exists,
+//    tests/render/ covers only the pure arithmetic it already covered.
+//
+//  - Whether RenderResources should be split the same way. Its public API is
+//    handles and measurements now, but its storage is still D3D11 types, so a
+//    null backend needs a second RenderResources as well as a second Renderer.
+//    That is one more pimpl, and it is the thing standing between here and a
+//    headless test that constructs a TextObject.
