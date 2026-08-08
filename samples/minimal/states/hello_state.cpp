@@ -31,13 +31,29 @@ void HelloState::init()
 
 	RenderResources* resources = this->app_->render_resources();
 
-	this->greeting_ = std::make_unique<Text>(L"Hello from the engine.",
-		font_name, this->position_, resources, colour_consts::WHITE);
+	// No thread pool and no partitioner: those are the scene's per-view
+	// fan-out, and one view does not need one.
+	this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 
-	this->hint_ = std::make_unique<Text>(
+	this->greeting_ = this->scene_->add(std::make_unique<Label>(
+		L"Hello from the engine.", font_name, this->position_, resources,
+		colour_consts::WHITE));
+
+	this->hint_ = this->scene_->add(std::make_unique<Label>(
 		L"Left stick moves it. B quits.", font_name,
 		Vector2F(24.0f, resolution.y - 40.0f), resources,
-		colour_consts::DARK_GRAY);
+		colour_consts::DARK_GRAY));
+
+	// Every add is pending until a tick ends, so that a weapon firing mid-tick
+	// cannot invalidate the loop walking the objects. Nothing has ticked yet
+	// and the first frame is a real frame, so the first tick ends here.
+	this->scene_->end_tick();
+
+	// One view, for the whole window, in screen space - the identity camera is
+	// what a list starts with, so this one is never mentioned again. A
+	// split-screen game clears this list and refills it every tick, one entry
+	// per player, and nothing else about the shape changes.
+	this->scene_->add_view(Viewport(RectangleF(Vector2F::ZERO, resolution)));
 }
 
 void HelloState::update(float dt)
@@ -67,6 +83,13 @@ void HelloState::update(float dt)
 		this->position_.y -= pad.thumbSticks.leftY * move_speed * dt;
 		this->greeting_->set_position(this->position_);
 	}
+
+	// Steps every object in the scene, and admits or retires whatever this tick
+	// asked for. Nothing here has anything to step, and that is the point: the
+	// shape is the same whether the scene holds two labels or five thousand
+	// paint tiles.
+	this->scene_->update(dt);
+	this->scene_->end_tick();
 }
 
 void HelloState::on_suspend()
@@ -81,17 +104,18 @@ void HelloState::on_resume()
 
 void HelloState::draw(Renderer& renderer) const
 {
-	// One view: the whole window, in screen space. A split-screen game says
-	// set_view_count(players) here and fills each one; the shape does not
-	// otherwise change, which is the point of the seam.
+	// The whole of drawing a screen. The scene declares this frame's views off
+	// the list init() filled, culls each object to what that view can see and
+	// draws it - so there is no loop over the game's own objects here, and
+	// there is nothing to keep in step when one is added.
 	//
 	// Nothing below names a graphics type. There is no deferred context to
 	// index, no sprite batch to Begin and End, and no command list to finish,
 	// execute and Release - which was five of the eleven lines this function
 	// used to be, and three caller obligations stated nowhere in the tree.
-	renderer.set_view_count(1);
-	DrawList list = renderer.view(0);
-
-	this->greeting_->draw(list);
-	this->hint_->draw(list);
+	//
+	// A game with something over the world - a HUD, a divider, a countdown -
+	// passes a second argument, and it runs per view, on that view's worker.
+	// game/objects/level.cpp has one.
+	this->scene_->draw(renderer);
 }

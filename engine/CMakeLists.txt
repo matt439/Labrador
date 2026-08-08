@@ -34,6 +34,7 @@ add_library(ArtAttackEngine STATIC
     render/d3d11/render_resources.cpp
     render/d3d11/renderer.cpp
     render/draw_object.cpp
+    render/label.cpp
     render/resolution_manager.cpp
     render/sprite_frame.cpp
     render/sprite_sheet.cpp
@@ -45,6 +46,7 @@ add_library(ArtAttackEngine STATIC
     render/texture_object.cpp
     render/viewport_manager.cpp
     render/visual.cpp
+    scene/scene.cpp
     ui/button.cpp
     ui/focus.cpp
     ui/navigation.cpp

@@ -80,12 +80,14 @@ being load-bearing.
 ├── cmake/                  the shared settings target, helper modules
 ├── engine/                 the product
 │   ├── math/               MattMath — depends on nothing
-│   ├── core/               game loop, fixed-step timing, Scene, states, services, registries
+│   ├── core/               game loop, fixed-step timing, states, services, registries
 │   ├── render/             the Renderer, cameras, viewports
 │   │   └── d3d11/          the D3D11/DirectXTK backend, behind the Renderer
 │   ├── collision/          contacts, narrow phase, manifolds, resolution
 │   │                       (the pair sweep is still all-pairs; a broad
 │   │                       phase goes behind find_contacts)
+│   ├── scene/              Scene: the object list, the view list, the tick
+│   │                       phases, the per-view draw fan-out and the cull
 │   ├── input/              devices, action mapping
 │   │   └── xinput/         the XInput backend
 │   ├── audio/              playback, mixing
@@ -106,6 +108,7 @@ being load-bearing.
 │   ├── core/
 │   ├── math/
 │   ├── render/
+│   ├── scene/
 │   └── ui/
 ├── external/               third-party source: rapidjson, DirectXTK
 └── docs/
@@ -147,6 +150,7 @@ already is (T5). That option is held, not spent.
 | `core` | math |
 | `collision` | core, math |
 | `render` | core, math — D3D11/DirectXTK inside `d3d11/` only |
+| `scene` | core, math, collision, render |
 | `input` | core, math — XInput inside `xinput/` only |
 | `audio` | core, math — the audio backend at its edge only |
 | `ui` | core, math, render, input |
@@ -154,10 +158,18 @@ already is (T5). That option is held, not spent.
 | `app` | everything |
 
 Dependencies point one way — toward `math` — and never sideways in a
-cycle. `core` is the only module everything may lean on. Two modules lean
-on peers, for opposite reasons: `ui`, because widgets genuinely are
-rendering plus input, and `assets`, because a loader has to know what it
-is building.
+cycle. `core` is the only module everything may lean on. Three modules
+lean on peers, for the same kind of reason: `ui`, because widgets
+genuinely are rendering plus input; `scene`, because a scene genuinely is
+an object list plus a sweep plus a fan-out; and `assets`, because a loader
+has to know what it is building.
+
+`Scene` is why `scene` is a folder and not a file in `core/`. The review
+filed it as `core/scene.*`, written before `collision/` existed. It cannot
+go there: a scene owns collision objects and sweeps them, and `collision`
+depends on `core`, so `core → collision` would close a cycle — and it
+drives the renderer, which `core → math` does not allow. Both walls are
+real, and a module is a folder, so the cheap answer is the right one.
 
 Nothing points back at `assets`, and that is what keeps its arrows from
 closing into a cycle. Resource types are passive: a sprite sheet is

@@ -2,7 +2,8 @@
 
 #include "engine/app/application.h"
 #include "engine/core/state.h"
-#include "engine/render/text.h"
+#include "engine/render/label.h"
+#include "engine/scene/scene.h"
 #include <memory>
 
 // One screen: a line of text that follows the left stick, and B to quit -
@@ -33,11 +34,21 @@ public:
 private:
 	artattack::Application* app_ = nullptr;
 
-	// Built in init() rather than the constructor, because a Text resolves its
+	// What is on screen, and where it is watched from. A game does not loop
+	// over its own objects to draw them: it registers them once and says how
+	// many views the frame has. This one has one view, so the scene needs no
+	// thread pool - a fan-out over a single pane is a fan-out over nothing.
+	std::unique_ptr<artattack::Scene> scene_ = nullptr;
+
+	// Built in init() rather than the constructor, because a Label resolves its
 	// font name against RenderResources - and that only has the font once the
 	// manifest has been walked.
-	std::unique_ptr<artattack::Text> greeting_ = nullptr;
-	std::unique_ptr<artattack::Text> hint_ = nullptr;
+	//
+	// Borrowed, not owned: the scene owns everything added to it, and add()
+	// hands back a pointer of the object's own type for exactly this - the
+	// things the game still has something to say to.
+	artattack::Label* greeting_ = nullptr;
+	artattack::Label* hint_ = nullptr;
 
 	mattmath::Vector2F position_ = { 0.0f, 0.0f };
 };
