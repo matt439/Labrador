@@ -49,6 +49,16 @@ namespace artattack
 		// worth resizing.
 		int min_window_width = 320;
 		int min_window_height = 200;
+
+		// Throws std::invalid_argument naming the field, rather than letting
+		// a bad number reach the code that divides by it. Application calls
+		// this before it opens a window.
+		//
+		// Nothing checked these. max_threads reaches Partitioner as a divisor
+		// on every frame of every view, and target_fps reaches StepTimer as
+		// one, so a zero in either was a hang or a crash on the first frame -
+		// and the game reads both from a save file it does not control.
+		void validate() const;
 	};
 
 	// The machinery every game needs and no game should write: a window, a device,

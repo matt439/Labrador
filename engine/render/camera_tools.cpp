@@ -1,5 +1,7 @@
 #include "engine/render/camera_tools.h"
 
+#include <algorithm>
+
 using namespace DirectX;
 using namespace mattmath;
 
@@ -99,10 +101,30 @@ namespace artattack
 			viewport_size.y * DEFAULT_BORDER_RATIO_BOTTOM
 		};
 
-		clamp_ref(result.left, MIN_BORDER_LEFT, viewport_size.x / 2.0f);
-		clamp_ref(result.right, MIN_BORDER_RIGHT, viewport_size.x / 2.0f);
-		clamp_ref(result.top, MIN_BORDER_TOP, viewport_size.y / 2.0f);
-		clamp_ref(result.bottom, MIN_BORDER_BOTTOM, viewport_size.y / 2.0f);
+		// Half the viewport is a hard geometric limit and the pixel floor is a
+		// preference, so the limit is applied last and wins. It has to: with
+		// opposing borders each capped at half, left + right can never exceed
+		// the width and top + bottom can never exceed the height, which is the
+		// invariant calculate_camera() reads them under - it derives
+		// left_edge/right_edge and top_edge/bottom_edge from them and assumes
+		// the first of each pair is the smaller.
+		//
+		// clamp_ref() cannot express this. It takes the min branch first, so
+		// with a floor above the ceiling the ceiling is never consulted and
+		// the floor is returned unchanged. At 1280x720 two-player - the
+		// default resolution, and what an unparseable save file coerces to -
+		// each pane is 1280x360, both vertical floors are 250 against a
+		// ceiling of 180, and the result was top_edge sitting 140 px *below*
+		// bottom_edge. A motionless player then satisfied both branches in
+		// turn, every frame, forever.
+		result.left = std::min(std::max(result.left, MIN_BORDER_LEFT),
+			viewport_size.x / 2.0f);
+		result.right = std::min(std::max(result.right, MIN_BORDER_RIGHT),
+			viewport_size.x / 2.0f);
+		result.top = std::min(std::max(result.top, MIN_BORDER_TOP),
+			viewport_size.y / 2.0f);
+		result.bottom = std::min(std::max(result.bottom, MIN_BORDER_BOTTOM),
+			viewport_size.y / 2.0f);
 
 		return result;
 	}

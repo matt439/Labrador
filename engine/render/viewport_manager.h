@@ -20,8 +20,12 @@ namespace artattack
 		static inline const std::string DIVIDER_FRAME_NAME = "pixel";
 		static inline const mattmath::Colour DIVIDER_COLOUR = colour_consts::BLACK;
 
-		ViewportManager(ResolutionManager* resolution_manager,
-			DeviceResources* device_resources);
+		// Takes no DeviceResources. It held one and no member function ever
+		// read it, and it was the only thing standing between this class and
+		// a test: a ResolutionManager needs no device, so a ViewportManager
+		// now needs no device either. The two members that do touch D3D take
+		// the context as a parameter.
+		explicit ViewportManager(ResolutionManager* resolution_manager);
 
 		void set_layout(ScreenLayout layout);
 		ScreenLayout layout() const { return layout_; }
@@ -52,11 +56,11 @@ namespace artattack
 		static constexpr float DIVIDER_THICKNESS = 2.0f;
 
 		ResolutionManager* resolution_manager_ = nullptr;
-		DeviceResources* device_resources_ = nullptr;
 
 		ScreenLayout layout_ = ScreenLayout::one_player;
 
 		int player_count_from_layout(ScreenLayout layout) const;
+		int viewport_count_from_layout(ScreenLayout layout) const;
 
 		D3D11_VIEWPORT calculate_d3d11_viewport(ScreenLayout layout,
 			int player_num, const mattmath::Vector2F& screen_size) const;

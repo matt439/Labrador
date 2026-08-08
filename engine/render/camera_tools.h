@@ -13,7 +13,13 @@ namespace artattack
             const mattmath::Vector2F& viewport_size,
             const mattmath::Camera& prev_camera,
             const mattmath::RectangleF& camera_bounds) const;
-    private:
+
+        // The dead zone the player moves inside before the camera follows,
+        // for a viewport this size. Public because it is the whole of the
+        // camera model that can be checked without simulating one, and it
+        // carries an invariant worth checking directly: opposing borders never
+        // sum past the viewport, or calculate_camera()'s near edge ends up
+        // beyond its far edge.
         static BorderThickness calculate_camera_scroll_border(
             const mattmath::Vector2F& viewport_size);
     };

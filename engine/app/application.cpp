@@ -9,9 +9,37 @@ using namespace DirectX;
 
 namespace artattack
 {
+	void ApplicationOptions::validate() const
+	{
+		const auto require = [](bool condition, const char* message)
+			{
+				if (!condition)
+				{
+					throw std::invalid_argument(message);
+				}
+			};
+
+		require(this->target_fps > 0,
+			"ApplicationOptions::target_fps must be greater than zero.");
+		require(this->min_threads >= 1,
+			"ApplicationOptions::min_threads must be at least 1.");
+		require(this->max_threads >= this->min_threads,
+			"ApplicationOptions::max_threads must be at least min_threads.");
+		require(this->min_window_width > 0,
+			"ApplicationOptions::min_window_width must be greater than zero.");
+		require(this->min_window_height > 0,
+			"ApplicationOptions::min_window_height must be greater than zero.");
+		require(!this->window_class_name.empty(),
+			"ApplicationOptions::window_class_name must not be empty.");
+	}
+
 	Application::Application(ApplicationOptions options) :
 		options_(std::move(options))
 	{
+		// Before anything is built out of them, and before the window exists,
+		// so a bad number is a message rather than a first-frame crash.
+		this->options_.validate();
+
 		// Renders only 2D, so no depth buffer.
 		this->device_resources_ = std::make_unique<DeviceResources>(
 			DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_UNKNOWN);
@@ -142,7 +170,7 @@ namespace artattack
 			this->device_resources_->GetD3DDevice(), this->audio_engine_.get());
 
 		this->viewport_manager_ = std::make_unique<ViewportManager>(
-			this->resolution_manager_.get(), this->device_resources_.get());
+			this->resolution_manager_.get());
 
 		this->partitioner_ = std::make_unique<Partitioner>();
 
