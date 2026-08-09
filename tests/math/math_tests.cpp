@@ -1,7 +1,11 @@
 #include <doctest/doctest.h>
 #include "engine/math/matt_math.h"
 #include "engine/math/ericson_math.h"
+#include <array>
 #include <cfloat>
+#include <cmath>
+#include <limits>
+#include <span>
 #include <stdexcept>
 
 using namespace mattmath;
@@ -53,6 +57,203 @@ namespace EricsonMathTests
 			p = Point2F(10.0f + FLT_EPSILON, 10.0f + FLT_EPSILON);
 			closest_pt_point_AABB(p, a, closest);
 			CHECK(closest == Point2F(10.0f, 10.0f));
+		}
+		TEST_CASE("signed_area measures a polygon, and its sign is the winding")
+		{
+			const std::array<Point2F, 4> square = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f) };
+			const std::array<Point2F, 4> reversed = {
+				Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f),
+				Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f) };
+
+			CHECK(signed_area(square) == 100.0f);
+			CHECK(signed_area(reversed) == -100.0f);
+
+			// The polygon closes itself; the caller does not repeat the first
+			// vertex at the end.
+			const std::array<Point2F, 3> triangle = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f) };
+			CHECK(signed_area(triangle) == 50.0f);
+
+			// Which is half of what the triangle predicate reports, since that
+			// one returns twice the area.
+			CHECK(signed_area(triangle) ==
+				signed_2D_tri_area(triangle[0], triangle[1], triangle[2]) / 2.0f);
+		}
+		TEST_CASE("signed_area is zero for everything that encloses nothing")
+		{
+			const std::array<Point2F, 2> segment = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f) };
+			CHECK(signed_area(segment) == 0.0f);
+			CHECK(signed_area(std::span<const Point2F>{}) == 0.0f);
+
+			// Collinear, and a repeated vertex.
+			const std::array<Point2F, 3> flat = {
+				Point2F(0.0f, 0.0f), Point2F(5.0f, 0.0f), Point2F(10.0f, 0.0f) };
+			const std::array<Point2F, 3> doubled = {
+				Point2F(3.0f, 3.0f), Point2F(3.0f, 3.0f), Point2F(9.0f, 9.0f) };
+			CHECK(signed_area(flat) == 0.0f);
+			CHECK(signed_area(doubled) == 0.0f);
+		}
+		TEST_CASE("signed_area stays exact at the coordinates the game runs at")
+		{
+			// Out where the levels are, the raw coordinates form products near
+			// 3e7, and consecutive floats up there are 2 apart. Summing four
+			// of those and cancelling down to the area of a small shape leaves
+			// an error set by the size of the world rather than the size of
+			// the shape - this square comes out as 176.0 computed that way,
+			// against a true 176.88. Taken relative to the first vertex, every
+			// product is the size of the polygon and the answer is exactly the
+			// width times the height.
+			//
+			// Round coordinates hide this: a 40-unit tile at (6200, 5000) has
+			// products that are all exactly representable, so both
+			// formulations agree and prove nothing.
+			constexpr float X = 6232.75f;
+			constexpr float Y = 5408.46f;
+			constexpr float SIDE = 13.3f;
+
+			const std::array<Point2F, 4> tile = {
+				Point2F(X, Y), Point2F(X + SIDE, Y),
+				Point2F(X + SIDE, Y + SIDE), Point2F(X, Y + SIDE) };
+
+			// The side lengths the corners actually store, once each sum has
+			// been rounded to a float.
+			const float width = tile[1].x - tile[0].x;
+			const float height = tile[2].y - tile[1].y;
+
+			CHECK(signed_area(tile) == width * height);
+			CHECK(signed_area(tile) != 176.0f);
+		}
+		TEST_CASE("signed_area of a quad agrees with the cross of its diagonals")
+		{
+			// Ericson notes the quad case collapses to one cross product of
+			// the diagonals rather than a term per edge. The identity is real
+			// but the direction matters: it is cross(A - C, B - D), and
+			// cross(C - A, B - D) gives twice the area negated.
+			const std::array<Point2F, 4> quad = {
+				Point2F(1.0f, 2.0f), Point2F(9.0f, 1.0f),
+				Point2F(11.0f, 7.0f), Point2F(2.0f, 8.0f) };
+
+			const float twice = 2.0f * signed_area(quad);
+
+			CHECK(twice == Vector2F::cross(quad[0] - quad[2], quad[1] - quad[3]));
+			CHECK(-twice == Vector2F::cross(quad[2] - quad[0], quad[1] - quad[3]));
+		}
+		TEST_CASE("point_in_convex_polygon takes the boundary as inside")
+		{
+			const std::array<Point2F, 4> square = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f) };
+
+			CHECK(point_in_convex_polygon(square, Point2F(5.0f, 5.0f)));
+			CHECK(point_in_convex_polygon(square, Point2F(5.0f, 0.0f)));
+			CHECK(point_in_convex_polygon(square, Point2F(0.0f, 0.0f)));
+
+			CHECK_FALSE(point_in_convex_polygon(square, Point2F(15.0f, 5.0f)));
+			CHECK_FALSE(point_in_convex_polygon(square, Point2F(-1.0f, 5.0f)));
+
+			// Diagonally past a corner: outside, though it is beyond only one
+			// of the two edges that meet there by a whole unit.
+			CHECK_FALSE(point_in_convex_polygon(square, Point2F(11.0f, 11.0f)));
+		}
+		TEST_CASE("point_in_convex_polygon does not care which way the caller wound it")
+		{
+			const std::array<Point2F, 3> forwards = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f) };
+			const std::array<Point2F, 3> backwards = {
+				Point2F(0.0f, 10.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f) };
+
+			const Point2F inside(2.0f, 2.0f);
+			const Point2F outside(9.0f, 9.0f);
+
+			CHECK(point_in_convex_polygon(forwards, inside));
+			CHECK(point_in_convex_polygon(backwards, inside));
+			CHECK_FALSE(point_in_convex_polygon(forwards, outside));
+			CHECK_FALSE(point_in_convex_polygon(backwards, outside));
+		}
+		TEST_CASE("point_in_convex_polygon rejects what encloses nothing")
+		{
+			const std::array<Point2F, 2> segment = {
+				Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f) };
+
+			CHECK_FALSE(point_in_convex_polygon(segment, Point2F(5.0f, 0.0f)));
+			CHECK_FALSE(point_in_convex_polygon(std::span<const Point2F>{},
+				Point2F(0.0f, 0.0f)));
+		}
+		TEST_CASE("a zero-length segment is its own closest point, not a NaN")
+		{
+			// Reachable: circle_segment_intersect forwards straight into this,
+			// with edges pulled from a shape. The old form divided by the
+			// segment's zero length first, and NaN fails every comparison, so
+			// both clamps declined to catch it and the caller compared
+			// NaN <= radius - false - and reported no intersection.
+			const Point2F point(3.0f, 4.0f);
+			const Point2F degenerate(10.0f, 10.0f);
+
+			float t = -1.0f;
+			Point2F closest;
+			closest_pt_point_segment(point, degenerate, degenerate, t, closest);
+
+			CHECK(t == 0.0f);
+			CHECK(closest == degenerate);
+			CHECK_FALSE(std::isnan(closest.x));
+			CHECK_FALSE(std::isnan(closest.y));
+		}
+		TEST_CASE("a collinear triangle contains nothing, and says so")
+		{
+			// The barycentric form divided by the triangle's determinant,
+			// which is zero here, so every comparison against the resulting
+			// NaN was false and the answer was "outside" for every point in
+			// the plane - including the ones lying on the degenerate triangle
+			// itself. Now the point on it is inside and the one off it is not.
+			const Point2F a(0.0f, 0.0f);
+			const Point2F b(5.0f, 0.0f);
+			const Point2F c(10.0f, 0.0f);
+
+			CHECK(test_point_triangle(Point2F(2.0f, 0.0f), a, b, c));
+			CHECK_FALSE(test_point_triangle(Point2F(2.0f, 3.0f), a, b, c));
+		}
+		TEST_CASE("test_point_triangle does not depend on the winding")
+		{
+			const Point2F a(0.0f, 0.0f);
+			const Point2F b(10.0f, 0.0f);
+			const Point2F c(0.0f, 10.0f);
+			const Point2F inside(2.0f, 2.0f);
+			const Point2F outside(9.0f, 9.0f);
+
+			CHECK(test_point_triangle(inside, a, b, c));
+			CHECK(test_point_triangle(inside, a, c, b));
+			CHECK_FALSE(test_point_triangle(outside, a, b, c));
+			CHECK_FALSE(test_point_triangle(outside, a, c, b));
+
+			// The boundary is inside, which is what the barycentric form's
+			// v >= 0 && w >= 0 && v + w <= 1 also said.
+			CHECK(test_point_triangle(Point2F(5.0f, 0.0f), a, b, c));
+			CHECK(test_point_triangle(a, a, b, c));
+		}
+		TEST_CASE("a NaN coordinate makes test_AABB_AABB report no intersection")
+		{
+			// It used to report the opposite. The rejecting form - "return
+			// false if separated on either axis, otherwise true" - reaches its
+			// accept branch by falling through, and NaN fails every
+			// comparison, so a single bad coordinate produced a box that
+			// intersected everything in the level. This routine is live behind
+			// Level::is_object_out_of_bounds.
+			const float nan = std::numeric_limits<float>::quiet_NaN();
+			const RectangleF good(0.0f, 0.0f, 10.0f, 10.0f);
+			const RectangleF poisoned(nan, 0.0f, 10.0f, 10.0f);
+
+			CHECK_FALSE(test_AABB_AABB(poisoned, good));
+			CHECK_FALSE(test_AABB_AABB(good, poisoned));
+
+			// Ordinary answers are unchanged, including the closed boundary
+			// that contacts.cpp depends on: boxes sharing only an edge still
+			// intersect.
+			CHECK(test_AABB_AABB(good, RectangleF(5.0f, 5.0f, 10.0f, 10.0f)));
+			CHECK(test_AABB_AABB(good, RectangleF(10.0f, 0.0f, 10.0f, 10.0f)));
+			CHECK_FALSE(test_AABB_AABB(good, RectangleF(11.0f, 0.0f, 10.0f, 10.0f)));
 		}
 		TEST_CASE("test_signed_2D_tri_area")
 		{
@@ -208,7 +409,246 @@ namespace MattMathTests
 	
 	TEST_SUITE("MattMathTests")
 	{
-		
+		TEST_CASE("cross is the signed parallelogram area, and it is a scalar")
+		{
+			const Vector2F right(1.0f, 0.0f);
+			const Vector2F down(0.0f, 1.0f);
+
+			// The unit square, both ways round. The magnitude is the area and
+			// the sign is the turn direction.
+			CHECK(Vector2F::cross(right, down) == 1.0f);
+			CHECK(Vector2F::cross(down, right) == -1.0f);
+
+			// Scaling either side scales the area.
+			CHECK(Vector2F::cross(right * 3.0f, down * 4.0f) == 12.0f);
+		}
+		TEST_CASE("cross is zero exactly when the two are parallel")
+		{
+			const Vector2F v(3.0f, 4.0f);
+
+			CHECK(Vector2F::cross(v, v) == 0.0f);
+			CHECK(Vector2F::cross(v, v * 5.0f) == 0.0f);
+
+			// Anti-parallel is still parallel: it is the direction that has
+			// collapsed, not the ordering.
+			CHECK(Vector2F::cross(v, v * -2.0f) == 0.0f);
+
+			// A zero vector spans no area with anything.
+			CHECK(Vector2F::cross(v, Vector2F::ZERO) == 0.0f);
+		}
+		TEST_CASE("cross and dot answer opposite questions")
+		{
+			// dot vanishes at a right angle where cross is largest, and cross
+			// vanishes when parallel where dot is largest. Together they are
+			// the components of one rotation, so the squares sum to the
+			// product of the squared lengths.
+			const Vector2F a(3.0f, 4.0f);
+			const Vector2F b(-2.0f, 7.0f);
+
+			const float d = Vector2F::dot(a, b);
+			const float c = Vector2F::cross(a, b);
+
+			CHECK(d * d + c * c ==
+				doctest::Approx(a.length_squared() * b.length_squared()));
+		}
+		TEST_CASE("cross on differences is ORIENT2D, matching signed_2D_tri_area")
+		{
+			// The identity the two headers claim about each other. If either
+			// side is ever rewritten, this is what notices.
+			const Point2F a(0.0f, 0.0f);
+			const Point2F b(10.0f, 0.0f);
+			const Point2F c(0.0f, 10.0f);
+
+			CHECK(Vector2F::cross(b - a, c - a) == signed_2D_tri_area(a, b, c));
+			CHECK(Vector2F::cross(c - a, b - a) == signed_2D_tri_area(a, c, b));
+
+			// Collinear points, from both functions.
+			const Point2F far_along(20.0f, 0.0f);
+			CHECK(Vector2F::cross(b - a, far_along - a) == 0.0f);
+			CHECK(signed_2D_tri_area(a, b, far_along) == 0.0f);
+		}
+		TEST_CASE("cross separates slivers that a truncating orientation test loses")
+		{
+			// The reason this function exists as a float. A triangle a tenth
+			// of a unit tall is a real triangle; the deleted mattmath::sign
+			// cast its area to int and reported every one of these collinear,
+			// which is the failure that turns a thin ramp into a line.
+			const Point2F a(0.0f, 0.0f);
+			const Point2F b(1.0f, 0.0f);
+			const Point2F barely_above(0.0f, 0.1f);
+
+			const float area = Vector2F::cross(b - a, barely_above - a);
+
+			CHECK(area == doctest::Approx(0.1f));
+			CHECK(area != 0.0f);
+			CHECK(static_cast<int>(area) == 0);
+		}
+		TEST_CASE("triangles overlapping with no vertex inside either are still found")
+		{
+			// The Star of David: two triangles crossing in a hexagon, with
+			// every vertex of each outside the other, so the containment half
+			// of the predicate finds nothing and the answer rests entirely on
+			// edge crossings.
+			//
+			// This is the case the four-pair enumeration looked unable to
+			// handle. It handled it - six crossings cannot all avoid four of
+			// nine pairs - and no configuration defeats it, for the reason
+			// argued in matt_math.cpp. The test is here to pin the behaviour,
+			// not to record a fix.
+			const Triangle up(Point2F(0.0f, 0.0f), Point2F(60.0f, 0.0f),
+				Point2F(30.0f, 52.0f));
+			const Triangle down(Point2F(0.0f, 35.0f), Point2F(60.0f, 35.0f),
+				Point2F(30.0f, -17.0f));
+
+			for (int i = 0; i < 3; i++)
+			{
+				CAPTURE(i);
+				REQUIRE_FALSE(up.contains(down.points[i]));
+				REQUIRE_FALSE(down.contains(up.points[i]));
+			}
+
+			CHECK(triangles_intersect(up, down));
+			CHECK(triangles_intersect(down, up));
+
+			// And the predicate is symmetric on a plain miss.
+			const Triangle far_away(Point2F(500.0f, 500.0f),
+				Point2F(560.0f, 500.0f), Point2F(530.0f, 552.0f));
+			CHECK_FALSE(triangles_intersect(up, far_away));
+			CHECK_FALSE(triangles_intersect(far_away, up));
+		}
+		TEST_CASE("angle_between survives a zero-length vector and its own rounding")
+		{
+			// Zero in, zero out - the contract normalized() already keeps.
+			// This used to be acos(0/0), and the NaN surfaced two call levels
+			// away as "Triangle is not a right triangle", thrown about a
+			// triangle that was one.
+			CHECK(Vector2F::angle_between(Vector2F::ZERO,
+				Vector2F(1.0f, 0.0f)) == 0.0f);
+			CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),
+				Vector2F::ZERO) == 0.0f);
+
+			// Parallel and antiparallel are the two places the quotient lands
+			// exactly on the edge of acos's domain, so rounding can push it
+			// outside and produce a NaN from arithmetic that was never wrong
+			// by more than an ulp.
+			const Vector2F v(3.0f, 4.0f);
+			CHECK(Vector2F::angle_between(v, v) == doctest::Approx(0.0f));
+			CHECK(Vector2F::angle_between(v, v * -1.0f)
+				== doctest::Approx(PI));
+			CHECK_FALSE(std::isnan(Vector2F::angle_between(v, v)));
+
+			// A right angle, which is what the triangle predicates ask for.
+			CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),
+				Vector2F(0.0f, 1.0f)) == doctest::Approx(PI_OVER_2));
+		}
+		TEST_CASE("inflate moves every edge out by the full amount, not by a cosine")
+		{
+			// The property the radial version could not hold. Displacing a
+			// vertex by `amount` along its ray from the centroid moves the
+			// edges meeting there by only amount * cos(angle), so a sharp
+			// corner under-inflated badly and a right angle by a factor of
+			// 1/sqrt(2).
+			//
+			// Measured from a FIXED interior point, captured before the
+			// inflation. The centroid of the grown polygon is not the centroid
+			// of the original, so measuring from the live centre compares
+			// against a reference that moved - which is a bug in the test, not
+			// in the arithmetic, and cost one confused run to find.
+			const auto edge_distance = [](const Triangle& t, int i,
+				const Point2F& from)
+			{
+				const Point2F a = t.points[i];
+				const Point2F b = t.points[(i + 1) % 3];
+				const Vector2F normal = Vector2F(-(b.y - a.y), b.x - a.x)
+					.normalized();
+				return std::abs(Vector2F::dot(from - a, normal));
+			};
+
+			// A deliberately sharp triangle - the case the old form was worst
+			// on.
+			Triangle t(Point2F(0.0f, 0.0f), Point2F(100.0f, 0.0f),
+				Point2F(90.0f, 20.0f));
+
+			const Point2F reference = t.center();
+
+			float before[3];
+			for (int i = 0; i < 3; i++)
+			{
+				before[i] = edge_distance(t, i, reference);
+			}
+
+			constexpr float AMOUNT = 5.0f;
+			t.inflate(AMOUNT);
+
+			for (int i = 0; i < 3; i++)
+			{
+				CAPTURE(i);
+				CHECK(edge_distance(t, i, reference)
+					== doctest::Approx(before[i] + AMOUNT).epsilon(0.001));
+			}
+		}
+		TEST_CASE("an inflated shape contains the shape it grew from")
+		{
+			// The direction of the error is the contract. A collider that
+			// grows by less than asked lets things visibly interpenetrate
+			// while collision correctly reports no touch.
+			const Triangle original(Point2F(10.0f, 10.0f), Point2F(60.0f, 12.0f),
+				Point2F(20.0f, 40.0f));
+
+			Triangle grown = original;
+			grown.inflate(3.0f);
+
+			for (int i = 0; i < 3; i++)
+			{
+				CAPTURE(i);
+				CHECK(grown.contains(original.points[i]));
+			}
+
+			// And a quad, which shares the implementation.
+			const Quad square(Point2F(0.0f, 0.0f), Point2F(20.0f, 0.0f),
+				Point2F(20.0f, 20.0f), Point2F(0.0f, 20.0f));
+			Quad bigger = square;
+			bigger.inflate(2.0f);
+
+			// A square inflated by 2 is the square grown by 2 on every side.
+			CHECK(bigger.point_0().x == doctest::Approx(-2.0f));
+			CHECK(bigger.point_0().y == doctest::Approx(-2.0f));
+			CHECK(bigger.point_2().x == doctest::Approx(22.0f));
+			CHECK(bigger.point_2().y == doctest::Approx(22.0f));
+		}
+		TEST_CASE("a Quad must be convex, not merely non-self-intersecting")
+		{
+			// A dart: the square with one corner pushed back through the
+			// opposite diagonal. No two of its edges cross, so the old
+			// simplicity test accepted it - and then the separating-axis
+			// theorem, which only decides convex shapes, produced a confident
+			// wrong manifold for it.
+			CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(2.0f, 2.0f), Point2F(0.0f, 10.0f)),
+				std::invalid_argument);
+
+			// A bowtie, which the old test also caught, since its edges do
+			// cross.
+			CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f)),
+				std::invalid_argument);
+
+			// Degenerate: three points on a line, and a repeated vertex. Both
+			// put a zero on one side of a diagonal, and a zero is not strictly
+			// opposite anything.
+			CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(5.0f, 0.0f),
+				Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f)),
+				std::invalid_argument);
+			CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(0.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f)),
+				std::invalid_argument);
+
+			// Convex quads are still fine, wound either way.
+			CHECK_NOTHROW(Quad(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f)));
+			CHECK_NOTHROW(Quad(Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f),
+				Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f)));
+		}
 		TEST_CASE("test_8_cardinal_direction")
 		{
 			Point2F p(0.0f, 0.0f);

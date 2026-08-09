@@ -4,6 +4,7 @@
 #include "engine/collision/contacts.h"
 #include "engine/collision/resolve.h"
 
+#include <algorithm>
 #include <vector>
 
 using artattack::CollisionLayer;
@@ -89,6 +90,17 @@ namespace
 		return (contact.a == &x && contact.b == &y) ||
 			(contact.a == &y && contact.b == &x);
 	}
+
+	// Membership, not position: the order of `contacts` is unspecified and
+	// follows whatever the broad phase's sort produced. Asserting a pair is
+	// present, together with the total count, still pins "every pair once and
+	// no pair twice" without pinning an order nothing promises.
+	bool contains_pair(const std::vector<Contact>& contacts,
+		const CollisionObject& x, const CollisionObject& y)
+	{
+		return std::any_of(contacts.begin(), contacts.end(),
+			[&x, &y](const Contact& contact) { return names(contact, x, y); });
+	}
 }
 
 TEST_CASE("an overlapping pair is reported once, not twice and not against itself")
@@ -105,9 +117,9 @@ TEST_CASE("an overlapping pair is reported once, not twice and not against itsel
 	find_contacts(objects, contacts);
 
 	REQUIRE(contacts.size() == 3);
-	CHECK(names(contacts[0], a, b));
-	CHECK(names(contacts[1], a, c));
-	CHECK(names(contacts[2], b, c));
+	CHECK(contains_pair(contacts, a, b));
+	CHECK(contains_pair(contacts, a, c));
+	CHECK(contains_pair(contacts, b, c));
 }
 
 TEST_CASE("either side can veto a pair")

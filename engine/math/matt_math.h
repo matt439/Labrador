@@ -49,6 +49,51 @@ namespace mattmath
 
 	constexpr float PI = 3.14159265358979323846f;
 	constexpr float PI_OVER_2 = PI / 2.0f;
+
+	// The general comparison tolerance, and the one number here that carries a
+	// warning.
+	//
+	// EPSILON is ABSOLUTE, so it only means anything over a bounded range of
+	// coordinates, and the range it means something over is smaller than the
+	// one this game runs at. One float ulp at 5000 is 4.883e-4, so
+	// `5000.0f + EPSILON == 5000.0f` exactly: out where the levels are, the
+	// engine's general tolerance is a fifth of the smallest representable
+	// step, which is to say it is exact equality wearing a costume. The tests
+	// mostly run within a few hundred units of the origin, where one ulp is
+	// 6.1e-5 and EPSILON is a meaningful ~1.6 of them - so the suite exercises
+	// the range where this constant works and the game runs in the range where
+	// it does not.
+	//
+	// That is not currently a bug, and the reason is worth recording so nobody
+	// "fixes" it by making the number bigger. Every use of EPSILON in the
+	// collision path CLASSIFIES - is this vector degenerate, is this axis
+	// usable - and none of them MEASURE. The one place a tolerance would have
+	// moved geometry was resolve.cpp's guard, and that now refuses rather than
+	// returns a number (see MIN_AXIS_ALIGNMENT). The separation sweep was
+	// re-run translated out to 600,000 units and holds exactly, so the
+	// analytic path needs no tolerance at all at world scale.
+	//
+	// The ordering, which is what Ericson insists a set of tolerances has
+	// (8.4.3, p.377 - a query tolerance must exceed the tolerance geometry was
+	// built with, or a primitive placed on one side is missed by a strict
+	// query). Smallest first:
+	//
+	//   SEGMENT_PARALLEL_EPSILON  1e-6  ericson_math.cpp, anonymous namespace.
+	//                                   A slab-test fudge for a segment nearly
+	//                                   parallel to an axis. Two orders tighter
+	//                                   than EPSILON on purpose; they were
+	//                                   never the same quantity.
+	//   EPSILON                   1e-4  this constant. Classification only.
+	//   MIN_AXIS_ALIGNMENT        0.1   resolve.h. Not a rounding tolerance at
+	//                                   all - a bound on how oblique an axis
+	//                                   may be before separating along it is a
+	//                                   category error. Named here because it
+	//                                   is the one that decides whether a
+	//                                   caller gets an answer.
+	//
+	// Anything added to this set states which of those three jobs it does, and
+	// where it sits in the order. A tolerance that may move geometry has to be
+	// strictly larger than one that may only classify it.
 	constexpr float EPSILON = 0.0001f;
 
 	//float min_value(float a, float b);
@@ -58,9 +103,6 @@ namespace mattmath
 	void clamp_ref(float& value, float min, float max);
 	int clamp(int value, int min, int max);
 	void clamp_ref(int& value, int min, int max);
-
-	int sign(const mattmath::Vector2F& p1,
-		const mattmath::Vector2F& p2, const mattmath::Vector2F& p3);
 
 	bool are_equal(float a, float b, float epsilon = EPSILON);
 	bool are_equal(const mattmath::Vector2F& a, const mattmath::Vector2F& b,
@@ -89,6 +131,31 @@ namespace mattmath
 		bool AABB_intersects(const Shape& other) const;
 		virtual void offset(const Vector2F& amount) = 0;
 		virtual Point2F center() const = 0;
+		// Grows the shape by moving every part of its boundary `amount`
+		// outward, along that part's own normal.
+		//
+		// One contract for all four implementations, because a virtual with
+		// three different meanings is worse than three differently named
+		// functions. A box's faces each move out by `amount`; a circle's
+		// radius grows by `amount`; a polygon's edges each move out by
+		// `amount` and its corners are extended to meet (a mitre).
+		//
+		// The result always CONTAINS the original. That direction is the
+		// contract, not an accident of the arithmetic - a collider that grows
+		// by less than it was asked to lets objects visibly interpenetrate
+		// while the collision system correctly reports no touch, which is the
+		// one failure a geometry simplifier must never have. Polygons used to
+		// have exactly that bug: they displaced each vertex away from the
+		// centroid by `amount`, which moves the adjacent edges out by only
+		// amount * cos(angle between the vertex ray and the edge normal) -
+		// short of the request, by a different factor at every corner.
+		//
+		// The true offset of a polygon has arcs where the corners were; the
+		// mitre keeps the result a polygon and errs outward, which is the safe
+		// side (T3 - nobody will see the corner).
+		//
+		// A negative `amount` is not supported: shrinking can invert a small
+		// polygon through itself, and no caller wants it.
 		virtual void inflate(float amount) = 0;
 
 		// NOT HERE: clone(), and edges().
@@ -431,8 +498,7 @@ namespace mattmath
 		mattmath::Direction direction() const;
 
 		float dot(const Vector2F& other) const;
-		Vector2F cross(const Vector2F& other) const;
-		
+
 		// Zero-length in, zero-length out. A zero vector has no direction, and
 		// returning zero lets the caller detect that; dividing by the length
 		// produced NaN, which then propagated silently through velocities and
@@ -462,7 +528,6 @@ namespace mattmath
 		bool abs_x_greater_than_y() const;
 
 		static Vector2F rotate_vector(const Vector2F& vec, float angle);
-		static void rotate_vector_by_ref(Vector2F& vec, float angle);
 
 		static float angle_between(const Vector2F& a, const Vector2F& b);
 
@@ -473,6 +538,30 @@ namespace mattmath
 		static float distance_squared(const Vector2F& a, const Vector2F& b);
 
 		static float dot(const Vector2F& a, const Vector2F& b);
+
+		// The 2D cross product: a scalar, not a vector. In three dimensions
+		// the cross product of two vectors is the third axis; in two there is
+		// no third axis, and what survives is its signed length,
+		// a.x * b.y - a.y * b.x.
+		//
+		// It is the signed area of the parallelogram a and b span, so its
+		// magnitude measures how far from parallel they are - the exact
+		// counterpart of dot() measuring how far from perpendicular. Its sign
+		// is the orientation test: positive when b lies counter-clockwise of
+		// a, negative when clockwise, and zero when the two are parallel,
+		// which is the only reliable way to ask that question.
+		//
+		// Comparing three points is this on their differences:
+		// cross(b - a, c - a) is twice the signed area of triangle abc, and
+		// is positive exactly when abc winds counter-clockwise. That
+		// composite is Ericson's ORIENT2D; ericson_math.h spells it
+		// signed_2D_tri_area.
+		//
+		// Beware the y-down screen convention: "counter-clockwise" above is
+		// stated in maths axes. On screen, where y grows downward, a positive
+		// result reads as clockwise. The sign is consistent either way - it
+		// is the word that flips.
+		static float cross(const Vector2F& a, const Vector2F& b);
 
 		static Vector2F min_vec(const Vector2F& a, const Vector2F& b);
 		static Vector2F max_vec(const Vector2F& a, const Vector2F& b);

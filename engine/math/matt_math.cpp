@@ -61,12 +61,6 @@ namespace mattmath
 			value = max;
 		}
 	}
-	int mattmath::sign(const Vector2F& p1,
-		const Vector2F& p2, const Vector2F& p3)
-	{
-		return static_cast<int>((p1.x - p3.x) * (p2.y - p3.y) -
-			(p2.x - p3.x) * (p1.y - p3.y));
-	}
 
 	bool mattmath::are_equal(float a, float b, float epsilon)
 	{
@@ -277,8 +271,16 @@ namespace mattmath
 
 	bool mattmath::circles_intersect(const Circle& a, const Circle& b)
 	{
-		return Vector2F::distance(a.center(), b.center()) <=
-			a.radius() + b.radius();
+		// The squared form, which is the same answer without the square root.
+		// Squaring preserves order on non-negative quantities, so a predicate
+		// that only has to decide never needs the root (5.2.5, p.165).
+		//
+		// Forwarded rather than rewritten: test_circle_circle is this test,
+		// already ported and already correct, and it had no callers anywhere
+		// in the tree. Two functions answering one question is a correctness
+		// hazard before it is a duplication one - they round differently at
+		// the grazing boundary, so they can disagree about a contact.
+		return test_circle_circle(a, b);
 	}
 
 	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle, Point2F& point)
@@ -314,7 +316,11 @@ namespace mattmath
 		closest_pt_point_segment(circle.center(),
 			segment.point_0, segment.point_1, t, point);
 
-		return Vector2F::distance(circle.center(), point) <= circle.radius();
+		// Squared both sides - see circles_intersect. This one is called once
+		// per edge from circle_rectangle_rotated_intersect, so it was four
+		// roots per query for an answer that never needed one.
+		return Vector2F::distance_squared(circle.center(), point) <=
+			circle.radius() * circle.radius();
 	}
 
 	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment)
@@ -325,7 +331,8 @@ namespace mattmath
 
 	bool mattmath::circle_point_intersect(const Circle& circle, const Point2F& point)
 	{
-		return Vector2F::distance(circle.center(), point) <= circle.radius();
+		return Vector2F::distance_squared(circle.center(), point) <=
+			circle.radius() * circle.radius();
 	}
 
 	bool mattmath::circle_rectangle_rotated_intersect(const Circle& circle,
@@ -371,13 +378,42 @@ namespace mattmath
 		const auto a_edges = a.edges();
 		const auto b_edges = b.edges();
 
-		// check if any of the edges intersect
-		for (int i = 0; i < 2; i++)
+		// All nine edge pairs.
+		//
+		// This is not a bug fix, and the previous four-pair version was not
+		// wrong. It ran i < 2 against b_edges[0] and b_edges[1], never testing
+		// a_edges[2] or b_edges[2] against anything, which reads like an
+		// obvious hole - and is not one, for a reason worth writing down
+		// before somebody "restores" the optimisation or, worse, keeps the
+		// subset believing it is broken.
+		//
+		// Given the containment test above has already failed, no vertex of
+		// either triangle lies inside the other. Now suppose no crossing fell
+		// among the four pairs that were tested. Then a_edges[0] and
+		// a_edges[1] could only ever cross b_edges[2]. But a segment that
+		// enters a convex region has to leave it again - with no endpoint
+		// inside, its crossings come in pairs - and two straight segments
+		// cross at most once. So each of a_edges[0] and a_edges[1] would have
+		// to cross the boundary of B zero times. By the same argument
+		// b_edges[0] and b_edges[1] cross A zero times. The only crossing left
+		// possible is (a_edges[2], b_edges[2]), a single crossing, which again
+		// needs an endpoint inside. Contradiction: there were no crossings at
+		// all, and the triangles do not overlap.
+		//
+		// So the subset was sufficient. It was not *evidently* sufficient, and
+		// nine segment tests on a predicate the narrow phase is replacing is
+		// not a cost worth defending against the reader who has to re-derive
+		// that proof. A search over half a million overlapping vertex-free
+		// triangle pairs produced no disagreement between the two forms, which
+		// is the empirical half of the same statement.
+		for (int i = 0; i < 3; i++)
 		{
-			if (segments_intersect(a_edges[i], b_edges[0]) ||
-				segments_intersect(a_edges[i], b_edges[1]))
+			for (int j = 0; j < 3; j++)
 			{
-				return true;
+				if (segments_intersect(a_edges[i], b_edges[j]))
+				{
+					return true;
+				}
 			}
 		}
 
@@ -1234,10 +1270,6 @@ namespace mattmath
 	{
 		return this->x * other.x + this->y * other.y;
 	}
-	Vector2F Vector2F::cross(const Vector2F& other) const
-	{
-		return Vector2F(this->x * other.y, this->y * other.x);
-	}
 	Vector2F Vector2F::normalized() const
 	{
 		float length = this->length();
@@ -1324,17 +1356,32 @@ namespace mattmath
 		return Vector2F(vec.x * cos_angle - vec.y * sin_angle,
 			vec.x * sin_angle + vec.y * cos_angle);
 	}
-	void Vector2F::rotate_vector_by_ref(Vector2F& vec, float angle)
-	{
-		float cos_angle = std::cos(angle);
-		float sin_angle = std::sin(angle);
-
-		vec.x = vec.x * cos_angle - vec.y * sin_angle;
-		vec.y = vec.x * sin_angle + vec.y * cos_angle;
-	}
 	float Vector2F::angle_between(const Vector2F& a, const Vector2F& b)
 	{
-		return std::acos(Vector2F::dot(a, b) / (a.length() * b.length()));
+		const float lengths = a.length() * b.length();
+		if (lengths == 0.0f)
+		{
+			// A zero-length vector points nowhere, so there is no angle to
+			// report. Zero is the same answer normalized() gives for the same
+			// reason, and it beats dividing by nothing: this used to return
+			// NaN, and NaN travelled. Triangle::angle_0/1/2 feed
+			// TriangleRightAxisAligned::find_hypotenuse, where every
+			// are_equal(NaN, PI_OVER_2) is false, so find_hypotenuse returned
+			// -1 and hypotenuse() threw "Triangle is not a right triangle" -
+			// about a triangle that was one, two call levels from the actual
+			// fault.
+			return 0.0f;
+		}
+
+		// Mathematically this quotient is in [-1, 1]; computationally it is
+		// not. Rounding in the dot product and in two square roots can put it
+		// a few ulps outside, and acos of 1.0000001 is NaN - a domain error
+		// produced by arithmetic that was never wrong by more than a rounding
+		// step (11.1, p.428).
+		const float cosine = mattmath::clamp(
+			Vector2F::dot(a, b) / lengths, -1.0f, 1.0f);
+
+		return std::acos(cosine);
 	}
 	Vector2F Vector2F::lerp(const Vector2F& a, const Vector2F& b, float t)
 	{
@@ -1357,6 +1404,10 @@ namespace mattmath
 	float Vector2F::dot(const Vector2F& a, const Vector2F& b)
 	{
 		return a.x * b.x + a.y * b.y;
+	}
+	float Vector2F::cross(const Vector2F& a, const Vector2F& b)
+	{
+		return a.x * b.y - a.y * b.x;
 	}
 	Vector2F Vector2F::min_vec(const Vector2F& a, const Vector2F& b)
 	{
@@ -1868,21 +1919,101 @@ namespace mattmath
 		this->points[1] += offset;
 		this->points[2] += offset;
 	}
+	namespace
+	{
+		// Moves every edge of a convex polygon outward along its own normal by
+		// `amount`, and puts each vertex back where its two offset edges meet.
+		//
+		// This is what Shape::inflate promises, and it is not what pushing the
+		// vertices away from the centroid does. A vertex ray and the normal of
+		// an edge meeting at that vertex differ by some angle, so displacing
+		// the vertex by `amount` along the ray moves the edge outward by only
+		// amount * cos(that angle) - less than asked, by a different factor at
+		// every corner, and never enough. A collider that inflates by less
+		// than it claims is the one direction Ericson singles out as
+		// unacceptable (12.4, p.487): objects visibly interpenetrate while the
+		// collision system correctly reports no touch.
+		//
+		// The true offset of a polygon by a disc has arcs at the corners.
+		// Extending the edges to meet instead - a mitre - keeps the result a
+		// polygon and always contains the true shape, so it errs outward,
+		// which is the safe direction. T3: nobody will see the corner.
+		void inflate_convex_polygon(Vector2F* points, int count, float amount)
+		{
+			constexpr int MAX_POINTS = 4;
+			if (count < 3 || count > MAX_POINTS)
+			{
+				return;
+			}
+
+			Vector2F centre = Vector2F::ZERO;
+			for (int i = 0; i < count; i++)
+			{
+				centre += points[i];
+			}
+			centre /= static_cast<float>(count);
+
+			// Each edge as an outward unit normal and the offset line's
+			// constant, so a vertex is a 2x2 solve rather than a construction.
+			Vector2F normals[MAX_POINTS];
+			float constants[MAX_POINTS];
+			for (int i = 0; i < count; i++)
+			{
+				const Vector2F& from = points[i];
+				const Vector2F edge = points[(i + 1) % count] - from;
+
+				Vector2F normal = Vector2F(-edge.y, edge.x).normalized();
+				if (normal == Vector2F::ZERO)
+				{
+					// A degenerate edge has no normal to offset along. Leave
+					// the polygon alone rather than invent a direction.
+					return;
+				}
+
+				if (Vector2F::dot(normal, from - centre) < 0.0f)
+				{
+					normal = Vector2F(-normal.x, -normal.y);
+				}
+
+				normals[i] = normal;
+				constants[i] = Vector2F::dot(from, normal) + amount;
+			}
+
+			Vector2F moved[MAX_POINTS];
+			for (int i = 0; i < count; i++)
+			{
+				// Vertex i is shared by the edge that ends at it and the edge
+				// that starts at it.
+				const int previous = (i + count - 1) % count;
+
+				const Vector2F& n0 = normals[previous];
+				const Vector2F& n1 = normals[i];
+				const float determinant = Vector2F::cross(n0, n1);
+
+				if (std::abs(determinant) < EPSILON)
+				{
+					// The two edges are parallel, so they never meet however
+					// far they are extended. Nothing to mitre: push the vertex
+					// straight out instead.
+					moved[i] = points[i] + n1 * amount;
+					continue;
+				}
+
+				moved[i] = Vector2F(
+					(constants[previous] * n1.y - constants[i] * n0.y) / determinant,
+					(constants[i] * n0.x - constants[previous] * n1.x) / determinant);
+			}
+
+			for (int i = 0; i < count; i++)
+			{
+				points[i] = moved[i];
+			}
+		}
+	}
+
 	void Triangle::inflate(float amount)
 	{
-		Vector2F center = this->center();
-		Vector2F edge0 = this->points[0] - center;
-		Vector2F edge1 = this->points[1] - center;
-		Vector2F edge2 = this->points[2] - center;
-
-		edge0.normalize();
-		edge1.normalize();
-		edge2.normalize();
-
-		this->points[0] = center + edge0 * (this->points[0] - center).length() + edge0 * amount;
-		this->points[1] = center + edge1 * (this->points[1] - center).length() + edge1 * amount;
-		this->points[2] = center + edge2 * (this->points[2] - center).length() + edge2 * amount;
-
+		inflate_convex_polygon(this->points, 3, amount);
 	}
 	const Vector2F& Triangle::point_0() const
 	{
@@ -2190,40 +2321,55 @@ namespace mattmath
 
 	void Quad::inflate(float amount)
 	{
-		Vector2F center = this->center();
-		Vector2F edge0 = this->points_[0] - center;
-		Vector2F edge1 = this->points_[1] - center;
-		Vector2F edge2 = this->points_[2] - center;
-		Vector2F edge3 = this->points_[3] - center;
-
-		edge0.normalize();
-		edge1.normalize();
-		edge2.normalize();
-		edge3.normalize();
-
-		this->points_[0] = center + edge0 * (this->points_[0] - center).length() + edge0 * amount;
-		this->points_[1] = center + edge1 * (this->points_[1] - center).length() + edge1 * amount;
-		this->points_[2] = center + edge2 * (this->points_[2] - center).length() + edge2 * amount;
-		this->points_[3] = center + edge3 * (this->points_[3] - center).length() + edge3 * amount;
+		inflate_convex_polygon(this->points_, 4, amount);
 	}
 
 	bool Quad::is_valid() const
 	{
-		// check if the edges intersect
-		const auto edges = this->edges();
+		// Convex, which is a stronger claim than the edges not crossing.
+		//
+		// Both consumers need convexity and neither needs simplicity: the
+		// narrow phase runs the separating-axis theorem, which is only a
+		// decision procedure for convex shapes, and triangles() splits on a
+		// diagonal that lies outside a concave quad. A dart - four points with
+		// one pushed back through the opposite diagonal - has no two edges
+		// crossing, so it passed the old test and then received a confident
+		// wrong manifold.
+		//
+		// A quad is convex exactly when its diagonals properly cross
+		// (Ericson, 3.7.1): each diagonal must have the other's endpoints
+		// strictly on opposite sides of it. Four signed areas, no allocation,
+		// against six segment tests over a heap-allocated vector of edges.
+		//
+		// Strictness is what rejects the degenerate cases - three collinear
+		// points, or a repeated vertex, put a zero on one side and a zero is
+		// not strictly opposite anything.
+		//
+		// This also removes a trap. The old test asked whether any two edges
+		// intersect, and adjacent edges share a vertex; it only passed at all
+		// because segments_intersect excludes its endpoints. Closing that
+		// boundary - which is an open item against segments_intersect - would
+		// have made every Quad in the tree throw on construction.
+		const Point2F& a = this->points_[0];
+		const Point2F& b = this->points_[1];
+		const Point2F& c = this->points_[2];
+		const Point2F& d = this->points_[3];
 
-		for (int i = 0; i < 4; i++)
+		const auto strictly_opposite = [](float lhs, float rhs)
 		{
-			for (int j = i + 1; j < 4; j++)
-			{
-				if (edges[i].intersects(edges[j]))
-				{
-					return false;
-				}
-			}
+			return (lhs > 0.0f && rhs < 0.0f) || (lhs < 0.0f && rhs > 0.0f);
+		};
+
+		// a and c on opposite sides of diagonal bd
+		if (!strictly_opposite(Vector2F::cross(d - b, a - b),
+			Vector2F::cross(d - b, c - b)))
+		{
+			return false;
 		}
 
-		return true;
+		// b and d on opposite sides of diagonal ac
+		return strictly_opposite(Vector2F::cross(c - a, b - a),
+			Vector2F::cross(c - a, d - a));
 	}
 
 	const Point2F& Quad::point_0() const

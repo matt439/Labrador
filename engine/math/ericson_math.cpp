@@ -26,11 +26,22 @@ namespace mattmath
 		Vector2F b_min = b.top_left();
 		Vector2F b_max = b.bottom_right();
 	
-		// Exit with no intersection if separated along an axis
-		if (a_max.x < b_min.x || a_min.x > b_max.x) return 0;
-		if (a_max.y < b_min.y || a_min.y > b_max.y) return 0;
-		// Overlapping on all axes means AABBs are intersecting
-		return 1;
+		// Stated as "overlapping on both axes", not as "not separated on
+		// either". The two are the same for real numbers and are not the same
+		// for NaN: every comparison against NaN is false, so the rejecting
+		// form fell through to `return true` and one NaN coordinate produced a
+		// box that intersected everything. This form makes the accept branch
+		// something a comparison has to actually reach, so a NaN reports no
+		// intersection - which is the failure a caller can survive
+		// (11.2.2, pp.436-437).
+		//
+		// The bounds stay closed: boxes that share only an edge intersect, and
+		// contacts.cpp relies on that filter being closed while narrow_phase
+		// is open.
+		const bool overlap_x = a_min.x <= b_max.x && b_min.x <= a_max.x;
+		const bool overlap_y = a_min.y <= b_max.y && b_min.y <= a_max.y;
+
+		return overlap_x && overlap_y;
 	}
 
 	bool test_circle_circle(const Circle& a, const Circle& b)
@@ -186,137 +197,8 @@ namespace mattmath
 		return Vector2F::dot(v, v) <= s.radius() * s.radius();
 	}
 
-	//bool test_triangle_AABB(const Point2F& v0,
-	//	const Point2F& v1, const Point2F& v2, const RectangleF& b)
-	//{
-	//	float p0, p1, p2, r;
-	//	// Compute box center and extents (if not already given in that format)
-	//	Vector2F c = (b.min + b.max) * 0.5f;
-	//	float e0 = (b.max.x - b.min.x) * 0.5f;
-	//	float e1 = (b.max.y - b.min.y) * 0.5f;
-	//	float e2 = (b.max.z - b.min.z) * 0.5f;
-	//	// Translate triangle as conceptually moving AABB to origin
-	//	v0 = v0 - c;
-	//	v1 = v1 - c;
-	//	v2 = v2 - c;
-	//	// Compute edge vectors for triangle
-	//	Vector2F f0 = v1 - v0, f1 = v2 - v1, f2 = v0 - v2;
-	//	// Test axes a00..a22 (category 3)
-	//	// Test axis a00
-	//	p0 = v0.z * v1.y - v0.y * v1.z;
-	//	p2 = v2.z * (v1.y - v0.y) - v2.z * (v1.z - v0.z);
-	//	r = e1 * Abs(f0.z) + e2 * Abs(f0.y);
-	//	if (Max(-Max(p0, p2), Min(p0, p2)) > r) return 0; // Axis is a separating axis
-	//	// Repeat similar tests for remaining axes a01..a22
-	//	...
-	//		// Test the three axes corresponding to the face normals of AABB b (category 1).
-	//		// Exit if...
-	//		// ... [-e0, e0] and [min(v0.x,v1.x,v2.x), max(v0.x,v1.x,v2.x)] do not overlap
-	//		if (Max(v0.x, v1.x, v2.x) < -e0 || Min(v0.x, v1.x, v2.x) > e0) return 0;
-	//	// ... [-e1, e1] and [min(v0.y,v1.y,v2.y), max(v0.y,v1.y,v2.y)] do not overlap
-	//	if (Max(v0.y, v1.y, v2.y) < -e1 || Min(v0.y, v1.y, v2.y) > e1) return 0;
-	//	// ... [-e2, e2] and [min(v0.z,v1.z,v2.z), max(v0.z,v1.z,v2.z)] do not overlap
-	//	if (Max(v0.z, v1.z, v2.z) < -e2 || Min(v0.z, v1.z, v2.z) > e2) return 0;
-	//	// Test separating axis corresponding to triangle face normal (category 2)
-	//	Plane p;
-	//	p.n = Cross(f0, f1);
-	//	p.d = Dot(p.n, v0);
-	//	return TestAABBPlane(b, p);
-	//}
 
 
-	// Intersect AABBs �a� and �b� moving with constant velocities va and vb.
-	// On intersection, return time of first and last contact in tfirst and tlast
-	bool intersect_moving_AABB_AABB(const AABB& a, const AABB& b,
-		const Vector2F& va, const Vector2F& vb,
-		float& tfirst, float& tlast)
-	{
-		// Exit early if �a� and �b� initially overlapping
-		if (test_AABB_AABB(a, b)) {
-			tfirst = tlast = 0.0f;
-			return 1;
-		}
-		// Use relative velocity; effectively treating �a� as stationary
-		Vector2F v = vb - va;
-		// Initialize times of first and last contact
-		tfirst = 0.0f;
-		tlast = 1.0f;
-
-
-		Vector2F a_min = a.top_left();
-		Vector2F a_max = a.bottom_right();
-		Vector2F b_min = b.top_left();
-		Vector2F b_max = b.bottom_right();
-
-		if (v.x < 0.0f) {
-			if (b_max.x < a_min.x)
-			{
-				return 0; // Nonintersecting and moving apart
-			}
-			if (a_max.x < b_min.x)
-			{
-				tfirst = std::max((a_max.x - b_min.x) / v.x, tfirst);
-			}
-			if (b_max.x > a_min.x)
-			{
-				tlast = std::min((a_min.x - b_max.x) / v.x, tlast);
-			}
-		}
-		if (v.x > 0.0f) {
-			if (b_min.x > a_max.x)
-			{
-				return 0; // Nonintersecting and moving apart
-			}
-			if (b_max.x < a_min.x)
-			{
-				tfirst = std::max((a_min.x - b_max.x) / v.x, tfirst);
-			}
-			if (a_max.x > b_min.x)
-			{
-				tlast = std::min((a_max.x - b_min.x) / v.x, tlast);
-			}
-		}
-		// No overlap possible if time of first contact occurs after time of last contact
-		if (tfirst > tlast)
-		{
-			return 0;
-		}
-
-		if (v.y < 0.0f) {
-			if (b_max.y < a_min.y)
-			{
-				return 0; // Nonintersecting and moving apart
-			}
-			if (a_max.y < b_min.y)
-			{
-				tfirst = std::max((a_max.y - b_min.y) / v.y, tfirst);
-			}
-			if (b_max.y > a_min.y)
-			{
-				tlast = std::min((a_min.y - b_max.y) / v.y, tlast);
-			}
-		}
-		if (v.y > 0.0f) {
-			if (b_min.y > a_max.y)
-			{
-				return 0; // Nonintersecting and moving apart
-			}
-			if (b_max.y < a_min.y)
-			{
-				tfirst = std::max((a_min.y - b_max.y) / v.y, tfirst);
-			}
-			if (a_max.y > b_min.y)
-			{
-				tlast = std::min((a_max.y - b_min.y) / v.y, tlast);
-			}
-		}
-		// No overlap possible if time of first contact occurs after time of last contact
-		if (tfirst > tlast)
-		{
-			return 0;
-		}
-		return 1;
-	}
 
 
 	// Test if segment specified by points p0 and p1 intersects AABB b
@@ -362,6 +244,69 @@ namespace mattmath
 	}
 
 
+	float signed_area(std::span<const Point2F> polygon)
+	{
+		if (polygon.size() < 3)
+		{
+			return 0.0f;
+		}
+
+		// Relative to the first vertex, so the products are the size of the
+		// polygon and not the size of the world. The terms for the first and
+		// last edges are identically zero this way, which is why the loop can
+		// skip them.
+		const Point2F& origin = polygon[0];
+
+		float twice_area = 0.0f;
+		for (size_t i = 1; i + 1 < polygon.size(); i++)
+		{
+			twice_area += Vector2F::cross(polygon[i] - origin,
+				polygon[i + 1] - origin);
+		}
+
+		return twice_area * 0.5f;
+	}
+
+	bool point_in_convex_polygon(std::span<const Point2F> polygon,
+		const Point2F& p)
+	{
+		if (polygon.size() < 3)
+		{
+			return false;
+		}
+
+		bool any_left = false;
+		bool any_right = false;
+
+		for (size_t i = 0; i < polygon.size(); i++)
+		{
+			const Point2F& from = polygon[i];
+			const Point2F& to = polygon[(i + 1) % polygon.size()];
+
+			// Signed area of the edge and the point. Differences first, so
+			// this stays exact at world coordinates.
+			const float side = Vector2F::cross(to - from, p - from);
+
+			if (side > 0.0f)
+			{
+				any_left = true;
+			}
+			else if (side < 0.0f)
+			{
+				any_right = true;
+			}
+
+			// Sides disagree, so the point is outside this edge no matter
+			// which way the caller wound the polygon.
+			if (any_left && any_right)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	// Test if segments ab and cd overlap. If they do, compute and return
 	// intersection t value along ab and intersection position p
 	bool test_2D_segment_segment(const Point2F& a,
@@ -396,43 +341,46 @@ namespace mattmath
 
 	// Compute barycentric coordinates (u, v, w) for
 	// point p with respect to triangle (a, b, c)
-	void barycentric(const Point2F& a,
-		const Point2F& b, const Point2F& c,
-		const Point2F& p, float& u, float& v, float& w)
-	{
-		Vector2F v0 = b - a, v1 = c - a, v2 = p - a;
-		float d00 = Vector2F::dot(v0, v0);
-		float d01 = Vector2F::dot(v0, v1);
-		float d11 = Vector2F::dot(v1, v1);
-		float d20 = Vector2F::dot(v2, v0);
-		float d21 = Vector2F::dot(v2, v1);
-		float denom = d00 * d11 - d01 * d01;
-		v = (d11 * d20 - d01 * d21) / denom;
-		w = (d00 * d21 - d01 * d20) / denom;
-		u = 1.0f - v - w;
-	}
-
-	// Test if point p is contained in triangle (a, b, c)
-	bool  test_point_triangle(const Point2F& p,
+	bool test_point_triangle(const Point2F& p,
 		const Point2F& a, const Point2F& b, const Point2F& c)
 	{
-		float u, v, w;
-		barycentric(a, b, c, p, u, v, w);
-		return v >= 0.0f && w >= 0.0f && (v + w) <= 1.0f;
+		const Point2F vertices[3] = { a, b, c };
+		return point_in_convex_polygon(vertices, p);
 	}
 
-	// Given segment ab and point c, computes closest point d on ab.
-	// Also returns t for the position of d, d(t) = a + t*(b - a)
 	void closest_pt_point_segment(const Point2F& c, const Point2F& a,
 		const Point2F& b, float& t, Point2F& d)
 	{
-		Vector2F ab = b - a;
-		// Project c onto ab, computing parameterized position d(t) = a + t*(b � a)
-		t = Vector2F::dot(c - a, ab) / Vector2F::dot(ab, ab);
-		// If outside segment, clamp t (and therefore d) to the closest endpoint
-		if (t < 0.0f) t = 0.0f;
-		if (t > 1.0f) t = 1.0f;
-		// Compute projected position from the clamped t
+		const Vector2F ab = b - a;
+
+		// The projection, with the divide by dot(ab, ab) deferred. Both clamps
+		// can be decided on the undivided value, so the division happens only
+		// where it is known to be safe - and only in the one case that needs
+		// it (5.1.2, p.129, which supersedes the listing on the page before).
+		const float projection = Vector2F::dot(c - a, ab);
+		if (projection <= 0.0f)
+		{
+			t = 0.0f;
+			d = a;
+			return;
+		}
+
+		// Never negative: it is the squared length of ab. Zero exactly when
+		// the segment is a point, and that case has already returned above,
+		// because dot(c - a, (0, 0)) is zero and zero is not greater than
+		// zero. That is the whole fix - the previous form divided first and
+		// handed back (NaN, NaN) for a degenerate segment, and since NaN
+		// fails every comparison, both clamps declined to catch it and the
+		// caller read the result as "no intersection".
+		const float length_squared = Vector2F::dot(ab, ab);
+		if (projection >= length_squared)
+		{
+			t = 1.0f;
+			d = b;
+			return;
+		}
+
+		t = projection / length_squared;
 		d = a + t * ab;
 	}
 
@@ -456,5 +404,4 @@ namespace mattmath
 		}
 	}
 
-	// 132
 }
