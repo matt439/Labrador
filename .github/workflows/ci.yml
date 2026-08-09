@@ -3,9 +3,10 @@
 # ARCHITECTURE said ctest runs "on a contributor's machine or in CI" while
 # there was no .github/ at all. This is the CI half made true.
 #
-# It runs on a runner with no wave bank, which is the point rather than a
-# limitation: the audio sources are not in this repository (see NOTICE), so
-# every run is a real clone of what a new contributor gets.
+# Everything this builds is in the repository or in vcpkg.json, so a run here
+# is a real clone of what a new contributor gets. The step that used to launch
+# the paint-shooter to prove a clone with no wave bank still starts went with
+# it to its own repository; there is no game here to launch.
 
 name: build and test
 
@@ -90,36 +91,3 @@ jobs:
       # developer machine's and are not meant to be.
       - name: Benchmark numbers
         run: out\build\${{ matrix.preset }}\bench\ArtAttackBench.exe
-
-      # A clone has no wave bank, so the game should reach its window in
-      # silence rather than throwing on the file the manifest names. That is
-      # the regression this exists to catch.
-      #
-      # NOT GATING, and the reason is honest: this is the only step that runs
-      # the game, and a Direct3D 11 device on a headless runner is not the
-      # thing under test. If it fails because the runner has no adapter, that
-      # is a fact about the runner. Read the log; a startup *exception* names
-      # itself on stderr and is worth acting on, a device failure is not.
-      - name: A clone with no audio still starts
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          $dir = "out/build/${{ matrix.preset }}/game"
-          if (Test-Path "$dir/sounds/sound_bank_1.xwb") {
-            Write-Error "the runner has a wave bank; this check assumes a clone has none"
-            exit 1
-          }
-          $p = Start-Process -FilePath "$dir/ArtAttackGame.exe" `
-            -WorkingDirectory $dir -PassThru `
-            -RedirectStandardError "$dir/startup.err" `
-            -RedirectStandardOutput "$dir/startup.out"
-          Start-Sleep -Seconds 15
-          $exited = $p.HasExited
-          if (-not $exited) { $p.Kill() }
-          Write-Output "--- stderr ---"
-          Get-Content "$dir/startup.err" -ErrorAction SilentlyContinue
-          if ($exited) {
-            Write-Error "the game exited during startup (code $($p.ExitCode))"
-            exit 1
-          }
-          Write-Output "the game reached its window without a wave bank"

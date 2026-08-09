@@ -1466,5 +1466,9 @@ Not items on a plan, and none of them blocking anything:
 - **An action map over `engine/input/`.** D2 built the devices half and said
   why it stopped: neither client has a rebinding screen, so a data-driven
   binding table would be T1's speculative framework.
-- **Executing the split.** `docs/repo-split.md`, and two `gh repo create`
-  calls.
+
+**~~Executing the split.~~** Done, 2026-08-09 — this is `matt439/Labrador`,
+and the paint-shooter is `matt439/ColourWars` consuming it as a submodule.
+`docs/repo-split.md` carries the record, including the four places the
+procedure turned out to be wrong. That closes the last item this plan was
+carrying.

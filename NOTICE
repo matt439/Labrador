@@ -1,7 +1,12 @@
-# Third-party code, and content that is not distributed
+# Third-party code
 
-ArtAttack is MIT licensed (see LICENSE). This file records what in the working
-tree is not ArtAttack's to license, and what is deliberately absent.
+Labrador is MIT licensed (see LICENSE). This file records what in the working
+tree is not Labrador's to license.
+
+The sections on content that is deliberately not distributed — the audio and
+the compiled fonts — went with `game/` to the paint-shooter's own repository,
+because that is where the content they describe lives. This repository ships
+no content beyond `samples/`.
 
 ## Code carried in this repository
 
@@ -48,30 +53,14 @@ this repository.
   MIT, Microsoft Corporation.
 - **doctest** — MIT, Viktor Kirilov.
 
-## Content that is deliberately not distributed
+## Content
 
-### Audio
-
-`game/content/sounds/` ships the bank's definition
-(`sound_bank_1.json`), the build tool (`XWBTool.exe`, Microsoft, MIT), and the
-CMake recipe that turns source waves into `sound_bank_1.xwb`. It does not ship
-the waves or the built bank.
-
-Two reasons, and either alone would be enough:
-
-1. **Licence.** Four of the twenty-four waves are commercial music tracks. They
-   are not ArtAttack's to redistribute under MIT or any other licence.
-2. **Size.** The sources are 148 MB and the built bank is 154 MB, past
-   GitHub's per-file limit.
-
-A clone therefore has no wave bank, and this is handled rather than broken: the
-manifest marks the bank optional, the loader substitutes a silent one, prints a
-line saying so, and the game runs. See README, "Audio".
+`samples/minimal/content/` is the only content in this repository.
 
 ### Fonts
 
-`game/content/fonts/` holds compiled `.spritefont` files built from system
-fonts (Gill Sans MT, Courier New) with Microsoft's `MakeSpriteFont`. The
-compiled glyph atlases are redistributed here on the same footing as any other
-game asset built from a licensed system font; the fonts themselves are not
-included and are not ArtAttack's to license.
+`samples/minimal/content/fonts/courier_new_bold_16.spritefont` is a compiled
+glyph atlas built from a system font (Courier New) with Microsoft's
+`MakeSpriteFont`. The atlas is redistributed here on the same footing as any
+other asset built from a licensed system font; the font itself is not included
+and is not Labrador's to license.

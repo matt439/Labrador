@@ -1,5 +1,27 @@
 # The repository split — a verified procedure
 
+> **Done.** Executed 2026-08-09. This repository is the engine side; the
+> paint-shooter is `matt439/ColourWars` and consumes this one as a submodule at
+> `external/labrador`. The document is kept as the record of how it was done.
+>
+> Four things differed from the plan below, all of them found while running it:
+>
+> - **The names.** `Labrador` for the engine and `ColourWars` for the game, not
+>   the `artattack-engine` / `ArtAttack` this document assumes. Read the paths
+>   accordingly.
+> - **§6 is wrong about CI.** `.github/workflows/ci.yml` could not go to the
+>   engine "unchanged" — its last step launches `ArtAttackGame.exe`, which does
+>   not exist here. The step moved to ColourWars; the benchmark step stayed.
+> - **§2 is wrong about NOTICE.** Its "content that is deliberately not
+>   distributed" sections describe `game/content/`, so they belonged with the
+>   game. Each repository now has a NOTICE covering what it actually ships.
+> - **History does not reach 2022-12-30 on this side.** §5 claims it does.
+>   `engine/` did not exist as a directory until the restructure, so
+>   `--path engine` starts at 2023-12-19; the older history is under `game/`
+>   paths and went to ColourWars, which does reach back to the beginning.
+>
+> §4's two breakages both happened exactly as described.
+
 The last item on `docs/review/round-2/PLAN.md`'s §6, and the only one that
 changes anything outside this working tree. It is written out rather than
 performed because it creates repositories and rewrites this one: the commands

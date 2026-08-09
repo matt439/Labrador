@@ -1,17 +1,19 @@
-# ArtAttack
+# Labrador
 
-A 2D game engine in C++, and a split-screen paint-shooter built on it to prove
-it works.
+A 2D game engine in C++.
 
-The engine is the point. The game exists because an engine with no client is a
-library of guesses — it is the thing that keeps saying "this API is awkward"
-loudly enough to be worth fixing.
+The engine is the point, but an engine with no client is a library of guesses.
+Labrador has one: [ColourWars](https://github.com/matt439/ColourWars), a
+split-screen paint-shooter that consumes this repository as a submodule and is
+the thing that keeps saying "this API is awkward" loudly enough to be worth
+fixing. It used to live in this tree. It does not any more, and that is the
+point of the arrangement rather than an accident of it — see
+[The wall](#the-wall).
 
 ```
 engine/    ~17k lines   the engine: ten modules with a fixed dependency direction
-game/      ~13k lines   the paint-shooter — first client, and on its way to its own repository
 samples/   ~330 lines   the minimal sample: the answer to "how do I start a project on this"
-tests/     197 cases    doctest, eight targets, run by ctest
+tests/     233 cases    doctest, eight targets, run by ctest
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 ```
@@ -50,41 +52,42 @@ cmake --build --preset x64-debug
 ctest --preset x64-debug
 ```
 
-The presets put the build in `out/build/<preset>/`. The game runs from its own
-output directory, which the build fills with `game/content/` — so
-`out/build/x64-debug/game/ArtAttackGame.exe` runs from anywhere.
+The presets put the build in `out/build/<preset>/`. The sample lands at
+`out/build/x64-debug/samples/minimal/ArtAttackSample.exe` and runs from
+anywhere — the build mirrors its content beside it.
 
 If `cmake` is not on your `PATH`, the copy inside Visual Studio is at
 `<VS install>\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\`, and
 `cl.exe` needs a `vcvars64.bat` shell.
 
-## Audio
+## Using Labrador in a project
 
-**A fresh clone has no sound, and that is expected.** The game runs; it is
-silent, and it says so once on stderr.
+Add it as a submodule and `add_subdirectory` it before the target that links
+it:
 
-The wave bank is built from source `.wav` files that are not in this
-repository. Two reasons: four of the twenty-four waves are commercial music
-tracks nobody can redistribute, and the sources are 148 MB against a built bank
-of 154 MB, past GitHub's per-file limit. See [NOTICE](NOTICE).
+```cmake
+add_subdirectory(external/labrador)   # defines ArtAttackEngine and artattack_settings
 
-What *is* here is the recipe:
+target_link_libraries(YourGame PRIVATE ArtAttackEngine artattack_settings)
+target_include_directories(YourGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+```
 
-- `game/content/sounds/sound_bank_1.json` — the bank's definition, and the
-  authoritative list of the waves it expects.
-- `game/content/sounds/sound_bank_1/XWBTool.exe` — Microsoft's wave-bank
-  compiler.
-- `cmake/build_wave_bank.cmake` — run from the build, it compiles the bank
-  whenever every source wave named by the definition is present, and does
-  nothing when they are not.
+Three things worth knowing:
 
-To get audio, put a `.wav` for each name in `sound_bank_1.json`'s `waves` array
-into `game/content/sounds/sound_bank_1/` and build. The bank is compiled for
-you.
+- **You get the library and nothing else.** The tests, the benchmark and the
+  sample are behind `PROJECT_IS_TOP_LEVEL`, so consuming Labrador does not put
+  ten doctest targets and a sample executable into your `ctest`.
+- **`artattack_settings` comes from here, and only from here.** It is the
+  `/W4 /WX /permissive- /fp:precise` interface target every real target links
+  (ARCHITECTURE, The build). Do not define your own copy — CMake will fail on
+  the duplicate target name, and the fix is not a guard: two copies across two
+  repositories is precisely the second place that target exists to prevent.
+- **You need your own include root.** Includes are written from the repository
+  root (CONVENTIONS), so your own `#include "yourgame/thing.h"` needs the
+  directory above `yourgame/` on the include path. Labrador publishes its root,
+  not yours.
 
-Absent the bank, `game/content/manifest.json` marks it `"optional": true`, the
-loader substitutes a silent sound bank, and every play is a no-op. Nothing else
-in the game changes.
+`samples/minimal` is a working example of all three, at about 330 lines.
 
 ## The engine
 
@@ -104,10 +107,20 @@ Ten modules, each depending only on modules above it in the table
 | `assets` | The manifest, and checked JSON. |
 | `app` | The window, the frame loop, and the services a game is handed. |
 
-`engine/` may not include from `game/`, and the build fails if it does —
-`cmake/check_engine_includes.cmake` runs on every build. That grep is a
-stand-in for a compiler error, and becomes one when the game moves to its own
-repository.
+### The wall
+
+`engine/` may not include from a client's tree, and the build fails if it does.
+Standalone, that is now the compiler's own error — there is no `game/` beside
+`engine/` to resolve, and an engine file reaching for one gets
+
+```
+fatal error C1083: Cannot open include file: 'game/objects/level.h'
+```
+
+`cmake/check_engine_includes.cmake` runs on every build anyway, because the
+compiler only enforces it standalone. Build Labrador as a subdirectory of a
+project that *does* have a `game/` and the grep is the only thing left holding
+the line.
 
 ## Tests and benchmarks
 
@@ -115,10 +128,8 @@ repository.
 ctest --preset x64-debug
 ```
 
-197 test cases and about 4,000 assertions across eight targets, plus the
-benchmark. Tests are doctest; there is no test for `game/`, because it is an
-executable with no target to link against and it is on its way out of this
-repository.
+233 test cases and about 4,000 assertions across eight targets, plus the
+benchmark.
 
 The benchmark (`bench/`) reports throughput and asserts on **complexity class**
 rather than on wall-clock — a phase that is linear in the object count must
@@ -128,18 +139,18 @@ regression. Run `ArtAttackBench` directly to see the table.
 
 ## Status
 
-The engine is usable and the game runs. Two rounds of full source review have
+The engine is usable and its client runs. Two rounds of full source review have
 been carried out and worked through; `docs/review/` has both, including what
-each was wrong about.
+each was wrong about. Those reviews were written while the paint-shooter was
+still in this tree, so findings filed against `game/` refer to code that now
+lives in [ColourWars](https://github.com/matt439/ColourWars).
 
 Not done, and known: a second render backend (the seam is cut, nothing is
-behind it); a null backend for headless render tests; an action-mapping layer
-over the input devices; and the repository split that moves `game/` out and
-consumes the engine as a submodule.
+behind it); a null backend for headless render tests; and an action-mapping
+layer over the input devices.
 
 ## Licence
 
 MIT — see [LICENSE](LICENSE). [NOTICE](NOTICE) records the third-party code
-carried here (Microsoft's `DeviceResources` and `StepTimer`, Christer Ericson's
-collision routines, rapidjson) and the content that is deliberately not
-distributed.
+carried here: Microsoft's `DeviceResources` and `StepTimer`, Christer Ericson's
+collision routines, and rapidjson.

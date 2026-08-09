@@ -15,20 +15,30 @@ An arrow reads "links against"; no arrow ever points the other way — an
 engine file including a game header fails the build, and that is the
 feature (T5).
 
-It fails on a check and not on the compiler, and that is worth stating
-plainly rather than leaving to be discovered. Includes are written from
-the repository root, so an engine file says
+It fails on the compiler *and* on a check, and the difference between
+the two is worth stating plainly rather than leaving to be discovered.
+Includes are written from the repository root, so an engine file says
 `#include "engine/render/renderer.h"` — which means the engine's own
-include root has to be the directory *above* `engine/`, and in this
-repository that directory also holds `game/`. No include path admits the
-first spelling and refuses `#include "game/objects/level.h"` while the
-two are siblings. So `cmake/check_engine_includes.cmake` is the wall, it
-runs on every build, and it fails the build with the offending file and
-line. What replaces it with a compiler error is the repo split — engine
-and samples in one repository, the paint-shooter in its own, consuming
-the engine as a submodule — and the include roots are relative
-(`CMAKE_CURRENT_SOURCE_DIR`, never `CMAKE_SOURCE_DIR`) so that split is a
-move rather than a build rewrite.
+include root has to be the directory *above* `engine/`. That directory
+used to hold `game/` too, and no include path admits the first spelling
+and refuses `#include "game/objects/level.h"` while the two are
+siblings; `cmake/check_engine_includes.cmake` was the whole of the wall
+for exactly as long as that was true. The repo split ended it. The
+paint-shooter is in its own repository consuming this one as a submodule,
+nothing named `game/` sits beside `engine/` any more, and the offending
+include now fails like any other missing header:
+
+```
+engine\scene\scene.cpp(1): fatal error C1083: Cannot open include file:
+'game/objects/level.h': No such file or directory
+```
+
+The check stays anyway, and not out of sentiment. The compiler only
+enforces the rule when this repository is built **standalone**. A client
+consuming the engine as a subdirectory builds it from a tree that very
+likely does have a `game/` in it, and that client's include roots are not
+the engine's business — there, the grep is the only thing holding the
+line. It runs on every build and fails with the offending file and line.
 
 ```mermaid
 flowchart TD
@@ -121,17 +131,12 @@ being load-bearing.
 │   ├── assets/             JSON loading, resource loaders, manifest, factories
 │   └── app/                the application shell: window, device, services,
 │                           main loop, state stack
-├── game/                   the paint-shooter — first client
-│   ├── states/             menu flow, gameplay flow
-│   ├── objects/            entities implementing the engine interfaces
-│   └── content/            the manifest and everything it names - levels,
-│                           textures, fonts, sounds - plus tuning.json and
-│                           presentation.json, which are read before the
-│                           manifest and are what those assets are used
-│                           *by* (T7). The sounds the manifest names are
-│                           not distributed; see NOTICE
 ├── samples/
-│   └── minimal/            the second client, and the new-project template
+│   └── minimal/            the only client in this tree, and the
+│                           new-project template. The paint-shooter that
+│                           used to sit beside it under game/ is its own
+│                           repository now, and consumes this one as a
+│                           submodule
 ├── tests/                  one folder per module under test
 │   ├── assets/
 │   ├── collision/

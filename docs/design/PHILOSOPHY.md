@@ -211,16 +211,20 @@ and chooses its own grammar behind them — full OOP or full performance
 (see The object model).
 
 **What "everything it ships" means, exactly:** the engine and `samples/`.
-The paint-shooter in `game/` is **not** in that set. It is the first
-client, and its whole job is to be one — it lives in this repository today
-only because the split into its own has not happened yet, and it leaves
-when it does (ARCHITECTURE.md, The targets). A review finding that
-holds `game/` to T11 is therefore filed against a client, and the honest
-answer to it is either "the engine's API made that awkward, fix the API"
-or nothing at all. The distinction is not academic: `game/` is where the
-engine gets to be *used* rather than exemplified, and a client that had to
-obey the engine's internal style would be proving nothing about the
-boundary.
+That is now the literal contents of this repository rather than a promise
+about it — the paint-shooter left for its own, and consumes this one as a
+submodule (ARCHITECTURE.md, The targets). It was always the first client
+and its whole job was to be one; the split just stopped the arrangement
+from needing a paragraph to explain it.
+
+The rule that outlived the move: a review finding that holds *client*
+code to T11 is filed against a client, and the honest answer to it is
+either "the engine's API made that awkward, fix the API" or nothing at
+all. `docs/review/` is still here and still contains findings written
+when the paint-shooter was in this tree — read them with that in mind.
+The distinction was never academic: a client is where the engine gets to
+be *used* rather than exemplified, and one that had to obey the engine's
+internal style would be proving nothing about the boundary.
 
 ### T12. The language over a dialect
 
@@ -268,7 +272,7 @@ that outranks it.
 
 ### Targets and layout
 
-Four build targets, one dependency direction, one shared
+Three build targets, one dependency direction, one shared
 compiler-settings target (CMake — see ARCHITECTURE.md, The build):
 
 | Target | Type | Directory | Depends on |
@@ -276,17 +280,20 @@ compiler-settings target (CMake — see ARCHITECTURE.md, The build):
 | `MattMath` | static library | `engine/math/` | nothing |
 | `ArtAttackEngine` | static library | `engine/` | MattMath, platform SDKs |
 | `ArtAttackSample` | application | `samples/minimal/` | ArtAttackEngine |
-| `ArtAttackGame` | application | `game/` | ArtAttackEngine |
 | tests | applications | `tests/` | the libraries they test |
 
+A client's own application target is a fourth, in the client's own
+repository, linking `ArtAttackEngine` and `artattack_settings` across the
+submodule boundary.
+
 The disk layout mirrors the targets — `engine/math/`, `engine/core/`,
-`engine/render/`, `engine/collision/`, `engine/input/`, `engine/audio/`,
-`game/…` — and every file picks its home the day it is created. An engine
-file including a game header fails the build, on a check that runs every
-time (T5); it does not fail to *compile*, and it cannot while `engine/`
-and `game/` are siblings under one include root — ARCHITECTURE.md, The
-targets, says why and what changes it. Tests link libraries, never
-`#include` implementation files.
+`engine/render/`, `engine/collision/`, `engine/input/`, `engine/audio/` —
+and every file picks its home the day it is created. An engine file
+including a client's header fails to compile, because no client's tree is
+a sibling of `engine/` any more; it *also* fails a check that runs every
+build (T5), which is what still holds when a client builds the engine as
+a subdirectory of its own tree — ARCHITECTURE.md, The targets, says why.
+Tests link libraries, never `#include` implementation files.
 
 Platform-specific code — rendering backend, input devices, audio backend,
 windowing — lives at the edge behind engine-owned interfaces, so that a
