@@ -3,12 +3,18 @@
 A 2D game engine in C++.
 
 The engine is the point, but an engine with no client is a library of guesses.
-Labrador has one: [ColourWars](https://github.com/matt439/ColourWars), a
-split-screen paint-shooter that consumes this repository as a submodule and is
-the thing that keeps saying "this API is awkward" loudly enough to be worth
-fixing. It used to live in this tree. It does not any more, and that is the
-point of the arrangement rather than an accident of it — see
-[The wall](#the-wall).
+Labrador has one: ColourWars, a split-screen paint-shooter that consumes this
+repository as a submodule and is the thing that keeps saying "this API is
+awkward" loudly enough to be worth fixing. It used to live in this tree. It
+does not any more, and that is the point of the arrangement rather than an
+accident of it — see [The wall](#the-wall).
+
+*(ColourWars is a private repository, so its link is omitted rather than left
+to 404. Nothing here depends on it: this repository builds, tests and
+benchmarks standalone.)*
+
+`samples/minimal` is the client you can actually read — about 330 lines, and
+the answer to "how do I start a project on this".
 
 ```
 engine/    ~17k lines   the engine: ten modules with a fixed dependency direction
@@ -143,7 +149,7 @@ The engine is usable and its client runs. Two rounds of full source review have
 been carried out and worked through; `docs/review/` has both, including what
 each was wrong about. Those reviews were written while the paint-shooter was
 still in this tree, so findings filed against `game/` refer to code that now
-lives in [ColourWars](https://github.com/matt439/ColourWars).
+lives in ColourWars.
 
 Not done, and known: a second render backend (the seam is cut, nothing is
 behind it); a null backend for headless render tests; and an action-mapping
