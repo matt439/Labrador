@@ -9,6 +9,7 @@
 // that is supposed to depend on nothing does.
 
 #include "engine/math/shape_type.h"
+#include <array>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -87,10 +88,28 @@ namespace mattmath
 		bool AABB_intersects(const Shape* other) const;
 		bool AABB_intersects(const Shape& other) const;
 		virtual void offset(const Vector2F& amount) = 0;
-		virtual std::unique_ptr<Shape> clone() const = 0;
 		virtual Point2F center() const = 0;
-		virtual std::vector<Segment> edges() const = 0;
 		virtual void inflate(float amount) = 0;
+
+		// NOT HERE: clone(), and edges().
+		//
+		// A polymorphic clone() on the engine's most-copied value was filed
+		// `high` twice, and counting said it had one caller in the whole
+		// repository: a Structure constructor that took a borrowed
+		// `const Shape*` and secretly copied it. That constructor takes a
+		// unique_ptr now, so the copy is at the call site where it is visible
+		// and the virtual has nothing left to serve. Every other shape here is
+		// copied by its own copy constructor, which is what a value does.
+		//
+		// edges() was a pure virtual returning std::vector<Segment> - a heap
+		// allocation per call for three or four segments known at compile
+		// time - and it was called only through concrete types, never through
+		// a Shape&. So the polymorphism paid for nothing and the allocation
+		// paid for less: the callers are the intersection routines below, on
+		// the narrow phase's own path. Each shape declares its own edges()
+		// returning std::array of the right length, and Circle - which
+		// answered the pure virtual with an empty vector because a circle has
+		// no edges - declares none at all.
 	};
 
 	bool shapes_intersect(const Shape* a, const Shape* b);
@@ -204,7 +223,6 @@ namespace mattmath
 
 		RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
-		std::unique_ptr<Shape> clone() const override;
 
 		mattmath::Vector2F center() const override;
 		mattmath::Vector2F position() const;
@@ -221,7 +239,7 @@ namespace mattmath
 		mattmath::Segment bottom_edge() const;
 		mattmath::Segment left_edge() const;
 		mattmath::Segment right_edge() const;
-		std::vector<mattmath::Segment> edges() const override;
+		std::array<mattmath::Segment, 4> edges() const;
 		float area() const;
 		mattmath::RectangleI rectangle_i() const;
 
@@ -599,8 +617,6 @@ namespace mattmath
 		mattmath::RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
 		void offset(const mattmath::Vector2F& amount) override;
-		std::unique_ptr<Shape> clone() const override;
-		std::vector<Segment> edges() const override;
 		void inflate(float amount) override;
 
 		bool operator==(const Circle& other) const;
@@ -638,7 +654,6 @@ namespace mattmath
 		mattmath::RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
 		void offset(const mattmath::Vector2F& amount) override;
-		std::unique_ptr<Shape> clone() const override;
 		void inflate(float amount) override;
 
 		const Vector2F& point_0() const;
@@ -648,7 +663,7 @@ namespace mattmath
 		Segment edge_0() const;
 		Segment edge_1() const;
 		Segment edge_2() const;
-		std::vector<Segment> edges() const override;
+		std::array<Segment, 3> edges() const;
 
 		float angle_0() const;
 		float angle_1() const;
@@ -708,7 +723,6 @@ namespace mattmath
 		mattmath::RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
 		void offset(const mattmath::Vector2F& amount) override;
-		std::unique_ptr<Shape> clone() const override;
 		void inflate(float amount) override;
 
 		bool is_valid() const;
@@ -728,7 +742,7 @@ namespace mattmath
 		Segment edge_1() const;
 		Segment edge_2() const;
 		Segment edge_3() const;
-		std::vector<Segment> edges() const override;
+		std::array<Segment, 4> edges() const;
 
 		Triangle triangle_0() const;
 		Triangle triangle_1() const;
@@ -798,9 +812,8 @@ namespace mattmath
 		bool intersects(const RectangleRotated& rect_rotated) const override;
 		bool contains(const Point2F& point) const;
 		void offset(const Vector2F& amount) override;
-		std::unique_ptr<Shape> clone() const override;
 		Point2F center() const override;
-		std::vector<Segment> edges() const override;
+		std::array<Segment, 4> edges() const;
 		void inflate(float amount) override;
 
 		Point2F x_axis() const;

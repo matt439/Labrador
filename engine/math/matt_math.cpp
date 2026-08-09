@@ -194,7 +194,7 @@ namespace mattmath
 		}
 
 		// check if any of the triangle's edges intersect the rectangle
-		std::vector<Segment> edges = triangle.edges();
+		const auto edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
 			if (rectangle.intersects(edge))
@@ -263,7 +263,7 @@ namespace mattmath
 		}
 
 		// check if any of the rotated rectangle's edges intersect the rectangle
-		std::vector<Segment> edges = rotated_rect.edges();
+		const auto edges = rotated_rect.edges();
 		for (const Segment& edge : edges)
 		{
 			if (rect.intersects(edge))
@@ -344,7 +344,7 @@ namespace mattmath
 		}
 
 		// check if the circle intersects any of the rectangle's edges
-		std::vector<Segment> edges = rect_rotated.edges();
+		const auto edges = rect_rotated.edges();
 		for (const Segment& edge : edges)
 		{
 			if (circle_segment_intersect(circle, edge))
@@ -368,8 +368,8 @@ namespace mattmath
 		}
 
 		// get edges of each triangle
-		std::vector<Segment> a_edges = a.edges();
-		std::vector<Segment> b_edges = b.edges();
+		const auto a_edges = a.edges();
+		const auto b_edges = b.edges();
 
 		// check if any of the edges intersect
 		for (int i = 0; i < 2; i++)
@@ -410,7 +410,7 @@ namespace mattmath
 		}
 
 		// check if the segment intersects any of the triangle's edges
-		std::vector<Segment> edges = triangle.edges();
+		const auto edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
 			if (segments_intersect(edge, segment))
@@ -455,7 +455,7 @@ namespace mattmath
 		}
 
 		// check if any of the triangle's edges intersect the rectangle
-		std::vector<Segment> edges = triangle.edges();
+		const auto edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
 			if (rect_rotated.intersects(edge))
@@ -574,7 +574,7 @@ namespace mattmath
 		}
 
 		// check if the segment intersects any of the rectangle's edges
-		std::vector<Segment> edges = rect_rotated.edges();
+		const auto edges = rect_rotated.edges();
 		for (const Segment& edge : edges)
 		{
 			if (segments_intersect(segment, edge))
@@ -621,8 +621,8 @@ namespace mattmath
 		}
 
 		// check if any of the edges of one rectangle intersect the other
-		std::vector<Segment> a_edges = a.edges();
-		std::vector<Segment> b_edges = b.edges();
+		const auto a_edges = a.edges();
+		const auto b_edges = b.edges();
 
 		for (const Segment& edge : a_edges)
 		{
@@ -669,10 +669,6 @@ namespace mattmath
 	ShapeType RectangleF::shape_type() const
 	{
 		return ShapeType::rectangle;
-	}
-	std::unique_ptr<Shape> RectangleF::clone() const
-	{
-		return std::make_unique<RectangleF>(*this);
 	}
 	Vector2F RectangleF::center() const
 	{
@@ -735,16 +731,15 @@ namespace mattmath
 	{
 		return Segment(this->top_right(), this->bottom_right());
 	}
-	std::vector<Segment> RectangleF::edges() const
+	std::array<Segment, 4> RectangleF::edges() const
 	{
-		std::vector<Segment> edges = 
+		return
 		{
 			this->top_edge(),
 			this->bottom_edge(),
 			this->left_edge(),
 			this->right_edge()
 		};
-		return edges;
 	}
 	float RectangleF::area() const
 	{
@@ -1770,17 +1765,6 @@ namespace mattmath
 		this->center_ += offset;
 	}
 
-	std::unique_ptr<Shape> Circle::clone() const
-	{
-		return std::make_unique<Circle>(*this);
-	}
-
-	std::vector<Segment> Circle::edges() const
-	{
-		// Circles have no edges
-		return std::vector<Segment>();
-	}
-
 	void Circle::inflate(float amount)
 	{
 		this->radius_ += amount;
@@ -1884,10 +1868,6 @@ namespace mattmath
 		this->points[1] += offset;
 		this->points[2] += offset;
 	}
-	std::unique_ptr<Shape> Triangle::clone() const
-	{
-		return std::make_unique<Triangle>(*this);
-	}
 	void Triangle::inflate(float amount)
 	{
 		Vector2F center = this->center();
@@ -1928,15 +1908,14 @@ namespace mattmath
 	{
 		return Segment(this->points[2], this->points[0]);
 	}
-	std::vector<Segment> Triangle::edges() const
+	std::array<Segment, 3> Triangle::edges() const
 	{
-		std::vector<Segment> segments =
+		return
 		{
 			this->edge_0(),
 			this->edge_1(),
 			this->edge_2()
 		};
-		return segments;
 	}
 	float Triangle::angle_0() const
 	{
@@ -2209,11 +2188,6 @@ namespace mattmath
 		this->points_[3] += offset;
 	}
 
-	std::unique_ptr<Shape> Quad::clone() const
-	{
-		return std::make_unique<Quad>(*this);
-	}
-
 	void Quad::inflate(float amount)
 	{
 		Vector2F center = this->center();
@@ -2236,7 +2210,7 @@ namespace mattmath
 	bool Quad::is_valid() const
 	{
 		// check if the edges intersect
-		std::vector<Segment> edges = this->edges();
+		const auto edges = this->edges();
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -2343,16 +2317,15 @@ namespace mattmath
 		return Segment(this->points_[3], this->points_[0]);
 	}
 
-	std::vector<Segment> Quad::edges() const
+	std::array<Segment, 4> Quad::edges() const
 	{
-		std::vector<Segment> edges =
+		return
 		{
 			this->edge_0(),
 			this->edge_1(),
 			this->edge_2(),
 			this->edge_3()
 		};
-		return edges;
 	}
 
 	Triangle Quad::triangle_0() const
@@ -2583,24 +2556,19 @@ namespace mattmath
 		this->points_ = this->calculate_points();
 
 	}
-	std::unique_ptr<Shape> RectangleRotated::clone() const
-	{
-		return std::make_unique<RectangleRotated>(*this);
-	}
 	Point2F RectangleRotated::center() const
 	{
 		return this->center_;
 	}
-	std::vector<Segment> RectangleRotated::edges() const
+	std::array<Segment, 4> RectangleRotated::edges() const
 	{
-		std::vector<Segment> edges =
+		return
 		{
 			this->edge_0(),
 			this->edge_1(),
 			this->edge_2(),
 			this->edge_3()
 		};
-		return edges;
 	}
 	void RectangleRotated::inflate(float amount)
 	{
@@ -2856,7 +2824,7 @@ namespace mattmath
 	}
 	bool RectangleRotated::edges_valid() const
 	{
-		std::vector<Segment> edges = this->edges();
+		const auto edges = this->edges();
 		if (edges.size() != 4)
 		{
 			throw std::invalid_argument("RectangleRotated must have 4 edges");
