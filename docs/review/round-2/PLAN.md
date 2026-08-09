@@ -19,7 +19,7 @@ days, **week** ≈ 5 working days, **weeks** ≈ 2 or more.
 3. [The work items](#3-the-work-items)
 4. [Do not fix these](#4-do-not-fix-these)
 5. [Sequencing](#5-sequencing)
-6. [The plan is spent](#6-the-plan-is-spent)
+6. [The plan is spent, and so is its tail](#6-the-plan-is-spent-and-so-is-its-tail)
 
 ---
 
@@ -502,6 +502,43 @@ hard include-root change breaks the build for unrelated reasons.
 ---
 
 #### A7 — The front door (off the spine, and cheap)
+
+> **Landed. The wave bank was a licensing problem before it was a size one,
+> and that changed the answer.**
+>
+> **"Either commit it with a path-scoped exception or commit the pipeline" was
+> a false choice.** Committing it was never available. The bank is 154 MB
+> built and 148 MB in sources, past GitHub's per-file limit — and, decisively,
+> four of its twenty-four waves are commercial music tracks. The item's other
+> bullet is *adding a licence*, which makes the contradiction explicit: there
+> is no licence under which those tracks can be redistributed. So the
+> repository ships the recipe — the bank's definition, the XWBTool that was
+> already committed beside the sources, and `cmake/build_wave_bank.cmake`,
+> which reads the wave list out of the definition the engine resolves names
+> against so the two cannot drift. Run against the existing sources it
+> reproduces the shipped bank byte-for-byte in size.
+>
+> **And a clone without it now runs.** `AssetEntry` gains `optional`, which is
+> the manifest stating that an asset's absence is not a broken contract —
+> stated by the person who knows rather than guessed at by a loader, and false
+> by default because T6. For a sound bank the substitution is
+> `SoundBank::silent()`. What that costs is written into the header rather
+> than left to be found: resolving names up front is the class's whole T6
+> guarantee, and a silent bank has no name table to check against, so a typo
+> is a startup failure with audio present and nothing without it. That is why
+> `silent()` is a named constructor a loader has to ask for.
+>
+> **The licence is MIT, and `NOTICE` was the part that could not be skipped
+> once it existed.** The two adopted Microsoft files and the transcribed
+> Ericson routines were shipping with no licence text at all — a distribution
+> problem rather than a front-door one, and the item said so.
+>
+> **CI is `.github/workflows/ci.yml`**, debug and release, on a runner with no
+> wave bank — which is the point rather than a limitation, because that is
+> what a new contributor gets. It finds vcvars64 through vswhere rather than a
+> third-party action. It is unverified *as a workflow*, because GitHub Actions
+> cannot be run from here; what is verified is what it does — the three
+> commands the README documents run clean locally.
 
 **What changes.** Four independent things a second person meets before any
 header:
@@ -1287,6 +1324,12 @@ engine's most-copied value, and the fixed-size geometry returning `std::vector`
 C2 rewrites its heaviest caller, and a value-semantics pass over a type whose
 call sites are about to change is the same work twice.
 
+> **Done, after C2, and it was a fraction of what "the engine's most-copied
+> value" implied.** `clone()` had one caller in the whole repository and
+> `edges()` had no polymorphic caller at all — every one of its callers was an
+> intersection routine naming a concrete type, allocating a vector for three
+> or four segments known at compile time. See §6.
+
 ---
 
 ## 5. Sequencing
@@ -1346,34 +1389,82 @@ findings in the appendix — is maintenance rather than sequencing.
 
 ---
 
-## 6. The plan is spent
+## 6. The plan is spent, and so is its tail
 
-Every item A1–A6, B1, C1–C3, D1–D3 and E1–E3 has landed. A7 — the README, the
-licence, the wave bank and CI — has not, and it is the only item on this
-document still open; it was always off the spine and its trigger is "a second
-person is anywhere near this repository".
+Every item A1–A7, B1, C1–C3, D1–D3 and E1–E3 has landed, and so has everything
+this section listed after them. Nothing on this document is open.
 
-Two things this plan was wrong about are worth carrying forward, both recorded
-at the item that found them:
+**Three things this plan was wrong about are worth carrying forward**, each
+recorded at the item that found it, and they are the same lesson three times:
 
 - **E1: count the callers before budgeting a move.** Thirty-nine of the
   forty-six conversions E1 budgeted to move had no callers at all.
 - **E2: count the declarations before budgeting a sweep.** The "593 SCREAMING
   constants" were 329 by the time A5 had finished, and only 107 of those were
   the tuning this item was about. Seventeen of the 107 were dead.
+- **§6: measure before choosing where to put the index.** The item below said
+  a broad phase belonged in front of `Scene`'s per-view cull. The benchmark
+  said the cull is 6.2 ns per object and flat, and that the quadratic sweep
+  twenty lines away was six frame budgets deep at four thousand objects. The
+  work was right; the address was wrong.
 
-What is left is not sequenced by anything:
+### The tail, and what it turned out to be
 
-- The ~200 SCREAMING layout constants in `game/states/*_menu.h` and
-  `game/objects/interface_gameplay.h`. Same defect as E2, different files, and
-  no dependency on anything.
-- A broad phase in front of `Scene`'s per-view cull, and the benchmarks
-  PHILOSOPHY's Performance section asks for — the honest remainder of finding
-  `#16`, and the first item on this list that wants a measurement before a
-  change.
-- `Shape`'s polymorphic `clone()` and the fixed-size geometry returning
-  `std::vector` (§4's "one more, of a different kind"). C2 has landed, so the
-  reason to hold it has gone.
-- The repo split itself, which E1 made a move rather than a build rewrite, and
-  which is what turns A6's grep into the compiler error ARCHITECTURE would
-  rather have.
+- **The menu and HUD constants.** Filed as "~200 SCREAMING layout constants".
+  Counted: 163 declarations across seven headers, 152 of them live. The
+  relocation was the smaller half of it — four menu headers each declared the
+  same fifteen values, and they agreed, which is the only reason nobody had
+  noticed. `game/presentation.h` and `./presentation.json` now hold one copy.
+  Eleven constants were dead, four of them read nowhere at all. Paint geometry
+  went to `tuning.json` instead, on the line `GameTuning` already draws: how
+  finely a surface divides into tiles is what the scoring system measures
+  coverage at, which is balance rather than look. Two things fell out —
+  `weapon_description`'s `default: return L"ERROR"` was a string a player
+  could see, and the colour reader now rejects a name the palette does not
+  know instead of answering opaque black.
+
+- **The broad phase, and the benchmarks.** `bench/` is the harness
+  PHILOSOPHY's Performance section had asked for and nothing had provided; it
+  registers with `ctest` and asserts on complexity class rather than
+  wall-clock, because an absolute threshold either fails on a slow machine or
+  passes on a fast one after a real regression. What it measured moved the
+  work: the render cull did not need an index and `find_contacts` badly did.
+  `engine/collision/broad_phase.h` is a uniform grid in front of the sweep —
+  11× faster at 64 objects, 240× at 4,096, and `resolve` is now on the list of
+  phases held to linear. The all-pairs sweep is kept rather than deleted,
+  because it is the specification the grid is tested for equality against.
+
+- **`Shape`'s `clone()` and the vector-returning geometry.** Filed `high`
+  twice, and E1's lesson applied again: `clone()` had one caller in the
+  repository and `edges()` had no polymorphic caller at all. The constructor
+  that cloned takes a `unique_ptr` now, `edges()` is a `std::array` per shape,
+  and `Circle` — which answered the pure virtual with an empty vector because
+  a circle has no edges — declares none. The old `clone()` was also silently
+  slicing every ramp; nothing read the difference, but it is gone rather than
+  documented.
+
+- **The repo split.** Rehearsed rather than performed, because it creates
+  repositories and rewrites this one: `docs/repo-split.md` is the verified
+  procedure, with both sides configured, built and tested in a scratch tree.
+  It confirms the payoff — an engine file including a game header is a
+  `fatal error C1083` afterwards, which is the claim ARCHITECTURE has been
+  making since before it was true. Two things broke in rehearsal and are
+  written up rather than left to be rediscovered: `artattack_settings` gets
+  defined twice, and the game loses the include root it had been borrowing
+  from the engine.
+
+### What is genuinely open
+
+Not items on a plan, and none of them blocking anything:
+
+- **The null render backend.** `engine/render/renderer.h`'s STILL OPEN note
+  has the argument. Until it exists, `tests/render/` covers pure arithmetic
+  only, and `bench/`'s cull case measures the loop out of `Scene::draw_views`
+  rather than driving `Scene::draw` — which its comment says out loud.
+- **A second real backend.** The seam is cut and nothing is behind it. That is
+  the state the seam was designed for, not a gap in it.
+- **An action map over `engine/input/`.** D2 built the devices half and said
+  why it stopped: neither client has a rebinding screen, so a data-driven
+  binding table would be T1's speculative framework.
+- **Executing the split.** `docs/repo-split.md`, and two `gh repo create`
+  calls.

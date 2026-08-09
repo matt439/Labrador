@@ -77,7 +77,14 @@ platform (Targets and layout, PHILOSOPHY.md) cannot be reached from a
   rapidjson stays vendored in `external/`.
 - Tests use a portable test framework and register with CTest: `ctest`
   runs everything, on a contributor's machine or in CI, with no IDE
-  present.
+  present. CI is `.github/workflows/ci.yml` - debug and release, configure,
+  build and test, on a runner with no wave bank, which is what a fresh clone
+  gets.
+- Benchmarks register with CTest too, and assert on complexity class rather
+  than on wall-clock: a phase that is linear in the object count must stay
+  linear when the count quadruples, whatever the machine. An absolute
+  threshold would either fail on a slow box or pass on a fast one after a
+  real regression.
 - Builds are out-of-source (`out/`, ignored); the source tree never
   contains build products.
 
@@ -118,9 +125,11 @@ being load-bearing.
 │   ├── states/             menu flow, gameplay flow
 │   ├── objects/            entities implementing the engine interfaces
 │   └── content/            the manifest and everything it names - levels,
-│                           textures, fonts, sounds - plus tuning.json,
-│                           which is read before the manifest and is what
-│                           those assets are used *by* (T7)
+│                           textures, fonts, sounds - plus tuning.json and
+│                           presentation.json, which are read before the
+│                           manifest and are what those assets are used
+│                           *by* (T7). The sounds the manifest names are
+│                           not distributed; see NOTICE
 ├── samples/
 │   └── minimal/            the second client, and the new-project template
 ├── tests/                  one folder per module under test
@@ -132,10 +141,13 @@ being load-bearing.
 │   ├── render/
 │   ├── scene/
 │   └── ui/
+├── bench/                  throughput, registered with ctest beside the tests
 ├── external/               third-party source: rapidjson. DirectXTK is not
 │                           here — it is a vcpkg package (vcpkg.json)
+├── .github/workflows/      CI
 └── docs/
     ├── design/             philosophies, conventions, this document
+    ├── repo-split.md       the verified procedure for splitting engine from game
     └── review/             findings against the current code
 ```
 

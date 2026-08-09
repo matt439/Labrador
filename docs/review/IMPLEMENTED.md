@@ -115,9 +115,25 @@ shared buffer; `widen()` in `engine/render/text_encoding.h` is the single place
 narrow content comes across, off the draw path. The race is fixed as of that
 change.
 
-The **redundancy** is not fixed: `draw_player_view_level` still walks the entire
-world in every task rather than its own slice, so an N-player match does N times
-the visibility work. That is wasted time, not undefined behaviour.
+The **redundancy** half is closed, and by a correction rather than by a fix.
+It asked for workers to own disjoint slices of the world. They cannot: the
+parallelism axis is views, and a view has to consider every object in order to
+decide it cannot see it. `draw_player_view_level` is gone with the rest of
+`Level`'s draw path; what replaced it is `Scene::draw_views`, which culls each
+view against what that view can see.
+
+What was left after that was a throughput question — a linear walk per view,
+wanting a spatial index and a benchmark before anyone touched it. **Both now
+exist, and the benchmark answered the question in the negative.** On a release
+build the cull is 6.2 ns per object and flat from 64 objects to 4,096: four
+views over four thousand objects is 102 µs, well under one percent of a 60 Hz
+frame. An index in front of it would have been ceremony.
+
+The same benchmark found where an index *was* worth having, which was not here:
+`find_contacts` was all-pairs, 115 ms at 4,096 objects — six times a whole
+frame from one call. `engine/collision/broad_phase.h` is in front of that
+instead, and `bench/` is the harness PHILOSOPHY's Performance section had been
+asking for. This finding is closed on both halves.
 
 Worth recording for whoever writes `Scene`: the parallelism axis here is
 **views, not objects**. Workers do not own disjoint slices — every worker draws
