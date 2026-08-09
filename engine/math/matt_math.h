@@ -128,6 +128,31 @@ namespace mattmath
 		virtual std::unique_ptr<Shape> clone() const = 0;
 		virtual Point2F center() const = 0;
 		virtual std::vector<Segment> edges() const = 0;
+		// Grows the shape by moving every part of its boundary `amount`
+		// outward, along that part's own normal.
+		//
+		// One contract for all four implementations, because a virtual with
+		// three different meanings is worse than three differently named
+		// functions. A box's faces each move out by `amount`; a circle's
+		// radius grows by `amount`; a polygon's edges each move out by
+		// `amount` and its corners are extended to meet (a mitre).
+		//
+		// The result always CONTAINS the original. That direction is the
+		// contract, not an accident of the arithmetic - a collider that grows
+		// by less than it was asked to lets objects visibly interpenetrate
+		// while the collision system correctly reports no touch, which is the
+		// one failure a geometry simplifier must never have. Polygons used to
+		// have exactly that bug: they displaced each vertex away from the
+		// centroid by `amount`, which moves the adjacent edges out by only
+		// amount * cos(angle between the vertex ray and the edge normal) -
+		// short of the request, by a different factor at every corner.
+		//
+		// The true offset of a polygon has arcs where the corners were; the
+		// mitre keeps the result a polygon and errs outward, which is the safe
+		// side (T3 - nobody will see the corner).
+		//
+		// A negative `amount` is not supported: shrinking can invert a small
+		// polygon through itself, and no caller wants it.
 		virtual void inflate(float amount) = 0;
 	};
 

@@ -2564,21 +2564,101 @@ namespace mattmath
 	{
 		return std::make_unique<Triangle>(*this);
 	}
+	namespace
+	{
+		// Moves every edge of a convex polygon outward along its own normal by
+		// `amount`, and puts each vertex back where its two offset edges meet.
+		//
+		// This is what Shape::inflate promises, and it is not what pushing the
+		// vertices away from the centroid does. A vertex ray and the normal of
+		// an edge meeting at that vertex differ by some angle, so displacing
+		// the vertex by `amount` along the ray moves the edge outward by only
+		// amount * cos(that angle) - less than asked, by a different factor at
+		// every corner, and never enough. A collider that inflates by less
+		// than it claims is the one direction Ericson singles out as
+		// unacceptable (12.4, p.487): objects visibly interpenetrate while the
+		// collision system correctly reports no touch.
+		//
+		// The true offset of a polygon by a disc has arcs at the corners.
+		// Extending the edges to meet instead - a mitre - keeps the result a
+		// polygon and always contains the true shape, so it errs outward,
+		// which is the safe direction. T3: nobody will see the corner.
+		void inflate_convex_polygon(Vector2F* points, int count, float amount)
+		{
+			constexpr int MAX_POINTS = 4;
+			if (count < 3 || count > MAX_POINTS)
+			{
+				return;
+			}
+
+			Vector2F centre = Vector2F::ZERO;
+			for (int i = 0; i < count; i++)
+			{
+				centre += points[i];
+			}
+			centre /= static_cast<float>(count);
+
+			// Each edge as an outward unit normal and the offset line's
+			// constant, so a vertex is a 2x2 solve rather than a construction.
+			Vector2F normals[MAX_POINTS];
+			float constants[MAX_POINTS];
+			for (int i = 0; i < count; i++)
+			{
+				const Vector2F& from = points[i];
+				const Vector2F edge = points[(i + 1) % count] - from;
+
+				Vector2F normal = Vector2F(-edge.y, edge.x).normalized();
+				if (normal == Vector2F::ZERO)
+				{
+					// A degenerate edge has no normal to offset along. Leave
+					// the polygon alone rather than invent a direction.
+					return;
+				}
+
+				if (Vector2F::dot(normal, from - centre) < 0.0f)
+				{
+					normal = Vector2F(-normal.x, -normal.y);
+				}
+
+				normals[i] = normal;
+				constants[i] = Vector2F::dot(from, normal) + amount;
+			}
+
+			Vector2F moved[MAX_POINTS];
+			for (int i = 0; i < count; i++)
+			{
+				// Vertex i is shared by the edge that ends at it and the edge
+				// that starts at it.
+				const int previous = (i + count - 1) % count;
+
+				const Vector2F& n0 = normals[previous];
+				const Vector2F& n1 = normals[i];
+				const float determinant = Vector2F::cross(n0, n1);
+
+				if (std::abs(determinant) < EPSILON)
+				{
+					// The two edges are parallel, so they never meet however
+					// far they are extended. Nothing to mitre: push the vertex
+					// straight out instead.
+					moved[i] = points[i] + n1 * amount;
+					continue;
+				}
+
+				moved[i] = Vector2F(
+					(constants[previous] * n1.y - constants[i] * n0.y) / determinant,
+					(constants[i] * n0.x - constants[previous] * n1.x) / determinant);
+			}
+
+			for (int i = 0; i < count; i++)
+			{
+				points[i] = moved[i];
+			}
+		}
+	}
+
 	void Triangle::inflate(float amount)
 	{
-		Vector2F center = this->center();
-		Vector2F edge0 = this->points[0] - center;
-		Vector2F edge1 = this->points[1] - center;
-		Vector2F edge2 = this->points[2] - center;
-
-		edge0.normalize();
-		edge1.normalize();
-		edge2.normalize();
-
-		this->points[0] = center + edge0 * (this->points[0] - center).length() + edge0 * amount;
-		this->points[1] = center + edge1 * (this->points[1] - center).length() + edge1 * amount;
-		this->points[2] = center + edge2 * (this->points[2] - center).length() + edge2 * amount;
-
+		inflate_convex_polygon(this->points, 3, amount);
 	}
 	const Vector2F& Triangle::point_0() const
 	{
@@ -2917,21 +2997,7 @@ namespace mattmath
 
 	void Quad::inflate(float amount)
 	{
-		Vector2F center = this->center();
-		Vector2F edge0 = this->points_[0] - center;
-		Vector2F edge1 = this->points_[1] - center;
-		Vector2F edge2 = this->points_[2] - center;
-		Vector2F edge3 = this->points_[3] - center;
-
-		edge0.normalize();
-		edge1.normalize();
-		edge2.normalize();
-		edge3.normalize();
-
-		this->points_[0] = center + edge0 * (this->points_[0] - center).length() + edge0 * amount;
-		this->points_[1] = center + edge1 * (this->points_[1] - center).length() + edge1 * amount;
-		this->points_[2] = center + edge2 * (this->points_[2] - center).length() + edge2 * amount;
-		this->points_[3] = center + edge3 * (this->points_[3] - center).length() + edge3 * amount;
+		inflate_convex_polygon(this->points_, 4, amount);
 	}
 
 	bool Quad::is_valid() const

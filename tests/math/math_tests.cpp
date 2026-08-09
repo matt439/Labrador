@@ -541,6 +541,81 @@ namespace MattMathTests
 			CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),
 				Vector2F(0.0f, 1.0f)) == doctest::Approx(PI_OVER_2));
 		}
+		TEST_CASE("inflate moves every edge out by the full amount, not by a cosine")
+		{
+			// The property the radial version could not hold. Displacing a
+			// vertex by `amount` along its ray from the centroid moves the
+			// edges meeting there by only amount * cos(angle), so a sharp
+			// corner under-inflated badly and a right angle by a factor of
+			// 1/sqrt(2).
+			//
+			// Measured from a FIXED interior point, captured before the
+			// inflation. The centroid of the grown polygon is not the centroid
+			// of the original, so measuring from the live centre compares
+			// against a reference that moved - which is a bug in the test, not
+			// in the arithmetic, and cost one confused run to find.
+			const auto edge_distance = [](const Triangle& t, int i,
+				const Point2F& from)
+			{
+				const Point2F a = t.points[i];
+				const Point2F b = t.points[(i + 1) % 3];
+				const Vector2F normal = Vector2F(-(b.y - a.y), b.x - a.x)
+					.normalized();
+				return std::abs(Vector2F::dot(from - a, normal));
+			};
+
+			// A deliberately sharp triangle - the case the old form was worst
+			// on.
+			Triangle t(Point2F(0.0f, 0.0f), Point2F(100.0f, 0.0f),
+				Point2F(90.0f, 20.0f));
+
+			const Point2F reference = t.center();
+
+			float before[3];
+			for (int i = 0; i < 3; i++)
+			{
+				before[i] = edge_distance(t, i, reference);
+			}
+
+			constexpr float AMOUNT = 5.0f;
+			t.inflate(AMOUNT);
+
+			for (int i = 0; i < 3; i++)
+			{
+				CAPTURE(i);
+				CHECK(edge_distance(t, i, reference)
+					== doctest::Approx(before[i] + AMOUNT).epsilon(0.001));
+			}
+		}
+		TEST_CASE("an inflated shape contains the shape it grew from")
+		{
+			// The direction of the error is the contract. A collider that
+			// grows by less than asked lets things visibly interpenetrate
+			// while collision correctly reports no touch.
+			const Triangle original(Point2F(10.0f, 10.0f), Point2F(60.0f, 12.0f),
+				Point2F(20.0f, 40.0f));
+
+			Triangle grown = original;
+			grown.inflate(3.0f);
+
+			for (int i = 0; i < 3; i++)
+			{
+				CAPTURE(i);
+				CHECK(grown.contains(original.points[i]));
+			}
+
+			// And a quad, which shares the implementation.
+			const Quad square(Point2F(0.0f, 0.0f), Point2F(20.0f, 0.0f),
+				Point2F(20.0f, 20.0f), Point2F(0.0f, 20.0f));
+			Quad bigger = square;
+			bigger.inflate(2.0f);
+
+			// A square inflated by 2 is the square grown by 2 on every side.
+			CHECK(bigger.point_0().x == doctest::Approx(-2.0f));
+			CHECK(bigger.point_0().y == doctest::Approx(-2.0f));
+			CHECK(bigger.point_2().x == doctest::Approx(22.0f));
+			CHECK(bigger.point_2().y == doctest::Approx(22.0f));
+		}
 		TEST_CASE("a Quad must be convex, not merely non-self-intersecting")
 		{
 			// A dart: the square with one corner pushed back through the

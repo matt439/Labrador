@@ -44,10 +44,22 @@ namespace artattack
 			int axis_count = 0;
 		};
 
+		// The shortest edge that still says something about direction.
+		//
+		// An edge is a subtraction of two nearby coordinates, so its absolute
+		// error is set by where it is, not by how long it is: out at 6200,
+		// where consecutive floats are 4.88e-4 apart, an edge a thousandth of
+		// a unit long is built almost entirely from the bits that subtraction
+		// destroyed. Normalising it produces a confident unit vector pointing
+		// in a direction nothing measured.
+		//
+		// A thousandth of a world unit is also far below anything the content
+		// contains - level geometry is authored in multiples of five - so
+		// nothing real is discarded here.
+		constexpr float MIN_EDGE_LENGTH = 0.001f;
+
 		// Fills `axes` from the first `edge_count` edges. Degenerate edges
-		// contribute nothing: normalized() reports a zero-length vector as
-		// zero rather than inventing (1, 0) for it, which is how a repeated
-		// vertex is skipped instead of supplying a bogus axis.
+		// contribute nothing.
 		void fill_axes(Polygon& polygon, int edge_count)
 		{
 			for (int i = 0; i < edge_count; i++)
@@ -55,13 +67,21 @@ namespace artattack
 				const Vector2F edge =
 					polygon.points[(i + 1) % polygon.count] - polygon.points[i];
 
-				const Vector2F axis = Vector2F(-edge.y, edge.x).normalized();
-				if (axis == Vector2F::ZERO)
+				// Tested on the edge, before normalising, and not on the
+				// result afterwards. normalized() returns zero only when the
+				// length is exactly 0.0f, so an edge of 1e-7 passed that guard
+				// and contributed an axis whose direction was noise - and a
+				// bogus axis either falsely separates the pair or wins the
+				// least-penetration contest with a meaningless normal.
+				if (Vector2F::dot(edge, edge) < MIN_EDGE_LENGTH * MIN_EDGE_LENGTH)
 				{
 					continue;
 				}
 
-				polygon.axes[polygon.axis_count] = axis;
+				const Vector2F direction = edge.normalized();
+
+				polygon.axes[polygon.axis_count] =
+					Vector2F(-direction.y, direction.x);
 				polygon.axis_count++;
 			}
 		}
