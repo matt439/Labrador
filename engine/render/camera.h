@@ -41,9 +41,24 @@ namespace artattack
 		static Camera calculate_intermediate_camera(
 			const Camera& first, const Camera& last, float amount);
 
-		static Camera calculate_camera_from_view_rectangle(
-			const mattmath::RectangleF& view_rectangle,
-			const mattmath::RectangleF& world_rectangle);
+		// The camera that shows all of `world_rectangle` in `viewport`.
+		//
+		// Both axes are honoured: the scale is whichever of the two ratios
+		// fits, and the surplus on the other axis is split evenly so the
+		// requested rectangle ends up centred. What this replaces,
+		// `calculate_camera_from_view_rectangle`, derived the scale from the
+		// widths alone and silently discarded the height it was given - so an
+		// end-of-match shot authored as 3840x2160 was framed as "3840 wide,
+		// and however tall the back buffer's aspect makes that". Its two
+		// parameters were also named the wrong way round: the first was the
+		// world rectangle and the second the view.
+		//
+		// Throws std::invalid_argument if either rectangle has a
+		// non-positive extent - the old form divided by view_rectangle.width
+		// with no guard, and a zero there is an infinite scale that poisons
+		// every cull and every draw taken through the result.
+		static Camera frame(const mattmath::RectangleF& world_rectangle,
+			const Viewport& viewport);
 
 		mattmath::Vector2F calculate_view_position(
 			const mattmath::Vector2F& world_position) const;

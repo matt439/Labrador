@@ -1,5 +1,8 @@
 #include "engine/render/camera.h"
 
+#include <algorithm>
+#include <stdexcept>
+
 using namespace mattmath;
 
 namespace artattack
@@ -68,19 +71,31 @@ namespace artattack
 		return Camera(Vector2F::lerp(first.translation, last.translation, amount),
 			lerp(first.scale, last.scale, amount));
 	}
-	Camera Camera::calculate_camera_from_view_rectangle(
-		const RectangleF& view_rectangle,
-		const RectangleF& world_rectangle)
+	Camera Camera::frame(const RectangleF& world_rectangle,
+		const Viewport& viewport)
 	{
-		//return Camera(world_rectangle.x - view_rectangle.x,
-		//	world_rectangle.y - view_rectangle.y,
-		//	world_rectangle.width / view_rectangle.width);
+		if (world_rectangle.width <= 0.0f || world_rectangle.height <= 0.0f ||
+			viewport.width <= 0.0f || viewport.height <= 0.0f)
+		{
+			throw std::invalid_argument(
+				"Camera::frame: a world rectangle and a viewport both need a "
+				"positive width and height to fit one inside the other.");
+		}
 
+		// Fit, not stretch: the smaller of the two ratios is the one that gets
+		// all of `world_rectangle` on screen, and the other axis then shows
+		// more than was asked for rather than less.
+		const float scale = std::min(viewport.width / world_rectangle.width,
+			viewport.height / world_rectangle.height);
 
-		return Camera(view_rectangle.x - world_rectangle.x,
-			view_rectangle.y - world_rectangle.y,
-			world_rectangle.width / view_rectangle.width);
+		// Centre the slack on the axis that got the surplus, so what was asked
+		// for sits in the middle of the pane rather than against one edge.
+		const Vector2F shown(viewport.width / scale, viewport.height / scale);
+		const Vector2F origin(
+			world_rectangle.x - (shown.x - world_rectangle.width) / 2.0f,
+			world_rectangle.y - (shown.y - world_rectangle.height) / 2.0f);
 
+		return Camera(origin, scale);
 	}
 	Vector2F Camera::calculate_view_position(
 		const Vector2F& world_position) const
