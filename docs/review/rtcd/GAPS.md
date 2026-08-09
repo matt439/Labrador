@@ -170,3 +170,68 @@ At least six findings across the themes reduce to "add a header comment": the co
 ### 5. What the sweep did well, briefly
 
 The 3D material was translated or rejected by name and never smuggled in as 2D. Every "this is not a live cost" correction I re-checked was right, and the discipline of writing those corrections is what makes the rest of the document trustworthy. The three highest-value correctness items — `closest_pt_point_segment`'s NaN, `test_AABB_AABB`'s NaN-permissive form, and `separation_along`'s guard on the wrong quantity — are all real, all cheap, and all verified at the stated lines. And the sweep found something better than an algorithm: it found that `PHILOSOPHY.md:423-425` promises benchmarks, `PHILOSOPHY.md:71-72` promises a tunnel-proof speed cap, and `manifold.h` promises two invariants, and that none of the three is implemented. That is worth more than any technique in the book.
+
+---
+
+## Corrections found while implementing (added after the sweep)
+
+The sweep marked its own homework above. This section is what implementing it
+turned up — errors in the findings themselves, found by writing the code and
+testing the claims rather than by re-reading them.
+
+### `triangles_intersect` was not incomplete — the finding is wrong
+
+The finding at *"triangles_intersect enumerates four of the nine edge pairs"*
+states the four-pair enumeration is "provably incomplete by reading, and the
+geometry that defeats it exists", then describes the defeating configuration as
+one where the only crossings are `(a2,b0)`, `(a2,b1)`, `(a0,b2)`, `(a1,b2)`.
+
+No such configuration exists. The finding had already caught slice 31 inventing
+a bad counterexample (the Star of David, where six crossings cannot avoid four
+of nine pairs) and then substituted one of its own, which is impossible for a
+different reason:
+
+> The containment test runs first, so no vertex of either triangle is inside the
+> other. Suppose no crossing fell among the four tested pairs. Then `a0` and `a1`
+> could only cross `b2` — but a segment entering a convex region must leave it,
+> so with no endpoint inside its crossings come in pairs, and two straight
+> segments cross at most once. So `a0` and `a1` cross **B** zero times.
+> Symmetrically `b0` and `b1` cross **A** zero times. The only crossing left is
+> `(a2,b2)`: a single crossing, which again requires an endpoint inside.
+> Contradiction — there were no crossings, so the triangles do not overlap.
+
+A search over **521,020** overlapping triangle pairs with no vertex of either
+inside the other found no disagreement between the four-pair and nine-pair
+forms. The loops were widened to nine anyway, for clarity and because the reader
+who spots the subset will otherwise believe the hole is real — but as a
+readability change, not a fix, and the proof now sits beside the code.
+
+**The lesson generalises.** Two independent agents asserted this bug and both
+produced a wrong counterexample; the grounding pass corrected the first and
+adopted the second without testing it. A claim of the form "this enumeration is
+incomplete" is exactly the kind that reads as obviously true and needs a
+worked example or a search before it is believed.
+
+### The precision test that proved nothing
+
+`signed_area`'s vertex-relative accumulation was first pinned with a 40-unit
+tile at (6200, 5000) — the coordinates the game actually uses. Both the naive
+and the relative formulations return exactly 1600 there, because every product
+involved is exactly representable in a float. The test discriminated nothing.
+A 13.3-unit square at (6232.75, 5408.46) does: naive gives 176.0 against a true
+176.88. Round numbers are the worst possible choice for a floating-point test.
+
+### The quad diagonal identity had its sign backwards
+
+The finding gives the quad shortcut as `2 * area(ABCD) = perp_dot(C - A, B - D)`.
+Expanding it yields the negative, and a unit square confirms
+`cross(C - A, B - D) = -2`. The identity is real; the direction is
+`cross(A - C, B - D)`. Both orientations are now pinned by test.
+
+### Confirmed exactly as stated
+
+The tunnelling arithmetic, checked against the tree rather than restated:
+sniper 2000 u/s ÷ 60 fps = 33.33 units per step, against a budget of 20 (jet
+collider) + 10 (thinnest static collider, `spawn_a_ceiling`, present in all
+three shipping levels) = 30. The cap PHILOSOPHY promises does not exist and the
+content already exceeds it.

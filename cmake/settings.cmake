@@ -11,6 +11,21 @@ target_compile_options(artattack_settings INTERFACE
     /WX          # warnings are errors, zero suppressions
     /permissive- # standards conformance mode
     /sdl         # additional security checks
+
+    # IEEE-754 semantics, stated rather than inherited. This is already the
+    # compiler default, and that is the reason to write it down: a great deal
+    # of this tree is only correct under exactly-rounded arithmetic that does
+    # not reassociate. Vector2F::normalized tests its length against zero,
+    # narrow_phase compares an axis against Vector2F::ZERO through an exact
+    # operator==, every are_equal tolerance assumes a known rounding bound,
+    # and the collision path's NaN handling assumes NaN is produced and
+    # propagated rather than optimised away - which /fp:fast permits.
+    #
+    # The solution this build replaced used /fp:fast in all four
+    # configurations, so "swap this for speed" is not a hypothetical. Written
+    # explicitly, that change means deleting a stated decision instead of
+    # filling a blank.
+    /fp:precise
 )
 
 target_compile_definitions(artattack_settings INTERFACE

@@ -272,8 +272,16 @@ namespace mattmath
 
 	bool mattmath::circles_intersect(const Circle& a, const Circle& b)
 	{
-		return Vector2F::distance(a.center(), b.center()) <=
-			a.radius() + b.radius();
+		// The squared form, which is the same answer without the square root.
+		// Squaring preserves order on non-negative quantities, so a predicate
+		// that only has to decide never needs the root (5.2.5, p.165).
+		//
+		// Forwarded rather than rewritten: test_circle_circle is this test,
+		// already ported and already correct, and it had no callers anywhere
+		// in the tree. Two functions answering one question is a correctness
+		// hazard before it is a duplication one - they round differently at
+		// the grazing boundary, so they can disagree about a contact.
+		return test_circle_circle(a, b);
 	}
 
 	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle, Point2F& point)
@@ -309,7 +317,11 @@ namespace mattmath
 		closest_pt_point_segment(circle.center(),
 			segment.point_0, segment.point_1, t, point);
 
-		return Vector2F::distance(circle.center(), point) <= circle.radius();
+		// Squared both sides - see circles_intersect. This one is called once
+		// per edge from circle_rectangle_rotated_intersect, so it was four
+		// roots per query for an answer that never needed one.
+		return Vector2F::distance_squared(circle.center(), point) <=
+			circle.radius() * circle.radius();
 	}
 
 	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment)
@@ -320,7 +332,8 @@ namespace mattmath
 
 	bool mattmath::circle_point_intersect(const Circle& circle, const Point2F& point)
 	{
-		return Vector2F::distance(circle.center(), point) <= circle.radius();
+		return Vector2F::distance_squared(circle.center(), point) <=
+			circle.radius() * circle.radius();
 	}
 
 	bool mattmath::circle_rectangle_rotated_intersect(const Circle& circle,
