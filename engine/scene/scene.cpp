@@ -87,7 +87,8 @@ namespace artattack
 
 	void Scene::resolve()
 	{
-		find_contacts(this->collidables_, this->contacts_);
+		find_contacts(this->collidables_, this->contacts_,
+			&this->broad_phase_);
 		dispatch_contacts(this->contacts_);
 	}
 

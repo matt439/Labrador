@@ -7,6 +7,7 @@
 
 namespace artattack
 {
+	class BroadPhase;
 	class CollisionObject;
 
 	// One overlapping pair, and the smallest translation that separates it.
@@ -38,18 +39,27 @@ namespace artattack
 	// boxes, then narrow_phase. Objects already flagged for deletion take part
 	// in nothing.
 	//
-	// The pair enumeration is still all-pairs. That is the honest state of it:
-	// PHILOSOPHY promises a broad phase that prunes pairs, and this function
-	// is where one goes - the signature does not change when it arrives,
-	// because "which pairs are worth measuring" is exactly the question the
-	// two cheap filters above already answer badly.
+	// With no broad phase, the pair enumeration is all-pairs - O(n^2), which
+	// bench/ measures at 106 ms for four thousand objects, six times a 60 Hz
+	// frame from one call. Pass one and it enumerates only the pairs whose
+	// bounding boxes overlap, in the same order.
+	//
+	// The parameter is a pointer with a default rather than a required
+	// argument because the exhaustive sweep is the specification: it is what
+	// the grid is tested against (tests/collision/broad_phase_tests.cpp), and
+	// a caller with a handful of objects has no reason to build a grid.
+	//
+	// `broad_phase` is borrowed, and it holds the buffers that make the steady
+	// state allocation-free, so a caller that wants that keeps one across
+	// frames - exactly as it does with `contacts`.
 	//
 	// What it replaces: two hand-written nested loops that tested (player,
 	// object) and then (object, player) and then (object, object) with both
 	// orderings, so most pairs were measured twice and every pair's response
 	// depended on which loop reached it first.
 	void find_contacts(std::span<CollisionObject* const> objects,
-		std::vector<Contact>& contacts);
+		std::vector<Contact>& contacts,
+		BroadPhase* broad_phase = nullptr);
 
 	// Tells both participants of every contact, once each, with the normal
 	// oriented for the object receiving it.

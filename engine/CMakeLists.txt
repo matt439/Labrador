@@ -19,6 +19,7 @@ add_library(ArtAttackEngine STATIC
     audio/audio_resources.cpp
     audio/sound_bank.cpp
     audio/sound_bank_object.cpp
+    collision/broad_phase.cpp
     collision/contacts.cpp
     collision/narrow_phase.cpp
     collision/partitioner.cpp

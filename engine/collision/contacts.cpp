@@ -1,5 +1,6 @@
 #include "engine/collision/contacts.h"
 
+#include "engine/collision/broad_phase.h"
 #include "engine/collision/collision_object.h"
 #include "engine/collision/narrow_phase.h"
 
@@ -7,10 +8,56 @@ using mattmath::Vector2F;
 
 namespace artattack
 {
+	namespace
+	{
+		// The three filters, cheapest first, for one candidate pair. Shared so
+		// that the swept and the indexed enumerations cannot drift.
+		void measure_pair(CollisionObject* a, CollisionObject* b,
+			std::vector<Contact>& contacts)
+		{
+			if (!layers_collide(a->layer(), a->mask(), b->layer(), b->mask()))
+			{
+				return;
+			}
+
+			if (!a->shape()->AABB_intersects(b->shape()))
+			{
+				return;
+			}
+
+			const std::optional<Manifold> manifold =
+				narrow_phase(*a->shape(), *b->shape());
+			if (!manifold.has_value())
+			{
+				return;
+			}
+
+			contacts.push_back(Contact{ a, b,
+				manifold->normal, manifold->penetration });
+		}
+	}
+
 	void find_contacts(std::span<CollisionObject* const> objects,
-		std::vector<Contact>& contacts)
+		std::vector<Contact>& contacts, BroadPhase* broad_phase)
 	{
 		contacts.clear();
+
+		if (broad_phase != nullptr)
+		{
+			// The grid has already dropped every pair whose boxes cannot
+			// overlap, and hands back what is left in the same ascending order
+			// the sweep below would have produced.
+			std::vector<std::pair<int, int>>& pairs =
+				broad_phase->pairs_buffer();
+			broad_phase->find_pairs(objects, pairs);
+
+			for (const std::pair<int, int>& pair : pairs)
+			{
+				measure_pair(objects[static_cast<size_t>(pair.first)],
+					objects[static_cast<size_t>(pair.second)], contacts);
+			}
+			return;
+		}
 
 		for (size_t i = 0; i < objects.size(); i++)
 		{
@@ -30,26 +77,7 @@ namespace artattack
 					continue;
 				}
 
-				if (!layers_collide(a->layer(), a->mask(),
-					b->layer(), b->mask()))
-				{
-					continue;
-				}
-
-				if (!a->shape()->AABB_intersects(b->shape()))
-				{
-					continue;
-				}
-
-				const std::optional<Manifold> manifold =
-					narrow_phase(*a->shape(), *b->shape());
-				if (!manifold.has_value())
-				{
-					continue;
-				}
-
-				contacts.push_back(Contact{ a, b,
-					manifold->normal, manifold->penetration });
+				measure_pair(a, b, contacts);
 			}
 		}
 	}

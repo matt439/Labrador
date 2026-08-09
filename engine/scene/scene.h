@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/collision/broad_phase.h"
 #include "engine/collision/collision_object.h"
 #include "engine/collision/contacts.h"
 #include "engine/core/game_object.h"
@@ -259,6 +260,11 @@ namespace artattack
 
 		// Kept across ticks so a busy frame allocates nothing after the first.
 		std::vector<Contact> contacts_;
+
+		// Which pairs are worth measuring. A member rather than a local so
+		// that its buffers survive the frame, which is what keeps resolve()
+		// allocation-free once it is warm.
+		BroadPhase broad_phase_;
 
 		std::vector<View> views_;
 
