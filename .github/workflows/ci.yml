@@ -1,0 +1,125 @@
+# Configure, build and test on a clean checkout.
+#
+# ARCHITECTURE said ctest runs "on a contributor's machine or in CI" while
+# there was no .github/ at all. This is the CI half made true.
+#
+# It runs on a runner with no wave bank, which is the point rather than a
+# limitation: the audio sources are not in this repository (see NOTICE), so
+# every run is a real clone of what a new contributor gets.
+
+name: build and test
+
+on:
+  push:
+    branches: [master, 'review-*']
+  pull_request:
+  workflow_dispatch:
+
+# A second push to the same branch cancels the first. A queue of stale runs on
+# a repository with one maintainer is a queue nobody reads.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [x64-debug, x64-release]
+
+    # The presets use the Ninja generator, so every cmake step needs the MSVC
+    # environment. vcvars64 is found through vswhere rather than a hardcoded
+    # path, because the runner image's Visual Studio edition is not this
+    # repository's business - and through vswhere rather than a third-party
+    # action, because a build that can be done with the tools already on the
+    # machine should not add a supply chain to do it.
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # CMakePresets.json reads $env{VCPKG_ROOT} for the toolchain file and
+      # configuring fails without it. This is the same one-time step the README
+      # asks a person to do.
+      - name: Point at the runner's vcpkg
+        shell: pwsh
+        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+
+      # The manifest's dependencies are built at configure time, which is most
+      # of this job's wall clock. Keyed on vcpkg.json, so a run that changes no
+      # dependency reuses the last one's binaries.
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Find vcvars64
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
+
+      - name: Configure
+        run: |
+          call "%VCVARS%"
+          cmake --preset ${{ matrix.preset }}
+
+      # This includes cmake/check_engine_includes.cmake, so an engine file that
+      # includes a game header fails here as well as locally.
+      - name: Build
+        run: |
+          call "%VCVARS%"
+          cmake --build --preset ${{ matrix.preset }}
+
+      # The benchmark is one of these targets. It asserts on complexity class
+      # rather than wall-clock, so it is a real test on a shared runner where an
+      # absolute timing would be noise.
+      - name: Test
+        run: |
+          call "%VCVARS%"
+          ctest --preset ${{ matrix.preset }}
+
+      # Reported, not gated, so the numbers are in the log where a throughput
+      # change shows up as a diff between two runs rather than as nothing at
+      # all. A shared runner's absolute timings are not comparable to a
+      # developer machine's and are not meant to be.
+      - name: Benchmark numbers
+        run: out\build\${{ matrix.preset }}\bench\ArtAttackBench.exe
+
+      # A clone has no wave bank, so the game should reach its window in
+      # silence rather than throwing on the file the manifest names. That is
+      # the regression this exists to catch.
+      #
+      # NOT GATING, and the reason is honest: this is the only step that runs
+      # the game, and a Direct3D 11 device on a headless runner is not the
+      # thing under test. If it fails because the runner has no adapter, that
+      # is a fact about the runner. Read the log; a startup *exception* names
+      # itself on stderr and is worth acting on, a device failure is not.
+      - name: A clone with no audio still starts
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $dir = "out/build/${{ matrix.preset }}/game"
+          if (Test-Path "$dir/sounds/sound_bank_1.xwb") {
+            Write-Error "the runner has a wave bank; this check assumes a clone has none"
+            exit 1
+          }
+          $p = Start-Process -FilePath "$dir/ArtAttackGame.exe" `
+            -WorkingDirectory $dir -PassThru `
+            -RedirectStandardError "$dir/startup.err" `
+            -RedirectStandardOutput "$dir/startup.out"
+          Start-Sleep -Seconds 15
+          $exited = $p.HasExited
+          if (-not $exited) { $p.Kill() }
+          Write-Output "--- stderr ---"
+          Get-Content "$dir/startup.err" -ErrorAction SilentlyContinue
+          if ($exited) {
+            Write-Error "the game exited during startup (code $($p.ExitCode))"
+            exit 1
+          }
+          Write-Output "the game reached its window without a wave bank"

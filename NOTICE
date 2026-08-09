@@ -1,0 +1,77 @@
+# Third-party code, and content that is not distributed
+
+ArtAttack is MIT licensed (see LICENSE). This file records what in the working
+tree is not ArtAttack's to license, and what is deliberately absent.
+
+## Code carried in this repository
+
+### Microsoft — DirectX Tool Kit samples (MIT)
+
+Two files were adopted from Microsoft's DirectX samples and kept, with their
+original headers, rather than rewritten:
+
+- `engine/render/d3d11/device_resources.{h,cpp}` — "DeviceResources.h - A
+  wrapper for the Direct3D 11 device and swapchain"
+- `engine/core/step_timer.h` — "StepTimer.h - A simple timer that provides
+  elapsed time information"
+
+Copyright (c) Microsoft Corporation. Licensed under the MIT License.
+Source: https://github.com/microsoft/DirectXTK
+
+Both have been modified: `device_resources` moved into the D3D11 backend folder
+when the renderer seam was cut, and both were brought into the `artattack`
+namespace. They remain recognisably Microsoft's.
+
+### Christer Ericson — Real-Time Collision Detection
+
+`engine/math/ericson_math.{h,cpp}` transcribes closest-point and intersection
+routines from *Real-Time Collision Detection* (Christer Ericson, Morgan
+Kaufmann, 2005), adapted from the book's 3D forms to this engine's 2D types.
+The file names the book at the top.
+
+The code in that book is provided by the author for use in readers' own
+software. It is transcribed and adapted here rather than copied wholesale, and
+is attributed for that reason rather than because a licence compels it. If you
+are redistributing this engine commercially, read the book's own terms.
+
+### rapidjson (MIT)
+
+`external/rapidjson/` is vendored, with its own `license.txt` and `README.md`
+beside it. Copyright (c) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
+
+### Dependencies resolved by vcpkg, not vendored
+
+`vcpkg.json` names these; they are fetched at configure time and are not in
+this repository.
+
+- **DirectX Tool Kit for DX11** (`directxtk`, with `xaudio2redist`) —
+  MIT, Microsoft Corporation.
+- **doctest** — MIT, Viktor Kirilov.
+
+## Content that is deliberately not distributed
+
+### Audio
+
+`game/content/sounds/` ships the bank's definition
+(`sound_bank_1.json`), the build tool (`XWBTool.exe`, Microsoft, MIT), and the
+CMake recipe that turns source waves into `sound_bank_1.xwb`. It does not ship
+the waves or the built bank.
+
+Two reasons, and either alone would be enough:
+
+1. **Licence.** Four of the twenty-four waves are commercial music tracks. They
+   are not ArtAttack's to redistribute under MIT or any other licence.
+2. **Size.** The sources are 148 MB and the built bank is 154 MB, past
+   GitHub's per-file limit.
+
+A clone therefore has no wave bank, and this is handled rather than broken: the
+manifest marks the bank optional, the loader substitutes a silent one, prints a
+line saying so, and the game runs. See README, "Audio".
+
+### Fonts
+
+`game/content/fonts/` holds compiled `.spritefont` files built from system
+fonts (Gill Sans MT, Courier New) with Microsoft's `MakeSpriteFont`. The
+compiled glyph atlases are redistributed here on the same footing as any other
+game asset built from a licensed system font; the fonts themselves are not
+included and are not ArtAttack's to license.
