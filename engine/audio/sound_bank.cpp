@@ -14,9 +14,28 @@ namespace artattack
 
 	}
 
+	std::unique_ptr<SoundBank> SoundBank::silent()
+	{
+		return std::unique_ptr<SoundBank>(new SoundBank(nullptr,
+			Registry<SoundEffectInstance>("SoundEffectInstance")));
+	}
+
+	bool SoundBank::audible() const
+	{
+		return this->wave_bank_ != nullptr;
+	}
+
 	SoundBank::WaveHandle SoundBank::resolve_wave(
 		const std::string& wave_name) const
 	{
+		if (!this->audible())
+		{
+			// Any name, and index 0 rather than an unresolved handle: play_wave
+			// rejects an unresolved one, and a silent bank must not reject
+			// anything.
+			return WaveHandle(0);
+		}
+
 		// WaveBank::Find returns -1 for a name the bank does not have, which is
 		// also what an unresolved Handle holds - so this has to be caught here
 		// rather than handed on as a handle that looks fine until it is read.
@@ -32,12 +51,21 @@ namespace artattack
 	SoundBank::EffectHandle SoundBank::resolve_effect(
 		const std::string& effect_name) const
 	{
+		if (!this->audible())
+		{
+			return EffectHandle(0);
+		}
 		return this->sound_effect_instances_.resolve(effect_name);
 	}
 
 	void SoundBank::play_wave(WaveHandle wave, float volume, float pitch,
 		float pan) const
 	{
+		if (!this->audible())
+		{
+			return;
+		}
+
 		if (!wave.valid())
 		{
 			throw std::out_of_range(
@@ -52,6 +80,11 @@ namespace artattack
 	void SoundBank::play_effect(EffectHandle effect, bool loop, float volume,
 		float pitch, float pan) const
 	{
+		if (!this->audible())
+		{
+			return;
+		}
+
 		clamp_levels(volume, pitch, pan);
 		SoundEffectInstance* instance = this->sound_effect_instance(effect);
 		instance->SetVolume(volume);
@@ -61,37 +94,77 @@ namespace artattack
 	}
 	void SoundBank::stop_effect(EffectHandle effect, bool immediate) const
 	{
+		if (!this->audible())
+		{
+			return;
+		}
+
 		this->sound_effect_instance(effect)->Stop(immediate);
 	}
 	void SoundBank::pause_effect(EffectHandle effect) const
 	{
+		if (!this->audible())
+		{
+			return;
+		}
+
 		this->sound_effect_instance(effect)->Pause();
 	}
 	void SoundBank::resume_effect(EffectHandle effect) const
 	{
+		if (!this->audible())
+		{
+			return;
+		}
+
 		this->sound_effect_instance(effect)->Resume();
 	}
 	void SoundBank::set_effect_volume(EffectHandle effect, float volume) const
 	{
+		if (!this->audible())
+		{
+			return;
+		}
+
 		volume = clamp(volume, 0.0f, 1.0f);
 		this->sound_effect_instance(effect)->SetVolume(volume);
 	}
 	void SoundBank::set_effect_pitch(EffectHandle effect, float pitch) const
 	{
+		if (!this->audible())
+		{
+			return;
+		}
+
 		pitch = clamp(pitch, -1.0f, 1.0f);
 		this->sound_effect_instance(effect)->SetPitch(pitch);
 	}
 	void SoundBank::set_effect_pan(EffectHandle effect, float pan) const
 	{
+		if (!this->audible())
+		{
+			return;
+		}
+
 		pan = clamp(pan, -1.0f, 1.0f);
 		this->sound_effect_instance(effect)->SetPan(pan);
 	}
 	SoundState SoundBank::effect_state(EffectHandle effect) const
 	{
+		if (!this->audible())
+		{
+			return SoundState::STOPPED;
+		}
+
 		return this->sound_effect_instance(effect)->GetState();
 	}
 	bool SoundBank::is_effect_looping(EffectHandle effect) const
 	{
+		if (!this->audible())
+		{
+			return false;
+		}
+
 		return this->sound_effect_instance(effect)->IsLooped();
 	}
 	SoundEffectInstance* SoundBank::sound_effect_instance(

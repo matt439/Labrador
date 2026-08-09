@@ -27,6 +27,11 @@ namespace artattack
 			entry.kind = group.string("kind");
 			entry.directory = group.string("directory");
 
+			// Absent means required, which is the safe default and the one
+			// every existing manifest already meant.
+			entry.optional =
+				group.has("optional") ? group.boolean("optional") : false;
+
 			const JsonValue names = group.array("names");
 			for (size_t name_index = 0; name_index < names.size(); ++name_index)
 			{

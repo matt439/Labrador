@@ -30,6 +30,28 @@ namespace artattack
 		SoundBank(std::unique_ptr<DirectX::WaveBank> wave_bank,
 			Registry<DirectX::SoundEffectInstance> instances);
 
+		// A bank with nothing in it, for a build that has no audio.
+		//
+		// The paint-shooter's wave bank is built from source audio that cannot
+		// be distributed (README), so a fresh clone has no .xwb and the
+		// manifest marks the bank optional. This is what the loader puts in
+		// its place: every resolve succeeds, every play does nothing, and a
+		// game that is otherwise correct runs in silence rather than throwing
+		// at startup on a file it was never going to have.
+		//
+		// WHAT IT COSTS, SAID OUT LOUD. Resolving is this class's whole T6
+		// guarantee - a misspelt wave name throws at load rather than going
+		// quiet at the moment it should have been heard. A silent bank cannot
+		// keep that promise, because it has no name table to check against.
+		// So the trade is: with audio present, a typo is a startup failure;
+		// with audio absent, it is nothing, because everything is. That is
+		// why this is a named constructor a loader has to ask for and not a
+		// state the class can fall into.
+		static std::unique_ptr<SoundBank> silent();
+
+		// Whether this bank can make a sound. False only for silent().
+		bool audible() const;
+
 		// Load-time. Each throws std::out_of_range naming what was asked for if
 		// this bank does not have it, so a bad name fails where it is written
 		// rather than going quiet at the moment it should have been heard.

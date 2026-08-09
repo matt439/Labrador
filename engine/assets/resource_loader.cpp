@@ -1,5 +1,7 @@
 #include "engine/assets/resource_loader.h"
 #include "engine/assets/sound_bank_loader.h"
+
+#include <cstdio>
 #include "engine/assets/sprite_sheet_loader.h"
 // The deliberate include renderer.h describes: this is the file that creates
 // textures and fonts on a device, so it is the one place outside
@@ -42,10 +44,12 @@ namespace artattack
 	void ResourceLoader::register_builtin_kinds()
 	{
 		const auto texture = [this](const std::string& directory,
-			const std::string& name) { this->load_texture(directory, name); };
+			const std::string& name, bool /*optional*/)
+			{ this->load_texture(directory, name); };
 
 		const auto font = [this](const std::string& directory,
-			const std::string& name) { this->load_sprite_font(directory, name); };
+			const std::string& name, bool /*optional*/)
+			{ this->load_sprite_font(directory, name); };
 
 		// A texture and a font are remade outright, so the reload is the load.
 		this->register_kind("texture", { texture, texture });
@@ -57,7 +61,8 @@ namespace artattack
 		// now, the reload refills that handle's slot, and the sheet is untouched.
 		this->register_kind("sprite_sheet",
 			{
-				[this](const std::string& directory, const std::string& name)
+				[this](const std::string& directory, const std::string& name,
+					bool /*optional*/)
 				{
 					this->load_sprite_sheet(directory, name);
 				},
@@ -68,9 +73,10 @@ namespace artattack
 		// borrowed SoundBank*, so a device restore must leave it alone.
 		this->register_kind("sound_bank",
 			{
-				[this](const std::string& directory, const std::string& name)
+				[this](const std::string& directory, const std::string& name,
+					bool optional)
 				{
-					this->load_sound_bank(directory, name);
+					this->load_sound_bank(optional, directory, name);
 				},
 				nullptr
 			});
@@ -87,7 +93,7 @@ namespace artattack
 					manifest.source_path + "' is of kind '" + entry.kind +
 					"', which nothing registered.");
 			}
-			kind->second.load(entry.directory, entry.name);
+			kind->second.load(entry.directory, entry.name, entry.optional);
 		}
 
 		// Kept only once the walk has finished, so the loader never holds a
@@ -105,7 +111,7 @@ namespace artattack
 			const AssetKind& kind = this->kinds_.at(entry.kind);
 			if (kind.reload_device)
 			{
-				kind.reload_device(entry.directory, entry.name);
+				kind.reload_device(entry.directory, entry.name, entry.optional);
 			}
 		}
 	}
@@ -168,8 +174,8 @@ namespace artattack
 				this->render_resources_->resolve_texture(name)));
 	}
 
-	void ResourceLoader::load_sound_bank(const std::string& directory,
-		const std::string& name) const
+	void ResourceLoader::load_sound_bank(bool optional,
+		const std::string& directory, const std::string& name) const
 	{
 		const std::string wave_bank_path = directory + name + ".xwb";
 
@@ -182,6 +188,29 @@ namespace artattack
 		}
 		catch (const std::exception&)
 		{
+			// A bank the manifest marked optional is allowed not to be there,
+			// and this is the one substitution the engine makes for a missing
+			// file: a bank that resolves everything and plays nothing, so the
+			// game runs in silence instead of dying on a file it was never
+			// going to have (SoundBank::silent).
+			//
+			// It is reported rather than swallowed. T6's rule is that a broken
+			// contract stops the game with the reason on screen and never
+			// aborts silently; a stated-optional asset is not a broken
+			// contract, but a person wondering where the sound went should be
+			// able to find out without reading this file.
+			if (optional)
+			{
+				std::fprintf(stderr,
+					"no audio: '%s' is not there, and the manifest marks this "
+					"bank optional, so it plays nothing. See the repository's "
+					"README, 'Audio'.\n", wave_bank_path.c_str());
+
+				this->audio_resources_->add_sound_bank(name,
+					SoundBank::silent());
+				return;
+			}
+
 			// DirectXTK's what() is just "WaveBank" - T6 wants the path.
 			throw std::runtime_error(
 				"Failed to load wave bank: " + wave_bank_path);

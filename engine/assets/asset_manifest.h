@@ -21,6 +21,22 @@ namespace artattack
 		std::string kind;
 		std::string directory;
 		std::string name;
+
+		// Whether the game still runs when this file is not there.
+		//
+		// False for everything by default, because T6 says a broken contract
+		// stops the game dead with the reason on screen. This is how a piece
+		// of content states that its absence is not a broken contract - and
+		// it is stated in the manifest, by the person who knows, rather than
+		// guessed at by a loader.
+		//
+		// The one case that needs it: the paint-shooter's wave bank is built
+		// from source audio that cannot be distributed (see the repository's
+		// README), so a fresh clone has no ./sounds/sound_bank_1.xwb and used
+		// to throw at startup on the very file the shipped manifest named.
+		// What the loader substitutes is the kind's business; what this says
+		// is only that it may.
+		bool optional = false;
 	};
 
 	// Everything a game is made of, as data the loader walks rather than filenames

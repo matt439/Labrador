@@ -24,8 +24,12 @@ namespace artattack
 		// Builds one asset from a manifest entry. A kind owns its own file naming,
 		// extension included, which is why this is handed the directory and the
 		// name rather than a finished path.
+		// `optional` is the manifest's own word for "the game still runs
+		// without this" (asset_manifest.h). A kind that has no substitute to
+		// offer ignores it and throws as it always did; the sound bank is the
+		// one that has one.
 		using LoadAsset = std::function<void(const std::string& directory,
-			const std::string& name)>;
+			const std::string& name, bool optional)>;
 
 		// A kind of asset, and what a device loss does to it. `reload_device` runs
 		// in place of `load` on a device restore; leave it empty for a kind the GPU
@@ -106,7 +110,7 @@ namespace artattack
 			const std::string& name) const;
 		void load_sprite_sheet(const std::string& directory,
 			const std::string& name) const;
-		void load_sound_bank(const std::string& directory,
+		void load_sound_bank(bool optional, const std::string& directory,
 			const std::string& name) const;
 	};
 }
