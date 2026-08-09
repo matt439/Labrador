@@ -19,6 +19,7 @@ days, **week** ≈ 5 working days, **weeks** ≈ 2 or more.
 3. [The work items](#3-the-work-items)
 4. [Do not fix these](#4-do-not-fix-these)
 5. [Sequencing](#5-sequencing)
+6. [The plan is spent](#6-the-plan-is-spent)
 
 ---
 
@@ -1047,6 +1048,84 @@ violation in the review.
 
 #### E2 — Tuning into data
 
+> **Landed. The count was wrong by half, one number existed twice and
+> disagreed with itself, and two classes turned out to be a constant each.**
+>
+> **Counting first, as E1 said to.** The item budgets against "roughly 593
+> SCREAMING constant declarations across the tree". There are 329, because A5
+> already deleted a large part of what the review counted — and only 107 of
+> those were tuning: 60 in `player_consts.h`, 18 in `weapon_consts.h`, 13 in
+> `projectile_consts.h` and 16 in `level_consts`. Of the 60, **thirteen were
+> dead**: `JUMP_POWER`, `DEFAULT_COLLISION_BOUNDS`, three zero-valued
+> `STARTING_*` vectors, and an entire eight-constant `COUNTDOWN_*` block that
+> `level.h` had a second, live, differently-valued copy of. Four more were
+> dead in `projectile_consts.h`. The remaining ~200 SCREAMING constants are
+> menu and HUD *layout* — `main_menu.h` has 53, `results_menu.h` 32 — and they
+> are not in this item's file list. They are the same defect and they are
+> still there.
+>
+> **One number existed twice, and the copy that looked authoritative was
+> dead.** `ProjectileDetails::player_damage` was written for all five
+> projectiles and read by nobody: `Projectile::player_damage()` had zero
+> callers. What the game applied was a *second* set of five in
+> `player_consts.h`, dispatched by a ten-branch if-chain over
+> `CollisionObjectType` ending in a throw its own caller had already excluded.
+> The two disagreed by a factor of ten on spray and by five orders of
+> magnitude on rolling (`-1000.0f` against `0.015f`). There is one number now,
+> on the projectile's record, and the if-chain is one lookup.
+>
+> **Which surfaced a bug that had been there since the file was written.**
+> `ProjectileMist` passed `SPRAY` to its base constructor. `type()` has
+> exactly one reader, `collision_type()`, so every mist particle was tagged
+> `projectile_spray_team_*`. Invisible while spray and mist shared a layer, a
+> mask and a damage number to four decimal places — and not invisible at all
+> once the damage is a number in a file keyed by that enum.
+>
+> **Two classes were a constant each.** With the constant in data,
+> `WeaponSprayer` and `WeaponMister` had nothing left in them: no override, no
+> member, a constructor forwarding its arguments. Both are deleted and the two
+> picks build `RelativeVelocityWeapon` directly. `WeaponLoopSounds` shed the
+> same weight — eight named members and a two-level switch over them became
+> two arrays of four and an index, and `Weapon::resolve_loop_sound`'s
+> three-way switch over `WeaponType` became "does this weapon's record have a
+> loop block?".
+>
+> **A projectile borrows its record rather than copying it.**
+> `ProjectileDetails` carries two `std::string`s, and a firing sprayer spawns
+> one projectile per frame per player, so the old by-value member was two heap
+> allocations on the spawn path for a value identical across every projectile
+> of the type. It is a `const ProjectileTuning*` into the table `main()` owns.
+>
+> **Both content bugs are fixed, and both were measured rather than assumed.**
+> The end-of-match shot showed 82% of `close_quarters`' painted surface, 13%
+> of `king_of_the_hill`'s and 14% of `turbulence`' — the review's numbers
+> reproduce exactly. `Camera::calculate_camera_from_view_rectangle` is
+> `Camera::frame(world, viewport)` now: it honours both axes, splits the
+> surplus so the request lands centred, throws on a degenerate extent instead
+> of dividing by it, and has its parameters the right way round. The three
+> level files are re-authored against their real paintable extents, and all
+> three show **100%** at both 1920x1080 and 1280x720. Six tests in
+> `tests/render/camera_tests.cpp` pin it. The countdown is centred on
+> `TextObject::text_bounds()`, which B1 has measured since the handle pass and
+> nothing read; the hardcoded 400x600 is gone, and so is the separate "3"
+> constant that a countdown retuned to five seconds would have opened on.
+>
+> **`level_consts` went too, and it is worth saying why it was in scope.**
+> CONVENTIONS names the shape exactly: "a header full of numeric constants is
+> usually tuning data in the wrong place... constants that stay in code live
+> next to the one thing they configure, not in a `consts` namespace collecting
+> strays". A match's duration, its countdown, its zoom-out and its overview
+> are that, and they are a `match` section now.
+>
+> **What is not tested, and cannot be from here.** `GameTuning` has no unit
+> test, because `game/` is an executable and there is no target for a test to
+> link. Making the game a library to test its loader is a build change bigger
+> than this item, and not obviously worth it while `game/` is on its way out
+> of this repository. What stands in for it: every one of the ~110 transcribed
+> values was diffed against the deleted headers programmatically, and the
+> constructor reads the whole file eagerly at startup — so the game reaching
+> its window at all is the parse passing.
+
 **What changes.** Weapon, projectile and player tuning are C++ aggregates in
 headers, so a tuning change rebuilds a third of the game — against T7 and
 `docs/design/PHILOSOPHY.md:409` ("Tuning changes rebuild nothing"). Roughly 593
@@ -1086,6 +1165,50 @@ or accept the merges.
 ---
 
 #### E3 — Correct the documents
+
+> **Landed. Two of the four had already fixed themselves, and the document
+> that needed the most work is not one of the four.**
+>
+> **Items 1 and 3 were done by the work that made them wrong.** B1 amended
+> PHILOSOPHY's "render workers own disjoint slices" when it built the seam
+> that tenet governs, and A3 corrected `IMPLEMENTED.md`'s `#16` note when it
+> fixed the race. Item 4 (`tests --> engine`) was made true by A1 and needed
+> no edit. Only item 2 was outstanding.
+>
+> **Item 2, answered: `game/` is a client, not shipped code.** T11 governs the
+> engine and `samples/`. The paint-shooter is the first *client*, and the
+> reason is not a preference — it is that the repo split is pending and
+> `game/` leaves this repository when it happens. So the twenty findings
+> citing T11 against `game/` are filed against a client, and the honest answer
+> to one is either "the engine's API made that awkward, fix the API" or
+> nothing at all. That is written into T11's "Not a licence for" and into the
+> object-model section that enumerates the shipped set.
+>
+> **`IMPLEMENTED.md` was stale in the other direction, and that is the part
+> worth the time.** It still recorded `#1`, `#2`, `#13` and `#18` as
+> outstanding — the four the 2023 review scoped at weeks-to-months — when the
+> CMake rewrite, C2, C1 and B1 had closed all four. It said "31 of 36 fixed";
+> it is 36 of 36. It said "38/38 unit tests pass"; it is 192 test cases and
+> 4,060 assertions across eight `ctest` targets. Two of its three "known
+> remaining issues" were closed by B1 and C1, and are recorded as closed
+> rather than deleted, because that section is the one a reader checks before
+> believing the table above it.
+>
+> **`#16` is no longer "partial", and the reason is a correction rather than a
+> fix.** Its redundancy half asked for workers to own disjoint slices. They
+> cannot: the axis is views, and a view has to consider every object in order
+> to decide it cannot see it. What actually remains is that
+> `Scene::draw_views` culls with a linear walk — a throughput item wanting a
+> spatial index and a benchmark, not the filed defect.
+>
+> **Four more corrections, found by looking rather than filed.** PHILOSOPHY
+> still carried the "an engine file including a game header fails to compile"
+> claim that E1 corrected in ARCHITECTURE and nowhere else; its target table
+> said three targets and omitted `ArtAttackSample`; ARCHITECTURE gave
+> `engine/input/` "devices, action mapping" when D2 deliberately built only
+> the devices half; and its `game/content/` line said "the manifest and
+> everything it names", which E2 made incomplete — `tuning.json` is read
+> before the manifest and is not in it.
 
 **What changes.** Most of the "documentation inaccuracy" findings resolve
 themselves: PHILOSOPHY and ARCHITECTURE describe the destination, and B1 through
@@ -1220,3 +1343,37 @@ something moves, and it should be landed at a moment when nothing is.
 
 Then the plan is spent, and what is left — E2, E3, and the long tail of `low`
 findings in the appendix — is maintenance rather than sequencing.
+
+---
+
+## 6. The plan is spent
+
+Every item A1–A6, B1, C1–C3, D1–D3 and E1–E3 has landed. A7 — the README, the
+licence, the wave bank and CI — has not, and it is the only item on this
+document still open; it was always off the spine and its trigger is "a second
+person is anywhere near this repository".
+
+Two things this plan was wrong about are worth carrying forward, both recorded
+at the item that found them:
+
+- **E1: count the callers before budgeting a move.** Thirty-nine of the
+  forty-six conversions E1 budgeted to move had no callers at all.
+- **E2: count the declarations before budgeting a sweep.** The "593 SCREAMING
+  constants" were 329 by the time A5 had finished, and only 107 of those were
+  the tuning this item was about. Seventeen of the 107 were dead.
+
+What is left is not sequenced by anything:
+
+- The ~200 SCREAMING layout constants in `game/states/*_menu.h` and
+  `game/objects/interface_gameplay.h`. Same defect as E2, different files, and
+  no dependency on anything.
+- A broad phase in front of `Scene`'s per-view cull, and the benchmarks
+  PHILOSOPHY's Performance section asks for — the honest remainder of finding
+  `#16`, and the first item on this list that wants a measurement before a
+  change.
+- `Shape`'s polymorphic `clone()` and the fixed-size geometry returning
+  `std::vector` (§4's "one more, of a different kind"). C2 has landed, so the
+  reason to hold it has gone.
+- The repo split itself, which E1 made a move rather than a build rewrite, and
+  which is what turns A6's grep into the compiler error ARCHITECTURE would
+  rather have.

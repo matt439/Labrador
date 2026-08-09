@@ -104,7 +104,10 @@ being load-bearing.
 │   │                       phase goes behind find_contacts)
 │   ├── scene/              Scene: the object list, the view list, the tick
 │   │                       phases, the per-view draw fan-out and the cull
-│   ├── input/              devices, action mapping
+│   ├── input/              devices: polling, deadzones, press edges. The
+│   │                       action map is deliberately not built - neither
+│   │                       client has a rebinding screen, so a binding
+│   │                       table would be a speculative framework (T1)
 │   │   └── xinput/         the XInput backend
 │   ├── audio/              playback, mixing
 │   ├── ui/                 widgets, focus, controller navigation
@@ -114,8 +117,10 @@ being load-bearing.
 ├── game/                   the paint-shooter — first client
 │   ├── states/             menu flow, gameplay flow
 │   ├── objects/            entities implementing the engine interfaces
-│   └── content/            the manifest, and everything it names: JSON
-│                           definitions, levels, textures, sounds
+│   └── content/            the manifest and everything it names - levels,
+│                           textures, fonts, sounds - plus tuning.json,
+│                           which is read before the manifest and is what
+│                           those assets are used *by* (T7)
 ├── samples/
 │   └── minimal/            the second client, and the new-project template
 ├── tests/                  one folder per module under test
@@ -280,7 +285,7 @@ flowchart LR
         scene["Scene, game loop,<br/>fixed-step timing"]
         collision["collision detection<br/>and response"]
         render["renderer, cameras,<br/>viewports, split-screen"]
-        input["input devices,<br/>action mapping"]
+        input["input devices:<br/>polling, deadzones, edges"]
         audio["audio playback<br/>and mixing"]
         assets["asset loading,<br/>registries, JSON"]
         states["state machinery"]

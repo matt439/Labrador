@@ -210,6 +210,18 @@ everything it ships, while game code meets the engine at small interfaces
 and chooses its own grammar behind them — full OOP or full performance
 (see The object model).
 
+**What "everything it ships" means, exactly:** the engine and `samples/`.
+The paint-shooter in `game/` is **not** in that set. It is the first
+client, and its whole job is to be one — it lives in this repository today
+only because the split into its own has not happened yet, and it leaves
+when it does (ARCHITECTURE.md, The targets). A review finding that
+holds `game/` to T11 is therefore filed against a client, and the honest
+answer to it is either "the engine's API made that awkward, fix the API"
+or nothing at all. The distinction is not academic: `game/` is where the
+engine gets to be *used* rather than exemplified, and a client that had to
+obey the engine's internal style would be proving nothing about the
+boundary.
+
 ### T12. The language over a dialect
 
 The engine is written in the C++ a C++ programmer already knows. No macro
@@ -256,21 +268,25 @@ that outranks it.
 
 ### Targets and layout
 
-Three build targets, one dependency direction, one shared
+Four build targets, one dependency direction, one shared
 compiler-settings target (CMake — see ARCHITECTURE.md, The build):
 
 | Target | Type | Directory | Depends on |
 |---|---|---|---|
 | `MattMath` | static library | `engine/math/` | nothing |
 | `ArtAttackEngine` | static library | `engine/` | MattMath, platform SDKs |
+| `ArtAttackSample` | application | `samples/minimal/` | ArtAttackEngine |
 | `ArtAttackGame` | application | `game/` | ArtAttackEngine |
 | tests | applications | `tests/` | the libraries they test |
 
 The disk layout mirrors the targets — `engine/math/`, `engine/core/`,
 `engine/render/`, `engine/collision/`, `engine/input/`, `engine/audio/`,
 `game/…` — and every file picks its home the day it is created. An engine
-file including a game header fails to compile; that is the feature (T5).
-Tests link libraries, never `#include` implementation files.
+file including a game header fails the build, on a check that runs every
+time (T5); it does not fail to *compile*, and it cannot while `engine/`
+and `game/` are siblings under one include root — ARCHITECTURE.md, The
+targets, says why and what changes it. Tests link libraries, never
+`#include` implementation files.
 
 Platform-specific code — rendering backend, input devices, audio backend,
 windowing — lives at the edge behind engine-owned interfaces, so that a
@@ -311,9 +327,11 @@ stranger's — would need to edit it, it is game code.
   for thousands of values updated in a tight loop. A paint-tile grid is
   one `GameObject`, not ten thousand. Interface granularity is the user's
   performance dial.
-- The engine's own internals, and everything it ships — the sample game,
-  the tutorials — are value-first (T11): concrete types, contiguous
-  storage, interfaces implemented at batch granularity where N is large.
+- The engine's own internals, and everything it ships — the sample game
+  in `samples/`, the tutorials — are value-first (T11): concrete types,
+  contiguous storage, interfaces implemented at batch granularity where N
+  is large. The paint-shooter is a client rather than shipped code and is
+  bound by none of it; see T11's "Not a licence for".
 - There is no garbage collector and no ambient object graph. Ownership is
   explicit and lexical (T11); whether the scene owns a registered object
   or borrows it is stated in the API, never assumed.

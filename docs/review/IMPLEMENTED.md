@@ -1,13 +1,18 @@
 # Review remediation status
 
 Tracks what has been fixed from the review in [README.md](README.md), and what has not.
-Last updated 2026-08-08.
+Last updated 2026-08-09.
 
-**Critical findings: 31 of 36 fixed, 1 partial, 4 outstanding.**
+**Critical findings: 36 of 36 fixed.**
 
-The four outstanding ones are the structural items the review itself scopes at
-weeks-to-months (`#1`, `#2`, `#13`, `#18`). Everything reachable without the
-engine/game split has been done.
+The last four - `#1`, `#2`, `#13` and `#18` - were the structural items the
+2023 review scoped at weeks-to-months and this document listed as outstanding
+for two years. All four were closed by the round-2 plan
+([round-2/PLAN.md](round-2/PLAN.md)): `#1` and `#2` by the CMake rewrite that
+made the engine a static library anything can link, `#13` by `engine/collision/`
+taking the interface the game's content enum used to sit in, and `#18` by
+`engine/scene/`, which is the half of `Level` that was never about a paint
+match.
 
 | Commit | Scope |
 |---|---|
@@ -16,11 +21,25 @@ engine/game split has been done.
 | `5b75b31` | All `/W4` warnings cleared, `TreatWarningAsError` enabled |
 | `9a48f5d` | `draw()` made a pure read across every renderable |
 | `ca4d228` | `draw()` made `const`, so that is enforced by the compiler |
+| round 2, phase A | The regression net: tests link the engine, the include wall, the wide-text race, deferred `transition_to`, four engine arithmetic defects, the dead code and the type prefixes |
+| round 2, `aa043aa` | **B1**, the renderer seam: `engine/render/renderer.h`, the D3D11 backend under `engine/render/d3d11/`, and every draw signature in the tree |
+| round 2, `ec39da8` | **C1**, `engine/scene/` - finding `#18` |
+| round 2, `5101879`, `4140a2d` | **C2**, `engine/collision/` - finding `#13` |
+| round 2, `1f555a2` | **C3**, a real state stack |
+| round 2, `cfcf82e`, `9f95672` | **D1**, `engine/ui/` focus and navigation |
+| round 2, `0ff4bc5` | **D2**, `engine/input/` |
+| round 2, `cca22ce` | **D3**, a checked `JsonValue` as the assets module's public JSON type |
+| round 2, `91d90a0`-`30488fe` | **E1**, MattMath depends on nothing; the module walls |
+| round 2, **E2** | Tuning into `./tuning.json`; the end-of-match camera; the countdown |
 
 Verified after each commit: `Debug|x64` and `Release|x64` build clean with
-warnings as errors, 38/38 unit tests pass, and the game launches and runs.
-(`Win32` is declared in the project files but not mapped in the `.sln`, so it
-was already unbuildable and remains so.)
+warnings as errors, the unit tests pass, and the game launches and runs. The
+suite was 38 assertions in one project when this document was first written;
+it is 192 test cases and 4,060 assertions across eight `ctest` targets now -
+`assets`, `collision`, `core`, `input`, `math`, `render`, `scene` and `ui` -
+which is what `#1` and `#2` were blocking. (`Win32` was declared in the old
+project files and never mapped in the `.sln`; the project is CMake now and
+builds `x64` only.)
 
 ---
 
@@ -28,8 +47,8 @@ was already unbuildable and remains so.)
 
 | # | Finding | Status | Commit |
 |--:|---|---|---|
-| 1 | No engine target: one Application project, 193 files flat | **Outstanding** | — |
-| 2 | `ConfigurationType=Application`, so nothing can link it | **Outstanding** | — |
+| 1 | No engine target: one Application project, 193 files flat | Fixed | round 2, phase A |
+| 2 | `ConfigurationType=Application`, so nothing can link it | Fixed | round 2, phase A |
 | 3 | Device-lost destroys `ResourceManager` and the dt float | Fixed | `0c7eaff` |
 | 4 | `closest_pt_point_OBB` loops 3 axes in 2D, throws on every call | Fixed | `73da0a2` |
 | 5 | Device restore rebuilds SpriteBatches on the destroyed device's contexts | Fixed | `0c7eaff` |
@@ -40,12 +59,12 @@ was already unbuildable and remains so.)
 | 10 | `AudioEngine` destroyed before its WaveBanks | Fixed | `0c7eaff` |
 | 11 | Gamepad vector compacted by connection, indexed by player number | Fixed | `0c7eaff` |
 | 12 | End-menu Restart replays with the wrong viewport layout | Fixed | `0c7eaff` |
-| 13 | Collision interface identifies objects with this game's content enum | **Outstanding** | — |
+| 13 | Collision interface identifies objects with this game's content enum | Fixed | round 2, C2 |
 | 14 | `player_inputs` compacted but indexed by player ordinal (OOB) | Fixed | `0c7eaff` |
 | 15 | `Level` indexes the compacted input vector by ordinal | Fixed | `0c7eaff` |
-| 16 | Every render worker draws every object, and `draw()` mutates it | **Partial** | `9a48f5d`, `ca4d228` |
+| 16 | Every render worker draws every object, and `draw()` mutates it | Fixed | `9a48f5d`, `ca4d228`, round 2 A3 |
 | 17 | `draw_zoom_out_level_component` mutates ViewportManager, touches immediate context | Fixed | `0c7eaff` |
-| 18 | `Level` is both the scene abstraction and the paint-battle ruleset | **Outstanding** | — |
+| 18 | `Level` is both the scene abstraction and the paint-battle ruleset | Fixed | round 2, C1 |
 | 19 | Level JSON parsed through a 1-byte heap buffer | Fixed | `73da0a2` |
 | 20 | `StructurePaintable` stores a reference to a builder local | Fixed | `0c7eaff` |
 | 21 | `RectangleRotated(Segment, thickness)` always throws | Fixed | `73da0a2` |
@@ -65,7 +84,7 @@ was already unbuildable and remains so.)
 | 35 | `stop_sounds()` throws for Sniper and Bucket | Fixed | `73da0a2` |
 | 36 | Match end throws unhandled if any player picked Sniper or Bucket | Fixed | `73da0a2` |
 
-### Note on #16 (partial)
+### Note on #16
 
 Two defects were merged under this finding.
 
