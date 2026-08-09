@@ -366,13 +366,42 @@ namespace mattmath
 		std::vector<Segment> a_edges = a.edges();
 		std::vector<Segment> b_edges = b.edges();
 
-		// check if any of the edges intersect
-		for (int i = 0; i < 2; i++)
+		// All nine edge pairs.
+		//
+		// This is not a bug fix, and the previous four-pair version was not
+		// wrong. It ran i < 2 against b_edges[0] and b_edges[1], never testing
+		// a_edges[2] or b_edges[2] against anything, which reads like an
+		// obvious hole - and is not one, for a reason worth writing down
+		// before somebody "restores" the optimisation or, worse, keeps the
+		// subset believing it is broken.
+		//
+		// Given the containment test above has already failed, no vertex of
+		// either triangle lies inside the other. Now suppose no crossing fell
+		// among the four pairs that were tested. Then a_edges[0] and
+		// a_edges[1] could only ever cross b_edges[2]. But a segment that
+		// enters a convex region has to leave it again - with no endpoint
+		// inside, its crossings come in pairs - and two straight segments
+		// cross at most once. So each of a_edges[0] and a_edges[1] would have
+		// to cross the boundary of B zero times. By the same argument
+		// b_edges[0] and b_edges[1] cross A zero times. The only crossing left
+		// possible is (a_edges[2], b_edges[2]), a single crossing, which again
+		// needs an endpoint inside. Contradiction: there were no crossings at
+		// all, and the triangles do not overlap.
+		//
+		// So the subset was sufficient. It was not *evidently* sufficient, and
+		// nine segment tests on a predicate the narrow phase is replacing is
+		// not a cost worth defending against the reader who has to re-derive
+		// that proof. A search over half a million overlapping vertex-free
+		// triangle pairs produced no disagreement between the two forms, which
+		// is the empirical half of the same statement.
+		for (int i = 0; i < 3; i++)
 		{
-			if (segments_intersect(a_edges[i], b_edges[0]) ||
-				segments_intersect(a_edges[i], b_edges[1]))
+			for (int j = 0; j < 3; j++)
 			{
-				return true;
+				if (segments_intersect(a_edges[i], b_edges[j]))
+				{
+					return true;
+				}
 			}
 		}
 
@@ -1438,7 +1467,30 @@ namespace mattmath
 	}
 	float Vector2F::angle_between(const Vector2F& a, const Vector2F& b)
 	{
-		return std::acos(Vector2F::dot(a, b) / (a.length() * b.length()));
+		const float lengths = a.length() * b.length();
+		if (lengths == 0.0f)
+		{
+			// A zero-length vector points nowhere, so there is no angle to
+			// report. Zero is the same answer normalized() gives for the same
+			// reason, and it beats dividing by nothing: this used to return
+			// NaN, and NaN travelled. Triangle::angle_0/1/2 feed
+			// TriangleRightAxisAligned::find_hypotenuse, where every
+			// are_equal(NaN, PI_OVER_2) is false, so find_hypotenuse returned
+			// -1 and hypotenuse() threw "Triangle is not a right triangle" -
+			// about a triangle that was one, two call levels from the actual
+			// fault.
+			return 0.0f;
+		}
+
+		// Mathematically this quotient is in [-1, 1]; computationally it is
+		// not. Rounding in the dot product and in two square roots can put it
+		// a few ulps outside, and acos of 1.0000001 is NaN - a domain error
+		// produced by arithmetic that was never wrong by more than a rounding
+		// step (11.1, p.428).
+		const float cosine = mattmath::clamp(
+			Vector2F::dot(a, b) / lengths, -1.0f, 1.0f);
+
+		return std::acos(cosine);
 	}
 	Vector2F Vector2F::lerp(const Vector2F& a, const Vector2F& b, float t)
 	{

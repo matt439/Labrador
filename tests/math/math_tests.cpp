@@ -483,6 +483,64 @@ namespace MattMathTests
 			CHECK(area != 0.0f);
 			CHECK(static_cast<int>(area) == 0);
 		}
+		TEST_CASE("triangles overlapping with no vertex inside either are still found")
+		{
+			// The Star of David: two triangles crossing in a hexagon, with
+			// every vertex of each outside the other, so the containment half
+			// of the predicate finds nothing and the answer rests entirely on
+			// edge crossings.
+			//
+			// This is the case the four-pair enumeration looked unable to
+			// handle. It handled it - six crossings cannot all avoid four of
+			// nine pairs - and no configuration defeats it, for the reason
+			// argued in matt_math.cpp. The test is here to pin the behaviour,
+			// not to record a fix.
+			const Triangle up(Point2F(0.0f, 0.0f), Point2F(60.0f, 0.0f),
+				Point2F(30.0f, 52.0f));
+			const Triangle down(Point2F(0.0f, 35.0f), Point2F(60.0f, 35.0f),
+				Point2F(30.0f, -17.0f));
+
+			for (int i = 0; i < 3; i++)
+			{
+				CAPTURE(i);
+				REQUIRE_FALSE(up.contains(down.points[i]));
+				REQUIRE_FALSE(down.contains(up.points[i]));
+			}
+
+			CHECK(triangles_intersect(up, down));
+			CHECK(triangles_intersect(down, up));
+
+			// And the predicate is symmetric on a plain miss.
+			const Triangle far_away(Point2F(500.0f, 500.0f),
+				Point2F(560.0f, 500.0f), Point2F(530.0f, 552.0f));
+			CHECK_FALSE(triangles_intersect(up, far_away));
+			CHECK_FALSE(triangles_intersect(far_away, up));
+		}
+		TEST_CASE("angle_between survives a zero-length vector and its own rounding")
+		{
+			// Zero in, zero out - the contract normalized() already keeps.
+			// This used to be acos(0/0), and the NaN surfaced two call levels
+			// away as "Triangle is not a right triangle", thrown about a
+			// triangle that was one.
+			CHECK(Vector2F::angle_between(Vector2F::ZERO,
+				Vector2F(1.0f, 0.0f)) == 0.0f);
+			CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),
+				Vector2F::ZERO) == 0.0f);
+
+			// Parallel and antiparallel are the two places the quotient lands
+			// exactly on the edge of acos's domain, so rounding can push it
+			// outside and produce a NaN from arithmetic that was never wrong
+			// by more than an ulp.
+			const Vector2F v(3.0f, 4.0f);
+			CHECK(Vector2F::angle_between(v, v) == doctest::Approx(0.0f));
+			CHECK(Vector2F::angle_between(v, v * -1.0f)
+				== doctest::Approx(PI));
+			CHECK_FALSE(std::isnan(Vector2F::angle_between(v, v)));
+
+			// A right angle, which is what the triangle predicates ask for.
+			CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),
+				Vector2F(0.0f, 1.0f)) == doctest::Approx(PI_OVER_2));
+		}
 		TEST_CASE("a Quad must be convex, not merely non-self-intersecting")
 		{
 			// A dart: the square with one corner pushed back through the
