@@ -44,6 +44,51 @@ namespace mattmath
 
 	constexpr float PI = 3.14159265358979323846f;
 	constexpr float PI_OVER_2 = PI / 2.0f;
+
+	// The general comparison tolerance, and the one number here that carries a
+	// warning.
+	//
+	// EPSILON is ABSOLUTE, so it only means anything over a bounded range of
+	// coordinates, and the range it means something over is smaller than the
+	// one this game runs at. One float ulp at 5000 is 4.883e-4, so
+	// `5000.0f + EPSILON == 5000.0f` exactly: out where the levels are, the
+	// engine's general tolerance is a fifth of the smallest representable
+	// step, which is to say it is exact equality wearing a costume. The tests
+	// mostly run within a few hundred units of the origin, where one ulp is
+	// 6.1e-5 and EPSILON is a meaningful ~1.6 of them - so the suite exercises
+	// the range where this constant works and the game runs in the range where
+	// it does not.
+	//
+	// That is not currently a bug, and the reason is worth recording so nobody
+	// "fixes" it by making the number bigger. Every use of EPSILON in the
+	// collision path CLASSIFIES - is this vector degenerate, is this axis
+	// usable - and none of them MEASURE. The one place a tolerance would have
+	// moved geometry was resolve.cpp's guard, and that now refuses rather than
+	// returns a number (see MIN_AXIS_ALIGNMENT). The separation sweep was
+	// re-run translated out to 600,000 units and holds exactly, so the
+	// analytic path needs no tolerance at all at world scale.
+	//
+	// The ordering, which is what Ericson insists a set of tolerances has
+	// (8.4.3, p.377 - a query tolerance must exceed the tolerance geometry was
+	// built with, or a primitive placed on one side is missed by a strict
+	// query). Smallest first:
+	//
+	//   SEGMENT_PARALLEL_EPSILON  1e-6  ericson_math.cpp, anonymous namespace.
+	//                                   A slab-test fudge for a segment nearly
+	//                                   parallel to an axis. Two orders tighter
+	//                                   than EPSILON on purpose; they were
+	//                                   never the same quantity.
+	//   EPSILON                   1e-4  this constant. Classification only.
+	//   MIN_AXIS_ALIGNMENT        0.1   resolve.h. Not a rounding tolerance at
+	//                                   all - a bound on how oblique an axis
+	//                                   may be before separating along it is a
+	//                                   category error. Named here because it
+	//                                   is the one that decides whether a
+	//                                   caller gets an answer.
+	//
+	// Anything added to this set states which of those three jobs it does, and
+	// where it sits in the order. A tolerance that may move geometry has to be
+	// strictly larger than one that may only classify it.
 	constexpr float EPSILON = 0.0001f;
 
 	//float min_value(float a, float b);

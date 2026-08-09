@@ -67,11 +67,6 @@ namespace mattmath
 	// penetration depth. Its commented-out body lived here for a long time and
 	// is gone; the decision is the thing worth keeping.
 
-	bool intersect_moving_AABB_AABB(const mattmath::AABB& a,
-		const mattmath::AABB& b,
-		const mattmath::Vector2F& va,
-		const mattmath::Vector2F& vb,
-		float& tfirst, float& tlast);
 
 	bool test_segment_AABB(const mattmath::Point2F& p0,
 		const mattmath::Point2F p1, const mattmath::AABB& b);
