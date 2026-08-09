@@ -15,12 +15,26 @@
 > - **§2 is wrong about NOTICE.** Its "content that is deliberately not
 >   distributed" sections describe `game/content/`, so they belonged with the
 >   game. Each repository now has a NOTICE covering what it actually ships.
-> - **History does not reach 2022-12-30 on this side.** §5 claims it does.
->   `engine/` did not exist as a directory until the restructure, so
->   `--path engine` starts at 2023-12-19; the older history is under `game/`
->   paths and went to ColourWars, which does reach back to the beginning.
+> - **§5's history claim is wrong twice over, and the commands lose most of
+>   it.** It says `git filter-repo` preserves a history running back to
+>   2022-12-30. The ArtAttack repository's own history began 2023-12-19 — the
+>   2022 origin is in `matt439/ColourWars`, a separate repository whose commits
+>   were never carried forward. Worse, the source lived in `ArtAttack/` until
+>   commit 9bb3d30 on 2026-08-08 renamed it to `game/`, so `--path game` and
+>   `--path engine` both start *after* that rename and silently drop the 95
+>   commits before it. ColourWars was therefore filtered with
+>   `--path ArtAttack --path game`, giving it 130 commits and a working
+>   `git log --follow` across the rename. This repository was not: `engine/`
+>   is genuinely new code extracted from that monolith, and pulling
+>   `ArtAttack/` in would put the whole paint-shooter and 27 MB of its content
+>   into the engine's history for good.
 >
 > §4's two breakages both happened exactly as described.
+>
+> One thing this document could not have known: `matt439/ColourWars` was not a
+> free name. It is where the project started. The game's history was pushed
+> there beside the original, which is on the `original-2022` branch — two
+> disjoint roots, because there is no shared commit to graft onto.
 
 The last item on `docs/review/round-2/PLAN.md`'s §6, and the only one that
 changes anything outside this working tree. It is written out rather than
