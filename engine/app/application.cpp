@@ -137,36 +137,79 @@ namespace artattack
 			throw std::runtime_error("Could not register the window class.");
 		}
 
-		const mattmath::Vector2I size =
+		const mattmath::Vector2I client =
 			this->resolution_manager_->resolution_ivec();
+
+		const DWORD style = static_cast<DWORD>(
+			this->options_.fullscreen ? WS_POPUP : WS_OVERLAPPEDWINDOW);
+		const DWORD ex_style = static_cast<DWORD>(
+			this->options_.fullscreen ? WS_EX_TOPMOST : 0);
+
+		// THE REQUESTED SIZE IS CLIENT AREA. CreateWindowExW takes an OUTER
+		// rect, so handing it the requested resolution straight spends the
+		// caption and the borders out of the game's own pixels: a windowed
+		// 1280x720 came out as roughly 1264x681 to draw into, at every preset,
+		// and nothing said so. AdjustWindowRectEx is the only way to ask what
+		// frame this style costs, and it answers zero for the WS_POPUP branch,
+		// which is why one call covers both.
+		const mattmath::Vector2I outer =
+			outer_size_for_client(client, style, ex_style);
 
 		// The Application pointer rides in as the create parameter and is stashed
 		// in the window's user data by WM_CREATE, so window_proc can find it
 		// without a global.
-		if (this->options_.fullscreen)
-		{
-			this->window_ = CreateWindowExW(WS_EX_TOPMOST,
-				this->options_.window_class_name.c_str(),
-				this->options_.window_title.c_str(), WS_POPUP,
-				CW_USEDEFAULT, CW_USEDEFAULT, size.x, size.y,
-				nullptr, nullptr, instance, this);
-		}
-		else
-		{
-			this->window_ = CreateWindowExW(0,
-				this->options_.window_class_name.c_str(),
-				this->options_.window_title.c_str(), WS_OVERLAPPEDWINDOW,
-				CW_USEDEFAULT, CW_USEDEFAULT, size.x, size.y,
-				nullptr, nullptr, instance, this);
-		}
+		this->window_ = CreateWindowExW(ex_style,
+			this->options_.window_class_name.c_str(),
+			this->options_.window_title.c_str(), style,
+			CW_USEDEFAULT, CW_USEDEFAULT, outer.x, outer.y,
+			nullptr, nullptr, instance, this);
 
 		if (this->window_ == nullptr)
 		{
 			throw std::runtime_error("Could not create the window.");
 		}
 
+		// AND THE WM_SIZE THIS PRODUCES IS NOW WORTH SOMETHING. It arrives
+		// before create_device, so the renderer half of on_window_size_changed
+		// still does nothing - DeviceResources::WindowSizeChanged returns early
+		// with no window set. The resolution-manager half does not, so by the
+		// time initialize() reads resolution_ivec() for create_device, that is
+		// the client size the window really got. It matters most for the
+		// full-screen branch, where SW_SHOWMAXIMIZED decides the size and
+		// nothing here knows it: the swap chain used to be created at the saved
+		// preset and then stretched non-uniformly to the monitor
+		// (DXGI_SCALING_STRETCH), which is the one form of this bug the shipped
+		// sample hits.
 		ShowWindow(this->window_,
 			this->options_.fullscreen ? SW_SHOWMAXIMIZED : show_command);
+	}
+
+	mattmath::Vector2I Application::outer_size_for_client(
+		const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style)
+	{
+		RECT rect = { 0, 0, static_cast<LONG>(client_size.x),
+			static_cast<LONG>(client_size.y) };
+
+		// FALSE: no menu bar. This engine's window never has one, and a menu
+		// would change the answer by its height.
+		if (AdjustWindowRectEx(&rect, style, FALSE, ex_style) == 0)
+		{
+			// Nothing to fall back to but the request. A style this call cannot
+			// account for costs the game its frame's worth of pixels, which is
+			// where it started.
+			return client_size;
+		}
+
+		return mattmath::Vector2I(static_cast<int>(rect.right - rect.left),
+			static_cast<int>(rect.bottom - rect.top));
+	}
+
+	mattmath::Vector2I Application::outer_size_for_client(
+		const mattmath::Vector2I& client_size) const
+	{
+		return outer_size_for_client(client_size,
+			static_cast<DWORD>(GetWindowLongPtrW(this->window_, GWL_STYLE)),
+			static_cast<DWORD>(GetWindowLongPtrW(this->window_, GWL_EXSTYLE)));
 	}
 
 	// Services outlive the D3D device. They are created exactly once, here, and
@@ -237,9 +280,14 @@ namespace artattack
 		this->options_.resolution = resolution;
 		this->resolution_manager_->set_resolution(resolution);
 
-		const mattmath::Vector2I size =
-			this->resolution_manager_->resolution_ivec();
-		SetWindowPos(this->window_, HWND_TOP, 0, 0, size.x, size.y,
+		// Adjusted for whatever frame the window is currently wearing, so the
+		// game gets the client area it asked for rather than that minus a
+		// caption. The WM_SIZE this produces re-points the resolution manager at
+		// what the window actually became, which is not always what was asked
+		// for - a size past the monitor's comes back clamped.
+		const mattmath::Vector2I outer = this->outer_size_for_client(
+			this->resolution_manager_->resolution_ivec());
+		SetWindowPos(this->window_, HWND_TOP, 0, 0, outer.x, outer.y,
 			SWP_NOMOVE | SWP_NOZORDER);
 	}
 
@@ -260,10 +308,22 @@ namespace artattack
 			SetWindowLongPtr(this->window_, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 			SetWindowLongPtr(this->window_, GWL_EXSTYLE, 0);
 
-			const mattmath::Vector2I size =
-				this->resolution_manager_->resolution_ivec();
+			// BACK TO THE SIZE THE GAME ASKED FOR, WHICH IS NO LONGER THE SIZE
+			// THE MANAGER HOLDS. resolution_ivec() used to be a synonym for the
+			// requested preset and is now the live window, so while full screen
+			// it is the monitor - reading it here would keep the window at
+			// monitor size with a caption on it. options_.resolution is the last
+			// thing a game actually requested, so the manager is re-pointed at
+			// it, and the WM_SIZE below then corrects it to whatever client area
+			// that yields. The style is set before this runs, so the frame
+			// arithmetic below reads the ordinary window's frame and not
+			// WS_POPUP's nothing.
+			this->resolution_manager_->set_resolution(this->options_.resolution);
+			const mattmath::Vector2I outer = this->outer_size_for_client(
+				this->resolution_manager_->resolution_ivec());
+
 			ShowWindow(this->window_, SW_SHOWNORMAL);
-			SetWindowPos(this->window_, HWND_TOP, 0, 0, size.x, size.y,
+			SetWindowPos(this->window_, HWND_TOP, 0, 0, outer.x, outer.y,
 				SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 		}
 	}
@@ -368,6 +428,27 @@ namespace artattack
 
 	void Application::on_window_size_changed(int width, int height)
 	{
+		// THE LAYOUT SIZE FIRST, AND THIS LINE IS THE WHOLE FIX. Every way a
+		// window can change size arrives here - set_resolution, set_fullscreen,
+		// and a user dragging an edge, which no game asked for at all - and
+		// until now the only thing told about it was the renderer. The back
+		// buffer became 2560x1440 while ResolutionManager went on reporting the
+		// last requested preset, so ViewportManager laid out every viewport and
+		// divider for 1280x720 and the game drew into the top-left corner of its
+		// own window with the rest cleared black.
+		//
+		// `width` and `height` are CLIENT pixels: WM_SIZE's lParam is the client
+		// area, and the WM_EXITSIZEMOVE path uses GetClientRect. So no frame
+		// arithmetic belongs here - that is create_window's problem, on the way
+		// in.
+		//
+		// Exactly, not through the coercing overload. See
+		// ResolutionManager::set_resolution_exactly: the enum-converting path
+		// answers 720p for any size outside its four presets, which would make
+		// this line a no-op that looks like a fix.
+		this->resolution_manager_->set_resolution_exactly(
+			mattmath::Vector2I(width, height));
+
 		std::ignore = this->renderer_->window_size_changed(width, height);
 	}
 

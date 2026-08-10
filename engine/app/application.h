@@ -103,12 +103,29 @@ namespace artattack
 		// a game asking to exit does not need to know it is on Win32.
 		void quit() const;
 
-		// Resizes the window and re-points the resolution manager at the new size.
-		// The game decides which resolution and when - it is reading its own
-		// options menu - and the engine owns what that means to a window.
+		// THE LAYOUT SIZE FOLLOWS THE WINDOW. However the window comes to change
+		// size - either call below, or a user dragging an edge, which no game
+		// asked for at all - ResolutionManager is re-pointed at the new CLIENT
+		// size before the renderer resizes its back buffer. All three arrive as
+		// WM_SIZE, so on_window_size_changed is the single place that holds the
+		// invariant, and it cannot be got at from a game.
+		//
+		// It used to hold for neither. set_fullscreen restyled to WS_POPUP and
+		// showed maximized while the resolution manager reported the last
+		// requested preset, so ViewportManager laid out every viewport and
+		// divider for 1280x720 inside a 1440p back buffer, and the game rendered
+		// into the top-left corner of its own window with the rest cleared black.
+		// A dragged window edge was the same door with no guard on it at all.
+
+		// Resizes the window so the game gets `resolution` pixels of CLIENT area,
+		// and re-points the resolution manager at what it actually got. The game
+		// decides which resolution and when - it is reading its own options menu
+		// - and the engine owns what that means to a window, frame included.
 		void set_resolution(ScreenResolution resolution);
 
 		// Switches between a borderless full-screen window and an ordinary one.
+		// Going full screen adopts the monitor's size; coming back adopts the
+		// resolution last requested, not the monitor size just vacated.
 		void set_fullscreen(bool fullscreen);
 
 		// Tells the clock that the time just spent was not gameplay.
@@ -203,6 +220,18 @@ namespace artattack
 
 		void create_window(HINSTANCE instance, int show_command);
 		void create_services();
+
+		// The outer window size that leaves `client_size` pixels to draw into
+		// under `style`/`ex_style`. Every Win32 call that sizes a window takes
+		// the outer rect, and every resolution this engine is asked for is client
+		// area, so this conversion sits between the two - without it a windowed
+		// 1280x720 delivered about 1264x681, silently, at every preset.
+		static mattmath::Vector2I outer_size_for_client(
+			const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style);
+
+		// The same, for the style the window is wearing right now.
+		mattmath::Vector2I outer_size_for_client(
+			const mattmath::Vector2I& client_size) const;
 
 		// DeviceNotify
 		void on_device_lost() override;

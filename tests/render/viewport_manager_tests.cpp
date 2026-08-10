@@ -156,3 +156,37 @@ TEST_CASE("the divider count matches the layout")
 	manager.set_layout(ScreenLayout::four_player);
 	CHECK(manager.viewport_dividers().size() == 2);
 }
+
+TEST_CASE("the layout follows a window size that is not a preset")
+{
+	// THE CONSUMER HALF OF THE RESOLUTION FIX, and the reason that fix was
+	// filed as high. This class derives every viewport and divider from
+	// resolution_vec(), and it has no device pointer to read a real back
+	// buffer from instead - deliberately, so that it can be constructed in a
+	// test like this one. So the whole of its correctness rests on the
+	// resolution manager being told when the window changed size.
+	//
+	// Before that happened, a full-screen toggle to 1440p left this laying
+	// every pane out for 1280x720 in the top-left corner of a 2560x1440 back
+	// buffer, with the rest cleared black. 1600x900 is deliberately not one of
+	// the four presets: routed through the coercing setter this test would see
+	// 1280x720 and pass for the wrong reason.
+	ResolutionManager resolution = default_resolution();
+	ViewportManager manager(&resolution);
+	manager.set_layout(ScreenLayout::two_player);
+
+	resolution.set_resolution_exactly(mattmath::Vector2I(1600, 900));
+
+	CHECK(same(manager.fullscreen_viewport(), 0.0f, 0.0f, 1600.0f, 900.0f));
+
+	// Top and bottom halves of the new size, not of the old one.
+	CHECK(same(manager.player_viewport(0), 0.0f, 0.0f, 1600.0f, 450.0f));
+	CHECK(same(manager.player_viewport(1), 0.0f, 450.0f, 1600.0f, 450.0f));
+
+	// And the divider is still centred on the screen it is actually dividing.
+	const std::vector<mattmath::RectangleF> dividers =
+		manager.viewport_dividers();
+	REQUIRE(dividers.size() == 1);
+	CHECK(dividers[0].width == doctest::Approx(1600.0f));
+	CHECK(dividers[0].center().y == doctest::Approx(450.0f));
+}

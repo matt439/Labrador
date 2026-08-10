@@ -1,20 +1,27 @@
 #include "engine/render/resolution_manager.h"
 
+#include <stdexcept>
 #include <string>
 
 using namespace mattmath;
 
 namespace artattack
 {
+    ResolutionManager::ResolutionManager()
+    {
+        // Through the setter, so the size cannot disagree with the preset it is
+        // supposed to be the size of.
+        this->set_resolution(this->resolution_);
+    }
+
     Vector2I ResolutionManager::resolution_ivec() const
     {
-    	return this->convert_resolution_to_ivec(this->resolution_);
+    	return this->size_;
     }
 
     Vector2F ResolutionManager::resolution_vec() const
     {
-        Vector2F result = this->convert_resolution_to_vec(this->resolution_);
-        return result;
+        return Vector2F(this->size_);
     }
 
     std::string ResolutionManager::resolution_string() const
@@ -29,22 +36,58 @@ namespace artattack
 
     void ResolutionManager::set_resolution(ScreenResolution resolution)
     {
+        // Both members, from the one argument. Every other overload lands here,
+        // so there is one place that decides what a preset means.
     	this->resolution_ = resolution;
+        this->size_ = this->convert_resolution_to_ivec(resolution);
     }
 
     void ResolutionManager::set_resolution(const std::string& resolution)
     {
-    	this->resolution_ = this->convert_string_to_resolution(resolution);
+    	this->set_resolution(this->convert_string_to_resolution(resolution));
     }
 
     void ResolutionManager::set_resolution(const Vector2F& resolution)
     {
-        this->resolution_ = this->convert_vec_to_resolution(resolution);
+        this->set_resolution(this->convert_vec_to_resolution(resolution));
     }
 
     void ResolutionManager::set_resolution(const Vector2I& resolution)
     {
-        this->resolution_ = this->convert_ivec_to_resolution(resolution);
+        // Still coercing, deliberately unchanged: this overload has always meant
+        // "pick the preset nearest this", it answers 1280x720 for anything it
+        // does not recognise, and a client may be relying on exactly that. The
+        // non-coercing path is set_resolution_exactly, and the reason it is a
+        // separate function rather than a change of heart here is that these two
+        // are different questions with the same arguments.
+        this->set_resolution(this->convert_ivec_to_resolution(resolution));
+    }
+
+    void ResolutionManager::set_resolution_exactly(const Vector2I& size)
+    {
+        if (size.x <= 0 || size.y <= 0)
+        {
+            throw std::invalid_argument("ResolutionManager::"
+                "set_resolution_exactly - a resolution of " +
+                std::to_string(size.x) + "x" + std::to_string(size.y) +
+                " has no positive extent, and everything above this divides by "
+                "it.");
+        }
+
+        this->size_ = size;
+
+        // The label follows only if this size really is a preset, and the round
+        // trip is what makes that test exact rather than approximate:
+        // convert_ivec_to_resolution answers s_1280_720 for everything it does
+        // not recognise, so converting the answer back and comparing is the
+        // difference between "this size IS 720p" and "this size has just been
+        // replaced by 720p". A size with no name keeps the last named one.
+        const ScreenResolution candidate =
+            this->convert_ivec_to_resolution(size);
+        if (this->convert_resolution_to_ivec(candidate) == size)
+        {
+            this->resolution_ = candidate;
+        }
     }
 
     Vector2I ResolutionManager::convert_resolution_to_ivec(
