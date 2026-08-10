@@ -132,6 +132,22 @@ namespace artattack
 		//
 		// Borrowed, every one: the Application owns them and outlives the states
 		// it runs.
+		//
+		// THAT SENTENCE IS TRUE BECAUSE ~Application DRAINS THE STACK FIRST, and
+		// it was false by construction until it did. The states live in the
+		// StateContext base and every service below is a member, so member
+		// destruction runs first and each of these was already gone by the time
+		// the states holding them were destroyed. ~Application calls
+		// StateContext::clear() as its first statement; that is the whole of
+		// what makes a state safe to release a service in its destructor, which
+		// is the teardown pattern state_context.h documents.
+		//
+		// The tidier arrangement is for StateContext to be a member declared
+		// last rather than a base - then the ordering is designed rather than
+		// repaired. It is deferred because it removes push/pop/transition_to
+		// /depth from every Application*, and PHILOSOPHY batches source breaks.
+		// If it is ever done, ~StateContext's `virtual` goes with it: it is
+		// virtual only because it is inherited from.
 		Renderer* renderer() const;
 		RenderResources* render_resources() const;
 		AudioResources* audio_resources() const;

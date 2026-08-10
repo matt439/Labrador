@@ -51,6 +51,20 @@ namespace artattack
 
 	Application::~Application()
 	{
+		// FIRST, BEFORE ANYTHING BELOW IS TOUCHED AND BEFORE ANY MEMBER IS
+		// DESTROYED. The live states are frames_ in the StateContext base, and
+		// [class.dtor]/8 destroys members before bases - so without this line
+		// every service declared in the header has already gone by the time
+		// ~StateContext destroys the states that point at them, on every exit
+		// path, since run() returns the instant WM_QUIT arrives with the stack
+		// still full. Reordering the base list cannot fix it. See
+		// StateContext::clear.
+		//
+		// CoUninitialize below is the same hazard in the destructor's own body
+		// rather than in its member list, and this line is what puts the states
+		// in front of it too.
+		this->clear();
+
 		if (this->audio_engine_)
 		{
 			this->audio_engine_->Suspend();

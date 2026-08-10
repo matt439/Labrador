@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -357,6 +358,99 @@ TEST_CASE("popping an empty stack throws where it was written")
 {
 	StateContext context;
 	CHECK_THROWS_AS(context.pop(), std::logic_error);
+}
+
+TEST_CASE("clear destroys the live states from the top down")
+{
+	std::vector<std::string> log;
+	StateContext context;
+
+	context.transition_to(std::make_unique<RecordingState>("menu", &log));
+	context.push(std::make_unique<RecordingState>("match", &log));
+	context.push(std::make_unique<RecordingState>("pause", &log));
+	REQUIRE(context.depth() == 3);
+
+	log.clear();
+	context.clear();
+
+	// THE ORDER IS THE WHOLE POINT, and it is the opposite of what
+	// frames_.clear() does. The stack is ordered by dependency - what a screen
+	// pushes above itself may borrow what that screen owns - so the bottom
+	// state has to be the last one standing. A vector destroys front to back,
+	// which would have destroyed it first.
+	CHECK(log == std::vector<std::string>{
+		"pause:dtor", "match:dtor", "menu:dtor"});
+	CHECK(context.depth() == 0);
+}
+
+TEST_CASE("clear fires no result callbacks")
+{
+	std::vector<std::string> log;
+	StateContext context;
+
+	context.transition_to(std::make_unique<RecordingState>("level", &log));
+
+	std::vector<Answer> answers;
+	context.push<Answer>(std::make_unique<RecordingState>("menu", &log),
+		[&](const Answer& answer) { answers.push_back(answer); });
+
+	context.clear();
+
+	// A callback is the answer to a pop, and a shutdown is not an answer.
+	// Firing them here would re-enter push() from inside teardown - the game
+	// this engine was written for closes its match frame by reopening the menu,
+	// which pushes - and rebuild the stack being drained.
+	CHECK(answers.empty());
+	CHECK(context.depth() == 0);
+}
+
+TEST_CASE("clear on an empty context is a no-op, twice over")
+{
+	StateContext context;
+
+	context.clear();
+	CHECK(context.depth() == 0);
+	context.clear();
+	CHECK(context.depth() == 0);
+}
+
+TEST_CASE("clear drops a queued state that never became live")
+{
+	// The one reachable way to have something queued when clear() runs: a
+	// drain that did not finish. An init() that throws carries the exception
+	// out through update() and leaves whatever was issued behind it waiting, and
+	// a client unwinding out of main from there destroys the Application, which
+	// calls this.
+	std::vector<std::string> log;
+	StateContext context;
+
+	auto level = std::make_unique<RecordingState>("level", &log);
+	RecordingState* level_raw = level.get();
+	context.transition_to(std::move(level));
+
+	level_raw->on_update([&]()
+		{
+			auto bad = std::make_unique<RecordingState>("bad", &log);
+			bad->on_init([]() { throw std::runtime_error("init failed"); });
+			context.push(std::move(bad));
+			context.push(std::make_unique<RecordingState>("never", &log));
+		});
+
+	log.clear();
+	CHECK_THROWS_AS(context.update(0.0f), std::runtime_error);
+
+	// "bad" reached the stack and ran a failing init. "never" was queued behind
+	// it and was never entered.
+	CHECK(std::find(log.begin(), log.end(), "never:init") == log.end());
+
+	context.clear();
+
+	// Everything constructed is destroyed, the one that never became live
+	// included - and it goes first, because it is the newest thing here and the
+	// likeliest to borrow from a state still on the stack.
+	CHECK(ran_before(log, "never:dtor", "bad:dtor"));
+	CHECK(ran_before(log, "bad:dtor", "level:dtor"));
+	CHECK(context.depth() == 0);
 }
 
 TEST_CASE("the shape the game is built out of")

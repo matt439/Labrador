@@ -135,6 +135,43 @@ namespace artattack
 		// How many states are stacked. The shell's own is 1 at a title screen
 		// and 3 with a pause menu over a match over a menu.
 		int depth() const;
+
+		// Destroys every live state and drops anything still queued. After it
+		// this context is what a freshly constructed one is.
+		//
+		// IT EXISTS BECAUSE NOTHING ELSE COULD DRAIN THE STACK IN TIME, and the
+		// class comment above is what made that necessary: it advertises
+		// destructor teardown as the reason the stack exists - "the layout is
+		// released by ~GameLevel" - and on the only exit path a game has, those
+		// destructors ran after the things they release. Application derives
+		// from this class and holds every service as a member, so [class.dtor]/8
+		// destroys the services BEFORE ~StateContext destroys the states that
+		// borrow them. Reordering the base list cannot help; members always go
+		// first. And run() returns the instant WM_QUIT arrives, with the stack
+		// still full, on every exit there is. ~Application calls this as its
+		// first statement, while the services are all still alive.
+		//
+		// IT DOES NOT DEFER. The other three operations queue, because each is
+		// issued from inside the update() of a state it may destroy. This one is
+		// issued by a destructor, from outside every state's call frame, so
+		// queueing it would mean a drain that never comes. The consequence is
+		// the contract: do not call it from inside a state's own update() or
+		// init(), where it would destroy the state whose call frame is running.
+		//
+		// NO RESULT CALLBACK FIRES, deliberately. push(state, on_closed) reads
+		// as though it covered shutdown and it does not: a callback is the
+		// answer to a pop, a shutdown is not an answer, and firing them here
+		// would re-enter push() from inside teardown and rebuild the stack it is
+		// draining. ColourWars is the worked example - its match frame's
+		// on_result reopens the menu, which pushes.
+		//
+		// noexcept, and T6 is the reason rather than an accident: "not a licence
+		// for throwing on the way out - teardown stays silent". Its one caller
+		// is a destructor. What this newly does is let state destructors run for
+		// real, where before they ran against freed services, so a state that
+		// throws from one was already unwinding through a noexcept destructor
+		// and still is.
+		void clear() noexcept;
 	private:
 		struct Frame
 		{

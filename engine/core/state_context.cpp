@@ -82,6 +82,38 @@ namespace artattack
 		this->pop_frame(std::any());
 	}
 
+	void StateContext::clear() noexcept
+	{
+		// QUEUED STATES FIRST. A pending push holds a state the client has
+		// already constructed and this context has never entered - no
+		// set_context, no init - and it is the most recently built thing here,
+		// so it is the one most likely to borrow from a state still on the
+		// stack. It dies before them, not with them.
+		//
+		// Not defensive padding: the queue is empty whenever a public call has
+		// returned, so the one way to arrive here with something in it is a
+		// drain that did not finish - an init() or an on_result that threw,
+		// carrying the exception out through update() and leaving whatever was
+		// issued behind it still waiting. A client unwinding out of main from
+		// there destroys the Application, which lands exactly here. deferring_
+		// goes back with it, so what is left is a context in its initial state
+		// rather than one stuck mid-drain.
+		this->pending_.clear();
+		this->deferring_ = false;
+
+		// TOP DOWN, AND EXPLICITLY NOT frames_.clear(), which destroys front to
+		// back - the BOTTOM state first. The stack is ordered by dependency:
+		// what a screen pushes above itself may borrow what it owns, and
+		// ColourWars is exactly that shape, with every menu page above the
+		// bottom state borrowing the menu context that state holds. Draining
+		// bottom-first would trade one dangling reference for another and look
+		// like a fix.
+		while (!this->frames_.empty())
+		{
+			this->frames_.pop_back();
+		}
+	}
+
 	int StateContext::depth() const
 	{
 		// The applied stack. Operations queued during this update are not in it
