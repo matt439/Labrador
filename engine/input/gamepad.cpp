@@ -22,13 +22,22 @@ namespace artattack
 	bool pressed(const GamepadState& now, const GamepadState& before,
 		GamepadButton button)
 	{
-		return now.is_down(button) && !before.is_down(button);
+		// The slot on both frames first, then the edge across them. Without the
+		// first half the frame a pad appears on is a press for every button it
+		// arrives holding - see gamepad.h for why that is a statement about
+		// occupancy and not about identity.
+		return now.connected && before.connected &&
+			now.is_down(button) && !before.is_down(button);
 	}
 
 	bool released(const GamepadState& now, const GamepadState& before,
 		GamepadButton button)
 	{
-		return !now.is_down(button) && before.is_down(button);
+		// Symmetrically: a pad that vanishes with a button down did not release
+		// it, and a client that wants to hear about that asks for the
+		// disconnect. gamepad.h spells the idiom.
+		return now.connected && before.connected &&
+			!now.is_down(button) && before.is_down(button);
 	}
 
 	bool trigger_held(const GamepadState& now, GamepadTrigger trigger,
@@ -40,14 +49,16 @@ namespace artattack
 	bool trigger_pressed(const GamepadState& now, const GamepadState& before,
 		GamepadTrigger trigger, float threshold)
 	{
-		return now.trigger(trigger) > threshold &&
+		return now.connected && before.connected &&
+			now.trigger(trigger) > threshold &&
 			before.trigger(trigger) <= threshold;
 	}
 
 	bool trigger_released(const GamepadState& now, const GamepadState& before,
 		GamepadTrigger trigger, float threshold)
 	{
-		return now.trigger(trigger) <= threshold &&
+		return now.connected && before.connected &&
+			now.trigger(trigger) <= threshold &&
 			before.trigger(trigger) > threshold;
 	}
 

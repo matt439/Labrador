@@ -81,6 +81,47 @@ namespace artattack
 	// are forwarders to them. That is what makes the whole of the edge logic
 	// testable without a device: a test writes the two frames by hand rather
 	// than needing a controller to be plugged into the machine running it.
+	//
+	// AN EDGE REQUIRES THE SLOT TO HAVE BEEN OCCUPIED ON BOTH FRAMES. All four
+	// of the edge functions below - pressed, released, trigger_pressed,
+	// trigger_released - answer false unless `now.connected` and
+	// `before.connected` are both true, and that conjunction is part of the
+	// contract rather than an implementation detail.
+	//
+	// It did not used to be, and the absence was reachable three ways. The
+	// process's first poll compares against a default-constructed previous, so
+	// a pad already holding A when the game starts pressed it. A replug reads
+	// as absent and then present again, so it pressed everything it came back
+	// holding. And a reader that reports absence for any other reason - see
+	// GamepadReader::suspend - hands the same phantom edge to whatever
+	// resumes. None of it was a client's to guard: the obvious
+	// `if (pads.connected(slot))` is TRUE on the offending frame, which is
+	// precisely the frame the slot became occupied, so the guard a careful
+	// caller writes does not work and the correct one - gating every press site
+	// on !just_connected(slot) - has to be remembered at every site.
+	//
+	// IT SAYS OCCUPIED, NOT "THE SAME DEVICE". connected && connected does not
+	// establish identity and cannot: gamepads.h states that this engine
+	// deliberately does not track it, and a backend is free to drop one pad and
+	// add another inside a single scan, so a controller leaving a slot and a
+	// different one landing in it between two polls is a cross-device edge with
+	// no absent frame in between for this rule to catch. That case belongs to
+	// the caller, through just_connected/just_disconnected, and claiming
+	// otherwise here would be the same kind of promise this rule exists to stop
+	// making.
+	//
+	// THE DISCONNECT SIDE LOSES NOTHING, but it does change spelling. A pad
+	// that vanishes with a button down no longer produces released() on that
+	// frame - held() is false there too - so a client keying "stop firing" off
+	// a release asks for the disconnect instead:
+	//
+	//     just_disconnected(slot) && previous_state(slot).is_down(button)
+	//
+	// One consequence for a hand-written state: a test double or a replay
+	// source that fills a GamepadState and forgets `connected = true` now gets
+	// silence from every edge rather than working by accident. That is the
+	// useful direction to fail in, and it is the reason the field is documented
+	// as neutral-not-stale above.
 	bool pressed(const GamepadState& now, const GamepadState& before,
 		GamepadButton button);
 	bool released(const GamepadState& now, const GamepadState& before,

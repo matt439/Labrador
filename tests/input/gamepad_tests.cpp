@@ -102,6 +102,79 @@ namespace GamepadTests
 			CHECK_FALSE(pressed(down, down, GamepadButton::a));
 		}
 
+		TEST_CASE("the frame a pad appears on is not a press")
+		{
+			// The absence is the whole point: `before` is what a slot reads as
+			// on the process's first poll, on the frame after a replug, and on
+			// the frame after any other absence the reader reports. A pad that
+			// arrives holding A did not press A here.
+			const GamepadState absent;
+			const GamepadState arrives_holding_a = pad({ GamepadButton::a });
+
+			CHECK_FALSE(pressed(arrives_holding_a, absent, GamepadButton::a));
+
+			// And the guard a careful client would reach for does not help,
+			// which is why this belongs in the engine: the slot IS connected on
+			// the offending frame.
+			CHECK(arrives_holding_a.connected);
+			CHECK(just_connected(arrives_holding_a, absent));
+		}
+
+		TEST_CASE("a pad that vanishes holding a button did not release it")
+		{
+			const GamepadState absent;
+			const GamepadState down = pad({ GamepadButton::start });
+
+			CHECK_FALSE(released(absent, down, GamepadButton::start));
+
+			// The information is not lost, only spelt differently - this is the
+			// idiom gamepad.h names for a client that keyed "stop" off the
+			// release.
+			CHECK(just_disconnected(absent, down));
+			CHECK(down.is_down(GamepadButton::start));
+		}
+
+		TEST_CASE("an edge between two occupied frames is unaffected")
+		{
+			// The regression guard for the conjunction above: it must gate on
+			// presence and nothing else.
+			const GamepadState up = pad({});
+			const GamepadState down = pad({ GamepadButton::a });
+
+			CHECK(pressed(down, up, GamepadButton::a));
+			CHECK(released(up, down, GamepadButton::a));
+		}
+
+		TEST_CASE("occupancy is not identity, and the rule does not claim to be")
+		{
+			// Two connected frames are two connected frames. gamepads.h says
+			// this engine does not track device identity, so a pad leaving a
+			// slot and a different one landing in it between polls is still an
+			// edge here - there is no absent frame for the rule to catch, and
+			// pretending otherwise is the promise it exists to stop making.
+			const GamepadState one_pad = pad({});
+			const GamepadState another_pad = pad({ GamepadButton::x });
+
+			CHECK(pressed(another_pad, one_pad, GamepadButton::x));
+			CHECK_FALSE(just_connected(another_pad, one_pad));
+		}
+
+		TEST_CASE("a trigger edge needs the slot occupied on both frames too")
+		{
+			const GamepadState absent;
+			const GamepadState pulled = pad_with_triggers(1.0f, 0.0f);
+
+			CHECK_FALSE(trigger_pressed(pulled, absent,
+				GamepadTrigger::left, 0.6f));
+			CHECK_FALSE(trigger_released(absent, pulled,
+				GamepadTrigger::left, 0.6f));
+
+			// Still an edge when the slot was occupied for both.
+			const GamepadState off = pad_with_triggers(0.0f, 0.0f);
+			CHECK(trigger_pressed(pulled, off, GamepadTrigger::left, 0.6f));
+			CHECK(trigger_released(off, pulled, GamepadTrigger::left, 0.6f));
+		}
+
 		TEST_CASE("a trigger edge is measured against the caller's threshold")
 		{
 			const GamepadState off = pad_with_triggers(0.0f, 0.0f);

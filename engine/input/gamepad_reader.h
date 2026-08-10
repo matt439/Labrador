@@ -35,6 +35,22 @@ namespace artattack
 		// answers disconnected for every slot, so a button held down while the
 		// game is in the background is not waiting to be delivered as input the
 		// moment it comes back.
+		//
+		// THAT LAST CLAUSE IS NOT THIS CLASS'S TO KEEP, and it should not be
+		// read as the thing that makes it true. Both calls forward straight to
+		// the backend with no flag of their own, the backend implements
+		// suspension differently per pad API, and which pad API this build
+		// compiles is not chosen here: the vcpkg DirectXTK target carries
+		// USING_XINPUT in its interface definitions, which pre-empts the
+		// selection inside GamePad.h before it runs. Whether XInput honours a
+		// suspend on a current Windows is the backend's affair and is not
+		// verified in this tree.
+		//
+		// What is guaranteed is narrower and lives in gamepad.h: an edge
+		// requires the slot to have been occupied on both frames, so every
+		// absence this reader DOES report - a replug, the first poll, a
+		// suspension that works - is suppressed rather than delivered as a
+		// press. That holds whichever backend is behind this seam.
 		void suspend();
 		void resume();
 
