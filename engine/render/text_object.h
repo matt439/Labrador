@@ -3,6 +3,8 @@
 #include "engine/render/draw_object.h"
 #include "engine/render/colour.h"
 
+#include <string>
+
 namespace artattack
 {
 	// A string drawn in one font.

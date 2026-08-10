@@ -6,6 +6,9 @@
 #include "engine/render/colour.h"
 #include "engine/render/camera.h"
 
+#include <string>
+#include <vector>
+
 namespace artattack
 {
 	// A named, hideable thing in a user interface.

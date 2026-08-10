@@ -1,5 +1,7 @@
 #include "engine/render/visual.h"
 
+#include <string>
+
 using namespace mattmath;
 
 namespace artattack

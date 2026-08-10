@@ -3,6 +3,8 @@
 #include "engine/render/text.h"
 #include "engine/render/colour.h"
 
+#include <string>
+
 namespace artattack
 {
 	class TextDropShadow : public Text

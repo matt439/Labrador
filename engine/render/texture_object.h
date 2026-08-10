@@ -4,6 +4,8 @@
 #include "engine/render/colour.h"
 #include "engine/render/camera.h"
 
+#include <string>
+
 namespace artattack
 {
 	// One still frame out of a sprite sheet.

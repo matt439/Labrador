@@ -10,7 +10,9 @@
 #include <DDSTextureLoader.h>
 #include <wrl/client.h>
 #include <cstdio>
+#include <memory>
 #include <stdexcept>
+#include <string>
 
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;

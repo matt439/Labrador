@@ -4,8 +4,10 @@
 // device belong to a platform, and this is the file that owns both.
 #include "engine/render/d3d11/backend.h"
 #include <DirectXMath.h>
+#include <memory>
 #include <objbase.h>
 #include <stdexcept>
+#include <string>
 #include <tuple>
 
 using namespace DirectX;

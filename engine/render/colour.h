@@ -48,7 +48,6 @@ namespace artattack
 		explicit Colour(const std::string& hex);
 
 		Colour& operator=(const Colour&) = default;
-		Colour& operator=(const mattmath::Vector4F& vector);
 
 		bool operator==(const Colour& other) const;
 		bool operator!=(const Colour& other) const;

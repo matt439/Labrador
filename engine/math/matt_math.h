@@ -10,32 +10,10 @@
 
 #include "engine/math/shape_type.h"
 #include <array>
-#include <cmath>
-#include <memory>
-#include <string>
-#include <vector>
+#include <span>
 
 namespace mattmath
 {
-	enum class Direction
-	{
-		none,
-		up,
-		down,
-		left,
-		right,
-		up_left,
-		up_right,
-		down_left,
-		down_right,
-	};
-
-	//enum class vector_type
-	//{
-	//	row,
-	//	column,
-	//};
-	
 	struct Vector2I;
 	struct Vector2F;
 	typedef Vector2F Point2F;
@@ -121,13 +99,15 @@ namespace mattmath
 	// strictly larger than one that may only classify it.
 	constexpr float EPSILON = 0.0001f;
 
-	//float min_value(float a, float b);
-	//float max_value(float a, float b);
-
+	// Takes the min branch first, so with a floor above the ceiling the
+	// ceiling is never consulted and the floor wins. Callers wanting the other
+	// answer for an inverted range have to say so themselves - camera_tools.cpp
+	// is the one place that needed to, and it writes the four lines out.
+	//
+	// clamp_ref, the in-place form of each, is gone: it had no caller in the
+	// tree and could not have acquired a useful one, for the reason above.
 	float clamp(float value, float min, float max);
-	void clamp_ref(float& value, float min, float max);
 	int clamp(int value, int min, int max);
-	void clamp_ref(int& value, int min, int max);
 
 	bool are_equal(float a, float b, float epsilon = EPSILON);
 	bool are_equal(const mattmath::Vector2F& a, const mattmath::Vector2F& b,
@@ -222,11 +202,6 @@ namespace mattmath
 		// answered the pure virtual with an empty vector because a circle has
 		// no edges - declares none at all.
 	};
-
-	bool shapes_intersect(const Shape* a, const Shape* b);
-	bool shapes_intersect(const Shape& a, const Shape& b);
-	bool shapes_AABB_intersect(const Shape* a, const Shape* b);
-	bool shapes_AABB_intersect(const Shape& a, const Shape& b);
 
 	bool rectangles_intersect(const mattmath::RectangleF& a,
 		const mattmath::RectangleF& b);
@@ -330,7 +305,6 @@ namespace mattmath
 							const mattmath::Vector2F& size);
 		RectangleF(const mattmath::Vector2F& center, float horiz_half_width,
 			float vert_half_height);
-		//RectangleF(const mattmath::Segment& center_line, float thickness);
 
 		RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
@@ -351,13 +325,11 @@ namespace mattmath
 		mattmath::Segment left_edge() const;
 		mattmath::Segment right_edge() const;
 		std::array<mattmath::Segment, 4> edges() const;
-		float area() const;
 		mattmath::RectangleI rectangle_i() const;
 
 		bool operator==(const RectangleF& other) const;
 		bool operator!=(const RectangleF& other) const;
 
-		//bool contains(const mattmath::Vector2F& point) const;
 		bool contains(const RectangleF& other) const;
 
 		bool intersects(const RectangleF& other) const override;
@@ -368,21 +340,10 @@ namespace mattmath
 		bool intersects(const mattmath::Point2F& point) const override;
 		bool intersects(const RectangleRotated& rect_rotated) const override;
 		bool contains(const mattmath::Point2F& point) const;
-		RectangleF intersection(const RectangleF& other) const;
-		
-		//void set_left(float left);
-		//void set_top(float top);
-		//void set_right(float right);
-		//void set_bottom(float bottom);
 
 		void inflate(float horizontal_amount, float vertical_amount);
 		void inflate(const mattmath::Vector2F& amount);
 		void inflate(float amount) override;
-		void inflate_to_size(float width, float height);
-		void inflate_to_size(const mattmath::Vector2F& size);
-		void scale_at_center(float scale);
-		void scale_at_center(float horizontal_scale, float vertical_scale);
-		void scale_at_center(const mattmath::Vector2F& scale);
 		void offset(float horizontal_amount, float vertical_amount);
 		void offset(const mattmath::Vector2F& amount) override;
 		void scale(float horizontal_amount, float vertical_amount);
@@ -406,8 +367,20 @@ namespace mattmath
 		void set_width(float width);
 		void set_height(float height);
 
-		static RectangleF intersection(const RectangleF& a, const RectangleF& b);
 		static RectangleF union_of(const RectangleF& a, const RectangleF& b);
+
+		// The smallest axis-aligned box containing every point.
+		//
+		// Triangle, Quad and RectangleRotated each wrote this fold out; the
+		// last two were character for character identical. Empty in, ZERO out
+		// - a box around nothing.
+		//
+		// A non-finite coordinate is NOT rejected. std::min(a, NaN) returns a,
+		// so a poisoned vertex is silently dropped rather than poisoning the
+		// box, and checking per coordinate would put an isnan on a path every
+		// broad-phase candidate walks. The predicates downstream are the ones
+		// written to survive a NaN (see test_AABB_AABB); this stays cheap.
+		static RectangleF bounding_box_of(std::span<const mattmath::Point2F> points);
 
 		static RectangleF from_top_left_bottom_right(const mattmath::Vector2F& top_left,
 			const mattmath::Vector2F& bottom_right);
@@ -419,56 +392,6 @@ namespace mattmath
 
 	typedef mattmath::RectangleF AABB;
 	
-	/*template<typename T>
-	struct Matrix
-	{
-		Matrix() = default;
-		Matrix(const Matrix&) = default;
-		Matrix(int rows, int columns);
-		Matrix(int rows, int columns, const std::vector<T>& elements);
-		Matrix(int size, vector_type type);
-		Matrix(int size, vector_type type, const std::vector<T>& elements);
-
-		T element(int row, int column) const;
-		void set_element(int row, int column, T value);
-
-		int rows() const;
-		int columns() const;
-
-		bool is_square() const;
-		bool equal_size(const Matrix<T>& other) const;
-
-		Matrix<T> rotate_pi_radians() const;
-
-		T& operator()(int row, int column);
-		const T& operator()(int row, int column) const;
-
-	private:
-		int rows_ = 0;
-		int columns_ = 0;
-		std::vector<T> elements_;
-		T** matrix_ = nullptr;
-		bool row_valid(int row) const;
-		bool column_valid(int column) const;
-		int calculate_index(int row, int column) const;
-		T& element_ref(int row, int column);
-	};
-
-	template<typename T>
-	struct Vector : Matrix<T>
-	{
-		Vector() = default;
-		Vector(const Vector&) = default;
-		Vector(int size);
-		Vector(int size, vector_type type);
-		Vector(int size, vector_type type, const std::vector<T>& elements);
-
-		int size() const;
-		vector_type vector_type() const;
-
-		T& operator[](int index);
-		const T& operator[](int index) const;
-	};*/
 
 	struct Vector2I
 	{
@@ -478,7 +401,7 @@ namespace mattmath
 		Vector2I() = default;
 		Vector2I(const Vector2I&) = default;
 		Vector2I(int x, int y);
-		Vector2I(const mattmath::Vector2F& vector);
+		explicit Vector2I(const mattmath::Vector2F& vector);
 
 		bool operator==(const Vector2I& other) const;
 		bool operator!=(const Vector2I& other) const;
@@ -489,9 +412,6 @@ namespace mattmath
 		Vector2I& operator/=(const Vector2I& other);
 		Vector2I& operator*=(int other);
 		Vector2I& operator/=(int other);
-
-		//Vector2I operator+(const Vector2I& other) const;
-		//Vector2I operator-(const Vector2I& other) const;
 
 		void offset(int horizontal_amount, int vertical_amount);
 		void scale(int horizontal_amount, int vertical_amount);
@@ -515,9 +435,15 @@ namespace mattmath
 
 		Vector2F() = default;
 		Vector2F(const Vector2F&) = default;
-		Vector2F(float f);
+		// explicit, all of them. A float is not a vector, a Vector2I is not a
+		// Vector2F, and a RectangleF is not a Quad - and while these
+		// conversions were implicit the compiler inserted them silently at
+		// /W4 /WX. Two of the Quad forms end in a throw, so a wrong-typed
+		// argument became a runtime exception from inside the callee with no
+		// conversion visible at the call site.
+		explicit Vector2F(float f);
 		Vector2F(float x, float y);
-		Vector2F(const mattmath::Vector2I& vector);
+		explicit Vector2F(const mattmath::Vector2I& vector);
 
 		bool operator==(const Vector2F& other) const;
 		bool operator!=(const Vector2F& other) const;
@@ -529,17 +455,8 @@ namespace mattmath
 		Vector2F& operator*=(float other);
 		Vector2F& operator/=(float other);
 
-		//Vector2F& operator/(float other);
-		//Vector2F& operator*(float other);
-
-		//Vector2F& operator+(const Vector2F& other);
-		//Vector2F& operator-(const Vector2F& other);
-		//Vector2F& operator*(const Vector2F& other);
-		//Vector2F& operator/(const Vector2F& other);
-
 		float length() const;
 		float length_squared() const;
-		mattmath::Direction direction() const;
 
 		float dot(const Vector2F& other) const;
 
@@ -554,24 +471,16 @@ namespace mattmath
 		Vector2F normalized() const;
 		void normalize();
 
-		bool is_contained_within(const mattmath::RectangleF& other) const;
-
 		void clamp(const Vector2F& min, const Vector2F& max);
 		Vector2F clamped(const Vector2F& min, const Vector2F& max) const;
 
 		float angle() const;
 		static float angle(const Vector2F& vec);
 
-		void rotate(float angle);
-		void normal();
 
 		// Substitutes (1, 0) for a zero-length vector - i.e. it invents a
 		// direction rather than reporting that there is none. See normalize().
 		void to_unit_vector();
-
-		bool abs_x_greater_than_y() const;
-
-		static Vector2F rotate_vector(const Vector2F& vec, float angle);
 
 		static float angle_between(const Vector2F& a, const Vector2F& b);
 
@@ -607,18 +516,12 @@ namespace mattmath
 		// is the word that flips.
 		static float cross(const Vector2F& a, const Vector2F& b);
 
-		static Vector2F min_vec(const Vector2F& a, const Vector2F& b);
-		static Vector2F max_vec(const Vector2F& a, const Vector2F& b);
-
-		static Vector2F vec_from_angle_magnitude(float angle, float magnitude);
 		static Vector2F unit_vec_from_angle(float angle);
 
 		// Returns (1, 0) for a zero-length vector. See to_unit_vector().
 		static Vector2F unit_vector(const Vector2F& vec);
 		
 		static Vector2F normal(const Vector2F& vec);
-
-		static Vector2F direction_to_8_cardinal_direction(const Vector2F& direction);
 
 		static const Vector2F ZERO;
 		static const Vector2F ONE;
@@ -631,6 +534,12 @@ namespace mattmath
 		static const Vector2F DIRECTION_DOWN_LEFT;
 		static const Vector2F DIRECTION_UP_LEFT;
 	};
+
+	// Reversing a direction. The collision module does this constantly - a
+	// contact normal points from the first shape to the second, so the second
+	// needs the other one - and every site wrote Vector2F(-v.x, -v.y) or
+	// v * -1.0f by hand, in two spellings.
+	Vector2F operator- (const Vector2F& V);
 
 	Vector2F operator+ (const Vector2F& V1, const Vector2F& V2);
 	Vector2F operator- (const Vector2F& V1, const Vector2F& V2);
@@ -654,7 +563,7 @@ namespace mattmath
 			const mattmath::Vector2I& size);
 		RectangleI(const mattmath::Vector2F& position,
 			const mattmath::Vector2F& size);
-		RectangleI(mattmath::RectangleF rectangle);
+		explicit RectangleI(const mattmath::RectangleF& rectangle);
 
 		int left() const;
 		int top() const;
@@ -692,49 +601,6 @@ namespace mattmath
 		static const RectangleI ZERO;
 	};
 
-	struct Vector4F
-	{
-		float x = 0.0f;
-		float y = 0.0f;
-		float z = 0.0f;
-		float w = 0.0f;
-
-		Vector4F() = default;
-		Vector4F(const Vector4F&) = default;
-		Vector4F(float x, float y, float z, float w);
-
-		bool operator==(const Vector4F& other) const;
-		bool operator!=(const Vector4F& other) const;
-	};
-
-	struct Vector3F
-	{
-		float x = 0.0f;
-		float y = 0.0f;
-		float z = 0.0f;
-
-		Vector3F() = default;
-		Vector3F(const Vector3F&) = default;
-		Vector3F(float x, float y, float z);
-
-		bool operator==(const Vector3F& other) const;
-		bool operator!=(const Vector3F& other) const;
-
-		Vector3F& operator+=(const Vector3F& other);
-		Vector3F& operator-=(const Vector3F& other);
-		Vector3F& operator*=(const Vector3F& other);
-		Vector3F& operator/=(const Vector3F& other);
-		Vector3F& operator*=(float other);
-		Vector3F& operator/=(float other);
-	};
-
-	Vector3F operator+ (const Vector3F& V1, const Vector3F& V2);
-	Vector3F operator- (const Vector3F& V1, const Vector3F& V2);
-	Vector3F operator* (const Vector3F& V1, const Vector3F& V2);
-	Vector3F operator* (const Vector3F& V, float S);
-	Vector3F operator/ (const Vector3F& V1, const Vector3F& V2);
-	Vector3F operator/ (const Vector3F& V, float S);
-	Vector3F operator* (float S, const Vector3F& V);
 
 	struct Circle : public Shape
 	{
@@ -754,8 +620,6 @@ namespace mattmath
 
 		bool operator==(const Circle& other) const;
 		bool operator!=(const Circle& other) const;
-
-		//bool contains(const mattmath::Vector2F& point) const;
 
 		bool intersects(const mattmath::RectangleF& other) const override;
 		bool intersects(const Circle& other) const override;
@@ -801,12 +665,9 @@ namespace mattmath
 		float angle_0() const;
 		float angle_1() const;
 		float angle_2() const;
-		std::vector<float> angles() const;
 
 		bool operator==(const Triangle& other) const;
 		bool operator!=(const Triangle& other) const;
-
-		//bool contains(const mattmath::Vector2F& point) const;
 
 		bool intersects(const mattmath::RectangleF& other) const override;
 		bool intersects(const mattmath::Circle& other) const override;
@@ -834,9 +695,11 @@ namespace mattmath
 		float hypotenuse_gradient() const;
 
 	private:
-		//bool is_right_triangle(const Triangle& tri) const;
+		// The gradient helper the base class already provides is NOT
+		// redeclared here. It used to be, byte for byte, which hid the public
+		// one behind a private copy - so a fix to the base would have missed
+		// this type entirely.
 		int find_hypotenuse(const Triangle& tri) const;
-		float calculate_gradient(int edge) const;
 	};
 
 	/*
@@ -849,9 +712,8 @@ namespace mattmath
 		Quad(const Quad&) = default;
 		Quad(const Vector2F& point1, const Vector2F& point2,
 			const Vector2F& point3, const Vector2F& point4);
-		Quad(const std::vector<Point2F>& points);
-		Quad(const RectangleF& rectangle);
-		Quad(const RectangleRotated& rectangle);
+		explicit Quad(const RectangleF& rectangle);
+		explicit Quad(const RectangleRotated& rectangle);
 
 		mattmath::RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
@@ -864,8 +726,6 @@ namespace mattmath
 		const Point2F& point_1() const;
 		const Point2F& point_2() const;
 		const Point2F& point_3() const;
-		std::vector<Point2F> points() const;
-
 		void set_point_0(const Point2F& point);
 		void set_point_1(const Point2F& point);
 		void set_point_2(const Point2F& point);
@@ -879,7 +739,7 @@ namespace mattmath
 
 		Triangle triangle_0() const;
 		Triangle triangle_1() const;
-		std::vector<Triangle> triangles() const;
+		std::array<Triangle, 2> triangles() const;
 
 		bool operator==(const Quad& other) const;
 		bool operator!=(const Quad& other) const;
@@ -922,8 +782,6 @@ namespace mattmath
 		float length() const;
 
 		mattmath::Point2F center() const;
-		//bool intersects(const mattmath::Circle& other) const;
-		//bool intersects(const mattmath::Triangle& other) const;
 	};
 	struct RectangleRotated : public Shape
 	{
@@ -983,7 +841,10 @@ namespace mattmath
 		Point2F point_1() const;
 		Point2F point_2() const;
 		Point2F point_3() const;
-		const std::vector<Point2F>& points() const;
+		// The four corners, in the order point_0..point_3 name them. A
+		// reference to storage the rectangle already holds, recomputed only
+		// when something that defines it changes.
+		const std::array<Point2F, 4>& points() const;
 
 		Segment edge_0() const;
 		Segment edge_1() const;
@@ -995,10 +856,6 @@ namespace mattmath
 		RectangleF rectangle_rotated_to_axis() const;
 
 		float angle() const;
-		//RectangleRotated(const mattmath::Point2F& center,
-		//	float angle, const mattmath::Vector2F& hw_extents);
-
-		//std::vector<Point2F> points() const;
 
 		bool is_valid() const;
 
@@ -1011,17 +868,20 @@ namespace mattmath
 		Vector2F y_axis_ = Vector2F::DIRECTION_UP;
 		Vector2F hw_extents_ = Vector2F::ZERO;
 
-		std::vector<Point2F> points_ = { Point2F::ZERO, Point2F::ZERO,
+		// Four points of fixed size, in fixed storage. This was a
+		// std::vector, so every construction, copy and assignment of an OBB
+		// allocated, and each of the ten places that write a defining member
+		// paid a malloc/free pair to refresh the cache. The argument is the
+		// one already written above Shape for edges(); this member is where it
+		// stopped one short.
+		std::array<Point2F, 4> points_ = { Point2F::ZERO, Point2F::ZERO,
 					Point2F::ZERO, Point2F::ZERO };
 
-		std::vector<Point2F> calculate_points() const;
+		std::array<Point2F, 4> calculate_points() const;
 
-		std::vector<mattmath::Point2F> calculate_points(const mattmath::Point2F& center,
+		std::array<mattmath::Point2F, 4> calculate_points(const mattmath::Point2F& center,
 			const mattmath::Vector2F& x_axis, const mattmath::Vector2F& y_axis,
 			const mattmath::Vector2F& hw_extents) const;
-
-		std::vector<mattmath::Point2F> calculate_points(const mattmath::Segment& center_line,
-			float thickness) const;
 
 		bool half_widths_valid() const;
 		bool axes_valid() const;

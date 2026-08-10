@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 using mattmath::RectangleF;
 

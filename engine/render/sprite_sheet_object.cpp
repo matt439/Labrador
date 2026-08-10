@@ -1,5 +1,7 @@
 #include "engine/render/sprite_sheet_object.h"
 
+#include <string>
+
 using namespace mattmath;
 
 namespace artattack

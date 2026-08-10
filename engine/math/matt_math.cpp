@@ -1,6 +1,8 @@
 #include "engine/math/matt_math.h"
 #include "engine/math/ericson_math.h"
 
+#include <array>
+#include <cmath>
 #include <stdexcept>
 
 
@@ -24,17 +26,6 @@ namespace mattmath
 			return value;
 		}
 	}
-	void mattmath::clamp_ref(float& value, float min, float max)
-	{
-		if (value < min)
-		{
-			value = min;
-		}
-		else if (value > max)
-		{
-			value = max;
-		}
-	}
 	int mattmath::clamp(int value, int min, int max)
 	{
 		if (value < min)
@@ -50,18 +41,6 @@ namespace mattmath
 			return value;
 		}
 	}
-	void mattmath::clamp_ref(int& value, int min, int max)
-	{
-		if (value < min)
-		{
-			value = min;
-		}
-		else if (value > max)
-		{
-			value = max;
-		}
-	}
-
 	bool mattmath::are_equal(float a, float b, float epsilon)
 	{
 		return fabs(a - b) < epsilon;
@@ -126,26 +105,6 @@ namespace mattmath
 
 #pragma region Global Intersect Functions
 
-	bool mattmath::shapes_intersect(const Shape* a, const Shape* b)
-	{
-		return a->intersects(b);
-	}
-
-	bool mattmath::shapes_intersect(const Shape& a, const Shape& b)
-	{
-		return a.intersects(b);
-	}
-
-	bool mattmath::shapes_AABB_intersect(const Shape* a, const Shape* b)
-	{
-		return a->bounding_box().intersects(b->bounding_box());
-	}
-
-	bool mattmath::shapes_AABB_intersect(const Shape& a, const Shape& b)
-	{
-		return a.bounding_box().intersects(b.bounding_box());
-	}
-
 	bool rectangles_intersect(const RectangleF& a, const RectangleF& b)
 	{
 		return test_AABB_AABB(a, b);
@@ -203,7 +162,7 @@ namespace mattmath
 	bool mattmath::rectangle_quad_intersect(const RectangleF& rectangle, const Quad& quad)
 	{
 		// get the triangles of the quad
-		std::vector<Triangle> triangles = quad.triangles();
+		const auto triangles = quad.triangles();
 
 		// check each triangle against the rectangle
 		for (const Triangle& triangle : triangles)
@@ -298,7 +257,7 @@ namespace mattmath
 
 	bool mattmath::circle_quad_intersect(const Circle& circle, const Quad& quad)
 	{
-		std::vector<Triangle> triangles = quad.triangles();
+		const auto triangles = quad.triangles();
 
 		for (const Triangle& triangle : triangles)
 		{
@@ -423,7 +382,7 @@ namespace mattmath
 	bool mattmath::triangle_quad_intersect(const Triangle& triangle, const Quad& quad)
 	{
 		// get the triangles of the quad
-		std::vector<Triangle> triangles = quad.triangles();
+		const auto triangles = quad.triangles();
 
 		// check each triangle against the quad's triangles
 		for (const Triangle& quad_triangle : triangles)
@@ -506,8 +465,8 @@ namespace mattmath
 	bool mattmath::quads_intersect(const Quad& a, const Quad& b)
 	{
 		// get the triangles of each quad
-		std::vector<Triangle> a_triangles = a.triangles();
-		std::vector<Triangle> b_triangles = b.triangles();
+		const auto a_triangles = a.triangles();
+		const auto b_triangles = b.triangles();
 
 		// check each triangle of one quad against the other
 		for (const Triangle& a_triangle : a_triangles)
@@ -527,7 +486,7 @@ namespace mattmath
 	bool mattmath::quad_segment_intersect(const Quad& quad, const Segment& segment)
 	{
 		// get the triangles of the quad
-		std::vector<Triangle> triangles = quad.triangles();
+		const auto triangles = quad.triangles();
 
 		// check each triangle against the segment
 		for (const Triangle& triangle : triangles)
@@ -544,7 +503,7 @@ namespace mattmath
 	bool mattmath::quad_point_intersect(const Quad& quad, const Point2F& point)
 	{
 		// check if the point is contained within any of the quad's triangles
-		std::vector<Triangle> triangles = quad.triangles();
+		const auto triangles = quad.triangles();
 		for (const Triangle& triangle : triangles)
 		{
 			if (triangle.contains(point))
@@ -560,7 +519,7 @@ namespace mattmath
 		const RectangleRotated& rect_rotated)
 	{
 		// get the triangles of the quad
-		std::vector<Triangle> triangles = quad.triangles();
+		const auto triangles = quad.triangles();
 
 		// check each triangle against the rotated rectangle
 		for (const Triangle& triangle : triangles)
@@ -801,10 +760,6 @@ namespace mattmath
 			this->right_edge()
 		};
 	}
-	float RectangleF::area() const
-	{
-		return this->width * this->height;
-	}
 	RectangleI RectangleF::rectangle_i() const
 	{
 		return RectangleI(static_cast<int>(this->x),
@@ -869,10 +824,6 @@ namespace mattmath
 	{
 		return rectangle_rotated_rectangle_intersect(*this, other);
 	}
-	RectangleF RectangleF::intersection(const RectangleF& other) const
-	{
-		return RectangleF::intersection(*this, other);
-	}
 	void RectangleF::inflate(float horizontal_amount, float vertical_amount)
 	{
 		this->x -= horizontal_amount;
@@ -890,36 +841,6 @@ namespace mattmath
 	void RectangleF::inflate(float amount)
 	{
 		this->inflate(amount, amount);
-	}
-	void RectangleF::inflate_to_size(float new_width, float new_height)
-	{
-		this->x -= (new_width - this->width) / 2.0f;
-		this->y -= (new_height - this->height) / 2.0f;
-		this->width = new_width;
-		this->height = new_height;
-	}
-	void RectangleF::inflate_to_size(const Vector2F& size)
-	{
-		this->x -= (size.x - this->width) / 2.0f;
-		this->y -= (size.y - this->height) / 2.0f;
-		this->width = size.x;
-		this->height = size.y;
-	}
-	void RectangleF::scale_at_center(float scale)
-	{
-		this->scale_at_center(scale, scale);
-	}
-	void RectangleF::scale_at_center(float horizontal_scale, float vertical_scale)
-	{
-		Vector2F center = this->center();
-		this->x = center.x - this->width * horizontal_scale / 2.0f;
-		this->y = center.y - this->height * vertical_scale / 2.0f;
-		this->width *= horizontal_scale;
-		this->height *= vertical_scale;
-	}
-	void RectangleF::scale_at_center(const Vector2F& scale)
-	{
-		this->scale_at_center(scale.x, scale.y);
 	}
 	void RectangleF::offset(float horizontal_amount, float vertical_amount)
 	{
@@ -1025,20 +946,27 @@ namespace mattmath
 	{
 		this->height = new_height;
 	}
-	RectangleF RectangleF::intersection(const RectangleF& a, const RectangleF& b)
+	RectangleF RectangleF::bounding_box_of(std::span<const Point2F> points)
 	{
-		float x1 = std::max(a.x, b.x);
-		float x2 = std::min(a.x + a.width, b.x + b.width);
-		float y1 = std::max(a.y, b.y);
-		float y2 = std::min(a.y + a.height, b.y + b.height);
-		if (x2 >= x1 && y2 >= y1)
+		if (points.empty())
 		{
-			return RectangleF(x1, y1, x2 - x1, y2 - y1);
+			return RectangleF::ZERO;
 		}
-		else
+
+		float min_x = points[0].x;
+		float max_x = points[0].x;
+		float min_y = points[0].y;
+		float max_y = points[0].y;
+
+		for (size_t i = 1; i < points.size(); i++)
 		{
-			return RectangleF();
+			min_x = std::min(min_x, points[i].x);
+			max_x = std::max(max_x, points[i].x);
+			min_y = std::min(min_y, points[i].y);
+			max_y = std::max(max_y, points[i].y);
 		}
+
+		return RectangleF(min_x, min_y, max_x - min_x, max_y - min_y);
 	}
 	RectangleF RectangleF::union_of(const RectangleF& a, const RectangleF& b)
 	{
@@ -1236,60 +1164,6 @@ namespace mattmath
 	{
 		return this->x * this->x + this->y * this->y;
 	}
-	Direction Vector2F::direction() const
-	{
-		if (are_equal(this->x, 0.0f) && are_equal(this->y, 0.0f))
-		{
-			return Direction::none;
-		}
-		else if (are_equal(this->x, 0.0f))
-		{
-			if (this->y > 0.0f)
-			{
-				return Direction::down;
-			}
-			else
-			{
-				return Direction::up;
-			}
-		}
-		else if (are_equal(this->y, 0.0f))
-		{
-			if (this->x > 0.0f)
-			{
-				return Direction::right;
-			}
-			else
-			{
-				return Direction::left;
-			}
-		}
-		else
-		{
-			if (this->x > 0.0f)
-			{
-				if (this->y > 0.0f)
-				{
-					return Direction::down_right;
-				}
-				else
-				{
-					return Direction::up_right;
-				}
-			}
-			else
-			{
-				if (this->y > 0.0f)
-				{
-					return Direction::down_left;
-				}
-				else
-				{
-					return Direction::up_left;
-				}
-			}
-		}
-	}
 	float Vector2F::dot(const Vector2F& other) const
 	{
 		return this->x * other.x + this->y * other.y;
@@ -1315,10 +1189,6 @@ namespace mattmath
 		this->x /= length;
 		this->y /= length;
 	}
-	bool Vector2F::is_contained_within(const RectangleF& other) const
-	{
-		return other.intersects(*this);
-	}
 	void Vector2F::clamp(const Vector2F& min, const Vector2F& max)
 	{
 		this->x = std::min(std::max(this->x, min.x), max.x);
@@ -1337,23 +1207,6 @@ namespace mattmath
 	{
 		return std::atan2(vec.y, vec.x);
 	}
-	void Vector2F::rotate(float angle)
-	{
-		float cos_angle = std::cos(angle);
-		float sin_angle = std::sin(angle);
-
-		float rotated_x = this->x * cos_angle - this->y * sin_angle;
-		float rotated_y = this->x * sin_angle + this->y * cos_angle;
-
-		this->x = rotated_x;
-		this->y = rotated_y;
-	}
-	void Vector2F::normal()
-	{
-		float temp = x;
-		x = -y;
-		y = temp;
-	}
 	void Vector2F::to_unit_vector()
 	{
 		float length = this->length();
@@ -1367,18 +1220,6 @@ namespace mattmath
 			this->x /= length;
 			this->y /= length;
 		}
-	}
-	bool Vector2F::abs_x_greater_than_y() const
-	{
-		return std::abs(this->x) > std::abs(this->y);
-	}
-	Vector2F Vector2F::rotate_vector(const Vector2F& vec, float angle)
-	{
-		float cos_angle = std::cos(angle);
-		float sin_angle = std::sin(angle);
-
-		return Vector2F(vec.x * cos_angle - vec.y * sin_angle,
-			vec.x * sin_angle + vec.y * cos_angle);
 	}
 	float Vector2F::angle_between(const Vector2F& a, const Vector2F& b)
 	{
@@ -1433,20 +1274,6 @@ namespace mattmath
 	{
 		return a.x * b.y - a.y * b.x;
 	}
-	Vector2F Vector2F::min_vec(const Vector2F& a, const Vector2F& b)
-	{
-		return Vector2F(std::min(a.x, b.x), std::min(a.y, b.y));
-	}
-	Vector2F Vector2F::max_vec(const Vector2F& a, const Vector2F& b)
-	{
-		return Vector2F(std::max(a.x, b.x), std::max(a.y, b.y));
-	}
-	Vector2F Vector2F::vec_from_angle_magnitude(float angle, float magnitude)
-	{
-		float x = magnitude * std::cos(angle);
-		float y = magnitude * std::sin(angle);
-		return Vector2F(x, y);
-	}
 	Vector2F Vector2F::unit_vec_from_angle(float angle)
 	{
 		return Vector2F(std::cos(angle), std::sin(angle));
@@ -1469,55 +1296,41 @@ namespace mattmath
 		return Vector2F(-vec.y, vec.x);
 	}
 
-	Vector2F Vector2F::direction_to_8_cardinal_direction(const Vector2F& direction)
-	{
-		float angle = direction.angle();
-		if (angle >= -PI / 8.0f && angle < PI / 8.0f)
-		{
-			return Vector2F::DIRECTION_RIGHT;
-		}
-		else if (angle >= PI / 8.0f && angle < 3.0f * PI / 8.0f)
-		{
-			return Vector2F::DIRECTION_DOWN_RIGHT;
-		}
-		else if (angle >= 3.0f * PI / 8.0f && angle < 5.0f * PI / 8.0f)
-		{
-			return Vector2F::DIRECTION_DOWN;
-		}
-		else if (angle >= 5.0f * PI / 8.0f && angle < 7.0f * PI / 8.0f)
-		{
-			return Vector2F::DIRECTION_DOWN_LEFT;
-		}
-		else if (angle >= 7.0f * PI / 8.0f || angle < -7.0f * PI / 8.0f)
-		{
-			return Vector2F::DIRECTION_LEFT;
-		}
-		else if (angle >= -7.0f * PI / 8.0f && angle < -5.0f * PI / 8.0f)
-		{
-			return Vector2F::DIRECTION_UP_LEFT;
-		}
-		else if (angle >= -5.0f * PI / 8.0f && angle < -3.0f * PI / 8.0f)
-		{
-			return Vector2F::DIRECTION_UP;
-		}
-		else
-		{
-			return Vector2F::DIRECTION_UP_RIGHT;
-		}
-	}
-
 	const Vector2F Vector2F::ZERO = { 0.0f, 0.0f };
 	const Vector2F Vector2F::ONE = { 1.0f, 1.0f };
 	const Vector2F Vector2F::DIRECTION_RIGHT = { 1.0f, 0.0f };
 	const Vector2F Vector2F::DIRECTION_DOWN = { 0.0f, 1.0f };
 	const Vector2F Vector2F::DIRECTION_LEFT = { -1.0f, 0.0f };
 	const Vector2F Vector2F::DIRECTION_UP = { 0.0f, -1.0f };
-	const Vector2F Vector2F::DIRECTION_UP_RIGHT = Vector2F::unit_vector(Vector2F::DIRECTION_UP + Vector2F::DIRECTION_RIGHT);
-	const Vector2F Vector2F::DIRECTION_DOWN_RIGHT = Vector2F::unit_vector(Vector2F::DIRECTION_DOWN + Vector2F::DIRECTION_RIGHT);
-	const Vector2F Vector2F::DIRECTION_DOWN_LEFT = Vector2F::unit_vector(Vector2F::DIRECTION_DOWN + Vector2F::DIRECTION_LEFT);
-	const Vector2F Vector2F::DIRECTION_UP_LEFT = Vector2F::unit_vector(Vector2F::DIRECTION_UP + Vector2F::DIRECTION_LEFT);
+	// Written out rather than derived. These four used to be
+	// unit_vector(DIRECTION_UP + DIRECTION_RIGHT) and so on, which is a
+	// function call and a square root per constant during dynamic
+	// initialisation, and which read the four cardinal constants above while
+	// they were being initialised themselves.
+	//
+	// Inside this file that ordering is defined - initialisation runs in
+	// declaration order within a translation unit - but nothing extends that
+	// guarantee across one. Any other TU whose own namespace-scope initialiser
+	// named a diagonal would have got (0, 0), silently and depending on link
+	// order. The engine has already been bitten by exactly this shape once,
+	// with ViewportManager::DIVIDER_COLOUR.
+	//
+	// The literal is the float nearest 1/sqrt(2), which is the value the
+	// square root produced.
+	namespace
+	{
+		constexpr float ROOT_HALF = 0.70710678f;
+	}
+	const Vector2F Vector2F::DIRECTION_UP_RIGHT = { ROOT_HALF, -ROOT_HALF };
+	const Vector2F Vector2F::DIRECTION_DOWN_RIGHT = { ROOT_HALF, ROOT_HALF };
+	const Vector2F Vector2F::DIRECTION_DOWN_LEFT = { -ROOT_HALF, ROOT_HALF };
+	const Vector2F Vector2F::DIRECTION_UP_LEFT = { -ROOT_HALF, -ROOT_HALF };
 
 
+	Vector2F mattmath::operator- (const Vector2F& V)
+	{
+		return Vector2F(-V.x, -V.y);
+	}
 	Vector2F mattmath::operator+ (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x + V2.x, V1.y + V2.y);
@@ -1573,7 +1386,7 @@ namespace mattmath
 		this->width = static_cast<int>(size.x);
 		this->height = static_cast<int>(size.y);
 	}
-	RectangleI::RectangleI(RectangleF rectangle)
+	RectangleI::RectangleI(const RectangleF& rectangle)
 	{
 		this->x = static_cast<int>(rectangle.x);
 		this->y = static_cast<int>(rectangle.y);
@@ -1701,117 +1514,6 @@ namespace mattmath
 
 #pragma endregion RectangleI
 
-#pragma region Vector4F
-
-	Vector4F::Vector4F(float x, float y, float z, float w)
-	{
-		this->x = x;
-		this->y = y;
-		this->z = z;
-		this->w = w;
-	}
-	bool Vector4F::operator==(const Vector4F& other) const
-	{
-		return this->x == other.x &&
-			this->y == other.y &&
-			this->z == other.z &&
-			this->w == other.w;
-	}
-	bool Vector4F::operator!=(const Vector4F& other) const
-	{
-		return !(*this == other);
-	}
-#pragma endregion Vector4F
-
-#pragma region Vector3F
-
-	Vector3F::Vector3F(float x, float y, float z) :
-		x(x), y(y), z(z)
-	{
-	}
-	bool Vector3F::operator==(const Vector3F& other) const
-	{
-		return this->x == other.x &&
-			this->y == other.y &&
-			this->z == other.z;
-	}
-	bool Vector3F::operator!=(const Vector3F& other) const
-	{
-		return !(*this == other);
-	}
-	Vector3F& Vector3F::operator+=(const Vector3F& other)
-	{
-		this->x += other.x;
-		this->y += other.y;
-		this->z += other.z;
-		return *this;
-	}
-	Vector3F& Vector3F::operator-=(const Vector3F& other)
-	{
-		this->x -= other.x;
-		this->y -= other.y;
-		this->z -= other.z;
-		return *this;
-	}
-	Vector3F& Vector3F::operator*=(const Vector3F& other)
-	{
-		this->x *= other.x;
-		this->y *= other.y;
-		this->z *= other.z;
-		return *this;
-	}
-	Vector3F& Vector3F::operator/=(const Vector3F& other)
-	{
-		this->x /= other.x;
-		this->y /= other.y;
-		this->z /= other.z;
-		return *this;
-	}
-	Vector3F& Vector3F::operator*=(float other)
-	{
-		this->x *= other;
-		this->y *= other;
-		this->z *= other;
-		return *this;
-	}
-	Vector3F& Vector3F::operator/=(float other)
-	{
-		this->x /= other;
-		this->y /= other;
-		this->z /= other;
-		return *this;
-	}
-	Vector3F mattmath::operator+ (const Vector3F& V1, const Vector3F& V2)
-	{
-		return Vector3F(V1.x + V2.x, V1.y + V2.y, V1.z + V2.z);
-	}
-	Vector3F mattmath::operator- (const Vector3F& V1, const Vector3F& V2)
-	{
-		return Vector3F(V1.x - V2.x, V1.y - V2.y, V1.z - V2.z);
-	}
-	Vector3F mattmath::operator* (const Vector3F& V1, const Vector3F& V2)
-	{
-		return Vector3F(V1.x * V2.x, V1.y * V2.y, V1.z * V2.z);
-	}
-	Vector3F mattmath::operator* (const Vector3F& V, float S)
-	{
-		return Vector3F(V.x * S, V.y * S, V.z * S);
-	}
-	Vector3F mattmath::operator/ (const Vector3F& V1, const Vector3F& V2)
-	{
-		return Vector3F(V1.x / V2.x, V1.y / V2.y, V1.z / V2.z);
-	}
-	Vector3F mattmath::operator/ (const Vector3F& V, float S)
-	{
-		return Vector3F(V.x / S, V.y / S, V.z / S);
-	}
-	Vector3F mattmath::operator* (float S, const Vector3F& V)
-	{
-		return Vector3F(V.x * S, V.y * S, V.z * S);
-	}
-
-#pragma endregion Vector3F
-
 #pragma region Circle
 
 	Circle::Circle(const Vector2F& center, float radius) :
@@ -1919,19 +1621,7 @@ namespace mattmath
 	}
 	RectangleF Triangle::bounding_box() const
 	{
-		float x1 = std::min(std::min(this->points[0].x, this->points[1].x),
-			this->points[2].x);
-
-		float x2 = std::max(std::max(this->points[0].x, this->points[1].x), 
-			this->points[2].x);
-
-		float y1 = std::min(std::min(this->points[0].y, this->points[1].y), 
-			this->points[2].y);
-
-		float y2 = std::max(std::max(this->points[0].y, this->points[1].y), 
-			this->points[2].y);
-
-		return RectangleF(x1, y1, x2 - x1, y2 - y1);
+		return RectangleF::bounding_box_of(this->points);
 	}
 	ShapeType Triangle::shape_type() const
 	{
@@ -2016,7 +1706,7 @@ namespace mattmath
 
 				if (Vector2F::dot(normal, from - centre) < 0.0f)
 				{
-					normal = Vector2F(-normal.x, -normal.y);
+					normal = -normal;
 				}
 
 				normals[i] = normal;
@@ -2138,16 +1828,6 @@ namespace mattmath
 	{
 		return Vector2F::angle_between(this->points[0] - this->points[2],
 			this->points[1] - this->points[2]);
-	}
-	std::vector<float> Triangle::angles() const
-	{
-		std::vector<float> angles =
-		{
-			this->angle_0(),
-			this->angle_1(),
-			this->angle_2()
-		};
-		return angles;
 	}
 	bool Triangle::operator==(const Triangle& other) const
 	{
@@ -2306,17 +1986,6 @@ namespace mattmath
 			return -1;
 		}
 	}
-	float TriangleRightAxisAligned::calculate_gradient(int edge) const
-	{
-		if (edge < 0 || edge > 2)
-		{
-			throw std::invalid_argument("Edge must be between 0 and 2");
-		}
-
-		return (this->points[(edge + 1) % 3].y - this->points[edge].y) /
-			(this->points[(edge + 1) % 3].x - this->points[edge].x);
-	}
-
 #pragma endregion TriangleRightAxisAligned
 
 #pragma region Quad
@@ -2330,24 +1999,6 @@ namespace mattmath
 		this->points_[1] = point1;
 		this->points_[2] = point2;
 		this->points_[3] = point3;
-
-		if (!this->is_valid())
-		{
-			throw std::invalid_argument("Quad is not valid");
-		}
-	}
-
-	Quad::Quad(const std::vector<Point2F>& points)
-	{
-		if (points.size() != 4)
-		{
-			throw std::invalid_argument("Quad must have 4 points");
-		}
-
-		this->points_[0] = points[0];
-		this->points_[1] = points[1];
-		this->points_[2] = points[2];
-		this->points_[3] = points[3];
 
 		if (!this->is_valid())
 		{
@@ -2385,19 +2036,7 @@ namespace mattmath
 
 	RectangleF Quad::bounding_box() const
 	{
-		float x1 = std::min(std::min(std::min(this->points_[0].x, this->points_[1].x),
-			this->points_[2].x), this->points_[3].x);
-
-		float x2 = std::max(std::max(std::max(this->points_[0].x, this->points_[1].x),
-			this->points_[2].x), this->points_[3].x);
-
-		float y1 = std::min(std::min(std::min(this->points_[0].y, this->points_[1].y),
-			this->points_[2].y), this->points_[3].y);
-
-		float y2 = std::max(std::max(std::max(this->points_[0].y, this->points_[1].y),
-			this->points_[2].y), this->points_[3].y);
-
-		return RectangleF(x1, y1, x2 - x1, y2 - y1);
+		return RectangleF::bounding_box_of(this->points_);
 	}
 
 	ShapeType Quad::shape_type() const
@@ -2479,17 +2118,6 @@ namespace mattmath
 	const Point2F& Quad::point_3() const
 	{
 		return this->points_[3];
-	}
-
-	std::vector<Point2F> Quad::points() const
-	{
-		return
-		{
-			this->points_[0],
-			this->points_[1],
-			this->points_[2],
-			this->points_[3]
-		};
 	}
 
 	// Each setter puts the point back if the result is not a valid quad, so a
@@ -2590,14 +2218,13 @@ namespace mattmath
 		return Triangle(this->points_[0], this->points_[2], this->points_[3]);
 	}
 
-	std::vector<Triangle> Quad::triangles() const
+	std::array<Triangle, 2> Quad::triangles() const
 	{
-		std::vector<Triangle> triangles =
+		return
 		{
 			this->triangle_0(),
 			this->triangle_1()
 		};
-		return triangles;
 	}
 
 	bool Quad::operator==(const Quad& other) const
@@ -2751,19 +2378,7 @@ namespace mattmath
 
 	RectangleF RectangleRotated::bounding_box() const
 	{
-		float x1 = std::min(std::min(std::min(this->points_[0].x, this->points_[1].x),
-			this->points_[2].x), this->points_[3].x);
-
-		float x2 = std::max(std::max(std::max(this->points_[0].x, this->points_[1].x),
-			this->points_[2].x), this->points_[3].x);
-
-		float y1 = std::min(std::min(std::min(this->points_[0].y, this->points_[1].y),
-			this->points_[2].y), this->points_[3].y);
-
-		float y2 = std::max(std::max(std::max(this->points_[0].y, this->points_[1].y),
-			this->points_[2].y), this->points_[3].y);
-
-		return RectangleF(x1, y1, x2 - x1, y2 - y1);
+		return RectangleF::bounding_box_of(this->points_);
 	}
 	ShapeType RectangleRotated::shape_type() const
 	{
@@ -2985,7 +2600,7 @@ namespace mattmath
 	{
 		return this->points_[3];
 	}
-	const std::vector<Point2F>& RectangleRotated::points() const
+	const std::array<Point2F, 4>& RectangleRotated::points() const
 	{
 		return this->points_;
 	}
@@ -3007,9 +2622,12 @@ namespace mattmath
 	}
 	Quad RectangleRotated::quad() const
 	{
-		auto points = this->calculate_points();
-
-		return Quad(points);
+		// Straight off the corner cache. This used to RECOMPUTE the four
+		// points into a fresh vector and hand that to a validating
+		// constructor, so it allocated and re-proved the convexity of a shape
+		// that is convex by construction.
+		return Quad(this->points_[0], this->points_[1],
+			this->points_[2], this->points_[3]);
 	}
 	RectangleF RectangleRotated::rectangle_rotated_to_axis() const
 	{
@@ -3063,35 +2681,22 @@ namespace mattmath
 		return !(*this == other);
 	}
 
-	std::vector<Point2F> RectangleRotated::calculate_points() const
+	std::array<Point2F, 4> RectangleRotated::calculate_points() const
 	{
 		return calculate_points(this->center_, this->x_axis_, this->y_axis_, this->hw_extents_);
 	}
 
-	std::vector<Point2F> RectangleRotated::calculate_points(const Point2F& center,
+	std::array<Point2F, 4> RectangleRotated::calculate_points(const Point2F& center,
 		const Vector2F& x_axis, const Vector2F& y_axis,
 		const Vector2F& hw_extents) const
 	{
-		std::vector<Point2F> points(4);
-
-		points[0] = center - x_axis * hw_extents.x - y_axis * hw_extents.y;
-		points[1] = center + x_axis * hw_extents.x - y_axis * hw_extents.y;
-		points[2] = center + x_axis * hw_extents.x + y_axis * hw_extents.y;
-		points[3] = center - x_axis * hw_extents.x + y_axis * hw_extents.y;
-
-		return points;
-	}
-
-	std::vector<Point2F> RectangleRotated::calculate_points(const Segment& center_line,
-		float thickness) const
-	{
-		Vector2F center = center_line.center();
-		Vector2F x_axis = center_line.direction();
-		x_axis.normalize();
-		Vector2F y_axis = Vector2F::normal(x_axis);
-		Vector2F hw_extents = Vector2F(center_line.length() / 2.0f + thickness, thickness);
-
-		return calculate_points(center, x_axis, y_axis, hw_extents);
+		return
+		{
+			center - x_axis * hw_extents.x - y_axis * hw_extents.y,
+			center + x_axis * hw_extents.x - y_axis * hw_extents.y,
+			center + x_axis * hw_extents.x + y_axis * hw_extents.y,
+			center - x_axis * hw_extents.x + y_axis * hw_extents.y
+		};
 	}
 
 	bool RectangleRotated::half_widths_valid() const
@@ -3124,9 +2729,28 @@ namespace mattmath
 	bool RectangleRotated::edges_valid() const
 	{
 		const auto edges = this->edges();
-		if (edges.size() != 4)
+
+		// One pass, one square root per edge. This used to take twelve: each
+		// of the four loop iterations normalised two edges, so every edge was
+		// normalised twice, and then all four lengths were taken again from
+		// scratch - by length(), which is the same square root normalized()
+		// had just computed and thrown away. The check on edges.size() went
+		// with them; edges() returns a std::array<Segment, 4> and could not
+		// have answered anything else.
+		Vector2F directions[4];
+		float lengths[4];
+		for (size_t i = 0; i < 4; i++)
 		{
-			throw std::invalid_argument("RectangleRotated must have 4 edges");
+			const Vector2F edge = edges[i].direction();
+			lengths[i] = edge.length();
+
+			// Zero-length in, zero out - normalized()'s contract, kept
+			// deliberately: a degenerate edge has always passed the
+			// perpendicularity test below, because the dot product of two zero
+			// vectors is zero.
+			directions[i] = lengths[i] == 0.0f
+				? Vector2F::ZERO
+				: Vector2F(edge.x / lengths[i], edge.y / lengths[i]);
 		}
 
 		// Compare unit directions rather than the raw edge vectors. The dot
@@ -3135,11 +2759,8 @@ namespace mattmath
 		// that were perfectly square.
 		for (size_t i = 0; i < 4; i++)
 		{
-			const Vector2F direction_a = edges[i].direction().normalized();
-			const Vector2F direction_b =
-				edges[(i + 1) % 4].direction().normalized();
-
-			if (!are_equal(Vector2F::dot(direction_a, direction_b), 0.0f, EPSILON))
+			if (!are_equal(Vector2F::dot(directions[i], directions[(i + 1) % 4]),
+				0.0f, EPSILON))
 			{
 				return false;
 			}
@@ -3147,13 +2768,10 @@ namespace mattmath
 
 		// Opposite edges must match in length, to a tolerance that scales with
 		// the edges themselves for the same reason.
-		const float length_0 = edges[0].length();
-		const float length_1 = edges[1].length();
-
-		if (std::fabs(length_0 - edges[2].length()) >
-				EPSILON * std::max(1.0f, length_0) ||
-			std::fabs(length_1 - edges[3].length()) >
-				EPSILON * std::max(1.0f, length_1))
+		if (std::fabs(lengths[0] - lengths[2]) >
+				EPSILON * std::max(1.0f, lengths[0]) ||
+			std::fabs(lengths[1] - lengths[3]) >
+				EPSILON * std::max(1.0f, lengths[1]))
 		{
 			return false;
 		}

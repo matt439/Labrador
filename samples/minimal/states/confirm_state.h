@@ -4,6 +4,7 @@
 #include "engine/core/state.h"
 #include "engine/render/text.h"
 #include <memory>
+#include <string>
 
 // A question put over whatever asked it, which answers by closing.
 //

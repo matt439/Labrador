@@ -270,7 +270,7 @@ namespace artattack
 			}
 			else
 			{
-				result.normal = Vector2F(-axis.x, -axis.y);
+				result.normal = -axis;
 				result.penetration = forwards;
 			}
 			return result;

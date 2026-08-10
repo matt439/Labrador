@@ -6,6 +6,8 @@
 #include "engine/render/camera.h"
 #include "engine/render/viewport.h"
 
+#include <vector>
+
 namespace artattack
 {
 	class ViewportManager

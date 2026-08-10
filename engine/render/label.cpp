@@ -1,5 +1,7 @@
 #include "engine/render/label.h"
 
+#include <string>
+
 using namespace mattmath;
 
 namespace artattack

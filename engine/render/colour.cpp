@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <string>
 
 using namespace mattmath;
 
@@ -36,15 +37,6 @@ namespace artattack
 	Colour::Colour(const std::string& hex)
 	{
 		this->set_from_hex(hex);
-	}
-	Colour& Colour::operator=(const mattmath::Vector4F& vector)
-	{
-		this->r = vector.x;
-		this->g = vector.y;
-		this->b = vector.z;
-		this->a = vector.w;
-		this->clamp_colours();
-		return *this;
 	}
 	bool Colour::operator==(const Colour& other) const
 	{

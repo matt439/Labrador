@@ -1,5 +1,6 @@
 #include "engine/core/state_context.h"
 
+#include <memory>
 #include <utility>
 
 namespace artattack

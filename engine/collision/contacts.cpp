@@ -4,6 +4,8 @@
 #include "engine/collision/collision_object.h"
 #include "engine/collision/narrow_phase.h"
 
+#include <vector>
+
 using mattmath::Vector2F;
 
 namespace artattack
@@ -110,8 +112,7 @@ namespace artattack
 
 			contact.a->on_contact(*contact.b, manifold->normal,
 				manifold->penetration);
-			contact.b->on_contact(*contact.a,
-				Vector2F(-manifold->normal.x, -manifold->normal.y),
+			contact.b->on_contact(*contact.a, -manifold->normal,
 				manifold->penetration);
 		}
 	}

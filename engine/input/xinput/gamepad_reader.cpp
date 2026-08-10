@@ -1,6 +1,7 @@
 #include "engine/input/gamepad_reader.h"
 
 #include <GamePad.h>
+#include <memory>
 
 using namespace mattmath;
 

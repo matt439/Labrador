@@ -230,6 +230,54 @@ namespace EricsonMathTests
 			// A vertex of a shape that has none.
 			CHECK_FALSE(test_point_triangle(a, a, b, c));
 		}
+		TEST_CASE("bounding_box_of is the one extremal fold")
+		{
+			// It was written three times - Triangle, Quad and
+			// RectangleRotated - and the last two were character for
+			// character identical.
+			const Point2F points[4] = { Point2F(3.0f, -2.0f),
+				Point2F(-1.0f, 5.0f), Point2F(7.0f, 1.0f),
+				Point2F(2.0f, 4.0f) };
+
+			const RectangleF box = RectangleF::bounding_box_of(points);
+
+			CHECK(box.left() == -1.0f);
+			CHECK(box.top() == -2.0f);
+			CHECK(box.right() == 7.0f);
+			CHECK(box.bottom() == 5.0f);
+
+			// Every shape that has one agrees with it.
+			const Triangle tri(Point2F(3.0f, -2.0f), Point2F(-1.0f, 5.0f),
+				Point2F(7.0f, 1.0f));
+			const Point2F three[3] = { tri.point_0(), tri.point_1(),
+				tri.point_2() };
+			CHECK(tri.bounding_box() == RectangleF::bounding_box_of(three));
+
+			const Quad q(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f));
+			CHECK(q.bounding_box() == RectangleF(0.0f, 0.0f, 10.0f, 10.0f));
+
+			// A single point is a box with no extent, and nothing at all is
+			// ZERO rather than a guess.
+			const Point2F one[1] = { Point2F(4.0f, 9.0f) };
+			CHECK(RectangleF::bounding_box_of(one) ==
+				RectangleF(4.0f, 9.0f, 0.0f, 0.0f));
+			CHECK(RectangleF::bounding_box_of({}) == RectangleF::ZERO);
+		}
+		TEST_CASE("unary minus reverses a vector")
+		{
+			// The collision module reverses a contact normal constantly and
+			// wrote it out by hand in two different spellings.
+			const Vector2F v(3.0f, -4.0f);
+
+			CHECK(-v == Vector2F(-3.0f, 4.0f));
+			CHECK(-(-v) == v);
+			CHECK(v + (-v) == Vector2F::ZERO);
+			CHECK(-Vector2F::ZERO == Vector2F::ZERO);
+
+			// It agrees with the spelling it replaces.
+			CHECK(-v == v * -1.0f);
+		}
 		TEST_CASE("a rotated rectangle can actually be rotated")
 		{
 			// set_x_axis validates against the unchanged y_axis_ and
@@ -320,9 +368,8 @@ namespace EricsonMathTests
 			CHECK(are_equal(right.angle_1(), PI / 4.0f, EPSILON_F_100));
 			CHECK(are_equal(right.angle_2(), PI / 4.0f, EPSILON_F_100));
 
-			const auto angles = right.angles();
-			CHECK(are_equal(angles[0] + angles[1] + angles[2], PI,
-				EPSILON_F_100));
+			CHECK(are_equal(right.angle_0() + right.angle_1() + right.angle_2(),
+				PI, EPSILON_F_100));
 
 			// Equilateral: 60 degrees at every corner, not 120.
 			const float height = 10.0f * std::sqrt(3.0f) / 2.0f;
@@ -985,42 +1032,6 @@ namespace MattMathTests
 				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f)));
 			CHECK_NOTHROW(Quad(Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f),
 				Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f)));
-		}
-		TEST_CASE("test_8_cardinal_direction")
-		{
-			Point2F p(0.0f, 0.0f);
-			Point2F q(1.0f, 1.0f);
-			Vector2F v = Vector2F::unit_vector(q - p);
-			Vector2F cardinal = Vector2F::direction_to_8_cardinal_direction(v);
-			CHECK(cardinal == Vector2F::DIRECTION_DOWN_RIGHT);
-			q = Point2F(-1.0f, 1.0f);
-			v = Vector2F::unit_vector(q - p);
-			cardinal = Vector2F::direction_to_8_cardinal_direction(v);
-			CHECK(cardinal == Vector2F::DIRECTION_DOWN_LEFT);
-			q = Point2F(-1.0f, -1.0f);
-			v = Vector2F::unit_vector(q - p);
-			cardinal = Vector2F::direction_to_8_cardinal_direction(v);
-			CHECK(cardinal == Vector2F::DIRECTION_UP_LEFT);
-			q = Point2F(1.0f, -1.0f);
-			v = Vector2F::unit_vector(q - p);
-			cardinal = Vector2F::direction_to_8_cardinal_direction(v);
-			CHECK(cardinal == Vector2F::DIRECTION_UP_RIGHT);
-			q = Point2F(0.0f, 1.0f);
-			v = Vector2F::unit_vector(q - p);
-			cardinal = Vector2F::direction_to_8_cardinal_direction(v);
-			CHECK(cardinal == Vector2F::DIRECTION_DOWN);
-			q = Point2F(-1.0f, 0.0f);
-			v = Vector2F::unit_vector(q - p);
-			cardinal = Vector2F::direction_to_8_cardinal_direction(v);
-			CHECK(cardinal == Vector2F::DIRECTION_LEFT);
-			q = Point2F(0.0f, -1.0f);
-			v = Vector2F::unit_vector(q - p);
-			cardinal = Vector2F::direction_to_8_cardinal_direction(v);
-			CHECK(cardinal == Vector2F::DIRECTION_UP);
-			q = Point2F(1.0f, 0.0f);
-			v = Vector2F::unit_vector(q - p);
-			cardinal = Vector2F::direction_to_8_cardinal_direction(v);
-			CHECK(cardinal == Vector2F::DIRECTION_RIGHT);
 		}
 		TEST_CASE("test_rectangles_intersect")
 		{

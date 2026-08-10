@@ -5,9 +5,11 @@
 #include "engine/core/thread_pool.h"
 #include "engine/render/renderer.h"
 
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 using namespace mattmath;
 

@@ -3,6 +3,7 @@
 #include "engine/collision/partitioner.h"
 
 #include <stdexcept>
+#include <vector>
 
 using artattack::Partitioner;
 

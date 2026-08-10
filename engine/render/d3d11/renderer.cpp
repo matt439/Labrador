@@ -3,7 +3,7 @@
 #include "engine/core/throw_if_failed.h"
 
 #include <DirectXColors.h>
-
+#include <memory>
 #include <stdexcept>
 #include <string>
 

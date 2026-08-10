@@ -1,6 +1,7 @@
 #include "engine/render/text_encoding.h"
 
 #include <Windows.h>
+#include <string>
 
 namespace artattack
 {

@@ -4,7 +4,9 @@
 #include <rapidjson/error/en.h>
 
 #include <cstdio>
+#include <memory>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 namespace artattack

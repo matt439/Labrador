@@ -3,6 +3,7 @@
 #include "engine/ui/widget.h"
 
 #include <cmath>
+#include <vector>
 
 using namespace mattmath;
 

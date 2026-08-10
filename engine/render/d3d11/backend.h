@@ -11,6 +11,7 @@
 #include <wrl/client.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 #include "engine/render/camera.h"
 

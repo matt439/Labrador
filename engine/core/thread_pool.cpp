@@ -1,5 +1,7 @@
 #include "engine/core/thread_pool.h"
 
+#include <memory>
+
 namespace artattack
 {
     ThreadPool::ThreadPool(int min_num_threads, int max_num_threads) :

@@ -3,6 +3,9 @@
 #include "engine/core/state_context.h"
 #include "samples/minimal/states/confirm_state.h"
 
+#include <memory>
+#include <string>
+
 using namespace DirectX;
 using namespace mattmath;
 using namespace artattack;

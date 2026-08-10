@@ -3,6 +3,8 @@
 #include "engine/render/sprite_sheet_object.h"
 #include "engine/render/colour.h"
 
+#include <string>
+
 namespace artattack
 {
 	// A playing animation out of a sprite sheet.

@@ -1,4 +1,5 @@
 #include <doctest/doctest.h>
+#include <vector>
 
 #include "engine/render/resolution_manager.h"
 #include "engine/render/screen_layout.h"

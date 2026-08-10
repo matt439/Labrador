@@ -1,6 +1,8 @@
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/assets/json.h"
 
+#include <memory>
+
 using namespace mattmath;
 
 namespace artattack

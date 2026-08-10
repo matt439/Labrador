@@ -1,5 +1,8 @@
 #include "engine/render/d3d11/backend.h"
 
+#include <memory>
+#include <string>
+
 using namespace DirectX;
 using namespace mattmath;
 

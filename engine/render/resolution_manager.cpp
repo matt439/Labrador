@@ -1,5 +1,7 @@
 #include "engine/render/resolution_manager.h"
 
+#include <string>
+
 using namespace mattmath;
 
 namespace artattack

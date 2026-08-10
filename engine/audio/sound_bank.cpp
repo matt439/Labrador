@@ -1,5 +1,7 @@
 #include "engine/audio/sound_bank.h"
+#include <memory>
 #include <stdexcept>
+#include <string>
 
 using namespace DirectX;
 using namespace mattmath;

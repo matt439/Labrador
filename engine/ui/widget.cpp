@@ -1,5 +1,8 @@
 #include "engine/ui/widget.h"
 
+#include <string>
+#include <vector>
+
 using namespace mattmath;
 
 #pragma region UiObject

@@ -1,4 +1,5 @@
 #include <doctest/doctest.h>
+#include <vector>
 
 #include "engine/ui/navigation.h"
 #include "tests/ui/stub_widget.h"

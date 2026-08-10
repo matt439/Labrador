@@ -1,5 +1,7 @@
 #include "engine/math/ericson_math.h"
 
+#include <cmath>
+
 using namespace mattmath;
 
 namespace mattmath

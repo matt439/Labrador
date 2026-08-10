@@ -2,6 +2,7 @@
 
 #include <limits>
 #include <stdexcept>
+#include <vector>
 
 namespace artattack
 {

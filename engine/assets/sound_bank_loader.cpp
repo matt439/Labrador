@@ -1,5 +1,6 @@
 #include "engine/assets/sound_bank_loader.h"
 #include "engine/assets/json.h"
+#include <memory>
 #include <stdexcept>
 #include <string>
 

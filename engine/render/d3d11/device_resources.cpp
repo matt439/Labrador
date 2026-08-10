@@ -7,8 +7,10 @@
 #include "engine/core/throw_if_failed.h"
 
 #include <DirectXMath.h>
+#include <memory>
 #include <stdexcept>
 #include <system_error>
+#include <vector>
 
 #ifdef _DEBUG
 #include <dxgidebug.h>

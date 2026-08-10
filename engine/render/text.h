@@ -3,6 +3,8 @@
 #include "engine/render/text_object.h"
 #include "engine/render/colour.h"
 
+#include <string>
+
 namespace artattack
 {
 	class Text : public TextObject

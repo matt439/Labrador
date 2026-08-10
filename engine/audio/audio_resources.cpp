@@ -1,5 +1,8 @@
 #include "engine/audio/audio_resources.h"
 
+#include <memory>
+#include <string>
+
 namespace artattack
 {
 	AudioResources::SoundBankHandle AudioResources::resolve_sound_bank(

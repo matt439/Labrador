@@ -2,6 +2,8 @@
 
 #include "engine/math/matt_math.h"
 
+#include <vector>
+
 namespace artattack
 {
 	class AnimationStrip

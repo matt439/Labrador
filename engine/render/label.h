@@ -4,6 +4,8 @@
 #include "engine/render/text.h"
 #include "engine/render/colour.h"
 
+#include <string>
+
 namespace artattack
 {
 	// A string a scene can hold, which is what Text on its own is not.

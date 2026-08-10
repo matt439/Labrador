@@ -1,5 +1,7 @@
 #include "engine/render/viewport_manager.h"
 
+#include <vector>
+
 using namespace mattmath;
 
 namespace artattack

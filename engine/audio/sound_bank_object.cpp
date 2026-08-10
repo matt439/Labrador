@@ -1,5 +1,7 @@
 #include "engine/audio/sound_bank_object.h"
 
+#include <string>
+
 using namespace DirectX;
 
 namespace artattack

@@ -5,6 +5,8 @@
 #include "engine/math/matt_math.h"
 #include "engine/render/colour.h"
 
+#include <string>
+
 namespace artattack
 {
 	class Visual final : public GameObject, public TextureObject
