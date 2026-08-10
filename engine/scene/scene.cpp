@@ -206,8 +206,13 @@ namespace artattack
 			// handed one of - the arithmetic is the camera's translation and
 			// the pane's size divided by its zoom, and it needs no layout at
 			// all.
-			const RectangleF visible(view.camera.translation,
-				view.viewport.size() * view.camera.scale);
+			//
+			// It then wrote that arithmetic out inline and MULTIPLIED by the
+			// zoom, which the comment above it had already described
+			// correctly. Camera::visible_rectangle is the inverse transform,
+			// stated once where the forward one lives.
+			const RectangleF visible =
+				view.camera.visible_rectangle(view.viewport);
 
 			// The cull. "Objects expose bounds; the scene culls" (PHILOSOPHY,
 			// Rendering) - and this is the line that makes it true for every

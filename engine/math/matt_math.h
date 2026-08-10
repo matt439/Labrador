@@ -65,13 +65,19 @@ namespace mattmath
 	// it does not.
 	//
 	// That is not currently a bug, and the reason is worth recording so nobody
-	// "fixes" it by making the number bigger. Every use of EPSILON in the
+	// "fixes" it by making the number bigger. Every use of EPSILON on the
 	// collision path CLASSIFIES - is this vector degenerate, is this axis
 	// usable - and none of them MEASURE. The one place a tolerance would have
 	// moved geometry was resolve.cpp's guard, and that now refuses rather than
 	// returns a number (see MIN_AXIS_ALIGNMENT). The separation sweep was
 	// re-run translated out to 600,000 units and holds exactly, so the
 	// analytic path needs no tolerance at all at world scale.
+	//
+	// Off that path there is exactly one exception, and it is named here so
+	// the sentence above can stay absolute: inflate_convex_polygon compares a
+	// determinant against EPSILON, and that comparison decides how far a
+	// produced vertex moves. It is a mitre solve, not a collision query, and
+	// no caller in this repository reaches it.
 	//
 	// The ordering, which is what Ericson insists a set of tolerances has
 	// (8.4.3, p.377 - a query tolerance must exceed the tolerance geometry was
@@ -84,12 +90,31 @@ namespace mattmath
 	//                                   than EPSILON on purpose; they were
 	//                                   never the same quantity.
 	//   EPSILON                   1e-4  this constant. Classification only.
+	//   MIN_EDGE_LENGTH           1e-3  narrow_phase.cpp. Classification: an
+	//                                   edge shorter than this contributes no
+	//                                   separating axis, because normalising
+	//                                   it would amplify its rounding error
+	//                                   into a direction. Below anything the
+	//                                   content contains.
+	//   require_unit's bound      1e-3  resolve.cpp, on a SQUARED length, so
+	//                                   it is twice as loose as it looks
+	//                                   against a length. Classification: it
+	//                                   catches a vector that was never
+	//                                   normalised, and refuses rather than
+	//                                   correcting.
 	//   MIN_AXIS_ALIGNMENT        0.1   resolve.h. Not a rounding tolerance at
 	//                                   all - a bound on how oblique an axis
 	//                                   may be before separating along it is a
 	//                                   category error. Named here because it
 	//                                   is the one that decides whether a
 	//                                   caller gets an answer.
+	//
+	// One member of the family cannot be ranked in that order at all, and is
+	// listed apart rather than pretended into it: RectangleRotated::edges_valid
+	// compares lengths with EPSILON * max(1, length), a RELATIVE tolerance. It
+	// has to be relative, because an absolute one rejected large rectangles
+	// that were perfectly square - which is the same arithmetic this whole note
+	// is about, met from the other side.
 	//
 	// Anything added to this set states which of those three jobs it does, and
 	// where it sits in the order. A tolerance that may move geometry has to be
@@ -106,7 +131,7 @@ namespace mattmath
 
 	bool are_equal(float a, float b, float epsilon = EPSILON);
 	bool are_equal(const mattmath::Vector2F& a, const mattmath::Vector2F& b,
-		float epsilon = 0.0001f);
+		float epsilon = EPSILON);
 
 	float to_radians(float degrees);
 	float to_degrees(float radians);
@@ -153,6 +178,25 @@ namespace mattmath
 		// The true offset of a polygon has arcs where the corners were; the
 		// mitre keeps the result a polygon and errs outward, which is the safe
 		// side (T3 - nobody will see the corner).
+		//
+		// Two consequences of holding containment above tidiness, both stated
+		// because the arithmetic will otherwise look wrong to the next reader:
+		//
+		//   A polygon with no interior is left EXACTLY AS IT WAS. Collinear or
+		//   coincident vertices give a shape with no outward direction to grow
+		//   along - the centroid is on the same line as every vertex, so no
+		//   edge normal can be oriented - and inventing one moved two of a
+		//   collinear triangle's three vertices outside the result. Unchanged
+		//   still contains the original; a guess did not. This matches the
+		//   existing policy for a single degenerate edge.
+		//
+		//   A needle-sharp corner produces a FAR mitre. Two edges that double
+		//   back on each other still meet, and the point where their offset
+		//   lines meet can be thousands of units away for an inflation of one.
+		//   That is the honest answer, and clamping it would put the original
+		//   vertex outside the result, so the ceiling is accepted rather than
+		//   hidden (T3). A caller inflating slivers should expect large
+		//   results.
 		//
 		// A negative `amount` is not supported: shrinking can invert a small
 		// polygon through itself, and no caller wants it.
@@ -914,6 +958,21 @@ namespace mattmath
 		float half_width(int axis) const;
 
 		void set_center(const Point2F& center);
+
+		// Rotating a rectangle means writing BOTH axes, and this is the only
+		// way to do it.
+		//
+		// set_x_axis and set_y_axis each validate the candidate against the
+		// partner axis as it currently stands, which is correct and which
+		// makes them useless for turning anything: the new x axis has to be
+		// perpendicular to the OLD y axis, so every genuine rotation is
+		// rejected whichever of the two is called first. They remain for the
+		// one thing they can express - reversing an axis - and this exists for
+		// the thing they cannot.
+		//
+		// Throws std::invalid_argument unless the pair is orthonormal, and
+		// commits nothing when it does.
+		void set_axes(const Point2F& x_axis, const Point2F& y_axis);
 		void set_x_axis(const Point2F& x_axis);
 		void set_y_axis(const Point2F& y_axis);
 		void set_half_extents(const Point2F& hw_extents);

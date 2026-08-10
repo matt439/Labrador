@@ -97,6 +97,19 @@ namespace artattack
 
 		return Camera(origin, scale);
 	}
+	RectangleF Camera::visible_rectangle(const Viewport& viewport) const
+	{
+		if (this->scale == 0.0f)
+		{
+			throw std::invalid_argument(
+				"Camera::visible_rectangle: the camera's scale is zero, so it "
+				"shows no region of the world");
+		}
+
+		return RectangleF(this->translation,
+			Vector2F(viewport.width / this->scale,
+				viewport.height / this->scale));
+	}
 	Vector2F Camera::calculate_view_position(
 		const Vector2F& world_position) const
 	{

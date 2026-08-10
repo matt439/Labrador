@@ -41,6 +41,27 @@ namespace artattack
 		static Camera calculate_intermediate_camera(
 			const Camera& first, const Camera& last, float amount);
 
+		// What `viewport` actually shows of the world under this camera - the
+		// inverse of calculate_view_rectangle, and the only inverse this type
+		// has ever offered.
+		//
+		// The forward transform is view = (world - translation) * scale, so
+		// the world extent behind `viewport.width` pixels is
+		// viewport.width / scale. Every caller that needed this wrote it by
+		// hand and most of them wrote a MULTIPLY, which is the right
+		// arithmetic upside down: it agrees at scale 1, is merely
+		// over-inclusive above it, and collapses below it. Camera::frame
+		// produces exactly the below-one case whenever a world rectangle is
+		// larger than the viewport showing it - framing 6000 world units into
+		// 1080 pixels gives scale 0.18, where the multiply reports a visible
+		// region 31 times too small in each axis and a cull built on it throws
+		// away almost everything on screen.
+		//
+		// Throws std::invalid_argument for a zero scale, which is not a
+		// viewpoint but a division by nothing. Camera::frame cannot produce
+		// one; a hand-built camera can.
+		mattmath::RectangleF visible_rectangle(const Viewport& viewport) const;
+
 		// The camera that shows all of `world_rectangle` in `viewport`.
 		//
 		// Both axes are honoured: the scale is whichever of the two ratios

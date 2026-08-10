@@ -12,15 +12,18 @@ using mattmath::Vector2F;
 
 namespace
 {
-	// What `viewport` actually shows of the world, under `camera`. This is the
-	// inverse of Camera::calculate_view_rectangle, and it is what the caller
-	// of frame() cares about: not the numbers in the camera, but the region
-	// they put on screen.
+	// What `viewport` actually shows of the world, under `camera` - the
+	// inverse of Camera::calculate_view_rectangle, and what the caller of
+	// frame() cares about: not the numbers in the camera, but the region they
+	// put on screen.
+	//
+	// This was the only correct inverse in the tree, and it was private to
+	// this file while three production sites wrote their own and multiplied
+	// where they should divide. It is Camera::visible_rectangle now, and this
+	// forwards so the cases below keep reading as they did.
 	RectangleF shown(const Camera& camera, const Viewport& viewport)
 	{
-		return RectangleF(camera.translation,
-			Vector2F(viewport.width / camera.scale,
-				viewport.height / camera.scale));
+		return camera.visible_rectangle(viewport);
 	}
 
 	bool contains(const RectangleF& outer, const RectangleF& inner)
@@ -132,5 +135,64 @@ TEST_SUITE("Camera::frame")
 		CHECK(on_screen.width == doctest::Approx(1920.0f));
 		CHECK(on_screen.width <= screen.width + 0.01f);
 		CHECK(on_screen.height <= screen.height + 0.01f);
+	}
+
+	TEST_CASE("visible_rectangle is the inverse of calculate_view_rectangle")
+	{
+		const Viewport screen(RectangleF(0.0f, 0.0f, 1920.0f, 1080.0f));
+
+		SUBCASE("a rectangle taken through both transforms comes back")
+		{
+			const Camera camera(Vector2F(500.0f, 300.0f), 2.0f);
+			const RectangleF visible = camera.visible_rectangle(screen);
+
+			// Push the visible region forward and it should be exactly the
+			// pane, at the origin.
+			const RectangleF on_screen =
+				camera.calculate_view_rectangle(visible);
+
+			CHECK(on_screen.x == doctest::Approx(0.0f));
+			CHECK(on_screen.y == doctest::Approx(0.0f));
+			CHECK(on_screen.width == doctest::Approx(screen.width));
+			CHECK(on_screen.height == doctest::Approx(screen.height));
+		}
+
+		SUBCASE("zooming out shows MORE of the world, not less")
+		{
+			// The direction the multiply got backwards. This is the case
+			// Camera::frame produces for any world larger than its pane, and
+			// the one a cull is built on.
+			const Camera zoomed_out(Vector2F::ZERO, 0.5f);
+			const Camera zoomed_in(Vector2F::ZERO, 2.0f);
+
+			CHECK(zoomed_out.visible_rectangle(screen).width >
+				zoomed_in.visible_rectangle(screen).width);
+
+			CHECK(zoomed_out.visible_rectangle(screen).width ==
+				doctest::Approx(screen.width * 2.0f));
+		}
+
+		SUBCASE("a framed camera sees exactly what it was asked to frame")
+		{
+			// 6000 world units into 1080 pixels is a scale of 0.18, where
+			// multiplying reported a visible region 31 times too small in each
+			// axis - so a scene culling against it discarded almost everything
+			// that was on screen.
+			const RectangleF world(0.0f, 0.0f, 6000.0f, 6000.0f);
+			const RectangleF visible =
+				Camera::frame(world, screen).visible_rectangle(screen);
+
+			CHECK(visible.height == doctest::Approx(6000.0f));
+			CHECK(visible.width >= 6000.0f);
+			CHECK(contains(visible, world));
+		}
+
+		SUBCASE("a zero scale is refused rather than divided by")
+		{
+			const Camera blind(Vector2F::ZERO, 0.0f);
+
+			CHECK_THROWS_AS(blind.visible_rectangle(screen),
+				std::invalid_argument);
+		}
 	}
 }

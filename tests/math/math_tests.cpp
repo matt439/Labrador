@@ -203,17 +203,354 @@ namespace EricsonMathTests
 		}
 		TEST_CASE("a collinear triangle contains nothing, and says so")
 		{
-			// The barycentric form divided by the triangle's determinant,
-			// which is zero here, so every comparison against the resulting
-			// NaN was false and the answer was "outside" for every point in
-			// the plane - including the ones lying on the degenerate triangle
-			// itself. Now the point on it is inside and the one off it is not.
+			// This case has had three answers and only the third is the one
+			// the title claims. The barycentric form divided by the
+			// triangle's determinant, zero here, and every comparison against
+			// the resulting NaN was false - "outside" for the whole plane, by
+			// accident. The sign form that replaced it accepted every point
+			// whose signed area against all three edges was zero, which is the
+			// entire infinite supporting line, and the point at (2, 0) below
+			// was pinned as INSIDE while the title said otherwise.
+			//
+			// A shape with no area encloses nothing, which is what
+			// signed_area says about these same three points. So: nothing is
+			// inside, on the line or off it, near the vertices or a thousand
+			// units past them.
 			const Point2F a(0.0f, 0.0f);
 			const Point2F b(5.0f, 0.0f);
 			const Point2F c(10.0f, 0.0f);
 
-			CHECK(test_point_triangle(Point2F(2.0f, 0.0f), a, b, c));
+			CHECK_FALSE(test_point_triangle(Point2F(2.0f, 0.0f), a, b, c));
 			CHECK_FALSE(test_point_triangle(Point2F(2.0f, 3.0f), a, b, c));
+
+			// On the supporting line but far outside the vertices. This is the
+			// one the sign form got most visibly wrong.
+			CHECK_FALSE(test_point_triangle(Point2F(-1000.0f, 0.0f), a, b, c));
+
+			// A vertex of a shape that has none.
+			CHECK_FALSE(test_point_triangle(a, a, b, c));
+		}
+		TEST_CASE("a rotated rectangle can actually be rotated")
+		{
+			// set_x_axis validates against the unchanged y_axis_ and
+			// set_y_axis against the unchanged x_axis_, so a genuine rotation
+			// was rejected whichever was called first - the rectangle could
+			// not be turned through its own API at all. Both single-axis
+			// setters still refuse, correctly; set_axes is the one that turns.
+			RectangleRotated r(Point2F(0.0f, 0.0f), Vector2F::DIRECTION_RIGHT,
+				Vector2F::DIRECTION_DOWN, Vector2F(10.0f, 5.0f));
+
+			const float turn = PI / 6.0f;
+			const Vector2F x = Vector2F::unit_vec_from_angle(turn);
+
+			// The old route, both orders, still throws - that is what it is
+			// for and it is not what is being fixed.
+			CHECK_THROWS_AS(r.set_x_axis(x), std::invalid_argument);
+			CHECK_THROWS_AS(r.set_y_axis(Vector2F::normal(x)),
+				std::invalid_argument);
+
+			r.set_axes(x, Vector2F::normal(x));
+
+			CHECK(are_equal(r.angle(), turn, EPSILON_F_100));
+			CHECK(r.is_valid());
+
+			// A non-orthogonal pair is refused, and refused transactionally.
+			const RectangleRotated before = r;
+			CHECK_THROWS_AS(r.set_axes(Vector2F::DIRECTION_RIGHT,
+				Vector2F(1.0f, 1.0f)), std::invalid_argument);
+			CHECK(r == before);
+		}
+		TEST_CASE("a rejected Quad setter leaves the quad as it was")
+		{
+			// The sibling of "test_rectangle_rotated_setters_are_transactional".
+			// Quad assigned the member first and validated afterwards, so a
+			// rejected point stayed in the object - and because is_valid() is
+			// a convexity test over all four points, the quad was then stuck:
+			// every subsequent setter rejected the shape it had been left in,
+			// so it could not be repaired through its own API.
+			Quad q(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f));
+			const Quad before = q;
+
+			// Pushing point 1 through the far diagonal makes a dart.
+			CHECK_THROWS_AS(q.set_point_1(Point2F(5.0f, 5.0f)),
+				std::invalid_argument);
+			CHECK(q == before);
+
+			// Still usable afterwards: the object was not left corrupt.
+			q.set_point_1(Point2F(20.0f, 0.0f));
+			CHECK(q.point_1() == Point2F(20.0f, 0.0f));
+			CHECK(q.contains(Point2F(5.0f, 5.0f)));
+		}
+		TEST_CASE("a degenerate rotated rectangle answers contains(), it does not throw")
+		{
+			// contains() reached Quad's constructor, which rejects four
+			// coincident points - so a bool predicate on a default-constructed
+			// RectangleRotated threw invalid_argument("Quad is not valid"),
+			// naming a type the caller never mentioned. A shape with no
+			// interior contains nothing, which is what every other degenerate
+			// shape in the library now says.
+			const RectangleRotated degenerate;
+
+			CHECK_NOTHROW(degenerate.contains(Point2F(1.0f, 1.0f)));
+			CHECK_FALSE(degenerate.contains(Point2F(1.0f, 1.0f)));
+			CHECK_FALSE(degenerate.contains(Point2F::ZERO));
+
+			// A real one is unaffected, boundary included.
+			const RectangleRotated real(Point2F(0.0f, 0.0f),
+				Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN,
+				Vector2F(10.0f, 5.0f));
+
+			CHECK(real.contains(Point2F::ZERO));
+			CHECK(real.contains(Point2F(9.9f, 4.9f)));
+			CHECK(real.contains(Point2F(10.0f, 5.0f)));
+			CHECK_FALSE(real.contains(Point2F(10.1f, 0.0f)));
+		}
+		TEST_CASE("a triangle's angles are its interior angles, and they sum to PI")
+		{
+			// They were taken between the two edge directions meeting at each
+			// vertex, which is PI minus the interior angle - so an equilateral
+			// triangle reported three 120-degree corners and angles() summed
+			// to 2*PI. A right angle is its own supplement, which is why the
+			// only consumer never noticed.
+			const Triangle right(Point2F(0.0f, 0.0f), Point2F(0.0f, 10.0f),
+				Point2F(10.0f, 0.0f));
+
+			CHECK(are_equal(right.angle_0(), PI_OVER_2, EPSILON_F_100));
+			CHECK(are_equal(right.angle_1(), PI / 4.0f, EPSILON_F_100));
+			CHECK(are_equal(right.angle_2(), PI / 4.0f, EPSILON_F_100));
+
+			const auto angles = right.angles();
+			CHECK(are_equal(angles[0] + angles[1] + angles[2], PI,
+				EPSILON_F_100));
+
+			// Equilateral: 60 degrees at every corner, not 120.
+			const float height = 10.0f * std::sqrt(3.0f) / 2.0f;
+			const Triangle equilateral(Point2F(0.0f, 0.0f),
+				Point2F(10.0f, 0.0f), Point2F(5.0f, height));
+
+			CHECK(are_equal(equilateral.angle_0(), PI / 3.0f, EPSILON_F_100));
+			CHECK(are_equal(equilateral.angle_1(), PI / 3.0f, EPSILON_F_100));
+			CHECK(are_equal(equilateral.angle_2(), PI / 3.0f, EPSILON_F_100));
+		}
+		TEST_CASE("the hypotenuse is the side opposite the right angle, not the one beside it")
+		{
+			// find_hypotenuse answers with the VERTEX holding the right angle,
+			// and both accessors used it to index edges() directly. Edge n
+			// runs from vertex n, so the side opposite vertex v is edge v + 1
+			// and they were returning a leg every time.
+			const TriangleRightAxisAligned tri(Point2F(0.0f, 0.0f),
+				Point2F(0.0f, 10.0f), Point2F(10.0f, 0.0f));
+
+			const Segment h = tri.hypotenuse();
+
+			// The long side: 14.14, against legs of 10.
+			CHECK(are_equal(h.length(), std::sqrt(200.0f), EPSILON_F_100));
+
+			// And it is the side that does not touch the right-angled corner.
+			CHECK(h.point_0 != Point2F(0.0f, 0.0f));
+			CHECK(h.point_1 != Point2F(0.0f, 0.0f));
+
+			// Falling from (0,10) to (10,0) is a gradient of -1.
+			CHECK(are_equal(tri.hypotenuse_gradient(), -1.0f, EPSILON_F_100));
+		}
+		TEST_CASE("a rotated rectangle's angle keeps its sign")
+		{
+			// angle_between is an acos, so its range is [0, PI] and a
+			// rectangle turned one way reported the same number as its mirror
+			// image. Nothing could rebuild the orientation from it - which is
+			// the likeliest reason the DrawObject setter that consumes it was
+			// never written.
+			const Vector2F hw(10.0f, 5.0f);
+
+			const float turn = PI / 6.0f;
+			const Vector2F x_pos = Vector2F::unit_vec_from_angle(turn);
+			const RectangleRotated positive(Point2F(0.0f, 0.0f), x_pos,
+				Vector2F::normal(x_pos), hw);
+
+			const Vector2F x_neg = Vector2F::unit_vec_from_angle(-turn);
+			const RectangleRotated negative(Point2F(0.0f, 0.0f), x_neg,
+				Vector2F::normal(x_neg), hw);
+
+			CHECK(are_equal(positive.angle(), turn, EPSILON_F_100));
+			CHECK(are_equal(negative.angle(), -turn, EPSILON_F_100));
+			CHECK(positive.angle() != negative.angle());
+
+			// An unrotated rectangle is still zero.
+			const RectangleRotated flat(Point2F(0.0f, 0.0f),
+				Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN, hw);
+
+			CHECK(are_equal(flat.angle(), 0.0f, EPSILON_F_100));
+		}
+		TEST_CASE("inflate never leaves a vertex outside the shape it grew from")
+		{
+			// The existing "an inflated shape contains the shape it grew from"
+			// case only ever uses well-formed triangles. These are the two
+			// shapes where the mitre solve failed the contract outright.
+
+			SUBCASE("a collinear triangle is left alone rather than mangled")
+			{
+				// No interior means no outward: the centroid is on the same
+				// line as every vertex, so the orientation test scored exactly
+				// zero for all three edges and no normal was flipped. The
+				// result was {(0,1), (5,1), (10,-1)}, which contains neither
+				// (0,0) nor (10,0).
+				Triangle collinear(Point2F(0.0f, 0.0f), Point2F(5.0f, 0.0f),
+					Point2F(10.0f, 0.0f));
+				const Triangle before = collinear;
+
+				collinear.inflate(1.0f);
+
+				CHECK(collinear == before);
+			}
+
+			SUBCASE("a needle's tip is not pushed sideways off its own mitre")
+			{
+				// The determinant at the tip is -2e-5, inside EPSILON, so the
+				// parallel branch fired and moved the tip one unit UP. The
+				// edges are not parallel: they double back, and they meet a
+				// long way to the left.
+				const Point2F tip(0.0f, 0.0f);
+				Triangle needle(tip, Point2F(100.0f, 0.001f),
+					Point2F(100.0f, -0.001f));
+
+				needle.inflate(1.0f);
+
+				CHECK(needle.contains(tip));
+
+				// Every original vertex, not just the awkward one.
+				CHECK(needle.contains(Point2F(100.0f, 0.001f)));
+				CHECK(needle.contains(Point2F(100.0f, -0.001f)));
+
+				// The mitre goes outward, which is the direction that matters.
+				CHECK(needle.point_0().x < tip.x);
+			}
+
+			SUBCASE("a straight-through vertex still takes the parallel push")
+			{
+				// The case the old guard was written for, and the one it got
+				// right: a quad with three collinear points along one side.
+				// Its determinant is also near zero, but the normals agree in
+				// direction, so the straight push is the correct limit.
+				Quad q(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+					Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f));
+
+				q.inflate(1.0f);
+
+				CHECK(q.contains(Point2F(0.0f, 0.0f)));
+				CHECK(q.contains(Point2F(10.0f, 10.0f)));
+				CHECK(q.contains(Point2F(5.0f, 5.0f)));
+			}
+		}
+		TEST_CASE("a triangle with two coincident vertices has a closest point, not a NaN")
+		{
+			// The sibling of "a zero-length segment is its own closest point,
+			// not a NaN", and the same arithmetic: the AB edge region divides
+			// by dot(ab, ab), which is zero when a and b are the same point.
+			// The result travelled - test_circle_triangle returns it as the
+			// contact point on the branch that reports a hit, so a caller
+			// asking where two things touched was handed (NaN, NaN) while
+			// being told they did.
+			const Point2F a(0.0f, 0.0f);
+			const Point2F b(0.0f, 0.0f);
+			const Point2F c(10.0f, 0.0f);
+
+			// Not merely finite: correct. With a and b coincident the shape is
+			// the segment a-c, so the closest point to (5, 1) is (5, 0).
+			// Returning a instead would also be NaN-free and would be wrong by
+			// five units.
+			const Point2F closest = closest_pt_point_triangle(
+				Point2F(5.0f, 1.0f), a, b, c);
+
+			CHECK_FALSE(std::isnan(closest.x));
+			CHECK_FALSE(std::isnan(closest.y));
+			CHECK(closest == Point2F(5.0f, 0.0f));
+
+			// Beyond each end, where the vertex regions answer.
+			CHECK(closest_pt_point_triangle(Point2F(-4.0f, 3.0f), a, b, c) == a);
+			CHECK(closest_pt_point_triangle(Point2F(14.0f, 3.0f), a, b, c) == c);
+
+			// All three vertices the same, approached from anywhere.
+			const Point2F degenerate = closest_pt_point_triangle(
+				Point2F(3.0f, 4.0f), a, b, a);
+
+			CHECK_FALSE(std::isnan(degenerate.x));
+			CHECK_FALSE(std::isnan(degenerate.y));
+			CHECK(degenerate == a);
+
+			// And the circle test that consumes it now reports a usable point
+			// rather than a poisoned one.
+			Point2F contact;
+			const Circle circle(Point2F(5.0f, 1.0f), 5.0f);
+
+			CHECK(test_circle_triangle(circle, a, b, c, contact));
+			CHECK_FALSE(std::isnan(contact.x));
+			CHECK_FALSE(std::isnan(contact.y));
+		}
+		TEST_CASE("a default Triangle contains nothing, and collides with nothing")
+		{
+			// Triangle() is three copies of Vector2F::ZERO, and its
+			// constructor validates nothing - narrow_phase.h says so in
+			// writing and guards itself accordingly. Every edge vector is
+			// (0, 0), so every signed area is exactly zero, and a predicate
+			// that accepts by falling past both sign branches called that
+			// "inside": the degenerate triangle contained every point in the
+			// plane, and triangles_intersect returned true against it for any
+			// triangle at all, through its containment pass.
+			const Triangle degenerate;
+
+			CHECK_FALSE(degenerate.contains(Point2F(1000.0f, 1000.0f)));
+			CHECK_FALSE(degenerate.contains(Point2F::ZERO));
+
+			// Deliberately away from the origin. A real triangle with a vertex
+			// AT the origin genuinely touches the degenerate one, and would
+			// pass the containment test for a reason that has nothing to do
+			// with the defect under test.
+			const Triangle real(Point2F(100.0f, 100.0f), Point2F(110.0f, 100.0f),
+				Point2F(100.0f, 110.0f));
+
+			CHECK_FALSE(triangles_intersect(real, degenerate));
+			CHECK_FALSE(triangles_intersect(degenerate, real));
+
+			// Against itself. This one needed the `a == b` shortcut in
+			// segments_intersect to go as well: all three of a degenerate
+			// triangle's edges are the same zero-length segment, so the
+			// shortcut matched and reported a crossing.
+			CHECK_FALSE(triangles_intersect(degenerate, degenerate));
+		}
+		TEST_CASE("a NaN coordinate is inside nothing and hits nothing")
+		{
+			// The companion to "a NaN coordinate makes test_AABB_AABB report
+			// no intersection". All three predicates now answer a poisoned
+			// input the same way; two of them used to answer "yes".
+			const float nan = std::numeric_limits<float>::quiet_NaN();
+
+			const Point2F polygon[4] = { Point2F(0.0f, 0.0f),
+				Point2F(10.0f, 0.0f), Point2F(10.0f, 10.0f),
+				Point2F(0.0f, 10.0f) };
+
+			CHECK_FALSE(point_in_convex_polygon(polygon, Point2F(nan, 5.0f)));
+			CHECK_FALSE(point_in_convex_polygon(polygon, Point2F(5.0f, nan)));
+
+			// A poisoned vertex, rather than a poisoned query point.
+			const Point2F poisoned[4] = { Point2F(nan, 0.0f),
+				Point2F(10.0f, 0.0f), Point2F(10.0f, 10.0f),
+				Point2F(0.0f, 10.0f) };
+
+			CHECK_FALSE(point_in_convex_polygon(poisoned, Point2F(5.0f, 5.0f)));
+
+			const RectangleF box(0.0f, 0.0f, 10.0f, 10.0f);
+
+			CHECK_FALSE(test_segment_AABB(Point2F(nan, 5.0f),
+				Point2F(20.0f, 5.0f), box));
+			CHECK_FALSE(test_segment_AABB(Point2F(-20.0f, 5.0f),
+				Point2F(20.0f, nan), box));
+			CHECK_FALSE(test_segment_AABB(Point2F(-20.0f, 5.0f),
+				Point2F(20.0f, 5.0f), RectangleF(nan, 0.0f, 10.0f, 10.0f)));
+
+			// The segment that does cross it is unaffected.
+			CHECK(test_segment_AABB(Point2F(-20.0f, 5.0f),
+				Point2F(20.0f, 5.0f), box));
 		}
 		TEST_CASE("test_point_triangle does not depend on the winding")
 		{
@@ -1268,9 +1605,28 @@ namespace MattMathTests
 			// a and b are just not touching
 			b = Segment(Point2F(5.0f, -5.0f), Point2F(5.0f, -EPSILON_F));
 			CHECK_FALSE(segments_intersect(a, b));
-			// a and b are equal
-			b = Segment(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f));
-			CHECK(segments_intersect(a, b));
+
+			// Two identical segments do not CROSS, and this predicate only
+			// answers about crossing. It used to say true through an `a == b`
+			// shortcut, which made the answer depend on which end the caller
+			// wrote first: Segment's operator== is direction sensitive, so the
+			// identical segment matched and the reversed one did not, for the
+			// same two points.
+			//
+			// Whatever the answer is, it has to be the same for both.
+			const Segment same(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f));
+			const Segment reversed(Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f));
+
+			CHECK(segments_intersect(a, same) ==
+				segments_intersect(a, reversed));
+			CHECK_FALSE(segments_intersect(a, same));
+			CHECK_FALSE(segments_intersect(a, reversed));
+
+			// The shapes built on this are unaffected, because a flush contact
+			// is caught by their containment pass rather than by this.
+			const Triangle t0(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+				Point2F(0.0f, 10.0f));
+			CHECK(triangles_intersect(t0, t0));
 		}
 		TEST_CASE("test_segment_rectangle_rotated_intersect")
 		{

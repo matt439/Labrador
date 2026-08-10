@@ -576,13 +576,24 @@ namespace mattmath
 
 	bool mattmath::segments_intersect(const Segment& a, const Segment& b, float& t, Point2F& p)
 	{
-		if (a == b)
-		{
-			t = 0.0f;
-			p = a.point_0;
-			return true;
-		}
-		
+		// A proper crossing, and nothing else - see the contract on
+		// test_2D_segment_segment.
+		//
+		// There used to be an `if (a == b)` shortcut here returning true with
+		// t = 0. It made the predicate disagree with itself: Segment's
+		// operator== compares point_0 to point_0, so it is direction
+		// sensitive, and segments_intersect(s, s) was therefore true while
+		// segments_intersect(s, reversed(s)) was false. The same two point
+		// sets, opposite answers, decided by which end the caller happened to
+		// write first.
+		//
+		// It also did not fix the hole it sat in front of - collinear overlap
+		// is still not an intersection here - so it patched exactly one
+		// instance of a uniformly-open boundary and made the rest
+		// inconsistent. Removing it changes no consumer's answer: every
+		// polygon routine that reaches this runs a closed containment pass
+		// over the vertices first, and two identical segments share both
+		// endpoints, so containment has already returned true.
 		return test_2D_segment_segment(a.point_0, a.point_1,
 			b.point_0, b.point_1, t, p);
 	}
@@ -625,9 +636,22 @@ namespace mattmath
 	bool mattmath::point_rectangle_rotated_intersect(const Point2F& point,
 		const RectangleRotated& rect_rotated)
 	{
-		Quad quad = rect_rotated.quad();
-
-		return quad_point_intersect(quad, point);
+		// Straight onto the corner cache the rectangle already holds.
+		//
+		// This used to build a Quad from it and triangulate that - so a
+		// boolean query allocated twice, re-proved the convexity of a shape
+		// that is convex by construction, and could THROW: Quad's constructor
+		// rejects four coincident points, which is exactly what a
+		// default-constructed RectangleRotated holds. RectangleRotated::contains
+		// is this function, so a predicate returning bool terminated the
+		// caller with an invalid_argument naming a type it never mentioned.
+		//
+		// point_in_convex_polygon gives the same answer for a convex
+		// quadrilateral - both take the boundary as inside and neither cares
+		// about winding - in four cross products and no allocation. A
+		// degenerate rectangle now answers false rather than throwing, which
+		// is the same thing every other degenerate shape in the library says.
+		return point_in_convex_polygon(rect_rotated.points(), point);
 	}
 
 	bool mattmath::rectangles_rotated_intersect(const RectangleRotated& a,
@@ -1946,6 +1970,26 @@ namespace mattmath
 				return;
 			}
 
+			// A polygon with no interior cannot be grown outward, because it
+			// has no outward: the centroid lies on the line every vertex is
+			// on, so the orientation test below scores exactly zero for every
+			// edge and no normal is flipped. Left to run, a collinear triangle
+			// came out with two of its three original vertices OUTSIDE the
+			// result - the one direction the contract on Shape::inflate says
+			// this operation must never fail in.
+			//
+			// signed_area is the engine's existing answer to "does this
+			// enclose anything", and narrow_phase.cpp uses it for the same
+			// question. Leaving the shape alone matches the degenerate-edge
+			// policy a few lines below: still contains the original, refuses
+			// to invent geometry it cannot derive.
+			const std::span<const Point2F> outline(points,
+				static_cast<size_t>(count));
+			if (signed_area(outline) == 0.0f)
+			{
+				return;
+			}
+
 			Vector2F centre = Vector2F::ZERO;
 			for (int i = 0; i < count; i++)
 			{
@@ -1990,11 +2034,35 @@ namespace mattmath
 				const Vector2F& n1 = normals[i];
 				const float determinant = Vector2F::cross(n0, n1);
 
-				if (std::abs(determinant) < EPSILON)
+				// A near-zero determinant means the turn at this vertex is
+				// near-nothing OR near-straight-back, and those two want
+				// opposite treatment. The sign of dot(n0, n1) tells them
+				// apart; testing the determinant alone conflated them.
+				//
+				//   dot > 0: the edges run the same way, the offset lines
+				//            really are parallel and never meet, and pushing
+				//            the vertex straight out along the common normal
+				//            is the limit of the mitre. Correct.
+				//   dot < 0: a needle. The edges double back and DO meet, at
+				//            a mitre point far outside the shape. Pushing
+				//            straight out there leaves the original vertex
+				//            outside the result - the one failure this
+				//            contract exists to prevent. For the triangle
+				//            (0,0), (100, 0.001), (100, -0.001) inflated by 1
+				//            the tip belongs 100,000 units out, and the
+				//            straight push moved it 1 unit up.
+				//
+				// So solve wherever the lines actually meet, and accept that a
+				// needle produces a far mitre. Containment is the invariant
+				// the header states, and a caller who hands this a sliver gets
+				// a shape that honours it rather than a tidier one that does
+				// not. An exact zero cannot be solved at all and is
+				// unreachable here: a perfect spike encloses nothing, and the
+				// area guard at the top of this function has already returned.
+				if (determinant == 0.0f ||
+					(std::abs(determinant) < EPSILON &&
+						Vector2F::dot(n0, n1) > 0.0f))
 				{
-					// The two edges are parallel, so they never meet however
-					// far they are extended. Nothing to mitre: push the vertex
-					// straight out instead.
 					moved[i] = points[i] + n1 * amount;
 					continue;
 				}
@@ -2048,21 +2116,28 @@ namespace mattmath
 			this->edge_2()
 		};
 	}
+	// The INTERIOR angle at each vertex - the one a reader means by "the
+	// angles of a triangle", and the one that makes angles() sum to PI.
+	//
+	// These used to be taken between the two edge DIRECTIONS meeting at the
+	// vertex, which is not the same thing: edge_2 runs p2 -> p0 while the
+	// interior angle at p0 is measured from p0 outwards, so the result was
+	// PI minus the interior angle and angles() summed to 2*PI. A right angle
+	// is its own supplement, which is why find_hypotenuse never noticed.
 	float Triangle::angle_0() const
 	{
-		return Vector2F::angle_between(this->edge_0().direction(),
-			this->edge_2().direction());
-
+		return Vector2F::angle_between(this->points[1] - this->points[0],
+			this->points[2] - this->points[0]);
 	}
 	float Triangle::angle_1() const
 	{
-		return Vector2F::angle_between(this->edge_1().direction(),
-			this->edge_0().direction());
+		return Vector2F::angle_between(this->points[0] - this->points[1],
+			this->points[2] - this->points[1]);
 	}
 	float Triangle::angle_2() const
 	{
-		return Vector2F::angle_between(this->edge_2().direction(),
-			this->edge_1().direction());
+		return Vector2F::angle_between(this->points[0] - this->points[2],
+			this->points[1] - this->points[2]);
 	}
 	std::vector<float> Triangle::angles() const
 	{
@@ -2160,25 +2235,44 @@ namespace mattmath
 
 	}
 
+	namespace
+	{
+		// find_hypotenuse answers with a VERTEX index - the corner holding the
+		// right angle - and the hypotenuse is the side that does not touch it.
+		// Since edge n runs from vertex n to vertex n + 1, the side opposite
+		// vertex v is edge v + 1.
+		//
+		// Both accessors below used the vertex index as an edge index
+		// directly, so both returned a leg. For the right triangle
+		// (0,0), (0,10), (10,0) the right angle is at vertex 0 and the
+		// hypotenuse runs (0,10) -> (10,0) with length 14.14; they returned
+		// (0,0) -> (0,10), length 10, and a gradient to match.
+		int edge_opposite_vertex(int vertex)
+		{
+			return (vertex + 1) % 3;
+		}
+	}
+
 	Segment TriangleRightAxisAligned::hypotenuse() const
 	{
-		int hypotenuse = this->find_hypotenuse(*this);
-		if (hypotenuse == -1)
+		int right_angle_vertex = this->find_hypotenuse(*this);
+		if (right_angle_vertex == -1)
 		{
 			throw std::invalid_argument("Triangle is not a right triangle");
 		}
 
-		return this->edges()[hypotenuse];
+		return this->edges()[edge_opposite_vertex(right_angle_vertex)];
 	}
 	float TriangleRightAxisAligned::hypotenuse_gradient() const
 	{
-		int hypotenuse = this->find_hypotenuse(*this);
-		if (hypotenuse == -1)
+		int right_angle_vertex = this->find_hypotenuse(*this);
+		if (right_angle_vertex == -1)
 		{
 			throw std::invalid_argument("Triangle is not a right triangle");
 		}
 
-		return this->calculate_gradient(hypotenuse);
+		return this->calculate_gradient(
+			edge_opposite_vertex(right_angle_vertex));
 	}
 
 	//bool TriangleRightAxisAligned::is_right_triangle(const Triangle& tri) const
@@ -2355,20 +2449,15 @@ namespace mattmath
 		const Point2F& c = this->points_[2];
 		const Point2F& d = this->points_[3];
 
-		const auto strictly_opposite = [](float lhs, float rhs)
-		{
-			return (lhs > 0.0f && rhs < 0.0f) || (lhs < 0.0f && rhs > 0.0f);
-		};
-
 		// a and c on opposite sides of diagonal bd
-		if (!strictly_opposite(Vector2F::cross(d - b, a - b),
+		if (!strictly_opposite_sides(Vector2F::cross(d - b, a - b),
 			Vector2F::cross(d - b, c - b)))
 		{
 			return false;
 		}
 
 		// b and d on opposite sides of diagonal ac
-		return strictly_opposite(Vector2F::cross(c - a, b - a),
+		return strictly_opposite_sides(Vector2F::cross(c - a, b - a),
 			Vector2F::cross(c - a, d - a));
 	}
 
@@ -2403,42 +2492,59 @@ namespace mattmath
 		};
 	}
 
+	// Each setter puts the point back if the result is not a valid quad, so a
+	// rejected argument leaves the shape exactly as it was.
+	//
+	// RectangleRotated's setters carry the same note and were fixed for the
+	// same reason: assigning to the member and throwing afterwards left the
+	// object holding the value it had just refused. Here it was worse than
+	// there, because is_valid() is a convexity test over all four points - so
+	// a rejected set_point_1 left a quad that every subsequent setter would
+	// also reject, and the shape could not be repaired through its own API.
 	void Quad::set_point_0(const Point2F& point)
 	{
+		const Point2F previous = this->points_[0];
 		this->points_[0] = point;
 
 		if (!this->is_valid())
 		{
+			this->points_[0] = previous;
 			throw std::invalid_argument("Quad is not valid");
 		}
 	}
 
 	void Quad::set_point_1(const Point2F& point)
 	{
+		const Point2F previous = this->points_[1];
 		this->points_[1] = point;
 
 		if (!this->is_valid())
 		{
+			this->points_[1] = previous;
 			throw std::invalid_argument("Quad is not valid");
 		}
 	}
 
 	void Quad::set_point_2(const Point2F& point)
 	{
+		const Point2F previous = this->points_[2];
 		this->points_[2] = point;
 
 		if (!this->is_valid())
 		{
+			this->points_[2] = previous;
 			throw std::invalid_argument("Quad is not valid");
 		}
 	}
 
 	void Quad::set_point_3(const Point2F& point)
 	{
+		const Point2F previous = this->points_[3];
 		this->points_[3] = point;
 
 		if (!this->is_valid())
 		{
+			this->points_[3] = previous;
 			throw std::invalid_argument("Quad is not valid");
 		}
 	}
@@ -2786,6 +2892,27 @@ namespace mattmath
 	// rejected argument leaves the rectangle exactly as it was. Assigning to
 	// the member first and throwing afterwards left the object corrupt: it
 	// held the bad value and a stale points_ cache.
+	void RectangleRotated::set_axes(const Point2F& x_axis, const Point2F& y_axis)
+	{
+		const Vector2F new_x = x_axis.normalized();
+		const Vector2F new_y = y_axis.normalized();
+
+		// Against each other, not against what the rectangle currently holds.
+		// That is the whole point of this function: the single-axis setters
+		// each validate a candidate against the partner they are not changing,
+		// so a rotation is rejected in either order and the rectangle could
+		// not be turned at all through its own API.
+		if (!are_equal(new_x.length(), 1.0f, EPSILON) ||
+			!are_equal(new_y.length(), 1.0f, EPSILON) ||
+			!are_equal(Vector2F::dot(new_x, new_y), 0.0f, EPSILON))
+		{
+			throw std::invalid_argument("Axes are not valid");
+		}
+
+		this->x_axis_ = new_x;
+		this->y_axis_ = new_y;
+		this->points_ = this->calculate_points();
+	}
 	void RectangleRotated::set_x_axis(const Point2F& x_axis)
 	{
 		const Vector2F candidate = x_axis.normalized();
@@ -2890,7 +3017,11 @@ namespace mattmath
 	}
 	float RectangleRotated::angle() const
 	{
-		return Vector2F::angle_between(this->x_axis_, Vector2F::DIRECTION_RIGHT);
+		// atan2 through Vector2F::angle(), not angle_between. angle_between is
+		// an acos, so its range is [0, PI] and it cannot tell +30 degrees from
+		// -30: a rectangle and its mirror image reported the same rotation,
+		// and nothing could reconstruct the orientation from the number.
+		return this->x_axis_.angle();
 	}
 	bool RectangleRotated::is_valid() const
 	{
@@ -2908,6 +3039,28 @@ namespace mattmath
 		}
 
 		return true;
+	}
+
+	// Declared in the header since the type was written, and never defined -
+	// the one shape of the ten in this file whose comparison was a promise
+	// only. Nothing had used it, so nothing had failed to link, and it read
+	// from the header as though it worked.
+	//
+	// Compares the four members that DEFINE the rectangle, not points_, which
+	// is a cache derived from them: two rectangles with equal centre, axes and
+	// extents have equal corners by construction, and comparing the cache as
+	// well would only add four ways to disagree with the thing that produced
+	// it. Exact float equality, as every other shape here uses.
+	bool RectangleRotated::operator==(const RectangleRotated& other) const
+	{
+		return this->center_ == other.center_ &&
+			this->x_axis_ == other.x_axis_ &&
+			this->y_axis_ == other.y_axis_ &&
+			this->hw_extents_ == other.hw_extents_;
+	}
+	bool RectangleRotated::operator!=(const RectangleRotated& other) const
+	{
+		return !(*this == other);
 	}
 
 	std::vector<Point2F> RectangleRotated::calculate_points() const

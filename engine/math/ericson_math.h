@@ -68,8 +68,15 @@ namespace mattmath
 	// is gone; the decision is the thing worth keeping.
 
 
+	// Whether the segment p0p1 meets the box, boundary included.
+	//
+	// Written in the accepting form - it returns the conjunction of three
+	// overlaps rather than falling through a run of rejections - so a NaN
+	// coordinate in either endpoint or in the box reports no intersection.
+	// See test_AABB_AABB, which is the same decision, and the note on EPSILON
+	// in matt_math.h for where SEGMENT_PARALLEL_EPSILON sits in the ordering.
 	bool test_segment_AABB(const mattmath::Point2F& p0,
-		const mattmath::Point2F p1, const mattmath::AABB& b);
+		const mattmath::Point2F& p1, const mattmath::AABB& b);
 
 	// Twice the signed area of triangle abc. This is the book's ORIENT2D
 	// predicate, and it is exactly mattmath::Vector2F::cross(b - a, c - a) -
@@ -79,11 +86,30 @@ namespace mattmath
 	//
 	// Zero means the three points are collinear. Callers wanting only the
 	// orientation should compare this against zero, or compare two of these
-	// results for equal sign - never multiply two of them together, which
-	// squares the magnitudes and overflows to zero or infinity on
-	// world-scale coordinates long before the signs are in doubt.
+	// results for sign - never multiply two of them together. Use
+	// strictly_opposite_sides below, which is what that comparison is called.
+	//
+	// The hazard the multiply carries is UNDERFLOW, not the overflow an
+	// earlier version of this note claimed. signed_2D_tri_area subtracts
+	// before it multiplies, so its result is the size of the triangle rather
+	// than the size of the world, and even at 600,000 units the product of two
+	// of them stays fifteen orders inside float's range. What it does not
+	// survive is the other end: two small opposite-signed areas - a crossing
+	// that is nearly a graze - multiply to exactly 0.0f, and a test written as
+	// `a * b < 0.0f` then reports no crossing at all. A NaN in either operand
+	// does the same.
 	float signed_2D_tri_area(const mattmath::Point2F& a,
 		const mattmath::Point2F& b, const mattmath::Point2F& c);
+
+	// Whether two signed areas place their points on strictly opposite sides
+	// of the line they were both measured against.
+	//
+	// Strict on purpose: a zero is on the line, and "on the line" is not
+	// "opposite" to anything. That is what makes it reject the degenerate
+	// cases - a repeated vertex, three collinear points - rather than
+	// classifying them arbitrarily, and it is why this cannot be written as
+	// `(lhs < 0.0f) != (rhs < 0.0f)`, which calls an exact zero "positive".
+	bool strictly_opposite_sides(float lhs, float rhs);
 
 	// The signed area enclosed by a polygon given as its vertices in order,
 	// closing automatically from the last back to the first. Positive for one
@@ -125,11 +151,37 @@ namespace mattmath
 	// inside.
 	//
 	// Convexity is a precondition and is NOT checked; a concave polygon will
-	// report false for points that are genuinely inside it. Fewer than three
-	// vertices encloses nothing and is always false.
+	// report false for points that are genuinely inside it.
+	//
+	// Anything that encloses nothing contains nothing, which is the same
+	// answer signed_area gives for the same inputs: fewer than three
+	// vertices, coincident vertices, all vertices collinear. A degenerate
+	// polygon is therefore always false - including for points lying on it,
+	// which is the one place this deliberately differs from "the boundary is
+	// inside". A shape with no interior has no boundary to be on.
+	//
+	// A NaN in the point or in any vertex is false, by the rule test_AABB_AABB
+	// states: the accept branch is one a comparison has to reach.
 	bool point_in_convex_polygon(std::span<const mattmath::Point2F> polygon,
 		const mattmath::Point2F& p);
 
+	// Whether segments ab and cd cross PROPERLY, and if so where: t along ab,
+	// and the point itself.
+	//
+	// Proper is the whole contract, and it is exclusive at both ends
+	// (5.1.9.1, pp.152-153). Two segments that merely touch - one's endpoint
+	// landing on the other, or on the other's endpoint - do not cross, and
+	// neither do two collinear segments that overlap along their length, however
+	// much of it they share. Both cases produce a zero signed area, and zero is
+	// not strictly opposite anything.
+	//
+	// That agrees with manifold.h, where shapes which merely touch do not
+	// overlap, and it is why the polygon routines that call this run a closed
+	// containment pass over the vertices first: containment is what catches a
+	// flush contact, and this is what catches a crossing. Neither is asked to
+	// do the other's job.
+	//
+	// `t` and `p` are written only when the result is true.
 	bool test_2D_segment_segment(const mattmath::Point2F& a,
 		const mattmath::Point2F& b, const mattmath::Point2F& c,
 		const mattmath::Point2F& d, float& t, mattmath::Point2F& p);
@@ -143,6 +195,15 @@ namespace mattmath
 	// and every comparison against the resulting NaN was false, so a
 	// degenerate triangle reported "outside" for every point in the plane
 	// rather than reporting anything a caller could act on.
+	//
+	// A triangle with no area answers false for every point, which is
+	// deliberate and is not the old NaN behaviour wearing a new hat: it is
+	// what signed_area says about the same three points, reached by a
+	// comparison rather than by a division nobody guarded. The sign form
+	// first shipped returning TRUE for points on a collinear triangle's
+	// supporting line - the whole infinite line, not merely the part between
+	// the vertices - and true for every point in the plane once two vertices
+	// coincided. Degenerate in, "contains nothing" out.
 	bool test_point_triangle(const mattmath::Point2F& p,
 		const mattmath::Point2F& a, const mattmath::Point2F& b,
 		const mattmath::Point2F& c);

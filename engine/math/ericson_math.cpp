@@ -72,8 +72,32 @@ namespace mattmath
 		// Check if P in edge region of AB, if so return projection of P onto AB
 		float vc = d1 * d4 - d3 * d2;
 		if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
-			float v = d1 / (d1 - d3);
-			return a + v * ab; // barycentric coordinates (1-v,v,0)
+			// d1 - d3 is dot(ab, ab) - the squared length of ab - so it is
+			// zero exactly when a and b are the same point. Unguarded, that
+			// divided 0/0 and returned (NaN, NaN), which test_circle_triangle
+			// hands back as the contact point on the branch where it reports
+			// a hit. Triangle's constructor validates nothing, so the input is
+			// reachable.
+			//
+			// Falling through is the fix, NOT returning a. When a and b
+			// coincide the triangle is the segment a-c, and a is only the
+			// closest point on it when p is beyond that end - which the vertex
+			// region above has already tested for. Answering a here removes
+			// the NaN and substitutes a wrong point: for a = b = (0,0),
+			// c = (10,0) and p = (5,1) the answer is (5,0), and a is 5.1 away
+			// from p rather than 1.
+			//
+			// The AC edge region below produces it, because with ab degenerate
+			// vb is also zero and its guards hold. Only this branch can see a
+			// zero denominator: for a == c and b == c the AB branch is reached
+			// first with a positive one, and all three coincident is caught by
+			// the vertex-A region at the top.
+			const float ab_length_squared = d1 - d3;
+			if (ab_length_squared > 0.0f)
+			{
+				float v = d1 / ab_length_squared;
+				return a + v * ab; // barycentric coordinates (1-v,v,0)
+			}
 		}
 		// Check if P in vertex region outside C
 		Vector2F cp = p - c;
@@ -203,36 +227,41 @@ namespace mattmath
 
 	// Test if segment specified by points p0 and p1 intersects AABB b
 	bool test_segment_AABB(const Point2F& p0,
-		const Point2F p1, const AABB& b)
+		const Point2F& p1, const AABB& b)
 	{
 		Vector2F b_min = b.top_left();
 		Vector2F b_max = b.bottom_right();
-	
+
 		Point2F c = (b_min + b_max) * 0.5f; // Box center-point
 		Vector2F e = b_max - c; // Box halflength extents
 		Point2F m = (p0 + p1) * 0.5f; // Segment midpoint
 		Vector2F d = p1 - m; // Segment halflength vector
 		m = m - c; // Translate box and segment to origin
-		// Try world coordinate axes as separating axes
-		float adx = std::abs(d.x);
-		if (std::abs(m.x) > e.x + adx) return 0;
-		float ady = std::abs(d.y);
-		if (std::abs(m.y) > e.y + ady) return 0;
-		//float adz = std::abs(d.z);
-		//if (std::abs(m.z) > e.z + adz) return 0;
 
-		// Add in an epsilon term to counteract arithmetic errors when segment is
-		// (near) parallel to a coordinate axis (see text for detail)
-		adx += SEGMENT_PARALLEL_EPSILON;
-		ady += SEGMENT_PARALLEL_EPSILON;
-		//adz += SEGMENT_PARALLEL_EPSILON;
+		// Stated as "overlapping on every axis", not as "not separated on
+		// some axis" - the same rewrite, for the same reason, as
+		// test_AABB_AABB at the top of this file. The rejecting form was three
+		// comparisons that are all false against NaN, falling through to
+		// `return 1`, so a segment with one poisoned endpoint coordinate hit
+		// every box in the world (11.2.2, pp.436-437).
+		const float adx = std::abs(d.x);
+		const bool overlap_x = std::abs(m.x) <= e.x + adx;
 
-		if (std::abs(m.x * d.y - m.y * d.x) > e.x * ady + e.y * adx)
-		{
-			return 0;
-		}
+		const float ady = std::abs(d.y);
+		const bool overlap_y = std::abs(m.y) <= e.y + ady;
+
+		// The epsilon term counteracts arithmetic error when the segment runs
+		// (near) parallel to a coordinate axis (see text for detail). It
+		// belongs to the cross test alone, and is still added after the two
+		// axis tests have been decided, exactly as before.
+		const float adx_e = adx + SEGMENT_PARALLEL_EPSILON;
+		const float ady_e = ady + SEGMENT_PARALLEL_EPSILON;
+
+		const bool overlap_cross =
+			std::abs(m.x * d.y - m.y * d.x) <= e.x * ady_e + e.y * adx_e;
+
 		// No separating axis found; segment must be overlapping AABB
-		return 1;
+		return overlap_x && overlap_y && overlap_cross;
 	}
 
 	// Returns 2 times the signed triangle area. The result is positive if
@@ -241,6 +270,11 @@ namespace mattmath
 		const Point2F& b, const Point2F& c)
 	{
 		return (a.x - c.x) * (b.y - c.y) - (a.y - c.y) * (b.x - c.x);
+	}
+
+	bool strictly_opposite_sides(float lhs, float rhs)
+	{
+		return (lhs > 0.0f && rhs < 0.0f) || (lhs < 0.0f && rhs > 0.0f);
 	}
 
 
@@ -277,6 +311,7 @@ namespace mattmath
 
 		bool any_left = false;
 		bool any_right = false;
+		bool any_signed = false;
 
 		for (size_t i = 0; i < polygon.size(); i++)
 		{
@@ -287,13 +322,26 @@ namespace mattmath
 			// this stays exact at world coordinates.
 			const float side = Vector2F::cross(to - from, p - from);
 
+			// A NaN is on neither side, and it has to be rejected by a branch
+			// rather than by falling past both of them. This is the same
+			// argument test_AABB_AABB makes at the top of this file: every
+			// comparison against NaN is false, so a test whose accept branch
+			// is the fall-through accepts every poisoned input
+			// (11.2.2, pp.436-437).
+			if (!(side >= 0.0f || side <= 0.0f))
+			{
+				return false;
+			}
+
 			if (side > 0.0f)
 			{
 				any_left = true;
+				any_signed = true;
 			}
 			else if (side < 0.0f)
 			{
 				any_right = true;
+				any_signed = true;
 			}
 
 			// Sides disagree, so the point is outside this edge no matter
@@ -304,7 +352,18 @@ namespace mattmath
 			}
 		}
 
-		return true;
+		// Every edge returned exactly zero, so the polygon has no interior:
+		// its vertices are coincident, or all of them are collinear. That is
+		// the case signed_area already calls "encloses nothing", and this
+		// function is the one place in the file that used to disagree with it.
+		//
+		// The disagreement was not academic. A default-constructed Triangle is
+		// three copies of Vector2F::ZERO, so every edge vector was (0, 0),
+		// every cross product was zero, and the fall-through said "inside" -
+		// which made Triangle().contains(p) true for every point in the plane
+		// and triangles_intersect(anything, Triangle()) true unconditionally,
+		// through its containment pass.
+		return any_signed;
 	}
 
 	// Test if segments ab and cd overlap. If they do, compute and return
@@ -313,18 +372,25 @@ namespace mattmath
 		const Point2F& b, const Point2F& c,
 		const Point2F& d, float& t, Point2F& p)
 	{	
-		// Sign of areas correspond to which side of ab points c and d are
+		// Sign of areas correspond to which side of ab points c and d are.
+		//
+		// Compared by sign rather than by multiplying the two areas together,
+		// which is what the book's listing does and what the note on
+		// signed_2D_tri_area forbids: two small opposite-signed areas - a
+		// crossing that is nearly a graze - multiply to exactly zero, and
+		// `< 0.0f` then reports no crossing. Same answer everywhere else, and
+		// two fewer multiplies.
 		float a1 = signed_2D_tri_area(a, b, d); // Compute winding of abd (+ or -)
 		float a2 = signed_2D_tri_area(a, b, c); // To intersect, must have sign opposite of a1
 		// If c and d are on different sides of ab, areas have different signs
-		if (a1 * a2 < 0.0f) {
+		if (strictly_opposite_sides(a1, a2)) {
 			// Compute signs for a and b with respect to segment cd
 			float a3 = signed_2D_tri_area(c, d, a); // Compute winding of cda (+ or -)
 			// Since area is constant a1 - a2 = a3 - a4, or a4 = a3 + a2 - a1
 			// float a4 = Signed2DTriArea(c, d, b); // Must have opposite sign of a3
 			float a4 = a3 + a2 - a1;
 			// Points a and b on different sides of cd if areas have different signs
-			if (a3 * a4 < 0.0f) {
+			if (strictly_opposite_sides(a3, a4)) {
 				// Segments intersect. Find intersection point along L(t) = a + t * (b - a).
 				// Given height h1 of an over cd and height h2 of b over cd,
 				// t = h1 / (h1 - h2) = (b*h1/2) / (b*h1/2 - b*h2/2) = a3 / (a3 - a4),
