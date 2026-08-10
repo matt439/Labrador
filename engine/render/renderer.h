@@ -121,8 +121,7 @@ namespace artattack
 		// Restricts subsequent draws to this viewport, in back-buffer pixels.
 		// Absorbs ViewportManager::apply_player_viewport, whose three lines of
 		// RSSetViewports/SetViewport were the only backend part of that class -
-		// camera_adjusted_player_viewport_rect and the layout arithmetic beside
-		// it are pure and stay where they are.
+		// the layout arithmetic beside it is pure and stays where it is.
 		void set_viewport(const Viewport& viewport);
 
 		// World to view, for every draw recorded after it.

@@ -212,7 +212,9 @@ namespace artattack
 			// It then wrote that arithmetic out inline and MULTIPLIED by the
 			// zoom, which the comment above it had already described
 			// correctly. Camera::visible_rectangle is the inverse transform,
-			// stated once where the forward one lives.
+			// stated once where the forward one lives, and the ViewportManager
+			// member is deleted rather than left forwarding to it: a second copy
+			// of one inverse is how the wrong copy survived this long.
 			const RectangleF visible =
 				view.camera.visible_rectangle(view.viewport);
 

@@ -17,16 +17,6 @@ namespace artattack
         return { 0.0f, 0.0f, res.x, res.y };
     }
 
-    RectangleF ViewportManager::camera_adjusted_player_viewport_rect(
-        int player_num, const Camera& camera) const
-    {
-        // The extent was multiplied by the camera's scale rather than divided
-        // by it, so this reported a world region that shrank as the camera
-        // zoomed out. Camera::visible_rectangle holds that inverse now, beside
-        // the forward transform it inverts.
-        return camera.visible_rectangle(this->player_viewport(player_num));
-    }
-
     void ViewportManager::set_layout(ScreenLayout layout)
     {
         this->layout_ = layout;

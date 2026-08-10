@@ -3,7 +3,6 @@
 #include "engine/render/screen_layout.h"
 #include "engine/render/resolution_manager.h"
 #include "engine/math/matt_math.h"
-#include "engine/render/camera.h"
 #include "engine/render/viewport.h"
 
 #include <vector>
@@ -41,9 +40,13 @@ namespace artattack
 
 		std::vector<Viewport> all_viewports() const;
 
-		mattmath::RectangleF camera_adjusted_player_viewport_rect(
-			int player_num, const Camera& camera) const;
-
+		// camera_adjusted_player_viewport_rect(player_num, camera) is gone. It
+		// asked the layout for a viewport its only caller had just been handed
+		// one of, and the rest of it was the camera's inverse transform written
+		// a second time - which is how the wrong copy of that inverse, a
+		// multiply where the arithmetic divides, survived two reviews and a
+		// seam extraction. Camera::visible_rectangle states it once, beside the
+		// forward transform, and this class needs no Camera at all now.
 		std::vector<mattmath::RectangleF> viewport_dividers() const;
 
 		Viewport fullscreen_viewport() const;
