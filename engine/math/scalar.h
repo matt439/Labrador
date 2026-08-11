@@ -86,15 +86,19 @@ namespace mattmath
 	//
 	// clamp_ref, the in-place form of each, is gone: it had no caller in the
 	// tree and could not have acquired a useful one, for the reason above.
+	// The int overload went the same way, and for the plainer reason: every
+	// clamp in either repository is a float one.
 	float clamp(float value, float min, float max);
-	int clamp(int value, int min, int max);
 
 	bool are_equal(float a, float b, float epsilon = EPSILON);
 	bool are_equal(const mattmath::Vector2F& a, const mattmath::Vector2F& b,
 		float epsilon = EPSILON);
 
-	float to_radians(float degrees);
-	float to_degrees(float radians);
+	// NOT HERE: to_radians and to_degrees. Both had zero callers in this
+	// repository and zero in the client - every angle in the engine is
+	// already radians, because that is what <cmath> takes and what
+	// Vector2F::unit_vec_from_angle and RectangleRotated::angle answer in.
+	// A pair of conversions with no caller is a unit system nobody uses (T1).
 
 	float lerp(float a, float b, float t);
 }
