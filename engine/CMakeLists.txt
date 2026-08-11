@@ -11,6 +11,7 @@ find_package(directxtk CONFIG REQUIRED)
 
 add_library(ArtAttackEngine STATIC
     app/application.cpp
+    app/window.cpp
     assets/asset_manifest_loader.cpp
     assets/json.cpp
     assets/resource_loader.cpp

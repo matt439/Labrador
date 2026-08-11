@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/app/window.h"
 #include "engine/assets/resource_loader.h"
 #include "engine/audio/audio_resources.h"
 #include "engine/collision/partitioner.h"
@@ -78,7 +79,8 @@ namespace artattack
 	// The first state is constructed last on purpose: states build drawables, and
 	// a drawable resolves handles against resources that do not exist until the
 	// manifest has been walked.
-	class Application : public DeviceNotify, public StateContext
+	class Application : public DeviceNotify, public StateContext,
+		public WindowNotify
 	{
 	public:
 		explicit Application(ApplicationOptions options);
@@ -187,7 +189,7 @@ namespace artattack
 		std::unique_ptr<DirectX::AudioEngine> audio_engine_ = nullptr;
 
 		ApplicationOptions options_;
-		HWND window_ = nullptr;
+		std::unique_ptr<Window> window_ = nullptr;
 		std::unique_ptr<Renderer> renderer_ = nullptr;
 		StepTimer timer_ = StepTimer();
 
@@ -205,39 +207,33 @@ namespace artattack
 		bool com_initialized_ = false;
 		bool content_loaded_ = false;
 
-		// The window forwards these; nothing else calls them.
-		void tick();
 		void update();
 		void render();
 
-		void on_activated() const;
-		void on_deactivated() const;
-		void on_suspending() const;
-		void on_resuming();
-		void on_window_moved() const;
-		void on_display_change() const;
-		void on_window_size_changed(int width, int height);
+		// WindowNotify. The window forwards these; nothing else calls them,
+		// and they are private because a private override is still reachable
+		// through the base pointer the window holds.
+		//
+		// They stay on Application rather than moving into Window with the
+		// rest of the Win32, and on_display_change is the one that decides it:
+		// it ends in DeviceResources::UpdateColorSpace, so a Window handling
+		// its own messages would be a third file outside engine/render/d3d11/
+		// including the backend. A Renderer::display_changed() on the seam
+		// would delete the constraint and make the placement a free choice.
+		void tick() override;
+		void on_activated() const override;
+		void on_deactivated() const override;
+		void on_suspending() const override;
+		void on_resuming() override;
+		void on_window_moved() const override;
+		void on_display_change() const override;
+		void on_window_size_changed(int width, int height) override;
 
 		void create_window(HINSTANCE instance, int show_command);
 		void create_services();
 
-		// The outer window size that leaves `client_size` pixels to draw into
-		// under `style`/`ex_style`. Every Win32 call that sizes a window takes
-		// the outer rect, and every resolution this engine is asked for is client
-		// area, so this conversion sits between the two - without it a windowed
-		// 1280x720 delivered about 1264x681, silently, at every preset.
-		static mattmath::Vector2I outer_size_for_client(
-			const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style);
-
-		// The same, for the style the window is wearing right now.
-		mattmath::Vector2I outer_size_for_client(
-			const mattmath::Vector2I& client_size) const;
-
 		// DeviceNotify
 		void on_device_lost() override;
 		void on_device_restored() override;
-
-		static LRESULT CALLBACK window_proc(HWND window, UINT message,
-			WPARAM w_param, LPARAM l_param);
 	};
 }

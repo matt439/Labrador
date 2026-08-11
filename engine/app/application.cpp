@@ -1,7 +1,10 @@
 #include "engine/app/application.h"
 #include "engine/assets/asset_manifest_loader.h"
-// The one place the shell has to name the backend: a window handle and a
-// device belong to a platform, and this is the file that owns both.
+// The one place the shell has to name the backend, and since the window moved
+// out it is down to one reason: on_display_change ends in
+// DeviceResources::UpdateColorSpace. That is also why the seven window
+// handlers stayed on Application rather than following the Win32 into
+// window.cpp - see the note above them in application.h.
 #include "engine/render/d3d11/backend.h"
 #include "engine/math/vector2f.h"
 #include <DirectXMath.h>
@@ -107,7 +110,7 @@ namespace artattack
 
 		// max_threads is the view capacity: the widest this frame may ever fan
 		// out, which is what sizes the per-view recording state.
-		this->renderer_->create_device(this->window_, size.x, size.y,
+		this->renderer_->create_device(this->window_->handle(), size.x, size.y,
 			this->options_.max_threads);
 
 		this->create_services();
@@ -122,101 +125,23 @@ namespace artattack
 
 	void Application::create_window(HINSTANCE instance, int show_command)
 	{
-		WNDCLASSEXW window_class = {};
-		window_class.cbSize = sizeof(WNDCLASSEXW);
-		window_class.style = CS_HREDRAW | CS_VREDRAW;
-		window_class.lpfnWndProc = window_proc;
-		window_class.hInstance = instance;
-		window_class.hIcon = LoadIconW(instance, L"IDI_ICON");
-		window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-		window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-		window_class.lpszClassName = this->options_.window_class_name.c_str();
-		window_class.hIconSm = LoadIconW(instance, L"IDI_ICON");
-
-		if (RegisterClassExW(&window_class) == 0)
-		{
-			throw std::runtime_error("Could not register the window class.");
-		}
-
-		const mattmath::Vector2I client =
+		WindowOptions window_options;
+		window_options.window_class_name = this->options_.window_class_name;
+		window_options.window_title = this->options_.window_title;
+		window_options.client_size =
 			this->resolution_manager_->resolution_ivec();
+		window_options.fullscreen = this->options_.fullscreen;
+		window_options.min_window_width = this->options_.min_window_width;
+		window_options.min_window_height = this->options_.min_window_height;
 
-		const DWORD style = static_cast<DWORD>(
-			this->options_.fullscreen ? WS_POPUP : WS_OVERLAPPEDWINDOW);
-		const DWORD ex_style = static_cast<DWORD>(
-			this->options_.fullscreen ? WS_EX_TOPMOST : 0);
-
-		// THE REQUESTED SIZE IS CLIENT AREA. CreateWindowExW takes an OUTER
-		// rect, so handing it the requested resolution straight spends the
-		// caption and the borders out of the game's own pixels: a windowed
-		// 1280x720 came out as roughly 1264x681 to draw into, at every preset,
-		// and nothing said so. AdjustWindowRectEx is the only way to ask what
-		// frame this style costs, and it answers zero for the WS_POPUP branch,
-		// which is why one call covers both.
-		const mattmath::Vector2I outer =
-			outer_size_for_client(client, style, ex_style);
-
-		// The Application pointer rides in as the create parameter and is stashed
-		// in the window's user data by WM_CREATE, so window_proc can find it
-		// without a global.
-		this->window_ = CreateWindowExW(ex_style,
-			this->options_.window_class_name.c_str(),
-			this->options_.window_title.c_str(), style,
-			CW_USEDEFAULT, CW_USEDEFAULT, outer.x, outer.y,
-			nullptr, nullptr, instance, this);
-
-		if (this->window_ == nullptr)
-		{
-			throw std::runtime_error("Could not create the window.");
-		}
-
-		// AND THE WM_SIZE THIS PRODUCES IS NOW WORTH SOMETHING. It arrives
-		// before create_device, so the renderer half of on_window_size_changed
-		// still does nothing - DeviceResources::WindowSizeChanged returns early
-		// with no window set. The resolution-manager half does not, so by the
-		// time initialize() reads resolution_ivec() for create_device, that is
-		// the client size the window really got. It matters most for the
-		// full-screen branch, where SW_SHOWMAXIMIZED decides the size and
-		// nothing here knows it: the swap chain used to be created at the saved
-		// preset and then stretched non-uniformly to the monitor
-		// (DXGI_SCALING_STRETCH), which is the one form of this bug the shipped
-		// sample hits.
-		ShowWindow(this->window_,
-			this->options_.fullscreen ? SW_SHOWMAXIMIZED : show_command);
+		// `this` is handed over in the constructor, not after it: the WM_SIZE
+		// ShowWindow fires arrives before this call returns, and it is what
+		// corrects resolution_manager_ to the client size the window really
+		// got before create_device reads it back.
+		this->window_ = std::make_unique<Window>(
+			instance, show_command, window_options, this);
 	}
 
-	mattmath::Vector2I Application::outer_size_for_client(
-		const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style)
-	{
-		RECT rect = { 0, 0, static_cast<LONG>(client_size.x),
-			static_cast<LONG>(client_size.y) };
-
-		// FALSE: no menu bar. This engine's window never has one, and a menu
-		// would change the answer by its height.
-		if (AdjustWindowRectEx(&rect, style, FALSE, ex_style) == 0)
-		{
-			// Nothing to fall back to but the request. A style this call cannot
-			// account for costs the game its frame's worth of pixels, which is
-			// where it started.
-			return client_size;
-		}
-
-		return mattmath::Vector2I(static_cast<int>(rect.right - rect.left),
-			static_cast<int>(rect.bottom - rect.top));
-	}
-
-	mattmath::Vector2I Application::outer_size_for_client(
-		const mattmath::Vector2I& client_size) const
-	{
-		return outer_size_for_client(client_size,
-			static_cast<DWORD>(GetWindowLongPtrW(this->window_, GWL_STYLE)),
-			static_cast<DWORD>(GetWindowLongPtrW(this->window_, GWL_EXSTYLE)));
-	}
-
-	// Services outlive the D3D device. They are created exactly once, here, and
-	// never reassigned: every object a game builds snapshots raw pointers to them
-	// at construction and is never told when they change. Recreating them on a
-	// device restore turned the entire object graph into dangling pointers.
 	void Application::create_services()
 	{
 		this->thread_pool_ = std::make_unique<ThreadPool>(
@@ -252,28 +177,13 @@ namespace artattack
 	{
 		this->transition_to(std::move(first_state));
 
-		MSG message = {};
-		while (message.message != WM_QUIT)
-		{
-			if (PeekMessage(&message, nullptr, 0, 0, PM_REMOVE))
-			{
-				TranslateMessage(&message);
-				DispatchMessage(&message);
-			}
-			else
-			{
-				this->tick();
-			}
-		}
-		return static_cast<int>(message.wParam);
+		this->window_->pump_until_quit();
+		return this->window_->exit_code();
 	}
 
 	void Application::quit() const
 	{
-		if (this->window_ != nullptr)
-		{
-			DestroyWindow(this->window_);
-		}
+		this->window_->close();
 	}
 
 	void Application::set_resolution(ScreenResolution resolution)
@@ -281,15 +191,11 @@ namespace artattack
 		this->options_.resolution = resolution;
 		this->resolution_manager_->set_resolution(resolution);
 
-		// Adjusted for whatever frame the window is currently wearing, so the
-		// game gets the client area it asked for rather than that minus a
-		// caption. The WM_SIZE this produces re-points the resolution manager at
-		// what the window actually became, which is not always what was asked
-		// for - a size past the monitor's comes back clamped.
-		const mattmath::Vector2I outer = this->outer_size_for_client(
+		// The WM_SIZE this produces re-points the resolution manager at what
+		// the window actually became, which is not always what was asked for -
+		// a size past the monitor's comes back clamped.
+		this->window_->resize_client(
 			this->resolution_manager_->resolution_ivec());
-		SetWindowPos(this->window_, HWND_TOP, 0, 0, outer.x, outer.y,
-			SWP_NOMOVE | SWP_NOZORDER);
 	}
 
 	void Application::set_fullscreen(bool fullscreen)
@@ -298,34 +204,21 @@ namespace artattack
 
 		if (fullscreen)
 		{
-			SetWindowLongPtr(this->window_, GWL_STYLE, WS_POPUP);
-			SetWindowLongPtr(this->window_, GWL_EXSTYLE, WS_EX_TOPMOST);
-			SetWindowPos(this->window_, HWND_TOP, 0, 0, 0, 0,
-				SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-			ShowWindow(this->window_, SW_SHOWMAXIMIZED);
+			this->window_->enter_fullscreen();
 		}
 		else
 		{
-			SetWindowLongPtr(this->window_, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-			SetWindowLongPtr(this->window_, GWL_EXSTYLE, 0);
-
-			// BACK TO THE SIZE THE GAME ASKED FOR, WHICH IS NO LONGER THE SIZE
-			// THE MANAGER HOLDS. resolution_ivec() used to be a synonym for the
+			// BACK TO THE SIZE THE GAME ASKED FOR, WHICH IS NOT THE SIZE THE
+			// MANAGER HOLDS. resolution_ivec() used to be a synonym for the
 			// requested preset and is now the live window, so while full screen
 			// it is the monitor - reading it here would keep the window at
 			// monitor size with a caption on it. options_.resolution is the last
 			// thing a game actually requested, so the manager is re-pointed at
 			// it, and the WM_SIZE below then corrects it to whatever client area
-			// that yields. The style is set before this runs, so the frame
-			// arithmetic below reads the ordinary window's frame and not
-			// WS_POPUP's nothing.
+			// that yields.
 			this->resolution_manager_->set_resolution(this->options_.resolution);
-			const mattmath::Vector2I outer = this->outer_size_for_client(
+			this->window_->leave_fullscreen(
 				this->resolution_manager_->resolution_ivec());
-
-			ShowWindow(this->window_, SW_SHOWNORMAL);
-			SetWindowPos(this->window_, HWND_TOP, 0, 0, outer.x, outer.y,
-				SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 		}
 	}
 
@@ -513,167 +406,7 @@ namespace artattack
 	}
 	HWND Application::window() const
 	{
-		return this->window_;
+		return this->window_->handle();
 	}
 
-	// Every message either forwards to the Application or is Windows housekeeping.
-	// There is nothing game-specific here, which is the reason it is in the engine
-	// and not copied into every project's main.cpp.
-	LRESULT CALLBACK Application::window_proc(HWND window, UINT message,
-		WPARAM w_param, LPARAM l_param)
-	{
-		static bool in_sizemove = false;
-		static bool in_suspend = false;
-		static bool minimized = false;
-
-		auto* app = reinterpret_cast<Application*>(
-			GetWindowLongPtr(window, GWLP_USERDATA));
-
-		switch (message)
-		{
-		case WM_CREATE:
-			if (l_param)
-			{
-				auto params = reinterpret_cast<LPCREATESTRUCTW>(l_param);
-				SetWindowLongPtr(window, GWLP_USERDATA,
-					reinterpret_cast<LONG_PTR>(params->lpCreateParams));
-			}
-			break;
-
-		case WM_PAINT:
-			// While the user drags the window Windows owns the loop, so the only
-			// way to keep drawing is from inside the paint message.
-			if (in_sizemove && app)
-			{
-				app->tick();
-			}
-			else
-			{
-				PAINTSTRUCT paint;
-				std::ignore = BeginPaint(window, &paint);
-				EndPaint(window, &paint);
-			}
-			break;
-
-		case WM_DISPLAYCHANGE:
-			if (app)
-			{
-				app->on_display_change();
-			}
-			break;
-
-		case WM_MOVE:
-			if (app)
-			{
-				app->on_window_moved();
-			}
-			break;
-
-		case WM_SIZE:
-			if (w_param == SIZE_MINIMIZED)
-			{
-				if (!minimized)
-				{
-					minimized = true;
-					if (!in_suspend && app)
-					{
-						app->on_suspending();
-					}
-					in_suspend = true;
-				}
-			}
-			else if (minimized)
-			{
-				minimized = false;
-				if (in_suspend && app)
-				{
-					app->on_resuming();
-				}
-				in_suspend = false;
-			}
-			else if (!in_sizemove && app)
-			{
-				app->on_window_size_changed(LOWORD(l_param), HIWORD(l_param));
-			}
-			break;
-
-		case WM_ENTERSIZEMOVE:
-			in_sizemove = true;
-			break;
-
-		case WM_EXITSIZEMOVE:
-			in_sizemove = false;
-			if (app)
-			{
-				RECT client;
-				GetClientRect(window, &client);
-				app->on_window_size_changed(client.right - client.left,
-					client.bottom - client.top);
-			}
-			break;
-
-		case WM_GETMINMAXINFO:
-			if (l_param && app)
-			{
-				auto info = reinterpret_cast<MINMAXINFO*>(l_param);
-				info->ptMinTrackSize.x = app->options_.min_window_width;
-				info->ptMinTrackSize.y = app->options_.min_window_height;
-			}
-			break;
-
-		case WM_ACTIVATEAPP:
-			if (app)
-			{
-				if (w_param)
-				{
-					app->on_activated();
-				}
-				else
-				{
-					app->on_deactivated();
-				}
-			}
-			break;
-
-		case WM_POWERBROADCAST:
-			switch (w_param)
-			{
-			case PBT_APMQUERYSUSPEND:
-				if (!in_suspend && app)
-				{
-					app->on_suspending();
-				}
-				in_suspend = true;
-				return TRUE;
-
-			case PBT_APMRESUMESUSPEND:
-				if (!minimized)
-				{
-					if (in_suspend && app)
-					{
-						app->on_resuming();
-					}
-					in_suspend = false;
-				}
-				return TRUE;
-			default:
-				break;
-			}
-			break;
-
-		case WM_DESTROY:
-			PostQuitMessage(0);
-			break;
-
-		case WM_MENUCHAR:
-			// A menu is active and the key pressed matches no mnemonic. Swallow it
-			// so Windows does not beep.
-			return MAKELRESULT(0, MNC_CLOSE);
-
-		default:
-			break;
-		}
-
-		return DefWindowProc(window, message, w_param, l_param);
-	}
 }

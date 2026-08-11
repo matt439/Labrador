@@ -161,7 +161,16 @@ lists them. Every file picks its home the day it is created.
 Platform-specific code
 lives only in the backend subfolders (`render/d3d11/`, `input/xinput/`),
 behind engine-owned interfaces, so a second platform is an addition, not
-a rewrite.
+a rewrite. There is a third case and it is named here rather than left to
+be discovered: the shell's window, `app/window.{h,cpp}`. `app` is already
+the one module allowed to depend on everything, PHILOSOPHY lists
+windowing alongside the rendering backend as platform code at the edge,
+and the seam is the same shape as the others — `Window` translates
+messages and `WindowNotify` is what the owner implements, so nothing
+above it names a Win32 type. It is not in `app/win32/` because there is
+no second platform to select between and inventing the folder now is the
+speculative framework T1 rules out; when one arrives the pair moves down
+a folder without renaming the class or touching a call site.
 
 Those interfaces are **concrete classes with one implementation selected
 at build time, not abstract bases with vtables.** `Renderer` is declared
