@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "engine/input/gamepad.h"
+#include "engine/math/vector2f.h"
 using namespace artattack;
 using namespace mattmath;
 

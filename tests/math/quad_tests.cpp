@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 
-#include "engine/math/matt_math.h"
+#include "engine/math/intersects.h"
+#include "engine/math/quad.h"
+#include "engine/math/vector2f.h"
 
 #include <stdexcept>
 

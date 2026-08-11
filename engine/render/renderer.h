@@ -1,7 +1,9 @@
 #pragma once
 
 #include "engine/core/handle.h"
-#include "engine/math/matt_math.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/rectanglei.h"
+#include "engine/math/vector2f.h"
 
 #include <memory>
 #include <string>

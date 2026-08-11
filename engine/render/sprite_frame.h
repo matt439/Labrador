@@ -1,6 +1,7 @@
 #pragma once
 
-#include "engine/math/matt_math.h"
+#include "engine/math/rectanglei.h"
+#include "engine/math/vector2f.h"
 
 namespace artattack
 {

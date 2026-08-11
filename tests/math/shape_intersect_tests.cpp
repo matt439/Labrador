@@ -1,6 +1,14 @@
 #include <doctest/doctest.h>
 
-#include "engine/math/matt_math.h"
+#include "engine/math/circle.h"
+#include "engine/math/intersects.h"
+#include "engine/math/quad.h"
+#include "engine/math/rectangle_rotated.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/scalar.h"
+#include "engine/math/segment.h"
+#include "engine/math/triangle.h"
+#include "engine/math/vector2f.h"
 
 #include <cfloat>
 
@@ -22,7 +30,7 @@ TEST_SUITE("ShapeIntersect")
 		// This is the case the four-pair enumeration looked unable to
 		// handle. It handled it - six crossings cannot all avoid four of
 		// nine pairs - and no configuration defeats it, for the reason
-		// argued in matt_math.cpp. The test is here to pin the behaviour,
+		// argued in intersects.cpp. The test is here to pin the behaviour,
 		// not to record a fix.
 		const Triangle up(Point2F(0.0f, 0.0f), Point2F(60.0f, 0.0f),
 			Point2F(30.0f, 52.0f));

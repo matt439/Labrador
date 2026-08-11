@@ -1,4 +1,7 @@
 #include "engine/render/animation_object.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/rectanglei.h"
+#include "engine/math/vector2f.h"
 
 #include <stdexcept>
 #include <string>

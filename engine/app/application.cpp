@@ -3,6 +3,7 @@
 // The one place the shell has to name the backend: a window handle and a
 // device belong to a platform, and this is the file that owns both.
 #include "engine/render/d3d11/backend.h"
+#include "engine/math/vector2f.h"
 #include <DirectXMath.h>
 #include <memory>
 #include <objbase.h>

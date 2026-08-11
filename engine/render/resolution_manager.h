@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string>
-#include "engine/math/matt_math.h"
+#include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/screen_resolution.h"
 
 namespace artattack

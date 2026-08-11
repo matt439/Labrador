@@ -1,4 +1,5 @@
 #include "engine/render/sprite_sheet_object.h"
+#include "engine/math/vector2f.h"
 
 #include <string>
 

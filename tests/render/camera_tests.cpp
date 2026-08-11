@@ -2,6 +2,8 @@
 
 #include "engine/render/camera.h"
 #include "engine/render/viewport.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 
 #include <stdexcept>
 

@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 #include "engine/core/registry.h"
-#include "engine/math/matt_math.h"
 
 namespace artattack
 {

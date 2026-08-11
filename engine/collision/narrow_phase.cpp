@@ -1,6 +1,12 @@
 #include "engine/collision/narrow_phase.h"
 
 #include "engine/math/ericson_math.h"
+#include "engine/math/quad.h"
+#include "engine/math/rectangle_rotated.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/shape_type.h"
+#include "engine/math/triangle.h"
+#include "engine/math/vector2f.h"
 
 #include <algorithm>
 #include <limits>

@@ -2,7 +2,8 @@
 
 #include "engine/collision/collision_layer.h"
 #include "engine/core/game_object.h"
-#include "engine/math/matt_math.h"
+#include "engine/math/shape.h"
+#include "engine/math/vector2f.h"
 
 namespace artattack
 {

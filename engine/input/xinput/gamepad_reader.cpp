@@ -1,4 +1,5 @@
 #include "engine/input/gamepad_reader.h"
+#include "engine/math/vector2f.h"
 
 #include <GamePad.h>
 #include <memory>

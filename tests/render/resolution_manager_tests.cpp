@@ -2,6 +2,7 @@
 
 #include "engine/render/resolution_manager.h"
 #include "engine/render/screen_resolution.h"
+#include "engine/math/vector2i.h"
 
 #include <stdexcept>
 

@@ -4,6 +4,7 @@
 #include "engine/core/state.h"
 #include "engine/render/label.h"
 #include "engine/scene/scene.h"
+#include "engine/math/vector2f.h"
 #include <memory>
 
 // One screen: a line of text that follows the left stick, and B to quit -

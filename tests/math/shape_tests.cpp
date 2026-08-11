@@ -1,6 +1,10 @@
 #include <doctest/doctest.h>
 
-#include "engine/math/matt_math.h"
+#include "engine/math/quad.h"
+#include "engine/math/rectangle_rotated.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/triangle.h"
+#include "engine/math/vector2f.h"
 
 #include <array>
 
@@ -8,7 +12,7 @@ using namespace mattmath;
 
 // The subject is the contracts every Shape implementation states, rather
 // than the base class: edges() was deliberately taken off Shape (see the
-// NOT HERE note in matt_math.h), so the ordering below is a promise each
+// NOT HERE note in shape.h), so the ordering below is a promise each
 // concrete shape keeps on its own account.
 TEST_SUITE("Shape")
 {

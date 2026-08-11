@@ -1,4 +1,5 @@
 #include "engine/render/text_drop_shadow.h"
+#include "engine/math/vector2f.h"
 
 #include <string>
 

@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/camera_tools.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 
 using artattack::BorderThickness;
 using artattack::CameraTools;

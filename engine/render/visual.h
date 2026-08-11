@@ -2,7 +2,9 @@
 
 #include "engine/core/game_object.h"
 #include "engine/render/texture_object.h"
-#include "engine/math/matt_math.h"
+#include "engine/math/rectangle_rotated.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 #include "engine/render/colour.h"
 
 #include <string>

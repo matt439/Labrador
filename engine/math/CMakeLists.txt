@@ -5,8 +5,20 @@
 # engine/render/d3d11/renderer.cpp.
 
 add_library(MattMath STATIC
+    circle.cpp
     ericson_math.cpp
-    matt_math.cpp
+    inflate.cpp
+    intersects.cpp
+    quad.cpp
+    rectangle_rotated.cpp
+    rectanglef.cpp
+    rectanglei.cpp
+    scalar.cpp
+    segment.cpp
+    shape.cpp
+    triangle.cpp
+    vector2f.cpp
+    vector2i.cpp
 )
 # Relative to this file, not to the top-level project: see the note in
 # engine/CMakeLists.txt.

@@ -1,4 +1,6 @@
 #include "engine/render/texture_object.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 
 #include <string>
 

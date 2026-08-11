@@ -2,6 +2,7 @@
 
 #include "engine/ui/widget.h"
 #include "engine/render/colour.h"
+#include "engine/math/rectanglef.h"
 
 // A widget that is nothing but a rectangle and a colour.
 //

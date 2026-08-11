@@ -2,6 +2,8 @@
 
 #include "engine/render/draw_object.h"
 #include "engine/render/colour.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 
 #include <string>
 

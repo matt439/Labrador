@@ -2,6 +2,12 @@
 
 #include "engine/collision/narrow_phase.h"
 #include "engine/collision/resolve.h"
+#include "engine/math/circle.h"
+#include "engine/math/quad.h"
+#include "engine/math/rectangle_rotated.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/triangle.h"
+#include "engine/math/vector2f.h"
 
 #include <limits>
 #include <optional>

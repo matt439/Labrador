@@ -1,5 +1,7 @@
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/assets/json.h"
+#include "engine/math/rectanglei.h"
+#include "engine/math/vector2f.h"
 
 #include <memory>
 

@@ -4,6 +4,8 @@
 #include "engine/render/resolution_manager.h"
 #include "engine/render/screen_layout.h"
 #include "engine/render/viewport_manager.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2i.h"
 
 using artattack::ResolutionManager;
 using artattack::ScreenLayout;

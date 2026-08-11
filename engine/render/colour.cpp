@@ -4,8 +4,6 @@
 #include <array>
 #include <string>
 
-using namespace mattmath;
-
 namespace
 {
 	int hex_digit(char c)

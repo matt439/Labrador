@@ -1,6 +1,9 @@
 #include "engine/render/d3d11/backend.h"
 
 #include "engine/core/throw_if_failed.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/rectanglei.h"
+#include "engine/math/vector2f.h"
 
 #include <DirectXColors.h>
 #include <memory>

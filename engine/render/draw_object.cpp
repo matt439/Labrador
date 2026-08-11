@@ -1,4 +1,6 @@
 #include "engine/render/draw_object.h"
+#include "engine/math/rectangle_rotated.h"
+#include "engine/math/vector2f.h"
 
 using namespace mattmath;
 

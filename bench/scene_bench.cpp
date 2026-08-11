@@ -4,6 +4,8 @@
 #include "engine/collision/collision_object.h"
 #include "engine/collision/contacts.h"
 #include "engine/scene/scene.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 
 #include <memory>
 #include <vector>

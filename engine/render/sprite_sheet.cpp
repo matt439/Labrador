@@ -1,4 +1,7 @@
 #include "engine/render/sprite_sheet.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/rectanglei.h"
+#include "engine/math/vector2f.h"
 
 #include <string>
 

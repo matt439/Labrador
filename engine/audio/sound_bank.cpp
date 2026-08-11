@@ -1,11 +1,11 @@
 #include "engine/audio/sound_bank.h"
+#include "engine/math/scalar.h"
 #include <memory>
 #include <stdexcept>
 #include <string>
 
 using namespace DirectX;
 using namespace mattmath;
-
 namespace artattack
 {
 	SoundBank::SoundBank(std::unique_ptr<WaveBank> wave_bank,

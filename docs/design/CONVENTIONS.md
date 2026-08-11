@@ -93,7 +93,14 @@ Almost everything below falls out of one rule:
   case-sensitive filesystem — the all-lowercase rule deletes the trap
   before the second platform arrives.
 - One primary type per header. Small types that exist only to serve it —
-  a return struct, an options bag — may ride along.
+  a return struct, an options bag, a typedef naming the same thing for a
+  different reader — may ride along. A header may instead hold no type at
+  all, and then it is named for what it computes rather than for what it
+  holds: `shape_type.h` is an enum, `scalar.h` is the scalar vocabulary
+  and the tolerance ordering, `intersects.h` is the pairwise predicates.
+  That is the exception, not a second pattern to reach for — a header
+  with no type and no single answer to "what is this for" is a bag, and
+  the rule exists to stop bags.
 - No huge files. Deliberately no line count: length is a symptom, not the
   defect, and the number that would be right for a table of constants is
   wrong for a class with intricate control flow. A file is too big when a

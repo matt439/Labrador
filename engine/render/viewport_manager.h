@@ -2,7 +2,8 @@
 
 #include "engine/render/screen_layout.h"
 #include "engine/render/resolution_manager.h"
-#include "engine/math/matt_math.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 #include "engine/render/viewport.h"
 
 #include <vector>

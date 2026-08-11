@@ -4,8 +4,10 @@
 // Christer Ericson
 // 2005
 
-#include "engine/math/matt_math.h"
-#include <cmath>
+#include "engine/math/circle.h"
+#include "engine/math/rectangle_rotated.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 #include <span>
 
 namespace mattmath
@@ -74,7 +76,7 @@ namespace mattmath
 	// overlaps rather than falling through a run of rejections - so a NaN
 	// coordinate in either endpoint or in the box reports no intersection.
 	// See test_AABB_AABB, which is the same decision, and the note on EPSILON
-	// in matt_math.h for where SEGMENT_PARALLEL_EPSILON sits in the ordering.
+	// in scalar.h for where SEGMENT_PARALLEL_EPSILON sits in the ordering.
 	bool test_segment_AABB(const mattmath::Point2F& p0,
 		const mattmath::Point2F& p1, const mattmath::AABB& b);
 

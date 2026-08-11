@@ -2,6 +2,7 @@
 
 #include "engine/render/text_object.h"
 #include "engine/render/colour.h"
+#include "engine/math/vector2f.h"
 
 #include <string>
 

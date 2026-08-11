@@ -1,6 +1,9 @@
 #include <doctest/doctest.h>
 
-#include "engine/math/matt_math.h"
+#include "engine/math/quad.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/triangle.h"
+#include "engine/math/vector2f.h"
 
 using namespace mattmath;
 

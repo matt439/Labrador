@@ -12,7 +12,7 @@
 #include "engine/render/resolution_manager.h"
 #include "engine/render/screen_resolution.h"
 #include "engine/render/viewport_manager.h"
-#include "engine/math/matt_math.h"
+#include "engine/math/vector2i.h"
 #include <Audio.h>
 #include <Windows.h>
 #include <memory>

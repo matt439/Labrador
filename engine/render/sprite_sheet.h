@@ -5,6 +5,9 @@
 #include "engine/render/sprite_frame.h"
 #include "engine/render/animation_strip.h"
 #include "engine/render/colour.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/rectanglei.h"
+#include "engine/math/vector2f.h"
 #include <string>
 
 namespace artattack

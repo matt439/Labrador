@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 
 #include "engine/scene/scene.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 
 #include <memory>
 #include <stdexcept>

@@ -6,8 +6,6 @@
 #include <stdexcept>
 #include <vector>
 
-using namespace mattmath;
-
 namespace artattack
 {
 	FocusGroup::FocusGroup(int slot_count, FocusStyle style) :

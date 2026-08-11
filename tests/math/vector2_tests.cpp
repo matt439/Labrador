@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
-#include "engine/math/matt_math.h"
+#include "engine/math/scalar.h"
+#include "engine/math/vector2f.h"
 #include "engine/math/ericson_math.h"
 
 #include <cmath>

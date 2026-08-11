@@ -1,4 +1,5 @@
 #include "engine/render/camera.h"
+#include "engine/math/scalar.h"
 
 #include <algorithm>
 #include <stdexcept>

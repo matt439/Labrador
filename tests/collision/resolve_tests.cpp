@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "engine/collision/resolve.h"
+#include "engine/math/vector2f.h"
 
 #include <cmath>
 #include <limits>

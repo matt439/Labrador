@@ -1,5 +1,8 @@
 #include <doctest/doctest.h>
 #include "engine/input/gamepad.h"
+#include "engine/math/vector2f.h"
+
+#include <initializer_list>
 using namespace artattack;
 
 namespace

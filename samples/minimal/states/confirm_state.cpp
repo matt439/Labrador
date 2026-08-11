@@ -1,6 +1,7 @@
 #include "samples/minimal/states/confirm_state.h"
 
 #include "engine/core/state_context.h"
+#include "engine/math/vector2f.h"
 
 #include <memory>
 #include <string>

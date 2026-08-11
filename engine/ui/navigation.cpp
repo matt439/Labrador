@@ -1,6 +1,7 @@
 #include "engine/ui/navigation.h"
 
 #include "engine/ui/widget.h"
+#include "engine/math/vector2f.h"
 
 #include <cmath>
 #include <vector>

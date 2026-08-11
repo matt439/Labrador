@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "engine/ui/navigation.h"
+#include "engine/math/rectanglef.h"
 #include "tests/ui/stub_widget.h"
 
 using artattack::Direction;
