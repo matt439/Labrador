@@ -362,6 +362,8 @@ Nine entries must pass, by name: `MattMathTests`, `CoreTests`, `CollisionTests`,
 
 For engine sources the failure is louder but not automatic: an unlisted `engine/math/*.cpp` produces a link error in `MattMathTests` for the symbols it should have defined — unless every symbol in it happens to be unreferenced, which after step 3 is true of nothing except possibly parts of `intersects.cpp`. Do not rely on the linker alone; count the files.
 
+**Step 2 needs a clean build, and this was learned the hard way rather than predicted.** Removing the seven virtuals shrinks `Shape`'s vtable from twelve entries to five, not counting the destructor. A translation unit compiled against the old header and linked against objects compiled with the new one calls through a slot that has moved: it links without complaint and then dispatches into the wrong function. That is what happened on the first incremental build of the surgery — every test passed and `Benchmarks` segfaulted before producing a line of output, which reads exactly like a fault in the collision path and is not one. The same source built clean passes everything. So for any step that changes a virtual's position in `Shape` — step 2 here, and step 3 if it moves a declaration between headers — delete `out/build/<preset>/` and configure again rather than trusting the incremental build. A crash that appears after a vtable edit should be re-tested from clean before it is debugged.
+
 Step-specific:
 
 - **Step 1**: diff each moved case body mechanically against the original. The commit is sold as motion plus 35 mechanical argument drops, so a reviewer must be able to confirm nothing else changed. Nothing in the tree filters on `--test-suite`, so the suite renames are cosmetic to the build.

@@ -48,19 +48,19 @@ TEST_SUITE("RectangleRotated")
 		// shape in the library now says.
 		const RectangleRotated degenerate;
 
-		CHECK_NOTHROW(degenerate.contains(Point2F(1.0f, 1.0f)));
-		CHECK_FALSE(degenerate.contains(Point2F(1.0f, 1.0f)));
-		CHECK_FALSE(degenerate.contains(Point2F::ZERO));
+		CHECK_NOTHROW(point_rectangle_rotated_intersect(Point2F(1.0f, 1.0f), degenerate));
+		CHECK_FALSE(point_rectangle_rotated_intersect(Point2F(1.0f, 1.0f), degenerate));
+		CHECK_FALSE(point_rectangle_rotated_intersect(Point2F::ZERO, degenerate));
 
 		// A real one is unaffected, boundary included.
 		const RectangleRotated real(Point2F(0.0f, 0.0f),
 			Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN,
 			Vector2F(10.0f, 5.0f));
 
-		CHECK(real.contains(Point2F::ZERO));
-		CHECK(real.contains(Point2F(9.9f, 4.9f)));
-		CHECK(real.contains(Point2F(10.0f, 5.0f)));
-		CHECK_FALSE(real.contains(Point2F(10.1f, 0.0f)));
+		CHECK(point_rectangle_rotated_intersect(Point2F::ZERO, real));
+		CHECK(point_rectangle_rotated_intersect(Point2F(9.9f, 4.9f), real));
+		CHECK(point_rectangle_rotated_intersect(Point2F(10.0f, 5.0f), real));
+		CHECK_FALSE(point_rectangle_rotated_intersect(Point2F(10.1f, 0.0f), real));
 	}
 	TEST_CASE("a rotated rectangle's angle keeps its sign")
 	{

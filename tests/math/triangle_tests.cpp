@@ -67,8 +67,8 @@ TEST_SUITE("Triangle")
 		// triangle at all, through its containment pass.
 		const Triangle degenerate;
 
-		CHECK_FALSE(degenerate.contains(Point2F(1000.0f, 1000.0f)));
-		CHECK_FALSE(degenerate.contains(Point2F::ZERO));
+		CHECK_FALSE(triangle_point_intersect(degenerate, Point2F(1000.0f, 1000.0f)));
+		CHECK_FALSE(triangle_point_intersect(degenerate, Point2F::ZERO));
 
 		// Deliberately away from the origin. A real triangle with a vertex
 		// AT the origin genuinely touches the degenerate one, and would

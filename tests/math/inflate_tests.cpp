@@ -42,11 +42,11 @@ TEST_SUITE("Inflate")
 
 			needle.inflate(1.0f);
 
-			CHECK(needle.contains(tip));
+			CHECK(triangle_point_intersect(needle, tip));
 
 			// Every original vertex, not just the awkward one.
-			CHECK(needle.contains(Point2F(100.0f, 0.001f)));
-			CHECK(needle.contains(Point2F(100.0f, -0.001f)));
+			CHECK(triangle_point_intersect(needle, Point2F(100.0f, 0.001f)));
+			CHECK(triangle_point_intersect(needle, Point2F(100.0f, -0.001f)));
 
 			// The mitre goes outward, which is the direction that matters.
 			CHECK(needle.point_0().x < tip.x);
@@ -63,9 +63,9 @@ TEST_SUITE("Inflate")
 
 			q.inflate(1.0f);
 
-			CHECK(q.contains(Point2F(0.0f, 0.0f)));
-			CHECK(q.contains(Point2F(10.0f, 10.0f)));
-			CHECK(q.contains(Point2F(5.0f, 5.0f)));
+			CHECK(quad_point_intersect(q, Point2F(0.0f, 0.0f)));
+			CHECK(quad_point_intersect(q, Point2F(10.0f, 10.0f)));
+			CHECK(quad_point_intersect(q, Point2F(5.0f, 5.0f)));
 		}
 	}
 	TEST_CASE("inflate moves every edge out by the full amount, not by a cosine")
@@ -128,7 +128,7 @@ TEST_SUITE("Inflate")
 		for (int i = 0; i < 3; i++)
 		{
 			CAPTURE(i);
-			CHECK(grown.contains(original.points[i]));
+			CHECK(triangle_point_intersect(grown, original.points[i]));
 		}
 
 		// And a quad, which shares the implementation.

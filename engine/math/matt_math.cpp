@@ -67,30 +67,6 @@ namespace mattmath
 
 #pragma region Shape
 
-	bool Shape::intersects(const Shape* other) const
-	{
-		switch (other->shape_type())
-		{
-		case ShapeType::rectangle:
-			return this->intersects(*dynamic_cast<const RectangleF*>(other));
-		case ShapeType::circle:
-			return this->intersects(*dynamic_cast<const Circle*>(other));
-		case ShapeType::triangle:
-			return this->intersects(*dynamic_cast<const Triangle*>(other));
-		case ShapeType::quad:
-			return this->intersects(*dynamic_cast<const Quad*>(other));
-		case ShapeType::rectangle_rotated:
-			return this->intersects(*dynamic_cast<const RectangleRotated*>(other));
-		default:
-			throw std::invalid_argument("Shape type not recognized");
-		};
-	}
-
-	bool Shape::intersects(const Shape& other) const
-	{
-		return this->intersects(&other);
-	}
-
 	bool Shape::AABB_intersects(const Shape* other) const
 	{
 		return this->bounding_box().intersects(other->bounding_box());
@@ -104,11 +80,6 @@ namespace mattmath
 #pragma endregion Shape
 
 #pragma region Global Intersect Functions
-
-	bool rectangles_intersect(const RectangleF& a, const RectangleF& b)
-	{
-		return test_AABB_AABB(a, b);
-	}
 
 	bool mattmath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle,
 		Point2F& point)
@@ -130,18 +101,18 @@ namespace mattmath
 		}
 
 		// check if the rectangle contains any of the triangle's points
-		if (rectangle.contains(triangle.point_0()) ||
-			rectangle.contains(triangle.point_1()) ||
-			rectangle.contains(triangle.point_2()))
+		if (rectangle_point_intersect(rectangle, triangle.point_0()) ||
+			rectangle_point_intersect(rectangle, triangle.point_1()) ||
+			rectangle_point_intersect(rectangle, triangle.point_2()))
 		{
 			return true;
 		}
 
 		// check if the triangle contains any of the rectangle's points
-		if (triangle.contains(rectangle.top_left()) ||
-			triangle.contains(rectangle.top_right()) ||
-			triangle.contains(rectangle.bottom_left()) ||
-			triangle.contains(rectangle.bottom_right()))
+		if (triangle_point_intersect(triangle, rectangle.top_left()) ||
+			triangle_point_intersect(triangle, rectangle.top_right()) ||
+			triangle_point_intersect(triangle, rectangle.bottom_left()) ||
+			triangle_point_intersect(triangle, rectangle.bottom_right()))
 		{
 			return true;
 		}
@@ -150,7 +121,7 @@ namespace mattmath
 		const auto edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
-			if (rectangle.intersects(edge))
+			if (rectangle_segment_intersect(rectangle, edge))
 			{
 				return true;
 			}
@@ -198,19 +169,19 @@ namespace mattmath
 		}
 
 		// check if the rotated rectangle contains any of the rectangle's points
-		if (rotated_rect.contains(rect.top_left()) ||
-			rotated_rect.contains(rect.top_right()) ||
-			rotated_rect.contains(rect.bottom_left()) ||
-			rotated_rect.contains(rect.bottom_right()))
+		if (point_rectangle_rotated_intersect(rect.top_left(), rotated_rect) ||
+			point_rectangle_rotated_intersect(rect.top_right(), rotated_rect) ||
+			point_rectangle_rotated_intersect(rect.bottom_left(), rotated_rect) ||
+			point_rectangle_rotated_intersect(rect.bottom_right(), rotated_rect))
 		{
 			return true;
 		}
 
 		// check if the rectangle contains any of the rotated rectangle's points
-		if (rect.contains(rotated_rect.point_0()) ||
-			rect.contains(rotated_rect.point_1()) ||
-			rect.contains(rotated_rect.point_2()) ||
-			rect.contains(rotated_rect.point_3()))
+		if (rectangle_point_intersect(rect, rotated_rect.point_0()) ||
+			rectangle_point_intersect(rect, rotated_rect.point_1()) ||
+			rectangle_point_intersect(rect, rotated_rect.point_2()) ||
+			rectangle_point_intersect(rect, rotated_rect.point_3()))
 		{
 			return true;
 		}
@@ -219,7 +190,7 @@ namespace mattmath
 		const auto edges = rotated_rect.edges();
 		for (const Segment& edge : edges)
 		{
-			if (rect.intersects(edge))
+			if (rectangle_segment_intersect(rect, edge))
 			{
 				return true;
 			}
@@ -298,13 +269,13 @@ namespace mattmath
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the circle intersects the rectangle's bounding box
-		if (!circle.intersects(rect_rotated.bounding_box()))
+		if (!rectangle_circle_intersect(rect_rotated.bounding_box(), circle))
 		{
 			return false;
 		}
 
 		// check if circle's center is contained within the rectangle
-		if (rect_rotated.contains(circle.center()))
+		if (point_rectangle_rotated_intersect(circle.center(), rect_rotated))
 		{
 			return true;
 		}
@@ -327,7 +298,8 @@ namespace mattmath
 		// check if any of the points are contained within each other
 		for (int i = 0; i < 3; i++)
 		{
-			if (a.contains(b.points[i]) || b.contains(a.points[i]))
+			if (triangle_point_intersect(a, b.points[i]) ||
+				triangle_point_intersect(b, a.points[i]))
 			{
 				return true;
 			}
@@ -399,7 +371,8 @@ namespace mattmath
 	bool mattmath::triangle_segment_intersect(const Triangle& triangle, const Segment& segment)
 	{
 		// check if the segment's end points are contained within the triangle
-		if (triangle.contains(segment.point_0) || triangle.contains(segment.point_1))
+		if (triangle_point_intersect(triangle, segment.point_0) ||
+			triangle_point_intersect(triangle, segment.point_1))
 		{
 			return true;
 		}
@@ -427,24 +400,24 @@ namespace mattmath
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the triangle intersects the rectangle's bounding box
-		if (!triangle.intersects(rect_rotated.bounding_box()))
+		if (!rectangle_triangle_intersect(rect_rotated.bounding_box(), triangle))
 		{
 			return false;
 		}
 
 		// check if the triangle contains any of the rectangle's points
-		if (triangle.contains(rect_rotated.point_0()) ||
-			triangle.contains(rect_rotated.point_1()) ||
-			triangle.contains(rect_rotated.point_2()) ||
-			triangle.contains(rect_rotated.point_3()))
+		if (triangle_point_intersect(triangle, rect_rotated.point_0()) ||
+			triangle_point_intersect(triangle, rect_rotated.point_1()) ||
+			triangle_point_intersect(triangle, rect_rotated.point_2()) ||
+			triangle_point_intersect(triangle, rect_rotated.point_3()))
 		{
 			return true;
 		}
 
 		// check if the rectangle contains any of the triangle's points
-		if (rect_rotated.contains(triangle.points[0]) ||
-			rect_rotated.contains(triangle.points[1]) ||
-			rect_rotated.contains(triangle.points[2]))
+		if (point_rectangle_rotated_intersect(triangle.points[0], rect_rotated) ||
+			point_rectangle_rotated_intersect(triangle.points[1], rect_rotated) ||
+			point_rectangle_rotated_intersect(triangle.points[2], rect_rotated))
 		{
 			return true;
 		}
@@ -453,7 +426,7 @@ namespace mattmath
 		const auto edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
-			if (rect_rotated.intersects(edge))
+			if (segment_rectangle_rotated_intersect(edge, rect_rotated))
 			{
 				return true;
 			}
@@ -506,7 +479,7 @@ namespace mattmath
 		const auto triangles = quad.triangles();
 		for (const Triangle& triangle : triangles)
 		{
-			if (triangle.contains(point))
+			if (triangle_point_intersect(triangle, point))
 			{
 				return true;
 			}
@@ -568,13 +541,14 @@ namespace mattmath
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the segment intersects the rectangle's bounding box
-		if (!segment.intersects(rect_rotated.bounding_box()))
+		if (!rectangle_segment_intersect(rect_rotated.bounding_box(), segment))
 		{
 			return false;
 		}
 
 		// check if the segment's end points are contained within the rectangle
-		if (rect_rotated.contains(segment.point_0) || rect_rotated.contains(segment.point_1))
+		if (point_rectangle_rotated_intersect(segment.point_0, rect_rotated) ||
+			point_rectangle_rotated_intersect(segment.point_1, rect_rotated))
 		{
 			return true;
 		}
@@ -602,8 +576,11 @@ namespace mattmath
 		// that is convex by construction, and could THROW: Quad's constructor
 		// rejects four coincident points, which is exactly what a
 		// default-constructed RectangleRotated holds. RectangleRotated::contains
-		// is this function, so a predicate returning bool terminated the
-		// caller with an invalid_argument naming a type it never mentioned.
+		// forwarded here, so a predicate returning bool terminated the caller
+		// with an invalid_argument naming a type it never mentioned. That
+		// member is gone now - it was one of five one-line contains(Point2F)
+		// forwards deleted with the intersection table - and this function is
+		// the only spelling left, which is where the guarantee below lives.
 		//
 		// point_in_convex_polygon gives the same answer for a convex
 		// quadrilateral - both take the boundary as inside and neither cares
@@ -617,24 +594,24 @@ namespace mattmath
 		const RectangleRotated& b)
 	{
 		// check if the rectangles' bounding boxes intersect
-		if (!a.intersects(b.bounding_box()))
+		if (!rectangle_rotated_rectangle_intersect(b.bounding_box(), a))
 		{
 			return false;
 		}
 
 		// check if any of the points of one rectangle are contained within the other
-		if (a.contains(b.point_0()) ||
-			a.contains(b.point_1()) ||
-			a.contains(b.point_2()) ||
-			a.contains(b.point_3()))
+		if (point_rectangle_rotated_intersect(b.point_0(), a) ||
+			point_rectangle_rotated_intersect(b.point_1(), a) ||
+			point_rectangle_rotated_intersect(b.point_2(), a) ||
+			point_rectangle_rotated_intersect(b.point_3(), a))
 		{
 			return true;
 		}
 
-		if (b.contains(a.point_0()) ||
-			b.contains(a.point_1()) ||
-			b.contains(a.point_2()) ||
-			b.contains(a.point_3()))
+		if (point_rectangle_rotated_intersect(a.point_0(), b) ||
+			point_rectangle_rotated_intersect(a.point_1(), b) ||
+			point_rectangle_rotated_intersect(a.point_2(), b) ||
+			point_rectangle_rotated_intersect(a.point_3(), b))
 		{
 			return true;
 		}
@@ -794,35 +771,7 @@ namespace mattmath
 	}
 	bool RectangleF::intersects(const RectangleF& other) const
 	{
-		return rectangles_intersect(*this, other);
-	}
-	bool RectangleF::intersects(const Circle& other) const
-	{
-		return rectangle_circle_intersect(*this, other);
-	}
-	bool RectangleF::intersects(const Triangle& other) const
-	{
-		return rectangle_triangle_intersect(*this, other);
-	}
-	bool RectangleF::intersects(const Quad& other) const
-	{
-		return rectangle_quad_intersect(*this, other);
-	}
-	bool RectangleF::intersects(const Segment& other) const
-	{
-		return rectangle_segment_intersect(*this, other);
-	}
-	bool RectangleF::intersects(const Point2F& other) const
-	{
-		return rectangle_point_intersect(*this, other);
-	}
-	bool RectangleF::contains(const Point2F& point) const
-	{
-		return this->intersects(point);
-	}
-	bool RectangleF::intersects(const RectangleRotated& other) const
-	{
-		return rectangle_rotated_rectangle_intersect(*this, other);
+		return test_AABB_AABB(*this, other);
 	}
 	void RectangleF::inflate(float horizontal_amount, float vertical_amount)
 	{
@@ -1560,38 +1509,6 @@ namespace mattmath
 	//{
 	//	return Vector2F::distance(this->center_, point) <= this->radius_;
 	//}
-	bool Circle::intersects(const RectangleF& other) const
-	{
-		return rectangle_circle_intersect(other, *this);
-	}
-	bool Circle::intersects(const Circle& other) const
-	{
-		return circles_intersect(*this, other);
-	}
-	bool Circle::intersects(const Triangle& other) const
-	{
-		return circle_triangle_intersect(*this, other);
-	}
-	bool Circle::intersects(const Quad& other) const
-	{
-		return circle_quad_intersect(*this, other);
-	}
-	bool Circle::intersects(const Segment& other) const
-	{
-		return circle_segment_intersect(*this, other);
-	}
-	bool Circle::intersects(const Point2F& other) const
-	{
-		return circle_point_intersect(*this, other);
-	}
-	bool Circle::intersects(const RectangleRotated& rect_rotated) const
-	{
-		return circle_rectangle_rotated_intersect(*this, rect_rotated);
-	}
-	bool Circle::contains(const Point2F& point) const
-	{
-		return this->intersects(point);
-	}
 	Point2F Circle::center() const
 	{
 		return this->center_;
@@ -1838,46 +1755,6 @@ namespace mattmath
 	bool Triangle::operator!=(const Triangle& other) const
 	{
 		return !(*this == other);
-	}
-
-	bool Triangle::intersects(const RectangleF& other) const
-	{
-		return rectangle_triangle_intersect(other, *this);
-	}
-
-	bool Triangle::intersects(const Circle& other) const
-	{
-		return circle_triangle_intersect(other, *this);
-	}
-
-	bool Triangle::intersects(const Triangle& other) const
-	{
-		return triangles_intersect(*this, other);
-	}
-
-	bool Triangle::intersects(const Quad& other) const
-	{
-		return triangle_quad_intersect(*this, other);
-	}
-
-	bool Triangle::intersects(const Segment& other) const
-	{
-		return triangle_segment_intersect(*this, other);
-	}
-
-	bool Triangle::intersects(const Point2F& other) const
-	{
-		return triangle_point_intersect(*this, other);
-	}
-
-	bool Triangle::intersects(const RectangleRotated& rect_rotated) const
-	{
-		return triangle_rectangle_rotated_intersect(*this, rect_rotated);
-	}
-
-	bool Triangle::contains(const Point2F& point) const
-	{
-		return this->intersects(point);
 	}
 
 	Point2F Triangle::center() const
@@ -2240,46 +2117,6 @@ namespace mattmath
 		return !(*this == other);
 	}
 
-	bool Quad::intersects(const RectangleF& other) const
-	{
-		return rectangle_quad_intersect(other, *this);
-	}
-
-	bool Quad::intersects(const Circle& other) const
-	{
-		return circle_quad_intersect(other, *this);
-	}
-
-	bool Quad::intersects(const Triangle& other) const
-	{
-		return triangle_quad_intersect(other, *this);
-	}
-
-	bool Quad::intersects(const Quad& other) const
-	{
-		return quads_intersect(*this, other);
-	}
-
-	bool Quad::intersects(const Segment& other) const
-	{
-		return quad_segment_intersect(*this, other);
-	}
-
-	bool Quad::intersects(const Point2F& other) const
-	{
-		return quad_point_intersect(*this, other);
-	}
-
-	bool Quad::intersects(const RectangleRotated& rect_rotated) const
-	{
-		return quad_rectangle_rotated_intersect(*this, rect_rotated);
-	}
-
-	bool Quad::contains(const Point2F& point) const
-	{
-		return this->intersects(point);
-	}
-
 	Point2F Quad::center() const
 	{
 		return (this->points_[0] + this->points_[1] + this->points_[2] + this->points_[3]) / 4.0f;
@@ -2305,15 +2142,6 @@ namespace mattmath
 	bool Segment::operator!=(const Segment& other) const
 	{
 		return !(*this == other);
-	}
-	bool Segment::intersects(const Segment& other) const
-	{
-		return segments_intersect(*this, other);
-	}
-	bool Segment::intersects(const RectangleF& other) const
-	{
-		return other.intersects(*this);
-
 	}
 	Vector2F Segment::direction() const
 	{
@@ -2383,38 +2211,6 @@ namespace mattmath
 	ShapeType RectangleRotated::shape_type() const
 	{
 		return ShapeType::rectangle_rotated;
-	}
-	bool RectangleRotated::intersects(const RectangleF& rect) const
-	{
-		return rectangle_rotated_rectangle_intersect(rect, *this);
-	}
-	bool RectangleRotated::intersects(const Circle& circle) const
-	{
-		return circle_rectangle_rotated_intersect(circle, *this);
-	}
-	bool RectangleRotated::intersects(const Triangle& triangle) const
-	{
-		return triangle_rectangle_rotated_intersect(triangle, *this);
-	}
-	bool RectangleRotated::intersects(const Quad& quad) const
-	{
-		return quad_rectangle_rotated_intersect(quad, *this);
-	}
-	bool RectangleRotated::intersects(const Segment& segment) const
-	{
-		return segment_rectangle_rotated_intersect(segment, *this);
-	}
-	bool RectangleRotated::intersects(const Point2F& point) const
-	{
-		return point_rectangle_rotated_intersect(point, *this);
-	}
-	bool RectangleRotated::intersects(const RectangleRotated& rect_rotated) const
-	{
-		return rectangles_rotated_intersect(*this, rect_rotated);
-	}
-	bool RectangleRotated::contains(const Point2F& point) const
-	{
-		return point_rectangle_rotated_intersect(point, *this);
 	}
 	void RectangleRotated::offset(const Vector2F& amount)
 	{

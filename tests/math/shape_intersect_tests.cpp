@@ -32,8 +32,8 @@ TEST_SUITE("ShapeIntersect")
 		for (int i = 0; i < 3; i++)
 		{
 			CAPTURE(i);
-			REQUIRE_FALSE(up.contains(down.points[i]));
-			REQUIRE_FALSE(down.contains(up.points[i]));
+			REQUIRE_FALSE(triangle_point_intersect(up, down.points[i]));
+			REQUIRE_FALSE(triangle_point_intersect(down, up.points[i]));
 		}
 
 		CHECK(triangles_intersect(up, down));
@@ -45,31 +45,31 @@ TEST_SUITE("ShapeIntersect")
 		CHECK_FALSE(triangles_intersect(up, far_away));
 		CHECK_FALSE(triangles_intersect(far_away, up));
 	}
-	TEST_CASE("test_rectangles_intersect")
+	TEST_CASE("RectangleF::intersects, the one predicate kept as a member")
 	{
 		RectangleF a(0.0f, 0.0f, 10.0f, 10.0f);
 
 		RectangleF b(5.0f, 5.0f, 10.0f, 10.0f);
-		CHECK(rectangles_intersect(a, b));
+		CHECK(a.intersects(b));
 
 		// a and b are just touching
 		b = RectangleF(10.0f - EPSILON_F, 10.0f, 10.0f, 10.0f);
-		CHECK(rectangles_intersect(a, b));
+		CHECK(a.intersects(b));
 
 		// a and b are just not touching
 		b = RectangleF(10.0f + EPSILON_F, 10.0f, 10.0f, 10.0f);
-		CHECK_FALSE(rectangles_intersect(a, b));
+		CHECK_FALSE(a.intersects(b));
 
 		// b is inside a
 		b = RectangleF(2.0f, 2.0f, 2.0f, 2.0f);
-		CHECK(rectangles_intersect(a, b));
+		CHECK(a.intersects(b));
 
 		// a is inside b
 		b = RectangleF(-2.0f, -2.0f, 20.0f, 20.0f);
-		CHECK(rectangles_intersect(a, b));
+		CHECK(a.intersects(b));
 
 		// 2 identical rectangles
-		CHECK(rectangles_intersect(a, a));
+		CHECK(a.intersects(a));
 	}
 	TEST_CASE("test_rectangle_circle_intersect")
 	{

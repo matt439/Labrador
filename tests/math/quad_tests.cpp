@@ -28,7 +28,7 @@ TEST_SUITE("Quad")
 		// Still usable afterwards: the object was not left corrupt.
 		q.set_point_1(Point2F(20.0f, 0.0f));
 		CHECK(q.point_1() == Point2F(20.0f, 0.0f));
-		CHECK(q.contains(Point2F(5.0f, 5.0f)));
+		CHECK(quad_point_intersect(q, Point2F(5.0f, 5.0f)));
 	}
 	TEST_CASE("a Quad must be convex, not merely non-self-intersecting")
 	{

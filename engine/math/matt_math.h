@@ -123,15 +123,6 @@ namespace mattmath
 		virtual ~Shape() = default;
 		virtual RectangleF bounding_box() const = 0;
 		virtual ShapeType shape_type() const = 0;
-		virtual bool intersects(const RectangleF& rect) const = 0;
-		virtual bool intersects(const Circle& circle) const = 0;
-		virtual bool intersects(const Triangle& triangle) const = 0;
-		virtual bool intersects(const Quad& quad) const = 0;
-		virtual bool intersects(const Segment& segment) const = 0;
-		virtual bool intersects(const Point2F& point) const = 0;
-		virtual bool intersects(const RectangleRotated& rect_rotated) const = 0;
-		bool intersects(const Shape* other) const;
-		bool intersects(const Shape& other) const;
 		bool AABB_intersects(const Shape* other) const;
 		bool AABB_intersects(const Shape& other) const;
 		virtual void offset(const Vector2F& amount) = 0;
@@ -182,7 +173,7 @@ namespace mattmath
 		// polygon through itself, and no caller wants it.
 		virtual void inflate(float amount) = 0;
 
-		// NOT HERE: clone(), and edges().
+		// NOT HERE: clone(), edges(), and the intersection table.
 		//
 		// A polymorphic clone() on the engine's most-copied value was filed
 		// `high` twice, and counting said it had one caller in the whole
@@ -201,10 +192,38 @@ namespace mattmath
 		// returning std::array of the right length, and Circle - which
 		// answered the pure virtual with an empty vector because a circle has
 		// no edges - declares none at all.
+		//
+		// intersects() was the same mistake at seven times the size, and it is
+		// why this header used to declare eleven types before it defined one.
+		// Seven pure virtuals - one per shape a shape could be asked about -
+		// meant every concrete type had to name every other at declaration
+		// time, so the forward-declaration block above existed to let Shape do
+		// it, and nothing here could be filed apart from anything else. The
+		// thirty-seven overrides answering them were one-line forwards to the
+		// free predicates below, which held the bodies, the contracts and the
+		// documented degenerate cases the whole time. Two dispatchers on top
+		// recovered the concrete type with dynamic_cast to choose an overload:
+		// a downcast per query, on the narrow phase's own path, to reach a
+		// function whose name the caller already knew (T8).
+		//
+		// Counted before it went, every production call of that table was a
+		// RectangleF against a RectangleF - which is why that one predicate
+		// survives as a member, and why it holds a body now instead of
+		// forwarding to a free function that no longer exists. The two
+		// dispatchers had no caller anywhere, tests included.
+		//
+		// contains(const Point2F&) went with it, from all five shapes. Each
+		// was a one-line forward to that shape's own intersects(Point2F)
+		// override - a second spelling of a second spelling. The surviving
+		// spelling is the *_point_intersect predicate below. Not affected:
+		// RectangleF::contains(const RectangleF&), which asks a different
+		// question and has a caller, and RectangleI's pair, which is not a
+		// Shape.
 	};
 
-	bool rectangles_intersect(const mattmath::RectangleF& a,
-		const mattmath::RectangleF& b);
+	// No rectangles_intersect here: RectangleF::intersects(const RectangleF&)
+	// is that predicate, and is the one member of the old table with
+	// production callers.
 
 	bool rectangle_circle_intersect(const mattmath::RectangleF& rectangle,
 		const mattmath::Circle& circle, mattmath::Point2F& point);
@@ -332,14 +351,10 @@ namespace mattmath
 
 		bool contains(const RectangleF& other) const;
 
-		bool intersects(const RectangleF& other) const override;
-		bool intersects(const mattmath::Circle& other) const override;
-		bool intersects(const mattmath::Triangle& other) const override;
-		bool intersects(const mattmath::Quad& quad) const override;
-		bool intersects(const mattmath::Segment& other) const override;
-		bool intersects(const mattmath::Point2F& point) const override;
-		bool intersects(const RectangleRotated& rect_rotated) const override;
-		bool contains(const mattmath::Point2F& point) const;
+		// The one survivor of the table Shape used to carry, kept because
+		// broad_phase, scene and the benchmark all name it. Every other pair
+		// is a free predicate above.
+		bool intersects(const RectangleF& other) const;
 
 		void inflate(float horizontal_amount, float vertical_amount);
 		void inflate(const mattmath::Vector2F& amount);
@@ -621,15 +636,6 @@ namespace mattmath
 		bool operator==(const Circle& other) const;
 		bool operator!=(const Circle& other) const;
 
-		bool intersects(const mattmath::RectangleF& other) const override;
-		bool intersects(const Circle& other) const override;
-		bool intersects(const mattmath::Triangle& other) const override;
-		bool intersects(const mattmath::Quad& other) const override;
-		bool intersects(const mattmath::Segment& other) const override;
-		bool intersects(const mattmath::Point2F& point) const override;
-		bool intersects(const RectangleRotated& rect_rotated) const override;
-		bool contains(const mattmath::Point2F& point) const;
-
 		mattmath::Vector2F center() const override;
 		float radius() const;
 
@@ -668,15 +674,6 @@ namespace mattmath
 
 		bool operator==(const Triangle& other) const;
 		bool operator!=(const Triangle& other) const;
-
-		bool intersects(const mattmath::RectangleF& other) const override;
-		bool intersects(const mattmath::Circle& other) const override;
-		bool intersects(const Triangle& other) const override;
-		bool intersects(const mattmath::Quad& other) const override;
-		bool intersects(const mattmath::Segment& other) const override;
-		bool intersects(const mattmath::Point2F& point) const override;
-		bool intersects(const RectangleRotated& rect_rotated) const override;
-		bool contains(const mattmath::Point2F& point) const;
 
 		mattmath::Vector2F center() const override;
 
@@ -744,15 +741,6 @@ namespace mattmath
 		bool operator==(const Quad& other) const;
 		bool operator!=(const Quad& other) const;
 
-		bool intersects(const RectangleF& other) const override;
-		bool intersects(const Circle& other) const override;
-		bool intersects(const Triangle& other) const override;
-		bool intersects(const Quad& other) const override;
-		bool intersects(const Segment& other) const override;
-		bool intersects(const Point2F& point) const override;
-		bool intersects(const RectangleRotated& rect_rotated) const override;
-		bool contains(const Point2F& point) const;
-
 		mattmath::Vector2F center() const override;
 
 	private:
@@ -774,9 +762,6 @@ namespace mattmath
 		bool operator==(const Segment& other) const;
 		bool operator!=(const Segment& other) const;
 
-		bool intersects(const Segment& other) const;
-		bool intersects(const mattmath::RectangleF& other) const;
-
 		mattmath::Vector2F direction() const;
 
 		float length() const;
@@ -794,14 +779,6 @@ namespace mattmath
 
 		RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
-		bool intersects(const RectangleF& rect) const override;
-		bool intersects(const Circle& circle) const override;;
-		bool intersects(const Triangle& triangle) const override;
-		bool intersects(const Quad& quad) const override;
-		bool intersects(const Segment& segment) const override;
-		bool intersects(const Point2F& point) const override;
-		bool intersects(const RectangleRotated& rect_rotated) const override;
-		bool contains(const Point2F& point) const;
 		void offset(const Vector2F& amount) override;
 		Point2F center() const override;
 		std::array<Segment, 4> edges() const;
