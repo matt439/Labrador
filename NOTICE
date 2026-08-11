@@ -19,13 +19,31 @@ original headers, rather than rewritten:
   wrapper for the Direct3D 11 device and swapchain"
 - `engine/core/step_timer.h` — "StepTimer.h - A simple timer that provides
   elapsed time information"
+- `engine/core/throw_if_failed.h` — `com_exception` and `ThrowIfFailed`, which
+  DirectXTK's samples carry inside their own headers. It is a separate file
+  here because `device_resources` is not its only caller.
 
 Copyright (c) Microsoft Corporation. Licensed under the MIT License.
 Source: https://github.com/microsoft/DirectXTK
 
-Both have been modified: `device_resources` moved into the D3D11 backend folder
-when the renderer seam was cut, and both were brought into the `artattack`
-namespace. They remain recognisably Microsoft's.
+All three have been modified, and the modifications are listed rather than
+summarised, because "recognisably Microsoft's" is only checkable if the
+departures from upstream are written down:
+
+- All three were brought into the `artattack` namespace, and
+  `device_resources` moved into the D3D11 backend folder when the renderer
+  seam was cut.
+- `device_resources.h` renames upstream's `IDeviceNotify` to
+  `D3DDeviceNotify`, because `DeviceNotify` is now the engine seam's name in
+  `engine/render/renderer.h` and is what a game implements.
+- `device_resources.cpp` includes this repository's `throw_if_failed.h` in
+  place of the sample's own copy.
+- The pool of deferred contexts was engine code, not Microsoft's, and has
+  been removed: each of the renderer's views owns the context it records
+  into, which is where that lifetime always belonged.
+
+They remain recognisably Microsoft's, with the last engine-authored code out
+of them.
 
 ### Christer Ericson — Real-Time Collision Detection
 

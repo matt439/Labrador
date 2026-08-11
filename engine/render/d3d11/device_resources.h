@@ -8,8 +8,6 @@
 #include <wrl/client.h>
 #include <d3d11_1.h>
 #include <dxgi1_6.h>
-#include <memory>
-#include <vector>
 
 namespace artattack
 {
@@ -94,15 +92,6 @@ namespace artattack
             m_d3dAnnotation->SetMarker(name);
         }
 
-        // Creates `num` deferred contexts on the current device. The count is
-        // remembered so CreateDeviceResources() can rebuild them after device
-        // loss - contexts belong to the device that made them, and using ones
-        // from a removed device is invalid.
-        void create_deferred_contexts(int num);
-        std::vector<ID3D11DeviceContext*>* deferred_contexts() const noexcept;
-        // Throws std::out_of_range for an invalid index, so not noexcept.
-        ID3D11DeviceContext* deferred_context(int index) const;
-
     private:
         void CreateFactory();
         void GetHardwareAdapter(IDXGIAdapter1** ppAdapter);
@@ -140,12 +129,5 @@ namespace artattack
 
         // The notify can be held directly as it owns the DeviceResources.
         D3DDeviceNotify*                                m_deviceNotify;
-
-        // Owning handles, plus a raw mirror for the existing accessors. The
-        // contexts used to be raw pointers that were never Released and never
-        // recreated on device loss.
-        std::vector<Microsoft::WRL::ComPtr<ID3D11DeviceContext>> deferred_contexts_owned_;
-        std::unique_ptr<std::vector<ID3D11DeviceContext*>> deferred_contexts_ = nullptr;
-        int deferred_context_count_ = 0;
     };
 }

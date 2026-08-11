@@ -222,17 +222,30 @@ namespace artattack
 		ID3D11Device1* device = this->device_resources.GetD3DDevice();
 		this->states = std::make_unique<CommonStates>(device);
 
-		// The contexts belong to the device and were remade with it, so the
-		// batches that write into them are remade too - and the View objects
-		// themselves are not, because a DrawList a caller is holding must keep
-		// pointing at the same view.
-		for (size_t i = 0; i < this->views.size(); i++)
+		// A context belongs to the device that made it, so both are remade
+		// here together - and the View objects themselves are not, because a
+		// DrawList a caller is holding must keep pointing at the same view.
+		//
+		// The context is created two lines above the SpriteBatch that records
+		// into it, which is the whole point of it living here. DeviceResources
+		// used to own a pool of them and this loop borrowed the i'th, so the
+		// ordering that made that work - rebuild the pool after the device and
+		// before OnDeviceRestored - was a rule spanning two classes with
+		// nowhere to write it down. Now there is no ordering to state.
+		//
+		// ReleaseAndGetAddressOf, not GetAddressOf: this function can run
+		// twice over the same views for one device loss, because
+		// CreateWindowSizeDependentResources can re-enter HandleDeviceLost
+		// whose inner OnDeviceRestored has already been through here. The
+		// releasing form makes the second pass free the first pass's context
+		// instead of leaking one per view.
+		for (std::unique_ptr<DrawList::View>& view_ptr : this->views)
 		{
-			DrawList::View& view = *this->views[i];
+			DrawList::View& view = *view_ptr;
 			view.owner = this;
-			view.context =
-				this->device_resources.deferred_context(static_cast<int>(i));
-			view.batch = std::make_unique<SpriteBatch>(view.context);
+			ThrowIfFailed(device->CreateDeferredContext(0,
+				view.context.ReleaseAndGetAddressOf()));
+			view.batch = std::make_unique<SpriteBatch>(view.context.Get());
 			view.reset();
 		}
 	}
@@ -242,7 +255,7 @@ namespace artattack
 		for (std::unique_ptr<DrawList::View>& view : this->views)
 		{
 			view->batch.reset();
-			view->context = nullptr;
+			view->context.Reset();
 			view->batch_open = false;
 		}
 		this->states.reset();
@@ -286,7 +299,6 @@ namespace artattack
 		this->impl_->device_resources.SetWindow(
 			static_cast<HWND>(native_window), width, height);
 		this->impl_->device_resources.CreateDeviceResources();
-		this->impl_->device_resources.create_deferred_contexts(view_capacity);
 
 		this->impl_->views.clear();
 		this->impl_->views.reserve(static_cast<size_t>(view_capacity));

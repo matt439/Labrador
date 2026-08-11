@@ -88,7 +88,7 @@ namespace artattack
 	{
 	public:
 		Renderer::Impl* owner = nullptr;
-		ID3D11DeviceContext* context = nullptr;
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 		std::unique_ptr<DirectX::SpriteBatch> batch;
 
 		// Reset at the top of every frame, not carried across one.
