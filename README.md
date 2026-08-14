@@ -102,7 +102,7 @@ Ten modules, each depending only on modules above it in the table
 
 | Module | What it is |
 |---|---|
-| `math` | Vectors, shapes, intersection. Depends on nothing and links nothing. |
+| `math` | Vectors, shapes, intersection, 2D affine transforms. Depends on nothing and links nothing. |
 | `core` | Game objects, handles, registries, the state stack, the thread pool. |
 | `collision` | Layers and masks, a broad phase, a narrow phase, analytic resolution. |
 | `render` | The renderer seam, cameras, viewports, sprites, text. D3D11 lives in `render/d3d11/`. |

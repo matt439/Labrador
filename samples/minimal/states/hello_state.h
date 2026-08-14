@@ -7,8 +7,8 @@
 #include "engine/math/vector2f.h"
 #include <memory>
 
-// One screen: a line of text that follows the left stick, and B to quit -
-// which asks first, by putting a second state on top of this one.
+// One screen: a line of text that circles a point the left stick moves, and B
+// to quit - which asks first, by putting a second state on top of this one.
 //
 // A state is the whole of what a game is to the engine (PHILOSOPHY, Structural
 // types) - there is no IGame to implement. The engine calls init() once, then
@@ -51,5 +51,11 @@ private:
 	artattack::Label* greeting_ = nullptr;
 	artattack::Label* hint_ = nullptr;
 
+	// The two numbers the greeting's placement is worked out from every frame:
+	// the point it circles, which the stick moves, and how far round the
+	// circle it currently is. update() turns the pair into a transform - the
+	// engine has no opinion about where anything is, and this is what doing it
+	// by hand looks like.
 	mattmath::Vector2F position_ = { 0.0f, 0.0f };
+	float spin_ = 0.0f;
 };

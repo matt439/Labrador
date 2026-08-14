@@ -9,6 +9,7 @@ add_library(MattMath STATIC
     ericson_math.cpp
     inflate.cpp
     intersects.cpp
+    matrix3x2f.cpp
     quad.cpp
     rectangle_rotated.cpp
     rectanglef.cpp

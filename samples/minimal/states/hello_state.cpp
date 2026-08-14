@@ -1,6 +1,7 @@
 #include "samples/minimal/states/hello_state.h"
 
 #include "engine/core/state_context.h"
+#include "engine/math/matrix3x2f.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 #include "samples/minimal/states/confirm_state.h"
@@ -20,6 +21,12 @@ namespace
 	const std::string font_name = "courier_new_bold_16";
 
 	constexpr float move_speed = 400.0f;
+
+	// How the greeting circles: radians a second, and how far out. Tuning, in
+	// the game's file, next to the one thing it configures (CONVENTIONS,
+	// Constants).
+	constexpr float spin_speed = 1.2f;
+	constexpr float orbit_radius = 24.0f;
 
 	// How far the stick has to move before it counts. One number, applied
 	// once, by the thing that knows what the stick is for - which is what
@@ -97,8 +104,24 @@ void HelloState::update(float dt)
 		const Vector2F stick = apply_deadzone(pads.state(0).left_stick,
 			stick_deadzone);
 		this->position_ += stick * (move_speed * dt);
-		this->greeting_->set_position(this->position_);
 	}
+
+	this->spin_ += spin_speed * dt;
+
+	// Where the greeting goes, worked out here rather than by the engine -
+	// nothing in the engine has an opinion about where a game's things are.
+	//
+	// The two factories compose left to right, in the order the two things
+	// happen to the text: turn it about the origin, then move it out to the
+	// point the stick has left at position_. One transform_point then takes
+	// the offset through both, which is what the type is for - build the
+	// transform once, push points through it. Writing it as a pair of sines
+	// instead works today and stops working the moment a third step joins
+	// them.
+	const Matrix3x2F to_screen = Matrix3x2F::rotation(this->spin_) *
+		Matrix3x2F::translation(this->position_);
+	this->greeting_->set_position(
+		to_screen.transform_point(Point2F(0.0f, -orbit_radius)));
 
 	// Steps every object in the scene, and admits or retires whatever this tick
 	// asked for. Nothing here has anything to step, and that is the point: the

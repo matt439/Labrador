@@ -3,6 +3,7 @@ find_package(doctest CONFIG REQUIRED)
 add_executable(MattMathTests
     ericson_math_tests.cpp
     inflate_tests.cpp
+    matrix3x2f_tests.cpp
     quad_tests.cpp
     rectangle_rotated_tests.cpp
     rectanglef_tests.cpp
