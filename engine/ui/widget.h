@@ -44,12 +44,65 @@ namespace artattack
 		void update(float dt) override = 0;
 		void draw(DrawList& draw_list) const override = 0;
 		mattmath::RectangleF bounds() const override = 0;
+
+		// Painting a thing that has no colour is nothing, not an error, which
+		// is why this is a no-op here and pure one level down.
+		//
+		// It is on this class at all so that a container can forward it to
+		// children it knows only as UiObjects. The two alternatives are both
+		// worse: a container that asked at runtime which of its children were
+		// colourable would be putting a cast on the path, and a container that
+		// could only hold colourable children would be a narrower container
+		// than anyone asked for.
+		virtual void set_colour(const Colour& colour);
 	private:
 		std::string name_ = "error_name";
 		bool hidden_ = false;
 	};
 
-	class UiContainer final : public UiObject
+	// A UiObject that has a colour, which is what the focus machinery
+	// traffics in: FocusGroup::add takes one of these, because paint is how a
+	// menu shows where the cursor is (focus.h).
+	class UiWidget : public UiObject
+	{
+	public:
+		UiWidget() = default;
+		explicit UiWidget(const std::string& name, bool hidden = false);
+		~UiWidget() override = default;
+
+		void update(float dt) override = 0;
+		void draw(DrawList& draw_list) const override = 0;
+		mattmath::RectangleF bounds() const override = 0;
+
+		// Pure again. UiObject's no-op is for a thing that is drawn and not
+		// coloured; a widget is the other kind, and being the other kind is
+		// the whole of what this class adds.
+		void set_colour(const Colour& colour) override = 0;
+	};
+
+	// A widget that is its children.
+	//
+	// IT IS A UiWidget, AND USED TO BE A UiObject, which is the difference
+	// between a compound widget being writable and not. FocusGroup::add takes
+	// a UiWidget*, so a container could not be focused - and a row that is a
+	// label and a value side by side, which is what every options screen is
+	// made of, is exactly a container the cursor lands on. A client without
+	// this recovers the label-to-value relationship by comparing the focused
+	// pointer against each label in turn, and cannot write a slider at all.
+	//
+	// SO IT IS NOT final EITHER, and deriving from it is how a compound
+	// widget is written: build the parts in the constructor, hand them to
+	// add_child, and inherit update, draw, bounds and set_colour already
+	// written. set_colour reaches every child, so a focus group holding one of
+	// these paints the whole row.
+	//
+	// Children are loans, as they were, and the container outlives nothing. A
+	// deriving class that owns its children holds them as members and calls
+	// add_child from its constructor body: members are built after the base,
+	// so there is nothing to add during the initialiser list, and destruction
+	// runs the other way - the container is emptied before the members it was
+	// pointing at go.
+	class UiContainer : public UiWidget
 	{
 	public:
 		UiContainer() = default;
@@ -64,25 +117,31 @@ namespace artattack
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
+
+		// Every child, in the order they were added, and whatever a child
+		// makes of it - a nested container passes it down, and a child with no
+		// colour ignores it.
+		void set_colour(const Colour& colour) override;
 	private:
 		std::vector<std::pair<std::string, UiObject*>> children_;
 	};
 
-	class UiWidget : public UiObject
-	{
-	public:
-		UiWidget() = default;
-		explicit UiWidget(const std::string& name, bool hidden = false);
-		~UiWidget() override = default;
-
-		void update(float dt) override = 0;
-		void draw(DrawList& draw_list) const override = 0;
-		mattmath::RectangleF bounds() const override = 0;
-
-		virtual void set_colour(const Colour& colour) = 0;
-	};
-
-	class UiTexture final : public UiWidget, public TextureObject
+	// THE THREE LEAVES ARE NOT final, and it is worth saying because they
+	// were, with no reason given anywhere - which reads as unconsidered rather
+	// than decided. A client wanting a text object with one extra behaviour -
+	// a line that builds itself from a list of parts, say - had to compose one
+	// and forward update, draw, bounds and set_colour to it by hand: four
+	// functions of boilerplate to add one.
+	//
+	// Deriving costs nothing structural. The destructor is virtual from
+	// GameObject down, so these are safe to hold and delete as UiWidget*, and
+	// each leaf is that plus a render-side base that already does the drawing.
+	//
+	// WHAT A DERIVING CLASS OWES: if it overrides draw(), it early-outs on
+	// hidden() itself. That check is written into each leaf's draw rather than
+	// into a wrapper around it, so an override replaces it rather than
+	// running after it.
+	class UiTexture : public UiWidget, public TextureObject
 	{
 	public:
 		UiTexture() = default;
@@ -117,7 +176,7 @@ namespace artattack
 		mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;
 	};
 
-	class UiText final : public UiWidget, public Text
+	class UiText : public UiWidget, public Text
 	{
 	public:
 		UiText() = default;
@@ -139,7 +198,7 @@ namespace artattack
 		void set_colour(const Colour& colour) override;
 	};
 
-	class UiTextDropShadow final : public UiWidget, public TextDropShadow
+	class UiTextDropShadow : public UiWidget, public TextDropShadow
 	{
 	public:
 		UiTextDropShadow() = default;

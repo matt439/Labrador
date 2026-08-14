@@ -28,13 +28,29 @@ namespace artattack
 	{
 		return this->hidden_;
 	}
+	void UiObject::set_colour(const Colour& /*colour*/)
+	{
+		// Nothing, and deliberately not pure: see the header. A container
+		// forwards to children it knows as UiObjects, and one of those having
+		// no colour is an answer rather than a case to detect.
+	}
 
 #pragma endregion UiObject
+
+#pragma region UiWidget
+
+	UiWidget::UiWidget(const std::string& name, bool hidden) :
+		UiObject(name, hidden)
+	{
+
+	}
+
+#pragma endregion UiWidget
 
 #pragma region UiContainer
 
 	UiContainer::UiContainer(const std::string& name) :
-		UiObject(name)
+		UiWidget(name)
 	{
 
 	}
@@ -125,19 +141,18 @@ namespace artattack
 		}
 		return result;
 	}
-
-#pragma endregion UiContainer
-
-#pragma region UiWidget
-
-
-	UiWidget::UiWidget(const std::string& name, bool hidden) :
-		UiObject(name, hidden)
+	void UiContainer::set_colour(const Colour& colour)
 	{
-
+		// No hidden() check, unlike draw(). A hidden subtree that is about to
+		// be shown should already be the colour it was told to be, and a focus
+		// group has no idea which of the widgets it holds are visible.
+		for (auto const& child : this->children_)
+		{
+			child.second->set_colour(colour);
+		}
 	}
 
-#pragma endregion UiWidget
+#pragma endregion UiContainer
 
 #pragma region UiTexture
 

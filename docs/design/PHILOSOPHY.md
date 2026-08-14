@@ -408,6 +408,13 @@ engine API to depend on.
   — with the two things every controller game needs solved once: focus, and
   navigation between widgets (stick/d-pad movement, per-viewport focus for
   split-screen).
+- The set is small because it is **open**, not because it is finished. Every
+  leaf can be derived from and a container is itself a widget, so a compound
+  — a row that is a label and a value, with the cursor landing on the row —
+  is a class the game writes rather than one the engine has to ship. This is
+  the place inheritance is the intended grammar rather than the last resort
+  (T11): these are interfaces the engine calls unknown game code through,
+  which is what Structural types reserves an interface for.
 - Layout is manual: the game positions widgets explicitly. There is no
   autolayout engine — the widget machine stays small, cheap and teachable
   (T4, T10).
