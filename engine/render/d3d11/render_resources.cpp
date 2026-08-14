@@ -128,4 +128,28 @@ namespace artattack
 			this->impl_->sprite_font(font)->MeasureString(text.c_str());
 		return { XMVectorGetX(size), XMVectorGetY(size) };
 	}
+
+	bool RenderResources::can_render(FontHandle font,
+		std::wstring_view text) const
+	{
+		return this->first_unrenderable(font, text) == std::wstring_view::npos;
+	}
+
+	size_t RenderResources::first_unrenderable(FontHandle font,
+		std::wstring_view text) const
+	{
+		// Resolved once, outside the loop. The handle read is a bounds check
+		// and an indexed load, but this is a per-character walk over a string
+		// a caller may be checking every content file with.
+		const SpriteFont* sprite_font = this->impl_->sprite_font(font);
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			if (!sprite_font->ContainsCharacter(text[i]))
+			{
+				return i;
+			}
+		}
+		return std::wstring_view::npos;
+	}
 }

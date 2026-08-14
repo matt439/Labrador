@@ -17,6 +17,55 @@
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
 
+namespace
+{
+	// The stand-in glyph a font draws when asked for one it does not have.
+	//
+	// WITHOUT ONE, A MISSING GLYPH IS AN EXCEPTION. DirectXTK's FindGlyph
+	// throws when the default character is U+0000, and U+0000 is what every
+	// .spritefont in this tree carries, because it is what MakeSpriteFont
+	// writes when nobody chooses - along with exactly 95 glyphs, U+0020 to
+	// U+007E. Nothing chose that region and nothing records it, so the
+	// out-of-the-box behaviour of the engine's own font kind was: any
+	// character a text editor inserts on its own - a curly apostrophe, an
+	// en-dash - kills the process on the frame that first drew it, which is
+	// typically several screens from wherever the string was read.
+	//
+	// The engine already documented the opposite. text_encoding.h promises
+	// that invalid UTF-8 becomes U+FFFD so that "text about to be drawn should
+	// show mojibake, not vanish" - and U+FFFD is outside 32..126, so the
+	// documented graceful path led directly into the throw it was written to
+	// avoid. It leads to a question mark now.
+	//
+	// Degradation rather than a throw is also what the audio half of this file
+	// already does: a missing optional wave bank becomes a bank that plays
+	// nothing rather than a dead process.
+	//
+	// '?' FIRST, ' ' AFTER IT, and nothing if the font has neither. A question
+	// mark says "something was here and could not be drawn", which is the
+	// mojibake text_encoding.h asks for; a space says only that the text is
+	// oddly spaced, and is the better of the two only when there is no
+	// question mark to be had. A font with neither is not a text font - an
+	// icon atlas, say - and is left exactly as it was rather than warned
+	// about, because there is nothing wrong with it.
+	//
+	// Asked before it is set, never caught: SetDefaultCharacter throws for a
+	// character the font does not have, and that is the throw this whole
+	// function exists to stop happening.
+	void install_default_character(DirectX::SpriteFont& font)
+	{
+		if (font.ContainsCharacter(L'?'))
+		{
+			font.SetDefaultCharacter(L'?');
+			return;
+		}
+		if (font.ContainsCharacter(L' '))
+		{
+			font.SetDefaultCharacter(L' ');
+		}
+	}
+}
+
 namespace artattack
 {
 	ResourceLoader::ResourceLoader(RenderResources* render_resources,
@@ -150,11 +199,11 @@ namespace artattack
 	{
 		const std::string font_path = directory + name + ".spritefont";
 
+		std::unique_ptr<SpriteFont> font;
 		try
 		{
-			this->render_resources_->impl()->add_sprite_font(name,
-				std::make_unique<SpriteFont>(this->device_,
-					std::wstring(font_path.begin(), font_path.end()).c_str()));
+			font = std::make_unique<SpriteFont>(this->device_,
+				std::wstring(font_path.begin(), font_path.end()).c_str());
 		}
 		catch (const std::exception&)
 		{
@@ -162,6 +211,9 @@ namespace artattack
 			throw std::out_of_range(
 				"SpriteFont " + name + " not found at " + font_path + ".");
 		}
+
+		install_default_character(*font);
+		this->render_resources_->impl()->add_sprite_font(name, std::move(font));
 	}
 
 	void ResourceLoader::load_sprite_sheet(const std::string& directory,

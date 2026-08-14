@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace artattack
 {
@@ -79,6 +80,34 @@ namespace artattack
 		// exactly the pointer it already holds.
 		mattmath::Vector2F measure_text(FontHandle font,
 			const std::wstring& text) const;
+
+		// Whether `font` has a glyph for every character in `text`, and where
+		// the first character it has none for is - wstring_view::npos when
+		// there is none.
+		//
+		// ASKED OF THE ATLAS, NOT OF WHAT WOULD HAPPEN. The loader installs a
+		// stand-in glyph on every font it builds, so drawing an unrenderable
+		// string no longer fails; it draws question marks. "Will this throw"
+		// has therefore stopped being a question worth answering, and "will
+		// the player read what I wrote" has not.
+		//
+		// IT IS HERE BECAUSE THERE IS NO OTHER WAY TO ASK. SpriteFont's own
+		// ContainsCharacter is behind the backend header, and the two files
+		// outside engine/render/<backend>/ allowed to include that are named
+		// in ARCHITECTURE - a third would be a mistake. Without this a client
+		// can only guess, or convert every content string through a
+		// hand-written table of what it believes the font holds. One did, and
+		// only after measuring the alternative: a curly apostrophe in a weapon
+		// description let the game start, load and reach the menu, and would
+		// have thrown four screens later, during play.
+		//
+		// Per UTF-16 unit, so a character outside the basic plane is two and
+		// reports at the first of them - which is where a caller pointing at
+		// the problem wants to point anyway, and is how the font will treat it
+		// when it draws.
+		bool can_render(FontHandle font, std::wstring_view text) const;
+		size_t first_unrenderable(FontHandle font,
+			std::wstring_view text) const;
 
 		// The tables, for the resource factory that fills them. Declared in the
 		// backend's own header rather than here - see the class comment.
