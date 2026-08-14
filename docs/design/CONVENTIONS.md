@@ -59,6 +59,20 @@ Almost everything below falls out of one rule:
 - Names are spelled out. The allowlist of short forms is small and
   closed: `dt`, `id`, `src`, `dst`, `min`, `max`. Everything else earns
   its letters — `weapon_type`, not `wep_type`.
+- Types are spelled out too: `auto` does not stand in for a type that
+  can be written. `Window* self`, not `auto* self`; `const
+  std::vector<Segment> edges = triangle.edges();`, not `const auto edges
+  = ...`. A declaration tells the next reader two things, the name and
+  the type, and `auto` moves the second one out of the line and into a
+  callee that is usually in another file (T4). The exception is the type
+  that cannot be written: a lambda's type has no spelling, so a lambda
+  held in a variable is held in an `auto`. The price is the occasional
+  long declaration — an iterator, a nested `value_type` — and where one
+  reads badly the fix is a named alias or a range-`for`, both of which
+  say more than the `auto` did, not less. This restricts style, not
+  vocabulary: `auto` is C++ that every C++ programmer knows, and
+  declining a deduction invents no dialect (T12) the way a macro
+  standing in for a keyword would.
 
 ## Constants and enumerators
 
@@ -138,3 +152,5 @@ Almost everything below falls out of one rule:
 - `get_` on accessors.
 - `using namespace` in a header.
 - Abbreviations off the allowlist.
+- `auto` where the type can be written — a lambda variable is the only
+  place it can't.
