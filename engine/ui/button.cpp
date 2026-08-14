@@ -28,4 +28,14 @@ namespace artattack
 		this->on_activate_();
 		return true;
 	}
+
+	bool Button::enabled() const
+	{
+		return this->enabled_;
+	}
+
+	void Button::set_enabled(bool enabled)
+	{
+		this->enabled_ = enabled;
+	}
 }

@@ -84,8 +84,13 @@ namespace artattack
 			return false;
 		}
 
-		UiWidget* to = nearest_in_direction(*from, direction, this->visuals(),
-			wrap);
+		// Disabled entries are not in the candidate list, so the walk lands on
+		// the next live row rather than stopping at a dead one. `from` is
+		// passed separately and may itself be disabled - which is the live
+		// case, a row switched off under a cursor already sitting on it - and
+		// moving off it still works.
+		UiWidget* to = nearest_in_direction(*from, direction,
+			this->enabled_visuals(), wrap);
 		if (to == nullptr || to == from)
 		{
 			return false;
@@ -93,14 +98,50 @@ namespace artattack
 		return this->set_focused(slot, to);
 	}
 
-	bool FocusGroup::activate(int slot) const
+	Activation FocusGroup::activate(int slot) const
 	{
 		const int index = this->focused_.at(static_cast<size_t>(slot));
 		if (index < 0)
 		{
+			return Activation::none;
+		}
+
+		const Button& button = this->buttons_[static_cast<size_t>(index)];
+		if (!button.enabled())
+		{
+			// Before the action rather than instead of it: a disabled entry
+			// may well have one bound, and the press is being refused, not
+			// found to be empty.
+			return Activation::refused;
+		}
+		return button.activate() ? Activation::ran : Activation::none;
+	}
+
+	bool FocusGroup::set_enabled(const UiWidget* widget, bool enabled)
+	{
+		const int index = this->index_of(widget);
+		if (index < 0)
+		{
 			return false;
 		}
-		return this->buttons_[static_cast<size_t>(index)].activate();
+		this->buttons_[static_cast<size_t>(index)].set_enabled(enabled);
+
+		// The paint is derived, so switching a row off is enough to recolour
+		// it. A page doing this per frame - which the live case is - repaints
+		// single digits of widgets on a menu, which is what the class comment
+		// already priced.
+		this->refresh_style();
+		return true;
+	}
+
+	bool FocusGroup::enabled(const UiWidget* widget) const
+	{
+		const int index = this->index_of(widget);
+		if (index < 0)
+		{
+			return false;
+		}
+		return this->buttons_[static_cast<size_t>(index)].enabled();
 	}
 
 	const FocusStyle& FocusGroup::style() const
@@ -118,6 +159,17 @@ namespace artattack
 	{
 		for (size_t i = 0; i < this->buttons_.size(); i++)
 		{
+			// Disabled outranks focused, and it has to. The cursor is left
+			// where it was when a row is switched off under it, so "focused
+			// and disabled" is a state a player reaches by standing still -
+			// and painting that row focused would be the screen saying it is
+			// available at the moment it refuses to be picked.
+			if (!this->buttons_[i].enabled())
+			{
+				this->buttons_[i].visual()->set_colour(this->style_.disabled);
+				continue;
+			}
+
 			const int index = static_cast<int>(i);
 			const bool has_focus = std::find(this->focused_.begin(),
 				this->focused_.end(), index) != this->focused_.end();
@@ -144,13 +196,16 @@ namespace artattack
 		return -1;
 	}
 
-	std::vector<UiWidget*> FocusGroup::visuals() const
+	std::vector<UiWidget*> FocusGroup::enabled_visuals() const
 	{
 		std::vector<UiWidget*> result;
 		result.reserve(this->buttons_.size());
 		for (const Button& button : this->buttons_)
 		{
-			result.push_back(button.visual());
+			if (button.enabled())
+			{
+				result.push_back(button.visual());
+			}
 		}
 		return result;
 	}
