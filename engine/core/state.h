@@ -64,6 +64,36 @@ namespace artattack
 		// stack that has already finished changing shape.
 		virtual void on_resume() {}
 
+		// The application got or lost the foreground: alt-tab, minimise, a
+		// power suspend, or coming back from any of them.
+		//
+		// A DIFFERENT QUESTION FROM on_suspend, and the pair above is exactly
+		// why this one had to exist. on_suspend means "something was pushed
+		// above me" and is asked of one state; these mean "nobody is looking
+		// at any of us", which is a fact about the window that no state can
+		// see. The shell used to keep it entirely to itself - it suspended the
+		// pad reader and told the stack nothing - and a suspended reader
+		// answers "disconnected" for every slot, which becomes a neutral
+		// input, which is a legal input that nothing downstream questions. So
+		// a match alt-tabbed out of played itself out with nobody in it: the
+		// characters standing still, the clock running down, and the music at
+		// full volume over whatever the player had switched to.
+		//
+		// EVERY FRAME IS TOLD, top down, not the top one alone. A match under
+		// a pause menu is not being updated and is still holding the music and
+		// a looping weapon voice, so the frame that most needs to hear this is
+		// the one furthest from the top.
+		//
+		// AN EDGE, so a state may pause here and resume there without keeping
+		// a bool of its own. Windows offers no such guarantee - deactivating
+		// and then minimising is two separate messages that both mean "not in
+		// front of the player" - and StateContext::notify_activation is where
+		// the sources collapse into one question, so it is where the edge is
+		// made. A state constructed while the application is already inactive
+		// missed the edge and is told nothing; it asks StateContext::active().
+		virtual void on_activated() {}
+		virtual void on_deactivated() {}
+
 		void set_context(StateContext* context);
 	protected:
 		StateContext* context() const;

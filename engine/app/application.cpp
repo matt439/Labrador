@@ -309,31 +309,47 @@ namespace artattack
 		}
 	}
 
-	void Application::on_activated() const
+	// ALL FOUR SAY THE SAME THING TO THE STACK, and notify_activation is what
+	// makes four into two: alt-tab and then minimise is two of these firing
+	// with one piece of news in them, and the repeat is dropped there.
+	//
+	// THE STATES ARE TOLD WHILE EVERY SERVICE IS STILL BEHAVING NORMALLY. A
+	// state's on_deactivated is a game's own code and will stop a looping
+	// voice or pause a clock, so going away it speaks after the input devices
+	// are settled and before the audio engine is suspended under it; coming
+	// back it speaks last of all, into a shell that has finished becoming what
+	// it is about to describe. It is the same rule that makes ~Application
+	// drain the stack first: a state gets to run against live services or it
+	// does not get to run.
+
+	void Application::on_activated()
 	{
 		if (this->gamepad_reader_)
 		{
 			this->gamepad_reader_->resume();
 		}
 		this->set_input_focus(true);
+		this->notify_activation(true);
 	}
 
-	void Application::on_deactivated() const
+	void Application::on_deactivated()
 	{
 		if (this->gamepad_reader_)
 		{
 			this->gamepad_reader_->suspend();
 		}
 		this->set_input_focus(false);
+		this->notify_activation(false);
 	}
 
-	void Application::on_suspending() const
+	void Application::on_suspending()
 	{
 		if (this->gamepad_reader_)
 		{
 			this->gamepad_reader_->suspend();
 		}
 		this->set_input_focus(false);
+		this->notify_activation(false);
 		if (this->audio_engine_)
 		{
 			this->audio_engine_->Suspend();
@@ -352,6 +368,7 @@ namespace artattack
 		{
 			this->audio_engine_->Resume();
 		}
+		this->notify_activation(true);
 	}
 
 	void Application::on_window_moved() const

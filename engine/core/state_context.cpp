@@ -114,6 +114,59 @@ namespace artattack
 		}
 	}
 
+	void StateContext::notify_activation(bool active)
+	{
+		// The edge. Two messages saying the same thing is one piece of news,
+		// and the second of them is not an event a state should be able to
+		// hear.
+		if (active == this->active_)
+		{
+			return;
+		}
+
+		// Before the walk, so a state asking active() from inside its own
+		// callback is told what it is being told.
+		this->active_ = active;
+
+		if (this->frames_.empty())
+		{
+			// Not a special case. The window is up from initialize() and the
+			// first state does not arrive until run(), so a message can land
+			// here with nothing on the stack - and the level above is the
+			// whole of what that message meant, kept for whoever arrives next.
+			return;
+		}
+
+		// TOP DOWN: push's order reversed, which is clear()'s order too. What
+		// is on top is what the player was last looking at, so it answers
+		// first.
+		//
+		// Deferring across the whole walk, not per frame. A state that closes
+		// itself when the player looks away would otherwise resize frames_
+		// from inside the loop that is indexing it.
+		this->deferring_ = true;
+		for (size_t i = this->frames_.size(); i > 0; i--)
+		{
+			State* state = this->frames_[i - 1].state.get();
+			if (active)
+			{
+				state->on_activated();
+			}
+			else
+			{
+				state->on_deactivated();
+			}
+		}
+		this->deferring_ = false;
+
+		this->apply_pending();
+	}
+
+	bool StateContext::active() const
+	{
+		return this->active_;
+	}
+
 	int StateContext::depth() const
 	{
 		// The applied stack. Operations queued during this update are not in it

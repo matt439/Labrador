@@ -68,6 +68,18 @@ namespace
 		{
 			this->log_->push_back(this->name_ + ":resume");
 		}
+		void on_activated() override
+		{
+			this->log_->push_back(this->name_ + ":activated");
+		}
+		void on_deactivated() override
+		{
+			this->log_->push_back(this->name_ + ":deactivated");
+			if (this->on_deactivation_)
+			{
+				this->on_deactivation_();
+			}
+		}
 
 		void on_init(std::function<void()> action)
 		{
@@ -76,6 +88,12 @@ namespace
 		void on_update(std::function<void()> action)
 		{
 			this->on_update_ = std::move(action);
+		}
+		// Named for the event rather than the callback, because on_deactivated
+		// is the override.
+		void on_deactivation(std::function<void()> action)
+		{
+			this->on_deactivation_ = std::move(action);
 		}
 		void set_covers_screen(bool covers_screen)
 		{
@@ -87,6 +105,7 @@ namespace
 		std::vector<std::string>* log_ = nullptr;
 		std::function<void()> on_init_;
 		std::function<void()> on_update_;
+		std::function<void()> on_deactivation_;
 		bool covers_screen_ = true;
 		bool touched_ = false;
 	};
@@ -358,6 +377,113 @@ TEST_CASE("popping an empty stack throws where it was written")
 {
 	StateContext context;
 	CHECK_THROWS_AS(context.pop(), std::logic_error);
+}
+
+TEST_CASE("activation reaches every frame, from the top down")
+{
+	std::vector<std::string> log;
+	StateContext context;
+
+	context.transition_to(std::make_unique<RecordingState>("menu", &log));
+	context.push(std::make_unique<RecordingState>("match", &log));
+	auto pause = std::make_unique<RecordingState>("pause", &log);
+	pause->set_covers_screen(false);
+	context.push(std::move(pause));
+	REQUIRE(context.depth() == 3);
+
+	log.clear();
+	context.notify_activation(false);
+
+	// NOT THE TOP FRAME ALONE, which is the difference between this and every
+	// other thing the stack does. The match under the pause menu is not being
+	// updated and is the state holding the music and the looping weapon voice,
+	// so it is both the frame furthest from the top and the one this exists
+	// for.
+	CHECK(log == std::vector<std::string>{
+		"pause:deactivated", "match:deactivated", "menu:deactivated"});
+
+	log.clear();
+	context.notify_activation(true);
+	CHECK(log == std::vector<std::string>{
+		"pause:activated", "match:activated", "menu:activated"});
+}
+
+TEST_CASE("only a change is an edge, and only an edge is reported")
+{
+	std::vector<std::string> log;
+	StateContext context;
+	context.transition_to(std::make_unique<RecordingState>("level", &log));
+
+	// A window given the foreground on creation is never told it has it.
+	CHECK(context.active());
+
+	log.clear();
+	context.notify_activation(true);
+	CHECK(log.empty());
+
+	// Alt-tab away and then minimise: two messages, both meaning "not in front
+	// of the player", and one piece of news. A client left to pair these up
+	// itself cannot - SoundBank::pause_effect carries no depth, so the second
+	// pause and the first are the same state and one resume answers both.
+	context.notify_activation(false);
+	context.notify_activation(false);
+	CHECK(log == std::vector<std::string>{"level:deactivated"});
+	CHECK(context.active() == false);
+
+	log.clear();
+	context.notify_activation(true);
+	CHECK(log == std::vector<std::string>{"level:activated"});
+	CHECK(context.active());
+}
+
+TEST_CASE("a state that arrives after the edge asks for the level instead")
+{
+	std::vector<std::string> log;
+	StateContext context;
+
+	// Told with nothing on the stack, which is reachable rather than
+	// defensive: the window is up from initialize() and the first state does
+	// not arrive until run(), so a player who clicks away during a manifest
+	// load lands exactly here.
+	context.notify_activation(false);
+	CHECK(context.active() == false);
+
+	bool active_at_init = true;
+	auto level = std::make_unique<RecordingState>("level", &log);
+	level->on_init([&]() { active_at_init = context.active(); });
+	context.transition_to(std::move(level));
+
+	// It cannot be told an edge that happened before it existed, and the stack
+	// keeps updating in the background so states are still built there. The
+	// level survives the state that was not there to hear it.
+	CHECK(active_at_init == false);
+	CHECK(log == std::vector<std::string>{"level:init"});
+}
+
+TEST_CASE("what a deactivated state asks for applies after the walk")
+{
+	std::vector<std::string> log;
+	StateContext context;
+
+	context.transition_to(std::make_unique<RecordingState>("level", &log));
+
+	auto menu = std::make_unique<RecordingState>("menu", &log);
+	RecordingState* menu_raw = menu.get();
+	context.push(std::move(menu));
+
+	// A page that closes itself when the player looks away.
+	menu_raw->on_deactivation([&]() { context.pop(); });
+
+	log.clear();
+	context.notify_activation(false);
+
+	// The walk is indexing frames_, so the pop cannot take effect inside it.
+	// Every frame is told first - the one below included, which would have
+	// been skipped if the stack had shrunk mid-loop - and the shape changes
+	// afterwards.
+	CHECK(ran_before(log, "menu:deactivated", "level:deactivated"));
+	CHECK(ran_before(log, "level:deactivated", "menu:dtor"));
+	CHECK(context.depth() == 1);
 }
 
 TEST_CASE("clear destroys the live states from the top down")

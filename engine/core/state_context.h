@@ -136,6 +136,48 @@ namespace artattack
 		// and 3 with a pause menu over a match over a menu.
 		int depth() const;
 
+		// The application got or lost the foreground, and every live state is
+		// told - the top frame first, then down.
+		//
+		// ALL OF THEM, WHICH IS THE WHOLE VALUE. Only the top frame is
+		// updated, and for a pause menu over a match that is right: the match
+		// is not meant to be simulating. It is still holding a music track and
+		// a looping weapon voice, though, and nothing but Level::update was
+		// ever going to stop them - so the frame that most needs this is the
+		// one furthest from the top, and a hook that stopped at the top would
+		// have reached everything except the thing it was written for.
+		//
+		// IT IS AN EDGE, MADE HERE BECAUSE IT IS ONE NOWHERE ELSE.
+		// WM_ACTIVATEAPP and the power broadcast are separate messages that
+		// both mean "not in front of the player": alt-tab, then minimise, is
+		// two deactivations and then one activation. A client cannot pair them
+		// up afterwards either - SoundBank::pause_effect and resume_effect
+		// carry no depth, so "paused twice" and "paused" are the same state
+		// and one resume answers both - so every client would write the same
+		// remembered bool, and this writes it once. A repeat returns without
+		// touching the stack.
+		//
+		// IT DEFERS, like update() and for update()'s reason: these callbacks
+		// are a state's own code and may push, pop or transition, and the walk
+		// is indexing frames_ while they run. Whatever they ask for applies
+		// once every frame has been told.
+		void notify_activation(bool active);
+
+		// Whether the application has the foreground, as last reported.
+		//
+		// TRUE UNTIL SOMETHING SAYS OTHERWISE. A window that is given the
+		// foreground on creation gets no message to say so - it was already
+		// active when the handler that would have heard it did not exist -
+		// which is the same reason Application starts the keyboard and mouse
+		// focused rather than waiting to be told.
+		//
+		// It is a query and not just a record because the edge cannot reach a
+		// state that was not there for it. The stack keeps updating while the
+		// application is in the background, so states are still constructed
+		// there, and one of those missed its on_deactivated by being younger
+		// than the message. Its init() asks this instead.
+		bool active() const;
+
 		// Destroys every live state and drops anything still queued. After it
 		// this context is what a freshly constructed one is.
 		//
@@ -155,8 +197,10 @@ namespace artattack
 		// issued from inside the update() of a state it may destroy. This one is
 		// issued by a destructor, from outside every state's call frame, so
 		// queueing it would mean a drain that never comes. The consequence is
-		// the contract: do not call it from inside a state's own update() or
-		// init(), where it would destroy the state whose call frame is running.
+		// the contract: do not call it from inside a state's own update(),
+		// init() or activation callback, where it would destroy the state
+		// whose call frame is running - and, from the last of those, the
+		// frames the walk has not reached yet.
 		//
 		// NO RESULT CALLBACK FIRES, deliberately. push(state, on_closed) reads
 		// as though it covered shutdown and it does not: a callback is the
@@ -206,8 +250,12 @@ namespace artattack
 		std::vector<PendingOp> pending_;
 
 		// True while something of this context's is on the stack - a state's
-		// update(), a state's init(), or the drain itself.
+		// update(), a state's init(), an activation callback, or the drain
+		// itself.
 		bool deferring_ = false;
+
+		// The foreground, as last reported. See notify_activation.
+		bool active_ = true;
 
 		void queue(PendingOp op);
 		void apply_pending();

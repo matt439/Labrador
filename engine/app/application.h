@@ -243,9 +243,13 @@ namespace artattack
 		// including the backend. A Renderer::display_changed() on the seam
 		// would delete the constraint and make the placement a free choice.
 		void tick() override;
-		void on_activated() const override;
-		void on_deactivated() const override;
-		void on_suspending() const override;
+
+		// The four that mean "the player is looking at us" or "the player is
+		// not", and the only four that reach the state stack. Non-const for
+		// that reason and no other: see WindowNotify.
+		void on_activated() override;
+		void on_deactivated() override;
+		void on_suspending() override;
 		void on_resuming() override;
 		void on_window_moved() const override;
 		void on_display_change() const override;

@@ -11,9 +11,18 @@ namespace artattack
 {
 	// What a window has to tell whoever owns it. Modelled on DeviceNotify
 	// (engine/render/renderer.h) and const-qualified to match, because these
-	// are the handlers Application already had: five of them read the world
-	// and two change it, and copying that distinction wrong makes Application
+	// are the handlers Application already had: some of them read the world
+	// and some change it, and copying that distinction wrong makes Application
 	// abstract.
+	//
+	// THE ACTIVATION FOUR ARE ON THE CHANGING SIDE, and three of them were
+	// not. They were const while all they did was suspend a borrowed pad
+	// reader and mark two borrowed devices unfocused; they now carry the same
+	// news into the state stack, where a game's own code runs and may push,
+	// pop or transition. Fanning that out from a const handler would have
+	// compiled - the states hang off unique_ptrs, whose constness is one level
+	// deep - which is the reason to change the signature rather than lean on
+	// it.
 	class WindowNotify
 	{
 	public:
@@ -23,9 +32,9 @@ namespace artattack
 		// Windows owns the loop, and painting is the only way back in.
 		virtual void tick() = 0;
 
-		virtual void on_activated() const = 0;
-		virtual void on_deactivated() const = 0;
-		virtual void on_suspending() const = 0;
+		virtual void on_activated() = 0;
+		virtual void on_deactivated() = 0;
+		virtual void on_suspending() = 0;
 		virtual void on_resuming() = 0;
 		virtual void on_window_moved() const = 0;
 		virtual void on_display_change() const = 0;
@@ -39,8 +48,9 @@ namespace artattack
 		// which is the whole reason `input` is fed rather than read, and the
 		// reason nothing in it names a window (keyboard.h says it at length).
 		//
-		// const, like the five above and for the same reason: they change
-		// nothing about the window and everything they do reach is borrowed.
+		// const, like on_window_moved and on_display_change and for the same
+		// reason: they change nothing about the window, and everything they do
+		// reach is borrowed and fed rather than asked anything.
 		//
 		// Already translated, both directions. `Key` and `MouseButton` are the
 		// engine's own names, decided in window.cpp from the platform's codes,
