@@ -118,6 +118,23 @@ namespace artattack
 		this->gamepad_reader_ = std::make_unique<GamepadReader>();
 		this->gamepads_ = std::make_unique<Gamepads>(this->gamepad_reader_.get());
 
+		// No reader to give either of these: the window feeds them. They exist
+		// from here on so that a message arriving before the first frame has
+		// somewhere to land - WM_MOUSEMOVE turns up the moment the cursor is
+		// over a window that has only just been shown.
+		this->keyboard_ = std::make_unique<Keyboard>();
+		this->mouse_ = std::make_unique<Mouse>();
+
+		// The window is already up by the time services are built, and a
+		// window that was given the foreground on creation gets no
+		// WM_ACTIVATEAPP to say so - it was already active when the handler
+		// that would have heard it did not exist. Without this the first key
+		// press after launch lands on an unfocused device and is discarded,
+		// and the player's first input in the process is silently the one that
+		// does nothing.
+		this->keyboard_->set_focused(true);
+		this->mouse_->set_focused(true);
+
 		this->timer_.SetFixedTimeStep(true);
 		this->timer_.SetTargetElapsedSeconds(
 			1.0 / static_cast<double>(this->options_.target_fps));
@@ -238,7 +255,15 @@ namespace artattack
 		// Before anything reads it, and on every frame whatever is running.
 		// That is what makes "down now, up last frame" true - see gamepads.h
 		// for the two hand-primed edge detectors this replaced.
+		//
+		// All three together, and in one place, so that a frame boundary means
+		// the same thing to every device. A keyboard polled somewhere else in
+		// the frame would put its edges half a frame away from the pads', and
+		// a game reading both would see a stick and a key pressed on the same
+		// physical frame report on different ones.
 		this->gamepads_->poll();
+		this->keyboard_->poll();
+		this->mouse_->poll();
 
 		StateContext::update(
 			static_cast<float>(this->timer_.GetElapsedSeconds()));
@@ -267,12 +292,30 @@ namespace artattack
 		this->renderer_->end_frame();
 	}
 
+	void Application::set_input_focus(bool focused) const
+	{
+		// Losing it is the load-bearing direction. A key or a button held when
+		// the window goes away has its release delivered to whatever took the
+		// foreground, so a device that kept the bit set would hold it until
+		// the player pressed and released that key again - which is a
+		// character walking left forever after an alt-tab.
+		if (this->keyboard_)
+		{
+			this->keyboard_->set_focused(focused);
+		}
+		if (this->mouse_)
+		{
+			this->mouse_->set_focused(focused);
+		}
+	}
+
 	void Application::on_activated() const
 	{
 		if (this->gamepad_reader_)
 		{
 			this->gamepad_reader_->resume();
 		}
+		this->set_input_focus(true);
 	}
 
 	void Application::on_deactivated() const
@@ -281,6 +324,7 @@ namespace artattack
 		{
 			this->gamepad_reader_->suspend();
 		}
+		this->set_input_focus(false);
 	}
 
 	void Application::on_suspending() const
@@ -289,6 +333,7 @@ namespace artattack
 		{
 			this->gamepad_reader_->suspend();
 		}
+		this->set_input_focus(false);
 		if (this->audio_engine_)
 		{
 			this->audio_engine_->Suspend();
@@ -302,6 +347,7 @@ namespace artattack
 		{
 			this->gamepad_reader_->resume();
 		}
+		this->set_input_focus(true);
 		if (this->audio_engine_)
 		{
 			this->audio_engine_->Resume();
@@ -400,6 +446,91 @@ namespace artattack
 	{
 		return this->partitioner_.get();
 	}
+	// EIGHT FORWARDERS AND NOT ONE DECISION IN THEM, which is the point. The
+	// window decided what the message was; the device decides what a frame of
+	// them adds up to; the game decides what it means. Anything that looked
+	// like policy appearing in this block - a key that opens a menu, a click
+	// that selects - would be engine code answering a question the boundary
+	// gives to the game (T1).
+	//
+	// The null guards are not defensive habit. Messages arrive during
+	// create_window, which runs before create_services, so the first
+	// WM_MOUSEMOVE of the process genuinely can land before there is a Mouse
+	// to land in.
+	void Application::on_key_down(Key key) const
+	{
+		if (this->keyboard_)
+		{
+			this->keyboard_->on_key_down(key);
+		}
+	}
+
+	void Application::on_key_up(Key key) const
+	{
+		if (this->keyboard_)
+		{
+			this->keyboard_->on_key_up(key);
+		}
+	}
+
+	void Application::on_text(char32_t codepoint) const
+	{
+		if (this->keyboard_)
+		{
+			this->keyboard_->on_text(codepoint);
+		}
+	}
+
+	void Application::on_mouse_move(int x, int y) const
+	{
+		if (this->mouse_)
+		{
+			this->mouse_->on_move(mattmath::Vector2I(x, y));
+		}
+	}
+
+	void Application::on_mouse_button_down(MouseButton button) const
+	{
+		if (this->mouse_)
+		{
+			this->mouse_->on_button_down(button);
+		}
+	}
+
+	void Application::on_mouse_button_up(MouseButton button) const
+	{
+		if (this->mouse_)
+		{
+			this->mouse_->on_button_up(button);
+		}
+	}
+
+	void Application::on_mouse_wheel(float notches) const
+	{
+		if (this->mouse_)
+		{
+			this->mouse_->on_wheel(notches);
+		}
+	}
+
+	void Application::on_mouse_wheel_horizontal(float notches) const
+	{
+		if (this->mouse_)
+		{
+			this->mouse_->on_wheel_horizontal(notches);
+		}
+	}
+
+	Keyboard* Application::keyboard() const
+	{
+		return this->keyboard_.get();
+	}
+
+	Mouse* Application::mouse() const
+	{
+		return this->mouse_.get();
+	}
+
 	Gamepads* Application::gamepads() const
 	{
 		return this->gamepads_.get();

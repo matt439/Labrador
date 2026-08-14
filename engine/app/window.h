@@ -1,5 +1,7 @@
 #pragma once
 
+#include "engine/input/keyboard.h"
+#include "engine/input/mouse.h"
 #include "engine/math/vector2i.h"
 
 #include <Windows.h>
@@ -28,6 +30,38 @@ namespace artattack
 		virtual void on_window_moved() const = 0;
 		virtual void on_display_change() const = 0;
 		virtual void on_window_size_changed(int width, int height) = 0;
+
+		// THE KEYBOARD AND THE MOUSE, and they are here rather than behind a
+		// reader in engine/input/ because there is nowhere else they could be.
+		// A pad is polled: input/xinput/ asks XInput for a snapshot and owes
+		// this file nothing. These two arrive as messages in this window's
+		// queue, so the only way into the input module is out through here -
+		// which is the whole reason `input` is fed rather than read, and the
+		// reason nothing in it names a window (keyboard.h says it at length).
+		//
+		// const, like the five above and for the same reason: they change
+		// nothing about the window and everything they do reach is borrowed.
+		//
+		// Already translated, both directions. `Key` and `MouseButton` are the
+		// engine's own names, decided in window.cpp from the platform's codes,
+		// and `codepoint` is UTF-32 with any surrogate pair already assembled.
+		// Nothing above this line meets a VK_ constant or a UTF-16 unit -
+		// message translation lives here, and that is the whole of the job
+		// this class exists to hand over.
+		virtual void on_key_down(Key key) const = 0;
+		virtual void on_key_up(Key key) const = 0;
+		virtual void on_text(char32_t codepoint) const = 0;
+
+		virtual void on_mouse_move(int x, int y) const = 0;
+		virtual void on_mouse_button_down(MouseButton button) const = 0;
+		virtual void on_mouse_button_up(MouseButton button) const = 0;
+
+		// Notches, signed, fractional on a high-resolution wheel. Two
+		// functions rather than one with an axis flag, because a caller
+		// reading `on_mouse_wheel(delta, true)` cannot tell which way `true`
+		// points without looking it up (T4).
+		virtual void on_mouse_wheel(float notches) const = 0;
+		virtual void on_mouse_wheel_horizontal(float notches) const = 0;
 
 	protected:
 		~WindowNotify() = default;
@@ -147,6 +181,33 @@ namespace artattack
 		int min_width_ = 0;
 		int min_height_ = 0;
 		int exit_code_ = 0;
+
+		// How many mouse buttons are down, and it exists to balance SetCapture
+		// against ReleaseCapture.
+		//
+		// Without capture, WM_MOUSEMOVE stops the instant the cursor crosses
+		// the client edge - so a slider dragged too far, or a marquee pulled
+		// past the corner, freezes where it left and then jumps when the
+		// cursor comes back. Capture is what makes a drag one gesture.
+		//
+		// It is a COUNT and not a flag because capture is per window, not per
+		// button. Pressing left, then right, then releasing left would release
+		// the capture with the right button still held if this were a bool,
+		// and the drag would break in the middle for no reason the player
+		// could see. Capture is taken when the count leaves zero and released
+		// when it returns.
+		int held_buttons_ = 0;
+
+		// The high half of a surrogate pair, waiting for its low half.
+		//
+		// WM_CHAR carries one UTF-16 code unit, so anything past the basic
+		// plane - an emoji, most of the CJK extensions - arrives as two
+		// messages that mean one character. Assembling them is message
+		// translation and therefore this file's job: engine/input/keyboard.h
+		// takes a char32_t and never learns that Windows speaks UTF-16.
+		//
+		// Zero when nothing is pending, which no real high surrogate is.
+		wchar_t pending_high_surrogate_ = 0;
 
 		HWND handle_ = nullptr;
 	};

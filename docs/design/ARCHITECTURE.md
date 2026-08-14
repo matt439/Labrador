@@ -121,11 +121,18 @@ being load-bearing.
 │   │                       phase goes behind find_contacts)
 │   ├── scene/              Scene: the object list, the view list, the tick
 │   │                       phases, the per-view draw fan-out and the cull
-│   ├── input/              devices: polling, deadzones, press edges. The
-│   │                       action map is deliberately not built - neither
-│   │                       client has a rebinding screen, so a binding
-│   │                       table would be a speculative framework (T1)
-│   │   └── xinput/         the XInput backend
+│   ├── input/              devices: polling, deadzones, press edges, typed
+│   │                       text. Three devices, one API shape, two ways in
+│   │                       — the pads are read from a backend, the keyboard
+│   │                       and mouse are fed from the window (see below).
+│   │                       The action map is deliberately not built -
+│   │                       neither client has a rebinding screen, so a
+│   │                       binding table would be a speculative framework
+│   │                       (T1)
+│   │   └── xinput/         the XInput backend. There is no win32/ beside
+│   │                       it: the keyboard and mouse have no backend to
+│   │                       select, because their platform edge is the
+│   │                       window and it already exists
 │   ├── audio/              playback, mixing
 │   ├── ui/                 widgets, focus, controller navigation
 │   ├── assets/             JSON loading, resource loaders, manifest, factories
@@ -171,6 +178,33 @@ above it names a Win32 type. It is not in `app/win32/` because there is
 no second platform to select between and inventing the folder now is the
 speculative framework T1 rules out; when one arrives the pair moves down
 a folder without renaming the class or touching a call site.
+
+That third case now carries two of the three input devices, and the
+asymmetry is worth stating because it looks like an inconsistency and is
+not. A gamepad is **read**: `input/xinput/` asks XInput for a complete
+snapshot whenever `Gamepads::poll` wants one, and owes the window
+nothing. A keyboard and a mouse are **fed**: they reach a Win32 program
+only as messages in a window's queue, and one of their channels — typed
+text — cannot be rebuilt from device state at any price, because the
+shift resolution, the key repeat, the dead keys and the IME have all
+happened inside the OS before the character exists. The wheel is the same
+shape for a different reason: it has no position to sample, only deltas
+that are gone if nobody was listening.
+
+So the flow for those two is `app → input`, never the reverse. `Window`
+translates the messages into `Key` and `MouseButton` — the engine's own
+names, so nothing above `window.cpp` meets a `VK_` constant or a UTF-16
+code unit — `WindowNotify` carries them out, `Application` forwards them
+into the devices, and the devices latch them into frames. The module
+table is untouched by all of it: `input` still depends on `core` and
+`math` alone, and nothing in it knows a window exists.
+
+What a game sees is the same shape for all three devices — `state`,
+`previous_state`, `held`, `pressed`, `released`, and an edge that
+requires the device to have been live on both frames. That last rule is
+`gamepad.h`'s, transplanted: a pad that was unplugged and a window that
+lost the foreground produce the identical phantom press, and a client
+should not have to learn two spellings to suppress one bug.
 
 Those interfaces are **concrete classes with one implementation selected
 at build time, not abstract bases with vtables.** `Renderer` is declared

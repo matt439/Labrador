@@ -31,6 +31,8 @@ add_library(ArtAttackEngine STATIC
     core/thread_pool.cpp
     input/gamepad.cpp
     input/gamepads.cpp
+    input/keyboard.cpp
+    input/mouse.cpp
     input/xinput/gamepad_reader.cpp
     render/animation_object.cpp
     render/animation_strip.cpp

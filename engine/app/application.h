@@ -8,6 +8,8 @@
 #include "engine/core/step_timer.h"
 #include "engine/core/thread_pool.h"
 #include "engine/input/gamepads.h"
+#include "engine/input/keyboard.h"
+#include "engine/input/mouse.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resolution_manager.h"
@@ -176,6 +178,20 @@ namespace artattack
 		ThreadPool* thread_pool() const;
 		const Partitioner* partitioner() const;
 		Gamepads* gamepads() const;
+
+		// The other two devices. Both are polled beside the pads, once per
+		// frame before any state updates, so every edge in the engine is
+		// measured across the same frame boundary whichever device it came
+		// from.
+		//
+		// They differ from Gamepads in where their data comes from and in
+		// nothing a client can see: the pads are read from XInput on demand,
+		// while these are fed from the window's messages as they arrive
+		// (engine/input/keyboard.h says why that is forced rather than
+		// chosen). The question a game asks is the same shape for all three.
+		Keyboard* keyboard() const;
+		Mouse* mouse() const;
+
 		HWND window() const;
 
 	private:
@@ -204,6 +220,12 @@ namespace artattack
 		std::unique_ptr<GamepadReader> gamepad_reader_ = nullptr;
 		std::unique_ptr<Gamepads> gamepads_ = nullptr;
 
+		// No reader above either of these, because neither has one to borrow.
+		// They are fed from the window instead, which is why they are created
+		// alongside the pads and not beside a backend.
+		std::unique_ptr<Keyboard> keyboard_ = nullptr;
+		std::unique_ptr<Mouse> mouse_ = nullptr;
+
 		bool com_initialized_ = false;
 		bool content_loaded_ = false;
 
@@ -228,6 +250,25 @@ namespace artattack
 		void on_window_moved() const override;
 		void on_display_change() const override;
 		void on_window_size_changed(int width, int height) override;
+
+		// Straight into the devices, every one of them. Nothing is interpreted
+		// on the way past: what a key means is the game's, and what a key IS
+		// was decided in window.cpp.
+		void on_key_down(Key key) const override;
+		void on_key_up(Key key) const override;
+		void on_text(char32_t codepoint) const override;
+		void on_mouse_move(int x, int y) const override;
+		void on_mouse_button_down(MouseButton button) const override;
+		void on_mouse_button_up(MouseButton button) const override;
+		void on_mouse_wheel(float notches) const override;
+		void on_mouse_wheel_horizontal(float notches) const override;
+
+		// Both fed devices at once, because every reason to tell one is a
+		// reason to tell the other: losing the foreground and being suspended
+		// both mean the key-ups and button-ups for whatever is held will be
+		// delivered somewhere else. Four handlers above call this and the
+		// alternative is the same pair of lines written four times.
+		void set_input_focus(bool focused) const;
 
 		void create_window(HINSTANCE instance, int show_command);
 		void create_services();
