@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include "engine/render/colour.h"
 #include "engine/render/camera.h"
 #include "engine/render/viewport.h"
@@ -299,6 +300,33 @@ namespace artattack
 		// and GetScreenViewport, which is all the layout arithmetic in
 		// engine/render/ ever wanted from the device.
 		mattmath::Vector2F back_buffer_size() const;
+
+		// Copies the back buffer out: 8-bit RGBA, row-major, top row first,
+		// exactly width * height * 4 bytes. `pixels` is resized to fit.
+		//
+		// THIS IS WHAT MAKES THE FIRST PURPOSE AT THE TOP OF THIS FILE REAL.
+		// The seam exists for headless tests and a second platform, and until
+		// this method there was no way for a test to observe a single thing the
+		// renderer had drawn - so every term of the pixel contract (what the
+		// blend equation is, which way y runs, what `origin` is measured in,
+		// what happens to a fractional destination) was decided by whichever
+		// library the backend happened to call and written down nowhere. A seam
+		// whose output nothing can read cannot be held to a contract, however
+		// many backends fill it.
+		//
+		// RGBA REGARDLESS OF WHAT THE BACKEND STORES, so that the assertions a
+		// second backend has to pass are the same bytes and not the same bytes
+		// after a per-backend swizzle. This backend's buffer is BGRA and the
+		// conversion happens here.
+		//
+		// BETWEEN submit() AND end_frame(). Presenting discards the back
+		// buffer's contents, so after end_frame there is nothing left to read.
+		// Not const: reading the GPU's memory means staging a copy through the
+		// device, which is a write.
+		//
+		// NOT A FRAME-PATH CALL and not meant to become one (T8). It stalls on
+		// the GPU by construction.
+		void read_back_buffer(std::vector<unsigned char>& pixels);
 
 		// Debug markers. The only capability of the backend's device wrapper
 		// that reaches the seam unchanged - everything else a frame needs is

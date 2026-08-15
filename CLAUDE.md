@@ -25,9 +25,14 @@ ctest --preset x64-debug
 
 `VCPKG_ROOT` must be set — `CMakePresets.json` reads it for the toolchain file
 and configuring fails without it. Ninja generator, out-of-source in
-`out/build/<preset>/`. Eleven ctest entries: `MattMathTests`, `CoreTests`,
-`CollisionTests`, `SceneTests`, `RenderTests`, `InputTests`, `UiTests`,
-`AssetsTests`, `AppTests`, `LineSweeperTests` (doctest) and `Benchmarks`. The
+`out/build/<preset>/`. Twelve ctest entries: `MattMathTests`, `CoreTests`,
+`CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
+`InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`
+(doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
+Direct3D device — a hidden window, a WARP fallback in debug, and assertions on
+the pixels `Renderer::read_back_buffer` hands back. It is the only test of
+anything this engine draws, and the executable statement of the pixel contract
+a second backend has to reproduce. The
 samples land at `out/build/x64-debug/samples/minimal/ArtAttackSample.exe` and
 `out/build/x64-debug/samples/linesweeper/LineSweeperSample.exe`.
 
@@ -105,7 +110,8 @@ runs there with no window and no device. A rule is asserted rather than played.
 
 ## Known-absent, on purpose
 
-A second render backend (the seam is cut, nothing is behind it), a null backend
+A second render backend (the seam is cut, nothing is behind it — though the
+pixel contract it must reproduce is now pinned by `RenderPixelTests`), a null backend
 for headless render tests, and an action-mapping layer over the input devices —
 neither client has a rebinding screen, so a binding table would be the
 speculative framework T1 rules out. Also permanently out of scope: online play,

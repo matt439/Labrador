@@ -485,6 +485,65 @@ namespace artattack
 			static_cast<float>(size.bottom - size.top) };
 	}
 
+	void Renderer::read_back_buffer(std::vector<unsigned char>& pixels)
+	{
+		DeviceResources& device = this->impl_->device_resources;
+
+		// Through the view rather than a GetRenderTarget() accessor, because
+		// the view is what the seam already needs and one reader does not
+		// justify widening the wrapper's surface again.
+		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
+		device.GetRenderTargetView()->GetResource(resource.GetAddressOf());
+
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> back_buffer;
+		ThrowIfFailed(resource.As(&back_buffer));
+
+		// A staging copy, because the back buffer is not CPU-readable. Made per
+		// call and thrown away: this is not a frame-path function and a cached
+		// staging texture would be one more thing to remake on a device loss.
+		D3D11_TEXTURE2D_DESC description = {};
+		back_buffer->GetDesc(&description);
+		description.Usage = D3D11_USAGE_STAGING;
+		description.BindFlags = 0;
+		description.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		description.MiscFlags = 0;
+
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> staging;
+		ThrowIfFailed(device.GetD3DDevice()->CreateTexture2D(&description,
+			nullptr, staging.ReleaseAndGetAddressOf()));
+
+		ID3D11DeviceContext1* context = device.GetD3DDeviceContext();
+		context->CopyResource(staging.Get(), back_buffer.Get());
+
+		D3D11_MAPPED_SUBRESOURCE mapped = {};
+		ThrowIfFailed(context->Map(staging.Get(), 0, D3D11_MAP_READ, 0,
+			&mapped));
+
+		const size_t width = static_cast<size_t>(description.Width);
+		const size_t height = static_cast<size_t>(description.Height);
+		pixels.resize(width * height * 4);
+
+		// Row pitch is the driver's, not width * 4, so the rows are walked
+		// rather than the buffer memcpy'd. B and R swap on the way out: the
+		// back buffer is B8G8R8A8 and the seam promises RGBA.
+		const unsigned char* source =
+			static_cast<const unsigned char*>(mapped.pData);
+		for (size_t y = 0; y < height; y++)
+		{
+			const unsigned char* row = source + y * mapped.RowPitch;
+			for (size_t x = 0; x < width; x++)
+			{
+				unsigned char* out = pixels.data() + (y * width + x) * 4;
+				out[0] = row[x * 4 + 2];
+				out[1] = row[x * 4 + 1];
+				out[2] = row[x * 4 + 0];
+				out[3] = row[x * 4 + 3];
+			}
+		}
+
+		context->Unmap(staging.Get(), 0);
+	}
+
 	void Renderer::begin_marker(const wchar_t* name)
 	{
 		this->impl_->device_resources.PIXBeginEvent(name);

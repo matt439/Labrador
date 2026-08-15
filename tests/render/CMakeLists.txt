@@ -17,3 +17,31 @@ target_link_libraries(RenderTests PRIVATE
 )
 
 add_test(NAME RenderTests COMMAND RenderTests)
+
+# RenderPixelTests — the drawing half, on a real device.
+#
+# A separate executable from RenderTests, which is pure arithmetic and wants no
+# device. This one creates a Direct3D device and a hidden window, so it is the
+# one entry in ctest that can fail for a reason outside the repository: a debug
+# build falls back to WARP and needs no GPU, but a release build has no such
+# fallback (device_resources.cpp) and needs an adapter. Keeping it apart means
+# that failure names itself instead of taking the arithmetic down with it.
+add_executable(RenderPixelTests
+    pixel_tests.cpp
+    test_main.cpp
+)
+target_link_libraries(RenderPixelTests PRIVATE
+    ArtAttackEngine
+    doctest::doctest
+    artattack_settings
+)
+
+# The test texture, beside the executable. ctest runs from the build directory,
+# and the harness loads "./content/quad.dds" relative to it.
+add_custom_command(TARGET RenderPixelTests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/content"
+        "$<TARGET_FILE_DIR:RenderPixelTests>/content"
+)
+
+add_test(NAME RenderPixelTests COMMAND RenderPixelTests)
