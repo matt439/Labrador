@@ -3,8 +3,8 @@
 #include "engine/assets/asset_manifest.h"
 #include "engine/audio/audio_resources.h"
 #include "engine/render/render_resources.h"
+#include "engine/render/renderer.h"
 #include <Audio.h>
-#include <d3d11_1.h>
 #include <functional>
 #include <map>
 #include <string>
@@ -48,8 +48,16 @@ namespace artattack
 
 		// The stores to fill are handed in - the loader fills stores, it does not
 		// own them.
+		//
+		// The renderer rather than a device, and this file names no graphics type
+		// as a result: the two kinds that need one go through
+		// engine/render/resource_factory.h, which reads the device off the
+		// renderer at the moment it builds. That also deletes a caller
+		// obligation. A device restore hands back a different device, so a loader
+		// holding one had to be re-seated from on_device_restored - a rule with
+		// no home, stated in two places, enforced in none.
 		ResourceLoader(RenderResources* render_resources,
-			AudioResources* audio_resources, ID3D11Device1* device,
+			const Renderer* renderer, AudioResources* audio_resources,
 			DirectX::AudioEngine* audio_engine);
 
 		// The built-in kinds hold `this`, so a copy would quietly load into the
@@ -87,13 +95,10 @@ namespace artattack
 		// them that a reload would invalidate.
 		void reload_device_resources() const;
 
-		// The device changes identity on restore, so the loader has to be told.
-		void set_device(ID3D11Device1* device);
-
 	private:
 		RenderResources* render_resources_ = nullptr;
+		const Renderer* renderer_ = nullptr;
 		AudioResources* audio_resources_ = nullptr;
-		ID3D11Device1* device_ = nullptr;
 		DirectX::AudioEngine* audio_engine_ = nullptr;
 
 		std::map<std::string, AssetKind> kinds_;

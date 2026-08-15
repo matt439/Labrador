@@ -73,9 +73,11 @@ runs there with no window and no device. A rule is asserted rather than played.
 - **Platform code lives behind seams**: `render/d3d11/`, `input/xinput/`.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
-  Two files outside `render/d3d11/` include the backend on purpose and are
-  named in ARCHITECTURE: `assets/resource_loader.cpp` and
-  `app/application.cpp`. A third would be a mistake.
+  A backend is three translation units — `renderer.cpp`,
+  `render_resources.cpp`, `resource_factory.cpp` — and all three live in
+  `render/<backend>/`. Exactly one file outside that folder includes the
+  backend header, named in ARCHITECTURE: `app/application.cpp`. A second
+  would be a mistake, and the rule counts headers, not just `.cpp` files.
 - **A new public primitive ships with behavioural tests in the same commit.**
   Benchmarks assert on **complexity class**, not wall-clock — a phase linear in
   the object count must stay linear when the count quadruples, whatever the

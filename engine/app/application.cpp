@@ -187,9 +187,8 @@ namespace artattack
 		this->renderer_->set_resources(this->render_resources_.get());
 
 		this->resource_loader_ = std::make_unique<ResourceLoader>(
-			this->render_resources_.get(), this->audio_resources_.get(),
-			this->renderer_->impl()->device_resources.GetD3DDevice(),
-			this->audio_engine_.get());
+			this->render_resources_.get(), this->renderer_.get(),
+			this->audio_resources_.get(), this->audio_engine_.get());
 
 		this->viewport_manager_ = std::make_unique<ViewportManager>(
 			this->resolution_manager_.get());
@@ -437,8 +436,11 @@ namespace artattack
 	{
 		// Reload the GPU-side assets into the existing RenderResources, so every
 		// borrowed SpriteSheet* and SoundBank* stays valid.
-		this->resource_loader_->set_device(
-			this->renderer_->impl()->device_resources.GetD3DDevice());
+		//
+		// Nothing re-seats a device here any more. The restore hands back a
+		// different one, and the loader used to be told so - which was an
+		// ordering only this line knew about. The factory reads the device off
+		// the renderer as it builds, so the new device is simply what is there.
 		if (this->content_loaded_)
 		{
 			this->resource_loader_->reload_device_resources();

@@ -1,87 +1,27 @@
 #include "engine/assets/resource_loader.h"
-#include "engine/assets/sound_bank_loader.h"
 
-#include <cstdio>
+#include "engine/assets/sound_bank_loader.h"
 #include "engine/assets/sprite_sheet_loader.h"
-// The deliberate include renderer.h describes: this is the file that creates
-// textures and fonts on a device, so it is the one place outside
-// engine/render/<backend>/ that is allowed to name one.
-#include "engine/render/d3d11/backend.h"
-#include <DDSTextureLoader.h>
-#include <wrl/client.h>
+#include "engine/render/resource_factory.h"
+
 #include <cstdio>
 #include <memory>
 #include <stdexcept>
 #include <string>
 
 using namespace DirectX;
-using Microsoft::WRL::ComPtr;
-
-namespace
-{
-	// The stand-in glyph a font draws when asked for one it does not have.
-	//
-	// WITHOUT ONE, A MISSING GLYPH IS AN EXCEPTION. DirectXTK's FindGlyph
-	// throws when the default character is U+0000, and U+0000 is what every
-	// .spritefont in this tree carries, because it is what MakeSpriteFont
-	// writes when nobody chooses - along with exactly 95 glyphs, U+0020 to
-	// U+007E. Nothing chose that region and nothing records it, so the
-	// out-of-the-box behaviour of the engine's own font kind was: any
-	// character a text editor inserts on its own - a curly apostrophe, an
-	// en-dash - kills the process on the frame that first drew it, which is
-	// typically several screens from wherever the string was read.
-	//
-	// The engine already documented the opposite. text_encoding.h promises
-	// that invalid UTF-8 becomes U+FFFD so that "text about to be drawn should
-	// show mojibake, not vanish" - and U+FFFD is outside 32..126, so the
-	// documented graceful path led directly into the throw it was written to
-	// avoid. It leads to a question mark now.
-	//
-	// Degradation rather than a throw is also what the audio half of this file
-	// already does: a missing optional wave bank becomes a bank that plays
-	// nothing rather than a dead process.
-	//
-	// '?' FIRST, ' ' AFTER IT, and nothing if the font has neither. A question
-	// mark says "something was here and could not be drawn", which is the
-	// mojibake text_encoding.h asks for; a space says only that the text is
-	// oddly spaced, and is the better of the two only when there is no
-	// question mark to be had. A font with neither is not a text font - an
-	// icon atlas, say - and is left exactly as it was rather than warned
-	// about, because there is nothing wrong with it.
-	//
-	// Asked before it is set, never caught: SetDefaultCharacter throws for a
-	// character the font does not have, and that is the throw this whole
-	// function exists to stop happening.
-	void install_default_character(DirectX::SpriteFont& font)
-	{
-		if (font.ContainsCharacter(L'?'))
-		{
-			font.SetDefaultCharacter(L'?');
-			return;
-		}
-		if (font.ContainsCharacter(L' '))
-		{
-			font.SetDefaultCharacter(L' ');
-		}
-	}
-}
 
 namespace artattack
 {
 	ResourceLoader::ResourceLoader(RenderResources* render_resources,
-		AudioResources* audio_resources, ID3D11Device1* device,
+		const Renderer* renderer, AudioResources* audio_resources,
 		DirectX::AudioEngine* audio_engine) :
 		render_resources_(render_resources),
+		renderer_(renderer),
 		audio_resources_(audio_resources),
-		device_(device),
 		audio_engine_(audio_engine)
 	{
 		this->register_builtin_kinds();
-	}
-
-	void ResourceLoader::set_device(ID3D11Device1* device)
-	{
-		this->device_ = device;
 	}
 
 	void ResourceLoader::register_kind(const std::string& kind,
@@ -167,53 +107,22 @@ namespace artattack
 		}
 	}
 
+	// The two kinds that only exist on a device are built by the backend's own
+	// factory (engine/render/resource_factory.h). What is left here is the half
+	// that decides a manifest entry becomes one - which is this module's job and
+	// names no graphics type.
 	void ResourceLoader::load_texture(const std::string& directory,
 		const std::string& name) const
 	{
-		const std::string texture_path = directory + name + ".dds";
-
-		ComPtr<ID3D11ShaderResourceView> texture_view;
-		ComPtr<ID3D11Resource> resource;
-		const HRESULT result = CreateDDSTextureFromFile(this->device_,
-			std::wstring(texture_path.begin(), texture_path.end()).c_str(),
-			resource.GetAddressOf(),
-			texture_view.ReleaseAndGetAddressOf());
-		if (FAILED(result))
-		{
-			// ThrowIfFailed's message is the HRESULT and nothing else, so the
-			// commonest failure here - a texture named in the manifest that is
-			// not on disk - arrived as eight hex digits. The font loader twenty
-			// lines below has always named its file; this now does too (T6).
-			char hresult[16] = {};
-			std::snprintf(hresult, sizeof(hresult), "0x%08X",
-				static_cast<unsigned int>(result));
-			throw std::runtime_error("Failed to load texture: " + texture_path +
-				" (" + hresult + ")");
-		}
-
-		this->render_resources_->impl()->add_texture(name, texture_view.Get());
+		load_texture_asset(*this->renderer_, *this->render_resources_,
+			directory, name);
 	}
 
 	void ResourceLoader::load_sprite_font(const std::string& directory,
 		const std::string& name) const
 	{
-		const std::string font_path = directory + name + ".spritefont";
-
-		std::unique_ptr<SpriteFont> font;
-		try
-		{
-			font = std::make_unique<SpriteFont>(this->device_,
-				std::wstring(font_path.begin(), font_path.end()).c_str());
-		}
-		catch (const std::exception&)
-		{
-			// DirectXTK's what() does not say which font or where - T6 does.
-			throw std::out_of_range(
-				"SpriteFont " + name + " not found at " + font_path + ".");
-		}
-
-		install_default_character(*font);
-		this->render_resources_->impl()->add_sprite_font(name, std::move(font));
+		load_font_asset(*this->renderer_, *this->render_resources_,
+			directory, name);
 	}
 
 	void ResourceLoader::load_sprite_sheet(const std::string& directory,
@@ -223,7 +132,7 @@ namespace artattack
 		// asset with two files, and the manifest names it once.
 		this->load_texture(directory, name);
 
-		this->render_resources_->impl()->add_sprite_sheet(name,
+		this->render_resources_->add_sprite_sheet(name,
 			read_sprite_sheet((directory + name + ".json").c_str(),
 				this->render_resources_->resolve_texture(name)));
 	}

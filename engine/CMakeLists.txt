@@ -42,6 +42,7 @@ add_library(ArtAttackEngine STATIC
     render/d3d11/device_resources.cpp
     render/d3d11/render_resources.cpp
     render/d3d11/renderer.cpp
+    render/d3d11/resource_factory.cpp
     render/draw_object.cpp
     render/label.cpp
     render/resolution_manager.cpp

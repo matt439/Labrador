@@ -90,6 +90,13 @@ namespace artattack
 	RenderResources& RenderResources::operator=(RenderResources&&) noexcept
 		= default;
 
+	void RenderResources::add_sprite_sheet(const std::string& sprite_sheet_name,
+		std::unique_ptr<SpriteSheet> sprite_sheet)
+	{
+		this->impl_->add_sprite_sheet(sprite_sheet_name,
+			std::move(sprite_sheet));
+	}
+
 	TextureHandle RenderResources::resolve_texture(
 		const std::string& texture_name) const
 	{

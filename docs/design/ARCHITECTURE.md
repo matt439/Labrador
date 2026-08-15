@@ -289,17 +289,25 @@ position in it (`'./levels/turbulence.json': collision_objects[17] has no
 reject what it read — an unknown colour name is a content mistake exactly
 like a missing key.
 
-**One backend still lives outside its folder, and it is named here rather
-than left to be discovered.** `assets/resource_loader.cpp` creates
-textures and fonts on a device, so it includes
-`render/d3d11/backend.h` and spells `DDSTextureLoader` and `SpriteFont`
-directly. That is the resource factory's job and not the renderer's — a
-`Renderer` that could load a file from disk would be a worse seam — but it
-does mean a second backend is three translation units, not one, and that
-the third of them is in `assets/`. `app/application.cpp` is the only other
-file outside `render/d3d11/` that includes it, because a window handle and
-a swap chain belong to a platform and the shell owns both. A third would
-be a mistake.
+**The backend is three translation units, and all three are in its folder.**
+A second backend supplies `renderer.cpp`, `render_resources.cpp` and
+`resource_factory.cpp`. The third is there because creating a texture from a
+file is the resource factory's job and not the renderer's — a `Renderer`
+that could load a file from disk would be a worse seam — while every line of
+that job names a graphics type, so it belongs to the backend even though
+none of its callers do. `assets/` declares which manifest entries become
+textures and fonts and calls `render/resource_factory.h`, whose declarations
+name nothing a backend owns.
+
+**`app/application.cpp` is the only file outside `render/<backend>/` that
+includes the backend header, because a window handle and a swap chain belong
+to a platform and the shell owns both. A second would be a mistake** — and
+the rule is about *any* file, not about `.cpp` files. It was written as a
+count of implementation files and so missed the include that mattered most:
+`assets/resource_loader.h` named `ID3D11Device1` in a constructor, and
+`app/application.h` includes it, so `<d3d11_1.h>` reached every state file in
+every client. A header carries a backend further in one line than a
+translation unit can.
 
 **The shell asks the machine exactly one question, once, and what the
 answer sizes is one thing.** `ApplicationOptions::max_threads` defaults to

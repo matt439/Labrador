@@ -28,6 +28,12 @@ namespace artattack
 	// is not here at all. It is on Impl, in engine/render/<backend>/backend.h,
 	// because every one of those calls names a backend type in its signature.
 	// The resource factory includes that header deliberately; nothing else does.
+	//
+	// add_sprite_sheet is the exception the rule produces rather than one made
+	// for it: a sheet is engine data, so its signature names nothing a backend
+	// owns, so by the sentence above it does not belong on Impl. It is here, and
+	// the loader that builds sheets out of JSON - which lives in assets/, where
+	// no backend header may go - installs them through it.
 	class RenderResources
 	{
 	public:
@@ -42,6 +48,11 @@ namespace artattack
 		RenderResources& operator=(RenderResources&&) noexcept;
 		RenderResources(const RenderResources&) = delete;
 		RenderResources& operator=(const RenderResources&) = delete;
+
+		// Load-time. Adding one twice under the same name replaces it, which is
+		// what a device restore does to the texture underneath a sheet.
+		void add_sprite_sheet(const std::string& sprite_sheet_name,
+			std::unique_ptr<SpriteSheet> sprite_sheet);
 
 		// Load-time. Each throws std::out_of_range naming the resource if nothing
 		// has loaded it, so a misspelt name in a definition file fails while the
