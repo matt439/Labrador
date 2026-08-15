@@ -38,6 +38,28 @@ namespace labrador
 		mattmath::Vector2F position() const;
 		mattmath::Vector2F size() const;
 
+		// The whole pixels this viewport covers, and THE ONLY CONVERSION TO
+		// THEM ANY BACKEND IS ALLOWED TO PERFORM.
+		//
+		// EACH EDGE, THEN THE DIFFERENCE, which is the rule
+		// sprite_geometry.h's build_sprite_quad already states for a
+		// destination rectangle and this is the same question about a bigger
+		// one. Truncating the position and the size separately is the obvious
+		// alternative and it loses rows: two panes splitting a height of 721
+		// come out 360 and 360 that way, leaving the last row of the back
+		// buffer covered by neither, where each-edge-then-the-difference gives
+		// 360 and 361 and covers all of it.
+		//
+		// IT EXISTS BECAUSE A BACKEND CANNOT BE TRUSTED TO AGREE WITH ITSELF.
+		// GL 3.3 core has no float glViewport - glViewportIndexedf is 4.1 - so
+		// the GL backend has to make this conversion whatever the seam says.
+		// It used to make it inline and then divide by the UN-truncated float
+		// when it built the pixels-to-clip transform, so the rasteriser and
+		// the projection disagreed about how big the viewport was and every
+		// sprite in a fractional pane was scaled by the ratio between them.
+		// One rectangle, computed once, feeds both.
+		mattmath::RectangleI pixel_rect() const;
+
 		Viewport& operator=(const mattmath::RectangleF& rectangle);
 		Viewport& operator=(const mattmath::RectangleI& rectangle);
 

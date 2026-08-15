@@ -33,9 +33,20 @@ namespace labrador
 		// what put <d3d11.h> in a library documented as depending on nothing.
 		// This file was its only caller, so this is where it goes. A second
 		// backend writes its own; it does not inherit this.
+		// D3D11_VIEWPORT's four extent members are FLOAT and a fractional
+		// viewport is legal, so this backend could keep the fraction and the
+		// other one cannot. It does not, because then the two would disagree
+		// about a pane and the seam's whole claim is that they cannot
+		// (viewport.h). A no-op on every viewport this tree produces, all of
+		// which are whole pixels already.
 		D3D11_VIEWPORT to_d3d_viewport(const Viewport& viewport)
 		{
-			return { viewport.x, viewport.y, viewport.width, viewport.height,
+			const mattmath::RectangleI pixels = viewport.pixel_rect();
+
+			return { static_cast<float>(pixels.x),
+				static_cast<float>(pixels.y),
+				static_cast<float>(pixels.width),
+				static_cast<float>(pixels.height),
 				viewport.minDepth, viewport.maxDepth };
 		}
 

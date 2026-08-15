@@ -492,20 +492,31 @@ namespace labrador
 
 		for (const DrawList::View::Run& run : view.runs)
 		{
+			// ONE RECTANGLE, AND BOTH OF THE NEXT TWO CALLS READ IT. GL 3.3
+			// core has no float glViewport, so the pixels have to be whole
+			// here whatever the seam holds - but which whole pixels is the
+			// engine's answer (viewport.h), not this file's, and the
+			// projection below must divide by the same numbers the rasteriser
+			// was given. Truncating for glViewport and dividing by the
+			// un-truncated float is what this used to do, and it scaled every
+			// sprite in a fractional pane by the ratio between the two.
+			const RectangleI pixels = run.viewport.pixel_rect();
+
 			// GL'S WINDOW ORIGIN IS AT THE BOTTOM LEFT AND THE SEAM'S IS AT THE
 			// TOP, so a viewport's y is measured from the other end. This is
 			// the only place in the backend where that conversion happens - the
 			// vertex positions do not need it, because the clip-space y flip in
 			// the shader and GL's origin cancel exactly.
-			glViewport(static_cast<GLint>(run.viewport.x),
-				static_cast<GLint>(static_cast<float>(this->height) -
-					(run.viewport.y + run.viewport.height)),
-				static_cast<GLsizei>(run.viewport.width),
-				static_cast<GLsizei>(run.viewport.height));
+			glViewport(static_cast<GLint>(pixels.x),
+				static_cast<GLint>(this->height - (pixels.y + pixels.height)),
+				static_cast<GLsizei>(pixels.width),
+				static_cast<GLsizei>(pixels.height));
 
+			const float pane_width = static_cast<float>(pixels.width);
+			const float pane_height = static_cast<float>(pixels.height);
 			glUniform4f(this->transform_uniform,
-				run.viewport.width > 0.0f ? 2.0f / run.viewport.width : 0.0f,
-				run.viewport.height > 0.0f ? -2.0f / run.viewport.height : 0.0f,
+				pane_width > 0.0f ? 2.0f / pane_width : 0.0f,
+				pane_height > 0.0f ? -2.0f / pane_height : 0.0f,
 				-1.0f, 1.0f);
 
 			glBindTexture(GL_TEXTURE_2D, run.texture);

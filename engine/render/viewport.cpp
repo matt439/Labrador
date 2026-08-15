@@ -1,5 +1,7 @@
 #include "engine/render/viewport.h"
 
+#include <cmath>
+
 using namespace mattmath;
 
 namespace labrador
@@ -46,6 +48,16 @@ namespace labrador
 	Vector2F Viewport::size() const
 	{
 		return Vector2F(this->width, this->height);
+	}
+	RectangleI Viewport::pixel_rect() const
+	{
+		const float left = std::trunc(this->x);
+		const float top = std::trunc(this->y);
+		const float right = std::trunc(this->x + this->width);
+		const float bottom = std::trunc(this->y + this->height);
+
+		return RectangleI(static_cast<int>(left), static_cast<int>(top),
+			static_cast<int>(right - left), static_cast<int>(bottom - top));
 	}
 	Viewport& Viewport::operator=(const mattmath::RectangleF& rectangle)
 	{

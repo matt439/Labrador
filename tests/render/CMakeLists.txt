@@ -12,6 +12,7 @@ add_executable(RenderTests
     sprite_geometry_tests.cpp
     text_encoding_tests.cpp
     viewport_manager_tests.cpp
+    viewport_tests.cpp
     test_main.cpp
 )
 target_link_libraries(RenderTests PRIVATE
