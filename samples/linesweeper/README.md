@@ -10,12 +10,16 @@ are three of them, and this is not a fourth: everything here is a choice about
 one sample, made under those three. Where a decision below is really an engine
 commitment, it says so and names the document it belongs in.
 
-**Status: the rules are in; nothing draws them yet.** `rules/` is the whole
-game — the seven-bag deal, the gravity curve, the wall kicks, lock delay, hold,
-hard drop, T-spins and scoring — and `tests/linesweeper/` plays it with no
-window, no device and no engine linked into the binary. What does not exist is
-`presentation/`: the sample still draws two labels, and putting a well on the
-screen is the next commit.
+**Status: playable.** All three layers exist. `rules/` is the whole game — the
+seven-bag deal, the gravity curve, the wall kicks, lock delay, hold, hard drop,
+T-spins and scoring — and `tests/linesweeper/` plays it with no window, no
+device and no engine linked into the binary. `presentation/` draws it,
+`states/` turns a keyboard into it, and pressing R after a top-out restarts the
+match with one assignment.
+
+What is not here is the second half of what this sample is for: the particle
+field, the glow and the instrument panel. See *Particles are not in the first
+version*, below.
 
 ## What it is
 
@@ -200,6 +204,30 @@ rather than a rules exercise. Two consequences worth recording:
 Back-to-back came back with them, because it is what makes a T-spin worth
 setting up rather than merely worth more points.
 
+### The whole screen is one white texel
+
+There is no `draw_rect` on the renderer seam, and there should not be one: a
+solid rectangle is a sprite, and the seam draws sprites. So the content grows a
+132-byte `white.dds` — one opaque texel — and every block, panel, grid line and
+banner backing on the screen is that texel with a tint on it.
+
+That keeps "this sample's content is a font and a JSON file" nearly true, which
+is the sentence the whole in-tree-samples argument rests on. It is also the
+honest shape of the eventual answer: when the particle field lands, the glow is
+an atlas, and an atlas is this file with more in it.
+
+### Input is read as held, never as pressed
+
+The engine's `Keyboard` computes press edges of its own, and `states/` ignores
+them. It reads `held()` for all nine bindings, packs them into a byte, and lets
+`tick()` derive every press by comparing that byte against the previous one.
+
+Using the engine's edges would work, once. What it would cost is the property
+the rules layer exists for: an edge computed outside the simulation depends on
+which frames the window had the keyboard, so a recorded hard drop could replay
+as two or as none. Deriving edges *inside* `tick()` means the recording carries
+them, and a `std::vector<std::uint8_t>` is a complete match.
+
 ### Additive blending needs no engine change
 
 The engine looked as though it could not blend additively: `renderer.cpp` opens
@@ -227,16 +255,26 @@ goes through `SpriteFont` into the same batch, and the tool that builds a
 the text, which reads better at this resolution anyway — but it is a workaround
 and is named as one.
 
+`board_view.cpp` already has the quad, and it earned its place for the second
+reason before the first: the top-out banner is red words over whatever colour
+the stack happens to be under them, and no blend mode makes that legible. The
+quad is premultiplied black at 88%, so an eighth of the stack shows through and
+it reads as a banner over the well rather than a hole in it. `faded()` in
+`palette.h` is the two multiplications a premultiplied tint costs a caller, and
+is the only place in the sample that knows the blend equation.
+
 ### Particles are not in the first version
 
 The first version is the game: rules, plain drawing, the state flow, the tests.
 No particle field, no glow, no instrument panel.
 
-That means the shipped stub and its first few commits demonstrate the
-*value-semantics* half of what this sample is for and not the *data-layout*
-half. Deferred, not dropped — the particle field is where the second half lands,
-and it is the thing a modern falling-block game's identity is actually made of,
-which is why this genre was chosen over the alternatives.
+That means what ships today demonstrates the *value-semantics* half of what
+this sample is for and not the *data-layout* half. A 276-byte match, a restart
+that is an assignment and a replay that is a `memcmp` are all here; ten thousand
+particles laid out for the cache are not. Deferred, not dropped — the particle
+field is where the second half lands, and it is the thing a modern
+falling-block game's identity is actually made of, which is why this genre was
+chosen over the alternatives.
 
 ## Still open
 
@@ -244,17 +282,18 @@ which is why this genre was chosen over the alternatives.
   meant to prove needs a named part, a named resolution and a measured p99. No
   such measurement exists. Until one does, no number in this repository should
   be described as a floor.
-- **Whether the layer rule gets a build check.** `cmake/check_engine_includes.cmake`
-  is the model, and the case for it is stronger than it was: `rules/` is now
-  three headers and three translation units, and the half of the rule that
-  matters — presentation/ may include `world.h` and `tables.h` but not
-  `tick.h` — has nothing to enforce it because `presentation/` does not exist
-  yet. Write the check with the first file that goes in there, not before.
+- **Whether the layer rule gets a build check.** It is now checkable and
+  unchecked, which is the worst of the three states.
+  `cmake/check_engine_includes.cmake` is the model and the rule is two greps:
+  nothing in `rules/` may include `engine/`, and nothing in `presentation/` may
+  include `rules/tick.h`. Both hold today by review. The argument against
+  writing it is that a sample's build check is a sample's build check — someone
+  who copies the tree and deletes it gets folders and no discipline, which the
+  layer decision above already says out loud.
 
-- **Whether the input map belongs in the sample or the engine.** Turning a key
-  into one of `tick.h`'s `button_` bits is `states/`' job and is not written
-  yet. The engine deliberately has no action-mapping layer (CLAUDE.md,
-  Known-absent), and a sample with no rebinding screen is not the second client
-  that would justify one — so the expectation is a short chain of `if`s in
-  `play_state.cpp` and no new engine module. Recorded so that "add an InputMap"
-  has to meet an argument.
+- **Whether the input map belongs in the sample or the engine.** `states/` has
+  a nine-entry table of `{Key, button}` pairs and that is the whole input
+  layer. The engine deliberately has no action-mapping layer (CLAUDE.md,
+  Known-absent), and one sample with no rebinding screen is not the second
+  client that would justify one. Recorded so that "add an InputMap" has to meet
+  an argument.

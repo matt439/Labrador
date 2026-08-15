@@ -6,6 +6,13 @@
             "names": [
                 "courier_new_bold_16"
             ]
+        },
+        {
+            "kind": "texture",
+            "directory": "./textures/",
+            "names": [
+                "white"
+            ]
         }
     ]
 }
