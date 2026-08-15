@@ -26,10 +26,29 @@ jobs:
   windows:
     runs-on: windows-latest
 
+    # Both backends, because "both pass the same tests" is a claim that rots
+    # the moment nothing checks it - and a second backend rots by failing to
+    # compile long before it rots by drawing the wrong thing.
+    #
+    # THE GL PRESET SKIPS RenderPixelTests, AND THAT IS NOT A CONVENIENCE. A
+    # runner has no GPU. Direct3D falls back to WARP, an in-box, fully
+    # conformant software rasteriser, and that is a D3D-only luxury: Windows'
+    # fallback for OpenGL is the GDI generic implementation, which is version
+    # 1.1 and has no WGL_ARB_create_context, so create_device throws saying so.
+    # Every other entry runs, so the eleven that need no device hold both
+    # backends to the same answers here, and the pixel contract is checked on a
+    # machine with a driver. pixel_tests.cpp says the same thing at more length,
+    # and the null backend named in renderer.h is what would close it.
     strategy:
       fail-fast: false
       matrix:
-        preset: [x64-debug, x64-release]
+        include:
+          - preset: x64-debug
+            skip_tests: ''
+          - preset: x64-release
+            skip_tests: ''
+          - preset: x64-debug-gl
+            skip_tests: '-E RenderPixelTests'
 
     # The presets use the Ninja generator, so every cmake step needs the MSVC
     # environment. vcvars64 is found through vswhere rather than a hardcoded
@@ -83,7 +102,7 @@ jobs:
       - name: Test
         run: |
           call "%VCVARS%"
-          ctest --preset ${{ matrix.preset }}
+          ctest --preset ${{ matrix.preset }} ${{ matrix.skip_tests }}
 
       # Reported, not gated, so the numbers are in the log where a throughput
       # change shows up as a diff between two runs rather than as nothing at
