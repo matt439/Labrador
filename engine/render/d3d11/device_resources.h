@@ -26,18 +26,37 @@ namespace artattack
     };
 
     // Controls all the DirectX device resources.
+    //
+    // TRIMMED TO WHAT THIS ENGINE ASKS FOR. Three capabilities came from the
+    // upstream sample this file started as, and each was configured off at the
+    // only construction site while its machinery still ran. They are named here
+    // rather than left for the next reader to prove dead a second time.
+    //
+    //  - No depth buffer. The renderer draws 2D and nothing else, so the depth
+    //    format parameter, the depth texture, its view and its per-frame
+    //    DiscardView are gone rather than passed DXGI_FORMAT_UNKNOWN and
+    //    skipped on every path.
+    //  - No tearing. Nothing set the flag, so an IDXGIFactory5 probe measured a
+    //    capability no Present could reach. Present is vsync-locked.
+    //  - No HDR. Nothing set that flag either, and the window/output
+    //    intersection walk it guarded - every adapter, every output, on every
+    //    display change and every no-op resize - computed a value read only
+    //    inside the branch the flag turns on.
+    //
+    // What is left of the options word is one runtime fact, whether this OS has
+    // flip-model swap effects, so it is a bool and not a flags word with a
+    // single permanently-set flag.
     class DeviceResources
     {
     public:
-        static constexpr unsigned int c_FlipPresent  = 0x1;
-        static constexpr unsigned int c_AllowTearing = 0x2;
-        static constexpr unsigned int c_EnableHDR    = 0x4;
-
+        // minFeatureLevel is a floor, and CreateDeviceResources truncates the
+        // level array at it - so this default is the engine's real floor, and
+        // the 9_3, 9_2 and 9_1 entries in that array are never requested while
+        // nothing passes anything lower. Worth knowing before treating the
+        // array as a statement of reach.
         DeviceResources(DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM,
-                        DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D32_FLOAT,
                         UINT backBufferCount = 2,
-                        D3D_FEATURE_LEVEL minFeatureLevel = D3D_FEATURE_LEVEL_10_0,
-                        unsigned int flags = c_FlipPresent) noexcept;
+                        D3D_FEATURE_LEVEL minFeatureLevel = D3D_FEATURE_LEVEL_10_0) noexcept;
         ~DeviceResources() = default;
 
         DeviceResources(DeviceResources&&) = default;
@@ -55,26 +74,19 @@ namespace artattack
         void Present();
         void UpdateColorSpace();
 
-        // Device Accessors.
-        RECT GetOutputSize() const noexcept { return m_outputSize; }
-
-        // Direct3D Accessors.
+        // The accessors, and this is all of them.
+        //
+        // There were seventeen. Twelve had no caller anywhere in the repository
+        // - the swap chain, the factory, the window, the feature level, the
+        // back buffer texture, its format and count, the colour space, the
+        // options word, and the three depth-stencil ones whose members no
+        // longer exist. An accessor nobody calls is a promise about a member
+        // that a second backend would have to keep.
+        RECT                    GetOutputSize() const noexcept          { return m_outputSize; }
         auto                    GetD3DDevice() const noexcept           { return m_d3dDevice.Get(); }
         auto                    GetD3DDeviceContext() const noexcept    { return m_d3dContext.Get(); }
-        auto                    GetSwapChain() const noexcept           { return m_swapChain.Get(); }
-        auto                    GetDXGIFactory() const noexcept         { return m_dxgiFactory.Get(); }
-        HWND                    GetWindow() const noexcept              { return m_window; }
-        D3D_FEATURE_LEVEL       GetDeviceFeatureLevel() const noexcept  { return m_d3dFeatureLevel; }
-        ID3D11Texture2D*        GetRenderTarget() const noexcept        { return m_renderTarget.Get(); }
-        ID3D11Texture2D*        GetDepthStencil() const noexcept        { return m_depthStencil.Get(); }
         ID3D11RenderTargetView*	GetRenderTargetView() const noexcept    { return m_d3dRenderTargetView.Get(); }
-        ID3D11DepthStencilView* GetDepthStencilView() const noexcept    { return m_d3dDepthStencilView.Get(); }
-        DXGI_FORMAT             GetBackBufferFormat() const noexcept    { return m_backBufferFormat; }
-        DXGI_FORMAT             GetDepthBufferFormat() const noexcept   { return m_depthBufferFormat; }
         D3D11_VIEWPORT          GetScreenViewport() const noexcept      { return m_screenViewport; }
-        UINT                    GetBackBufferCount() const noexcept     { return m_backBufferCount; }
-        DXGI_COLOR_SPACE_TYPE   GetColorSpace() const noexcept          { return m_colorSpace; }
-        unsigned int            GetDeviceOptions() const noexcept       { return m_options; }
 
         // Performance events
         void PIXBeginEvent(_In_z_ const wchar_t* name)
@@ -103,16 +115,13 @@ namespace artattack
         Microsoft::WRL::ComPtr<IDXGISwapChain1>             m_swapChain;
         Microsoft::WRL::ComPtr<ID3DUserDefinedAnnotation>   m_d3dAnnotation;
 
-        // Direct3D rendering objects. Required for 3D.
+        // Direct3D rendering objects.
         Microsoft::WRL::ComPtr<ID3D11Texture2D>         m_renderTarget;
-        Microsoft::WRL::ComPtr<ID3D11Texture2D>         m_depthStencil;
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView>  m_d3dRenderTargetView;
-        Microsoft::WRL::ComPtr<ID3D11DepthStencilView>  m_d3dDepthStencilView;
         D3D11_VIEWPORT                                  m_screenViewport;
 
         // Direct3D properties.
         DXGI_FORMAT                                     m_backBufferFormat;
-        DXGI_FORMAT                                     m_depthBufferFormat;
         UINT                                            m_backBufferCount;
         D3D_FEATURE_LEVEL                               m_d3dMinFeatureLevel;
 
@@ -121,11 +130,9 @@ namespace artattack
         D3D_FEATURE_LEVEL                               m_d3dFeatureLevel;
         RECT                                            m_outputSize;
 
-        // HDR Support
-        DXGI_COLOR_SPACE_TYPE                           m_colorSpace;
-
-        // DeviceResources options (see flags above)
-        unsigned int                                    m_options;
+        // Whether this OS has flip-model swap effects. Assumed until the
+        // IDXGIFactory4 query in CreateDeviceResources says otherwise.
+        bool                                            m_flipPresent;
 
         // The notify can be held directly as it owns the DeviceResources.
         D3DDeviceNotify*                                m_deviceNotify;

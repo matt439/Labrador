@@ -300,9 +300,11 @@ namespace artattack
 		// engine/render/ ever wanted from the device.
 		mattmath::Vector2F back_buffer_size() const;
 
-		// Debug markers. The only three of DeviceResources' seventeen graphics
-		// accessors that survive into the seam unchanged; twelve of the other
-		// fourteen had no caller anywhere in the repository.
+		// Debug markers. The only capability of the backend's device wrapper
+		// that reaches the seam unchanged - everything else a frame needs is
+		// expressed above in the engine's own terms. The accessors nothing
+		// called are not merely unexposed here; they are gone from the backend
+		// (engine/render/<backend>/device_resources.h says which and why).
 		void begin_marker(const wchar_t* name);
 		void end_marker();
 		void set_marker(const wchar_t* name);

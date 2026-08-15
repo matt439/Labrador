@@ -149,9 +149,9 @@ namespace artattack
 	public:
 		Impl();
 
-		// Renders only 2D, so no depth buffer.
-		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM,
-			DXGI_FORMAT_UNKNOWN };
+		// Renders only 2D, so there is no depth buffer to ask for - see the
+		// class comment on DeviceResources, which no longer has one to offer.
+		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };
 
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;

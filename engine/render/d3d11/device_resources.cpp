@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
-#include <system_error>
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
@@ -19,13 +18,6 @@
 using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
-
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wcovered-switch-default"
-#pragma clang diagnostic ignored "-Wswitch-enum"
-#endif
-
-#pragma warning(disable : 4061)
 
 namespace artattack
 {
@@ -52,42 +44,38 @@ namespace artattack
         }
 #endif
 
+        // Flip-model swap chains reject an sRGB back buffer format: the buffer is
+        // created without it and the render target view puts it back.
+        //
+        // IF-ELSE AND NOT A SWITCH, which is the whole of why this file needs no
+        // warning suppressions. A switch over DXGI_FORMAT with a default is
+        // C4061 under /W4 (an enumerator not explicitly handled), and there are
+        // several hundred enumerators, so no amount of case labels answers it.
+        // The pragma that used to sit at the top of this file was the tree's
+        // only /W4 suppression, and it was disabling a warning about three
+        // comparisons.
         inline DXGI_FORMAT NoSRGB(DXGI_FORMAT fmt) noexcept
         {
-            switch (fmt)
-            {
-            case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:   return DXGI_FORMAT_R8G8B8A8_UNORM;
-            case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:   return DXGI_FORMAT_B8G8R8A8_UNORM;
-            case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:   return DXGI_FORMAT_B8G8R8X8_UNORM;
-            default:                                return fmt;
-            }
-        }
-
-        inline long ComputeIntersectionArea(
-            long ax1, long ay1, long ax2, long ay2,
-            long bx1, long by1, long bx2, long by2) noexcept
-        {
-            return std::max(0l, std::min(ax2, bx2) - std::max(ax1, bx1)) * std::max(0l, std::min(ay2, by2) - std::max(ay1, by1));
+            if (fmt == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) return DXGI_FORMAT_R8G8B8A8_UNORM;
+            if (fmt == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) return DXGI_FORMAT_B8G8R8A8_UNORM;
+            if (fmt == DXGI_FORMAT_B8G8R8X8_UNORM_SRGB) return DXGI_FORMAT_B8G8R8X8_UNORM;
+            return fmt;
         }
     }
 
     // Constructor for DeviceResources.
     DeviceResources::DeviceResources(
         DXGI_FORMAT backBufferFormat,
-        DXGI_FORMAT depthBufferFormat,
         UINT backBufferCount,
-        D3D_FEATURE_LEVEL minFeatureLevel,
-        unsigned int flags) noexcept :
+        D3D_FEATURE_LEVEL minFeatureLevel) noexcept :
             m_screenViewport{},
             m_backBufferFormat(backBufferFormat),
-            m_depthBufferFormat(depthBufferFormat),
             m_backBufferCount(backBufferCount),
             m_d3dMinFeatureLevel(minFeatureLevel),
             m_window(nullptr),
             m_d3dFeatureLevel(D3D_FEATURE_LEVEL_9_1),
             m_outputSize{0, 0, 1, 1},
-            m_colorSpace(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709),
-            m_options(flags | c_FlipPresent),
+            m_flipPresent(true),
             m_deviceNotify(nullptr)
     {
     }
@@ -111,47 +99,13 @@ namespace artattack
 
         CreateFactory();
 
-        // Determines whether tearing support is available for fullscreen borderless windows.
-        if (m_options & c_AllowTearing)
-        {
-            BOOL allowTearing = FALSE;
-
-            ComPtr<IDXGIFactory5> factory5;
-            HRESULT hr = m_dxgiFactory.As(&factory5);
-            if (SUCCEEDED(hr))
-            {
-                hr = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
-            }
-
-            if (FAILED(hr) || !allowTearing)
-            {
-                m_options &= ~c_AllowTearing;
-#ifdef _DEBUG
-                OutputDebugStringA("WARNING: Variable refresh rate displays not supported");
-#endif
-            }
-        }
-
-        // Disable HDR if we are on an OS that can't support FLIP swap effects
-        if (m_options & c_EnableHDR)
-        {
-            ComPtr<IDXGIFactory5> factory5;
-            if (FAILED(m_dxgiFactory.As(&factory5)))
-            {
-                m_options &= ~c_EnableHDR;
-#ifdef _DEBUG
-                OutputDebugStringA("WARNING: HDR swap chains not supported");
-#endif
-            }
-        }
-
         // Disable FLIP if not on a supporting OS
-        if (m_options & c_FlipPresent)
+        if (m_flipPresent)
         {
             ComPtr<IDXGIFactory4> factory4;
             if (FAILED(m_dxgiFactory.As(&factory4)))
             {
-                m_options &= ~c_FlipPresent;
+                m_flipPresent = false;
 #ifdef _DEBUG
                 OutputDebugStringA("INFO: Flip swap effects not supported");
 #endif
@@ -277,15 +231,13 @@ namespace artattack
         // Clear the previous window size specific context.
         m_d3dContext->OMSetRenderTargets(0, nullptr, nullptr);
         m_d3dRenderTargetView.Reset();
-        m_d3dDepthStencilView.Reset();
         m_renderTarget.Reset();
-        m_depthStencil.Reset();
         m_d3dContext->Flush();
 
         // Determine the render target size in pixels.
         const UINT backBufferWidth = std::max<UINT>(static_cast<UINT>(m_outputSize.right - m_outputSize.left), 1u);
         const UINT backBufferHeight = std::max<UINT>(static_cast<UINT>(m_outputSize.bottom - m_outputSize.top), 1u);
-        const DXGI_FORMAT backBufferFormat = (m_options & (c_FlipPresent | c_AllowTearing | c_EnableHDR)) ? NoSRGB(m_backBufferFormat) : m_backBufferFormat;
+        const DXGI_FORMAT backBufferFormat = m_flipPresent ? NoSRGB(m_backBufferFormat) : m_backBufferFormat;
 
         if (m_swapChain)
         {
@@ -295,7 +247,7 @@ namespace artattack
                 backBufferWidth,
                 backBufferHeight,
                 backBufferFormat,
-                (m_options & c_AllowTearing) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u
+                0u
                 );
 
             if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
@@ -330,9 +282,9 @@ namespace artattack
             swapChainDesc.SampleDesc.Count = 1;
             swapChainDesc.SampleDesc.Quality = 0;
             swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-            swapChainDesc.SwapEffect = (m_options & (c_FlipPresent | c_AllowTearing | c_EnableHDR)) ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD;
+            swapChainDesc.SwapEffect = m_flipPresent ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD;
             swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-            swapChainDesc.Flags = (m_options & c_AllowTearing) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
+            swapChainDesc.Flags = 0u;
 
             DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = {};
             fsSwapChainDesc.Windowed = TRUE;
@@ -350,7 +302,6 @@ namespace artattack
             ThrowIfFailed(m_dxgiFactory->MakeWindowAssociation(m_window, DXGI_MWA_NO_ALT_ENTER));
         }
 
-        // Handle color space settings for HDR
         UpdateColorSpace();
 
         // Create a render target view of the swap chain back buffer.
@@ -363,32 +314,7 @@ namespace artattack
             m_d3dRenderTargetView.ReleaseAndGetAddressOf()
             ));
 
-        if (m_depthBufferFormat != DXGI_FORMAT_UNKNOWN)
-        {
-            // Create a depth stencil view for use with 3D rendering if needed.
-            CD3D11_TEXTURE2D_DESC depthStencilDesc(
-                m_depthBufferFormat,
-                backBufferWidth,
-                backBufferHeight,
-                1, // This depth stencil view has only one texture.
-                1, // Use a single mipmap level.
-                D3D11_BIND_DEPTH_STENCIL
-                );
-
-            ThrowIfFailed(m_d3dDevice->CreateTexture2D(
-                &depthStencilDesc,
-                nullptr,
-                m_depthStencil.ReleaseAndGetAddressOf()
-                ));
-
-            ThrowIfFailed(m_d3dDevice->CreateDepthStencilView(
-                m_depthStencil.Get(),
-                nullptr,
-                m_d3dDepthStencilView.ReleaseAndGetAddressOf()
-                ));
-        }
-
-        // Set the 3D rendering viewport to target the entire window.
+        // Set the rendering viewport to target the entire window.
         m_screenViewport = { 0.0f, 0.0f, static_cast<float>(backBufferWidth), static_cast<float>(backBufferHeight), 0.f, 1.f };
     }
 
@@ -414,7 +340,6 @@ namespace artattack
         newRc.bottom = static_cast<long>(height);
         if (newRc.right == m_outputSize.right && newRc.bottom == m_outputSize.bottom)
         {
-            // Handle color space settings for HDR
             UpdateColorSpace();
 
             return false;
@@ -433,10 +358,8 @@ namespace artattack
             m_deviceNotify->OnDeviceLost();
         }
 
-        m_d3dDepthStencilView.Reset();
         m_d3dRenderTargetView.Reset();
         m_renderTarget.Reset();
-        m_depthStencil.Reset();
         m_swapChain.Reset();
         m_d3dContext.Reset();
         m_d3dAnnotation.Reset();
@@ -467,30 +390,15 @@ namespace artattack
     // Present the contents of the swap chain to the screen.
     void DeviceResources::Present()
     {
-        HRESULT hr = E_FAIL;
-        if (m_options & c_AllowTearing)
-        {
-            // Recommended to always use tearing if supported when using a sync interval of 0.
-            hr = m_swapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING);
-        }
-        else
-        {
-            // The first argument instructs DXGI to block until VSync, putting the application
-            // to sleep until the next VSync. This ensures we don't waste any cycles rendering
-            // frames that will never be displayed to the screen.
-            hr = m_swapChain->Present(1, 0);
-        }
+        // The first argument instructs DXGI to block until VSync, putting the application
+        // to sleep until the next VSync. This ensures we don't waste any cycles rendering
+        // frames that will never be displayed to the screen.
+        HRESULT hr = m_swapChain->Present(1, 0);
 
         // Discard the contents of the render target.
         // This is a valid operation only when the existing contents will be entirely
         // overwritten. If dirty or scroll rects are used, this call should be removed.
         m_d3dContext->DiscardView(m_d3dRenderTargetView.Get());
-
-        if (m_d3dDepthStencilView)
-        {
-            // Discard the contents of the depth stencil.
-            m_d3dContext->DiscardView(m_d3dDepthStencilView.Get());
-        }
 
         // If the device was removed either by a disconnection or a driver upgrade, we
         // must recreate all device resources.
@@ -615,7 +523,18 @@ namespace artattack
         *ppAdapter = adapter.Detach();
     }
 
-    // Sets the color space for the swap chain in order to handle HDR output.
+    // Tells the swap chain what its contents mean.
+    //
+    // sRGB, unconditionally, because that is the only answer this backend can
+    // give: the HDR path that chose between three colour spaces was reachable
+    // only with c_EnableHDR set, and nothing ever set it. What is left is
+    // refreshing a stale factory - output information is cached on it, so a
+    // display change invalidates it - and telling a swap chain that supports
+    // being told.
+    //
+    // Still called on three paths, and the first one does the work: swap chain
+    // creation, a resize that turns out not to be one, and a Present that finds
+    // the factory stale.
     void DeviceResources::UpdateColorSpace()
     {
         if (!m_dxgiFactory)
@@ -627,91 +546,7 @@ namespace artattack
             CreateFactory();
         }
 
-        DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-
-        bool isDisplayHDR10 = false;
-
-        if (m_swapChain)
-        {
-            // To detect HDR support, we will need to check the color space in the primary
-            // DXGI output associated with the app at this point in time
-            // (using window/display intersection).
-
-            // Get the retangle bounds of the app window.
-            RECT windowBounds;
-            if (!GetWindowRect(m_window, &windowBounds))
-                throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "GetWindowRect");
-
-            const long ax1 = windowBounds.left;
-            const long ay1 = windowBounds.top;
-            const long ax2 = windowBounds.right;
-            const long ay2 = windowBounds.bottom;
-
-            ComPtr<IDXGIOutput> bestOutput;
-            long bestIntersectArea = -1;
-
-            ComPtr<IDXGIAdapter> adapter;
-            for (UINT adapterIndex = 0;
-                SUCCEEDED(m_dxgiFactory->EnumAdapters(adapterIndex, adapter.ReleaseAndGetAddressOf()));
-                ++adapterIndex)
-            {
-                ComPtr<IDXGIOutput> output;
-                for (UINT outputIndex = 0;
-                    SUCCEEDED(adapter->EnumOutputs(outputIndex, output.ReleaseAndGetAddressOf()));
-                    ++outputIndex)
-                {
-                    // Get the rectangle bounds of current output.
-                    DXGI_OUTPUT_DESC desc;
-                    ThrowIfFailed(output->GetDesc(&desc));
-                    const auto& r = desc.DesktopCoordinates;
-
-                    // Compute the intersection
-                    const long intersectArea = ComputeIntersectionArea(ax1, ay1, ax2, ay2, r.left, r.top, r.right, r.bottom);
-                    if (intersectArea > bestIntersectArea)
-                    {
-                        bestOutput.Swap(output);
-                        bestIntersectArea = intersectArea;
-                    }
-                }
-            }
-
-            if (bestOutput)
-            {
-                ComPtr<IDXGIOutput6> output6;
-                if (SUCCEEDED(bestOutput.As(&output6)))
-                {
-                    DXGI_OUTPUT_DESC1 desc;
-                    ThrowIfFailed(output6->GetDesc1(&desc));
-
-                    if (desc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020)
-                    {
-                        // Display output is HDR10.
-                        isDisplayHDR10 = true;
-                    }
-                }
-            }
-        }
-
-        if ((m_options & c_EnableHDR) && isDisplayHDR10)
-        {
-            switch (m_backBufferFormat)
-            {
-            case DXGI_FORMAT_R10G10B10A2_UNORM:
-                // The application creates the HDR10 signal.
-                colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
-                break;
-
-            case DXGI_FORMAT_R16G16B16A16_FLOAT:
-                // The system creates the HDR10 signal; application uses linear values.
-                colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709;
-                break;
-
-            default:
-                break;
-            }
-        }
-
-        m_colorSpace = colorSpace;
+        constexpr DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 
         ComPtr<IDXGISwapChain3> swapChain3;
         if (m_swapChain && SUCCEEDED(m_swapChain.As(&swapChain3)))
