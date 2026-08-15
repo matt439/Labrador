@@ -299,15 +299,20 @@ none of its callers do. `assets/` declares which manifest entries become
 textures and fonts and calls `render/resource_factory.h`, whose declarations
 name nothing a backend owns.
 
-**`app/application.cpp` is the only file outside `render/<backend>/` that
-includes the backend header, because a window handle and a swap chain belong
-to a platform and the shell owns both. A second would be a mistake** — and
-the rule is about *any* file, not about `.cpp` files. It was written as a
-count of implementation files and so missed the include that mattered most:
-`assets/resource_loader.h` named `ID3D11Device1` in a constructor, and
-`app/application.h` includes it, so `<d3d11_1.h>` reached every state file in
-every client. A header carries a backend further in one line than a
-translation unit can.
+**No file outside `render/<backend>/` includes the backend header, and
+`cmake/check_engine_includes.cmake` fails the build for one that does.** The
+shell is not an exception to that: it passes its window handle to
+`Renderer::create_device` as a `void*`, because a window handle is not a
+graphics type — it is this platform's window, and the backend casts it back.
+
+The rule is about *any* file, and it is worth saying because it was once
+written as a count of implementation files. Counted that way it missed the
+include that carried the backend furthest: `assets/resource_loader.h` named
+`ID3D11Device1` in a constructor, and `app/application.h` includes it, so
+`<d3d11_1.h>` reached every state file in every client without anyone
+choosing that. A header carries a backend further in one line than a
+translation unit can, so the check reads both — and being a check rather than
+a paragraph is the point (T5).
 
 **The shell asks the machine exactly one question, once, and what the
 answer sizes is one thing.** `ApplicationOptions::max_threads` defaults to

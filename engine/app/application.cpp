@@ -1,11 +1,5 @@
 #include "engine/app/application.h"
 #include "engine/assets/asset_manifest_loader.h"
-// The one place the shell has to name the backend, and since the window moved
-// out it is down to one reason: on_display_change ends in
-// DeviceResources::UpdateColorSpace. That is also why the seven window
-// handlers stayed on Application rather than following the Win32 into
-// window.cpp - see the note above them in application.h.
-#include "engine/render/d3d11/backend.h"
 #include "engine/math/vector2f.h"
 #include <DirectXMath.h>
 #include <memory>
@@ -391,11 +385,6 @@ namespace artattack
 			static_cast<int>(size.x), static_cast<int>(size.y));
 	}
 
-	void Application::on_display_change() const
-	{
-		this->renderer_->impl()->device_resources.UpdateColorSpace();
-	}
-
 	void Application::on_window_size_changed(int width, int height)
 	{
 		// THE LAYOUT SIZE FIRST, AND THIS LINE IS THE WHOLE FIX. Every way a
@@ -428,8 +417,12 @@ namespace artattack
 		// down the sound banks here left every object holding a freed
 		// SoundBank*. The sprite batches and the sampler states belong to the
 		// renderer, which has already released them by the time this is called.
-		this->render_resources_->impl()->release_all_textures();
-		this->render_resources_->impl()->release_all_sprite_fonts();
+		//
+		// Which resources those are is the table's business, not the shell's.
+		// This used to name textures and fonts, which meant the shell knew both
+		// what kinds of resource the backend keeps and that there were exactly
+		// two of them.
+		this->render_resources_->release_device_resources();
 	}
 
 	void Application::on_device_restored()

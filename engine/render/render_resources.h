@@ -54,6 +54,21 @@ namespace artattack
 		void add_sprite_sheet(const std::string& sprite_sheet_name,
 			std::unique_ptr<SpriteSheet> sprite_sheet);
 
+		// Drops everything the device owns, leaving the names - and therefore
+		// every handle resolved from them - in place, so that a drawable holding
+		// one before the loss draws the right thing after the reload refills its
+		// slot.
+		//
+		// The sheets are not device resources and are left alone: a sheet's
+		// device half is its texture, which is a handle.
+		//
+		// IT IS ON THE SEAM RATHER THAN ON Impl, unlike the adds beside it,
+		// because its signature names nothing a backend owns and its one caller
+		// is the shell - which learns from DeviceNotify that a device it has
+		// never heard of has gone away. Making the shell say which *kinds* of
+		// resource a loss takes would be the seam telling it what a texture is.
+		void release_device_resources();
+
 		// Load-time. Each throws std::out_of_range naming the resource if nothing
 		// has loaded it, so a misspelt name in a definition file fails while the
 		// level is loading rather than on the frame that first drew it.

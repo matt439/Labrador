@@ -46,6 +46,9 @@ runs there with no window and no device. A rule is asserted rather than played.
   compiler's own error, but [cmake/check_engine_includes.cmake](cmake/check_engine_includes.cmake)
   greps for it on every build anyway, because the compiler only enforces it
   when this repository is built standalone.
+- **A file outside `engine/render/<backend>/` including that backend's
+  `backend.h`.** Second pass in the same script, and it reads headers as well
+  as `.cpp` files — a header is how the backend escaped last time.
 - **Adding a source file without listing it.** Sources are enumerated
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
@@ -75,9 +78,10 @@ runs there with no window and no device. A rule is asserted rather than played.
   time, not an abstract base — T8 does not permit a virtual call per sprite.
   A backend is three translation units — `renderer.cpp`,
   `render_resources.cpp`, `resource_factory.cpp` — and all three live in
-  `render/<backend>/`. Exactly one file outside that folder includes the
-  backend header, named in ARCHITECTURE: `app/application.cpp`. A second
-  would be a mistake, and the rule counts headers, not just `.cpp` files.
+  `render/<backend>/`. Nothing outside that folder includes the backend
+  header, the shell included: it hands its window handle to `create_device`
+  as a `void*`. `check_engine_includes.cmake` fails the build for a file that
+  reaches across, headers included.
 - **A new public primitive ships with behavioural tests in the same commit.**
   Benchmarks assert on **complexity class**, not wall-clock — a phase linear in
   the object count must stay linear when the count quadruples, whatever the

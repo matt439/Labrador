@@ -37,7 +37,6 @@ namespace artattack
 		virtual void on_suspending() = 0;
 		virtual void on_resuming() = 0;
 		virtual void on_window_moved() const = 0;
-		virtual void on_display_change() const = 0;
 		virtual void on_window_size_changed(int width, int height) = 0;
 
 		// THE KEYBOARD AND THE MOUSE, and they are here rather than behind a
@@ -48,9 +47,9 @@ namespace artattack
 		// which is the whole reason `input` is fed rather than read, and the
 		// reason nothing in it names a window (keyboard.h says it at length).
 		//
-		// const, like on_window_moved and on_display_change and for the same
-		// reason: they change nothing about the window, and everything they do
-		// reach is borrowed and fed rather than asked anything.
+		// const, like on_window_moved and for the same reason: they change
+		// nothing about the window, and everything they do reach is borrowed and
+		// fed rather than asked anything.
 		//
 		// Already translated, both directions. `Key` and `MouseButton` are the
 		// engine's own names, decided in window.cpp from the platform's codes,
@@ -106,13 +105,16 @@ namespace artattack
 	// and a second platform moves this pair down a folder without renaming the
 	// class or touching a call site.
 	//
-	// WHAT IS DELIBERATELY NOT HERE: the seven handlers themselves. They stay
-	// on Application and arrive through WindowNotify, and one of them is the
-	// reason. on_display_change ends in DeviceResources::UpdateColorSpace, so
-	// a Window that handled its own messages would be a third file outside
-	// engine/render/d3d11/ including the backend, which ARCHITECTURE forbids
-	// in as many words. Message translation lives here; what a message means
-	// does not.
+	// WHAT IS DELIBERATELY NOT HERE: the handlers themselves. They stay on
+	// Application and arrive through WindowNotify, because message translation
+	// lives here and what a message means does not.
+	//
+	// That used to be forced rather than chosen: on_display_change ended in
+	// DeviceResources::UpdateColorSpace, so a Window handling its own messages
+	// would have had to include the backend. The handler is gone and the
+	// constraint with it, so this is now a judgement about layering and nothing
+	// else - which is the better reason to keep them where they are, and a
+	// worse one to move them.
 	class Window
 	{
 	public:

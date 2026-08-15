@@ -97,6 +97,15 @@ namespace artattack
 			std::move(sprite_sheet));
 	}
 
+	// Textures and fonts, and this backend has no third kind. The sheets stay:
+	// a sheet's device half is the texture handle it holds, and that slot is
+	// refilled by the reload rather than remade.
+	void RenderResources::release_device_resources()
+	{
+		this->impl_->release_all_textures();
+		this->impl_->release_all_sprite_fonts();
+	}
+
 	TextureHandle RenderResources::resolve_texture(
 		const std::string& texture_name) const
 	{

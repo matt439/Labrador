@@ -267,12 +267,13 @@ namespace artattack
 		// and they are private because a private override is still reachable
 		// through the base pointer the window holds.
 		//
-		// They stay on Application rather than moving into Window with the
-		// rest of the Win32, and on_display_change is the one that decides it:
-		// it ends in DeviceResources::UpdateColorSpace, so a Window handling
-		// its own messages would be a third file outside engine/render/d3d11/
-		// including the backend. A Renderer::display_changed() on the seam
-		// would delete the constraint and make the placement a free choice.
+		// They stay on Application rather than moving into Window with the rest
+		// of the Win32, and that is now a choice about layering rather than a
+		// constraint: on_display_change used to end in
+		// DeviceResources::UpdateColorSpace and so pinned them here. Publishing
+		// a Renderer::display_changed() on the seam would have freed them too,
+		// at the price of a permanent seam method serving a call that could not
+		// change anything. Deleting the handler was cheaper and reverts.
 		void tick() override;
 
 		// The four that mean "the player is looking at us" or "the player is
@@ -283,7 +284,6 @@ namespace artattack
 		void on_suspending() override;
 		void on_resuming() override;
 		void on_window_moved() const override;
-		void on_display_change() const override;
 		void on_window_size_changed(int width, int height) override;
 
 		// Straight into the devices, every one of them. Nothing is interpreted

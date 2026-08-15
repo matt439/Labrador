@@ -356,13 +356,6 @@ namespace artattack
 			}
 			break;
 
-		case WM_DISPLAYCHANGE:
-			if (self)
-			{
-				self->notify_->on_display_change();
-			}
-			break;
-
 		case WM_MOVE:
 			if (self)
 			{
