@@ -19,7 +19,7 @@ the answer to "how do I start a project on this".
 ```
 engine/    ~17k lines   the engine: ten modules with a fixed dependency direction
 samples/   ~330 lines   the minimal sample: the answer to "how do I start a project on this"
-tests/     233 cases    doctest, eight targets, run by ctest
+tests/     331 cases    doctest, nine targets, run by ctest
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 ```
@@ -134,7 +134,7 @@ the line.
 ctest --preset x64-debug
 ```
 
-233 test cases and about 4,000 assertions across eight targets, plus the
+331 test cases and about 17,000 assertions across nine targets, plus the
 benchmark.
 
 The benchmark (`bench/`) reports throughput and asserts on **complexity class**

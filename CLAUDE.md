@@ -22,9 +22,9 @@ ctest --preset x64-debug
 
 `VCPKG_ROOT` must be set — `CMakePresets.json` reads it for the toolchain file
 and configuring fails without it. Ninja generator, out-of-source in
-`out/build/<preset>/`. Nine ctest entries: `MattMathTests`, `CoreTests`,
+`out/build/<preset>/`. Ten ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `InputTests`, `UiTests`,
-`AssetsTests` (doctest) and `Benchmarks`. The sample lands at
+`AssetsTests`, `AppTests` (doctest) and `Benchmarks`. The sample lands at
 `out/build/x64-debug/samples/minimal/ArtAttackSample.exe`.
 
 ## What will fail the build

@@ -24,6 +24,15 @@
 
 namespace artattack
 {
+	// How many logical processors the machine reports, and never fewer than one.
+	//
+	// THE SHELL ASKS THE MACHINE EXACTLY ONE QUESTION, AND THIS IS IT. What the
+	// answer sizes is the thread pool and nothing else: the renderer's view
+	// capacity is a property of the layout (ApplicationOptions::view_capacity)
+	// and the partition count is a property of the work (Scene::draw). One
+	// constant used to answer all three.
+	int default_thread_count();
+
 	// What a game hands the shell before it opens a window. Everything here is a
 	// decision only the game can make - its title, the resolution it read out of
 	// its own save file - which is exactly why none of it is compiled into the
@@ -41,12 +50,32 @@ namespace artattack
 		// The fixed step the simulation advances at. Rendering is not capped by it.
 		int target_fps = 60;
 
-		// The render thread pool. max_threads is also the renderer's view
-		// capacity - the widest the frame can ever fan out - because a backend
-		// that records into per-thread contexts has to make them before any
-		// frame starts.
+		// The render thread pool's floor and ceiling.
+		//
+		// The ceiling is a property of the MACHINE, so it defaults to what the
+		// machine reports rather than to a number written here. A fan-out wider
+		// than the box has hardware for is slower than not fanning out at all,
+		// and the box least able to absorb that mistake is the one this engine
+		// most wants to run on: the old default of 16 made four tasks plus a
+		// blocked submitter out of a four-view frame on a two-core part.
 		int min_threads = 1;
-		int max_threads = 16;
+		int max_threads = default_thread_count();
+
+		// The widest a frame may ever fan out, which is what sizes the
+		// renderer's per-view recording state - a backend that records into
+		// per-thread contexts has to make them before any frame starts.
+		//
+		// A PROPERTY OF THE LAYOUT, NOT OF THE MACHINE, and it used to be
+		// max_threads. That conflation was not merely untidy: every view costs a
+		// deferred context and a sprite batch's dynamic vertex buffer, built
+		// eagerly at create_device and rebuilt after every device restore,
+		// whether or not a frame ever uses it. A sixteen-thread default
+		// therefore built sixteen of them to draw one pane, out of the same
+		// memory the game runs in.
+		//
+		// Four is four-player split-screen, which is the widest layout either
+		// client has. A game drawing one pane says 1 and pays for one.
+		int view_capacity = 4;
 
 		// Smallest the user may drag the window; below this the swap chain is not
 		// worth resizing.
@@ -61,6 +90,8 @@ namespace artattack
 		// on every frame of every view, and target_fps reaches StepTimer as
 		// one, so a zero in either was a hang or a crash on the first frame -
 		// and the game reads both from a save file it does not control.
+		// view_capacity is the same shape: create_device throws below 1, and
+		// throwing here instead names the field rather than the parameter.
 		void validate() const;
 	};
 

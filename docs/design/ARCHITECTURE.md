@@ -145,6 +145,7 @@ being load-bearing.
 │                           repository now, and consumes this one as a
 │                           submodule
 ├── tests/                  one folder per module under test
+│   ├── app/
 │   ├── assets/
 │   ├── collision/
 │   ├── core/
@@ -291,6 +292,19 @@ the third of them is in `assets/`. `app/application.cpp` is the only other
 file outside `render/d3d11/` that includes it, because a window handle and
 a swap chain belong to a platform and the shell owns both. A third would
 be a mistake.
+
+**The shell asks the machine exactly one question, once, and what the
+answer sizes is one thing.** `ApplicationOptions::max_threads` defaults to
+the logical-processor count and sizes the thread pool. It does not size
+anything else, and it used to size two other things: the renderer's view
+capacity and — through `ThreadPool::max_num_threads` — the partition
+count. Those are three questions with three different right answers. A
+pool's ceiling is a property of the machine; a view capacity is a property
+of the *layout*, four for split-screen and one for a sample, on any
+machine; a partition count is a property of the work. The conflation was
+not untidy but expensive, because view capacity is what sizes the per-view
+recording state before a frame starts, and on an integrated GPU that state
+comes out of the same memory the game runs in.
 
 `app` sits at the top and is the one module allowed to depend on all of
 them, because assembling them is the whole of its job: it opens the

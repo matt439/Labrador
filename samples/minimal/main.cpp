@@ -28,6 +28,13 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 		options.window_title = L"ArtAttack - minimal sample";
 		options.resolution = ScreenResolution::s_1280_720;
 
+		// One pane, so one view's worth of recording state. The default is four
+		// - four-player split-screen, the widest layout the engine has a client
+		// for - and every view above what a frame draws is a deferred context
+		// and a dynamic vertex buffer created at startup and never used.
+		// A game that fans out says so here; this one does not.
+		options.view_capacity = 1;
+
 		Application app(std::move(options));
 		app.initialize(instance, show_command);
 

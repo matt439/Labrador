@@ -35,6 +35,7 @@ if(PROJECT_IS_TOP_LEVEL)
 
     add_subdirectory(samples/minimal)
     add_subdirectory(bench)
+    add_subdirectory(tests/app)
     add_subdirectory(tests/assets)
     add_subdirectory(tests/collision)
     add_subdirectory(tests/core)

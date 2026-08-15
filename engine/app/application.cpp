@@ -12,12 +12,22 @@
 #include <objbase.h>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <tuple>
 
 using namespace DirectX;
 
 namespace artattack
 {
+	int default_thread_count()
+	{
+		const unsigned int reported = std::thread::hardware_concurrency();
+		// Zero means the implementation could not tell. One is the honest
+		// answer to "I do not know" - guessing high is the mistake this
+		// function exists to stop making.
+		return reported == 0u ? 1 : static_cast<int>(reported);
+	}
+
 	void ApplicationOptions::validate() const
 	{
 		const auto require = [](bool condition, const char* message)
@@ -34,6 +44,8 @@ namespace artattack
 			"ApplicationOptions::min_threads must be at least 1.");
 		require(this->max_threads >= this->min_threads,
 			"ApplicationOptions::max_threads must be at least min_threads.");
+		require(this->view_capacity >= 1,
+			"ApplicationOptions::view_capacity must be at least 1.");
 		require(this->min_window_width > 0,
 			"ApplicationOptions::min_window_width must be greater than zero.");
 		require(this->min_window_height > 0,
@@ -108,10 +120,12 @@ namespace artattack
 		const mattmath::Vector2I size =
 			this->resolution_manager_->resolution_ivec();
 
-		// max_threads is the view capacity: the widest this frame may ever fan
-		// out, which is what sizes the per-view recording state.
+		// The layout's number, not the pool's. It used to be max_threads, which
+		// built one deferred context and one dynamic vertex buffer per thread
+		// the machine might ever run to draw a frame that has four panes at the
+		// very most - see ApplicationOptions::view_capacity.
 		this->renderer_->create_device(this->window_->handle(), size.x, size.y,
-			this->options_.max_threads);
+			this->options_.view_capacity);
 
 		this->create_services();
 
