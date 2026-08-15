@@ -448,8 +448,13 @@ engine API to depend on.
 
 ### Performance
 
-- Throughput is the measure: frame rate and object count, on the parallel
-  paths the engine already commits to (multi-core update and render).
+- Throughput is the measure: frame rate and object count, on the parallel path
+  the engine commits to — the per-view render fan-out, and that one alone.
+  Update is single-threaded and is not on a road to being otherwise: the axis
+  of parallelism is views (Simulation and rendering), which is a thing only a
+  frame has, and `update()` writes. Committing to a second axis would mean
+  deciding what two objects writing at once means, which is the question the
+  view axis exists to avoid answering.
 - Per-frame code performs no heap allocation and no string-keyed lookups;
   fixed-size geometry returns fixed-size containers; data the frame iterates
   is laid out for iteration.
