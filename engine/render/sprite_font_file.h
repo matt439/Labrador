@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/render/font.h"
-#include "engine/render/texture_format.h"
+#include "engine/render/texture_data.h"
 
 #include <string>
 #include <vector>
@@ -38,16 +38,11 @@ namespace artattack
 		// chooses, and therefore what every .spritefont in this tree says.
 		char32_t stand_in = 0;
 
-		// The atlas, exactly as the file stores it. `stride` is bytes per row
-		// of the layout rather than per row of pixels, so for a block-compressed
-		// format it is bytes per row of BLOCKS and `rows` is the block count -
-		// which is why neither is derivable from width and height here.
-		int width = 0;
-		int height = 0;
-		TextureFormat format = TextureFormat::r8g8b8a8_unorm;
-		int stride = 0;
-		int rows = 0;
-		std::vector<unsigned char> pixels;
+		// The atlas, in the same shape a .dds comes out in - one level, since
+		// the format has no way to carry a chain. Sharing the type with the
+		// other reader is what lets the backend have one function that turns
+		// bytes into a texture rather than one per file kind.
+		TextureData atlas;
 	};
 
 	// Reads the .spritefont at `path`.

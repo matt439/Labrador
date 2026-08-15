@@ -25,6 +25,7 @@ add_library(ArtAttackEngine STATIC
     collision/narrow_phase.cpp
     collision/partitioner.cpp
     collision/resolve.cpp
+    core/byte_reader.cpp
     core/moving_object.cpp
     core/state.cpp
     core/state_context.cpp
@@ -43,6 +44,7 @@ add_library(ArtAttackEngine STATIC
     render/d3d11/render_resources.cpp
     render/d3d11/renderer.cpp
     render/d3d11/resource_factory.cpp
+    render/dds_file.cpp
     render/draw_object.cpp
     render/font.cpp
     render/label.cpp
@@ -55,6 +57,7 @@ add_library(ArtAttackEngine STATIC
     render/text_drop_shadow.cpp
     render/text_encoding.cpp
     render/text_object.cpp
+    render/texture_data.cpp
     render/texture_object.cpp
     render/viewport.cpp
     render/viewport_manager.cpp

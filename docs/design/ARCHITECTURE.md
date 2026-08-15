@@ -113,7 +113,8 @@ being load-bearing.
 ├── engine/                 the product
 │   ├── math/               MattMath — depends on nothing, and links
 │   │                       nothing: no DirectXTK, no D3D11, no Windows
-│   ├── core/               game loop, fixed-step timing, states, services, registries
+│   ├── core/               game loop, fixed-step timing, states, services,
+│   │                       registries, reading numbers out of a file
 │   ├── render/             the Renderer, cameras, viewports, colours, fonts
 │   │   └── d3d11/          the D3D11/DirectXTK backend, behind the Renderer
 │   ├── collision/          contacts, narrow phase, manifolds, resolution

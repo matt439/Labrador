@@ -371,9 +371,16 @@ namespace artattack
 //    What the D3D11 implementation settled is the *shape* a second backend has
 //    to fill, and it is three translation units: renderer.cpp,
 //    render_resources.cpp and resource_factory.cpp, all three in
-//    engine/render/<backend>/. That shape is smaller than it was. The glyph
-//    table, the pen and the .spritefont parser used to be inside DirectXTK and
-//    are now engine/render/font.* and engine/render/sprite_font_file.*, so what
-//    a backend owes for text is a texture from bytes and one Draw per glyph.
-//    The same is not yet true of a .dds, which is still decoded by a library
-//    only this backend can link - and is the next thing to come out.
+//    engine/render/<backend>/. That shape keeps getting smaller. The glyph
+//    table, the pen, the .spritefont parser and the .dds parser were all inside
+//    DirectXTK and are now engine/render/font.*, sprite_font_file.* and
+//    dds_file.*, so what a backend owes for content is a texture from bytes
+//    (engine/render/texture_data.h) and one draw per glyph.
+//
+//    WHAT IS LEFT OF DirectXTK ON THE RENDER PATH IS THE BATCH. SpriteBatch
+//    holds the vertex buffer, the shaders, the blend and sampler state, the
+//    pixels-to-clip transform and the quad arithmetic that turns a source
+//    rectangle, a destination, an origin, a rotation and a flip into four
+//    vertices - and that arithmetic is every term RenderPixelTests pins. It is
+//    the largest single thing a second backend would otherwise have to
+//    reproduce from the pixels outwards, and the last one.

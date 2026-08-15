@@ -2,20 +2,20 @@
 
 #include "engine/core/throw_if_failed.h"
 #include "engine/render/d3d11/backend.h"
+#include "engine/render/dds_file.h"
 #include "engine/render/font.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_font_file.h"
+#include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
 
-#include <DDSTextureLoader.h>
 #include <wrl/client.h>
 
-#include <cstdio>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
@@ -39,50 +39,64 @@ namespace artattack
 		}
 
 		// The engine's format vocabulary, back into this API's. The other
-		// direction is in sprite_font_file.cpp, where a file that spells its
-		// format as a DXGI number is decoded; this is the half that belongs to
-		// a backend and it is three lines long.
+		// direction is in dds_file.cpp and sprite_font_file.cpp, where files
+		// that spell their format as a fourCC or a DXGI number are decoded;
+		// this is the half that belongs to a backend and it is a switch.
 		DXGI_FORMAT to_dxgi_format(TextureFormat format)
 		{
 			switch (format)
 			{
+			case TextureFormat::b8g8r8a8_unorm:
+				return DXGI_FORMAT_B8G8R8A8_UNORM;
 			case TextureFormat::b4g4r4a4_unorm:
 				return DXGI_FORMAT_B4G4R4A4_UNORM;
+			case TextureFormat::bc1_unorm:
+				return DXGI_FORMAT_BC1_UNORM;
 			case TextureFormat::bc2_unorm:
 				return DXGI_FORMAT_BC2_UNORM;
+			case TextureFormat::bc3_unorm:
+				return DXGI_FORMAT_BC3_UNORM;
 			case TextureFormat::r8g8b8a8_unorm:
 			default:
 				return DXGI_FORMAT_R8G8B8A8_UNORM;
 			}
 		}
 
-		// The atlas out of a .spritefont, as a texture like any other.
+		// Bytes into a texture, and this is the whole of what a backend does
+		// with a file now.
 		//
-		// IMMUTABLE AND SINGLE-MIP, which is what a font atlas is: it is
-		// sampled at one scale by a batch that never mips, and nothing ever
-		// writes to it. Those were DirectXTK's choices for the same texture and
-		// they are kept, because this commit is about where the glyph table
-		// lives and not about how its pixels are stored.
-		ComPtr<ID3D11ShaderResourceView> create_atlas(ID3D11Device1* device,
-			const SpriteFontFile& file)
+		// ONE FUNCTION FOR BOTH FILE KINDS, which is what sharing TextureData
+		// between the two readers bought: a .dds and the atlas inside a
+		// .spritefont differ in how they are decoded and not at all in what
+		// comes out, so there is nothing here that knows which one it is
+		// looking at.
+		//
+		// IMMUTABLE, because nothing ever writes to one of these, and that is
+		// what DirectXTK asked for on the same textures.
+		ComPtr<ID3D11ShaderResourceView> create_texture(ID3D11Device1* device,
+			const TextureData& data)
 		{
 			D3D11_TEXTURE2D_DESC description = {};
-			description.Width = static_cast<UINT>(file.width);
-			description.Height = static_cast<UINT>(file.height);
-			description.MipLevels = 1;
+			description.Width = static_cast<UINT>(data.width);
+			description.Height = static_cast<UINT>(data.height);
+			description.MipLevels = static_cast<UINT>(data.levels.size());
 			description.ArraySize = 1;
-			description.Format = to_dxgi_format(file.format);
+			description.Format = to_dxgi_format(data.format);
 			description.SampleDesc.Count = 1;
 			description.Usage = D3D11_USAGE_IMMUTABLE;
 			description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-			D3D11_SUBRESOURCE_DATA initial = {};
-			initial.pSysMem = file.pixels.data();
-			initial.SysMemPitch = static_cast<UINT>(file.stride);
-			initial.SysMemSlicePitch = static_cast<UINT>(file.pixels.size());
+			std::vector<D3D11_SUBRESOURCE_DATA> initial(data.levels.size());
+			for (size_t i = 0; i < data.levels.size(); i++)
+			{
+				const TextureLevel& level = data.levels[i];
+				initial[i].pSysMem = data.pixels.data() + level.offset;
+				initial[i].SysMemPitch = static_cast<UINT>(level.stride);
+				initial[i].SysMemSlicePitch = static_cast<UINT>(level.size);
+			}
 
 			ComPtr<ID3D11Texture2D> texture;
-			ThrowIfFailed(device->CreateTexture2D(&description, &initial,
+			ThrowIfFailed(device->CreateTexture2D(&description, initial.data(),
 				texture.GetAddressOf()));
 
 			ComPtr<ID3D11ShaderResourceView> view;
@@ -152,26 +166,14 @@ namespace artattack
 	{
 		const std::string texture_path = directory + name + ".dds";
 
-		ComPtr<ID3D11ShaderResourceView> texture_view;
-		ComPtr<ID3D11Resource> resource;
-		const HRESULT result = CreateDDSTextureFromFile(device_of(renderer),
-			std::wstring(texture_path.begin(), texture_path.end()).c_str(),
-			resource.GetAddressOf(),
-			texture_view.ReleaseAndGetAddressOf());
-		if (FAILED(result))
-		{
-			// ThrowIfFailed's message is the HRESULT and nothing else, so the
-			// commonest failure here - a texture named in the manifest that is
-			// not on disk - arrived as eight hex digits. The font loader below
-			// has always named its file; this now does too (T6).
-			char hresult[16] = {};
-			std::snprintf(hresult, sizeof(hresult), "0x%08X",
-				static_cast<unsigned int>(result));
-			throw std::runtime_error("Failed to load texture: " + texture_path +
-				" (" + hresult + ")");
-		}
-
-		resources.impl()->add_texture(name, texture_view.Get());
+		// Reading the file is not this backend's job and no longer happens
+		// here. What used to be one CreateDDSTextureFromFile call was a file
+		// reader, a format table and a device texture in a library only this
+		// backend can link, and the first two are neither this backend's nor
+		// DirectX's - they are what this engine's content is.
+		resources.impl()->add_texture(name,
+			create_texture(device_of(renderer),
+				read_dds_file(texture_path)).Get());
 	}
 
 	void load_font_asset(const Renderer& renderer,
@@ -195,7 +197,7 @@ namespace artattack
 		// a Windows filename, and every other name in this table is one.
 		const std::string atlas_name = "font:" + name;
 		resources.impl()->add_texture(atlas_name,
-			create_atlas(device_of(renderer), file).Get());
+			create_texture(device_of(renderer), file.atlas).Get());
 
 		std::unique_ptr<Font> font = std::make_unique<Font>(
 			resources.resolve_texture(atlas_name), file.glyphs,

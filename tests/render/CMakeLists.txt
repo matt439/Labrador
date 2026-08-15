@@ -4,6 +4,7 @@ add_executable(RenderTests
     camera_tests.cpp
     camera_tools_tests.cpp
     colour_tests.cpp
+    dds_file_tests.cpp
     font_tests.cpp
     render_resources_tests.cpp
     resolution_manager_tests.cpp

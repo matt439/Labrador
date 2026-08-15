@@ -110,23 +110,27 @@ TEST_CASE("the atlas comes out as bytes and a format, not as a texture")
 {
 	const SpriteFontFile font = read_sprite_font_file(FONT_PATH);
 
-	CHECK(font.width == 128);
-	CHECK(font.height == 144);
+	CHECK(font.atlas.width == 128);
+	CHECK(font.atlas.height == 144);
 
 	// BC2, WHICH IS THE ONE TO KNOW ABOUT BEFORE A SECOND BACKEND. Desktop GL
 	// reads it through an extension and GLES 3.0 cannot read it at all, so a
 	// backend that skipped it would have every glyph in both clients and no
 	// way to upload one.
-	CHECK(font.format == TextureFormat::bc2_unorm);
+	CHECK(font.atlas.format == TextureFormat::bc2_unorm);
+
+	// One level. The format has no way to carry a chain, which is why this is
+	// an assertion rather than an omission.
+	REQUIRE(font.atlas.levels.size() == 1);
 
 	// Four-by-four blocks of sixteen bytes: 128 pixels is 32 blocks is 512
-	// bytes a row, and 144 pixels is 36 rows OF BLOCKS. That is why the stride
-	// and the row count are read from the file rather than derived from the
-	// size - deriving them would give 144 rows of 512 and ask the device for
-	// four times the data there is.
-	CHECK(font.stride == 512);
-	CHECK(font.rows == 36);
-	CHECK(font.pixels.size() == 512u * 36u);
+	// bytes a row, and 144 pixels is 36 rows OF BLOCKS. Getting this wrong the
+	// obvious way gives 144 rows of 512 and asks the device for four times the
+	// data there is.
+	CHECK(font.atlas.levels[0].stride == 512);
+	CHECK(font.atlas.levels[0].rows == 36);
+	CHECK(font.atlas.levels[0].offset == 0);
+	CHECK(font.atlas.pixels.size() == 512u * 36u);
 }
 
 TEST_CASE("a file that is not a font says which way it is not one")
