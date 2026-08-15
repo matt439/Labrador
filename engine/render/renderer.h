@@ -362,23 +362,23 @@ namespace artattack
 
 // STILL OPEN:
 //
-//  - The null backend. How CMake selects a backend is settled - the option is
-//    ARTATTACK_RENDER_BACKEND and a backend is a folder of three translation
-//    units - so adding engine/render/null/ is now a matter of writing it.
-//    What it buys that the two real ones do not: RenderPixelTests needs a
-//    driver on the GL side and WARP on the D3D11 one, and a null backend is
-//    what would let a scene's drawing be asserted with neither. It would
-//    record what it was asked to draw rather than drawing it, which the
-//    engine-side geometry makes cheap: the vertices are already built before
-//    a backend sees them.
+//  - AssetKind::reload_device, which is not this file's but is this file's
+//    fault. It is a public std::function on the asset loader that exists only
+//    because a Direct3D device can be lost, and two of the three backends
+//    behind this seam never call it: a WGL context is not lost, and the null
+//    one has nothing to lose. So a caller writes a rebuild path for a hazard
+//    its configuration may not have. Whether that belongs on the loader, on
+//    DeviceNotify, or nowhere is a question two backends made askable and a
+//    third made worth asking.
 //
 // SETTLED, AND THIS FILE IS WHERE IT IS RECORDED:
 //
 //  - The shape of a backend is three translation units - renderer.cpp,
 //    render_resources.cpp and texture_factory.cpp, all in
 //    engine/render/<backend>/ - plus whatever that backend needs to build its
-//    shader. The third is thirty lines: it turns already-decoded bytes into a
-//    texture and adds it to the table. Path-building and file-reading are in
+//    shader, which for one of the three is nothing. The third file is thirty
+//    lines: it turns already-decoded bytes into a texture and adds it to the
+//    table. Path-building and file-reading are in
 //    engine/render/resource_factory.cpp, written once for everybody.
 //
 //  - What is on which side of the line. Every decision that shows on screen is
@@ -390,14 +390,20 @@ namespace artattack
 //    that make the blend premultiplied. NOTHING A BACKEND DOES DECIDES WHERE A
 //    PIXEL GOES, which is what lets two of them pass the same 128 assertions.
 //
-//  - The claim at the top of this file, that the seam serves "an eventual
-//    second platform", is no longer a claim. engine/render/gl/ is OpenGL 3.3
-//    core and passes RenderPixelTests, and writing it changed nothing above
-//    the seam. The one thing it found: OpenGL has no deferred contexts, so a
-//    view there records into memory and submit() replays it on the thread that
-//    owns the context. The seam admitted that without a word of it reaching a
+//  - BOTH PURPOSES AT THE TOP OF THIS FILE ARE NOW FILLED, and neither is a
+//    claim any more. engine/render/gl/ is OpenGL 3.3 core and passes
+//    RenderPixelTests; engine/render/null/ has no graphics API at all and
+//    records what it was asked to draw, which is what lets a test assert which
+//    sprites a frame submitted on a machine with no driver. Writing either
+//    changed nothing above the seam.
+//
+//    The one thing the port found: OpenGL has no deferred contexts, so a view
+//    there records into memory and submit() replays it on the thread that owns
+//    the context. The seam admitted that without a word of it reaching a
 //    caller, because the unit of work is a view and a view's vertices are
-//    already built on the CPU before any backend sees them.
+//    already built on the CPU before any backend sees them - and the null
+//    backend then took the same shape one step further, recording and never
+//    replaying at all.
 //
 //  - DirectXTK is no longer on the render path at all. It remains bought for
 //    audio and for the gamepad reader, which are seams of their own and are

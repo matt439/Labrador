@@ -120,9 +120,12 @@ being load-bearing.
 │   │   │                   decision that shows on screen
 │   │   ├── d3d11/          the D3D11 backend: a device, buffers, a shader
 │   │   │                   compiled by fxc at build time, four states
-│   │   └── gl/             the OpenGL 3.3 core backend: a WGL context, a
-│   │                       loader for the forty-one entry points it uses,
-│   │                       and the same shader in GLSL
+│   │   ├── gl/             the OpenGL 3.3 core backend: a WGL context, a
+│   │   │                   loader for the forty-one entry points it uses,
+│   │   │                   and the same shader in GLSL
+│   │   └── null/           no graphics API at all: it records what it was
+│   │                       asked to draw, so a test can assert drawing on a
+│   │                       machine with no driver
 │   ├── collision/          contacts, narrow phase, manifolds, resolution
 │   │                       (the pair sweep is still all-pairs; a broad
 │   │                       phase goes behind find_contacts)
@@ -248,7 +251,7 @@ already is (T5). That option is held, not spent.
 | `math` | nothing — and it links nothing, which is what makes this true |
 | `core` | math |
 | `collision` | core, math |
-| `render` | core, math — D3D11 inside `d3d11/`, OpenGL inside `gl/` |
+| `render` | core, math — D3D11 inside `d3d11/`, OpenGL inside `gl/`, nothing inside `null/` |
 | `scene` | core, math, collision, render |
 | `input` | core, math — XInput inside `xinput/` only |
 | `audio` | core, math — the audio backend at its edge only |
@@ -304,10 +307,20 @@ turning already-decoded bytes into a texture. Working out the path and reading
 the file are `render/resource_factory.cpp` and the readers beside it, written
 once for every backend.
 
-**There are two backends**, `render/d3d11/` and `render/gl/`, chosen by
-`ARTATTACK_RENDER_BACKEND` at configure time and both held to the same
-`RenderPixelTests`. Nothing outside either folder names it, which is what
-makes selection a list of files rather than a set of `#ifdef`s. `assets/` declares which manifest entries become
+**There are three backends**: `render/d3d11/`, `render/gl/` and
+`render/null/`, chosen by `ARTATTACK_RENDER_BACKEND` at configure time. The
+first two are held to the same `RenderPixelTests`; the third has no graphics
+API and records what it was asked to draw, which is what makes drawing
+assertable where there is no driver. Nothing outside any of the three folders
+names it, which is what makes selection a list of files rather than a set of
+`#ifdef`s.
+
+A backend may publish a second header beside `backend.h` **as long as it names
+no backend type** — `render/null/recording.h` is one, and is meant to be
+included by tests. The rule
+`cmake/check_engine_includes.cmake` enforces is about `backend.h` by name,
+because that is the file that carries an API's types across a folder in one
+line. `assets/` declares which manifest entries become
 textures and fonts and calls `render/resource_factory.h`, whose declarations
 name nothing a backend owns.
 

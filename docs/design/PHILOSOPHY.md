@@ -306,9 +306,10 @@ second platform is an addition, not a rewrite.
 
 This paragraph used to end "today there is one backend (D3D11, XInput), kept
 behind seams that don't presume it is the only one", and the amendment is
-worth stating rather than hiding. **There are two render backends now**:
-Direct3D 11 and OpenGL 3.3 core, selected by `ARTATTACK_RENDER_BACKEND` at
-configure time, both passing the same `RenderPixelTests`.
+worth stating rather than hiding. **There are three render backends now**:
+Direct3D 11, OpenGL 3.3 core, and a null one that records what it was asked to
+draw and never draws it, selected by `ARTATTACK_RENDER_BACKEND` at configure
+time. The first two pass the same `RenderPixelTests`.
 
 That is not cross-platform arriving early, and it is not the speculative
 framework T1 rules out. The second backend was written for a reason a single
@@ -432,11 +433,12 @@ engine API to depend on.
   two backends live in one process.
 - The seam has two clients and owes a backend to each: a headless one with no
   device, and a second platform's. A seam with a single implementation behind
-  it is a shape that has been cut, not a claim that has been tested. The
-  second platform's arrived first, and tested it: `render/gl/` is OpenGL 3.3
-  core, it passes the same `RenderPixelTests`, and writing it changed nothing
-  above the seam. The headless one is still owed — it is what would let the
-  drawing of a scene be asserted on a machine with no driver at all.
+  it is a shape that has been cut, not a claim that has been tested. **Both
+  are built.** `render/gl/` is OpenGL 3.3 core and passes the same
+  `RenderPixelTests`; `render/null/` has no graphics API and records what it
+  was asked to draw, so a test can assert which sprites a frame submitted, in
+  what order and from which texture, on a machine with no driver at all.
+  Writing either changed nothing above the seam.
 - Parallel rendering is sound because drawing is a pure read. The axis of
   parallelism is **views, not objects**: a worker owns one view and draws
   every object into it, so several workers enter `draw()` on the *same*

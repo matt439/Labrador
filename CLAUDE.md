@@ -30,13 +30,21 @@ and configuring fails without it. For the D3D11 backend `fxc` must also be on
 compiles its GLSL at device creation and needs no tool. Both come with the
 Visual Studio install. Ninja generator, out-of-source in `out/build/<preset>/`.
 
-**There are two render backends.** `x64-debug` and `x64-release` build
-`render/d3d11/`; `x64-debug-gl` builds `render/gl/` — OpenGL 3.3 core, through
-WGL, on the same Win32 window. The choice is `ARTATTACK_RENDER_BACKEND` at
-configure time, so asking for one that was not built is a missing symbol at
-link (T5). **Both pass the same twelve ctest entries, `RenderPixelTests`
-included**, and a change to anything in `engine/render/` should be checked
-against both. Twelve ctest entries: `MattMathTests`, `CoreTests`,
+**There are three render backends**, chosen by `ARTATTACK_RENDER_BACKEND` at
+configure time — so asking for one that was not built is a missing symbol at
+link (T5). A change to anything in `engine/render/` should be checked against
+all three; CI builds all three.
+
+| Preset | Backend | ctest |
+|---|---|---|
+| `x64-debug`, `x64-release` | `render/d3d11/` | 12 entries; WARP fallback in debug |
+| `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 12 entries; needs a real driver |
+| `x64-debug-null` | `render/null/` — no graphics API; records draws | 11 entries; `RenderPixelTests` is not built |
+
+`RenderPixelTests` is the pixel contract and needs a device. The null backend's
+`read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
+— compiled only in that configuration — asserts the other half: which sprites a
+frame submitted, in what order, from which texture, into which view. Twelve ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
 `InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`
 (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
@@ -130,9 +138,8 @@ runs there with no window and no device. A rule is asserted rather than played.
 
 ## Known-absent, on purpose
 
-A null backend for headless render tests — `RenderPixelTests` needs a real
-driver on the GL side and falls back to WARP on the D3D11 one, and a null
-backend is what would let a scene's drawing be asserted with neither — and an
-action-mapping layer over the input devices; neither client has a rebinding
-screen, so a binding table would be the speculative framework T1 rules out. Also permanently out of scope: online play,
+An action-mapping layer over the input devices — neither client has a rebinding
+screen, so a binding table would be the speculative framework T1 rules out.
+That is the whole list now; the second backend and the null backend both
+landed. Also permanently out of scope: online play,
 3D, an editor, and a scripting layer.

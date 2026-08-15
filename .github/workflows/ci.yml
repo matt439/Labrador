@@ -26,8 +26,8 @@ jobs:
   windows:
     runs-on: windows-latest
 
-    # Both backends, because "both pass the same tests" is a claim that rots
-    # the moment nothing checks it - and a second backend rots by failing to
+    # Every backend, because "they all pass the same tests" is a claim that
+    # rots the moment nothing checks it - and a backend rots by failing to
     # compile long before it rots by drawing the wrong thing.
     #
     # THE GL PRESET SKIPS RenderPixelTests, AND THAT IS NOT A CONVENIENCE. A
@@ -35,10 +35,15 @@ jobs:
     # conformant software rasteriser, and that is a D3D-only luxury: Windows'
     # fallback for OpenGL is the GDI generic implementation, which is version
     # 1.1 and has no WGL_ARB_create_context, so create_device throws saying so.
-    # Every other entry runs, so the eleven that need no device hold both
-    # backends to the same answers here, and the pixel contract is checked on a
-    # machine with a driver. pixel_tests.cpp says the same thing at more length,
-    # and the null backend named in renderer.h is what would close it.
+    # The pixel contract is checked on a machine with a driver; everything else
+    # about that backend is checked here.
+    #
+    # THE NULL PRESET IS THE ONE THIS MACHINE CAN RUN COMPLETELY, and it is here
+    # for that rather than for coverage. It has no graphics API at all - it
+    # records what it was asked to draw - so nothing in it can fail for a reason
+    # outside the repository, and its own tests assert which sprites a frame
+    # submitted, in what order, from which texture. RenderPixelTests is not
+    # built in that configuration, which is why nothing is excluded by name.
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +54,8 @@ jobs:
             skip_tests: ''
           - preset: x64-debug-gl
             skip_tests: '-E RenderPixelTests'
+          - preset: x64-debug-null
+            skip_tests: ''
 
     # The presets use the Ninja generator, so every cmake step needs the MSVC
     # environment. vcvars64 is found through vswhere rather than a hardcoded

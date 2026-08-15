@@ -93,8 +93,8 @@ target_include_directories(ArtAttackEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/.
 # Nothing outside engine/render/<backend>/ names either folder, which is what
 # makes this a list of files rather than a set of #ifdefs.
 set(ARTATTACK_RENDER_BACKEND "d3d11" CACHE STRING
-    "The render backend to build: d3d11 or gl")
-set_property(CACHE ARTATTACK_RENDER_BACKEND PROPERTY STRINGS d3d11 gl)
+    "The render backend to build: d3d11, gl or null")
+set_property(CACHE ARTATTACK_RENDER_BACKEND PROPERTY STRINGS d3d11 gl null)
 
 if(ARTATTACK_RENDER_BACKEND STREQUAL "d3d11")
     target_sources(ArtAttackEngine PRIVATE
@@ -132,11 +132,23 @@ elseif(ARTATTACK_RENDER_BACKEND STREQUAL "gl")
     # as source in render/gl/sprite_shader.h and the driver compiles it at
     # device creation - which that file explains at length, because it is the
     # one place the two backends genuinely differ in kind rather than spelling.
+elseif(ARTATTACK_RENDER_BACKEND STREQUAL "null")
+    target_sources(ArtAttackEngine PRIVATE
+        render/null/render_resources.cpp
+        render/null/renderer.cpp
+        render/null/texture_factory.cpp
+    )
+
+    # Nothing to link and nothing to compile. This backend records what it was
+    # asked to draw and never draws it, so it needs no graphics library, no
+    # shader and no display - which is what makes it the one configuration a
+    # build machine can run from end to end.
 else()
     message(FATAL_ERROR
         "ARTATTACK_RENDER_BACKEND is '${ARTATTACK_RENDER_BACKEND}'. "
-        "It must be d3d11 or gl - a backend is a folder in engine/render/ "
-        "holding renderer.cpp, render_resources.cpp and texture_factory.cpp.")
+        "It must be d3d11, gl or null - a backend is a folder in "
+        "engine/render/ holding renderer.cpp, render_resources.cpp and "
+        "texture_factory.cpp.")
 endif()
 
 # rapidjson is PRIVATE and SYSTEM. It used to be PUBLIC, so a sample that

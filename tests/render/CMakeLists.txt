@@ -31,34 +31,54 @@ add_custom_command(TARGET RenderTests POST_BUILD
         "$<TARGET_FILE_DIR:RenderTests>/content"
 )
 
+# The null backend's own tests, in the one configuration that has it.
+#
+# A backend is chosen at build time, so a test that names one only compiles
+# when that one is built - which is the same rule a client lives under and is
+# why this is a source list and not an #ifdef. RenderTests is otherwise
+# identical in every configuration.
+if(ARTATTACK_RENDER_BACKEND STREQUAL "null")
+    target_sources(RenderTests PRIVATE null_tests.cpp)
+endif()
+
 add_test(NAME RenderTests COMMAND RenderTests)
 
 # RenderPixelTests — the drawing half, on a real device.
 #
 # A separate executable from RenderTests, which is pure arithmetic and wants no
-# device. This one creates a Direct3D device and a hidden window, so it is the
-# one entry in ctest that can fail for a reason outside the repository: a debug
+# device. This one creates a device and a hidden window, so it is the one entry
+# in ctest that can fail for a reason outside the repository: a Direct3D debug
 # build falls back to WARP and needs no GPU, but a release build has no such
-# fallback (device_resources.cpp) and needs an adapter. Keeping it apart means
-# that failure names itself instead of taking the arithmetic down with it.
-add_executable(RenderPixelTests
-    pixel_tests.cpp
-    test_main.cpp
-)
-target_link_libraries(RenderPixelTests PRIVATE
-    ArtAttackEngine
-    doctest::doctest
-    artattack_settings
-)
+# fallback (device_resources.cpp) and the OpenGL backend has none at all, so
+# both need an adapter. Keeping it apart means that failure names itself
+# instead of taking the arithmetic down with it.
+#
+# NOT BUILT AT ALL AGAINST THE NULL BACKEND, rather than built and excluded. It
+# records what it was asked to draw and never draws it, so read_back_buffer
+# throws saying so - and a test that cannot pass is better absent than skipped,
+# because a skipped test is a line in a log nobody reads and a missing one is a
+# question somebody asks.
+if(NOT ARTATTACK_RENDER_BACKEND STREQUAL "null")
+    add_executable(RenderPixelTests
+        pixel_tests.cpp
+        test_main.cpp
+    )
+    target_link_libraries(RenderPixelTests PRIVATE
+        ArtAttackEngine
+        doctest::doctest
+        artattack_settings
+    )
 
-# The test content, beside the executable. ctest runs from the build directory,
-# and the harness loads "./content/" relative to it - a four-colour texture and
-# a font, both owned by these tests rather than borrowed from a sample, so that
-# restyling a sample cannot move a pin in here.
-add_custom_command(TARGET RenderPixelTests POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/content"
-        "$<TARGET_FILE_DIR:RenderPixelTests>/content"
-)
+    # The test content, beside the executable. ctest runs from the build
+    # directory, and the harness loads "./content/" relative to it - a
+    # four-colour texture and a font, both owned by these tests rather than
+    # borrowed from a sample, so that restyling a sample cannot move a pin in
+    # here.
+    add_custom_command(TARGET RenderPixelTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/content"
+            "$<TARGET_FILE_DIR:RenderPixelTests>/content"
+    )
 
-add_test(NAME RenderPixelTests COMMAND RenderPixelTests)
+    add_test(NAME RenderPixelTests COMMAND RenderPixelTests)
+endif()

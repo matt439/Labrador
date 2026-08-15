@@ -144,11 +144,13 @@ namespace
 	// The render cull, lifted out of Scene::draw_views.
 	//
 	// It is duplicated here rather than driven through Scene::draw because
-	// draw needs a Renderer and there is no null backend yet (renderer.h,
-	// STILL OPEN). The loop is the two lines that matter - bounds() against
-	// the visible rectangle - and measuring it separately is honest as long as
-	// this comment says so. When the null backend lands, this becomes a call
-	// to scene.draw() and the number should not move.
+	// draw needs a Renderer. The null backend now supplies one with no device
+	// (engine/render/null/), but only in the configuration that builds it, and
+	// this benchmark builds in all four - so driving it through scene.draw()
+	// would measure a different thing depending on which preset ran it, which
+	// is worse than a duplicated loop. The loop is the two lines that matter -
+	// bounds() against the visible rectangle - and measuring it separately is
+	// honest as long as this comment says so.
 	int cull_count(const Scene& scene, const RectangleF& visible)
 	{
 		int drawn = 0;
