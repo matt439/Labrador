@@ -36,8 +36,10 @@ target_link_libraries(RenderPixelTests PRIVATE
     artattack_settings
 )
 
-# The test texture, beside the executable. ctest runs from the build directory,
-# and the harness loads "./content/quad.dds" relative to it.
+# The test content, beside the executable. ctest runs from the build directory,
+# and the harness loads "./content/" relative to it - a four-colour texture and
+# a font, both owned by these tests rather than borrowed from a sample, so that
+# restyling a sample cannot move a pin in here.
 add_custom_command(TARGET RenderPixelTests POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/content"
