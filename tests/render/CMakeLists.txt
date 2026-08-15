@@ -4,8 +4,10 @@ add_executable(RenderTests
     camera_tests.cpp
     camera_tools_tests.cpp
     colour_tests.cpp
+    font_tests.cpp
     render_resources_tests.cpp
     resolution_manager_tests.cpp
+    sprite_font_file_tests.cpp
     text_encoding_tests.cpp
     viewport_manager_tests.cpp
     test_main.cpp
@@ -14,6 +16,17 @@ target_link_libraries(RenderTests PRIVATE
     ArtAttackEngine
     doctest::doctest
     artattack_settings
+)
+
+# The same content, for the same reason, and it is new here: a font stopped
+# being a device resource, so reading one and measuring with it is now
+# arithmetic this executable can do. sprite_font_file_tests.cpp reads the real
+# file rather than a fixture, because a fixture could only agree with the parser
+# that wrote it.
+add_custom_command(TARGET RenderTests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/content"
+        "$<TARGET_FILE_DIR:RenderTests>/content"
 )
 
 add_test(NAME RenderTests COMMAND RenderTests)

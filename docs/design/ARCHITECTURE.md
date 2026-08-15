@@ -114,7 +114,7 @@ being load-bearing.
 │   ├── math/               MattMath — depends on nothing, and links
 │   │                       nothing: no DirectXTK, no D3D11, no Windows
 │   ├── core/               game loop, fixed-step timing, states, services, registries
-│   ├── render/             the Renderer, cameras, viewports, colours
+│   ├── render/             the Renderer, cameras, viewports, colours, fonts
 │   │   └── d3d11/          the D3D11/DirectXTK backend, behind the Renderer
 │   ├── collision/          contacts, narrow phase, manifolds, resolution
 │   │                       (the pair sweep is still all-pairs; a broad

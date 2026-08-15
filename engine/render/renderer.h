@@ -56,10 +56,17 @@ namespace artattack
 	// render_resources.h includes this file, for the handle types below.
 	class RenderResources;
 
-	// Phantom payloads. A handle is an index into the table that produced it
-	// (handle.h), and these say which table. The backend decides what a Texture
-	// and a Font actually are; nothing outside engine/render/<backend>/ needs
-	// to know, which is the whole point.
+	// A handle is an index into the table that produced it (handle.h), and
+	// these say which table.
+	//
+	// TEXTURE IS A PHANTOM AND FONT IS NOT, WHICH IS NOT AN INCONSISTENCY.
+	// Texture never gains a definition: the backend decides what one is, and
+	// nothing outside engine/render/<backend>/ needs to know, which is the
+	// whole point of the seam. A Font was the same thing once and is not any
+	// more - it is engine data over a TextureHandle (engine/render/font.h),
+	// exactly as a SpriteSheet is, because a glyph table and a pen are
+	// arithmetic and not a device resource. Declared and not included here so
+	// that this file still costs a caller nothing.
 	class Texture;
 	class Font;
 
@@ -174,19 +181,23 @@ namespace artattack
 
 		// CONSTRAINT: the text entry point is wide.
 		//
-		// DirectXTK's narrow DrawString and MeasureString convert through
-		// SpriteFont::Impl::ConvertUTF8, which lazily allocates and may
-		// reallocate a utfBuffer owned by the shared SpriteFont - from a const
-		// method, under a fan-out where every worker draws the whole HUD. Wide
-		// in, wide all the way down; there is no narrow overload to fall back
-		// to and there should not be one.
+		// It was DirectXTK that made this urgent - its narrow DrawString
+		// converted through a utfBuffer owned by the shared SpriteFont, from a
+		// const method, under a fan-out where every worker draws the whole HUD,
+		// which is a data race and not a preference. That library is gone from
+		// the font path and the rule stays, because the reason underneath it
+		// never was DirectXTK's: a glyph table is keyed by code unit, so a
+		// narrow overload is a conversion, and a conversion on the draw path is
+		// either an allocation per string per view per frame or a buffer shared
+		// between workers. Wide in, wide all the way down; there is no narrow
+		// overload to fall back to and there should not be one.
 		//
-		// A wstring and not a wstring_view, which is what this said first.
-		// Every font API underneath takes a null-terminated pointer - DirectXTK
-		// has no (begin, end) DrawString - so a view would have to be copied
-		// into a terminated buffer per draw, which is an allocation on the
-		// frame path bought to make one call site prettier. Every caller in the
-		// tree holds a wstring already.
+		// A wstring and not a wstring_view, which is what this said first, and
+		// the reason has changed with the walk underneath it. Font::for_each_
+		// glyph takes a view and would be happy with one - but every caller in
+		// the tree holds a wstring, TextObject measures the same string it
+		// stores, and a view here would buy nothing while inviting a caller to
+		// hand over a temporary that outlives nothing.
 		void draw_text(FontHandle font,
 			const std::wstring& text,
 			const mattmath::Vector2F& position,
@@ -358,8 +369,11 @@ namespace artattack
 //    tests/render/ covers only the pure arithmetic it already covered.
 //
 //    What the D3D11 implementation settled is the *shape* a second backend has
-//    to fill, and it is three translation units, not one: renderer.cpp,
-//    render_resources.cpp, and the resource factory that reads files onto the
-//    device (engine/assets/resource_loader.cpp, which names DDSTextureLoader
-//    and SpriteFont and is therefore backend code living outside the folder).
-//    Moving it is what the null backend's first day looks like.
+//    to fill, and it is three translation units: renderer.cpp,
+//    render_resources.cpp and resource_factory.cpp, all three in
+//    engine/render/<backend>/. That shape is smaller than it was. The glyph
+//    table, the pen and the .spritefont parser used to be inside DirectXTK and
+//    are now engine/render/font.* and engine/render/sprite_font_file.*, so what
+//    a backend owes for text is a texture from bytes and one Draw per glyph.
+//    The same is not yet true of a .dds, which is still decoded by a library
+//    only this backend can link - and is the next thing to come out.

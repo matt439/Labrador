@@ -44,8 +44,10 @@ add_library(ArtAttackEngine STATIC
     render/d3d11/renderer.cpp
     render/d3d11/resource_factory.cpp
     render/draw_object.cpp
+    render/font.cpp
     render/label.cpp
     render/resolution_manager.cpp
+    render/sprite_font_file.cpp
     render/sprite_frame.cpp
     render/sprite_sheet.cpp
     render/sprite_sheet_object.cpp

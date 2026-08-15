@@ -2,12 +2,12 @@
 
 #include "engine/core/registry.h"
 #include "engine/render/d3d11/device_resources.h"
+#include "engine/render/font.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
 
 #include <CommonStates.h>
 #include <SpriteBatch.h>
-#include <SpriteFont.h>
 #include <wrl/client.h>
 
 #include <memory>
@@ -22,8 +22,9 @@
 // This is that include. It has exactly two clients:
 //
 //   - engine/app/application.cpp, which needs an HWND and a swap chain, and
-//   - engine/assets/resource_loader.cpp, which builds textures and fonts on a
-//     device and puts them in the table.
+//   - engine/render/d3d11/resource_factory.cpp, which builds textures on a
+//     device and puts them in the table - including the atlas a font is cut
+//     from, which is the one part of loading a font that needs one.
 //
 // A third would be a mistake. Everything that draws goes through DrawList, and
 // the whole point of the seam is that draw code never learns which backend it
@@ -42,31 +43,38 @@ namespace artattack
 		}
 	};
 
-	// What a Texture and a Font are, once this backend has decided. The phantom
-	// types in renderer.h never gain a definition; the handles that name them
-	// index the tables below, and this is where the index becomes a resource.
+	// What a Texture is, once this backend has decided, and where every named
+	// resource lives. The phantom type in renderer.h never gains a definition;
+	// the handles that name it index the table below, and this is where the
+	// index becomes a resource.
+	//
+	// ONE OF THE THREE TABLES IS THIS BACKEND'S AND TWO ARE NOT. Fonts and
+	// sheets are engine data (font.h, sprite_sheet.h) and are here only because
+	// the storage of a pimpl is the pimpl's; the textures are the sole reason
+	// this class cannot be written once for everybody. That is a smaller
+	// difference than it was - a font used to be a DirectX::SpriteFont, which
+	// is to say the pen arithmetic for every string this engine draws used to
+	// be in this table - and it is the shape a second backend inherits.
 	class RenderResources::Impl
 	{
 	public:
-		// Load-time, and the reason this header exists: everything here is
-		// spelt in DirectXTK and D3D11 types, which is exactly what the public
-		// RenderResources may not say.
+		// Load-time, and the reason this header exists: this is spelt in a D3D11
+		// type, which is exactly what the public RenderResources may not say.
+		// The adds for the two engine kinds are on RenderResources itself.
 		void add_texture(const std::string& name,
 			ID3D11ShaderResourceView* texture);
-		void add_sprite_font(const std::string& name,
-			std::unique_ptr<DirectX::SpriteFont> font);
+		void add_font(const std::string& name, std::unique_ptr<Font> font);
 		void add_sprite_sheet(const std::string& name,
 			std::unique_ptr<SpriteSheet> sprite_sheet);
 
-		// Device loss. The resources go; the names, and therefore every handle
-		// resolved from them, stay.
+		// Device loss. The textures go; the names, and therefore every handle
+		// resolved from them, stay. Nothing else in here is the device's.
 		void release_all_textures();
-		void release_all_sprite_fonts();
 
 		// Per-draw, from DrawList. Each throws std::out_of_range if the handle
 		// is unresolved or its slot has been released.
 		ID3D11ShaderResourceView* texture(TextureHandle texture) const;
-		DirectX::SpriteFont* sprite_font(FontHandle font) const;
+		const Font* font(FontHandle font) const;
 
 		// By name, for the loader that has just created one and wants it back.
 		ID3D11ShaderResourceView* texture(const std::string& name) const;
@@ -74,7 +82,7 @@ namespace artattack
 		Registry<ID3D11ShaderResourceView,
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>
 			textures{ "Texture" };
-		Registry<DirectX::SpriteFont> sprite_fonts{ "SpriteFont" };
+		Registry<Font> fonts{ "Font" };
 		Registry<SpriteSheet> sprite_sheets{ "SpriteSheet" };
 	};
 

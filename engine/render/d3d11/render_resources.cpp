@@ -20,11 +20,6 @@ namespace artattack
 		{
 			return Handle<ID3D11ShaderResourceView>(texture.index());
 		}
-
-		Handle<SpriteFont> font_slot(FontHandle font)
-		{
-			return Handle<SpriteFont>(font.index());
-		}
 	}
 
 	// --- RenderResources::Impl -----------------------------------------------
@@ -35,10 +30,10 @@ namespace artattack
 		this->textures.add(name, texture);
 	}
 
-	void RenderResources::Impl::add_sprite_font(const std::string& name,
-		std::unique_ptr<SpriteFont> font)
+	void RenderResources::Impl::add_font(const std::string& name,
+		std::unique_ptr<Font> font)
 	{
-		this->sprite_fonts.add(name, std::move(font));
+		this->fonts.add(name, std::move(font));
 	}
 
 	void RenderResources::Impl::add_sprite_sheet(const std::string& name,
@@ -52,20 +47,17 @@ namespace artattack
 		this->textures.release_all();
 	}
 
-	void RenderResources::Impl::release_all_sprite_fonts()
-	{
-		this->sprite_fonts.release_all();
-	}
-
 	ID3D11ShaderResourceView* RenderResources::Impl::texture(
 		TextureHandle texture) const
 	{
 		return this->textures.get(texture_slot(texture));
 	}
 
-	SpriteFont* RenderResources::Impl::sprite_font(FontHandle font) const
+	// No slot reinterpretation: a Font is what the public handle already names,
+	// which is what stopped being true of a texture and never was of a sheet.
+	const Font* RenderResources::Impl::font(FontHandle font) const
 	{
-		return this->sprite_fonts.get(font_slot(font));
+		return this->fonts.get(font);
 	}
 
 	ID3D11ShaderResourceView* RenderResources::Impl::texture(
@@ -78,7 +70,10 @@ namespace artattack
 	//
 	// The front half is backend-free logic, but it is defined here because Impl
 	// is only a complete type in this folder. A second backend supplies its own
-	// copy of this file, which is the same shape as renderer.cpp beside it.
+	// copy of this file, which is the same shape as renderer.cpp beside it -
+	// and it is a thinner copy than it was, because the three font queries below
+	// now forward to arithmetic in engine/render/font.cpp rather than performing
+	// any.
 
 	RenderResources::RenderResources() : impl_(std::make_unique<Impl>())
 	{
@@ -97,13 +92,18 @@ namespace artattack
 			std::move(sprite_sheet));
 	}
 
-	// Textures and fonts, and this backend has no third kind. The sheets stay:
-	// a sheet's device half is the texture handle it holds, and that slot is
+	void RenderResources::add_font(const std::string& font_name,
+		std::unique_ptr<Font> font)
+	{
+		this->impl_->add_font(font_name, std::move(font));
+	}
+
+	// Textures, and this backend has no second kind. The fonts and the sheets
+	// stay: each one's device half is a texture handle, and that slot is
 	// refilled by the reload rather than remade.
 	void RenderResources::release_device_resources()
 	{
 		this->impl_->release_all_textures();
-		this->impl_->release_all_sprite_fonts();
 	}
 
 	TextureHandle RenderResources::resolve_texture(
@@ -116,7 +116,7 @@ namespace artattack
 	FontHandle RenderResources::resolve_sprite_font(
 		const std::string& font_name) const
 	{
-		return FontHandle(this->impl_->sprite_fonts.resolve(font_name).index());
+		return this->impl_->fonts.resolve(font_name);
 	}
 
 	RenderResources::SpriteSheetHandle RenderResources::resolve_sprite_sheet(
@@ -140,9 +140,7 @@ namespace artattack
 	Vector2F RenderResources::measure_text(FontHandle font,
 		const std::wstring& text) const
 	{
-		const XMVECTOR size =
-			this->impl_->sprite_font(font)->MeasureString(text.c_str());
-		return { XMVectorGetX(size), XMVectorGetY(size) };
+		return this->impl_->font(font)->measure(text);
 	}
 
 	bool RenderResources::can_render(FontHandle font,
@@ -154,18 +152,6 @@ namespace artattack
 	size_t RenderResources::first_unrenderable(FontHandle font,
 		std::wstring_view text) const
 	{
-		// Resolved once, outside the loop. The handle read is a bounds check
-		// and an indexed load, but this is a per-character walk over a string
-		// a caller may be checking every content file with.
-		const SpriteFont* sprite_font = this->impl_->sprite_font(font);
-
-		for (size_t i = 0; i < text.size(); i++)
-		{
-			if (!sprite_font->ContainsCharacter(text[i]))
-			{
-				return i;
-			}
-		}
-		return std::wstring_view::npos;
+		return this->impl_->font(font)->first_unrenderable(text);
 	}
 }

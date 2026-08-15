@@ -250,7 +250,7 @@ exactly that, and a caller toggling it per particle would turn a handful of
 draw calls into thousands. That is the frame-loop tax T8 refuses.
 
 What is genuinely lost, rather than worked around: glowing **text**. `draw_text`
-goes through `SpriteFont` into the same batch, and the tool that builds a
+puts its glyphs in the same batch as everything else, and the tool that builds a
 `.spritefont` will not write `a = 0` glyphs. The answer is a soft quad behind
 the text, which reads better at this resolution anyway — but it is a workaround
 and is named as one.

@@ -18,22 +18,28 @@ namespace artattack
 	//
 	// BEHIND THE SEAM, and this is why the pimpl. The public API here was
 	// already handles, but the storage was ComPtr<ID3D11ShaderResourceView> and
-	// SpriteFont, so every translation unit that resolved a name compiled
-	// <SpriteFont.h> - which meant a headless test could not construct a
-	// TextObject even after draw() was clean, because TextObject's *constructor*
-	// resolves a font and measures a string. Renderer holds an Impl the backend
-	// defines; so does this, for the same reason and in the same folder.
+	// DirectX::SpriteFont, so every translation unit that resolved a name
+	// compiled <SpriteFont.h> - which meant a headless test could not construct
+	// a TextObject even after draw() was clean, because TextObject's
+	// *constructor* resolves a font and measures a string. Renderer holds an
+	// Impl the backend defines; so does this, for the same reason and in the
+	// same folder.
 	//
-	// The load-time half - add_texture, add_sprite_font, the device-loss resets -
-	// is not here at all. It is on Impl, in engine/render/<backend>/backend.h,
-	// because every one of those calls names a backend type in its signature.
-	// The resource factory includes that header deliberately; nothing else does.
+	// ONE OF THE TWO STORAGE TYPES HAS SINCE STOPPED BEING A BACKEND'S. A Font
+	// is engine data over a TextureHandle (font.h), so measuring a string is
+	// arithmetic a headless test can now run - the pimpl is still here for the
+	// textures, which nothing will ever make portable.
 	//
-	// add_sprite_sheet is the exception the rule produces rather than one made
-	// for it: a sheet is engine data, so its signature names nothing a backend
-	// owns, so by the sentence above it does not belong on Impl. It is here, and
-	// the loader that builds sheets out of JSON - which lives in assets/, where
-	// no backend header may go - installs them through it.
+	// THE RULE ABOUT WHICH HALF LIVES WHERE: a call whose signature names a
+	// backend type is on Impl, in engine/render/<backend>/backend.h, and the
+	// resource factory includes that header deliberately; nothing else does.
+	// A call whose signature names only engine types is here.
+	//
+	// add_texture is on Impl and add_sprite_sheet and add_font are here, which
+	// is the rule and not three decisions. A sheet is engine data, a font
+	// became engine data, and a texture never will be. add_font moved out of
+	// backend.h on the day it stopped taking a DirectX::SpriteFont, without
+	// anybody having to decide anything.
 	class RenderResources
 	{
 	public:
@@ -54,13 +60,28 @@ namespace artattack
 		void add_sprite_sheet(const std::string& sprite_sheet_name,
 			std::unique_ptr<SpriteSheet> sprite_sheet);
 
+		// The same, for a font, and it is here beside the sheets rather than on
+		// Impl beside the textures for the reason stated above: a Font is
+		// engine data now (font.h), so its signature names nothing a backend
+		// owns. It arrived here from Impl in the commit that made that true.
+		//
+		// The atlas underneath it is a texture like any other and goes in
+		// through Impl, which is the one part of loading a font that does need
+		// a device.
+		void add_font(const std::string& font_name,
+			std::unique_ptr<Font> font);
+
 		// Drops everything the device owns, leaving the names - and therefore
 		// every handle resolved from them - in place, so that a drawable holding
 		// one before the loss draws the right thing after the reload refills its
 		// slot.
 		//
-		// The sheets are not device resources and are left alone: a sheet's
-		// device half is its texture, which is a handle.
+		// TEXTURES, AND THAT IS NOW THE WHOLE LIST. The sheets are not device
+		// resources and never were: a sheet's device half is its texture, which
+		// is a handle. A font's is too, since it became engine data - so a
+		// device loss takes a font's atlas out of the texture table and leaves
+		// the glyphs, the spacing and the handle that names the atlas exactly
+		// where they were.
 		//
 		// IT IS ON THE SEAM RATHER THAN ON Impl, unlike the adds beside it,
 		// because its signature names nothing a backend owns and its one caller
@@ -111,21 +132,27 @@ namespace artattack
 		// the first character it has none for is - wstring_view::npos when
 		// there is none.
 		//
+		// STILL HERE THOUGH THE ANSWER IS NO LONGER BEHIND THE SEAM. Font is
+		// engine data now, so a caller holding one could ask it directly - but
+		// a caller does not hold one, it holds a FontHandle, and the table that
+		// turns a handle back into a font is this. The paragraph below is the
+		// reason the question exists; this is the reason it is asked here.
+		//
 		// ASKED OF THE ATLAS, NOT OF WHAT WOULD HAPPEN. The loader installs a
 		// stand-in glyph on every font it builds, so drawing an unrenderable
 		// string no longer fails; it draws question marks. "Will this throw"
 		// has therefore stopped being a question worth answering, and "will
 		// the player read what I wrote" has not.
 		//
-		// IT IS HERE BECAUSE THERE IS NO OTHER WAY TO ASK. SpriteFont's own
-		// ContainsCharacter is behind the backend header, and the two files
-		// outside engine/render/<backend>/ allowed to include that are named
-		// in ARCHITECTURE - a third would be a mistake. Without this a client
-		// can only guess, or convert every content string through a
-		// hand-written table of what it believes the font holds. One did, and
-		// only after measuring the alternative: a curly apostrophe in a weapon
-		// description let the game start, load and reach the menu, and would
-		// have thrown four screens later, during play.
+		// WHY A CLIENT WANTS TO ASK. Without it a client can only guess, or
+		// convert every content string through a hand-written table of what it
+		// believes the font holds. One did, and only after measuring the
+		// alternative: a curly apostrophe in a weapon description let the game
+		// start, load and reach the menu, and would have thrown four screens
+		// later, during play. The throw is gone - a missing glyph draws a
+		// question mark now - which changed the question from "will this kill
+		// the process" to "will the player read what I wrote", and left it
+		// worth asking.
 		//
 		// Per UTF-16 unit, so a character outside the basic plane is two and
 		// reports at the first of them - which is where a caller pointing at

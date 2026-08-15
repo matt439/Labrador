@@ -11,18 +11,18 @@ namespace artattack
 {
 	// A string drawn in one font.
 	//
-	// Text is held wide. DirectXTK's narrow DrawString and MeasureString
-	// overloads convert through a utfBuffer owned by the shared SpriteFont -
-	// allocated, and possibly reallocated, from inside a const method. Every
-	// render worker draws the whole HUD through the same SpriteFont, so the
-	// narrow overloads are a data race on the draw path. widen() in
+	// Text is held wide, which the seam requires and renderer.h explains. The
+	// short of it: a glyph table is keyed by code unit, so a narrow entry point
+	// is a conversion, and a conversion on the draw path is either an
+	// allocation per string per view per frame or a buffer shared between
+	// workers. DirectXTK chose the second and it was a data race. widen() in
 	// text_encoding.h is where narrow content comes across, once.
 	//
 	// The font name is resolved to a handle at construction. A handle rather than
-	// a cached font pointer, because fonts are device resources: a device loss
-	// destroys and rebuilds every one of them, and a pointer taken before the loss
-	// would be dangling after it. The handle names the registry slot, and the
-	// reload refills that same slot.
+	// a cached font pointer, because the table is what survives a device loss: a
+	// font is engine data now, but its atlas is not, and it is the registry slot
+	// that a reload refills. A pointer taken before a loss would still be a
+	// pointer into a table that a move of RenderResources could reseat.
 	class TextObject : public DrawObject
 	{
 	public:

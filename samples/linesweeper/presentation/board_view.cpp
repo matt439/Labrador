@@ -371,8 +371,8 @@ namespace linesweeper
 		}
 
 		// A SOFT QUAD BEHIND THE TEXT, which is the workaround README names
-		// for text this engine cannot make glow: draw_text goes through
-		// SpriteFont into the same batch, and the tool that builds a
+		// for text this engine cannot make glow: draw_text puts its glyphs in
+		// the same batch as everything else, and the tool that builds a
 		// .spritefont will not write the transparent-black glyphs additive
 		// blending would need. Here it earns its place twice over - red words
 		// over an orange block are unreadable whatever they are blended with.

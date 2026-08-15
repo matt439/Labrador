@@ -198,19 +198,42 @@ namespace artattack
 	{
 		this->view_->open_batch();
 
-		// Wide in, wide all the way down. DirectXTK's narrow DrawString
-		// converts through a utfBuffer owned by the shared SpriteFont, from a
-		// const method, under a fan-out where every worker draws the whole HUD.
-		this->view_->owner->resources->impl()->sprite_font(font)->DrawString(
-			this->view_->batch.get(),
-			text.c_str(),
-			to_xm(this->view_->camera.calculate_view_position(position)),
-			to_xm(tint),
-			rotation,
-			to_xm(origin),
-			this->view_->camera.calculate_view_scale(scale),
-			SpriteEffects_None,
-			layer_depth);
+		const RenderResources::Impl& resources =
+			*this->view_->owner->resources->impl();
+		const Font& the_font = *resources.font(font);
+
+		// A GLYPH IS A SPRITE, AND THAT IS THE WHOLE OF THIS FUNCTION. What
+		// used to be here was SpriteFont::DrawString, which walked its own
+		// glyph table and made exactly these calls. The walk is the engine's
+		// now (font.h) and what is left below is the part of it that names a
+		// batch - which is what a second backend has to write, and all it has
+		// to write, to draw text.
+		ID3D11ShaderResourceView* atlas = resources.texture(the_font.atlas());
+
+		const XMFLOAT2 screen_position = to_xm(
+			this->view_->camera.calculate_view_position(position));
+		const XMVECTOR colour = to_xm(tint);
+		const float screen_scale =
+			this->view_->camera.calculate_view_scale(scale);
+
+		// THE POSITION FORM, NOT THE RECTANGLE FORM draw_sprite uses. A
+		// destination rectangle is truncated to whole pixels - RenderPixelTests
+		// pins that - so a line of text laid out through one would jitter
+		// against its own advance, which is fractional in most fonts. Here the
+		// pen offset rides in the origin, in unscaled source texels, which is
+		// where the seam already says an origin is measured.
+		SpriteBatch& batch = *this->view_->batch;
+		the_font.for_each_glyph(text,
+			[&](const Glyph& glyph, const Vector2F& pen)
+			{
+				const RECT subrect = to_rect(glyph.subrect);
+				const XMFLOAT2 glyph_origin{ origin.x - pen.x,
+					origin.y - (pen.y + glyph.y_offset) };
+
+				batch.Draw(atlas, screen_position, &subrect, colour, rotation,
+					glyph_origin, screen_scale, SpriteEffects_None,
+					layer_depth);
+			});
 	}
 
 	// --- Renderer::Impl ------------------------------------------------------

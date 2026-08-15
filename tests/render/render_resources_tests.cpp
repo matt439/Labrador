@@ -9,10 +9,10 @@ using artattack::RenderResources;
 
 TEST_CASE("the font queries read through the same handle contract as the rest")
 {
-	// Constructible with no device, which is what the pimpl seam bought and
-	// what makes this the only part of the font path testable headlessly. The
-	// substitution itself - a font that draws a question mark for a glyph it
-	// has not got - needs a real SpriteFont, and a SpriteFont needs a device.
+	// Constructible with no device, which is what the pimpl seam bought. This
+	// is the handle contract and nothing else: what a font ANSWERS is
+	// arithmetic and is asserted in font_tests.cpp, which needs no table
+	// either. What is left here is what only a table can get wrong.
 	RenderResources resources;
 
 	// An unresolved handle throws rather than reading slot zero, which is what
