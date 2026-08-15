@@ -158,6 +158,12 @@ namespace labrador
 		// reports at the first of them - which is where a caller pointing at
 		// the problem wants to point anyway, and is how the font will treat it
 		// when it draws.
+		//
+		// A LINE FEED IS NOT AN UNRENDERABLE CHARACTER. U+000A and U+000D lay
+		// text out rather than appearing in it, no atlas holds a glyph for
+		// either, and the pen walk answers both itself - so they are skipped
+		// here too. Asking the atlas about them condemned four strings that
+		// draw perfectly well, in the first client that ran this check.
 		bool can_render(FontHandle font, std::wstring_view text) const;
 		size_t first_unrenderable(FontHandle font,
 			std::wstring_view text) const;

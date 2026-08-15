@@ -237,6 +237,30 @@ TEST_CASE("a character with no glyph draws the stand-in")
 	CHECK(font.first_unrenderable(L"AB") == std::wstring_view::npos);
 }
 
+TEST_CASE("a newline is not an unrenderable character")
+{
+	const Font font = square_font();
+
+	// THE ATLAS HOLDS NO LINE FEED AND NEVER WILL. The walk answers U+000A
+	// and U+000D itself, before it looks anything up, so a query that asked
+	// the atlas about them reported every two-line string as unrenderable -
+	// which is the opposite of the truth and is how a client discovered this,
+	// by having its own content refused.
+	CHECK(font.first_unrenderable(L"AB\nAB") == std::wstring_view::npos);
+	CHECK(font.first_unrenderable(L"AB\r\nAB") == std::wstring_view::npos);
+	CHECK(font.first_unrenderable(L"\n") == std::wstring_view::npos);
+
+	// And the skip is a skip, not a stop: a character the font really has not
+	// got is still found, and still reports its own index in the whole
+	// string rather than an index into the run it sits in.
+	CHECK(font.first_unrenderable(L"AB\nAZ") == 4);
+
+	// The two the walk skips are exactly these two. Every other whitespace
+	// character is a glyph lookup like any other - a tab draws the stand-in,
+	// which is a thing to be seen and therefore a thing to report on.
+	CHECK(font.first_unrenderable(L"A\tB") == 1);
+}
+
 TEST_CASE("a line is at least as tall as the font says a line is")
 {
 	std::vector<Glyph> extra;

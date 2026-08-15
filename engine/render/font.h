@@ -90,7 +90,9 @@ namespace labrador
 		float line_spacing() const { return this->line_spacing_; }
 
 		// The glyph the font has for `character`, with no substitution, or
-		// nullptr. This is the question can_render asks.
+		// nullptr. This is the question can_render asks of every character
+		// that is looked up at all - which is every character but the two
+		// is_layout_control names.
 		const Glyph* find(char32_t character) const;
 
 		bool contains(char32_t character) const
@@ -117,6 +119,15 @@ namespace labrador
 		// Where the first character with no glyph of its own is, or
 		// std::wstring_view::npos. Per UTF-16 unit, so a character outside the
 		// basic plane is two and reports at the first of them.
+		//
+		// LAYOUT CONTROLS ARE NOT LOOKED UP, HERE OR ANYWHERE. No atlas holds
+		// a glyph for U+000A, because the walk below answers a line feed
+		// itself before it ever looks a character up. So a version of this
+		// that asked the atlas about one condemned every string with a
+		// newline in it - and a caller asking "will this string draw" about
+		// text it has laid out in two lines wants "yes", which is also the
+		// truth. A client found this by having all four of its weapon
+		// descriptions refused.
 		size_t first_unrenderable(std::wstring_view text) const;
 
 		// The pen walk both of the above and every draw_text share.
@@ -143,14 +154,16 @@ namespace labrador
 				const char32_t character =
 					static_cast<char32_t>(text[i]);
 
-				if (character == U'\r')
+				// Layout, not glyphs. Neither of the two is ever looked up,
+				// which is the fact first_unrenderable has to agree with -
+				// hence one definition of the set rather than two.
+				if (is_layout_control(character))
 				{
-					continue;
-				}
-				if (character == U'\n')
-				{
-					x = 0.0f;
-					y += this->line_spacing_;
+					if (character == U'\n')
+					{
+						x = 0.0f;
+						y += this->line_spacing_;
+					}
 					continue;
 				}
 
@@ -177,6 +190,15 @@ namespace labrador
 		}
 
 	private:
+		// The characters that position text rather than being drawn in it.
+		// The walk consumes both without a lookup, so no font is ever asked
+		// for a glyph for either, and nothing that reports on the atlas may
+		// ask about one.
+		static bool is_layout_control(char32_t character)
+		{
+			return character == U'\n' || character == U'\r';
+		}
+
 		// The whitespace the walk skips.
 		//
 		// SPELT OUT RATHER THAN ASKED OF <cwctype>. SpriteFont called iswspace,

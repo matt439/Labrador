@@ -139,7 +139,14 @@ namespace labrador
 	{
 		for (size_t i = 0; i < text.size(); i++)
 		{
-			if (this->find(static_cast<char32_t>(text[i])) == nullptr)
+			const char32_t character = static_cast<char32_t>(text[i]);
+
+			if (is_layout_control(character))
+			{
+				continue;
+			}
+
+			if (this->find(character) == nullptr)
 			{
 				return i;
 			}
