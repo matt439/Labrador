@@ -103,11 +103,36 @@ namespace artattack
 		// frame's list. See Renderer::set_view_count.
 		bool touched = false;
 
+		// Whether this frame's render target and viewport have been bound into
+		// this view's deferred context.
+		//
+		// A deferred context holds every command recorded into it until
+		// FinishCommandList takes them away, and binding is itself two recorded
+		// commands. So a context that is bound and never finished accumulates
+		// them for the life of the process - which is exactly what happened
+		// while begin_frame bound all sixteen and submit() finished the one the
+		// frame declared: 1,800 stranded commands a second, on the default
+		// configuration, growing without bound.
+		//
+		// Binding is therefore deferred to set_view_count, which is the first
+		// moment anyone knows which views this frame has, and submit() finishes
+		// every view that says yes here rather than every view the frame
+		// declared. The two sets differ when a caller lowers the count.
+		bool bound = false;
+
 		// A sprite batch cannot change its sampler mid-Begin, so a filter
 		// change is a flush and a reopen. Opening is deferred to the first
 		// draw so that a view nobody drew into never opens one at all.
 		void open_batch();
 		void close_batch();
+
+		// Records this frame's render target and viewport into the context, and
+		// tells the batch what to project against. Idempotent within a frame:
+		// the second call on a bound view does nothing, so a caller that
+		// declares its view count twice does not re-bind a viewport over the one
+		// set_viewport just chose.
+		void bind(ID3D11RenderTargetView* render_target,
+			const D3D11_VIEWPORT& viewport);
 
 		void reset();
 		ID3D11CommandList* finish();

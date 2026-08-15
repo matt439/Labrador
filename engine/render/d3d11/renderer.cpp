@@ -93,12 +93,27 @@ namespace artattack
 		this->batch_open = false;
 	}
 
+	void DrawList::View::bind(ID3D11RenderTargetView* render_target,
+		const D3D11_VIEWPORT& viewport)
+	{
+		if (this->bound)
+		{
+			return;
+		}
+
+		this->context->OMSetRenderTargets(1, &render_target, nullptr);
+		this->context->RSSetViewports(1, &viewport);
+		this->batch->SetViewport(viewport);
+		this->bound = true;
+	}
+
 	void DrawList::View::reset()
 	{
 		this->camera = Camera::DEFAULT_CAMERA;
 		this->filter = TextureFilter::point;
 		this->batch_open = false;
 		this->touched = false;
+		this->bound = false;
 	}
 
 	ID3D11CommandList* DrawList::View::finish()
@@ -257,6 +272,10 @@ namespace artattack
 			view->batch.reset();
 			view->context.Reset();
 			view->batch_open = false;
+			// The context that held the bind has gone with the device, so the
+			// next one starts unbound. Without this, set_view_count would skip
+			// binding a fresh context that has never been bound at all.
+			view->bound = false;
 		}
 		this->states.reset();
 
@@ -339,14 +358,21 @@ namespace artattack
 		context->RSSetViewports(1, &viewport);
 
 		// Every view records into its own deferred context, so each needs the
-		// same target and viewport bound before the frame fans out - and needs
-		// it again every frame, because submit() finishes each command list
-		// without restoring the context state.
+		// same target and viewport bound before it is drawn into - and needs it
+		// again every frame, because submit() finishes each command list without
+		// restoring the context state.
+		//
+		// THE BINDING IS NOT DONE HERE, and that is the fix rather than an
+		// optimisation. Binding is two commands recorded into a deferred
+		// context, and a deferred context holds what is recorded into it until
+		// FinishCommandList takes it away - so binding every view in the
+		// capacity while submit() finishes only the views the frame declared
+		// stranded two commands per idle view per frame, permanently. Nothing
+		// below this line touches a context; set_view_count binds the views the
+		// frame actually has, which is the first moment anybody knows what they
+		// are.
 		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
 		{
-			view->context->OMSetRenderTargets(1, &render_target, nullptr);
-			view->context->RSSetViewports(1, &viewport);
-			view->batch->SetViewport(viewport);
 			view->reset();
 		}
 
@@ -384,6 +410,20 @@ namespace artattack
 		}
 
 		this->impl_->view_count = count;
+
+		// Bind what the frame is going to draw into, and nothing else. Views
+		// already bound this frame are left alone, so declaring the count twice
+		// is free and does not overwrite a viewport set_viewport has since
+		// chosen. See DrawList::View::bound.
+		DeviceResources& device = this->impl_->device_resources;
+		ID3D11RenderTargetView* render_target = device.GetRenderTargetView();
+		const D3D11_VIEWPORT viewport = device.GetScreenViewport();
+
+		for (int i = 0; i < count; i++)
+		{
+			this->impl_->views[static_cast<size_t>(i)]->bind(render_target,
+				viewport);
+		}
 	}
 
 	int Renderer::view_count() const
@@ -412,11 +452,28 @@ namespace artattack
 		// in four places, each of which had to pre-size a vector, pre-fill it
 		// with null and Release every non-null entry. The lists are executed in
 		// view order, which is the only ordering guarantee the seam makes.
-		for (int i = 0; i < this->impl_->view_count; i++)
+		//
+		// EVERY BOUND VIEW IS FINISHED; ONLY THE DECLARED ONES ARE EXECUTED,
+		// and the two sets are not always the same one. Lowering the view count
+		// past a view that was bound and not drawn into is legal - set_view_count
+		// rejects only the ones that were drawn into - and that view's context
+		// is holding the bind. Finishing without executing is how a context is
+		// drained; skipping it is how commands accumulate for the life of the
+		// process.
+		const int capacity = static_cast<int>(this->impl_->views.size());
+		for (int i = 0; i < capacity; i++)
 		{
-			ID3D11CommandList* commands =
-				this->impl_->views[static_cast<size_t>(i)]->finish();
-			immediate->ExecuteCommandList(commands, FALSE);
+			DrawList::View& view = *this->impl_->views[static_cast<size_t>(i)];
+			if (!view.bound)
+			{
+				continue;
+			}
+
+			ID3D11CommandList* commands = view.finish();
+			if (i < this->impl_->view_count)
+			{
+				immediate->ExecuteCommandList(commands, FALSE);
+			}
 			commands->Release();
 		}
 	}
