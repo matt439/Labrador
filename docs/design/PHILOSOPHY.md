@@ -160,7 +160,10 @@ that built code meet library standard — contracts, tests, documentation —
 or it was not worth building.
 
 **Not a licence for:** rebuilding the platform edge. Build the mixer, buy
-the audio backend.
+the audio backend — and read that line carefully where drawing is concerned:
+the graphics API is bought, but the sprite batcher and the glyph atlas
+standing on it are the mixer, and a helper library that hands those over is
+supplying engine rather than platform.
 
 ### T10. One language over a scripting layer
 
@@ -391,16 +394,35 @@ engine API to depend on.
 - `update()` writes; `draw()` is `const` all the way down and receives what
   it needs as parameters. All state changes — animation selection included —
   happen in `update()`.
-- Objects draw through a renderer interface
-  (`draw_sprite(texture, src, dst, tint, rotation, origin, depth)`). The
-  D3D11/DirectXTK backend is one implementation behind it — the same seam
-  serves headless testing today and a second platform later.
+- Objects draw into a recording target the renderer hands out — a draw list,
+  not the renderer itself — which carries the camera, the viewport and the
+  filter, so that a draw names only what varies per draw
+  (`draw_sprite(texture, src, dst, tint, rotation, origin, flip, depth)`).
+- The renderer is a concrete class with one implementation chosen at build
+  time, not an interface with a vtable. A customisation point inside the loop
+  that draws thousands of sprites is the tax T8 refuses, and a compile-time
+  choice fails at link rather than at run time (T5). Promotion to an
+  interface is the escalation held in reserve, spent only when a client needs
+  two backends live in one process.
+- The seam has two clients and owes a backend to each: a headless one with no
+  device, and a second platform's. A seam with a single implementation behind
+  it is a shape that has been cut, not a claim that has been tested — the
+  headless backend is what tests the claim, which is why it is the one that
+  comes first.
 - Parallel rendering is sound because drawing is a pure read. The axis of
   parallelism is **views, not objects**: a worker owns one view and draws
   every object into it, so several workers enter `draw()` on the *same*
   object at the same time. Disjoint slices would make the pure read a
   convenience; view parallelism makes it the load-bearing guarantee, and
   `const draw()` is how the compiler holds new code to it.
+- The fan-out obliges the backend too, and the obligation is weaker than it
+  looks: a backend owes **one independently writable recording target per
+  view**, not concurrent GPU command generation. Workers share nothing — no
+  vertex arena, no state cache, no pipeline or sampler object created on
+  first use — and replay depends on view order alone, never on which worker
+  finished first. Those three terms are the whole of what the axis asks, and
+  a backend that meets them honours it whether it records into a command
+  stream or into memory.
 - Objects expose bounds; the scene culls. Visibility is not each object's
   job.
 
@@ -493,9 +515,12 @@ engine API to depend on.
 
 ### Tests and toolchain
 
-- Everything below the platform edge is testable headlessly, because the
-  boundary (targets) and the seams (renderer interface, parameterised draw)
-  make it linkable and constructible without a window.
+- Everything below the platform edge is testable headlessly. The boundary
+  (targets) and the seams (draw list, parameterised draw) are half of what
+  makes that true; the other half is an implementation behind each seam that
+  needs no device, because a seam with only the platform's own implementation
+  behind it still requires the platform in order to construct anything. A
+  seam ships with its headless implementation, or it has not shipped.
 - A new public primitive ships with behavioural tests in the same commit.
 - Warnings are errors with zero suppressions; the language standard is
   current; `const`, `noexcept` and `[[nodiscard]]` carry information the
