@@ -230,14 +230,16 @@ them, and a `std::vector<std::uint8_t>` is a complete match.
 
 ### Additive blending needs no engine change
 
-The engine looked as though it could not blend additively: `renderer.cpp` opens
-every batch with a null blend state and the word "blend" appears nowhere in
+The engine looked as though it could not blend additively: it opened every batch
+with a null blend state and the word "blend" appeared nowhere in
 `engine/render/`. That reading was wrong, and the correction matters because the
 whole visual pitch rests on it.
 
-DirectXTK substitutes `CommonStates::AlphaBlend()` for a null blend state, and
-that is `CreateBlendState(D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_ALPHA)` with
-`BlendOp = ADD` — **premultiplied** alpha, not straight alpha. The equation is
+DirectXTK substituted `CommonStates::AlphaBlend()` for a null blend state, which
+is `SrcBlend = ONE`, `DestBlend = INV_SRC_ALPHA`, `BlendOp = ADD` —
+**premultiplied** alpha, not straight alpha. The blend state is the engine's own
+now (`renderer.cpp`, one descriptor, and `RenderPixelTests` pins it), and it is
+those same three values, deliberately. The equation is
 `dst = src.rgb + dst.rgb * (1 - src.a)`, so a texel authored with `a = 0` and
 `rgb > 0` adds with no attenuation. Glow is an atlas decision, not an API gap.
 The same one state also expresses opaque drawing, a darkening vignette and a

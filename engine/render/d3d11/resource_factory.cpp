@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-using namespace DirectX;
 using Microsoft::WRL::ComPtr;
 
 namespace artattack

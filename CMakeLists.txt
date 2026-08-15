@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.26)
 project(Labrador LANGUAGES CXX)
 
 include(cmake/settings.cmake)
+include(cmake/compile_shaders.cmake)
 
 # The module graph, enforced. Runs on every build.
 #

@@ -116,7 +116,8 @@ being load-bearing.
 │   ├── core/               game loop, fixed-step timing, states, services,
 │   │                       registries, reading numbers out of a file
 │   ├── render/             the Renderer, cameras, viewports, colours, fonts
-│   │   └── d3d11/          the D3D11/DirectXTK backend, behind the Renderer
+│   │   └── d3d11/          the D3D11 backend, behind the Renderer: a device,
+│   │                       buffers, two shaders and four states
 │   ├── collision/          contacts, narrow phase, manifolds, resolution
 │   │                       (the pair sweep is still all-pairs; a broad
 │   │                       phase goes behind find_contacts)
@@ -242,7 +243,7 @@ already is (T5). That option is held, not spent.
 | `math` | nothing — and it links nothing, which is what makes this true |
 | `core` | math |
 | `collision` | core, math |
-| `render` | core, math — D3D11/DirectXTK inside `d3d11/` only |
+| `render` | core, math — D3D11 inside `d3d11/` only |
 | `scene` | core, math, collision, render |
 | `input` | core, math — XInput inside `xinput/` only |
 | `audio` | core, math — the audio backend at its edge only |

@@ -4,93 +4,195 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/sprite_geometry.h"
+#include "engine/render/sprite_vertex.h"
 
-#include <DirectXColors.h>
+// The shaders, as bytes this build compiled (cmake/compile_shaders.cmake).
+// Nothing is read from disk at run time and nothing is deployed beside the
+// executable.
+#include "engine/render/d3d11/sprite_pixel_shader.h"
+#include "engine/render/d3d11/sprite_vertex_shader.h"
+
+#include <cstddef>
+#include <cstring>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <tuple>
+#include <vector>
 
-using namespace DirectX;
 using namespace mattmath;
 
 namespace artattack
 {
 	namespace
 	{
-		// Where the engine's values become the backend's. Every one of these
-		// used to be a member of the mattmath type - Viewport::d3d_viewport(),
-		// RectangleF::win_rect(), Colour::xm_vector() - which is what put
-		// <d3d11.h> and SimpleMath.h in a library documented as depending on
-		// nothing. This file was their only caller, so this is where they go.
-		// A second backend writes its own four; it does not inherit these.
+		// Where the engine's values become the backend's. This used to be a
+		// member of the mattmath type - Viewport::d3d_viewport() - which is
+		// what put <d3d11.h> in a library documented as depending on nothing.
+		// This file was its only caller, so this is where it goes. A second
+		// backend writes its own; it does not inherit this.
 		D3D11_VIEWPORT to_d3d_viewport(const Viewport& viewport)
 		{
 			return { viewport.x, viewport.y, viewport.width, viewport.height,
 				viewport.minDepth, viewport.maxDepth };
 		}
 
-		RECT to_rect(const RectangleF& rectangle)
-		{
-			return { static_cast<long>(rectangle.left()),
-				static_cast<long>(rectangle.top()),
-				static_cast<long>(rectangle.right()),
-				static_cast<long>(rectangle.bottom()) };
-		}
+		// Four corners, two triangles, and the winding the corner order in
+		// sprite_geometry.h fixes.
+		const int VERTICES_PER_SPRITE = 4;
+		const int INDICES_PER_SPRITE = 6;
 
-		RECT to_rect(const RectangleI& rectangle)
+		// What the vertex shader's one constant buffer holds. Sixteen bytes,
+		// which is the smallest a constant buffer is allowed to be.
+		struct ViewportTransform
 		{
-			return { rectangle.left(), rectangle.top(),
-				rectangle.right(), rectangle.bottom() };
-		}
+			float x_scale = 0.0f;
+			float y_scale = 0.0f;
+			float x_offset = 0.0f;
+			float y_offset = 0.0f;
+		};
 
-		XMFLOAT2 to_xm(const Vector2F& vector)
+		// Pixels to clip space.
+		//
+		// THE ONE LINE WHERE Y RUNNING DOWN IS DECIDED. The seam's y increases
+		// down the screen and clip space's increases up, so the y scale is
+		// negative and the offset is +1 rather than -1. A second backend whose
+		// clip space matches this one writes the same four numbers; one whose
+		// framebuffer origin is at the bottom writes them differently, and this
+		// is the only place it has to.
+		//
+		// The viewport's position is not in it: the rasteriser already maps
+		// clip space onto the viewport rectangle, so a sprite at pixel (0,0)
+		// lands at the viewport's top left wherever that is on the back buffer.
+		ViewportTransform to_transform(const D3D11_VIEWPORT& viewport)
 		{
-			return { vector.x, vector.y };
-		}
-
-		XMVECTOR to_xm(const Colour& colour)
-		{
-			return XMVectorSet(colour.r, colour.g, colour.b, colour.a);
-		}
-
-		SpriteEffects to_sprite_effects(SpriteFlip flip)
-		{
-			switch (flip)
-			{
-			case SpriteFlip::horizontal: return SpriteEffects_FlipHorizontally;
-			case SpriteFlip::vertical:   return SpriteEffects_FlipVertically;
-			case SpriteFlip::both:       return SpriteEffects_FlipBoth;
-			case SpriteFlip::none:
-			default:                     return SpriteEffects_None;
-			}
+			ViewportTransform transform;
+			transform.x_scale =
+				viewport.Width > 0.0f ? 2.0f / viewport.Width : 0.0f;
+			transform.y_scale =
+				viewport.Height > 0.0f ? -2.0f / viewport.Height : 0.0f;
+			transform.x_offset = -1.0f;
+			transform.y_offset = 1.0f;
+			return transform;
 		}
 	}
 
 	// --- DrawList::View ------------------------------------------------------
 
-	// Opening is deferred to the first draw, so a view the scene declared and
-	// then drew nothing into never opens a batch at all - which is what makes
-	// declaring the capacity up front cheap.
-	void DrawList::View::open_batch()
+	// Nothing is recorded until a flush, so a view the scene declared and then
+	// drew nothing into records nothing at all - which is what makes declaring
+	// the capacity up front cheap.
+	void DrawList::View::draw(ID3D11ShaderResourceView* texture,
+		const SpriteVertex* corners)
 	{
-		if (this->batch_open)
+		// ONE TEXTURE PER DRAW CALL, so a run of sprites sharing one is one
+		// call and a change is a flush. That is the whole of the batching: the
+		// paint tiles of a level, the glyphs of a HUD line and the frames of a
+		// sheet each share a texture and each collapse into a single draw,
+		// which is why a scene with thousands of sprites has tens of calls.
+		if (texture != this->batch_texture ||
+			this->batch.size() >= static_cast<size_t>(MAX_BATCH_SPRITES) *
+				VERTICES_PER_SPRITE)
 		{
-			return;
+			this->flush();
+			this->batch_texture = texture;
 		}
-		this->batch->Begin(SpriteSortMode_Deferred, nullptr,
-			this->owner->sampler(this->filter));
-		this->batch_open = true;
+
+		this->batch.insert(this->batch.end(), corners,
+			corners + VERTICES_PER_SPRITE);
 		this->touched = true;
 	}
 
-	void DrawList::View::close_batch()
+	void DrawList::View::flush()
 	{
-		if (!this->batch_open)
+		if (this->batch.empty())
 		{
 			return;
 		}
-		this->batch->End();
-		this->batch_open = false;
+
+		const int sprites =
+			static_cast<int>(this->batch.size()) / VERTICES_PER_SPRITE;
+
+		// DISCARD ON A WRAP, NO_OVERWRITE OTHERWISE, and the distinction is
+		// what keeps a flush from stalling. NO_OVERWRITE promises the driver
+		// that nothing already queued reads the range about to be written, so
+		// it need not wait; DISCARD asks for fresh memory, which is the only
+		// honest answer once the buffer is full and the earlier ranges are
+		// still being read by draws recorded this frame.
+		D3D11_MAP how = D3D11_MAP_WRITE_NO_OVERWRITE;
+		if (this->buffer_position + sprites > MAX_BATCH_SPRITES)
+		{
+			this->buffer_position = 0;
+			how = D3D11_MAP_WRITE_DISCARD;
+		}
+		if (this->buffer_position == 0)
+		{
+			how = D3D11_MAP_WRITE_DISCARD;
+		}
+
+		D3D11_MAPPED_SUBRESOURCE mapped = {};
+		ThrowIfFailed(this->context->Map(this->vertices.Get(), 0, how, 0,
+			&mapped));
+		SpriteVertex* destination =
+			static_cast<SpriteVertex*>(mapped.pData) +
+			static_cast<size_t>(this->buffer_position) * VERTICES_PER_SPRITE;
+		std::memcpy(destination, this->batch.data(),
+			this->batch.size() * sizeof(SpriteVertex));
+		this->context->Unmap(this->vertices.Get(), 0);
+
+		Renderer::Impl& owner_impl = *this->owner;
+
+		const UINT stride = sizeof(SpriteVertex);
+		const UINT offset = 0;
+		ID3D11Buffer* vertex_buffer = this->vertices.Get();
+		ID3D11Buffer* constant_buffer = this->transform.Get();
+		ID3D11SamplerState* sampler = owner_impl.sampler(this->filter);
+		const float blend_factor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		// SET IN FULL ON EVERY FLUSH rather than once per view. A flush is
+		// already a draw call, these are a dozen more commands into the same
+		// deferred context, and the alternative is a rule about which of them
+		// survives a viewport change and which does not - which is the rule the
+		// four hand-written copies of this protocol used to disagree about.
+		this->context->IASetInputLayout(owner_impl.input_layout.Get());
+		this->context->IASetPrimitiveTopology(
+			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		this->context->IASetVertexBuffers(0, 1, &vertex_buffer, &stride,
+			&offset);
+		this->context->IASetIndexBuffer(owner_impl.indices.Get(),
+			DXGI_FORMAT_R16_UINT, 0);
+
+		this->context->VSSetShader(owner_impl.vertex_shader.Get(), nullptr, 0);
+		this->context->VSSetConstantBuffers(0, 1, &constant_buffer);
+
+		this->context->PSSetShader(owner_impl.pixel_shader.Get(), nullptr, 0);
+		this->context->PSSetShaderResources(0, 1, &this->batch_texture);
+		this->context->PSSetSamplers(0, 1, &sampler);
+
+		this->context->OMSetBlendState(owner_impl.blend.Get(), blend_factor,
+			0xFFFFFFFFu);
+		this->context->OMSetDepthStencilState(owner_impl.depth.Get(), 0);
+		this->context->RSSetState(owner_impl.rasterizer.Get());
+
+		this->context->DrawIndexed(
+			static_cast<UINT>(sprites * INDICES_PER_SPRITE),
+			static_cast<UINT>(this->buffer_position * INDICES_PER_SPRITE), 0);
+
+		this->buffer_position += sprites;
+		this->batch.clear();
+	}
+
+	void DrawList::View::set_transform(const D3D11_VIEWPORT& viewport)
+	{
+		const ViewportTransform values = to_transform(viewport);
+
+		D3D11_MAPPED_SUBRESOURCE mapped = {};
+		ThrowIfFailed(this->context->Map(this->transform.Get(), 0,
+			D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+		std::memcpy(mapped.pData, &values, sizeof(values));
+		this->context->Unmap(this->transform.Get(), 0);
 	}
 
 	void DrawList::View::bind(ID3D11RenderTargetView* render_target,
@@ -103,7 +205,7 @@ namespace artattack
 
 		this->context->OMSetRenderTargets(1, &render_target, nullptr);
 		this->context->RSSetViewports(1, &viewport);
-		this->batch->SetViewport(viewport);
+		this->set_transform(viewport);
 		this->bound = true;
 	}
 
@@ -111,14 +213,16 @@ namespace artattack
 	{
 		this->camera = Camera::DEFAULT_CAMERA;
 		this->filter = TextureFilter::point;
-		this->batch_open = false;
+		this->batch.clear();
+		this->batch_texture = nullptr;
+		this->buffer_position = 0;
 		this->touched = false;
 		this->bound = false;
 	}
 
 	ID3D11CommandList* DrawList::View::finish()
 	{
-		this->close_batch();
+		this->flush();
 
 		ID3D11CommandList* commands = nullptr;
 		// FALSE: the deferred context's state is not restored afterwards,
@@ -134,14 +238,16 @@ namespace artattack
 
 	void DrawList::set_viewport(const Viewport& viewport)
 	{
-		// Both, and in this order. RSSetViewports is what the rasteriser
-		// clips against; SetViewport is what SpriteBatch builds its projection
-		// from, and on a deferred context it cannot read the first back.
-		this->view_->close_batch();
+		// Both, and in this order. RSSetViewports is what the rasteriser clips
+		// against; the constant buffer is what the vertex shader projects with,
+		// and on a deferred context nothing can read the first one back to
+		// derive the second. Everything already recorded belongs to the old
+		// viewport, so it goes out first.
+		this->view_->flush();
 
 		const D3D11_VIEWPORT d3d_viewport = to_d3d_viewport(viewport);
 		this->view_->context->RSSetViewports(1, &d3d_viewport);
-		this->view_->batch->SetViewport(d3d_viewport);
+		this->view_->set_transform(d3d_viewport);
 	}
 
 	void DrawList::set_camera(const Camera& camera)
@@ -157,7 +263,9 @@ namespace artattack
 		{
 			return;
 		}
-		this->view_->close_batch();
+		// One sampler per draw call, so a change is a flush - which is why the
+		// seam says to group by filter if it matters.
+		this->view_->flush();
 		this->view_->filter = filter;
 	}
 
@@ -170,21 +278,24 @@ namespace artattack
 		SpriteFlip flip,
 		float layer_depth)
 	{
-		this->view_->open_batch();
+		// UNUSED, AND SAYING SO IS THE POINT. layer_depth orders nothing -
+		// RenderPixelTests pins that call order decides - and now that the
+		// sprite vertex has no z there is nowhere left for the value to go. It
+		// stays on the seam because the seam is what a client writes against
+		// and because a backend that ever does sort will want it; it does not
+		// stay in the vertex, where it was written and ignored.
+		std::ignore = layer_depth;
 
-		const RECT source_rect = to_rect(source);
-		const RECT destination_rect =
-			to_rect(this->view_->camera.calculate_view_rectangle(destination));
+		ID3D11ShaderResourceView* view =
+			this->view_->owner->resources->impl()->texture(texture);
 
-		this->view_->batch->Draw(
-			this->view_->owner->resources->impl()->texture(texture),
-			destination_rect,
-			&source_rect,
-			to_xm(tint),
-			rotation,
-			to_xm(origin),
-			to_sprite_effects(flip),
-			layer_depth);
+		SpriteVertex corners[4];
+		build_sprite_quad(
+			this->view_->camera.calculate_view_rectangle(destination),
+			source, Renderer::Impl::texture_size(view), tint, rotation, origin,
+			flip, corners);
+
+		this->view_->draw(view, corners);
 	}
 
 	void DrawList::draw_text(FontHandle font,
@@ -196,43 +307,42 @@ namespace artattack
 		const Vector2F& origin,
 		float layer_depth)
 	{
-		this->view_->open_batch();
+		std::ignore = layer_depth;
 
 		const RenderResources::Impl& resources =
 			*this->view_->owner->resources->impl();
 		const Font& the_font = *resources.font(font);
 
-		// A GLYPH IS A SPRITE, AND THAT IS THE WHOLE OF THIS FUNCTION. What
-		// used to be here was SpriteFont::DrawString, which walked its own
-		// glyph table and made exactly these calls. The walk is the engine's
-		// now (font.h) and what is left below is the part of it that names a
-		// batch - which is what a second backend has to write, and all it has
-		// to write, to draw text.
+		// A GLYPH IS A SPRITE, AND THAT IS THE WHOLE OF THIS FUNCTION. The walk
+		// is the engine's (font.h) and so is the quad (sprite_geometry.h); what
+		// is left here is resolving two handles and asking for one quad per
+		// glyph. A second backend writes this and nothing more to draw text.
 		ID3D11ShaderResourceView* atlas = resources.texture(the_font.atlas());
+		const Vector2F atlas_size = Renderer::Impl::texture_size(atlas);
 
-		const XMFLOAT2 screen_position = to_xm(
-			this->view_->camera.calculate_view_position(position));
-		const XMVECTOR colour = to_xm(tint);
+		const Vector2F screen_position =
+			this->view_->camera.calculate_view_position(position);
 		const float screen_scale =
 			this->view_->camera.calculate_view_scale(scale);
 
-		// THE POSITION FORM, NOT THE RECTANGLE FORM draw_sprite uses. A
-		// destination rectangle is truncated to whole pixels - RenderPixelTests
+		// THE SCALED FORM, NOT THE RECTANGLE FORM draw_sprite uses. A
+		// destination rectangle truncates to whole pixels - RenderPixelTests
 		// pins that - so a line of text laid out through one would jitter
-		// against its own advance, which is fractional in most fonts. Here the
-		// pen offset rides in the origin, in unscaled source texels, which is
-		// where the seam already says an origin is measured.
-		SpriteBatch& batch = *this->view_->batch;
+		// against its own advance, which is fractional in most fonts. The pen
+		// offset rides in the origin, in unscaled source texels, which is where
+		// the seam already says an origin is measured.
+		DrawList::View& view = *this->view_;
 		the_font.for_each_glyph(text,
 			[&](const Glyph& glyph, const Vector2F& pen)
 			{
-				const RECT subrect = to_rect(glyph.subrect);
-				const XMFLOAT2 glyph_origin{ origin.x - pen.x,
-					origin.y - (pen.y + glyph.y_offset) };
+				const Vector2F glyph_origin(origin.x - pen.x,
+					origin.y - (pen.y + glyph.y_offset));
 
-				batch.Draw(atlas, screen_position, &subrect, colour, rotation,
-					glyph_origin, screen_scale, SpriteEffects_None,
-					layer_depth);
+				SpriteVertex corners[4];
+				build_scaled_quad(screen_position, screen_scale, glyph.subrect,
+					atlas_size, tint, rotation, glyph_origin, corners);
+
+				view.draw(atlas, corners);
 			});
 	}
 
@@ -245,31 +355,165 @@ namespace artattack
 
 	ID3D11SamplerState* Renderer::Impl::sampler(TextureFilter filter) const
 	{
-		// Read out of the CommonStates every time rather than cached at
-		// construction. Two objects used to cache PointClamp() as a raw
-		// ID3D11SamplerState* and hold it across a device loss, which frees the
-		// CommonStates that owns it. The states object is remade with the
-		// device; asking it per batch is a member read.
+		// Held rather than demanded from a state cache, because there are two
+		// of them and they are made with the device. Two objects used to cache
+		// CommonStates::PointClamp() as a raw pointer and hold it across a
+		// device loss, which freed the CommonStates that owned it; these are
+		// remade in create_device_dependent_resources like everything else, and
+		// nothing outside this class ever holds one.
 		return filter == TextureFilter::linear
-			? this->states->LinearClamp()
-			: this->states->PointClamp();
+			? this->linear_sampler.Get()
+			: this->point_sampler.Get();
+	}
+
+	Vector2F Renderer::Impl::texture_size(ID3D11ShaderResourceView* texture)
+	{
+		// ASKED OF THE VIEW, EVERY DRAW. The alternative is a size cached
+		// beside each texture in the table, which is a second thing to keep
+		// right across a device loss for a value the runtime already holds -
+		// and this is two virtual calls into the runtime's own bookkeeping, not
+		// a GPU round trip. DirectXTK did exactly this, in the same place.
+		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
+		texture->GetResource(resource.GetAddressOf());
+
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture_2d;
+		ThrowIfFailed(resource.As(&texture_2d));
+
+		D3D11_TEXTURE2D_DESC description = {};
+		texture_2d->GetDesc(&description);
+		return Vector2F(static_cast<float>(description.Width),
+			static_cast<float>(description.Height));
 	}
 
 	void Renderer::Impl::create_device_dependent_resources()
 	{
 		ID3D11Device1* device = this->device_resources.GetD3DDevice();
-		this->states = std::make_unique<CommonStates>(device);
+
+		ThrowIfFailed(device->CreateVertexShader(SPRITE_VERTEX_SHADER,
+			sizeof(SPRITE_VERTEX_SHADER), nullptr,
+			this->vertex_shader.ReleaseAndGetAddressOf()));
+		ThrowIfFailed(device->CreatePixelShader(SPRITE_PIXEL_SHADER,
+			sizeof(SPRITE_PIXEL_SHADER), nullptr,
+			this->pixel_shader.ReleaseAndGetAddressOf()));
+
+		// The three fields of SpriteVertex, in the order the struct declares
+		// them - which sprite_vertex.h says is the one rule about that type.
+		const D3D11_INPUT_ELEMENT_DESC elements[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+				offsetof(SpriteVertex, position),
+				D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+				offsetof(SpriteVertex, colour),
+				D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+				offsetof(SpriteVertex, texcoord),
+				D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+		ThrowIfFailed(device->CreateInputLayout(elements,
+			static_cast<UINT>(std::size(elements)), SPRITE_VERTEX_SHADER,
+			sizeof(SPRITE_VERTEX_SHADER),
+			this->input_layout.ReleaseAndGetAddressOf()));
+
+		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
+		// RenderPixelTests calls this the term most likely to be got wrong,
+		// because both answers look plausible and every opaque sprite in both
+		// samples renders identically either way. It is four lines here and it
+		// is the whole difference.
+		D3D11_BLEND_DESC blend_description = {};
+		blend_description.RenderTarget[0].BlendEnable = TRUE;
+		blend_description.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+		blend_description.RenderTarget[0].DestBlend =
+			D3D11_BLEND_INV_SRC_ALPHA;
+		blend_description.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		blend_description.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		blend_description.RenderTarget[0].DestBlendAlpha =
+			D3D11_BLEND_INV_SRC_ALPHA;
+		blend_description.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		blend_description.RenderTarget[0].RenderTargetWriteMask =
+			D3D11_COLOR_WRITE_ENABLE_ALL;
+		ThrowIfFailed(device->CreateBlendState(&blend_description,
+			this->blend.ReleaseAndGetAddressOf()));
+
+		// No depth, because there is no depth buffer to test against.
+		D3D11_DEPTH_STENCIL_DESC depth_description = {};
+		depth_description.DepthEnable = FALSE;
+		depth_description.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		depth_description.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+		depth_description.StencilEnable = FALSE;
+		ThrowIfFailed(device->CreateDepthStencilState(&depth_description,
+			this->depth.ReleaseAndGetAddressOf()));
+
+		// NO CULLING, WHERE SpriteBatch CULLED BACK FACES. A sprite is a quad
+		// whose winding never changes: a flip mirrors the texture coordinates
+		// and leaves the corners where they were (sprite_geometry.cpp), so
+		// there is no back face to find. Culling nothing is one fewer thing for
+		// a second backend to match, and one fewer way for a quad to vanish.
+		D3D11_RASTERIZER_DESC rasterizer_description = {};
+		rasterizer_description.FillMode = D3D11_FILL_SOLID;
+		rasterizer_description.CullMode = D3D11_CULL_NONE;
+		rasterizer_description.DepthClipEnable = TRUE;
+		rasterizer_description.MultisampleEnable = TRUE;
+		ThrowIfFailed(device->CreateRasterizerState(&rasterizer_description,
+			this->rasterizer.ReleaseAndGetAddressOf()));
+
+		// Clamped, so a source rectangle at the edge of an atlas cannot bleed
+		// the far side of it into a sprite - which is what a sheet is full of.
+		D3D11_SAMPLER_DESC sampler_description = {};
+		sampler_description.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		sampler_description.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		sampler_description.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		sampler_description.MaxAnisotropy = 1;
+		sampler_description.MaxLOD = D3D11_FLOAT32_MAX;
+		sampler_description.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+		sampler_description.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		ThrowIfFailed(device->CreateSamplerState(&sampler_description,
+			this->point_sampler.ReleaseAndGetAddressOf()));
+
+		sampler_description.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		ThrowIfFailed(device->CreateSamplerState(&sampler_description,
+			this->linear_sampler.ReleaseAndGetAddressOf()));
+
+		// The index buffer, which is the same for every sprite there will ever
+		// be: two triangles over four corners, immutable, filled once.
+		std::vector<unsigned short> index_data;
+		index_data.reserve(static_cast<size_t>(DrawList::View::
+			MAX_BATCH_SPRITES) * INDICES_PER_SPRITE);
+		for (int sprite = 0; sprite < DrawList::View::MAX_BATCH_SPRITES;
+			sprite++)
+		{
+			const unsigned short first =
+				static_cast<unsigned short>(sprite * VERTICES_PER_SPRITE);
+			index_data.push_back(static_cast<unsigned short>(first + 0));
+			index_data.push_back(static_cast<unsigned short>(first + 1));
+			index_data.push_back(static_cast<unsigned short>(first + 2));
+			index_data.push_back(static_cast<unsigned short>(first + 1));
+			index_data.push_back(static_cast<unsigned short>(first + 3));
+			index_data.push_back(static_cast<unsigned short>(first + 2));
+		}
+
+		D3D11_BUFFER_DESC index_description = {};
+		index_description.ByteWidth = static_cast<UINT>(index_data.size() *
+			sizeof(unsigned short));
+		index_description.Usage = D3D11_USAGE_IMMUTABLE;
+		index_description.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+		D3D11_SUBRESOURCE_DATA index_initial = {};
+		index_initial.pSysMem = index_data.data();
+		ThrowIfFailed(device->CreateBuffer(&index_description, &index_initial,
+			this->indices.ReleaseAndGetAddressOf()));
 
 		// A context belongs to the device that made it, so both are remade
 		// here together - and the View objects themselves are not, because a
 		// DrawList a caller is holding must keep pointing at the same view.
 		//
-		// The context is created two lines above the SpriteBatch that records
-		// into it, which is the whole point of it living here. DeviceResources
-		// used to own a pool of them and this loop borrowed the i'th, so the
-		// ordering that made that work - rebuild the pool after the device and
-		// before OnDeviceRestored - was a rule spanning two classes with
-		// nowhere to write it down. Now there is no ordering to state.
+		// The context is created beside the buffers that record into it, which
+		// is the whole point of it living here. DeviceResources used to own a
+		// pool of them and this loop borrowed the i'th, so the ordering that
+		// made that work - rebuild the pool after the device and before
+		// OnDeviceRestored - was a rule spanning two classes with nowhere to
+		// write it down. Now there is no ordering to state.
 		//
 		// ReleaseAndGetAddressOf, not GetAddressOf: this function can run
 		// twice over the same views for one device loss, because
@@ -277,13 +521,30 @@ namespace artattack
 		// whose inner OnDeviceRestored has already been through here. The
 		// releasing form makes the second pass free the first pass's context
 		// instead of leaking one per view.
+		D3D11_BUFFER_DESC vertex_description = {};
+		vertex_description.ByteWidth = static_cast<UINT>(
+			static_cast<size_t>(DrawList::View::MAX_BATCH_SPRITES) *
+			VERTICES_PER_SPRITE * sizeof(SpriteVertex));
+		vertex_description.Usage = D3D11_USAGE_DYNAMIC;
+		vertex_description.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vertex_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+		D3D11_BUFFER_DESC transform_description = {};
+		transform_description.ByteWidth = sizeof(ViewportTransform);
+		transform_description.Usage = D3D11_USAGE_DYNAMIC;
+		transform_description.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		transform_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
 		for (std::unique_ptr<DrawList::View>& view_ptr : this->views)
 		{
 			DrawList::View& view = *view_ptr;
 			view.owner = this;
 			ThrowIfFailed(device->CreateDeferredContext(0,
 				view.context.ReleaseAndGetAddressOf()));
-			view.batch = std::make_unique<SpriteBatch>(view.context.Get());
+			ThrowIfFailed(device->CreateBuffer(&vertex_description, nullptr,
+				view.vertices.ReleaseAndGetAddressOf()));
+			ThrowIfFailed(device->CreateBuffer(&transform_description, nullptr,
+				view.transform.ReleaseAndGetAddressOf()));
 			view.reset();
 		}
 	}
@@ -292,15 +553,27 @@ namespace artattack
 	{
 		for (std::unique_ptr<DrawList::View>& view : this->views)
 		{
-			view->batch.reset();
+			view->vertices.Reset();
+			view->transform.Reset();
 			view->context.Reset();
-			view->batch_open = false;
+			view->batch.clear();
+			view->batch_texture = nullptr;
+			view->buffer_position = 0;
 			// The context that held the bind has gone with the device, so the
 			// next one starts unbound. Without this, set_view_count would skip
 			// binding a fresh context that has never been bound at all.
 			view->bound = false;
 		}
-		this->states.reset();
+
+		this->indices.Reset();
+		this->vertex_shader.Reset();
+		this->pixel_shader.Reset();
+		this->input_layout.Reset();
+		this->blend.Reset();
+		this->depth.Reset();
+		this->rasterizer.Reset();
+		this->point_sampler.Reset();
+		this->linear_sampler.Reset();
 
 		if (this->notify != nullptr)
 		{
@@ -376,7 +649,12 @@ namespace artattack
 		ID3D11RenderTargetView* render_target = device.GetRenderTargetView();
 		const D3D11_VIEWPORT viewport = device.GetScreenViewport();
 
-		context->ClearRenderTargetView(render_target, Colors::Black);
+		// Opaque black, spelt out. It was DirectX::Colors::Black, which is the
+		// last thing <DirectXColors.h> was in this file for - and the clear
+		// colour is a term RenderPixelTests pins, so it is worth being able to
+		// read it here rather than in a table of a hundred and forty names.
+		const float BLACK[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		context->ClearRenderTargetView(render_target, BLACK);
 		context->OMSetRenderTargets(1, &render_target, nullptr);
 		context->RSSetViewports(1, &viewport);
 

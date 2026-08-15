@@ -24,8 +24,11 @@ ctest --preset x64-debug
 ```
 
 `VCPKG_ROOT` must be set — `CMakePresets.json` reads it for the toolchain file
-and configuring fails without it. Ninja generator, out-of-source in
-`out/build/<preset>/`. Twelve ctest entries: `MattMathTests`, `CoreTests`,
+and configuring fails without it. `fxc` must be on `PATH` — the backend's two
+shaders are compiled at build time into byte arrays
+([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)), and configuring
+fails naming it if it is missing. Both come with the Visual Studio install.
+Ninja generator, out-of-source in `out/build/<preset>/`. Twelve ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
 `InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`
 (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
@@ -82,11 +85,20 @@ runs there with no window and no device. A rule is asserted rather than played.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
   A backend is three translation units — `renderer.cpp`,
-  `render_resources.cpp`, `resource_factory.cpp` — and all three live in
-  `render/<backend>/`. Nothing outside that folder includes the backend
-  header, the shell included: it hands its window handle to `create_device`
-  as a `void*`. `check_engine_includes.cmake` fails the build for a file that
-  reaches across, headers included.
+  `render_resources.cpp`, `resource_factory.cpp` — plus one shader, and all
+  four live in `render/<backend>/`. Nothing outside that folder includes the
+  backend header, the shell included: it hands its window handle to
+  `create_device` as a `void*`. `check_engine_includes.cmake` fails the build
+  for a file that reaches across, headers included.
+- **Nothing a backend does decides where a pixel goes.** The glyph walk
+  ([render/font.h](engine/render/font.h)), both file readers
+  ([dds_file.h](engine/render/dds_file.h),
+  [sprite_font_file.h](engine/render/sprite_font_file.h)) and the quad
+  arithmetic ([sprite_geometry.h](engine/render/sprite_geometry.h)) are engine
+  code, tested headlessly, shared by every backend. A backend supplies a
+  device, a texture from bytes, a vertex buffer, a shader and four state
+  objects. DirectXTK is no longer on the render path — it is still bought for
+  audio and the gamepad reader.
 - **A new public primitive ships with behavioural tests in the same commit.**
   Benchmarks assert on **complexity class**, not wall-clock — a phase linear in
   the object count must stay linear when the count quadruples, whatever the

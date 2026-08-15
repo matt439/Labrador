@@ -51,6 +51,7 @@ add_library(ArtAttackEngine STATIC
     render/resolution_manager.cpp
     render/sprite_font_file.cpp
     render/sprite_frame.cpp
+    render/sprite_geometry.cpp
     render/sprite_sheet.cpp
     render/sprite_sheet_object.cpp
     render/text.cpp
@@ -83,6 +84,24 @@ add_library(ArtAttackEngine STATIC
 # true when this repository is built standalone - a consumer builds it from a
 # tree that may well have a game/ in it.
 target_include_directories(ArtAttackEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+# The backend's two shaders, compiled to byte arrays this build writes and the
+# backend includes (cmake/compile_shaders.cmake). They are listed here and not
+# in a file of their own for the same reason every .cpp is: a source nobody
+# lists is a source nobody compiles.
+#
+# The generated headers land under engine/render/d3d11/ in the build tree, so
+# renderer.cpp includes them from the repository root like everything else -
+# and check_engine_includes.cmake's rule about who may include a backend header
+# reads exactly the same for a generated one.
+compile_hlsl(ArtAttackEngine
+    "${CMAKE_CURRENT_SOURCE_DIR}/render/d3d11/sprite.hlsl"
+    vs_4_0_level_9_1 vertex_main SPRITE_VERTEX_SHADER
+    "engine/render/d3d11/sprite_vertex_shader.h")
+compile_hlsl(ArtAttackEngine
+    "${CMAKE_CURRENT_SOURCE_DIR}/render/d3d11/sprite.hlsl"
+    ps_4_0_level_9_1 pixel_main SPRITE_PIXEL_SHADER
+    "engine/render/d3d11/sprite_pixel_shader.h")
 
 # rapidjson is PRIVATE and SYSTEM. It used to be PUBLIC, so a sample that
 # parses nothing still had a JSON parser's headers on its command line, and

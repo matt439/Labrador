@@ -26,10 +26,10 @@
 //   - T8 (PHILOSOPHY.md:136-148): a customisation point that taxes the frame
 //     loop is a customisation point that goes. A virtual draw_sprite is that
 //     tax in the module that draws thousands of paint tiles per frame, and it
-//     is a *new* tax: today's per-sprite cost is one out-of-line call into
-//     DirectXTK's SpriteBatch::Draw, and a direct call through this seam is
-//     the same shape. An indirect branch through a vtable, in that loop, is
-//     not.
+//     is a *new* tax: the per-sprite cost is one out-of-line call that builds
+//     four vertices and appends them to a batch, and a direct call through
+//     this seam is the same shape. An indirect branch through a vtable, in
+//     that loop, is not.
 //   - T5: a compile-time choice fails at link, not at run time. Asking for a
 //     backend that was not built is a missing symbol.
 //   - If a real client ever needs runtime selection, promoting a concrete
@@ -41,11 +41,10 @@
 // holds a raw pointer to per-view state the backend owns; each backend
 // defines Renderer::Impl and DrawList::View in its own translation unit under
 // engine/render/<backend>/. DrawList stays trivially copyable, so passing one
-// costs nothing, and the per-draw cost is a single out-of-line call - which is
-// what SpriteBatch::Draw already is.
+// costs nothing, and the per-draw cost is a single out-of-line call.
 //
 // WHAT IS DELIBERATELY ABSENT. No ID3D11* type, no DirectX:: type, no
-// SpriteBatch, no sampler-state pointer, no device accessor. Creating a
+// batch object, no sampler-state pointer, no device accessor. Creating a
 // texture from a file is a resource factory's job, not a renderer's, and
 // RenderResources already speaks in handles - so only the handle's payload
 // type changes when the backend does.
@@ -371,16 +370,20 @@ namespace artattack
 //    What the D3D11 implementation settled is the *shape* a second backend has
 //    to fill, and it is three translation units: renderer.cpp,
 //    render_resources.cpp and resource_factory.cpp, all three in
-//    engine/render/<backend>/. That shape keeps getting smaller. The glyph
-//    table, the pen, the .spritefont parser and the .dds parser were all inside
-//    DirectXTK and are now engine/render/font.*, sprite_font_file.* and
-//    dds_file.*, so what a backend owes for content is a texture from bytes
-//    (engine/render/texture_data.h) and one draw per glyph.
+//    engine/render/<backend>/, plus one shader compiled at build time.
 //
-//    WHAT IS LEFT OF DirectXTK ON THE RENDER PATH IS THE BATCH. SpriteBatch
-//    holds the vertex buffer, the shaders, the blend and sampler state, the
-//    pixels-to-clip transform and the quad arithmetic that turns a source
-//    rectangle, a destination, an origin, a rotation and a flip into four
-//    vertices - and that arithmetic is every term RenderPixelTests pins. It is
-//    the largest single thing a second backend would otherwise have to
-//    reproduce from the pixels outwards, and the last one.
+//    THAT SHAPE IS NOW AS SMALL AS IT IS GOING TO GET, and it is worth saying
+//    what is on which side of the line, because the answer stopped being
+//    obvious. Every decision that shows on screen is the engine's: which
+//    glyph goes where (font.h), what a .dds and a .spritefont say (dds_file.h,
+//    sprite_font_file.h), and where a sprite's four corners land and what they
+//    sample (sprite_geometry.h). What a backend supplies is a device, a
+//    texture from bytes (texture_data.h), a vertex buffer, a shader that
+//    multiplies by two constants, and the four state objects that make the
+//    blend premultiplied - and nothing it does can move a pixel that
+//    RenderPixelTests would not catch, because nothing it does decides where a
+//    pixel goes.
+//
+//    DirectXTK is no longer on the render path at all. It remains bought for
+//    audio and for the gamepad reader, which are seams of their own and are
+//    not this file's business.

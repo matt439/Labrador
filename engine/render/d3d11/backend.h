@@ -5,9 +5,8 @@
 #include "engine/render/font.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
+#include "engine/render/sprite_vertex.h"
 
-#include <CommonStates.h>
-#include <SpriteBatch.h>
 #include <wrl/client.h>
 
 #include <memory>
@@ -86,23 +85,60 @@ namespace artattack
 		Registry<SpriteSheet> sprite_sheets{ "SpriteSheet" };
 	};
 
-	// One view's recording state: a deferred context and the sprite batch that
-	// writes into it, plus the three things set_viewport / set_camera /
-	// set_filter remember between draws.
+	// One view's recording state: a deferred context, the buffers that feed it,
+	// and the three things set_viewport / set_camera / set_filter remember
+	// between draws.
 	//
 	// DrawList holds a pointer to one of these and nothing else, which is what
 	// makes a DrawList trivially copyable and free to pass.
+	//
+	// THE BUFFERS ARE PER VIEW BECAUSE THE CONTEXT IS. Several workers record
+	// at once, into their own deferred contexts, and a dynamic buffer being
+	// mapped by two of them at the same time is not a race that shows up as
+	// anything readable. One vertex buffer and one constant buffer each; the
+	// index buffer, the shaders and the states are shared, because nothing ever
+	// writes to those.
 	class DrawList::View
 	{
 	public:
+		// How many sprites one vertex buffer holds. DirectXTK's number, and
+		// arrived at the same way: 16-bit indices cap it at 16384 sprites, and
+		// a buffer of 2048 is 256KB of vertices per view - which is affordable
+		// on the low tier and large enough that the fill-and-flush path is not
+		// what a frame is spending its time on.
+		static const int MAX_BATCH_SPRITES = 2048;
+
 		Renderer::Impl* owner = nullptr;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
-		std::unique_ptr<DirectX::SpriteBatch> batch;
+
+		// Dynamic, MAX_BATCH_SPRITES * 4 vertices. Written by Map, never by
+		// UpdateSubresource: a deferred context records the copy either way,
+		// but DISCARD is what lets the driver hand back fresh memory instead of
+		// waiting for the last frame's draw to finish reading this one.
+		Microsoft::WRL::ComPtr<ID3D11Buffer> vertices;
+
+		// The pixels-to-clip transform the vertex shader multiplies by. Per
+		// view because a view has its own viewport, and set_viewport is allowed
+		// to change it mid-list.
+		Microsoft::WRL::ComPtr<ID3D11Buffer> transform;
+
+		// Where the next batch is written in `vertices`, in sprites. Wraps to
+		// zero when a batch will not fit, which is the moment DISCARD is asked
+		// for; anything else is a NO_OVERWRITE append.
+		int buffer_position = 0;
+
+		// The sprites recorded since the last flush, four corners each. Built
+		// on the CPU and copied in one go, because a Map per sprite is a
+		// round trip per sprite.
+		std::vector<SpriteVertex> batch;
+
+		// What `batch` is drawn with. A change to either is what a flush is
+		// for: one texture and one sampler per draw call.
+		ID3D11ShaderResourceView* batch_texture = nullptr;
 
 		// Reset at the top of every frame, not carried across one.
 		Camera camera = Camera::DEFAULT_CAMERA;
 		TextureFilter filter = TextureFilter::point;
-		bool batch_open = false;
 
 		// Whether anything has been recorded into this view this frame. It is
 		// what makes a dropped view detectable: a caller that declares four
@@ -128,26 +164,34 @@ namespace artattack
 		// declared. The two sets differ when a caller lowers the count.
 		bool bound = false;
 
-		// A sprite batch cannot change its sampler mid-Begin, so a filter
-		// change is a flush and a reopen. Opening is deferred to the first
-		// draw so that a view nobody drew into never opens one at all.
-		void open_batch();
-		void close_batch();
+		// Appends one sprite's four corners, flushing first if it cannot join
+		// what is already there - a different texture, or a full buffer.
+		void draw(ID3D11ShaderResourceView* texture,
+			const SpriteVertex* corners);
+
+		// Records one draw call for everything appended since the last flush,
+		// and nothing at all when nothing has been. Called on a texture change,
+		// on a filter or viewport change, and at the end of the view.
+		void flush();
 
 		// Records this frame's render target and viewport into the context, and
-		// tells the batch what to project against. Idempotent within a frame:
-		// the second call on a bound view does nothing, so a caller that
-		// declares its view count twice does not re-bind a viewport over the one
-		// set_viewport just chose.
+		// writes the transform they imply. Idempotent within a frame: the second
+		// call on a bound view does nothing, so a caller that declares its view
+		// count twice does not re-bind a viewport over the one set_viewport just
+		// chose.
 		void bind(ID3D11RenderTargetView* render_target,
 			const D3D11_VIEWPORT& viewport);
+
+		// Pixels to clip space for this viewport, into the constant buffer.
+		void set_transform(const D3D11_VIEWPORT& viewport);
 
 		void reset();
 		ID3D11CommandList* finish();
 	};
 
-	// The device, the swap chain, the views, and the sampler states - which is
-	// to say every D3D11 object with a lifetime longer than one draw.
+	// The device, the swap chain, the views, and everything a draw call needs
+	// that is the same for every draw call - which is to say every D3D11 object
+	// with a lifetime longer than one frame.
 	//
 	// It implements D3DDeviceNotify itself and forwards to the seam's
 	// DeviceNotify, so the game hears about a device loss without ever hearing
@@ -164,15 +208,37 @@ namespace artattack
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;
 
-		std::unique_ptr<DirectX::CommonStates> states;
+		// SHARED BY EVERY VIEW, because nothing writes to any of them. The
+		// index buffer is the one that would surprise somebody: it is the same
+		// two triangles per sprite for every sprite there will ever be, so it
+		// is filled once at device creation and never touched again.
+		Microsoft::WRL::ComPtr<ID3D11Buffer> indices;
+		Microsoft::WRL::ComPtr<ID3D11VertexShader> vertex_shader;
+		Microsoft::WRL::ComPtr<ID3D11PixelShader> pixel_shader;
+		Microsoft::WRL::ComPtr<ID3D11InputLayout> input_layout;
+
+		// The three states a sprite pass needs, and there are only three
+		// because it needs no more: premultiplied alpha, no depth at all, and
+		// no culling. This replaced DirectX::CommonStates, which offered
+		// twenty-odd and was asked for four.
+		Microsoft::WRL::ComPtr<ID3D11BlendState> blend;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depth;
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizer;
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> point_sampler;
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> linear_sampler;
 
 		const RenderResources* resources = nullptr;
 		artattack::DeviceNotify* notify = nullptr;
 
 		ID3D11SamplerState* sampler(TextureFilter filter) const;
 
-		// The sprite batches and the sampler states, which belong to the
-		// device and are remade with it.
+		// The size of a texture, in texels, for the geometry that turns a
+		// source rectangle into texture coordinates. Read off the view rather
+		// than remembered beside it, because the table stores views.
+		static mattmath::Vector2F texture_size(
+			ID3D11ShaderResourceView* texture);
+
+		// Everything above that belongs to the device, remade with it.
 		void create_device_dependent_resources();
 
 		void OnDeviceLost() override;

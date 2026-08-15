@@ -9,6 +9,7 @@ add_executable(RenderTests
     render_resources_tests.cpp
     resolution_manager_tests.cpp
     sprite_font_file_tests.cpp
+    sprite_geometry_tests.cpp
     text_encoding_tests.cpp
     viewport_manager_tests.cpp
     test_main.cpp

@@ -303,8 +303,8 @@ Tests link libraries, never `#include` implementation files.
 Platform-specific code — rendering backend, input devices, audio backend,
 windowing — lives at the edge behind engine-owned interfaces, so that a
 second platform is an addition, not a rewrite. Cross-platform is an eventual
-goal, not a current work item: today there is one backend (D3D11/DirectXTK,
-XInput), kept behind seams that don't presume it is the only one.
+goal, not a current work item: today there is one backend (D3D11, XInput),
+kept behind seams that don't presume it is the only one.
 
 ### The boundary
 
