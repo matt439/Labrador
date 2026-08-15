@@ -96,6 +96,28 @@ namespace mattmath
 
 		static Vector2F unit_vec_from_angle(float angle);
 
+		// `vec` turned by `angle` radians about the origin.
+		//
+		// Counter-clockwise in maths axes, which reads as clockwise on a
+		// screen where y grows downward - the same word that flips in
+		// cross()'s note above, and for the same reason. The sign is
+		// consistent either way.
+		//
+		// It is the general case of normal(), which is this at PI_OVER_2 and
+		// exact where this is not: cos(PI/2) is not zero in floating point,
+		// so rotating (1, 0) by a right angle lands a few ulps off the y
+		// axis. Where a right angle is what is wanted, want normal().
+		//
+		// THIS WAS DELETED ONCE AND CAME BACK. It went in the math review as
+		// a name with no caller, counted in this repository - where the count
+		// was right and the question was wrong. ColourWars called it twice,
+		// stopped compiling at the pin bump, and carried a byte-for-byte copy
+		// of this body for two weeks: a second definition of engine
+		// arithmetic, living outside the engine's tests. A 2D vector that
+		// answers angle(), unit_vec_from_angle() and normal() and cannot turn
+		// a vector has a hole in it, whoever happens to be calling today.
+		static Vector2F rotate_vector(const Vector2F& vec, float angle);
+
 		// Returns (1, 0) for a zero-length vector. See to_unit_vector().
 		static Vector2F unit_vector(const Vector2F& vec);
 		

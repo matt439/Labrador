@@ -123,4 +123,58 @@ TEST_SUITE("Vector2")
 		CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),
 			Vector2F(0.0f, 1.0f)) == doctest::Approx(PI_OVER_2));
 	}
+	TEST_CASE("rotate_vector turns a vector and keeps its length")
+	{
+		const Vector2F right(1.0f, 0.0f);
+
+		// A quarter turn takes +x to +y. That is counter-clockwise in maths
+		// axes and clockwise on screen, and the two call sites that wanted
+		// this back are screen-space ones.
+		const Vector2F quarter = Vector2F::rotate_vector(right, PI_OVER_2);
+		CHECK(quarter.x == doctest::Approx(0.0f));
+		CHECK(quarter.y == doctest::Approx(1.0f));
+
+		// Half a turn is the unary minus, and a full turn is identity - the
+		// two answers a caller can check without trusting the arithmetic.
+		const Vector2F v(3.0f, -4.0f);
+		const Vector2F half = Vector2F::rotate_vector(v, PI);
+		CHECK(half.x == doctest::Approx(-v.x));
+		CHECK(half.y == doctest::Approx(-v.y));
+
+		const Vector2F whole = Vector2F::rotate_vector(v, 2.0f * PI);
+		CHECK(whole.x == doctest::Approx(v.x));
+		CHECK(whole.y == doctest::Approx(v.y));
+
+		// Rotation is rigid: it moves a vector without stretching it, which
+		// is the property everything downstream of it assumes.
+		CHECK(Vector2F::rotate_vector(v, 0.7f).length()
+			== doctest::Approx(v.length()));
+
+		// Zero rotates to zero rather than inventing a direction, which is
+		// normalized()'s contract rather than to_unit_vector()'s and is what
+		// a caller rotating a rest velocity needs.
+		CHECK(Vector2F::rotate_vector(Vector2F::ZERO, 1.3f)
+			== Vector2F::ZERO);
+	}
+	TEST_CASE("rotate_vector is the general case of normal")
+	{
+		// normal() is a quarter turn and this is any turn, so they must agree
+		// at a quarter - to rounding, and only to rounding: cos(PI/2) is not
+		// exactly zero, which is why normal() is kept rather than folded into
+		// this and why the header says to prefer it at a right angle.
+		const Vector2F v(3.0f, -4.0f);
+		const Vector2F turned = Vector2F::rotate_vector(v, PI_OVER_2);
+
+		CHECK(turned.x == doctest::Approx(Vector2F::normal(v).x));
+		CHECK(turned.y == doctest::Approx(Vector2F::normal(v).y));
+
+		// And it composes with the other angle names: turning a unit vector
+		// built from an angle is the same as building one from the sum.
+		const Vector2F built = Vector2F::unit_vec_from_angle(0.4f);
+		const Vector2F sum = Vector2F::unit_vec_from_angle(0.4f + 0.9f);
+		CHECK(Vector2F::rotate_vector(built, 0.9f).x
+			== doctest::Approx(sum.x));
+		CHECK(Vector2F::rotate_vector(built, 0.9f).y
+			== doctest::Approx(sum.y));
+	}
 }

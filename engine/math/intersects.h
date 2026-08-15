@@ -2,6 +2,37 @@
 
 #include "engine/math/vector2f.h"
 
+// The pairwise intersection vocabulary: every shape in this module against
+// every other, as free functions.
+//
+// WHY IT IS HERE AT ALL, SETTLED ONCE. This table was measured as having no
+// caller outside this file and the tests - no engine, bench, sample or client
+// use - and put forward for deletion on that evidence, which would have taken
+// circle.{h,cpp} and three Ericson routines out with it, some 1,400 lines.
+// It is kept, and NOT because the count has since changed. The count is not
+// the question.
+//
+// The question is what a game does when it needs one of these. A 2D engine
+// whose client has to ask whether a segment crosses a rotated rectangle, and
+// write the answer itself, has pushed geometry across the boundary
+// (PHILOSOPHY, The boundary) - the game would be supplying mechanism, and a
+// second definition of engine arithmetic would live outside the engine's
+// tests, where the degenerate cases both review rounds worked on are not
+// checked. That has already happened once, to a vector rotation deleted the
+// same way and reinstated in vector2f.h. Every one of these is a predicate a
+// 2D game can reasonably want, so every one of them belongs here, at whatever
+// call count.
+//
+// The measurement itself did not survive either, which is worth recording
+// because it is the reason to distrust the next one: ColourWars now calls
+// rectangle_point_intersect, having moved onto it when a member it used was
+// deleted. Zero callers became one without a line of this file changing.
+//
+// The collision module's not adopting the table is a real observation and a
+// separate question. narrow_phase builds its own Polygon and runs its own
+// separating-axis test; whether it should instead be built on these is a
+// design question about the collision module, not evidence against this one.
+
 namespace mattmath
 {
 	struct RectangleF;

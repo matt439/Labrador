@@ -190,6 +190,14 @@ namespace mattmath
 	{
 		return Vector2F(std::cos(angle), std::sin(angle));
 	}
+	Vector2F Vector2F::rotate_vector(const Vector2F& vec, float angle)
+	{
+		const float cos_angle = std::cos(angle);
+		const float sin_angle = std::sin(angle);
+
+		return Vector2F(vec.x * cos_angle - vec.y * sin_angle,
+			vec.x * sin_angle + vec.y * cos_angle);
+	}
 	Vector2F Vector2F::unit_vector(const Vector2F& vec)
 	{
 		float length = vec.length();

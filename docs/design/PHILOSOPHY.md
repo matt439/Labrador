@@ -542,6 +542,23 @@ engine API to depend on.
 - Once the engine/game split lands and the API settles, releases are
   versioned and breaking changes are deliberate, batched and documented —
   not incidental.
+- **A public name is deleted on a caller count that says which
+  repositories were counted.** The clients live in their own repositories;
+  that is what the split is for. So `git grep` here answers "does anything
+  in the engine call this", which is a narrower question than the one a
+  deletion needs answered, and mistaking the two is how live client API
+  gets deleted — twice, in one afternoon, by the same reasoning. No build
+  step can close this: the engine cannot reach a repository that consumes
+  it, and should not learn how. It is therefore a discipline, which is why
+  it is written down. A count that cannot be taken is a reason to keep,
+  not a reason to guess.
+- **The same count does not settle a decision about what the library is
+  for.** A name with no caller today is evidence about today; a client can
+  adopt it tomorrow and did. Where a whole family of primitives is in
+  question, the argument has to be about whether a client would have to
+  write them itself — a predicate a game needs belongs in the engine, at
+  whatever count — and a decision resting on a measurement has to be
+  re-taken when the measurement moves, not re-cited.
 
 ### Tests and toolchain
 
