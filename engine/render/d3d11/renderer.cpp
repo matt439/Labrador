@@ -33,6 +33,7 @@ namespace labrador
 		// what put <d3d11.h> in a library documented as depending on nothing.
 		// This file was its only caller, so this is where it goes. A second
 		// backend writes its own; it does not inherit this.
+		//
 		// D3D11_VIEWPORT's four extent members are FLOAT and a fractional
 		// viewport is legal, so this backend could keep the fraction and the
 		// other one cannot. It does not, because then the two would disagree

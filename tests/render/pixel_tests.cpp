@@ -999,3 +999,51 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 	CHECK(harness.at(0, 0) == WHITE);
 	CHECK(harness.at(63, 63) == WHITE);
 }
+
+TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not ZERO")
+{
+	Harness harness;
+
+	DrawList list = harness.begin();
+
+	// An opaque white ground first. THE CASE ABOVE CANNOT DO THIS. It composites
+	// its one sprite over the cleared frame, which is black - and black times
+	// any destination factor is black, so ZERO and INV_SRC_ALPHA give the same
+	// answer there and the RGB destination factor is undistinguished by it. The
+	// alpha channel is pinned by that case; the colour channels were not pinned
+	// by anything.
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	// Then a half-alpha black scrim over it. Premultiplied, which for black
+	// means the colour channels are zero and stay zero however the alpha moves
+	// - so the source contributes nothing at all and every channel of the
+	// result comes from the destination through the factor under test. A tint
+	// of (1,1,1,0.5) would NOT do: it is not premultiplied, and the source term
+	// alone saturates the result to white.
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour(0.0f, 0.0f, 0.0f, 0.5f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.end();
+
+	const Pixel scrimmed = harness.at(8, 8);
+
+	// dst * (1 - 0.5) = mid grey. ZERO gives black and ONE gives white, so a
+	// range that excludes both settles the factor without pinning a rounding
+	// mode - 127 and 128 are both defensible for 0.5 * 255 and a driver is
+	// entitled to either.
+	CHECK(scrimmed.r > 100);
+	CHECK(scrimmed.r < 155);
+	CHECK(scrimmed.g == scrimmed.r);
+	CHECK(scrimmed.b == scrimmed.r);
+
+	// And the alpha is the term the case above already pins, restated here
+	// because a factor change that moved both would otherwise pass one test
+	// and fail neither.
+	CHECK(scrimmed.a == 255);
+
+	// A scrim is what samples/linesweeper draws over the board when the game
+	// is paused, so this is live behaviour and not a hypothetical.
+}
