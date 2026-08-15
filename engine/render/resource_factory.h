@@ -6,46 +6,39 @@ namespace artattack
 {
 	class Renderer;
 	class RenderResources;
+	struct TextureData;
 
 	// Builds the two resources that only exist on a device, and puts them in the
 	// table.
 	//
-	// WHY THE DECLARATIONS ARE HERE AND THE BODIES ARE IN render/<backend>/.
-	// Creating a texture from a file is a resource factory's job and not a
-	// renderer's - renderer.h says so, and a Renderer that could read a file
-	// would be a worse seam. But the factory is the one piece of that job whose
-	// every line names a graphics type, so it belongs to the backend even though
-	// none of its callers do.
+	// TWO OF THESE ARE THE ENGINE'S AND ONE IS THE BACKEND'S, and the line
+	// between them is the point of the file. Loading a texture is: work out the
+	// path, read the file, put the result in the table. Only the third step
+	// names a graphics type. So the first two are written once, in
+	// resource_factory.cpp, and a backend supplies add_texture_asset and
+	// nothing else - which is thirty lines and the whole of what a port owes
+	// for content.
 	//
-	// The bodies used to live in engine/assets/resource_loader.cpp, which made
-	// assets/ the home of a backend translation unit. That was written down and
-	// accepted. What was not written down is that it also put <d3d11_1.h> in
-	// engine/assets/resource_loader.h - which engine/app/application.h includes,
-	// which every state file in every client includes. The seam promises that
-	// reaching for the device is "a deliberate include of
-	// engine/render/<backend>/ and not something a game file can do by
-	// accident"; transitively it already was. This is what closes it.
+	// It was not always so. All of this lived in engine/assets/resource_loader.cpp,
+	// which made assets/ the home of a backend translation unit - and put
+	// <d3d11_1.h> in engine/assets/resource_loader.h, which engine/app/application.h
+	// includes, which every state file in every client includes. The seam promises
+	// that reaching for the device is "a deliberate include of
+	// engine/render/<backend>/ and not something a game file can do by accident";
+	// transitively it already was. Moving the whole factory to the backend closed
+	// that, and this splits the factory again now that only one line of it is
+	// actually the backend's.
 	//
 	// Nothing declared here names a graphics type, so a caller compiles against
-	// it with no backend header in scope. Each backend supplies its own
-	// definitions, and asking for a backend that was not built is a missing
-	// symbol at link rather than a failure at run time (T5).
+	// it with no backend header in scope. Asking for a backend that was not built
+	// is a missing symbol at link rather than a failure at run time (T5).
 	//
-	// THE FILE EXTENSION IS NOT A PARAMETER, AND IT HAS STOPPED BEING THE
-	// BACKEND'S. A kind owns its own file naming (resource_loader.h), and this
-	// used to say that ".dds" and ".spritefont" were what this backend could
-	// decode. They are not any more: both readers are engine/render/dds_file.*
-	// and engine/render/sprite_font_file.*, so both extensions are the
-	// engine's and every backend reads the same two files the same way.
-	//
-	// STILL OPEN, and worth doing when there is a second backend to measure it
-	// against: each function below is now a path, a reader and one backend
-	// call, so the only part a backend genuinely owns is the call. Having the
-	// backend supply create_texture(renderer, TextureData) and moving these two
-	// bodies out of engine/render/<backend>/ would halve what a port writes
-	// here. It is not done yet because what a backend supplies is about to be
-	// settled by a larger question - the sprite batch - and settling it twice
-	// would be worse than settling it late.
+	// THE FILE EXTENSION IS NOT A PARAMETER, AND IT IS NOT THE BACKEND'S. A kind
+	// owns its own file naming (resource_loader.h), and this used to say ".dds"
+	// and ".spritefont" were what a backend could decode. They are not: both
+	// readers are engine/render/dds_file.* and engine/render/sprite_font_file.*,
+	// so every backend reads the same two files the same way and neither
+	// extension appears in engine/render/<backend>/ at all.
 
 	// Loads the texture named by `directory` and `name` onto the renderer's
 	// device, and adds it to `resources` under `name`.
@@ -72,4 +65,18 @@ namespace artattack
 		RenderResources& resources,
 		const std::string& directory,
 		const std::string& name);
+
+	// THE ONE LINE OF ALL THIS THAT A BACKEND WRITES. Makes a texture on the
+	// renderer's device from bytes the engine has already decoded
+	// (engine/render/texture_data.h), and puts it in the table under `name`.
+	//
+	// Every caller is one of the two above, and both of them are engine code -
+	// so a client never sees this and a backend never sees a file. Throws
+	// std::runtime_error naming `name` and the format if the device will not
+	// take it, which is the answer a backend that cannot upload block
+	// compression owes rather than a blank texture.
+	void add_texture_asset(const Renderer& renderer,
+		RenderResources& resources,
+		const std::string& name,
+		const TextureData& texture);
 }

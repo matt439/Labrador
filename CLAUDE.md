@@ -85,7 +85,7 @@ runs there with no window and no device. A rule is asserted rather than played.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
   A backend is three translation units — `renderer.cpp`,
-  `render_resources.cpp`, `resource_factory.cpp` — plus one shader, and all
+  `render_resources.cpp`, `texture_factory.cpp` — plus one shader, and all
   four live in `render/<backend>/`. Nothing outside that folder includes the
   backend header, the shell included: it hands its window handle to
   `create_device` as a `void*`. `check_engine_includes.cmake` fails the build

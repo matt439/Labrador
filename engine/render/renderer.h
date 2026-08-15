@@ -369,8 +369,11 @@ namespace artattack
 //
 //    What the D3D11 implementation settled is the *shape* a second backend has
 //    to fill, and it is three translation units: renderer.cpp,
-//    render_resources.cpp and resource_factory.cpp, all three in
-//    engine/render/<backend>/, plus one shader compiled at build time.
+//    render_resources.cpp and texture_factory.cpp, all three in
+//    engine/render/<backend>/, plus one shader. The third is thirty lines: it
+//    turns already-decoded bytes into a texture and adds it to the table, and
+//    the path-building and file-reading that used to sit beside it are in
+//    engine/render/resource_factory.cpp, written once for everybody.
 //
 //    THAT SHAPE IS NOW AS SMALL AS IT IS GOING TO GET, and it is worth saying
 //    what is on which side of the line, because the answer stopped being
