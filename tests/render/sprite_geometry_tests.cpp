@@ -2,6 +2,7 @@
 
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/colour.h"
+#include "engine/render/font.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_vertex.h"
 #include "engine/math/rectanglef.h"
@@ -38,6 +39,18 @@ namespace
 	// The whole of a 16x16 texture, for the cases that are not about the
 	// source rectangle.
 	RectangleI whole() { return RectangleI(0, 0, 16, 16); }
+
+	// A glyph four texels by eight with the bearing the case is about. Four by
+	// eight rather than square so a term applied to the wrong axis shows as a
+	// wrong number and not as a coincidence.
+	Glyph bearing(float y_offset)
+	{
+		Glyph glyph;
+		glyph.character = U'A';
+		glyph.subrect = RectangleI(0, 0, 4, 8);
+		glyph.y_offset = y_offset;
+		return glyph;
+	}
 }
 
 TEST_CASE("CONTRACT: the corners are the destination's, in the fixed order")
@@ -240,4 +253,110 @@ TEST_CASE("a source rectangle with no area does not divide by nothing")
 		CHECK(std::isfinite(corners[i].position.x));
 		CHECK(std::isfinite(corners[i].position.y));
 	}
+}
+
+// --- the glyph form ---------------------------------------------------------
+//
+// THE TERM BELOW WAS PINNED BY NOTHING UNTIL THIS BLOCK EXISTED, and it was
+// pinned by nothing in a way worth writing down, because the obvious reading of
+// the test suite says otherwise. RenderPixelTests draws nine strings; every one
+// of them compares two ink boxes drawn by the same code, so a term added
+// equally to every glyph in both cancels out of the comparison. The one case
+// that measures against an absolute rectangle cannot fail either, because a
+// line is at least line_spacing tall and RectangleI::contains is inclusive, so
+// the ink has room to move inside its own promised box. The null backend's
+// record test compares 'A' against 'B', which in a real font carry the SAME
+// bearing. Deleting glyph.y_offset from any one backend therefore left every
+// configuration green - which is what put the arithmetic here.
+
+TEST_CASE("CONTRACT: a glyph's bearing lowers it, and scales with the text")
+{
+	SpriteVertex flush[4];
+	SpriteVertex dropped[4];
+
+	// Same pen, same everything, one bearing apart. So the difference between
+	// the two is the bearing and can be nothing else.
+	build_glyph_quad(Vector2F(100.0f, 200.0f), 3.0f, bearing(0.0f),
+		Vector2F(10.0f, 20.0f), TEXTURE, Colour::white, 0.0f, Vector2F::ZERO,
+		flush);
+	build_glyph_quad(Vector2F(100.0f, 200.0f), 3.0f, bearing(5.0f),
+		Vector2F(10.0f, 20.0f), TEXTURE, Colour::white, 0.0f, Vector2F::ZERO,
+		dropped);
+
+	// A BEARING IS IN UNSCALED SOURCE TEXELS LIKE EVERY OTHER ORIGIN TERM, so
+	// five texels at a scale of three is fifteen pixels and not five. This is
+	// the assertion that fails if the term is dropped from the quad, and the
+	// reason it is stated as a difference rather than as a position.
+	CHECK(dropped[0].position.y - flush[0].position.y ==
+		doctest::Approx(15.0f));
+
+	// Down, not up. The walk reports pen.y as the top of the LINE, and the
+	// bearing is how far below that top this particular glyph's cell begins -
+	// so a capital with a large bearing sits lower, not higher.
+	CHECK(dropped[0].position.y > flush[0].position.y);
+
+	// It is a y term alone. Nothing about a bearing moves a glyph sideways.
+	CHECK(dropped[0].position.x == doctest::Approx(flush[0].position.x));
+}
+
+TEST_CASE("CONTRACT: the pen places the glyph and the cell rides with it")
+{
+	SpriteVertex corners[4];
+	build_glyph_quad(Vector2F(100.0f, 200.0f), 3.0f, bearing(5.0f),
+		Vector2F(10.0f, 20.0f), TEXTURE, Colour::white, 0.0f, Vector2F::ZERO,
+		corners);
+
+	// The pen and the bearing are both scaled: x is 100 + 10*3, y is
+	// 200 + (20 + 5)*3. An implementation that scaled the cell but not the pen
+	// would pass every relative assertion in RenderPixelTests and fail here.
+	CHECK(corners[0].position.x == doctest::Approx(130.0f));
+	CHECK(corners[0].position.y == doctest::Approx(275.0f));
+
+	// And the cell is still the cell: four by eight source texels at three.
+	CHECK(corners[3].position.x - corners[0].position.x ==
+		doctest::Approx(12.0f));
+	CHECK(corners[3].position.y - corners[0].position.y ==
+		doctest::Approx(24.0f));
+}
+
+TEST_CASE("CONTRACT: the caller's origin is the string's, in unscaled texels")
+{
+	SpriteVertex at_zero[4];
+	SpriteVertex shifted[4];
+
+	build_glyph_quad(Vector2F(100.0f, 200.0f), 3.0f, bearing(5.0f),
+		Vector2F(10.0f, 20.0f), TEXTURE, Colour::white, 0.0f, Vector2F::ZERO,
+		at_zero);
+	build_glyph_quad(Vector2F(100.0f, 200.0f), 3.0f, bearing(5.0f),
+		Vector2F(10.0f, 20.0f), TEXTURE, Colour::white, 0.0f,
+		Vector2F(2.0f, 3.0f), shifted);
+
+	// An origin moves the string against its position, so it subtracts - and
+	// it is in the same unscaled source texels the pen and the bearing are, so
+	// two texels at a scale of three is six pixels. The whole reason the pen
+	// rides in the origin is that the two compose without a conversion; this
+	// is the case that says so.
+	CHECK(at_zero[0].position.x - shifted[0].position.x ==
+		doctest::Approx(6.0f));
+	CHECK(at_zero[0].position.y - shifted[0].position.y ==
+		doctest::Approx(9.0f));
+}
+
+TEST_CASE("CONTRACT: a rotated line turns about the string, not each glyph")
+{
+	SpriteVertex corners[4];
+	const float QUARTER_TURN = 1.57079633f;
+
+	build_glyph_quad(Vector2F(100.0f, 200.0f), 2.0f, bearing(0.0f),
+		Vector2F(10.0f, 0.0f), TEXTURE, Colour::white, QUARTER_TURN,
+		Vector2F::ZERO, corners);
+
+	// Ten texels along the pen at a scale of two is twenty pixels, and a
+	// quarter turn about the STRING'S position puts them below it rather than
+	// right of it. Baking the pen into the position instead of the origin -
+	// which is the obvious simplification, and reads identically at a rotation
+	// of zero - turns each glyph about its own cell and leaves this at
+	// (120, 200).
+	CHECK(corners[0].position.x == doctest::Approx(100.0f).epsilon(0.001));
+	CHECK(corners[0].position.y == doctest::Approx(220.0f).epsilon(0.001));
 }

@@ -231,12 +231,9 @@ namespace labrador
 		the_font.for_each_glyph(text,
 			[&](const Glyph& glyph, const Vector2F& pen)
 			{
-				const Vector2F glyph_origin(origin.x - pen.x,
-					origin.y - (pen.y + glyph.y_offset));
-
 				SpriteVertex corners[4];
-				build_scaled_quad(screen_position, screen_scale, glyph.subrect,
-					atlas_size, tint, rotation, glyph_origin, corners);
+				build_glyph_quad(screen_position, screen_scale, glyph, pen,
+					atlas_size, tint, rotation, origin, corners);
 
 				view.draw(atlas, corners);
 			});

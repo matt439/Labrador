@@ -149,4 +149,25 @@ namespace labrador
 		build_quad(position, size, source, texture_size, tint, rotation,
 			origin, SpriteFlip::none, corners);
 	}
+
+	void build_glyph_quad(const Vector2F& position,
+		float scale,
+		const Glyph& glyph,
+		const Vector2F& pen,
+		const Vector2F& texture_size,
+		const Colour& tint,
+		float rotation,
+		const Vector2F& origin,
+		SpriteVertex* corners)
+	{
+		// THE SCALED FORM, NOT THE RECTANGLE FORM. A destination rectangle
+		// truncates each of its edges to a whole pixel, so a line of text laid
+		// out through one would jitter against its own advance, which is
+		// fractional in most fonts.
+		const Vector2F glyph_origin(origin.x - pen.x,
+			origin.y - (pen.y + glyph.y_offset));
+
+		build_scaled_quad(position, scale, glyph.subrect, texture_size, tint,
+			rotation, glyph_origin, corners);
+	}
 }

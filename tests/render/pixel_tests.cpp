@@ -49,6 +49,17 @@
 // left bearing hanging off the start of its line - which no glyph in this
 // font has, so no assertion here can reach it.
 //
+// AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
+// Because the text cases below are relationships (see two paragraphs down), a
+// term added EQUALLY TO EVERY GLYPH cancels out of every one of them and this
+// file cannot see it at all. The glyph's vertical bearing is exactly such a
+// term: deleting it used to leave this file green on both real backends, the
+// null backend's record test green, and the samples merely a few pixels wrong.
+// It is pinned in tests/render/sprite_geometry_tests.cpp instead, as a
+// difference between two glyphs whose bearings differ - which is the shape an
+// absolute term has to be asked about, and which needs no device. Anything
+// else uniform across a line belongs there for the same reason.
+//
 // TEXT IS PINNED BY THE SECOND HALF OF THIS FILE, and it is pinned as
 // relationships rather than as colours. A sprite case above can assert that one
 // pixel is exactly RED because the test texture has four flat texels in it. A

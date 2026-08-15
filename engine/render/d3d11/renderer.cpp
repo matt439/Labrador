@@ -325,22 +325,17 @@ namespace labrador
 		const float screen_scale =
 			this->view_->camera.calculate_view_scale(scale);
 
-		// THE SCALED FORM, NOT THE RECTANGLE FORM draw_sprite uses. A
-		// destination rectangle truncates to whole pixels - RenderPixelTests
-		// pins that - so a line of text laid out through one would jitter
-		// against its own advance, which is fractional in most fonts. The pen
-		// offset rides in the origin, in unscaled source texels, which is where
-		// the seam already says an origin is measured.
+		// THE PEN AND THE BEARING ARE THE ENGINE'S TOO, and this backend no
+		// longer spells either of them. build_glyph_quad takes the glyph and
+		// the pen the walk reported and answers with four corners, so what is
+		// left here is resolving two handles and submitting.
 		DrawList::View& view = *this->view_;
 		the_font.for_each_glyph(text,
 			[&](const Glyph& glyph, const Vector2F& pen)
 			{
-				const Vector2F glyph_origin(origin.x - pen.x,
-					origin.y - (pen.y + glyph.y_offset));
-
 				SpriteVertex corners[4];
-				build_scaled_quad(screen_position, screen_scale, glyph.subrect,
-					atlas_size, tint, rotation, glyph_origin, corners);
+				build_glyph_quad(screen_position, screen_scale, glyph, pen,
+					atlas_size, tint, rotation, origin, corners);
 
 				view.draw(atlas, corners);
 			});

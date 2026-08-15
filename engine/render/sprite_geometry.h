@@ -4,6 +4,7 @@
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/colour.h"
+#include "engine/render/font.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_vertex.h"
 
@@ -64,6 +65,37 @@ namespace labrador
 	void build_scaled_quad(const mattmath::Vector2F& position,
 		float scale,
 		const mattmath::RectangleI& source,
+		const mattmath::Vector2F& texture_size,
+		const Colour& tint,
+		float rotation,
+		const mattmath::Vector2F& origin,
+		SpriteVertex* corners);
+
+	// One glyph of a line of text, at the pen the walk (font.h) reported.
+	//
+	// `position`, `scale`, `tint` and `rotation` are the whole string's, and
+	// `origin` is the caller's origin for the string - all four the same for
+	// every glyph in it. What varies per glyph is `glyph` and `pen`.
+	//
+	// THIS IS THE TERM THE WALK DELIBERATELY DOES NOT CARRY. for_each_glyph
+	// reports pen.y as the TOP OF THE LINE and leaves the glyph's own y_offset
+	// out, because measurement wants the line and drawing wants the bearing;
+	// this is where drawing adds it back. It lived in each backend's
+	// draw_text until it was written here, which meant three copies of the one
+	// line that decides how high a glyph sits, none of them reachable by a
+	// test - deleting it from any single copy left every configuration green,
+	// because the pixel contract's text cases compare two glyphs drawn by the
+	// same code and a term applied to both cancels out of the comparison.
+	//
+	// The pen subtracts because it moves the glyph and an origin moves the
+	// string: shifting the origin left by the pen puts the glyph right of the
+	// string's position by exactly the pen. Both are in unscaled source
+	// texels, which is what build_scaled_quad already means by an origin, so
+	// the two compose without a conversion.
+	void build_glyph_quad(const mattmath::Vector2F& position,
+		float scale,
+		const Glyph& glyph,
+		const mattmath::Vector2F& pen,
 		const mattmath::Vector2F& texture_size,
 		const Colour& tint,
 		float rotation,
