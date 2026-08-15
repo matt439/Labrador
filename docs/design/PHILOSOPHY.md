@@ -302,9 +302,35 @@ Tests link libraries, never `#include` implementation files.
 
 Platform-specific code — rendering backend, input devices, audio backend,
 windowing — lives at the edge behind engine-owned interfaces, so that a
-second platform is an addition, not a rewrite. Cross-platform is an eventual
-goal, not a current work item: today there is one backend (D3D11, XInput),
-kept behind seams that don't presume it is the only one.
+second platform is an addition, not a rewrite.
+
+This paragraph used to end "today there is one backend (D3D11, XInput), kept
+behind seams that don't presume it is the only one", and the amendment is
+worth stating rather than hiding. **There are two render backends now**:
+Direct3D 11 and OpenGL 3.3 core, selected by `ARTATTACK_RENDER_BACKEND` at
+configure time, both passing the same `RenderPixelTests`.
+
+That is not cross-platform arriving early, and it is not the speculative
+framework T1 rules out. The second backend was written for a reason a single
+one cannot supply: **a seam with one implementation behind it is a shape that
+has been cut, not a claim that has been tested.** Every argument this document
+makes about the edge — that a platform is an addition, that a concrete class
+costs nothing an interface would save, that the parallelism axis is views —
+was an assertion until something else stood behind the seam. Two of them were
+wrong in detail and the port is what found it: OpenGL has no deferred
+contexts, so a view records into memory rather than into a driver, and the
+seam turned out to admit that without changing a line above it.
+
+It also cost far less than it would have, because the four commits before it
+moved everything decision-bearing out of the backend first — the glyph walk,
+both file readers, the quad arithmetic. A backend is now a device, a texture
+from bytes, a buffer, a shader and four state objects, and **nothing a backend
+does decides where a pixel goes.** That is the property worth having, and it
+is only demonstrable with two.
+
+The GL backend still runs on Windows, through WGL and the same Win32 window.
+Cross-platform remains an eventual goal rather than a current work item: what
+has been removed is the doubt about whether the seam can carry one.
 
 ### The boundary
 
@@ -406,9 +432,11 @@ engine API to depend on.
   two backends live in one process.
 - The seam has two clients and owes a backend to each: a headless one with no
   device, and a second platform's. A seam with a single implementation behind
-  it is a shape that has been cut, not a claim that has been tested — the
-  headless backend is what tests the claim, which is why it is the one that
-  comes first.
+  it is a shape that has been cut, not a claim that has been tested. The
+  second platform's arrived first, and tested it: `render/gl/` is OpenGL 3.3
+  core, it passes the same `RenderPixelTests`, and writing it changed nothing
+  above the seam. The headless one is still owed — it is what would let the
+  drawing of a scene be asserted on a machine with no driver at all.
 - Parallel rendering is sound because drawing is a pure read. The axis of
   parallelism is **views, not objects**: a worker owns one view and draws
   every object into it, so several workers enter `draw()` on the *same*

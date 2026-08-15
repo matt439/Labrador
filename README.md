@@ -38,9 +38,11 @@ docs/                   the design documents, and the reviews that argued with t
 
 ## Building
 
-**Windows only.** The renderer's one backend is Direct3D 11, and the audio
-backend is XAudio2. The seam for a second backend exists
-(`engine/render/renderer.h`) and nothing has been written behind it.
+**Windows only.** The renderer has two backends — Direct3D 11 and OpenGL 3.3
+core — selected by `ARTATTACK_RENDER_BACKEND` at configure time and held to the
+same pixel tests. Both still run on Windows, through the same Win32 window: the
+second one exists to prove the seam carries a backend, not to reach a new
+platform. The audio backend is XAudio2 and has no second.
 
 ### Prerequisites
 
@@ -57,10 +59,16 @@ at configure time. rapidjson is vendored in `external/`.
 ### Configure, build, test
 
 ```
-cmake --preset x64-debug          # or x64-release
+cmake --preset x64-debug          # or x64-release, or x64-debug-gl
 cmake --build --preset x64-debug
 ctest --preset x64-debug
 ```
+
+`x64-debug-gl` is the same build against the OpenGL backend instead of the
+Direct3D 11 one. It is a separate configuration rather than a runtime switch
+because the backend is chosen at compile time (`ARTATTACK_RENDER_BACKEND`), so
+asking for one that was not built is a missing symbol at link rather than a
+failure on the first frame.
 
 The presets put the build in `out/build/<preset>/`. The sample lands at
 `out/build/x64-debug/samples/minimal/ArtAttackSample.exe` and runs from
@@ -158,9 +166,9 @@ each was wrong about. Those reviews were written while the paint-shooter was
 still in this tree, so findings filed against `game/` refer to code that now
 lives in ColourWars.
 
-Not done, and known: a second render backend (the seam is cut, nothing is
-behind it); a null backend for headless render tests; and an action-mapping
-layer over the input devices.
+Not done, and known: a null backend for headless render tests, which is what
+would let a scene's drawing be asserted on a machine with no graphics driver at
+all; and an action-mapping layer over the input devices.
 
 ## Licence
 

@@ -24,11 +24,19 @@ ctest --preset x64-debug
 ```
 
 `VCPKG_ROOT` must be set — `CMakePresets.json` reads it for the toolchain file
-and configuring fails without it. `fxc` must be on `PATH` — the backend's two
-shaders are compiled at build time into byte arrays
-([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)), and configuring
-fails naming it if it is missing. Both come with the Visual Studio install.
-Ninja generator, out-of-source in `out/build/<preset>/`. Twelve ctest entries: `MattMathTests`, `CoreTests`,
+and configuring fails without it. For the D3D11 backend `fxc` must also be on
+`PATH`, because its shader is compiled at build time into a byte array
+([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)); the GL backend
+compiles its GLSL at device creation and needs no tool. Both come with the
+Visual Studio install. Ninja generator, out-of-source in `out/build/<preset>/`.
+
+**There are two render backends.** `x64-debug` and `x64-release` build
+`render/d3d11/`; `x64-debug-gl` builds `render/gl/` — OpenGL 3.3 core, through
+WGL, on the same Win32 window. The choice is `ARTATTACK_RENDER_BACKEND` at
+configure time, so asking for one that was not built is a missing symbol at
+link (T5). **Both pass the same twelve ctest entries, `RenderPixelTests`
+included**, and a change to anything in `engine/render/` should be checked
+against both. Twelve ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
 `InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`
 (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
@@ -122,9 +130,9 @@ runs there with no window and no device. A rule is asserted rather than played.
 
 ## Known-absent, on purpose
 
-A second render backend (the seam is cut, nothing is behind it — though the
-pixel contract it must reproduce is now pinned by `RenderPixelTests`), a null backend
-for headless render tests, and an action-mapping layer over the input devices —
-neither client has a rebinding screen, so a binding table would be the
-speculative framework T1 rules out. Also permanently out of scope: online play,
+A null backend for headless render tests — `RenderPixelTests` needs a real
+driver on the GL side and falls back to WARP on the D3D11 one, and a null
+backend is what would let a scene's drawing be asserted with neither — and an
+action-mapping layer over the input devices; neither client has a rebinding
+screen, so a binding table would be the speculative framework T1 rules out. Also permanently out of scope: online play,
 3D, an editor, and a scripting layer.

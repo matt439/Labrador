@@ -15,12 +15,6 @@
 # and hands straight to CreateVertexShader. No file is read at run time and
 # nothing has to be deployed beside the executable.
 
-find_program(FXC_EXECUTABLE
-    NAMES fxc
-    DOC "The Direct3D shader compiler, from the Windows SDK"
-    REQUIRED
-)
-
 # compile_hlsl(<target> <source> <profile> <entry> <symbol> <output>)
 #
 # `symbol` is the name of the byte array in the generated header, and `output`
@@ -28,6 +22,15 @@ find_program(FXC_EXECUTABLE
 # includes it the way it includes anything else, from the repository root
 # (CONVENTIONS).
 function(compile_hlsl target source profile entry symbol output)
+    # Looked for here rather than when this file is included, so that a build
+    # of a backend that has no HLSL in it does not require a Direct3D shader
+    # compiler to be present. find_program caches, so the second call is free.
+    find_program(FXC_EXECUTABLE
+        NAMES fxc
+        DOC "The Direct3D shader compiler, from the Windows SDK"
+        REQUIRED
+    )
+
     set(generated_root "${CMAKE_BINARY_DIR}/generated")
     set(generated_file "${generated_root}/${output}")
 

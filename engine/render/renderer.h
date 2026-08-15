@@ -362,31 +362,43 @@ namespace artattack
 
 // STILL OPEN:
 //
-//  - The null backend's home and how CMake selects it. engine/render/null/
-//    linked into tests/render/, or an option on ArtAttackEngine. The first
-//    keeps one library configuration and is probably right. Until it exists,
-//    tests/render/ covers only the pure arithmetic it already covered.
+//  - The null backend. How CMake selects a backend is settled - the option is
+//    ARTATTACK_RENDER_BACKEND and a backend is a folder of three translation
+//    units - so adding engine/render/null/ is now a matter of writing it.
+//    What it buys that the two real ones do not: RenderPixelTests needs a
+//    driver on the GL side and WARP on the D3D11 one, and a null backend is
+//    what would let a scene's drawing be asserted with neither. It would
+//    record what it was asked to draw rather than drawing it, which the
+//    engine-side geometry makes cheap: the vertices are already built before
+//    a backend sees them.
 //
-//    What the D3D11 implementation settled is the *shape* a second backend has
-//    to fill, and it is three translation units: renderer.cpp,
-//    render_resources.cpp and texture_factory.cpp, all three in
-//    engine/render/<backend>/, plus one shader. The third is thirty lines: it
-//    turns already-decoded bytes into a texture and adds it to the table, and
-//    the path-building and file-reading that used to sit beside it are in
+// SETTLED, AND THIS FILE IS WHERE IT IS RECORDED:
+//
+//  - The shape of a backend is three translation units - renderer.cpp,
+//    render_resources.cpp and texture_factory.cpp, all in
+//    engine/render/<backend>/ - plus whatever that backend needs to build its
+//    shader. The third is thirty lines: it turns already-decoded bytes into a
+//    texture and adds it to the table. Path-building and file-reading are in
 //    engine/render/resource_factory.cpp, written once for everybody.
 //
-//    THAT SHAPE IS NOW AS SMALL AS IT IS GOING TO GET, and it is worth saying
-//    what is on which side of the line, because the answer stopped being
-//    obvious. Every decision that shows on screen is the engine's: which
-//    glyph goes where (font.h), what a .dds and a .spritefont say (dds_file.h,
-//    sprite_font_file.h), and where a sprite's four corners land and what they
-//    sample (sprite_geometry.h). What a backend supplies is a device, a
-//    texture from bytes (texture_data.h), a vertex buffer, a shader that
-//    multiplies by two constants, and the four state objects that make the
-//    blend premultiplied - and nothing it does can move a pixel that
-//    RenderPixelTests would not catch, because nothing it does decides where a
-//    pixel goes.
+//  - What is on which side of the line. Every decision that shows on screen is
+//    the engine's: which glyph goes where (font.h), what a .dds and a
+//    .spritefont say (dds_file.h, sprite_font_file.h), and where a sprite's
+//    four corners land and what they sample (sprite_geometry.h). What a
+//    backend supplies is a device, a texture from bytes (texture_data.h), a
+//    vertex buffer, a shader that multiplies by two constants, and the states
+//    that make the blend premultiplied. NOTHING A BACKEND DOES DECIDES WHERE A
+//    PIXEL GOES, which is what lets two of them pass the same 128 assertions.
 //
-//    DirectXTK is no longer on the render path at all. It remains bought for
+//  - The claim at the top of this file, that the seam serves "an eventual
+//    second platform", is no longer a claim. engine/render/gl/ is OpenGL 3.3
+//    core and passes RenderPixelTests, and writing it changed nothing above
+//    the seam. The one thing it found: OpenGL has no deferred contexts, so a
+//    view there records into memory and submit() replays it on the thread that
+//    owns the context. The seam admitted that without a word of it reaching a
+//    caller, because the unit of work is a view and a view's vertices are
+//    already built on the CPU before any backend sees them.
+//
+//  - DirectXTK is no longer on the render path at all. It remains bought for
 //    audio and for the gamepad reader, which are seams of their own and are
 //    not this file's business.

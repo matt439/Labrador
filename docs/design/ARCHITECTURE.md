@@ -52,7 +52,7 @@ flowchart TD
         math["MattMath"]
     end
     subgraph edge["the bought edge (T9)"]
-        sdks["platform SDKs<br/>D3D11 · DirectXTK · XInput"]
+        sdks["platform SDKs<br/>D3D11 or OpenGL · DirectXTK · XInput"]
         rapidjson["rapidjson"]
     end
     game --> engine
@@ -115,9 +115,14 @@ being load-bearing.
 │   │                       nothing: no DirectXTK, no D3D11, no Windows
 │   ├── core/               game loop, fixed-step timing, states, services,
 │   │                       registries, reading numbers out of a file
-│   ├── render/             the Renderer, cameras, viewports, colours, fonts
-│   │   └── d3d11/          the D3D11 backend, behind the Renderer: a device,
-│   │                       buffers, two shaders and four states
+│   ├── render/             the Renderer, cameras, viewports, colours, fonts,
+│   │   │                   the file readers and the quad arithmetic — every
+│   │   │                   decision that shows on screen
+│   │   ├── d3d11/          the D3D11 backend: a device, buffers, a shader
+│   │   │                   compiled by fxc at build time, four states
+│   │   └── gl/             the OpenGL 3.3 core backend: a WGL context, a
+│   │                       loader for the forty-one entry points it uses,
+│   │                       and the same shader in GLSL
 │   ├── collision/          contacts, narrow phase, manifolds, resolution
 │   │                       (the pair sweep is still all-pairs; a broad
 │   │                       phase goes behind find_contacts)
@@ -243,7 +248,7 @@ already is (T5). That option is held, not spent.
 | `math` | nothing — and it links nothing, which is what makes this true |
 | `core` | math |
 | `collision` | core, math |
-| `render` | core, math — D3D11 inside `d3d11/` only |
+| `render` | core, math — D3D11 inside `d3d11/`, OpenGL inside `gl/` |
 | `scene` | core, math, collision, render |
 | `input` | core, math — XInput inside `xinput/` only |
 | `audio` | core, math — the audio backend at its edge only |
@@ -292,12 +297,17 @@ reject what it read — an unknown colour name is a content mistake exactly
 like a missing key.
 
 **The backend is three translation units, and all three are in its folder.**
-A second backend supplies `renderer.cpp`, `render_resources.cpp` and
-`resource_factory.cpp`. The third is there because creating a texture from a
-file is the resource factory's job and not the renderer's — a `Renderer`
-that could load a file from disk would be a worse seam — while every line of
-that job names a graphics type, so it belongs to the backend even though
-none of its callers do. `assets/` declares which manifest entries become
+A backend supplies `renderer.cpp`, `render_resources.cpp` and
+`texture_factory.cpp`, plus whatever it needs to build its shader. The third
+is there because exactly one step of loading content names a graphics type —
+turning already-decoded bytes into a texture. Working out the path and reading
+the file are `render/resource_factory.cpp` and the readers beside it, written
+once for every backend.
+
+**There are two backends**, `render/d3d11/` and `render/gl/`, chosen by
+`ARTATTACK_RENDER_BACKEND` at configure time and both held to the same
+`RenderPixelTests`. Nothing outside either folder names it, which is what
+makes selection a list of files rather than a set of `#ifdef`s. `assets/` declares which manifest entries become
 textures and fonts and calls `render/resource_factory.h`, whose declarations
 name nothing a backend owns.
 
