@@ -25,10 +25,15 @@ ctest --preset x64-debug
 
 `VCPKG_ROOT` must be set — `CMakePresets.json` reads it for the toolchain file
 and configuring fails without it. Ninja generator, out-of-source in
-`out/build/<preset>/`. Ten ctest entries: `MattMathTests`, `CoreTests`,
+`out/build/<preset>/`. Eleven ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `InputTests`, `UiTests`,
-`AssetsTests`, `AppTests` (doctest) and `Benchmarks`. The sample lands at
-`out/build/x64-debug/samples/minimal/ArtAttackSample.exe`.
+`AssetsTests`, `AppTests`, `LineSweeperTests` (doctest) and `Benchmarks`. The
+samples land at `out/build/x64-debug/samples/minimal/ArtAttackSample.exe` and
+`out/build/x64-debug/samples/linesweeper/LineSweeperSample.exe`.
+
+`LineSweeperTests` links no engine at all — the sample's rules are a static
+library that links only `artattack_settings` — so the whole falling-block game
+runs there with no window and no device. A rule is asserted rather than played.
 
 ## What will fail the build
 

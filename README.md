@@ -22,8 +22,8 @@ behind it.
 
 ```
 engine/    ~17k lines   the engine: ten modules with a fixed dependency direction
-samples/   ~770 lines   two clients: minimal, the template you copy; linesweeper, the game you read
-tests/     331 cases    doctest, nine targets, run by ctest
+samples/   ~2.1k lines  two clients: minimal, the template you copy; linesweeper, the game you read
+tests/     350 cases    doctest, ten targets, run by ctest
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 ```

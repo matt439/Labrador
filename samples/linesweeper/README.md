@@ -10,9 +10,12 @@ are three of them, and this is not a fourth: everything here is a choice about
 one sample, made under those three. Where a decision below is really an engine
 commitment, it says so and names the document it belongs in.
 
-**Status: stub.** The wiring, the layering and the world value exist. The rules
-do not yet — `rules/tick.h` is the next commit, and nothing is drawn from the
-world until after that.
+**Status: the rules are in; nothing draws them yet.** `rules/` is the whole
+game — the seven-bag deal, the gravity curve, the wall kicks, lock delay, hold,
+hard drop, T-spins and scoring — and `tests/linesweeper/` plays it with no
+window, no device and no engine linked into the binary. What does not exist is
+`presentation/`: the sample still draws two labels, and putting a well on the
+screen is the next commit.
 
 ## What it is
 
@@ -108,6 +111,71 @@ than decorative. Nothing in the engine pins it — `ApplicationOptions::validate
 only checks it is positive — so a game that sets 120 runs at half speed with no
 error anywhere. The line carries a comment saying so.
 
+### The tuning numbers are compiled in, and CONVENTIONS says they should not be
+
+> A header full of numeric constants is usually tuning data in the wrong place
+> — *which* and *how much* belong in JSON (T7).
+
+`rules/tables.h` is a header full of numeric constants: fifteen gravity rates,
+four timings, three score tables and eighty wall-kick offsets. The exception it
+claims is the wall the layer is built on. `rules/` links no engine, so it has no
+JSON parser, no asset system and no file access — and even if it had, a rule set
+that could be edited from disk would be a rule set a recording could not be
+replayed against. A match is only reproducible against the tables it was played
+on, so the tables change by commit.
+
+That is a real cost and it is worth naming: retuning the shift delay is a
+rebuild, not an edit. It buys a replay that is a `std::vector<std::uint8_t>` and
+nothing else.
+
+### The shapes are one formula; only the kicks are a transcription
+
+A clockwise turn inside a box of side *n* takes the cell at (x, y) to
+(n − 1 − y, x). Seven spawn rows and that line generate all twenty-eight
+states, and four `static_assert`s check the result against published pictures.
+The alternative — twenty-eight hand-typed matrices — is twenty-eight chances to
+put one square in the wrong place, and nobody checks all of them.
+
+It also turns the O piece's standing invariant into a structural fact rather
+than an asserted one. O's box is **two** wide, and on a box of side two the
+formula maps the four cells onto themselves; the obvious three-wide box slides
+the piece a column every turn.
+
+The kick table gets the opposite treatment, because it is data and not a rule:
+it is written out in the convention the sources print it in, y positive
+**upward**, so a reader can hold the file beside the published table and compare
+rows without arithmetic. One `constexpr` function flips the sign of y on the way
+into the tables the code reads, and two asserts fire if that flip is ever
+deleted.
+
+### The random source is a counter, so a snapshot restores the deal
+
+`World::rng` is a SplitMix32 *position*, not a register: the field is
+incremented by a constant and the bits come from mixing it. Two consequences,
+and the second is the one that mattered.
+
+A snapshot restores the piece that was coming next, for free, because the
+position travelled with the copy. And zero is a legal seed — an xorshift, which
+is the obvious thing to reach for, is stuck at zero forever from a zero state,
+so `World{}` would have dealt no pieces at all. A default value that cannot
+start a game is not the value semantics this sample is arguing for.
+
+### The padding assert priced a rule out, and the rule changed
+
+The guideline returns a piece's fifteen lock-delay resets when it reaches a row
+lower than any it has occupied. That needs one byte of low-water mark, and one
+byte is what `World` cannot afford: at 276 bytes the value has no padding at
+all, and 277 would be padded up to 280 —
+`has_unique_object_representations_v` fails, `memcmp` stops being a defined
+comparison, and the replay test loses its footing. **New state in this
+simulation costs four bytes or nothing.**
+
+So the resets come back on any downward move instead. The difference is a player
+who kicks a piece upward and lets it fall to farm resets, which costs them more
+lock delay than it buys. That is an assert doing design work rather than
+checking it, and it is the clearest thing in the sample about what a value
+semantics commitment actually feels like from the inside.
+
 ### T-spins are in, and they pay for the kick tables
 
 T-spins were initially cut: about seventy lines, plus the only cross-verb state
@@ -177,5 +245,16 @@ which is why this genre was chosen over the alternatives.
   such measurement exists. Until one does, no number in this repository should
   be described as a floor.
 - **Whether the layer rule gets a build check.** `cmake/check_engine_includes.cmake`
-  is the model. It is not worth writing while `rules/` is one header and one
-  translation unit.
+  is the model, and the case for it is stronger than it was: `rules/` is now
+  three headers and three translation units, and the half of the rule that
+  matters — presentation/ may include `world.h` and `tables.h` but not
+  `tick.h` — has nothing to enforce it because `presentation/` does not exist
+  yet. Write the check with the first file that goes in there, not before.
+
+- **Whether the input map belongs in the sample or the engine.** Turning a key
+  into one of `tick.h`'s `button_` bits is `states/`' job and is not written
+  yet. The engine deliberately has no action-mapping layer (CLAUDE.md,
+  Known-absent), and a sample with no rebinding screen is not the second client
+  that would justify one — so the expectation is a short chain of `if`s in
+  `play_state.cpp` and no new engine module. Recorded so that "add an InputMap"
+  has to meet an argument.

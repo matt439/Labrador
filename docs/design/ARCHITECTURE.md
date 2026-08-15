@@ -151,13 +151,14 @@ being load-bearing.
 │                           states/ is the only place that includes both
 │                           rules/ and engine/. Its own README records the
 │                           decisions behind it
-├── tests/                  one folder per module under test
-│   ├── app/
+├── tests/                  one folder per module under test, plus the one
+│   ├── app/                sample that has rules to assert on
 │   ├── assets/
 │   ├── collision/
 │   ├── core/
 │   ├── input/
-│   ├── math/
+│   ├── linesweeper/        the falling-block game, played headless: this
+│   ├── math/               target links LineSweeperRules and no engine
 │   ├── render/
 │   ├── scene/
 │   └── ui/

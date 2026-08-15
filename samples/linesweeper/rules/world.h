@@ -47,6 +47,15 @@ namespace linesweeper
 	// object model).
 	inline constexpr std::uint8_t cell_empty = 0;
 
+	// What World::shift_direction holds: which way the player is currently
+	// leaning, which is not the same question as which buttons are down. It
+	// survives a tick, so it is a field rather than a local, and it is spelt
+	// out here beside cell_empty because both are encodings of a byte in the
+	// value below and a reader of that byte has to be able to find them.
+	inline constexpr std::uint8_t shift_none = 0;
+	inline constexpr std::uint8_t shift_left = 1;
+	inline constexpr std::uint8_t shift_right = 2;
+
 	// The seven pieces, in the order the bag shuffles them.
 	enum class Kind : std::uint8_t
 	{
@@ -55,6 +64,22 @@ namespace linesweeper
 	};
 	inline constexpr int kind_count = 7;
 
+	// Four cells to a piece and four ways up, which is the genre's whole
+	// premise and the two bounds every loop over a piece stops at.
+	inline constexpr int piece_cell_count = 4;
+	inline constexpr int rotation_count = 4;
+
+	// A cell of the well, or the offset between two cells.
+	//
+	// Signed bytes for the reason Piece's x and y are, below: half the kick
+	// table is negative, and a piece's box legitimately hangs off the left of
+	// column zero in the middle of a kick test.
+	struct Coord
+	{
+		std::int8_t x = 0;
+		std::int8_t y = 0;
+	};
+
 	// Where a piece is and which way up. Four bytes.
 	//
 	// x and y are SIGNED because both legitimately go negative: a piece kicks
@@ -62,6 +87,12 @@ namespace linesweeper
 	// row is above the well's origin. An unsigned coordinate here turns the
 	// most common off-by-one in the whole rule set into a wrap that silently
 	// reads the far side of the board.
+	//
+	// x and y locate the piece's bounding BOX, not one of its cells: the box
+	// is four wide for I, two for O and three for the rest, and rotation turns
+	// the cells inside it without moving it. That is the representation the
+	// published kick tables are written against, so it is the one that makes
+	// them transcribable (tables.h).
 	struct Piece
 	{
 		Kind kind = Kind::none;
@@ -101,9 +132,10 @@ namespace linesweeper
 		std::uint8_t topped_out = 0;
 		// T-spin detection needs to know that the piece arrived by rotating
 		// rather than by moving or dropping, and the kick that got it there -
-		// the last two kick offsets are the ones that force a full T-spin
-		// rather than a mini. Nothing else in the rules reads these, and they
-		// are the only cross-verb state in the simulation.
+		// the last offset in the table is the one that promotes a mini T-spin
+		// to a full one, because it is the only one no sequence of moves could
+		// have walked. Nothing else in the rules reads these, and they are the
+		// only cross-verb state in the simulation.
 		std::uint8_t last_action_rotation = 0;
 		std::uint8_t last_kick_index = 0;
 		std::uint8_t input = 0;
@@ -173,4 +205,32 @@ namespace linesweeper
 	{
 		return y * well_columns + x;
 	}
+
+	// Whether a cell is inside the well at all. Every read of `cells` goes
+	// through this or is unreachable, because a kick test's whole job is to
+	// ask about squares that are not there.
+	constexpr bool in_well(int x, int y)
+	{
+		return x >= 0 && x < well_columns && y >= 0 && y < well_rows;
+	}
+
+	// THE THREE QUESTIONS THE PRESENTATION MAY ALSO ASK.
+	//
+	// These are pure reads of a World, and they are declared here rather than
+	// in tick.h because presentation/ draws the falling piece and the shadow
+	// under it and may not include a verb (README, Three layers). Their
+	// definitions are in tables.cpp, beside the shape table all three read.
+	//
+	// The ceiling is hard: a cell above row 0 is blocked, exactly as a cell
+	// left of column 0 is. Two buffer rows is not the twenty a full guideline
+	// well has, so a kick that would lift a piece clean out of the top fails
+	// here instead of writing outside the array.
+	std::array<Coord, piece_cell_count> piece_cells(const Piece& piece);
+	bool blocked(const World& world, const Piece& piece);
+
+	// Where a hard drop would put the current piece. The same value the
+	// shadow is drawn at, which is the point: the outline the player aims with
+	// and the square the piece lands on are one function, so they cannot
+	// disagree.
+	Piece shadow(const World& world);
 }

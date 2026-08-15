@@ -14,6 +14,8 @@ find_package(directxtk CONFIG REQUIRED)
 # ARCHITECTURE gives for MattMath being one: when a wall has to be load-bearing
 # rather than a convention, the escalation is cheap and it is this.
 add_library(LineSweeperRules STATIC
+    rules/tables.cpp
+    rules/tick.cpp
     rules/world.cpp
 )
 target_link_libraries(LineSweeperRules PUBLIC
