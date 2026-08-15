@@ -27,7 +27,7 @@
 
 namespace
 {
-	using namespace artattack;
+	using namespace labrador;
 	using namespace mattmath;
 
 	// A texture big enough that a source rectangle inside it gives texture

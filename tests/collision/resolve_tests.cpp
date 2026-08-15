@@ -7,9 +7,9 @@
 #include <limits>
 #include <stdexcept>
 
-using artattack::separation;
-using artattack::separation_along;
-using artattack::slide;
+using labrador::separation;
+using labrador::separation_along;
+using labrador::slide;
 using mattmath::Vector2F;
 
 TEST_CASE("separation moves against the normal, by the penetration")

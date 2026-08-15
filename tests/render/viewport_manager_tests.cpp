@@ -7,10 +7,10 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2i.h"
 
-using artattack::ResolutionManager;
-using artattack::ScreenLayout;
-using artattack::ViewportManager;
-using artattack::Viewport;
+using labrador::ResolutionManager;
+using labrador::ScreenLayout;
+using labrador::ViewportManager;
+using labrador::Viewport;
 
 namespace
 {
@@ -19,7 +19,7 @@ namespace
 	ResolutionManager default_resolution()
 	{
 		ResolutionManager manager;
-		manager.set_resolution(artattack::ScreenResolution::s_1280_720);
+		manager.set_resolution(labrador::ScreenResolution::s_1280_720);
 		return manager;
 	}
 

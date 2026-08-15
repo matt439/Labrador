@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
-using artattack::Renderer;
-using artattack::State;
-using artattack::StateContext;
+using labrador::Renderer;
+using labrador::State;
+using labrador::StateContext;
 
 namespace
 {

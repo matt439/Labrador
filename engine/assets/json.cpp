@@ -9,7 +9,7 @@
 #include <string>
 #include <utility>
 
-namespace artattack
+namespace labrador
 {
 	struct JsonDocument::Impl
 	{

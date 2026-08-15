@@ -3,7 +3,7 @@
 #include "engine/render/sprite_sheet.h"
 #include <memory>
 
-namespace artattack
+namespace labrador
 {
 	// Reads the sheet definition at `json_path` and builds a SpriteSheet
 	// drawing from `texture`. The frame and animation-strip tables are decoded

@@ -3,7 +3,7 @@
 #include "engine/input/gamepad.h"
 #include "engine/input/gamepad_reader.h"
 
-namespace artattack
+namespace labrador
 {
 	// Every pad, this frame and last, and the edges between them.
 	//

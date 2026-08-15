@@ -5,9 +5,9 @@ add_executable(AppTests
     test_main.cpp
 )
 target_link_libraries(AppTests PRIVATE
-    ArtAttackEngine
+    LabradorEngine
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 add_test(NAME AppTests COMMAND AppTests)

@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	Gamepads::Gamepads(GamepadReader* reader) :
 		reader_(reader)
@@ -52,33 +52,33 @@ namespace artattack
 
 	bool Gamepads::pressed(int slot, GamepadButton button) const
 	{
-		return artattack::pressed(this->state(slot),
+		return labrador::pressed(this->state(slot),
 			this->previous_state(slot), button);
 	}
 
 	bool Gamepads::released(int slot, GamepadButton button) const
 	{
-		return artattack::released(this->state(slot),
+		return labrador::released(this->state(slot),
 			this->previous_state(slot), button);
 	}
 
 	bool Gamepads::trigger_held(int slot, GamepadTrigger trigger,
 		float threshold) const
 	{
-		return artattack::trigger_held(this->state(slot), trigger, threshold);
+		return labrador::trigger_held(this->state(slot), trigger, threshold);
 	}
 
 	bool Gamepads::trigger_pressed(int slot, GamepadTrigger trigger,
 		float threshold) const
 	{
-		return artattack::trigger_pressed(this->state(slot),
+		return labrador::trigger_pressed(this->state(slot),
 			this->previous_state(slot), trigger, threshold);
 	}
 
 	bool Gamepads::trigger_released(int slot, GamepadTrigger trigger,
 		float threshold) const
 	{
-		return artattack::trigger_released(this->state(slot),
+		return labrador::trigger_released(this->state(slot),
 			this->previous_state(slot), trigger, threshold);
 	}
 
@@ -89,13 +89,13 @@ namespace artattack
 
 	bool Gamepads::just_connected(int slot) const
 	{
-		return artattack::just_connected(this->state(slot),
+		return labrador::just_connected(this->state(slot),
 			this->previous_state(slot));
 	}
 
 	bool Gamepads::just_disconnected(int slot) const
 	{
-		return artattack::just_disconnected(this->state(slot),
+		return labrador::just_disconnected(this->state(slot),
 			this->previous_state(slot));
 	}
 }

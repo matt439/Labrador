@@ -15,7 +15,7 @@
 // The renderer seam.
 //
 // WHAT THE SEAM IS FOR. Two things, and only two: headless tests, and an
-// eventual second platform. Before this file, nine of ArtAttackEngine's
+// eventual second platform. Before this file, nine of LabradorEngine's
 // translation units were untestable on one include - <SpriteBatch.h> at the
 // top of engine/core/game_object.h - which is why tests/ has an assets, a
 // core, a math, a collision and a ui folder and had no render one. Neither
@@ -49,7 +49,7 @@
 // RenderResources already speaks in handles - so only the handle's payload
 // type changes when the backend does.
 
-namespace artattack
+namespace labrador
 {
 	// The table a DrawList resolves handles against. Declared, not included:
 	// render_resources.h includes this file, for the handle types below.

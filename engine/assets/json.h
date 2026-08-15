@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	class JsonDocument;
 

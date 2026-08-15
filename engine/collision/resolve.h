@@ -2,7 +2,7 @@
 
 #include "engine/math/vector2f.h"
 
-namespace artattack
+namespace labrador
 {
 	// The smallest translation that moves an object out of a contact.
 	//

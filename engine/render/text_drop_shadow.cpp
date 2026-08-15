@@ -5,7 +5,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	TextDropShadow::TextDropShadow(const std::wstring& text,
 		const std::string& font_name,

@@ -2,7 +2,7 @@
 
 #include "engine/assets/asset_manifest.h"
 
-namespace artattack
+namespace labrador
 {
 	// Reads the manifest at `json_path`.
 	//

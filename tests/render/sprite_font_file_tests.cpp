@@ -26,10 +26,10 @@
 
 namespace
 {
-	using artattack::Glyph;
-	using artattack::SpriteFontFile;
-	using artattack::TextureFormat;
-	using artattack::read_sprite_font_file;
+	using labrador::Glyph;
+	using labrador::SpriteFontFile;
+	using labrador::TextureFormat;
+	using labrador::read_sprite_font_file;
 
 	const char* FONT_PATH = "./content/courier_new_bold_16.spritefont";
 

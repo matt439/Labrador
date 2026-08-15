@@ -4,7 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
-using namespace artattack;
+using namespace labrador;
 
 namespace
 {
@@ -17,7 +17,7 @@ namespace
 		explicit TempManifest(const std::string& contents)
 		{
 			this->path_ = std::filesystem::temp_directory_path() /
-				("artattack_manifest_test_" + std::to_string(next_id()) +
+				("labrador_manifest_test_" + std::to_string(next_id()) +
 					".json");
 
 			std::ofstream file(this->path_, std::ios::binary);

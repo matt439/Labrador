@@ -5,9 +5,9 @@ add_executable(SceneTests
     test_main.cpp
 )
 target_link_libraries(SceneTests PRIVATE
-    ArtAttackEngine
+    LabradorEngine
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 add_test(NAME SceneTests COMMAND SceneTests)

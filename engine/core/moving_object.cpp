@@ -2,7 +2,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	MovingObject::MovingObject(const Vector2F& velocity, float rotation) :
 		velocity_(velocity),

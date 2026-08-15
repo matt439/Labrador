@@ -5,7 +5,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 
-namespace artattack
+namespace labrador
 {
     class CameraTools
     {

@@ -5,7 +5,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
     ResolutionManager::ResolutionManager()
     {

@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// Named elements stored by value, resolved to handles once and then read by
 	// index. The same names-in, handles-out bargain as Registry, for the case

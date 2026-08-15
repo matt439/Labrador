@@ -2,7 +2,7 @@
 
 #include <memory>
 
-namespace artattack
+namespace labrador
 {
     ThreadPool::ThreadPool(int min_num_threads, int max_num_threads) :
         min_num_threads_(min_num_threads),

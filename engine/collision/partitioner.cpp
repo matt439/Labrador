@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	std::vector<std::pair<int, int>> Partitioner::partition(int num_elements, int num_partitions) const
 	{

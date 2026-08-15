@@ -7,9 +7,9 @@ add_executable(CoreTests
     test_main.cpp
 )
 target_link_libraries(CoreTests PRIVATE
-    ArtAttackEngine
+    LabradorEngine
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 add_test(NAME CoreTests COMMAND CoreTests)

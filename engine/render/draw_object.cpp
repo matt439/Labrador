@@ -4,7 +4,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	DrawObject::DrawObject(RenderResources* render_resources,
 		const Colour& color,

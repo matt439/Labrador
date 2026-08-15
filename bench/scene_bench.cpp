@@ -10,13 +10,13 @@
 #include <memory>
 #include <vector>
 
-using artattack::CollisionLayer;
-using artattack::CollisionMask;
-using artattack::CollisionObject;
-using artattack::CollisionTag;
-using artattack::Contact;
-using artattack::GameObject;
-using artattack::Scene;
+using labrador::CollisionLayer;
+using labrador::CollisionMask;
+using labrador::CollisionObject;
+using labrador::CollisionTag;
+using labrador::Contact;
+using labrador::GameObject;
+using labrador::Scene;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
 
@@ -49,7 +49,7 @@ namespace
 		}
 
 		void update(float dt) override { this->age_ += dt; }
-		void draw(artattack::DrawList& /*list*/) const override {}
+		void draw(labrador::DrawList& /*list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
 	private:
@@ -67,7 +67,7 @@ namespace
 		}
 
 		void update(float dt) override { this->age_ += dt; }
-		void draw(artattack::DrawList& /*list*/) const override {}
+		void draw(labrador::DrawList& /*list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
 		const mattmath::Shape* shape() const override

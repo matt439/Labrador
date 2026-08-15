@@ -23,7 +23,7 @@
 // backend runs on a build machine, in a container, and on a runner with no
 // display. That is what makes it the configuration CI can run completely.
 
-namespace artattack
+namespace labrador
 {
 	// A texture that is a size and nothing else.
 	//
@@ -108,6 +108,6 @@ namespace artattack
 		std::vector<RecordedSprite> recorded;
 
 		const RenderResources* resources = nullptr;
-		artattack::DeviceNotify* notify = nullptr;
+		labrador::DeviceNotify* notify = nullptr;
 	};
 }

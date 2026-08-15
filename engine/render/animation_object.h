@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// A playing animation out of a sprite sheet.
 	//

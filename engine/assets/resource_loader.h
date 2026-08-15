@@ -9,7 +9,7 @@
 #include <map>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// Turns a manifest into loaded resources, and does it again when the GPU
 	// throws the first set away.

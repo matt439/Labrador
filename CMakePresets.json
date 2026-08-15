@@ -29,7 +29,7 @@
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "ARTATTACK_RENDER_BACKEND": "gl"
+        "LABRADOR_RENDER_BACKEND": "gl"
       }
     },
     {
@@ -38,7 +38,7 @@
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "ARTATTACK_RENDER_BACKEND": "null"
+        "LABRADOR_RENDER_BACKEND": "null"
       }
     }
   ],

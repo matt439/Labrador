@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	AudioResources::SoundBankHandle AudioResources::resolve_sound_bank(
 		const std::string& sound_bank_name) const

@@ -3,7 +3,7 @@
 #include "engine/math/vector2f.h"
 
 #include <initializer_list>
-using namespace artattack;
+using namespace labrador;
 
 namespace
 {

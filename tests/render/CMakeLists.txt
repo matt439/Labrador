@@ -15,9 +15,9 @@ add_executable(RenderTests
     test_main.cpp
 )
 target_link_libraries(RenderTests PRIVATE
-    ArtAttackEngine
+    LabradorEngine
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 # The same content, for the same reason, and it is new here: a font stopped
@@ -37,7 +37,7 @@ add_custom_command(TARGET RenderTests POST_BUILD
 # when that one is built - which is the same rule a client lives under and is
 # why this is a source list and not an #ifdef. RenderTests is otherwise
 # identical in every configuration.
-if(ARTATTACK_RENDER_BACKEND STREQUAL "null")
+if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(RenderTests PRIVATE null_tests.cpp)
 endif()
 
@@ -58,15 +58,15 @@ add_test(NAME RenderTests COMMAND RenderTests)
 # throws saying so - and a test that cannot pass is better absent than skipped,
 # because a skipped test is a line in a log nobody reads and a missing one is a
 # question somebody asks.
-if(NOT ARTATTACK_RENDER_BACKEND STREQUAL "null")
+if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     add_executable(RenderPixelTests
         pixel_tests.cpp
         test_main.cpp
     )
     target_link_libraries(RenderPixelTests PRIVATE
-        ArtAttackEngine
+        LabradorEngine
         doctest::doctest
-        artattack_settings
+        labrador_settings
     )
 
     # The test content, beside the executable. ctest runs from the build

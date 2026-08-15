@@ -52,7 +52,7 @@ revisit, and it is the only such signal in the field.
 
 ### The rules are a static library that links nothing
 
-`LineSweeperRules` links `artattack_settings` — an INTERFACE target carrying
+`LineSweeperRules` links `labrador_settings` — an INTERFACE target carrying
 compiler flags and no libraries — so there is no way for it to reach an engine
 symbol. An `#include "engine/..."` that resolves still fails at link.
 

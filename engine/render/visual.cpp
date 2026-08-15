@@ -4,7 +4,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	Visual::Visual(const std::string& sheet_name,
 		const std::string& frame_name,

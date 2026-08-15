@@ -25,9 +25,9 @@
 
 namespace
 {
-	using artattack::Font;
-	using artattack::Glyph;
-	using artattack::TextureHandle;
+	using labrador::Font;
+	using labrador::Glyph;
+	using labrador::TextureHandle;
 	using mattmath::RectangleI;
 	using mattmath::Vector2F;
 

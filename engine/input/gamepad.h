@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace artattack
+namespace labrador
 {
 	// WHAT IS DELIBERATELY ABSENT: an action map. ARCHITECTURE gives this
 	// module "devices and action mapping", and this half is the devices. A

@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// A drawable that draws out of one sprite sheet.
 	//

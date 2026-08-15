@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// The state stack: what a game's flow is made of, and the only flow
 	// machinery the engine has (PHILOSOPHY, Structural types).

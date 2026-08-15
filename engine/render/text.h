@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	class Text : public TextObject
 	{

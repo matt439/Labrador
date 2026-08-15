@@ -5,7 +5,7 @@ find_package(directxtk CONFIG REQUIRED)
 
 # --- LineSweeperRules — the simulation, and it links nothing ---
 #
-# artattack_settings is an INTERFACE target carrying compiler flags and no
+# labrador_settings is an INTERFACE target carrying compiler flags and no
 # libraries, so this target has no way to reach an engine symbol: an include of
 # engine/ that resolves still fails at link. That is the wall, and it is why
 # the whole game is playable from tests/ with no window and no device.
@@ -19,7 +19,7 @@ add_library(LineSweeperRules STATIC
     rules/world.cpp
 )
 target_link_libraries(LineSweeperRules PUBLIC
-    artattack_settings
+    labrador_settings
 )
 # Includes are written from the repository root (CONVENTIONS), so the directory
 # above samples/ has to be on the path - the same arrangement a client project
@@ -39,8 +39,8 @@ add_executable(LineSweeperSample WIN32
 )
 target_link_libraries(LineSweeperSample PRIVATE
     LineSweeperRules
-    ArtAttackEngine
-    artattack_settings
+    LabradorEngine
+    labrador_settings
 )
 
 # Its own content, not a share of the other sample's. Two samples is few enough

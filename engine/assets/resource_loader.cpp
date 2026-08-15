@@ -11,7 +11,7 @@
 
 using namespace DirectX;
 
-namespace artattack
+namespace labrador
 {
 	ResourceLoader::ResourceLoader(RenderResources* render_resources,
 		const Renderer* renderer, AudioResources* audio_resources,

@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// How a resource is reached through the smart pointer that owns it. The
 	// primary template covers everything spelling it get() - unique_ptr,

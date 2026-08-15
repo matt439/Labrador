@@ -2,7 +2,7 @@
 
 #include "engine/ui/widget.h"
 
-namespace artattack
+namespace labrador
 {
 	Button::Button(UiWidget* visual, Action on_activate) :
 		visual_(visual), on_activate_(std::move(on_activate))

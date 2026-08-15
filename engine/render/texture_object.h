@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// One still frame out of a sprite sheet.
 	//

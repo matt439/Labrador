@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-using namespace artattack;
+using namespace labrador;
 
 namespace
 {
@@ -19,7 +19,7 @@ namespace
 		explicit TempJson(const std::string& contents)
 		{
 			this->path_ = std::filesystem::temp_directory_path() /
-				("artattack_json_test_" + std::to_string(next_id()) + ".json");
+				("labrador_json_test_" + std::to_string(next_id()) + ".json");
 
 			std::ofstream file(this->path_, std::ios::binary);
 			file << contents;

@@ -29,7 +29,7 @@
 // buffer is built from that and from nothing else, so the two triangles are
 // (0,1,2) and (1,3,2).
 
-namespace artattack
+namespace labrador
 {
 	// Fills `corners[4]` for a sprite drawn into `destination`.
 	//

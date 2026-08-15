@@ -116,4 +116,4 @@ jobs:
       # all. A shared runner's absolute timings are not comparable to a
       # developer machine's and are not meant to be.
       - name: Benchmark numbers
-        run: out\build\${{ matrix.preset }}\bench\ArtAttackBench.exe
+        run: out\build\${{ matrix.preset }}\bench\LabradorBench.exe

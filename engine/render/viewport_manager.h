@@ -8,7 +8,7 @@
 
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	class ViewportManager
 	{

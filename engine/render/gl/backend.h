@@ -34,7 +34,7 @@
 // the driver's promise, and it is what makes this backend's per-draw path
 // shorter than the one it copies.
 
-namespace artattack
+namespace labrador
 {
 	// A texture, owned.
 	//
@@ -159,7 +159,7 @@ namespace artattack
 		GLuint linear_sampler = 0;
 
 		const RenderResources* resources = nullptr;
-		artattack::DeviceNotify* notify = nullptr;
+		labrador::DeviceNotify* notify = nullptr;
 
 		GLuint sampler(TextureFilter filter) const;
 

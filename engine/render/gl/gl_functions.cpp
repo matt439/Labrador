@@ -4,12 +4,12 @@
 #include <stdexcept>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
-#define ARTATTACK_GL_DEFINE(result, name, parameters)                          \
+#define LABRADOR_GL_DEFINE(result, name, parameters)                          \
 	result (APIENTRY* name) parameters = nullptr;
-	ARTATTACK_GL_FUNCTIONS(ARTATTACK_GL_DEFINE)
-#undef ARTATTACK_GL_DEFINE
+	LABRADOR_GL_FUNCTIONS(LABRADOR_GL_DEFINE)
+#undef LABRADOR_GL_DEFINE
 
 	namespace
 	{
@@ -30,7 +30,7 @@ namespace artattack
 
 	void load_gl_functions()
 	{
-#define ARTATTACK_GL_LOAD(result, name, parameters)                            \
+#define LABRADOR_GL_LOAD(result, name, parameters)                            \
 		name = reinterpret_cast<result (APIENTRY*) parameters>(                \
 			load_entry_point(#name));                                          \
 		if (name == nullptr)                                                   \
@@ -40,8 +40,8 @@ namespace artattack
 				"and the context it was given does not provide one of the "    \
 				"forty-one entry points in gl_functions.h.");                  \
 		}
-		ARTATTACK_GL_FUNCTIONS(ARTATTACK_GL_LOAD)
-#undef ARTATTACK_GL_LOAD
+		LABRADOR_GL_FUNCTIONS(LABRADOR_GL_LOAD)
+#undef LABRADOR_GL_LOAD
 	}
 
 	bool has_gl_extension(const char* extension)

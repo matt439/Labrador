@@ -6,7 +6,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	Label::Label(const std::wstring& text,
 		const std::string& font_name,

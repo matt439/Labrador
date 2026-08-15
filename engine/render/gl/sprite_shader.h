@@ -23,7 +23,7 @@
 // are what ES 3.0 wants too, so an ES variant is "#version 300 es" and a
 // precision qualifier rather than a second shader.
 
-namespace artattack
+namespace labrador
 {
 	const char* const SPRITE_VERTEX_SHADER = R"(#version 330 core
 

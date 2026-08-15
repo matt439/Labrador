@@ -5,7 +5,7 @@
 
 #include <optional>
 
-namespace artattack
+namespace labrador
 {
 	// Measures one pair of shapes: nullopt when they do not overlap, and
 	// otherwise the axis of least penetration and how deep it is, with the

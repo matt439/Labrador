@@ -30,7 +30,7 @@ and configuring fails without it. For the D3D11 backend `fxc` must also be on
 compiles its GLSL at device creation and needs no tool. Both come with the
 Visual Studio install. Ninja generator, out-of-source in `out/build/<preset>/`.
 
-**There are three render backends**, chosen by `ARTATTACK_RENDER_BACKEND` at
+**There are three render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
 configure time — so asking for one that was not built is a missing symbol at
 link (T5). A change to anything in `engine/render/` should be checked against
 all three; CI builds all three.
@@ -52,17 +52,17 @@ Direct3D device — a hidden window, a WARP fallback in debug, and assertions on
 the pixels `Renderer::read_back_buffer` hands back. It is the only test of
 anything this engine draws, and the executable statement of the pixel contract
 a second backend has to reproduce. The
-samples land at `out/build/x64-debug/samples/minimal/ArtAttackSample.exe` and
+samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and
 `out/build/x64-debug/samples/linesweeper/LineSweeperSample.exe`.
 
 `LineSweeperTests` links no engine at all — the sample's rules are a static
-library that links only `artattack_settings` — so the whole falling-block game
+library that links only `labrador_settings` — so the whole falling-block game
 runs there with no window and no device. A rule is asserted rather than played.
 
 ## What will fail the build
 
 - **`/W4 /WX /permissive- /sdl /fp:precise`**, with **zero suppressions**. One
-  `INTERFACE` target, `artattack_settings` in [cmake/settings.cmake](cmake/settings.cmake),
+  `INTERFACE` target, `labrador_settings` in [cmake/settings.cmake](cmake/settings.cmake),
   carries it; every real target links it. `/fp:precise` is load-bearing, not
   inherited — exact `operator==` against `Vector2F::ZERO`, tolerance
   assumptions and NaN propagation all depend on it.

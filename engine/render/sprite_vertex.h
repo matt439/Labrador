@@ -3,7 +3,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/colour.h"
 
-namespace artattack
+namespace labrador
 {
 	// One corner of one sprite, in the form a vertex buffer wants it.
 	//

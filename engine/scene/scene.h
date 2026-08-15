@@ -16,7 +16,7 @@
 #include "engine/render/camera.h"
 #include "engine/render/viewport.h"
 
-namespace artattack
+namespace labrador
 {
 	class DrawList;
 	class Partitioner;

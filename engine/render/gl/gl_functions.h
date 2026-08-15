@@ -25,7 +25,7 @@
 // texture_factory.cpp, which ES has not got at all and which are named there as
 // the one real obstacle to an ES build.
 
-namespace artattack
+namespace labrador
 {
 	// The types the post-1.1 signatures need. <GL/gl.h> has none of them,
 	// because none of them existed in 1.1.
@@ -67,7 +67,7 @@ namespace artattack
 	// The list, in one place, expanded three ways: declared here, defined in
 	// gl_functions.cpp, and loaded there. Adding an entry point means adding
 	// one line and nothing else, which is the whole reason for the macro.
-#define ARTATTACK_GL_FUNCTIONS(X)                                              \
+#define LABRADOR_GL_FUNCTIONS(X)                                              \
 	X(void, glGenBuffers, (GLsizei n, GLuint* buffers))                        \
 	X(void, glDeleteBuffers, (GLsizei n, const GLuint* buffers))               \
 	X(void, glBindBuffer, (GLenum target, GLuint buffer))                      \
@@ -116,10 +116,10 @@ namespace artattack
 		GLenum type, const void* indices, GLint base_vertex))                  \
 	X(const GLubyte*, glGetStringi, (GLenum name, GLuint index))
 
-#define ARTATTACK_GL_DECLARE(result, name, parameters)                         \
+#define LABRADOR_GL_DECLARE(result, name, parameters)                         \
 	extern result (APIENTRY* name) parameters;
-	ARTATTACK_GL_FUNCTIONS(ARTATTACK_GL_DECLARE)
-#undef ARTATTACK_GL_DECLARE
+	LABRADOR_GL_FUNCTIONS(LABRADOR_GL_DECLARE)
+#undef LABRADOR_GL_DECLARE
 
 	// Fetches every entry point above from the current context.
 	//

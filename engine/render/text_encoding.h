@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-namespace artattack
+namespace labrador
 {
 	// UTF-8 to UTF-16, for the boundary where narrow text meets the render
 	// module's wide text API.

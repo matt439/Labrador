@@ -24,4 +24,4 @@ add_library(MattMath STATIC
 # Relative to this file, not to the top-level project: see the note in
 # engine/CMakeLists.txt.
 target_include_directories(MattMath PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
-target_link_libraries(MattMath PRIVATE artattack_settings)
+target_link_libraries(MattMath PRIVATE labrador_settings)

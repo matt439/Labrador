@@ -9,7 +9,7 @@
 #include <string>
 
 using namespace mattmath;
-using namespace artattack;
+using namespace labrador;
 
 namespace linesweeper
 {

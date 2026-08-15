@@ -11,7 +11,7 @@
 #include <string>
 #include <utility>
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

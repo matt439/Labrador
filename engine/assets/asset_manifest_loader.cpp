@@ -1,7 +1,7 @@
 #include "engine/assets/asset_manifest_loader.h"
 #include "engine/assets/json.h"
 
-namespace artattack
+namespace labrador
 {
 	AssetManifest read_asset_manifest(const char* json_path)
 	{

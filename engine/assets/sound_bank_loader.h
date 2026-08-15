@@ -4,7 +4,7 @@
 #include <Audio.h>
 #include <memory>
 
-namespace artattack
+namespace labrador
 {
 	// Reads the bank definition at `json_path` and builds a SoundBank playing
 	// from `wave_bank`, whose ownership it takes. The effect instances are

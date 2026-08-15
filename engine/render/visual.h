@@ -9,7 +9,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	class Visual final : public GameObject, public TextureObject
 	{

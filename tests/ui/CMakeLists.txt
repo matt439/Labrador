@@ -7,9 +7,9 @@ add_executable(UiTests
     test_main.cpp
 )
 target_link_libraries(UiTests PRIVATE
-    ArtAttackEngine
+    LabradorEngine
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 add_test(NAME UiTests COMMAND UiTests)

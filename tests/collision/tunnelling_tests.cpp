@@ -4,9 +4,9 @@
 
 #include <limits>
 
-using artattack::can_tunnel;
-using artattack::max_safe_displacement;
-using artattack::max_safe_speed;
+using labrador::can_tunnel;
+using labrador::max_safe_displacement;
+using labrador::max_safe_speed;
 
 TEST_CASE("the budget is the combined extent along the direction of travel")
 {

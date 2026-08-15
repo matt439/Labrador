@@ -5,7 +5,7 @@
 #include "engine/math/shape.h"
 #include "engine/math/vector2f.h"
 
-namespace artattack
+namespace labrador
 {
 	// A GameObject the collision module can see.
 	//

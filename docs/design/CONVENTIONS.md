@@ -1,4 +1,4 @@
-# ArtAttack — Naming & Code Conventions
+# Labrador — Naming & Code Conventions
 
 Names are the engine's first API. A stranger meets `Scene`, `draw_sprite`
 and `dt` before they meet any documentation, so the scheme must be
@@ -21,7 +21,7 @@ Almost everything below falls out of one rule:
 | Private data members | `snake_case_` (trailing underscore) | `frame_time_` |
 | Public struct fields | `snake_case` (bare) | `origin`, `layer_depth` |
 | Constants and enumerators | `snake_case` | `max_velocity`, `WeaponType::sprayer` |
-| Namespaces | one lowercase word | `artattack`, `mattmath` |
+| Namespaces | one lowercase word | `labrador`, `mattmath` |
 | Macros (rare) | `SCREAMING_SNAKE` | `AA_ASSERT` |
 | Files and directories | `snake_case` | `animated_sprite.h`, `engine/render/` |
 | JSON keys, asset and registry names | `snake_case` | `frame_time`, `player_walk` |
@@ -90,7 +90,7 @@ Almost everything below falls out of one rule:
 ## Namespaces
 
 - One namespace per library: everything in `MattMath` lives in
-  `mattmath::`; everything in `ArtAttackEngine` lives in `artattack::`.
+  `mattmath::`; everything in `LabradorEngine` lives in `labrador::`.
   No deeper nesting, with one exception: `detail` wraps internals that
   headers must expose but users must not touch.
 - The engine never claims the global namespace. Game code owns its own

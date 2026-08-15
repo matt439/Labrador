@@ -1,6 +1,6 @@
 #include "engine/core/state.h"
 
-namespace artattack
+namespace labrador
 {
 	void State::set_context(StateContext* context)
 	{

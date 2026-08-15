@@ -4,7 +4,7 @@
 
 #include <memory>
 
-namespace artattack
+namespace labrador
 {
 	// The input backend seam, and it is one function wide.
 	//

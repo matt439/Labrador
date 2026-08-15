@@ -4,7 +4,7 @@
 
 #include <string>
 
-using artattack::widen;
+using labrador::widen;
 
 TEST_CASE("ASCII crosses unchanged, and nothing crosses as nothing")
 {

@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-using namespace artattack;
+using namespace labrador;
 
 // The options are the one engine input a game reads out of a file it does not
 // control, so every field that reaches an arithmetic operation is checked

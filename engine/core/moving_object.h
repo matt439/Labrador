@@ -2,7 +2,7 @@
 
 #include "engine/math/vector2f.h"
 
-namespace artattack
+namespace labrador
 {
 	// A velocity and a rotation, with the accessors that are called.
 	//

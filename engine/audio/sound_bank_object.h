@@ -4,7 +4,7 @@
 #include "engine/audio/audio_resources.h"
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// Anything that makes noise, inherited for the plumbing: it holds the bank
 	// handle and forwards the calls, so a subclass writes play_wave(x) instead of

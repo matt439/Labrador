@@ -1,6 +1,6 @@
 #pragma once
 
-namespace artattack
+namespace labrador
 {
     enum class ScreenLayout
     {

@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace artattack
+namespace labrador
 {
 	// Fed, not read, for the reason keyboard.h gives at length and will not
 	// repeat: the messages arrive at the window, so the flow is app -> input

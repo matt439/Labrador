@@ -17,22 +17,22 @@
 // no callback stored here, and no shared flag polled by somebody: the caller
 // named the result type at the push, this one names it at the pop, and the
 // engine is what joins them.
-class ConfirmState : public artattack::State
+class ConfirmState : public labrador::State
 {
 public:
-	ConfirmState(artattack::Application* app, std::wstring question);
+	ConfirmState(labrador::Application* app, std::wstring question);
 
 	void init() override;
 	void update(float dt) override;
-	void draw(artattack::Renderer& renderer) const override;
+	void draw(labrador::Renderer& renderer) const override;
 
 	// A box over the screen, not a replacement for it - so the state below
 	// keeps drawing and this appears on top of it.
 	bool covers_screen() const override { return false; }
 
 private:
-	artattack::Application* app_ = nullptr;
+	labrador::Application* app_ = nullptr;
 	std::wstring question_;
 
-	std::unique_ptr<artattack::Text> prompt_ = nullptr;
+	std::unique_ptr<labrador::Text> prompt_ = nullptr;
 };

@@ -6,7 +6,7 @@
 
 using mattmath::Vector2F;
 
-namespace artattack
+namespace labrador
 {
 	Vector2F separation(const Vector2F& normal, float penetration)
 	{

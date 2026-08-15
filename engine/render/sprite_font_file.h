@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// A .spritefont, taken apart into the half that is engine data and the half
 	// that needs a device.

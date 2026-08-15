@@ -3,19 +3,19 @@
 #include "engine/ui/focus.h"
 #include "tests/ui/stub_widget.h"
 
-using artattack::Direction;
-using artattack::FocusGroup;
-using artattack::Activation;
-using artattack::FocusStyle;
+using labrador::Direction;
+using labrador::FocusGroup;
+using labrador::Activation;
+using labrador::FocusStyle;
 
 namespace
 {
 	FocusStyle test_style()
 	{
 		FocusStyle style;
-		style.focused = artattack::Colour::red;
-		style.unfocused = artattack::Colour::blue;
-		style.disabled = artattack::Colour::green;
+		style.focused = labrador::Colour::red;
+		style.unfocused = labrador::Colour::blue;
+		style.disabled = labrador::Colour::green;
 		return style;
 	}
 }
@@ -43,14 +43,14 @@ TEST_CASE("moving focus repaints both widgets")
 	group.add(&play);
 	group.add(&options);
 
-	CHECK(play.colour() == artattack::Colour::red);
-	CHECK(options.colour() == artattack::Colour::blue);
+	CHECK(play.colour() == labrador::Colour::red);
+	CHECK(options.colour() == labrador::Colour::blue);
 
 	CHECK(group.move(0, Direction::down));
 
 	CHECK(group.focused(0) == &options);
-	CHECK(play.colour() == artattack::Colour::blue);
-	CHECK(options.colour() == artattack::Colour::red);
+	CHECK(play.colour() == labrador::Colour::blue);
+	CHECK(options.colour() == labrador::Colour::red);
 }
 
 TEST_CASE("move reports whether focus actually moved")
@@ -121,7 +121,7 @@ TEST_CASE("a disabled row is registered, painted apart, and jumped over")
 	// Registered, so it is still in the group and still drawn - in a colour
 	// that says what it is.
 	CHECK(group.size() == 3);
-	CHECK(deathmatch.colour() == artattack::Colour::green);
+	CHECK(deathmatch.colour() == labrador::Colour::green);
 
 	// Jumped over rather than stopped at: one press from the top row reaches
 	// the third, not the second.
@@ -187,7 +187,7 @@ TEST_CASE("a row switched off under the cursor keeps the cursor and the exit")
 	// Disabled outranks focused in the paint, and it has to: painting it
 	// focused would be the screen offering a row at the moment it refuses to
 	// be picked.
-	CHECK(four.colour() == artattack::Colour::green);
+	CHECK(four.colour() == labrador::Colour::green);
 	CHECK(group.activate(0) == Activation::refused);
 
 	// And it is not a dead end. `from` is passed to the walk as itself rather
@@ -195,12 +195,12 @@ TEST_CASE("a row switched off under the cursor keeps the cursor and the exit")
 	// be on.
 	CHECK(group.move(0, Direction::up));
 	CHECK(group.focused(0) == &three);
-	CHECK(three.colour() == artattack::Colour::red);
+	CHECK(three.colour() == labrador::Colour::red);
 
 	// Plugged back in between two frames: the row is live again, in every
 	// sense, with no cursor disturbed.
 	group.set_enabled(&four, true);
-	CHECK(four.colour() == artattack::Colour::blue);
+	CHECK(four.colour() == labrador::Colour::blue);
 	CHECK(group.move(0, Direction::down));
 	CHECK(group.focused(0) == &four);
 	CHECK(group.activate(0) == Activation::none);
@@ -241,8 +241,8 @@ TEST_CASE("a group with nothing left enabled stops moving and refuses")
 	CHECK_FALSE(group.move(0, Direction::down));
 	CHECK(group.focused(0) == &a);
 	CHECK(group.activate(0) == Activation::refused);
-	CHECK(a.colour() == artattack::Colour::green);
-	CHECK(b.colour() == artattack::Colour::green);
+	CHECK(a.colour() == labrador::Colour::green);
+	CHECK(b.colour() == labrador::Colour::green);
 }
 
 TEST_CASE("set_focused rejects a widget the group does not hold")
@@ -297,8 +297,8 @@ TEST_CASE("a widget stays painted focused while any slot is still on it")
 	CHECK(group.focused(1) == &shared);
 	// Incremental repainting - unpaint what I left, paint what I entered -
 	// would have blanked `shared` here even though slot 1 is on it.
-	CHECK(shared.colour() == artattack::Colour::red);
-	CHECK(other.colour() == artattack::Colour::red);
+	CHECK(shared.colour() == labrador::Colour::red);
+	CHECK(other.colour() == labrador::Colour::red);
 }
 
 TEST_CASE("changing the style repaints from the current focus")
@@ -313,8 +313,8 @@ TEST_CASE("changing the style repaints from the current focus")
 
 	group.set_style(test_style());
 
-	CHECK(a.colour() == artattack::Colour::blue);
-	CHECK(b.colour() == artattack::Colour::red);
+	CHECK(a.colour() == labrador::Colour::blue);
+	CHECK(b.colour() == labrador::Colour::red);
 }
 
 TEST_CASE("a slot index outside the group throws rather than clamping")

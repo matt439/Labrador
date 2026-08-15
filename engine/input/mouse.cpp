@@ -1,6 +1,6 @@
 #include "engine/input/mouse.h"
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{
@@ -160,12 +160,12 @@ namespace artattack
 
 	bool Mouse::pressed(MouseButton button) const
 	{
-		return artattack::pressed(this->current_, this->previous_, button);
+		return labrador::pressed(this->current_, this->previous_, button);
 	}
 
 	bool Mouse::released(MouseButton button) const
 	{
-		return artattack::released(this->current_, this->previous_, button);
+		return labrador::released(this->current_, this->previous_, button);
 	}
 
 	const mattmath::Vector2I& Mouse::position() const
@@ -175,7 +175,7 @@ namespace artattack
 
 	mattmath::Vector2I Mouse::motion() const
 	{
-		return artattack::motion(this->current_, this->previous_);
+		return labrador::motion(this->current_, this->previous_);
 	}
 
 	float Mouse::wheel() const
@@ -195,11 +195,11 @@ namespace artattack
 
 	bool Mouse::just_focused() const
 	{
-		return artattack::just_focused(this->current_, this->previous_);
+		return labrador::just_focused(this->current_, this->previous_);
 	}
 
 	bool Mouse::just_unfocused() const
 	{
-		return artattack::just_unfocused(this->current_, this->previous_);
+		return labrador::just_unfocused(this->current_, this->previous_);
 	}
 }

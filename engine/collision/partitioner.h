@@ -3,7 +3,7 @@
 #include <utility>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	class Partitioner
 	{

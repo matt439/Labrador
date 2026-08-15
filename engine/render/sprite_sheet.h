@@ -10,7 +10,7 @@
 #include "engine/math/vector2f.h"
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// One texture, and the names of the rectangles inside it.
 	//

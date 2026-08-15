@@ -7,7 +7,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

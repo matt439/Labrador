@@ -9,7 +9,7 @@
 #include <string>
 #include <tuple>
 
-namespace artattack
+namespace labrador
 {
 	// The whole of this backend's share of loading content, and it keeps two
 	// numbers.

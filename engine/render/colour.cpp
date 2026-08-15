@@ -30,7 +30,7 @@ namespace
 	}
 }
 
-namespace artattack
+namespace labrador
 {
 	Colour::Colour(const std::string& hex)
 	{

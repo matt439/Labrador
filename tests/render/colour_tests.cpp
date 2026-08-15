@@ -2,8 +2,8 @@
 
 #include "engine/render/colour.h"
 
-using artattack::Colour;
-using artattack::colour_from_name;
+using labrador::Colour;
+using labrador::colour_from_name;
 
 TEST_SUITE("Colour")
 {

@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// Reads the .dds at `path`.
 	//

@@ -10,9 +10,9 @@ add_executable(AssetsTests
 # now, and this target is the check that a client of the engine's loaders needs
 # nothing but the engine.
 target_link_libraries(AssetsTests PRIVATE
-    ArtAttackEngine
+    LabradorEngine
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 add_test(NAME AssetsTests COMMAND AssetsTests)

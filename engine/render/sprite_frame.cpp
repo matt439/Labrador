@@ -2,7 +2,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	SpriteFrame::SpriteFrame(const RectangleI& source_rectangle,
 		const Vector2F& origin,

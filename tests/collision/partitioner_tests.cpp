@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <vector>
 
-using artattack::Partitioner;
+using labrador::Partitioner;
 
 namespace
 {

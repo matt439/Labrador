@@ -5,7 +5,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	SpriteSheetObject::SpriteSheetObject(const std::string& sheet_name,
 		RenderResources* render_resources,

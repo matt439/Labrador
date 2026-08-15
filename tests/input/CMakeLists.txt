@@ -8,9 +8,9 @@ add_executable(InputTests
     test_main.cpp
 )
 target_link_libraries(InputTests PRIVATE
-    ArtAttackEngine
+    LabradorEngine
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 add_test(NAME InputTests COMMAND InputTests)

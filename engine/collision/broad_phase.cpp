@@ -8,7 +8,7 @@
 
 using mattmath::RectangleF;
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

@@ -4,9 +4,9 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 
-using artattack::BorderThickness;
-using artattack::CameraTools;
-using artattack::Camera;
+using labrador::BorderThickness;
+using labrador::CameraTools;
+using labrador::Camera;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
 

@@ -13,9 +13,9 @@
 #include <optional>
 #include <stdexcept>
 
-using artattack::Manifold;
-using artattack::narrow_phase;
-using artattack::separation;
+using labrador::Manifold;
+using labrador::narrow_phase;
+using labrador::separation;
 using mattmath::Circle;
 using mattmath::Point2F;
 using mattmath::RectangleF;

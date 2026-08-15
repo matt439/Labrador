@@ -6,7 +6,7 @@
 #include <mutex>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
     class ThreadPool
     {

@@ -6,7 +6,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	TextObject::TextObject(const std::wstring& text,
 		const std::string& font_name,

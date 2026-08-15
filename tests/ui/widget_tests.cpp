@@ -7,14 +7,14 @@
 #include <memory>
 #include <string>
 
-using artattack::Activation;
-using artattack::Colour;
-using artattack::FocusGroup;
-using artattack::FocusStyle;
-using artattack::UiContainer;
-using artattack::UiObject;
-using artattack::UiTexture;
-using artattack::UiWidget;
+using labrador::Activation;
+using labrador::Colour;
+using labrador::FocusGroup;
+using labrador::FocusStyle;
+using labrador::UiContainer;
+using labrador::UiObject;
+using labrador::UiTexture;
+using labrador::UiWidget;
 
 namespace
 {
@@ -27,7 +27,7 @@ namespace
 		ColourlessObject() : UiObject("colourless") {}
 
 		void update(float /*dt*/) override {}
-		void draw(artattack::DrawList& /*draw_list*/) const override {}
+		void draw(labrador::DrawList& /*draw_list*/) const override {}
 		mattmath::RectangleF bounds() const override
 		{
 			return mattmath::RectangleF(0.0f, 0.0f, 10.0f, 10.0f);
@@ -169,7 +169,7 @@ TEST_CASE("a focus group can hold a compound row and paints all of it")
 	CHECK(full_screen.value().colour() == Colour::blue);
 
 	// And it navigates by its own bounds, which are its children's union.
-	CHECK(group.move(0, artattack::Direction::down));
+	CHECK(group.move(0, labrador::Direction::down));
 	CHECK(group.focused(0) == &full_screen);
 	CHECK(full_screen.value().colour() == Colour::red);
 	CHECK(resolution.label().colour() == Colour::blue);

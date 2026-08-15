@@ -4,7 +4,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
     ViewportManager::ViewportManager(ResolutionManager* resolution_manager) :
         resolution_manager_(resolution_manager)

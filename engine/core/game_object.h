@@ -3,7 +3,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/render/camera.h"
 
-namespace artattack
+namespace labrador
 {
 	// Declared, not included, and that is the point of the whole exercise.
 	// This header used to open with <SpriteBatch.h>, which is what put nine of

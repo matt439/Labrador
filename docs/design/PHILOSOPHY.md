@@ -1,6 +1,6 @@
-# ArtAttack — Engine Design Philosophies
+# Labrador — Engine Design Philosophies
 
-ArtAttack is a 2D game engine intended, eventually, for developers other
+Labrador is a 2D game engine intended, eventually, for developers other
 than its author. The paint-shooter built on it is its first client and its
 proof; a documented API, a sample game, teaching materials, and speed are
 what will make it worth picking up. Its style is the sharpest break from
@@ -167,7 +167,7 @@ supplying engine rather than platform.
 
 ### T10. One language over a scripting layer
 
-Everyone who writes behaviour for an ArtAttack game writes C++. There is no
+Everyone who writes behaviour for a Labrador game writes C++. There is no
 Blueprint, no Verse, no Lua — no second language dividing the people who
 build a game into programmers and designers. The premise behind those
 layers — that C++ is too hard for designers — is rejected here: C++ is as
@@ -281,14 +281,14 @@ compiler-settings target (CMake — see ARCHITECTURE.md, The build):
 | Target | Type | Directory | Depends on |
 |---|---|---|---|
 | `MattMath` | static library | `engine/math/` | nothing |
-| `ArtAttackEngine` | static library | `engine/` | MattMath, platform SDKs |
-| `ArtAttackSample` | application | `samples/minimal/` | ArtAttackEngine |
+| `LabradorEngine` | static library | `engine/` | MattMath, platform SDKs |
+| `MinimalSample` | application | `samples/minimal/` | LabradorEngine |
 | `LineSweeperRules` | static library | `samples/linesweeper/rules/` | nothing — the settings target carries no libraries |
-| `LineSweeperSample` | application | `samples/linesweeper/` | LineSweeperRules, ArtAttackEngine |
+| `LineSweeperSample` | application | `samples/linesweeper/` | LineSweeperRules, LabradorEngine |
 | tests | applications | `tests/` | the libraries they test |
 
 A client's own application target is a fourth, in the client's own
-repository, linking `ArtAttackEngine` and `artattack_settings` across the
+repository, linking `LabradorEngine` and `labrador_settings` across the
 submodule boundary.
 
 The disk layout mirrors the targets — `engine/math/`, `engine/core/`,
@@ -308,7 +308,7 @@ This paragraph used to end "today there is one backend (D3D11, XInput), kept
 behind seams that don't presume it is the only one", and the amendment is
 worth stating rather than hiding. **There are three render backends now**:
 Direct3D 11, OpenGL 3.3 core, and a null one that records what it was asked to
-draw and never draws it, selected by `ARTATTACK_RENDER_BACKEND` at configure
+draw and never draws it, selected by `LABRADOR_RENDER_BACKEND` at configure
 time. The first two pass the same `RenderPixelTests`.
 
 That is not cross-platform arriving early, and it is not the speculative
@@ -568,7 +568,7 @@ engine API to depend on.
 
 Named so their absence is deliberate, and revisited only explicitly:
 
-- **Online play. Permanent, not provisional.** ArtAttack is a
+- **Online play. Permanent, not provisional.** Labrador is a
   local-multiplayer engine — split-screen, shared screen, one machine.
   Being excellent at couch multiplayer is the niche; no design tax is paid
   for netcode, replication, or rollback determinism, ever.

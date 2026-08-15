@@ -12,7 +12,7 @@
 #include <initializer_list>
 #include <string>
 
-using namespace artattack;
+using namespace labrador;
 
 namespace
 {

@@ -14,7 +14,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

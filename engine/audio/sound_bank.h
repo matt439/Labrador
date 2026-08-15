@@ -5,7 +5,7 @@
 #include <string>
 #include "engine/core/registry.h"
 
-namespace artattack
+namespace labrador
 {
 	// A wave bank and the effect instances built over it, both reached by handle.
 	//

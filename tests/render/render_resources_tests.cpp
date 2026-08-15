@@ -4,8 +4,8 @@
 
 #include <stdexcept>
 
-using artattack::FontHandle;
-using artattack::RenderResources;
+using labrador::FontHandle;
+using labrador::RenderResources;
 
 TEST_CASE("the font queries read through the same handle contract as the rest")
 {

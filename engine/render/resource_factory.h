@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	class Renderer;
 	class RenderResources;

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace artattack
+namespace labrador
 {
 	// The pixel layouts this engine's content actually arrives in, named in the
 	// engine's own vocabulary rather than in any one API's.

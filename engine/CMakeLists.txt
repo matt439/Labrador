@@ -1,6 +1,6 @@
 add_subdirectory(math)
 
-# ArtAttackEngine — the engine static library (docs/design/ARCHITECTURE.md).
+# LabradorEngine — the engine static library (docs/design/ARCHITECTURE.md).
 # Modules are folders; dependencies point one way, toward math. Files
 # migrate in from the game as they become dependency-clean.
 
@@ -9,7 +9,7 @@ add_subdirectory(math)
 find_package(xaudio2redist CONFIG REQUIRED)
 find_package(directxtk CONFIG REQUIRED)
 
-add_library(ArtAttackEngine STATIC
+add_library(LabradorEngine STATIC
     app/application.cpp
     app/window.cpp
     assets/asset_manifest_loader.cpp
@@ -80,7 +80,7 @@ add_library(ArtAttackEngine STATIC
 # check_engine_includes target still runs on every build, because that is only
 # true when this repository is built standalone - a consumer builds it from a
 # tree that may well have a game/ in it.
-target_include_directories(ArtAttackEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_include_directories(LabradorEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 # The backend, chosen at build time.
 #
@@ -92,18 +92,18 @@ target_include_directories(ArtAttackEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/.
 #
 # Nothing outside engine/render/<backend>/ names either folder, which is what
 # makes this a list of files rather than a set of #ifdefs.
-set(ARTATTACK_RENDER_BACKEND "d3d11" CACHE STRING
+set(LABRADOR_RENDER_BACKEND "d3d11" CACHE STRING
     "The render backend to build: d3d11, gl or null")
-set_property(CACHE ARTATTACK_RENDER_BACKEND PROPERTY STRINGS d3d11 gl null)
+set_property(CACHE LABRADOR_RENDER_BACKEND PROPERTY STRINGS d3d11 gl null)
 
-if(ARTATTACK_RENDER_BACKEND STREQUAL "d3d11")
-    target_sources(ArtAttackEngine PRIVATE
+if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
+    target_sources(LabradorEngine PRIVATE
         render/d3d11/device_resources.cpp
         render/d3d11/render_resources.cpp
         render/d3d11/renderer.cpp
         render/d3d11/texture_factory.cpp
     )
-    target_link_libraries(ArtAttackEngine PUBLIC d3d11 dxgi dxguid)
+    target_link_libraries(LabradorEngine PUBLIC d3d11 dxgi dxguid)
 
     # Its two shaders, compiled to byte arrays this build writes and the
     # backend includes (cmake/compile_shaders.cmake). The generated headers
@@ -111,29 +111,29 @@ if(ARTATTACK_RENDER_BACKEND STREQUAL "d3d11")
     # includes them from the repository root like everything else - and
     # check_engine_includes.cmake's rule about who may include a backend
     # header reads exactly the same for a generated one.
-    compile_hlsl(ArtAttackEngine
+    compile_hlsl(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/d3d11/sprite.hlsl"
         vs_4_0_level_9_1 vertex_main SPRITE_VERTEX_SHADER
         "engine/render/d3d11/sprite_vertex_shader.h")
-    compile_hlsl(ArtAttackEngine
+    compile_hlsl(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/d3d11/sprite.hlsl"
         ps_4_0_level_9_1 pixel_main SPRITE_PIXEL_SHADER
         "engine/render/d3d11/sprite_pixel_shader.h")
-elseif(ARTATTACK_RENDER_BACKEND STREQUAL "gl")
-    target_sources(ArtAttackEngine PRIVATE
+elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
+    target_sources(LabradorEngine PRIVATE
         render/gl/gl_functions.cpp
         render/gl/render_resources.cpp
         render/gl/renderer.cpp
         render/gl/texture_factory.cpp
     )
-    target_link_libraries(ArtAttackEngine PUBLIC opengl32)
+    target_link_libraries(LabradorEngine PUBLIC opengl32)
 
     # No shader step. GL 3.3 has no offline shader format, so the GLSL ships
     # as source in render/gl/sprite_shader.h and the driver compiles it at
     # device creation - which that file explains at length, because it is the
     # one place the two backends genuinely differ in kind rather than spelling.
-elseif(ARTATTACK_RENDER_BACKEND STREQUAL "null")
-    target_sources(ArtAttackEngine PRIVATE
+elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")
+    target_sources(LabradorEngine PRIVATE
         render/null/render_resources.cpp
         render/null/renderer.cpp
         render/null/texture_factory.cpp
@@ -145,7 +145,7 @@ elseif(ARTATTACK_RENDER_BACKEND STREQUAL "null")
     # build machine can run from end to end.
 else()
     message(FATAL_ERROR
-        "ARTATTACK_RENDER_BACKEND is '${ARTATTACK_RENDER_BACKEND}'. "
+        "LABRADOR_RENDER_BACKEND is '${LABRADOR_RENDER_BACKEND}'. "
         "It must be d3d11, gl or null - a backend is a folder in "
         "engine/render/ holding renderer.cpp, render_resources.cpp and "
         "texture_factory.cpp.")
@@ -160,10 +160,10 @@ endif()
 # engine header names the parser and no client needs it to include one. A
 # client that parses files of its own asks for rapidjson on its own account -
 # which the game does, for the save file it writes.
-target_include_directories(ArtAttackEngine SYSTEM PRIVATE
+target_include_directories(LabradorEngine SYSTEM PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
 )
-target_link_libraries(ArtAttackEngine
+target_link_libraries(LabradorEngine
     PUBLIC MattMath Microsoft::DirectXTK
-    PRIVATE artattack_settings
+    PRIVATE labrador_settings
 )

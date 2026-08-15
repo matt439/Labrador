@@ -13,7 +13,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	Scene::Scene(ThreadPool* thread_pool, const Partitioner* partitioner) :
 		thread_pool_(thread_pool),

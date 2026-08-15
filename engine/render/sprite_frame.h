@@ -3,7 +3,7 @@
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
-namespace artattack
+namespace labrador
 {
 	class SpriteFrame
 	{

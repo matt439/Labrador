@@ -30,7 +30,7 @@ All three have been modified, and the modifications are listed rather than
 summarised, because "recognisably Microsoft's" is only checkable if the
 departures from upstream are written down:
 
-- All three were brought into the `artattack` namespace, and
+- All three were brought into the `labrador` namespace, and
   `device_resources` moved into the D3D11 backend folder when the renderer
   seam was cut.
 - `device_resources.h` renames upstream's `IDeviceNotify` to

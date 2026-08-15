@@ -4,7 +4,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	bool GamepadState::is_down(GamepadButton button) const
 	{

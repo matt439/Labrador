@@ -1,6 +1,6 @@
 #include "engine/input/keyboard.h"
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{
@@ -208,12 +208,12 @@ namespace artattack
 
 	bool Keyboard::pressed(Key key) const
 	{
-		return artattack::pressed(this->current_, this->previous_, key);
+		return labrador::pressed(this->current_, this->previous_, key);
 	}
 
 	bool Keyboard::released(Key key) const
 	{
-		return artattack::released(this->current_, this->previous_, key);
+		return labrador::released(this->current_, this->previous_, key);
 	}
 
 	bool Keyboard::focused() const
@@ -223,12 +223,12 @@ namespace artattack
 
 	bool Keyboard::just_focused() const
 	{
-		return artattack::just_focused(this->current_, this->previous_);
+		return labrador::just_focused(this->current_, this->previous_);
 	}
 
 	bool Keyboard::just_unfocused() const
 	{
-		return artattack::just_unfocused(this->current_, this->previous_);
+		return labrador::just_unfocused(this->current_, this->previous_);
 	}
 
 	std::string_view Keyboard::typed() const

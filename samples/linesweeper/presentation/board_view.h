@@ -25,7 +25,7 @@
 // keep in step.
 namespace linesweeper
 {
-	class BoardView final : public artattack::GameObject
+	class BoardView final : public labrador::GameObject
 	{
 	public:
 		// Both borrowed. The state owns the World by value and outlives this,
@@ -35,7 +35,7 @@ namespace linesweeper
 		// The handles are resolved here, once, and never looked up by name
 		// again - which is the only thing T7 asks of a name.
 		BoardView(const World* world,
-			artattack::RenderResources* render_resources);
+			labrador::RenderResources* render_resources);
 
 		// Rebuilds the four strings the HUD draws, and only when the number
 		// behind one has changed.
@@ -47,7 +47,7 @@ namespace linesweeper
 		// and is the half of the split that is allowed to compute.
 		void update(float dt) override;
 
-		void draw(artattack::DrawList& draw_list) const override;
+		void draw(labrador::DrawList& draw_list) const override;
 
 		// The whole panel: the well, both side columns and the numbers under
 		// them. One view, so nothing ever culls this - it is reported because
@@ -56,23 +56,23 @@ namespace linesweeper
 		mattmath::RectangleF bounds() const override;
 
 	private:
-		void draw_well(artattack::DrawList& draw_list) const;
-		void draw_stack(artattack::DrawList& draw_list) const;
-		void draw_falling(artattack::DrawList& draw_list) const;
-		void draw_side_panels(artattack::DrawList& draw_list) const;
-		void draw_numbers(artattack::DrawList& draw_list) const;
+		void draw_well(labrador::DrawList& draw_list) const;
+		void draw_stack(labrador::DrawList& draw_list) const;
+		void draw_falling(labrador::DrawList& draw_list) const;
+		void draw_side_panels(labrador::DrawList& draw_list) const;
+		void draw_numbers(labrador::DrawList& draw_list) const;
 
 		// One quad. Every filled square on the screen goes through here, so
 		// there is exactly one place that knows a block is a white texel with
 		// a tint on it.
-		void fill(artattack::DrawList& draw_list,
+		void fill(labrador::DrawList& draw_list,
 			const mattmath::RectangleF& rectangle,
-			const artattack::Colour& colour) const;
+			const labrador::Colour& colour) const;
 
 		// A piece's four cells, at the well's scale or the preview's.
-		void draw_piece(artattack::DrawList& draw_list, const Piece& piece,
-			const artattack::Colour& colour) const;
-		void draw_preview(artattack::DrawList& draw_list, Kind kind,
+		void draw_piece(labrador::DrawList& draw_list, const Piece& piece,
+			const labrador::Colour& colour) const;
+		void draw_preview(labrador::DrawList& draw_list, Kind kind,
 			const mattmath::Vector2F& origin) const;
 
 		const World* world_ = nullptr;
@@ -81,10 +81,10 @@ namespace linesweeper
 		// renderer's - measuring needs the atlas, and the atlas is here
 		// (render_resources.h). Read in update() only: it is not const, and
 		// draw() is.
-		artattack::RenderResources* render_resources_ = nullptr;
+		labrador::RenderResources* render_resources_ = nullptr;
 
-		artattack::TextureHandle block_;
-		artattack::FontHandle font_;
+		labrador::TextureHandle block_;
+		labrador::FontHandle font_;
 
 		std::wstring score_;
 		std::wstring lines_;

@@ -24,11 +24,11 @@
 
 namespace
 {
-	using artattack::TextureData;
-	using artattack::TextureFormat;
-	using artattack::TextureLevel;
-	using artattack::read_dds_file;
-	using artattack::texture_level;
+	using labrador::TextureData;
+	using labrador::TextureFormat;
+	using labrador::TextureLevel;
+	using labrador::read_dds_file;
+	using labrador::texture_level;
 
 	const char* QUAD_PATH = "./content/quad.dds";
 
@@ -133,8 +133,8 @@ TEST_CASE("a mip chain is walked, and a block-compressed one rounds up")
 	CHECK(texture_level(TextureFormat::bc3_unorm, 6, 6, 0).size == 64u);
 	CHECK(texture_level(TextureFormat::bc3_unorm, 1, 1, 0).size == 16u);
 
-	CHECK(artattack::is_block_compressed(TextureFormat::bc2_unorm));
-	CHECK_FALSE(artattack::is_block_compressed(TextureFormat::b8g8r8a8_unorm));
+	CHECK(labrador::is_block_compressed(TextureFormat::bc2_unorm));
+	CHECK_FALSE(labrador::is_block_compressed(TextureFormat::b8g8r8a8_unorm));
 }
 
 TEST_CASE("a file that is not a texture this engine draws says which way")

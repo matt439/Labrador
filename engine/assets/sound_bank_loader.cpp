@@ -6,7 +6,7 @@
 
 using namespace DirectX;
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

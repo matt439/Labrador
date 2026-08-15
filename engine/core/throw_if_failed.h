@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <exception>
 
-namespace artattack
+namespace labrador
 {
     // Helper class for COM exceptions
     class com_exception : public std::exception

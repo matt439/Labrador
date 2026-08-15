@@ -6,7 +6,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	Camera::Camera(const Vector2F& translation, float scale) :
 		translation(translation), scale(scale)

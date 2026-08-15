@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

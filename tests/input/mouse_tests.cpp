@@ -4,7 +4,7 @@
 
 #include <initializer_list>
 
-using namespace artattack;
+using namespace labrador;
 
 namespace
 {

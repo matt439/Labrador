@@ -8,7 +8,7 @@
 
 using mattmath::Vector2F;
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

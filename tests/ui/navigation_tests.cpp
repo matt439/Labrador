@@ -5,8 +5,8 @@
 #include "engine/math/rectanglef.h"
 #include "tests/ui/stub_widget.h"
 
-using artattack::Direction;
-using artattack::nearest_in_direction;
+using labrador::Direction;
+using labrador::nearest_in_direction;
 using mattmath::RectangleF;
 
 namespace
@@ -178,7 +178,7 @@ TEST_CASE("the widget overload walks the same way and excludes itself by pointer
 	// this one too, and only one of them is `top`.
 	StubWidget twin(100.0f, 0.0f, 300.0f, 100.0f);
 
-	const std::vector<artattack::UiWidget*> widgets = { &top, &middle, &twin };
+	const std::vector<labrador::UiWidget*> widgets = { &top, &middle, &twin };
 
 	CHECK(nearest_in_direction(top, Direction::down, widgets) == &middle);
 	CHECK(nearest_in_direction(middle, Direction::up, widgets) != nullptr);
@@ -189,7 +189,7 @@ TEST_CASE("null entries in the widget list are skipped, not dereferenced")
 	StubWidget top(0.0f, 0.0f, 100.0f, 100.0f);
 	StubWidget bottom(0.0f, 200.0f, 100.0f, 100.0f);
 
-	const std::vector<artattack::UiWidget*> widgets = { &top, nullptr, &bottom };
+	const std::vector<labrador::UiWidget*> widgets = { &top, nullptr, &bottom };
 
 	CHECK(nearest_in_direction(top, Direction::down, widgets) == &bottom);
 }

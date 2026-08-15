@@ -18,7 +18,7 @@
 // it (README, The match is one value).
 //
 // It is also why there is no window anywhere in this target: LineSweeperRules
-// links artattack_settings, which carries compiler flags and no libraries, so
+// links labrador_settings, which carries compiler flags and no libraries, so
 // there is no renderer to fail to create.
 namespace linesweeper
 {

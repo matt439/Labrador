@@ -76,7 +76,7 @@
 
 namespace
 {
-	using namespace artattack;
+	using namespace labrador;
 	using namespace mattmath;
 
 	constexpr int BUFFER_SIZE = 64;
@@ -86,7 +86,7 @@ namespace
 	// screen and steals no focus.
 	HWND create_hidden_window()
 	{
-		static const wchar_t* CLASS_NAME = L"ArtAttackPixelTestWindow";
+		static const wchar_t* CLASS_NAME = L"LabradorPixelTestWindow";
 
 		static const ATOM atom = []() -> ATOM
 			{

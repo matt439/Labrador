@@ -49,7 +49,7 @@
 // there is no flag (T3). MeasureDrawBounds, the third caller upstream that
 // wanted the other value, has never existed here.
 
-namespace artattack
+namespace labrador
 {
 	// One character's cell in a font's atlas.
 	//

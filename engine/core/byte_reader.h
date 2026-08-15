@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// A cursor over a buffer of bytes that cannot walk off the end.
 	//

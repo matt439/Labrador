@@ -18,7 +18,7 @@ using mattmath::Shape;
 using mattmath::ShapeType;
 using mattmath::Vector2F;
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

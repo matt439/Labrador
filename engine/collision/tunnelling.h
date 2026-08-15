@@ -1,6 +1,6 @@
 #pragma once
 
-namespace artattack
+namespace labrador
 {
 	// The rule that lets a discrete collision test be correct.
 	//

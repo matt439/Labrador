@@ -42,7 +42,7 @@
 // should have. Renderer::read_back_buffer therefore throws, and
 // RenderPixelTests is excluded from this configuration by name.
 
-namespace artattack
+namespace labrador
 {
 	// One sprite, exactly as a real backend would have received it: the corners
 	// are in view pixels with the camera already applied, which is what

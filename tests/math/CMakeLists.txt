@@ -16,7 +16,7 @@ add_executable(MattMathTests
 target_link_libraries(MattMathTests PRIVATE
     MattMath
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 add_test(NAME MattMathTests COMMAND MattMathTests)

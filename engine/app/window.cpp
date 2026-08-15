@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <tuple>
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

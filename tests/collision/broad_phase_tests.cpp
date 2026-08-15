@@ -12,12 +12,12 @@
 #include <string>
 #include <vector>
 
-using artattack::BroadPhase;
-using artattack::CollisionLayer;
-using artattack::CollisionMask;
-using artattack::CollisionObject;
-using artattack::CollisionTag;
-using artattack::Contact;
+using labrador::BroadPhase;
+using labrador::CollisionLayer;
+using labrador::CollisionMask;
+using labrador::CollisionObject;
+using labrador::CollisionTag;
+using labrador::Contact;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
 
@@ -36,7 +36,7 @@ namespace
 		}
 
 		void update(float /*dt*/) override {}
-		void draw(artattack::DrawList& /*list*/) const override {}
+		void draw(labrador::DrawList& /*list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
 		const mattmath::Shape* shape() const override

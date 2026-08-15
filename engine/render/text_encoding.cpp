@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	std::wstring widen(std::string_view utf8)
 	{

@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// How many logical processors the machine reports, and never fewer than one.
 	//
@@ -41,8 +41,8 @@ namespace artattack
 	{
 		// The window class name has to be unique per process, so a game that ever
 		// opens two windows needs two of these.
-		std::wstring window_class_name = L"ArtAttackWindowClass";
-		std::wstring window_title = L"ArtAttack";
+		std::wstring window_class_name = L"LabradorWindowClass";
+		std::wstring window_title = L"Labrador";
 
 		ScreenResolution resolution = ScreenResolution::s_1280_720;
 		bool fullscreen = false;

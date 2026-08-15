@@ -7,7 +7,7 @@
 // The whole of a LineSweeper match, as one value.
 //
 // THIS HEADER INCLUDES NOTHING FROM engine/, AND THAT IS THE POINT. The rules
-// layer is a static library that links artattack_settings and nothing else, so
+// layer is a static library that links labrador_settings and nothing else, so
 // an engine symbol in here is a link error rather than a review comment. What
 // it buys is that the entire game is playable inside the test suite, with no
 // window, no device and no renderer - which is also what makes the replay test

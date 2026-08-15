@@ -1,6 +1,6 @@
 #pragma once
 
-namespace artattack
+namespace labrador
 {
 	// A name that has already been resolved.
 	//

@@ -1,4 +1,4 @@
-# ArtAttack — Architecture
+# Labrador — Architecture
 
 The shape of the engine at build level: the targets, the tree, what a
 module is, what a game project is, and where the engine/game boundary
@@ -43,12 +43,12 @@ line. It runs on every build and fails with the offending file and line.
 ```mermaid
 flowchart TD
     subgraph apps["applications"]
-        game["ArtAttackGame<br/>the paint-shooter"]
-        sample["ArtAttackSample<br/>minimal sample game"]
+        game["ColourWarsGame<br/>the paint-shooter"]
+        sample["MinimalSample<br/>minimal sample game"]
         tests["tests"]
     end
     subgraph libs["static libraries"]
-        engine["ArtAttackEngine"]
+        engine["LabradorEngine"]
         math["MattMath"]
     end
     subgraph edge["the bought edge (T9)"]
@@ -308,7 +308,7 @@ the file are `render/resource_factory.cpp` and the readers beside it, written
 once for every backend.
 
 **There are three backends**: `render/d3d11/`, `render/gl/` and
-`render/null/`, chosen by `ARTATTACK_RENDER_BACKEND` at configure time. The
+`render/null/`, chosen by `LABRADOR_RENDER_BACKEND` at configure time. The
 first two are held to the same `RenderPixelTests`; the third has no graphics
 API and records what it was asked to draw, which is what makes drawing
 assertable where there is no driver. Nothing outside any of the three folders
@@ -364,7 +364,7 @@ little of `app` as it likes.
 
 For readers arriving from Unreal, the translation:
 
-| Unreal | ArtAttack |
+| Unreal | Labrador |
 |---|---|
 | Project (`.uproject`) | a folder: a short `CMakeLists.txt`, a `main.cpp`, a `content/` directory |
 | Module (`Build.cs`) | an engine folder with a fixed dependency direction — users don't write modules |

@@ -8,16 +8,16 @@
 #include <stdexcept>
 #include <vector>
 
-using artattack::CollisionLayer;
-using artattack::CollisionMask;
-using artattack::CollisionObject;
-using artattack::CollisionTag;
-using artattack::GameObject;
-using artattack::Scene;
-using artattack::Camera;
+using labrador::CollisionLayer;
+using labrador::CollisionMask;
+using labrador::CollisionObject;
+using labrador::CollisionTag;
+using labrador::GameObject;
+using labrador::Scene;
+using labrador::Camera;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
-using artattack::Viewport;
+using labrador::Viewport;
 
 namespace
 {
@@ -40,7 +40,7 @@ namespace
 			this->last_dt_ = dt;
 		}
 
-		void draw(artattack::DrawList& /*draw_list*/) const override {}
+		void draw(labrador::DrawList& /*draw_list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
 		int updates() const { return this->updates_; }
@@ -62,7 +62,7 @@ namespace
 		}
 
 		void update(float /*dt*/) override { this->updates_++; }
-		void draw(artattack::DrawList& /*draw_list*/) const override {}
+		void draw(labrador::DrawList& /*draw_list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
 		const mattmath::Shape* shape() const override

@@ -2,7 +2,7 @@ find_package(doctest CONFIG REQUIRED)
 
 # The whole game, with no engine in the binary.
 #
-# NOTE WHAT IS NOT LINKED: ArtAttackEngine. This target has LineSweeperRules,
+# NOTE WHAT IS NOT LINKED: LabradorEngine. This target has LineSweeperRules,
 # doctest and the settings interface, so there is no window to open, no device
 # to create and no renderer to fail. That is the property the rules library was
 # made a library for, and it is what makes a replay test - four thousand ticks
@@ -18,7 +18,7 @@ add_executable(LineSweeperTests
 target_link_libraries(LineSweeperTests PRIVATE
     LineSweeperRules
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 # The tests include their own fixtures header from the repository root, the

@@ -19,7 +19,7 @@
 // arithmetic that has no business depending on which backend was selected. The
 // right shape is a second file beside this one, added to UiTests under that
 // preset alone, the way tests/render/null_tests.cpp is.
-class StubWidget final : public artattack::UiWidget
+class StubWidget final : public labrador::UiWidget
 {
 public:
 	StubWidget(float x, float y, float width, float height) :
@@ -29,21 +29,21 @@ public:
 
 	void update(float /*dt*/) override {}
 
-	void draw(artattack::DrawList& /*draw_list*/) const override
+	void draw(labrador::DrawList& /*draw_list*/) const override
 	{
 		// Never called by anything under test; a focus group draws nothing.
 	}
 
 	mattmath::RectangleF bounds() const override { return this->bounds_; }
 
-	void set_colour(const artattack::Colour& colour) override
+	void set_colour(const labrador::Colour& colour) override
 	{
 		this->colour_ = colour;
 	}
 
-	const artattack::Colour& colour() const { return this->colour_; }
+	const labrador::Colour& colour() const { return this->colour_; }
 
 private:
 	mattmath::RectangleF bounds_;
-	artattack::Colour colour_ = artattack::Colour::black;
+	labrador::Colour colour_ = labrador::Colour::black;
 };

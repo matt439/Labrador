@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace artattack
+namespace labrador
 {
 	// Which group an object belongs to: exactly one bit, set by the game.
 	//

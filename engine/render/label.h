@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// A string a scene can hold, which is what Text on its own is not.
 	//

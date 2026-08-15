@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// A string drawn in one font.
 	//

@@ -9,7 +9,7 @@ using namespace mattmath;
 
 #pragma region UiObject
 
-namespace artattack
+namespace labrador
 {
 	UiObject::UiObject(const std::string& name, bool hidden) :
 		name_(name), hidden_(hidden)

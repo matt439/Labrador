@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace artattack
+namespace labrador
 {
 	// Everything drawing reads from, cached by name: the textures the GPU holds,
 	// the fonts built from them, and the sheets that index them. Named resources

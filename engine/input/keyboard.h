@@ -4,7 +4,7 @@
 #include <string>
 #include <string_view>
 
-namespace artattack
+namespace labrador
 {
 	// WHY THIS DEVICE IS FED AND THE PADS ARE READ.
 	//

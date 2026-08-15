@@ -2,7 +2,7 @@
 
 #include <functional>
 
-namespace artattack
+namespace labrador
 {
 	class UiWidget;
 

@@ -8,7 +8,7 @@
 #include <tuple>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

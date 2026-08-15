@@ -8,7 +8,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	AnimationObject::AnimationObject(const std::string& sheet_name,
 		const std::string& animation_strip_name,

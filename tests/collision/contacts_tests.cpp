@@ -9,13 +9,13 @@
 #include <algorithm>
 #include <vector>
 
-using artattack::CollisionLayer;
-using artattack::CollisionMask;
-using artattack::CollisionObject;
-using artattack::CollisionTag;
-using artattack::Contact;
-using artattack::dispatch_contacts;
-using artattack::find_contacts;
+using labrador::CollisionLayer;
+using labrador::CollisionMask;
+using labrador::CollisionObject;
+using labrador::CollisionTag;
+using labrador::Contact;
+using labrador::dispatch_contacts;
+using labrador::find_contacts;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
 
@@ -42,7 +42,7 @@ namespace
 		}
 
 		void update(float /*dt*/) override {}
-		void draw(artattack::DrawList& /*draw_list*/) const override {}
+		void draw(labrador::DrawList& /*draw_list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
 		const mattmath::Shape* shape() const override { return &this->rectangle_; }
@@ -66,7 +66,7 @@ namespace
 			}
 			if (this->separate_on_contact_)
 			{
-				this->rectangle_.offset(artattack::separation(normal, penetration));
+				this->rectangle_.offset(labrador::separation(normal, penetration));
 			}
 		}
 

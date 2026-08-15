@@ -10,9 +10,9 @@ add_executable(CollisionTests
     tunnelling_tests.cpp
 )
 target_link_libraries(CollisionTests PRIVATE
-    ArtAttackEngine
+    LabradorEngine
     doctest::doctest
-    artattack_settings
+    labrador_settings
 )
 
 add_test(NAME CollisionTests COMMAND CollisionTests)

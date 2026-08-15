@@ -6,7 +6,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	AnimationStrip::AnimationStrip(const RectangleI& first_frame,
 		int frame_count, float frame_time, bool looping) :

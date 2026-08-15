@@ -2,7 +2,7 @@
 
 #include "engine/math/vector2f.h"
 
-namespace artattack
+namespace labrador
 {
 	// What the narrow phase knows about one overlap: the axis it happened on,
 	// and how deep it is.

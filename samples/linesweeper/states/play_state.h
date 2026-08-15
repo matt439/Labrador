@@ -21,14 +21,14 @@
 // make one worth writing (README, Still open).
 namespace linesweeper
 {
-	class PlayState : public artattack::State
+	class PlayState : public labrador::State
 	{
 	public:
-		explicit PlayState(artattack::Application* app);
+		explicit PlayState(labrador::Application* app);
 
 		void init() override;
 		void update(float dt) override;
-		void draw(artattack::Renderer& renderer) const override;
+		void draw(labrador::Renderer& renderer) const override;
 
 	private:
 		// The keyboard as one of tick.h's button masks. A free function on the
@@ -39,7 +39,7 @@ namespace linesweeper
 
 		// Borrowed. The shell built every service before this existed and
 		// outlives it (PHILOSOPHY, Services and lifetimes).
-		artattack::Application* app_ = nullptr;
+		labrador::Application* app_ = nullptr;
 
 		// The match, by value, as a member. Not a unique_ptr, not a handle,
 		// not registered with anything - 276 bytes that die when this state
@@ -51,8 +51,8 @@ namespace linesweeper
 		// back for the things the state still has something to say to. The
 		// board holds a `const World*` into the member above, which is legal
 		// because the state outlives its own scene.
-		std::unique_ptr<artattack::Scene> scene_ = nullptr;
+		std::unique_ptr<labrador::Scene> scene_ = nullptr;
 		BoardView* board_ = nullptr;
-		artattack::Label* hint_ = nullptr;
+		labrador::Label* hint_ = nullptr;
 	};
 }

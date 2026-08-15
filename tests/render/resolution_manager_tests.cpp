@@ -6,8 +6,8 @@
 
 #include <stdexcept>
 
-using artattack::ResolutionManager;
-using artattack::ScreenResolution;
+using labrador::ResolutionManager;
+using labrador::ScreenResolution;
 using mattmath::Vector2I;
 
 TEST_CASE("the default size is the default preset's size")

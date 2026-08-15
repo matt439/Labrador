@@ -4,7 +4,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/viewport.h"
 
-namespace artattack
+namespace labrador
 {
 	// A 2D pan and zoom: what a view's world coordinates have to go through to
 	// become screen coordinates. One per view, held by DrawList and applied as

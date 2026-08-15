@@ -6,7 +6,7 @@
 
 using namespace mattmath;
 
-namespace artattack
+namespace labrador
 {
 	struct GamepadReader::Impl
 	{

@@ -7,8 +7,8 @@
 
 #include <stdexcept>
 
-using artattack::Camera;
-using artattack::Viewport;
+using labrador::Camera;
+using labrador::Viewport;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
 

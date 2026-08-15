@@ -6,7 +6,7 @@
 
 using namespace DirectX;
 using namespace mattmath;
-namespace artattack
+namespace labrador
 {
 	SoundBank::SoundBank(std::unique_ptr<WaveBank> wave_bank,
 		Registry<SoundEffectInstance> instances) :

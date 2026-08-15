@@ -4,7 +4,7 @@
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
-namespace artattack
+namespace labrador
 {
 	// A rectangle of the back buffer, plus a depth range, in the shape every
 	// graphics API wants it. It was a mattmath type carrying a D3D11_VIEWPORT

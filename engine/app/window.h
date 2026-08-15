@@ -7,7 +7,7 @@
 #include <Windows.h>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// What a window has to tell whoever owns it. Modelled on DeviceNotify
 	// (engine/render/renderer.h) and const-qualified to match, because these
@@ -82,8 +82,8 @@ namespace artattack
 	struct WindowOptions
 	{
 		// Unique per process, so a game that ever opens two windows needs two.
-		std::wstring window_class_name = L"ArtAttackWindowClass";
-		std::wstring window_title = L"ArtAttack";
+		std::wstring window_class_name = L"LabradorWindowClass";
+		std::wstring window_title = L"Labrador";
 
 		// CLIENT pixels - the area the game draws into, not the outer rect.
 		// Turning one into the other is this class's job and nobody else's.

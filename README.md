@@ -39,7 +39,7 @@ docs/                   the design documents, and the reviews that argued with t
 ## Building
 
 **Windows only.** The renderer has three backends, selected by
-`ARTATTACK_RENDER_BACKEND` at configure time: Direct3D 11, OpenGL 3.3 core, and
+`LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11, OpenGL 3.3 core, and
 a null one with no graphics API that records what it was asked to draw. The
 first two are held to the same pixel tests and both still run on Windows,
 through the same Win32 window — the second exists to prove the seam carries a
@@ -70,11 +70,11 @@ ctest --preset x64-debug
 `x64-debug-gl` builds against the OpenGL backend and `x64-debug-null` against
 one with no graphics API at all. They are separate configurations rather than a
 runtime switch because the backend is chosen at compile time
-(`ARTATTACK_RENDER_BACKEND`), so asking for one that was not built is a missing
+(`LABRADOR_RENDER_BACKEND`), so asking for one that was not built is a missing
 symbol at link rather than a failure on the first frame.
 
 The presets put the build in `out/build/<preset>/`. The sample lands at
-`out/build/x64-debug/samples/minimal/ArtAttackSample.exe` and runs from
+`out/build/x64-debug/samples/minimal/MinimalSample.exe` and runs from
 anywhere — the build mirrors its content beside it.
 
 If `cmake` is not on your `PATH`, the copy inside Visual Studio is at
@@ -87,9 +87,9 @@ Add it as a submodule and `add_subdirectory` it before the target that links
 it:
 
 ```cmake
-add_subdirectory(external/labrador)   # defines ArtAttackEngine and artattack_settings
+add_subdirectory(external/labrador)   # defines LabradorEngine and labrador_settings
 
-target_link_libraries(YourGame PRIVATE ArtAttackEngine artattack_settings)
+target_link_libraries(YourGame PRIVATE LabradorEngine labrador_settings)
 target_include_directories(YourGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 ```
 
@@ -98,7 +98,7 @@ Three things worth knowing:
 - **You get the library and nothing else.** The tests, the benchmark and the
   sample are behind `PROJECT_IS_TOP_LEVEL`, so consuming Labrador does not put
   ten doctest targets and a sample executable into your `ctest`.
-- **`artattack_settings` comes from here, and only from here.** It is the
+- **`labrador_settings` comes from here, and only from here.** It is the
   `/W4 /WX /permissive- /fp:precise` interface target every real target links
   (ARCHITECTURE, The build). Do not define your own copy — CMake will fail on
   the duplicate target name, and the fix is not a guard: two copies across two
@@ -159,7 +159,7 @@ The benchmark (`bench/`) reports throughput and asserts on **complexity class**
 rather than on wall-clock — a phase that is linear in the object count must
 stay linear when the count quadruples, whatever the machine. An absolute
 threshold would either fail on a slow box or pass on a fast one after a real
-regression. Run `ArtAttackBench` directly to see the table.
+regression. Run `LabradorBench` directly to see the table.
 
 ## Status
 

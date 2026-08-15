@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	class UiWidget;
 

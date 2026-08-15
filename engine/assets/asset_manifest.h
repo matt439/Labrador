@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// One asset to load: what it is, where it lives, and what it is called.
 	//

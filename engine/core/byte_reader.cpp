@@ -4,7 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 
-namespace artattack
+namespace labrador
 {
 	ByteReader::ByteReader(const std::vector<unsigned char>& bytes,
 		const std::string& what)

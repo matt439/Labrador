@@ -4,7 +4,7 @@
 
 using namespace DirectX;
 
-namespace artattack
+namespace labrador
 {
 	SoundBankObject::SoundBankObject(const std::string& sound_bank_name,
 	                                 const AudioResources* audio_resources) :

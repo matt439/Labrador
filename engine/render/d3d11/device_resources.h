@@ -9,7 +9,7 @@
 #include <d3d11_1.h>
 #include <dxgi1_6.h>
 
-namespace artattack
+namespace labrador
 {
     // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
     //

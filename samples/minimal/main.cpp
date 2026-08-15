@@ -13,7 +13,7 @@
 #include <exception>
 #include <cstdio>
 #include <memory>
-using namespace artattack;
+using namespace labrador;
 
 int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 	_In_ int show_command)
@@ -21,11 +21,11 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 	try
 	{
 		ApplicationOptions options;
-		options.window_class_name = L"ArtAttackSampleWindowClass";
+		options.window_class_name = L"MinimalSampleWindowClass";
 		// ASCII only: this file gets copied into new projects, and a wide
 		// literal's encoding depends on how the compiler was told to read the
 		// source.
-		options.window_title = L"ArtAttack - minimal sample";
+		options.window_title = L"Labrador - minimal sample";
 		options.resolution = ScreenResolution::s_1280_720;
 
 		// One pane, so one view's worth of recording state. The default is four

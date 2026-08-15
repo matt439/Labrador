@@ -19,27 +19,27 @@ namespace linesweeper
 {
 	// The guideline's seven, which is what anybody who has played the genre
 	// expects each shape to be.
-	constexpr artattack::Colour kind_colour(Kind kind)
+	constexpr labrador::Colour kind_colour(Kind kind)
 	{
 		switch (kind)
 		{
 		case Kind::i:
-			return artattack::Colour(0, 240, 240);
+			return labrador::Colour(0, 240, 240);
 		case Kind::j:
-			return artattack::Colour(0, 96, 240);
+			return labrador::Colour(0, 96, 240);
 		case Kind::l:
-			return artattack::Colour(240, 152, 0);
+			return labrador::Colour(240, 152, 0);
 		case Kind::o:
-			return artattack::Colour(240, 208, 0);
+			return labrador::Colour(240, 208, 0);
 		case Kind::s:
-			return artattack::Colour(0, 208, 80);
+			return labrador::Colour(0, 208, 80);
 		case Kind::t:
-			return artattack::Colour(168, 48, 240);
+			return labrador::Colour(168, 48, 240);
 		case Kind::z:
-			return artattack::Colour(240, 48, 48);
+			return labrador::Colour(240, 48, 48);
 		case Kind::none:
 		default:
-			return artattack::Colour(0, 0, 0, 0);
+			return labrador::Colour(0, 0, 0, 0);
 		}
 	}
 
@@ -59,10 +59,10 @@ namespace linesweeper
 	// README argues that the same one state expresses opaque drawing, a fade
 	// and additive glow; this is the line where that stops being an argument
 	// and starts being two multiplications.
-	constexpr artattack::Colour faded(const artattack::Colour& colour,
+	constexpr labrador::Colour faded(const labrador::Colour& colour,
 		float alpha)
 	{
-		return artattack::Colour(colour.r * alpha, colour.g * alpha,
+		return labrador::Colour(colour.r * alpha, colour.g * alpha,
 			colour.b * alpha, alpha);
 	}
 }

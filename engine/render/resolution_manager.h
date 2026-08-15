@@ -5,7 +5,7 @@
 #include "engine/math/vector2i.h"
 #include "engine/render/screen_resolution.h"
 
-namespace artattack
+namespace labrador
 {
     // The size everything above the backend lays itself out against.
     // ViewportManager derives every viewport and every divider from it, and it

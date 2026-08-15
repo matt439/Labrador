@@ -1,6 +1,6 @@
 #include "engine/render/texture_data.h"
 
-namespace artattack
+namespace labrador
 {
 	namespace
 	{

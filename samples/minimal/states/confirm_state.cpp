@@ -8,7 +8,7 @@
 
 using namespace DirectX;
 using namespace mattmath;
-using namespace artattack;
+using namespace labrador;
 
 namespace
 {
@@ -29,7 +29,7 @@ void ConfirmState::init()
 	this->prompt_ = std::make_unique<Text>(
 		this->question_ + L"   A = yes, B = no", font_name,
 		Vector2F(resolution.x * 0.5f - 200.0f, resolution.y * 0.5f + 60.0f),
-		this->app_->render_resources(), artattack::Colour::goldenrod);
+		this->app_->render_resources(), labrador::Colour::goldenrod);
 }
 
 void ConfirmState::update(float /*dt*/)

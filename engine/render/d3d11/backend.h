@@ -29,7 +29,7 @@
 // the whole point of the seam is that draw code never learns which backend it
 // is talking to.
 
-namespace artattack
+namespace labrador
 {
 	// COM spells the accessor Get(), so teach the registry to unwrap a ComPtr
 	// here, where COM is already in scope.
@@ -228,7 +228,7 @@ namespace artattack
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> linear_sampler;
 
 		const RenderResources* resources = nullptr;
-		artattack::DeviceNotify* notify = nullptr;
+		labrador::DeviceNotify* notify = nullptr;
 
 		ID3D11SamplerState* sampler(TextureFilter filter) const;
 

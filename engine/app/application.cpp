@@ -11,7 +11,7 @@
 
 using namespace DirectX;
 
-namespace artattack
+namespace labrador
 {
 	int default_thread_count()
 	{

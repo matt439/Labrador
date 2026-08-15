@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// A named, hideable thing in a user interface.
 	//

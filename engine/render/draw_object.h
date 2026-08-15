@@ -5,7 +5,7 @@
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/vector2f.h"
 
-namespace artattack
+namespace labrador
 {
 	class DrawObject
 	{

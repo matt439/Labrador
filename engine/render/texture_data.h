@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	// One mip level's place in a texture's bytes.
 	//

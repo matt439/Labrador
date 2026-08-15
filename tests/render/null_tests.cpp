@@ -40,7 +40,7 @@
 
 namespace
 {
-	using namespace artattack;
+	using namespace labrador;
 	using namespace mattmath;
 
 	// A renderer, a table, and content loaded through the real load path.

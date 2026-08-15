@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace artattack
+namespace labrador
 {
 	FocusGroup::FocusGroup(int slot_count, FocusStyle style) :
 		style_(style)

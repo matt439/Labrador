@@ -9,7 +9,7 @@
 #include <exception>
 
 
-namespace artattack
+namespace labrador
 {
     // Helper class for animation and simulation timing.
     class StepTimer

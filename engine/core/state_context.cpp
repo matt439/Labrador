@@ -3,7 +3,7 @@
 #include <memory>
 #include <utility>
 
-namespace artattack
+namespace labrador
 {
 	StateContext::StateContext() = default;
 	StateContext::~StateContext() = default;

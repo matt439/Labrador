@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-namespace artattack
+namespace labrador
 {
 	// The sound banks, cached by name. The audio counterpart to RenderResources,
 	// and separate from it because the module table (ARCHITECTURE.md) has render
