@@ -909,3 +909,93 @@ TEST_CASE("CONTRACT: a character the font lacks draws the stand-in glyph")
 	CHECK(harness.ink_bounds().width > 0);
 	CHECK((drawn == expected));
 }
+
+// --- the viewport -----------------------------------------------------------
+//
+// NOTHING HERE CALLED set_viewport UNTIL NOW, which is why the two device
+// backends were able to disagree about a pane for as long as they did. The
+// harness above builds one integral 64x64 view, both samples take their
+// resolution from a Vector2I, and the seam's only production caller of
+// set_viewport is engine/scene/scene.cpp, which no test reaches. So the pane
+// arithmetic was exercised by neither the pixel contract nor the recording.
+//
+// THE RULE ITSELF IS PINNED HEADLESSLY, in tests/render/viewport_tests.cpp,
+// which runs in every configuration including the null one. What that file
+// cannot see is whether a backend USES it - that is one line in each of two
+// files and needs a rasteriser to observe. These two cases are that
+// observation, and they are the reason the file is worth the device.
+
+TEST_CASE("CONTRACT: a viewport offsets the pane and scales the whole of it")
+{
+	Harness harness;
+
+	DrawList list = harness.begin();
+
+	// Deliberately not symmetric in y. A pane at (32, 8) 32x24 sits at rows
+	// 8..31 measured from the top and rows 32..55 measured from the bottom, so
+	// a backend that forgot GL's origin flip - or applied it twice - lands
+	// somewhere these assertions can tell apart. A centred pane could not.
+	list.set_viewport(Viewport(32.0f, 8.0f, 32.0f, 24.0f));
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 32.0f, 24.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// The pane is filled corner to corner. THE FAR CORNER IS THE ASSERTION
+	// THAT MATTERS: a backend that offset the rasteriser correctly but built
+	// its pixels-to-clip transform from the back buffer instead of the pane
+	// would put this sprite in the top left quarter of the pane and leave
+	// (63, 31) black. That is exactly the shape of the bug the GL backend had.
+	CHECK(harness.at(32, 8) == WHITE);
+	CHECK(harness.at(63, 31) == WHITE);
+	CHECK(harness.at(47, 20) == WHITE);
+
+	// And nothing outside it. A viewport confines; it does not merely offset.
+	CHECK(harness.at(31, 8) == BLACK);
+	CHECK(harness.at(32, 7) == BLACK);
+	CHECK(harness.at(32, 32) == BLACK);
+	CHECK(harness.at(0, 0) == BLACK);
+}
+
+TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them")
+{
+	Harness harness;
+
+	DrawList list = harness.begin();
+
+	// 64 rows split at 31.5, which is what an odd client height does to a
+	// two-player layout and what no integral test can produce. Each edge
+	// truncates and the size is the difference (Viewport::pixel_rect), so the
+	// panes come out 31 rows and 33 rows and meet exactly at row 31.
+	//
+	// TRUNCATING THE POSITION AND THE SIZE SEPARATELY - which is what the GL
+	// backend used to do, inline, in its own file - gives 31 rows and 32 rows.
+	// Those cover rows 0..30 and 31..62, and row 63 belongs to neither.
+	list.set_viewport(Viewport(0.0f, 0.0f, 64.0f, 31.5f));
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 64.0f, 31.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	list.set_viewport(Viewport(0.0f, 31.5f, 64.0f, 32.5f));
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 64.0f, 33.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.end();
+
+	// EVERY ROW, stated as a loop rather than as three sampled rows, because
+	// the failure this exists to catch is a single row of clear colour and
+	// sampling is how it survived this long.
+	for (int y = 0; y < BUFFER_SIZE; y++)
+	{
+		CHECK_MESSAGE(harness.at(32, y) == WHITE,
+			"row ", y, " is not covered by either pane");
+	}
+
+	// Changing the viewport mid-list is legal and costs a flush, so the two
+	// panes have to be two runs. If the second set_viewport had not flushed,
+	// the first pane's sprite would have been rasterised under the second
+	// pane's transform and the top of the frame would be black.
+	CHECK(harness.at(0, 0) == WHITE);
+	CHECK(harness.at(63, 63) == WHITE);
+}
