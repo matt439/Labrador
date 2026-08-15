@@ -280,6 +280,8 @@ compiler-settings target (CMake — see ARCHITECTURE.md, The build):
 | `MattMath` | static library | `engine/math/` | nothing |
 | `ArtAttackEngine` | static library | `engine/` | MattMath, platform SDKs |
 | `ArtAttackSample` | application | `samples/minimal/` | ArtAttackEngine |
+| `LineSweeperRules` | static library | `samples/linesweeper/rules/` | nothing — the settings target carries no libraries |
+| `LineSweeperSample` | application | `samples/linesweeper/` | LineSweeperRules, ArtAttackEngine |
 | tests | applications | `tests/` | the libraries they test |
 
 A client's own application target is a fourth, in the client's own
@@ -472,6 +474,14 @@ engine API to depend on.
 - A minimal sample game lives beside the paint-shooter. It is the standing
   answer to "how do I start a project on this engine" — and the permanent
   second client that keeps the boundary honest (T1).
+- A second sample answers the other question, and the two are not merged
+  because they are not the same artefact. "How do I start" wants the smallest
+  thing that runs and is meant to be **copied**; "what does a finished game
+  look like on this engine, and what does it cost" wants a whole game and is
+  meant to be **read**. A sample big enough to answer the second is a bad
+  answer to the first, and the instruction to copy it stops being true the
+  moment its file count goes up. Both live in this repository and are compiled
+  by the same build, because a sample nothing compiles is a sample that rots.
 - An "Introduction to C++" video series accompanies the engine (T10): the
   answer to "C++ is too hard" is teaching it, not wrapping it. The
   game-facing API is the series' subject matter — and its acceptance test:

@@ -34,6 +34,7 @@ if(PROJECT_IS_TOP_LEVEL)
     enable_testing()
 
     add_subdirectory(samples/minimal)
+    add_subdirectory(samples/linesweeper)
     add_subdirectory(bench)
     add_subdirectory(tests/app)
     add_subdirectory(tests/assets)

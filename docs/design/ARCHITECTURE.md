@@ -138,12 +138,19 @@ being load-bearing.
 │   ├── assets/             JSON loading, resource loaders, manifest, factories
 │   └── app/                the application shell: window, device, services,
 │                           main loop, state stack
-├── samples/
-│   └── minimal/            the only client in this tree, and the
-│                           new-project template. The paint-shooter that
-│                           used to sit beside it under game/ is its own
-│                           repository now, and consumes this one as a
-│                           submodule
+├── samples/               two clients, answering two different questions
+│   ├── minimal/            the new-project template: the smallest thing
+│                           that runs, and the one you copy. The
+│                           paint-shooter that used to sit beside it under
+│                           game/ is its own repository now, and consumes
+│                           this one as a submodule
+│   └── linesweeper/        a whole game, and the one you read. Three
+│       ├── rules/          layers: rules/ links nothing, so the game is
+│       ├── presentation/   playable from tests/ with no device;
+│       └── states/         presentation/ reads a world and draws it; and
+│                           states/ is the only place that includes both
+│                           rules/ and engine/. Its own README records the
+│                           decisions behind it
 ├── tests/                  one folder per module under test
 │   ├── app/
 │   ├── assets/

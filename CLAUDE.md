@@ -4,7 +4,10 @@ A 2D game engine in C++20, Windows-only, built with CMake + vcpkg. This
 repository is the **engine half of a split**: the client that drives it,
 ColourWars, lives in its own repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
-and `samples/minimal` (~330 lines) is the only client in it.
+and `samples/` holds the only two clients in it: `minimal` (~380 lines), the
+new-project template you copy, and `linesweeper`, a falling-block game you read
+— whose own [README](samples/linesweeper/README.md) records its design
+decisions and is the first thing to read before changing it.
 
 Start from [README.md](README.md). The three design documents are authoritative
 on intent: [PHILOSOPHY.md](docs/design/PHILOSOPHY.md) (the trade-offs T1–T12,
