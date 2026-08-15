@@ -42,7 +42,7 @@ if(offenders)
         "  See docs/design/ARCHITECTURE.md, The module graph.")
 endif()
 
-# The second wall: a backend header is for its own folder.
+# The second wall: a backend's folder is for itself.
 #
 # ARCHITECTURE says a file outside engine/render/<backend>/ including that
 # backend's header would be a mistake. That was review's job until now, and
@@ -52,6 +52,20 @@ endif()
 # without anyone choosing that. A header carries a backend further in one line
 # than a translation unit can, so the check reads both.
 #
+# THE FOLDER, NOT ONE FILENAME IN IT. This used to match "backend.h" alone,
+# which left three ways through: the angle-bracket spelling, which the include
+# root admits exactly as it admits the quoted one; the "../render/d3d11/..."
+# relative form; and - the one that matters - EVERY OTHER HEADER IN THE FOLDER.
+# device_resources.h opens with <d3d11_1.h>, <dxgi1_6.h> and a D3DDeviceNotify
+# interface, and naming it from engine/app/application.h passed this check
+# silently while doing precisely the damage the paragraph above describes. It
+# is the same header as that incident. gl_functions.h and sprite_shader.h were
+# the same hole on the other backend.
+#
+# So the rule is now what it always meant: a subfolder of render/ IS a backend,
+# and its headers are its own. Nothing needs editing here when a fourth one
+# lands, which is the property the filename form was reaching for and missed.
+#
 # Deliberately not a compiler error: the include root has to admit
 # "engine/render/d3d11/backend.h" for the folder's own three files, and there is
 # no include path that admits it there and refuses it next door. Same shape as
@@ -59,13 +73,16 @@ endif()
 
 set(backend_offenders "")
 foreach(source IN LISTS engine_sources)
+    # Both spellings and the relative form, matching the game-header wall - a
+    # rule that only catches one of three ways to write the same include is a
+    # rule the next person writes around without meaning to.
     file(STRINGS "${source}" hits
-        REGEX "^[ \t]*#[ \t]*include[ \t]*\"engine/render/[A-Za-z0-9_]+/backend\\.h\"")
+        REGEX "^[ \t]*#[ \t]*include[ \t]*[\"<](\\.\\./)*(engine/)?render/[A-Za-z0-9_]+/[A-Za-z0-9_]+\\.h[\">]")
     foreach(hit IN LISTS hits)
-        # The folder its own backend.h lives in is the one folder allowed to
-        # name it. Extract the backend from the include and compare it with the
+        # The folder a header lives in is the one folder allowed to name it.
+        # Extract the backend from the include and compare it with the
         # directory the file is in, so a new backend needs no edit here.
-        string(REGEX MATCH "engine/render/([A-Za-z0-9_]+)/backend\\.h" ignored "${hit}")
+        string(REGEX MATCH "render/([A-Za-z0-9_]+)/[A-Za-z0-9_]+\\.h" ignored "${hit}")
         get_filename_component(source_dir "${source}" DIRECTORY)
         if(NOT source_dir MATCHES "/render/${CMAKE_MATCH_1}$")
             string(STRIP "${hit}" hit)
