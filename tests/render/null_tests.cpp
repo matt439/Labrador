@@ -32,11 +32,20 @@
 // one, a view that recorded into its neighbour - none of those is visible in a
 // 64x64 read-back and all of them are here.
 //
-// AND WHAT THEY DO NOT. Nothing about colour, blending, filtering or
-// rasterisation, because nothing here rasterises. The geometry is real - this
-// backend runs engine/render/sprite_geometry.cpp exactly as the other two do -
-// so a corner position asserted here is the corner a device would have been
-// given. What happens to it afterwards is the pixel tests' business.
+// AND WHAT THEY DO NOT. Nothing about colour, blending or rasterisation,
+// because nothing here rasterises. The geometry is real - this backend runs
+// engine/render/sprite_geometry.cpp exactly as the other two do - so a corner
+// position asserted here is the corner a device would have been given. What
+// happens to it afterwards is the pixel tests' business.
+//
+// THE STATE A DRAW CARRIES IS THE EXCEPTION, AND IT IS A NARROW ONE. A
+// RecordedSprite stamps the filter and the viewport in force when it was
+// recorded, so this file can say which state each draw would have been made
+// under - not what a sampler or a rasteriser then did with it, which is the
+// pixel tests' business and unreachable here. That distinction is worth the
+// sentence: asserting the stamp is asserting that set_filter and set_viewport
+// reach the draw, which is all a recording can know and is more than nothing
+// was checking before.
 
 namespace
 {
@@ -290,4 +299,125 @@ TEST_CASE("reading pixels back says plainly that there are none")
 	std::vector<unsigned char> pixels;
 	CHECK_THROWS_AS(harness.renderer().read_back_buffer(pixels),
 		std::logic_error);
+}
+
+// --- the state a draw was recorded under ------------------------------------
+//
+// NOTHING ASSERTED EITHER OF THESE UNTIL NOW, on any backend. RecordedSprite
+// has carried filter and viewport since it was written; the pixel tests cannot
+// reach them, because that file creates one integral 64x64 view and never calls
+// set_viewport, and TextureFilter::linear has no caller anywhere in the tree.
+// So a backend that dropped either on the floor passed every configuration.
+//
+// THE set_filter CASE IS ALSO THE ONLY ODR-USE OF IT IN THE REPOSITORY, which
+// is worth more than the assertion: until this file called it, a backend could
+// omit the definition entirely and all four builds would link. Now the one
+// configuration CI runs completely needs it to exist, which is the link error
+// T5 asks for rather than a silence.
+
+TEST_CASE("the filter in force is stamped on each draw, and changes mid-list")
+{
+	Harness harness;
+
+	DrawList list = harness.begin();
+
+	// Default first, asserted rather than assumed - point is what both clients
+	// want everywhere and a backend that defaulted to linear would look
+	// slightly soft in every frame and fail nothing.
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	list.set_filter(TextureFilter::linear);
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	// And back, because "it changed once" and "it tracks" are different
+	// claims and only the second is the contract.
+	list.set_filter(TextureFilter::point);
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 3);
+	CHECK(drawn[0].filter == TextureFilter::point);
+	CHECK(drawn[1].filter == TextureFilter::linear);
+	CHECK(drawn[2].filter == TextureFilter::point);
+}
+
+TEST_CASE("the viewport in force is stamped on each draw")
+{
+	Harness harness;
+
+	DrawList list = harness.begin();
+
+	// The default is the whole back buffer the harness asked for.
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	// A pane, and a fractional one - which is the shape that made the two
+	// device backends disagree, because GL has to reach whole pixels and used
+	// to reach them twice with two different answers. The recording keeps the
+	// float it was given; Viewport::pixel_rect is where the conversion lives
+	// and tests/render/viewport_tests.cpp is where it is pinned.
+	list.set_viewport(Viewport(0.0f, 240.5f, 640.0f, 239.5f));
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 2);
+
+	CHECK(drawn[0].viewport.x == doctest::Approx(0.0f));
+	CHECK(drawn[0].viewport.y == doctest::Approx(0.0f));
+	CHECK(drawn[0].viewport.width == doctest::Approx(640.0f));
+	CHECK(drawn[0].viewport.height == doctest::Approx(480.0f));
+
+	CHECK(drawn[1].viewport.y == doctest::Approx(240.5f));
+	CHECK(drawn[1].viewport.height == doctest::Approx(239.5f));
+
+	// The pane the second draw carries covers the rows the first one's does
+	// not, all the way to the last: 240 + 240 against a back buffer of 480.
+	CHECK(drawn[1].viewport.pixel_rect().y +
+		drawn[1].viewport.pixel_rect().height == 480);
+}
+
+TEST_CASE("state set on one view does not leak into its neighbour")
+{
+	Harness harness;
+
+	DrawList first = harness.begin(2);
+	DrawList second = harness.view(1);
+
+	first.set_filter(TextureFilter::linear);
+	first.set_viewport(Viewport(0.0f, 0.0f, 320.0f, 480.0f));
+	first.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	second.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 2);
+
+	// THE PARALLELISM AXIS IS VIEWS, so this is not a tidiness assertion. Two
+	// workers enter draw() on the same object at once and record into
+	// different views; a filter or a viewport that crossed between them would
+	// make the frame depend on which worker got there first, and be invisible
+	// in every read-back that did not happen to catch the race.
+	CHECK(drawn[0].view == 0);
+	CHECK(drawn[0].filter == TextureFilter::linear);
+	CHECK(drawn[0].viewport.width == doctest::Approx(320.0f));
+
+	CHECK(drawn[1].view == 1);
+	CHECK(drawn[1].filter == TextureFilter::point);
+	CHECK(drawn[1].viewport.width == doctest::Approx(640.0f));
 }
