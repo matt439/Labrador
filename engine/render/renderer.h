@@ -309,6 +309,18 @@ namespace labrador
 		// Back-buffer size in pixels. Replaces DeviceResources::GetOutputSize
 		// and GetScreenViewport, which is all the layout arithmetic in
 		// engine/render/ ever wanted from the device.
+		//
+		// THE SIZE OF THE BUFFER, NOT OF THE LAST THING ANYONE SAID. The two
+		// agree whenever the shell is keeping up, and the one state where they
+		// need not is a drag-resize, during which the shell discards every
+		// WM_SIZE and still asks for frames (engine/app/window.cpp). What a
+		// backend answers then is whatever it is really drawing into: a swap
+		// chain does not follow its window, so the D3D11 backend answers the
+		// size it was told and lets Present stretch; a WGL context's default
+		// framebuffer is the window's client area, so the GL backend answers
+		// the window. read_back_buffer below is sized from this and a viewport
+		// is placed inside it, so a backend that answered from a cache would
+		// have both of those disagree with the pixels it just drew.
 		mattmath::Vector2F back_buffer_size() const;
 
 		// Copies the back buffer out: 8-bit RGBA, row-major, top row first,

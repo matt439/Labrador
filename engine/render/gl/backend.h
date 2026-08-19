@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/registry.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/font.h"
 #include "engine/render/gl/gl_functions.h"
 #include "engine/render/renderer.h"
@@ -144,8 +145,11 @@ namespace labrador
 		HDC device_context = nullptr;
 		HGLRC gl_context = nullptr;
 
-		int width = 0;
-		int height = 0;
+		// The size the shell last reported, and the only thing
+		// window_size_changed answers against. NOT the size of anything this
+		// backend draws into - see drawable_size below.
+		int reported_width = 0;
+		int reported_height = 0;
 
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;
@@ -163,6 +167,22 @@ namespace labrador
 
 		GLuint sampler(TextureFilter filter) const;
 
+		// How big the thing being drawn into is, right now, in pixels.
+		//
+		// THE DEFAULT FRAMEBUFFER OF A WGL CONTEXT IS ITS WINDOW'S CLIENT AREA,
+		// so the window is the only authority on this and the backend must not
+		// keep a second copy of it. It used to keep one, written by
+		// create_device and window_size_changed and read by every glViewport,
+		// and the shell guarantees that copy is wrong exactly when someone is
+		// looking: engine/app/window.cpp renders a full frame from WM_PAINT for
+		// every step of a drag-resize and discards every WM_SIZE until the drag
+		// ends, so the whole picture slid down the window under a black band
+		// for the duration. The other backend cannot have that bug, because it
+		// draws into a swap chain it created at a size it was told and needs no
+		// height at all to place a pane - which is why this is the file the
+		// number has to come out of.
+		mattmath::Vector2I drawable_size() const;
+
 		// Makes a 3.3 core context on `window` and loads the entry points.
 		void create_context(HWND window);
 
@@ -171,6 +191,10 @@ namespace labrador
 
 		// Issues one view's runs. Called from submit(), on the thread that owns
 		// the context and never from a worker.
-		void replay(const DrawList::View& view);
+		//
+		// The flip height is a parameter rather than a member because every
+		// pane of one frame must be placed against the same one - submit()
+		// reads it once and hands the same number to every view.
+		void replay(const DrawList::View& view, int drawable_height);
 	};
 }

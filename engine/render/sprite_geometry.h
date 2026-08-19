@@ -22,8 +22,17 @@
 // A BACKEND DOES NOT DO THIS ARITHMETIC, WHICH IS THE WHOLE POINT. What a
 // backend receives is four SpriteVertex in view pixels; what it owes is a
 // buffer, a shader that multiplies by two constants, and the state that makes
-// the blend premultiplied. Two backends cannot disagree about where a sprite
+// the blend premultiplied. Three backends cannot disagree about where a sprite
 // went, because only one of them decides.
+//
+// THE ONE TERM A BACKEND STILL OWNS is where the pane itself sits in the thing
+// being drawn into, because that is the one question the answer to which is not
+// the same shape on both APIs: D3D11 measures a viewport down from the render
+// target's top left and needs no height at all, GL measures up from the bottom
+// and so has to subtract from one. It held a cached copy of that height and it
+// was wrong for the whole of every drag-resize; it reads the window now
+// (engine/render/gl/backend.h, Impl::drawable_size), which is what makes the
+// sentence above true rather than nearly true.
 //
 // THE CORNER ORDER IS PART OF THE CONTRACT: 0 is the destination's top left, 1
 // its top right, 2 its bottom left, 3 its bottom right. A backend's index

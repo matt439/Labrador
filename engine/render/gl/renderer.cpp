@@ -3,6 +3,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/gl/sprite_shader.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
@@ -261,6 +262,17 @@ namespace labrador
 			: this->point_sampler;
 	}
 
+	Vector2I Renderer::Impl::drawable_size() const
+	{
+		RECT client = {};
+		if (this->window == nullptr || !GetClientRect(this->window, &client))
+		{
+			return { 0, 0 };
+		}
+		return { static_cast<int>(client.right - client.left),
+			static_cast<int>(client.bottom - client.top) };
+	}
+
 	void Renderer::Impl::create_context(HWND native_window)
 	{
 		this->window = native_window;
@@ -478,7 +490,7 @@ namespace labrador
 		glActiveTexture(GL_TEXTURE0_);
 	}
 
-	void Renderer::Impl::replay(const DrawList::View& view)
+	void Renderer::Impl::replay(const DrawList::View& view, int drawable_height)
 	{
 		if (view.runs.empty())
 		{
@@ -507,8 +519,14 @@ namespace labrador
 			// the only place in the backend where that conversion happens - the
 			// vertex positions do not need it, because the clip-space y flip in
 			// the shader and GL's origin cancel exactly.
+			//
+			// AND THIS IS THE ONE PLACE A BACKEND DECIDES WHERE A PIXEL GOES,
+			// which is why the height it subtracts from is the framebuffer's
+			// own (Impl::drawable_size) and not a number the shell last
+			// mentioned. Anything else displaces the whole frame, every pane
+			// and every glyph, by the difference between the two.
 			glViewport(static_cast<GLint>(pixels.x),
-				static_cast<GLint>(this->height - (pixels.y + pixels.height)),
+				static_cast<GLint>(drawable_height - (pixels.y + pixels.height)),
 				static_cast<GLsizei>(pixels.width),
 				static_cast<GLsizei>(pixels.height));
 
@@ -549,8 +567,8 @@ namespace labrador
 				"Renderer::create_device needs a view capacity of at least 1.");
 		}
 
-		this->impl_->width = width;
-		this->impl_->height = height;
+		this->impl_->reported_width = width;
+		this->impl_->reported_height = height;
 		this->impl_->create_context(static_cast<HWND>(native_window));
 
 		this->impl_->views.clear();
@@ -567,7 +585,8 @@ namespace labrador
 
 	bool Renderer::window_size_changed(int width, int height)
 	{
-		if (width == this->impl_->width && height == this->impl_->height)
+		if (width == this->impl_->reported_width &&
+			height == this->impl_->reported_height)
 		{
 			return false;
 		}
@@ -577,8 +596,18 @@ namespace labrador
 		// default framebuffer of a WGL context follows its window on its own.
 		// The answer is still "yes, re-run the layout", because that is what
 		// the shell asked.
-		this->impl_->width = width;
-		this->impl_->height = height;
+		//
+		// SO THE ONLY THING THIS WRITES IS THE ANSWER TO ITS OWN NEXT CALL.
+		// Nothing that places a pixel reads these two, and they are compared
+		// against the shell's number rather than the window's on purpose: the
+		// shell suppresses every WM_SIZE for the duration of a drag and then
+		// forwards GetClientRect on WM_EXITSIZEMOVE, so a backend that answered
+		// this against the live client rect would answer "nothing changed" to
+		// the one message that ends a resize, where the other backend answers
+		// true. Two backends disagreeing about the shell's signal is the same
+		// class of bug as two disagreeing about a pixel.
+		this->impl_->reported_width = width;
+		this->impl_->reported_height = height;
 		return true;
 	}
 
@@ -597,8 +626,10 @@ namespace labrador
 
 	void Renderer::begin_frame()
 	{
-		glViewport(0, 0, static_cast<GLsizei>(this->impl_->width),
-			static_cast<GLsizei>(this->impl_->height));
+		const Vector2I drawable = this->impl_->drawable_size();
+
+		glViewport(0, 0, static_cast<GLsizei>(drawable.x),
+			static_cast<GLsizei>(drawable.y));
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -606,8 +637,8 @@ namespace labrador
 		{
 			view->reset();
 			view->viewport = Viewport(0.0f, 0.0f,
-				static_cast<float>(this->impl_->width),
-				static_cast<float>(this->impl_->height));
+				static_cast<float>(drawable.x),
+				static_cast<float>(drawable.y));
 		}
 
 		this->impl_->view_count = 0;
@@ -670,6 +701,11 @@ namespace labrador
 		glBindBuffer(GL_ARRAY_BUFFER_, this->impl_->vertex_buffer);
 		glActiveTexture(GL_TEXTURE0_);
 
+		// Once, for the whole frame. Asking the window per view would let two
+		// panes of one picture be placed against two different heights if the
+		// window changed size between them.
+		const int drawable_height = this->impl_->drawable_size().y;
+
 		// In view order, which is the only ordering guarantee the seam makes -
 		// and here it is the only ordering there is, because a view's recording
 		// is a vector rather than a command list.
@@ -677,20 +713,29 @@ namespace labrador
 		{
 			DrawList::View& view = *this->impl_->views[static_cast<size_t>(i)];
 			view.close_run();
-			this->impl_->replay(view);
+			this->impl_->replay(view, drawable_height);
 		}
 	}
 
 	Vector2F Renderer::back_buffer_size() const
 	{
-		return { static_cast<float>(this->impl_->width),
-			static_cast<float>(this->impl_->height) };
+		// The window's, not the shell's. The seam promises the size of the
+		// buffer read_back_buffer copies out, and here that buffer is the
+		// window's client area whatever anyone last said about it.
+		const Vector2I drawable = this->impl_->drawable_size();
+		return { static_cast<float>(drawable.x),
+			static_cast<float>(drawable.y) };
 	}
 
 	void Renderer::read_back_buffer(std::vector<unsigned char>& pixels)
 	{
-		const size_t width = static_cast<size_t>(this->impl_->width);
-		const size_t height = static_cast<size_t>(this->impl_->height);
+		// Same source as back_buffer_size, which is what makes the seam's
+		// "exactly width * height * 4 bytes" true. Sized from anything else,
+		// a window that had shrunk would have glReadPixels reading rows that
+		// are not in the framebuffer, which GL leaves undefined.
+		const Vector2I drawable = this->impl_->drawable_size();
+		const size_t width = static_cast<size_t>(drawable.x);
+		const size_t height = static_cast<size_t>(drawable.y);
 		pixels.resize(width * height * 4);
 
 		glReadBuffer(GL_BACK);

@@ -200,13 +200,42 @@ namespace
 		{
 			this->renderer_.submit();
 			this->renderer_.read_back_buffer(this->pixels_);
+			this->buffer_ = this->renderer_.back_buffer_size();
 		}
+
+		// Changes the window's client area and TELLS THE RENDERER NOTHING,
+		// which is not a contrived state: engine/app/window.cpp discards every
+		// WM_SIZE for the duration of a drag and renders a full frame from
+		// WM_PAINT for every step of it, so a frame drawn into a window whose
+		// size the renderer was never told is the normal case while a user is
+		// dragging an edge.
+		void resize_window(int width, int height)
+		{
+			REQUIRE(SetWindowPos(this->window_, nullptr, 0, 0, width, height,
+				SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE) != 0);
+		}
+
+		// What the last end() read back, and how big the renderer said it was.
+		// Every case but one knows both are BUFFER_SIZE; at() goes through the
+		// reported width anyway so that the one case which does not can be
+		// written in the same vocabulary as the rest.
+		Vector2F buffer_size() const { return this->buffer_; }
+		size_t byte_count() const { return this->pixels_.size(); }
 
 		Pixel at(int x, int y) const
 		{
+			const size_t stride = static_cast<size_t>(this->buffer_.x) * 4;
 			const size_t offset =
-				(static_cast<size_t>(y) * BUFFER_SIZE + static_cast<size_t>(x))
-				* 4;
+				static_cast<size_t>(y) * stride + static_cast<size_t>(x) * 4;
+			// Guarded rather than asserted unconditionally: ink_bounds walks
+			// every pixel of every text case, and an assertion per read would
+			// bury the file's real assertion count under four thousand.
+			if (offset + 3 >= this->pixels_.size())
+			{
+				REQUIRE_MESSAGE(false, "pixel (", x, ", ", y,
+					") is outside the back buffer");
+				return {};
+			}
 			return { this->pixels_[offset], this->pixels_[offset + 1],
 				this->pixels_[offset + 2], this->pixels_[offset + 3] };
 		}
@@ -303,6 +332,8 @@ namespace
 		Renderer renderer_;
 		RenderResources resources_;
 		std::vector<unsigned char> pixels_;
+		Vector2F buffer_ = Vector2F(static_cast<float>(BUFFER_SIZE),
+			static_cast<float>(BUFFER_SIZE));
 	};
 }
 
@@ -998,6 +1029,64 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 	// pane's transform and the top of the frame would be black.
 	CHECK(harness.at(0, 0) == WHITE);
 	CHECK(harness.at(63, 63) == WHITE);
+}
+
+TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
+{
+	Harness harness;
+
+	// back_buffer_size is called by nothing else in this file and by nothing
+	// in tests/ at all, so until now the seam's "exactly width * height * 4
+	// bytes" was a sentence and not an assertion.
+	std::ignore = harness.begin();
+	harness.end();
+
+	CHECK(harness.buffer_size() ==
+		Vector2F(static_cast<float>(BUFFER_SIZE),
+			static_cast<float>(BUFFER_SIZE)));
+	CHECK(harness.byte_count() ==
+		static_cast<size_t>(BUFFER_SIZE) * BUFFER_SIZE * 4);
+
+	SUBCASE("and it still does when the window changed and nobody said so")
+	{
+		// THE ONE STATE IN WHICH A BACKEND CAN HOLD TWO ANSWERS TO "how big is
+		// it". D3D11 draws into a swap chain it made at the size it was told,
+		// so the window moving under it changes nothing here and the stretch
+		// happens at Present. A WGL context has no such buffer - its default
+		// framebuffer is the window's client area - so the GL backend has to
+		// read the window, and it used to answer this from a cached int that
+		// only create_device and window_size_changed ever wrote.
+		//
+		// WHAT THIS CANNOT SEE is where the pane went, and the shrink below is
+		// as close as the seam gets. A stale flip height displaces the whole
+		// frame in the window, but read_back_buffer is flipped against the same
+		// stale number, so on a grow the two errors cancel exactly and the
+		// image that comes back is correct; on a shrink the readback runs off
+		// the end of the framebuffer, which GL leaves undefined rather than
+		// wrong. Nothing inside this seam can assert on the window's real
+		// pixels - see docs/review/backend-equivalence/TEST-GAP.md. What is
+		// assertable is that the two answers agree, which is what makes the
+		// size above a fact about the buffer rather than about a cache.
+		harness.resize_window(BUFFER_SIZE, BUFFER_SIZE - 16);
+
+		DrawList list = harness.begin();
+		const Vector2F pane = harness.buffer_size();
+		list.set_viewport(Viewport(0.0f, 0.0f, pane.x, pane.y));
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(0.0f, 0.0f, pane.x, pane.y), Colour::white, 0.0f,
+			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		harness.end();
+
+		const Vector2F buffer = harness.buffer_size();
+		CHECK(harness.byte_count() == static_cast<size_t>(buffer.x) *
+			static_cast<size_t>(buffer.y) * 4);
+
+		// And a pane the size of that buffer covers it corner to corner, which
+		// is the placement half of the same statement.
+		CHECK(harness.at(0, 0) == WHITE);
+		CHECK(harness.at(static_cast<int>(buffer.x) - 1,
+			static_cast<int>(buffer.y) - 1) == WHITE);
+	}
 }
 
 TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not ZERO")
