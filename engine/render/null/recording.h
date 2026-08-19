@@ -16,8 +16,17 @@
 // The rule exists because a backend header names backend types, and one line of
 // #include carries them further than a translation unit can: that is how
 // <d3d11_1.h> came to be on the command line of every state file in every
-// client. `backend.h` names those types and may not be included from anywhere
-// else; cmake/check_engine_includes.cmake fails the build for it by name.
+// client.
+//
+// THE CHECK GUARDS THE FOLDER, NOT ONE FILENAME IN IT, and this file is inside
+// that folder - so it is inside the wall, not outside it.
+// cmake/check_engine_includes.cmake stopped matching `backend.h` by name
+// exactly because device_resources.h was the way around that, and it now fails
+// the build for any file outside engine/render/<backend>/ that names any header
+// in it. What keeps this legal is narrower than it looks: the check scans
+// engine/, and the only includer outside the folder is
+// tests/render/null_tests.cpp. Anything in engine/ that reached for this would
+// fail the build, and correctly - a recording is for a test to read.
 //
 // Nothing here names a backend type. A RecordedSprite is a handle, a viewport,
 // a filter and four vertices - every one of them an engine type that
@@ -29,8 +38,14 @@
 // existed: bench/scene_bench.cpp, which duplicates the render cull because
 // Scene::draw needs a Renderer; tests/ui/stub_widget.h, which exists because a
 // real UiText cannot be constructed without one; and .github/workflows/ci.yml,
-// where a runner with no GPU cannot check the OpenGL backend's pixels. This
-// answers the first two completely and the third not at all - see below.
+// where a runner with no GPU cannot check the OpenGL backend's pixels. It
+// UNBLOCKS the first two and answers the third not at all. Neither of the first
+// two has actually been converted: scene_bench.cpp:144-154 still duplicates the
+// cull and says why, and stub_widget.h:14-21 still stubs and says "that is
+// worth doing and is not done". Both call sites were amended to record that
+// they were not converted; this paragraph claimed they had been, which is the
+// drift that matters - a header saying a job is finished is the one place
+// nobody looks to find out that it is not.
 //
 // IT RECORDS WHAT WAS DRAWN, NOT WHAT IT LOOKED LIKE, and that is a deliberate
 // floor rather than a first version. Rasterising would mean a third
@@ -39,8 +54,10 @@
 // the pixel - which is a large thing to build and a larger one to be wrong
 // about quietly. What a test can assert here is that an object emitted the
 // quads it should have, from the texture it should have, at the positions it
-// should have. Renderer::read_back_buffer therefore throws, and
-// RenderPixelTests is excluded from this configuration by name.
+// should have. Renderer::read_back_buffer therefore throws std::logic_error,
+// and RenderPixelTests is NOT BUILT AT ALL in this configuration rather than
+// built and excluded - tests/render/CMakeLists.txt says why, and a test that
+// cannot pass is better absent than skipped.
 
 namespace labrador
 {

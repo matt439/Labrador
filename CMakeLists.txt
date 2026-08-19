@@ -28,9 +28,9 @@ add_subdirectory(engine)
 
 # A client consuming this as a submodule wants the library and nothing else:
 # its ctest should not run the engine's tests, and it should certainly not
-# build the engine's sample. Without this guard, adding Labrador as a
-# subdirectory drags in doctest, ten test targets and a sample executable, and
-# puts them all in the client's ctest.
+# build the engine's samples. Without this guard, adding Labrador as a
+# subdirectory drags in doctest, eleven test targets, a benchmark and two
+# sample executables, and puts them all in the client's ctest.
 if(PROJECT_IS_TOP_LEVEL)
     enable_testing()
 

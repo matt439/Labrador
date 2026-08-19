@@ -37,7 +37,7 @@
 //     option is held, not spent - the same escalation ARCHITECTURE.md:122-126
 //     describes for promoting a folder to a library.
 //
-// HOW ONE HEADER SERVES TWO BACKENDS. Renderer holds a pimpl and DrawList
+// HOW ONE HEADER SERVES THREE BACKENDS. Renderer holds a pimpl and DrawList
 // holds a raw pointer to per-view state the backend owns; each backend
 // defines Renderer::Impl and DrawList::View in its own translation unit under
 // engine/render/<backend>/. DrawList stays trivially copyable, so passing one
@@ -252,9 +252,11 @@ namespace labrador
 		// a backend that records into per-thread contexts has to make them
 		// before any frame starts.
 		//
-		// void* rather than HWND because this is the file a second backend
+		// void* rather than HWND because this is the file every backend
 		// implements, and a window handle is not a graphics type: it is this
-		// platform's window. The backend casts it back.
+		// platform's window. The backend casts it back - or, in the null
+		// backend's case, ignores it, which is what lets a client run on a
+		// machine with no display.
 		void create_device(void* native_window, int width, int height,
 			int view_capacity);
 
@@ -300,19 +302,33 @@ namespace labrador
 		// and std::out_of_range for a view index outside the current count -
 		// asking for a view nobody set up used to return a fullscreen pane and
 		// draw a whole extra pass (T6).
+		//
+		// AND std::logic_error FOR A COUNT LOWERED PAST A VIEW SOMETHING HAS
+		// ALREADY DRAWN INTO, which is a different mistake and gets a different
+		// type. The recording is stranded rather than absent: on two backends it
+		// is a vector nothing will replay, on the third a deferred context
+		// holding commands submit() will not reach. All three throw it, which is
+		// what makes it a term of the seam rather than one backend's caution.
+		// create_device throws std::invalid_argument for a view capacity below
+		// one, before it touches a window.
 		void set_view_count(int count);
 		int view_count() const;
 		DrawList view(int index) const;
 
-		// CONSTRAINT: command-list lifetime is RAII and inside the seam.
+		// CONSTRAINT: whatever a view recorded into, closing it is the seam's
+		// job and not a caller's.
 		//
-		// Records every view's list, executes them in view order and releases
-		// them. This protocol - record, FinishCommandList, ExecuteCommandList,
-		// Release - was hand-written in four places, each of which had to
-		// pre-size a vector, pre-fill it with null and Release every non-null
-		// entry, three caller obligations stated nowhere in the tree. Two of
-		// the four already disagreed about RestoreContextState. There is one
-		// copy now and it is not the caller's.
+		// Draws every view in view order, which is the only ordering guarantee
+		// made here, and leaves nothing of the frame behind. What that costs
+		// depends on the backend and is deliberately not described on this line:
+		// two of the three replay a vector, and the D3D11 one executes a command
+		// list per view - a protocol (record, FinishCommandList,
+		// ExecuteCommandList, Release) that was hand-written in four places,
+		// each of which had to pre-size a vector, pre-fill it with null and
+		// Release every non-null entry, three caller obligations stated nowhere
+		// in the tree. Two of the four already disagreed about
+		// RestoreContextState. There is one copy now and it is not the
+		// caller's; engine/render/d3d11/backend.h is where it is described.
 		//
 		// Called once per frame, between begin_frame and end_frame.
 		void submit();
@@ -347,10 +363,18 @@ namespace labrador
 		// whose output nothing can read cannot be held to a contract, however
 		// many backends fill it.
 		//
-		// RGBA REGARDLESS OF WHAT THE BACKEND STORES, so that the assertions a
-		// second backend has to pass are the same bytes and not the same bytes
-		// after a per-backend swizzle. This backend's buffer is BGRA and the
-		// conversion happens here.
+		// RGBA REGARDLESS OF WHAT THE BACKEND STORES, so that the assertions
+		// another backend has to pass are the same bytes and not the same bytes
+		// after a per-backend swizzle. Whether that costs anything is the
+		// backend's business and is written down in the backend: the D3D11 back
+		// buffer is BGRA and is swapped on the way out, the GL one is asked for
+		// as RGBA and only flipped, because GL reads from the bottom.
+		//
+		// A BACKEND MAY REFUSE, and one does. There is nothing for the null
+		// backend to copy - it records what it was asked to draw and never
+		// rasterises it - so it throws std::logic_error saying so, which is the
+		// honest answer and the reason RenderPixelTests is not built in that
+		// configuration at all rather than built and skipped.
 		//
 		// BETWEEN submit() AND end_frame(). Presenting discards the back
 		// buffer's contents, so after end_frame there is nothing left to read.
@@ -365,7 +389,9 @@ namespace labrador
 		// that reaches the seam unchanged - everything else a frame needs is
 		// expressed above in the engine's own terms. The accessors nothing
 		// called are not merely unexposed here; they are gone from the backend
-		// (engine/render/<backend>/device_resources.h says which and why).
+		// (engine/render/d3d11/device_resources.h says which and why - it is the
+		// only one of the three with such a wrapper to strip, because it is the
+		// only one whose device can be lost).
 		void begin_marker(const wchar_t* name);
 		void end_marker();
 		void set_marker(const wchar_t* name);
@@ -396,22 +422,38 @@ namespace labrador
 //
 // SETTLED, AND THIS FILE IS WHERE IT IS RECORDED:
 //
-//  - The shape of a backend is three translation units - renderer.cpp,
-//    render_resources.cpp and texture_factory.cpp, all in
+//  - The shape of a backend is three translation units every backend has -
+//    renderer.cpp, render_resources.cpp and texture_factory.cpp, all in
 //    engine/render/<backend>/ - plus whatever that backend needs to build its
-//    shader, which for one of the three is nothing. The third file is thirty
-//    lines: it turns already-decoded bytes into a texture and adds it to the
-//    table. Path-building and file-reading are in
-//    engine/render/resource_factory.cpp, written once for everybody.
+//    shader, which for one of the three is nothing, plus at most one more for
+//    the API itself. Only null stops at three: d3d11 adds device_resources.cpp
+//    and gl adds gl_functions.cpp, and both are the same kind of file, which is
+//    the part of an API that is not about drawing. The third file is where the
+//    three diverge most and is the honest measure of what a port owes for
+//    content - 115 lines on d3d11, 162 on gl, 48 on null - because it turns
+//    already-decoded bytes into a texture, and how much work that is depends on
+//    how much the API will take unchanged. Path-building and file-reading are
+//    in engine/render/resource_factory.cpp, written once for everybody.
 //
 //  - What is on which side of the line. Every decision that shows on screen is
 //    the engine's: which glyph goes where (font.h), what a .dds and a
 //    .spritefont say (dds_file.h, sprite_font_file.h), and where a sprite's
 //    four corners land and what they sample (sprite_geometry.h). What a
 //    backend supplies is a device, a texture from bytes (texture_data.h), a
-//    vertex buffer, a shader that multiplies by two constants, and the states
-//    that make the blend premultiplied. NOTHING A BACKEND DOES DECIDES WHERE A
-//    PIXEL GOES, which is what lets two of them pass the same 128 assertions.
+//    vertex buffer, a shader that multiplies each vertex by one constant, and
+//    the states that make the blend premultiplied. NOTHING A BACKEND DOES
+//    DECIDES WHERE A PIXEL GOES, which is what lets the two backends that have
+//    a rasteriser pass the same assertions - 224 of them at the last count,
+//    over 24 cases, and the number is not the point: what it buys is that the
+//    file asserting them says "the renderer", never "this renderer".
+//
+//    IT IS TWO RUNS, NOT ONE COMPARISON, and that is the standing limit.
+//    RenderPixelTests runs against whichever backend the preset configured, so
+//    d3d11 and gl are each held to those assertions and never held against each
+//    other; a divergence in a term no case happens to pin is invisible here by
+//    construction. tests/render/renderer_seam_tests.cpp is the part that does
+//    run in all three configurations, being everything the seam answers without
+//    a device. See docs/review/backend-equivalence/TEST-GAP.md.
 //
 //  - BOTH PURPOSES AT THE TOP OF THIS FILE ARE NOW FILLED, and neither is a
 //    claim any more. engine/render/gl/ is OpenGL 3.3 core and passes

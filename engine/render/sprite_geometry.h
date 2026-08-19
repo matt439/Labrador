@@ -21,8 +21,9 @@
 //
 // A BACKEND DOES NOT DO THIS ARITHMETIC, WHICH IS THE WHOLE POINT. What a
 // backend receives is four SpriteVertex in view pixels; what it owes is a
-// buffer, a shader that multiplies by two constants, and the state that makes
-// the blend premultiplied. Three backends cannot disagree about where a sprite
+// buffer, a shader that multiplies each vertex by one four-float constant and
+// the sampled texel by the vertex's own colour, and the state that makes the
+// blend premultiplied. Three backends cannot disagree about where a sprite
 // went, because only one of them decides.
 //
 // THE ONE TERM A BACKEND STILL OWNS is where the pane itself sits in the thing

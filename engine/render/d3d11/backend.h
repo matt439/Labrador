@@ -14,20 +14,23 @@
 #include <vector>
 #include "engine/render/camera.h"
 
-// The D3D11 backend, for the two callers that have to name it.
+// The D3D11 backend, for the files that have to name a device.
 //
 // renderer.h promises that reaching for the device is "a deliberate include of
 // engine/render/<backend>/ and not something a game file can do by accident".
-// This is that include. It has exactly two clients:
+// This is that include.
 //
-//   - engine/app/application.cpp, which needs an HWND and a swap chain, and
-//   - engine/render/d3d11/resource_factory.cpp, which builds textures on a
-//     device and puts them in the table - including the atlas a font is cut
-//     from, which is the one part of loading a font that needs one.
-//
-// A third would be a mistake. Everything that draws goes through DrawList, and
-// the whole point of the seam is that draw code never learns which backend it
-// is talking to.
+// EVERY CLIENT OF IT IS IN THIS FOLDER, and that is the rule rather than a
+// count. cmake/check_engine_includes.cmake fails the build for any file outside
+// engine/render/<backend>/ that includes any header inside it - the folder, not
+// one filename in it, because device_resources.h was how the wall was climbed
+// last time. The three .cpp beside this file include it and so does the shader
+// header; nothing else in the tree may. This paragraph used to name its clients
+// individually and the list went stale twice: engine/app/application.cpp is on
+// the far side of the wall now and hands its window over as a void*, and
+// engine/render/d3d11/resource_factory.cpp never existed under that name.
+// Everything that draws goes through DrawList, and the whole point of the seam
+// is that draw code never learns which backend it is talking to.
 
 namespace labrador
 {

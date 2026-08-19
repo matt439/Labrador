@@ -430,8 +430,9 @@ namespace labrador
 			sizeof(SPRITE_PIXEL_SHADER), nullptr,
 			this->pixel_shader.ReleaseAndGetAddressOf()));
 
-		// The three fields of SpriteVertex, in the order the struct declares
-		// them - which sprite_vertex.h says is the one rule about that type.
+		// The three fields of SpriteVertex, located by offsetof rather than by
+		// position, which is why sprite_vertex.h is free to declare them in any
+		// order it likes.
 		const D3D11_INPUT_ELEMENT_DESC elements[] =
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0,

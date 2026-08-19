@@ -13,27 +13,39 @@
 #include <vector>
 #include "engine/render/camera.h"
 
-// The OpenGL 3.3 core backend, for the one caller that has to name it.
+// The OpenGL 3.3 core backend, for the files that have to name a context.
 //
 // renderer.h promises that reaching for the device is "a deliberate include of
 // engine/render/<backend>/ and not something a game file can do by accident".
-// This is that include, and its only client is
-// engine/render/gl/texture_factory.cpp. A second would be a mistake.
+// This is that include. Every client of it is in this folder - the three .cpp
+// beside it and sprite_shader.h - and cmake/check_engine_includes.cmake fails
+// the build for anything outside the folder that names any header in it.
 //
-// WHAT THIS BACKEND DOES DIFFERENTLY FROM THE OTHER ONE, and it is one thing.
-// D3D11 has deferred contexts, so each view records GPU commands on its own
-// worker thread and submit() executes the command lists in order. OpenGL has no
-// such thing: a context belongs to one thread and every call is immediate. So a
-// view here records into plain memory - vertices, and a list of what to draw
-// them with - and submit() walks the views in order on the thread that owns the
-// context, issuing the calls.
-//
-// That is not a workaround. The seam's parallelism axis is views, and the
-// engine already produces a view's vertices on the CPU
+// WHAT THIS BACKEND DOES DIFFERENTLY FROM D3D11, AND IT IS NOT ONE THING. This
+// heading used to claim it was, and then said so again 111 lines further down
+// about something else. The largest is the recording shape: D3D11 has deferred
+// contexts, so each view records GPU commands on its own worker thread and
+// submit() executes the command lists in order. OpenGL has no such thing - a
+// context belongs to one thread and every call is immediate - so a view here
+// records into plain memory, vertices and a list of what to draw them with, and
+// submit() walks the views in order on the thread that owns the context. That
+// is not a workaround: the seam's parallelism axis is views, and the engine
+// already produces a view's vertices on the CPU
 // (engine/render/sprite_geometry.h), so a view's recording is a std::vector and
 // touches no driver at all. It is thread-safe by construction rather than by
-// the driver's promise, and it is what makes this backend's per-draw path
-// shorter than the one it copies.
+// the driver's promise. IT ALSO DOES NOT DISTINGUISH THIS BACKEND, because the
+// null one took the same shape one step further and records without replaying.
+//
+// The rest, each written down where it happens: the shader is compiled at
+// device creation rather than at build time (engine/CMakeLists.txt); a resize
+// rebuilds nothing, because a WGL default framebuffer follows its window
+// (Renderer::window_size_changed, and Impl::drawable_size is what that costs);
+// there is no device loss to report (Renderer::Impl below); block compression
+// is an extension that has to be asked for and a format this backend will not
+// take is refused by name (texture_factory.cpp); the vertex store grows without
+// a cap where D3D11 wraps a fixed buffer; the depth range a Viewport carries is
+// dropped, there being no depth buffer to apply it to; and the seam's three
+// debug markers do nothing.
 
 namespace labrador
 {

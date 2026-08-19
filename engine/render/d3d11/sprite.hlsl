@@ -9,11 +9,17 @@
 // reimplementation of anything.
 //
 // COMPILED AT BUILD TIME, at vs_4_0_level_9_1 and ps_4_0_level_9_1. Those are
-// the lowest profiles that exist, and they are chosen rather than defaulted:
-// device_resources.cpp accepts a device down to feature level 9.1, so a shader
-// that needed 10.0 would turn a machine this engine is meant to run on into a
-// device-creation failure nobody could read. Nothing here wants a later
-// profile - there are no loops, no branches and no integer arithmetic.
+// the lowest profiles that exist, and they cost nothing to ask for: there are
+// no loops, no branches and no integer arithmetic here, so a later profile
+// would buy the shader nothing.
+//
+// IT IS NOT WHAT LETS THE ENGINE RUN ON A 9.1 MACHINE, AND THIS LINE USED TO
+// SAY IT WAS. DeviceResources defaults minFeatureLevel to
+// D3D_FEATURE_LEVEL_10_0 and backend.h takes the default, so the 9_3, 9_2 and
+// 9_1 entries are truncated out of the level array before it is ever requested
+// - device_resources.h:52-56 states that outright. The floor is 10.0 and the
+// shader profile is below it, which is the safe direction to be wrong in and
+// still worth not claiming the reverse.
 
 // Pixels to clip space, as two multiply-adds rather than a 4x4 matrix.
 //

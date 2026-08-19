@@ -10,27 +10,36 @@ namespace labrador
 	// because that is the file format, a .spritefont because MakeSpriteFont
 	// wrote one down. A DXGI number is a thing the engine may not repeat outside
 	// engine/render/<backend>/. This enum is the translation, and the two
-	// readers that produce one and the one backend that consumes one are the
-	// whole of its traffic.
+	// readers that produce one and the backends that consume one are the whole
+	// of its traffic - two of the three do, by different routes and with
+	// different answers about what they will take, and the null backend reads
+	// it never, because it keeps a width and a height and throws the bytes
+	// away.
 	//
 	// THE LIST IS WHAT THE CONTENT IS, AND NOTHING ELSE (T1). Between this
-	// repository and the client that consumes it there are 43 textures and two
-	// fonts, and they are: 41 block-compressed images, all DXT4 or DXT5 and so
-	// both bc3_unorm; two uncompressed images, both b8g8r8a8_unorm; and two font
-	// atlases, both bc2_unorm. bc1_unorm and r8g8b8a8_unorm are here because
-	// they complete a switch over what a .dds and a .spritefont can say rather
-	// than because a file says them, and b4g4r4a4_unorm because MakeSpriteFont
-	// offers it. A file naming anything else is rejected by name (T6) rather
-	// than passed through to fail as a device error, and this list grows when a
-	// real file needs it to.
+	// repository and the client that consumes it there are 45 .dds files, and
+	// they are: 43 block-compressed, all DXT4 or DXT5 and so all bc3_unorm; and
+	// two uncompressed, both b8g8r8a8_unorm. A font atlas is a texture too and
+	// is bc2_unorm - the one this repository ships is pinned as such by
+	// sprite_font_file_tests.cpp. THE FONT COUNT IS NOT A CENSUS AND WAS ONCE
+	// WRITTEN AS ONE: there are 32 .spritefont files in the client and three
+	// copies of a single font here, most of them loaded by nothing. What is on
+	// the render path is a handful. bc1_unorm and r8g8b8a8_unorm are here
+	// because they complete a switch over what a .dds and a .spritefont can say
+	// rather than because a file says them, and b4g4r4a4_unorm because
+	// MakeSpriteFont offers it. A file naming anything else is rejected by name
+	// (T6) rather than passed through to fail as a device error, and this list
+	// grows when a real file needs it to.
 	//
-	// THE BLOCK-COMPRESSED ENTRIES ARE THE ONES TO WATCH ON A SECOND BACKEND,
-	// and they are not a corner of the content - they are 43 of the 45 images
-	// there are. Desktop GL reads them through EXT_texture_compression_s3tc,
-	// which is universally present but is still an extension; GLES 3.0 has no
-	// S3TC at all. A backend that skipped them would have no art and no text -
-	// which is the sort of thing worth knowing before a port rather than during
-	// one.
+	// THE BLOCK-COMPRESSED ENTRIES WERE THE ONES TO WATCH ON A SECOND BACKEND,
+	// and they are not a corner of the content - they are 43 of the 45 .dds
+	// there are, and every font atlas besides. That was written before the port
+	// and the port has happened: engine/render/gl/texture_factory.cpp queries
+	// GL_EXT_texture_compression_s3tc once and names it in the throw if it is
+	// absent, which is universally present on a desktop driver and absent from
+	// GLES 3.0 entirely. A backend that skipped them would have no art and no
+	// text, so the failure worth having is the one that says which extension is
+	// missing rather than the one that draws nothing.
 	enum class TextureFormat
 	{
 		r8g8b8a8_unorm,

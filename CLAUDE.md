@@ -48,10 +48,14 @@ frame submitted, in what order, from which texture, into which view. Twelve ctes
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
 `InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`
 (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
-Direct3D device — a hidden window, a WARP fallback in debug, and assertions on
-the pixels `Renderer::read_back_buffer` hands back. It is the only test of
-anything this engine draws, and the executable statement of the pixel contract
-a second backend has to reproduce. The
+device — a hidden window and a WARP fallback in debug under `x64-debug`, a WGL
+context under `x64-debug-gl` — and asserts on the pixels
+`Renderer::read_back_buffer` hands back. It is the only test that rasterises
+anything, and the executable statement of the pixel contract every backend with
+a rasteriser has to reproduce; it runs against one backend at a time and never
+compares two. What runs in all three configurations is
+[tests/render/renderer_seam_tests.cpp](tests/render/renderer_seam_tests.cpp) —
+everything the seam answers without a device. The
 samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and
 `out/build/x64-debug/samples/linesweeper/LineSweeperSample.exe`.
 
@@ -70,9 +74,12 @@ runs there with no window and no device. A rule is asserted rather than played.
   compiler's own error, but [cmake/check_engine_includes.cmake](cmake/check_engine_includes.cmake)
   greps for it on every build anyway, because the compiler only enforces it
   when this repository is built standalone.
-- **A file outside `engine/render/<backend>/` including that backend's
-  `backend.h`.** Second pass in the same script, and it reads headers as well
-  as `.cpp` files — a header is how the backend escaped last time.
+- **A file outside `engine/render/<backend>/` including *any* header in that
+  folder.** Second pass in the same script. It guards the folder rather than
+  one filename in it, and it reads headers as well as `.cpp` files, because
+  `device_resources.h` beside `backend.h` is how the backend escaped last
+  time — so naming `engine/render/gl/gl_functions.h` from `engine/app/` fails
+  the build exactly as naming `backend.h` does.
 - **Adding a source file without listing it.** Sources are enumerated
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
@@ -100,21 +107,28 @@ runs there with no window and no device. A rule is asserted rather than played.
 - **Platform code lives behind seams**: `render/d3d11/`, `input/xinput/`.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
-  A backend is three translation units — `renderer.cpp`,
-  `render_resources.cpp`, `texture_factory.cpp` — plus one shader, and all
-  four live in `render/<backend>/`. Nothing outside that folder includes the
-  backend header, the shell included: it hands its window handle to
-  `create_device` as a `void*`. `check_engine_includes.cmake` fails the build
-  for a file that reaches across, headers included.
+  Every backend has the same three translation units — `renderer.cpp`,
+  `render_resources.cpp`, `texture_factory.cpp` — and at most two more:
+  `d3d11/` adds `device_resources.cpp` and a shader, `gl/` adds
+  `gl_functions.cpp` and compiles its GLSL at device creation, `null/` adds
+  nothing and has no shader at all. Everything a backend owns lives in
+  `render/<backend>/`. Nothing outside that folder includes anything from it,
+  the shell included: it hands its window handle to `create_device` as a
+  `void*`. `check_engine_includes.cmake` fails the build for a file that
+  reaches across, headers included.
 - **Nothing a backend does decides where a pixel goes.** The glyph walk
   ([render/font.h](engine/render/font.h)), both file readers
   ([dds_file.h](engine/render/dds_file.h),
   [sprite_font_file.h](engine/render/sprite_font_file.h)) and the quad
   arithmetic ([sprite_geometry.h](engine/render/sprite_geometry.h)) are engine
   code, tested headlessly, shared by every backend. A backend supplies a
-  device, a texture from bytes, a vertex buffer, a shader and four state
-  objects. DirectXTK is no longer on the render path — it is still bought for
-  audio and the gamepad reader.
+  device, a texture from bytes, a vertex buffer, a shader, and whatever its API
+  spells the blend, the rasteriser state and the two filters as — five state
+  objects on `d3d11/`, two sampler objects and some `glEnable` on `gl/`, none
+  at all on `null/`. The one term a backend still decides is where a pane sits
+  in the buffer, because D3D11 measures down from the top and GL up from the
+  bottom; `gl/backend.h` says what that costs. DirectXTK is no longer on the
+  render path — it is still bought for audio and the gamepad reader.
 - **A new public primitive ships with behavioural tests in the same commit.**
   Benchmarks assert on **complexity class**, not wall-clock — a phase linear in
   the object count must stay linear when the count quadruples, whatever the

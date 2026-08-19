@@ -398,8 +398,9 @@ namespace labrador
 		glUniform1i(glGetUniformLocation(this->program, "sprite_texture"), 0);
 
 		// The index buffer, which is the same two triangles per sprite for
-		// every sprite there will ever be. A run longer than this many is split
-		// at replay rather than growing anything.
+		// every sprite there will ever be. A run is capped at this many when it
+		// is recorded (DrawList::View::draw) rather than grown here; replay()
+		// neither splits nor clamps, and would draw whatever it was handed.
 		std::vector<unsigned short> index_data;
 		index_data.reserve(static_cast<size_t>(DrawList::View::MAX_RUN_SPRITES)
 			* INDICES_PER_SPRITE);
@@ -433,8 +434,10 @@ namespace labrador
 				sizeof(unsigned short)),
 			index_data.data(), GL_STATIC_DRAW_);
 
-		// The three fields of SpriteVertex, in the order the struct declares
-		// them - which sprite_vertex.h says is the one rule about that type.
+		// The three fields of SpriteVertex, located by offsetof rather than by
+		// position, which is why sprite_vertex.h is free to declare them in any
+		// order it likes. The attribute indexes are the shader's, bound by name
+		// before linking, and are what has to agree with it.
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
 			reinterpret_cast<const void*>(offsetof(SpriteVertex, position)));
