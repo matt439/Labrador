@@ -129,12 +129,16 @@ runs there with no window and no device. A rule is asserted rather than played.
   is wrong or the philosophy is, and if the philosophy is, say so there with
   the reason. Several commits in the history do nothing else.
 - `docs/review/` is **historical**. It is the review as written and is not
-  updated as findings are fixed. Both rounds were written while the
+  updated as findings are fixed. Both full rounds were written while the
   paint-shooter was still in this tree, so any finding citing `game/...` refers
   to code that now lives in ColourWars — do not go looking for those files
   here, and do not treat their line numbers as current. `docs/review/rtcd/` is
   a candidate list mined from Ericson's *Real-Time Collision Detection*, not a
   plan; the decisions live in `docs/review/round-2/PLAN.md`.
+  `docs/review/backend-equivalence/` is the exception to the `game/` caveat —
+  it postdates the split, holds the three render backends against one contract,
+  and its `DRIFT.md` is a live list of comments in `engine/render/` that the
+  code no longer matches.
 
 ## Known-absent, on purpose
 

@@ -169,6 +169,13 @@ each was wrong about. Those reviews were written while the paint-shooter was
 still in this tree, so findings filed against `game/` refer to code that now
 lives in ColourWars.
 
+Since the split, one targeted audit: `docs/review/backend-equivalence/` holds
+the three render backends against the one contract in `engine/render/renderer.h`
+and asks what `RenderPixelTests` structurally cannot, since it only ever runs
+against the backend the preset configured. The invariant holds — the three
+agree on every term the pixel contract names — with one live exception on the
+GL preset and a list of comments the code has outgrown.
+
 Not done, and known: an action-mapping layer over the input devices. That is
 the whole list — the second render backend and the null one both landed.
 
