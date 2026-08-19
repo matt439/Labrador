@@ -237,13 +237,40 @@ namespace labrador
 		this->flush();
 
 		ID3D11CommandList* commands = nullptr;
-		// FALSE: the deferred context's state is not restored afterwards,
-		// because begin_frame rebinds the render target and the viewport on
-		// every context at the top of the next frame. The two hand-written
-		// copies of this protocol disagreed about this flag - TRUE in Level,
-		// FALSE in MenuPage - and neither had a reason written down.
+		// FALSE: the deferred context's state is not restored afterwards, and
+		// `bound` is cleared below to say so - set_view_count binds again on
+		// the next frame, which is the only thing that puts a render target
+		// back on this context. The two hand-written copies of this protocol
+		// disagreed about this flag - TRUE in Level, FALSE in MenuPage - and
+		// neither had a reason written down.
 		ThrowIfFailed(this->context->FinishCommandList(FALSE, &commands));
+		this->bound = false;
 		return commands;
+	}
+
+	void DrawList::View::discard()
+	{
+		if (!this->bound)
+		{
+			return;
+		}
+
+		// NO flush() FIRST, AND THE HRESULT IS NOT CHECKED. Both follow from
+		// this being the throwing-away path. What is still batched is CPU
+		// memory that reset() is about to clear, and mapping a buffer to record
+		// a draw call nobody will execute is work for nothing; and the one way
+		// FinishCommandList fails here is a device this frame's exception was
+		// probably reporting in the first place, on a context OnDeviceLost is
+		// about to release. Turning that into a throw out of begin_frame would
+		// make an abandoned frame kill the process on the one backend that has
+		// device loss at all.
+		ID3D11CommandList* stranded = nullptr;
+		if (SUCCEEDED(this->context->FinishCommandList(FALSE, &stranded)) &&
+			stranded != nullptr)
+		{
+			stranded->Release();
+		}
+		this->bound = false;
 	}
 
 	// --- DrawList ------------------------------------------------------------
@@ -676,11 +703,23 @@ namespace labrador
 		// FinishCommandList takes it away - so binding every view in the
 		// capacity while submit() finishes only the views the frame declared
 		// stranded two commands per idle view per frame, permanently. Nothing
-		// below this line touches a context; set_view_count binds the views the
+		// below this line binds anything; set_view_count binds the views the
 		// frame actually has, which is the first moment anybody knows what they
 		// are.
+		//
+		// IT DOES DRAIN, THOUGH, AND ONLY THIS BACKEND HAS ANYTHING TO DRAIN.
+		// "begin_frame resets every view's recording" (renderer.h) has to mean
+		// the same thing on all three, and on the other two a recording is a
+		// vector that reset() empties. Here it is a deferred context, and the
+		// commands in one outlive any flag this loop clears: a frame begun,
+		// drawn into and never submitted used to leave its flushed geometry
+		// where the next frame's ExecuteCommandList would find it at the head
+		// of the list, drawn over the top of the clear above. discard() is a
+		// no-op on every view submit() already finished, which is every view on
+		// every normal frame.
 		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
 		{
+			view->discard();
 			view->reset();
 		}
 

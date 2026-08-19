@@ -421,3 +421,33 @@ TEST_CASE("state set on one view does not leak into its neighbour")
 	CHECK(drawn[1].filter == TextureFilter::point);
 	CHECK(drawn[1].viewport.width == doctest::Approx(640.0f));
 }
+
+TEST_CASE("a frame that is never submitted contributes nothing to the next")
+{
+	Harness harness;
+
+	// A sprite and then text, which is a texture change and therefore the
+	// point at which a backend that batches has to write something down. Here
+	// it is a push_back either way; on D3D11 the first draw's geometry is
+	// already inside a deferred context by the time the second one is
+	// recorded, and a deferred context keeps what is in it until something
+	// takes the command list away. Two of the three backends make this case
+	// trivially true and the third had to be taught it - which is the whole
+	// reason it is a case rather than an assumption. See
+	// docs/review/backend-equivalence/README.md, defect B.
+	DrawList abandoned = harness.begin();
+	abandoned.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	abandoned.draw_text(harness.font, L"AA", Vector2F(0.0f, 0.0f),
+		Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+
+	// And no end(), which is the case. The frame is begun, drawn into, and
+	// abandoned - a client reaches it by catching an exception out of its own
+	// draw walk and carrying on.
+
+	std::ignore = harness.begin();
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	CHECK(drawn.empty());
+}

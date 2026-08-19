@@ -1031,6 +1031,38 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 	CHECK(harness.at(63, 63) == WHITE);
 }
 
+TEST_CASE("CONTRACT: a frame that is never submitted contributes nothing")
+{
+	Harness harness;
+
+	// A SPRITE AND THEN TEXT, because the texture change between them is what
+	// forces a flush. Everything a draw records is CPU-side until something
+	// flushes it, so a frame holding one texture's worth of sprites strands
+	// nothing on any backend and would pass this on the code that fails it.
+	DrawList abandoned = harness.begin();
+	abandoned.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, static_cast<float>(BUFFER_SIZE),
+			static_cast<float>(BUFFER_SIZE)),
+		Colour::white, 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	abandoned.draw_text(harness.font, L"AAAA", Vector2F(4.0f, 4.0f),
+		Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+
+	// AND NO end(), which is the whole case. A client reaches this state by
+	// letting an exception out of its draw walk and carrying on; both samples
+	// exit instead, so nothing in the tree reaches it, which is why the
+	// backends were free to disagree about it. See
+	// docs/review/backend-equivalence/README.md, defect B.
+
+	std::ignore = harness.begin();
+	harness.end();
+
+	// The next frame is the clear and nothing else. Not sampled - the stranded
+	// geometry is a full-screen quad, but the failure it stands for is any
+	// already-flushed run arriving at the head of the next frame's commands.
+	CHECK(harness.at(0, 0) == BLACK);
+	CHECK(harness.ink_bounds() == RectangleI::ZERO);
+}
+
 TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 {
 	Harness harness;

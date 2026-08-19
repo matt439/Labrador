@@ -281,6 +281,17 @@ namespace labrador
 
 		// begin_frame clears the back buffer and resets every view's
 		// recording; end_frame presents.
+		//
+		// A FRAME BEGUN AND NEVER SUBMITTED CONTRIBUTES NOTHING TO THE NEXT
+		// ONE, which is a statement about what "resets" means and is worth
+		// making because the three backends have three different things to
+		// reset. Two of them hold a frame in a vector, where dropping it is
+		// clearing the vector; the D3D11 one holds it in a deferred context,
+		// which keeps what was recorded into it until something takes the
+		// command list away, so it has to drain as well as forget. A client
+		// reaches this by catching an exception out of its own draw walk and
+		// carrying on - and so does a device event, which surfaces as a throw
+		// from a worker mid-frame.
 		void begin_frame();
 		void end_frame();
 

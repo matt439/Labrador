@@ -186,7 +186,26 @@ namespace labrador
 		void set_transform(const D3D11_VIEWPORT& viewport);
 
 		void reset();
+
+		// Flushes what is batched, takes the command list off the context and
+		// clears `bound`, because FinishCommandList(FALSE) leaves the context
+		// with none of the state bind() recorded into it. The caller owns the
+		// list and releases it.
 		ID3D11CommandList* finish();
+
+		// Takes the command list off the context and throws it away.
+		//
+		// FOR A FRAME THAT WAS BEGUN AND NEVER SUBMITTED, which is the one
+		// state where this backend could differ from the other two about what a
+		// frame is. A view's recording there is a std::vector that reset()
+		// empties; here it is a deferred context, which holds what has been
+		// recorded into it until something takes it away - so clearing `bound`
+		// without draining first left an abandoned frame's already-flushed
+		// geometry to arrive prepended to the next frame's command list, over
+		// the top of the next frame's clear. Does nothing on a view that is not
+		// bound, so the normal path - where submit() has just drained
+		// everything - costs one branch per view per frame.
+		void discard();
 	};
 
 	// The device, the swap chain, the views, and everything a draw call needs
