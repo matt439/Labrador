@@ -96,6 +96,17 @@ namespace labrador
 	class Renderer::Impl
 	{
 	public:
+		// Whether create_device has run.
+		//
+		// THE ONE THING THIS BACKEND HAS TO REMEMBER ABOUT A DEVICE IT DOES NOT
+		// HAVE. Every ordering rule the seam states is enforced by the other two
+		// backends as a side effect of a pointer being null, and a backend that
+		// cannot fail is a backend that lets a client through a rule the
+		// configuration it ships on will stop it at - which is the opposite of
+		// what this one is for. It is what CI runs completely, so it has to be
+		// the strictest of the three and not the most permissive.
+		bool device_created = false;
+
 		int width = 0;
 		int height = 0;
 

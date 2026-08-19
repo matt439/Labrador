@@ -151,6 +151,7 @@ namespace labrador
 				"Renderer::create_device needs a view capacity of at least 1.");
 		}
 
+		this->impl_->device_created = true;
 		this->impl_->width = width;
 		this->impl_->height = height;
 

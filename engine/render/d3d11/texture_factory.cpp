@@ -9,6 +9,7 @@
 
 #include <wrl/client.h>
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -69,6 +70,19 @@ namespace labrador
 		const std::string& name,
 		const TextureData& texture)
 	{
+		// BEFORE ANY OF THE DESCRIPTION BELOW, because device_of is a bare
+		// GetD3DDevice() and it is null until create_device has run. The two
+		// calls that use it are ThrowIfFailed'd, which reads like a check and
+		// is not one: the dereference happens first, so a load before the
+		// device existed was an access violation inside the D3D runtime with
+		// nothing catchable and no name in it. The seam states the ordering
+		// (resource_factory.h); this is one of the three places it is kept.
+		if (device_of(renderer) == nullptr)
+		{
+			throw std::runtime_error("Texture '" + name + "' was loaded before "
+				"create_device made a device.");
+		}
+
 		D3D11_TEXTURE2D_DESC description = {};
 		description.Width = static_cast<UINT>(texture.width);
 		description.Height = static_cast<UINT>(texture.height);

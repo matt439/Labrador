@@ -7,6 +7,7 @@ add_executable(RenderTests
     dds_file_tests.cpp
     font_tests.cpp
     render_resources_tests.cpp
+    renderer_seam_tests.cpp
     resolution_manager_tests.cpp
     sprite_font_file_tests.cpp
     sprite_geometry_tests.cpp

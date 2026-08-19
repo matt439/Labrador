@@ -75,6 +75,16 @@ namespace labrador
 	// std::runtime_error naming `name` and the format if the device will not
 	// take it, which is the answer a backend that cannot upload block
 	// compression owes rather than a blank texture.
+	//
+	// AFTER create_device, AND THAT IS A RULE OF THE SEAM RATHER THAN ONE
+	// BACKEND'S PREFERENCE. `renderer` is named here only because a texture is
+	// made on a device, so there has to be one; a call before there is throws
+	// std::runtime_error naming `name`. It was written down nowhere, and the
+	// three backends answered it three ways - a named throw, an access
+	// violation inside the D3D runtime, and, on the one configuration CI runs
+	// end to end, a handle that resolved and drew. The ordering is fixed the
+	// other way round from set_resources, which is why it is easy to get wrong:
+	// the device comes first, then the table, then the content.
 	void add_texture_asset(const Renderer& renderer,
 		RenderResources& resources,
 		const std::string& name,
