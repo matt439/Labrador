@@ -443,8 +443,8 @@ namespace labrador
 //    vertex buffer, a shader that multiplies each vertex by one constant, and
 //    the states that make the blend premultiplied. NOTHING A BACKEND DOES
 //    DECIDES WHERE A PIXEL GOES, which is what lets the two backends that have
-//    a rasteriser pass the same assertions - 262 of them at the last count,
-//    over 24 cases, and the number is not the point: what it buys is that the
+//    a rasteriser pass the same assertions - 290 of them at the last count,
+//    over 28 cases, and the number is not the point: what it buys is that the
 //    file asserting them says "the renderer", never "this renderer".
 //
 //    IT IS TWO RUNS AND ONE SET OF IMAGES, and the second half of that used to
@@ -455,8 +455,10 @@ namespace labrador
 //    Every frame a case reads back is now also compared byte for byte against
 //    a PNG of it in tests/render/golden/, and those images are what hold the
 //    backends to each other rather than each to a sentence
-//    (tests/render/golden_image.h carries the argument). Thirty-eight frames.
-//    On one machine's GPU, d3d11 and gl reproduce all thirty-eight exactly.
+//    (tests/render/golden_image.h carries the argument). Forty-four frames,
+//    six of which fill more than one view - the machinery the two backends
+//    share least, one a deferred context per view and the other a vector. On
+//    one machine's GPU, d3d11 and gl reproduce all forty-four exactly.
 //
 //    WHAT IS STILL TWO RUNS is the running of it. LABRADOR_RENDER_BACKEND
 //    picks a backend at configure time (T5), so this is still two processes

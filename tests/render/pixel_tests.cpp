@@ -57,9 +57,9 @@
 // assertion in this file holds one backend to a relationship, and two
 // hand-copied implementations can get the same relationship wrong in the same
 // direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Thirty-nine frames; thirty-eight of them are 64x64 on every
-// backend and identical across the two that rasterise. The thirty-ninth is
-// read out of a buffer the seam says is a different size per backend, and
+// argument. Forty-five frames; forty-four of them are 64x64 on every backend
+// and identical across the two that rasterise. The forty-fifth is read out of
+// a buffer the seam says is a different size per backend, and
 // Harness::end_not_comparable is where that is written down.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
@@ -167,8 +167,18 @@ namespace
 		Harness()
 		{
 			this->window_ = create_hidden_window();
+
+			// FOUR VIEWS OF CAPACITY, WHICH IS THE SAME NUMBER null_tests.cpp
+			// asks for, and it is not four because anything here draws four.
+			// A capacity is a property of the layout - four for split-screen,
+			// one for a sample - and the two files asking for the same one is
+			// what lets a case be written in the same vocabulary in both. This
+			// was 1 until the golden set made a multi-view frame checkable, and
+			// while it was 1 every multi-view path in both backends - D3D11's
+			// per-view deferred contexts, GL's per-view record-and-replay,
+			// view order against call order - reached no rasteriser anywhere.
 			this->renderer_.create_device(this->window_, BUFFER_SIZE,
-				BUFFER_SIZE, 1);
+				BUFFER_SIZE, 4);
 			this->renderer_.set_resources(&this->resources_);
 
 			// content/ is copied beside the executable by this folder's
@@ -198,12 +208,23 @@ namespace
 		Harness(const Harness&) = delete;
 		Harness& operator=(const Harness&) = delete;
 
-		DrawList begin()
+		// Returns view 0, because almost every case here wants one view and
+		// wants it without saying so. The default and the signature are
+		// null_tests.cpp's, deliberately: the two harnesses are the same shape
+		// so that a multi-view case can be written once in each vocabulary -
+		// one asserting what was recorded, the other what was rasterised.
+		DrawList begin(int views = 1)
 		{
 			this->renderer_.begin_frame();
-			this->renderer_.set_view_count(1);
+			this->renderer_.set_view_count(views);
 			return this->renderer_.view(0);
 		}
+
+		DrawList view(int index) { return this->renderer_.view(index); }
+
+		// For the cases that change the view count in the middle of a frame,
+		// which is a state the seam names and nothing on a device has entered.
+		Renderer& renderer() { return this->renderer_; }
 
 		// Deliberately no end_frame(). Presenting a FLIP_DISCARD swap chain
 		// throws the back buffer's contents away, which is exactly what is
@@ -1079,6 +1100,171 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 	// pane's transform and the top of the frame would be black.
 	CHECK(harness.at(0, 0) == WHITE);
 	CHECK(harness.at(63, 63) == WHITE);
+}
+
+// THE FOUR CASES BELOW ARE THE FIRST MULTI-VIEW ANYTHING ON A RASTERISER.
+//
+// Every other case in this file fills one view, and the harness could not do
+// otherwise until its capacity went from 1 to 4 - so the two backends' most
+// different machinery has until now been exercised by the null backend's
+// recording tests and by nothing else. D3D11 gives each view a deferred
+// context and binds a render target and a viewport into it, then finishes and
+// executes one command list per view; GL gives each view a vector of runs and
+// replays them. Those are not two spellings of one thing, and view order, view
+// isolation and what a view starts a frame holding are decided separately in
+// each. What makes these worth writing now rather than then is the golden set:
+// a multi-view frame is one more image, so agreeing about split-screen is
+// checked at the same resolution as agreeing about one sprite.
+
+TEST_CASE("CONTRACT: views draw in view order, whatever order they were filled")
+{
+	Harness harness;
+
+	// Filled 1 then 0, submitted 0 then 1. The two orders are opposite on
+	// purpose: everywhere else in this file they are the same order, so a
+	// backend that replayed in the order the calls arrived would pass every
+	// other case here and lose split-screen's layering entirely.
+	DrawList zero = harness.begin(2);
+	DrawList one = harness.view(1);
+
+	one.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 64.0f, 64.0f), Colour(1.0f, 0.0f, 0.0f, 1.0f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	zero.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 64.0f, 64.0f), Colour(0.0f, 0.0f, 1.0f, 1.0f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.end();
+
+	// View 1 went last and is opaque, so view 1 is the whole frame. Call order
+	// would have left this blue.
+	CHECK(harness.at(0, 0) == RED);
+	CHECK(harness.at(32, 32) == RED);
+	CHECK(harness.at(63, 63) == RED);
+}
+
+TEST_CASE("CONTRACT: view state belongs to its view and not to the frame")
+{
+	Harness harness;
+
+	// Both subcases put view 0's state somewhere that would MOVE view 1's
+	// sprite if it leaked, rather than somewhere that would merely change it.
+	// A leak that displaced a pane by nothing is the leak that survives.
+	SUBCASE("a pane set on one view does not confine its neighbour")
+	{
+		DrawList zero = harness.begin(2);
+		zero.set_viewport(Viewport(0.0f, 0.0f, 32.0f, 64.0f));
+		zero.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(0.0f, 0.0f, 32.0f, 64.0f),
+			Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f, Vector2F::ZERO,
+			SpriteFlip::none, 0.0f);
+
+		// No set_viewport at all, so this view's pane is the whole buffer and
+		// its sprite is the far half of it. Under view 0's pane the same
+		// destination is off the right-hand edge of a 32-wide view and clips
+		// away to nothing.
+		DrawList one = harness.view(1);
+		one.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(32.0f, 0.0f, 32.0f, 64.0f),
+			Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, Vector2F::ZERO,
+			SpriteFlip::none, 0.0f);
+
+		harness.end();
+
+		CHECK(harness.at(16, 32) == RED);
+		CHECK(harness.at(48, 32) == BLUE);
+	}
+
+	SUBCASE("a camera set on one view does not move its neighbour")
+	{
+		// view = (world - translation) * scale, so view 0's sprite is at world
+		// x 32 and lands at the left of the frame.
+		DrawList zero = harness.begin(2);
+		zero.set_camera(Camera(32.0f, 0.0f, 1.0f));
+		zero.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(32.0f, 0.0f, 32.0f, 64.0f),
+			Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f, Vector2F::ZERO,
+			SpriteFlip::none, 0.0f);
+
+		// The same rectangle, no camera, so it stays where it was written. A
+		// leaked camera would put it on top of view 0's instead.
+		DrawList one = harness.view(1);
+		one.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(32.0f, 0.0f, 32.0f, 64.0f),
+			Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, Vector2F::ZERO,
+			SpriteFlip::none, 0.0f);
+
+		harness.end();
+
+		CHECK(harness.at(16, 32) == RED);
+		CHECK(harness.at(48, 32) == BLUE);
+	}
+}
+
+TEST_CASE("CONTRACT: a view starts every frame holding nothing")
+{
+	Harness harness;
+
+	// A pane in the corner and a camera off the origin, both on view 0.
+	DrawList first = harness.begin();
+	first.set_viewport(Viewport(32.0f, 0.0f, 32.0f, 64.0f));
+	first.set_camera(Camera(8.0f, 8.0f, 1.0f));
+	first.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(8.0f, 8.0f, 32.0f, 64.0f), Colour(1.0f, 0.0f, 0.0f, 1.0f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// The same view index, the next frame, and it sets neither. The three
+	// backends reset in three different places - begin_frame on two of them,
+	// set_view_count's rebind on the third - so this is the term that says the
+	// three arrive at the same state rather than at three defensible ones.
+	DrawList second = harness.begin();
+	second.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 64.0f, 64.0f), Colour(0.0f, 0.0f, 1.0f, 1.0f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// Corner to corner. A pane that survived would leave the left half black;
+	// a camera that survived would leave the far corner black, because the
+	// sprite would start eight pixels up and to the left of where it says.
+	CHECK(harness.at(0, 0) == BLUE);
+	CHECK(harness.at(32, 32) == BLUE);
+	CHECK(harness.at(63, 63) == BLUE);
+}
+
+TEST_CASE("CONTRACT: declaring another view leaves the filled ones alone")
+{
+	Harness harness;
+
+	// A pane that is NOT where its sprite is written, which is what makes this
+	// case able to see the failure at all: the destination is the left half of
+	// a pane that sits in the right half of the buffer, so a view whose pane
+	// was quietly put back to fullscreen draws in the wrong half rather than
+	// in the same half by coincidence.
+	DrawList zero = harness.begin();
+	zero.set_viewport(Viewport(32.0f, 0.0f, 32.0f, 64.0f));
+	zero.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 32.0f, 64.0f), Colour(1.0f, 0.0f, 0.0f, 1.0f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	// Raising the count mid-frame is legal and a scene does it whenever a
+	// second player joins a running match. On D3D11 this is the call that
+	// binds a render target and the screen viewport into a view's deferred
+	// context, and it must bind the NEW one only.
+	harness.renderer().set_view_count(2);
+
+	DrawList one = harness.view(1);
+	one.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 32.0f, 64.0f), Colour(0.0f, 0.0f, 1.0f, 1.0f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.end();
+
+	// View 0 in the right half under its own pane, view 1 in the left half
+	// under the whole buffer. A rebind would have put both in the left half
+	// and view 1 replays second, so the right half would be black.
+	CHECK(harness.at(48, 32) == RED);
+	CHECK(harness.at(16, 32) == BLUE);
 }
 
 TEST_CASE("CONTRACT: a frame that is never submitted contributes nothing")

@@ -182,7 +182,7 @@ holds an image of every frame the pixel tests draw, and each run compares its
 frame against one, which is the only mechanism that can catch two hand-copied
 backends drifting the same way. It turned the audit's argument from source into
 a measurement — on one machine's GPU the D3D11 and OpenGL backends reproduce
-all thirty-eight frames exactly.
+all forty-four frames exactly, split-screen included.
 
 Not done, and known: an action-mapping layer over the input devices. That is
 the whole list — the second render backend and the null one both landed.
