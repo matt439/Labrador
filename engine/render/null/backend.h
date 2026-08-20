@@ -102,7 +102,7 @@ namespace labrador
 		// cannot fail is a backend that lets a client through a rule the
 		// configuration it ships on will stop it at - which is the opposite of
 		// what this one is for. It is what CI runs completely, so it has to be
-		// the strictest of the three and not the most permissive.
+		// the strictest of the four and not the most permissive.
 		bool device_created = false;
 
 		int width = 0;

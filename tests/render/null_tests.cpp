@@ -456,3 +456,77 @@ TEST_CASE("a frame that is never submitted contributes nothing to the next")
 
 	CHECK(drawn.empty());
 }
+
+TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
+{
+	// renderer.h makes it a term of the seam that window_size_changed may
+	// arrive between begin_frame and submit, and that what every view has
+	// recorded is dropped when it does. tests/render/pixel_tests.cpp asserts it
+	// on the three backends that rasterise, in pixels; this is the same term in
+	// the vocabulary this file has - which sprites a frame submitted - and it
+	// is the only configuration that can ask the question that way.
+	//
+	// IT IS ALSO THE BACKEND THE TERM WAS MISSING FROM. Nothing here is
+	// destroyed by a resize: a recording is a vector of structs and there is no
+	// buffer to rebuild, so this backend could hand every sprite back and be
+	// internally consistent. gl/renderer.cpp already argues why it must not -
+	// "what a client can rely on is the same sentence everywhere" - and it
+	// argues harder here, because this is the configuration CI runs end to end
+	// and the one a client is most likely to be tested in.
+	Harness harness;
+
+	DrawList list = harness.begin();
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 32.0f, 32.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	CHECK(harness.renderer().window_size_changed(320, 240));
+
+	// The list the caller is holding is still a list, and this draw belongs to
+	// the frame that is now running.
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	// One sprite, not two: what was recorded before the resize is gone.
+	REQUIRE(drawn.size() == 1);
+
+	// And it is the one drawn after it, at the pane the new size makes - the
+	// views were reopened, not merely emptied. 8 rather than 32 says which
+	// draw survived; 320 says the viewport was re-stamped.
+	CHECK(drawn[0].corners[3].position.x == doctest::Approx(8.0f));
+	CHECK(drawn[0].viewport.width == doctest::Approx(320.0f));
+	CHECK(drawn[0].viewport.height == doctest::Approx(240.0f));
+}
+
+TEST_CASE("CONTRACT: a resize clears `touched`, so the layout may be re-run")
+{
+	// The other half of the same term, and the half only this backend can be
+	// asked about. renderer.h says the return value means "re-run the layout",
+	// and set_view_count throws std::logic_error for a count lowered past a
+	// view something has already drawn into - so a shell that does exactly what
+	// it was told, re-running its layout mid-frame from two views to one, has
+	// to find those views untouched.
+	//
+	// This threw here and was silent on the other three, which inverted this
+	// backend's own claim to be the strictest rather than the most permissive
+	// (null/backend.h). Both halves came from one missing view->reset().
+	Harness harness;
+
+	DrawList first = harness.begin(2);
+	first.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.view(1).draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	CHECK(harness.renderer().window_size_changed(320, 240));
+
+	harness.renderer().set_view_count(1);
+
+	const std::vector<RecordedSprite> drawn = harness.end();
+	CHECK(drawn.empty());
+}

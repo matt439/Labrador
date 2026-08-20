@@ -175,6 +175,46 @@ namespace labrador
 		}
 		this->impl_->width = width;
 		this->impl_->height = height;
+
+		// AND THE FRAME IN PROGRESS IS RESTARTED, WHICH THIS BACKEND NEEDS
+		// EVEN LESS THAN THE OPENGL ONE AND DOES ANYWAY.
+		//
+		// renderer.h makes it a term of the seam that a resize arriving
+		// mid-frame drops what every view has recorded and reopens them at the
+		// new size. On the two Direct3D backends that is a correctness fix:
+		// their recordings name a render target the resize destroys. Here
+		// there is no target and no buffer - a recording is a vector of
+		// structs - so this backend could keep every sprite it has been given
+		// and hand them all back.
+		//
+		// It does not, for the reason gl/renderer.cpp already argues at
+		// length: the difference would be observable. A caller that draws, is
+		// resized under it and submits would see its drawing survive here and
+		// vanish on the other three, from one call, with nothing in the seam
+		// to say which to expect - and this is the configuration a client is
+		// most likely to be tested in, because it is the one that needs no
+		// driver. The most permissive backend teaching a rule that does not
+		// hold anywhere else is worse than a divergence a device would catch.
+		//
+		// view->reset() is also what clears `touched`, which is not a
+		// bookkeeping detail here: without it a shell doing exactly what the
+		// return value told it to - re-running its layout mid-frame, from two
+		// views to one - got std::logic_error out of set_view_count under this
+		// backend and silence under the other three.
+		//
+		// WHAT IS NOT TOUCHED: view_count, because renderer.h says the layout
+		// is the shell's to decide and this call is what tells it to decide
+		// again; and impl_->recorded, because submit() rebuilds it wholesale
+		// and end_frame promises the last recording stays readable until the
+		// next begin_frame.
+		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
+		{
+			view->reset();
+			view->viewport = Viewport(0.0f, 0.0f,
+				static_cast<float>(this->impl_->width),
+				static_cast<float>(this->impl_->height));
+		}
+
 		return true;
 	}
 
