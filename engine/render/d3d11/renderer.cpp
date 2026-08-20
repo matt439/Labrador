@@ -712,12 +712,19 @@ namespace labrador
 		// discard() rather than finish(): what these contexts hold was drawn
 		// against a buffer that is about to stop existing, so there is nothing
 		// worth executing and no command list worth owning.
+		//
+		// AND WHETHER THERE IS A FRAME IS A THING THE FRAME SAYS, not a thing
+		// the views are asked. This used to be `restart || view.bound`, and no
+		// view is bound between begin_frame and the first set_view_count - so
+		// a resize arriving there rebuilt the buffer and then left it to be
+		// drawn into without the clear below. Impl::frame_begun is the
+		// interval renderer.h actually names.
+		const bool restart = impl.frame_begun;
+
 		const int capacity = static_cast<int>(impl.views.size());
-		bool restart = false;
 		for (int i = 0; i < capacity; i++)
 		{
 			DrawList::View& view = *impl.views[static_cast<size_t>(i)];
-			restart = restart || view.bound;
 			view.discard();
 			view.reset();
 		}
@@ -741,6 +748,9 @@ namespace labrador
 			context->OMSetRenderTargets(1, &render_target, nullptr);
 			context->RSSetViewports(1, &viewport);
 
+			// None of them when the frame has not said how many it has yet,
+			// which leaves the clear above as the whole of the restart - and
+			// that is exactly what the frame is owed at that point.
 			for (int i = 0; i < impl.view_count; i++)
 			{
 				impl.views[static_cast<size_t>(i)]->bind(render_target,
@@ -810,10 +820,23 @@ namespace labrador
 		}
 
 		this->impl_->view_count = 0;
+
+		// AND THE FRAME IS OPEN FROM HERE UNTIL end_frame, which is what a
+		// resize arriving before the first set_view_count needs to be told.
+		// The views cannot say it - none of them is bound yet - and the clear
+		// at the top of this function is already this frame's. See
+		// Renderer::window_size_changed.
+		this->impl_->frame_begun = true;
 	}
 
 	void Renderer::end_frame()
 	{
+		// Cleared before the present rather than after it, because Present is
+		// where a device loss surfaces and what it does about one is rebuild
+		// every resource this frame was drawn with. There is nothing left to
+		// restart by then.
+		this->impl_->frame_begun = false;
+
 		this->impl_->device_resources.Present();
 	}
 

@@ -67,7 +67,8 @@ and **review every image it changes** — a regeneration that is not looked at
 turns the contract into a recording of whatever the code does now.
 Two terms sit outside the images and both say so where they are decided:
 `Harness::end_not_comparable` in [pixel_tests.cpp](tests/render/pixel_tests.cpp)
-holds the one frame whose size the seam makes backend-specific, and
+holds the three frames that are not 64x64 — one whose size the seam makes
+backend-specific, two that resize to 32x32 mid-frame — and
 `ALLOWED_CHANNEL_DRIFT` in
 [golden_image.cpp](tests/render/golden_image.cpp) is the per-channel allowance
 that lets one set serve both a hardware adapter and the WARP one CI has, with

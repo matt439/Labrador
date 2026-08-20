@@ -228,6 +228,17 @@ namespace labrador
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;
 
+		// BETWEEN begin_frame AND end_frame, WHICH IS A WIDER INTERVAL THAN
+		// "SOME VIEW IS BOUND" - and it is the wider one renderer.h
+		// legislates. No view is bound between begin_frame and the first
+		// set_view_count, because binding is set_view_count's job and it has
+		// not been called yet. A resize arriving in that window still has a
+		// frame to restart, and asking the views whether there is one answers
+		// no - which cost that frame its clear. See
+		// Renderer::window_size_changed; the D3D12 backend tracks the same
+		// term for the same reason and a worse consequence.
+		bool frame_begun = false;
+
 		// SHARED BY EVERY VIEW, because nothing writes to any of them. The
 		// index buffer is the one that would surprise somebody: it is the same
 		// two triangles per sprite for every sprite there will ever be, so it

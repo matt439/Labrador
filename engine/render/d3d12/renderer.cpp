@@ -485,23 +485,6 @@ namespace labrador
 		return handle;
 	}
 
-	bool Renderer::Impl::frame_open() const
-	{
-		if (this->frame_list_open)
-		{
-			return true;
-		}
-
-		for (const std::unique_ptr<DrawList::View>& view : this->views)
-		{
-			if (view->recording)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
 	void Renderer::Impl::abandon_recording()
 	{
 		// CLOSED, NOT EXECUTED, AND THAT IS THE WHOLE OPERATION. A command
@@ -545,8 +528,9 @@ namespace labrador
 			nullptr);
 		this->execute_frame_list();
 
-		// Nothing on the ordinary path, where the frame has not said how many
-		// views it has yet. Everything on the resize path, where it has.
+		// Nothing while the frame has not said how many views it has yet -
+		// begin_frame, and a resize that beat the first set_view_count to it.
+		// Everything on a resize that arrived after one.
 		const D3D12_VIEWPORT viewport =
 			this->device_resources.screen_viewport();
 		for (int i = 0; i < this->view_count; i++)
@@ -1073,7 +1057,15 @@ namespace labrador
 		// is not the problem; an OPEN one is, because the resize waits for the
 		// GPU and then resets allocators that a recording list is still
 		// holding.
-		const bool restart = impl.frame_open();
+		//
+		// AND WHETHER THERE IS A FRAME IS A THING THE FRAME SAYS, not a thing
+		// the command lists are asked. This used to read frame_open() - is
+		// anything recording right now - which is false for the whole interval
+		// between begin_frame and the first set_view_count, so a resize
+		// arriving there rebuilt the buffer and then left it to be drawn into
+		// with no barrier and no clear. Impl::frame_begun is the interval
+		// renderer.h actually names.
+		const bool restart = impl.frame_begun;
 		impl.abandon_recording();
 
 		const bool rebuilt =
@@ -1083,7 +1075,9 @@ namespace labrador
 		{
 			// Cleared and reopened against the buffer that now exists, so a
 			// DrawList the caller is still holding draws into this frame
-			// instead of into a resource that has gone.
+			// instead of into a resource that has gone. With no views declared
+			// yet it is the barrier and the clear alone, which is exactly what
+			// the frame is owed at that point.
 			impl.open_frame();
 		}
 
@@ -1126,6 +1120,11 @@ namespace labrador
 		// starting a frame and restarting one.
 		impl.view_count = 0;
 
+		// SET BEFORE THE CLEAR AND NOT AFTER IT, so that the frame owns
+		// everything open_frame is about to do to the back buffer. From here
+		// until end_frame, window_size_changed has a frame to restart.
+		impl.frame_begun = true;
+
 		impl.open_frame();
 	}
 
@@ -1133,6 +1132,13 @@ namespace labrador
 	{
 		this->impl_->transition_back_buffer(D3D12_RESOURCE_STATE_PRESENT);
 		this->impl_->execute_frame_list();
+
+		// Cleared before the present rather than after it, because present()
+		// is where a device loss surfaces and what it does about one is
+		// rebuild every resource this frame was drawn with. There is nothing
+		// left to restart by then.
+		this->impl_->frame_begun = false;
+
 		this->impl_->device_resources.present();
 	}
 

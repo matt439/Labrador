@@ -59,10 +59,14 @@
 // assertion in this file holds one backend to a relationship, and two
 // hand-copied implementations can get the same relationship wrong in the same
 // direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Forty-eight frames; forty-seven of them are 64x64 on every backend
-// and identical across the two that rasterise. The forty-eighth is read out of
-// a buffer the seam says is a different size per backend, and
-// Harness::end_not_comparable is where that is written down.
+// argument. Fifty frames; forty-seven of them are 64x64 on every backend and
+// identical across the three that rasterise, and those forty-seven are the
+// images in tests/render/golden/. The other three are not 64x64 - one because
+// the seam makes its size backend-specific, two because they ask for a
+// different size deliberately - and a golden set is one image per case at one
+// size. Harness::end_not_comparable is where that is written down, and the
+// count of images should be checkable against the count of frames from here:
+// forty-seven and three.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
 // Because the text cases below are relationships (see two paragraphs down), a
@@ -298,23 +302,29 @@ namespace
 		// end(), for the frames in this file that no golden image can hold -
 		// and it is the seam that says so, not a tolerance this harness needed.
 		//
-		// THERE ARE TWO OF THEM NOW AND THEY ARE EXEMPT FOR THE SAME REASON:
-		// neither is 64x64. One is the drag-resize below, whose buffer is a
-		// different size on different backends by contract; the other is the
-		// mid-frame resize case at the end of this file, which asks for a
-		// 32x32 buffer deliberately and gets it on every backend. A golden set
+		// THERE ARE THREE OF THEM AND THEY ARE EXEMPT FOR THE SAME REASON:
+		// none is 64x64. One is the drag-resize below, whose buffer is a
+		// different size on different backends by contract; the other two are
+		// the mid-frame resize cases at the end of this file, which ask for a
+		// 32x32 buffer deliberately and get it on every backend. A golden set
 		// is one image per case at one size, so a case that changes the size
-		// mid-frame has no image to be - and both of them assert on pixels
-		// they address themselves, which is what a golden image would have
-		// added nothing to.
+		// mid-frame has no image to be - and all three assert on pixels they
+		// address themselves, which is what a golden image would have added
+		// nothing to.
 		//
-		// renderer.h, back_buffer_size: "a swap chain does not follow its
-		// window, so the D3D11 backend answers the size it was told and lets
-		// Present stretch; a WGL context's default framebuffer is the window's
-		// client area, so the GL backend answers the window." A frame read back
-		// while the two disagree is therefore 64x64 on one backend and 64x48 on
-		// the other BY CONTRACT, and one file cannot be both. Every other frame
-		// here is 64x64 on every backend and is compared byte for byte.
+		// THE FIRST IS EXEMPT FOR A STRONGER REASON THAN THE OTHER TWO, and
+		// the difference is worth keeping. renderer.h, back_buffer_size: "a
+		// swap chain does not follow its window, so both Direct3D backends
+		// answer the size they were told and let Present stretch; a WGL
+		// context's default framebuffer is the window's client area, so the GL
+		// backend answers the window." A frame read back while the two
+		// disagree is therefore 64x64 on some backends and 64x48 on others BY
+		// CONTRACT, and one file cannot be both - so no image could hold it
+		// however the set were organised. The other two could be held to an
+		// image and are not; that is a choice about how much of the newest
+		// path belongs in a set whose every other member is one size, not a
+		// fact about the seam. Every frame here that is not one of these three
+		// is 64x64 on every backend and is compared byte for byte.
 		//
 		// Named rather than filtered by slug inside golden_image.cpp, so that
 		// the reason sits with the case that needs it and renaming the case
@@ -337,9 +347,9 @@ namespace
 		}
 
 		// What the last end() read back, and how big the renderer said it was.
-		// Every case but one knows both are BUFFER_SIZE; at() goes through the
-		// reported width anyway so that the one case which does not can be
-		// written in the same vocabulary as the rest.
+		// Every case but the three that resize knows both are BUFFER_SIZE;
+		// at() goes through the reported width anyway so that the three which
+		// do not can be written in the same vocabulary as the rest.
 		Vector2F buffer_size() const { return this->buffer_; }
 		size_t byte_count() const { return this->pixels_.size(); }
 
@@ -1612,6 +1622,65 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// covers 8x8 of a 32x32 one, so a pixel at (20, 20) is inside the first and
 	// outside the second: it is the one place the two disagree, and it says
 	// which frame the buffer is holding.
+	CHECK(harness.at(4, 4) == WHITE);
+	CHECK(harness.at(20, 20) == BLACK);
+}
+
+TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame")
+{
+	// THE SAME TERM AS THE CASE ABOVE, ARRIVING ONE CALL EARLIER, and it is a
+	// separate case because a backend can pass that one and fail this one. The
+	// interval renderer.h legislates starts at begin_frame; the part of it
+	// before the first set_view_count is the part where NOTHING IS OPEN - no
+	// view is recording, no list is holding a barrier - so a backend that
+	// decides whether there is a frame to restart by asking what is open
+	// answers "no frame" here and skips the restart. Both Direct3D backends
+	// did, and it cost the new buffer its clear on both and its
+	// PRESENT -> RENDER_TARGET barrier on D3D12.
+	//
+	// WHAT MAKES THE MISSING BARRIER FAIL RATHER THAN PASS IS THE DEBUG LAYER
+	// AND NOT AN ASSERTION BELOW, which is worth saying because it is the
+	// half of this case a reader cannot see: engine/render/d3d12/
+	// device_resources.cpp asks the info queue to break on ERROR, and drawing
+	// into a back buffer that is still in PRESENT is one. The assertions pin
+	// what pixels can pin - the buffer is the new size, the draw that came
+	// after the resize is in it, and the rest of it is the clear colour - and
+	// a driver that happens to hand back zeroed memory would satisfy the last
+	// of those either way. Both halves are the case; neither is the whole of
+	// it.
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+
+	// begin_frame WITHOUT harness.begin(), which is the whole point of the
+	// case: begin() calls set_view_count immediately after begin_frame, so
+	// every other case in this file is past this interval before it can be
+	// resized. It is not a contrived sequence - a shell that lays its views
+	// out from the frame's own state does its arithmetic here.
+	renderer.begin_frame();
+
+	// The window first and then the renderer, in that order and for the reason
+	// the case above gives: back_buffer_size is answered from the swap chain
+	// on the Direct3D backends and from the window on the OpenGL one, so a
+	// resize the window never had would ask two backends a different question
+	// from the third.
+	harness.resize_window(BUFFER_SIZE / 2, BUFFER_SIZE / 2);
+	CHECK(renderer.window_size_changed(BUFFER_SIZE / 2, BUFFER_SIZE / 2));
+
+	// And now the frame says what it has, which is the ordinary next call and
+	// the one the resize arrived in front of.
+	renderer.set_view_count(1);
+	DrawList list = renderer.view(0);
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.end_not_comparable();
+
+	CHECK(harness.buffer_size().x == static_cast<float>(BUFFER_SIZE / 2));
+	CHECK(harness.buffer_size().y == static_cast<float>(BUFFER_SIZE / 2));
+
+	// The 8x8 sprite is there, and the buffer around it is the clear colour
+	// rather than whatever ResizeBuffers left in it.
 	CHECK(harness.at(4, 4) == WHITE);
 	CHECK(harness.at(20, 20) == BLACK);
 }

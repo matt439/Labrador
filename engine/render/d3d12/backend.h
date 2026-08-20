@@ -264,6 +264,18 @@ namespace labrador
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;
 
+		// BETWEEN begin_frame AND end_frame, WHICH IS A WIDER INTERVAL THAN
+		// "SOMETHING IS RECORDING" - and it is the wider one renderer.h
+		// legislates. Nothing of this frame is open between begin_frame and the
+		// first set_view_count: open_frame executes the frame list on its way
+		// out and opens no views while the count is still zero. A resize
+		// arriving in that window still has a frame to restart, and asking the
+		// command lists whether there is one answers no - which costs that
+		// frame its clear and its PRESENT -> RENDER_TARGET barrier. So the
+		// frame is tracked rather than inferred, and this is the whole of the
+		// tracking.
+		bool frame_begun = false;
+
 		// SHARED BY EVERY VIEW, because nothing writes to any of them once they
 		// are made. The index buffer is the same two triangles per sprite for
 		// every sprite there will ever be, uploaded once at device creation.
@@ -304,11 +316,6 @@ namespace labrador
 
 		D3D12_CPU_DESCRIPTOR_HANDLE texture_slot_cpu(int slot) const;
 		D3D12_GPU_DESCRIPTOR_HANDLE texture_slot_gpu(int slot) const;
-
-		// Whether anything of a frame is open: a view recording, or the frame
-		// list holding a barrier. What Renderer::window_size_changed asks
-		// before it decides whether there is a frame to restart.
-		bool frame_open() const;
 
 		// Closes every open command list and forgets what was recorded into
 		// it, without executing any of it. Two callers, and they want it for
