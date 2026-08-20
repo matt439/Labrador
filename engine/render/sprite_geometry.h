@@ -23,8 +23,8 @@
 // backend receives is four SpriteVertex in view pixels; what it owes is a
 // buffer, a shader that multiplies each vertex by one four-float constant and
 // the sampled texel by the vertex's own colour, and the state that makes the
-// blend premultiplied. Three backends cannot disagree about where a sprite
-// went, because only one of them decides.
+// blend premultiplied. Four backends cannot disagree about where a sprite went,
+// because none of them decides.
 //
 // THE ONE TERM A BACKEND STILL OWNS is where the pane itself sits in the thing
 // being drawn into, because that is the one question the answer to which is not

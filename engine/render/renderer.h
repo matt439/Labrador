@@ -343,11 +343,14 @@ namespace labrador
 		//
 		// A FRAME BEGUN AND NEVER SUBMITTED CONTRIBUTES NOTHING TO THE NEXT
 		// ONE, which is a statement about what "resets" means and is worth
-		// making because the three backends have three different things to
+		// making because the four backends have three different things to
 		// reset. Two of them hold a frame in a vector, where dropping it is
 		// clearing the vector; the D3D11 one holds it in a deferred context,
 		// which keeps what was recorded into it until something takes the
-		// command list away, so it has to drain as well as forget. A client
+		// command list away, so it has to drain as well as forget; and the
+		// D3D12 one holds an open command list, which cannot be reset and whose
+		// allocator cannot be reset under it, so it has to be closed before its
+		// memory can be reused and what it holds goes nowhere. A client
 		// reaches this by catching an exception out of its own draw walk and
 		// carrying on - and so does a device event, which surfaces as a throw
 		// from a worker mid-frame.
@@ -363,9 +366,11 @@ namespace labrador
 		// AND std::logic_error FOR A COUNT LOWERED PAST A VIEW SOMETHING HAS
 		// ALREADY DRAWN INTO, which is a different mistake and gets a different
 		// type. The recording is stranded rather than absent: on two backends it
-		// is a vector nothing will replay, on the third a deferred context
-		// holding commands submit() will not reach. All three throw it, which is
-		// what makes it a term of the seam rather than one backend's caution.
+		// is a vector nothing will replay, on the D3D11 one a deferred context
+		// holding commands submit() will not reach, and on the D3D12 one a
+		// closed command list submit() will not put in its array. All four throw
+		// it, which is what makes it a term of the seam rather than one
+		// backend's caution.
 		// create_device throws std::invalid_argument for a view capacity below
 		// one, before it touches a window.
 		void set_view_count(int count);
@@ -378,14 +383,18 @@ namespace labrador
 		// Draws every view in view order, which is the only ordering guarantee
 		// made here, and leaves nothing of the frame behind. What that costs
 		// depends on the backend and is deliberately not described on this line:
-		// two of the three replay a vector, and the D3D11 one executes a command
-		// list per view - a protocol (record, FinishCommandList,
-		// ExecuteCommandList, Release) that was hand-written in four places,
-		// each of which had to pre-size a vector, pre-fill it with null and
-		// Release every non-null entry, three caller obligations stated nowhere
-		// in the tree. Two of the four already disagreed about
-		// RestoreContextState. There is one copy now and it is not the
-		// caller's; engine/render/d3d11/backend.h is where it is described.
+		// two of the four replay a vector, and the two that do not each execute
+		// a command list per view by a different route. The D3D11 one runs a
+		// protocol (record, FinishCommandList, ExecuteCommandList, Release) that
+		// was hand-written in four places, each of which had to pre-size a
+		// vector, pre-fill it with null and Release every non-null entry, three
+		// caller obligations stated nowhere in the tree; two of the four already
+		// disagreed about RestoreContextState. There is one copy now and it is
+		// not the caller's; engine/render/d3d11/backend.h is where it is
+		// described. The D3D12 one hands the finished lists to its queue as one
+		// array in view order, in a single ExecuteCommandLists - the one submit
+		// shape a fourth backend actually introduced, and the cheapest of the
+		// four to describe.
 		//
 		// Called once per frame, between begin_frame and end_frame.
 		void submit();
@@ -423,9 +432,11 @@ namespace labrador
 		// RGBA REGARDLESS OF WHAT THE BACKEND STORES, so that the assertions
 		// another backend has to pass are the same bytes and not the same bytes
 		// after a per-backend swizzle. Whether that costs anything is the
-		// backend's business and is written down in the backend: the D3D11 back
-		// buffer is BGRA and is swapped on the way out, the GL one is asked for
-		// as RGBA and only flipped, because GL reads from the bottom.
+		// backend's business and is written down in the backend: both Direct3D
+		// back buffers are BGRA and are swapped on the way out, and the D3D12
+		// one additionally unpads a row pitch its API rounds up to 256 bytes;
+		// the GL one is asked for as RGBA and only flipped, because GL reads
+		// from the bottom.
 		//
 		// A BACKEND MAY REFUSE, and one does. There is nothing for the null
 		// backend to copy - it records what it was asked to draw and never
@@ -447,8 +458,11 @@ namespace labrador
 		// expressed above in the engine's own terms. The accessors nothing
 		// called are not merely unexposed here; they are gone from the backend
 		// (engine/render/d3d11/device_resources.h says which and why - it is the
-		// only one of the three with such a wrapper to strip, because it is the
-		// only one whose device can be lost).
+		// only one of the four that HAD such a wrapper to strip, being the only
+		// one this repository did not write. The D3D12 one was written to this
+		// seam from the start, so it never had accessors nobody called; a device
+		// can be lost on both of them, which is half the backends rather than
+		// one, and the STILL OPEN note at the foot of this file says so).
 		void begin_marker(const wchar_t* name);
 		void end_marker();
 		void set_marker(const wchar_t* name);
@@ -527,15 +541,15 @@ namespace labrador
 //    vertex buffer, a shader that multiplies each vertex by one constant, and
 //    the states that make the blend premultiplied. NOTHING A BACKEND DOES
 //    DECIDES WHERE A PIXEL GOES, which is what lets the three backends that
-//    have a rasteriser pass the same assertions - 308 of them at the last
-//    count, over 30 cases, and the number is not the point: what it buys is
+//    have a rasteriser pass the same assertions - over three hundred of them,
+//    over thirty cases, and the number is not the point: what it buys is
 //    that the file asserting them says "the renderer", never "this renderer".
 //
-//    IT IS TWO RUNS AND ONE SET OF IMAGES, and the second half of that used to
-//    be missing. This paragraph read "IT IS TWO RUNS, NOT ONE COMPARISON, and
-//    that is the standing limit", because an assertion holds ONE backend to a
-//    relationship and two hand-copied implementations can get the same
-//    relationship wrong in the same direction without either run noticing.
+//    IT IS THREE RUNS AND ONE SET OF IMAGES, and the second half of that used
+//    to be missing. This paragraph read "IT IS TWO RUNS, NOT ONE COMPARISON,
+//    and that is the standing limit", because an assertion holds ONE backend to
+//    a relationship and hand-copied implementations can get the same
+//    relationship wrong in the same direction without any run noticing.
 //    Every frame a case reads back is now also compared byte for byte against
 //    a PNG of it in tests/render/golden/, and those images are what hold the
 //    backends to each other rather than each to a sentence
@@ -555,12 +569,16 @@ namespace labrador
 //    two terms sit outside it, both stated where they are decided rather than
 //    here. The size of a frame read back while the window has moved under an
 //    unresized swap chain differs by backend because back_buffer_size above
-//    says it must, so that one frame is held to no image. And a per-channel
+//    says it must, so no image could hold that frame - and two more, which
+//    resize to a smaller buffer mid-frame, are outside the set by choice rather
+//    than by contract, because a golden set is one image per case at one size.
+//    Harness::end_not_comparable holds all three and separates the reasons. And
+//    a per-channel
 //    allowance of 8 is what lets one set serve both a hardware adapter and the
 //    WARP one CI has instead; golden_image.cpp carries the measurement that
 //    set it and the reason it is not zero.
 //
-//    tests/render/renderer_seam_tests.cpp is the part that runs in all three
+//    tests/render/renderer_seam_tests.cpp is the part that runs in all four
 //    configurations, being everything the seam answers without a device. See
 //    docs/review/backend-equivalence/TEST-GAP.md, which proposed the images.
 //
@@ -593,11 +611,13 @@ namespace labrador
 //    inside a backend's begin_frame, waiting on a fence before anything resets
 //    an allocator, which no caller can see. What it changed up here is a
 //    sentence rather than a signature: "begin_frame resets every view's
-//    recording" now covers a third kind of thing to reset - a command list
-//    that is still open, which cannot be reset and whose allocator cannot be
-//    reset under it - and that paragraph already said the three backends had
-//    three different things to drop, which is why it needed no rewriting to
-//    take a fourth.
+//    recording" gained a third kind of thing to reset - a command list that is
+//    still open, which cannot be reset and whose allocator cannot be reset
+//    under it. That paragraph is above, on begin_frame, and it now names all
+//    three; it used to say "the three backends have three different things to
+//    reset" and that sentence went stale on the day the fourth landed, having
+//    been written when the count of backends and the count of things happened
+//    to be the same number.
 //
 //  - DirectXTK is no longer on the render path at all. It remains bought for
 //    audio and for the gamepad reader, which are seams of their own and are

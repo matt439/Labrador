@@ -7,21 +7,21 @@ namespace labrador
 {
 	// One corner of one sprite, in the form a vertex buffer wants it.
 	//
-	// THE FIELD SET IS THE LAYOUT; THE DECLARATION ORDER IS NOT. Both real
-	// backends build every offset from offsetof and bind by semantic (d3d11) or
-	// by name (gl), so the three fields can be reordered here and both follow
-	// silently and correctly. This paragraph used to say the opposite - that
-	// reordering them changed what every shader reads - and the rule had been
-	// copied verbatim into both backends, three statements of a constraint
-	// nothing enforced. What is load-bearing is which fields exist, what types
-	// they are, and that this is one interleaved struct rather than three
-	// parallel streams.
+	// THE FIELD SET IS THE LAYOUT; THE DECLARATION ORDER IS NOT. Every backend
+	// with a vertex buffer builds its offsets from offsetof and binds by
+	// semantic (the two Direct3D ones) or by name (gl), so the three fields can
+	// be reordered here and all three follow silently and correctly. This
+	// paragraph used to say the opposite - that reordering them changed what
+	// every shader reads - and the rule had been copied verbatim into the
+	// backends, several statements of a constraint nothing enforced. What is
+	// load-bearing is which fields exist, what types they are, and that this is
+	// one interleaved struct rather than three parallel streams.
 	//
 	// NO DEPTH, AND THAT IS A DELETION RATHER THAN AN OMISSION. DirectXTK's
 	// sprite vertex carried a float3 position whose z was the layer_depth the
 	// seam takes. Nothing read it: there is no depth buffer
-	// (engine/render/d3d11/device_resources.h says why it has none, and the
-	// other two backends never make one) and no sort mode that consults it,
+	// (engine/render/d3d11/device_resources.h says why it has none, and no
+	// other backend ever makes one) and no sort mode that consults it,
 	// which
 	// RenderPixelTests pins - "layer_depth does not order draws, call order
 	// does". So the value was written into every vertex of every sprite and

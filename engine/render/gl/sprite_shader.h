@@ -1,21 +1,27 @@
 #pragma once
 
 // The only shader this backend has, and a transliteration of the only shader
-// the other one has.
+// this engine has.
 //
-// SIDE BY SIDE WITH engine/render/d3d11/sprite.hlsl, deliberately. Both do one
-// multiply-add to reach clip space, one texture fetch and one multiply, because
-// every term of the pixel contract is settled on the CPU in
-// engine/render/sprite_geometry.cpp before either of them runs. The two files
-// differing in more than syntax would mean the contract had leaked into a
-// shader, which is the failure this arrangement exists to prevent.
+// SIDE BY SIDE WITH engine/render/sprite.hlsl, deliberately - and that path is
+// the point of this line. The HLSL used to live under engine/render/d3d11/ and
+// moved up when a second backend started compiling it, because it is one source
+// at two profiles rather than one backend's file. Both do one multiply-add to
+// reach clip space, one texture fetch and one multiply, because every term of
+// the pixel contract is settled on the CPU in engine/render/sprite_geometry.cpp
+// before either of them runs. The two files differing in more than syntax would
+// mean the contract had leaked into a shader, which is the failure this
+// arrangement exists to prevent - and this is the only instruction anywhere to
+// compare the two SOURCES by eye, the golden set catching behavioural
+// divergence and not structural.
 //
-// COMPILED AT RUN TIME, WHERE THE OTHER ONE IS COMPILED AT BUILD TIME, and that
-// is not a preference. GL 3.3 has no offline shader format: glShaderBinary
-// needs a format the driver defines and will not accept from another driver,
-// and SPIR-V arrives in 4.6 - which is a decade of hardware above the tier this
-// port exists for. So the source ships, and a syntax error is a throw at device
-// creation naming the compiler's own message rather than a build failure.
+// COMPILED AT RUN TIME, WHERE THE HLSL IS COMPILED AT BUILD TIME - twice, at a
+// profile per Direct3D backend - and that is not a preference. GL 3.3 has no
+// offline shader format: glShaderBinary needs a format the driver defines and
+// will not accept from another driver, and SPIR-V arrives in 4.6 - which is a
+// decade of hardware above the tier this port exists for. So the source ships,
+// and a syntax error is a throw at device creation naming the compiler's own
+// message rather than a build failure.
 //
 // #version 330 core, AUTHORED TO THE GLES 3.0 INTERSECTION. `in`/`out` rather
 // than `attribute`/`varying`, an explicit `out` for the fragment colour rather
@@ -33,8 +39,9 @@ namespace labrador
 // the seam's y runs down the screen and clip space's runs up. GL's window
 // origin is at the bottom left where Direct3D's is at the top, and the two
 // cancel - clip y of +1 is the top of the viewport in both - so this is the
-// same constant the other backend uploads, which is why RenderPixelTests can
-// hold them to the same answers.
+// same constant the Direct3D backends put at b0 - as a constant buffer on one
+// and as four root constants on the other - which is why RenderPixelTests can
+// hold all three to the same answers.
 uniform vec4 pixels_to_clip;
 
 in vec2 position;

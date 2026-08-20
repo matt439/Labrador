@@ -103,16 +103,24 @@ namespace labrador
 		// never presents is not hypothetical: tests/render/pixel_tests.cpp
 		// draws, submits and reads the buffer back without ever presenting,
 		// deliberately, because presenting a flip-model swap chain discards
-		// what it wants to read. Under signal-at-present that client would
-		// reset a command allocator the GPU was still reading from, every
-		// frame, and the only symptom would be a debug-layer message the
-		// preset that runs those tests does not always have.
+		// what it wants to read. Under signal-at-present, such a client resets
+		// a command allocator the GPU may still be reading from, and the only
+		// symptom would be a debug-layer message the preset that runs those
+		// tests does not always have.
+		//
+		// THE RULE IS RIGHT AND pixel_tests IS NOT THE PROOF OF IT, which is
+		// worth being exact about because that file was cited here as though it
+		// were. Every frame termination in it routes through read_back_buffer,
+		// which ends in wait_for_gpu below, so the hazard is live at zero frame
+		// boundaries there. The client this protects is the one that draws,
+		// submits and does not present WITHOUT reading back - which this seam
+		// permits, nothing here forbids, and no test currently is.
 		void signal_frame();
 
 		// Blocks until the work signal_frame recorded for THIS frame index has
 		// finished. Called once at the top of a frame, before anything resets a
 		// command allocator - which is the one rule this API has that the other
-		// two do not.
+		// three do not.
 		void wait_for_frame();
 
 		// Blocks until the GPU has finished everything. NOT A FRAME-PATH CALL:

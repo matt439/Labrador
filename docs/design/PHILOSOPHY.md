@@ -329,8 +329,11 @@ seam turned out to admit that without changing a line above it.
 It also cost far less than it would have, because the four commits before it
 moved everything decision-bearing out of the backend first — the glyph walk,
 both file readers, the quad arithmetic. A backend is now a device, a texture
-from bytes, a buffer, a shader and four state objects, and **nothing a backend
-does decides where a pixel goes.** That is the property worth having, and it
+from bytes, a buffer, a shader and however few state objects its API spells the
+blend, the rasteriser and the two filters as — five on D3D11, one pipeline
+state object and two samplers on D3D12, two samplers and some `glEnable` on GL,
+none at all on the null one — and **nothing a backend does decides where a
+pixel goes.** That is the property worth having, and it
 is only demonstrable with two.
 
 **The fourth backend tests a different claim, and it is the last one this seam

@@ -53,7 +53,7 @@ namespace labrador
 
 	// --- RenderResources -----------------------------------------------------
 	//
-	// The same short list the other two backends keep, for the same reason:
+	// The same short list the other three backends keep, for the same reason:
 	// each of these either touches the texture table or needs Impl complete to
 	// make or destroy one. Everything else the class declares is compiled once,
 	// in engine/render/render_resources.cpp.

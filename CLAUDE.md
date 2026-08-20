@@ -72,7 +72,7 @@ backend-specific, two that resize to 32x32 mid-frame — and
 `ALLOWED_CHANNEL_DRIFT` in
 [golden_image.cpp](tests/render/golden_image.cpp) is the per-channel allowance
 that lets one set serve both a hardware adapter and the WARP one CI has, with
-the measurement that set it. What runs in all three configurations is
+the measurement that set it. What runs in all four configurations is
 [tests/render/renderer_seam_tests.cpp](tests/render/renderer_seam_tests.cpp) —
 everything the seam answers without a device. The
 samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and

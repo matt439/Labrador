@@ -12,8 +12,10 @@
 # which is the same bet the repository already makes on cl.exe.
 #
 # WHAT COMES OUT is a C header holding a byte array, which the backend includes
-# and hands straight to CreateVertexShader. No file is read at run time and
-# nothing has to be deployed beside the executable.
+# and hands to whatever its API wants bytecode in - CreateVertexShader on D3D11,
+# a field of D3D12_GRAPHICS_PIPELINE_STATE_DESC on D3D12, which has no such
+# call. No file is read at run time and nothing has to be deployed beside the
+# executable.
 
 # compile_hlsl(<target> <source> <profile> <entry> <symbol> <output>)
 #

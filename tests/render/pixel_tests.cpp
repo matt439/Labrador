@@ -72,8 +72,9 @@
 // Because the text cases below are relationships (see two paragraphs down), a
 // term added EQUALLY TO EVERY GLYPH cancels out of every one of them and this
 // file cannot see it at all. The glyph's vertical bearing is exactly such a
-// term: deleting it used to leave this file green on both real backends, the
-// null backend's record test green, and the samples merely a few pixels wrong.
+// term: deleting it used to leave this file green on every backend that
+// rasterises, the null backend's record test green, and the samples merely a
+// few pixels wrong.
 // It is pinned in tests/render/sprite_geometry_tests.cpp instead, as a
 // difference between two glyphs whose bearings differ - which is the shape an
 // absolute term has to be asked about, and which needs no device. Anything
@@ -1293,14 +1294,16 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 // THE FOUR CASES BELOW ARE THE FIRST MULTI-VIEW ANYTHING ON A RASTERISER.
 //
 // Every other case in this file fills one view, and the harness could not do
-// otherwise until its capacity went from 1 to 4 - so the two backends' most
-// different machinery has until now been exercised by the null backend's
-// recording tests and by nothing else. D3D11 gives each view a deferred
-// context and binds a render target and a viewport into it, then finishes and
-// executes one command list per view; GL gives each view a vector of runs and
-// replays them. Those are not two spellings of one thing, and view order, view
-// isolation and what a view starts a frame holding are decided separately in
-// each. What makes these worth writing now rather than then is the golden set:
+// otherwise until its capacity went from 1 to 4 - so the machinery the backends
+// share least had until then been exercised by the null backend's recording
+// tests and by nothing else. D3D11 gives each view a deferred context and binds
+// a render target and a viewport into it, then finishes and executes one
+// command list per view; D3D12 gives each view a command list and an allocator
+// per frame in flight and hands the finished lists to its queue as one array;
+// GL gives each view a vector of runs and replays them. Those are not three
+// spellings of one thing, and view order, view isolation and what a view starts
+// a frame holding are decided separately in each. What makes these worth
+// writing now rather than then is the golden set:
 // a multi-view frame is one more image, so agreeing about split-screen is
 // checked at the same resolution as agreeing about one sprite.
 

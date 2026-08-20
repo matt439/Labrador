@@ -11,7 +11,7 @@ namespace labrador
 	// wrote one down. A DXGI number is a thing the engine may not repeat outside
 	// engine/render/<backend>/. This enum is the translation, and the two
 	// readers that produce one and the backends that consume one are the whole
-	// of its traffic - two of the three do, by different routes and with
+	// of its traffic - three of the four do, by different routes and with
 	// different answers about what they will take, and the null backend reads
 	// it never, because it keeps a width and a height and throws the bytes
 	// away.

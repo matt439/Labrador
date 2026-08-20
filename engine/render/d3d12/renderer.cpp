@@ -261,13 +261,22 @@ namespace labrador
 		Renderer::Impl& owner_impl = *this->owner;
 		const int frame = owner_impl.device_resources.frame_index();
 
-		// THE ALLOCATOR IS RESET HERE AND NOWHERE ELSE, and Renderer::begin_frame
-		// has already waited on the fence for this frame index. That sentence is
-		// the whole of what this API asks of the engine that the other two do
+		// THE ALLOCATOR IS RESET HERE AND NOWHERE ELSE, AND SOMETHING HAS
+		// ALREADY WAITED FOR THE GPU TO FINISH WITH IT. That sentence is the
+		// whole of what this API asks of the engine that the other three do
 		// not: the memory a command list records into belongs to the allocator,
 		// and reusing it while the GPU is still reading last time's commands is
 		// not an error anything reports - it is a frame drawn from two frames'
 		// commands at once.
+		//
+		// WHICH WAIT IT WAS DEPENDS ON WHO CALLED, and there are two callers.
+		// Renderer::begin_frame waits on the fence for this frame index before
+		// anything else it does. Renderer::window_size_changed reaches this
+		// through open_frame(), where the wait is the one inside
+		// DeviceResources::create_window_size_dependent_resources - a full
+		// wait_for_gpu, which is stronger, and which has to be: frame_index_ is
+		// re-read from the swap chain after ResizeBuffers and may not be the
+		// index begin_frame waited on.
 		ThrowIfFailed(this->allocators[static_cast<size_t>(frame)]->Reset());
 		ThrowIfFailed(this->list->Reset(
 			this->allocators[static_cast<size_t>(frame)].Get(),
@@ -892,7 +901,7 @@ namespace labrador
 		// this API has no initial-data parameter, so "upload it once at
 		// creation" is a staging buffer, a copy on a command list and a wait -
 		// the same three steps every texture takes (texture_factory.cpp), which
-		// is why the third file of this backend is the longest of the three.
+		// is why the third file of this backend is the longest of the four.
 		std::vector<unsigned short> index_data;
 		index_data.reserve(static_cast<size_t>(DrawList::View::
 			MAX_PAGE_SPRITES) * INDICES_PER_SPRITE);
@@ -1118,7 +1127,7 @@ namespace labrador
 
 		// A FRAME BEGUN AND NEVER SUBMITTED CONTRIBUTES NOTHING TO THE NEXT
 		// ONE (renderer.h), and here that means closing what was left open.
-		// The three backends have three different things to drop: two clear a
+		// The four backends have three different things to drop: two clear a
 		// vector, the D3D11 one drains a deferred context, and this one has a
 		// command list that is still recording - which cannot be reset, and
 		// whose allocator cannot be reset under it either. Closing it throws

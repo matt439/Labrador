@@ -19,9 +19,14 @@
 //
 // renderer.h promises that reaching for the device is "a deliberate include of
 // engine/render/<backend>/ and not something a game file can do by accident".
-// This is that include. Every client of it is in this folder - the four .cpp
-// beside it - and cmake/check_engine_includes.cmake fails the build for
-// anything outside the folder that names any header in it.
+// This is that include, and EVERY CLIENT OF IT IS IN THIS FOLDER - which is the
+// rule rather than a count. cmake/check_engine_includes.cmake fails the build
+// for any file outside engine/render/<backend>/ that names any header inside
+// it: the folder, not one filename in it. The D3D11 backend's copy of this
+// paragraph used to list its clients and says the list went stale twice, so
+// this one does not list them either. device_resources.cpp is not among them
+// and structurally could not be - it is what this header includes, not
+// something that includes it.
 //
 // WHAT THIS BACKEND DOES DIFFERENTLY, AND WHY IT WAS WORTH WRITING AT ALL. It
 // reaches less hardware than the D3D11 backend, not more: feature level 11_0
@@ -103,9 +108,12 @@ namespace labrador
 		int height_ = 0;
 	};
 
-	// Where every named resource lives. Only the first of the three tables is
-	// this backend's; fonts and sheets are engine data and are here because the
-	// storage of a pimpl is the pimpl's.
+	// Where a named texture lives, and only a texture. This class held all
+	// three tables once and the sentence here still said so after two of them
+	// left: fonts and sheets are engine data and are members of RenderResources
+	// itself now (engine/render/render_resources.h says why, and what it
+	// saved), so what is behind the pimpl is the one table whose resource type
+	// this folder owns.
 	class RenderResources::Impl
 	{
 	public:
@@ -153,7 +161,9 @@ namespace labrador
 		// what the GPU is still reading; here nobody does either, so the memory
 		// has to be memory the GPU cannot still be reading. That is what the
 		// per-frame array below is for: page N of frame 0 is written again only
-		// after the fence says frame 0's last submission finished.
+		// after the fence says frame 0's last submission finished. That wait is
+		// not in this file either - View::begin names the two places it happens
+		// and why the resize path needs the stronger of them.
 		//
 		// PAGES GROW, THEY DO NOT WRAP. D3D11 wraps its one buffer at 2048
 		// sprites and asks for a DISCARD; wrapping here would overwrite
@@ -217,7 +227,9 @@ namespace labrador
 		// render target bound into the list - which is to say whether the list
 		// is open for recording. Deferred to set_view_count for the reason the
 		// D3D11 backend defers its binding: that is the first moment anybody
-		// knows which views this frame has.
+		// knows which views this frame has. What makes the allocator safe to
+		// reset by then is a wait, and which wait it was depends on the caller;
+		// View::begin names both.
 		bool recording = false;
 
 		// Appends one sprite's four corners, flushing first if it cannot join
@@ -345,8 +357,13 @@ namespace labrador
 		void open_frame();
 
 		// Opens the frame list for recording, resetting it onto this frame's
-		// allocator if it is closed. Returns the same list either way, so a
-		// caller that wants to add to what begin_frame recorded can.
+		// allocator if it is closed. Returns the same list either way, which is
+		// what makes it idempotent WITHIN one operation: the barrier and the
+		// clear of open_frame are two calls to this and one list, as are the
+		// transition, the copy and the transition back of read_back_buffer. It
+		// is not a way to add to what begin_frame recorded - every entry point
+		// executes and closes the list before it returns, so there is never an
+		// open one between them.
 		ID3D12GraphicsCommandList* open_frame_list();
 
 		// Closes and executes it, and signals the fence. Does nothing if

@@ -91,10 +91,14 @@ namespace labrador
 	// reading it before it goes.
 	//
 	// A FULL STALL PER TEXTURE, AND THAT IS THE RIGHT ANSWER HERE RATHER THAN A
-	// SHORTCUT. Loading already stalls on every backend (resource_factory.h),
-	// this runs at load and never on the frame path, and the alternative -
-	// keeping every upload buffer alive until some later fence - is a pool and
-	// a lifetime rule for a path that reads files off a disk.
+	// SHORTCUT - and it is this backend's stall alone, which the sentence here
+	// used to get backwards. Loading is a synchronous, blocking path on all
+	// four (resource_factory.h says why it reads its file that way), but only
+	// this one waits on a GPU inside it; d3d11 hands the bytes to the runtime
+	// and gl hands them to the driver. It runs at load and never on the frame
+	// path, and the alternative - keeping every upload buffer alive until some
+	// later fence - is a pool and a lifetime rule for a path that reads files
+	// off a disk.
 	void add_texture_asset(const Renderer& renderer,
 		RenderResources& resources,
 		const std::string& name,

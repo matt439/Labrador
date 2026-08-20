@@ -149,8 +149,15 @@ namespace labrador
 				// ASKED WHETHER IT CAN MAKE A DEVICE, WHICH THE D3D11 FILE DOES
 				// NOT HAVE TO. There, every adapter DXGI enumerates supports
 				// D3D11 at some level; here an adapter can be present and not
-				// support Direct3D 12 at all, and picking it would mean a throw
-				// out of create_device rather than the WARP fallback below.
+				// support Direct3D 12 at all.
+				//
+				// WHAT IT BUYS IS THE SECOND ADAPTER, NOT THE FALLBACK. Without
+				// the probe this loop takes the first non-software adapter and
+				// stops, so a machine whose first adapter cannot do D3D12 and
+				// whose second can would drop to WARP - the fallback below is a
+				// plain if rather than the else of `if (candidate)`, so it
+				// catches that case either way and nothing throws. With the
+				// probe the loop keeps looking, and the capable GPU is used.
 				if (SUCCEEDED(D3D12CreateDevice(candidate.Get(),
 					MIN_FEATURE_LEVEL, __uuidof(ID3D12Device), nullptr)))
 				{

@@ -160,7 +160,8 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     # No shader step. GL 3.3 has no offline shader format, so the GLSL ships
     # as source in render/gl/sprite_shader.h and the driver compiles it at
     # device creation - which that file explains at length, because it is the
-    # one place the two backends genuinely differ in kind rather than spelling.
+    # one place a backend genuinely differs in kind rather than in spelling
+    # from the two that compile HLSL above.
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(LabradorEngine PRIVATE
         render/null/render_resources.cpp

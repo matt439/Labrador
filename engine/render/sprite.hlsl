@@ -10,14 +10,16 @@
 // source and have nothing notice, which is the failure
 // cmake/compile_shaders.cmake refuses to check bytecode in to avoid.
 //
-// WHAT A BACKEND DOES OWN IS THE PROFILE AND THE BINDING, and both are in
-// engine/CMakeLists.txt where the backend is chosen: D3D11 compiles this at
-// vs_4_0_level_9_1 and ps_4_0_level_9_1 and gives the vertex shader its b0
-// through a constant buffer; D3D12 compiles it at 5_1 and gives it the same b0
-// as four root constants. Neither difference reaches this file, which is the
-// test that it belongs above both of them. The OpenGL backend is not a
-// counter-example: GLSL is a different language, not a different profile, and
-// render/gl/sprite_shader.h says what that costs.
+// WHAT A BACKEND DOES OWN IS THE PROFILE AND THE BINDING, and they are written
+// down in two different places. The profile is in engine/CMakeLists.txt where
+// the backend is chosen - D3D11 asks for vs_4_0_level_9_1 and ps_4_0_level_9_1,
+// D3D12 for 5_1 - along with the header each one's bytes land in. The binding
+// is in each backend's renderer.cpp, because it is a call and not a build
+// setting: D3D11 gives the vertex shader its b0 through a constant buffer and
+// D3D12 gives it the same b0 as four root constants. Neither difference reaches
+// this file, which is the test that it belongs above both of them. The OpenGL
+// backend is not a counter-example: GLSL is a different language, not a
+// different profile, and render/gl/sprite_shader.h says what that costs.
 //
 // IT DOES ALMOST NOTHING, AND THAT IS THE DESIGN. Every term of the pixel
 // contract is settled on the CPU in engine/render/sprite_geometry.cpp, which

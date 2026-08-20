@@ -54,9 +54,9 @@ namespace labrador
 		//
 		// A CHAIN IS READ AND UPLOADED AND NEVER SAMPLED FROM. A minified draw
 		// samples level zero, which renderer.h states beside set_filter and
-		// which the two rasterising backends answered differently until it was
-		// stated - one walked the chain, the other did not, and they agreed only
-		// because there has never been a chain to disagree about. The levels
+		// which the rasterising backends answered differently until it was
+		// stated - one walked the chain, the others did not, and they agreed
+		// only because there has never been a chain to disagree about. The levels
 		// stay here and still reach the device: refusing them would make this
 		// struct a worse description of a .dds without making anything safer.
 		std::vector<TextureLevel> levels;

@@ -248,7 +248,7 @@ namespace labrador
 	{
 		// Nothing to present. The recording stays until the next begin_frame,
 		// so a caller that reads it after this rather than before gets the same
-		// answer - which the other two backends cannot offer, because
+		// answer - which the other three backends cannot offer, because
 		// presenting discards what they drew.
 	}
 

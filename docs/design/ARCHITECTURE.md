@@ -107,7 +107,9 @@ being load-bearing.
 ```
 /
 ├── CMakeLists.txt          the root build file: lists the targets, nothing else
-├── CMakePresets.json       the configurations: debug, release
+├── CMakePresets.json       the configurations: debug and release on the
+│                           default backend, and a debug preset for each
+│                           of the other three — five in all
 ├── vcpkg.json              the bought edge, declared (T9)
 ├── cmake/                  the shared settings target, helper modules
 ├── engine/                 the product
@@ -121,7 +123,7 @@ being load-bearing.
 │   │   ├── sprite.hlsl     the only shader, compiled by fxc at build time —
 │   │   │                   shared by the two backends that take HLSL, each
 │   │   │                   at its own profile
-│   │   ├── d3d11/          the D3D11 backend: a device, buffers, four states
+│   │   ├── d3d11/          the D3D11 backend: a device, buffers, five states
 │   │   ├── d3d12/          the D3D12 backend: a device, a queue, a fence and
 │   │   │                   frames in flight — the one API where the engine
 │   │   │                   owns synchronisation
