@@ -301,8 +301,61 @@ namespace labrador
 		wanted.cAlphaBits = 8;
 
 		const int format = ChoosePixelFormat(this->device_context, &wanted);
-		if (format == 0 ||
-			!SetPixelFormat(this->device_context, format, &wanted))
+		if (format == 0)
+		{
+			throw std::runtime_error("This window cannot be given a 32-bit "
+				"double-buffered OpenGL pixel format.");
+		}
+
+		// WHAT WAS ASKED FOR IS NOT NECESSARILY WHAT WAS CHOSEN, and until this
+		// block nothing here ever found out. ChoosePixelFormat returns the
+		// CLOSEST format it has and is under no obligation to match the
+		// request: a driver with no 8-bit alpha answers with one that has none,
+		// successfully, and every term this seam promises about a pixel then
+		// changes underneath it - what the blend equation's destination alpha
+		// is, what read_back_buffer's fourth channel means, and how many
+		// distinct values a channel holds at all. The frame would look nearly
+		// right and the pixel contract would fail for a reason no assertion in
+		// it could name.
+		//
+		// The other backend cannot have this problem: it names
+		// DXGI_FORMAT_B8G8R8A8_UNORM and device creation fails if it cannot
+		// have it. This is the same refusal, written out, because GL's
+		// selection is a negotiation and D3D's is a demand (T6).
+		//
+		// PER CHANNEL RATHER THAN cColorBits, which is documented as excluding
+		// the alpha bitplanes and which drivers report inconsistently as 24 or
+		// 32 for the same format. The four channel counts are unambiguous and
+		// are what the contract actually needs.
+		//
+		// BEFORE SetPixelFormat, which may be called once per window and never
+		// undone - so a format worth refusing is refused while refusing is
+		// still possible.
+		PIXELFORMATDESCRIPTOR given = {};
+		if (DescribePixelFormat(this->device_context, format, sizeof(given),
+			&given) == 0)
+		{
+			throw std::runtime_error("The OpenGL pixel format this window was "
+				"offered cannot be described.");
+		}
+		if (given.iPixelType != PFD_TYPE_RGBA ||
+			(given.dwFlags & PFD_DOUBLEBUFFER) == 0 ||
+			given.cRedBits < 8 || given.cGreenBits < 8 ||
+			given.cBlueBits < 8 || given.cAlphaBits < 8)
+		{
+			throw std::runtime_error("This window's OpenGL pixel format is "
+				"r" + std::to_string(given.cRedBits) +
+				"g" + std::to_string(given.cGreenBits) +
+				"b" + std::to_string(given.cBlueBits) +
+				"a" + std::to_string(given.cAlphaBits) +
+				(((given.dwFlags & PFD_DOUBLEBUFFER) != 0)
+					? ", double buffered" : ", single buffered") +
+				". The renderer needs at least eight bits of each channel and "
+				"two buffers. ChoosePixelFormat answers with the nearest it "
+				"has rather than refusing, so this is where it is refused.");
+		}
+
+		if (!SetPixelFormat(this->device_context, format, &wanted))
 		{
 			throw std::runtime_error("This window cannot be given a 32-bit "
 				"double-buffered OpenGL pixel format.");

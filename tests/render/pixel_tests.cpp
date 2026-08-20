@@ -59,8 +59,8 @@
 // assertion in this file holds one backend to a relationship, and two
 // hand-copied implementations can get the same relationship wrong in the same
 // direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Forty-seven frames; forty-six of them are 64x64 on every backend
-// and identical across the two that rasterise. The forty-seventh is read out of
+// argument. Forty-eight frames; forty-seven of them are 64x64 on every backend
+// and identical across the two that rasterise. The forty-eighth is read out of
 // a buffer the seam says is a different size per backend, and
 // Harness::end_not_comparable is where that is written down.
 //
@@ -550,6 +550,50 @@ TEST_CASE("CONTRACT: flip mirrors the texture, not the destination rectangle")
 		CHECK(harness.at(2, 6) == GREEN);
 		CHECK(harness.at(6, 6) == RED);
 	}
+}
+
+TEST_CASE("CONTRACT: a positive rotation turns the sprite clockwise on screen")
+{
+	Harness harness;
+
+	// Half of pi. Not exactly, because nothing is: std::cos of it is about
+	// 6e-17 rather than 0, so the far corners land a hair off the whole pixels
+	// named below and the fill rule decides which side of each they fall. That
+	// is the point of the case as much as the direction is - see below.
+	const float quarter_turn = 1.5707963f;
+
+	// A bar four pixels tall and sixteen wide, pivoting on its own top-left
+	// corner, because a square rotated about its centre looks the same both
+	// ways round and every other case in this file passes 0.0f here.
+	DrawList list = harness.begin();
+	list.draw_sprite(harness.quad, Harness::red_texel(),
+		RectangleF(32.0f, 32.0f, 16.0f, 4.0f), Colour::white, quarter_turn,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// x' = x cos - y sin, y' = x sin + y cos, with y running DOWN the screen -
+	// so +x turns towards +y, which is right turning to down. The bar was
+	// pointing right and now points down, four pixels wide, hanging to the
+	// left of the pivot because its own height went that way.
+	CHECK(harness.at(30, 40) == RED);
+	CHECK(harness.at(30, 46) == RED);
+
+	// Where it was before the turn, and where an anticlockwise convention
+	// would have put it. Either being red is a backend that turned the other
+	// way, which no assertion in this file could previously have noticed.
+	CHECK(harness.at(40, 34) == BLACK);
+	CHECK(harness.at(30, 24) == BLACK);
+
+	// AND THIS IS THE ONLY FRAME IN THE FILE WITH EDGES THAT ARE NOT AXIS
+	// ALIGNED, which is worth more than the four assertions above.
+	// build_sprite_quad truncates every edge to a whole pixel, so an
+	// unrotated sprite never puts one across a pixel centre and the fill rule
+	// is never consulted; a turned one puts all four there at once. D3D11
+	// mandates the top-left rule exactly and GL 3.3 asks only that a shared
+	// edge be neither dropped nor drawn twice, leaving the tie-break to the
+	// implementation - so this is a term the two specifications do NOT agree
+	// on, and the golden image is what says whether the two devices do.
+	CHECK(harness.ink_bounds() == RectangleI(28, 32, 4, 16));
 }
 
 TEST_CASE("CONTRACT: the source rectangle selects, and is in texels")
