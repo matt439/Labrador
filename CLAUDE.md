@@ -179,10 +179,14 @@ runs there with no window and no device. A rule is asserted rather than played.
   here, and do not treat their line numbers as current. `docs/review/rtcd/` is
   a candidate list mined from Ericson's *Real-Time Collision Detection*, not a
   plan; the decisions live in `docs/review/round-2/PLAN.md`.
-  `docs/review/backend-equivalence/` is the exception to the `game/` caveat —
-  it postdates the split, holds the three render backends against one contract,
-  and its `DRIFT.md` is a live list of comments in `engine/render/` that the
-  code no longer matches.
+  `docs/review/backend-equivalence/` and `docs/review/d3d12/` are the two
+  exceptions to the `game/` caveat, because both postdate the split. The first
+  holds the three render backends that existed when it was written against one
+  contract, and its `DRIFT.md` is a live list of comments in `engine/render/`
+  that the code no longer matches. The second reviews the fourth backend
+  against the seam it was written to test, and **none of it has been applied** —
+  its three must-fix findings are open, and nine more were never verified at
+  all and are questions rather than findings.
 
 ## Known-absent, on purpose
 
