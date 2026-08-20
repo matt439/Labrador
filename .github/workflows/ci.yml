@@ -111,6 +111,20 @@ jobs:
           call "%VCVARS%"
           ctest --preset ${{ matrix.preset }} ${{ matrix.skip_tests }}
 
+      # A failed golden comparison is the one failure here that cannot be read
+      # from the log: it says which frame moved and by how much, but the thing a
+      # reviewer has to do next is look at the picture. RenderPixelTests writes
+      # every frame it rejected beside itself, so this carries them out of the
+      # runner. Only on failure, because on a green run the directory is empty
+      # and an empty artifact is a line in a log nobody reads.
+      - name: Keep the frames a golden check rejected
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-actual-${{ matrix.preset }}
+          path: out/build/${{ matrix.preset }}/tests/render/golden-actual/
+          if-no-files-found: ignore
+
       # Reported, not gated, so the numbers are in the log where a throughput
       # change shows up as a diff between two runs rather than as nothing at
       # all. A shared runner's absolute timings are not comparable to a

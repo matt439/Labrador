@@ -309,7 +309,11 @@ behind seams that don't presume it is the only one", and the amendment is
 worth stating rather than hiding. **There are three render backends now**:
 Direct3D 11, OpenGL 3.3 core, and a null one that records what it was asked to
 draw and never draws it, selected by `LABRADOR_RENDER_BACKEND` at configure
-time. The first two pass the same `RenderPixelTests`.
+time. The first two pass the same `RenderPixelTests` and, since that stopped
+being enough on its own, draw the same pixels: every frame those cases read
+back is compared against a checked-in image of it, so the two are held to each
+other and not only to the same sentences. A backend is chosen at build time, so
+this is still two runs — the images are what pass between them.
 
 That is not cross-platform arriving early, and it is not the speculative
 framework T1 rules out. The second backend was written for a reason a single

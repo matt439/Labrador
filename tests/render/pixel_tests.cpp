@@ -7,6 +7,8 @@
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
+#include "tests/render/golden_image.h"
+
 #include <doctest/doctest.h>
 
 #include <Windows.h>
@@ -48,6 +50,17 @@
 // filtering, flipped text, and the clamp that stops a glyph with a negative
 // left bearing hanging off the start of its line - which no glyph in this
 // font has, so no assertion here can reach it.
+//
+// AND EVERY FRAME IS ALSO CHECKED WHOLE. Each case's read-back is compared
+// byte for byte against a PNG of it in tests/render/golden/, which is the one
+// statement here that a difference BETWEEN two backends can fail - every
+// assertion in this file holds one backend to a relationship, and two
+// hand-copied implementations can get the same relationship wrong in the same
+// direction without either noticing. tests/render/golden_image.h has the whole
+// argument. Thirty-nine frames; thirty-eight of them are 64x64 on every
+// backend and identical across the two that rasterise. The thirty-ninth is
+// read out of a buffer the seam says is a different size per backend, and
+// Harness::end_not_comparable is where that is written down.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
 // Because the text cases below are relationships (see two paragraphs down), a
@@ -198,9 +211,38 @@ namespace
 		// never presenting costs a test nothing.
 		void end()
 		{
-			this->renderer_.submit();
-			this->renderer_.read_back_buffer(this->pixels_);
-			this->buffer_ = this->renderer_.back_buffer_size();
+			this->read_frame();
+
+			// And the frame itself is checked against the image of it that is
+			// in the repository - the one statement in this file that holds one
+			// backend to another rather than holding each separately to a
+			// relationship they can both get wrong in the same direction
+			// (tests/render/golden_image.h says why that gap exists at all).
+			//
+			// Here rather than in each case, so that the coverage grows with
+			// the file instead of with a list somebody has to remember to
+			// extend: a case added tomorrow is golden tomorrow.
+			golden::check_frame(static_cast<int>(this->buffer_.x),
+				static_cast<int>(this->buffer_.y), this->pixels_);
+		}
+
+		// end(), for the one frame in this file that no golden image can hold -
+		// and it is the seam that says so, not a tolerance this harness needed.
+		//
+		// renderer.h, back_buffer_size: "a swap chain does not follow its
+		// window, so the D3D11 backend answers the size it was told and lets
+		// Present stretch; a WGL context's default framebuffer is the window's
+		// client area, so the GL backend answers the window." A frame read back
+		// while the two disagree is therefore 64x64 on one backend and 64x48 on
+		// the other BY CONTRACT, and one file cannot be both. Every other frame
+		// here is 64x64 on every backend and is compared byte for byte.
+		//
+		// Named rather than filtered by slug inside golden_image.cpp, so that
+		// the reason sits with the case that needs it and renaming the case
+		// cannot quietly move the exemption somewhere else.
+		void end_not_comparable()
+		{
+			this->read_frame();
 		}
 
 		// Changes the window's client area and TELLS THE RENDERER NOTHING,
@@ -328,6 +370,14 @@ namespace
 		FontHandle font;
 
 	private:
+		// The half of end() that both spellings of it share.
+		void read_frame()
+		{
+			this->renderer_.submit();
+			this->renderer_.read_back_buffer(this->pixels_);
+			this->buffer_ = this->renderer_.back_buffer_size();
+		}
+
 		HWND window_ = nullptr;
 		Renderer renderer_;
 		RenderResources resources_;
@@ -1107,7 +1157,10 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 		list.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(0.0f, 0.0f, pane.x, pane.y), Colour::white, 0.0f,
 			Vector2F::ZERO, SpriteFlip::none, 0.0f);
-		harness.end();
+		// The one frame here that is not held against a golden image, because
+		// the buffer it was read out of is a different size on each backend and
+		// the seam says it must be. Harness::end_not_comparable explains.
+		harness.end_not_comparable();
 
 		const Vector2F buffer = harness.buffer_size();
 		CHECK(harness.byte_count() == static_cast<size_t>(buffer.x) *

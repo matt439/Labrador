@@ -52,8 +52,20 @@ device — a hidden window and a WARP fallback in debug under `x64-debug`, a WGL
 context under `x64-debug-gl` — and asserts on the pixels
 `Renderer::read_back_buffer` hands back. It is the only test that rasterises
 anything, and the executable statement of the pixel contract every backend with
-a rasteriser has to reproduce; it runs against one backend at a time and never
-compares two. What runs in all three configurations is
+a rasteriser has to reproduce. It runs against one backend at a time — but it no
+longer follows that two are never compared: every frame it reads back is also
+checked byte for byte against a PNG of it in
+[tests/render/golden/](tests/render/golden/), which is one set of images that
+both rasterising backends are held to. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
+and **review every image it changes** — a regeneration that is not looked at
+turns the contract into a recording of whatever the code does now.
+Two terms sit outside the images and both say so where they are decided:
+`Harness::end_not_comparable` in [pixel_tests.cpp](tests/render/pixel_tests.cpp)
+holds the one frame whose size the seam makes backend-specific, and
+`ALLOWED_CHANNEL_DRIFT` in
+[golden_image.cpp](tests/render/golden_image.cpp) is the per-channel allowance
+that lets one set serve both a hardware adapter and the WARP one CI has, with
+the measurement that set it. What runs in all three configurations is
 [tests/render/renderer_seam_tests.cpp](tests/render/renderer_seam_tests.cpp) —
 everything the seam answers without a device. The
 samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and

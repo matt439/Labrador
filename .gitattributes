@@ -39,9 +39,16 @@
 # behavior for image files
 #
 # image files are treated as binary by default.
+#
+# png is uncommented rather than left to the heuristic, because tests/render/
+# golden/ is now a set of images whose exact bytes a test compares against. The
+# auto-detection would classify them correctly today; "* text=auto" above is
+# still a rule that decides by inspection, and a golden set is the one place in
+# this repository where being wrong about that is a corrupted contract rather
+# than a mangled diff.
 ###############################################################################
 #*.jpg   binary
-#*.png   binary
+*.png    binary
 #*.gif   binary
 
 ###############################################################################

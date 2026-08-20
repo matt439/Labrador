@@ -443,17 +443,35 @@ namespace labrador
 //    vertex buffer, a shader that multiplies each vertex by one constant, and
 //    the states that make the blend premultiplied. NOTHING A BACKEND DOES
 //    DECIDES WHERE A PIXEL GOES, which is what lets the two backends that have
-//    a rasteriser pass the same assertions - 224 of them at the last count,
+//    a rasteriser pass the same assertions - 262 of them at the last count,
 //    over 24 cases, and the number is not the point: what it buys is that the
 //    file asserting them says "the renderer", never "this renderer".
 //
-//    IT IS TWO RUNS, NOT ONE COMPARISON, and that is the standing limit.
-//    RenderPixelTests runs against whichever backend the preset configured, so
-//    d3d11 and gl are each held to those assertions and never held against each
-//    other; a divergence in a term no case happens to pin is invisible here by
-//    construction. tests/render/renderer_seam_tests.cpp is the part that does
-//    run in all three configurations, being everything the seam answers without
-//    a device. See docs/review/backend-equivalence/TEST-GAP.md.
+//    IT IS TWO RUNS AND ONE SET OF IMAGES, and the second half of that used to
+//    be missing. This paragraph read "IT IS TWO RUNS, NOT ONE COMPARISON, and
+//    that is the standing limit", because an assertion holds ONE backend to a
+//    relationship and two hand-copied implementations can get the same
+//    relationship wrong in the same direction without either run noticing.
+//    Every frame a case reads back is now also compared byte for byte against
+//    a PNG of it in tests/render/golden/, and those images are what hold the
+//    backends to each other rather than each to a sentence
+//    (tests/render/golden_image.h carries the argument). Thirty-eight frames.
+//    On one machine's GPU, d3d11 and gl reproduce all thirty-eight exactly.
+//
+//    WHAT IS STILL TWO RUNS is the running of it. LABRADOR_RENDER_BACKEND
+//    picks a backend at configure time (T5), so this is still two processes
+//    that never meet and the checked-in set is what passes between them - and
+//    two terms sit outside it, both stated where they are decided rather than
+//    here. The size of a frame read back while the window has moved under an
+//    unresized swap chain differs by backend because back_buffer_size above
+//    says it must, so that one frame is held to no image. And a per-channel
+//    allowance of 8 is what lets one set serve both a hardware adapter and the
+//    WARP one CI has instead; golden_image.cpp carries the measurement that
+//    set it and the reason it is not zero.
+//
+//    tests/render/renderer_seam_tests.cpp is the part that runs in all three
+//    configurations, being everything the seam answers without a device. See
+//    docs/review/backend-equivalence/TEST-GAP.md, which proposed the images.
 //
 //  - BOTH PURPOSES AT THE TOP OF THIS FILE ARE NOW FILLED, and neither is a
 //    claim any more. engine/render/gl/ is OpenGL 3.3 core and passes

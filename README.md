@@ -41,9 +41,10 @@ docs/                   the design documents, and the reviews that argued with t
 **Windows only.** The renderer has three backends, selected by
 `LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11, OpenGL 3.3 core, and
 a null one with no graphics API that records what it was asked to draw. The
-first two are held to the same pixel tests and both still run on Windows,
-through the same Win32 window — the second exists to prove the seam carries a
-backend, not to reach a new platform. The third is what makes drawing
+first two are held to the same pixel tests and to the same checked-in images of
+every frame those tests draw, and both still run on Windows, through the same
+Win32 window — the second exists to prove the seam carries a backend, not to
+reach a new platform. The third is what makes drawing
 assertable on a machine with no driver. The audio backend is XAudio2 and has no
 second.
 
@@ -175,6 +176,13 @@ and asks what `RenderPixelTests` structurally cannot, since it only ever runs
 against the backend the preset configured. The invariant holds — the three
 agree on every term the pixel contract names — with one live exception on the
 GL preset and a list of comments the code has outgrown.
+
+That audit's headline recommendation has since landed: `tests/render/golden/`
+holds an image of every frame the pixel tests draw, and each run compares its
+frame against one, which is the only mechanism that can catch two hand-copied
+backends drifting the same way. It turned the audit's argument from source into
+a measurement — on one machine's GPU the D3D11 and OpenGL backends reproduce
+all thirty-eight frames exactly.
 
 Not done, and known: an action-mapping layer over the input devices. That is
 the whole list — the second render backend and the null one both landed.

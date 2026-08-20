@@ -62,6 +62,7 @@ add_test(NAME RenderTests COMMAND RenderTests)
 # question somebody asks.
 if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     add_executable(RenderPixelTests
+        golden_image.cpp
         pixel_tests.cpp
         test_main.cpp
     )
@@ -69,6 +70,20 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         LabradorEngine
         doctest::doctest
         labrador_settings
+        # The in-box PNG codec, for the golden set. A test executable that
+        # already opens a window is not made less portable by reading an image
+        # with the imaging component of the same operating system, and the
+        # alternative - a raw dump of every frame - is a golden set no reviewer
+        # can look at (tests/render/golden_image.h).
+        windowscodecs
+    )
+
+    # The golden set, addressed where it lives rather than copied beside the
+    # executable like content/ is, and golden_image.cpp says why: a
+    # regeneration has to write into the source tree, because that is the only
+    # place the new images can be reviewed before they are committed.
+    target_compile_definitions(RenderPixelTests PRIVATE
+        LABRADOR_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     )
 
     # The test content, beside the executable. ctest runs from the build
