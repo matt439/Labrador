@@ -17,8 +17,8 @@ namespace labrador
 	// away.
 	//
 	// THE LIST IS WHAT THE CONTENT IS, AND NOTHING ELSE (T1). Between this
-	// repository and the client that consumes it there are 45 .dds files, and
-	// they are: 43 block-compressed, all DXT4 or DXT5 and so all bc3_unorm; and
+	// repository and the client that consumes it there are 43 .dds files, and
+	// they are: 41 block-compressed, all DXT4 or DXT5 and so all bc3_unorm; and
 	// two uncompressed, both b8g8r8a8_unorm. A font atlas is a texture too and
 	// is bc2_unorm - the one this repository ships is pinned as such by
 	// sprite_font_file_tests.cpp. THE FONT COUNT IS NOT A CENSUS AND WAS ONCE
@@ -32,7 +32,7 @@ namespace labrador
 	// grows when a real file needs it to.
 	//
 	// THE BLOCK-COMPRESSED ENTRIES WERE THE ONES TO WATCH ON A SECOND BACKEND,
-	// and they are not a corner of the content - they are 43 of the 45 .dds
+	// and they are not a corner of the content - they are 41 of the 43 .dds
 	// there are, and every font atlas besides. That was written before the port
 	// and the port has happened: engine/render/gl/texture_factory.cpp queries
 	// GL_EXT_texture_compression_s3tc once and names it in the throw if it is

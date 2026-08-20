@@ -22,8 +22,8 @@ namespace labrador
 
 		// Checked once, on the first compressed texture, and remembered.
 		//
-		// NAMED IN THE THROW, BECAUSE IT IS THE ANSWER. Forty-three of the
-		// forty-five images between this repository and its client are block
+		// NAMED IN THE THROW, BECAUSE IT IS THE ANSWER. Forty-one of the
+		// forty-three .dds between this repository and its client are block
 		// compressed, so a context without S3TC has no art and no text - and
 		// the useful thing to say is which extension is missing, not that a
 		// texture failed.
@@ -41,7 +41,7 @@ namespace labrador
 				throw std::runtime_error("Texture '" + name + "' is block "
 					"compressed and this OpenGL context has no "
 					"GL_EXT_texture_compression_s3tc. Desktop drivers all "
-					"provide it; GLES 3.0 does not, and 43 of the 45 images "
+					"provide it; GLES 3.0 does not, and 41 of the 43 .dds "
 					"this engine loads are in it.");
 			}
 
