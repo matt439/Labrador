@@ -116,9 +116,32 @@ namespace labrador
 		void wait_for_frame();
 
 		// Blocks until the GPU has finished everything. NOT A FRAME-PATH CALL:
-		// it is what a load, a resize, a read-back and a shutdown use, each of
-		// which is already a stall by construction.
+		// it is what a load, a read-back and device creation use, each of which
+		// is already a stall by construction. Throws com_exception if the queue
+		// will not take the signal, which is a removed or reset device and
+		// nothing else.
 		void wait_for_gpu();
+
+		// THE SAME WAIT, FOR THE THREE PLACES WHERE THROWING DOES MORE DAMAGE
+		// THAN THE FAILURE IT REPORTS. Answers false instead, having waited for
+		// nothing.
+		//
+		// Two of them are destructors - this class's and Renderer::Impl's -
+		// which are implicitly noexcept because every member of both has a
+		// non-throwing destructor, so a throw out of either is std::terminate
+		// and the GPU wait they exist for never happens. PHILOSOPHY.md says it
+		// by name: T6 is "not a licence for throwing on the way out - teardown
+		// stays silent".
+		//
+		// The third is create_window_size_dependent_resources, where the wait
+		// stands fifteen lines above the DXGI_ERROR_DEVICE_REMOVED branch that
+		// is this backend's only device-loss recovery outside present(). A
+		// device removed while the window is being dragged reaches that wait
+		// first, and a throw there unwinds out of a window procedure into
+		// DispatchMessage, which is the "nowhere to catch" renderer.h names.
+		// The recovery has to be reachable in exactly the ordering it was
+		// written for.
+		bool try_wait_for_gpu() noexcept;
 
 		// After a present: the swap chain decides which buffer is next.
 		void move_to_next_frame();
@@ -164,6 +187,13 @@ namespace labrador
 	private:
 		void create_factory();
 		void hardware_adapter(IDXGIAdapter1** adapter);
+
+		// The two halves of a fence wait, as HRESULTs rather than as throws.
+		// Everything above that signals or waits is one of these two reported
+		// one of two ways, so there is one copy of each and no path where a
+		// throwing form and an answering form can drift apart.
+		HRESULT record_signal() noexcept;
+		HRESULT block_until(UINT64 target) noexcept;
 
 		Microsoft::WRL::ComPtr<IDXGIFactory4> factory_;
 		Microsoft::WRL::ComPtr<ID3D12Device> device_;

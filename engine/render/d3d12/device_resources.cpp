@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <stdexcept>
+#include <tuple>
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
@@ -46,15 +47,22 @@ namespace labrador
 
 	DeviceResources::~DeviceResources()
 	{
-		// THE ONE DESTRUCTOR IN engine/render/ THAT HAS TO DO ANYTHING, and it
-		// is the same fact this whole file exists for. Releasing a D3D11 device
-		// is enough because the runtime tracks what is still in flight; here,
-		// dropping a command list the GPU is still reading is exactly the bug
-		// the fence exists to prevent, and a destructor is no exception.
-		if (this->command_queue_ && this->fence_)
-		{
-			this->wait_for_gpu();
-		}
+		// ONE OF THE TWO DESTRUCTORS IN engine/render/ THAT HAS TO SYNCHRONISE
+		// WITH A GPU, and it is the same fact this whole file exists for.
+		// Releasing a D3D11 device is enough because the runtime tracks what is
+		// still in flight; here, dropping a command list the GPU is still
+		// reading is exactly the bug the fence exists to prevent, and a
+		// destructor is no exception. The other one is ~Renderer::Impl in
+		// renderer.cpp, from the same commit and for the same reason, and it
+		// covers the lists, the allocators and the vertex pages this class does
+		// not own.
+		//
+		// AND IT ANSWERS RATHER THAN THROWS. This destructor is implicitly
+		// noexcept - every member has a non-throwing one - so a com_exception
+		// out of the wait would be std::terminate on an ordinary exit, and the
+		// wait it was raised from would not have happened either way. T6:
+		// teardown stays silent.
+		std::ignore = this->try_wait_for_gpu();
 
 		if (this->fence_event_ != nullptr)
 		{
@@ -289,7 +297,21 @@ namespace labrador
 
 		// Nothing may be released while the GPU is still reading it, and a back
 		// buffer is the thing most likely to be.
-		this->wait_for_gpu();
+		//
+		// AND IT ANSWERS RATHER THAN THROWS, because the branch that recovers
+		// from a device removal is fifteen lines below this one. A TDR or a
+		// driver update lands while a window is being dragged, WM_EXITSIZEMOVE
+		// arrives with the removal still clearing, and this wait is the first
+		// thing to touch D3D afterwards - so a throw here skipped
+		// handle_device_lost in exactly the ordering it was written for and
+		// unwound into DispatchMessage instead, where the shell has nowhere to
+		// catch it. Same recovery, reached from the wait as well as from
+		// ResizeBuffers.
+		if (!this->try_wait_for_gpu())
+		{
+			this->handle_device_lost();
+			return;
+		}
 
 		for (int i = 0; i < FRAME_COUNT; i++)
 		{
@@ -460,40 +482,85 @@ namespace labrador
 		this->move_to_next_frame();
 	}
 
-	void DeviceResources::signal_frame()
+	HRESULT DeviceResources::record_signal() noexcept
 	{
 		this->fence_value_++;
-		ThrowIfFailed(this->command_queue_->Signal(this->fence_.Get(),
-			this->fence_value_));
+
+		const HRESULT hr = this->command_queue_->Signal(this->fence_.Get(),
+			this->fence_value_);
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+
 		this->frame_fences_[static_cast<size_t>(this->frame_index_)] =
 			this->fence_value_;
+		return S_OK;
+	}
+
+	HRESULT DeviceResources::block_until(UINT64 target) noexcept
+	{
+		// AND A REMOVED DEVICE CANNOT HANG HERE, which is worth knowing before
+		// reading the INFINITE below: the runtime signals every fence to
+		// UINT64_MAX when a device is removed, so this early-out is what a
+		// removal takes rather than the wait.
+		if (this->fence_->GetCompletedValue() >= target)
+		{
+			return S_OK;
+		}
+
+		const HRESULT hr = this->fence_->SetEventOnCompletion(target,
+			this->fence_event_);
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+
+		WaitForSingleObjectEx(this->fence_event_, INFINITE, FALSE);
+		return S_OK;
+	}
+
+	void DeviceResources::signal_frame()
+	{
+		ThrowIfFailed(this->record_signal());
 	}
 
 	void DeviceResources::wait_for_frame()
 	{
-		const UINT64 target =
-			this->frame_fences_[static_cast<size_t>(this->frame_index_)];
-
-		if (this->fence_->GetCompletedValue() >= target)
-		{
-			return;
-		}
-
-		ThrowIfFailed(this->fence_->SetEventOnCompletion(target,
-			this->fence_event_));
-		WaitForSingleObjectEx(this->fence_event_, INFINITE, FALSE);
+		ThrowIfFailed(this->block_until(
+			this->frame_fences_[static_cast<size_t>(this->frame_index_)]));
 	}
 
 	void DeviceResources::wait_for_gpu()
 	{
-		if (!this->command_queue_ || !this->fence_ ||
-			this->fence_event_ == nullptr)
+		if (this->try_wait_for_gpu())
 		{
 			return;
 		}
 
-		this->signal_frame();
-		this->wait_for_frame();
+		// The only way the wait above fails is a device that has gone, so what
+		// this reports is the removal rather than the call that noticed it.
+		// E_FAIL stands in for the case that cannot be explained that way,
+		// because ThrowIfFailed(S_OK) would be a silent return.
+		const HRESULT reason = this->device_->GetDeviceRemovedReason();
+		ThrowIfFailed(FAILED(reason) ? reason : E_FAIL);
+	}
+
+	bool DeviceResources::try_wait_for_gpu() noexcept
+	{
+		if (!this->command_queue_ || !this->fence_ ||
+			this->fence_event_ == nullptr)
+		{
+			return true;
+		}
+
+		if (FAILED(this->record_signal()))
+		{
+			return false;
+		}
+
+		return SUCCEEDED(this->block_until(
+			this->frame_fences_[static_cast<size_t>(this->frame_index_)]));
 	}
 
 	void DeviceResources::move_to_next_frame()

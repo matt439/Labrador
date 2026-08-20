@@ -438,7 +438,15 @@ namespace labrador
 		// them. The D3D11 backend has no such destructor because its runtime
 		// keeps what is in flight alive; here that is this engine's job, which
 		// is the point of the whole backend.
-		this->device_resources.wait_for_gpu();
+		//
+		// AND IT ANSWERS RATHER THAN THROWS, for the reason ~DeviceResources
+		// gives at the top of device_resources.cpp: this destructor is
+		// implicitly noexcept, so a com_exception out of the wait is
+		// std::terminate on an ordinary exit and the wait does not happen
+		// either way. It is also the destructor a move-assignment runs, and
+		// renderer.h declares Renderer's move operations noexcept. T6:
+		// teardown stays silent.
+		std::ignore = this->device_resources.try_wait_for_gpu();
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE Renderer::Impl::sampler(
