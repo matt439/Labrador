@@ -124,6 +124,20 @@ namespace labrador
 				"flags " + hex(flags) + ", which this engine does not read "
 				"(texture_format.h).");
 		}
+
+		// How many levels a chain from these dimensions can have: the larger
+		// side halved until it is one, counted as you go. Level zero is the
+		// first, so a 1x1 texture has one.
+		uint32_t full_chain_length(int width, int height)
+		{
+			uint32_t levels = 1;
+			for (int side = width > height ? width : height; side > 1;
+				side /= 2)
+			{
+				levels++;
+			}
+			return levels;
+		}
 	}
 
 	TextureData read_dds_file(const std::string& path)
@@ -211,6 +225,29 @@ namespace labrador
 		// when the file says it has a chain, and a writer that has none leaves
 		// it at zero rather than at one.
 		const uint32_t levels = mip_count < 1 ? 1u : mip_count;
+
+		// AND A CHAIN CANNOT BE LONGER THAN THE DIMENSIONS ALLOW. Halving the
+		// larger side until it reaches one is what a chain is, so a file
+		// claiming more levels than that is claiming levels that cannot exist -
+		// and the loop below would build every one of them, all 1x1, for
+		// whatever number the file said. That is a header field deciding how
+		// much this process allocates and how many subresources every backend
+		// downstream is then asked about, which is worth refusing by name
+		// rather than surviving (T6).
+		//
+		// HERE RATHER THAN IN A BACKEND, because every backend inherits this
+		// list and the count is a fact about the file rather than about an API.
+		// A backend with a limit of its own still states it - D3D12's is 15 and
+		// its texture factory says so - but it is stating a second wall, not
+		// the first.
+		const uint32_t possible = full_chain_length(width, height);
+		if (levels > possible)
+		{
+			throw std::runtime_error(path + " says it has " +
+				std::to_string(levels) + " mip levels. A " +
+				std::to_string(width) + "x" + std::to_string(height) +
+				" texture has at most " + std::to_string(possible) + ".");
+		}
 
 		int level_width = width;
 		int level_height = height;

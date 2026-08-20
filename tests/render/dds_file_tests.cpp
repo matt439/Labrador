@@ -184,12 +184,38 @@ TEST_CASE("a file that is not a texture this engine draws says which way")
 	SUBCASE("a file that claims more mips than it carries")
 	{
 		std::vector<unsigned char> bytes = quad_bytes();
-		poke(bytes, MIP_COUNT, 4);
+		// Two, which a 2x2 texture can have - 2x2 and 1x1 - and which this
+		// file does not carry the twenty bytes for.
+		poke(bytes, MIP_COUNT, 2);
 		const ScratchFile file("too_many_mips.dds", bytes);
 
 		// The levels are back to back with no table, so a count that lies is a
 		// read past the end of the file - which is what a bounds-checked reader
 		// is for, and what mapping a struct over the buffer would not catch.
+		CHECK_THROWS_AS(read_dds_file(file.path()), std::runtime_error);
+	}
+
+	SUBCASE("a file that claims more mips than can exist")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, MIP_COUNT, 70000);
+		const ScratchFile file("impossible_mips.dds", bytes);
+
+		// REFUSED ON THE COUNT AND NOT ON THE BYTES, which is a different
+		// check from the one above and is the reason it exists. A chain is the
+		// larger side halved until it reaches one, so a 2x2 texture has two
+		// levels and cannot have a third; the walk below the check would
+		// happily build seventy thousand of them, all 1x1, because halving one
+		// leaves one. A header field deciding how much a process allocates -
+		// and how many subresources every backend downstream is then asked
+		// about - is the shape worth refusing by name.
+		//
+		// SEVENTY THOUSAND SPECIFICALLY, because the D3D12 backend narrowed
+		// this count to UINT16 for the resource description it builds: a value
+		// that fits UINT16 fails resource creation and hits that backend's
+		// named throw, and one that does not used to be TRUNCATED and succeed
+		// on a number no file ever said. Both walls stand now, and this is the
+		// first of them - the one every backend inherits.
 		CHECK_THROWS_AS(read_dds_file(file.path()), std::runtime_error);
 	}
 }

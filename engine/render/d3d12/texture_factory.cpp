@@ -116,13 +116,36 @@ namespace labrador
 		ID3D12Device* device = device_of(renderer);
 		Renderer::Impl& impl = *renderer.impl();
 
+		// ONE COUNT, DERIVED ONCE AND REFUSED IF IT WILL NOT FIT. It used to be
+		// two casts of texture.levels.size() at two different widths - UINT16
+		// into MipLevels below, UINT into GetCopyableFootprints after it - and
+		// a count that did not fit the first was truncated rather than
+		// rejected, so CreateCommittedResource SUCCEEDED on a number the file
+		// never said. That is the one way past the named throw this function
+		// has for a texture the device will not take, and it left
+		// GetCopyableFootprints being asked about a subresource count outside
+		// the range its annotation gives.
+		//
+		// dds_file.cpp already bounds the count at what the dimensions can
+		// produce, for every backend. This is the wall behind that one, and it
+		// is this API's number rather than the engine's.
+		if (texture.levels.size() > static_cast<size_t>(D3D12_REQ_MIP_LEVELS))
+		{
+			throw std::runtime_error("Texture '" + name + "' has " +
+				std::to_string(texture.levels.size()) + " mip levels, and "
+				"Direct3D 12 takes at most " +
+				std::to_string(D3D12_REQ_MIP_LEVELS) + ".");
+		}
+		const UINT16 level_count =
+			static_cast<UINT16>(texture.levels.size());
+
 		D3D12_RESOURCE_DESC description = {};
 		description.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		description.Alignment = 0;
 		description.Width = static_cast<UINT64>(texture.width);
 		description.Height = static_cast<UINT>(texture.height);
 		description.DepthOrArraySize = 1;
-		description.MipLevels = static_cast<UINT16>(texture.levels.size());
+		description.MipLevels = level_count;
 		description.Format = to_dxgi_format(texture.format);
 		description.SampleDesc.Count = 1;
 		description.SampleDesc.Quality = 0;
@@ -157,7 +180,7 @@ namespace labrador
 		// - which matters most for the block-compressed levels that are 43 of
 		// the 45 images loaded, where a "row" is a row of 4x4 blocks and the
 		// obvious arithmetic is four times too large (texture_data.h).
-		const UINT subresources = static_cast<UINT>(texture.levels.size());
+		const UINT subresources = level_count;
 		std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(
 			subresources);
 		std::vector<UINT> row_counts(subresources);
