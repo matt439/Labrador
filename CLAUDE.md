@@ -185,9 +185,15 @@ runs there with no window and no device. A rule is asserted rather than played.
   holds the three render backends that existed when it was written against one
   contract, and its `DRIFT.md` is a live list of comments in `engine/render/`
   that the code no longer matches. The second reviews the fourth backend
-  against the seam it was written to test, and **none of it has been applied** —
-  its three must-fix findings are open, and nine more were never verified at
-  all and are questions rather than findings.
+  against the seam it was written to test. **Its three must-fix findings, all
+  seven should-fix, every minor and the one item it left unresolved have been
+  applied** — nine commits, each naming the section it answers, `6ae4a15`
+  through `06f0b5f`. What has *not* been applied is section 6: nine findings
+  that ranked below the review's own verification budget and were never checked,
+  which are questions rather than findings. Two of them were counts a reader can
+  check and went in with the rest; the other seven are behaviour and need
+  verifying before anybody acts on them. The document itself still reads as it
+  was written, line numbers included, so do not expect them to match.
 
 ## Known-absent, on purpose
 
