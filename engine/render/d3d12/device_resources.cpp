@@ -1,6 +1,6 @@
 #include "engine/render/d3d12/device_resources.h"
 
-#include "engine/core/throw_if_failed.h"
+#include "engine/render/throw_if_failed.h"
 
 #include <algorithm>
 #include <cstdio>

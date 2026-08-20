@@ -12,16 +12,20 @@ no content beyond `samples/`.
 
 ### Microsoft — DirectX Tool Kit samples (MIT)
 
-Two files were adopted from Microsoft's DirectX samples and kept, with their
-original headers, rather than rewritten:
+Three things were adopted from Microsoft's DirectX samples and kept rather than
+rewritten — four files, `device_resources` being a header and a source. Two of
+them carry their original file headers; the third never had one, being a
+fragment of a sample's own header rather than a file in its own right:
 
 - `engine/render/d3d11/device_resources.{h,cpp}` — "DeviceResources.h - A
   wrapper for the Direct3D 11 device and swapchain"
 - `engine/core/step_timer.h` — "StepTimer.h - A simple timer that provides
   elapsed time information"
-- `engine/core/throw_if_failed.h` — `com_exception` and `ThrowIfFailed`, which
-  DirectXTK's samples carry inside their own headers. It is a separate file
-  here because `device_resources` is not its only caller.
+- `engine/render/throw_if_failed.h` — `com_exception` and `ThrowIfFailed`,
+  which DirectXTK's samples carry inside their own headers. It is a separate
+  file here because `device_resources` is not its only caller — and since a
+  second Direct3D backend landed, not even its only folder of callers, which
+  is what decided where it lives.
 
 Copyright (c) Microsoft Corporation. Licensed under the MIT License.
 Source: https://github.com/microsoft/DirectXTK
@@ -30,9 +34,13 @@ All three have been modified, and the modifications are listed rather than
 summarised, because "recognisably Microsoft's" is only checkable if the
 departures from upstream are written down:
 
-- All three were brought into the `labrador` namespace, and
-  `device_resources` moved into the D3D11 backend folder when the renderer
-  seam was cut.
+- All three were brought into the `labrador` namespace, and two of them have
+  moved since: `device_resources` into the D3D11 backend folder when the
+  renderer seam was cut, and `throw_if_failed.h` out of `engine/core/` and into
+  `engine/render/`, because the one module everything may lean on was carrying
+  `<Windows.h>` and an `HRESULT` for the sole benefit of the two Direct3D
+  backends. It is in neither backend's folder because both call it and a
+  backend's headers are its own; the file itself carries that argument.
 - `device_resources.h` renames upstream's `IDeviceNotify` to
   `D3DDeviceNotify`, because `DeviceNotify` is now the engine seam's name in
   `engine/render/renderer.h` and is what a game implements.

@@ -12,6 +12,7 @@ add_executable(RenderTests
     sprite_font_file_tests.cpp
     sprite_geometry_tests.cpp
     text_encoding_tests.cpp
+    throw_if_failed_tests.cpp
     viewport_manager_tests.cpp
     viewport_tests.cpp
     test_main.cpp

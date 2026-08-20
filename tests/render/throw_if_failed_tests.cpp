@@ -1,20 +1,28 @@
 #include <doctest/doctest.h>
-#include "engine/core/throw_if_failed.h"
+#include "engine/render/throw_if_failed.h"
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 using namespace labrador;
 
-// What a D3D11 failure is, as a type.
+// What a Direct3D failure is, as a type.
 //
-// THIS IS A CONTRACT TEST, NOT A BEHAVIOUR TEST, and the contract is written
-// down in a different module. engine/render/resource_factory.h says
-// add_texture_asset throws std::runtime_error naming the texture and the format
-// when the device will not take it. The GL backend does exactly that at four
-// sites. The D3D11 backend routes every failure through ThrowIfFailed, and
-// com_exception used to derive from std::exception - so that sentence had never
-// once described the implementation that existed when it was written, and
-// git log -S over the header shows it never could have.
+// THIS IS A CONTRACT TEST, NOT A BEHAVIOUR TEST, and the contract is one file
+// over. engine/render/resource_factory.h says add_texture_asset throws
+// std::runtime_error naming the texture and the format when the device will not
+// take it. The GL backend does exactly that at four sites. Both Direct3D
+// backends route every failure through ThrowIfFailed, and com_exception used to
+// derive from std::exception - so that sentence had never once described the
+// implementation that existed when it was written, and git log -S over the
+// header shows it never could have.
+//
+// "ONE FILE OVER" USED TO READ "A DIFFERENT MODULE", and the difference is the
+// point of the move that brought this file here. throw_if_failed.h was in
+// core/, which is the module everything may lean on and the last place a COM
+// error type belongs; it is in render/ now, beside the resource_factory.h whose
+// promise it keeps, and this test moved with it - out of CoreTests and into
+// RenderTests, which is likewise built in every configuration. Not one
+// assertion below changed, which is what a static_assert is for.
 //
 // A CATCH SITE COULD NOT TELL, WHICH IS WHY NOTHING NOTICED. Every catch in
 // this repository is catch (const std::exception&), so both types were caught

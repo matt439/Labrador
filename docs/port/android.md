@@ -37,6 +37,27 @@ more.
 
 ## 1. What was checked, and what was not
 
+> **Amended 2026-08-21, and the paragraph below is left as written.** Two of
+> those six files are gone and one the `grep` could not see has turned up, so
+> the Windows surface outside the render backends is now **four files, none of
+> them in `core/`**: `app/application.{h,cpp}`, `app/window.h`,
+> `render/throw_if_failed.h`, `render/text_encoding.cpp`. That is §3.6's third
+> bullet, discharged — see the amendment at the head of that section for what
+> moved and why it was the only one of its four that could go first.
+>
+> **The blind spot is worth recording, because it is the method's and not this
+> one file's.** [`core/step_timer.h`](../../engine/core/step_timer.h) uses
+> `QueryPerformanceFrequency`, `QueryPerformanceCounter` and `LARGE_INTEGER`
+> and includes nothing that declares any of them: it compiles because its only
+> includer, `app/application.h`, has already pulled `<Windows.h>` in through
+> `app/window.h` five lines above it. A search for the include cannot find a
+> file that does not have one. So `core/` still has a Windows dependency after
+> this, and the honest fix for it points the wrong way — making that file
+> include what it uses would add a `<windows.h>` to `core/` on the day two of
+> them left. What it actually wants is `std::chrono::steady_clock`, which is a
+> change of substance to a file `NOTICE` carries as Microsoft's and a change to
+> fixed-step timing besides, so it is named here rather than done.
+
 **Checked, by reading this tree.** Every file and line cited below. The Windows
 surface outside the render backends is **six files**: `app/application.{h,cpp}`,
 `app/window.h`, `core/thread_pool.h`, `core/throw_if_failed.h`,
@@ -295,6 +316,36 @@ one for its position in the *plan*: it is where the confidence is, not where the
 risk is.
 
 ### 3.6 Build and core — *days*
+
+> **One of the four bullets is done, 2026-08-21, and the split is the useful
+> part.** `windows.h` in `core/` was the only one answerable on this tree's own
+> account, and its justification was never Android:
+> [`core/registry.h:14-17`](../../engine/core/registry.h#L14-L17) had already
+> refused to drag a platform header into this folder and said so in as many
+> words, and these were the two files in the same folder not held to it.
+>
+> `throw_if_failed.h` is [`render/throw_if_failed.h`](../../engine/render/throw_if_failed.h)
+> now — one file the two Direct3D backends share and neither owns, beside
+> `sprite.hlsl`, which is the same arrangement for the same reason, because the
+> rule that a backend's headers are its own leaves a copy in each folder as the
+> only alternative. Its contract test moved with it into `RenderTests`, which
+> is likewise built in every configuration, so the `static_assert` that was the
+> point of it still fires where no Direct3D file is compiled at all.
+> `thread_pool.h` keeps the Win32 thread pool and stops naming it: the platform
+> types are behind a `ThreadPool::Impl` defined in the `.cpp`, the API is
+> unchanged, and seven behavioural cases in `tests/core/thread_pool_tests.cpp`
+> now hold a primitive that had none. `NOTICE` records the move, the file
+> having been Microsoft's.
+>
+> **The other three wait, and §7's rule is why.** Clang equivalents for
+> `/W4 /WX /permissive- /sdl /fp:precise`, an `arm64-v8a` preset, and
+> `char16_t` on the render API are all correct for a build that does not exist.
+> The last is the one to be careful with: `std::wstring` is not wrong today —
+> a Windows code unit *is* 16 bits, which is exactly what `text_encoding.h`
+> says the glyph table is keyed by — so changing it now would be rewriting
+> working code in the future tense of a port, which is the mistake
+> `texture_format.h` was corrected for. They land with the toolchain that needs
+> them. **The section below is left as written**, its line numbers included.
 
 Small, mechanical, and it blocks compiling anything.
 

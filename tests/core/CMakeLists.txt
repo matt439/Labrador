@@ -4,7 +4,7 @@ add_executable(CoreTests
     name_table_tests.cpp
     registry_tests.cpp
     state_context_tests.cpp
-    throw_if_failed_tests.cpp
+    thread_pool_tests.cpp
     test_main.cpp
 )
 target_link_libraries(CoreTests PRIVATE

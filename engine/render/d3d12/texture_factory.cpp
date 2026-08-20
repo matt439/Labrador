@@ -1,11 +1,11 @@
 #include "engine/render/resource_factory.h"
 
-#include "engine/core/throw_if_failed.h"
 #include "engine/render/d3d12/backend.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
+#include "engine/render/throw_if_failed.h"
 
 #include <wrl/client.h>
 

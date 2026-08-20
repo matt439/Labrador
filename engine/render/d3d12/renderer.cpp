@@ -1,11 +1,11 @@
 #include "engine/render/d3d12/backend.h"
 
-#include "engine/core/throw_if_failed.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
+#include "engine/render/throw_if_failed.h"
 
 // The shaders, as bytes this build compiled (cmake/compile_shaders.cmake) from
 // engine/render/sprite.hlsl - the same source the D3D11 backend compiles, at a
