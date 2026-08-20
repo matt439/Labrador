@@ -214,10 +214,12 @@ namespace labrador
 	{
 		std::ignore = layer_depth;
 
-		const RenderResources::Impl& resources =
-			*this->view_->owner->resources->impl();
+		// The font table is the seam's own and the texture table is this
+		// folder's, which is the rule about which half lives where reading as
+		// two lines of code (engine/render/render_resources.h).
+		const RenderResources& resources = *this->view_->owner->resources;
 		const Font& the_font = *resources.font(font);
-		const GlTexture& atlas = *resources.texture(the_font.atlas());
+		const GlTexture& atlas = *resources.impl()->texture(the_font.atlas());
 		const Vector2F atlas_size = atlas.size();
 
 		const Vector2F screen_position =

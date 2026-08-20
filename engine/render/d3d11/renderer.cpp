@@ -348,15 +348,19 @@ namespace labrador
 	{
 		std::ignore = layer_depth;
 
-		const RenderResources::Impl& resources =
-			*this->view_->owner->resources->impl();
+		// Two tables and two lookups, and which side of the seam each comes
+		// from is the rule rather than a habit: a Font is engine data, so its
+		// table is the seam's own; a shader resource view is not, so its table
+		// is this folder's.
+		const RenderResources& resources = *this->view_->owner->resources;
 		const Font& the_font = *resources.font(font);
 
 		// A GLYPH IS A SPRITE, AND THAT IS THE WHOLE OF THIS FUNCTION. The walk
 		// is the engine's (font.h) and so is the quad (sprite_geometry.h); what
 		// is left here is resolving two handles and asking for one quad per
 		// glyph. A second backend writes this and nothing more to draw text.
-		ID3D11ShaderResourceView* atlas = resources.texture(the_font.atlas());
+		ID3D11ShaderResourceView* atlas =
+			resources.impl()->texture(the_font.atlas());
 		const Vector2F atlas_size = Renderer::Impl::texture_size(atlas);
 
 		const Vector2F screen_position =

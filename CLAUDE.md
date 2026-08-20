@@ -123,7 +123,13 @@ runs there with no window and no device. A rule is asserted rather than played.
   `render_resources.cpp`, `texture_factory.cpp` — and at most two more:
   `d3d11/` adds `device_resources.cpp` and a shader, `gl/` adds
   `gl_functions.cpp` and compiles its GLSL at device creation, `null/` adds
-  nothing and has no shader at all. Everything a backend owns lives in
+  nothing and has no shader at all. Note the name collision, because it is
+  deliberate: [engine/render/render_resources.cpp](engine/render/render_resources.cpp)
+  is a shared file, and the backend one beside it holds only the calls that
+  touch a texture. Two of the three resource tables hold engine data and are
+  members of `RenderResources` itself, so their methods — `measure_text` and
+  `first_unrenderable` among them — are compiled once rather than once per
+  backend. Everything a backend owns lives in
   `render/<backend>/`. Nothing outside that folder includes anything from it,
   the shell included: it hands its window handle to `create_device` as a
   `void*`. `check_engine_includes.cmake` fails the build for a file that

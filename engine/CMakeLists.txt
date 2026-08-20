@@ -44,6 +44,7 @@ add_library(LabradorEngine STATIC
     render/draw_object.cpp
     render/font.cpp
     render/label.cpp
+    render/render_resources.cpp
     render/resolution_manager.cpp
     render/resource_factory.cpp
     render/sprite_font_file.cpp

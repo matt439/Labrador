@@ -435,6 +435,15 @@ namespace labrador
 //    how much the API will take unchanged. Path-building and file-reading are
 //    in engine/render/resource_factory.cpp, written once for everybody.
 //
+//    THE SECOND FILE IS WHERE THEY DIVERGE LEAST, and it used to be the file
+//    where they diverged not at all: render_resources.cpp carried the whole
+//    public RenderResources surface in every backend, a page of forwarding
+//    calls kept identical by proofreading. It is a constructor, a destructor,
+//    two moves and two lookups now. The rest is engine/render/render_
+//    resources.cpp - a fourth file with a backend sibling's name and no
+//    backend in it - because two of the three resource tables hold engine data
+//    and only the third was ever hiding anything.
+//
 //  - What is on which side of the line. Every decision that shows on screen is
 //    the engine's: which glyph goes where (font.h), what a .dds and a
 //    .spritefont say (dds_file.h, sprite_font_file.h), and where a sprite's

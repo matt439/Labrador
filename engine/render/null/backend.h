@@ -52,20 +52,17 @@ namespace labrador
 	class RenderResources::Impl
 	{
 	public:
+		// One table, and it is the only one whose resource type this folder
+		// owns. The font and sheet tables are RenderResources' own members;
+		// engine/render/render_resources.h says why, and what it saved.
 		void add_texture(const std::string& name,
 			std::unique_ptr<NullTexture> texture);
-		void add_font(const std::string& name, std::unique_ptr<Font> font);
-		void add_sprite_sheet(const std::string& name,
-			std::unique_ptr<SpriteSheet> sprite_sheet);
 
 		void release_all_textures();
 
 		const NullTexture* texture(TextureHandle texture) const;
-		const Font* font(FontHandle font) const;
 
 		Registry<NullTexture> textures{ "Texture" };
-		Registry<Font> fonts{ "Font" };
-		Registry<SpriteSheet> sprite_sheets{ "SpriteSheet" };
 	};
 
 	// One view's recording, which is a vector of what it was asked to draw.

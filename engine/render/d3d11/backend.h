@@ -62,21 +62,21 @@ namespace labrador
 	public:
 		// Load-time, and the reason this header exists: this is spelt in a D3D11
 		// type, which is exactly what the public RenderResources may not say.
-		// The adds for the two engine kinds are on RenderResources itself.
+		// The adds for the two engine kinds are on RenderResources itself, and
+		// so are their tables now - this holds one table, not three.
 		void add_texture(const std::string& name,
 			ID3D11ShaderResourceView* texture);
-		void add_font(const std::string& name, std::unique_ptr<Font> font);
-		void add_sprite_sheet(const std::string& name,
-			std::unique_ptr<SpriteSheet> sprite_sheet);
 
 		// Device loss. The textures go; the names, and therefore every handle
-		// resolved from them, stay. Nothing else in here is the device's.
+		// resolved from them, stay. Nothing else in here is the device's, and
+		// there is nothing else in here.
 		void release_all_textures();
 
-		// Per-draw, from DrawList. Each throws std::out_of_range if the handle
-		// is unresolved or its slot has been released.
+		// Per-draw, from DrawList. Throws std::out_of_range if the handle is
+		// unresolved or its slot has been released. The font lookup that used
+		// to sit beside this one is RenderResources::font: a Font is engine
+		// data, so its table was never hiding anything from anybody.
 		ID3D11ShaderResourceView* texture(TextureHandle texture) const;
-		const Font* font(FontHandle font) const;
 
 		// By name, for the loader that has just created one and wants it back.
 		ID3D11ShaderResourceView* texture(const std::string& name) const;
@@ -84,8 +84,6 @@ namespace labrador
 		Registry<ID3D11ShaderResourceView,
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>
 			textures{ "Texture" };
-		Registry<Font> fonts{ "Font" };
-		Registry<SpriteSheet> sprite_sheets{ "SpriteSheet" };
 	};
 
 	// One view's recording state: a deferred context, the buffers that feed it,

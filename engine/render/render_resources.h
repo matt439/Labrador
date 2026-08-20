@@ -1,6 +1,8 @@
 #pragma once
 
 #include "engine/core/handle.h"
+#include "engine/core/registry.h"
+#include "engine/render/font.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_sheet.h"
 #include "engine/math/vector2f.h"
@@ -40,6 +42,23 @@ namespace labrador
 	// became engine data, and a texture never will be. add_font moved out of
 	// backend.h on the day it stopped taking a DirectX::SpriteFont, without
 	// anybody having to decide anything.
+	//
+	// AND THE STORAGE FOLLOWS THE SAME RULE NOW, which it did not until the
+	// three copies of it became legible. The font and sheet tables are members
+	// of this class; only the texture table is on Impl. Each backend used to
+	// carry all three, so every method below - measure_text and
+	// first_unrenderable included, which are the two that carry a contract
+	// rather than a forward - was defined once per backend, because Impl was a
+	// complete type only inside a backend folder. The three copies agreed, and
+	// nothing but proofreading held them to it.
+	//
+	// The trade-off those files stated was between that duplication and a
+	// virtual table on the resource store, which would cost a call per lookup
+	// on the frame path (T8). It was a false pair. A table of engine data
+	// behind a pimpl is hidden from nobody: the pimpl is there so that a
+	// caller resolving a name does not compile a graphics API, and Font and
+	// SpriteSheet are not one. Moving them out costs no indirection, and what
+	// stays behind is exactly the calls that touch a texture.
 	class RenderResources
 	{
 	public:
@@ -114,6 +133,21 @@ namespace labrador
 		// sheet now. Nothing on the draw path may use it.
 		const SpriteSheet* sprite_sheet(const std::string& sprite_sheet_name) const;
 
+		// The same, for a font, and it is the same because a Font is the same
+		// kind of thing a SpriteSheet is: engine data over a texture handle.
+		// This used to be RenderResources::Impl::font, one copy per backend
+		// behind the wall, and it is on the seam now for the reason the sheet
+		// accessor beside it always was.
+		//
+		// IT DOES NOT MAKE THE THREE BELOW REDUNDANT. Those are what a caller
+		// wants - the extent of a string, whether the atlas can spell it - and
+		// measure_text is a pinned term of the pixel contract
+		// (tests/render/pixel_tests.cpp). This is what the engine's own draw
+		// path wants, because a glyph walk needs the Font itself, and a backend
+		// asking for one through here rather than through Impl is what lets the
+		// font table stop being a backend's.
+		const Font* font(FontHandle font) const;
+
 		// The unscaled extent of `text` in `font`.
 		//
 		// MEASUREMENT IS EAGER, and it lives here rather than on Renderer
@@ -168,12 +202,20 @@ namespace labrador
 		size_t first_unrenderable(FontHandle font,
 			std::wstring_view text) const;
 
-		// The tables, for the resource factory that fills them. Declared in the
-		// backend's own header rather than here - see the class comment.
+		// The texture table, for the resource factory that fills it. Declared in
+		// the backend's own header rather than here - see the class comment.
+		// It is the texture table and no longer all three.
 		class Impl;
 		Impl* impl() const { return this->impl_.get(); }
 
 	private:
+		// The two tables whose resource type is an engine type, so neither
+		// needs hiding and neither may be written three times. A device loss
+		// touches neither: a font's device half is its atlas, which is a
+		// texture handle, and a sheet's is the same.
+		Registry<Font> fonts_{ "Font" };
+		Registry<SpriteSheet> sprite_sheets_{ "SpriteSheet" };
+
 		std::unique_ptr<Impl> impl_;
 	};
 }
