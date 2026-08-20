@@ -290,13 +290,35 @@ namespace labrador
 		// rather than an error. One question, one answer that was fine, one
 		// that was loud and one that was fatal.
 		//
-		// IT IS NOT A RULE THE CALLER COULD KEEP EVEN IF THIS FILE STATED ONE.
-		// A resize reaches the shell as a window message, and a window message
-		// can be delivered while the shell is inside a frame: engine/app/
-		// window.cpp renders from WM_PAINT, and a vsync Present is entitled to
-		// pump. So "do not call this between begin_frame and submit" would be a
-		// prohibition on something the caller does not control, which is the
-		// kind of rule T6 says to make impossible rather than to document.
+		// IT IS NOT A RULE THE CALLER COULD KEEP EVEN IF THIS FILE STATED ONE,
+		// AND THE MECHANISM IS SYNCHRONOUS RATHER THAN PUMPED. A resize reaches
+		// the shell as a window message, and a window message can be SENT -
+		// straight to the window procedure, on the calling thread, with no
+		// queue and no pump in between. engine/app/window.cpp's resize_client
+		// is a SetWindowPos, which does exactly that; Application::
+		// set_resolution and set_fullscreen call it; and Application::render
+		// runs the state's whole draw walk between begin_frame and submit. So a
+		// client that changes resolution from inside its own drawing lands here
+		// with a frame open, in one call stack, and no amount of care at the
+		// call site would have told it so. "Do not call this between begin_frame
+		// and submit" would be a prohibition on something the caller does not
+		// control, which is the kind of rule T6 says to make impossible rather
+		// than to document.
+		//
+		// TWO OTHER MECHANISMS WERE NAMED HERE AND NEITHER EXISTS, which is
+		// worth recording because both were checkable against files this
+		// paragraph cited by path. "window.cpp renders from WM_PAINT" - it
+		// does, but only under `if (self->in_sizemove_)`, and it forwards
+		// WM_SIZE only under `!in_sizemove_`; the conditions are complements,
+		// so in exactly the state where the shell renders from a message it
+		// throws every resize away, which the back_buffer_size paragraph below
+		// says itself. (WM_PAINT also puts a frame inside a message rather than
+		// a message inside a frame.) And "a vsync Present is entitled to pump" -
+		// the only Present is inside end_frame, which is after submit, so
+		// whatever window a pumping Present opens, it opens outside the interval
+		// this paragraph is about. The term is right; the reasoning under it was
+		// not, and a false justification is worse than none because it reads as
+		// though the case had been considered.
 		//
 		// WHAT RESTARTED MEANS, EXACTLY, because a caller may be holding a
 		// DrawList when this lands and that list must not become a trap:

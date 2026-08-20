@@ -1604,9 +1604,11 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// THE ONE CASE HERE THAT IS NOT ABOUT A PIXEL, and it is in this file
 	// because it is the only one with a device. renderer.h makes it a term of
 	// the seam that window_size_changed may arrive between begin_frame and
-	// submit - a resize reaches the shell as a window message, and a window
-	// message can be delivered while the shell is inside a frame, so no rule
-	// forbidding it would be one the caller could keep.
+	// submit - a window message can be SENT rather than posted, and
+	// Application::set_resolution sends one through SetWindowPos on the calling
+	// thread, so a client that changes resolution from inside its own draw walk
+	// gets this mid-frame in one stack. No rule forbidding it would be one the
+	// caller could keep.
 	//
 	// IT WAS WRITTEN BECAUSE ALL THREE BACKENDS ANSWERED DIFFERENTLY AND TWO
 	// WERE WRONG. OpenGL carried on; D3D11 threw DXGI_ERROR_INVALID_CALL out of
