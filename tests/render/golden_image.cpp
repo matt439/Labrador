@@ -385,10 +385,10 @@ namespace
 	// stated with the measurement that set it.
 	//
 	// MEASURED, NOT GUESSED. Held against the same set, this machine's GPU and
-	// WARP differ on 19 of the 44 frames. Eighteen of those 19 draw text, so
+	// WARP differ on 19 of the 46 frames. Eighteen of those 19 draw text, so
 	// their pixels came out of the block-compressed font atlas through a
 	// filter; the nineteenth is a blend case. The worst channel across all of
-	// them is 7 and most are 5, and the other twenty-five frames - the ones
+	// them is 7 and most are 5, and the other twenty-seven frames - the ones
 	// carrying flat texels through no filter, the six multi-view ones among
 	// them - are identical to the byte. That is the shape of a decode-and-filter
 	// difference, and neither term is one this engine decides - pixel_tests.cpp

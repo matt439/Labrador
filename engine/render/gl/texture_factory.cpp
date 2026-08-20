@@ -111,6 +111,12 @@ namespace labrador
 		// max level is 1000, and a texture whose chain stops earlier than the
 		// sampler expects is incomplete - which draws black rather than
 		// failing, and is the classic way a single-level texture disappears.
+		//
+		// It is belt and braces since the seam settled on level zero, because
+		// this backend's min filters are the non-mipmap ones and so ask for no
+		// level this could be wrong about. It stays because completeness is a
+		// property of the texture rather than of whoever samples it, and the
+		// day a sampler here changes is not the day to rediscover that.
 		glTexParameteri(GL_TEXTURE_2D, static_cast<GLenum>(
 			GL_TEXTURE_BASE_LEVEL_), 0);
 		glTexParameteri(GL_TEXTURE_2D, static_cast<GLenum>(

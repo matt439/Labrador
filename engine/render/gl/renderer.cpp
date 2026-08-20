@@ -452,6 +452,15 @@ namespace labrador
 
 		// Clamped, so a source rectangle at the edge of an atlas cannot bleed
 		// the far side of it into a sprite.
+		//
+		// AND GL_NEAREST AND GL_LINEAR ARE THE NON-MIPMAP MIN FILTERS, which is
+		// this backend's whole share of the seam's level-zero term and is worth
+		// saying because it reads as an omission. The mipmap spellings are
+		// GL_NEAREST_MIPMAP_NEAREST and friends; these are deliberately not
+		// them. This backend has always answered level zero and the other one
+		// sampled the chain until its MaxLOD was set to 0 - they agreed only
+		// because nothing in either client ships a chain. d3d11/renderer.cpp
+		// carries the argument for which way the seam settled it.
 		glGenSamplers(1, &this->point_sampler);
 		glSamplerParameteri(this->point_sampler, GL_TEXTURE_MIN_FILTER,
 			GL_NEAREST);

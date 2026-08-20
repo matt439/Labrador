@@ -3,6 +3,8 @@
 #include "engine/render/colour.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/resource_factory.h"
+#include "engine/render/texture_data.h"
+#include "engine/render/texture_format.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
@@ -57,8 +59,8 @@
 // assertion in this file holds one backend to a relationship, and two
 // hand-copied implementations can get the same relationship wrong in the same
 // direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Forty-five frames; forty-four of them are 64x64 on every backend
-// and identical across the two that rasterise. The forty-fifth is read out of
+// argument. Forty-seven frames; forty-six of them are 64x64 on every backend
+// and identical across the two that rasterise. The forty-seventh is read out of
 // a buffer the seam says is a different size per backend, and
 // Harness::end_not_comparable is where that is written down.
 //
@@ -160,6 +162,48 @@ namespace
 	constexpr Pixel BLUE{ 0, 0, 255, 255 };
 	constexpr Pixel WHITE{ 255, 255, 255, 255 };
 
+	// A texture that carries a mip chain, which no file in either client does.
+	//
+	// Level zero is sixteen pixels of red and level one is eight of blue, so
+	// which level a minified draw sampled is the colour that comes back rather
+	// than an inference from one. The seam's texture handover is a plain
+	// aggregate (engine/render/texture_data.h), so this needs no file, no
+	// tool and no new bytes in the repository - which is the only reason the
+	// term below is testable at all, because there is nothing to load that
+	// would exercise it.
+	TextureData two_level_texture()
+	{
+		TextureData texture;
+		texture.width = 16;
+		texture.height = 16;
+		texture.format = TextureFormat::r8g8b8a8_unorm;
+
+		const TextureLevel coarse_offset =
+			texture_level(texture.format, 16, 16, 0);
+		texture.levels.push_back(coarse_offset);
+		texture.levels.push_back(
+			texture_level(texture.format, 8, 8, coarse_offset.size));
+
+		const TextureLevel& fine = texture.levels[0];
+		const TextureLevel& coarse = texture.levels[1];
+		texture.pixels.resize(fine.size + coarse.size);
+
+		for (size_t byte = fine.offset; byte < fine.offset + fine.size;
+			byte += 4)
+		{
+			texture.pixels[byte] = 255;
+			texture.pixels[byte + 3] = 255;
+		}
+		for (size_t byte = coarse.offset; byte < coarse.offset + coarse.size;
+			byte += 4)
+		{
+			texture.pixels[byte + 2] = 255;
+			texture.pixels[byte + 3] = 255;
+		}
+
+		return texture;
+	}
+
 	// A device, a table with one texture in it, and a frame you can read back.
 	class Harness
 	{
@@ -225,6 +269,10 @@ namespace
 		// For the cases that change the view count in the middle of a frame,
 		// which is a state the seam names and nothing on a device has entered.
 		Renderer& renderer() { return this->renderer_; }
+
+		// For the one case that builds its own texture rather than loading
+		// one. Both are null_tests.cpp's accessors, spelt the same way.
+		RenderResources& resources() { return this->resources_; }
 
 		// Deliberately no end_frame(). Presenting a FLIP_DISCARD swap chain
 		// throws the back buffer's contents away, which is exactly what is
@@ -517,6 +565,52 @@ TEST_CASE("CONTRACT: the source rectangle selects, and is in texels")
 	// One texel stretched over the whole destination, so every sample is it.
 	CHECK(harness.at(1, 1) == RED);
 	CHECK(harness.at(6, 6) == RED);
+}
+
+TEST_CASE("CONTRACT: a minified draw samples level zero, not the chain")
+{
+	Harness harness;
+
+	// Sixteen source pixels into four, so the level a mip-sampling backend
+	// would pick is level one and not a near miss: log2(16/4) is 2, and the
+	// chain stops at 1, so a sampler walking it lands on blue with margin.
+	add_texture_asset(harness.renderer(), harness.resources(), "two_level",
+		two_level_texture());
+	const TextureHandle chained =
+		harness.resources().resolve_texture("two_level");
+
+	// BOTH FILTERS, because the term belongs to both samplers and because
+	// TextureFilter::linear reached no device anywhere in this repository
+	// until this case. Point and linear differ in which texels of a level
+	// they combine; neither chooses a level.
+	SUBCASE("under the point filter")
+	{
+		DrawList list = harness.begin();
+		list.set_filter(TextureFilter::point);
+		list.draw_sprite(chained, RectangleI(0, 0, 16, 16),
+			RectangleF(8.0f, 8.0f, 4.0f, 4.0f), Colour::white, 0.0f,
+			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		harness.end();
+
+		CHECK(harness.at(9, 9) == RED);
+		CHECK(harness.at(10, 10) == RED);
+	}
+
+	SUBCASE("and under the linear filter")
+	{
+		DrawList list = harness.begin();
+		list.set_filter(TextureFilter::linear);
+		list.draw_sprite(chained, RectangleI(0, 0, 16, 16),
+			RectangleF(8.0f, 8.0f, 4.0f, 4.0f), Colour::white, 0.0f,
+			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		harness.end();
+
+		// Level zero is one flat colour, so linear filtering has nothing to
+		// blend towards and the answer is exact rather than approximately red.
+		// That is the whole reason the two levels are flat.
+		CHECK(harness.at(9, 9) == RED);
+		CHECK(harness.at(10, 10) == RED);
+	}
 }
 
 TEST_CASE("CONTRACT: the tint multiplies the texel")

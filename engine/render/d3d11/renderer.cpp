@@ -503,8 +503,26 @@ namespace labrador
 		sampler_description.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		sampler_description.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 		sampler_description.MaxAnisotropy = 1;
-		sampler_description.MaxLOD = D3D11_FLOAT32_MAX;
 		sampler_description.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+		// LEVEL ZERO, ALWAYS, and this line is the whole of the term on this
+		// backend. It was D3D11_FLOAT32_MAX, which samples whatever chain the
+		// texture carries; the GL backend's min filters are GL_NEAREST and
+		// GL_LINEAR, which are the non-mipmap ones, so it has always answered
+		// level zero. The two agreed only because no file in either client has
+		// ever carried a second level - agreement by content, which stops the
+		// first time somebody authors a chain and stops silently.
+		//
+		// The seam decides it this way round because the alternative hands a
+		// which-texel decision to the rasteriser: a mip level is chosen per
+		// pixel from screen-space derivatives, both APIs allow an
+		// implementation to approximate that, and nothing this engine does
+		// would decide it. renderer.h's closing section says NOTHING A BACKEND
+		// DOES DECIDES WHERE A PIXEL GOES, and which texel is the same
+		// sentence. Chains are still read and still uploaded; they are not
+		// sampled from.
+		sampler_description.MinLOD = 0.0f;
+		sampler_description.MaxLOD = 0.0f;
 
 		sampler_description.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		ThrowIfFailed(device->CreateSamplerState(&sampler_description,

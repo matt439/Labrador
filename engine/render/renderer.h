@@ -155,6 +155,21 @@ namespace labrador
 
 		// Applies to every draw recorded after it. Changing it mid-list is
 		// legal and costs a flush, so group by filter if it matters.
+		//
+		// IT CHOOSES BETWEEN TEXELS OF LEVEL ZERO AND NEVER BETWEEN LEVELS.
+		// A minified draw samples level zero however many levels the texture
+		// carries, under either filter. That is a term of this seam and not a
+		// backend's habit: the two answered it differently - one sampled the
+		// chain, the other did not - and agreed in practice only because no
+		// file in either client has ever carried a second level.
+		//
+		// LEVEL ZERO IS THE ANSWER BECAUSE THE OTHER ONE IS NOT THE ENGINE'S TO
+		// GIVE. A mip level is chosen per pixel from screen-space derivatives,
+		// and both APIs let an implementation approximate that computation, so
+		// a chain would put "which texel" in the same class as the things the
+		// closing section of this file says a backend never decides. Chains are
+		// read and uploaded - a .dds that has one is not rejected and its bytes
+		// reach the device - and nothing samples from them.
 		void set_filter(TextureFilter filter);
 
 		// CONSTRAINT: sort depth is per draw, not per object.
@@ -452,8 +467,8 @@ namespace labrador
 //    vertex buffer, a shader that multiplies each vertex by one constant, and
 //    the states that make the blend premultiplied. NOTHING A BACKEND DOES
 //    DECIDES WHERE A PIXEL GOES, which is what lets the two backends that have
-//    a rasteriser pass the same assertions - 290 of them at the last count,
-//    over 28 cases, and the number is not the point: what it buys is that the
+//    a rasteriser pass the same assertions - 300 of them at the last count,
+//    over 29 cases, and the number is not the point: what it buys is that the
 //    file asserting them says "the renderer", never "this renderer".
 //
 //    IT IS TWO RUNS AND ONE SET OF IMAGES, and the second half of that used to
@@ -464,10 +479,10 @@ namespace labrador
 //    Every frame a case reads back is now also compared byte for byte against
 //    a PNG of it in tests/render/golden/, and those images are what hold the
 //    backends to each other rather than each to a sentence
-//    (tests/render/golden_image.h carries the argument). Forty-four frames,
+//    (tests/render/golden_image.h carries the argument). Forty-six frames,
 //    six of which fill more than one view - the machinery the two backends
 //    share least, one a deferred context per view and the other a vector. On
-//    one machine's GPU, d3d11 and gl reproduce all forty-four exactly.
+//    one machine's GPU, d3d11 and gl reproduce all forty-six exactly.
 //
 //    WHAT IS STILL TWO RUNS is the running of it. LABRADOR_RENDER_BACKEND
 //    picks a backend at configure time (T5), so this is still two processes
