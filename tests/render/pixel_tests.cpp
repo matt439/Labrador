@@ -468,8 +468,15 @@ namespace
 		}
 
 		HWND window_ = nullptr;
-		Renderer renderer_;
+
+		// THE TABLE BEFORE THE RENDERER, so it dies after one - render_
+		// resources.h states it as a term of the seam. This harness was saved
+		// from needing it only by accident: every end() routes through
+		// read_back_buffer, which drains the GPU, so no frame here has ever
+		// been in flight at the point the members go. The first case that
+		// submits a frame it does not read back would have found it.
 		RenderResources resources_;
+		Renderer renderer_;
 		std::vector<unsigned char> pixels_;
 		Vector2F buffer_ = Vector2F(static_cast<float>(BUFFER_SIZE),
 			static_cast<float>(BUFFER_SIZE));

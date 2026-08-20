@@ -109,8 +109,13 @@ namespace
 		FontHandle font;
 
 	private:
-		Renderer renderer_;
+		// The table before the renderer, so it dies after one. It costs this
+		// backend nothing - a null texture is two ints - and the order is kept
+		// anyway, because render_resources.h states it as a term of the seam
+		// and a harness that keeps it only where it is expensive is a harness
+		// that teaches the rule wrong.
 		RenderResources resources_;
+		Renderer renderer_;
 	};
 }
 

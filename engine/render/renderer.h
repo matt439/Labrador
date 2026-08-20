@@ -330,6 +330,12 @@ namespace labrador
 		// Separate from create_device because the order is fixed the other way:
 		// the resource factory needs a device before it can load anything into
 		// a table, so the table cannot exist when the device is made.
+		//
+		// AND THE TEARDOWN ORDER IS FIXED THE OTHER WAY AGAIN. The table
+		// outlives the renderer, because on one backend it holds resources the
+		// GPU may still be reading and the only wait for them is inside this
+		// class's destructor. render_resources.h states it beside
+		// release_device_resources, where the resources in question are.
 		void set_resources(const RenderResources* resources);
 
 		// begin_frame clears the back buffer and resets every view's

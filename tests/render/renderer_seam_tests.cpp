@@ -53,8 +53,12 @@ TEST_CASE("CONTRACT: a texture loaded before there is a device is refused, by na
 	// A renderer that has never been given one. Both real backends hold a null
 	// pointer here - a device or a WGL context - and the null backend holds a
 	// flag, because it has nothing to be null.
-	Renderer renderer;
+	// The table before the renderer, so it dies after one - render_resources.h
+	// states the ordering as a term of the seam. Nothing here has a device for
+	// it to matter to; it is written this way so that the one file a reader
+	// consults for what the seam answers does not model the order backwards.
 	RenderResources resources;
+	Renderer renderer;
 	renderer.set_resources(&resources);
 
 	const TextureData texture = two_by_two();

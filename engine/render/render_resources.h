@@ -109,6 +109,28 @@ namespace labrador
 		// resource a loss takes would be the seam telling it what a texture is.
 		void release_device_resources();
 
+		// CONSTRAINT: A RenderResources OUTLIVES THE Renderer IT WAS FILLED
+		// AGAINST. This class holds whatever a backend calls a texture, and on
+		// one of the four that is an ID3D12Resource the GPU may still be
+		// reading: the only thing that waits for it is ~Renderer::Impl, so a
+		// shell that declares its table before its renderer releases every
+		// texture ahead of the one wait on the whole shutdown path. The debug
+		// layer calls that OBJECT_DELETED_WHILE_STILL_IN_USE, and
+		// engine/render/d3d12/device_resources.cpp asks it to break on one.
+		//
+		// It is stated here rather than only kept, because it costs nothing on
+		// three of the four backends and is therefore invisible in three
+		// configurations out of four. Members destruct in reverse declaration
+		// order, so keeping it means declaring the table BEFORE the renderer -
+		// which is the opposite of the order they are CREATED in, and the
+		// paragraph on set_resources in renderer.h says why that order is
+		// forced the other way. Everything in this repository that holds both
+		// keeps it: engine/app/application.h, and the three test files whose
+		// harnesses stand in for a shell.
+		//
+		// Nothing here needs the renderer to still be alive: a texture releases
+		// itself, and an ID3D12Resource holds its own reference on the device.
+
 		// Load-time. Each throws std::out_of_range naming the resource if nothing
 		// has loaded it, so a misspelt name in a definition file fails while the
 		// level is loading rather than on the frame that first drew it.

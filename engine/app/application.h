@@ -237,11 +237,21 @@ namespace labrador
 
 		ApplicationOptions options_;
 		std::unique_ptr<Window> window_ = nullptr;
+
+		// AND THE TABLE IS DECLARED BEFORE THE RENDERER, so it dies after one.
+		// render_resources.h states it as a term of the seam and says what it
+		// costs to get wrong: the table holds whatever a backend calls a
+		// texture, and on the D3D12 backend that is an ID3D12Resource the GPU
+		// may still be reading, whose only wait is in ~Renderer::Impl. Declared
+		// the other way round - which is the order they are created in, and the
+		// order this list had - every texture is released ahead of that wait on
+		// every normal exit. It costs nothing on the other three backends,
+		// which is why it survived.
+		std::unique_ptr<RenderResources> render_resources_ = nullptr;
 		std::unique_ptr<Renderer> renderer_ = nullptr;
 		StepTimer timer_ = StepTimer();
 
 		std::unique_ptr<AudioResources> audio_resources_ = nullptr;
-		std::unique_ptr<RenderResources> render_resources_ = nullptr;
 		std::unique_ptr<ResourceLoader> resource_loader_ = nullptr;
 		std::unique_ptr<ResolutionManager> resolution_manager_ = nullptr;
 		std::unique_ptr<ViewportManager> viewport_manager_ = nullptr;
