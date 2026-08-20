@@ -38,6 +38,13 @@ jobs:
     # The pixel contract is checked on a machine with a driver; everything else
     # about that backend is checked here.
     #
+    # THE D3D12 PRESET SKIPS NOTHING, AND THAT IS THE REASON IT IS THE FOURTH
+    # BACKEND. Direct3D 12 has WARP as well, so this runner rasterises the
+    # whole pixel contract twice, against one set of images, on one software
+    # rasteriser - which is the cross-backend comparison the golden set was
+    # added for and which the GL preset cannot supply here. If the two ever
+    # disagree, this job is where it shows.
+    #
     # THE NULL PRESET IS THE ONE THIS MACHINE CAN RUN COMPLETELY, and it is here
     # for that rather than for coverage. It has no graphics API at all - it
     # records what it was asked to draw - so nothing in it can fail for a reason
@@ -51,6 +58,8 @@ jobs:
           - preset: x64-debug
             skip_tests: ''
           - preset: x64-release
+            skip_tests: ''
+          - preset: x64-debug-d3d12
             skip_tests: ''
           - preset: x64-debug-gl
             skip_tests: '-E RenderPixelTests'

@@ -118,8 +118,13 @@ being load-bearing.
 │   ├── render/             the Renderer, cameras, viewports, colours, fonts,
 │   │   │                   the file readers and the quad arithmetic — every
 │   │   │                   decision that shows on screen
-│   │   ├── d3d11/          the D3D11 backend: a device, buffers, a shader
-│   │   │                   compiled by fxc at build time, four states
+│   │   ├── sprite.hlsl     the only shader, compiled by fxc at build time —
+│   │   │                   shared by the two backends that take HLSL, each
+│   │   │                   at its own profile
+│   │   ├── d3d11/          the D3D11 backend: a device, buffers, four states
+│   │   ├── d3d12/          the D3D12 backend: a device, a queue, a fence and
+│   │   │                   frames in flight — the one API where the engine
+│   │   │                   owns synchronisation
 │   │   ├── gl/             the OpenGL 3.3 core backend: a WGL context, a
 │   │   │                   loader for the forty-one entry points it uses,
 │   │   │                   and the same shader in GLSL
@@ -251,7 +256,7 @@ already is (T5). That option is held, not spent.
 | `math` | nothing — and it links nothing, which is what makes this true |
 | `core` | math |
 | `collision` | core, math |
-| `render` | core, math — D3D11 inside `d3d11/`, OpenGL inside `gl/`, nothing inside `null/` |
+| `render` | core, math — D3D11 inside `d3d11/`, D3D12 inside `d3d12/`, OpenGL inside `gl/`, nothing inside `null/` |
 | `scene` | core, math, collision, render |
 | `input` | core, math — XInput inside `xinput/` only |
 | `audio` | core, math — the audio backend at its edge only |
@@ -299,21 +304,43 @@ position in it (`'./levels/turbulence.json': collision_objects[17] has no
 reject what it read — an unknown colour name is a content mistake exactly
 like a missing key.
 
-**The backend is three translation units, and all three are in its folder.**
+**The backend is three translation units, and all of them are in its folder.**
 A backend supplies `renderer.cpp`, `render_resources.cpp` and
-`texture_factory.cpp`, plus whatever it needs to build its shader. The third
-is there because exactly one step of loading content names a graphics type —
-turning already-decoded bytes into a texture. Working out the path and reading
-the file are `render/resource_factory.cpp` and the readers beside it, written
-once for every backend.
+`texture_factory.cpp`, plus at most one more for the part of its API that is
+not about drawing, plus whatever it needs to build its shader. The third of the
+three is there because exactly one step of loading content names a graphics
+type — turning already-decoded bytes into a texture. Working out the path and
+reading the file are `render/resource_factory.cpp` and the readers beside it,
+written once for every backend.
 
-**There are three backends**: `render/d3d11/`, `render/gl/` and
-`render/null/`, chosen by `LABRADOR_RENDER_BACKEND` at configure time. The
-first two are held to the same `RenderPixelTests`; the third has no graphics
-API and records what it was asked to draw, which is what makes drawing
-assertable where there is no driver. Nothing outside any of the three folders
-names it, which is what makes selection a list of files rather than a set of
-`#ifdef`s.
+**What a backend needs to build its shader is not always in its folder, and
+that is the one thing above it that is shared rather than written twice.**
+`render/sprite.hlsl` is compiled by both Direct3D backends — at
+`4_0_level_9_1` for one and `5_1` for the other, into two byte arrays that
+never meet — because the source they compile is character for character the
+same file. A backend owns the profile it asks for and the binding it gives the
+shader's `b0`; it does not own the arithmetic, which is the same rule as
+everything else on this page.
+
+**There are four backends**: `render/d3d11/`, `render/d3d12/`, `render/gl/`
+and `render/null/`, chosen by `LABRADOR_RENDER_BACKEND` at configure time. The
+first three are held to the same `RenderPixelTests` and to the same images in
+`tests/render/golden/`; the fourth has no graphics API and records what it was
+asked to draw, which is what makes drawing assertable where there is no driver.
+Nothing outside any of the four folders names it, which is what makes selection
+a list of files rather than a set of `#ifdef`s.
+
+**A fourth backend was worth having for one claim the first three could not
+test.** D3D11 and OpenGL both hide the CPU/GPU boundary behind a driver, and
+the null backend has no GPU to be out of step with — so until D3D12 the seam
+had never met an API where the engine owns synchronisation. Frames in flight,
+a command allocator that may not be reused until a fence says so, a vertex
+page that is still being read next frame, an upload the load path has to wait
+for: all four are below the seam in `render/d3d12/`, and none of them reached
+a line of `render/renderer.h`. It reaches *less* hardware than the backend
+beside it — feature level 11_0 and Windows 10, against 10.0 — so it is a seam
+test and a second rasteriser CI can run, and never a way down onto the low
+tier.
 
 A backend may publish a second header beside `backend.h` **as long as it names
 no backend type** — `render/null/recording.h` is one, and is meant to be

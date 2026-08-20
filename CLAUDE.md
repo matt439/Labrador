@@ -24,20 +24,23 @@ ctest --preset x64-debug
 ```
 
 `VCPKG_ROOT` must be set — `CMakePresets.json` reads it for the toolchain file
-and configuring fails without it. For the D3D11 backend `fxc` must also be on
-`PATH`, because its shader is compiled at build time into a byte array
-([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)); the GL backend
-compiles its GLSL at device creation and needs no tool. Both come with the
-Visual Studio install. Ninja generator, out-of-source in `out/build/<preset>/`.
+and configuring fails without it. For the two Direct3D backends `fxc` must also
+be on `PATH`, because they compile [engine/render/sprite.hlsl](engine/render/sprite.hlsl)
+at build time into a byte array
+([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)) — one source, two
+profiles, two generated headers; the GL backend compiles its GLSL at device
+creation and needs no tool. Both come with the Visual Studio install. Ninja
+generator, out-of-source in `out/build/<preset>/`.
 
-**There are three render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
+**There are four render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
 configure time — so asking for one that was not built is a missing symbol at
 link (T5). A change to anything in `engine/render/` should be checked against
-all three; CI builds all three.
+all four; CI builds all four.
 
 | Preset | Backend | ctest |
 |---|---|---|
 | `x64-debug`, `x64-release` | `render/d3d11/` | 12 entries; WARP fallback in debug |
+| `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 12 entries; WARP fallback in debug |
 | `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 12 entries; needs a real driver |
 | `x64-debug-null` | `render/null/` — no graphics API; records draws | 11 entries; `RenderPixelTests` is not built |
 
@@ -48,15 +51,18 @@ frame submitted, in what order, from which texture, into which view. Twelve ctes
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
 `InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`
 (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
-device — a hidden window and a WARP fallback in debug under `x64-debug`, a WGL
-context under `x64-debug-gl` — and asserts on the pixels
+device — a hidden window and a WARP fallback in debug under `x64-debug` and
+`x64-debug-d3d12`, a WGL context under `x64-debug-gl` — and asserts on the
+pixels
 `Renderer::read_back_buffer` hands back. It is the only test that rasterises
 anything, and the executable statement of the pixel contract every backend with
 a rasteriser has to reproduce. It runs against one backend at a time — but it no
-longer follows that two are never compared: every frame it reads back is also
+longer follows that they are never compared: every frame it reads back is also
 checked byte for byte against a PNG of it in
 [tests/render/golden/](tests/render/golden/), which is one set of images that
-both rasterising backends are held to. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
+all three rasterising backends are held to. CI checks two of them, because
+Direct3D falls back to WARP on a GPU-less runner and OpenGL falls back to GDI
+1.1. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
 and **review every image it changes** — a regeneration that is not looked at
 turns the contract into a recording of whatever the code does now.
 Two terms sit outside the images and both say so where they are decided:
@@ -120,10 +126,12 @@ runs there with no window and no device. A rule is asserted rather than played.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
   Every backend has the same three translation units — `renderer.cpp`,
-  `render_resources.cpp`, `texture_factory.cpp` — and at most two more:
-  `d3d11/` adds `device_resources.cpp` and a shader, `gl/` adds
-  `gl_functions.cpp` and compiles its GLSL at device creation, `null/` adds
-  nothing and has no shader at all. Note the name collision, because it is
+  `render_resources.cpp`, `texture_factory.cpp` — and at most one more, being
+  the part of an API that is not about drawing: `d3d11/` and `d3d12/` each add
+  `device_resources.cpp`, `gl/` adds `gl_functions.cpp` and compiles its GLSL
+  at device creation, `null/` adds nothing. The HLSL the two Direct3D backends
+  compile is **not** in either folder — it is `render/sprite.hlsl`, one file at
+  two profiles, and that file says why. Note the name collision, because it is
   deliberate: [engine/render/render_resources.cpp](engine/render/render_resources.cpp)
   is a shared file, and the backend one beside it holds only the calls that
   touch a texture. Two of the three resource tables hold engine data and are
@@ -142,11 +150,15 @@ runs there with no window and no device. A rule is asserted rather than played.
   code, tested headlessly, shared by every backend. A backend supplies a
   device, a texture from bytes, a vertex buffer, a shader, and whatever its API
   spells the blend, the rasteriser state and the two filters as — five state
-  objects on `d3d11/`, two sampler objects and some `glEnable` on `gl/`, none
-  at all on `null/`. The one term a backend still decides is where a pane sits
-  in the buffer, because D3D11 measures down from the top and GL up from the
-  bottom; `gl/backend.h` says what that costs. DirectXTK is no longer on the
-  render path — it is still bought for audio and the gamepad reader.
+  objects on `d3d11/`, one pipeline state object and two samplers on `d3d12/`,
+  two sampler objects and some `glEnable` on `gl/`, none at all on `null/`. The
+  one term a backend still decides is where a pane sits in the buffer, because
+  Direct3D measures down from the top and GL up from the bottom;
+  `gl/backend.h` says what that costs. What `d3d12/` decides that no other
+  backend does is **when** rather than where: frames in flight, fence-gated
+  allocator reuse, a per-frame vertex ring and an upload the load path waits
+  for. None of it reaches the seam, which is why that backend exists —
+  `d3d12/backend.h` states the claim.
 - **A new public primitive ships with behavioural tests in the same commit.**
   Benchmarks assert on **complexity class**, not wall-clock — a phase linear in
   the object count must stay linear when the count quadruples, whatever the
@@ -176,6 +188,9 @@ runs there with no window and no device. A rule is asserted rather than played.
 
 An action-mapping layer over the input devices — neither client has a rebinding
 screen, so a binding table would be the speculative framework T1 rules out.
-That is the whole list now; the second backend and the null backend both
-landed. Also permanently out of scope: online play,
-3D, an editor, and a scripting layer.
+That is the whole list now; every render backend that was planned has landed.
+A fifth is not planned and is not refused either — Vulkan was weighed against
+D3D12 and lost on cost, not on principle — but the seam claim a fourth backend
+existed to test is now tested, so a fifth would need a reason of its own.
+Also permanently out of scope: online play, 3D, an editor, and a scripting
+layer.

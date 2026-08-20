@@ -89,13 +89,14 @@ target_include_directories(LabradorEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..
 # a virtual call per sprite is the frame-loop tax T8 refuses, and a compile-time
 # choice fails at link rather than at run time (T5). This is where that choice
 # is made, and it is the whole of what selecting a backend involves - three
-# translation units and whatever that backend needs to build its shader.
+# translation units, at most one more for the part of the API that is not about
+# drawing, and whatever that backend needs to build its shader.
 #
 # Nothing outside engine/render/<backend>/ names either folder, which is what
 # makes this a list of files rather than a set of #ifdefs.
 set(LABRADOR_RENDER_BACKEND "d3d11" CACHE STRING
-    "The render backend to build: d3d11, gl or null")
-set_property(CACHE LABRADOR_RENDER_BACKEND PROPERTY STRINGS d3d11 gl null)
+    "The render backend to build: d3d11, d3d12, gl or null")
+set_property(CACHE LABRADOR_RENDER_BACKEND PROPERTY STRINGS d3d11 d3d12 gl null)
 
 if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
     target_sources(LabradorEngine PRIVATE
@@ -112,14 +113,41 @@ if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
     # includes them from the repository root like everything else - and
     # check_engine_includes.cmake's rule about who may include a backend
     # header reads exactly the same for a generated one.
+    #
+    # THE SOURCE IS render/sprite.hlsl AND THE PROFILE IS THIS BACKEND'S, which
+    # is the whole of the split. Two backends compile that one file and neither
+    # owns it; what each owns is the profile it asks for and the header the
+    # bytes land in. That file says why it is not two files.
     compile_hlsl(LabradorEngine
-        "${CMAKE_CURRENT_SOURCE_DIR}/render/d3d11/sprite.hlsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
         vs_4_0_level_9_1 vertex_main SPRITE_VERTEX_SHADER
         "engine/render/d3d11/sprite_vertex_shader.h")
     compile_hlsl(LabradorEngine
-        "${CMAKE_CURRENT_SOURCE_DIR}/render/d3d11/sprite.hlsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
         ps_4_0_level_9_1 pixel_main SPRITE_PIXEL_SHADER
         "engine/render/d3d11/sprite_pixel_shader.h")
+elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
+    target_sources(LabradorEngine PRIVATE
+        render/d3d12/device_resources.cpp
+        render/d3d12/render_resources.cpp
+        render/d3d12/renderer.cpp
+        render/d3d12/texture_factory.cpp
+    )
+    target_link_libraries(LabradorEngine PUBLIC d3d12 dxgi dxguid)
+
+    # The same source as the backend above, at the lowest profile this API has.
+    # Shader model 5 is where D3D12 starts - there is no 4_0_level_9_1 to ask
+    # for - and 5_1 is the one fxc emits for it. The generated headers land
+    # under engine/render/d3d12/, so the two backends never share a byte array
+    # even though they share every line that produced it.
+    compile_hlsl(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
+        vs_5_1 vertex_main SPRITE_VERTEX_SHADER
+        "engine/render/d3d12/sprite_vertex_shader.h")
+    compile_hlsl(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
+        ps_5_1 pixel_main SPRITE_PIXEL_SHADER
+        "engine/render/d3d12/sprite_pixel_shader.h")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     target_sources(LabradorEngine PRIVATE
         render/gl/gl_functions.cpp
@@ -147,7 +175,7 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")
 else()
     message(FATAL_ERROR
         "LABRADOR_RENDER_BACKEND is '${LABRADOR_RENDER_BACKEND}'. "
-        "It must be d3d11, gl or null - a backend is a folder in "
+        "It must be d3d11, d3d12, gl or null - a backend is a folder in "
         "engine/render/ holding renderer.cpp, render_resources.cpp and "
         "texture_factory.cpp.")
 endif()

@@ -37,7 +37,7 @@
 //     option is held, not spent - the same escalation ARCHITECTURE.md:122-126
 //     describes for promoting a folder to a library.
 //
-// HOW ONE HEADER SERVES THREE BACKENDS. Renderer holds a pimpl and DrawList
+// HOW ONE HEADER SERVES FOUR BACKENDS. Renderer holds a pimpl and DrawList
 // holds a raw pointer to per-view state the backend owns; each backend
 // defines Renderer::Impl and DrawList::View in its own translation unit under
 // engine/render/<backend>/. DrawList stays trivially copyable, so passing one
@@ -357,12 +357,12 @@ namespace labrador
 		// need not is a drag-resize, during which the shell discards every
 		// WM_SIZE and still asks for frames (engine/app/window.cpp). What a
 		// backend answers then is whatever it is really drawing into: a swap
-		// chain does not follow its window, so the D3D11 backend answers the
-		// size it was told and lets Present stretch; a WGL context's default
-		// framebuffer is the window's client area, so the GL backend answers
-		// the window. read_back_buffer below is sized from this and a viewport
-		// is placed inside it, so a backend that answered from a cache would
-		// have both of those disagree with the pixels it just drew.
+		// chain does not follow its window, so both Direct3D backends answer
+		// the size they were told and let Present stretch; a WGL context's
+		// default framebuffer is the window's client area, so the GL backend
+		// answers the window. read_back_buffer below is sized from this and a
+		// viewport is placed inside it, so a backend that answered from a cache
+		// would have both of those disagree with the pixels it just drew.
 		mattmath::Vector2F back_buffer_size() const;
 
 		// Copies the back buffer out: 8-bit RGBA, row-major, top row first,
@@ -428,27 +428,45 @@ namespace labrador
 //
 //  - AssetKind::reload_device, which is not this file's but is this file's
 //    fault. It is a public std::function on the asset loader that exists only
-//    because a Direct3D device can be lost, and two of the three backends
+//    because a Direct3D device can be lost, and two of the four backends
 //    behind this seam never call it: a WGL context is not lost, and the null
 //    one has nothing to lose. So a caller writes a rebuild path for a hazard
 //    its configuration may not have. Whether that belongs on the loader, on
-//    DeviceNotify, or nowhere is a question two backends made askable and a
-//    third made worth asking.
+//    DeviceNotify, or nowhere is a question two backends made askable, a third
+//    made worth asking, and a fourth has now answered half of: D3D12 loses a
+//    device the same way D3D11 does, so the hazard belongs to half the
+//    backends rather than to one, and what is left to settle is which of the
+//    three places it goes rather than whether it goes anywhere.
 //
 // SETTLED, AND THIS FILE IS WHERE IT IS RECORDED:
 //
 //  - The shape of a backend is three translation units every backend has -
 //    renderer.cpp, render_resources.cpp and texture_factory.cpp, all in
 //    engine/render/<backend>/ - plus whatever that backend needs to build its
-//    shader, which for one of the three is nothing, plus at most one more for
-//    the API itself. Only null stops at three: d3d11 adds device_resources.cpp
-//    and gl adds gl_functions.cpp, and both are the same kind of file, which is
-//    the part of an API that is not about drawing. The third file is where the
-//    three diverge most and is the honest measure of what a port owes for
-//    content - 115 lines on d3d11, 162 on gl, 48 on null - because it turns
-//    already-decoded bytes into a texture, and how much work that is depends on
-//    how much the API will take unchanged. Path-building and file-reading are
-//    in engine/render/resource_factory.cpp, written once for everybody.
+//    shader, which for one of the four is nothing and for two of them is the
+//    same file, plus at most one more for the API itself. Only null stops at
+//    three: d3d11 and d3d12 each add device_resources.cpp and gl adds
+//    gl_functions.cpp, and all three are the same kind of file, which is the
+//    part of an API that is not about drawing. The third file is where they
+//    diverge most and is the honest measure of what a port owes for content -
+//    115 lines on d3d11, 264 on d3d12, 168 on gl, 48 on null - because it
+//    turns already-decoded bytes into a texture, and how much work that is
+//    depends on how much the API will take unchanged. THE LONGEST OF THEM IS
+//    THE ONE WHOSE API TAKES THE LEAST: D3D11 is handed the bytes and copies
+//    them itself, where D3D12 wants a resource, a staging buffer, a footprint
+//    per mip level, a copy on a command list, a barrier and a wait - which is
+//    the argument for the fourth backend in one file. Path-building and
+//    file-reading are in engine/render/resource_factory.cpp, written once for
+//    everybody.
+//
+//    AND THE SHADER IS NOT A BACKEND'S AT ALL, which is where this paragraph
+//    used to put it. engine/render/sprite.hlsl is one file compiled twice, at
+//    a profile each Direct3D backend picks and into a byte array each keeps to
+//    itself, because the source is character for character the same and a
+//    second copy of it would be a file that can silently disagree with the
+//    first. What a backend owns there is the profile and how it binds b0 - a
+//    constant buffer on one, four root constants on the other - and neither
+//    difference reaches the shader.
 //
 //    THE SECOND FILE IS WHERE THEY DIVERGE LEAST, and it used to be the file
 //    where they diverged not at all: render_resources.cpp carried the whole
@@ -466,10 +484,10 @@ namespace labrador
 //    backend supplies is a device, a texture from bytes (texture_data.h), a
 //    vertex buffer, a shader that multiplies each vertex by one constant, and
 //    the states that make the blend premultiplied. NOTHING A BACKEND DOES
-//    DECIDES WHERE A PIXEL GOES, which is what lets the two backends that have
-//    a rasteriser pass the same assertions - 308 of them at the last count,
-//    over 30 cases, and the number is not the point: what it buys is that the
-//    file asserting them says "the renderer", never "this renderer".
+//    DECIDES WHERE A PIXEL GOES, which is what lets the three backends that
+//    have a rasteriser pass the same assertions - 308 of them at the last
+//    count, over 30 cases, and the number is not the point: what it buys is
+//    that the file asserting them says "the renderer", never "this renderer".
 //
 //    IT IS TWO RUNS AND ONE SET OF IMAGES, and the second half of that used to
 //    be missing. This paragraph read "IT IS TWO RUNS, NOT ONE COMPARISON, and
@@ -480,13 +498,18 @@ namespace labrador
 //    a PNG of it in tests/render/golden/, and those images are what hold the
 //    backends to each other rather than each to a sentence
 //    (tests/render/golden_image.h carries the argument). Forty-seven frames,
-//    six of which fill more than one view - the machinery the two backends
-//    share least, one a deferred context per view and the other a vector. On
-//    one machine's GPU, d3d11 and gl reproduce all forty-seven exactly.
+//    six of which fill more than one view - the machinery the backends share
+//    least, one a deferred context per view, one a command list per view and
+//    the third a vector. On one machine's GPU, d3d11, d3d12 and gl reproduce
+//    all forty-seven exactly.
 //
-//    WHAT IS STILL TWO RUNS is the running of it. LABRADOR_RENDER_BACKEND
-//    picks a backend at configure time (T5), so this is still two processes
-//    that never meet and the checked-in set is what passes between them - and
+//    WHAT IS STILL SEPARATE RUNS is the running of it. LABRADOR_RENDER_BACKEND
+//    picks a backend at configure time (T5), so these are still processes that
+//    never meet and the checked-in set is what passes between them. Two of the
+//    three now happen on the build machine as well as on a developer's, which
+//    is the reason the fourth backend is a Direct3D one: a runner has no GPU,
+//    Direct3D falls back to WARP where OpenGL falls back to GDI 1.1, so CI
+//    rasterises the whole contract twice against one set of images. And
 //    two terms sit outside it, both stated where they are decided rather than
 //    here. The size of a frame read back while the window has moved under an
 //    unresized swap chain differs by backend because back_buffer_size above
@@ -513,6 +536,26 @@ namespace labrador
 //    already built on the CPU before any backend sees them - and the null
 //    backend then took the same shape one step further, recording and never
 //    replaying at all.
+//
+//  - AND A THIRD PURPOSE NOBODY HAD WRITTEN DOWN, which engine/render/d3d12/
+//    is the answer to. Every API behind this seam hid the CPU/GPU boundary
+//    until that one: D3D11 renames a mapped buffer for you and tracks what is
+//    still in flight, OpenGL's driver does the same, and the null backend has
+//    no GPU to be out of step with. So nothing had ever asked whether the
+//    methods on this class still describe a frame when the ENGINE owns the
+//    fence - when a command allocator may not be reused until the GPU says so,
+//    a vertex page written this frame is still being read next frame, and a
+//    texture upload is a copy somebody has to wait for.
+//
+//    THEY DO, AND NOT ONE SIGNATURE MOVED. What the port added is one line
+//    inside a backend's begin_frame, waiting on a fence before anything resets
+//    an allocator, which no caller can see. What it changed up here is a
+//    sentence rather than a signature: "begin_frame resets every view's
+//    recording" now covers a third kind of thing to reset - a command list
+//    that is still open, which cannot be reset and whose allocator cannot be
+//    reset under it - and that paragraph already said the three backends had
+//    three different things to drop, which is why it needed no rewriting to
+//    take a fourth.
 //
 //  - DirectXTK is no longer on the render path at all. It remains bought for
 //    audio and for the gamepad reader, which are seams of their own and are

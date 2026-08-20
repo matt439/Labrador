@@ -24,6 +24,15 @@
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
     },
     {
+      "name": "x64-debug-d3d12",
+      "displayName": "x64 Debug (Direct3D 12)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "LABRADOR_RENDER_BACKEND": "d3d12"
+      }
+    },
+    {
       "name": "x64-debug-gl",
       "displayName": "x64 Debug (OpenGL)",
       "inherits": "base",
@@ -45,6 +54,7 @@
   "buildPresets": [
     { "name": "x64-debug", "configurePreset": "x64-debug" },
     { "name": "x64-release", "configurePreset": "x64-release" },
+    { "name": "x64-debug-d3d12", "configurePreset": "x64-debug-d3d12" },
     { "name": "x64-debug-gl", "configurePreset": "x64-debug-gl" },
     { "name": "x64-debug-null", "configurePreset": "x64-debug-null" }
   ],
@@ -57,6 +67,11 @@
     {
       "name": "x64-release",
       "configurePreset": "x64-release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "x64-debug-d3d12",
+      "configurePreset": "x64-debug-d3d12",
       "output": { "outputOnFailure": true }
     },
     {

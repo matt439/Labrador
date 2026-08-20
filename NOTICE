@@ -45,6 +45,16 @@ departures from upstream are written down:
 They remain recognisably Microsoft's, with the last engine-authored code out
 of them.
 
+**`engine/render/d3d12/device_resources.{h,cpp}` is not one of them**, and the
+shared filename is the reason to say so here rather than only in the file. It
+is Labrador's own, written for the Direct3D 12 backend and following this
+repository's conventions rather than the sample's - snake_case methods,
+trailing-underscore members, no `m_` - which is the visible difference between
+the two files if you open them side by side. It solves the same problem for a
+different API and borrows no code from the D3D12 flavour of Microsoft's sample;
+what it does keep is the name `D3DDeviceNotify`, so that the two backends spell
+the same idea the same way.
+
 ### Christer Ericson — Real-Time Collision Detection
 
 `engine/math/ericson_math.{h,cpp}` transcribes closest-point and intersection
