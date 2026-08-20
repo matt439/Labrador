@@ -539,11 +539,11 @@ namespace labrador
 //    Every frame a case reads back is now also compared byte for byte against
 //    a PNG of it in tests/render/golden/, and those images are what hold the
 //    backends to each other rather than each to a sentence
-//    (tests/render/golden_image.h carries the argument). Forty-seven frames,
+//    (tests/render/golden_image.h carries the argument). Forty-eight frames,
 //    six of which fill more than one view - the machinery the backends share
 //    least, one a deferred context per view, one a command list per view and
 //    the third a vector. On one machine's GPU, d3d11, d3d12 and gl reproduce
-//    all forty-seven exactly.
+//    all forty-eight exactly.
 //
 //    WHAT IS STILL SEPARATE RUNS is the running of it. LABRADOR_RENDER_BACKEND
 //    picks a backend at configure time (T5), so these are still processes that

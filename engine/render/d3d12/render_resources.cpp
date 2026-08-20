@@ -30,6 +30,21 @@ namespace labrador
 		this->textures.release_all();
 	}
 
+	int RenderResources::Impl::descriptor_slot(const std::string& name) const
+	{
+		// contains() rather than a find, because a released slot has to read as
+		// absent here: after a device loss the heap is remade and
+		// create_device_dependent_resources resets the allocator to zero, so
+		// the number a released D3d12Texture is still holding names a slot in a
+		// heap that no longer exists.
+		if (!this->textures.contains(name))
+		{
+			return -1;
+		}
+
+		return this->textures.get(name)->slot();
+	}
+
 	const D3d12Texture* RenderResources::Impl::texture(
 		TextureHandle texture) const
 	{
@@ -51,6 +66,15 @@ namespace labrador
 	// itself is a device resource and Renderer::Impl remakes it whole - see
 	// create_device_dependent_resources, which resets the allocator to zero for
 	// the reload to take again.
+	//
+	// A SLOT STOPS BEING NEEDED TWO WAYS AND ONLY ONE OF THEM IS THAT. The
+	// other is a texture re-added under a name that already has one, which
+	// Registry::add treats as the ordinary case and which is the reason
+	// descriptor_slot below exists: the load path asks the table what slot the
+	// name holds and writes its new view into that one. Without it a re-load
+	// took a fresh slot and abandoned the old, and nothing here would ever have
+	// noticed, because a D3d12Texture's slot number is a plain int with no
+	// destructor.
 
 	RenderResources::RenderResources() : impl_(std::make_unique<Impl>())
 	{

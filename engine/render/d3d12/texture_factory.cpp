@@ -247,7 +247,26 @@ namespace labrador
 
 		// The descriptor, which is what a draw call actually names. Claimed
 		// last, so a texture the device refused never takes a slot.
-		const int slot = impl.allocate_texture_slot(name);
+		//
+		// AND THE NAME'S OWN SLOT IF IT ALREADY HAS ONE, which is the whole of
+		// what re-loading a texture costs this backend. registry.h and
+		// render_resources.h both make re-adding a name a first-class operation
+		// - "Re-adding a name reuses its slot" - and Registry::add duly replaces
+		// the entry and destroys the old D3d12Texture. Its slot number is a
+		// plain int with no destructor, so allocating a second one per re-load
+		// spent the heap on textures that were no longer live: a client
+		// re-walking a manifest per level ran out of a 256-entry heap with a few
+		// dozen textures in it, and a single manifest naming one asset as both a
+		// texture and a sprite sheet does it inside one walk.
+		//
+		// OVERWRITING A SHADER-VISIBLE DESCRIPTOR IS SAFE HERE AND NOWHERE ELSE
+		// IN THIS FILE, which is the obvious objection and worth answering: the
+		// execute and the wait immediately above leave the GPU idle, so no list
+		// in flight is naming this slot.
+		const int existing = resources.impl()->descriptor_slot(name);
+		const int slot = existing >= 0
+			? existing
+			: impl.allocate_texture_slot(name);
 
 		// A null description means "the whole resource as it was created",
 		// which is what every texture this engine loads wants - all of its

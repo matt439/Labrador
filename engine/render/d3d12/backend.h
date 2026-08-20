@@ -117,6 +117,12 @@ namespace labrador
 
 		void release_all_textures();
 
+		// The descriptor slot the name already holds, or -1 if it holds none -
+		// which is the answer for a name nobody has loaded and for one whose
+		// texture a device loss released, because the heap those slots were in
+		// has gone with it.
+		int descriptor_slot(const std::string& name) const;
+
 		const D3d12Texture* texture(TextureHandle texture) const;
 
 		Registry<D3d12Texture> textures{ "Texture" };
@@ -249,14 +255,23 @@ namespace labrador
 		Impl();
 		~Impl();
 
-		// HOW MANY TEXTURES MAY BE LIVE AT ONCE, and it is a fixed number for a
-		// reason this API imposes: the heap a shader samples from is created at
-		// one size, and growing one means either a second non-shader-visible
-		// heap to copy descriptors out of or rebuilding every view that names
-		// them. Neither is machinery this engine's content needs - both clients
-		// together load a few dozen textures - so the limit is stated, and
-		// allocate_texture_slot refuses by name rather than overrunning
-		// (T6: say what went wrong, do not carry on).
+		// HOW MANY DISTINCT TEXTURE NAMES MAY BE LIVE AT ONCE, and it is a
+		// fixed number for a reason this API imposes: the heap a shader samples
+		// from is created at one size, and growing one means either a second
+		// non-shader-visible heap to copy descriptors out of or rebuilding
+		// every view that names them. Neither is machinery this engine's
+		// content needs - both clients together load a few dozen textures - so
+		// the limit is stated, and allocate_texture_slot refuses by name rather
+		// than overrunning (T6: say what went wrong, do not carry on).
+		//
+		// NAMES AND NOT LOADS, which is the term to read carefully because
+		// nothing here gives a slot back one at a time. A name keeps the slot
+		// it was given for as long as the heap lives, so re-loading a texture
+		// under a name that has one writes into that slot rather than taking
+		// another (texture_factory.cpp), and a client that walks its manifest
+		// once per level costs the heap nothing after the first walk. The only
+		// thing that returns slots is a device loss, which remakes the heap
+		// whole and resets the allocator to zero.
 		static const int TEXTURE_CAPACITY = 256;
 
 		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };

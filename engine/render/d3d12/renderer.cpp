@@ -468,8 +468,9 @@ namespace labrador
 		{
 			throw std::runtime_error("Texture '" + name + "' does not fit: "
 				"this backend's descriptor heap holds " +
-				std::to_string(TEXTURE_CAPACITY) + " textures and they are all "
-				"taken. See Renderer::Impl::TEXTURE_CAPACITY.");
+				std::to_string(TEXTURE_CAPACITY) + " distinct texture names "
+				"and they are all taken. Re-loading a name already in it is "
+				"free. See Renderer::Impl::TEXTURE_CAPACITY.");
 		}
 
 		return this->next_texture_slot++;

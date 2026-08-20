@@ -59,14 +59,14 @@
 // assertion in this file holds one backend to a relationship, and two
 // hand-copied implementations can get the same relationship wrong in the same
 // direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Fifty frames; forty-seven of them are 64x64 on every backend and
-// identical across the three that rasterise, and those forty-seven are the
+// argument. Fifty-one frames; forty-eight of them are 64x64 on every backend
+// and identical across the three that rasterise, and those forty-eight are the
 // images in tests/render/golden/. The other three are not 64x64 - one because
 // the seam makes its size backend-specific, two because they ask for a
 // different size deliberately - and a golden set is one image per case at one
 // size. Harness::end_not_comparable is where that is written down, and the
 // count of images should be checkable against the count of frames from here:
-// forty-seven and three.
+// forty-eight and three.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
 // Because the text cases below are relationships (see two paragraphs down), a
@@ -165,6 +165,29 @@ namespace
 	constexpr Pixel GREEN{ 0, 255, 0, 255 };
 	constexpr Pixel BLUE{ 0, 0, 255, 255 };
 	constexpr Pixel WHITE{ 255, 255, 255, 255 };
+
+	// Two by two, one colour, one level. For the case that cares which bytes a
+	// name is holding rather than what an atlas looks like.
+	TextureData flat_texture(unsigned char red, unsigned char green,
+		unsigned char blue)
+	{
+		TextureData texture;
+		texture.width = 2;
+		texture.height = 2;
+		texture.format = TextureFormat::r8g8b8a8_unorm;
+		texture.levels.push_back(texture_level(texture.format, 2, 2, 0));
+		texture.pixels.resize(texture.levels[0].size);
+
+		for (size_t byte = 0; byte < texture.pixels.size(); byte += 4)
+		{
+			texture.pixels[byte] = red;
+			texture.pixels[byte + 1] = green;
+			texture.pixels[byte + 2] = blue;
+			texture.pixels[byte + 3] = 255;
+		}
+
+		return texture;
+	}
 
 	// A texture that carries a mip chain, which no file in either client does.
 	//
@@ -1690,4 +1713,47 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 	// rather than whatever ResizeBuffers left in it.
 	CHECK(harness.at(4, 4) == WHITE);
 	CHECK(harness.at(20, 20) == BLACK);
+}
+
+TEST_CASE("CONTRACT: re-loading a name reuses its slot, however many times")
+{
+	// "Re-adding a name reuses its slot" is registry.h's sentence and
+	// render_resources.h repeats it, so a handle resolved before a re-load is
+	// the same handle afterwards and draws the new bytes. What that has to mean
+	// for a backend is that a re-load costs it nothing PER LOAD, and one of the
+	// four was spending a fixed-size resource on every one: the D3D12
+	// descriptor heap holds a fixed number of entries, its slot allocator is a
+	// bump with no free list, and a re-load took a fresh slot and abandoned the
+	// one the name already had. A client re-walking its manifest per level ran
+	// that heap out with a few dozen textures live - and one manifest naming a
+	// single asset as both a texture and a sprite sheet does it inside one
+	// walk, because load_sprite_sheet loads the sheet's texture under the
+	// sheet's own name.
+	//
+	// SO THE LOOP IS THE CASE, AND THE LAST DRAW IS THE ASSERTION. Three
+	// hundred is comfortably past the smallest fixed capacity any backend in
+	// this tree has, and a backend that leaks per load never reaches the draw:
+	// the throw comes out of the load. The colour change on the final pass is
+	// the other half - a slot that is reused and not rewritten would hand back
+	// the first load's red.
+	Harness harness;
+
+	for (int load = 0; load < 299; load++)
+	{
+		add_texture_asset(harness.renderer(), harness.resources(), "reloaded",
+			flat_texture(255, 0, 0));
+	}
+	add_texture_asset(harness.renderer(), harness.resources(), "reloaded",
+		flat_texture(0, 255, 0));
+
+	const TextureHandle reloaded =
+		harness.resources().resolve_texture("reloaded");
+
+	DrawList list = harness.begin();
+	list.draw_sprite(reloaded, RectangleI(0, 0, 2, 2),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	CHECK(harness.at(4, 4) == GREEN);
 }
