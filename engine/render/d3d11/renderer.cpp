@@ -689,11 +689,13 @@ namespace labrador
 
 		// ASKED BEFORE ANYTHING IS THROWN AWAY, because most calls to this
 		// change nothing and a frame is not worth losing to one of them.
-		// Application::on_window_moved calls this with the size it already has
-		// on every move of the window. The comparison is the one
-		// WindowSizeChanged makes itself; it is repeated here rather than
-		// added to that file, which is Microsoft's and carried with its own
-		// naming (NOTICE).
+		// Application::on_window_moved calls this with the size it already
+		// has on every move of the window outside a drag; inside one, window.cpp
+		// gates WM_MOVE the way it gates WM_SIZE, because that argument is a
+		// swap chain's size here and the live client rect on the GL backend.
+		// The comparison is the one WindowSizeChanged makes itself; it is
+		// repeated here rather than added to that file, which is Microsoft's
+		// and carried with its own naming (NOTICE).
 		const RECT size = impl.device_resources.GetOutputSize();
 		if (static_cast<long>(width) == size.right - size.left &&
 			static_cast<long>(height) == size.bottom - size.top)

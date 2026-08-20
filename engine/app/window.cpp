@@ -357,7 +357,21 @@ namespace labrador
 			break;
 
 		case WM_MOVE:
-			if (self)
+			// GATED ON !in_sizemove_, THE SAME WAY WM_SIZE BELOW IS, and the
+			// two have to be gated together. Dragging the LEFT or TOP edge
+			// moves the origin as well as the size, so Windows sends WM_MOVE
+			// per step of the drag - and this handler asks the renderer for a
+			// size, which is exactly the term the drag is allowed to be out of
+			// date about. Two of the backends answer it from a swap chain and
+			// so answer the size they were last told, making the call a
+			// self-comparison that changes nothing; the GL backend answers it
+			// from the window (renderer.h, back_buffer_size), so every step
+			// used to hand it the already-current client rect. That cost a
+			// viewport, a clear and a per-view reset per mouse-move step, and
+			// then made gl answer "nothing changed" to the WM_EXITSIZEMOVE
+			// below - the one message that ends a resize, which the other
+			// backends answer true to.
+			if (self && !self->in_sizemove_)
 			{
 				self->notify_->on_window_moved();
 			}
