@@ -484,7 +484,7 @@ namespace labrador
 		// one this repository did not write. The D3D12 one was written to this
 		// seam from the start, so it never had accessors nobody called; a device
 		// can be lost on both of them, which is half the backends rather than
-		// one, and the STILL OPEN note at the foot of this file says so).
+		// one, and the settled note at the foot of this file says so).
 		void begin_marker(const wchar_t* name);
 		void end_marker();
 		void set_marker(const wchar_t* name);
@@ -502,21 +502,61 @@ namespace labrador
 	};
 }
 
-// STILL OPEN:
-//
-//  - AssetKind::reload_device, which is not this file's but is this file's
-//    fault. It is a public std::function on the asset loader that exists only
-//    because a Direct3D device can be lost, and two of the four backends
-//    behind this seam never call it: a WGL context is not lost, and the null
-//    one has nothing to lose. So a caller writes a rebuild path for a hazard
-//    its configuration may not have. Whether that belongs on the loader, on
-//    DeviceNotify, or nowhere is a question two backends made askable, a third
-//    made worth asking, and a fourth has now answered half of: D3D12 loses a
-//    device the same way D3D11 does, so the hazard belongs to half the
-//    backends rather than to one, and what is left to settle is which of the
-//    three places it goes rather than whether it goes anywhere.
-//
 // SETTLED, AND THIS FILE IS WHERE IT IS RECORDED:
+//
+//  - AssetKind::reload_device STAYS ON THE LOADER. It was the one open question
+//    at the foot of this file, and this is what closed it. What was open: a
+//    public std::function on the asset loader that exists only because a
+//    Direct3D device can be lost, which two of the four backends behind this
+//    seam never call - a WGL context is not lost, and the null one has nothing
+//    to lose - so a caller writes a rebuild path for a hazard its
+//    configuration may not have. Three places it could go, and the other two
+//    are worse.
+//
+//    NOT ON DeviceNotify, WHICH ALREADY CARRIES THE HALF IT CAN CARRY. That
+//    interface is the EVENT - the device went away, it came back - and the
+//    shell hears it and calls the loader (engine/app/application.cpp,
+//    on_device_restored). What it cannot carry is WHAT TO REBUILD. A rebuild
+//    has to refill the slots the old resources sat in rather than make new
+//    ones, because a drawable holds a handle, a handle names a slot and a slot
+//    belongs to a name (render_resources.h, resolve_texture) - and the only
+//    thing in this engine that knows the names is the manifest, which is what
+//    the loader keeps. Move the rebuild to DeviceNotify and a game keeps a
+//    second list beside the manifest, which engine/assets/resource_loader.h
+//    already answers in the paragraph on reload_device_resources: walking the
+//    manifest is true by construction where a list kept in step by hand is
+//    only true today.
+//
+//    NOT NOWHERE, which is the option the fourth backend closed. A device is
+//    lost on two of the four rather than on one, so the hazard is half of this
+//    seam's configurations and not a Direct3D 11 peculiarity that a fifth
+//    backend might leave behind.
+//
+//    AND THE PREMISE THAT MADE IT LOOK MISPLACED IS THE PART THAT WAS WRONG.
+//    "A hazard its configuration may not have" is a statement about a build,
+//    not about a caller. LABRADOR_RENDER_BACKEND picks a backend at configure
+//    time (T5) over one game source, so the same register_kind call compiles
+//    into a D3D11 build and into a GL one; what varies is which build ever
+//    runs the path, never which source has to write it. A seam whose caller
+//    contract changed per backend is the thing this file exists to prevent,
+//    and two backends in this tree already pay the mirror of that price and
+//    say so at length: gl/renderer.cpp and null/renderer.cpp
+//    both drop a frame on a resize that destroys nothing of theirs, because a
+//    caller must not be able to tell which backend it has. reload_device is
+//    the same shape one module over - free where it never runs, and observable
+//    by its absence where it does.
+//
+//    WHAT CHANGED WHEN IT WAS SETTLED, because "it stays where it was" is
+//    otherwise indistinguishable from nobody having looked. The criterion a
+//    caller applies is written on AssetKind itself now - does the GPU hold
+//    this asset, never can this backend lose a device - which that comment did
+//    not say, and which left the wrong reading available to anyone who read it
+//    while building the GL or the null preset. And what a restore does is
+//    pinned rather than only described: tests/assets/resource_loader_tests.cpp
+//    asserts the order, the skipping of the kinds the GPU does not hold, and
+//    that a second manifest replaces what is replayed. It needs no device, so
+//    it runs in all four configurations - which is where a contract that is
+//    not a backend's belongs.
 //
 //  - The shape of a backend is three translation units every backend has -
 //    renderer.cpp, render_resources.cpp and texture_factory.cpp, all in

@@ -219,6 +219,36 @@ Two more, both smaller than they look:
 
 ### 3.4 The shell — *week*
 
+> **Amended 2026-08-21, and the paragraph below is left as written.** *"The
+> seam already has a shape for this and it is called `DeviceNotify`"* is wrong
+> for this port, and the settlement it was cited in support of
+> ([§4](#4-the-dependency-spine)) landed without it. `DeviceNotify` is the shape
+> for a lost **device**. What an Android activity loses on
+> backgrounding is its **surface**: under Vulkan — which
+> [§3.5](#35-the-vulkan-backend) and [§6](#6-out-of-scope-on-purpose) commit
+> this port to — the swapchain and the `VkSurfaceKHR` are destroyed while the
+> `VkDevice`, every `VkImage` in it and therefore all of the content survive. So
+> the routine Android event rebuilds a swapchain and never reaches the asset
+> loader at all, and the two hazards read as one here only because Direct3D
+> happens to lose both at once. This is knowledge rather than measurement (§1),
+> and it is conditional on the Vulkan-first decision: a GLES context genuinely
+> can take every GL object with it, which is the one fact that would put §6's
+> rejected hedge back on the table.
+>
+> **What it costs instead is a call this seam cannot currently make.** A surface
+> destroyed and recreated at the same size is not a resize, and
+> `window_size_changed` is the only door in — where all four backends answer
+> `false` and do nothing when the width and height match what they already have:
+> [`d3d11/renderer.cpp:699-704`](../../engine/render/d3d11/renderer.cpp#L699-L704),
+> [`d3d12/renderer.cpp:1063-1068`](../../engine/render/d3d12/renderer.cpp#L1063-L1068),
+> [`gl/renderer.cpp:655-659`](../../engine/render/gl/renderer.cpp#L655-L659),
+> [`null/renderer.cpp:172-175`](../../engine/render/null/renderer.cpp#L172-L175).
+> A phone returning from the home screen at the size it left is exactly that
+> call. The week below is the right size and this is one of the things in it.
+> The term itself is the fifth backend's to state, so it is **not** written into
+> `renderer.h` in advance, for the reason [§7](#7-the-documents-this-port-amends)
+> gives.
+
 `app/` is 1,800 lines: `window.{h,cpp}` at 906, `application.{h,cpp}` at 894.
 The move itself is already specified ([§2](#2-the-claim-this-port-tests)) and
 should cost hours. What costs a week is the lifecycle underneath it.
@@ -334,6 +364,28 @@ being exceptional. A question that gets harder to answer with every backend
 added to it, and whose answer changes when the platform arrives, should be
 answered in the gap between the two. That gap is now.
 
+> **Done 2026-08-21, and one of its two arguments did not survive the doing.**
+> It stays on the loader. `DeviceNotify` carries the event and cannot carry what
+> to rebuild, because a rebuild has to refill the slots the old resources sat in
+> rather than make new ones, and the manifest is the only thing in this engine
+> that knows their names.
+> [`renderer.h:505-559`](../../engine/render/renderer.h#L505-L559) records it as
+> settled rather than open — that file now has no open questions of its own —
+> the criterion a caller applies is written on `AssetKind` itself (does the GPU
+> hold this asset, never can this backend lose a device), and
+> [`resource_loader_tests.cpp`](../../tests/assets/resource_loader_tests.cpp)
+> pins what a restore does, in all four configurations, because none of it needs
+> a device.
+>
+> The argument that did not survive is the second one. *"Whose answer changes
+> when the platform arrives"* was true of a hazard Android does not deliver:
+> what a backgrounded activity destroys is the surface, not the device, and the
+> amendment at the head of §3.4 says why. The first argument was the honest one
+> and was enough on its own — the question was answerable from the four backends
+> already here, and each one added to it makes it longer to answer without
+> making it different. **The paragraph above is left as written**, the claim it
+> leans on included.
+
 ---
 
 ## 5. What Vulkan buys, and what it does not
@@ -405,14 +457,23 @@ it:
 | `ARCHITECTURE.md:264` | `audio`'s row gains the folder the sentence already implies (§3.2) |
 | `PHILOSOPHY.md:303-305` | "a second platform is an addition, not a rewrite" — amend with where it held and where it did not |
 | `PHILOSOPHY.md:454-462` | "a second platform's" backend stops being hypothetical |
-| `renderer.h:505-517` | `AssetKind::reload_device` — settled, per §4 |
+| ~~`renderer.h:505-517`~~ | `AssetKind::reload_device` — **settled 2026-08-21**, per §4. It stays on the loader; the note moved from STILL OPEN to SETTLED |
 
-**None of these should be amended in advance.** A design document that describes
-a port that has not happened is the speculative framework this tree refuses, and
-it would be the second time a comment in `render/` was written in the future
-tense of a port. The first is on record and was corrected:
-`texture_format.h`'s block-compression paragraph was written for a GL backend
-that had not shipped, `docs/review/backend-equivalence/DRIFT.md` caught it, and
-`a56d198` fixed it — [`:34-42`](../../engine/render/texture_format.h#L34-L42) now
-says "that was written before the port and the port has happened" in as many
-words, which is why it is quotable in §3.1 at all.
+**None of these should be amended in advance**, and the one row already struck
+through is not an exception to that. It is the only line in the table that
+amends nothing about Android: the question `renderer.h` held open was posed by
+the four backends in this tree and was answerable from them, so settling it is
+the tree answering its own question rather than a document describing a port
+that has not happened. Every other row waits for the work that earns it — the
+surface-loss term §3.4 names included, which is the fifth backend's to write and
+not this document's to pre-empt.
+
+A design document that describes a port that has not happened is the speculative
+framework this tree refuses, and it would be the second time a comment in
+`render/` was written in the future tense of a port. The first is on record and
+was corrected: `texture_format.h`'s block-compression paragraph was written for
+a GL backend that had not shipped, `docs/review/backend-equivalence/DRIFT.md`
+caught it, and `a56d198` fixed it —
+[`:34-42`](../../engine/render/texture_format.h#L34-L42) now says "that was
+written before the port and the port has happened" in as many words, which is
+why it is quotable in §3.1 at all.

@@ -311,9 +311,16 @@ TEST_CASE("the view list is the game's, and it is refilled not appended to")
 	CHECK(scene.view_count() == 0);
 }
 
-// NOT TESTED HERE, and it is the same gap engine/render/renderer.h closes with
-// "STILL OPEN": Scene::draw. It needs a Renderer, and the only Renderer that
-// exists is the D3D11 one, which needs a device. The cull it performs -
-// bounds() against the camera's translation and the pane's size over its zoom -
-// is the arithmetic that wants a test, and it gets one the day a null backend
-// lands in engine/render/null/.
+// NOT TESTED HERE, and this paragraph has outlived both of the reasons it gave.
+// It read "the same gap engine/render/renderer.h closes with STILL OPEN", and
+// that header has no open question left to close one with; and it read "the
+// only Renderer that exists is the D3D11 one", and there are four.
+//
+// What is still true is that Scene::draw needs a Renderer, and that the cull it
+// performs - bounds() against the camera's translation and the pane's size over
+// its zoom - is the arithmetic that wants a test. What is no longer true is the
+// promise this made of one "the day a null backend lands in
+// engine/render/null/". That day came. A case that draws would be built in one
+// configuration out of four, the way tests/render/null_tests.cpp is, and this
+// target is built in all four - so the test is owed rather than blocked, which
+// is a different sentence from the one that was here.

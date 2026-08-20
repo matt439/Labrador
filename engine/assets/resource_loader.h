@@ -40,6 +40,20 @@ namespace labrador
 		// always re-loading: a sprite sheet's device half is its texture, and
 		// the frame and strip tables that every handle indexes into are not
 		// rebuilt at all.
+		//
+		// THE CRITERION IS WHAT THE GPU HOLDS, NEVER WHETHER THIS BUILD'S
+		// BACKEND CAN LOSE A DEVICE, and this paragraph did not say so until a
+		// port asked where the rebuild belonged. Two of the four backends never
+		// call reload_device at all - a WGL context is not lost, and the null
+		// one has nothing to lose - so a game written and run against either of
+		// those presets can leave every one of these empty and watch nothing go
+		// wrong. It is the same source a Direct3D build compiles:
+		// LABRADOR_RENDER_BACKEND picks the backend at configure time (T5), so
+		// what varies is which build ever runs this function, not which source
+		// has to write it. engine/render/renderer.h carries the argument, in
+		// the first of the settled notes at the foot of that file, and
+		// tests/assets/resource_loader_tests.cpp pins what a restore does with
+		// what is written here.
 		struct AssetKind
 		{
 			LoadAsset load;

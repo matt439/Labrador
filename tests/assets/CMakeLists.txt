@@ -3,6 +3,7 @@ find_package(doctest CONFIG REQUIRED)
 add_executable(AssetsTests
     asset_manifest_loader_tests.cpp
     json_tests.cpp
+    resource_loader_tests.cpp
     test_main.cpp
 )
 # No rapidjson here. These tests used to ask for it themselves, because the
