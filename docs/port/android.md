@@ -11,11 +11,13 @@ port actually costs, which parts are load-bearing, and what order they have to
 happen in**, because the intuitive order is wrong: the renderer is the part
 everyone thinks of and it is neither the largest item nor the riskiest.
 
-This file is flat rather than a folder for the same reason `app/window.{h,cpp}`
-is not in `app/win32/` yet ([ARCHITECTURE.md:203-204](design/ARCHITECTURE.md#L203-L204)):
-there is one document, and inventing the folder before there is a second is the
-speculative structure T1 rules out. When the probe in §3.1 produces its own
-file, this becomes `docs/port/`.
+This file was flat rather than a folder for the same reason `app/window.{h,cpp}`
+is not in `app/win32/` yet ([ARCHITECTURE.md:203-204](../design/ARCHITECTURE.md#L203-L204)):
+one document, and inventing the folder before there is a second is the
+speculative structure T1 rules out. The condition it set — *"when the probe in
+§3.1 produces its own file, this becomes `docs/port/`"* — was met the same day,
+by [content-probe.md](content-probe.md). It is a folder now, and it became one
+by the rule rather than in advance of it.
 
 Sizes mean what `docs/review/round-2/PLAN.md` made them mean: **hours** ≈ an
 afternoon, **days** ≈ 2–4 days, **week** ≈ 5 working days, **weeks** ≈ 2 or
@@ -40,7 +42,7 @@ surface outside the render backends is **six files**: `app/application.{h,cpp}`,
 `app/window.h`, `core/thread_pool.h`, `core/throw_if_failed.h`,
 `render/text_encoding.cpp`. That is a `grep` result minus one false positive
 worth keeping — `core/registry.h` matches on `wrl`, and it matches because
-[`:14-17`](../engine/core/registry.h#L14-L17) explains that the D3D-facing
+[`:14-17`](../../engine/core/registry.h#L14-L17) explains that the D3D-facing
 specialisation lives where COM is already in scope "rather than dragging
 `<wrl/client.h>` in here." `core` has refused this once already, deliberately,
 which is the standard §3.6 holds the other two `core` files to. Module sizes are
@@ -67,8 +69,8 @@ item on the spine deliberately does not need one.
 Two documents make the same promise in the same words. **Platform-specific code
 lives at the edge behind engine-owned interfaces, so that a second platform is
 an addition, not a rewrite** —
-[PHILOSOPHY.md:303-305](design/PHILOSOPHY.md#L303-L305),
-[ARCHITECTURE.md:194-197](design/ARCHITECTURE.md#L194-L197).
+[PHILOSOPHY.md:303-305](../design/PHILOSOPHY.md#L303-L305),
+[ARCHITECTURE.md:194-197](../design/ARCHITECTURE.md#L194-L197).
 
 That claim has never been cashed. Four render backends test one *half* of it —
 that the render seam holds against four APIs, most recently one where the engine
@@ -82,11 +84,11 @@ It is worth writing down now, before the work, what the answer looks like:
 - **Where the claim holds outright.** `render/` — the seam was cut four times
   and a fifth costs a folder ([§3.5](#35-the-vulkan-backend)). `input/xinput/`
   — the folder exists and the module table forbids XInput outside it
-  ([ARCHITECTURE.md:263](design/ARCHITECTURE.md#L263)).
+  ([ARCHITECTURE.md:263](../design/ARCHITECTURE.md#L263)).
 - **Where it holds but has not been demonstrated.** The window. ARCHITECTURE
   already commits to the exact move and to its cost — `app/window.{h,cpp}`
   drops into `app/win32/` "without renaming the class or touching a call site"
-  ([:203-204](design/ARCHITECTURE.md#L203-L204)). The port is what checks that
+  ([:203-204](../design/ARCHITECTURE.md#L203-L204)). The port is what checks that
   sentence.
 - **Where it is false today.** `audio/`. See §3.2. This is the finding of this
   document.
@@ -97,12 +99,24 @@ It is worth writing down now, before the work, what the answer looks like:
 
 Ordered by dependency in §4, not by size. Sizes here are per item in isolation.
 
-### 3.1 The content probe — *hours*
+### 3.1 The content probe — *hours* — **RUN, see [content-probe.md](content-probe.md)**
+
+> **Answered 2026-08-21.** ETC2 fits the existing shape exactly — six one-line
+> additions, no documented contract broken, and byte-for-byte the same size as
+> BC3. ASTC would change the shape and is deferred. `.dds` **cannot** carry ETC2
+> at any header version, because the container's format vocabulary is DXGI and
+> DXGI has no ETC2 number — so the sprite sheet moves to a second container and
+> the DX10-header question below is closed, not open. Source art exists for the
+> one live sprite sheet, so it is a fresh encode rather than a transcode. Fonts
+> are the awkward part and it is a tool problem. **The section below is left as
+> written**, including the count it got from `texture_format.h` and which the
+> probe found to be stale by two (it is 43 `.dds` and 41 block-compressed, not
+> 45 and 43).
 
 **Do this first, before a line of anything else.** It is the cheapest item on
 the list and the only one that can invalidate the rest.
 
-[`texture_format.h`](../engine/render/texture_format.h) already states the
+[`texture_format.h`](../../engine/render/texture_format.h) already states the
 problem, in a paragraph written for a different reason: of the 45 `.dds` files
 across this repository and its client, **43 are BC3 and two are uncompressed**,
 every font atlas is **BC2**, and the file says of block compression that it is
@@ -118,7 +132,7 @@ and all three are shared engine code tested headlessly.
 Two things make it worse than a format addition, and both are already written
 down as deliberate decisions:
 
-- [`dds_file.h:20-25`](../engine/render/dds_file.h#L20-L25) names **the DX10
+- [`dds_file.h:20-25`](../../engine/render/dds_file.h#L20-L25) names **the DX10
   extended header** among the things it deliberately does not read. That header
   is exactly how a `.dds` would carry ASTC. The reader's stated non-goal is on
   the critical path, which is the good case for a stated non-goal — it is a
@@ -140,18 +154,18 @@ the first place.
 **This is the one place the second-platform claim is provably false today, and
 it is false in a way a folder move does not fix.**
 
-[`audio/sound_bank.h:3`](../engine/audio/sound_bank.h#L3) includes `<Audio.h>` —
+[`audio/sound_bank.h:3`](../../engine/audio/sound_bank.h#L3) includes `<Audio.h>` —
 DirectXTK's, so XAudio2's — in a **public engine header**. It is not an
 implementation detail that leaked: the public API is *spelled* in the library's
 types. `SoundBank`'s constructor takes a `std::unique_ptr<DirectX::WaveBank>`
-([:28-29](../engine/audio/sound_bank.h#L28-L29)), and `EffectHandle` is
+([:28-29](../../engine/audio/sound_bank.h#L28-L29)), and `EffectHandle` is
 `Registry<DirectX::SoundEffectInstance>::handle`
-([:25](../engine/audio/sound_bank.h#L25)) — a `DirectX::` type in the handle a
+([:25](../../engine/audio/sound_bank.h#L25)) — a `DirectX::` type in the handle a
 game holds.
 
 There is no `audio/xaudio2/`. The module table promises one in effect — *"`audio`
 | core, math — the audio backend at its edge only"*
-([ARCHITECTURE.md:264](design/ARCHITECTURE.md#L264)) — and the folder listing
+([ARCHITECTURE.md:264](../design/ARCHITECTURE.md#L264)) — and the folder listing
 promises nothing more specific than "playback, mixing" (`:153`). Compare
 `render`, where the same table names the API *and the folder it is confined to*,
 four times. Audio got the sentence without the structure.
@@ -170,7 +184,7 @@ is the same shape, one module over.
 
 ### 3.3 Input — the asymmetry runs backwards — *week*
 
-[ARCHITECTURE.md:208-226](design/ARCHITECTURE.md#L208-L226) documents an
+[ARCHITECTURE.md:208-226](../design/ARCHITECTURE.md#L208-L226) documents an
 asymmetry it is careful to say is not an inconsistency. A gamepad is **read**:
 `input/xinput/` asks for a complete snapshot whenever `Gamepads::poll` wants
 one, and owes the window nothing. A keyboard and a mouse are **fed**: they exist
@@ -179,7 +193,7 @@ text "cannot be rebuilt from device state at any price."
 
 **On Android every device is fed.** Gamepads arrive as input events through the
 same queue as touch. So `GamepadReader`
-([`input/gamepad_reader.h`](../engine/input/gamepad_reader.h), 61 lines) is a
+([`input/gamepad_reader.h`](../../engine/input/gamepad_reader.h), 61 lines) is a
 *pull* interface on a platform that only pushes, and the one device the
 architecture singles out as owing the window nothing is the one whose seam does
 not survive. That is a re-cut, not a second implementation — and it is the
@@ -213,7 +227,7 @@ A Win32 program owns its window until it destroys it. An Android activity does
 not: the surface can be destroyed and recreated under a running process, on
 rotation, on backgrounding, on a phone call. **The seam already has a shape for
 this and it is called `DeviceNotify`** —
-[`renderer.h:239-245`](../engine/render/renderer.h#L239-L245), `on_device_lost`
+[`renderer.h:239-245`](../../engine/render/renderer.h#L239-L245), `on_device_lost`
 / `on_device_restored`. Two of four backends currently use it and two never can
 (a WGL context is not lost; the null backend has nothing to lose), which is the
 open question `renderer.h:505-517` is still holding. Android is the platform
@@ -224,7 +238,7 @@ settling it before the fifth backend rather than after.
 The resize path is the other half and it is live: five commits in two days
 (`d31a804`, `6ae4a15`, `f473505`, `30a0353`, `06da146`) are all fighting the
 mid-frame-resize term, and
-[`renderer.h:330-338`](../engine/render/renderer.h#L330-L338) states a contract
+[`renderer.h:330-338`](../../engine/render/renderer.h#L330-L338) states a contract
 written entirely in terms of a caller who already knows the size changed. See
 §5 — this is the term Vulkan stresses.
 
@@ -254,7 +268,7 @@ risk is.
 
 Small, mechanical, and it blocks compiling anything.
 
-- [`cmake/settings.cmake`](../cmake/settings.cmake) is the single `INTERFACE`
+- [`cmake/settings.cmake`](../../cmake/settings.cmake) is the single `INTERFACE`
   target every real target links, and it is **entirely MSVC**: `/W4 /WX
   /permissive- /sdl /fp:precise`, plus `UNICODE _UNICODE WIN32 _WINDOWS NOMINMAX
   WIN32_LEAN_AND_MEAN` handed to every translation unit in the tree. The clang
@@ -274,7 +288,7 @@ Small, mechanical, and it blocks compiling anything.
 - **`std::wstring` on the render API.** `render/text_encoding.cpp` uses
   `MultiByteToWideChar`, which is a one-function replacement. The decision
   underneath it is not:
-  [`text_encoding.h:9-18`](../engine/render/text_encoding.h#L9-L18) says the
+  [`text_encoding.h:9-18`](../../engine/render/text_encoding.h#L9-L18) says the
   render module holds text as `std::wstring` because "a glyph table is keyed by
   code unit" and converting on the draw path is the alternative. On Windows a
   code unit is 16 bits. **On Android `wchar_t` is 32 bits**, so the glyph
@@ -287,15 +301,22 @@ Small, mechanical, and it blocks compiling anything.
 ## 4. The dependency spine
 
 ```
-3.1 content probe ──────────────┐   (hours; nothing depends on it, everything is shaped by it)
+3.1 content probe ── DONE ──────┐   (hours; nothing depends on it, everything is shaped by it)
                                 │
 3.6 build + core ───────────────┤   (days; nothing compiles for the target without it)
                                 │
-        ┌───────────────────────┴──────────────────┐
-        │                                          │
-3.5 Vulkan backend                        3.2 audio ── 3.3 input ── 3.4 shell
-(verifiable on Windows, now)              (all three need a device to finish)
+        ┌───────────────────────┴──────────┬───────────────────────┐
+        │                                  │                       │
+3.5 Vulkan backend            3.1a KTX2 reader + ETC2      3.2 audio ── 3.3 input ── 3.4 shell
+(verifiable on Windows, now)  (days; headless, testable    (all three need a device to finish)
+                               now, blocks nothing)
 ```
+
+**3.1a is what the probe spawned.** ETC2 itself is six one-line additions; the
+container it has to arrive in is a second reader beside `dds_file.h`, and like
+that one it is engine code with no device in it — so it joins the left branch,
+not the right. Fonts ship uncompressed until the atlas sizes are revisited,
+which is a content decision rather than a work item.
 
 The shape that matters: **the left branch can start today and finish on this
 desktop; the right branch cannot be finished without hardware.** That is why
@@ -304,7 +325,7 @@ Vulkan is a reasonable first *build* even though the content probe is the first
 
 One ordering claim is worth arguing rather than asserting. **Settle
 `AssetKind::reload_device` before the fifth backend, not after.**
-[`renderer.h:505-517`](../engine/render/renderer.h#L505-L517) holds it open and
+[`renderer.h:505-517`](../../engine/render/renderer.h#L505-L517) holds it open and
 records that a fourth backend "answered half of" it: device loss belongs to two
 of four backends rather than to one, and what is left is which of three places
 the hazard goes. Vulkan has `VK_ERROR_DEVICE_LOST` and lands on the same side,
@@ -327,8 +348,8 @@ it holds, "Metal eventually" is a build target rather than a sixth backend.**
 
 **It buys one untested seam claim, and it is a live one.** Resize reaches the
 renderer exactly one way today: `WM_SIZE` →
-[`window.cpp:410`](../engine/app/window.cpp#L410) →
-[`application.cpp:411`](../engine/app/application.cpp#L411) →
+[`window.cpp:410`](../../engine/app/window.cpp#L410) →
+[`application.cpp:411`](../../engine/app/application.cpp#L411) →
 `Renderer::window_size_changed`. The window tells the renderer; the renderer has
 no path to originate it. All four current backends are content with that because
 all four learn about a resize from Win32. **Vulkan is the first API where the
@@ -341,7 +362,7 @@ this exact term, the fifth backend is the one that asks whether the contract at
 **It does not buy a CI rasteriser for free.** `d3d12/` earned its place partly
 on WARP: a GPU-less runner can rasterise Direct3D, and CI checks the pixel
 contract twice because of it
-([`d3d12/backend.h`](../engine/render/d3d12/backend.h) states the claim). Vulkan
+([`d3d12/backend.h`](../../engine/render/d3d12/backend.h) states the claim). Vulkan
 has no in-box equivalent on a Windows runner — it is lavapipe or SwiftShader,
 installed. That is a third CI install burden or a preset untested the way the GL
 one is, and it should be decided rather than discovered.
@@ -392,6 +413,6 @@ it would be the second time a comment in `render/` was written in the future
 tense of a port. The first is on record and was corrected:
 `texture_format.h`'s block-compression paragraph was written for a GL backend
 that had not shipped, `docs/review/backend-equivalence/DRIFT.md` caught it, and
-`a56d198` fixed it — [`:34-42`](../engine/render/texture_format.h#L34-L42) now
+`a56d198` fixed it — [`:34-42`](../../engine/render/texture_format.h#L34-L42) now
 says "that was written before the port and the port has happened" in as many
 words, which is why it is quotable in §3.1 at all.
