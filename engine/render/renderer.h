@@ -277,6 +277,42 @@ namespace labrador
 
 		// Returns whether anything was rebuilt, which is the signal the shell
 		// wants for "re-run the layout".
+		//
+		// CONSTRAINT: IT MAY ARRIVE IN THE MIDDLE OF A FRAME, AND A FRAME IN
+		// PROGRESS IS RESTARTED RATHER THAN REFUSED.
+		//
+		// This used to say nothing, and three backends answered it three ways:
+		// OpenGL carried on, because its default framebuffer follows the window
+		// and there is nothing to rebuild; D3D11 threw DXGI_ERROR_INVALID_CALL
+		// out of ResizeBuffers, because its views' deferred contexts still held
+		// the render target; and D3D12 destroyed the back buffer and then
+		// executed command lists that still named it, which is a dead process
+		// rather than an error. One question, one answer that was fine, one
+		// that was loud and one that was fatal.
+		//
+		// IT IS NOT A RULE THE CALLER COULD KEEP EVEN IF THIS FILE STATED ONE.
+		// A resize reaches the shell as a window message, and a window message
+		// can be delivered while the shell is inside a frame: engine/app/
+		// window.cpp renders from WM_PAINT, and a vsync Present is entitled to
+		// pump. So "do not call this between begin_frame and submit" would be a
+		// prohibition on something the caller does not control, which is the
+		// kind of rule T6 says to make impossible rather than to document.
+		//
+		// WHAT RESTARTED MEANS, EXACTLY, because a caller may be holding a
+		// DrawList when this lands and that list must not become a trap:
+		//
+		//  - Everything recorded into every view this frame is dropped. It was
+		//    recorded against a buffer that no longer exists.
+		//  - The views the frame declared are reopened against the new buffer,
+		//    which is cleared as begin_frame would clear it. A DrawList the
+		//    caller is holding stays valid and draws into the new frame.
+		//  - view_count is unchanged, because the layout is the shell's to
+		//    decide and this call is what tells it to decide again.
+		//
+		// So the frame that was in progress contributes nothing, exactly as a
+		// frame begun and never submitted does (begin_frame below), and the
+		// caller sees one frame's drawing lost rather than an exception it has
+		// nowhere to catch.
 		bool window_size_changed(int width, int height);
 
 		// Borrowed; the shell owns it and outlives the renderer.

@@ -685,7 +685,70 @@ namespace labrador
 
 	bool Renderer::window_size_changed(int width, int height)
 	{
-		return this->impl_->device_resources.WindowSizeChanged(width, height);
+		Impl& impl = *this->impl_;
+
+		// ASKED BEFORE ANYTHING IS THROWN AWAY, because most calls to this
+		// change nothing and a frame is not worth losing to one of them.
+		// Application::on_window_moved calls this with the size it already has
+		// on every move of the window. The comparison is the one
+		// WindowSizeChanged makes itself; it is repeated here rather than
+		// added to that file, which is Microsoft's and carried with its own
+		// naming (NOTICE).
+		const RECT size = impl.device_resources.GetOutputSize();
+		if (static_cast<long>(width) == size.right - size.left &&
+			static_cast<long>(height) == size.bottom - size.top)
+		{
+			return false;
+		}
+
+		// A FRAME IN PROGRESS IS RESTARTED, NOT REFUSED (renderer.h), and this
+		// backend used to be the one that refused. Every bound view holds this
+		// frame's render target view in its deferred context, and DXGI will
+		// not resize a swap chain while anything still references its buffers:
+		// ResizeBuffers answered DXGI_ERROR_INVALID_CALL and the throw came out
+		// of a window message, where the shell has nowhere to catch it. So the
+		// recordings go first, which is also what releases the reference.
+		//
+		// discard() rather than finish(): what these contexts hold was drawn
+		// against a buffer that is about to stop existing, so there is nothing
+		// worth executing and no command list worth owning.
+		const int capacity = static_cast<int>(impl.views.size());
+		bool restart = false;
+		for (int i = 0; i < capacity; i++)
+		{
+			DrawList::View& view = *impl.views[static_cast<size_t>(i)];
+			restart = restart || view.bound;
+			view.discard();
+			view.reset();
+		}
+
+		const bool rebuilt =
+			impl.device_resources.WindowSizeChanged(width, height);
+
+		if (rebuilt && restart)
+		{
+			// Cleared and rebound against the buffer that now exists, so a
+			// DrawList the caller is still holding draws into this frame
+			// instead of into a view with no target bound at all.
+			DeviceResources& device = impl.device_resources;
+			ID3D11DeviceContext1* context = device.GetD3DDeviceContext();
+			ID3D11RenderTargetView* render_target =
+				device.GetRenderTargetView();
+			const D3D11_VIEWPORT viewport = device.GetScreenViewport();
+
+			const float BLACK[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			context->ClearRenderTargetView(render_target, BLACK);
+			context->OMSetRenderTargets(1, &render_target, nullptr);
+			context->RSSetViewports(1, &viewport);
+
+			for (int i = 0; i < impl.view_count; i++)
+			{
+				impl.views[static_cast<size_t>(i)]->bind(render_target,
+					viewport);
+			}
+		}
+
+		return rebuilt;
 	}
 
 	void Renderer::set_device_notify(DeviceNotify* device_notify)

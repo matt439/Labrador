@@ -675,6 +675,46 @@ namespace labrador
 		// class of bug as two disagreeing about a pixel.
 		this->impl_->reported_width = width;
 		this->impl_->reported_height = height;
+
+		// AND THE FRAME IN PROGRESS IS RESTARTED, WHICH THIS BACKEND DOES NOT
+		// NEED AND DOES ANYWAY.
+		//
+		// renderer.h makes it a term of the seam that a resize arriving
+		// mid-frame drops what every view has recorded and reopens them on the
+		// buffer that now exists. On the two Direct3D backends that is a
+		// correctness fix: their recordings name a render target the resize
+		// destroys, and executing one afterwards is a crash or a refusal. Here
+		// nothing is destroyed - a WGL context's default framebuffer follows
+		// its window - so this backend could keep every vertex it has recorded
+		// and replay it happily at the new size.
+		//
+		// It does not, because the difference would be observable. A caller
+		// that draws, is resized under it, and submits would see its drawing
+		// survive on one backend and vanish on two, from one call, with
+		// nothing in the seam to say which to expect. The paragraph above says
+		// what that class of disagreement is worth: two backends disagreeing
+		// about the shell's signal is the same class of bug as two disagreeing
+		// about a pixel. So the cheaper answer is thrown away deliberately, and
+		// what a client can rely on is the same sentence everywhere.
+		//
+		// The clear is here for the same reason: the other two hand back a
+		// cleared buffer, and the region a widened window just exposed would
+		// otherwise hold whatever was in it.
+		const Vector2I drawable = this->impl_->drawable_size();
+
+		glViewport(0, 0, static_cast<GLsizei>(drawable.x),
+			static_cast<GLsizei>(drawable.y));
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
+		{
+			view->reset();
+			view->viewport = Viewport(0.0f, 0.0f,
+				static_cast<float>(drawable.x),
+				static_cast<float>(drawable.y));
+		}
+
 		return true;
 	}
 

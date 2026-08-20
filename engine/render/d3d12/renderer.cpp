@@ -485,6 +485,77 @@ namespace labrador
 		return handle;
 	}
 
+	bool Renderer::Impl::frame_open() const
+	{
+		if (this->frame_list_open)
+		{
+			return true;
+		}
+
+		for (const std::unique_ptr<DrawList::View>& view : this->views)
+		{
+			if (view->recording)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void Renderer::Impl::abandon_recording()
+	{
+		// CLOSED, NOT EXECUTED, AND THAT IS THE WHOLE OPERATION. A command
+		// list that is still recording cannot be reset, and neither can the
+		// allocator underneath it, so a list nobody will execute still has to
+		// be closed before its memory can be reused. What it holds goes
+		// nowhere: on the begin_frame path it belongs to a frame nobody
+		// submitted, and on the resize path it names a back buffer that is
+		// about to stop existing.
+		for (std::unique_ptr<DrawList::View>& view : this->views)
+		{
+			if (view->recording)
+			{
+				std::ignore = view->list->Close();
+				view->recording = false;
+			}
+			view->reset();
+		}
+
+		if (this->frame_list_open)
+		{
+			std::ignore = this->frame_list->Close();
+			this->frame_list_open = false;
+		}
+	}
+
+	void Renderer::Impl::open_frame()
+	{
+		const int frame = this->device_resources.frame_index();
+		ThrowIfFailed(
+			this->frame_allocators[static_cast<size_t>(frame)]->Reset());
+
+		this->transition_back_buffer(D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+		// Opaque black, spelt out - the clear colour is a term
+		// RenderPixelTests pins, so it is worth being able to read it here.
+		const float BLACK[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		const D3D12_CPU_DESCRIPTOR_HANDLE render_target =
+			this->device_resources.back_buffer_view();
+		this->open_frame_list()->ClearRenderTargetView(render_target, BLACK, 0,
+			nullptr);
+		this->execute_frame_list();
+
+		// Nothing on the ordinary path, where the frame has not said how many
+		// views it has yet. Everything on the resize path, where it has.
+		const D3D12_VIEWPORT viewport =
+			this->device_resources.screen_viewport();
+		for (int i = 0; i < this->view_count; i++)
+		{
+			this->views[static_cast<size_t>(i)]->begin(render_target,
+				viewport);
+		}
+	}
+
 	ID3D12GraphicsCommandList* Renderer::Impl::open_frame_list()
 	{
 		if (!this->frame_list_open)
@@ -973,7 +1044,50 @@ namespace labrador
 
 	bool Renderer::window_size_changed(int width, int height)
 	{
-		return this->impl_->device_resources.window_size_changed(width, height);
+		Impl& impl = *this->impl_;
+
+		// ASKED BEFORE ANYTHING IS THROWN AWAY, because most calls to this
+		// change nothing and a frame is not worth losing to one of them.
+		// Application::on_window_moved calls this with the size it already has
+		// on every move of the window, and the shell calls it again on
+		// WM_EXITSIZEMOVE with a size the drag may well have returned to. The
+		// comparison is the one DeviceResources::window_size_changed makes
+		// itself; it is repeated here rather than reached for through a new
+		// accessor because this is the only caller and the alternative is a
+		// method whose whole purpose is to be asked twice.
+		const RECT size = impl.device_resources.output_size();
+		if (static_cast<long>(width) == size.right - size.left &&
+			static_cast<long>(height) == size.bottom - size.top)
+		{
+			return false;
+		}
+
+		// A FRAME IN PROGRESS IS RESTARTED, NOT REFUSED, and renderer.h states
+		// that as a term of the seam rather than leaving it to a backend. What
+		// every view has recorded names the render target of a back buffer
+		// that the resize below destroys, and executing any of it afterwards is
+		// a dead process rather than an error - which is what this did before
+		// the rule was written down.
+		//
+		// IT HAS TO HAPPEN BEFORE THE RESIZE AND NOT AFTER IT. A closed list
+		// is not the problem; an OPEN one is, because the resize waits for the
+		// GPU and then resets allocators that a recording list is still
+		// holding.
+		const bool restart = impl.frame_open();
+		impl.abandon_recording();
+
+		const bool rebuilt =
+			impl.device_resources.window_size_changed(width, height);
+
+		if (rebuilt && restart)
+		{
+			// Cleared and reopened against the buffer that now exists, so a
+			// DrawList the caller is still holding draws into this frame
+			// instead of into a resource that has gone.
+			impl.open_frame();
+		}
+
+		return rebuilt;
 	}
 
 	void Renderer::set_device_notify(DeviceNotify* device_notify)
@@ -1004,38 +1118,15 @@ namespace labrador
 		// whose allocator cannot be reset under it either. Closing it throws
 		// the commands away, because nothing will ever execute a list that
 		// begin() is about to reset.
-		for (std::unique_ptr<DrawList::View>& view : impl.views)
-		{
-			if (view->recording)
-			{
-				std::ignore = view->list->Close();
-				view->recording = false;
-			}
-			view->reset();
-		}
+		impl.abandon_recording();
 
-		if (impl.frame_list_open)
-		{
-			std::ignore = impl.frame_list->Close();
-			impl.frame_list_open = false;
-		}
-
-		const int frame = impl.device_resources.frame_index();
-		ThrowIfFailed(
-			impl.frame_allocators[static_cast<size_t>(frame)]->Reset());
-
-		impl.transition_back_buffer(D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-		// Opaque black, spelt out - the clear colour is a term
-		// RenderPixelTests pins, so it is worth being able to read it here.
-		const float BLACK[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		const D3D12_CPU_DESCRIPTOR_HANDLE render_target =
-			impl.device_resources.back_buffer_view();
-		impl.open_frame_list()->ClearRenderTargetView(render_target, BLACK, 0,
-			nullptr);
-		impl.execute_frame_list();
-
+		// Before the clear, so that open_frame opens no views: this frame has
+		// not said how many it has. The resize path calls the same function
+		// with a count already set, which is the whole difference between
+		// starting a frame and restarting one.
 		impl.view_count = 0;
+
+		impl.open_frame();
 	}
 
 	void Renderer::end_frame()

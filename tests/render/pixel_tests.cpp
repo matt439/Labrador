@@ -295,8 +295,18 @@ namespace
 				static_cast<int>(this->buffer_.y), this->pixels_);
 		}
 
-		// end(), for the one frame in this file that no golden image can hold -
+		// end(), for the frames in this file that no golden image can hold -
 		// and it is the seam that says so, not a tolerance this harness needed.
+		//
+		// THERE ARE TWO OF THEM NOW AND THEY ARE EXEMPT FOR THE SAME REASON:
+		// neither is 64x64. One is the drag-resize below, whose buffer is a
+		// different size on different backends by contract; the other is the
+		// mid-frame resize case at the end of this file, which asks for a
+		// 32x32 buffer deliberately and gets it on every backend. A golden set
+		// is one image per case at one size, so a case that changes the size
+		// mid-frame has no image to be - and both of them assert on pixels
+		// they address themselves, which is what a golden image would have
+		// added nothing to.
 		//
 		// renderer.h, back_buffer_size: "a swap chain does not follow its
 		// window, so the D3D11 backend answers the size it was told and lets
@@ -1544,4 +1554,64 @@ TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not ZERO")
 
 	// A scrim is what samples/linesweeper draws over the board when the game
 	// is paused, so this is live behaviour and not a hypothetical.
+}
+
+TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
+{
+	// THE ONE CASE HERE THAT IS NOT ABOUT A PIXEL, and it is in this file
+	// because it is the only one with a device. renderer.h makes it a term of
+	// the seam that window_size_changed may arrive between begin_frame and
+	// submit - a resize reaches the shell as a window message, and a window
+	// message can be delivered while the shell is inside a frame, so no rule
+	// forbidding it would be one the caller could keep.
+	//
+	// IT WAS WRITTEN BECAUSE ALL THREE BACKENDS ANSWERED DIFFERENTLY AND TWO
+	// WERE WRONG. OpenGL carried on; D3D11 threw DXGI_ERROR_INVALID_CALL out of
+	// ResizeBuffers, because its deferred contexts still held the render
+	// target; D3D12 destroyed the back buffer and then executed command lists
+	// that still named it, which killed the process. Nothing in the tree said
+	// what should happen, so nothing was wrong with any of them.
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+
+	DrawList list = harness.begin();
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 32.0f, 32.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	// Here, with a draw recorded and the list still in the caller's hand.
+	//
+	// THE WINDOW IS RESIZED TOO, AND NOT ONLY THE RENDERER TOLD, because
+	// otherwise this case would be asking two backends a different question
+	// from the third. back_buffer_size is answered from the swap chain on the
+	// Direct3D backends and from the window on the OpenGL one - renderer.h
+	// says so, and the drag-resize case above is built on the difference - so
+	// telling the renderer about a resize the window never had would leave GL
+	// drawing into 64x64 while the other two moved to 32x32. A real resize
+	// moves both, in this order: the window changes, then the shell says so.
+	harness.resize_window(BUFFER_SIZE / 2, BUFFER_SIZE / 2);
+	CHECK(renderer.window_size_changed(BUFFER_SIZE / 2, BUFFER_SIZE / 2));
+
+	// THE LIST THE CALLER IS HOLDING IS STILL A LIST. That is the half of the
+	// rule a backend could satisfy by tearing everything down and still get
+	// wrong: the frame is restarted, not abandoned, so this draw belongs to the
+	// frame that is now running.
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.end_not_comparable();
+
+	// The buffer is the size the resize asked for, and read_back_buffer agreed
+	// with it - which is what makes the assertions below addressable at all.
+	CHECK(harness.buffer_size().x == static_cast<float>(BUFFER_SIZE / 2));
+	CHECK(harness.buffer_size().y == static_cast<float>(BUFFER_SIZE / 2));
+
+	// WHAT WAS DRAWN BEFORE THE RESIZE IS GONE, AND WHAT WAS DRAWN AFTER IT IS
+	// THERE. The first sprite covered 32x32 of a 64x64 buffer and the second
+	// covers 8x8 of a 32x32 one, so a pixel at (20, 20) is inside the first and
+	// outside the second: it is the one place the two disagree, and it says
+	// which frame the buffer is holding.
+	CHECK(harness.at(4, 4) == WHITE);
+	CHECK(harness.at(20, 20) == BLACK);
 }

@@ -305,6 +305,23 @@ namespace labrador
 		D3D12_CPU_DESCRIPTOR_HANDLE texture_slot_cpu(int slot) const;
 		D3D12_GPU_DESCRIPTOR_HANDLE texture_slot_gpu(int slot) const;
 
+		// Whether anything of a frame is open: a view recording, or the frame
+		// list holding a barrier. What Renderer::window_size_changed asks
+		// before it decides whether there is a frame to restart.
+		bool frame_open() const;
+
+		// Closes every open command list and forgets what was recorded into
+		// it, without executing any of it. Two callers, and they want it for
+		// the same reason: a frame nobody will submit (begin_frame) and a
+		// frame whose back buffer is about to be destroyed
+		// (window_size_changed).
+		void abandon_recording();
+
+		// Clears the current back buffer and opens the views the frame has
+		// declared against it. The second half of begin_frame, and the whole
+		// of what putting a resized frame back on its feet takes.
+		void open_frame();
+
 		// Opens the frame list for recording, resetting it onto this frame's
 		// allocator if it is closed. Returns the same list either way, so a
 		// caller that wants to add to what begin_frame recorded can.
