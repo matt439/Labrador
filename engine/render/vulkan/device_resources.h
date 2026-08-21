@@ -36,12 +36,16 @@
 // presentation model follows from insisting they are one:
 //
 //  - A Vulkan swapchain image must be ACQUIRED before it is drawn into and
-//    PRESENTED to give it back. tests/render/pixel_tests.cpp draws fifty-one
-//    frames and presents none of them - deliberately, because presenting a
-//    flip-model swap chain discards what it wants to read - so a backend that
-//    acquired per frame would block on the third one for ever. The seam permits
-//    a frame that is submitted and never presented (renderer.h,
-//    read_back_buffer); a swapchain image does not.
+//    PRESENTED to give it back. tests/render/pixel_tests.cpp draws fifty-three
+//    frames and presents exactly one of them - the case that exists to walk
+//    the far end of read_back_buffer's interval ("a frame may be read back and
+//    then presented"). Every other frame is deliberately never presented,
+//    because presenting a flip-model swap chain discards what it wants to
+//    read, so a backend that acquired per frame would block on the third one
+//    for ever - fifty-two consecutive frames that never present is more than
+//    any swapchain has images. The seam permits a frame that is submitted and
+//    never presented (renderer.h, read_back_buffer); a swapchain image does
+//    not.
 //  - A Win32 surface reports minImageExtent == maxImageExtent == the window's
 //    client area, so a swapchain CANNOT be a size other than the window's.
 //    renderer.h's back_buffer_size says both Direct3D backends "answer the size
@@ -194,6 +198,21 @@ namespace labrador
 		// SAME NUMBER. The presentation engine says how many images it has and
 		// this backend takes what it is given, because the frame is not drawn
 		// into one of them - see the top of this file.
+		//
+		// AND NOTHING IN THIS TREE HAS EVER RUN TWO FRAMES IN FLIGHT, WHICH IS
+		// DISCLOSED RATHER THAN LEFT TO BE FOUND. frame_index_ advances only
+		// inside present(), and tests/render/pixel_tests.cpp presents exactly
+		// once - so the ring's second half is entered by that one case's second
+		// frame and never wraps, and even that frame sits behind the full
+		// wait_for_gpu the read-back before it performs. The samples are the
+		// only things that pace frames against this at all. So the mechanism
+		// this number exists for - recording frame N+1 while frame N is still
+		// executing - is not what any test covers, and a defect that needs it
+		// will surface on a screen rather than under ctest. That is exactly
+		// where abandon_commands' forgotten layout lived - a write-after-read
+		// between the two frames that share one colour image - and the whole of
+		// what caught it was the validation layers with synchronization
+		// validation on. docs/review/vulkan/ carries the settings file.
 		static const int FRAME_COUNT = 2;
 
 		// Everything one frame in flight owns.
@@ -271,9 +290,20 @@ namespace labrador
 		// Returns the same buffer either way, which is what makes it idempotent
 		// WITHIN one operation: the barrier and the clear of a begin_frame are
 		// two calls to this and one buffer, as are the transition, the copy and
-		// the transition back of a read-back. It is not a way to add to what an
-		// earlier entry point recorded - every entry point executes before it
-		// returns, so there is never an open buffer between them.
+		// the transition back of a read-back.
+		//
+		// AND IT IS EXACTLY HOW ONE ENTRY POINT ADDS TO WHAT AN EARLIER ONE
+		// RECORDED, WHICH IS THIS BACKEND'S FRAME SHAPE. This paragraph used to
+		// say the opposite - "every entry point executes before it returns, so
+		// there is never an open buffer between them" - which is D3D12's
+		// protocol described on a backend that deliberately does not use it.
+		// Here begin_frame and every submit return with recording_ still true,
+		// and execute() is called from present() and read_back_buffer alone:
+		// one buffer holds the whole frame and goes to the queue once. That is
+		// cheaper, and it is why abandon_commands has a layout to think about
+		// and why the barrier that opens a frame has to order itself against
+		// the previous frame's submit - the hazard class the validation layers
+		// found here, which the sentence this replaces denied could exist.
 		VkCommandBuffer commands();
 		bool recording() const { return this->recording_; }
 

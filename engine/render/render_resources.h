@@ -111,15 +111,19 @@ namespace labrador
 
 		// CONSTRAINT: A RenderResources OUTLIVES THE Renderer IT WAS FILLED
 		// AGAINST. This class holds whatever a backend calls a texture, and on
-		// one of the five that is an ID3D12Resource the GPU may still be
-		// reading: the only thing that waits for it is ~Renderer::Impl, so a
-		// shell that declares its table before its renderer releases every
-		// texture ahead of the one wait on the whole shutdown path. The debug
-		// layer calls that OBJECT_DELETED_WHILE_STILL_IN_USE, and
-		// engine/render/d3d12/device_resources.cpp asks it to break on one.
+		// TWO of the five that is a resource the GPU may still be reading - an
+		// ID3D12Resource on one and a VkImage on the other - whose only wait is
+		// ~Renderer::Impl, so a shell that declares its table before its
+		// renderer releases every texture ahead of the one wait on the whole
+		// shutdown path. The D3D12 debug layer calls that
+		// OBJECT_DELETED_WHILE_STILL_IN_USE and
+		// engine/render/d3d12/device_resources.cpp asks it to break on one;
+		// the Vulkan validation layers report the same thing about a VkImage,
+		// which is the reason to say TWO here rather than to leave the number
+		// where the fifth backend found it.
 		//
 		// It is stated here rather than only kept, because it costs nothing on
-		// four of the five backends and is therefore invisible in four
+		// three of the five backends and is therefore invisible in three
 		// configurations out of five. Members destruct in reverse declaration
 		// order, so keeping it means declaring the table BEFORE the renderer -
 		// which is the opposite of the order they are CREATED in, and the

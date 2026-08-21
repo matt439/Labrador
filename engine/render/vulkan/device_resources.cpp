@@ -22,13 +22,21 @@ namespace labrador
 		// binary semaphores and fences that says the same thing in more places
 		// (device_resources.h says so at length).
 		//
-		// IT IS NOT WHERE THE PLATFORM ARGUMENT LIVES. docs/port/android.md
-		// wants this backend for Android, Linux and - through MoltenVK - the
-		// Apple platforms; Android has shipped 1.1 since Android 10 and 1.3 on
-		// current devices, and MoltenVK reports 1.2. So the floor is a desktop
-		// driver from 2020 and a phone from 2019, which is comfortably below
-		// the tier a port would target and is worth stating rather than
-		// discovering.
+		// IT IS NOT WHERE THE PLATFORM ARGUMENT LIVES, AND IT IS THE ONE NUMBER
+		// THAT DECIDES WHICH PHONES THIS BACKEND CAN RUN ON. docs/port/
+		// android.md wants this backend for Android, Linux and - through
+		// MoltenVK - the Apple platforms. MoltenVK reports 1.2 and a desktop
+		// driver has since 2020, so both of those clear it. ANDROID IS WHERE
+		// THIS COSTS SOMETHING: Android 10 (2019) shipped 1.1, and 1.2 arrives
+		// with the Android 12/13-era drivers, so a phone from 2019 does NOT
+		// clear this floor - select_physical_device below refuses it by name
+		// and says which version it found. That is a deliberate price rather
+		// than an oversight, and the alternative is spelt out so that whoever
+		// pays it knows what they are buying: binary semaphores and fences say
+		// the same thing as a timeline in three objects and two rules, and the
+		// whole of this file's synchronisation would stop being D3D12's
+		// transliterated. If the tier a port targets turns out to include those
+		// devices, that is the work - not a smaller edit here.
 		const uint32_t MIN_API_VERSION = VK_API_VERSION_1_2;
 
 		// How many descriptor sets one pool holds. A set is one run - one

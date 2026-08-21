@@ -470,8 +470,16 @@ namespace labrador
 		// honest answer and the reason RenderPixelTests is not built in that
 		// configuration at all rather than built and skipped.
 		//
-		// BETWEEN submit() AND end_frame(). Presenting discards the back
-		// buffer's contents, so after end_frame there is nothing left to read.
+		// BETWEEN submit() AND end_frame(), because on the backends where a
+		// present discards what it presented there is nothing left to read
+		// afterwards. That is a flip-model swap chain's behaviour and not a
+		// term of this seam: the Vulkan backend draws into an image the engine
+		// owns and blits it into a swapchain image at present, so reading after
+		// end_frame would answer there - and a contract that holds on one
+		// backend and not another is not a contract. The interval is the
+		// narrow one every backend can keep, and
+		// tests/render/pixel_tests.cpp's "a frame may be read back and then
+		// presented" walks its far end.
 		// Not const: reading the GPU's memory means staging a copy through the
 		// device, which is a write.
 		//
@@ -485,10 +493,10 @@ namespace labrador
 		// called are not merely unexposed here; they are gone from the backend
 		// (engine/render/d3d11/device_resources.h says which and why - it is the
 		// only one of the five that HAD such a wrapper to strip, being the only
-		// one this repository did not write. The D3D12 one was written to this
-		// seam from the start, so it never had accessors nobody called; a device
-		// can be lost on both of them, which is half the backends rather than
-		// one, and the settled note at the foot of this file says so).
+		// one this repository did not write. The D3D12 and Vulkan ones were
+		// written to this seam from the start, so they never had accessors
+		// nobody called; a device can be lost on three of the five, and the
+		// settled note at the foot of this file says so).
 		void begin_marker(const wchar_t* name);
 		void end_marker();
 		void set_marker(const wchar_t* name);
@@ -577,17 +585,20 @@ namespace labrador
 //    gl_functions.cpp, and all four are the same kind of file, which is the
 //    part of an API that is not about drawing. The third file is where they
 //    diverge most and is the honest measure of what a port owes for content -
-//    115 lines on d3d11, 264 on d3d12, 168 on gl, 48 on null - because it
+//    115 lines on d3d11, 310 on d3d12, 168 on gl, 48 on null and 356 on
+//    vulkan - because it
 //    turns already-decoded bytes into a texture, and how much work that is
 //    depends on how much the API will take unchanged. THE LONGEST OF THEM IS
 //    THE ONE WHOSE API TAKES THE LEAST: D3D11 is handed the bytes and copies
 //    them itself, where D3D12 wants a resource, a staging buffer, a footprint
 //    per mip level, a copy on a command list, a barrier and a wait - which is
-//    the argument for the fourth backend in one file. Vulkan wants all of
-//    that and an allocation to bind to the image besides, and is shorter than
-//    D3D12 anyway, because its copy takes the engine's own tightly packed
-//    bytes where a D3D12 one pads every row to 256 bytes and has to be asked
-//    to what. Path-building and
+//    the argument for the fourth backend in one file. VULKAN IS THE LONGEST OF
+//    THE FIVE, and the extra is not the copy: that one takes the engine's own
+//    tightly packed bytes, where a D3D12 one pads every row to 256 bytes and
+//    has to be asked to what. It is that nothing in this API owns anything -
+//    an allocation to bind to the image, a memory type chosen for it by hand,
+//    and a handler putting all three back on every path that can throw,
+//    because there is no ComPtr. Path-building and
 //    file-reading are in engine/render/resource_factory.cpp, written once for
 //    everybody.
 //

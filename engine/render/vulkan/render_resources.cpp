@@ -91,15 +91,23 @@ namespace labrador
 	// make or destroy one. Everything else the class declares is compiled once,
 	// in engine/render/render_resources.cpp.
 	//
-	// NO descriptor_slot HERE, WHICH IS THE ONE LINE THAT DIFFERS FROM THE
-	// D3D12 FILE. That backend keeps a fixed-size shader-visible heap and has
-	// to hand a re-loaded name back the slot it already held, or a client
-	// re-walking its manifest runs the heap out. Here a descriptor set is
-	// allocated per run out of a pool the frame resets (renderer.cpp, replay),
-	// so a texture holds no descriptor at all and re-loading one costs exactly
-	// the image it makes and the image it destroys. The pixel test that found
-	// the D3D12 leak - three hundred loads under one name - passes here without
-	// this backend having to know it exists.
+	// NO descriptor_slot HERE, WHICH IS THE INTERESTING DIFFERENCE FROM THE
+	// D3D12 FILE RATHER THAN THE ONLY ONE. That backend keeps a fixed-size
+	// shader-visible heap and has to hand a re-loaded name back the slot it
+	// already held, or a client re-walking its manifest runs the heap out. Here
+	// a descriptor set is allocated per run out of a pool the frame resets
+	// (renderer.cpp, submit), so a texture holds no descriptor at all and
+	// re-loading one costs exactly the image it makes and the image it
+	// destroys. The pixel test that found the D3D12 leak - three hundred loads
+	// under one name - passes here without this backend having to know it
+	// exists.
+	//
+	// The other differences are this API not owning anything: a fourteen-line
+	// descriptor_slot is missing, and in its place stand a ~VulkanTexture that
+	// frees three handles against a device it holds a reference to, a size()
+	// the quad arithmetic asks for, and the include and using-declaration that
+	// come with returning one. Counting them as one line was a claim
+	// texture_factory.cpp then cited as authority.
 
 	RenderResources::RenderResources() : impl_(std::make_unique<Impl>())
 	{

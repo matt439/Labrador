@@ -368,8 +368,8 @@ namespace labrador
 		// name that already has one is replaced and the old one destroyed by
 		// Registry::add - which on this backend costs exactly the image it
 		// frees, there being no descriptor slot to give back
-		// (render_resources.cpp says why that is the one line differing from
-		// the D3D12 file).
+		// (render_resources.cpp says why that absence is the interesting
+		// difference from the D3D12 file).
 		resources.impl()->add_texture(name,
 			std::make_unique<VulkanTexture>(
 				device_resources.shared_device(), image, memory, view,

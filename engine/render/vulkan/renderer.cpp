@@ -52,7 +52,7 @@ namespace labrador
 		// space has y increasing DOWN where D3D's and GL's increase up, so this
 		// shader - which is theirs, unchanged - would draw every frame upside
 		// down here. What puts it right is a negative viewport height in
-		// replay() below, which is core since 1.1 and is exactly the term
+		// submit() below, which is core since 1.1 and is exactly the term
 		// renderer.h says every backend decides for itself: where a pane sits
 		// in the buffer. GL subtracts the pane's bottom edge from the
 		// framebuffer height; this one negates the height. Neither reaches
@@ -446,7 +446,7 @@ namespace labrador
 		// whose winding never changes: a flip mirrors the texture coordinates
 		// and leaves the corners where they were (sprite_geometry.cpp). It
 		// matters more here than anywhere else, because the negative viewport
-		// height in replay() reverses the winding as it reverses y - so a
+		// height in submit() reverses the winding as it reverses y - so a
 		// backend that culled would have to pick the opposite face from every
 		// other one and would look correct until somebody changed the flip.
 		VkPipelineRasterizationStateCreateInfo rasteriser = {};

@@ -340,8 +340,11 @@ written entirely in terms of a caller who already knows the size changed. See
 > than transliterated was one thing this document did not anticipate at all:
 > **what a back buffer is.** A Vulkan swapchain image cannot be drawn into
 > without being acquired and given back, and `tests/render/pixel_tests.cpp`
-> draws fifty-one frames and presents none of them. The answer is in
-> `vulkan/device_resources.h` and it is the largest decision in the port.
+> draws fifty-three frames and presents exactly one of them — the case that
+> walks the far end of `read_back_buffer`'s interval, after the read. The other
+> fifty-two are consecutive and never present, which is more than any swapchain
+> has images. The answer is in `vulkan/device_resources.h` and it is the
+> largest decision in the port.
 >
 > **Three findings worth carrying forward.** The toolchain note below is
 > right and understated: there are two `dxc.exe` on a normal Windows machine and

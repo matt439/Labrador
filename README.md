@@ -198,8 +198,9 @@ against the backend the preset configured. It was written when there were three
 of them, and the invariant it checked still holds — they agree on every term the
 pixel contract names — with one live exception on the GL preset and a list of
 comments the code has outgrown. `docs/review/d3d12/` and `docs/review/vulkan/`
-then held the fourth and fifth backends to that same contract one at a time; the
-first has been worked through, the second has not.
+then held the fourth and fifth backends to that same contract one at a time, and
+both have been worked through — everything either ranked, down to its minors,
+with only the findings each review left explicitly unverified still open.
 
 That audit's headline recommendation has since landed: `tests/render/golden/`
 holds an image of every frame the pixel tests draw, and each run compares its

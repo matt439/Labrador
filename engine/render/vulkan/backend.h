@@ -64,9 +64,9 @@
 // because push constants would need an annotation in the shared
 // engine/render/sprite.hlsl (renderer.cpp, create_device_dependent_resources);
 // a descriptor set is allocated per run from a pool the frame resets, so a
-// texture carries no descriptor state at all (renderer.cpp, replay); the
+// texture carries no descriptor state at all (renderer.cpp, submit); the
 // viewport is flipped rather than the clip space, which is the one term every
-// backend decides for itself (renderer.cpp, replay); block compression is a
+// backend decides for itself (renderer.cpp, submit); block compression is a
 // device feature that is asked for and named in the throw if it is absent
 // (texture_factory.cpp); and the seam's three debug markers do nothing.
 
@@ -187,13 +187,19 @@ namespace labrador
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;
 
-		// BETWEEN begin_frame AND end_frame, WHICH IS A WIDER INTERVAL THAN
-		// "SOMETHING IS RECORDING" - and it is the wider one renderer.h
-		// legislates. A resize arriving before the first set_view_count still
-		// has a frame to restart, and asking the command buffer whether there
-		// is one answers no. engine/render/d3d12/backend.h states the same
-		// term; this backend inherited the answer rather than rediscovering it,
-		// which is what a written-down contract is for.
+		// BETWEEN begin_frame AND end_frame, WHICH IS THE INTERVAL renderer.h
+		// LEGISLATES AND NOT ONE THE COMMAND BUFFER CAN ANSWER FOR. A resize
+		// arriving before the first set_view_count still has a frame to
+		// restart, and DeviceResources::recording() is not the question:
+		// engine/render/d3d12/backend.h can say its command lists answer no,
+		// because its open_frame executes the frame list on the way out, but
+		// here open_frame leaves the buffer open and recording() is true from
+		// the frame's first barrier onwards. It also goes FALSE mid-frame,
+		// every time read_back_buffer submits, which is the half that would
+		// actually get this wrong: a resize arriving in that window would find
+		// no frame to restart when there is one. So the frame is tracked rather
+		// than inferred, and this is the whole of the tracking - the same term
+		// as D3D12's, reached for a different reason.
 		bool frame_begun = false;
 
 		// SHARED BY EVERY VIEW, because nothing writes to any of them once they

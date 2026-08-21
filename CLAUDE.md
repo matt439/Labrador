@@ -215,11 +215,20 @@ runs there with no window and no device. A rule is asserted rather than played.
   check and went in with the rest; the other seven are behaviour and need
   verifying before anybody acts on them. The document itself still reads as it
   was written, line numbers included, so do not expect them to match.
-- **The third reviews the fifth backend, and none of it has been applied yet.**
-  `docs/review/vulkan/` holds `engine/render/vulkan/` against the same seam:
-  three must-fix, fifteen should-fix, eight minor, and sixty-five findings that
-  ranked below its verification budget and were never checked, which are its
-  section 7 and are questions rather than findings. It is the first review in
+- **The third reviews the fifth backend.** `docs/review/vulkan/` holds
+  `engine/render/vulkan/` against the same seam: three must-fix, fifteen
+  should-fix, eight minor, and sixty-five findings that ranked below its
+  verification budget and were never checked, which are its section 7 and are
+  questions rather than findings. **All three must-fix, every should-fix and
+  every minor have been applied**, along with two of the four items its section
+  6 left unresolved — the index buffer's missing barrier, and the disclosure
+  that nothing in this tree has ever run two frames in flight. What is **not**
+  applied is section 7, and two of section 6: the severity of the minimise
+  throw, which needs somebody to minimise a sample under the layers, and
+  `compositeAlpha`/`preTransform`, which the review declines to decide because
+  they are live only on a platform this tree does not build. The document
+  itself still reads as it was written, line numbers included, so do not expect
+  them to match. It is the first review in
   this tree that **ran** anything — its section 2 is `RenderPixelTests` under
   the Khronos validation layer with `validate_sync` on, which is not what the
   layers check by default and is not what this backend was written against.

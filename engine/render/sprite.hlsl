@@ -29,10 +29,15 @@
 // is in each backend's renderer.cpp, because it is a call and not a build
 // setting: D3D11 gives the vertex shader its b0 through a constant buffer,
 // D3D12 gives it the same b0 as four root constants, and Vulkan as a uniform
-// buffer in a descriptor set. No difference reaches
-// this file, which is the test that it belongs above all three. The OpenGL
-// backend is not a counter-example: GLSL is a different language, not a
-// different profile, and render/gl/sprite_shader.h says what that costs.
+// buffer in a descriptor set. ONE difference reaches
+// this file and it is worth knowing before that sentence is read as none: the
+// declaration order of VertexIn's three members is an ABI term on the Vulkan
+// backend, because dxc assigns SPIR-V locations in declaration order and a
+// Vulkan pipeline binds attributes by number rather than by semantic. It is
+// stated again where those members are, which is where somebody would reorder
+// them. The OpenGL backend is not a counter-example either way: GLSL is a
+// different language, not a different profile, and render/gl/sprite_shader.h
+// says what that costs.
 //
 // IT DOES ALMOST NOTHING, AND THAT IS THE DESIGN. Every term of the pixel
 // contract is settled on the CPU in engine/render/sprite_geometry.cpp, which
@@ -65,8 +70,16 @@
 // A matrix is what SpriteBatch used, and sixteen floats to express a 2D scale
 // and offset is fifteen more than the arithmetic needs. The values are
 // (2/width, -2/height, -1, 1): the y term is negative because the seam's y runs
-// down the screen and clip space's runs up, which is the single line in this
-// engine where that is decided.
+// down the screen and Direct3D's and GL's clip space runs up.
+//
+// AND THAT IS NO LONGER THE ONLY LINE WHERE IT IS DECIDED, which it used to
+// claim. Vulkan's clip space runs y DOWN, so this term and that one would
+// cancel and every frame would be upside down - the Vulkan backend answers it
+// by handing the rasteriser a negative viewport height, which flips y a second
+// time (engine/render/vulkan/renderer.cpp, submit). Where a pane sits in the
+// buffer is the one term renderer.h leaves to a backend, and all three answers
+// to it are outside this file. What is decided HERE is the term that is the
+// same for all of them: the seam's y runs down.
 cbuffer ViewportTransform : register(b0)
 {
 	float4 pixels_to_clip;
@@ -75,6 +88,15 @@ cbuffer ViewportTransform : register(b0)
 Texture2D<float4> sprite_texture : register(t0);
 SamplerState sprite_sampler : register(s0);
 
+// AND THE ORDER OF THESE THREE IS AN ABI TERM ON ONE OF THE FIVE BACKENDS,
+// which is the one place a backend difference does reach this file. dxc assigns
+// SPIR-V input locations in declaration order and there is no semantic in the
+// Vulkan pipeline's attribute descriptions to bind by, so
+// engine/render/vulkan/renderer.cpp gives location 0 the offsetof(position), 1
+// the colour and 2 the texcoord and would go on doing so if these three were
+// reordered. The two Direct3D backends bind by semantic name and would not
+// notice, and the GL one does not read this file at all. Reordering these
+// members means changing that array too.
 struct VertexIn
 {
 	float2 position : POSITION;

@@ -47,15 +47,18 @@ namespace labrador
 
 	DeviceResources::~DeviceResources()
 	{
-		// ONE OF THE TWO DESTRUCTORS IN engine/render/ THAT HAS TO SYNCHRONISE
-		// WITH A GPU, and it is the same fact this whole file exists for.
-		// Releasing a D3D11 device is enough because the runtime tracks what is
-		// still in flight; here, dropping a command list the GPU is still
-		// reading is exactly the bug the fence exists to prevent, and a
-		// destructor is no exception. The other one is ~Renderer::Impl in
+		// ONE OF THE FOUR DESTRUCTORS IN engine/render/ THAT HAVE TO
+		// SYNCHRONISE WITH A GPU, and it is the same fact this whole file
+		// exists for. Releasing a D3D11 device is enough because the runtime
+		// tracks what is still in flight; here, dropping a command list the GPU
+		// is still reading is exactly the bug the fence exists to prevent, and
+		// a destructor is no exception. The second is ~Renderer::Impl in
 		// renderer.cpp, from the same commit and for the same reason, and it
 		// covers the lists, the allocators and the vertex pages this class does
-		// not own.
+		// not own. The other two are the Vulkan backend's pair of the same
+		// shape, which arrived with the fifth backend - a timeline semaphore
+		// being an ID3D12Fence spelt differently, its two destructors are this
+		// pair spelt differently too.
 		//
 		// AND IT ANSWERS RATHER THAN THROWS. This destructor is implicitly
 		// noexcept - every member has a non-throwing one - so a com_exception
@@ -356,7 +359,9 @@ namespace labrador
 			// does not exist in this one. Everything that follows from flip is
 			// therefore unconditional: no sRGB back buffer format, and a
 			// present that discards what it presented, which is why
-			// tests/render/pixel_tests.cpp never calls end_frame.
+			// tests/render/pixel_tests.cpp calls end_frame exactly once - in
+			// the one case that exists to walk the far end of
+			// read_back_buffer's interval, after it has already read.
 			DXGI_SWAP_CHAIN_DESC1 description = {};
 			description.Width = width;
 			description.Height = height;

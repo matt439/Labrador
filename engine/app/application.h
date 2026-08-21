@@ -241,12 +241,13 @@ namespace labrador
 		// AND THE TABLE IS DECLARED BEFORE THE RENDERER, so it dies after one.
 		// render_resources.h states it as a term of the seam and says what it
 		// costs to get wrong: the table holds whatever a backend calls a
-		// texture, and on the D3D12 backend that is an ID3D12Resource the GPU
-		// may still be reading, whose only wait is in ~Renderer::Impl. Declared
-		// the other way round - which is the order they are created in, and the
-		// order this list had - every texture is released ahead of that wait on
-		// every normal exit. It costs nothing on the other three backends,
-		// which is why it survived.
+		// texture, and on two of the five backends that is a resource the GPU
+		// may still be reading - an ID3D12Resource on D3D12, a VkImage on
+		// Vulkan - whose only wait is in ~Renderer::Impl. Declared the other
+		// way round - which is the order they are created in, and the order
+		// this list had - every texture is released ahead of that wait on every
+		// normal exit. It costs nothing on the other three backends, which is
+		// why it survived.
 		std::unique_ptr<RenderResources> render_resources_ = nullptr;
 		std::unique_ptr<Renderer> renderer_ = nullptr;
 		StepTimer timer_ = StepTimer();

@@ -11,9 +11,9 @@
 // anti-aliased and its atlas is block-compressed, so the coverage value at any
 // one pixel is a fact about the compressor rather than about the engine.
 // Relationships survive a different rasteriser, which is exactly what makes
-// them portable and exactly what makes them blind. Every term the three
+// them portable and exactly what makes them blind. Every term the four
 // rasterising backends hand-copied from each other - the pixels-to-clip
-// constant, the index loop, the HLSL at two profiles and its GLSL
+// constant, the index loop, the HLSL at three profiles and its GLSL
 // transliteration, draw_text's camera prologue - is a term every copy can get
 // wrong in the same direction while every relationship in that file still
 // holds.
@@ -23,7 +23,7 @@
 // image of what that frame is supposed to contain - and because a backend is
 // chosen at configure time (T5), "d3d11 agrees with gl" is not a statement any
 // one process can make. The checked-in set is what carries it between them:
-// three runs, three configurations, one set of images, and a difference is a
+// four runs, four configurations, one set of images, and a difference is a
 // file somebody has to look at rather than an argument somebody has to make.
 namespace golden
 {
