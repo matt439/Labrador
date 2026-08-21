@@ -408,14 +408,29 @@ namespace labrador
 		void create_frames();
 		void create_render_pass();
 		void create_colour_target();
-		void create_swapchain();
+
+		// ANSWERS FALSE WHEN THE DEVICE WAS LOST, for the same reason execute()
+		// does and only where there was a swapchain to replace. A minimised
+		// window is not a failure: it answers true, having RELEASED the
+		// swapchain rather than kept one it cannot use - which is what makes
+		// present()'s null-swapchain branch reachable at all.
+		bool create_swapchain();
+
+		// Whether the surface has any area to present into, asked of the
+		// surface rather than of the shell. It is how present() notices a
+		// minimised window coming back, because no Win32 message says so:
+		// engine/app/window.cpp's restore branch sends on_resuming and no size.
+		bool surface_has_area() const noexcept;
 
 		// The swapchain alone, waited for and remade. What present() does about
 		// VK_ERROR_OUT_OF_DATE_KHR, and deliberately NOT
 		// create_window_size_dependent_resources: the colour target is the
 		// frame that was just drawn, and a presentation engine declaring its
 		// own images stale is no reason to throw it away.
-		void rebuild_swapchain();
+		//
+		// Answers false on a device loss, having rebuilt everything - which
+		// includes the command buffer of the frame the caller was presenting.
+		bool rebuild_swapchain();
 
 		void destroy_swapchain();
 		void destroy_colour_target();

@@ -1020,7 +1020,7 @@ namespace labrador
 		this->colour_extent_ = { 0, 0 };
 	}
 
-	void DeviceResources::create_swapchain()
+	bool DeviceResources::create_swapchain()
 	{
 		VkDevice device = this->owner_->device;
 
@@ -1062,8 +1062,23 @@ namespace labrador
 			// will be again; present() answers this by doing nothing rather
 			// than by refusing, because a shell that keeps drawing while
 			// minimised is the ordinary case and not a mistake.
+			//
+			// AND THE OLD ONE IS RELEASED HERE, WHICH IS WHAT MAKES THAT
+			// SENTENCE TRUE. This branch used to return with swapchain_ still
+			// naming the swapchain it had declined to replace, so the two null
+			// checks in present() that the paragraph above points at could
+			// never fire: destroy_swapchain is the only place that member is
+			// ever cleared. What actually happened was that the acquire kept
+			// being answered VK_ERROR_OUT_OF_DATE_KHR by a swapchain nothing
+			// was remaking, and end_frame threw out of the message pump.
+			//
+			// SAFE TO DESTROY IT HERE because both callers have already waited
+			// for the whole device - rebuild_swapchain does, and
+			// create_window_size_dependent_resources does - which is the same
+			// wait destroy_swapchain needs anywhere else.
+			this->destroy_swapchain();
 			this->swapchain_extent_ = extent;
-			return;
+			return true;
 		}
 
 		uint32_t formats = 0;
@@ -1138,6 +1153,27 @@ namespace labrador
 		// handed to oldSwapchain, which puts it into a state where the only
 		// legal thing left is to destroy it.
 		this->destroy_swapchain();
+
+		// AND A REMOVAL THAT SURFACES HERE IS ANSWERED RATHER THAN THROWN,
+		// which is the other half of what
+		// create_window_size_dependent_resources' comment claims and the half
+		// that did not come across from
+		// engine/render/d3d12/device_resources.cpp. That file answers
+		// DXGI_ERROR_DEVICE_REMOVED out of ResizeBuffers as well as out of the
+		// wait, and says so - "Same recovery, reached from the wait as well as
+		// from ResizeBuffers". Here the wait was answered and this was not, so
+		// a TDR landing between the two threw out of a window procedure into
+		// DispatchMessage: the exact outcome that paragraph exists to prevent.
+		//
+		// ONLY WHEN THERE WAS ONE TO REPLACE, for the reason the D3D12 file's
+		// `if (this->swap_chain_)` gives without stating it: the recovery
+		// re-enters this function with a fresh device and no previous
+		// swapchain, so a device that is dead in a way a rebuild cannot fix
+		// throws on the second attempt instead of recursing.
+		if (created == VK_ERROR_DEVICE_LOST && previous != VK_NULL_HANDLE)
+		{
+			return false;
+		}
 		check_vk(created, "The swapchain could not be created");
 
 		this->swapchain_ = fresh;
@@ -1166,13 +1202,45 @@ namespace labrador
 				&this->presentable_[i]),
 				"A present semaphore could not be created");
 		}
+
+		return true;
 	}
 
-	void DeviceResources::rebuild_swapchain()
+	bool DeviceResources::surface_has_area() const noexcept
+	{
+		if (!this->owner_ ||
+			this->owner_->physical_device == VK_NULL_HANDLE ||
+			this->surface_ == VK_NULL_HANDLE)
+		{
+			return false;
+		}
+
+		VkSurfaceCapabilitiesKHR capabilities = {};
+		if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+			this->owner_->physical_device, this->surface_, &capabilities) !=
+			VK_SUCCESS)
+		{
+			return false;
+		}
+
+		// 0xFFFFFFFF is "the swapchain decides", which create_swapchain answers
+		// with the colour target's size - never zero, because that is clamped
+		// to at least one in each direction. So a surface that says it is
+		// asking has area by construction.
+		if (capabilities.currentExtent.width == 0xFFFFFFFFu)
+		{
+			return true;
+		}
+
+		return capabilities.currentExtent.width != 0u &&
+			capabilities.currentExtent.height != 0u;
+	}
+
+	bool DeviceResources::rebuild_swapchain()
 	{
 		if (!this->owner_ || this->owner_->device == VK_NULL_HANDLE)
 		{
-			return;
+			return true;
 		}
 
 		// A full device wait rather than the timeline one, and it has to be: a
@@ -1180,7 +1248,18 @@ namespace labrador
 		// image the presentation engine is still reading is not something
 		// wait_for_gpu can see.
 		std::ignore = vkDeviceWaitIdle(this->owner_->device);
-		this->create_swapchain();
+
+		if (!this->create_swapchain())
+		{
+			// AND THE ANSWER GOES BACK TO present(), for exactly the reason
+			// execute()'s does: the rebuild destroys this frame's command
+			// buffer along with everything else, so there is nothing left of
+			// the frame the caller was in the middle of presenting.
+			this->handle_device_lost();
+			return false;
+		}
+
+		return true;
 	}
 
 	void DeviceResources::destroy_swapchain()
@@ -1237,7 +1316,13 @@ namespace labrador
 		this->abandon_commands();
 		this->destroy_colour_target();
 		this->create_colour_target();
-		this->create_swapchain();
+
+		// The second end of the recovery the paragraph above promises, and the
+		// one this file did not have. create_swapchain says why it answers.
+		if (!this->create_swapchain())
+		{
+			this->handle_device_lost();
+		}
 	}
 
 	bool DeviceResources::window_size_changed(int width, int height)
@@ -1497,8 +1582,35 @@ namespace labrador
 			// Minimised, or a swapchain that could not be made at this size.
 			// Whatever the frame recorded still goes to the GPU, so a client
 			// that draws while minimised is doing ordinary work rather than
-			// accumulating it.
-			this->execute();
+			// accumulating it - and its answer is honoured here as everywhere
+			// else, because a device lost inside it has already put the frame
+			// index back to zero.
+			if (!this->execute())
+			{
+				return;
+			}
+
+			// AND THIS IS WHERE THE WINDOW COMING BACK IS NOTICED, because
+			// nothing else in the tree will notice it. engine/app/window.cpp
+			// turns a restore into on_resuming and forwards no size, so
+			// window_size_changed is never called and
+			// create_window_size_dependent_resources never runs - which would
+			// make the state create_swapchain calls temporary permanent
+			// instead, and a window that stops drawing when it is restored is
+			// worse than one that dies when it is minimised.
+			//
+			// ASKED OF THE SURFACE RATHER THAN OF THE SHELL, for the same
+			// reason create_swapchain takes its extent from there: the surface
+			// is the only thing that knows, and the presentation engine
+			// saying so with no window message anywhere near it is the term
+			// this backend exists to stress (device_resources.h). It costs one
+			// capabilities probe per frame in a state where nothing is being
+			// drawn to a screen at all.
+			if (this->surface_has_area() && !this->rebuild_swapchain())
+			{
+				return;
+			}
+
 			this->frame_index_ = (this->frame_index_ + 1) % FRAME_COUNT;
 			return;
 		}
@@ -1519,11 +1631,22 @@ namespace labrador
 			// is the swapchain, which is not what the seam calls the back
 			// buffer. So it is answered here, in full, and
 			// Renderer::window_size_changed never hears about it.
-			this->rebuild_swapchain();
+			if (!this->rebuild_swapchain())
+			{
+				return;
+			}
+
+			// A window that went away between the acquire and the rebuild -
+			// minimised, most often. Reachable now that create_swapchain
+			// releases the swapchain it declines to replace, which is what
+			// this branch was written for and could not do before.
 			if (this->swapchain_ == VK_NULL_HANDLE)
 			{
-				this->execute();
-				this->frame_index_ = (this->frame_index_ + 1) % FRAME_COUNT;
+				if (this->execute())
+				{
+					this->frame_index_ =
+						(this->frame_index_ + 1) % FRAME_COUNT;
+				}
 				return;
 			}
 
@@ -1638,7 +1761,12 @@ namespace labrador
 			// already been presented into an image the engine says is stale.
 			// One frame at the old size is what a resize costs everywhere else
 			// in this tree too.
-			this->rebuild_swapchain();
+			if (!this->rebuild_swapchain())
+			{
+				// handle_device_lost has put the frame index back to zero, so
+				// this must not move it on.
+				return;
+			}
 		}
 		else
 		{
