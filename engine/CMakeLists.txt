@@ -180,8 +180,17 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     # SDK's installer sets, so a machine that has it needs no further
     # configuration and one that does not fails here by name rather than at the
     # first missing symbol (T6).
+    # PRIVATE, WHICH IS THE ONE THING THE INCLUDE CHECK CANNOT SEE. Linking it
+    # PUBLIC put the SDK's include directory on the command line of every
+    # sample, every test and every downstream client - the only backend whose
+    # link line carried a header path - so a file outside
+    # engine/render/vulkan/ could have said #include <vulkan/vulkan.h> and
+    # compiled. cmake/check_engine_includes.cmake guards the folder, not the
+    # API, and would not have caught it. Nothing outside the backend names a
+    # Vulkan type: the shell hands its window handle to create_device as a
+    # void*.
     find_package(Vulkan REQUIRED)
-    target_link_libraries(LabradorEngine PUBLIC Vulkan::Vulkan)
+    target_link_libraries(LabradorEngine PRIVATE Vulkan::Vulkan)
 
     # The same source as the three backends above, through a third compiler.
     # cmake/compile_shaders.cmake carries the whole argument - why dxc and not

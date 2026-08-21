@@ -61,8 +61,10 @@ jobs:
     # Studio, opengl32 with Windows - where this one needs the Vulkan SDK twice
     # over: for a dxc that can emit SPIR-V at build time
     # (cmake/compile_shaders.cmake says which dxc and why), and for the Vulkan
-    # loader the same installer puts in System32, without which none of the
-    # eleven other test executables in this preset would start at all.
+    # loader the same installer puts in System32, without which nine of the
+    # eleven other test executables in this preset would not start at all -
+    # every one that links the engine. MattMathTests and LineSweeperTests are
+    # the two that do not.
     #
     # THE NULL PRESET IS THE ONE THIS MACHINE CAN RUN COMPLETELY, and it is here
     # for that rather than for coverage. It has no graphics API at all - it
@@ -126,14 +128,32 @@ jobs:
       # Only for the preset that needs it, and it is the only install step in
       # this file. CMake's own FindVulkan reads VULKAN_SDK, which is what the
       # installer sets and what this hands on to the configure step.
+      #
+      # -PassThru IS WHAT MAKES THIS STEP ABLE TO FAIL. Without it Start-Process
+      # returns nothing and the exit code goes nowhere, so a failed install was
+      # a green step that exported VULKAN_SDK anyway - and the two things that
+      # then failed, find_package(Vulkan) and compile_hlsl_to_spirv's
+      # deliberately-named VULKAN_SDK error, both blamed a cause that was not
+      # the cause. That is the opposite of what T6 asks those messages to do,
+      # and it is worth the lines here to keep the first failure the true one.
+      # The second check is the same argument one step further: the loader can
+      # land without the dxc, and that failure surfaces at configure time in
+      # cmake/compile_shaders.cmake with VULKAN_SDK named and nothing wrong
+      # with VULKAN_SDK.
       - name: Install the Vulkan SDK
         if: matrix.vulkan_sdk
         shell: pwsh
         run: |
           $installer = Join-Path $env:RUNNER_TEMP "vulkan-sdk.exe"
           Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe" -OutFile $installer
-          Start-Process -FilePath $installer -Wait -ArgumentList `
+          $process = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList `
             "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install"
+          if ($process.ExitCode -ne 0) {
+            throw "The Vulkan SDK installer exited with $($process.ExitCode). Nothing after this step can work, and every message it would produce would name the wrong cause."
+          }
+          if (-not (Test-Path "C:\VulkanSDK\Bin\dxc.exe")) {
+            throw "The Vulkan SDK installed without the dxc that cmake/compile_shaders.cmake looks for in `$VULKAN_SDK/Bin. There is no other one on this runner with a SPIR-V backend."
+          }
           echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
 
       - name: Find vcvars64
