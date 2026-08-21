@@ -190,13 +190,16 @@ each was wrong about. Those reviews were written while the paint-shooter was
 still in this tree, so findings filed against `game/` refer to code that now
 lives in ColourWars.
 
-Since the split, one targeted audit: `docs/review/backend-equivalence/` holds
-the render backends against the one contract in `engine/render/renderer.h`
+Since the split, three targeted reviews rather than a full round.
+`docs/review/backend-equivalence/` holds the render backends against the one
+contract in `engine/render/renderer.h`
 and asks what `RenderPixelTests` structurally cannot, since it only ever runs
 against the backend the preset configured. It was written when there were three
 of them, and the invariant it checked still holds — they agree on every term the
 pixel contract names — with one live exception on the GL preset and a list of
-comments the code has outgrown.
+comments the code has outgrown. `docs/review/d3d12/` and `docs/review/vulkan/`
+then held the fourth and fifth backends to that same contract one at a time; the
+first has been worked through, the second has not.
 
 That audit's headline recommendation has since landed: `tests/render/golden/`
 holds an image of every frame the pixel tests draw, and each run compares its

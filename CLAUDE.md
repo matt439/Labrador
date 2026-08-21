@@ -200,8 +200,9 @@ runs there with no window and no device. A rule is asserted rather than played.
   here, and do not treat their line numbers as current. `docs/review/rtcd/` is
   a candidate list mined from Ericson's *Real-Time Collision Detection*, not a
   plan; the decisions live in `docs/review/round-2/PLAN.md`.
-  `docs/review/backend-equivalence/` and `docs/review/d3d12/` are the two
-  exceptions to the `game/` caveat, because both postdate the split. The first
+  `docs/review/backend-equivalence/`, `docs/review/d3d12/` and
+  `docs/review/vulkan/` are the three exceptions to the `game/` caveat, because
+  all three postdate the split. The first
   holds the three render backends that existed when it was written against one
   contract, and its `DRIFT.md` is a live list of comments in `engine/render/`
   that the code no longer matches. The second reviews the fourth backend
@@ -214,6 +215,19 @@ runs there with no window and no device. A rule is asserted rather than played.
   check and went in with the rest; the other seven are behaviour and need
   verifying before anybody acts on them. The document itself still reads as it
   was written, line numbers included, so do not expect them to match.
+- **The third reviews the fifth backend, and none of it has been applied yet.**
+  `docs/review/vulkan/` holds `engine/render/vulkan/` against the same seam:
+  three must-fix, fifteen should-fix, eight minor, and sixty-five findings that
+  ranked below its verification budget and were never checked, which are its
+  section 7 and are questions rather than findings. It is the first review in
+  this tree that **ran** anything — its section 2 is `RenderPixelTests` under
+  the Khronos validation layer with `validate_sync` on, which is not what the
+  layers check by default and is not what this backend was written against.
+  That sweep found two synchronisation hazards on the present path and both are
+  findings below it, so **re-run it after any change under
+  `engine/render/vulkan/`**: section 2 carries the `vk_layer_settings.txt` that
+  makes the layer's output visible to a shell, which the backend's own messenger
+  (it writes to `OutputDebugStringA`) does not.
 
 ## Known-absent, on purpose
 
