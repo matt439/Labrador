@@ -807,8 +807,8 @@ namespace labrador
 		//
 		// IT DOES DRAIN, THOUGH, AND ONLY THIS BACKEND HAS ANYTHING TO DRAIN.
 		// "begin_frame resets every view's recording" (renderer.h) has to mean
-		// the same thing on all three, and on the other two a recording is a
-		// vector that reset() empties. Here it is a deferred context, and the
+		// the same thing on all five, and on three of the other four a recording
+		// is a vector that reset() empties. Here it is a deferred context, and the
 		// commands in one outlive any flag this loop clears: a frame begun,
 		// drawn into and never submitted used to leave its flushed geometry
 		// where the next frame's ExecuteCommandList would find it at the head

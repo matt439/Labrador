@@ -258,7 +258,7 @@ already is (T5). That option is held, not spent.
 | `math` | nothing — and it links nothing, which is what makes this true |
 | `core` | math |
 | `collision` | core, math |
-| `render` | core, math — D3D11 inside `d3d11/`, D3D12 inside `d3d12/`, OpenGL inside `gl/`, nothing inside `null/` |
+| `render` | core, math — D3D11 inside `d3d11/`, D3D12 inside `d3d12/`, OpenGL inside `gl/`, Vulkan inside `vulkan/`, nothing inside `null/` |
 | `scene` | core, math, collision, render |
 | `input` | core, math — XInput inside `xinput/` only |
 | `audio` | core, math — the audio backend at its edge only |
@@ -317,20 +317,24 @@ written once for every backend.
 
 **What a backend needs to build its shader is not always in its folder, and
 that is the one thing above it that is shared rather than written twice.**
-`render/sprite.hlsl` is compiled by both Direct3D backends — at
-`4_0_level_9_1` for one and `5_1` for the other, into two byte arrays that
-never meet — because the source they compile is character for character the
-same file. A backend owns the profile it asks for and the binding it gives the
-shader's `b0`; it does not own the arithmetic, which is the same rule as
-everything else on this page.
+`render/sprite.hlsl` is compiled by three backends — at `4_0_level_9_1` for
+D3D11, `5_1` for D3D12 and `6_0` for Vulkan, into three byte arrays that never
+meet — because the source they compile is character for character the same
+file. Two of those go through `fxc` and produce DXBC; the third goes through
+the Vulkan SDK's `dxc` and produces SPIR-V, which is a different compiler and a
+different intermediate for one unchanged source. A backend owns the profile it
+asks for and the binding it gives the shader's `b0` — a constant buffer, four
+root constants, a uniform buffer at a shifted descriptor binding — and it does
+not own the arithmetic, which is the same rule as everything else on this
+page.
 
-**There are four backends**: `render/d3d11/`, `render/d3d12/`, `render/gl/`
-and `render/null/`, chosen by `LABRADOR_RENDER_BACKEND` at configure time. The
-first three are held to the same `RenderPixelTests` and to the same images in
-`tests/render/golden/`; the fourth has no graphics API and records what it was
-asked to draw, which is what makes drawing assertable where there is no driver.
-Nothing outside any of the four folders names it, which is what makes selection
-a list of files rather than a set of `#ifdef`s.
+**There are five backends**: `render/d3d11/`, `render/d3d12/`, `render/gl/`,
+`render/vulkan/` and `render/null/`, chosen by `LABRADOR_RENDER_BACKEND` at
+configure time. The first four are held to the same `RenderPixelTests` and to
+the same images in `tests/render/golden/`; the fifth has no graphics API and
+records what it was asked to draw, which is what makes drawing assertable where
+there is no driver. Nothing outside any of the five folders names it, which is
+what makes selection a list of files rather than a set of `#ifdef`s.
 
 **A fourth backend was worth having for one claim the first three could not
 test.** D3D11 and OpenGL both hide the CPU/GPU boundary behind a driver, and
@@ -343,6 +347,24 @@ a line of `render/renderer.h`. It reaches *less* hardware than the backend
 beside it — feature level 11_0 and Windows 10, against 10.0 — so it is a seam
 test and a second rasteriser CI can run, and never a way down onto the low
 tier.
+
+**The fifth is the first one that is about a platform rather than about the
+seam, and it still found a term the seam had never been asked.**
+`render/vulkan/` is here because Vulkan is the single API that reaches Android,
+Linux and — through MoltenVK — the Apple platforms, so an engine that has it
+has stopped needing a backend per platform; `docs/port/android.md` is where
+that is argued and where the rest of such a port is costed. What it tested on
+the way in was **who says the window changed**. Every other backend learns it
+from Win32, and `Renderer::window_size_changed` is written entirely in terms of
+a caller that already knows; Vulkan's presentation engine answers
+`VK_ERROR_OUT_OF_DATE_KHR` from an acquire or a present with no window message
+anywhere near it. The contract held, because the frame is drawn into an image
+the engine owns and blitted into a swapchain image at present, so what goes
+stale is not what the seam calls the back buffer —
+`render/vulkan/device_resources.h` carries that argument and it is the largest
+decision in the port. It is also the one backend whose toolchain is not already
+on the machine: SPIR-V at build time means the Vulkan SDK, which
+`cmake/compile_shaders.cmake` states as the tax it is.
 
 A backend may publish a second header beside `backend.h` **as long as it names
 no backend type** — `render/null/recording.h` is one, and is meant to be

@@ -306,14 +306,15 @@ second platform is an addition, not a rewrite.
 
 This paragraph used to end "today there is one backend (D3D11, XInput), kept
 behind seams that don't presume it is the only one", and the amendment is
-worth stating rather than hiding. **There are four render backends now**:
-Direct3D 11, Direct3D 12, OpenGL 3.3 core, and a null one that records what it
-was asked to draw and never draws it, selected by `LABRADOR_RENDER_BACKEND` at
-configure time. The first three pass the same `RenderPixelTests` and, since
+worth stating rather than hiding. **There are five render backends now**:
+Direct3D 11, Direct3D 12, OpenGL 3.3 core, Vulkan, and a null one that records
+what it was asked to draw and never draws it, selected by
+`LABRADOR_RENDER_BACKEND` at configure time. The first four pass the same
+`RenderPixelTests` and, since
 that stopped being enough on its own, draw the same pixels: every frame those
 cases read back is compared against a checked-in image of it, so they are held
 to each other and not only to the same sentences. A backend is chosen at build
-time, so this is three runs — the images are what pass between them.
+time, so this is four runs — the images are what pass between them.
 
 That is not cross-platform arriving early, and it is not the speculative
 framework T1 rules out. The second backend was written for a reason a single
@@ -332,12 +333,13 @@ both file readers, the quad arithmetic. A backend is now a device, a texture
 from bytes, a buffer, a shader and however few state objects its API spells the
 blend, the rasteriser and the two filters as — five on D3D11, one pipeline
 state object and two samplers on D3D12, two samplers and some `glEnable` on GL,
-none at all on the null one — and **nothing a backend does decides where a
+one pipeline and two samplers on Vulkan, none at all on the null one — and
+**nothing a backend does decides where a
 pixel goes.** That is the property worth having, and it
 is only demonstrable with two.
 
-**The fourth backend tests a different claim, and it is the last one this seam
-had left.** D3D11 and OpenGL both hide the CPU/GPU boundary behind a driver;
+**The fourth backend tests a different claim.** D3D11 and OpenGL both hide the
+CPU/GPU boundary behind a driver;
 the null backend has no GPU to be out of step with. So "the seam is what a
 platform is added at" had never been asked of an API where the engine, not the
 driver, owns synchronisation — frames in flight, a command allocator that
@@ -348,10 +350,27 @@ less hardware than the one beside it (feature level 11_0 and Windows 10,
 against 10.0), so it is a test of the seam and a second rasteriser CI can run,
 never a way down onto smaller hardware.
 
-The GL backend still runs on Windows, through WGL and the same Win32 window,
-and so does the D3D12 one. Cross-platform remains an eventual goal rather than
-a current work item: what has been removed is the doubt about whether the seam
-can carry one.
+That paragraph used to open "and it is the last one this seam had left", and
+**the fifth backend is the amendment.** There was one more, and it was not
+about synchronisation: **who is entitled to say the window changed.** All four
+of the others learn it from Win32, and `Renderer::window_size_changed` is
+written entirely in terms of a caller that already knows the new size. Vulkan's
+presentation engine says it instead — `VK_ERROR_OUT_OF_DATE_KHR`, out of an
+acquire or a present, on a frame no window message touched. The contract held
+and not by luck: `render/vulkan/` draws the frame into an image the engine owns
+and blits it into a swapchain image at present, so what the presentation engine
+declares stale is not what the seam calls the back buffer. Whether the list of
+untested claims is empty now is not a thing this document should assert twice.
+
+**And the fifth is the first backend that is about a platform.** The other
+three all run on Windows through the same Win32 window, and the paragraph here
+used to close by saying so and calling cross-platform an eventual goal rather
+than a current work item. Vulkan runs on Windows too, and it is the single API
+that reaches Android, Linux and — through MoltenVK — the Apple platforms, so
+what it changes is the *cost* of the goal rather than its status:
+`docs/port/android.md` costs the rest of such a port, and the renderer is not
+the expensive part of it. Audio, input and the shell are, and that document
+names which.
 
 ### The boundary
 
@@ -454,12 +473,17 @@ engine API to depend on.
 - The seam has two clients and owes a backend to each: a headless one with no
   device, and a second platform's. A seam with a single implementation behind
   it is a shape that has been cut, not a claim that has been tested. **Both
-  are built, and a third kind after them.** `render/gl/` is OpenGL 3.3 core and
+  are built, and two more kinds after them.** `render/gl/` is OpenGL 3.3 core
+  and
   passes the same `RenderPixelTests`; `render/null/` has no graphics API and
   records what it was asked to draw, so a test can assert which sprites a frame
   submitted, in what order and from which texture, on a machine with no driver
   at all; `render/d3d12/` is the one where the engine owns the fence rather
-  than the driver. Writing any of them changed nothing above the seam.
+  than the driver; `render/vulkan/` is the one where the presentation engine,
+  not the window, says the size changed — and the one whose API a second
+  platform would actually be reached through, which is the half of this bullet
+  that was hypothetical until it landed. Writing any of them changed nothing
+  above the seam.
 - Parallel rendering is sound because drawing is a pure read. The axis of
   parallelism is **views, not objects**: a worker owns one view and draws
   every object into it, so several workers enter `draw()` on the *same*

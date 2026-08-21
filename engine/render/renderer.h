@@ -37,7 +37,7 @@
 //     option is held, not spent - the same escalation ARCHITECTURE.md:122-126
 //     describes for promoting a folder to a library.
 //
-// HOW ONE HEADER SERVES FOUR BACKENDS. Renderer holds a pimpl and DrawList
+// HOW ONE HEADER SERVES FIVE BACKENDS. Renderer holds a pimpl and DrawList
 // holds a raw pointer to per-view state the backend owns; each backend
 // defines Renderer::Impl and DrawList::View in its own translation unit under
 // engine/render/<backend>/. DrawList stays trivially copyable, so passing one
@@ -281,7 +281,8 @@ namespace labrador
 		// CONSTRAINT: IT MAY ARRIVE IN THE MIDDLE OF A FRAME, AND A FRAME IN
 		// PROGRESS IS RESTARTED RATHER THAN REFUSED.
 		//
-		// This used to say nothing, and three backends answered it three ways:
+		// This used to say nothing, and three backends answered it three ways
+		// - which was every backend there was when the rule was written:
 		// OpenGL carried on, because its default framebuffer follows the window
 		// and there is nothing to rebuild; D3D11 threw DXGI_ERROR_INVALID_CALL
 		// out of ResizeBuffers, because its views' deferred contexts still held
@@ -365,7 +366,7 @@ namespace labrador
 		//
 		// A FRAME BEGUN AND NEVER SUBMITTED CONTRIBUTES NOTHING TO THE NEXT
 		// ONE, which is a statement about what "resets" means and is worth
-		// making because the four backends have three different things to
+		// making because the five backends have three different things to
 		// reset. Two of them hold a frame in a vector, where dropping it is
 		// clearing the vector; the D3D11 one holds it in a deferred context,
 		// which keeps what was recorded into it until something takes the
@@ -390,7 +391,7 @@ namespace labrador
 		// type. The recording is stranded rather than absent: on two backends it
 		// is a vector nothing will replay, on the D3D11 one a deferred context
 		// holding commands submit() will not reach, and on the D3D12 one a
-		// closed command list submit() will not put in its array. All four throw
+		// closed command list submit() will not put in its array. All five throw
 		// it, which is what makes it a term of the seam rather than one
 		// backend's caution.
 		// create_device throws std::invalid_argument for a view capacity below
@@ -405,18 +406,21 @@ namespace labrador
 		// Draws every view in view order, which is the only ordering guarantee
 		// made here, and leaves nothing of the frame behind. What that costs
 		// depends on the backend and is deliberately not described on this line:
-		// two of the four replay a vector, and the two that do not each execute
-		// a command list per view by a different route. The D3D11 one runs a
+		// three of the five replay a vector, and the two that do not each
+		// execute a command list per view by a different route. The D3D11 one runs a
 		// protocol (record, FinishCommandList, ExecuteCommandList, Release) that
 		// was hand-written in four places, each of which had to pre-size a
 		// vector, pre-fill it with null and Release every non-null entry, three
-		// caller obligations stated nowhere in the tree; two of the four already
-		// disagreed about RestoreContextState. There is one copy now and it is
+		// caller obligations stated nowhere in the tree; two of the four call
+		// sites already disagreed about RestoreContextState. There is one copy now and it is
 		// not the caller's; engine/render/d3d11/backend.h is where it is
 		// described. The D3D12 one hands the finished lists to its queue as one
 		// array in view order, in a single ExecuteCommandLists - the one submit
 		// shape a fourth backend actually introduced, and the cheapest of the
-		// four to describe.
+		// five to describe. The fifth introduced none: engine/render/vulkan/
+		// replays vectors like the OpenGL one, because a VkCommandPool may not
+		// be used from two threads at once and a view's vertices are already
+		// built on the CPU before any backend sees them.
 		//
 		// Called once per frame, between begin_frame and end_frame.
 		void submit();
@@ -480,7 +484,7 @@ namespace labrador
 		// expressed above in the engine's own terms. The accessors nothing
 		// called are not merely unexposed here; they are gone from the backend
 		// (engine/render/d3d11/device_resources.h says which and why - it is the
-		// only one of the four that HAD such a wrapper to strip, being the only
+		// only one of the five that HAD such a wrapper to strip, being the only
 		// one this repository did not write. The D3D12 one was written to this
 		// seam from the start, so it never had accessors nobody called; a device
 		// can be lost on both of them, which is half the backends rather than
@@ -511,7 +515,11 @@ namespace labrador
 //    seam never call - a WGL context is not lost, and the null one has nothing
 //    to lose - so a caller writes a rebuild path for a hazard its
 //    configuration may not have. Three places it could go, and the other two
-//    are worse.
+//    are worse. (Four was the count when this was settled, and the fifth
+//    landed on the same side of it: Vulkan has VK_ERROR_DEVICE_LOST and
+//    engine/render/vulkan/device_resources.cpp answers it, which makes the
+//    hazard three of five and this settlement stronger rather than
+//    different.)
 //
 //    NOT ON DeviceNotify, WHICH ALREADY CARRIES THE HALF IT CAN CARRY. That
 //    interface is the EVENT - the device went away, it came back - and the
@@ -527,10 +535,12 @@ namespace labrador
 //    manifest is true by construction where a list kept in step by hand is
 //    only true today.
 //
-//    NOT NOWHERE, which is the option the fourth backend closed. A device is
-//    lost on two of the four rather than on one, so the hazard is half of this
-//    seam's configurations and not a Direct3D 11 peculiarity that a fifth
-//    backend might leave behind.
+//    NOT NOWHERE, which is the option the fourth backend closed and the fifth
+//    closed again. A device is lost on three of the five rather than on one,
+//    so the hazard is most of this seam's configurations and not a Direct3D 11
+//    peculiarity that another backend might leave behind. Vulkan is the
+//    backend this paragraph was hedging about when it wrote "a fifth backend
+//    might"; it did not.
 //
 //    AND THE PREMISE THAT MADE IT LOOK MISPLACED IS THE PART THAT WAS WRONG.
 //    "A hazard its configuration may not have" is a statement about a build,
@@ -555,16 +565,16 @@ namespace labrador
 //    pinned rather than only described: tests/assets/resource_loader_tests.cpp
 //    asserts the order, the skipping of the kinds the GPU does not hold, and
 //    that a second manifest replaces what is replayed. It needs no device, so
-//    it runs in all four configurations - which is where a contract that is
+//    it runs in all five configurations - which is where a contract that is
 //    not a backend's belongs.
 //
 //  - The shape of a backend is three translation units every backend has -
 //    renderer.cpp, render_resources.cpp and texture_factory.cpp, all in
 //    engine/render/<backend>/ - plus whatever that backend needs to build its
-//    shader, which for one of the four is nothing and for two of them is the
+//    shader, which for one of the five is nothing and for three of them is the
 //    same file, plus at most one more for the API itself. Only null stops at
-//    three: d3d11 and d3d12 each add device_resources.cpp and gl adds
-//    gl_functions.cpp, and all three are the same kind of file, which is the
+//    three: d3d11, d3d12 and vulkan each add device_resources.cpp and gl adds
+//    gl_functions.cpp, and all four are the same kind of file, which is the
 //    part of an API that is not about drawing. The third file is where they
 //    diverge most and is the honest measure of what a port owes for content -
 //    115 lines on d3d11, 264 on d3d12, 168 on gl, 48 on null - because it
@@ -573,18 +583,25 @@ namespace labrador
 //    THE ONE WHOSE API TAKES THE LEAST: D3D11 is handed the bytes and copies
 //    them itself, where D3D12 wants a resource, a staging buffer, a footprint
 //    per mip level, a copy on a command list, a barrier and a wait - which is
-//    the argument for the fourth backend in one file. Path-building and
+//    the argument for the fourth backend in one file. Vulkan wants all of
+//    that and an allocation to bind to the image besides, and is shorter than
+//    D3D12 anyway, because its copy takes the engine's own tightly packed
+//    bytes where a D3D12 one pads every row to 256 bytes and has to be asked
+//    to what. Path-building and
 //    file-reading are in engine/render/resource_factory.cpp, written once for
 //    everybody.
 //
 //    AND THE SHADER IS NOT A BACKEND'S AT ALL, which is where this paragraph
-//    used to put it. engine/render/sprite.hlsl is one file compiled twice, at
-//    a profile each Direct3D backend picks and into a byte array each keeps to
-//    itself, because the source is character for character the same and a
+//    used to put it. engine/render/sprite.hlsl is one file compiled three
+//    times, at a profile each backend picks and into a byte array each keeps
+//    to itself, because the source is character for character the same and a
 //    second copy of it would be a file that can silently disagree with the
 //    first. What a backend owns there is the profile and how it binds b0 - a
-//    constant buffer on one, four root constants on the other - and neither
-//    difference reaches the shader.
+//    constant buffer on one, four root constants on the next, a uniform
+//    buffer at a shifted descriptor binding on the third - and no difference
+//    reaches the shader. Two of the three go through fxc into DXBC and one
+//    through the Vulkan SDK's dxc into SPIR-V, which is a second compiler for
+//    one unchanged source rather than a second source.
 //
 //    THE SECOND FILE IS WHERE THEY DIVERGE LEAST, and it used to be the file
 //    where they diverged not at all: render_resources.cpp carried the whole
@@ -602,12 +619,12 @@ namespace labrador
 //    backend supplies is a device, a texture from bytes (texture_data.h), a
 //    vertex buffer, a shader that multiplies each vertex by one constant, and
 //    the states that make the blend premultiplied. NOTHING A BACKEND DOES
-//    DECIDES WHERE A PIXEL GOES, which is what lets the three backends that
+//    DECIDES WHERE A PIXEL GOES, which is what lets the four backends that
 //    have a rasteriser pass the same assertions - over three hundred of them,
 //    over thirty cases, and the number is not the point: what it buys is
 //    that the file asserting them says "the renderer", never "this renderer".
 //
-//    IT IS THREE RUNS AND ONE SET OF IMAGES, and the second half of that used
+//    IT IS FOUR RUNS AND ONE SET OF IMAGES, and the second half of that used
 //    to be missing. This paragraph read "IT IS TWO RUNS, NOT ONE COMPARISON,
 //    and that is the standing limit", because an assertion holds ONE backend to
 //    a relationship and hand-copied implementations can get the same
@@ -615,19 +632,21 @@ namespace labrador
 //    Every frame a case reads back is now also compared byte for byte against
 //    a PNG of it in tests/render/golden/, and those images are what hold the
 //    backends to each other rather than each to a sentence
-//    (tests/render/golden_image.h carries the argument). Forty-eight frames,
+//    (tests/render/golden_image.h carries the argument). Fifty frames,
 //    six of which fill more than one view - the machinery the backends share
 //    least, one a deferred context per view, one a command list per view and
-//    the third a vector. On one machine's GPU, d3d11, d3d12 and gl reproduce
-//    all forty-eight exactly.
+//    the third and the fourth a vector. On one machine's GPU, d3d11, d3d12,
+//    gl and vulkan reproduce all fifty exactly.
 //
 //    WHAT IS STILL SEPARATE RUNS is the running of it. LABRADOR_RENDER_BACKEND
 //    picks a backend at configure time (T5), so these are still processes that
 //    never meet and the checked-in set is what passes between them. Two of the
-//    three now happen on the build machine as well as on a developer's, which
+//    four now happen on the build machine as well as on a developer's, which
 //    is the reason the fourth backend is a Direct3D one: a runner has no GPU,
-//    Direct3D falls back to WARP where OpenGL falls back to GDI 1.1, so CI
-//    rasterises the whole contract twice against one set of images. And
+//    Direct3D falls back to WARP where OpenGL falls back to GDI 1.1 and Vulkan
+//    has no in-box fallback at all - its software implementations are
+//    installed rather than shipped - so CI rasterises the whole contract twice
+//    against one set of images. And
 //    two terms sit outside it, both stated where they are decided rather than
 //    here. The size of a frame read back while the window has moved under an
 //    unresized swap chain differs by backend because back_buffer_size above
@@ -640,7 +659,7 @@ namespace labrador
 //    WARP one CI has instead; golden_image.cpp carries the measurement that
 //    set it and the reason it is not zero.
 //
-//    tests/render/renderer_seam_tests.cpp is the part that runs in all four
+//    tests/render/renderer_seam_tests.cpp is the part that runs in all five
 //    configurations, being everything the seam answers without a device. See
 //    docs/review/backend-equivalence/TEST-GAP.md, which proposed the images.
 //

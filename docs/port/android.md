@@ -270,6 +270,32 @@ Two more, both smaller than they look:
 > `renderer.h` in advance, for the reason [§7](#7-the-documents-this-port-amends)
 > gives.
 
+> **Amended again 2026-08-21, by the fifth backend landing, and the amendment
+> above is left as written.** Half of that finding is answered and half of it
+> stands, and the split is worth being exact about because the paragraph above
+> treats them as one thing.
+>
+> **The swapchain half needs no call at all.**
+> [`engine/render/vulkan/device_resources.h`](../../engine/render/vulkan/device_resources.h)
+> draws the frame into an image the engine owns and blits it into a swapchain
+> image at present, for reasons that had nothing to do with Android — the seam
+> permits a frame that is submitted and never presented, and a Win32 surface
+> will not give a swapchain a size other than the window's. What falls out of it
+> is that `VK_ERROR_OUT_OF_DATE_KHR` is handled entirely inside `present()`, so
+> a swapchain going stale — from a rotation, from a compositor, from a resize
+> nobody reported — never reaches `Renderer::window_size_changed` and never
+> needed to.
+>
+> **The surface half stands, and is narrower than it was.** A backgrounded
+> activity destroys the `ANativeWindow` itself, so the `VkSurfaceKHR` built from
+> it has to be destroyed and a new one built from the handle the activity hands
+> back. That is not something `present()` can discover: only the shell knows the
+> new handle. So what the port still owes the seam is a way to say *here is a
+> new window*, which is one call and not the resize term this paragraph was
+> reaching for. It stays unwritten for the same reason as before — there is no
+> platform here that makes it, and `renderer.h` should not gain a method for a
+> caller that does not exist (T1).
+
 `app/` is 1,800 lines: `window.{h,cpp}` at 906, `application.{h,cpp}` at 894.
 The move itself is already specified ([§2](#2-the-claim-this-port-tests)) and
 should cost hours. What costs a week is the lifecycle underneath it.
@@ -294,6 +320,44 @@ written entirely in terms of a caller who already knows the size changed. See
 §5 — this is the term Vulkan stresses.
 
 ### 3.5 The Vulkan backend — *weeks*
+
+> **Done 2026-08-21, and it took a day rather than the weeks below.** The
+> section is left as written, its estimate included, because an estimate that is
+> quietly corrected teaches nobody anything. `render/vulkan/` is the four
+> translation units it predicted; it passes `RenderPixelTests` and reproduces
+> all fifty images in `tests/render/golden/` — the same set the other three
+> rasterisers are held to — on the first run, and it draws
+> `samples/linesweeper` on screen through a real driver at the right size and
+> the right way up, resize included.
+>
+> **Where the estimate was wrong is the interesting part, and it is the sentence
+> two paragraphs down.** *"A meaningful part of `d3d12/`'s cost was the
+> synchronisation model, and that model is now written down and tested rather
+> than being discovered."* That was the whole of it. A timeline semaphore is an
+> `ID3D12Fence` with a different spelling, so the frame pacing, the wait before
+> an allocator is reused and the stall on every upload transliterated from
+> `d3d12/device_resources.cpp` line for line. What had to be *decided* rather
+> than transliterated was one thing this document did not anticipate at all:
+> **what a back buffer is.** A Vulkan swapchain image cannot be drawn into
+> without being acquired and given back, and `tests/render/pixel_tests.cpp`
+> draws fifty-one frames and presents none of them. The answer is in
+> `vulkan/device_resources.h` and it is the largest decision in the port.
+>
+> **Three findings worth carrying forward.** The toolchain note below is
+> right and understated: there are two `dxc.exe` on a normal Windows machine and
+> the Windows SDK's — the one `PATH` finds first after `vcvars64` — lists every
+> `-spirv` flag in its help and then answers *"SPIR-V CodeGen not available"*,
+> so `cmake/compile_shaders.cmake` looks in `$VULKAN_SDK/Bin` and nowhere else.
+> The register shifts that the same file applies are not optional: HLSL has a
+> register space per resource kind and Vulkan has one binding number per
+> descriptor set, so `b0`, `t0` and `s0` all arrive at set 0, binding 0 without
+> them. And the validation layers found a defect nothing else could — a command
+> buffer dropped without being submitted left this backend's image-layout
+> tracking describing a transition that would never execute, on a case whose
+> every assertion passed anyway; `DeviceResources::abandon_commands` says so
+> where it is fixed.
+>
+> **§5's live claim is answered below**, in that section rather than here.
 
 A fifth folder under `render/`, the same four translation units the other three
 non-null backends have. `d3d12/` is 3,010 lines and is the fair comparison;
@@ -449,6 +513,18 @@ not implement is not a subset this seam touches — see §1, this is the one
 unmeasured claim in this document that would cost real work if it is wrong. **If
 it holds, "Metal eventually" is a build target rather than a sixth backend.**
 
+> **Answered 2026-08-21 and the paragraph below is left as written.** The
+> contract at `renderer.h` has the right shape and did not move a line. The
+> reason is not that the term was easy: it is that `render/vulkan/` does not
+> draw into a swapchain image at all, so what the presentation engine declares
+> stale is not what the seam calls the back buffer, and
+> `VK_ERROR_OUT_OF_DATE_KHR` is answered inside `present()` without
+> `window_size_changed` hearing about it. That was chosen for a different
+> reason — see [§3.5](#35-the-vulkan-backend) — and this fell out of it, which
+> is worth recording as luck rather than as foresight. What a backend that DID
+> draw into swapchain images would have owed the seam is now an unasked
+> question, and this document should not pretend it was asked.
+
 **It buys one untested seam claim, and it is a live one.** Resize reaches the
 renderer exactly one way today: `WM_SIZE` →
 [`window.cpp:410`](../../engine/app/window.cpp#L410) →
@@ -469,6 +545,17 @@ contract twice because of it
 has no in-box equivalent on a Windows runner — it is lavapipe or SwiftShader,
 installed. That is a third CI install burden or a preset untested the way the GL
 one is, and it should be decided rather than discovered.
+
+> **Decided 2026-08-21: both, and for different reasons.**
+> `.github/workflows/ci.yml` installs the Vulkan SDK on that preset and skips
+> `RenderPixelTests` on it. The install is not optional and is not about the
+> rasteriser — the build needs a `dxc` that emits SPIR-V, and the same installer
+> supplies the loader without which none of the *other* eleven test executables
+> in that preset would start at all. Rasterising is what was given up: a
+> software ICD would be a second install of a thing whose only job is to
+> disagree with the four backends that already rasterise the same images, and
+> the reason the matrix exists is that a backend rots by failing to compile long
+> before it rots by drawing the wrong thing.
 
 **It does not buy Android.** Stated once more because it is the thing this
 document exists to say: on the spine above, the Vulkan backend is one of five
@@ -507,7 +594,7 @@ it:
 | `ARCHITECTURE.md:194-204` | The window moves to `app/win32/`; the folder stops being speculative |
 | `ARCHITECTURE.md:264` | `audio`'s row gains the folder the sentence already implies (§3.2) |
 | `PHILOSOPHY.md:303-305` | "a second platform is an addition, not a rewrite" — amend with where it held and where it did not |
-| `PHILOSOPHY.md:454-462` | "a second platform's" backend stops being hypothetical |
+| ~~`PHILOSOPHY.md:454-462`~~ | "a second platform's" backend stops being hypothetical — **done 2026-08-21**, with §3.5. It is the one row the fifth backend earns on its own: the bullet said the seam owes a backend to "a headless one with no device, and a second platform's", and the second half was hypothetical until an API a second platform is actually reached through stood behind it. The rest of that document's backend arithmetic — four becoming five, three rasterisers becoming four — moved in the same commit, because those are counts rather than claims |
 | ~~`renderer.h:505-517`~~ | `AssetKind::reload_device` — **settled 2026-08-21**, per §4. It stays on the loader; the note moved from STILL OPEN to SETTLED |
 
 **None of these should be amended in advance**, and the one row already struck

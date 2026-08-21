@@ -1,23 +1,36 @@
 // The only shader this engine has, and it is not a backend's.
 //
 // IT LIVES HERE RATHER THAN IN engine/render/d3d11/, WHICH IS WHERE IT USED TO
-// LIVE AND WHERE ITS ONLY READER WAS. Two backends compile HLSL now, and the
+// LIVE AND WHERE ITS ONLY READER WAS. Three backends compile HLSL now, and the
 // source they compile is character for character the same: the transform is a
 // float4 at b0 whichever way a backend binds it, the texture is t0, the sampler
 // is s0, and every decision that shows on screen was settled on the CPU before
-// either of them saw a vertex. A second copy of this file under d3d12/ would be
-// a generated artifact by another name - a file that can disagree with its
-// source and have nothing notice, which is the failure
+// any of them saw a vertex. A second copy of this file under d3d12/ or vulkan/
+// would be a generated artifact by another name - a file that can disagree with
+// its source and have nothing notice, which is the failure
 // cmake/compile_shaders.cmake refuses to check bytecode in to avoid.
+//
+// THE THIRD READER IS THE TEST OF THE SECOND, AND IT IS NOT A THIRD PROFILE -
+// IT IS A DIFFERENT COMPILER AND A DIFFERENT INTERMEDIATE. The Vulkan backend
+// compiles this file with the Vulkan SDK's dxc into SPIR-V, where the two
+// Direct3D ones use fxc and get DXBC, and the source still did not move. What
+// it needed instead was three register shifts on the command line, because HLSL
+// has a register space per resource kind and Vulkan has one binding number per
+// descriptor set - so b0, t0 and s0 would all arrive at the same slot.
+// cmake/compile_shaders.cmake makes that shift and says why it belongs to the
+// build rather than to this file, which is the same argument as the profile
+// below, one level further out.
 //
 // WHAT A BACKEND DOES OWN IS THE PROFILE AND THE BINDING, and they are written
 // down in two different places. The profile is in engine/CMakeLists.txt where
 // the backend is chosen - D3D11 asks for vs_4_0_level_9_1 and ps_4_0_level_9_1,
-// D3D12 for 5_1 - along with the header each one's bytes land in. The binding
+// D3D12 for 5_1, Vulkan for 6_0 - along with the header each one's bytes land
+// in. The binding
 // is in each backend's renderer.cpp, because it is a call and not a build
-// setting: D3D11 gives the vertex shader its b0 through a constant buffer and
-// D3D12 gives it the same b0 as four root constants. Neither difference reaches
-// this file, which is the test that it belongs above both of them. The OpenGL
+// setting: D3D11 gives the vertex shader its b0 through a constant buffer,
+// D3D12 gives it the same b0 as four root constants, and Vulkan as a uniform
+// buffer in a descriptor set. No difference reaches
+// this file, which is the test that it belongs above all three. The OpenGL
 // backend is not a counter-example: GLSL is a different language, not a
 // different profile, and render/gl/sprite_shader.h says what that costs.
 //
@@ -30,11 +43,13 @@
 // reimplementation of anything.
 //
 // COMPILED AT BUILD TIME, at the lowest profile each backend accepts:
-// 4_0_level_9_1 for D3D11, which are the lowest profiles that exist, and 5_1
-// for D3D12, which has no shader model below 5. Both cost nothing to ask for:
+// 4_0_level_9_1 for D3D11, which are the lowest profiles that exist, 5_1
+// for D3D12, which has no shader model below 5, and 6_0 for Vulkan, which is
+// where dxc starts. None costs anything to ask for:
 // there are no loops, no branches and no integer arithmetic here, so a later
-// profile would buy the shader nothing and the two produce the same arithmetic
-// - which tests/render/golden/ is what actually checks.
+// profile would buy the shader nothing and all three produce the same
+// arithmetic - which tests/render/golden/ is what actually checks, and now
+// checks across two compilers as well as three profiles.
 //
 // IT IS NOT WHAT LETS THE ENGINE RUN ON A 9.1 MACHINE, AND THIS LINE USED TO
 // SAY IT WAS. The D3D11 backend's DeviceResources defaults minFeatureLevel to

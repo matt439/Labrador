@@ -190,7 +190,7 @@ namespace labrador
 		// It does not, for the reason gl/renderer.cpp already argues at
 		// length: the difference would be observable. A caller that draws, is
 		// resized under it and submits would see its drawing survive here and
-		// vanish on the other three, from one call, with nothing in the seam
+		// vanish on the other four, from one call, with nothing in the seam
 		// to say which to expect - and this is the configuration a client is
 		// most likely to be tested in, because it is the one that needs no
 		// driver. The most permissive backend teaching a rule that does not
@@ -200,7 +200,7 @@ namespace labrador
 		// bookkeeping detail here: without it a shell doing exactly what the
 		// return value told it to - re-running its layout mid-frame, from two
 		// views to one - got std::logic_error out of set_view_count under this
-		// backend and silence under the other three.
+		// backend and silence under the other four.
 		//
 		// WHAT IS NOT TOUCHED: view_count, because renderer.h says the layout
 		// is the shell's to decide and this call is what tells it to decide
@@ -248,7 +248,7 @@ namespace labrador
 	{
 		// Nothing to present. The recording stays until the next begin_frame,
 		// so a caller that reads it after this rather than before gets the same
-		// answer - which the other three backends cannot offer, because
+		// answer - which the other four backends cannot offer, because
 		// presenting discards what they drew.
 	}
 
@@ -262,7 +262,7 @@ namespace labrador
 				std::to_string(capacity) + " create_device was given.");
 		}
 
-		// The same throw the other two make, and it costs this backend nothing
+		// The same throw the other four make, and it costs this backend nothing
 		// to be strict about - which is the point of testing a client here. A
 		// caller that drops a drawn-into view fails in every configuration or
 		// in none.

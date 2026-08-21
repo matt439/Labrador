@@ -95,8 +95,9 @@ target_include_directories(LabradorEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..
 # Nothing outside engine/render/<backend>/ names either folder, which is what
 # makes this a list of files rather than a set of #ifdefs.
 set(LABRADOR_RENDER_BACKEND "d3d11" CACHE STRING
-    "The render backend to build: d3d11, d3d12, gl or null")
-set_property(CACHE LABRADOR_RENDER_BACKEND PROPERTY STRINGS d3d11 d3d12 gl null)
+    "The render backend to build: d3d11, d3d12, gl, vulkan or null")
+set_property(CACHE LABRADOR_RENDER_BACKEND PROPERTY STRINGS
+    d3d11 d3d12 gl vulkan null)
 
 if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
     target_sources(LabradorEngine PRIVATE
@@ -162,6 +163,40 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     # device creation - which that file explains at length, because it is the
     # one place a backend genuinely differs in kind rather than in spelling
     # from the two that compile HLSL above.
+elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
+    target_sources(LabradorEngine PRIVATE
+        render/vulkan/device_resources.cpp
+        render/vulkan/render_resources.cpp
+        render/vulkan/renderer.cpp
+        render/vulkan/texture_factory.cpp
+    )
+
+    # THE ONLY BACKEND WHOSE DEPENDENCY IS NOT ALREADY ON THE MACHINE, and
+    # docs/port/android.md said so before it was written: fxc and the two
+    # Direct3D libraries come with the Visual Studio install and opengl32 comes
+    # with Windows, where this needs the Vulkan SDK for its headers, its import
+    # library and - the part that actually cost something - a dxc that can emit
+    # SPIR-V. CMake's own FindVulkan reads VULKAN_SDK, which is the variable the
+    # SDK's installer sets, so a machine that has it needs no further
+    # configuration and one that does not fails here by name rather than at the
+    # first missing symbol (T6).
+    find_package(Vulkan REQUIRED)
+    target_link_libraries(LabradorEngine PUBLIC Vulkan::Vulkan)
+
+    # The same source as the three backends above, through a third compiler.
+    # cmake/compile_shaders.cmake carries the whole argument - why dxc and not
+    # glslc, which of the two dxc.exe on a Windows machine has a SPIR-V backend
+    # compiled into it, and what the three register shifts are for. Shader model
+    # 6.0 because that is where dxc starts; there is no lower profile to ask
+    # for, exactly as there was none below 5_1 for D3D12.
+    compile_hlsl_to_spirv(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
+        vs_6_0 vertex_main SPRITE_VERTEX_SHADER
+        "engine/render/vulkan/sprite_vertex_shader.h")
+    compile_hlsl_to_spirv(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
+        ps_6_0 pixel_main SPRITE_PIXEL_SHADER
+        "engine/render/vulkan/sprite_pixel_shader.h")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(LabradorEngine PRIVATE
         render/null/render_resources.cpp
@@ -176,8 +211,8 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")
 else()
     message(FATAL_ERROR
         "LABRADOR_RENDER_BACKEND is '${LABRADOR_RENDER_BACKEND}'. "
-        "It must be d3d11, d3d12, gl or null - a backend is a folder in "
-        "engine/render/ holding renderer.cpp, render_resources.cpp and "
+        "It must be d3d11, d3d12, gl, vulkan or null - a backend is a folder "
+        "in engine/render/ holding renderer.cpp, render_resources.cpp and "
         "texture_factory.cpp.")
 endif()
 

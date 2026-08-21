@@ -146,7 +146,7 @@ namespace
 	// It is duplicated here rather than driven through Scene::draw because
 	// draw needs a Renderer. The null backend now supplies one with no device
 	// (engine/render/null/), but only in the configuration that builds it, and
-	// this benchmark builds in all four - so driving it through scene.draw()
+	// this benchmark builds in all five - so driving it through scene.draw()
 	// would measure a different thing depending on which preset ran it, which
 	// is worse than a duplicated loop. The loop is the two lines that matter -
 	// bounds() against the visible rectangle - and measuring it separately is

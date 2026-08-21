@@ -41,7 +41,7 @@ namespace labrador
 
 	// --- RenderResources -----------------------------------------------------
 	//
-	// The same short list the other two keep. THIS BACKEND IS WHERE THE COST
+	// The same short list the other four keep. THIS BACKEND IS WHERE THE COST
 	// OF THE OLD ARRANGEMENT WAS LEGIBLE: a third copy of a page of forwarding
 	// calls, in a backend that has no graphics API at all, none of it about one.
 	// Its own comment used to say exactly that and then keep the copy. What it

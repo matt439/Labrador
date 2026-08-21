@@ -13,8 +13,8 @@
 //
 // COMPILED UNCONDITIONALLY, unlike null_tests.cpp beside it, and that is the
 // point of a separate file. It names no backend type and creates no device, so
-// the same assertions run against d3d11, against gl and against null - which
-// is the only way this repository can say "the three answer this the same way"
+// the same assertions run against every backend there is - which
+// is the only way this repository can say "all five answer this the same way"
 // at all. RenderPixelTests needs an adapter and is not built against null;
 // null_tests.cpp compiles only against null. Between them they never hold two
 // backends to one statement.
@@ -50,9 +50,9 @@ namespace
 
 TEST_CASE("CONTRACT: a texture loaded before there is a device is refused, by name")
 {
-	// A renderer that has never been given one. Both real backends hold a null
-	// pointer here - a device or a WGL context - and the null backend holds a
-	// flag, because it has nothing to be null.
+	// A renderer that has never been given one. Every real backend holds a null
+	// pointer here - a device, a WGL context, a VkDevice - and the null backend
+	// holds a flag, because it has nothing to be null.
 	// The table before the renderer, so it dies after one - render_resources.h
 	// states the ordering as a term of the seam. Nothing here has a device for
 	// it to matter to; it is written this way so that the one file a reader

@@ -38,16 +38,24 @@ docs/                   the design documents, and the reviews that argued with t
 
 ## Building
 
-**Windows only.** The renderer has four backends, selected by
+**Windows only.** The renderer has five backends, selected by
 `LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11, Direct3D 12, OpenGL
-3.3 core, and a null one with no graphics API that records what it was asked to
-draw. The first three are held to the same pixel tests and to the same
+3.3 core, Vulkan, and a null one with no graphics API that records what it was
+asked to draw. The first four are held to the same pixel tests and to the same
 checked-in images of every frame those tests draw, and all of them run on
-Windows, through the same Win32 window — the extra ones exist to prove the seam
-carries a backend, not to reach a new platform. Each proves something a
+Windows, through the same Win32 window. Each proves something a
 different one could not: OpenGL that a view need not record into a driver,
-Direct3D 12 that the engine can own the fence rather than the driver, and the
-null one that drawing is assertable on a machine with no driver at all. The
+Direct3D 12 that the engine can own the fence rather than the driver, Vulkan
+that the seam's resize contract survives an API where the *presentation engine*
+rather than the window says the size changed, and the
+null one that drawing is assertable on a machine with no driver at all.
+
+Four of the five exist to prove the seam carries a backend rather than to reach
+a new platform. **Vulkan is the one that is about a platform**, and it is not a
+platform this repository has yet: it is the single API that reaches Android,
+Linux and — through MoltenVK — the Apple ones, which
+[docs/port/android.md](docs/port/android.md) argues at length and which is why
+that is the only item on its list that runs on hardware already here. The
 audio backend is XAudio2 and has no second.
 
 ### Prerequisites
@@ -57,6 +65,12 @@ audio backend is XAudio2 and has no second.
 - **The Windows 10/11 SDK**, for `d3d11.h` and friends, and for `fxc` — the
   two Direct3D backends compile their shader at build time and the build fails
   without it. The OpenGL one needs no tool.
+- **The [Vulkan SDK](https://vulkan.lunarg.com/)**, with `VULKAN_SDK` set, and
+  **only for `x64-debug-vulkan`**. It is the one dependency here that does not
+  come with Visual Studio or with Windows. That backend compiles the same
+  `sprite.hlsl` to SPIR-V, and the `dxc` that can do it is the SDK's rather
+  than the Windows SDK's — `cmake/compile_shaders.cmake` says how to tell them
+  apart, because both are called `dxc.exe` and only one of them will work.
 - **vcpkg**, with `VCPKG_ROOT` set. `CMakePresets.json` reads it for the
   toolchain file, and configuring fails without it. Visual Studio ships a copy
   at `<VS install>\VC\vcpkg` if you have no other.
@@ -67,14 +81,15 @@ at configure time. rapidjson is vendored in `external/`.
 ### Configure, build, test
 
 ```
-cmake --preset x64-debug          # or x64-release, x64-debug-d3d12, x64-debug-gl
+cmake --preset x64-debug          # or x64-release, x64-debug-d3d12,
+                                  # x64-debug-gl, x64-debug-vulkan
 cmake --build --preset x64-debug
 ctest --preset x64-debug
 ```
 
 `x64-debug-d3d12` builds against the Direct3D 12 backend, `x64-debug-gl`
-against the OpenGL one and `x64-debug-null` against one with no graphics API at
-all. They are separate configurations rather than a runtime switch because the
+against the OpenGL one, `x64-debug-vulkan` against the Vulkan one and
+`x64-debug-null` against one with no graphics API at all. They are separate configurations rather than a runtime switch because the
 backend is chosen at compile time (`LABRADOR_RENDER_BACKEND`), so asking for one
 that was not built is a missing symbol at link rather than a failure on the
 first frame.
@@ -187,10 +202,11 @@ That audit's headline recommendation has since landed: `tests/render/golden/`
 holds an image of every frame the pixel tests draw, and each run compares its
 frame against one, which is the only mechanism that can catch two hand-copied
 backends drifting the same way. It turned the audit's argument from source into
-a measurement — on one machine's GPU the D3D11, D3D12 and OpenGL backends
-reproduce all forty-seven frames exactly, split-screen included. Two of the
-three do it on the runner as well: CI has no GPU, and Direct3D falls back to
-WARP where OpenGL falls back to GDI 1.1.
+a measurement — on one machine's GPU the D3D11, D3D12, OpenGL and Vulkan
+backends reproduce all fifty frames exactly, split-screen included. Two
+of the four do it on the runner as well: CI has no GPU, and Direct3D falls back
+to WARP where OpenGL falls back to GDI 1.1 and Vulkan has no in-box fallback at
+all.
 
 Not done, and known: an action-mapping layer over the input devices. That is
 the whole list — every render backend that was planned has landed.

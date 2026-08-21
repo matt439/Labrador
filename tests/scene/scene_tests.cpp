@@ -322,5 +322,5 @@ TEST_CASE("the view list is the game's, and it is refilled not appended to")
 // promise this made of one "the day a null backend lands in
 // engine/render/null/". That day came. A case that draws would be built in one
 // configuration out of four, the way tests/render/null_tests.cpp is, and this
-// target is built in all four - so the test is owed rather than blocked, which
+// target is built in all five - so the test is owed rather than blocked, which
 // is a different sentence from the one that was here.

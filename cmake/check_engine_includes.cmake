@@ -64,7 +64,9 @@ endif()
 #
 # So the rule is now what it always meant: a subfolder of render/ IS a backend,
 # and its headers are its own. Nothing needs editing here when a fourth one
-# lands, which is the property the filename form was reaching for and missed.
+# lands, which is the property the filename form was reaching for and missed -
+# and nothing did when a fifth did, which is the same claim checked rather than
+# made. engine/render/vulkan/ was added without a line of this file changing.
 #
 # Deliberately not a compiler error: the include root has to admit
 # "engine/render/d3d11/backend.h" for the folder's own three files, and there is

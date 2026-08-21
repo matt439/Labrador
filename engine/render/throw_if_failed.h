@@ -17,7 +17,7 @@ namespace labrador
     // first, and what these two would disagree about is an exception type
     // whose whole point is that a catch site cannot tell (see
     // tests/render/throw_if_failed_tests.cpp, which is why that test is in
-    // this module now and still compiles in all four configurations).
+    // this module now and still compiles in all five configurations).
     //
     // IT USED TO LIVE IN core/, WHICH IS THE FOLDER THAT HAD ALREADY REFUSED
     // IT. core/registry.h keeps its COM-facing specialisation out - "rather

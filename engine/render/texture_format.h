@@ -11,7 +11,7 @@ namespace labrador
 	// wrote one down. A DXGI number is a thing the engine may not repeat outside
 	// engine/render/<backend>/. This enum is the translation, and the two
 	// readers that produce one and the backends that consume one are the whole
-	// of its traffic - three of the four do, by different routes and with
+	// of its traffic - four of the five do, by different routes and with
 	// different answers about what they will take, and the null backend reads
 	// it never, because it keeps a width and a height and throws the bytes
 	// away.
@@ -34,12 +34,17 @@ namespace labrador
 	// THE BLOCK-COMPRESSED ENTRIES WERE THE ONES TO WATCH ON A SECOND BACKEND,
 	// and they are not a corner of the content - they are 41 of the 43 .dds
 	// there are, and every font atlas besides. That was written before the port
-	// and the port has happened: engine/render/gl/texture_factory.cpp queries
+	// and the port has happened twice.
+	// engine/render/gl/texture_factory.cpp queries
 	// GL_EXT_texture_compression_s3tc once and names it in the throw if it is
 	// absent, which is universally present on a desktop driver and absent from
-	// GLES 3.0 entirely. A backend that skipped them would have no art and no
-	// text, so the failure worth having is the one that says which extension is
-	// missing rather than the one that draws nothing.
+	// GLES 3.0 entirely. engine/render/vulkan/texture_factory.cpp asks the
+	// device for textureCompressionBC, and asks at device SELECTION rather than
+	// at the first texture, so the refusal can name the whole content set
+	// rather than the one file that happened to be loaded first - which is the
+	// same distinction one level earlier. A backend that skipped them would
+	// have no art and no text, so the failure worth having is the one that says
+	// which feature is missing rather than the one that draws nothing.
 	enum class TextureFormat
 	{
 		r8g8b8a8_unorm,

@@ -901,7 +901,7 @@ namespace labrador
 		// this API has no initial-data parameter, so "upload it once at
 		// creation" is a staging buffer, a copy on a command list and a wait -
 		// the same three steps every texture takes (texture_factory.cpp), which
-		// is why the third file of this backend is the longest of the four.
+		// is why the third file of this backend is the longest of the five.
 		std::vector<unsigned short> index_data;
 		index_data.reserve(static_cast<size_t>(DrawList::View::
 			MAX_PAGE_SPRITES) * INDICES_PER_SPRITE);
@@ -1127,7 +1127,7 @@ namespace labrador
 
 		// A FRAME BEGUN AND NEVER SUBMITTED CONTRIBUTES NOTHING TO THE NEXT
 		// ONE (renderer.h), and here that means closing what was left open.
-		// The four backends have three different things to drop: two clear a
+		// The five backends have three different things to drop: three clear a
 		// vector, the D3D11 one drains a deferred context, and this one has a
 		// command list that is still recording - which cannot be reset, and
 		// whose allocator cannot be reset under it either. Closing it throws

@@ -52,8 +52,10 @@ add_test(NAME RenderTests COMMAND RenderTests)
 # device. This one creates a device and a hidden window, so it is the one entry
 # in ctest that can fail for a reason outside the repository: a Direct3D debug
 # build falls back to WARP and needs no GPU, but a release build has no such
-# fallback (device_resources.cpp) and the OpenGL backend has none at all, so
-# both need an adapter. Keeping it apart means that failure names itself
+# fallback (device_resources.cpp), and neither the OpenGL backend nor the
+# Vulkan one has any fallback at all - Vulkan's software implementations are
+# installed rather than shipped - so all three need an adapter. Keeping it
+# apart means that failure names itself
 # instead of taking the arithmetic down with it.
 #
 # NOT BUILT AT ALL AGAINST THE NULL BACKEND, rather than built and excluded. It

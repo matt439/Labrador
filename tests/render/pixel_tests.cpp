@@ -59,14 +59,14 @@
 // assertion in this file holds one backend to a relationship, and two
 // hand-copied implementations can get the same relationship wrong in the same
 // direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Fifty-one frames; forty-eight of them are 64x64 on every backend
-// and identical across the three that rasterise, and those forty-eight are the
+// argument. Fifty-three frames; fifty of them are 64x64 on every backend
+// and identical across the four that rasterise, and those fifty are the
 // images in tests/render/golden/. The other three are not 64x64 - one because
 // the seam makes its size backend-specific, two because they ask for a
 // different size deliberately - and a golden set is one image per case at one
 // size. Harness::end_not_comparable is where that is written down, and the
 // count of images should be checkable against the count of frames from here:
-// forty-eight and three.
+// fifty and three.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
 // Because the text cases below are relationships (see two paragraphs down), a
@@ -306,6 +306,12 @@ namespace
 		// throws the back buffer's contents away, which is exactly what is
 		// being read here. begin_frame clears and rebinds on the next pass, so
 		// never presenting costs a test nothing.
+		//
+		// ONE CASE CALLS IT ITSELF, AND IT IS THE CASE ABOUT THAT. "a frame may
+		// be read back and then presented" walks the far end of the interval
+		// renderer.h gives read_back_buffer, which no other case here reaches -
+		// and which was a live defect on one backend precisely because of
+		// that.
 		void end()
 		{
 			this->read_frame();
@@ -1632,7 +1638,7 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// Direct3D backends and from the window on the OpenGL one - renderer.h
 	// says so, and the drag-resize case above is built on the difference - so
 	// telling the renderer about a resize the window never had would leave GL
-	// drawing into 64x64 while the other two moved to 32x32. A real resize
+	// drawing into 64x64 while the other three moved to 32x32. A real resize
 	// moves both, in this order: the window changes, then the shell says so.
 	harness.resize_window(BUFFER_SIZE / 2, BUFFER_SIZE / 2);
 	CHECK(renderer.window_size_changed(BUFFER_SIZE / 2, BUFFER_SIZE / 2));
@@ -1718,6 +1724,59 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 	// rather than whatever ResizeBuffers left in it.
 	CHECK(harness.at(4, 4) == WHITE);
 	CHECK(harness.at(20, 20) == BLACK);
+}
+
+TEST_CASE("CONTRACT: a frame may be read back and then presented")
+{
+	// THE INTERVAL renderer.h NAMES, WALKED TO ITS END. read_back_buffer says
+	// it is called "BETWEEN submit() AND end_frame()", and until this case
+	// nothing in this file ever reached the second half of that sentence:
+	// Harness::end deliberately stops at the read, because presenting a
+	// flip-model swap chain discards the buffer it just read. So the sequence
+	// the seam explicitly permits - draw, submit, read, present - had never
+	// been run on any backend, and a client that screenshots a frame and then
+	// shows it is doing exactly that.
+	//
+	// IT WAS A LIVE DEFECT ON THE FIFTH BACKEND AND ONLY THE VALIDATION LAYERS
+	// COULD SEE IT. A read-back there submits the frame's command buffer
+	// mid-frame and waits, and end_frame then wants the same buffer again -
+	// which is not a begin but a wait and a pool reset, because a command
+	// buffer that has been to the queue is not in the state vkBeginCommandBuffer
+	// takes (VUID-vkBeginCommandBuffer-commandBuffer-00050).
+	// engine/render/vulkan/device_resources.cpp's commands() is where that is
+	// answered. The other three had nothing to answer, which is the usual
+	// shape of a term nobody had written down.
+	//
+	// WHAT IT ASSERTS IS THAT THE NEXT FRAME IS ORDINARY, because that is the
+	// only observable half. What a present does to the buffer it presented is
+	// a backend's business and differs - two of the four discard it - so the
+	// statement worth pinning is that the frame after one is clean, correctly
+	// cleared, and draws where it is told.
+	Harness harness;
+
+	DrawList first = harness.begin();
+	first.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	CHECK(harness.at(4, 4) == WHITE);
+	CHECK(harness.at(20, 20) == BLACK);
+
+	// The half of the interval nothing else in this file walks.
+	harness.renderer().end_frame();
+
+	// And an ordinary frame after it, drawing somewhere the first one did not,
+	// so that "the clear happened" and "the new sprite landed" are two
+	// different pixels rather than one.
+	DrawList second = harness.begin();
+	second.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(16.0f, 16.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	CHECK(harness.at(20, 20) == WHITE);
+	CHECK(harness.at(4, 4) == BLACK);
 }
 
 TEST_CASE("CONTRACT: re-loading a name reuses its slot, however many times")

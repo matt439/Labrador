@@ -63,6 +63,15 @@ different API and borrows no code from the D3D12 flavour of Microsoft's sample;
 what it does keep is the name `D3DDeviceNotify`, so that the two backends spell
 the same idea the same way.
 
+**`engine/render/vulkan/device_resources.{h,cpp}` is not one of them either**,
+and it shares that filename with two files rather than one now, which is a
+further reason to say so. It is Labrador's own, written for the Vulkan backend
+and following this repository's conventions; it borrows no code from LunarG's
+or Khronos' samples. It keeps the shape of the D3D12 file next door on purpose
+- a timeline semaphore is an `ID3D12Fence` spelt differently - and the naming it
+keeps from that one is `VulkanDeviceNotify` beside `D3DDeviceNotify`, so that
+three backends spell the same idea the same way.
+
 ### Christer Ericson — Real-Time Collision Detection
 
 `engine/math/ericson_math.{h,cpp}` transcribes closest-point and intersection
@@ -88,6 +97,22 @@ this repository.
 - **DirectX Tool Kit for DX11** (`directxtk`, with `xaudio2redist`) —
   MIT, Microsoft Corporation.
 - **doctest** — MIT, Viktor Kirilov.
+
+### Toolchains, not code
+
+Nothing in this section is linked into a build product or carried in this tree;
+each is a tool or an import library the build finds on the machine, and is
+listed so that "what does this repository need that it does not ship" has one
+answer.
+
+- **The Windows 10/11 SDK** — `fxc`, for the two Direct3D backends' shader, and
+  the Direct3D and DXGI headers and import libraries.
+- **The Vulkan SDK** (LunarG) — for the Vulkan backend only, and it is the one
+  dependency here that does not arrive with Visual Studio or with Windows. The
+  build uses its `dxc` to compile `engine/render/sprite.hlsl` to SPIR-V, and
+  links `vulkan-1.lib`, which is an import library for a loader that ships with
+  graphics drivers. Its own components carry their own licences; none of them
+  is redistributed here.
 
 ## Content
 

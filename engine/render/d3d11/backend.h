@@ -197,7 +197,7 @@ namespace labrador
 		// Takes the command list off the context and throws it away.
 		//
 		// FOR A FRAME THAT WAS BEGUN AND NEVER SUBMITTED, which is the one
-		// state where this backend could differ from the other two about what a
+		// state where this backend could differ from the other four about what a
 		// frame is. A view's recording there is a std::vector that reset()
 		// empties; here it is a deferred context, which holds what has been
 		// recorded into it until something takes it away - so clearing `bound`

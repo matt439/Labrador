@@ -34,7 +34,7 @@
 //
 // AND WHAT THEY DO NOT. Nothing about colour, blending or rasterisation,
 // because nothing here rasterises. The geometry is real - this backend runs
-// engine/render/sprite_geometry.cpp exactly as the other two do - so a corner
+// engine/render/sprite_geometry.cpp exactly as the other four do - so a corner
 // position asserted here is the corner a device would have been given. What
 // happens to it afterwards is the pixel tests' business.
 //
@@ -316,7 +316,7 @@ TEST_CASE("reading pixels back says plainly that there are none")
 //
 // THE set_filter CASE IS ALSO THE ONLY ODR-USE OF IT IN THE REPOSITORY, which
 // is worth more than the assertion: until this file called it, a backend could
-// omit the definition entirely and all four builds would link. Now the one
+// omit the definition entirely and all five builds would link. Now the one
 // configuration CI runs completely needs it to exist, which is the link error
 // T5 asks for rather than a silence.
 
@@ -436,7 +436,7 @@ TEST_CASE("a frame that is never submitted contributes nothing to the next")
 	// it is a push_back either way; on D3D11 the first draw's geometry is
 	// already inside a deferred context by the time the second one is
 	// recorded, and a deferred context keeps what is in it until something
-	// takes the command list away. Two of the three backends make this case
+	// takes the command list away. Two of the four backends make this case
 	// trivially true and the third had to be taught it - which is the whole
 	// reason it is a case rather than an assumption. See
 	// docs/review/backend-equivalence/README.md, defect B.
@@ -462,7 +462,7 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// renderer.h makes it a term of the seam that window_size_changed may
 	// arrive between begin_frame and submit, and that what every view has
 	// recorded is dropped when it does. tests/render/pixel_tests.cpp asserts it
-	// on the three backends that rasterise, in pixels; this is the same term in
+	// on the four backends that rasterise, in pixels; this is the same term in
 	// the vocabulary this file has - which sprites a frame submitted - and it
 	// is the only configuration that can ask the question that way.
 	//
@@ -510,7 +510,7 @@ TEST_CASE("CONTRACT: a resize clears `touched`, so the layout may be re-run")
 	// it was told, re-running its layout mid-frame from two views to one, has
 	// to find those views untouched.
 	//
-	// This threw here and was silent on the other three, which inverted this
+	// This threw here and was silent on the other four, which inverted this
 	// backend's own claim to be the strictest rather than the most permissive
 	// (null/backend.h). Both halves came from one missing view->reset().
 	Harness harness;

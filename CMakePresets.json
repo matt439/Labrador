@@ -42,6 +42,15 @@
       }
     },
     {
+      "name": "x64-debug-vulkan",
+      "displayName": "x64 Debug (Vulkan)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "LABRADOR_RENDER_BACKEND": "vulkan"
+      }
+    },
+    {
       "name": "x64-debug-null",
       "displayName": "x64 Debug (no graphics API)",
       "inherits": "base",
@@ -56,6 +65,7 @@
     { "name": "x64-release", "configurePreset": "x64-release" },
     { "name": "x64-debug-d3d12", "configurePreset": "x64-debug-d3d12" },
     { "name": "x64-debug-gl", "configurePreset": "x64-debug-gl" },
+    { "name": "x64-debug-vulkan", "configurePreset": "x64-debug-vulkan" },
     { "name": "x64-debug-null", "configurePreset": "x64-debug-null" }
   ],
   "testPresets": [
@@ -77,6 +87,11 @@
     {
       "name": "x64-debug-gl",
       "configurePreset": "x64-debug-gl",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "x64-debug-vulkan",
+      "configurePreset": "x64-debug-vulkan",
       "output": { "outputOnFailure": true }
     },
     {

@@ -697,7 +697,7 @@ namespace labrador
 		// about a pixel. So the cheaper answer is thrown away deliberately, and
 		// what a client can rely on is the same sentence everywhere.
 		//
-		// The clear is here for the same reason: the other two hand back a
+		// The clear is here for the same reason: the other three hand back a
 		// cleared buffer, and the region a widened window just exposed would
 		// otherwise hold whatever was in it.
 		const Vector2I drawable = this->impl_->drawable_size();

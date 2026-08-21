@@ -45,6 +45,25 @@ jobs:
     # added for and which the GL preset cannot supply here. If the two ever
     # disagree, this job is where it shows.
     #
+    # THE VULKAN PRESET SKIPS RenderPixelTests FOR THE SAME REASON THE GL ONE
+    # DOES, AND docs/port/android.md SAID SO BEFORE IT WAS WRITTEN: "it does not
+    # buy a CI rasteriser for free". WARP is a Direct3D luxury. Vulkan's
+    # software implementations - lavapipe, SwiftShader - are installed rather
+    # than shipped, so a runner has a loader and no device, and
+    # engine/render/vulkan/device_resources.cpp says exactly that when it finds
+    # none. Everything else about the backend is checked here, which is the
+    # point: a backend rots by failing to compile long before it rots by drawing
+    # the wrong thing.
+    #
+    # IT IS ALSO THE ONE PRESET THAT INSTALLS SOMETHING, and that was decided
+    # rather than discovered. Every other dependency in this repository is on
+    # the runner already - fxc and the Direct3D libraries come with Visual
+    # Studio, opengl32 with Windows - where this one needs the Vulkan SDK twice
+    # over: for a dxc that can emit SPIR-V at build time
+    # (cmake/compile_shaders.cmake says which dxc and why), and for the Vulkan
+    # loader the same installer puts in System32, without which none of the
+    # eleven other test executables in this preset would start at all.
+    #
     # THE NULL PRESET IS THE ONE THIS MACHINE CAN RUN COMPLETELY, and it is here
     # for that rather than for coverage. It has no graphics API at all - it
     # records what it was asked to draw - so nothing in it can fail for a reason
@@ -57,14 +76,22 @@ jobs:
         include:
           - preset: x64-debug
             skip_tests: ''
+            vulkan_sdk: false
           - preset: x64-release
             skip_tests: ''
+            vulkan_sdk: false
           - preset: x64-debug-d3d12
             skip_tests: ''
+            vulkan_sdk: false
           - preset: x64-debug-gl
             skip_tests: '-E RenderPixelTests'
+            vulkan_sdk: false
+          - preset: x64-debug-vulkan
+            skip_tests: '-E RenderPixelTests'
+            vulkan_sdk: true
           - preset: x64-debug-null
             skip_tests: ''
+            vulkan_sdk: false
 
     # The presets use the Ninja generator, so every cmake step needs the MSVC
     # environment. vcvars64 is found through vswhere rather than a hardcoded
@@ -95,6 +122,19 @@ jobs:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: vcpkg-${{ runner.os }}-
+
+      # Only for the preset that needs it, and it is the only install step in
+      # this file. CMake's own FindVulkan reads VULKAN_SDK, which is what the
+      # installer sets and what this hands on to the configure step.
+      - name: Install the Vulkan SDK
+        if: matrix.vulkan_sdk
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP "vulkan-sdk.exe"
+          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe" -OutFile $installer
+          Start-Process -FilePath $installer -Wait -ArgumentList `
+            "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install"
+          echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
 
       - name: Find vcvars64
         run: |

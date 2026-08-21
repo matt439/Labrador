@@ -43,7 +43,7 @@ namespace labrador
 		//
 		// THE CRITERION IS WHAT THE GPU HOLDS, NEVER WHETHER THIS BUILD'S
 		// BACKEND CAN LOSE A DEVICE, and this paragraph did not say so until a
-		// port asked where the rebuild belonged. Two of the four backends never
+		// port asked where the rebuild belonged. Two of the five backends never
 		// call reload_device at all - a WGL context is not lost, and the null
 		// one has nothing to lose - so a game written and run against either of
 		// those presets can leave every one of these empty and watch nothing go

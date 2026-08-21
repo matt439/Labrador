@@ -29,19 +29,27 @@ be on `PATH`, because they compile [engine/render/sprite.hlsl](engine/render/spr
 at build time into a byte array
 ([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)) — one source, two
 profiles, two generated headers; the GL backend compiles its GLSL at device
-creation and needs no tool. Both come with the Visual Studio install. Ninja
-generator, out-of-source in `out/build/<preset>/`.
+creation and needs no tool. Both come with the Visual Studio install.
+**The Vulkan preset is the one exception to that**, and it is the only thing in
+this repository that has to be installed: it needs the
+[Vulkan SDK](https://vulkan.lunarg.com/) — `VULKAN_SDK` set — for its headers,
+its import library and a `dxc` that can emit SPIR-V from the same `sprite.hlsl`.
+There are two `dxc.exe` on a normal machine and only one of them has a SPIR-V
+backend compiled in; `compile_shaders.cmake` says which, why it is looked for in
+`$VULKAN_SDK/Bin` and nowhere else, and what the error looks like when the wrong
+one is found. Ninja generator, out-of-source in `out/build/<preset>/`.
 
-**There are four render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
+**There are five render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
 configure time — so asking for one that was not built is a missing symbol at
 link (T5). A change to anything in `engine/render/` should be checked against
-all four; CI builds all four.
+all five; CI builds all five.
 
 | Preset | Backend | ctest |
 |---|---|---|
 | `x64-debug`, `x64-release` | `render/d3d11/` | 12 entries; WARP fallback in debug |
 | `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 12 entries; WARP fallback in debug |
 | `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 12 entries; needs a real driver |
+| `x64-debug-vulkan` | `render/vulkan/` — the one that reaches other platforms | 12 entries; needs a driver and the Vulkan SDK |
 | `x64-debug-null` | `render/null/` — no graphics API; records draws | 11 entries; `RenderPixelTests` is not built |
 
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
@@ -52,7 +60,8 @@ frame submitted, in what order, from which texture, into which view. Twelve ctes
 `InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`
 (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
 device — a hidden window and a WARP fallback in debug under `x64-debug` and
-`x64-debug-d3d12`, a WGL context under `x64-debug-gl` — and asserts on the
+`x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
+`x64-debug-vulkan` — and asserts on the
 pixels
 `Renderer::read_back_buffer` hands back. It is the only test that rasterises
 anything, and the executable statement of the pixel contract every backend with
@@ -60,9 +69,10 @@ a rasteriser has to reproduce. It runs against one backend at a time — but it 
 longer follows that they are never compared: every frame it reads back is also
 checked byte for byte against a PNG of it in
 [tests/render/golden/](tests/render/golden/), which is one set of images that
-all three rasterising backends are held to. CI checks two of them, because
-Direct3D falls back to WARP on a GPU-less runner and OpenGL falls back to GDI
-1.1. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
+all four rasterising backends are held to. CI checks two of them, because
+Direct3D falls back to WARP on a GPU-less runner where OpenGL falls back to GDI
+1.1 and Vulkan has no in-box fallback at all — its software implementations are
+installed rather than shipped. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
 and **review every image it changes** — a regeneration that is not looked at
 turns the contract into a recording of whatever the code does now.
 Two terms sit outside the images and both say so where they are decided:
@@ -72,7 +82,7 @@ backend-specific, two that resize to 32x32 mid-frame — and
 `ALLOWED_CHANNEL_DRIFT` in
 [golden_image.cpp](tests/render/golden_image.cpp) is the per-channel allowance
 that lets one set serve both a hardware adapter and the WARP one CI has, with
-the measurement that set it. What runs in all four configurations is
+the measurement that set it. What runs in all five configurations is
 [tests/render/renderer_seam_tests.cpp](tests/render/renderer_seam_tests.cpp) —
 everything the seam answers without a device. The
 samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and
@@ -128,11 +138,12 @@ runs there with no window and no device. A rule is asserted rather than played.
   time, not an abstract base — T8 does not permit a virtual call per sprite.
   Every backend has the same three translation units — `renderer.cpp`,
   `render_resources.cpp`, `texture_factory.cpp` — and at most one more, being
-  the part of an API that is not about drawing: `d3d11/` and `d3d12/` each add
-  `device_resources.cpp`, `gl/` adds `gl_functions.cpp` and compiles its GLSL
-  at device creation, `null/` adds nothing. The HLSL the two Direct3D backends
-  compile is **not** in either folder — it is `render/sprite.hlsl`, one file at
-  two profiles, and that file says why. Note the name collision, because it is
+  the part of an API that is not about drawing: `d3d11/`, `d3d12/` and
+  `vulkan/` each add `device_resources.cpp`, `gl/` adds `gl_functions.cpp` and
+  compiles its GLSL at device creation, `null/` adds nothing. The HLSL three of
+  the five compile is **not** in any of their folders — it is
+  `render/sprite.hlsl`, one file at three profiles through two compilers, and
+  that file says why. Note the name collision, because it is
   deliberate: [engine/render/render_resources.cpp](engine/render/render_resources.cpp)
   is a shared file, and the backend one beside it holds only the calls that
   touch a texture. Two of the three resource tables hold engine data and are
@@ -152,14 +163,23 @@ runs there with no window and no device. A rule is asserted rather than played.
   device, a texture from bytes, a vertex buffer, a shader, and whatever its API
   spells the blend, the rasteriser state and the two filters as — five state
   objects on `d3d11/`, one pipeline state object and two samplers on `d3d12/`,
-  two sampler objects and some `glEnable` on `gl/`, none at all on `null/`. The
-  one term a backend still decides is where a pane sits in the buffer, because
-  Direct3D measures down from the top and GL up from the bottom;
-  `gl/backend.h` says what that costs. What `d3d12/` decides that no other
-  backend does is **when** rather than where: frames in flight, fence-gated
-  allocator reuse, a per-frame vertex ring and an upload the load path waits
-  for. None of it reaches the seam, which is why that backend exists —
-  `d3d12/backend.h` states the claim.
+  two sampler objects and some `glEnable` on `gl/`, one pipeline and two
+  samplers on `vulkan/`, none at all on `null/`. The
+  one term a backend still decides is where a pane sits in the buffer, and the
+  three answers to it are the map of the folder: Direct3D measures down from
+  the top, GL up from the bottom, and Vulkan hands the rasteriser a negative
+  viewport height so that one shader serves all three. `gl/backend.h` and
+  `vulkan/renderer.cpp` each say what theirs costs. What `d3d12/` decides that
+  no other backend does is **when** rather than where: frames in flight,
+  fence-gated allocator reuse, a per-frame vertex ring and an upload the load
+  path waits for. None of it reaches the seam, which is why that backend
+  exists — `d3d12/backend.h` states the claim, and `vulkan/` is the second
+  answer to it, a timeline semaphore being an `ID3D12Fence` spelt differently.
+  What `vulkan/` decides that no other backend does is what a **back buffer**
+  is: the frame is drawn into an image the engine owns and blitted into a
+  swapchain image at present, because the seam permits a frame that is never
+  presented and a swapchain image does not. `vulkan/device_resources.h` carries
+  that argument and it is the largest decision in the port.
 - **A new public primitive ships with behavioural tests in the same commit.**
   Benchmarks assert on **complexity class**, not wall-clock — a phase linear in
   the object count must stay linear when the count quadruples, whatever the
@@ -200,8 +220,20 @@ runs there with no window and no device. A rule is asserted rather than played.
 An action-mapping layer over the input devices — neither client has a rebinding
 screen, so a binding table would be the speculative framework T1 rules out.
 That is the whole list now; every render backend that was planned has landed.
-A fifth is not planned and is not refused either — Vulkan was weighed against
-D3D12 and lost on cost, not on principle — but the seam claim a fourth backend
-existed to test is now tested, so a fifth would need a reason of its own.
+
+This section used to end "a fifth is not planned and is not refused either —
+Vulkan was weighed against D3D12 and lost on cost, not on principle — but the
+seam claim a fourth backend existed to test is now tested, so a fifth would
+need a reason of its own." **It found one, and it was not a seam claim.**
+`render/vulkan/` is here because it is the single API that reaches Android,
+Linux and, through MoltenVK, the Apple platforms — [the Android
+port](docs/port/android.md) is where that is argued, and it is the only item
+on that document's spine that runs on hardware this repository already has. It
+did test something the other four could not: Vulkan is the first API behind
+this seam where the *presentation engine* says the window changed, rather than
+Win32, and `renderer.h`'s resize contract turned out to have the right shape
+for it. A sixth is not planned. Metal would be a build target rather than a
+backend if MoltenVK holds, which is the one unmeasured claim that port rests
+on.
 Also permanently out of scope: online play, 3D, an editor, and a scripting
 layer.
