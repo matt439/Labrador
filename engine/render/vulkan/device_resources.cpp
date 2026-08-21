@@ -1699,9 +1699,21 @@ namespace labrador
 
 		VkImage target = this->swapchain_images_[static_cast<size_t>(image)];
 
+		// THE SOURCE STAGE IS THE STAGE THE ACQUIRE SEMAPHORE IS WAITED AT, AND
+		// THE TWO HAVE TO BE THE SAME ONE - see the execute() below, which
+		// passes VK_PIPELINE_STAGE_TRANSFER_BIT as the wait stage. This was
+		// TOP_OF_PIPE, which is what the other three hand-written barriers in
+		// this folder say and is wrong on exactly this one, because this is the
+		// only image the presentation engine touched last. A semaphore wait's
+		// second scope is the batch's commands at the waited stages AND LATER;
+		// TOP_OF_PIPE is earlier than all of them, so the transition - which
+		// out of UNDEFINED may discard the contents and re-initialise the
+		// compression metadata - was not ordered after the presentation engine
+		// finished with the image at all. Synchronization validation reports it
+		// as SYNC-HAZARD-WRITE-AFTER-READ against vkAcquireNextImageKHR.
 		VkImageMemoryBarrier to_destination = image_barrier(target,
 			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		vkCmdPipelineBarrier(commands, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		vkCmdPipelineBarrier(commands, VK_PIPELINE_STAGE_TRANSFER_BIT,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
 			&to_destination);
 
@@ -1754,6 +1766,10 @@ namespace labrador
 			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1,
 			&to_present);
 
+		// THE WAIT STAGE IS THE ONE THE to_destination BARRIER ABOVE NAMES AS
+		// ITS SOURCE, and the argument for why is up there. Changing this one
+		// without changing that one puts the transition back outside the
+		// acquire's ordering.
 		if (!this->execute(current.acquired, VK_PIPELINE_STAGE_TRANSFER_BIT,
 			this->presentable_[static_cast<size_t>(image)]))
 		{
