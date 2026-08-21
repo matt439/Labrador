@@ -1529,6 +1529,10 @@ namespace labrador
 			return;
 		}
 
+		// WHETHER THERE WAS ANYTHING TO THROW AWAY, read before the reset that
+		// answers no. The tail of this function needs it.
+		const bool discarded = this->recording_;
+
 		// RESET, NOT EXECUTED, AND WHOEVER CALLS THIS HAS ALREADY WAITED. A
 		// command pool may not be reset while anything allocated from it is
 		// still executing: begin_frame has run wait_for_frame, and the resize
@@ -1548,14 +1552,14 @@ namespace labrador
 		frame.descriptor_pool_in_use = 0;
 		frame.descriptor_sets_taken = 0;
 
-		// AND THE LAYOUT TRACKING IS FORGOTTEN, WHICH IS NOT TIDINESS. The
-		// barriers that moved the colour target into a layout were IN the
-		// commands this just threw away, so the member saying where it is has
-		// stopped being true - it describes a transition that will never
-		// execute. UNDEFINED is the honest word for that: not a layout the
-		// image is in, but the statement that nothing here knows, which is
-		// exactly what a barrier out of UNDEFINED means and why one is always
-		// legal.
+		// AND THE LAYOUT TRACKING IS FORGOTTEN WHEN SOMETHING WAS ACTUALLY
+		// THROWN AWAY, WHICH IS NOT TIDINESS. The barriers that moved the
+		// colour target into a layout were IN the commands this just discarded,
+		// so the member saying where it is has stopped being true - it
+		// describes a transition that will never execute. UNDEFINED is the
+		// honest word for that: not a layout the image is in, but the statement
+		// that nothing here knows, which is exactly what a barrier out of
+		// UNDEFINED means and why one is always legal.
 		//
 		// FOUND BY THE VALIDATION LAYERS AND BY NOTHING ELSE, on
 		// tests/render/pixel_tests.cpp's "a frame that is never submitted
@@ -1565,12 +1569,35 @@ namespace labrador
 		// while it was wrong, on this machine's driver, because the render pass
 		// loads an attachment the clear had just filled either way.
 		//
+		// AND THE CONDITION IS THE WHOLE OF IT, WHICH IS WHAT THE LAYERS SAID
+		// NEXT. This ran unconditionally, and its one per-frame caller is
+		// Renderer::begin_frame, where nothing has been thrown away at all:
+		// present() left the image a TRANSFER_SRC and execute() submitted the
+		// barrier that put it there, so the member was TRUE and was discarded
+		// anyway. transition_colour then built the frame's opening barrier with
+		// stage_of(UNDEFINED) as its source, which is TOP_OF_PIPE and orders
+		// nothing - leaving frame N+1's clear unordered against frame N's
+		// present-time read of the same image, one image being shared by both
+		// frames in flight. Synchronization validation reports it as
+		// SYNC-HAZARD-WRITE-AFTER-READ against vkCmdCopyImage; the default
+		// layer configuration does not check for it, which is why the run this
+		// backend was written against was silent. docs/review/vulkan/ carries
+		// the settings file that turns it on.
+		//
+		// THE RESIZE CALLER NEEDS NOTHING FROM THIS LINE, which is worth
+		// knowing before anybody widens it again: destroy_colour_target and
+		// create_colour_target both set the member themselves, immediately
+		// after this returns.
+		//
 		// THE D3D12 BACKEND CANNOT HAVE THIS, AND THE DIFFERENCE IS ONE LINE OF
 		// ITS open_frame: it executes the clear immediately, so its
 		// back_buffer_state is true the moment it is written. This backend
 		// records the whole frame into one command buffer and submits once,
 		// which is cheaper and puts the burden here.
-		this->colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+		if (discarded)
+		{
+			this->colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+		}
 	}
 
 	// --- Presentation ---------------------------------------------------------

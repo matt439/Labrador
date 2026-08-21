@@ -298,6 +298,12 @@ namespace labrador
 		// Two callers, and they want it for the same reason: a frame nobody
 		// will submit (begin_frame) and a frame whose colour target is about to
 		// be destroyed (window_size_changed).
+		//
+		// AND IT FORGETS THE TRACKED LAYOUT ONLY WHEN SOMETHING WAS ACTUALLY
+		// RECORDED. The begin_frame caller runs every frame and usually
+		// discards nothing, where the member is still true and throwing it away
+		// makes the next frame's opening barrier order nothing at all. The
+		// function says the whole of it.
 		void abandon_commands();
 
 		// Acquires a swapchain image, blits the colour target into it, presents
