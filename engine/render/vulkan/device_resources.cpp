@@ -1749,8 +1749,20 @@ namespace labrador
 		// keeping up; the state where they do not is a drag-resize, which
 		// renderer.h's back_buffer_size describes and which this backend is now
 		// able to be in for the same reason those two are.
+		//
+		// AND "AGREE" IS THE FORMAT AS WELL AS THE EXTENT, which is not a
+		// theoretical term on the platform this backend exists for.
+		// create_swapchain asks for B8G8R8A8_UNORM and takes the first thing
+		// offered when it is not there - always there on Win32, not promised
+		// anywhere else - and vkCmdCopyImage does not convert: it reinterprets.
+		// A surface offering RGBA and not BGRA would present every frame with
+		// red and blue swapped while read_back_buffer, which reads the colour
+		// target rather than the swapchain, stayed clean and every golden image
+		// with it. vkCmdBlitImage converts, so the branch that already exists
+		// for a size mismatch is the whole answer.
 		if (this->colour_extent_.width == this->swapchain_extent_.width &&
-			this->colour_extent_.height == this->swapchain_extent_.height)
+			this->colour_extent_.height == this->swapchain_extent_.height &&
+			this->swapchain_format_ == this->colour_format_)
 		{
 			VkImageCopy copy = {};
 			copy.srcSubresource = layers;
