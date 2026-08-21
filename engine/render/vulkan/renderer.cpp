@@ -1188,53 +1188,125 @@ namespace labrador
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			"The read-back buffer");
 
-		const VkImageLayout previous = device_resources.colour_layout();
+		// WHETHER THE DEVICE WENT AWAY UNDER THIS READ, decided inside the try
+		// below and answered after it. It cannot be answered inside, because
+		// the answer is precisely that nothing may touch `readback` again.
+		bool lost = false;
 
-		device_resources.transition_colour(
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-		// TIGHTLY PACKED, WHICH IS WHY THERE IS NO ROW PITCH HERE AND THERE IS
-		// ONE ON D3D12. A zero bufferRowLength means "as wide as the image", so
-		// the copy lands exactly width * height * 4 bytes with nothing between
-		// the rows - where a D3D12 copy pads every row to 256 bytes and the
-		// runtime is the only thing that knows to what.
-		VkBufferImageCopy copy = {};
-		copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		copy.imageSubresource.layerCount = 1;
-		copy.imageExtent = { extent.width, extent.height, 1 };
-
-		vkCmdCopyImageToBuffer(device_resources.commands(),
-			device_resources.colour_target(),
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, readback.buffer, 1, &copy);
-
-		// PUT BACK WHERE IT WAS, not into a layout this function decided. The
-		// seam says this is called between submit() and end_frame(), so the
-		// frame is not over; a caller that reads twice, or that reads and then
-		// presents, gets what it would have got without the read. UNDEFINED is
-		// not a layout anything can be transitioned INTO, so a colour target
-		// nothing has drawn into yet is simply left where the copy put it.
-		if (previous != VK_IMAGE_LAYOUT_UNDEFINED)
+		// A VulkanBuffer HAS NO DESTRUCTOR AND THERE ARE SIX THROWING CALLS
+		// BELOW IT, which is the whole of why this block is here. The same
+		// sentence texture_factory.cpp writes over its staging copy: there is
+		// no ComPtr in this API, so every failure between a handle being taken
+		// and being released has to put it back by hand.
+		try
 		{
-			device_resources.transition_colour(previous);
+			const VkImageLayout previous = device_resources.colour_layout();
+
+			device_resources.transition_colour(
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+			// TIGHTLY PACKED, WHICH IS WHY THERE IS NO ROW PITCH HERE AND THERE
+			// IS ONE ON D3D12. A zero bufferRowLength means "as wide as the
+			// image", so the copy lands exactly width * height * 4 bytes with
+			// nothing between the rows - where a D3D12 copy pads every row to
+			// 256 bytes and the runtime is the only thing that knows to what.
+			VkBufferImageCopy copy = {};
+			copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			copy.imageSubresource.layerCount = 1;
+			copy.imageExtent = { extent.width, extent.height, 1 };
+
+			vkCmdCopyImageToBuffer(device_resources.commands(),
+				device_resources.colour_target(),
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, readback.buffer, 1,
+				&copy);
+
+			// AND THE HOST IS A DOMAIN THE WAIT BELOW DOES NOT REACH. A
+			// timeline wait is an EXECUTION dependency: it says the copy has
+			// finished, not that what it wrote is available to a CPU load.
+			// HOST_COHERENT makes the write visible without making it
+			// available, and there is no other barrier into the host domain
+			// anywhere in this folder. This is the one hazard on this path that
+			// synchronization validation cannot report, because it cannot
+			// observe a CPU read - and it is the path every golden image goes
+			// through.
+			VkBufferMemoryBarrier to_host = {};
+			to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+			to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+			to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			to_host.buffer = readback.buffer;
+			to_host.offset = 0;
+			to_host.size = VK_WHOLE_SIZE;
+
+			vkCmdPipelineBarrier(device_resources.commands(),
+				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0,
+				0, nullptr, 1, &to_host, 0, nullptr);
+
+			// PUT BACK WHERE IT WAS, not into a layout this function decided.
+			// The seam says this is called between submit() and end_frame(), so
+			// the frame is not over; a caller that reads twice, or that reads
+			// and then presents, gets what it would have got without the read.
+			// UNDEFINED is not a layout anything can be transitioned INTO, so a
+			// colour target nothing has drawn into yet is simply left where the
+			// copy put it.
+			if (previous != VK_IMAGE_LAYOUT_UNDEFINED)
+			{
+				device_resources.transition_colour(previous);
+			}
+
+			// THE ANSWER IS NOT A COURTESY, AND device_resources.h SAYS SO ON
+			// execute() ITSELF: false means the device was lost and everything
+			// has been rebuilt on the way out - the VkDevice these two handles
+			// came from included. Discarding it left `readback.mapped` pointing
+			// into freed memory and handed a destroyed device's VkBuffer and
+			// VkDeviceMemory to its replacement to free.
+			lost = !device_resources.execute();
+
+			if (!lost)
+			{
+				// It stalls on the GPU by construction, and the seam says so.
+				device_resources.wait_for_gpu();
+
+				// B AND R SWAP ON THE WAY OUT: the colour target is B8G8R8A8
+				// and the seam promises RGBA. No flip, though - Vulkan's
+				// framebuffer origin is the top left like Direct3D's, so the
+				// row order is already the one the seam asks for and only the
+				// GL backend has to turn its rows over.
+				const unsigned char* bytes =
+					static_cast<const unsigned char*>(readback.mapped);
+				for (size_t i = 0; i < width * height; i++)
+				{
+					pixels[i * 4 + 0] = bytes[i * 4 + 2];
+					pixels[i * 4 + 1] = bytes[i * 4 + 1];
+					pixels[i * 4 + 2] = bytes[i * 4 + 0];
+					pixels[i * 4 + 3] = bytes[i * 4 + 3];
+				}
+			}
+		}
+		catch (...)
+		{
+			// The device is still the one that made it, so this is the ordinary
+			// release. The lost case below is the one that is not.
+			destroy_vulkan_buffer(device_resources.device(), readback);
+			throw;
 		}
 
-		device_resources.execute();
-
-		// It stalls on the GPU by construction, and the seam says so.
-		device_resources.wait_for_gpu();
-
-		// B AND R SWAP ON THE WAY OUT: the colour target is B8G8R8A8 and the
-		// seam promises RGBA. No flip, though - Vulkan's framebuffer origin is
-		// the top left like Direct3D's, so the row order is already the one the
-		// seam asks for and only the GL backend has to turn its rows over.
-		const unsigned char* bytes =
-			static_cast<const unsigned char*>(readback.mapped);
-		for (size_t i = 0; i < width * height; i++)
+		if (lost)
 		{
-			pixels[i * 4 + 0] = bytes[i * 4 + 2];
-			pixels[i * 4 + 1] = bytes[i * 4 + 1];
-			pixels[i * 4 + 2] = bytes[i * 4 + 0];
-			pixels[i * 4 + 3] = bytes[i * 4 + 3];
+			// DELIBERATELY NOT DESTROYED. Both handles belong to a VkDevice
+			// that no longer exists, and the only device to free them against
+			// is a different one - which is a call into a driver with another
+			// object's handles, the one shape of undefined behaviour this API
+			// gives no diagnostic for. Their memory went with the device.
+			//
+			// AND IT SAYS SO RATHER THAN HANDING BACK A BLACK FRAME (T6). A
+			// read that silently answers zeroes fails a golden comparison with
+			// a message about pixels instead of about the device.
+			throw std::runtime_error("The device was lost while reading the "
+				"back buffer, so there is nothing to read: everything the "
+				"renderer holds has been rebuilt and the frame that was being "
+				"read no longer exists.");
 		}
 
 		destroy_vulkan_buffer(device_resources.device(), readback);
