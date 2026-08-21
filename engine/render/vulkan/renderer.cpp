@@ -268,10 +268,16 @@ namespace labrador
 		// BEFORE device_resources GOES, which is why this destructor exists at
 		// all. Members are destroyed in reverse declaration order, so
 		// device_resources - declared first - is destroyed last, and everything
-		// below it here is a handle whose owner it is. The wait is inside
-		// destroy_device_dependent_resources for the same reason
-		// ~DeviceResources has one: nothing may be freed while the GPU is
-		// reading it, and this API tracks none of that for you.
+		// below it here is a handle whose owner it is. Nothing may be freed
+		// while the GPU is reading it, and this API tracks none of that for
+		// you.
+		//
+		// THE WAIT IS THE LINE BELOW AND NOT INSIDE
+		// destroy_device_dependent_resources, which this paragraph used to
+		// claim and which that function has never contained. It matters
+		// because the OTHER caller is handle_device_lost, by way of
+		// on_device_lost, and that path does its own wait first - a second one
+		// inside would be on a device that has just gone.
 		//
 		// AND IT ANSWERS RATHER THAN THROWS, for the reason ~DeviceResources
 		// gives: this destructor is implicitly noexcept, so a throw out of the

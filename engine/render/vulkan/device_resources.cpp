@@ -1349,20 +1349,28 @@ namespace labrador
 
 	void DeviceResources::handle_device_lost()
 	{
+		// BEFORE ANYTHING IS DESTROYED, INCLUDING BY THE SHELL, and it used to
+		// be five lines below the notify that destroys most of it. Not every
+		// route here is a device that has actually gone: an out-of-memory
+		// answer from try_wait_for_gpu reaches this function with a live device
+		// still executing a frame, and on_device_lost is what frees the
+		// pipeline, both samplers, the layouts and the index buffer that frame
+		// names. A wait that answers VK_ERROR_DEVICE_LOST costs nothing and is
+		// ignored; a wait that was skipped is a free of something in flight.
+		if (this->owner_ && this->owner_->device != VK_NULL_HANDLE)
+		{
+			std::ignore = vkDeviceWaitIdle(this->owner_->device);
+		}
+
 		if (this->notify_ != nullptr)
 		{
-			// FIRST, AND IT IS WHAT KEEPS THE OLD DEVICE ALIVE JUST LONG
-			// ENOUGH. The shell answers this by emptying the texture table
+			// AND IT IS WHAT KEEPS THE OLD DEVICE ALIVE JUST LONG ENOUGH. The
+			// shell answers this by emptying the texture table
 			// (render_resources.h, release_device_resources), and every texture
 			// in it holds a shared_ptr to the VulkanDevice being replaced - so
 			// the images are destroyed against the device that made them, in
 			// the only window where that is still possible.
 			this->notify_->on_device_lost();
-		}
-
-		if (this->owner_ && this->owner_->device != VK_NULL_HANDLE)
-		{
-			std::ignore = vkDeviceWaitIdle(this->owner_->device);
 		}
 
 		this->destroy_swapchain();
@@ -1464,14 +1472,25 @@ namespace labrador
 			"The frame's command buffer could not be ended");
 		this->recording_ = false;
 
-		this->timeline_value_++;
+		// THE VALUE THIS SUBMIT WOULD SIGNAL, NOT YET THE COUNTER. The member
+		// moves on below, after the submit that makes it true - which is the
+		// one line the transliteration from
+		// engine/render/d3d12/device_resources.cpp lost. That file bumps its
+		// fence value, calls Signal, and returns the failure BEFORE writing
+		// frame_fences_[frame_index_], and its waits target that array rather
+		// than the raw counter. Advancing first means that a submit failure
+		// which is not a device loss - an out-of-memory answer, most plausibly
+		// - leaves timeline_value_ naming a value nothing will ever signal,
+		// and wait_for_gpu waits on it with UINT64_MAX. That is a hang where
+		// the throw below is a message.
+		const uint64_t signalled = this->timeline_value_ + 1;
 
 		// THE TIMELINE ALWAYS, THE BINARY ONE ONLY WHEN A PRESENT IS COMING.
 		// Everything the CPU waits for is a value of the first; the second
 		// exists because vkQueuePresentKHR takes binary semaphores and nothing
 		// else.
 		VkSemaphore signals[2] = { this->timeline_, signal };
-		uint64_t signal_values[2] = { this->timeline_value_, 0 };
+		uint64_t signal_values[2] = { signalled, 0 };
 		const uint64_t wait_value = 0;
 
 		VkTimelineSemaphoreSubmitInfo timeline = {};
@@ -1499,11 +1518,14 @@ namespace labrador
 
 		if (submitted == VK_ERROR_DEVICE_LOST)
 		{
+			// The counter is not moved on: handle_device_lost puts it back to
+			// zero along with everything else it rebuilds.
 			this->handle_device_lost();
 			return false;
 		}
 		check_vk(submitted, "The frame could not be submitted");
 
+		this->timeline_value_ = signalled;
 		this->submitted_ = true;
 
 		// WHICH FRAME'S WORK THIS WAS, RECORDED FOR THE PASS THAT REUSES IT.
@@ -2040,12 +2062,20 @@ namespace labrador
 		check_vk(vkEndCommandBuffer(commands),
 			"An upload command buffer could not be ended");
 
-		this->timeline_value_++;
+		// THE SAME RULE execute() STATES: the counter moves on after the submit
+		// that makes it true, not before. This one has no device-lost branch to
+		// answer with and deliberately keeps none - end_upload is reached from
+		// inside handle_device_lost's own restore, where the index buffer is
+		// re-uploaded, so calling it back from here would recurse. A load path
+		// that throws is what the seam permits (engine/render/
+		// resource_factory.h); a load path that leaves every later wait
+		// blocking for ever on a value nothing will signal is not.
+		const uint64_t signalled = this->timeline_value_ + 1;
 
 		VkTimelineSemaphoreSubmitInfo timeline = {};
 		timeline.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
 		timeline.signalSemaphoreValueCount = 1;
-		timeline.pSignalSemaphoreValues = &this->timeline_value_;
+		timeline.pSignalSemaphoreValues = &signalled;
 
 		VkSubmitInfo submit = {};
 		submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -2063,6 +2093,8 @@ namespace labrador
 				&commands);
 			check_vk(submitted, "An upload could not be submitted");
 		}
+
+		this->timeline_value_ = signalled;
 
 		// A FULL STALL PER UPLOAD, AND IT IS THE RIGHT ANSWER HERE RATHER THAN
 		// A SHORTCUT - the same sentence engine/render/d3d12/texture_factory.cpp
