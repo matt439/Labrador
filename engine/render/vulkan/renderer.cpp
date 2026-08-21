@@ -592,16 +592,54 @@ namespace labrador
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			"The sprite index buffer's staging copy");
 
-		std::memcpy(staging.mapped, index_data.data(),
-			static_cast<size_t>(index_bytes));
+		// AND EVERY FAILURE FROM HERE TO THE RELEASE HAS TO PUT IT BACK, which
+		// is texture_factory.cpp's sentence over the identical three steps.
+		// begin_upload, end_upload and the wait inside it all throw, and a
+		// VulkanBuffer has no destructor to lean on. This path also runs inside
+		// handle_device_lost's restore, where a leak is a leak per loss rather
+		// than one per process.
+		try
+		{
+			std::memcpy(staging.mapped, index_data.data(),
+				static_cast<size_t>(index_bytes));
 
-		VkCommandBuffer upload = this->device_resources.begin_upload();
+			VkCommandBuffer upload = this->device_resources.begin_upload();
 
-		VkBufferCopy copy = {};
-		copy.size = index_bytes;
-		vkCmdCopyBuffer(upload, staging.buffer, this->indices.buffer, 1, &copy);
+			VkBufferCopy copy = {};
+			copy.size = index_bytes;
+			vkCmdCopyBuffer(upload, staging.buffer, this->indices.buffer, 1,
+				&copy);
 
-		this->device_resources.end_upload(upload);
+			// TRANSFER_WRITE -> INDEX_READ, WHICH IS THE SAME BARRIER THE
+			// TEXTURE PATH EMITS AND FOR THE SAME REASON. end_upload waits for
+			// the whole queue afterwards, so this looks redundant - and it is
+			// exactly as redundant as texture_factory.cpp's TRANSFER ->
+			// FRAGMENT_SHADER barrier, which is there because a host wait is
+			// not an availability operation for a later queue access. The
+			// asymmetry was the finding; a buffer this engine reads on every
+			// draw call it ever makes is not the place to be the exception.
+			VkBufferMemoryBarrier to_index = {};
+			to_index.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+			to_index.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			to_index.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
+			to_index.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			to_index.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			to_index.buffer = this->indices.buffer;
+			to_index.offset = 0;
+			to_index.size = VK_WHOLE_SIZE;
+
+			vkCmdPipelineBarrier(upload, VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1,
+				&to_index, 0, nullptr);
+
+			this->device_resources.end_upload(upload);
+		}
+		catch (...)
+		{
+			destroy_vulkan_buffer(device, staging);
+			throw;
+		}
+
 		destroy_vulkan_buffer(device, staging);
 	}
 

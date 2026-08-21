@@ -2102,7 +2102,22 @@ namespace labrador
 		// and the GPU has to be done reading it before it goes; the
 		// alternative is a pool and a lifetime rule for a path that reads files
 		// off a disk.
-		this->wait_for_gpu();
+		//
+		// AND THE COMMAND BUFFER GOES BACK EVEN IF THE WAIT THROWS, which it
+		// can: this is the one place in the folder where a throwing call sits
+		// between a handle being taken and being released, and a device that
+		// answered a wait with an error is one whose next upload should not
+		// also have leaked a buffer from the pool.
+		try
+		{
+			this->wait_for_gpu();
+		}
+		catch (...)
+		{
+			vkFreeCommandBuffers(this->owner_->device, this->upload_pool_, 1,
+				&commands);
+			throw;
+		}
 
 		vkFreeCommandBuffers(this->owner_->device, this->upload_pool_, 1,
 			&commands);

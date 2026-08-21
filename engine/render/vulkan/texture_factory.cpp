@@ -10,6 +10,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace labrador
@@ -205,6 +206,13 @@ namespace labrador
 		VkDeviceMemory memory = VK_NULL_HANDLE;
 		VkImageView view = VK_NULL_HANDLE;
 
+		// DECLARED OUT HERE SO THE catch CAN NAME IT. It used to be a local of
+		// the try below, which put a VkBuffer and a still-mapped allocation the
+		// full size of the texture outside the reach of the block whose own
+		// comment says every failure has to put everything back - with five
+		// throwing calls between its creation and its release.
+		VulkanBuffer staging;
+
 		// FROM HERE THE IMAGE IS OWNED BY NOBODY UNTIL THE LAST LINE, so every
 		// failure between the two has to put it back. There is no ComPtr in
 		// this API and no destructor to lean on: the VulkanTexture that will
@@ -227,7 +235,7 @@ namespace labrador
 			// level rather than a row walk - which is where this backend is
 			// cheaper than the D3D12 one, whose runtime pads every row to 256
 			// bytes and has to be asked to what.
-			VulkanBuffer staging = create_vulkan_buffer(owner,
+			staging = create_vulkan_buffer(owner,
 				static_cast<VkDeviceSize>(texture.pixels.size()),
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -319,6 +327,20 @@ namespace labrador
 		}
 		catch (...)
 		{
+			// FIRST, BECAUSE THE UPLOAD MAY STILL BE RUNNING. The only thing
+			// that establishes the copy into this image has finished is
+			// end_upload's post-submit wait, and that wait is itself a throwing
+			// call - so the path that gets here is exactly the path where it
+			// may not have completed. Freeing an image a submitted batch is
+			// copying into is undefined behaviour this API has no diagnostic
+			// for. It answers rather than throws for the reason
+			// device_resources.h gives on try_wait_for_gpu: a throw out of a
+			// handler that is already unwinding replaces the real failure with
+			// a worse-reported one (T6).
+			std::ignore = device_resources.try_wait_for_gpu();
+
+			destroy_vulkan_buffer(device, staging);
+
 			if (view != VK_NULL_HANDLE)
 			{
 				vkDestroyImageView(device, view, nullptr);
