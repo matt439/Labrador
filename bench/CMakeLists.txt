@@ -7,6 +7,7 @@
 add_executable(LabradorBench
     bench.cpp
     main.cpp
+    render_bench.cpp
     scene_bench.cpp
 )
 target_link_libraries(LabradorBench PRIVATE

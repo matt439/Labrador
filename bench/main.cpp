@@ -6,6 +6,7 @@
 #include <vector>
 
 void run_scene_benchmarks();
+void run_render_benchmarks();
 
 namespace
 {
@@ -27,6 +28,17 @@ namespace
 		// The grid is why this one is here. Before it, resolve was the
 		// all-pairs sweep and could not have been on this list.
 		"Scene::resolve (broad phase)",
+
+		// The draw path's engine-side arithmetic (render_bench.cpp). Linear by
+		// construction - four corners a sprite, no lookup and no allocation -
+		// so an accidental O(n^2) is not what these are guarding. What they
+		// guard is the change that would make a sprite's cost depend on how
+		// many sprites there are, which is exactly the shape a bulk or
+		// instanced submission path has if it sorts or groups; docs/next.md 5
+		// names that as the item this benchmark exists to let somebody argue.
+		"build_sprite_quad",
+		"build_sprite_quad (rotated)",
+		"build_scaled_quad",
 	};
 
 	std::vector<bench::Result> for_case(const std::string& name)
@@ -46,6 +58,7 @@ namespace
 int main()
 {
 	run_scene_benchmarks();
+	run_render_benchmarks();
 	bench::report();
 
 	int failures = 0;
@@ -99,6 +112,35 @@ int main()
 				"than the sweep\n",
 				static_cast<long long>(sweep[i].n),
 				sweep[i].median_ns / indexed[i].median_ns);
+		}
+	}
+
+	// What the angle branch inside build_quad buys, which is the one claim
+	// engine/render/sprite_geometry.cpp makes about its own speed: "a sine and
+	// a cosine per sprite for an angle of zero is a real cost in a frame that
+	// draws thousands". Reported rather than asserted on - the ratio is a
+	// property of this machine's transcendentals, and the branch stays worth
+	// having at any ratio above one - but printed, because until it was
+	// printed the claim was an assertion in a comment.
+	const std::vector<bench::Result> upright = for_case("build_sprite_quad");
+	const std::vector<bench::Result> turned =
+		for_case("build_sprite_quad (rotated)");
+
+	if (upright.size() == turned.size())
+	{
+		for (size_t i = 0; i < upright.size(); i++)
+		{
+			if (upright[i].ns_per_n() <= 0.0)
+			{
+				continue;
+			}
+
+			std::printf("note    n=%-5lld a rotated sprite costs %5.2fx an "
+				"upright one (%.2f against %.2f ns/sprite)\n",
+				static_cast<long long>(upright[i].n),
+				turned[i].ns_per_n() / upright[i].ns_per_n(),
+				turned[i].ns_per_n(),
+				upright[i].ns_per_n());
 		}
 	}
 
