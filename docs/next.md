@@ -1,0 +1,384 @@
+# What to do next — the survey, and what it found
+
+**Written 2026-08-26, against `b4bcda0`.** Like `docs/review/`, this is the
+survey as written: it is not updated as items land, and its line numbers are
+the ones that were true on the day. Unlike `docs/review/`, nothing here is a
+review of a change — it is a sweep of the whole tree asking one question, *what
+should be built next*, and the answer it came back with is that the two most
+valuable things are not features at all.
+
+`docs/port/android.md` is the sibling document and the two disagree about
+nothing: that one costs a port, this one costs everything else. Where they
+overlap — the audio seam — this document defers to it.
+
+---
+
+## 1. What was checked, and what was not
+
+Every engine module, both samples, `bench/`, `tests/`, the three design
+documents and every review folder. Every claim below was verified against the
+tree at `b4bcda0` by reading the file, and the citations are the evidence
+rather than the decoration — where a claim rests on an absence, the absence was
+checked by `grep` over the whole repository and the grep is quoted.
+
+**Not checked:** anything requiring a device, a run, or hardware. No preset was
+configured and no test was executed for this document. Three items below turn
+on a measurement that does not exist yet, and each says so where it is ranked
+rather than pretending the ranking is safe without it.
+
+**Not in scope:** ColourWars. It is in another repository and is 44 commits
+behind besides, so "no caller in this tree" is used below in the narrow sense
+`PHILOSOPHY.md:590-599` already insists on — it is never used as an argument
+for deleting anything.
+
+---
+
+## 2. Two holes that are not features
+
+These outrank every work item in §3, and neither is a thing to add. Both are
+holes in claims this repository already makes out loud.
+
+### 2.1 The parallel path the engine commits to has never executed
+
+[`PHILOSOPHY.md:550-551`](design/PHILOSOPHY.md) commits to one axis of
+parallelism and one only — "the per-view render fan-out, and that one alone" —
+and `CLAUDE.md` calls the `const draw()` discipline that guards it
+"load-bearing, not a convenience". The fan-out has never run:
+
+- [`scene.cpp:171-176`](../engine/scene/scene.cpp) returns before the fan-out
+  when `count <= 1`, or the pool is null, or the partitioner is null.
+- Both samples construct `Scene(nullptr, nullptr)` —
+  [`hello_state.cpp:54`](../samples/minimal/states/hello_state.cpp),
+  [`play_state.cpp:63`](../samples/linesweeper/states/play_state.cpp).
+- `ThreadPool` is constructed in exactly one place in the tree,
+  [`application.cpp:172`](../engine/app/application.cpp), and handed to
+  nothing.
+- `grep -rn ThreadPool tests/ bench/` is empty. No test and no benchmark ever
+  pairs a pool with a scene.
+
+So the early-out at `scene.cpp:171` is the only branch that has ever been
+taken, on any machine, ever. This is worse than untested and different from
+untested: the rule the conventions are built around governs code that has not
+run, and the guarantee `draw()`'s constness exists to provide has never been
+asked for.
+
+It is not a bug — there is no evidence the fan-out is wrong. It is that
+nobody can say either way, and the document that names it as *the* measure is
+making a claim the tree cannot support.
+
+### 2.2 `samples/minimal` cannot be quit without a controller
+
+`CLAUDE.md` calls it "the new-project template you copy". It is unusable on a
+machine with no pad:
+
+- [`hello_state.cpp:80`](../samples/minimal/states/hello_state.cpp) wraps both
+  the move and the quit in `if (pads.connected(0))`.
+- [`confirm_state.cpp:47-51`](../samples/minimal/states/confirm_state.cpp) —
+  the dialog that quit pushes — reads only `pads.pressed(0, ...)`, so even a
+  player who reached the question could not answer it.
+- `grep -rn "keyboard\|Key::" samples/minimal/` returns nothing. No file in
+  the template names the keyboard at all.
+- [`hello_state.cpp:60-61`](../samples/minimal/states/hello_state.cpp) draws a
+  hint that says "Left stick moves it. B quits." — which is the whole of the
+  documented interface.
+
+The template's only exit on a desk without a pad is Alt+F4. That is a defect in
+the artefact this repository tells strangers to copy, and it fails in the first
+thirty seconds of the only job that artefact has.
+
+It also manufactures evidence nothing else can.
+[`samples/linesweeper/README.md`](../samples/linesweeper/README.md), *Still
+open*, records the InputMap question "so that 'add an InputMap' has to meet an
+argument". A second device wired into a sample that already has a nine-entry
+`{Key, button}` table is that argument, measured — see §5.
+
+---
+
+## 3. The work items
+
+Ranked. Each carries the honest objection, because a work item whose strongest
+counter-argument is not written down has not been argued.
+
+### 3.1 A render throughput benchmark — *days* — the gate on everything below
+
+[`bench/CMakeLists.txt`](../bench/CMakeLists.txt) lists three sources, and
+`LINEAR_PHASES` at [`bench/main.cpp:22-30`](../bench/main.cpp) holds
+`Scene::update`, `Scene::end_tick`, a hand-copied render cull and
+`Scene::resolve`. The draw path is absent. The one thing
+[`PHILOSOPHY.md:550-551`](design/PHILOSOPHY.md) says to measure is the one
+thing nothing measures.
+
+This ranks first because it is a gate rather than because it is exciting.
+[`PHILOSOPHY.md:563-564`](design/PHILOSOPHY.md) says optimisation follows a
+profile, measured and not guessed — so §3.2 cannot argue its cost, §5's bulk
+submission cannot be weighed at all, and no number in this repository can be
+called a floor until one exists.
+
+**First commit.** `bench/render_bench.cpp`, listed beside `scene_bench.cpp`,
+covering the engine-side arithmetic only: `build_sprite_quad` and
+`build_scaled_quad` from
+[`sprite_geometry.h`](../engine/render/sprite_geometry.h) over large sprite
+counts, reported per-sprite in nanoseconds, with the phase names added to
+`LINEAR_PHASES`. Pure arithmetic, no `Renderer`, so it builds in all five
+presets. Stay inside `bench/bench.h`'s rule: complexity class, not wall-clock,
+and no third-party benchmark library.
+
+The `Scene::draw` fan-out case is the second commit and is where §2.1 gets
+discharged, under `x64-debug-null` where the recording is assertable.
+
+**The objection.** A benchmark with nothing to compare against is a number, not
+a finding — and half of it can only run under a preset no sample ships against.
+Both true. The answer is that `build_sprite_quad` is the arithmetic every
+backend uploads, per-sprite nanoseconds is the figure two other items need
+before they are allowed to argue, and measuring the fan-out under `null`
+measures the recording rather than a GPU, which is fine for complexity class
+and must be said in the file or the number will be misread later.
+
+### 3.2 The LineSweeper particle field — *weeks*
+
+[`samples/linesweeper/README.md`](../samples/linesweeper/README.md) defers it
+in its own words — "Deferred, not dropped" — and says what the deferral costs:
+what ships today demonstrates the value-semantics half of what the sample is
+for and not the data-layout half. A 276-byte match and a replay that is a
+`memcmp` are here; ten thousand particles laid out for the cache are not.
+
+It is the only in-tree exercise of [`PHILOSOPHY.md:397-412`](design/PHILOSOPHY.md)'s
+central claim — that both ends of the spectrum are first-class, and a game may
+register one object standing for a batch rather than one per entity. Nothing in
+this repository currently stands at that end.
+
+Entirely above the seam. No blend mode, no new backend state, no golden image:
+ten thousand `draw_sprite` calls through the two verbs
+[`renderer.h:187,215`](../engine/render/renderer.h) already has, from one
+`GameObject`. Take it after §3.1 so its cost is measured rather than asserted.
+
+**The objection.** It is sample work, not engine work, and the engine learns
+nothing if the answer is "it was fast enough". That is the good outcome and it
+is still worth having in writing, because the claim at `PHILOSOPHY.md:397-412`
+is currently carried by argument alone.
+
+### 3.3 `engine/ui/` has no client, and its stated producer does not exist — *week*
+
+Two findings, and the second is the sharper one.
+
+`grep -rn "engine/ui/" samples/` is empty. Roughly 1,350 lines across eight
+files with no consumer in this repository — its only client left with the
+split, and `navigation.h` still argues its design against a file in another
+repo. [`PHILOSOPHY.md:572-573`](design/PHILOSOPHY.md) calls the samples "the
+permanent second client that keeps the boundary honest (T1)", and on this one
+module that client does not exist. The only exercise the module gets is four
+`StubWidget`s.
+
+And [`navigation.h:11-12`](../engine/ui/navigation.h) states as fact:
+
+> Which way the player pushed. Produced by the input module from a stick or a
+> d-pad; consumed here as a pure direction with no device in it.
+
+`grep -rn Direction engine/ | grep -v engine/ui/` is empty. No such producer
+exists. `apply_deadzone` is in
+[`gamepad.h`](../engine/input/gamepad.h) and nothing turns its result into a
+`Direction`, so every client wiring a menu hand-rolls the deadzone, the
+quadrant test and the hold-to-repeat — and gets the repeat wrong, which is the
+one of the three that is not obvious. A header stating a false fact about
+another module is a defect independent of whether any game wants a menu.
+
+**First commit.** `samples/linesweeper/states/pause_state.{h,cpp}` — a pause
+screen over the board from a `FocusGroup` and two or three `Button`s, pushed
+beside the existing `Key::r` restart, navigated by the bindings the sample
+already has, laid out manually per `PHILOSOPHY.md:517-519` and framed with
+`Camera::frame` so it survives a resize. Listed explicitly in the sample's
+`CMakeLists.txt`; no globbing. **No `engine/` change in this commit.** The
+`Direction` producer lands in the commit that adds pad navigation to that menu,
+which is T1's shape rather than a violation of it.
+
+**The objection.** T1 points the other way: LineSweeper does not need a pause
+screen, and its README argues restart-as-one-assignment as a virtue — so this
+is a menu built to give a module a client rather than because the game wants
+one. That is real, and the defence is narrow: the module already shipped,
+`PHILOSOPHY.md:572-573` already promised it a second client, and the false
+sentence in `navigation.h` is a defect on its own. The other risk is scope
+creep into the autolayout and widget set that `PHILOSOPHY.md:518` and
+`widget.h:96-118` both refuse; the guard is that layout stays manual and any
+compound row stays in the sample.
+
+### 3.4 The audio seam that is not there — *weeks*, and see `port/android.md` §3.2
+
+[`ARCHITECTURE.md:267`](design/ARCHITECTURE.md) promises `audio` depends on
+"core, math — the audio backend at its edge only". There is no edge. `ls
+engine/audio/` is six files and no backend folder, and DirectXTK's types are in
+the **public headers of three modules**:
+
+- [`engine/audio/sound_bank.h:3`](../engine/audio/sound_bank.h) — `#include <Audio.h>`,
+  and `DirectX::WaveBank`, `DirectX::SoundEffectInstance` and
+  `DirectX::SoundState` in the class's public interface.
+- [`engine/app/application.h:19`](../engine/app/application.h) — `#include <Audio.h>`,
+  `std::unique_ptr<DirectX::AudioEngine>` as a member.
+- [`engine/assets/resource_loader.h:7`](../engine/assets/resource_loader.h) —
+  `#include <Audio.h>`, `DirectX::AudioEngine*` in a constructor parameter.
+
+The asymmetry is the finding. `render/` has five backends behind a seam that
+[`check_engine_includes.cmake`](../cmake/check_engine_includes.cmake) enforces
+at build time on every file including headers; `input/` has
+[`gamepad_reader.h:9`](../engine/input/gamepad_reader.h) calling itself "the
+input backend seam, and it is one function wide" and citing `renderer.h`'s
+reasoning at length. `audio/` has neither the folder, nor the check, nor a
+second implementation, nor the headless one
+[`PHILOSOPHY.md:615`](design/PHILOSOPHY.md) requires — "a seam ships with its
+headless implementation, or it has not shipped".
+
+**It is not first, and it is not second.** It is weeks, it is blocked on the
+`.xwb` container question `port/android.md` §3.2 raises and does not settle,
+and it heads the branch of that document's spine that cannot be finished
+without hardware.
+
+**Buy the evidence cheaply first — *hours*.** `audio` is the only engine module
+with no ctest entry: `grep -rn SoundBank tests/` returns exactly one hit and it
+is inside a comment. A `tests/audio/` target costs an afternoon, and its real
+product is not coverage — it is the written list of which of `SoundBank`'s
+fourteen public methods `silent()` makes unreachable. That list is the measured
+argument for how large the seam has to be, and nobody should spend weeks on
+§3.4 before it exists.
+
+### 3.5 Sprite sheets silently discard authored content — *days*
+
+[`sprite_sheet_loader.cpp:29-43`](../engine/assets/sprite_sheet_loader.cpp)
+parses `origin` and `rotated` out of sheet JSON and hands both to
+`SpriteFrame`. [`sprite_frame.h:30-31`](../engine/render/sprite_frame.h) stores
+them. `grep -rn "origin_\|rotated_" engine/` finds the two members, the two
+constructors that set them, and nothing else — `source_rectangle()` is the only
+accessor, and it is the only one
+[`animation_strip.h:17`](../engine/render/animation_strip.h) knows about.
+
+So the engine reads two keys out of authored content and drops them. The day
+someone runs a texture packer, frames come back rotated, the engine draws them
+upright and nothing anywhere says so — which is precisely the T6 trap, on the
+content path T7 says should be data.
+
+**The cheapest in-doctrine answer is to refuse rather than implement.** Throw at
+load, naming the key and the frame, when `rotated` is true — one branch in the
+loader, loud (T6), and honest about a capability this engine does not have.
+Packer rotation is a real feature and should be argued on its own, not
+smuggled in by a member that already exists. `origin` is the same shape and a
+different decision, because it is cheap to honour and probably should be.
+
+---
+
+## 4. The dependency spine
+
+```
+2.2 samples on both devices ─── hours ────────┐  (defect fix; also the InputMap measurement)
+                                              │
+3.1a render bench, engine arithmetic ─ days ──┤  (builds in all five presets; gates everything below)
+                                              │
+   ┌──────────────────────────────────────────┴────────────┬──────────────────────┐
+   │                                                       │                      │
+3.1b Scene::draw fan-out under null              3.2 particle field      3.5 refuse `rotated`
+(discharges §2.1; needs no device)               (needs 3.1a's number)   (independent, days)
+   │
+3.3 ui client, then the Direction producer ── week
+   │
+3.4a tests/audio ── hours ── 3.4b the audio seam ── weeks ── blocked on .xwb, see port/android.md
+```
+
+The shape that matters: **everything above the fold runs on this desktop with
+no new dependency**, and the one item that needs hardware is the one deferred
+furthest. §3.1a is the only item three others wait on, which is why a benchmark
+outranks two genuine features.
+
+---
+
+## 5. Refused, on purpose
+
+Named so the absence is deliberate, in `PHILOSOPHY.md`'s own style.
+
+- **An engine action-mapping layer.** The single stated known-absent item, and
+  the bar is a second client this tree does not meet. §2.2 is the experiment
+  that produces the evidence either way; deciding before it runs would settle
+  by assertion the question `samples/linesweeper/README.md` deliberately left
+  open. **Name the threshold first** — if two devices in one table is six
+  lines, the refusal is confirmed; if it is sixty, it is not. A measurement
+  whose threshold is chosen afterwards can only agree with you.
+- **Bulk or instanced sprite submission.** A five-backend change with the full
+  golden-image tax, and `PHILOSOPHY.md:563-564` forbids it before the profile
+  exists. §3.1 is the prerequisite and may well close the question: at
+  LineSweeper's sprite count, and even at ten thousand particles in one object,
+  the per-sprite arithmetic may not be where the time goes.
+- **A KTX2/ETC2 reader.** Straight T1. There is no Android build, so the client
+  is a port nobody has started, and `port/android.md` §3.6 refuses three
+  sibling items on exactly that ground — "they land with the toolchain that
+  needs them". Its own spine entry says it blocks nothing.
+- **Deleting anything that appears unused here.** `MovingObject`, `Visual`,
+  `Mouse::`, `Keyboard::typed()`, `layer_depth`. `PHILOSOPHY.md:590-599` is
+  explicit that a grep taken in this repository answers a narrower question
+  than a deletion needs, and live client API has been deleted twice on exactly
+  that mistake. Zero callers here means zero callers **here**.
+- **Everything already permanent.** Online play, 3D, an editor, a scripting
+  layer — `PHILOSOPHY.md`, Non-goals. Nothing in this survey changes them.
+
+---
+
+## 6. The decisions this document does not make
+
+- **The reference machine.** Five code sites size real decisions against "the
+  low tier" — [`d3d11/backend.h`](../engine/render/d3d11/backend.h),
+  [`d3d12/backend.h`](../engine/render/d3d12/backend.h),
+  [`vulkan/device_resources.h`](../engine/render/vulkan/device_resources.h) —
+  and no design document defines it, while `samples/linesweeper/README.md`
+  says no number here should be called a floor until a named part and a
+  measured p99 exist. §3.1 will produce numbers with nowhere to stand until
+  this is named. **It is the largest unmade decision in the tree.**
+- **Whether markers stay on the seam.**
+  [`application.cpp:294`](../engine/app/application.cpp) calls `begin_marker`
+  on the frame path every frame; four of five backends discard it. Either the
+  seam says markers are advisory and may do nothing, or the three methods come
+  off and [`renderer.h:490-502`](../engine/render/renderer.h) loses the
+  paragraph claiming they reach the seam unchanged.
+- **Whether the fan-out is itself a T1 violation.** If §3.1b confirms it has
+  never run and no client in this tree wants it, then `PHILOSOPHY.md:550-551`
+  commits to a parallel path whose only client is in another repository and
+  behind the math split. Worth deciding deliberately rather than discovering.
+- **The `.xwb` container.** `port/android.md` says there is no Android reader
+  for it, so §3.4 either moves the content format too or is cut above it with
+  the format decision deferred. That sets whether it is weeks or months, and it
+  should be written down before anyone starts.
+
+---
+
+## 7. Drift found in passing
+
+`CLAUDE.md` makes amendment a rule — a document changes in the same commit as
+the change that fights it — so the following are defects by this project's own
+standard rather than untidiness. All verified at `b4bcda0`.
+
+| Where | Says | Is |
+|---|---|---|
+| [`README.md:26`](../README.md) | "361 cases … eleven targets" | 450 `TEST_CASE`; eleven doctest targets is right |
+| [`README.md:121`](../README.md) | "ten doctest targets and a sample executable" | a third phrasing of the same count, and the benchmark is not in it |
+| [`README.md:147`](../README.md) | "`render/d3d11/` and three beside it" | four beside it, against :41's own "five backends" |
+| [`README.md:176`](../README.md) | "331 test cases … across nine targets" | 450 cases across eleven doctest targets; the case count disagrees with :26 as well as with the tree |
+| [`ARCHITECTURE.md:110-112`](design/ARCHITECTURE.md) | "a debug preset for each of the other three — five in all" | six configure presets in `CMakePresets.json` |
+| [`ARCHITECTURE.md:126-135`](design/ARCHITECTURE.md) | the `render/` tree: `d3d11`, `d3d12`, `gl`, `null` | `vulkan/` is missing from the tree block entirely |
+| [`ARCHITECTURE.md:122-125`](design/ARCHITECTURE.md) | `sprite.hlsl` "compiled by fxc … shared by the two backends that take HLSL" | three backends, two compilers — the same document has it right at :323 |
+| [`ARCHITECTURE.md:136-139`](design/ARCHITECTURE.md) | "(the pair sweep is still all-pairs; a broad phase goes behind `find_contacts`)" | `collision/broad_phase.{h,cpp}` exist and `bench/` measures the broad-phase path |
+| [`renderer.h:588`](../engine/render/renderer.h) | "356 on vulkan" | `vulkan/texture_factory.cpp` is 378 lines |
+
+The last one is the reason this table is in a document rather than in a
+`TODO`. `git blame` puts that line in **`b4bcda0`** — the commit whose message
+is *"Correct the claims the fifth backend made false, and the ones it
+inherited"*. The commit that exists to fix stale counts carried a stale count
+in with it. Counts written into prose drift fastest precisely when someone is
+looking at them, which is an argument for fewer of them rather than for a
+better habit.
+
+**None of the nine is fixed here.** Each is a claim rather than a typo, and a
+claim is amended by the commit that fights it, which is the rule that produced
+this table. The one change made alongside this document is to
+`ARCHITECTURE.md`'s `docs/` tree block, which listed three of the five things
+in this folder — an index, not a claim, and it had to name this file for anyone
+to find it.
+
+`ARCHITECTURE.md:136-139` is a different case and wants deleting rather than
+correcting: that document's own opening says it describes the destination and
+says nothing about the current codebase, and "still all-pairs" is a statement
+about the current codebase. Correcting it keeps a sentence that should not be
+in that document at all.

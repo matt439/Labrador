@@ -185,6 +185,9 @@ being load-bearing.
 ├── .github/workflows/      CI
 └── docs/
     ├── design/             philosophies, conventions, this document
+    ├── file-length-audit.md  which files are long, and which of them earn it
+    ├── next.md             the survey of what to build next, and what it found
+    ├── port/               what a second platform costs, and in what order
     ├── repo-split.md       the verified procedure for splitting engine from game
     └── review/             findings against the current code
 ```
