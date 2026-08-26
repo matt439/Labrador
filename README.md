@@ -14,7 +14,7 @@ to 404. Nothing here depends on it: this repository builds, tests and
 benchmarks standalone.)*
 
 Two samples come with it, and they answer different questions.
-`samples/minimal` is about 380 lines and is the answer to "how do I start a
+`samples/minimal` is about 450 lines and is the answer to "how do I start a
 project on this" — copy it. `samples/linesweeper` is a falling-block game and
 is the answer to "what does a finished game look like on this engine" — read
 it, and read [its README](samples/linesweeper/README.md) for the decisions
@@ -129,7 +129,7 @@ Three things worth knowing:
   directory above `yourgame/` on the include path. Labrador publishes its root,
   not yours.
 
-`samples/minimal` is a working example of all three, at about 380 lines.
+`samples/minimal` is a working example of all three, at about 450 lines.
 `samples/linesweeper` is the same three plus a fourth thing worth copying: a
 game's simulation as a static library that links nothing, so the whole game is
 playable from `ctest` with no window and no device.

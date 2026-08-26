@@ -15,10 +15,10 @@
 // THIS IS ONE OF THE ONLY TWO PLACES ALLOWED TO INCLUDE BOTH engine/ AND
 // rules/, and the only one that includes rules/tick.h. The layering is that
 // rules/ knows nothing of the engine, presentation/ reads a World and draws
-// it, and states/ is where the two meet - which in practice means the seven
-// lines of update() below that turn a keyboard into a byte. It is enforced by
-// review today and by a build check once presentation/ has enough files to
-// make one worth writing (README, Still open).
+// it, and states/ is where the two meet - which in practice means the two
+// tables and two loops below that turn a keyboard and a pad into one byte. It
+// is enforced by review today and by a build check once presentation/ has
+// enough files to make one worth writing (README, Still open).
 namespace linesweeper
 {
 	class PlayState : public labrador::State
@@ -31,10 +31,11 @@ namespace linesweeper
 		void draw(labrador::Renderer& renderer) const override;
 
 	private:
-		// The keyboard as one of tick.h's button masks. A free function on the
-		// state rather than a class, because it is a switch over eight keys
-		// and the engine deliberately has no action-mapping layer to put it in
-		// (CLAUDE.md, Known-absent).
+		// Both devices as one of tick.h's button masks. A method on the state
+		// rather than a class, because it is two tables and two loops over
+		// them, and the engine deliberately has no action-mapping layer to put
+		// it in (CLAUDE.md, Known-absent). What that costs is measured rather
+		// than asserted - README, Still open, has the number.
 		std::uint8_t read_input() const;
 
 		// Borrowed. The shell built every service before this existed and
@@ -54,5 +55,6 @@ namespace linesweeper
 		std::unique_ptr<labrador::Scene> scene_ = nullptr;
 		BoardView* board_ = nullptr;
 		labrador::Label* hint_ = nullptr;
+		labrador::Label* pad_hint_ = nullptr;
 	};
 }

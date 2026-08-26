@@ -1,6 +1,7 @@
 #include "samples/minimal/states/hello_state.h"
 
 #include "engine/core/state_context.h"
+#include "engine/input/keyboard.h"
 #include "engine/math/matrix3x2f.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
@@ -33,6 +34,39 @@ namespace
 	// engine/input/gamepad.h asks for and what the pad API's own deadzone
 	// modes take away.
 	constexpr float stick_deadzone = 0.2f;
+
+	// The keyboard's answer to the question the stick answers, in the same
+	// units: a direction, at most one unit per axis, +y down like everything
+	// else in this engine.
+	//
+	// TWO KEYS PER DIRECTION AND NO TABLE, because four directions is not a
+	// table yet - samples/linesweeper has nine bindings and earns one. Key
+	// positions, not characters, which is what a movement binding wants: this
+	// is the block of keys under the left hand whatever the layout prints on
+	// them (keyboard.h).
+	Vector2F keyboard_direction(const Keyboard& keyboard)
+	{
+		Vector2F direction = Vector2F::ZERO;
+
+		if (keyboard.held(Key::left) || keyboard.held(Key::a))
+		{
+			direction.x -= 1.0f;
+		}
+		if (keyboard.held(Key::right) || keyboard.held(Key::d))
+		{
+			direction.x += 1.0f;
+		}
+		if (keyboard.held(Key::up) || keyboard.held(Key::w))
+		{
+			direction.y -= 1.0f;
+		}
+		if (keyboard.held(Key::down) || keyboard.held(Key::s))
+		{
+			direction.y += 1.0f;
+		}
+
+		return direction;
+	}
 }
 
 HelloState::HelloState(Application* app) : app_(app)
@@ -58,7 +92,7 @@ void HelloState::init()
 		labrador::Colour::white));
 
 	this->hint_ = this->scene_->add(std::make_unique<Label>(
-		L"Left stick moves it. B quits.", font_name,
+		L"Left stick, arrows or WASD move it. B or Escape quits.", font_name,
 		Vector2F(24.0f, resolution.y - 40.0f), resources,
 		labrador::Colour::dark_gray));
 
@@ -77,34 +111,51 @@ void HelloState::init()
 void HelloState::update(float dt)
 {
 	const Gamepads& pads = *this->app_->gamepads();
-	if (pads.connected(0))
-	{
-		if (pads.pressed(0, GamepadButton::b))
-		{
-			// Ask, rather than quit. The result type is named here and matched
-			// at the pop; the question knows nothing about this state, and the
-			// callback runs once, when it closes, rather than being a flag read
-			// on every frame until something sets it.
-			this->context()->push<bool>(
-				std::make_unique<ConfirmState>(this->app_, L"Really quit?"),
-				[this](const bool& quit)
-				{
-					if (quit)
-					{
-						this->app_->quit();
-					}
-				});
-			return;
-		}
+	const Keyboard& keyboard = *this->app_->keyboard();
 
-		// The stick is already in this engine's convention - +y is down, the
-		// same as every rectangle and viewport - and already has a deadzone
-		// applied, once, with the magnitude rescaled so a small push moves
-		// slowly instead of jumping to the threshold.
-		const Vector2F stick = apply_deadzone(pads.state(0).left_stick,
-			stick_deadzone);
-		this->position_ += stick * (move_speed * dt);
+	// BOTH DEVICES, AND NO connected() AROUND THE PAD. This function used to
+	// wrap everything below in `if (pads.connected(0))`, which is the guard
+	// gamepad.h asks callers not to write and which made this template - the
+	// one a new project is copied from - impossible to quit on a machine with
+	// no pad. Neither half needs it: pressed() answers false unless the slot
+	// was occupied on both frames, and an empty slot reads as a neutral state
+	// rather than a stale one, so a pad that is not there contributes nothing
+	// and costs nothing to ask.
+	if (pads.pressed(0, GamepadButton::b) || keyboard.pressed(Key::escape))
+	{
+		// Ask, rather than quit. The result type is named here and matched
+		// at the pop; the question knows nothing about this state, and the
+		// callback runs once, when it closes, rather than being a flag read
+		// on every frame until something sets it.
+		this->context()->push<bool>(
+			std::make_unique<ConfirmState>(this->app_, L"Really quit?"),
+			[this](const bool& quit)
+			{
+				if (quit)
+				{
+					this->app_->quit();
+				}
+			});
+		return;
 	}
+
+	// The stick is already in this engine's convention - +y is down, the
+	// same as every rectangle and viewport - and already has a deadzone
+	// applied, once, with the magnitude rescaled so a small push moves
+	// slowly instead of jumping to the threshold.
+	//
+	// SUMMED WITH THE KEYS RATHER THAN CHOSEN BETWEEN, so a desk with both
+	// can use both and neither device has to be declared the real one. The
+	// clamp is what makes the sum safe, and it is not only about the sum: the
+	// keyboard gives a whole unit per axis, so up-and-left is 1.41 units long
+	// on its own and would otherwise outrun any push of the stick by half.
+	Vector2F move = apply_deadzone(pads.state(0).left_stick, stick_deadzone) +
+		keyboard_direction(keyboard);
+	if (move.length_squared() > 1.0f)
+	{
+		move.normalize();
+	}
+	this->position_ += move * (move_speed * dt);
 
 	this->spin_ += spin_speed * dt;
 

@@ -14,8 +14,8 @@ commitment, it says so and names the document it belongs in.
 seven-bag deal, the gravity curve, the wall kicks, lock delay, hold, hard drop,
 T-spins and scoring — and `tests/linesweeper/` plays it with no window, no
 device and no engine linked into the binary. `presentation/` draws it,
-`states/` turns a keyboard into it, and pressing R after a top-out restarts the
-match with one assignment.
+`states/` turns a keyboard and a pad into it, and pressing R or Start after a
+top-out restarts the match with one assignment.
 
 What is not here is the second half of what this sample is for: the particle
 field, the glow and the instrument panel. See *Particles are not in the first
@@ -219,14 +219,22 @@ an atlas, and an atlas is this file with more in it.
 ### Input is read as held, never as pressed
 
 The engine's `Keyboard` computes press edges of its own, and `states/` ignores
-them. It reads `held()` for all nine bindings, packs them into a byte, and lets
-`tick()` derive every press by comparing that byte against the previous one.
+them. It reads `held()` for every binding in both tables — nine keys and nine
+pad buttons — ORs the lot into one byte, and lets `tick()` derive every press by
+comparing that byte against the previous one. Which device set a bit is not
+recorded and could not be: the byte is the whole of what the simulation sees,
+which is also why a player may use both at once and nothing has to arbitrate.
 
 Using the engine's edges would work, once. What it would cost is the property
 the rules layer exists for: an edge computed outside the simulation depends on
 which frames the window had the keyboard, so a recorded hard drop could replay
 as two or as none. Deriving edges *inside* `tick()` means the recording carries
 them, and a `std::vector<std::uint8_t>` is a complete match.
+
+Restart is the exception that proves it. `update()` reads `pressed()` for R and
+for Start, because restarting is not an input to `tick()` — it replaces the
+value `tick()` runs on — so that edge falls outside the recording and is free to
+be an edge. A held R would otherwise restart sixty times a second.
 
 ### Additive blending needs no engine change
 
@@ -293,9 +301,31 @@ chosen over the alternatives.
   who copies the tree and deletes it gets folders and no discipline, which the
   layer decision above already says out loud.
 
-- **Whether the input map belongs in the sample or the engine.** `states/` has
-  a nine-entry table of `{Key, button}` pairs and that is the whole input
+- **Whether the input map belongs in the sample or the engine — now priced,
+  and still open.** `states/` has two tables, `{Key, button}` and
+  `{GamepadButton, button}`, nine entries each, and that is the whole input
   layer. The engine deliberately has no action-mapping layer (CLAUDE.md,
   Known-absent), and one sample with no rebinding screen is not the second
-  client that would justify one. Recorded so that "add an InputMap" has to meet
-  an argument.
+  client that would justify one.
+
+  `docs/next.md` §5 asked for the second device to be priced before the
+  question was argued, and for the threshold to be named **first**, on the
+  grounds that a measurement whose threshold is chosen afterwards can only
+  agree with whoever ran it. So it was: under 25 lines confirms the refusal;
+  60+, or an engine header having to change, overturns it; between them is
+  inconclusive.
+
+  **The pad cost 26 lines here** — an include, a five-line struct, an
+  eleven-line table, a seven-line loop, one line to reach the pads and one more
+  on the restart. Hints are excluded, being what a one-device sample pays for
+  too. Nine of the twenty-six are binding rows, which any design pays for
+  wherever the table ends up living; the mechanism is the other seventeen.
+  `samples/minimal` paid 27 for the same change with no table at all.
+
+  **So nothing overturned the refusal and nothing confirmed it.** One line over
+  a threshold is not a result to round down, and it is recorded rather than
+  argued away. What the exercise did settle is worth more than the count: no
+  engine header changed, and the cost is per *device* rather than per binding —
+  a third device is a third table and a third loop, not an edit to every row of
+  the first two. An `InputMap` would have to beat that, and "it would be
+  tidier" is not beating it.

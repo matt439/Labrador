@@ -134,7 +134,7 @@ namespace linesweeper
 		{
 			this->shown_topped_out_ = this->world_->topped_out;
 			this->banner_ = this->shown_topped_out_ != 0
-				? std::wstring(L"TOPPED OUT - PRESS R")
+				? std::wstring(L"TOPPED OUT - PRESS R OR START")
 				: std::wstring();
 			this->banner_size_ = this->banner_.empty()
 				? Vector2F::ZERO

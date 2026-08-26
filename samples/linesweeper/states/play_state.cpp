@@ -1,5 +1,6 @@
 #include "samples/linesweeper/states/play_state.h"
 
+#include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
@@ -44,6 +45,38 @@ namespace linesweeper
 			{ Key::c, button_hold },
 			{ Key::shift, button_hold },
 		};
+
+		// The pad's half, and TWO TABLES RATHER THAN ONE ROW PER ACTION.
+		//
+		// The obvious shape is a single row naming both devices, and it does
+		// not fit: `up` and `x` both rotate clockwise and `c` and `shift` both
+		// hold, so a combined row would need a "no button on this device"
+		// enumerator - and GamepadButton has none, deliberately (gamepad.h).
+		// Adding one to an engine header so a sample's table lines up is the
+		// tail wagging the dog. Two tables cost a loop each, ask the engine
+		// for nothing, and a third device would be a third table rather than
+		// an edit to every row above.
+		//
+		// The d-pad and not the stick, because tick() takes a byte of held
+		// buttons: an axis would need a threshold here to become one, on top
+		// of the repeat rate the rules already own (tables.h).
+		struct PadBinding
+		{
+			GamepadButton pad;
+			std::uint8_t button;
+		};
+
+		constexpr PadBinding pad_bindings[] = {
+			{ GamepadButton::dpad_left, button_left },
+			{ GamepadButton::dpad_right, button_right },
+			{ GamepadButton::dpad_down, button_soft_drop },
+			{ GamepadButton::y, button_hard_drop },
+			{ GamepadButton::dpad_up, button_rotate_clockwise },
+			{ GamepadButton::a, button_rotate_clockwise },
+			{ GamepadButton::b, button_rotate_anticlockwise },
+			{ GamepadButton::x, button_hold },
+			{ GamepadButton::left_shoulder, button_hold },
+		};
 	}
 
 	PlayState::PlayState(Application* app) : app_(app)
@@ -67,9 +100,17 @@ namespace linesweeper
 		this->board_ = this->scene_->add(
 			std::make_unique<BoardView>(&this->world_, resources));
 
+		// One line per device, left-aligned on the HUD column at x = 344 and
+		// columnised against each other by hand, which only works because the
+		// font is monospaced.
 		this->hint_ = this->scene_->add(std::make_unique<Label>(
-			L"arrows move   Z X rotate   space drops   C holds",
-			font_name, Vector2F(344.0f, resolution.y - 40.0f), resources,
+			L"keyboard   arrows move   Z X rotate   space drops   C holds",
+			font_name, Vector2F(344.0f, resolution.y - 60.0f), resources,
+			Colour::dark_gray));
+
+		this->pad_hint_ = this->scene_->add(std::make_unique<Label>(
+			L"pad        d-pad moves   A B rotate   Y drops       X holds",
+			font_name, Vector2F(344.0f, resolution.y - 36.0f), resources,
 			Colour::dark_gray));
 
 		// Adds are pending until a tick ends, and the frame drawn before the
@@ -96,12 +137,32 @@ namespace linesweeper
 	std::uint8_t PlayState::read_input() const
 	{
 		const Keyboard& keyboard = *this->app_->keyboard();
+		const Gamepads& pads = *this->app_->gamepads();
 
 		std::uint8_t input = button_none;
 
 		for (const Binding& binding : bindings)
 		{
 			if (keyboard.held(binding.key))
+			{
+				input |= binding.button;
+			}
+		}
+
+		// OR, AND NO connected() AROUND IT. The byte tick() gets does not say
+		// which device set a bit and must not - a player holding left on the
+		// d-pad while tapping Z on the keyboard is one input, and the
+		// recording of it is one byte either way. An empty slot reads as a
+		// neutral state rather than a stale one (gamepad.h), so this loop
+		// contributes nothing when there is no pad and needs no guard to.
+		//
+		// Slot 0, spelt here rather than tracked, because this is a
+		// one-player game. Which pad is which player is a decision the engine
+		// deliberately leaves to a game (gamepads.h), and this is the whole of
+		// this game's.
+		for (const PadBinding& binding : pad_bindings)
+		{
+			if (pads.held(0, binding.pad))
 			{
 				input |= binding.button;
 			}
@@ -116,8 +177,15 @@ namespace linesweeper
 		// match is one value" is arguing for. There is no reset(), nothing to
 		// notify, no scene to rebuild and no allocation - the board holds a
 		// pointer to this member and the pointer stays good.
+		//
+		// pressed() here where read_input() above insists on held(), and the
+		// difference is which side of the recording the edge falls on.
+		// Restarting is not an input to tick() - it replaces the value tick()
+		// runs on - so it is free to be an edge, and wants to be: a held R
+		// would restart sixty times a second.
 		if (this->world_.topped_out != 0 &&
-			this->app_->keyboard()->pressed(Key::r))
+			(this->app_->keyboard()->pressed(Key::r) ||
+				this->app_->gamepads()->pressed(0, GamepadButton::start)))
 		{
 			this->world_ = World{};
 		}
