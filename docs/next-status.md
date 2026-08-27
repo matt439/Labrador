@@ -19,7 +19,7 @@ Two rules for it:
   items exist to produce a number or settle a question. Those answers are the
   product, and a commit message is not where anybody looks for them.
 
-Written against `c2411a0`.
+Written against `169a3c0`.
 
 ---
 
@@ -35,15 +35,16 @@ Written against `c2411a0`.
 | **3.3** `engine/ui/` has no client, and no `Direction` producer | **both fixed** | `f567fe7`, `c2411a0` |
 | **3.4a** `tests/audio/` — the cheap evidence | open | |
 | **3.4b** The audio seam | open, and still blocked on `.xwb` | |
-| **3.5** Sprite sheets discard `rotated` | open — independent of everything | |
+| **3.5** Sprite sheets discard `origin` and `rotated` | **both keys answered** | `169a3c0` |
 | **5** The InputMap refusal | **measured, and inconclusive** | `d3de8f6` |
 | **6** The four decisions `next.md` does not make | one made — the third; three still unmade | `f411e24` |
 | **7** The nine drifted claims | **all nine fixed**, and three more found | `dea5fe0` |
 
-§4's spine is finished and both of the items it branched into have landed.
-What is left of §3 is **3.5**, independent of everything and days of work, and
-the audio pair — **3.4a** is now unblocked, and **3.4b** behind it is still
-blocked on `.xwb`.
+**Everything above §4's audio fold has landed** — the spine 2.2 → 3.1a → 3.3,
+and all three of the branches off it: 3.1b, 3.2 and now 3.5. What is left of §3
+is the pair at the bottom of that spine — **3.4a** is unblocked and costs an
+afternoon, **3.4b** behind it is still blocked on `.xwb`. Nothing else in the
+survey is open except §6's three unmade decisions.
 
 ---
 
@@ -243,6 +244,59 @@ already made false — CLAUDE.md and README were amended then and that one was
 missed. Fixed in `c2411a0`. §7's lesson holds: the counts that drift are the
 ones nothing checks.
 
+### 3.5 — the two keys the loader read and dropped
+
+**Both answered, in one commit** — `169a3c0`. `rotated` is refused at load by
+name; `origin` is honoured, added to whatever origin the caller passed. §3.5
+predicted exactly that split and gave the reason for it, and nothing found
+while doing it argued against either half.
+
+**What the survey's grep claimed was true.** `origin_` and `rotated_` were two
+members, two constructors that set them, and nothing else — no accessor, no
+reader, no draw path. Checked again before the change.
+
+**The measured part, and it is the reason this was cheap.** Nothing in *this*
+tree has a sprite sheet at all: neither sample declares the `sprite_sheet`
+asset kind, so the whole path is client-only code and no golden image, no
+sample and no other test reaches it. The client does have one, and it was read
+rather than guessed at — `game/content/textures/sprite_sheet_1.json`, **41
+frames and 9 strips, of which exactly one frame mentions either key**, and it
+sets `"origin": {0.0, 0.0}` and `"rotated": false`. Both the identity. So the
+refusal rejects nothing the only client owns and the composition moves nothing
+it draws. The two keys look like a packer template filled in once and
+abandoned, which is consistent with nobody ever noticing they went nowhere.
+
+**The member was deleted, and that needed an argument rather than a grep.**
+§5 refuses deletion of anything that merely looks unused here, on
+`PHILOSOPHY.md:590-599` — zero callers here means zero callers *here*, and
+live client API has been deleted twice on that mistake. `SpriteFrame::rotated_`
+is outside that rule for a reason narrower than "nothing calls it": it had **no
+accessor**, so no client could observe it, and a constructor argument that is
+provably ignored is not behaviour anybody can depend on. Removing it is a
+compile error for a caller that passed one — which is the loud answer — rather
+than a silent change of what a program does. §3.5 asked for it in its own
+words: rotation "should be argued on its own, not smuggled in by a member that
+already exists".
+
+**The origin composes rather than replaces, and the reason is a missing
+sentinel.** A sheet's pivot and a caller's origin are the same quantity in the
+same units, so `SpriteSheet::draw` adds them. The alternative — the frame's
+unless the caller gave one — cannot be written: a default argument cannot tell
+a caller that said nothing from one that asked for the top-left corner, so the
+rule would hang on whether a `Vector2F` happened to be zero. Addition also
+makes the change invisible to every frame with no authored pivot, which is
+almost all of them.
+
+**Two test files, because neither can hold the whole finding.**
+`tests/assets/sprite_sheet_loader_tests.cpp` is new, runs in all five
+configurations and creates no device — `read_sprite_sheet` takes a
+`TextureHandle`, and a handle is an index. It pins the parse and the refusal
+message, including that the message names the offending frame and **not** the
+one before it. The composition is not readable anywhere after the call — it is
+one argument to `build_sprite_quad` and then four corner positions — so it is
+pinned in `tests/render/null_tests.cpp`, where a quad can be read off a
+recording on a machine with no GPU.
+
 ---
 
 ## The four decisions in §6, restated with what is now known
@@ -303,6 +357,15 @@ Recorded here because `next.md` reads as written, the way `docs/review/` does.
   itself an undercount is the finding restated, and §7 predicted it in its own
   last paragraph.
 
+- **§3.5's price tag is for the feature its own body refuses.** The heading
+  reads *days* and the spine entry reads "3.5 refuse `rotated` (independent,
+  days)" — but the paragraph between them argues that the in-doctrine answer is
+  one branch in the loader rather than the packer-rotation feature, and it is
+  right. Refusing, deleting the member, honouring `origin` and writing both test
+  files came to an afternoon. The estimate priced the option the item talks
+  itself out of, which is a mis-estimate rather than a wrong claim, and it is
+  the only reason this sat at the bottom of §4's spine.
+
 Nothing else in the survey has failed a check yet. §1 says every citation was
-verified by reading the file, and the five items worked through so far found
-two exceptions between them.
+verified by reading the file, and the six items worked through so far found
+three exceptions between them — two wrong, one merely expensive.
