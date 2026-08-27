@@ -19,7 +19,7 @@ Two rules for it:
   items exist to produce a number or settle a question. Those answers are the
   product, and a commit message is not where anybody looks for them.
 
-Written against `90ce3d0`.
+Written against `dea5fe0`.
 
 ---
 
@@ -37,8 +37,8 @@ Written against `90ce3d0`.
 | **3.4b** The audio seam | open, and still blocked on `.xwb` | |
 | **3.5** Sprite sheets discard `rotated` | open — independent of everything | |
 | **5** The InputMap refusal | **measured, and inconclusive** | `d3de8f6` |
-| **6** The four decisions `next.md` does not make | all four still unmade | |
-| **7** The nine drifted claims | none fixed — checked again at `90ce3d0` | |
+| **6** The four decisions `next.md` does not make | one made — the third; three still unmade | `f411e24` |
+| **7** The nine drifted claims | **all nine fixed**, and three more found | `dea5fe0` |
 
 §4's spine is clear down to its branch point — 2.2, 3.1a and 3.1b are all
 done — so **3.2, 3.3 and 3.5 are unblocked**, and 3.4a sits one step behind
@@ -120,6 +120,42 @@ not a result to round down. What did settle: no engine header changed, and the
 cost is per device rather than per binding, so a third device is a third table
 rather than an edit to every existing row.
 
+### 7 — the drifted claims
+
+**All nine fixed, and three more found while counting** — `dea5fe0`. §7 declined
+to fix any of them, on the rule that a claim is amended by the commit that
+fights it. That rule cannot reach these, which is the whole finding: no future
+commit collides with `vulkan/` being absent from `ARCHITECTURE.md`'s tree block,
+or with `README.md` printing three different test-case counts. A rule that
+produces a table it cannot close needs a commit whose only job is to close it.
+
+The three the survey missed, all of them in the same shape as the nine:
+
+- `README.md`'s `engine/` size said **~17k lines** and the tree is **~33k** —
+  more than doubled, and 18.7k of it is `render/` across five backends. The
+  `samples/` row beside it is still accurate, which is how the units were
+  confirmed: they are raw line counts, not a code-only measure.
+- **`gl_functions.h` says it declares forty-one entry points. It declares
+  thirty-six** — and so did the loader's `std::runtime_error`, and so did
+  `ARCHITECTURE.md`'s tree. Three copies, none checked.
+- That error message is the only one of the twelve **a user can read**, which
+  is why it is the one that stopped being written by hand. `gl_function_count()`
+  is now `constexpr`, counted from the X-macro list, and the message builds the
+  number rather than spelling it (T5). 36 was confirmed by a temporary
+  `static_assert` that was **not** left in — a written 36 beside a computed one
+  is the same defect wearing a seatbelt.
+
+**Where a count was decoration it was deleted rather than corrected**, which is
+what §7's own closing argument asks for: `README.md`'s test row now carries an
+approximate size like the two rows above it, and its Tests section says what
+`ctest` prints instead of naming two numbers that were wrong. **Where a count
+carries an argument it was corrected and kept** — `renderer.h`'s
+`texture_factory` comparison needs its line counts to make its point about which
+API takes the least, so vulkan went 356 to 378.
+
+`ARCHITECTURE.md`'s collision line lost its parenthetical rather than gaining a
+correction, exactly as §7 proposed.
+
 ---
 
 ## The four decisions in §6, restated with what is now known
@@ -130,13 +166,28 @@ rather than an edit to every existing row.
    crossing at 250 objects are both properties of one desktop, and neither can
    be called a floor until a named part and a measured p99 exist.
 2. **Whether markers stay on the seam.** Untouched by any of this.
-3. **Whether the fan-out is itself a T1 violation.** §6 said: if §3.1b confirms
-   it has never run and no client in this tree wants it, then
-   `PHILOSOPHY.md:550-551` commits to a parallel path whose only client is in
-   another repository and behind the math split. §3.1b confirmed the first half
-   outright and gave the second half a number — below ~250 objects the fan-out
-   is slower than the early-out beside it, and neither sample reaches that. The
-   decision is still open, and it should be made rather than discovered.
+3. **Whether the fan-out is itself a T1 violation. Made, and the answer is
+   no** — `f411e24`. §6 said: if §3.1b confirms it has never run and no client
+   in this tree wants it, then `PHILOSOPHY.md:550-551` commits to a parallel
+   path whose only client is in another repository and behind the math split.
+   §3.1b confirmed the first half outright and gave the second half a number.
+   The decision went the other way anyway, on the ground `PHILOSOPHY.md:590-599`
+   already holds: the axis was extracted from a client that draws four panes,
+   that client is in its own repository because that is what the split is for,
+   and "no caller in this tree" is exactly the count that section refuses as an
+   argument. The mechanism stays.
+
+   **What was wrong was smaller, and is what the commit actually changed.**
+   "Throughput is the measure … on the parallel path the engine commits to" read
+   as though the parallel path were unconditionally the faster one, and below
+   ~250 objects it is not. The Performance section now says the commitment is to
+   the axis rather than to always taking it, and names the dial that already
+   existed — `Scene`'s pool and partitioner are constructor parameters, and
+   `nullptr` for either takes the serial path. **No threshold was added to
+   `scene.cpp`**, and its early-out comment now says that is a decision: the
+   crossing moves with the build and with the part, so a number there would be a
+   machine-specific policy baked into mechanism, and decision 1 above is why no
+   such number can be a floor yet.
 4. **The `.xwb` container.** Untouched, and still what makes §3.4b weeks or
    months.
 
@@ -154,6 +205,14 @@ Recorded here because `next.md` reads as written, the way `docs/review/` does.
   `Partitioner` and passes `nullptr` twice — but the grep as printed does not
   establish it. The finding stands; one line of its evidence does not.
 
+- **§7's table is nine rows long and the count was twelve.** Not an error in
+  any row — every one of the nine was still true when it was fixed — but the
+  sweep that produced them stopped at the claims it had gone looking for.
+  `README.md`'s `engine/` size and the three copies of "forty-one entry points"
+  were all in files §7 was already reading. A table of drifted counts that is
+  itself an undercount is the finding restated, and §7 predicted it in its own
+  last paragraph.
+
 Nothing else in the survey has failed a check yet. §1 says every citation was
-verified by reading the file, and the three items worked through so far found
-one exception between them.
+verified by reading the file, and the five items worked through so far found
+two exceptions between them.
