@@ -554,6 +554,28 @@ engine API to depend on.
   frame has, and `update()` writes. Committing to a second axis would mean
   deciding what two objects writing at once means, which is the question the
   view axis exists to avoid answering.
+- **The fan-out is opt-in, and the commitment above is to the axis, not to
+  always taking it.** That sentence stood alone for a long time and read as
+  though the parallel path were unconditionally the faster one. It is not, and
+  the first run of it is what said so: below roughly **250 objects** — four
+  panes over one arena, release build, null backend — cutting the view list up,
+  submitting a task per range and waiting costs more than the work it divides,
+  and one thread wins by better than two to one at sixty-four objects.
+  `bench/fanout_bench_null.cpp` is the measurement and carries the caveats. So
+  the engine does not choose: `Scene` takes its pool and its partitioner as
+  constructor parameters, `nullptr` for either takes the serial path, and that
+  pair is the dial — turned by a client that knows its own object counts, never
+  by an engine guessing a threshold. Guessing one would bake a policy number
+  into mechanism (T1), and a machine-specific number at that, because the
+  crossing moves with the build and with the part. No part is named in these
+  documents, which is exactly why 250 is a crossing and not a floor.
+- **None of that makes the axis the speculative framework T1 rules out.**
+  Neither sample in this repository has a second view, so nothing here reaches
+  the branch at all — and the axis was extracted from a client that draws four
+  panes, which lives in its own repository now. "No caller in this tree" is the
+  count The public face already refuses as an argument, and it is refused again
+  here. The mechanism stays. What changed is that it has been run, and that the
+  document no longer implies taking it is free.
 - Per-frame code performs no heap allocation and no string-keyed lookups;
   fixed-size geometry returns fixed-size containers; data the frame iterates
   is laid out for iteration.

@@ -168,6 +168,15 @@ namespace labrador
 		// One view is not worth a fan-out, and neither is a scene with no pool:
 		// a menu, a sample and a headless test all draw one pane, and the pool
 		// is a constructor parameter they should be able to leave null.
+		//
+		// Leaving it null is also how a scene with several views declines the
+		// fan-out, and below roughly 250 objects declining is the faster path:
+		// bench/fanout_bench_null.cpp measures 0.45x against one thread at 64
+		// objects and 2.77x at 4,096, in a release build. There is deliberately
+		// no object-count test in this branch. The crossing moves with the
+		// build and with the part, so a threshold here would be a policy number
+		// baked into mechanism (T1) - PHILOSOPHY, Performance, makes that the
+		// decision rather than the omission it looks like.
 		if (count <= 1 || this->thread_pool_ == nullptr ||
 			this->partitioner_ == nullptr)
 		{
