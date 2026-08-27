@@ -106,7 +106,9 @@ namespace labrador
 		// arrived at the same way: 16-bit indices cap it at 16384 sprites, and
 		// a buffer of 2048 is 256KB of vertices per view - which is affordable
 		// on the low tier and large enough that the fill-and-flush path is not
-		// what a frame is spending its time on.
+		// what a frame is spending its time on. PHILOSOPHY.md, Performance,
+		// names the low tier this is affordable on, and this is the half of
+		// that term a written spec settles: 256KB is a memory budget.
 		static const int MAX_BATCH_SPRITES = 2048;
 
 		Renderer::Impl* owner = nullptr;

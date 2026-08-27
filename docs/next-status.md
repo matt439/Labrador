@@ -19,7 +19,7 @@ Two rules for it:
   items exist to produce a number or settle a question. Those answers are the
   product, and a commit message is not where anybody looks for them.
 
-Written against `ad4141e`.
+Written against `94076f1`.
 
 ---
 
@@ -34,15 +34,16 @@ Written against `ad4141e`.
 | **3.2** The LineSweeper particle field | **landed** | `f5bd513` |
 | **3.3** `engine/ui/` has no client, and no `Direction` producer | **both fixed** | `f567fe7`, `c2411a0` |
 | **3.4a** `tests/audio/` — the cheap evidence | **landed**, and it found one defect | `708114b` |
-| **3.4b** The audio seam | **landed**, and it was not blocked on `.xwb` after all | *this commit* |
+| **3.4b** The audio seam | **landed**, and it was not blocked on `.xwb` after all | `94076f1` |
 | **3.5** Sprite sheets discard `origin` and `rotated` | **both keys answered** | `169a3c0` |
 | **5** The InputMap refusal | **measured, and inconclusive** | `d3de8f6` |
-| **6** The four decisions `next.md` does not make | one made — the third; three still unmade | `f411e24` |
+| **6** The four decisions `next.md` does not make | two made — the third, then the first; two still unmade | `f411e24`, *this commit* |
 | **7** The nine drifted claims | **all nine fixed**, and three more found | `dea5fe0` |
 
 **Every work item in the survey has landed** — the whole spine
 2.2 → 3.1a → 3.3 → 3.4a → 3.4b, all three branches off it (3.1b, 3.2, 3.5),
-and §7. What is left is not work: it is §6's three unmade decisions.
+and §7. What is left is §6: two unmade decisions, and one measurement that
+a decision has now made takeable.
 
 **3.4b is the one that came out differently from the way the survey ranked it**,
 and the difference is worth the sentence. It was filed as *weeks*, at the bottom
@@ -476,14 +477,45 @@ recording on a machine with no GPU.
 
 ## The four decisions in §6, restated with what is now known
 
-1. **The reference machine.** Still unnamed, and now the most expensive gap in
-   the tree rather than merely the largest. §6 predicted §3.1 would "produce
-   numbers with nowhere to stand" and it did: 35.4 ns a sprite and a fan-out
-   crossing at 250 objects are both properties of one desktop, and neither can
-   be called a floor until a named part and a measured p99 exist. **§3.2 has
-   now spent one of those numbers** — the particle field's whole cost argument
-   rests on the 35.4 — which makes this the decision the most other work is
-   quietly leaning on.
+1. **The reference machine. Made, and it is half of what the bar asks for** —
+   *this commit*. `PHILOSOPHY.md`, Performance now defines "the low tier", the
+   term four backend comments were sizing real decisions against while no
+   document said what it meant. It is the Radeon Graphics adapter integrated
+   into this desktop's Ryzen 9000 package (PCI `1002:13C0`), at 1280x720, with
+   the process held to four cores.
+
+   **A configuration rather than a purchased part, and that was the decision.**
+   `samples/linesweeper/README.md` asks for a named part, a named resolution
+   and a measured p99, which reads as a demand for hardware. There is none to
+   name: the only machines here are this desktop and a Raspberry Pi 3B+, and
+   the Pi is not too low but on the wrong axis — Windows-only tree, a GL
+   backend that creates its context through WGL, VideoCore IV topping out at
+   OpenGL 2.1, and no Vulkan driver until the Pi 4. Naming hardware nobody can
+   boot would have left every number where it was while reading as decided, so
+   the answer is the weakest thing in the box that is still a real driver. It
+   is not WARP for the reason `PHILOSOPHY.md` now gives.
+
+   **What it buys, and the half it does not.** All four rasterising backends
+   run on it, so all four "low tier" sites have a referent. But it names a GPU,
+   and §3.1a's 35.4 ns and §3.1b's 250-object crossing are both CPU-side —
+   capping the core count changes how many workers the fan-out gets, never how
+   fast one is. So those two stay properties of a fast desktop and `f411e24`'s
+   refusal to bake a threshold into `scene.cpp` is untouched. The four claims
+   also split: the two 256 KB vertex pages are memory budgets a written spec
+   settles, and the two about pipeline depth need the p99. **No p99 has been
+   taken**, so nothing here is a floor yet and both documents say so.
+
+   **The candidate that would replace it, and what it is blocked on.** A 2013
+   MacBook Air is the one genuinely low-tier *whole* machine in reach — a
+   dual-core Haswell fixes exactly the CPU gap above. Under Boot Camp it runs
+   D3D11 (HD 5000 is feature level 11_0 against a 10_0 floor) and GL 3.3 core
+   (Intel's Haswell driver exposes 4.3), and it runs neither D3D12 nor Vulkan,
+   because Intel's Windows drivers for both start at Skylake and Haswell has no
+   driver at all — which strands precisely the two pipeline-depth claims. It
+   would be a named part with a takeable p99, so it is the successor rather
+   than a rival; it is blocked on whether the machine still boots Windows, on
+   an EOL Windows 10, and it has a second and better job — see decision 4's
+   neighbour below.
 2. **Whether markers stay on the seam.** Untouched by any of this.
 3. **Whether the fan-out is itself a T1 violation. Made, and the answer is
    no** — `f411e24`. §6 said: if §3.1b confirms it has never run and no client
@@ -536,6 +568,20 @@ recording on a machine with no GPU.
    manifest marks the bank optional. That is worth stating plainly, because it
    is the only item in this document whose blocker is a missing file rather
    than a missing judgement.
+
+**A fifth question, raised by none of the above and now on the table.** The
+plan is for this engine to reach macOS. Four documents already say Vulkan gets
+there through MoltenVK and that "Metal eventually" is then a build target
+rather than a sixth backend — `docs/port/android.md` §5 — but that is stated as
+a conditional and its own §1 files the condition as **the one unmeasured claim
+in the document that would cost real work if it is wrong**. A plan makes a
+conditional load-bearing. There is no `docs/port/macos.md`, and `CLAUDE.md`
+still reads "a sixth is not planned". Worth noting here because the claim is a
+*capability* question — does the subset MoltenVK omits touch a seam that draws
+textured quads with one blend state and two samplers — so it needs a Mac and
+not a fast one, and the 2013 Air under decision 1 is one. That is a better use
+of it than being a low-tier D3D11 box, and Boot Camp does not make the two
+exclusive.
 
 ---
 

@@ -462,10 +462,14 @@ which is the only thing that argument leaves room for.
 
 ## Still open
 
-- **The reference machine.** The hardware-floor claim this sample is eventually
-  meant to prove needs a named part, a named resolution and a measured p99. No
-  such measurement exists. Until one does, no number in this repository should
-  be described as a floor.
+- **The reference machine — named now, and still unmeasured.** The
+  hardware-floor claim this sample is eventually meant to prove needs a named
+  part, a named resolution and a measured p99. Two of the three have landed:
+  `PHILOSOPHY.md`, Performance names the configuration, and the resolution is
+  the 1280x720 `main.cpp` already asks for. The p99 has not been taken, and it
+  is the half that carries the claim. So what changed is the shape of this gap
+  rather than its size — until that measurement exists, no number in this
+  repository should be described as a floor.
 - **Whether the layer rule gets a build check.** It is now checkable and
   unchecked, which is the worst of the three states, and `presentation/`
   has five files in it rather than three.

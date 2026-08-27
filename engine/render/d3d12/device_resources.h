@@ -62,6 +62,10 @@ namespace labrador
 		// per view - buys latency nobody asked for. The D3D11 backend's swap
 		// chain has two buffers for the same reason and says nothing about it,
 		// because there it is only a swap chain's business.
+		//
+		// PHILOSOPHY.md, Performance, names the low tier - and says that this
+		// claim, unlike the vertex page's, is latency rather than a memory
+		// budget, so it is one of the two waiting on a p99 nobody has taken.
 		static const int FRAME_COUNT = 2;
 
 		explicit DeviceResources(

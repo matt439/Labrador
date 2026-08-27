@@ -601,8 +601,10 @@ engine API to depend on.
   pair is the dial — turned by a client that knows its own object counts, never
   by an engine guessing a threshold. Guessing one would bake a policy number
   into mechanism (T1), and a machine-specific number at that, because the
-  crossing moves with the build and with the part. No part is named in these
-  documents, which is exactly why 250 is a crossing and not a floor.
+  crossing moves with the build and with the part. The reference machine below
+  does not settle it either, and why not is worth the sentence: it names a
+  graphics adapter, and cutting a view list up is CPU work. 250 stays a
+  crossing.
 - **None of that makes the axis the speculative framework T1 rules out.**
   Neither sample in this repository has a second view, so nothing here reaches
   the branch at all — and the axis was extracted from a client that draws four
@@ -618,6 +620,29 @@ engine API to depend on.
   throughput regression is a defect, not a curiosity.
 - Beyond the designed shape, optimisation follows a profile — measured, not
   guessed.
+- **"The low tier" is a named configuration, and this is it.** Four backend
+  comments size real decisions against that phrase, and it is defined here
+  because it is a target and not a report: the 2048-sprite vertex page in `render/d3d11/backend.h`, which
+  `render/d3d12/backend.h` copies, and the two-frame pipeline depth in
+  `render/d3d12/device_resources.h`, which `render/vulkan/device_resources.h`
+  defers to. It means the Radeon Graphics adapter integrated into the Ryzen
+  9000 desktop package (PCI `1002:13C0`) — two RDNA 2 compute units drawing on
+  shared system memory — at the 1280x720 both samples ask for, with the process
+  held to four cores. **A configuration rather than a purchased part**, because
+  naming hardware nobody can boot leaves every number exactly where it was
+  while reading as though something had been decided, and because this one is a
+  real driver: all four rasterising backends run on it the way they ship. WARP
+  is not the alternative. A CPU rasteriser on a sixteen-core part is a fast CPU
+  imitating a GPU, and it fails in a different shape from a slow GPU.
+- **It names a GPU, and nothing has been measured on it yet.** Holding the
+  process to four cores changes how many workers the fan-out gets, not how fast
+  one of them is, so every arithmetic figure in this tree remains a property of
+  a fast desktop — sized *against* this configuration rather than proven *on*
+  it. The four claims above do not all need the same evidence: a 256 KB vertex
+  page is a memory budget and is checkable against a written spec, while the
+  two about pipeline depth are latency and need a measured p99. Until that
+  exists no number here is a floor, and `samples/linesweeper/README.md` says so
+  again where the claim is actually made.
 
 ### The public face
 
