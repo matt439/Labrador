@@ -19,7 +19,7 @@ Two rules for it:
   items exist to produce a number or settle a question. Those answers are the
   product, and a commit message is not where anybody looks for them.
 
-Written against `dea5fe0`.
+Written against `f5bd513`.
 
 ---
 
@@ -31,7 +31,7 @@ Written against `dea5fe0`.
 | **2.2** `samples/minimal` cannot be quit without a controller | **fixed** | `d3de8f6` |
 | **3.1a** Render bench, engine arithmetic | **landed** | `a9b806c` |
 | **3.1b** `Scene::draw` fan-out under null | **landed** | `90ce3d0` |
-| **3.2** The LineSweeper particle field | open — unblocked, 3.1a's number exists | |
+| **3.2** The LineSweeper particle field | **landed** | `f5bd513` |
 | **3.3** `engine/ui/` has no client, and no `Direction` producer | open | |
 | **3.4a** `tests/audio/` — the cheap evidence | open | |
 | **3.4b** The audio seam | open, and still blocked on `.xwb` | |
@@ -40,12 +40,12 @@ Written against `dea5fe0`.
 | **6** The four decisions `next.md` does not make | one made — the third; three still unmade | `f411e24` |
 | **7** The nine drifted claims | **all nine fixed**, and three more found | `dea5fe0` |
 
-§4's spine is clear down to its branch point — 2.2, 3.1a and 3.1b are all
-done — so **3.2, 3.3 and 3.5 are unblocked**, and 3.4a sits one step behind
-3.3. Of the three, 3.2 is the one the spine points at and the only in-tree
-exercise of `PHILOSOPHY.md:397-412`'s central claim; 3.5 is independent of
-every other item and costs days; 3.3 carries the sharper of its two findings,
-a header stating a false fact about another module.
+§4's spine is finished down to its branch point and **3.2, the item it
+pointed at, has landed**. What is left of §3 is two independent items and one
+pair: **3.3** carries the sharper of its two findings, a header stating a false
+fact about another module, and **3.5** is independent of everything and costs
+days; **3.4a** sits one step behind 3.3 and **3.4b** behind that, still blocked
+on `.xwb`.
 
 ---
 
@@ -156,6 +156,52 @@ API takes the least, so vulkan went 356 to 378.
 `ARCHITECTURE.md`'s collision line lost its parenthetical rather than gaining a
 correction, exactly as §7 proposed.
 
+### 3.2 — the particle field
+
+**Landed, and it needed nothing from the engine** — `f5bd513`. No blend mode,
+no instancing verb, no backend state, no golden image and not one changed file
+under `engine/`: ten thousand `draw_sprite` calls through the verb `renderer.h`
+already had, from inside one `GameObject`. `PHILOSOPHY.md:397-412`'s central
+claim now has an in-tree exercise, which was the whole argument for ranking a
+sample feature this high.
+
+**The number it was waiting for held.** §3.1a's 35.4 ns a sprite predicted
+about 354 µs of quad arithmetic for ten thousand particles — a fiftieth of a
+16.7 ms frame — and that prediction is why the field ships with no spatial
+index, no sort and no second submission path. It stays a prediction about
+arithmetic rather than a measured frame time, for the reason decision 1 below
+gives.
+
+**What it found that the survey did not predict.** Two things, both recorded in
+the sample's own README:
+
+- **A tick locks and clears together**, so a full row is never visible from
+  outside the simulation. The obvious implementation — look for a full row in
+  last frame's match — can never fire, and that was discovered by writing it
+  and watching nothing happen. The board between the lock and the clear is
+  reconstructed from `shadow()` and `piece_cells()` instead. The exact answer
+  would cost `World` four bytes and both its size and padding asserts, so **the
+  padding assert has now priced out a second thing** — a rule the first time,
+  an effect the second.
+- **The glow needed no atlas.** The sample's README predicted one. Under
+  premultiplied alpha a tint with `a = 0` adds without attenuating, so a
+  shrinking quad of pure addition reads as a spark and the content is still one
+  white texel.
+
+**And one thing it broke and fixed.** The top-out banner drew from inside
+`BoardView`, and the field's largest burst is thrown on the exact frame those
+words appear — so for the first second the one screen a player has to read was
+unreadable. Object order is this sample's only depth, so the banner is its own
+object now, registered last. That was caught by looking at the screen, which is
+the only place it could have been caught.
+
+**`LineSweeperViewTests` is new**, and is the reason `docs/design/` and
+`CLAUDE.md` gained a thirteenth ctest entry in the same commit. It links the
+engine and still creates no device, because the field takes a resolved texture
+handle rather than the resource table — so the ten thousand particles, the
+compaction and the row reconstruction all run headlessly. It pins the policy
+and not the tuning.
+
 ---
 
 ## The four decisions in §6, restated with what is now known
@@ -164,7 +210,10 @@ correction, exactly as §7 proposed.
    the tree rather than merely the largest. §6 predicted §3.1 would "produce
    numbers with nowhere to stand" and it did: 35.4 ns a sprite and a fan-out
    crossing at 250 objects are both properties of one desktop, and neither can
-   be called a floor until a named part and a measured p99 exist.
+   be called a floor until a named part and a measured p99 exist. **§3.2 has
+   now spent one of those numbers** — the particle field's whole cost argument
+   rests on the 35.4 — which makes this the decision the most other work is
+   quietly leaning on.
 2. **Whether markers stay on the seam.** Untouched by any of this.
 3. **Whether the fan-out is itself a T1 violation. Made, and the answer is
    no** — `f411e24`. §6 said: if §3.1b confirms it has never run and no client
