@@ -19,7 +19,7 @@ Two rules for it:
   items exist to produce a number or settle a question. Those answers are the
   product, and a commit message is not where anybody looks for them.
 
-Written against `f5bd513`.
+Written against `c2411a0`.
 
 ---
 
@@ -32,7 +32,7 @@ Written against `f5bd513`.
 | **3.1a** Render bench, engine arithmetic | **landed** | `a9b806c` |
 | **3.1b** `Scene::draw` fan-out under null | **landed** | `90ce3d0` |
 | **3.2** The LineSweeper particle field | **landed** | `f5bd513` |
-| **3.3** `engine/ui/` has no client, and no `Direction` producer | open | |
+| **3.3** `engine/ui/` has no client, and no `Direction` producer | **both fixed** | `f567fe7`, `c2411a0` |
 | **3.4a** `tests/audio/` — the cheap evidence | open | |
 | **3.4b** The audio seam | open, and still blocked on `.xwb` | |
 | **3.5** Sprite sheets discard `rotated` | open — independent of everything | |
@@ -40,12 +40,10 @@ Written against `f5bd513`.
 | **6** The four decisions `next.md` does not make | one made — the third; three still unmade | `f411e24` |
 | **7** The nine drifted claims | **all nine fixed**, and three more found | `dea5fe0` |
 
-§4's spine is finished down to its branch point and **3.2, the item it
-pointed at, has landed**. What is left of §3 is two independent items and one
-pair: **3.3** carries the sharper of its two findings, a header stating a false
-fact about another module, and **3.5** is independent of everything and costs
-days; **3.4a** sits one step behind 3.3 and **3.4b** behind that, still blocked
-on `.xwb`.
+§4's spine is finished and both of the items it branched into have landed.
+What is left of §3 is **3.5**, independent of everything and days of work, and
+the audio pair — **3.4a** is now unblocked, and **3.4b** behind it is still
+blocked on `.xwb`.
 
 ---
 
@@ -201,6 +199,49 @@ engine and still creates no device, because the field takes a resolved texture
 handle rather than the resource table — so the ten thousand particles, the
 compaction and the row reconstruction all run headlessly. It pins the policy
 and not the tuning.
+
+### 3.3 — the module with no client, and the header that lied
+
+**Both findings fixed, in two commits.** `f567fe7` gave `engine/ui/` a client;
+`c2411a0` made `navigation.h`'s sentence about `engine/input/` true.
+
+**The first was answered by a pause screen, and nothing in `engine/` changed
+to make it work.** That is the outcome §3.3 predicted and it is recorded as a
+result rather than assumed: the widget set, the focus group, the navigation
+walk and the state stack were all used exactly as they shipped. Two things the
+engine already had turned out to be load-bearing and had never been run —
+`State::covers_screen()` returning false, which `state_context.h` names a pause
+menu as the worked example for twice, and `StateContext::pop` being queued
+rather than immediate, which is the only reason a button's action may pop the
+state it lives inside.
+
+**A stub is not a client, and that is the part worth keeping.** The module's
+only previous exercise was four `StubWidget`s, which report whatever bounds the
+test asks for. `nearest_in_direction` is arithmetic over `bounds()`, so the
+three rows navigate and wrap only because a `UiText` reports what the font
+measured. No test could have established that.
+
+**The second finding cost an engine change and was worth waiting for one
+client.** `Direction` moved to `engine/input/direction.h` — the sentence had
+the dependency the right way round and ARCHITECTURE's table already allowed
+`ui → input`, an edge nothing had ever stood on. Beside it went the two pieces
+a client keeps writing: `stick_direction` for the quadrant test and
+`DirectionRepeat` for the hold-to-repeat, plus `pad_direction` to collapse a
+stick and a d-pad into one answer.
+
+**The order was the point.** The pause screen's first version translated two
+keys and two d-pad buttons itself, in nine obvious lines, and that was cheap
+*because both are edge devices* — an edge needs neither a deadzone nor a
+repeat. Adding the stick is what makes the other two thirds appear. The
+mechanism landed with the client that needed it rather than ahead of one, which
+is T1's shape rather than a violation of it, and §3.3 called that shape
+correctly in advance.
+
+**One thing it caught in passing.** `ARCHITECTURE.md`'s `tests/` tree still
+said `tests/linesweeper/` was one target linking no engine, which `f5bd513` had
+already made false — CLAUDE.md and README were amended then and that one was
+missed. Fixed in `c2411a0`. §7's lesson holds: the counts that drift are the
+ones nothing checks.
 
 ---
 
