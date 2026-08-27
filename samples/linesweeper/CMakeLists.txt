@@ -37,6 +37,7 @@ add_executable(LineSweeperSample WIN32
     presentation/board_view.cpp
     presentation/particles.cpp
     presentation/top_out_banner.cpp
+    states/pause_state.cpp
     states/play_state.cpp
 )
 target_link_libraries(LineSweeperSample PRIVATE

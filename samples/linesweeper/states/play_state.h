@@ -7,6 +7,7 @@
 #include "samples/linesweeper/presentation/board_view.h"
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
+#include "samples/linesweeper/states/pause_state.h"
 #include "samples/linesweeper/rules/world.h"
 
 #include <cstdint>
@@ -39,6 +40,15 @@ namespace linesweeper
 		// it in (CLAUDE.md, Known-absent). What that costs is measured rather
 		// than asserted - README, Still open, has the number.
 		std::uint8_t read_input() const;
+
+		// Pushes the pause screen and acts on what it decided.
+		//
+		// The answer comes back through StateContext::push<PauseChoice>, which
+		// carries it on the stack frame rather than on either state - so
+		// neither this class nor PauseState holds a result member, and there
+		// is nothing to reset when the menu is opened a second time
+		// (state_context.h).
+		void open_pause_menu();
 
 		// Borrowed. The shell built every service before this existed and
 		// outlives it (PHILOSOPHY, Services and lifetimes).

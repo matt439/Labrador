@@ -238,6 +238,71 @@ for Start, because restarting is not an input to `tick()` — it replaces the
 value `tick()` runs on — so that edge falls outside the recording and is free to
 be an edge. A held R would otherwise restart sixty times a second.
 
+### There is a pause screen, and the game did not need one
+
+**The objection first, because it is the real one.** T1 points the other way:
+LineSweeper does not need a pause screen. Its README argues restart-as-one-
+assignment as a virtue and the match is already interruptible by closing the
+window. A menu built so that a module has a client is a menu built for the
+engine's benefit, which is the thing this document is supposed to catch.
+
+It is here anyway, and the defence is narrow enough to write down. `engine/ui/`
+is roughly 1,350 lines across eight files and
+`grep -rn "engine/ui/" samples/` was **empty** — the module's only client left
+with the split. `PHILOSOPHY.md` calls the samples "the permanent second client
+that keeps the boundary honest (T1)", and on this one module that client did
+not exist. A promise a document makes on a module's behalf is not kept by four
+`StubWidget`s in a test. `docs/next.md` section 3.3 is the finding.
+
+**A stub is not a client, and the difference showed up immediately.** A stub
+reports whatever bounds the test asks for; a `UiText` reports the box the font
+measured, and directional navigation is arithmetic over exactly those boxes.
+The three rows navigate and wrap because the measurements are real, which is a
+thing only a client can demonstrate.
+
+**Nothing in `engine/` changed.** That is the outcome the survey predicted and
+it is recorded as a result rather than assumed: the widget set, the focus
+group, the navigation walk and the state stack were all used as they shipped.
+Two things the engine already had turned out to be load-bearing and had never
+been exercised:
+
+- **`State::covers_screen()` returning false** is the whole of "keep drawing
+  the match underneath". `state_context.h` names a pause menu as its worked
+  example twice; this is the first one that exists.
+- **`StateContext::pop` is queued, not immediate**, when called from inside a
+  state's own update. That is what makes it safe for a button's action to pop
+  the state — the action, the `FocusGroup` holding it and the state itself are
+  all destroyed by that pop, and would be destroyed *during* the call if it
+  were not deferred. `tests/core/state_context_tests.cpp` already pins it.
+
+**The layout is manual and stayed manual.** `PHILOSOPHY.md` refuses an
+autolayout engine, so the three rows are three y-coordinates and a spacing
+constant. The one thing not done by hand is centring: each string is measured
+once in `init()` through `RenderResources::measure_text`. The HUD in
+`board_view.cpp` columnises by counting characters and says it only works
+because the font is monospaced — true, and not a habit a menu with rows of
+different lengths should inherit.
+
+**The scrim is not a widget**, and that is the only place the widget set did
+not fit. A full-screen dimming quad has no focus, no colour a cursor changes
+and nothing to navigate to; making it a `UiWidget` would put a destination in
+the walk that swallows every press. `UiTexture` is the leaf that would
+otherwise fit and it takes a sheet name and a frame name, which this sample has
+not got — one white texel and a font is the whole of its content. Fifteen lines
+of `GameObject` in `pause_state.cpp` is cheaper than a sprite sheet in the
+manifest.
+
+**What is still hand-rolled, and it is the half that hurts.**
+`engine/ui/navigation.h` says `Direction` is "produced by the input module from
+a stick or a d-pad", and
+`grep -rn Direction engine/ | grep -v engine/ui/` was empty: **no such producer
+exists**. A header stating a false fact about another module is a defect on its
+own, independent of whether any game wants a menu. What this sample writes in
+its absence is nine lines translating two keys and two d-pad buttons into a
+`Direction` — which is the cheap two thirds of the problem, because an
+edge-driven device needs neither a deadzone nor a repeat. The stick needs all
+three and is deliberately not read here. See *Still open*.
+
 ### Additive blending needs no engine change
 
 The engine looked as though it could not blend additively: it opened every batch
@@ -400,6 +465,15 @@ which is the only thing that argument leaves room for.
   writing it is that a sample's build check is a sample's build check — someone
   who copies the tree and deletes it gets folders and no discipline, which the
   layer decision above already says out loud.
+
+- **The stick does not drive the pause menu, and `navigation.h` still states
+  a false fact.** That header says `Direction` is produced by the input module;
+  no producer exists, so `pause_state.cpp` translates the keyboard and the
+  d-pad itself. Both are edge devices, so it costs nine obvious lines. An
+  analogue stick costs a deadzone, a quadrant test and hold-to-repeat, and the
+  third is the one every client gets wrong — which is the argument for the
+  mechanism living in `engine/input/` rather than here, and for it landing with
+  the client that needs it rather than ahead of one (T1).
 
 - **Whether the input map belongs in the sample or the engine — now priced,
   and still open.** `states/` has two tables, `{Key, button}` and

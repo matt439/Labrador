@@ -5,6 +5,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 #include "samples/linesweeper/rules/tick.h"
+#include "samples/linesweeper/states/pause_state.h"
 
 #include <memory>
 #include <string>
@@ -197,8 +198,56 @@ namespace linesweeper
 		return input;
 	}
 
+	// PAUSING IS NOT AN INPUT TO tick(), which is the same distinction the
+	// restart below turns on. It suspends the match rather than stepping it, so
+	// it reads an edge and falls outside anything a recording would carry.
+	//
+	// Escape and Start, and not P alone: P is a letter the pause screen also
+	// accepts as a way out, and a player who opened the menu with a key expects
+	// that key to close it.
+	void PlayState::open_pause_menu()
+	{
+		this->context()->push<PauseChoice>(
+			std::make_unique<PauseState>(this->app_),
+			[this](const PauseChoice& choice)
+			{
+				switch (choice)
+				{
+				case PauseChoice::restart:
+					// The same one line the top-out restart is, reached from a
+					// menu instead of from a key. There is no reset() here
+					// either - README, The match is one value.
+					this->world_ = World{};
+					break;
+
+				case PauseChoice::quit:
+					this->app_->quit();
+					break;
+
+				case PauseChoice::resume:
+				default:
+					break;
+				}
+			});
+	}
+
 	void PlayState::update(float dt)
 	{
+		// Before the restart test and before tick(), so the frame a player
+		// pauses on is not also a frame the match steps.
+		//
+		// Not while topped out: the match is already over, the banner says what
+		// to press, and a pause menu offering RESUME over a finished match is
+		// offering something that does not exist.
+		if (this->world_.topped_out == 0 &&
+			(this->app_->keyboard()->pressed(Key::escape) ||
+				this->app_->keyboard()->pressed(Key::p) ||
+				this->app_->gamepads()->pressed(0, GamepadButton::start)))
+		{
+			this->open_pause_menu();
+			return;
+		}
+
 		// RESTARTING IS AN ASSIGNMENT, and this is the line README's "The
 		// match is one value" is arguing for. There is no reset(), nothing to
 		// notify, no scene to rebuild and no allocation - the board holds a
