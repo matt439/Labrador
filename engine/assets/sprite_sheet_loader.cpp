@@ -4,6 +4,8 @@
 #include "engine/math/vector2f.h"
 
 #include <memory>
+#include <stdexcept>
+#include <string>
 
 using namespace mattmath;
 
@@ -17,6 +19,13 @@ namespace labrador
 			for (size_t index = 0; index < json.size(); ++index)
 			{
 				const JsonValue frame = json.at(index);
+
+				// Read before anything else so that every message below can
+				// carry it. The name is required either way - NameTable::add
+				// needs one - so hoisting it adds no failure, it only decides
+				// which of two complaints a doubly-broken frame gets.
+				const std::string name = frame.string("name");
+
 				const JsonValue position = frame.object("position");
 				const JsonValue size = frame.object("size");
 
@@ -28,6 +37,10 @@ namespace labrador
 
 				// A frame without an origin draws from its top-left corner, and
 				// most of them do - the sheet only says so where it differs.
+				// What the two numbers mean is the seam's term rather than this
+				// file's: unscaled source texels, measured from the frame's own
+				// top left (engine/render/sprite_geometry.h). SpriteSheet::draw
+				// is where it reaches a quad.
 				Vector2F origin = Vector2F::ZERO;
 				if (frame.has("origin"))
 				{
@@ -36,11 +49,35 @@ namespace labrador
 					origin.y = origin_json.number("y");
 				}
 
-				const bool rotated =
-					frame.has("rotated") && frame.boolean("rotated");
+				// REFUSED, NOT IGNORED, AND THAT IS EVERYTHING THIS ENGINE
+				// KNOWS ABOUT PACKER ROTATION.
+				//
+				// This key used to be parsed into a SpriteFrame member that
+				// nothing ever read: the sheet said a frame was turned in the
+				// atlas, the engine drew it upright, and no line anywhere said
+				// so. Quiet disagreement with a content file is the T6 trap on
+				// the one path T7 says should be data, and it is worse here
+				// than a missing key would be, because the file is right and
+				// the engine is wrong.
+				//
+				// Drawing one is not refused on cost alone. A turned frame
+				// swaps its source width and height against the destination and
+				// stops sampling its four corners in corner order, which is
+				// engine/render/sprite_geometry.h - the pixel contract all four
+				// rasterising backends are held to, and the golden set with it.
+				// That is a real feature and deserves its own argument. What it
+				// does not deserve is to arrive through a member that already
+				// existed, so the member is gone too (render/sprite_frame.h).
+				if (frame.has("rotated") && frame.boolean("rotated"))
+				{
+					throw std::runtime_error(frame.where() + " ('" + name +
+						"') sets 'rotated', and this engine draws every frame "
+						"the way it is stored: a packer turns a frame in the "
+						"atlas and nothing on the draw path turns it back. "
+						"Repack the sheet with rotation off.");
+				}
 
-				sprite_frames.add(frame.string("name"),
-					SpriteFrame(source_rectangle, origin, rotated));
+				sprite_frames.add(name, SpriteFrame(source_rectangle, origin));
 			}
 			return sprite_frames;
 		}

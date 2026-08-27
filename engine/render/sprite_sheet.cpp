@@ -70,8 +70,10 @@ namespace labrador
 		SpriteFlip flip,
 		float layer_depth) const
 	{
-		this->draw(draw_list, this->sprite_frame(frame).source_rectangle(),
-			destination, colour, rotation, origin, flip, layer_depth);
+		const SpriteFrame& sheet_frame = this->sprite_frame(frame);
+		this->draw(draw_list, sheet_frame.source_rectangle(), destination,
+			colour, rotation, sheet_frame.origin() + origin, flip,
+			layer_depth);
 	}
 
 	void SpriteSheet::draw(DrawList& draw_list,
@@ -84,8 +86,9 @@ namespace labrador
 		SpriteFlip flip,
 		float layer_depth) const
 	{
-		this->draw(draw_list, this->sprite_frame(frame).source_rectangle(),
-			position, colour, rotation, origin, scale, flip, layer_depth);
+		const SpriteFrame& sheet_frame = this->sprite_frame(frame);
+		this->draw(draw_list, sheet_frame.source_rectangle(), position, colour,
+			rotation, sheet_frame.origin() + origin, scale, flip, layer_depth);
 	}
 
 	void SpriteSheet::draw(DrawList& draw_list,

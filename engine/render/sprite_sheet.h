@@ -58,6 +58,20 @@ namespace labrador
 		// The destination is in world space and the list's current camera maps
 		// it; the position overloads are the same draw with the size taken from
 		// the source rectangle, which is what the backend used to compute.
+		//
+		// `origin` IS ADDED TO THE FRAME'S OWN, NOT SUBSTITUTED FOR IT. A sheet
+		// may author a pivot per frame (sprite_frame.h) and for years nothing
+		// read it; these two overloads are where it now reaches a quad. Both
+		// quantities are in unscaled source texels - the same units, so they
+		// compose with no conversion, exactly as build_glyph_quad composes a
+		// pen with a string's origin (sprite_geometry.h).
+		//
+		// Addition rather than "the caller's if it gave one" because the second
+		// needs a sentinel this signature does not have: a default argument
+		// cannot tell a caller that said nothing from one that asked for the
+		// top-left corner, so the rule would be a silent policy hanging off
+		// whether a Vector2F happened to be zero. A frame with no authored
+		// pivot adds zero and every existing caller draws exactly where it did.
 		void draw(DrawList& draw_list,
 			frame_handle frame,
 			const mattmath::RectangleF& destination,
@@ -80,6 +94,13 @@ namespace labrador
 		// The same two, for a caller holding a source rectangle rather than a
 		// frame handle - an animation strip's current frame is computed, not
 		// named.
+		//
+		// SO `origin` IS THE CALLER'S ALONE HERE, and the asymmetry with the
+		// pair above is not an oversight: there is no frame, so there is no
+		// authored pivot to add. A strip's definition has no origin key either,
+		// which is why the one caller that reaches these - AnimationObject -
+		// loses nothing by it. A sheet that wants a per-frame pivot on an
+		// animation is asking for a schema this loader does not have.
 		void draw(DrawList& draw_list,
 			const mattmath::RectangleI& source,
 			const mattmath::RectangleF& destination,

@@ -1,17 +1,22 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/null/recording.h"
+#include "engine/core/name_table.h"
+#include "engine/render/animation_strip.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
+#include "engine/render/sprite_frame.h"
+#include "engine/render/sprite_sheet.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
 #include <stdexcept>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 // Drawing, asserted with no graphics API at all.
@@ -529,4 +534,103 @@ TEST_CASE("CONTRACT: a resize clears `touched`, so the layout may be re-run")
 
 	const std::vector<RecordedSprite> drawn = harness.end();
 	CHECK(drawn.empty());
+}
+
+// --- what a sheet's own frame contributes to a draw -------------------------
+//
+// THE ONLY PLACE THE COMPOSITION IS OBSERVABLE. A sheet may author a pivot per
+// frame, SpriteSheet::draw adds it to whatever origin the caller passed, and
+// the sum is not readable anywhere afterwards: it is one argument to
+// build_sprite_quad and then it is four corner positions. RenderPixelTests
+// could infer it from ink, in the one configuration that has a device, for a
+// class no sample draws; here it is read straight off the quad, on a build
+// machine, in the configuration CI runs completely.
+//
+// tests/assets/sprite_sheet_loader_tests.cpp holds the other half - that the
+// key is parsed, and that its sibling `rotated` is refused rather than
+// silently obeyed. Neither file can assert the whole of the finding alone.
+
+TEST_CASE("a frame's authored origin moves the quad, and the caller's adds")
+{
+	Harness harness;
+
+	// A 2x2 source with a pivot at (1,1) - its centre, in unscaled source
+	// texels, which is the seam's unit for an origin and the sheet's for this
+	// key. Over an 8x4 destination that is half of each side: 4 pixels left and
+	// 2 up.
+	NameTable<SpriteFrame> frames("sprite frame");
+	frames.add("plain", SpriteFrame(Harness::whole()));
+	frames.add("centred",
+		SpriteFrame(Harness::whole(), Vector2F(1.0f, 1.0f)));
+
+	const SpriteSheet sheet(harness.quad, std::move(frames),
+		NameTable<AnimationStrip>("animation strip"));
+
+	const RectangleF destination(10.0f, 20.0f, 8.0f, 4.0f);
+
+	DrawList list = harness.begin();
+
+	// A frame with no pivot, drawn with no origin: the top left of the
+	// destination, which is what every frame in the tree does today and what
+	// this change must not have moved.
+	sheet.draw(list, sheet.resolve_sprite_frame("plain"), destination);
+
+	// The same draw, from the frame that carries one.
+	sheet.draw(list, sheet.resolve_sprite_frame("centred"), destination);
+
+	// And both origins at once. The caller's is a second shift in the same
+	// units, so the quad lands one further step along - not at the caller's
+	// alone, which is the reading a substitution would have given and is the
+	// distinction this case exists for.
+	sheet.draw(list, sheet.resolve_sprite_frame("centred"), destination,
+		Colour::white, 0.0f, Vector2F(1.0f, 1.0f));
+
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 3);
+
+	CHECK(drawn[0].corners[0].position.x == doctest::Approx(10.0f));
+	CHECK(drawn[0].corners[0].position.y == doctest::Approx(20.0f));
+
+	CHECK(drawn[1].corners[0].position.x == doctest::Approx(6.0f));
+	CHECK(drawn[1].corners[0].position.y == doctest::Approx(18.0f));
+
+	CHECK(drawn[2].corners[0].position.x == doctest::Approx(2.0f));
+	CHECK(drawn[2].corners[0].position.y == doctest::Approx(16.0f));
+
+	// The destination itself never moved - an origin shifts where the rectangle
+	// is anchored and does not resize it, so all three quads are 8x4.
+	for (const RecordedSprite& sprite : drawn)
+	{
+		CHECK(sprite.corners[3].position.x - sprite.corners[0].position.x ==
+			doctest::Approx(8.0f));
+		CHECK(sprite.corners[3].position.y - sprite.corners[0].position.y ==
+			doctest::Approx(4.0f));
+	}
+}
+
+TEST_CASE("a strip's frame carries no authored origin, and says so by drawing")
+{
+	Harness harness;
+
+	// The source-rectangle overloads take the caller's origin and nothing else,
+	// because there is no frame to ask. Asserted rather than left to the
+	// header: an implementation that reached for a pivot here would have to
+	// invent which frame it belonged to.
+	NameTable<SpriteFrame> frames("sprite frame");
+	frames.add("centred",
+		SpriteFrame(Harness::whole(), Vector2F(1.0f, 1.0f)));
+
+	const SpriteSheet sheet(harness.quad, std::move(frames),
+		NameTable<AnimationStrip>("animation strip"));
+
+	const RectangleF destination(10.0f, 20.0f, 8.0f, 4.0f);
+
+	DrawList list = harness.begin();
+	sheet.draw(list, Harness::whole(), destination);
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 1);
+	CHECK(drawn[0].corners[0].position.x == doctest::Approx(10.0f));
+	CHECK(drawn[0].corners[0].position.y == doctest::Approx(20.0f));
 }
