@@ -4,6 +4,7 @@ add_executable(AssetsTests
     asset_manifest_loader_tests.cpp
     json_tests.cpp
     resource_loader_tests.cpp
+    sound_bank_loader_tests.cpp
     sprite_sheet_loader_tests.cpp
     test_main.cpp
 )

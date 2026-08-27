@@ -68,6 +68,21 @@ endif()
 # and nothing did when a fifth did, which is the same claim checked rather than
 # made. engine/render/vulkan/ was added without a line of this file changing.
 #
+# AND IT IS NOT ABOUT render/ ANY MORE, WHICH IS WHY THE MODULE IS CAPTURED TOO.
+# engine/audio/ has a seam and two backends now - xaudio2/ and null/ - and the
+# rule that protects them is word for word the rule above: the folder is the
+# backend, its headers are its own, and one line of #include carries a platform
+# further than a translation unit can. That is not a hypothetical here. Audio is
+# the module where it had already happened and nothing caught it, because this
+# check only ever looked at render/: <Audio.h> sat in FOUR public engine
+# headers across three modules, so every sample, every test and every
+# downstream game compiled XAudio2's headers whether it made a noise or not. A
+# rule written for one module is a rule the next module is allowed to break.
+#
+# The module is captured rather than listed, so a third one that grows backend
+# folders needs no edit here either - the same property the backend name has,
+# and the same reason.
+#
 # Deliberately not a compiler error: the include root has to admit
 # "engine/render/d3d11/backend.h" for the folder's own three files, and there is
 # no include path that admits it there and refuses it next door. Same shape as
@@ -79,14 +94,15 @@ foreach(source IN LISTS engine_sources)
     # rule that only catches one of three ways to write the same include is a
     # rule the next person writes around without meaning to.
     file(STRINGS "${source}" hits
-        REGEX "^[ \t]*#[ \t]*include[ \t]*[\"<](\\.\\./)*(engine/)?render/[A-Za-z0-9_]+/[A-Za-z0-9_]+\\.h[\">]")
+        REGEX "^[ \t]*#[ \t]*include[ \t]*[\"<](\\.\\./)*(engine/)?(render|audio)/[A-Za-z0-9_]+/[A-Za-z0-9_]+\\.h[\">]")
     foreach(hit IN LISTS hits)
         # The folder a header lives in is the one folder allowed to name it.
-        # Extract the backend from the include and compare it with the
-        # directory the file is in, so a new backend needs no edit here.
-        string(REGEX MATCH "render/([A-Za-z0-9_]+)/[A-Za-z0-9_]+\\.h" ignored "${hit}")
+        # Extract the module and the backend from the include and compare them
+        # with the directory the file is in, so neither a new backend nor a new
+        # module with backends needs an edit here.
+        string(REGEX MATCH "(render|audio)/([A-Za-z0-9_]+)/[A-Za-z0-9_]+\\.h" ignored "${hit}")
         get_filename_component(source_dir "${source}" DIRECTORY)
-        if(NOT source_dir MATCHES "/render/${CMAKE_MATCH_1}$")
+        if(NOT source_dir MATCHES "/${CMAKE_MATCH_1}/${CMAKE_MATCH_2}$")
             string(STRIP "${hit}" hit)
             list(APPEND backend_offenders "${source}\n      ${hit}")
         endif()
@@ -100,5 +116,6 @@ if(backend_offenders)
         "    ${report}\n"
         "  Everything that draws goes through DrawList, and everything that\n"
         "  builds a resource on a device goes through render/resource_factory.h.\n"
+        "  Everything that makes a noise goes through audio/audio_device.h.\n"
         "  See docs/design/ARCHITECTURE.md, Modules.")
 endif()

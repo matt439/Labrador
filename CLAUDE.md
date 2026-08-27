@@ -44,13 +44,19 @@ configure time — so asking for one that was not built is a missing symbol at
 link (T5). A change to anything in `engine/render/` should be checked against
 all five; CI builds all five.
 
+**And two audio backends**, on a second and independent axis:
+`LABRADOR_AUDIO_BACKEND` is `xaudio2` or `null`, and only `x64-debug-null`
+asks for the second. That preset is therefore the one that takes no platform
+API at all, which is what makes it the configuration a build machine runs end
+to end.
+
 | Preset | Backend | ctest |
 |---|---|---|
 | `x64-debug`, `x64-release` | `render/d3d11/` | 14 entries; WARP fallback in debug |
 | `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 14 entries; WARP fallback in debug |
 | `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 14 entries; needs a real driver |
 | `x64-debug-vulkan` | `render/vulkan/` — the one that reaches other platforms | 14 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null` | `render/null/` — no graphics API; records draws | 13 entries; `RenderPixelTests` is not built |
+| `x64-debug-null` | `render/null/` — no graphics API; records draws. **The only preset that also takes `audio/null/`** | 13 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
 
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
@@ -99,19 +105,35 @@ the compaction and the event reconstruction all run headlessly; the board view
 cannot, because measuring text walks an atlas a device filled, and what it
 draws is checked by looking at it.
 
-**`AudioTests` is headless for a reason neither of those shares, and the
-reason is the finding.** `engine/audio/` has no backend folder and no seam —
-DirectXTK is in the public headers of three modules — so the only `SoundBank`
-this repository can construct is `SoundBank::silent()`: `DirectX::WaveBank`
-takes an `AudioEngine*` and a path to an `.xwb`, there is no `.xwb` in this
-tree, and `DirectX::SoundEffectInstance` has no public constructor to fill a
-registry with by hand. Eight of that class's thirteen instance methods
-therefore have no observable behaviour at all here, and five sites of level
-clamping — engine arithmetic, sitting *below* the check for the platform —
-have never executed. [tests/audio/sound_bank_tests.cpp](tests/audio/sound_bank_tests.cpp)
-carries the whole list; it is what `docs/next.md` §3.4a asked for and the
-measured argument for how wide the audio seam has to be. Do not read a green
-`AudioTests` as audio being covered.
+**`AudioTests` is headless in every configuration and can say what a sound did
+in only one of them, and that split is the finding.** This paragraph used to
+read: `engine/audio/` has no backend folder and no seam, DirectXTK is in the
+public headers of three modules, and the only `SoundBank` this repository can
+construct is `SoundBank::silent()` — so eight of that class's thirteen instance
+methods have no observable behaviour at all here, and five sites of level
+clamping, engine arithmetic sitting *below* the check for the platform, have
+never executed. All of it was true, it was `docs/next.md` §3.4a's measured
+product, and §3.4b is what spent it. There is a seam now
+([engine/audio/audio_device.h](engine/audio/audio_device.h)); the clamp and
+every handle check are above it; and [engine/audio/null/](engine/audio/null/)
+records what it was asked to play.
+
+So what to know before reading a green `AudioTests` is narrower than "audio is
+not covered". Under the five presets that build `audio/xaudio2/` this target
+still constructs no device, and every case runs against `SoundBank::silent()` —
+the substitute a missing `.xwb` produces, which is a question about content
+rather than about the seam. **Under `x64-debug-null` it also compiles
+[tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and that is the one
+place in the tree where a sound can be asserted to have happened: which wave,
+out of which bank, at which clamped levels, in what order. A change under
+`engine/audio/` checked only on the default preset has not been checked.
+
+What is still absent, on purpose: there is no `.xwb` in this tree and there
+cannot be one, so nothing here ever plays anything, and writing that container
+format down — an `xwb_file.h` beside
+[dds_file.h](engine/render/dds_file.h), which is the precedent
+`docs/port/android.md` §3.2 argues from — is open and is blocked on having a
+file of that format to read it against.
 
 ## What will fail the build
 
@@ -124,12 +146,17 @@ measured argument for how wide the audio seam has to be. Do not read a green
   compiler's own error, but [cmake/check_engine_includes.cmake](cmake/check_engine_includes.cmake)
   greps for it on every build anyway, because the compiler only enforces it
   when this repository is built standalone.
-- **A file outside `engine/render/<backend>/` including *any* header in that
-  folder.** Second pass in the same script. It guards the folder rather than
-  one filename in it, and it reads headers as well as `.cpp` files, because
-  `device_resources.h` beside `backend.h` is how the backend escaped last
-  time — so naming `engine/render/gl/gl_functions.h` from `engine/app/` fails
-  the build exactly as naming `backend.h` does.
+- **A file outside `engine/render/<backend>/` or `engine/audio/<backend>/`
+  including *any* header in that folder.** Second pass in the same script. It
+  guards the folder rather than one filename in it, and it reads headers as
+  well as `.cpp` files, because `device_resources.h` beside `backend.h` is how
+  the backend escaped last time — so naming `engine/render/gl/gl_functions.h`
+  from `engine/app/` fails the build exactly as naming `backend.h` does. It
+  captures the module as well as the backend, so `engine/audio/null/` is
+  covered by the same six lines and a third module with backend folders would
+  be too. Audio is the module where this had already gone wrong unwatched:
+  the check only ever looked at `render/`, and `<Audio.h>` was in four public
+  engine headers across three modules.
 - **Adding a source file without listing it.** Sources are enumerated
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
@@ -161,7 +188,8 @@ measured argument for how wide the audio seam has to be. Do not read a green
   one thread. Both are compiled only under `x64-debug-null`, and until they
   existed the early-out beside the fan-out was the only branch that had ever
   been taken.
-- **Platform code lives behind seams**: `render/d3d11/`, `input/xinput/`.
+- **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`,
+  `input/xinput/`.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
   Every backend has the same three translation units — `renderer.cpp`,

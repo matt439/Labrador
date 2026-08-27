@@ -52,11 +52,12 @@
     },
     {
       "name": "x64-debug-null",
-      "displayName": "x64 Debug (no graphics API)",
+      "displayName": "x64 Debug (no platform API)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "LABRADOR_RENDER_BACKEND": "null"
+        "LABRADOR_RENDER_BACKEND": "null",
+        "LABRADOR_AUDIO_BACKEND": "null"
       }
     }
   ],

@@ -1,8 +1,3 @@
-# xaudio2redist first: directxtk's config references Microsoft::XAudio2Redist
-# but does not find it itself.
-find_package(xaudio2redist CONFIG REQUIRED)
-find_package(directxtk CONFIG REQUIRED)
-
 # --- LineSweeperRules — the simulation, and it links nothing ---
 #
 # labrador_settings is an INTERFACE target carrying compiler flags and no

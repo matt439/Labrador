@@ -19,9 +19,12 @@ using namespace labrador;
 // audio_resources.h opens with when it calls itself "the audio counterpart to
 // RenderResources".
 //
-// Every bank below is SoundBank::silent(), for the reason sound_bank_tests.cpp
-// gives at length: it is the only SoundBank this repository can construct. That
-// costs this file nothing, because none of it is about what a bank plays.
+// Every bank below is SoundBank::silent(), and it no longer has to be: since
+// the audio seam landed, a bank over engine/audio/null/ can be built and read
+// back (tests/audio/null_tests.cpp). It stays that way here because a bank with
+// no content needs no device and compiles in all six configurations, and none
+// of this file is about what a bank plays - a registry does not know what it
+// holds, which is the property being asserted.
 
 TEST_CASE("a bank name is resolved once and read by handle after that")
 {

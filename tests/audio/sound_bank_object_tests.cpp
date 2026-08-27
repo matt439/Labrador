@@ -4,8 +4,6 @@
 #include "engine/audio/sound_bank.h"
 #include "engine/audio/sound_bank_object.h"
 
-#include <Audio.h>
-
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -82,12 +80,13 @@ TEST_CASE("every play call an object forwards reaches its bank")
 	const SoundBank::WaveHandle wave = object.resolve_wave("shot");
 	const SoundBank::EffectHandle effect = object.resolve_effect("engine_loop");
 
-	// Twelve forwards, each one line, and against a silent bank eight of them
-	// can only be checked for arriving somewhere at all - which is
-	// sound_bank_tests.cpp's finding inherited rather than a second one. What
-	// this case does establish is that none of the twelve forgets to go
-	// through sound_bank(): a forward that read the wrong member would throw
-	// here rather than in a client.
+	// Twelve forwards, each one line, and against a bank with no content eight
+	// of them can only be checked for arriving somewhere at all - which is
+	// sound_bank_tests.cpp's finding inherited rather than a second one, and is
+	// a property of the bank rather than of this class. What this case does
+	// establish is that none of the twelve forgets to go through sound_bank():
+	// a forward that read the wrong member would throw here rather than in a
+	// client.
 	CHECK_NOTHROW(object.play_wave(wave));
 	CHECK_NOTHROW(object.play_effect(effect, true));
 	CHECK_NOTHROW(object.stop_effect(effect));
@@ -97,7 +96,7 @@ TEST_CASE("every play call an object forwards reaches its bank")
 	CHECK_NOTHROW(object.set_effect_pitch(effect, 0.5f));
 	CHECK_NOTHROW(object.set_effect_pan(effect, 0.5f));
 
-	CHECK(object.effect_state(effect) == DirectX::SoundState::STOPPED);
+	CHECK(object.effect_state(effect) == SoundState::stopped);
 	CHECK(object.is_effect_looping(effect) == false);
 }
 
@@ -115,9 +114,11 @@ TEST_CASE("set_sound_bank points the object at a different bank")
 
 	// What is not asserted, and cannot be here: the header warns that every
 	// handle resolved from the old bank is meaningless against the new one. Two
-	// silent banks resolve every name to slot zero, so the two are numerically
-	// identical and the warning has nothing to show. It is true of a pair of
-	// audible banks, which this repository cannot build.
+	// banks with no content resolve every name to slot zero, so the two are
+	// numerically identical and the warning has nothing to show. A pair of
+	// audible banks would show it, and building one takes a device -
+	// tests/audio/null_tests.cpp is where that is done, and the nearest thing
+	// to this claim it pins is that two effects over one bank are two voices.
 	CHECK_THROWS_AS(object.set_sound_bank("voice"), std::out_of_range);
 }
 

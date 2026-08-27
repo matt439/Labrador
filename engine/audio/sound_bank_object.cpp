@@ -3,8 +3,6 @@
 #include <stdexcept>
 #include <string>
 
-using namespace DirectX;
-
 namespace labrador
 {
 	namespace

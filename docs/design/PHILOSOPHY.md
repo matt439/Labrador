@@ -304,6 +304,16 @@ Platform-specific code — rendering backend, input devices, audio backend,
 windowing — lives at the edge behind engine-owned interfaces, so that a
 second platform is an addition, not a rewrite.
 
+**That was true of three of those four and not of audio, and the amendment
+belongs here rather than in a footnote.** `engine/audio/` had the sentence
+without the structure: DirectXTK's `<Audio.h>` sat in four public engine
+headers, a sound bank was constructed from a `DirectX::WaveBank`, and asking
+what a piece of music was doing meant naming XAudio2 to ask — so a second
+platform was a rewrite of the module and not an addition beside it. It is
+`engine/audio/audio_device.h` now, with `audio/xaudio2/` and `audio/null/`
+behind it, and the check that fails the build for a file reaching into a
+backend folder covers both modules rather than only `render/`.
+
 This paragraph used to end "today there is one backend (D3D11, XInput), kept
 behind seams that don't presume it is the only one", and the amendment is
 worth stating rather than hiding. **There are five render backends now**:
@@ -371,6 +381,17 @@ what it changes is the *cost* of the goal rather than its status:
 `docs/port/android.md` costs the rest of such a port, and the renderer is not
 the expensive part of it. Audio, input and the shell are, and that document
 names which.
+
+**One of those three has since been paid, and it was the one that document
+called the port's only provably false claim.** Audio was expensive because the
+engine-side type had to stop being DirectXTK's before an Android backend had
+anything to implement — a rewrite rather than a port. That rewrite has
+happened, on its own account and for a reason that was not the port's: a seam
+with only the platform's own implementation behind it cannot be constructed
+without the platform, so eight of `SoundBank`'s thirteen methods had no
+observable behaviour in this repository at all. What remains of that item is
+one backend against an existing seam, plus the container question, which is
+the shape the other two still have and audio did not.
 
 ### The boundary
 
@@ -484,6 +505,19 @@ engine API to depend on.
   platform would actually be reached through, which is the half of this bullet
   that was hypothetical until it landed. Writing any of them changed nothing
   above the seam.
+
+  **The audio seam owes the same two and now has one of them**, which is the
+  reason it was cut at all rather than the reason it was cut *well*.
+  `audio/null/` records what it was asked to play — which wave, out of which
+  bank, at which levels, in what order — so a test can assert playing on a
+  machine with no sound card, and `audio/xaudio2/` is the platform's. The
+  second-platform half is not built and is the whole of what
+  `docs/port/android.md` §3.2 has left. What the headless one bought was
+  measured before it was written: with only DirectXTK behind that module,
+  eight of `SoundBank`'s thirteen instance methods and five sites of level
+  clamping were code no test in this repository could reach, because the one
+  bank it could construct was a null pointer inside the platform's own class.
+  That is this bullet's opening sentence with a number on it.
 - Parallel rendering is sound because drawing is a pure read. The axis of
   parallelism is **views, not objects**: a worker owns one view and draws
   every object into it, so several workers enter `draw()` on the *same*

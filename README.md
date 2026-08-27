@@ -56,7 +56,11 @@ platform this repository has yet: it is the single API that reaches Android,
 Linux and — through MoltenVK — the Apple ones, which
 [docs/port/android.md](docs/port/android.md) argues at length and which is why
 that is the only item on its list that runs on hardware already here. The
-audio backend is XAudio2 and has no second.
+audio backend is XAudio2 — `audio/xaudio2/`, behind a seam of its own — and
+it has a null one beside it that records what it was asked to play. Both
+backends and both seams are chosen at configure time, and `x64-debug-null`
+is the preset that takes neither platform API: it is the one configuration a
+machine with no GPU and no sound card runs end to end.
 
 ### Prerequisites
 
@@ -89,10 +93,12 @@ ctest --preset x64-debug
 
 `x64-debug-d3d12` builds against the Direct3D 12 backend, `x64-debug-gl`
 against the OpenGL one, `x64-debug-vulkan` against the Vulkan one and
-`x64-debug-null` against one with no graphics API at all. They are separate configurations rather than a runtime switch because the
-backend is chosen at compile time (`LABRADOR_RENDER_BACKEND`), so asking for one
-that was not built is a missing symbol at link rather than a failure on the
-first frame.
+`x64-debug-null` against no platform API at all — no graphics API and no audio
+API, which is what makes it the preset a build machine runs end to end. They
+are separate configurations rather than a runtime switch because a backend is
+chosen at compile time (`LABRADOR_RENDER_BACKEND`, `LABRADOR_AUDIO_BACKEND`),
+so asking for one that was not built is a missing symbol at link rather than a
+failure on the first frame.
 
 The presets put the build in `out/build/<preset>/`. The sample lands at
 `out/build/x64-debug/samples/minimal/MinimalSample.exe` and runs from
@@ -148,7 +154,7 @@ Ten modules, each depending only on modules above it in the table
 | `render` | The renderer seam, cameras, viewports, sprites, text. Each graphics API lives in a folder of its own — `render/d3d11/` and the four beside it. |
 | `scene` | One object list, one collision sweep, one per-view render fan-out. |
 | `input` | Gamepads, deadzones, press edges, menu directions. XInput lives in `input/xinput/`. |
-| `audio` | Sound banks and effect instances. |
+| `audio` | Sound banks and effect instances, behind `AudioDevice`. XAudio2 lives in `audio/xaudio2/`; `audio/null/` records what it was asked to play. |
 | `ui` | Widgets, focus, directional navigation. |
 | `assets` | The manifest, and checked JSON. |
 | `app` | The window, the frame loop, and the services a game is handed. |

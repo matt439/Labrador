@@ -75,9 +75,9 @@ namespace labrador
 		// in front of it too.
 		this->clear();
 
-		if (this->audio_engine_)
+		if (this->audio_device_)
 		{
-			this->audio_engine_->Suspend();
+			this->audio_device_->suspend();
 		}
 		if (this->com_initialized_)
 		{
@@ -105,11 +105,10 @@ namespace labrador
 
 		this->create_window(instance, show_command);
 
-		AUDIO_ENGINE_FLAGS audio_flags = AudioEngine_Default;
-#ifdef _DEBUG
-		audio_flags |= AudioEngine_Debug;
-#endif
-		this->audio_engine_ = std::make_unique<AudioEngine>(audio_flags);
+		// Which audio API this opens, and whether it opens one at all, is
+		// engine/audio/<backend>/'s business and is chosen in CMake. The debug
+		// flags that used to be assembled here went with it.
+		this->audio_device_ = std::make_unique<AudioDevice>();
 
 		const mattmath::Vector2I size =
 			this->resolution_manager_->resolution_ivec();
@@ -182,7 +181,7 @@ namespace labrador
 
 		this->resource_loader_ = std::make_unique<ResourceLoader>(
 			this->render_resources_.get(), this->renderer_.get(),
-			this->audio_resources_.get(), this->audio_engine_.get());
+			this->audio_resources_.get(), this->audio_device_.get());
 
 		this->viewport_manager_ = std::make_unique<ViewportManager>(
 			this->resolution_manager_.get());
@@ -274,7 +273,7 @@ namespace labrador
 
 		StateContext::update(
 			static_cast<float>(this->timer_.GetElapsedSeconds()));
-		std::ignore = this->audio_engine_->Update();
+		this->audio_device_->update();
 	}
 
 	void Application::render()
@@ -357,9 +356,9 @@ namespace labrador
 		}
 		this->set_input_focus(false);
 		this->notify_activation(false);
-		if (this->audio_engine_)
+		if (this->audio_device_)
 		{
-			this->audio_engine_->Suspend();
+			this->audio_device_->suspend();
 		}
 	}
 
@@ -371,9 +370,9 @@ namespace labrador
 			this->gamepad_reader_->resume();
 		}
 		this->set_input_focus(true);
-		if (this->audio_engine_)
+		if (this->audio_device_)
 		{
-			this->audio_engine_->Resume();
+			this->audio_device_->resume();
 		}
 		this->notify_activation(true);
 	}

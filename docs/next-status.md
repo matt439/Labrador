@@ -19,7 +19,7 @@ Two rules for it:
   items exist to produce a number or settle a question. Those answers are the
   product, and a commit message is not where anybody looks for them.
 
-Written against `708114b`.
+Written against `ad4141e`.
 
 ---
 
@@ -34,19 +34,25 @@ Written against `708114b`.
 | **3.2** The LineSweeper particle field | **landed** | `f5bd513` |
 | **3.3** `engine/ui/` has no client, and no `Direction` producer | **both fixed** | `f567fe7`, `c2411a0` |
 | **3.4a** `tests/audio/` — the cheap evidence | **landed**, and it found one defect | `708114b` |
-| **3.4b** The audio seam | open, and still blocked on `.xwb` | |
+| **3.4b** The audio seam | **landed**, and it was not blocked on `.xwb` after all | *this commit* |
 | **3.5** Sprite sheets discard `origin` and `rotated` | **both keys answered** | `169a3c0` |
 | **5** The InputMap refusal | **measured, and inconclusive** | `d3de8f6` |
 | **6** The four decisions `next.md` does not make | one made — the third; three still unmade | `f411e24` |
 | **7** The nine drifted claims | **all nine fixed**, and three more found | `dea5fe0` |
 
-**Every work item in the survey has landed except 3.4b** — the whole spine
-2.2 → 3.1a → 3.3 → 3.4a, all three branches off it (3.1b, 3.2, 3.5), and §7.
-What is left is the bottom of that spine: **3.4b** is still blocked on `.xwb`
-and is the one item that was always going to need something this desktop cannot
-supply. Beside it are §6's three unmade decisions — and one of those three *is*
-the `.xwb` container, so the survey now has exactly one open question with two
-names.
+**Every work item in the survey has landed** — the whole spine
+2.2 → 3.1a → 3.3 → 3.4a → 3.4b, all three branches off it (3.1b, 3.2, 3.5),
+and §7. What is left is not work: it is §6's three unmade decisions.
+
+**3.4b is the one that came out differently from the way the survey ranked it**,
+and the difference is worth the sentence. It was filed as *weeks*, at the bottom
+of the spine, "blocked on the `.xwb` container question". It was not. The
+container question is real and is still unmade — it is §6's fourth decision —
+but the seam does not have to answer it, because `next.md` §6 named the other
+option in its own words and that option turned out to be the whole of the work:
+*"§3.4 either moves the content format too **or is cut above it with the format
+decision deferred**"*. Cut above it, the item is days rather than weeks, and
+nothing about it needed hardware this desktop does not have.
 
 ---
 
@@ -317,6 +323,102 @@ a deletion. It is also the argument for the whole item: this cost an afternoon,
 a grep could not have found it, and it was sitting in a module that had never
 had a test compiled against it.
 
+### 3.4b — the audio seam
+
+**Landed, and the block it was filed under was not the one that mattered.**
+§3.4b sat at the bottom of the spine marked *weeks* and *blocked on `.xwb`*.
+The `.xwb` block is real and is untouched; what was wrong was the belief that
+the seam had to wait for it. `next.md` §6 had already written the alternative —
+cut the seam above the container and defer the format — and once that is the
+plan, none of the remaining work needs a wave bank, a sound card or a second
+platform.
+
+**What the cut is.** `engine/audio/audio_device.h`: a concrete class chosen at
+build time by `LABRADOR_AUDIO_BACKEND`, sixteen methods wide, with
+`audio/xaudio2/` behind it and `audio/null/` beside it. Above the seam is
+everything this engine decides — which name means which wave, which handles are
+valid, and the level clamp. Below it is what an audio API does: open a
+container, find a name in it, build a voice, and start, stop, adjust or report
+one. `open_wave_bank` takes a directory and a bank *name*, never a file name,
+which is where the container decision is deferred to: the extension and the
+reader are the backend's.
+
+**The one thing that had to cross the seam, and it was not obvious in advance.**
+A backend with no container has no wave-name table, and a backend that accepts
+every name is `silent()` again — the exact failure the item exists to fix. So
+the seam takes the definition's list of wave names at `open_wave_bank`. That is
+principled rather than a workaround, and the precedent is one folder over:
+`render/null/` is handed a `TextureData` the *engine* decoded out of a `.dds`
+and keeps only the width and the height. The engine parses its own content; a
+backend keeps the minimum it needs to answer questions. On `xaudio2/` the list
+is checked against the container and a wave the definition names but the `.xwb`
+lacks throws at open, naming both — earlier and stricter than before, where the
+same content bug surfaced at `CreateInstance` or not at all.
+
+**What it bought, in the numbers §3.4a produced.** All of them.
+
+| §3.4a found | now |
+|---|---|
+| 8 of 13 instance methods with no observable behaviour | all 8 assert what they did, in `tests/audio/null_tests.cpp` |
+| 5 sites of level clamping never executed | all 5 execute, and the clamped value is read back off the device |
+| `stop_effect`'s `immediate` provably inert | both spellings arrive, as different calls |
+| an audible `SoundBank` unconstructible | constructible in one preset, over a device that records |
+
+**And one thing the reorder fixed that a recording backend could not.** The
+clamp and the handle checks moved *above* the test for whether a bank has
+content, which is where §3.4a argued they belonged — the clamp is engine
+arithmetic and a seam drawn at the old check put it on the platform's side of
+the wall. For the clamp that is a claim about which side of the wall the code
+is on and changes no behaviour; **for the unresolved-handle throw it changes
+real behaviour**, and it is the one promise `silent()` used to break that it
+does not have to. A handle nobody resolved is now refused by every bank in
+every build, where before "the one mistake this class exists to catch loudly"
+was caught with audio present and unmentioned without it.
+
+**Three things fell out that the item did not ask for.**
+
+- **`Microsoft::DirectXTK` is `PRIVATE` on `LabradorEngine`.** It was `PUBLIC`,
+  and not as a precaution: four public engine headers named `DirectX::` types,
+  so `<Audio.h>` was on the compile line of every sample, every test and every
+  downstream game whether it made a noise or not. The last of the four went
+  with this seam. Two `find_package` calls came out of each sample's
+  `CMakeLists.txt` — including the new-project template's, which is the one
+  every project on this engine starts from.
+- **`samples/minimal` had `using namespace DirectX;` in two state files**, using
+  nothing from it. The template told every copier to open a Microsoft namespace
+  it did not need, and only stopped compiling when the header stopped arriving.
+- **`check_engine_includes.cmake` now captures the module as well as the
+  backend.** The rule was written for `render/` and audio is the module where
+  the thing it exists to prevent had already happened, unwatched. The change is
+  one capture group, and a third module with backend folders needs no edit.
+
+**Where the tests live, and why the split is the honest one.** The parse is
+device-free and runs in all six configurations —
+`tests/assets/sound_bank_loader_tests.cpp`, new, and the loader had no test at
+all before because reading the JSON used to require constructing a
+`DirectX::WaveBank` first. What a bank *played* needs a device, so it is
+`tests/audio/null_tests.cpp`, compiled only under `x64-debug-null`, exactly as
+`tests/render/null_tests.cpp` is. `AudioTests` still constructs no device in
+the five presets that build `audio/xaudio2/`.
+
+**What did NOT change, and is the honest limit of the item.** There is still no
+`.xwb` in this tree and nothing here has ever played a sound. §6's fourth
+decision — write the container format down, an `xwb_file.h` beside
+`dds_file.h` — is exactly as unmade as it was, and it is now the whole of the
+audio question rather than half of it. It is also blocked on something a
+decision cannot supply: you cannot write and check a format reader with no file
+of that format. `docs/port/android.md` §3.2 carries the same conclusion from
+the port's side, and its own finding — that audio was the one place the
+second-platform claim was provably false — is discharged.
+
+**One behaviour change a reader might trip over.** The definition is parsed
+before the container is opened, because a backend with no container answers out
+of the parsed wave list. So a bank whose `.xwb` is missing *and* whose JSON is
+malformed now reports the malformed JSON, where it used to report the missing
+file. The JSON is in every clone and the container is not, so that is the
+better of the two answers (T6) — but it is a change, and it is recorded in
+`sound_bank_loader.h` as well as here.
+
 ### 3.5 — the two keys the loader read and dropped
 
 **Both answered, in one commit** — `169a3c0`. `rotated` is refused at load by
@@ -405,15 +507,35 @@ recording on a machine with no GPU.
    crossing moves with the build and with the part, so a number there would be a
    machine-specific policy baked into mechanism, and decision 1 above is why no
    such number can be a floor yet.
-4. **The `.xwb` container.** Still unmade, still what makes §3.4b weeks or
-   months — but no longer untouched, because §3.4a walked into it from the
-   other side. The reason an audible bank cannot be constructed in this tree is
-   that there is no `.xwb` in it, and the reason there is no `.xwb` is the same
-   undistributable source audio that made the manifest mark the bank optional
-   in the first place. So the container question is not only "does the format
-   move to Android": it is also **"can this repository ever have a test that
-   plays anything"**, and the answer today is no, on both platforms, for one
-   reason. That raises the value of deciding it and does not decide it.
+4. **The `.xwb` container.** Still unmade — and it is now the *only* thing left
+   in the audio question rather than the thing that gated it. §3.4a walked into
+   it from one side and §3.4b from the other, and between them they moved it
+   twice.
+
+   **First, it stopped gating the seam.** §3.4b was filed as weeks and blocked
+   on this decision; it was neither, because §6 itself had written the other
+   option — cut the seam above the container and defer the format — and that
+   option cost days. `AudioDevice::open_wave_bank` takes a directory and a bank
+   name, so the extension, the reader and the bytes belong to a backend and no
+   line above the seam knows what an `.xwb` is.
+
+   **Second, one of the two questions attached to it has been answered, and not
+   by deciding anything.** §3.4a asked *"can this repository ever have a test
+   that plays anything"* and recorded the answer as no. It is now yes:
+   `audio/null/` records what it was asked to play, so `tests/audio/null_tests.cpp`
+   asserts which wave, out of which bank, at which levels, in what order. What
+   it does not do is make a sound, and nothing here ever will.
+
+   **What is left is the original question and it is unmoved.** Does the
+   content format move to a second platform, or does this engine write it down
+   — an `xwb_file.h` beside `dds_file.h`, which is the precedent
+   `docs/port/android.md` §3.2 argues from and the same shape as the reader
+   that already replaced `CreateDDSTextureFromFile`. **It is blocked on
+   something a decision cannot supply**: there is no `.xwb` in this tree to
+   write a reader against, for the same undistributable-source-audio reason the
+   manifest marks the bank optional. That is worth stating plainly, because it
+   is the only item in this document whose blocker is a missing file rather
+   than a missing judgement.
 
 ---
 
@@ -456,7 +578,31 @@ Recorded here because `next.md` reads as written, the way `docs/review/` does.
   bank, and the fact that made that necessary is worth more than the list. Its
   price tag held exactly, which §3.5's did not: hours, and it was an afternoon.
 
+- **§3.4b was blocked on nothing, and the survey said so itself two sections
+  later.** Its heading reads *weeks*, its spine entry reads "blocked on .xwb,
+  see port/android.md", and §2's overview calls it "the one item that was
+  always going to need something this desktop cannot supply". §6's fourth
+  decision then names the escape in one clause — the item is "cut above [the
+  container] with the format decision deferred" — and that is the whole of what
+  it took. Cut there, nothing in the seam knows what an `.xwb` is, and the item
+  came to days on this desktop with no new dependency.
+
+  **This is a worse mis-estimate than §3.5's and a different kind.** §3.5
+  priced the option its own body talks itself out of, which is one paragraph
+  disagreeing with its own heading. Here two sections of the same document
+  disagree, the pessimistic one is the heading and the spine, and the effect
+  was to rank the item last: everything else was worked through first partly
+  *because* this was believed to need hardware. What made the difference is
+  that §3.4a was done first and reported honestly, and the reason it is not a
+  reason to distrust the survey is that the survey wrote both halves down. A
+  sweep that records the escape it does not take is one a reader can correct.
+
+  **What was right, and it was the important half.** The `.xwb` question is
+  real, it is untouched, and it is now the entire remaining audio question —
+  see decision 4 above. What the survey got wrong was which side of it the seam
+  was on.
+
 Nothing else in the survey has failed a check yet. §1 says every citation was
-verified by reading the file, and the seven items worked through so far found
-four exceptions between them — two wrong, one merely expensive, one that asked
+verified by reading the file, and the eight items worked through so far found
+five exceptions between them — two wrong, two merely expensive, one that asked
 a question with a missing premise.

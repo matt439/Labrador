@@ -9,17 +9,15 @@
 #include <stdexcept>
 #include <string>
 
-using namespace DirectX;
-
 namespace labrador
 {
 	ResourceLoader::ResourceLoader(RenderResources* render_resources,
 		const Renderer* renderer, AudioResources* audio_resources,
-		DirectX::AudioEngine* audio_engine) :
+		AudioDevice* audio_device) :
 		render_resources_(render_resources),
 		renderer_(renderer),
 		audio_resources_(audio_resources),
-		audio_engine_(audio_engine)
+		audio_device_(audio_device)
 	{
 		this->register_builtin_kinds();
 	}
@@ -140,17 +138,36 @@ namespace labrador
 	void ResourceLoader::load_sound_bank(bool optional,
 		const std::string& directory, const std::string& name) const
 	{
-		const std::string wave_bank_path = directory + name + ".xwb";
+		// THE DEFINITION IS READ FIRST NOW, AND THAT IS A REORDER RATHER THAN A
+		// TIDY-UP. A backend with no container answers wave_index out of the
+		// wave list this parse produces, so the list has to exist before
+		// open_wave_bank is called. sound_bank_loader.h states what it costs: a
+		// bank whose container is missing and whose definition is also broken
+		// reports the broken definition, where it used to report the missing
+		// file. The definition is in every clone and the container is not, so
+		// that is the better of the two answers (T6).
+		const SoundBankDefinition definition =
+			read_sound_bank_definition((directory + name + ".json").c_str());
 
-		std::unique_ptr<WaveBank> wave_bank;
+		AudioDevice::WaveBankHandle wave_bank;
 		try
 		{
-			wave_bank = std::make_unique<WaveBank>(this->audio_engine_,
-				std::wstring(wave_bank_path.begin(),
-					wave_bank_path.end()).c_str());
+			wave_bank = this->audio_device_->open_wave_bank(directory, name,
+				definition.waves);
 		}
-		catch (const std::exception&)
+		catch (const std::runtime_error& missing)
 		{
+			// std::runtime_error AND NOT std::exception, WHICH IS THE WHOLE
+			// DISTINCTION. The seam throws a runtime_error when the container
+			// is not there and a std::out_of_range - a logic_error - when it is
+			// there and does not hold a wave the definition names. The first is
+			// a file a clone was never going to have; the second is a content
+			// bug, and catching both here would turn it into silence.
+			if (!optional)
+			{
+				throw;
+			}
+
 			// A bank the manifest marked optional is allowed not to be there,
 			// and this is the one substitution the engine makes for a missing
 			// file: a bank that resolves everything and plays nothing, so the
@@ -162,25 +179,16 @@ namespace labrador
 			// aborts silently; a stated-optional asset is not a broken
 			// contract, but a person wondering where the sound went should be
 			// able to find out without reading this file.
-			if (optional)
-			{
-				std::fprintf(stderr,
-					"no audio: '%s' is not there, and the manifest marks this "
-					"bank optional, so it plays nothing. See the repository's "
-					"README, 'Audio'.\n", wave_bank_path.c_str());
+			std::fprintf(stderr,
+				"no audio: %s. The manifest marks this bank optional, so it "
+				"plays nothing. See the repository's README, 'Audio'.\n",
+				missing.what());
 
-				this->audio_resources_->add_sound_bank(name,
-					SoundBank::silent());
-				return;
-			}
-
-			// DirectXTK's what() is just "WaveBank" - T6 wants the path.
-			throw std::runtime_error(
-				"Failed to load wave bank: " + wave_bank_path);
+			this->audio_resources_->add_sound_bank(name, SoundBank::silent());
+			return;
 		}
 
 		this->audio_resources_->add_sound_bank(name,
-			read_sound_bank((directory + name + ".json").c_str(),
-				std::move(wave_bank)));
+			build_sound_bank(this->audio_device_, wave_bank, definition));
 	}
 }

@@ -1,8 +1,3 @@
-# xaudio2redist first: directxtk's config references Microsoft::XAudio2Redist
-# but does not find it itself.
-find_package(xaudio2redist CONFIG REQUIRED)
-find_package(directxtk CONFIG REQUIRED)
-
 # --- MinimalSample — the minimal sample, and the new-project template ---
 #
 # The whole build file for a game on this engine. A dozen honest lines: name

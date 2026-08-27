@@ -1,17 +1,23 @@
 #include "engine/audio/sound_bank.h"
+
+#include "engine/audio/audio_device.h"
 #include "engine/math/scalar.h"
+
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
-using namespace DirectX;
 using namespace mattmath;
+
 namespace labrador
 {
-	SoundBank::SoundBank(std::unique_ptr<WaveBank> wave_bank,
-		Registry<SoundEffectInstance> instances) :
-		wave_bank_(std::move(wave_bank)),
-		sound_effect_instances_(std::move(instances))
+	SoundBank::SoundBank(const AudioDevice* device,
+		AudioDevice::WaveBankHandle wave_bank,
+		Registry<SoundEffect> effects) :
+		device_(device),
+		wave_bank_(wave_bank),
+		effects_(std::move(effects))
 	{
 
 	}
@@ -19,12 +25,12 @@ namespace labrador
 	std::unique_ptr<SoundBank> SoundBank::silent()
 	{
 		return std::unique_ptr<SoundBank>(new SoundBank(nullptr,
-			Registry<SoundEffectInstance>("SoundEffectInstance")));
+			AudioDevice::WaveBankHandle(), Registry<SoundEffect>("SoundEffect")));
 	}
 
 	bool SoundBank::audible() const
 	{
-		return this->wave_bank_ != nullptr;
+		return this->device_ != nullptr;
 	}
 
 	SoundBank::WaveHandle SoundBank::resolve_wave(
@@ -32,16 +38,17 @@ namespace labrador
 	{
 		if (!this->audible())
 		{
-			// Any name, and index 0 rather than an unresolved handle: play_wave
-			// rejects an unresolved one, and a silent bank must not reject
-			// anything.
+			// Any name, and index 0 rather than an unresolved handle: every
+			// play below rejects an unresolved handle in every build now, and a
+			// bank with no content must not reject a name.
 			return WaveHandle(0);
 		}
 
-		// WaveBank::Find returns -1 for a name the bank does not have, which is
-		// also what an unresolved Handle holds - so this has to be caught here
+		// The seam answers -1 for a name a bank does not have, which is also
+		// what an unresolved Handle holds - so this has to be caught here
 		// rather than handed on as a handle that looks fine until it is read.
-		const int index = this->wave_bank_->Find(wave_name.c_str());
+		const int index =
+			this->device_->wave_index(this->wave_bank_, wave_name);
 		if (index < 0)
 		{
 			throw std::out_of_range(
@@ -57,16 +64,19 @@ namespace labrador
 		{
 			return EffectHandle(0);
 		}
-		return this->sound_effect_instances_.resolve(effect_name);
+		return this->effects_.resolve(effect_name);
 	}
 
 	void SoundBank::play_wave(WaveHandle wave, float volume, float pitch,
 		float pan) const
 	{
-		if (!this->audible())
-		{
-			return;
-		}
+		// THE CLAMP IS FIRST AND THAT IS THE POINT. Folding a level back into
+		// range is arithmetic this module owns - it is not XAudio2's and it is
+		// not any backend's, and it is the same kind of engine-side decision as
+		// the glyph walk in render/font.h. It used to sit below the test for
+		// content, where a tree that cannot build an audible bank - which this
+		// one could not - never reached it at all.
+		clamp_levels(volume, pitch, pan);
 
 		if (!wave.valid())
 		{
@@ -74,108 +84,132 @@ namespace labrador
 				"A wave was played through an unresolved handle.");
 		}
 
-		clamp_levels(volume, pitch, pan);
-		this->wave_bank_->Play(static_cast<unsigned int>(wave.index()),
-			volume, pitch, pan);
+		if (!this->audible())
+		{
+			return;
+		}
+
+		this->device_->play_wave(this->wave_bank_, wave.index(), volume, pitch,
+			pan);
 	}
 
 	void SoundBank::play_effect(EffectHandle effect, bool loop, float volume,
 		float pitch, float pan) const
 	{
+		clamp_levels(volume, pitch, pan);
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
 			return;
 		}
 
-		clamp_levels(volume, pitch, pan);
-		SoundEffectInstance* instance = this->sound_effect_instance(effect);
-		instance->SetVolume(volume);
-		instance->SetPitch(pitch);
-		instance->SetPan(pan);
-		instance->Play(loop);
+		this->device_->play_voice(voice, loop, volume, pitch, pan);
 	}
 	void SoundBank::stop_effect(EffectHandle effect, bool immediate) const
 	{
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
 			return;
 		}
 
-		this->sound_effect_instance(effect)->Stop(immediate);
+		this->device_->stop_voice(voice, immediate);
 	}
 	void SoundBank::pause_effect(EffectHandle effect) const
 	{
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
 			return;
 		}
 
-		this->sound_effect_instance(effect)->Pause();
+		this->device_->pause_voice(voice);
 	}
 	void SoundBank::resume_effect(EffectHandle effect) const
 	{
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
 			return;
 		}
 
-		this->sound_effect_instance(effect)->Resume();
+		this->device_->resume_voice(voice);
 	}
 	void SoundBank::set_effect_volume(EffectHandle effect, float volume) const
 	{
+		volume = clamp(volume, 0.0f, 1.0f);
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
 			return;
 		}
 
-		volume = clamp(volume, 0.0f, 1.0f);
-		this->sound_effect_instance(effect)->SetVolume(volume);
+		this->device_->set_voice_volume(voice, volume);
 	}
 	void SoundBank::set_effect_pitch(EffectHandle effect, float pitch) const
 	{
+		pitch = clamp(pitch, -1.0f, 1.0f);
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
 			return;
 		}
 
-		pitch = clamp(pitch, -1.0f, 1.0f);
-		this->sound_effect_instance(effect)->SetPitch(pitch);
+		this->device_->set_voice_pitch(voice, pitch);
 	}
 	void SoundBank::set_effect_pan(EffectHandle effect, float pan) const
 	{
+		pan = clamp(pan, -1.0f, 1.0f);
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
 			return;
 		}
 
-		pan = clamp(pan, -1.0f, 1.0f);
-		this->sound_effect_instance(effect)->SetPan(pan);
+		this->device_->set_voice_pan(voice, pan);
 	}
 	SoundState SoundBank::effect_state(EffectHandle effect) const
 	{
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
-			return SoundState::STOPPED;
+			return SoundState::stopped;
 		}
 
-		return this->sound_effect_instance(effect)->GetState();
+		return this->device_->voice_state(voice);
 	}
 	bool SoundBank::is_effect_looping(EffectHandle effect) const
 	{
+		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
 			return false;
 		}
 
-		return this->sound_effect_instance(effect)->IsLooped();
+		return this->device_->is_voice_looping(voice);
 	}
-	SoundEffectInstance* SoundBank::sound_effect_instance(
-		EffectHandle effect) const
+
+	AudioDevice::VoiceHandle SoundBank::voice(EffectHandle effect) const
 	{
-		// A bounds check and an indexed load, and the registry's own throw naming
-		// the instance if the handle was never resolved.
-		return this->sound_effect_instances_.get(effect);
+		if (!effect.valid())
+		{
+			// Above the check for content, deliberately: a handle nobody
+			// resolved is a program's mistake rather than a missing file, and
+			// the two builds should not disagree about whether to say so.
+			throw std::out_of_range(
+				"A sound effect was reached through an unresolved handle.");
+		}
+
+		if (!this->audible())
+		{
+			return AudioDevice::VoiceHandle();
+		}
+
+		// A bounds check and an indexed load, and the registry's own throw
+		// naming the effect if the handle came from another table.
+		return this->effects_.get(effect)->voice;
 	}
+
 	void SoundBank::clamp_levels(float& volume, float& pitch, float& pan)
 	{
 		volume = clamp(volume, 0.0f, 1.0f);

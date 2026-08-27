@@ -111,8 +111,15 @@ It is worth writing down now, before the work, what the answer looks like:
   drops into `app/win32/` "without renaming the class or touching a call site"
   ([:203-204](../design/ARCHITECTURE.md#L203-L204)). The port is what checks that
   sentence.
-- **Where it is false today.** `audio/`. See §3.2. This is the finding of this
-  document.
+- ~~**Where it is false today.** `audio/`. See §3.2. This is the finding of this
+  document.~~ **Answered 2026-08-27, and by this repository rather than by a
+  port.** `engine/audio/audio_device.h` is the seam, `audio/xaudio2/` and
+  `audio/null/` are behind it, and the include check that guards a backend
+  folder covers `audio/` as well as `render/`. So this bullet is now the first
+  kind — the claim holds outright — and what is left of §3.2 is one backend
+  against a seam that already exists, which is what `render/` costs. The
+  finding of this document has been paid; see the amendment at the head of
+  §3.2 for what it turned out to be worth and what it did not settle.
 
 ---
 
@@ -170,7 +177,51 @@ this content is actually drawn at? T9 buys format edges, so a transcoder is
 purchasable; the reader is not, by the same rule that produced `dds_file.h` in
 the first place.
 
-### 3.2 The audio seam that is not there — *week*
+### 3.2 The audio seam that is not there — *week* — **BUILT, 2026-08-27**
+
+> **Amended 2026-08-27. The paragraphs below are left as written**, the way §1
+> and §3.1 are, because what they found was right and the record of a finding
+> is worth more than a tidy page.
+>
+> **The seam exists.** `engine/audio/audio_device.h` is a concrete class chosen
+> by `LABRADOR_AUDIO_BACKEND`, with `audio/xaudio2/` behind it and
+> `audio/null/` — which records what it was asked to play — as the headless
+> implementation `PHILOSOPHY.md:632-637` requires. All four public headers this
+> section names have lost `<Audio.h>`; `SoundBank` is built from a handle
+> rather than a `DirectX::WaveBank`; `EffectHandle` and `SoundState` are
+> engine types; and `cmake/check_engine_includes.cmake` captures the module as
+> well as the backend, so a file outside `engine/audio/<backend>/` naming a
+> header inside it fails the build exactly as it does for `render/`.
+>
+> **It did not land for this document's reason, and that is worth recording.**
+> It landed for `docs/next.md` §3.4b, whose argument is about testability
+> rather than about a second platform: a seam with only the platform's own
+> implementation behind it cannot be constructed without the platform, so eight
+> of `SoundBank`'s thirteen instance methods and five sites of level clamping
+> were code no test in this repository could reach. The port's requirement and
+> the test's requirement turned out to be one piece of work, which is the
+> cheapest way for an item on this spine to be discharged and was not
+> predicted here.
+>
+> **What is left of this item, and it is the smaller half.** One backend
+> against an existing seam — `audio/aaudio/` or `audio/opensles/`, sixteen
+> methods, no engine change — which is now the same shape as §3.5 and can be
+> costed the same way. Nothing above the seam has to move.
+>
+> **What is NOT settled is the sentence below about the container**, and it was
+> deliberately left open rather than decided in passing. The seam is cut
+> *above* the format: `open_wave_bank` takes a directory and a bank name, never
+> a file name, so the extension and the reader belong to the backend — an
+> `.xwb` on `xaudio2/`, and on `null/` the wave-name list the definition JSON
+> supplies, because that JSON is content the engine parses and the container is
+> not. So an Android backend still needs a container it can read, and the
+> in-doctrine answer is still the one below: write the format down, an
+> `xwb_file.h` beside `dds_file.h`. **That is blocked on something this
+> repository does not have** — there is no `.xwb` in this tree to write a
+> reader against, for the same undistributable-source-audio reason the shipped
+> manifest marks the bank optional. `docs/next.md` §6's fourth decision is
+> therefore still unmade, and it is now the whole of the audio question rather
+> than half of it.
 
 **This is the one place the second-platform claim is provably false today, and
 it is false in a way a folder move does not fix.**
@@ -595,13 +646,13 @@ it:
 | `CLAUDE.md:1` | "Windows-only" |
 | `CLAUDE.md`, Known-absent | The action-mapping layer acquires its client (§3.3) |
 | `ARCHITECTURE.md:194-204` | The window moves to `app/win32/`; the folder stops being speculative |
-| `ARCHITECTURE.md:264` | `audio`'s row gains the folder the sentence already implies (§3.2) |
-| `PHILOSOPHY.md:303-305` | "a second platform is an addition, not a rewrite" — amend with where it held and where it did not |
+| ~~`ARCHITECTURE.md:264`~~ | `audio`'s row gains the folder the sentence already implies (§3.2) — **done 2026-08-27**, and it gained two: `xaudio2/` and `null/`. The row now reads the way `render`'s does, naming the API and the folder it is confined to |
+| ~~`PHILOSOPHY.md:303-305`~~ | "a second platform is an addition, not a rewrite" — amend with where it held and where it did not — **done 2026-08-27**, with the row above. It held for three of the four kinds of platform code that paragraph lists and did not hold for audio, which is what §2 above said and what the amendment now says in that document |
 | ~~`PHILOSOPHY.md:454-462`~~ | "a second platform's" backend stops being hypothetical — **done 2026-08-21**, with §3.5. It is the one row the fifth backend earns on its own: the bullet said the seam owes a backend to "a headless one with no device, and a second platform's", and the second half was hypothetical until an API a second platform is actually reached through stood behind it. The rest of that document's backend arithmetic — four becoming five, three rasterisers becoming four — moved in the same commit, because those are counts rather than claims |
 | ~~`renderer.h:505-517`~~ | `AssetKind::reload_device` — **settled 2026-08-21**, per §4. It stays on the loader; the note moved from STILL OPEN to SETTLED |
 
-**None of these should be amended in advance**, and the one row already struck
-through is not an exception to that. It is the only line in the table that
+**None of these should be amended in advance**, and the rows already struck
+through are not exceptions to that. It is the only line in the table that
 amends nothing about Android: the question `renderer.h` held open was posed by
 the four backends in this tree and was answerable from them, so settling it is
 the tree answering its own question rather than a document describing a port

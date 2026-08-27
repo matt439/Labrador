@@ -2,6 +2,7 @@
 
 #include "engine/app/window.h"
 #include "engine/assets/resource_loader.h"
+#include "engine/audio/audio_device.h"
 #include "engine/audio/audio_resources.h"
 #include "engine/collision/partitioner.h"
 #include "engine/core/state_context.h"
@@ -16,7 +17,6 @@
 #include "engine/render/screen_resolution.h"
 #include "engine/render/viewport_manager.h"
 #include "engine/math/vector2i.h"
-#include <Audio.h>
 #include <Windows.h>
 #include <memory>
 #include <string>
@@ -228,12 +228,20 @@ namespace labrador
 	private:
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE.
 		//
-		// Members destruct in reverse declaration order. DirectXTK requires the
-		// AudioEngine to outlive every WaveBank and SoundEffectInstance - their
-		// destructors unregister themselves from it - and AudioResources owns the
-		// SoundBanks that own those. So audio_engine_ is declared FIRST and dies
-		// LAST.
-		std::unique_ptr<DirectX::AudioEngine> audio_engine_ = nullptr;
+		// Members destruct in reverse declaration order, and the audio device
+		// owns every wave bank and every voice opened against it, so it is
+		// declared FIRST and dies LAST - after the AudioResources whose banks
+		// hold a borrowed pointer to it.
+		//
+		// THE PARAGRAPH THIS REPLACES WAS A DirectXTK RULE, and its leaving is
+		// the shape of what the audio seam was for. It read: "DirectXTK
+		// requires the AudioEngine to outlive every WaveBank and
+		// SoundEffectInstance - their destructors unregister themselves from
+		// it". True, still true, and no longer the shell's business: it is six
+		// lines from the library that requires it, in
+		// engine/audio/xaudio2/audio_device.cpp, where the next backend can
+		// have a different rule without this file learning it.
+		std::unique_ptr<AudioDevice> audio_device_ = nullptr;
 
 		ApplicationOptions options_;
 		std::unique_ptr<Window> window_ = nullptr;

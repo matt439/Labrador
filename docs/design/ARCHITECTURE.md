@@ -155,7 +155,18 @@ being load-bearing.
 │   │                       it: the keyboard and mouse have no backend to
 │   │                       select, because their platform edge is the
 │   │                       window and it already exists
-│   ├── audio/              playback, mixing
+│   ├── audio/              playback, mixing. AudioDevice is the seam and it
+│   │   │                   is the whole of what an audio API does - open a
+│   │   │                   container, find a name in it, build a voice, and
+│   │   │                   start, stop, adjust or report one. Which wave a
+│   │   │                   name means, which handles are valid and where a
+│   │   │                   level is clamped are above it
+│   │   ├── xaudio2/        the XAudio2 backend, through DirectXTK, and the
+│   │   │                   only file in the tree that includes <Audio.h>. It
+│   │   │                   owns the container: a wave bank is an .xwb here
+│   │   └── null/           no audio API at all: it records what it was asked
+│   │                       to play, so a test can assert playing on a machine
+│   │                       with no sound card
 │   ├── ui/                 widgets, focus, controller navigation
 │   ├── assets/             JSON loading, resource loaders, manifest, factories
 │   └── app/                the application shell: window, device, services,
@@ -204,9 +215,9 @@ being load-bearing.
 Every target directory owns its own `CMakeLists.txt`; the root file only
 lists them. Every file picks its home the day it is created.
 Platform-specific code
-lives only in the backend subfolders (`render/d3d11/`, `input/xinput/`),
-behind engine-owned interfaces, so a second platform is an addition, not
-a rewrite. There is a third case and it is named here rather than left to
+lives only in the backend subfolders (`render/d3d11/`, `audio/xaudio2/`,
+`input/xinput/`), behind engine-owned interfaces, so a second platform is
+an addition, not a rewrite. There is a third case and it is named here rather than left to
 be discovered: the shell's window, `app/window.{h,cpp}`. `app` is already
 the one module allowed to depend on everything, PHILOSOPHY lists
 windowing alongside the rendering backend as platform code at the edge,
@@ -273,7 +284,7 @@ already is (T5). That option is held, not spent.
 | `render` | core, math — D3D11 inside `d3d11/`, D3D12 inside `d3d12/`, OpenGL inside `gl/`, Vulkan inside `vulkan/`, nothing inside `null/` |
 | `scene` | core, math, collision, render |
 | `input` | core, math — XInput inside `xinput/` only |
-| `audio` | core, math — the audio backend at its edge only |
+| `audio` | core, math — XAudio2 inside `xaudio2/`, nothing inside `null/` |
 | `ui` | core, math, render, input |
 | `assets` | core, math, render, audio, rapidjson |
 | `app` | everything |
@@ -378,12 +389,31 @@ decision in the port. It is also the one backend whose toolchain is not already
 on the machine: SPIR-V at build time means the Vulkan SDK, which
 `cmake/compile_shaders.cmake` states as the tax it is.
 
+**`audio` is the second module with a seam and two backends, and it is the
+one that shows the rule is about modules rather than about `render`.**
+`engine/audio/audio_device.h` is a concrete class chosen at build time by
+`LABRADOR_AUDIO_BACKEND`, exactly as the renderer is, with `audio/xaudio2/`
+behind it and `audio/null/` — which records what it was asked to play — as the
+headless implementation PHILOSOPHY requires of every seam. What is *above* the
+seam is the part worth stating, because it is where the cut was argued: which
+name means which wave, which handles are valid, and the clamp that folds a
+volume into [0,1] and a pitch and a pan into [-1,1] are all engine arithmetic
+and sit above the test for whether there is anything to play. Below it is what
+an audio API actually does and nothing else. **The one thing the seam declines
+to decide is the container**: `open_wave_bank` takes a directory and a bank
+name, never a file name, so the extension and the reader are the backend's —
+an `.xwb` on `xaudio2/`, and on `null/` the list of wave names the definition
+JSON gave it, because that JSON is content this engine parses and the container
+is not.
+
 A backend may publish a second header beside `backend.h` **as long as it names
-no backend type** — `render/null/recording.h` is one, and is meant to be
-included by tests. The rule
-`cmake/check_engine_includes.cmake` enforces is about `backend.h` by name,
-because that is the file that carries an API's types across a folder in one
-line. `assets/` declares which manifest entries become
+no backend type** — `render/null/recording.h` is one, `audio/null/recording.h`
+is the other, and both are meant to be included by tests. The rule
+`cmake/check_engine_includes.cmake` enforces is the *folder*, not one filename
+in it: a subfolder of `render/` or of `audio/` **is** a backend and its headers
+are its own, so a file outside one that names any header in it fails the build.
+It was written as `backend.h` by name once and that left `device_resources.h`
+beside it as the way through. `assets/` declares which manifest entries become
 textures and fonts and calls `render/resource_factory.h`, whose declarations
 name nothing a backend owns.
 

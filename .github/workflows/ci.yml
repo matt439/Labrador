@@ -67,11 +67,15 @@ jobs:
     # the two that do not.
     #
     # THE NULL PRESET IS THE ONE THIS MACHINE CAN RUN COMPLETELY, and it is here
-    # for that rather than for coverage. It has no graphics API at all - it
-    # records what it was asked to draw - so nothing in it can fail for a reason
-    # outside the repository, and its own tests assert which sprites a frame
-    # submitted, in what order, from which texture. RenderPixelTests is not
-    # built in that configuration, which is why nothing is excluded by name.
+    # for that rather than for coverage. It has no platform API at all - no
+    # graphics API and, since the audio seam landed, no audio API either - so
+    # nothing in it can fail for a reason outside the repository, and its own
+    # tests assert which sprites a frame submitted, in what order, from which
+    # texture, and which wave an object played, out of which bank, at which
+    # levels. That second half is what a runner could never check before: a
+    # GPU-less runner has no sound card either, and the module had only
+    # DirectXTK behind it. RenderPixelTests is not built in that configuration,
+    # which is why nothing is excluded by name.
     strategy:
       fail-fast: false
       matrix:

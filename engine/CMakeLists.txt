@@ -226,6 +226,39 @@ else()
         "texture_factory.cpp.")
 endif()
 
+# The audio backend, chosen the same way and for the same reasons.
+#
+# A SECOND AXIS, NOT A SECOND VALUE ON THE FIRST ONE. Which audio API a build
+# opens has nothing to do with which graphics API it draws with, so they are two
+# cache variables and a preset sets whichever it means. What ties them in
+# practice is x64-debug-null, which sets both: that preset is the configuration
+# a machine with no hardware at all can run end to end, and audio was the half
+# of that claim which was not true.
+#
+# ONE TRANSLATION UNIT PER BACKEND, which is the whole of what selecting one
+# involves - an audio API is a smaller surface than a graphics API, and
+# engine/audio/audio_device.h is exactly as wide as what the thing does. The
+# null backend adds recording.h beside its own, exactly as engine/render/null/
+# does, so a test can read back what it was asked to play.
+set(LABRADOR_AUDIO_BACKEND "xaudio2" CACHE STRING
+    "The audio backend to build: xaudio2 or null")
+set_property(CACHE LABRADOR_AUDIO_BACKEND PROPERTY STRINGS xaudio2 null)
+
+if(LABRADOR_AUDIO_BACKEND STREQUAL "xaudio2")
+    target_sources(LabradorEngine PRIVATE
+        audio/xaudio2/audio_device.cpp
+    )
+elseif(LABRADOR_AUDIO_BACKEND STREQUAL "null")
+    target_sources(LabradorEngine PRIVATE
+        audio/null/audio_device.cpp
+    )
+else()
+    message(FATAL_ERROR
+        "LABRADOR_AUDIO_BACKEND is '${LABRADOR_AUDIO_BACKEND}'. "
+        "It must be xaudio2 or null - a backend is a folder in engine/audio/ "
+        "holding audio_device.cpp.")
+endif()
+
 # rapidjson is PRIVATE and SYSTEM. It used to be PUBLIC, so a sample that
 # parses nothing still had a JSON parser's headers on its command line, and
 # their warnings were measured against /W4 /WX.
@@ -238,7 +271,18 @@ endif()
 target_include_directories(LabradorEngine SYSTEM PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
 )
+# DirectXTK IS PRIVATE, AND IT USED TO BE THE ONE DEPENDENCY EVERY CLIENT PAID
+# FOR. Linking it PUBLIC put <Audio.h> and <GamePad.h> on the command line of
+# every sample, every test and every downstream game - which was not a
+# precaution, it was a requirement, because four public engine headers named
+# DirectX:: types and could not be included without it. All four are gone: the
+# audio seam took the last of them (engine/audio/audio_device.h), and the input
+# seam had already taken the other kind (engine/input/gamepad_reader.h). Nothing
+# above a backend folder names a DirectXTK type now, so nothing above one needs
+# its headers - which is the same claim the Vulkan block above makes, checked
+# the same way, and the reason cmake/check_engine_includes.cmake guards
+# engine/audio/<backend>/ as well as engine/render/<backend>/.
 target_link_libraries(LabradorEngine
-    PUBLIC MattMath Microsoft::DirectXTK
-    PRIVATE labrador_settings
+    PUBLIC MattMath
+    PRIVATE Microsoft::DirectXTK labrador_settings
 )

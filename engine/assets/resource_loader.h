@@ -1,10 +1,10 @@
 #pragma once
 
 #include "engine/assets/asset_manifest.h"
+#include "engine/audio/audio_device.h"
 #include "engine/audio/audio_resources.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
-#include <Audio.h>
 #include <functional>
 #include <map>
 #include <string>
@@ -70,9 +70,15 @@ namespace labrador
 		// obligation. A device restore hands back a different device, so a loader
 		// holding one had to be re-seated from on_device_restored - a rule with
 		// no home, stated in two places, enforced in none.
+		// The audio device rather than a library's engine object, and for the
+		// same reason: this file named DirectX::AudioEngine in a constructor
+		// parameter and included <Audio.h> to do it, which put XAudio2's
+		// headers on the command line of every client that loads an asset.
+		// engine/audio/audio_device.h is the seam now, and which audio API is
+		// behind it is chosen in CMake and named nowhere above it.
 		ResourceLoader(RenderResources* render_resources,
 			const Renderer* renderer, AudioResources* audio_resources,
-			DirectX::AudioEngine* audio_engine);
+			AudioDevice* audio_device);
 
 		// The built-in kinds hold `this`, so a copy would quietly load into the
 		// original's stores.
@@ -113,7 +119,7 @@ namespace labrador
 		RenderResources* render_resources_ = nullptr;
 		const Renderer* renderer_ = nullptr;
 		AudioResources* audio_resources_ = nullptr;
-		DirectX::AudioEngine* audio_engine_ = nullptr;
+		AudioDevice* audio_device_ = nullptr;
 
 		std::map<std::string, AssetKind> kinds_;
 

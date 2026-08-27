@@ -51,7 +51,7 @@ namespace labrador
 		void set_effect_volume(SoundBank::EffectHandle effect, float volume) const;
 		void set_effect_pitch(SoundBank::EffectHandle effect, float pitch) const;
 		void set_effect_pan(SoundBank::EffectHandle effect, float pan) const;
-		DirectX::SoundState effect_state(SoundBank::EffectHandle effect) const;
+		SoundState effect_state(SoundBank::EffectHandle effect) const;
 		bool is_effect_looping(SoundBank::EffectHandle effect) const;
 
 		// Points this object at a different bank. Every handle resolved from the

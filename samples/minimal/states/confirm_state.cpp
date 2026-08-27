@@ -7,7 +7,6 @@
 #include <memory>
 #include <string>
 
-using namespace DirectX;
 using namespace mattmath;
 using namespace labrador;
 
