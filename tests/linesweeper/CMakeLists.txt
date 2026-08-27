@@ -28,3 +28,41 @@ target_include_directories(LineSweeperTests PRIVATE
 )
 
 add_test(NAME LineSweeperTests COMMAND LineSweeperTests)
+
+# --- LineSweeperViewTests - the presentation, with no DEVICE ---
+#
+# TWO BINARIES BECAUSE THE SAMPLE HAS TWO WALLS, and they are different walls.
+# The target above links no engine, which is what proves the game is playable
+# with nothing underneath it. This one links the engine and still creates no
+# window, no adapter and no device, which is the other half of the same
+# discipline: PHILOSOPHY, Tests and toolchain, asks that everything below the
+# platform edge be testable headlessly, and a sample is below it too.
+#
+# It is one file, and presentation/particles.cpp is the only thing in it. The
+# board view needs the resource table to measure text and measuring walks an
+# atlas a device filled, so a BoardView cannot be constructed here and what it
+# draws is checked by looking at it. The particle field takes a resolved
+# texture handle instead - an integer nothing in update() reads - so the ten
+# thousand particles, the compaction and the event reconstruction all run.
+#
+# The sample's own sources are compiled into this target rather than linked,
+# because LineSweeperSample is a WIN32 executable and presentation/ is not a
+# library. One file is cheaper to list than a third library is to justify; if
+# a second presentation file ever becomes testable, that is the moment to
+# revisit it.
+add_executable(LineSweeperViewTests
+    test_main.cpp
+    view_tests.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/particles.cpp"
+)
+target_link_libraries(LineSweeperViewTests PRIVATE
+    LineSweeperRules
+    LabradorEngine
+    doctest::doctest
+    labrador_settings
+)
+target_include_directories(LineSweeperViewTests PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../.."
+)
+
+add_test(NAME LineSweeperViewTests COMMAND LineSweeperViewTests)

@@ -65,4 +65,30 @@ namespace linesweeper
 		return labrador::Colour(colour.r * alpha, colour.g * alpha,
 			colour.b * alpha, alpha);
 	}
+
+	// THE OTHER HALF OF THE SAME EQUATION, and the one the README spent a
+	// section predicting would need an atlas.
+	//
+	// faded() above scales the colour AND the alpha, which under
+	// `dst = src.rgb + dst.rgb * (1 - a)` is ordinary alpha blending: some of
+	// the source, the rest of the background. Hold the alpha at zero instead
+	// and the second term is untouched - the source simply adds. That is
+	// additive glow, out of the one blend state every batch already opens
+	// with, with no second state, no seam change and no atlas.
+	//
+	// `brightness` is therefore a multiplier on what the background already
+	// has rather than a mix against it, so overlapping draws saturate towards
+	// white instead of averaging. Ten thousand of them doing that is what a
+	// burst looks like (presentation/particles.cpp).
+	//
+	// A tint and not a texture, which is the part worth recording: the sample
+	// predicted the glow would arrive as an atlas of soft radial dots and it
+	// did not. A shrinking quad of pure addition reads as a spark at four
+	// pixels across, and the content stays one white texel.
+	constexpr labrador::Colour glowing(const labrador::Colour& colour,
+		float brightness)
+	{
+		return labrador::Colour(colour.r * brightness, colour.g * brightness,
+			colour.b * brightness, 0.0f);
+	}
 }

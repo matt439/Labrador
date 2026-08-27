@@ -20,6 +20,13 @@ namespace linesweeper
 		// (PHILOSOPHY T7, T8).
 		const std::string font_name = "courier_new_bold_16";
 
+		// The one white texel every block, panel and spark on this screen is
+		// drawn from. Spelt here as well as in board_view.cpp for the reason
+		// font_name is: the object that draws it resolves its own handle,
+		// except the particle field, which takes a resolved one so that it can
+		// be stepped with no device at all (particles.h).
+		const std::string block_texture_name = "white";
+
 		// The bindings, and the whole of the input layer.
 		//
 		// A table of pairs rather than a chain of ifs, because it is data and
@@ -99,6 +106,25 @@ namespace linesweeper
 		// it could not: presentation/ does not include tick.h.
 		this->board_ = this->scene_->add(
 			std::make_unique<BoardView>(&this->world_, resources));
+
+		// AFTER THE BOARD, AND THAT IS THE WHOLE DEPTH SYSTEM. Every draw in
+		// this sample is at layer_depth 0, so the order the scene was filled
+		// in is the order the quads are submitted in and sparks are drawn over
+		// the stack they came out of.
+		//
+		// It is handed the same const World* the board holds and nothing else.
+		// The state never tells it a line was cleared: it works that out by
+		// keeping last frame's match and comparing, which is a thing only a
+		// 276-byte trivially copyable value makes cheap enough to do every
+		// frame (particles.h).
+		this->particles_ = this->scene_->add(std::make_unique<ParticleField>(
+			&this->world_, resources->resolve_texture(block_texture_name)));
+
+		// LAST, AND OVER THE SPARKS. The top-out banner appears on the exact
+		// frame the field throws its largest burst, so the one screen a player
+		// has to read is the one the effect would bury.
+		this->banner_ = this->scene_->add(
+			std::make_unique<TopOutBanner>(&this->world_, resources));
 
 		// One line per device, left-aligned on the HUD column at x = 344 and
 		// columnised against each other by hand, which only works because the

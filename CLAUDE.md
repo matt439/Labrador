@@ -46,19 +46,19 @@ all five; CI builds all five.
 
 | Preset | Backend | ctest |
 |---|---|---|
-| `x64-debug`, `x64-release` | `render/d3d11/` | 12 entries; WARP fallback in debug |
-| `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 12 entries; WARP fallback in debug |
-| `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 12 entries; needs a real driver |
-| `x64-debug-vulkan` | `render/vulkan/` — the one that reaches other platforms | 12 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null` | `render/null/` — no graphics API; records draws | 11 entries; `RenderPixelTests` is not built |
+| `x64-debug`, `x64-release` | `render/d3d11/` | 13 entries; WARP fallback in debug |
+| `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 13 entries; WARP fallback in debug |
+| `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 13 entries; needs a real driver |
+| `x64-debug-vulkan` | `render/vulkan/` — the one that reaches other platforms | 13 entries; needs a driver and the Vulkan SDK |
+| `x64-debug-null` | `render/null/` — no graphics API; records draws | 12 entries; `RenderPixelTests` is not built |
 
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
 — compiled only in that configuration — asserts the other half: which sprites a
-frame submitted, in what order, from which texture, into which view. Twelve ctest entries: `MattMathTests`, `CoreTests`,
+frame submitted, in what order, from which texture, into which view. Thirteen ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
-`InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`
-(doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
+`InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`,
+`LineSweeperViewTests` (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
 device — a hidden window and a WARP fallback in debug under `x64-debug` and
 `x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
 `x64-debug-vulkan` — and asserts on the
@@ -91,6 +91,13 @@ samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and
 `LineSweeperTests` links no engine at all — the sample's rules are a static
 library that links only `labrador_settings` — so the whole falling-block game
 runs there with no window and no device. A rule is asserted rather than played.
+**`LineSweeperViewTests` is the other wall and a different one**: it links the
+engine and still creates no window, no adapter and no device, because the
+sample's particle field takes a resolved texture handle rather than the
+resource table and nothing in its `update()` reads one. Ten thousand particles,
+the compaction and the event reconstruction all run headlessly; the board view
+cannot, because measuring text walks an atlas a device filled, and what it
+draws is checked by looking at it.
 
 ## What will fail the build
 

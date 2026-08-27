@@ -23,6 +23,15 @@
 // the preview and the numbers are one read of one value. Splitting them would
 // buy five bounds() nobody culls against and five borrowed World pointers to
 // keep in step.
+//
+// THE TOP-OUT BANNER WAS THE SIXTH AND IT LEFT, which is the one thing that
+// argument leaves room for. Every draw in this sample is at layer_depth 0, so
+// the scene draws in the order it was filled and object order is the only
+// depth there is; the particle field is registered between this and the
+// banner, and a banner drawn from in here is drawn underneath ten thousand
+// sparks. presentation/top_out_banner.h carries that argument and pays both
+// prices this paragraph names. Nothing else has an ordering constraint, so
+// nothing else followed it out.
 namespace linesweeper
 {
 	class BoardView final : public labrador::GameObject
@@ -89,20 +98,13 @@ namespace linesweeper
 		std::wstring score_;
 		std::wstring lines_;
 		std::wstring level_;
-		std::wstring banner_;
 
-		// Measured when the banner changes, which is twice a game. Measuring
-		// walks the string through the font atlas, and draw() is the one place
-		// that must not.
-		mattmath::Vector2F banner_size_;
-
-		// What the strings above were built from. Four comparisons a tick
-		// against four allocations a frame for numbers that change a handful
+		// What the strings above were built from. Three comparisons a tick
+		// against three allocations a frame for numbers that change a handful
 		// of times a minute (T8).
 		std::uint32_t shown_score_ = 0;
 		std::uint32_t shown_lines_ = 0;
 		std::uint8_t shown_level_ = 0;
-		std::uint8_t shown_topped_out_ = 0;
 
 		// Whether any of the four has been built yet, which a zero counter
 		// cannot say on its own.

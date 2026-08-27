@@ -1,6 +1,7 @@
 #include "samples/linesweeper/presentation/board_view.h"
 
 #include "engine/math/rectanglei.h"
+#include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/rules/tables.h"
 
@@ -29,9 +30,9 @@ namespace linesweeper
 
 		// The layout, in back-buffer pixels at the 1280x720 main.cpp asks for.
 		// Constants next to the one thing they configure, which is this file
-		// (CONVENTIONS, Constants).
-		constexpr float cell_size = 28.0f;
-		constexpr float cell_inset = 1.0f;
+		// (CONVENTIONS, Constants) - except for the well itself, which moved
+		// to presentation/layout.h the day particles.cpp needed to know where
+		// column three is. Everything below configures only this file.
 		constexpr float frame_thickness = 3.0f;
 
 		constexpr float preview_cell_size = 18.0f;
@@ -42,16 +43,13 @@ namespace linesweeper
 
 		constexpr float hud_line_height = 26.0f;
 
-		constexpr float well_width =
-			static_cast<float>(well_columns) * cell_size;
-		constexpr float well_height =
-			static_cast<float>(well_visible_rows) * cell_size;
-
 		// Vector2F's constructor is not constexpr, so these are dynamically
 		// initialised - which is safe here and worth saying why: each depends
 		// on two float literals and on nothing in another translation unit, so
-		// there is no initialisation order to get wrong.
-		const Vector2F well_origin(500.0f, 72.0f);
+		// there is no initialisation order to get wrong. It is also why
+		// layout.h publishes the well's origin as two floats and not as one of
+		// these: a header included by two units cannot make that promise.
+		const Vector2F well_origin(well_origin_x, well_origin_y);
 		const Vector2F hold_origin(344.0f, 104.0f);
 		const Vector2F next_origin(816.0f, 104.0f);
 		const Vector2F label_offset(0.0f, -26.0f);
@@ -67,25 +65,9 @@ namespace linesweeper
 		constexpr Colour grid_colour = faded(Colour(1.0f, 1.0f, 1.0f), 0.05f);
 		constexpr Colour label_colour(150, 158, 172);
 		constexpr Colour value_colour(255, 255, 255);
-		constexpr Colour banner_colour(240, 96, 96);
 
 		// How much of a piece's own colour the landing shadow keeps.
 		constexpr float shadow_alpha = 0.28f;
-
-		// Where a well cell lands on the screen. Row well_buffer_rows is the
-		// top VISIBLE row, so the two spawn rows above it map to negative
-		// offsets and are never asked for - draw_stack and draw_falling both
-		// start counting at the first visible row.
-		RectangleF cell_rectangle(int x, int y)
-		{
-			return RectangleF(
-				well_origin.x + static_cast<float>(x) * cell_size + cell_inset,
-				well_origin.y +
-					static_cast<float>(y - well_buffer_rows) * cell_size +
-					cell_inset,
-				cell_size - cell_inset * 2.0f,
-				cell_size - cell_inset * 2.0f);
-		}
 	}
 
 	BoardView::BoardView(const World* world,
@@ -130,17 +112,6 @@ namespace linesweeper
 				static_cast<unsigned int>(this->shown_level_) + 1u);
 		}
 
-		if (first || this->world_->topped_out != this->shown_topped_out_)
-		{
-			this->shown_topped_out_ = this->world_->topped_out;
-			this->banner_ = this->shown_topped_out_ != 0
-				? std::wstring(L"TOPPED OUT - PRESS R OR START")
-				: std::wstring();
-			this->banner_size_ = this->banner_.empty()
-				? Vector2F::ZERO
-				: this->render_resources_->measure_text(this->font_,
-					this->banner_);
-		}
 	}
 
 	void BoardView::draw(DrawList& draw_list) const
@@ -364,35 +335,5 @@ namespace linesweeper
 				Vector2F(hud_origin.x, top + hud_line_height), value_colour,
 				1.0f, 0.0f, Vector2F::ZERO, 0.0f);
 		}
-
-		if (this->banner_.empty())
-		{
-			return;
-		}
-
-		// A SOFT QUAD BEHIND THE TEXT, which is the workaround README names
-		// for text this engine cannot make glow: draw_text puts its glyphs in
-		// the same batch as everything else, and the tool that builds a
-		// .spritefont will not write the transparent-black glyphs additive
-		// blending would need. Here it earns its place twice over - red words
-		// over an orange block are unreadable whatever they are blended with.
-		//
-		// The quad is premultiplied black at 88%, so it does not darken to
-		// black: it leaves an eighth of the stack showing through, which is
-		// what makes it read as a banner over the well rather than a hole in
-		// it. One blend state, three jobs (README, Additive blending).
-		const float middle = well_origin.y + well_height * 0.5f;
-		const float padding = 10.0f;
-
-		this->fill(draw_list,
-			RectangleF(well_origin.x, middle - padding, well_width,
-				this->banner_size_.y + padding * 2.0f),
-			faded(Colour(0.0f, 0.0f, 0.0f), 0.88f));
-
-		draw_list.draw_text(this->font_, this->banner_,
-			Vector2F(well_origin.x + (well_width - this->banner_size_.x) *
-					0.5f,
-				middle),
-			banner_colour, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
 	}
 }

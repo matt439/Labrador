@@ -10,16 +10,18 @@ are three of them, and this is not a fourth: everything here is a choice about
 one sample, made under those three. Where a decision below is really an engine
 commitment, it says so and names the document it belongs in.
 
-**Status: playable.** All three layers exist. `rules/` is the whole game — the
+**Status: playable, and both halves are here.** All three layers exist.
+`rules/` is the whole game — the
 seven-bag deal, the gravity curve, the wall kicks, lock delay, hold, hard drop,
 T-spins and scoring — and `tests/linesweeper/` plays it with no window, no
 device and no engine linked into the binary. `presentation/` draws it,
 `states/` turns a keyboard and a pad into it, and pressing R or Start after a
 top-out restarts the match with one assignment.
 
-What is not here is the second half of what this sample is for: the particle
-field, the glow and the instrument panel. See *Particles are not in the first
-version*, below.
+`presentation/particles.cpp` is the second half: ten thousand particles from
+one registered object, which is the data-layout claim the value-semantics half
+was carrying alone. What is still not here is the instrument panel. See
+*The particle field*, below.
 
 ## What it is
 
@@ -273,18 +275,115 @@ it reads as a banner over the well rather than a hole in it. `faded()` in
 `palette.h` is the two multiplications a premultiplied tint costs a caller, and
 is the only place in the sample that knows the blend equation.
 
-### Particles are not in the first version
+### The particle field
 
-The first version is the game: rules, plain drawing, the state flow, the tests.
-No particle field, no glow, no instrument panel.
+This section used to be called *Particles are not in the first version* and
+said the sample demonstrated the value-semantics half of what it is for and not
+the data-layout half — "a 276-byte match, a restart that is an assignment and a
+replay that is a `memcmp` are all here; ten thousand particles laid out for the
+cache are not. Deferred, not dropped." **They are here now**, and the five
+decisions behind them are below. `docs/next.md` section 3.2 is the item.
 
-That means what ships today demonstrates the *value-semantics* half of what
-this sample is for and not the *data-layout* half. A 276-byte match, a restart
-that is an assignment and a replay that is a `memcmp` are all here; ten thousand
-particles laid out for the cache are not. Deferred, not dropped — the particle
-field is where the second half lands, and it is the thing a modern
-falling-block game's identity is actually made of, which is why this genre was
-chosen over the alternatives.
+**One `GameObject`, ten thousand particles.** `PHILOSOPHY.md`, The object
+model, says both ends of the spectrum are first-class and that a game may
+register one object standing for thousands of values rather than one per
+entity. Nothing in this repository stood at that end. `ParticleField` is one
+registration, one `update()`, one `draw()` and one `bounds()` — three virtual
+calls a frame whatever the count, against thirty thousand and ten thousand heap
+allocations for the obvious shape.
+
+**It asked the engine for nothing.** No blend mode, no instancing verb, no
+particle system, no backend state and no golden image: ten thousand
+`draw_sprite` calls through the verb `renderer.h` already had. An engine-side
+particle system would have been the speculative framework T1 rules out — the
+mechanism the engine owes a game here is a batched sprite draw, and it already
+owned it. The only new engine-facing fact is that a sample can stand at that
+end of the dial without the engine noticing.
+
+**AoS, and thirty-two bytes.** The reflex for "laid out for the cache" is
+structure-of-arrays, and it is the wrong reflex here: `update()` writes
+position, velocity, life and decay and `draw()` reads position, life, size and
+kind, so between them they touch every field of every live particle every
+frame. Six streams would buy nothing. What was chosen instead is the size -
+exactly two particles to a cache line, none straddling one, one allocation of
+320 KB at construction and none after. Twenty-four bytes was reachable by
+packing three floats into indices behind lookup tables and is declined on T3:
+a sample meant to be *read* does not trade legibility for a fraction of a
+microsecond. Dead particles are overwritten by the last live one, so the array
+is a dense prefix and both loops stream.
+
+**The glow needed no atlas, and this file predicted it would.** *Additive
+blending needs no engine change*, above, closes by saying "when the particle
+field lands, the glow is an atlas, and an atlas is this file with more in it."
+That turned out to be wrong in the cheap direction. Under premultiplied alpha a
+tint with `a = 0` adds without attenuating, so `glowing()` in `palette.h` is the
+whole of it: a shrinking quad of pure addition reads as a spark at four pixels
+across, overlapping ones saturate towards white, and the content is still one
+white texel. The prediction was that soft radial dots were needed; at this size
+they are not.
+
+**It learns what happened by keeping last frame's match and looking.** There is
+no event queue, no callback and not one line in `rules/` that knows the field
+exists. The field holds a `World` by value, compares it with the live one every
+frame, and reads the locks, the clears, the top-out and the restart out of the
+difference. That is only affordable because a match is 276 trivially copyable
+bytes — an object graph would have needed the bus. It is the same argument
+*The match is one value* makes, arriving from the other side, and it is the
+strongest thing in the sample about what value semantics actually buy.
+
+#### The one place the diff is not enough, and what it cost
+
+**A tick locks and clears together.** `tick.cpp` writes the piece into the
+cells and calls `clear_lines` in the same step, so a full row is never visible
+from outside the simulation — not in last frame's match, not in this frame's. A
+field looking for one finds none, ever. That was found by writing the obvious
+thing first and watching it never fire.
+
+So the board between the lock and the clear is reconstructed, out of the two
+pure queries `world.h` declares for exactly this kind of reader: `shadow()`
+gives where a hard drop would have put the falling piece, which is where it
+locked in every case but one — gravity and soft drop lock a piece that is
+already resting, and a hard drop locks it at the shadow by definition. The
+exception is a piece that moved sideways or rotated on the very tick it locked,
+and the failure mode there is that no row comes back full and no sparks are
+thrown. **A missed burst on a rare frame is a cost worth paying; a burst on the
+wrong row is not.**
+
+**The exact answer was priced and refused, by the same assert that priced a
+rule out once already.** A field on `World` naming the rows that went would
+cost four bytes, not one: 277 pads to 280, and `sizeof(World) == 276` and
+`has_unique_object_representations_v` both fire. *The padding assert priced a
+rule out* records that trade being made for a rule. This is it made again for
+an effect, and an effect has even less claim on the value than the lock-delay
+low-water mark did.
+
+#### What it costs, measured against what was predicted
+
+`bench/render_bench.cpp` puts the engine's quad arithmetic at **35.4 ns a
+sprite** and flat from a thousand sprites to sixty-five thousand
+(`docs/next-status.md`, section 3.1a). Ten thousand particles is therefore
+about **354 microseconds** of arithmetic in a 16.7 ms frame — a fiftieth of the
+budget — which is why the field has no spatial index, no sort and no second
+submission path. That prediction is what section 3.2 was told to wait for
+section 3.1 to produce, and it is the reason the cost of this feature was known
+before a line of it was written.
+
+It remains a prediction about arithmetic rather than a frame time, and the
+reference machine is still unnamed, so no number here is a floor. See *Still
+open*.
+
+#### The banner had to leave the board view
+
+`board_view.h` argues that the well, the shadow, the hold slot, the preview and
+the numbers are one object because they are one read of one value. The top-out
+banner was the sixth and it is now its own file, because every draw in this
+sample is at `layer_depth` 0 and object order is the only depth there is. The
+top-out is the loudest burst the field throws — forty-eight particles for every
+filled cell of the well — and it is thrown on exactly the frame those words
+appear. Drawn from inside `BoardView` they were unreadable for the first second
+of the one screen a player has to read; that was seen on screen, not reasoned
+about. The split is bought by an ordering constraint rather than by tidiness,
+which is the only thing that argument leaves room for.
 
 ## Still open
 
@@ -293,7 +392,8 @@ chosen over the alternatives.
   such measurement exists. Until one does, no number in this repository should
   be described as a floor.
 - **Whether the layer rule gets a build check.** It is now checkable and
-  unchecked, which is the worst of the three states.
+  unchecked, which is the worst of the three states, and `presentation/`
+  has five files in it rather than three.
   `cmake/check_engine_includes.cmake` is the model and the rule is two greps:
   nothing in `rules/` may include `engine/`, and nothing in `presentation/` may
   include `rules/tick.h`. Both hold today by review. The argument against

@@ -23,7 +23,7 @@ behind it.
 ```
 engine/    ~33k lines   the engine: ten modules with a fixed dependency direction
 samples/   ~2.8k lines  two clients: minimal, the template you copy; linesweeper, the game you read
-tests/     ~14k lines   doctest, eleven targets, run by ctest
+tests/     ~14k lines   doctest, twelve targets, run by ctest
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 ```
@@ -174,7 +174,7 @@ the line.
 ctest --preset x64-debug
 ```
 
-Eleven doctest targets plus the benchmark. How many cases and how many
+Twelve doctest targets plus the benchmark. How many cases and how many
 assertions ran is what `ctest` prints on the day - a pair of numbers this line
 used to carry and got wrong, which is why it no longer does.
 

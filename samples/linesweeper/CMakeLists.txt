@@ -35,6 +35,8 @@ target_include_directories(LineSweeperRules PUBLIC
 add_executable(LineSweeperSample WIN32
     main.cpp
     presentation/board_view.cpp
+    presentation/particles.cpp
+    presentation/top_out_banner.cpp
     states/play_state.cpp
 )
 target_link_libraries(LineSweeperSample PRIVATE
