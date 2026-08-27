@@ -186,6 +186,7 @@ being load-bearing.
 └── docs/
     ├── design/             philosophies, conventions, this document
     ├── file-length-audit.md  which files are long, and which of them earn it
+    ├── next-status.md      what has landed from next.md, and what it returned
     ├── next.md             the survey of what to build next, and what it found
     ├── port/               what a second platform costs, and in what order
     ├── repo-split.md       the verified procedure for splitting engine from game
