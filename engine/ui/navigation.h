@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/input/direction.h"
 #include "engine/math/rectanglef.h"
 
 #include <vector>
@@ -8,16 +9,22 @@ namespace labrador
 {
 	class UiWidget;
 
-	// Which way the player pushed. Produced by the input module from a stick
-	// or a d-pad; consumed here as a pure direction with no device in it.
-	enum class Direction
-	{
-		none,
-		up,
-		down,
-		left,
-		right,
-	};
+	// `Direction` is engine/input/direction.h's, and this header used to
+	// declare it above a sentence saying it was "produced by the input module
+	// from a stick or a d-pad; consumed here as a pure direction with no
+	// device in it".
+	//
+	// THE SECOND HALF WAS TRUE AND THE FIRST WAS NOT. No producer existed
+	// anywhere in the tree - `grep -rn Direction engine/ | grep -v engine/ui/`
+	// was empty - so every client wiring a menu wrote the deadzone, the
+	// quadrant test and the hold-to-repeat itself, and the third is the one
+	// that goes wrong. docs/next.md section 3.3 is the finding; the enum, the
+	// stick, the pad and the repeat are all one include away now, and the
+	// sentence is true as written.
+	//
+	// The type moved rather than the producer, because ARCHITECTURE's module
+	// table already had the dependency this way round: `ui` may depend on
+	// `input`. Nothing in this module had ever stood on that edge before.
 
 	// The widget a move in `direction` should land on, or nullptr if there is
 	// nowhere to go.

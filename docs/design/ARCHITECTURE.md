@@ -142,13 +142,15 @@ being load-bearing.
 │   ├── scene/              Scene: the object list, the view list, the tick
 │   │                       phases, the per-view draw fan-out and the cull
 │   ├── input/              devices: polling, deadzones, press edges, typed
-│   │                       text. Three devices, one API shape, two ways in
-│   │                       — the pads are read from a backend, the keyboard
-│   │                       and mouse are fed from the window (see below).
-│   │                       The action map is deliberately not built -
-│   │                       neither client has a rebinding screen, so a
+│   │                       text, and the direction a stick or a d-pad is
+│   │                       pushed. Three devices, one API shape, two ways
+│   │                       in — the pads are read from a backend, the
+│   │                       keyboard and mouse are fed from the window (see
+│   │                       below). The action map is deliberately not built
+│   │                       - neither client has a rebinding screen, so a
 │   │                       binding table would be a speculative framework
-│   │                       (T1)
+│   │                       (T1). A Direction is not one: it names what a
+│   │                       device did, not what the game calls it
 │   │   └── xinput/         the XInput backend. There is no win32/ beside
 │   │                       it: the keyboard and mouse have no backend to
 │   │                       select, because their platform edge is the
@@ -177,8 +179,10 @@ being load-bearing.
 │   ├── collision/
 │   ├── core/
 │   ├── input/
-│   ├── linesweeper/        the falling-block game, played headless: this
-│   ├── math/               target links LineSweeperRules and no engine
+│   ├── linesweeper/        the falling-block game and its particle field,
+│   ├── math/               in two targets: one links LineSweeperRules and
+│   │                       no engine, the other links the engine and still
+│   │                       needs no device
 │   ├── render/
 │   ├── scene/
 │   └── ui/

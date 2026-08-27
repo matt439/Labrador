@@ -1,5 +1,6 @@
 #include "samples/linesweeper/states/pause_state.h"
 
+#include "engine/input/direction.h"
 #include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
 #include "engine/math/rectanglef.h"
@@ -167,25 +168,36 @@ namespace linesweeper
 		this->scene_->end_tick();
 
 		this->scene_->add_view(Viewport(RectangleF(Vector2F::ZERO, resolution)));
+
+		// The menu can open while a stick is already pushed - Start is on the
+		// pad, and a thumb does not leave the stick to press it. Without this
+		// the first frame reads that push as a fresh one and the cursor is off
+		// the top row before the screen is visible.
+		this->repeat_.reset();
 	}
 
-	Direction PauseState::read_direction() const
+	Direction PauseState::held_direction() const
 	{
 		const Keyboard& keyboard = *this->app_->keyboard();
-		const Gamepads& pads = *this->app_->gamepads();
 
-		if (keyboard.pressed(Key::up) || pads.pressed(0, GamepadButton::dpad_up))
+		// The keyboard first and held, not pressed: the repeat is
+		// DirectionRepeat's job now, so every source below reports what is
+		// being pushed and nothing computes an edge of its own. Two devices
+		// disagreeing is not a case - a hand is on one of them.
+		if (keyboard.held(Key::up))
 		{
 			return Direction::up;
 		}
 
-		if (keyboard.pressed(Key::down) ||
-			pads.pressed(0, GamepadButton::dpad_down))
+		if (keyboard.held(Key::down))
 		{
 			return Direction::down;
 		}
 
-		return Direction::none;
+		// Slot 0, spelt here rather than tracked, because this is a one-player
+		// game - the same decision read_input() makes in play_state.cpp and
+		// for the same reason.
+		return pad_direction(this->app_->gamepads()->state(0));
 	}
 
 	bool PauseState::confirm_pressed() const
@@ -214,7 +226,8 @@ namespace linesweeper
 			return;
 		}
 
-		const Direction direction = this->read_direction();
+		const Direction direction =
+			this->repeat_.update(this->held_direction(), dt);
 
 		if (direction != Direction::none)
 		{

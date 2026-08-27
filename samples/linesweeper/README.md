@@ -292,16 +292,26 @@ not got — one white texel and a font is the whole of its content. Fifteen line
 of `GameObject` in `pause_state.cpp` is cheaper than a sprite sheet in the
 manifest.
 
-**What is still hand-rolled, and it is the half that hurts.**
-`engine/ui/navigation.h` says `Direction` is "produced by the input module from
-a stick or a d-pad", and
+**The stick works, and it is the half that took an engine change.**
+`engine/ui/navigation.h` said `Direction` was "produced by the input module
+from a stick or a d-pad", and
 `grep -rn Direction engine/ | grep -v engine/ui/` was empty: **no such producer
-exists**. A header stating a false fact about another module is a defect on its
-own, independent of whether any game wants a menu. What this sample writes in
-its absence is nine lines translating two keys and two d-pad buttons into a
-`Direction` — which is the cheap two thirds of the problem, because an
-edge-driven device needs neither a deadzone nor a repeat. The stick needs all
-three and is deliberately not read here. See *Still open*.
+existed**, which is a header stating a false fact about another module and a
+defect independent of whether any game wants a menu.
+
+The first version of this screen wrote the mapping itself, and it was cheap for
+one reason only: it read the keyboard and the d-pad, which are edge devices, so
+it needed neither a deadzone nor a repeat. Nine obvious lines. Adding the stick
+is what makes the other two thirds appear, and that is where the mechanism
+earned its place rather than being guessed at (T1).
+
+What it costs here now is `pad_direction(gamepads()->state(0))` and one
+`DirectionRepeat` member. The deadzone is radial and behind the call, the
+quadrant test is behind it, and the repeat is a long delay then a short
+interval — the third being the one every client writes wrong, in one of three
+recognisable ways `engine/input/direction.h` lists. The keyboard is still read
+here, and should be: which key means up is a binding, and a binding is the
+game's.
 
 ### Additive blending needs no engine change
 
@@ -465,15 +475,6 @@ which is the only thing that argument leaves room for.
   writing it is that a sample's build check is a sample's build check — someone
   who copies the tree and deletes it gets folders and no discipline, which the
   layer decision above already says out loud.
-
-- **The stick does not drive the pause menu, and `navigation.h` still states
-  a false fact.** That header says `Direction` is produced by the input module;
-  no producer exists, so `pause_state.cpp` translates the keyboard and the
-  d-pad itself. Both are edge devices, so it costs nine obvious lines. An
-  analogue stick costs a deadzone, a quadrant test and hold-to-repeat, and the
-  third is the one every client gets wrong — which is the argument for the
-  mechanism living in `engine/input/` rather than here, and for it landing with
-  the client that needs it rather than ahead of one (T1).
 
 - **Whether the input map belongs in the sample or the engine — now priced,
   and still open.** `states/` has two tables, `{Key, button}` and

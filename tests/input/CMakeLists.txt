@@ -2,6 +2,7 @@ find_package(doctest CONFIG REQUIRED)
 
 add_executable(InputTests
     deadzone_tests.cpp
+    direction_tests.cpp
     gamepad_tests.cpp
     keyboard_tests.cpp
     mouse_tests.cpp

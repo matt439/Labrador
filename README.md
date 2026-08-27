@@ -147,7 +147,7 @@ Ten modules, each depending only on modules above it in the table
 | `collision` | Layers and masks, a broad phase, a narrow phase, analytic resolution. |
 | `render` | The renderer seam, cameras, viewports, sprites, text. Each graphics API lives in a folder of its own — `render/d3d11/` and the four beside it. |
 | `scene` | One object list, one collision sweep, one per-view render fan-out. |
-| `input` | Gamepads, deadzones, press edges. XInput lives in `input/xinput/`. |
+| `input` | Gamepads, deadzones, press edges, menu directions. XInput lives in `input/xinput/`. |
 | `audio` | Sound banks and effect instances. |
 | `ui` | Widgets, focus, directional navigation. |
 | `assets` | The manifest, and checked JSON. |

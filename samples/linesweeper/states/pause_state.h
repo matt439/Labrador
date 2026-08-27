@@ -2,6 +2,7 @@
 
 #include "engine/app/application.h"
 #include "engine/core/state.h"
+#include "engine/input/direction.h"
 #include "engine/scene/scene.h"
 #include "engine/ui/focus.h"
 #include "engine/ui/navigation.h"
@@ -69,24 +70,23 @@ namespace linesweeper
 		}
 
 	private:
-		// The frame's move, as a direction, from the keyboard and the d-pad.
+		// Which way the player is pushing, from the stick, the d-pad and the
+		// arrow keys at once.
 		//
-		// EDGES HERE, WHERE THE MATCH INSISTS ON held(). `play_state.cpp` reads
-		// `held()` for every gameplay binding so that `tick()` derives its own
-		// press edges and a recording carries them. A menu is not recorded and
-		// not stepped, so an edge computed out here costs nothing and is what a
-		// cursor wants: a held key that moved a cursor sixty times a second
-		// would cross a three-row menu in a twentieth of one.
+		// THIS USED TO BE NINE LINES OF TRANSLATION AND IS NOW A held().
+		// `navigation.h` said `Direction` was "produced by the input module
+		// from a stick or a d-pad" and no producer existed, so the first
+		// version of this file wrote the mapping itself - which was cheap
+		// precisely because it read only edge devices. `pad_direction` in
+		// `engine/input/direction.h` is that producer, and adding the stick
+		// costs nothing here now: the deadzone and the quadrant test are
+		// behind it, and `DirectionRepeat` below is the third piece.
 		//
-		// It is nine lines of translation the engine ought to be doing, and
-		// they are here on purpose. `navigation.h` says `Direction` is
-		// "produced by the input module from a stick or a d-pad" and no such
-		// producer exists - `grep -rn Direction engine/ | grep -v engine/ui/`
-		// is empty. This function is what a client writes in its absence, and
-		// it is the cheap two thirds: an edge-driven device needs no deadzone
-		// and no repeat. The stick needs all three, which is why the stick is
-		// not read here and why the producer lands with it.
-		labrador::Direction read_direction() const;
+		// The keyboard is folded in here rather than in the engine, and that
+		// is the right split: which keys mean up is a binding, and this sample
+		// deliberately has no binding table beyond the two it already carries
+		// (README, Still open).
+		labrador::Direction held_direction() const;
 
 		// Whether the confirm or the cancel button went down this frame.
 		bool confirm_pressed() const;
@@ -105,5 +105,12 @@ namespace linesweeper
 		// (focus.h), and a one-player falling-block game is the case that
 		// passes 0 and never thinks about it again.
 		labrador::FocusGroup focus_;
+
+		// Turns "the stick is pushed up" into "move the cursor now", with the
+		// long-then-short repeat a menu wants. It is a member because a repeat
+		// is a clock and a clock is state; `reset()` in `init()` is what stops
+		// a stick that was already held when the menu opened from stealing the
+		// first row.
+		labrador::DirectionRepeat repeat_;
 	};
 }

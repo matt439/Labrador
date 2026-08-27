@@ -30,6 +30,7 @@ add_library(LabradorEngine STATIC
     core/state.cpp
     core/state_context.cpp
     core/thread_pool.cpp
+    input/direction.cpp
     input/gamepad.cpp
     input/gamepads.cpp
     input/keyboard.cpp
