@@ -24,9 +24,11 @@
 // exactly because device_resources.h was the way around that, and it now fails
 // the build for any file outside engine/render/<backend>/ that names any header
 // in it. What keeps this legal is narrower than it looks: the check scans
-// engine/, and the only includer outside the folder is
-// tests/render/null_tests.cpp. Anything in engine/ that reached for this would
-// fail the build, and correctly - a recording is for a test to read.
+// engine/, and every includer outside the folder is a test or a benchmark -
+// tests/render/null_tests.cpp, tests/scene/fanout_tests.cpp and
+// bench/fanout_bench_null.cpp, each of them compiled in this configuration
+// alone. Anything in engine/ that reached for this would fail the build, and
+// correctly - a recording is for a test to read.
 //
 // Nothing here names a backend type. A RecordedSprite is a handle, a viewport,
 // a filter and four vertices - every one of them an engine type that
@@ -46,6 +48,17 @@
 // they were not converted; this paragraph claimed they had been, which is the
 // drift that matters - a header saying a job is finished is the one place
 // nobody looks to find out that it is not.
+//
+// THE FIRST OF THE THREE IS NOW HALF ANSWERED, AND THE HALF MATTERS. Scene::draw
+// is driven for real in bench/fanout_bench_null.cpp and pinned in
+// tests/scene/fanout_tests.cpp, which is what the paragraph above was reaching
+// for - but scene_bench.cpp's duplicated cull stays exactly where it is, for
+// the reason it gives rather than for want of this header: that benchmark
+// builds in all five configurations and a case that only runs in one would
+// measure a different thing depending on the preset. The conversion went into
+// a file of its own instead. So the sentence to keep is the narrow one: this
+// backend unblocked driving Scene::draw without a device, and doing so did not
+// remove one line from the file that could not.
 //
 // IT RECORDS WHAT WAS DRAWN, NOT WHAT IT LOOKED LIKE, and that is a deliberate
 // floor rather than a first version. Rasterising would mean a third

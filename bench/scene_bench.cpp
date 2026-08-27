@@ -151,6 +151,12 @@ namespace
 	// is worse than a duplicated loop. The loop is the two lines that matter -
 	// bounds() against the visible rectangle - and measuring it separately is
 	// honest as long as this comment says so.
+	//
+	// THE REAL THING IS MEASURED NOW, NEXT DOOR AND NOT HERE.
+	// bench/fanout_bench_null.cpp drives Scene::draw itself, both branches of
+	// it, in the one configuration that can - which is the case this stand-in
+	// could never be, and it is also why this one stays: the two rows it adds
+	// are absent from four presets out of five, and these four phases are not.
 	int cull_count(const Scene& scene, const RectangleF& visible)
 	{
 		int drawn = 0;

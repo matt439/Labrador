@@ -8,6 +8,13 @@
 void run_scene_benchmarks();
 void run_render_benchmarks();
 
+// Compiled from fanout_bench_null.cpp against the null backend and from
+// fanout_bench_absent.cpp against the other four - bench/CMakeLists.txt lists
+// one or the other, so nothing here knows which backend it was built against.
+// The returned string is a note for under the table: what the fan-out did on
+// this run, or where to go to see it do anything at all.
+std::string run_fanout_benchmarks();
+
 namespace
 {
 	// How much per-object cost a phase is allowed to gain between the smallest
@@ -39,6 +46,17 @@ namespace
 		"build_sprite_quad",
 		"build_sprite_quad (rotated)",
 		"build_scaled_quad",
+
+		// The per-view render fan-out, which exists in the null configuration
+		// alone (fanout_bench_null.cpp). Both rows are linear for the reason
+		// the cull is - a bounds test and at most a draw, per object per view,
+		// and nothing that looks anything up - so what they guard is what
+		// every other phase here guards: a change that makes one object's cost
+		// depend on how many objects there are. How much the fan-out actually
+		// won is a note below and not an assertion, because that is wall-clock
+		// and a property of the machine's core count.
+		"Scene::draw (4 views, serial)",
+		"Scene::draw (4 views, fan-out)",
 	};
 
 	std::vector<bench::Result> for_case(const std::string& name)
@@ -59,6 +77,7 @@ int main()
 {
 	run_scene_benchmarks();
 	run_render_benchmarks();
+	const std::string fanout_note = run_fanout_benchmarks();
 	bench::report();
 
 	int failures = 0;
@@ -143,6 +162,33 @@ int main()
 				upright[i].ns_per_n());
 		}
 	}
+
+	// What the fan-out bought, at each count, on this machine. Reported for the
+	// reason the broad phase's ratio is: it is a property of this box's core
+	// count and of this backend's idea of a draw, where bench.h asserts on
+	// complexity class alone.
+	const std::vector<bench::Result> one_thread =
+		for_case("Scene::draw (4 views, serial)");
+	const std::vector<bench::Result> fanned =
+		for_case("Scene::draw (4 views, fan-out)");
+
+	if (one_thread.size() == fanned.size())
+	{
+		for (size_t i = 0; i < one_thread.size(); i++)
+		{
+			if (fanned[i].median_ns <= 0.0)
+			{
+				continue;
+			}
+
+			std::printf("note    n=%-5lld the fan-out draws four views %5.2fx "
+				"the speed of one thread\n",
+				static_cast<long long>(one_thread[i].n),
+				one_thread[i].median_ns / fanned[i].median_ns);
+		}
+	}
+
+	std::printf("%s\n", fanout_note.c_str());
 
 	if (failures > 0)
 	{

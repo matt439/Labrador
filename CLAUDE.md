@@ -132,7 +132,14 @@ runs there with no window and no device. A rule is asserted rather than played.
 - **`update()` writes, `draw()` is `const` all the way down** and takes what it
   needs as parameters. The parallelism axis is views, not objects — several
   workers enter `draw()` on the *same* object at once, so the pure read is
-  load-bearing, not a convenience.
+  load-bearing, not a convenience. It is exercised in the null configuration
+  and nowhere else, because `Scene::draw` needs a `Renderer`:
+  [tests/scene/fanout_tests.cpp](tests/scene/fanout_tests.cpp) pins what the
+  fan-out must produce and
+  [bench/fanout_bench_null.cpp](bench/fanout_bench_null.cpp) prices it against
+  one thread. Both are compiled only under `x64-debug-null`, and until they
+  existed the early-out beside the fan-out was the only branch that had ever
+  been taken.
 - **Platform code lives behind seams**: `render/d3d11/`, `input/xinput/`.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
