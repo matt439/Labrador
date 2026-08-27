@@ -46,19 +46,19 @@ all five; CI builds all five.
 
 | Preset | Backend | ctest |
 |---|---|---|
-| `x64-debug`, `x64-release` | `render/d3d11/` | 13 entries; WARP fallback in debug |
-| `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 13 entries; WARP fallback in debug |
-| `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 13 entries; needs a real driver |
-| `x64-debug-vulkan` | `render/vulkan/` — the one that reaches other platforms | 13 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null` | `render/null/` — no graphics API; records draws | 12 entries; `RenderPixelTests` is not built |
+| `x64-debug`, `x64-release` | `render/d3d11/` | 14 entries; WARP fallback in debug |
+| `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 14 entries; WARP fallback in debug |
+| `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 14 entries; needs a real driver |
+| `x64-debug-vulkan` | `render/vulkan/` — the one that reaches other platforms | 14 entries; needs a driver and the Vulkan SDK |
+| `x64-debug-null` | `render/null/` — no graphics API; records draws | 13 entries; `RenderPixelTests` is not built |
 
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
 — compiled only in that configuration — asserts the other half: which sprites a
-frame submitted, in what order, from which texture, into which view. Thirteen ctest entries: `MattMathTests`, `CoreTests`,
+frame submitted, in what order, from which texture, into which view. Fourteen ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
-`InputTests`, `UiTests`, `AssetsTests`, `AppTests`, `LineSweeperTests`,
-`LineSweeperViewTests` (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
+`InputTests`, `UiTests`, `AssetsTests`, `AudioTests`, `AppTests`,
+`LineSweeperTests`, `LineSweeperViewTests` (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
 device — a hidden window and a WARP fallback in debug under `x64-debug` and
 `x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
 `x64-debug-vulkan` — and asserts on the
@@ -98,6 +98,20 @@ resource table and nothing in its `update()` reads one. Ten thousand particles,
 the compaction and the event reconstruction all run headlessly; the board view
 cannot, because measuring text walks an atlas a device filled, and what it
 draws is checked by looking at it.
+
+**`AudioTests` is headless for a reason neither of those shares, and the
+reason is the finding.** `engine/audio/` has no backend folder and no seam —
+DirectXTK is in the public headers of three modules — so the only `SoundBank`
+this repository can construct is `SoundBank::silent()`: `DirectX::WaveBank`
+takes an `AudioEngine*` and a path to an `.xwb`, there is no `.xwb` in this
+tree, and `DirectX::SoundEffectInstance` has no public constructor to fill a
+registry with by hand. Eight of that class's thirteen instance methods
+therefore have no observable behaviour at all here, and five sites of level
+clamping — engine arithmetic, sitting *below* the check for the platform —
+have never executed. [tests/audio/sound_bank_tests.cpp](tests/audio/sound_bank_tests.cpp)
+carries the whole list; it is what `docs/next.md` §3.4a asked for and the
+measured argument for how wide the audio seam has to be. Do not read a green
+`AudioTests` as audio being covered.
 
 ## What will fail the build
 

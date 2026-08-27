@@ -1,14 +1,38 @@
 #include "engine/audio/sound_bank_object.h"
 
+#include <stdexcept>
 #include <string>
 
 using namespace DirectX;
 
 namespace labrador
 {
+	namespace
+	{
+		// Every path into this class goes through the table, and there are two
+		// ways to arrive without one: default-construct, or hand the
+		// constructor a null. Both used to be a null dereference in a client's
+		// frame. This is the rest of the engine's answer instead - Registry
+		// never returns nullptr either, it says what was missing and stops
+		// (T6) - and it is one function because the alternative is the same
+		// sentence written three times and drifting apart.
+		const AudioResources* table_of(const AudioResources* audio_resources)
+		{
+			if (audio_resources == nullptr)
+			{
+				throw std::logic_error("SoundBankObject has no AudioResources "
+					"to reach a bank through. A default-constructed one never "
+					"had any and there is no setter for it: the constructor "
+					"taking a bank name is the only thing that fills it in.");
+			}
+			return audio_resources;
+		}
+	}
+
 	SoundBankObject::SoundBankObject(const std::string& sound_bank_name,
 	                                 const AudioResources* audio_resources) :
-		sound_bank_(audio_resources->resolve_sound_bank(sound_bank_name)),
+		sound_bank_(table_of(audio_resources)->resolve_sound_bank(
+			sound_bank_name)),
 		audio_resources_(audio_resources)
 
 	{
@@ -16,7 +40,7 @@ namespace labrador
 	}
 	SoundBank* SoundBankObject::sound_bank() const
 	{
-		return this->audio_resources_->sound_bank(this->sound_bank_);
+		return table_of(this->audio_resources_)->sound_bank(this->sound_bank_);
 	}
 
 	SoundBank::WaveHandle SoundBankObject::resolve_wave(
@@ -80,7 +104,7 @@ namespace labrador
 
 	void SoundBankObject::set_sound_bank(const std::string& sound_bank_name)
 	{
-		this->sound_bank_ = this->audio_resources_->resolve_sound_bank(
-			sound_bank_name);
+		this->sound_bank_ = table_of(this->audio_resources_)
+			->resolve_sound_bank(sound_bank_name);
 	}
 }

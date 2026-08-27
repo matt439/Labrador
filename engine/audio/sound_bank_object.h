@@ -17,7 +17,17 @@ namespace labrador
 	class SoundBankObject
 	{
 	public:
+		// A subclass that has not been given an AudioResources, which every
+		// object drawn by this engine has to be capable of being: draw objects
+		// are default-constructible. Nothing can fill the table in afterwards -
+		// set_sound_bank changes which bank, not which table it comes out of -
+		// so an object built this way is permanently unusable, and both ways of
+		// touching it throw std::logic_error saying so. That is T6 rather than
+		// the null dereference in somebody else's frame it used to be.
 		SoundBankObject() = default;
+
+		// Throws std::out_of_range naming the bank if nothing loaded it, and
+		// std::logic_error for a null table.
 		SoundBankObject(const std::string& sound_bank_name,
 			const AudioResources* audio_resources);
 	protected:
