@@ -19,7 +19,7 @@ Two rules for it:
   items exist to produce a number or settle a question. Those answers are the
   product, and a commit message is not where anybody looks for them.
 
-Written against `169a3c0`.
+Written against `708114b`.
 
 ---
 
@@ -33,18 +33,20 @@ Written against `169a3c0`.
 | **3.1b** `Scene::draw` fan-out under null | **landed** | `90ce3d0` |
 | **3.2** The LineSweeper particle field | **landed** | `f5bd513` |
 | **3.3** `engine/ui/` has no client, and no `Direction` producer | **both fixed** | `f567fe7`, `c2411a0` |
-| **3.4a** `tests/audio/` — the cheap evidence | open | |
+| **3.4a** `tests/audio/` — the cheap evidence | **landed**, and it found one defect | `708114b` |
 | **3.4b** The audio seam | open, and still blocked on `.xwb` | |
 | **3.5** Sprite sheets discard `origin` and `rotated` | **both keys answered** | `169a3c0` |
 | **5** The InputMap refusal | **measured, and inconclusive** | `d3de8f6` |
 | **6** The four decisions `next.md` does not make | one made — the third; three still unmade | `f411e24` |
 | **7** The nine drifted claims | **all nine fixed**, and three more found | `dea5fe0` |
 
-**Everything above §4's audio fold has landed** — the spine 2.2 → 3.1a → 3.3,
-and all three of the branches off it: 3.1b, 3.2 and now 3.5. What is left of §3
-is the pair at the bottom of that spine — **3.4a** is unblocked and costs an
-afternoon, **3.4b** behind it is still blocked on `.xwb`. Nothing else in the
-survey is open except §6's three unmade decisions.
+**Every work item in the survey has landed except 3.4b** — the whole spine
+2.2 → 3.1a → 3.3 → 3.4a, all three branches off it (3.1b, 3.2, 3.5), and §7.
+What is left is the bottom of that spine: **3.4b** is still blocked on `.xwb`
+and is the one item that was always going to need something this desktop cannot
+supply. Beside it are §6's three unmade decisions — and one of those three *is*
+the `.xwb` container, so the survey now has exactly one open question with two
+names.
 
 ---
 
@@ -244,6 +246,77 @@ already made false — CLAUDE.md and README were amended then and that one was
 missed. Fixed in `c2411a0`. §7's lesson holds: the counts that drift are the
 ones nothing checks.
 
+### 3.4a — the list the audio seam was waiting on
+
+**Landed, and the answer is larger than the question** — `708114b`. §3.4a asked
+for the written list of which of `SoundBank`'s fourteen public methods
+`silent()` makes unreachable, on the ground that nobody should spend weeks on
+§3.4b before it exists. The list is the header of
+`tests/audio/sound_bank_tests.cpp`. What it turned out to rest on is a harder
+fact than the item anticipated.
+
+**An audible `SoundBank` is not untested here. It is unconstructible.** The
+other constructor takes a `std::unique_ptr<DirectX::WaveBank>`; DirectXTK's
+`WaveBank` has exactly one constructor, an `AudioEngine*` and a path to an
+`.xwb`; `find . -name "*.xwb"` is empty, because the one the shipped manifest
+names is built from source audio that cannot be distributed; and
+`DirectX::SoundEffectInstance` has no public constructor at all, only a move, so
+the instance registry cannot be filled by hand either. `silent()` is therefore
+not one of two banks a test may choose between. It is the only bank this
+repository can build, and that is not a property of the tests.
+
+That is `PHILOSOPHY.md:632-637` almost word for word — *a seam with only the
+platform's own implementation behind it still requires the platform in order to
+construct anything*. So the finding is not that `silent()` is a poor headless
+implementation. It is that **`silent()` is not a headless implementation at
+all**: it is a null `WaveBank` pointer inside the platform's own class, checked
+at the top of every method. It can decline to do things. It cannot record them
+the way `render/null/` records a draw, which is why no test in this tree can
+assert that a sound was played.
+
+**The list, and the number that comes out of it.** Fourteen public methods
+counting the named constructor, so thirteen instance methods. A silent bank
+leaves **five** answering something — `audible`, the two resolvers, and
+`effect_state`/`is_effect_looping`, both of which answer for a handle they never
+issued — and **eight** with no observable behaviour whatever, where "it did not
+throw" is the whole of what a test can assert.
+
+**What the eight cost is the part worth carrying into §3.4b.** Every line the
+`audible()` check skips is engine code that has never executed in this
+repository, and the level clamp is on five of the eight. That clamp is
+arithmetic this module owns — folding a volume into `[0,1]` is the same kind of
+engine-side decision as the glyph walk in `render/font.h` — and it sits *below*
+the check for the platform rather than above it. A seam drawn where `audible()`
+is checked today would put it on the platform's side of the wall. That is one
+concrete thing §3.4b now knows that it did not, and it is the term the item was
+actually buying.
+
+**Two promises a silent bank cannot keep, both deliberate and both now pinned.**
+Resolving is this class's entire T6 guarantee — a misspelt wave throws at load —
+and a silent bank has no name table, so `"bang"` and `"bagn"` are not merely
+both accepted, they are the same answer. `sound_bank.h:41-48` states that trade
+out loud already. The second is `play_wave`'s unresolved-handle throw, which is
+also below the check: the one mistake the class exists to catch loudly is caught
+in a build with audio and goes unmentioned in a build without it.
+`sound_bank.cpp:35-38` says a silent bank must not reject anything, so both are
+the rule rather than an oversight.
+
+**And a defect, found by constructing the type rather than by reading it.** A
+default-constructed `SoundBankObject` dereferenced a null `AudioResources*` on
+every call, and nothing could ever repair it — `set_sound_bank` changes which
+bank, not which table — so an object built that way was permanently unusable
+and crashed rather than saying so. It **was confirmed as a `SIGSEGV` before it
+was fixed**, by backing the guard out and running the case, rather than argued
+from reading the pointer. It now throws `std::logic_error` naming the problem,
+which is what `Registry` already does instead of answering `nullptr` (T6), and
+the constructor takes the same guard.
+
+Nothing in this tree inherits `SoundBankObject`, and per `PHILOSOPHY.md:612-621`
+that settles nothing — which is exactly why the answer is a loud throw and not
+a deletion. It is also the argument for the whole item: this cost an afternoon,
+a grep could not have found it, and it was sitting in a module that had never
+had a test compiled against it.
+
 ### 3.5 — the two keys the loader read and dropped
 
 **Both answered, in one commit** — `169a3c0`. `rotated` is refused at load by
@@ -332,8 +405,15 @@ recording on a machine with no GPU.
    crossing moves with the build and with the part, so a number there would be a
    machine-specific policy baked into mechanism, and decision 1 above is why no
    such number can be a floor yet.
-4. **The `.xwb` container.** Untouched, and still what makes §3.4b weeks or
-   months.
+4. **The `.xwb` container.** Still unmade, still what makes §3.4b weeks or
+   months — but no longer untouched, because §3.4a walked into it from the
+   other side. The reason an audible bank cannot be constructed in this tree is
+   that there is no `.xwb` in it, and the reason there is no `.xwb` is the same
+   undistributable source audio that made the manifest mark the bank optional
+   in the first place. So the container question is not only "does the format
+   move to Android": it is also **"can this repository ever have a test that
+   plays anything"**, and the answer today is no, on both platforms, for one
+   reason. That raises the value of deciding it and does not decide it.
 
 ---
 
@@ -366,6 +446,17 @@ Recorded here because `next.md` reads as written, the way `docs/review/` does.
   itself out of, which is a mis-estimate rather than a wrong claim, and it is
   the only reason this sat at the bottom of §4's spine.
 
+- **§3.4a's question presupposes a bank that cannot exist.** It asks for "which
+  of `SoundBank`'s fourteen public methods `silent()` makes unreachable", which
+  reads as a comparison: these are reachable on a real bank and not on this one.
+  There is no real bank to compare against in this repository and there cannot
+  be one, for the reason recorded above. The list still exists and is still the
+  product — what a silent bank leaves observable is a question with an answer —
+  but it had to be taken against the class's source rather than against a second
+  bank, and the fact that made that necessary is worth more than the list. Its
+  price tag held exactly, which §3.5's did not: hours, and it was an afternoon.
+
 Nothing else in the survey has failed a check yet. §1 says every citation was
-verified by reading the file, and the six items worked through so far found
-three exceptions between them — two wrong, one merely expensive.
+verified by reading the file, and the seven items worked through so far found
+four exceptions between them — two wrong, one merely expensive, one that asked
+a question with a missing premise.
