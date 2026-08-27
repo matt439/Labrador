@@ -37,8 +37,9 @@ namespace labrador
 		{                                                                      \
 			throw std::runtime_error(std::string("This driver has no ") +      \
 				#name + ". The renderer needs an OpenGL 3.3 core context, "    \
-				"and the context it was given does not provide one of the "    \
-				"forty-one entry points in gl_functions.h.");                  \
+				"and the context it was given does not provide one of the " +  \
+				std::to_string(gl_function_count()) +                          \
+				" entry points in gl_functions.h.");                           \
 		}
 		LABRADOR_GL_FUNCTIONS(LABRADOR_GL_LOAD)
 #undef LABRADOR_GL_LOAD

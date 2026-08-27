@@ -585,14 +585,14 @@ namespace labrador
 //    gl_functions.cpp, and all four are the same kind of file, which is the
 //    part of an API that is not about drawing. The third file is where they
 //    diverge most and is the honest measure of what a port owes for content -
-//    115 lines on d3d11, 310 on d3d12, 168 on gl, 48 on null and 356 on
-//    vulkan - because it
-//    turns already-decoded bytes into a texture, and how much work that is
-//    depends on how much the API will take unchanged. THE LONGEST OF THEM IS
-//    THE ONE WHOSE API TAKES THE LEAST: D3D11 is handed the bytes and copies
-//    them itself, where D3D12 wants a resource, a staging buffer, a footprint
-//    per mip level, a copy on a command list, a barrier and a wait - which is
-//    the argument for the fourth backend in one file. VULKAN IS THE LONGEST OF
+//    115 lines on d3d11, 310 on d3d12, 168 on gl, 48 on null and 378 on
+//    vulkan - because it turns already-decoded bytes into a texture, and how
+//    much work that is depends on how much the API will take unchanged. THE
+//    LONGEST OF THEM IS THE ONE WHOSE API TAKES THE LEAST: D3D11 is handed
+//    the bytes and copies them itself, where D3D12 wants a resource, a
+//    staging buffer, a footprint per mip level, a copy on a command list, a
+//    barrier and a wait - which is the argument for the fourth backend in one
+//    file. VULKAN IS THE LONGEST OF
 //    THE FIVE, and the extra is not the copy: that one takes the engine's own
 //    tightly packed bytes, where a D3D12 one pads every row to 256 bytes and
 //    has to be asked to what. It is that nothing in this API owns anything -

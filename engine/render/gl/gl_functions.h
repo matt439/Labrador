@@ -12,12 +12,17 @@
 // three thousand entry points of every version and extension there has ever
 // been.
 //
-// THIS ONE DECLARES FORTY-ONE, and that is the reason it is written out rather
+// THIS ONE DECLARES THIRTY-SIX, and that is the reason it is written out rather
 // than generated. The list below is a complete and readable answer to "how much
 // of OpenGL does this engine need", which is the question that decides whether
 // an ES variant is a `#version` line or a rewrite - and a generated loader
 // answers it with a five-megabyte file. Adding a function here is one line;
 // nobody has to wonder whether it was already there.
+//
+// THAT SENTENCE SAID FORTY-ONE FOR LONGER THAN THE LIST HELD FORTY-ONE, and so
+// did the loader's error message and ARCHITECTURE's tree - three copies of a
+// number nothing checked. gl_function_count() below is the number now; this
+// sentence is a description of it and the message no longer spells one at all.
 //
 // THE VERSION IS 3.3 CORE, authored to the GLES 3.0 intersection. Nothing below
 // is outside that intersection except glDrawElementsBaseVertex, which ES 3.0
@@ -120,6 +125,20 @@ namespace labrador
 	extern result (APIENTRY* name) parameters;
 	LABRADOR_GL_FUNCTIONS(LABRADOR_GL_DECLARE)
 #undef LABRADOR_GL_DECLARE
+
+	// How many entry points the list above declares, counted from the list.
+	//
+	// The compiler answers a question a comment kept getting wrong (T5). It is
+	// constexpr because the only caller is a message, and a message should not
+	// pay for arithmetic that was decidable at compile time.
+	constexpr int gl_function_count()
+	{
+		int count = 0;
+#define LABRADOR_GL_COUNT(result, name, parameters) count++;
+		LABRADOR_GL_FUNCTIONS(LABRADOR_GL_COUNT)
+#undef LABRADOR_GL_COUNT
+		return count;
+	}
 
 	// Fetches every entry point above from the current context.
 	//

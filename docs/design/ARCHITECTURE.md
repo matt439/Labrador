@@ -109,7 +109,7 @@ being load-bearing.
 ├── CMakeLists.txt          the root build file: lists the targets, nothing else
 ├── CMakePresets.json       the configurations: debug and release on the
 │                           default backend, and a debug preset for each
-│                           of the other three — five in all
+│                           of the other four — six in all
 ├── vcpkg.json              the bought edge, declared (T9)
 ├── cmake/                  the shared settings target, helper modules
 ├── engine/                 the product
@@ -120,22 +120,25 @@ being load-bearing.
 │   ├── render/             the Renderer, cameras, viewports, colours, fonts,
 │   │   │                   the file readers and the quad arithmetic — every
 │   │   │                   decision that shows on screen
-│   │   ├── sprite.hlsl     the only shader, compiled by fxc at build time —
-│   │   │                   shared by the two backends that take HLSL, each
-│   │   │                   at its own profile
+│   │   ├── sprite.hlsl     the only shader, compiled at build time by fxc for
+│   │   │                   the two Direct3D backends and by dxc for Vulkan —
+│   │   │                   three backends, two compilers, a profile each
 │   │   ├── d3d11/          the D3D11 backend: a device, buffers, five states
 │   │   ├── d3d12/          the D3D12 backend: a device, a queue, a fence and
 │   │   │                   frames in flight — the one API where the engine
 │   │   │                   owns synchronisation
 │   │   ├── gl/             the OpenGL 3.3 core backend: a WGL context, a
-│   │   │                   loader for the forty-one entry points it uses,
+│   │   │                   loader for the thirty-six entry points it uses,
 │   │   │                   and the same shader in GLSL
+│   │   ├── vulkan/         the Vulkan backend: the one API that reaches
+│   │   │                   other platforms, and the one where the
+│   │   │                   presentation engine rather than the window says
+│   │   │                   the size changed
 │   │   └── null/           no graphics API at all: it records what it was
 │   │                       asked to draw, so a test can assert drawing on a
 │   │                       machine with no driver
-│   ├── collision/          contacts, narrow phase, manifolds, resolution
-│   │                       (the pair sweep is still all-pairs; a broad
-│   │                       phase goes behind find_contacts)
+│   ├── collision/          contacts, the broad phase that prunes the pairs,
+│   │                       the narrow phase, manifolds, resolution
 │   ├── scene/              Scene: the object list, the view list, the tick
 │   │                       phases, the per-view draw fan-out and the cull
 │   ├── input/              devices: polling, deadzones, press edges, typed

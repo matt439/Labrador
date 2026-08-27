@@ -21,9 +21,9 @@ it, and read [its README](samples/linesweeper/README.md) for the decisions
 behind it.
 
 ```
-engine/    ~17k lines   the engine: ten modules with a fixed dependency direction
+engine/    ~33k lines   the engine: ten modules with a fixed dependency direction
 samples/   ~2.8k lines  two clients: minimal, the template you copy; linesweeper, the game you read
-tests/     361 cases    doctest, eleven targets, run by ctest
+tests/     ~14k lines   doctest, eleven targets, run by ctest
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 ```
@@ -116,9 +116,10 @@ target_include_directories(YourGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 Three things worth knowing:
 
-- **You get the library and nothing else.** The tests, the benchmark and the
-  sample are behind `PROJECT_IS_TOP_LEVEL`, so consuming Labrador does not put
-  ten doctest targets and a sample executable into your `ctest`.
+- **You get the library and nothing else.** The tests, the benchmark and both
+  samples are behind `PROJECT_IS_TOP_LEVEL`, so consuming Labrador does not put
+  this repository's test targets into your `ctest`, or its executables into
+  your build.
 - **`labrador_settings` comes from here, and only from here.** It is the
   `/W4 /WX /permissive- /fp:precise` interface target every real target links
   (ARCHITECTURE, The build). Do not define your own copy — CMake will fail on
@@ -144,7 +145,7 @@ Ten modules, each depending only on modules above it in the table
 | `math` | Vectors, shapes, intersection, 2D affine transforms. Depends on nothing and links nothing. |
 | `core` | Game objects, handles, registries, the state stack, the thread pool. |
 | `collision` | Layers and masks, a broad phase, a narrow phase, analytic resolution. |
-| `render` | The renderer seam, cameras, viewports, sprites, text. Each graphics API lives in a folder of its own — `render/d3d11/` and three beside it. |
+| `render` | The renderer seam, cameras, viewports, sprites, text. Each graphics API lives in a folder of its own — `render/d3d11/` and the four beside it. |
 | `scene` | One object list, one collision sweep, one per-view render fan-out. |
 | `input` | Gamepads, deadzones, press edges. XInput lives in `input/xinput/`. |
 | `audio` | Sound banks and effect instances. |
@@ -173,8 +174,9 @@ the line.
 ctest --preset x64-debug
 ```
 
-331 test cases and about 17,000 assertions across nine targets, plus the
-benchmark.
+Eleven doctest targets plus the benchmark. How many cases and how many
+assertions ran is what `ctest` prints on the day - a pair of numbers this line
+used to carry and got wrong, which is why it no longer does.
 
 The benchmark (`bench/`) reports throughput and asserts on **complexity class**
 rather than on wall-clock — a phase that is linear in the object count must
