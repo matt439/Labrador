@@ -205,11 +205,13 @@ being load-bearing.
 └── docs/
     ├── design/             philosophies, conventions, this document
     ├── file-length-audit.md  which files are long, and which of them earn it
-    ├── next-status.md      what has landed from next.md, and what it returned
-    ├── next.md             the survey of what to build next, and what it found
     ├── port/               what a second platform costs, and in what order
     ├── repo-split.md       the verified procedure for splitting engine from game
-    └── review/             findings against the current code
+    ├── review/             findings against the current code
+    └── survey/             a sweep of the whole tree asking what to build next.
+                            One per sweep, dated, in pairs: <date>.md is the
+                            survey as written and is not updated as items land,
+                            <date>-status.md is what landed and what it returned
 ```
 
 Every target directory owns its own `CMakeLists.txt`; the root file only

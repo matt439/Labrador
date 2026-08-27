@@ -31,12 +31,13 @@ namespace labrador
 	//
 	// AND THE ORDER INSIDE EACH METHOD IS THE OTHER HALF OF IT. The clamp and
 	// the unresolved-handle check happen ABOVE the test for whether this bank
-	// has anything behind it, not below. docs/next.md 3.4a measured what the
-	// old order cost: five sites of level clamping and eight of this class's
-	// thirteen instance methods sat below that test, so in a tree that cannot
-	// construct an audible bank they were engine code no test could reach. The
-	// arithmetic is this module's, so it belongs on this module's side of the
-	// wall, and it now runs whether or not there is a sound at the end of it.
+	// has anything behind it, not below. docs/survey/2026-08-26.md 3.4a
+	// measured what the old order cost: five sites of level clamping and
+	// eight of this class's thirteen instance methods sat below that test, so
+	// in a tree that cannot construct an audible bank they were engine code
+	// no test could reach. The arithmetic is this module's, so it belongs on
+	// this module's side of the wall, and it now runs whether or not there is
+	// a sound at the end of it.
 	class SoundBank
 	{
 	public:

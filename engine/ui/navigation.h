@@ -18,9 +18,9 @@ namespace labrador
 	// anywhere in the tree - `grep -rn Direction engine/ | grep -v engine/ui/`
 	// was empty - so every client wiring a menu wrote the deadzone, the
 	// quadrant test and the hold-to-repeat itself, and the third is the one
-	// that goes wrong. docs/next.md section 3.3 is the finding; the enum, the
-	// stick, the pad and the repeat are all one include away now, and the
-	// sentence is true as written.
+	// that goes wrong. docs/survey/2026-08-26.md section 3.3 is the finding;
+	// the enum, the stick, the pad and the repeat are all one include away
+	// now, and the sentence is true as written.
 	//
 	// The type moved rather than the producer, because ARCHITECTURE's module
 	// table already had the dependency this way round: `ui` may depend on

@@ -13,12 +13,13 @@
 // A box over a running match, and the first client `engine/ui/` has ever had.
 //
 // THAT IS THE POINT OF THIS FILE, and it is worth being blunt about it.
-// `grep -rn "engine/ui/" samples/` was empty: roughly 1,350 lines across eight
-// files with no consumer anywhere in this repository, because the module's only
-// client left with the split. `PHILOSOPHY.md` calls the samples "the permanent
-// second client that keeps the boundary honest (T1)", and on this one module
-// that client did not exist. The only exercise the widget set got was four
-// `StubWidget`s in `tests/ui/`. `docs/next.md` section 3.3 is the finding.
+// `grep -rn "engine/ui/" samples/` was empty: roughly 1,350 lines across
+// eight files with no consumer anywhere in this repository, because the
+// module's only client left with the split. `PHILOSOPHY.md` calls the samples
+// "the permanent second client that keeps the boundary honest (T1)", and on
+// this one module that client did not exist. The only exercise the widget set
+// got was four `StubWidget`s in `tests/ui/`. `docs/survey/2026-08-26.md`
+// section 3.3 is the finding.
 //
 // A STUB IS NOT A CLIENT, and the difference showed up immediately. A stub
 // reports whatever bounds the test wants; a `UiText` reports the box the font

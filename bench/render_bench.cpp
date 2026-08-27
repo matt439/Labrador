@@ -54,9 +54,9 @@ using mattmath::Vector2F;
 
 namespace
 {
-	// One atlas, one frame in it, and every sprite drawing that frame. That
-	// is the shape a batch out of a single texture has, and it is the shape
-	// the particle field docs/next.md 3.2 proposes would arrive in.
+	// One atlas, one frame in it, and every sprite drawing that frame. That is
+	// the shape a batch out of a single texture has, and it is the shape the
+	// particle field docs/survey/2026-08-26.md 3.2 proposes would arrive in.
 	constexpr float atlas_side = 512.0f;
 	constexpr float frame_side = 32.0f;
 
@@ -169,8 +169,9 @@ void run_render_benchmarks()
 	// matter here are not a scene's. A shipped frame's board is two hundred
 	// cells - LineSweeper's well is ten columns by twenty visible rows
 	// (samples/linesweeper/rules/world.h) - and the particle field
-	// docs/next.md 3.2 proposes is ten thousand, so this span brackets the
-	// largest count anybody has asked for rather than stopping short of it.
+	// docs/survey/2026-08-26.md 3.2 proposes is ten thousand, so this span
+	// brackets the largest count anybody has asked for rather than stopping
+	// short of it.
 	//
 	// It is also the span over which the only thing that can bend this curve
 	// appears. Nothing here looks anything up and nothing allocates, so a

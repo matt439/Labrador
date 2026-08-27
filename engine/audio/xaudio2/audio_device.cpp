@@ -23,8 +23,8 @@
 //
 //  - THE CONTAINER. A wave bank is an .xwb here, an XACT container DirectXTK
 //    reads, and the extension is spelt once, below, rather than in the loader
-//    that asks for a bank. docs/next.md 6 leaves the format question open and
-//    this is the side of the cut it left it on.
+//    that asks for a bank. docs/survey/2026-08-26.md 6 leaves the format
+//    question open and this is the side of the cut it left it on.
 //  - THE LIFETIME RULE. DirectXTK requires the AudioEngine to outlive every
 //    WaveBank and SoundEffectInstance, because their destructors unregister
 //    themselves from it. That used to be a paragraph in engine/app/

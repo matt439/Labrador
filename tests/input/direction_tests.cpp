@@ -12,10 +12,11 @@ using mattmath::Vector2F;
 // The producer engine/ui/navigation.h spent its whole life claiming existed.
 //
 // That header said `Direction` was "produced by the input module from a stick
-// or a d-pad" and `grep -rn Direction engine/ | grep -v engine/ui/` was empty.
-// docs/next.md section 3.3 is the finding. What a client wrote in its place
-// was a deadzone, a quadrant test and a hold-to-repeat, and the third is the
-// one that goes wrong - so it is the one with the most cases here.
+// or a d-pad" and `grep -rn Direction engine/ | grep -v engine/ui/` was
+// empty. docs/survey/2026-08-26.md section 3.3 is the finding. What a client
+// wrote in its place was a deadzone, a quadrant test and a hold-to-repeat,
+// and the third is the one that goes wrong - so it is the one with the most
+// cases here.
 //
 // NO DEVICE, AND THAT IS gamepad.h's RULE RATHER THAN THIS FILE'S PREFERENCE:
 // the edge functions are free functions over values so that "a test writes the

@@ -34,9 +34,9 @@
 // pool. So the early-out was the only branch that had ever been taken, on any
 // machine - which is worse than untested and different from it, because the
 // rule the conventions are built around governed code that had not run.
-// docs/next.md 2.1 is the finding and this file is half of its answer;
-// tests/scene/fanout_tests.cpp is the other half, and pins what the fan-out
-// must produce where this only measures what it costs.
+// docs/survey/2026-08-26.md 2.1 is the finding and this file is half of its
+// answer; tests/scene/fanout_tests.cpp is the other half, and pins what the
+// fan-out must produce where this only measures what it costs.
 //
 // COMPILED ONLY IN THE null CONFIGURATION, which is why it is its own file
 // rather than a case in scene_bench.cpp. Scene::draw needs a Renderer, and the

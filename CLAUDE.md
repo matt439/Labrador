@@ -109,11 +109,11 @@ draws is checked by looking at it.
 in only one of them, and that split is the finding.** This paragraph used to
 read: `engine/audio/` has no backend folder and no seam, DirectXTK is in the
 public headers of three modules, and the only `SoundBank` this repository can
-construct is `SoundBank::silent()` — so eight of that class's thirteen instance
-methods have no observable behaviour at all here, and five sites of level
-clamping, engine arithmetic sitting *below* the check for the platform, have
-never executed. All of it was true, it was `docs/next.md` §3.4a's measured
-product, and §3.4b is what spent it. There is a seam now
+construct is `SoundBank::silent()` — so eight of that class's thirteen
+instance methods have no observable behaviour at all here, and five sites of
+level clamping, engine arithmetic sitting *below* the check for the platform,
+have never executed. All of it was true, it was `docs/survey/2026-08-26.md`
+§3.4a's measured product, and §3.4b is what spent it. There is a seam now
 ([engine/audio/audio_device.h](engine/audio/audio_device.h)); the clamp and
 every handle check are above it; and [engine/audio/null/](engine/audio/null/)
 records what it was asked to play.

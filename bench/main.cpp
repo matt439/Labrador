@@ -36,13 +36,14 @@ namespace
 		// all-pairs sweep and could not have been on this list.
 		"Scene::resolve (broad phase)",
 
-		// The draw path's engine-side arithmetic (render_bench.cpp). Linear by
-		// construction - four corners a sprite, no lookup and no allocation -
-		// so an accidental O(n^2) is not what these are guarding. What they
-		// guard is the change that would make a sprite's cost depend on how
-		// many sprites there are, which is exactly the shape a bulk or
-		// instanced submission path has if it sorts or groups; docs/next.md 5
-		// names that as the item this benchmark exists to let somebody argue.
+		// The draw path's engine-side arithmetic (render_bench.cpp). Linear
+		// by construction - four corners a sprite, no lookup and no
+		// allocation - so an accidental O(n^2) is not what these are
+		// guarding. What they guard is the change that would make a sprite's
+		// cost depend on how many sprites there are, which is exactly the
+		// shape a bulk or instanced submission path has if it sorts or
+		// groups; docs/survey/2026-08-26.md 5 names that as the item this
+		// benchmark exists to let somebody argue.
 		"build_sprite_quad",
 		"build_sprite_quad (rotated)",
 		"build_scaled_quad",

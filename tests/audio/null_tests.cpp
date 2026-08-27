@@ -15,16 +15,17 @@ using namespace labrador;
 
 // What an audible bank actually played, on a machine with no sound card.
 //
-// THIS FILE IS docs/next.md 3.4b's PRODUCT, and 3.4a's list is what it spends.
-// That list said: eight of SoundBank's thirteen instance methods have no
-// observable behaviour anywhere in this repository, and five sites of level
-// clamping - engine arithmetic, sitting below the check for the platform - have
-// never executed. Neither was a gap in the tests. An audible SoundBank could
-// not be CONSTRUCTED here, because the only implementation behind the audio
-// module was DirectXTK's and DirectXTK's WaveBank needs an .xwb this repository
-// cannot contain. PHILOSOPHY.md:632-637 predicts exactly that failure and names
-// the fix - "a seam ships with its headless implementation, or it has not
-// shipped" - and engine/audio/null/ is that implementation.
+// THIS FILE IS docs/survey/2026-08-26.md 3.4b's PRODUCT, and 3.4a's list is
+// what it spends. That list said: eight of SoundBank's thirteen instance
+// methods have no observable behaviour anywhere in this repository, and five
+// sites of level clamping - engine arithmetic, sitting below the check for
+// the platform - have never executed. Neither was a gap in the tests. An
+// audible SoundBank could not be CONSTRUCTED here, because the only
+// implementation behind the audio module was DirectXTK's and DirectXTK's
+// WaveBank needs an .xwb this repository cannot contain.
+// PHILOSOPHY.md:632-637 predicts exactly that failure and names the fix - "a
+// seam ships with its headless implementation, or it has not shipped" - and
+// engine/audio/null/ is that implementation.
 //
 // COMPILED IN ONE CONFIGURATION, WHICH IS THE SAME RULE A CLIENT LIVES UNDER. A
 // backend is chosen at build time, so a test that names one only compiles when
@@ -131,14 +132,14 @@ TEST_CASE("the level clamp is engine arithmetic, and this is where it is read")
 	const SoundBank::EffectHandle effect =
 		fixture.bank->resolve_effect("engine_loop");
 
-	// FIVE SITES, AND THIS IS THE CASE docs/next.md 3.4a WAS BUYING. Every one
-	// of these had never executed in this repository: the clamp sat below the
-	// check for the platform, and no bank that reached it could be built. It
-	// sits above that check now, because folding a volume into [0,1] and a
-	// pitch and a pan into [-1,1] is arithmetic engine/audio/ owns - the same
-	// kind of engine-side decision as the glyph walk in render/font.h - and a
-	// seam drawn where the old check was would have put it on the platform's
-	// side of the wall.
+	// FIVE SITES, AND THIS IS THE CASE docs/survey/2026-08-26.md 3.4a WAS
+	// BUYING. Every one of these had never executed in this repository: the
+	// clamp sat below the check for the platform, and no bank that reached it
+	// could be built. It sits above that check now, because folding a volume
+	// into [0,1] and a pitch and a pan into [-1,1] is arithmetic
+	// engine/audio/ owns - the same kind of engine-side decision as the glyph
+	// walk in render/font.h - and a seam drawn where the old check was would
+	// have put it on the platform's side of the wall.
 	fixture.bank->play_wave(wave, 500.0f, -12.0f, 9.0f);
 	fixture.bank->play_effect(effect, false, -1.0f, 40.0f, -40.0f);
 	fixture.bank->set_effect_volume(effect, 1000.0f);

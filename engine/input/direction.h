@@ -14,7 +14,7 @@ namespace labrador
 	// was true. The first was not: `grep -rn Direction engine/ | grep -v
 	// engine/ui/` was empty, and no producer existed anywhere in the tree. A
 	// header stating a false fact about another module is a defect on its own,
-	// which is what docs/next.md section 3.3 called it.
+	// which is what docs/survey/2026-08-26.md section 3.3 called it.
 	//
 	// It moved here rather than the producer moving there, because the
 	// sentence had the dependency the right way round and ARCHITECTURE's module

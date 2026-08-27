@@ -252,7 +252,7 @@ is roughly 1,350 lines across eight files and
 with the split. `PHILOSOPHY.md` calls the samples "the permanent second client
 that keeps the boundary honest (T1)", and on this one module that client did
 not exist. A promise a document makes on a module's behalf is not kept by four
-`StubWidget`s in a test. `docs/next.md` section 3.3 is the finding.
+`StubWidget`s in a test. `docs/survey/2026-08-26.md` section 3.3 is the finding.
 
 **A stub is not a client, and the difference showed up immediately.** A stub
 reports whatever bounds the test asks for; a `UiText` reports the box the font
@@ -353,11 +353,12 @@ is the only place in the sample that knows the blend equation.
 ### The particle field
 
 This section used to be called *Particles are not in the first version* and
-said the sample demonstrated the value-semantics half of what it is for and not
-the data-layout half — "a 276-byte match, a restart that is an assignment and a
-replay that is a `memcmp` are all here; ten thousand particles laid out for the
-cache are not. Deferred, not dropped." **They are here now**, and the five
-decisions behind them are below. `docs/next.md` section 3.2 is the item.
+said the sample demonstrated the value-semantics half of what it is for and
+not the data-layout half — "a 276-byte match, a restart that is an assignment
+and a replay that is a `memcmp` are all here; ten thousand particles laid out
+for the cache are not. Deferred, not dropped." **They are here now**, and the
+five decisions behind them are below. `docs/survey/2026-08-26.md` section 3.2
+is the item.
 
 **One `GameObject`, ten thousand particles.** `PHILOSOPHY.md`, The object
 model, says both ends of the spectrum are first-class and that a game may
@@ -436,12 +437,12 @@ low-water mark did.
 
 `bench/render_bench.cpp` puts the engine's quad arithmetic at **35.4 ns a
 sprite** and flat from a thousand sprites to sixty-five thousand
-(`docs/next-status.md`, section 3.1a). Ten thousand particles is therefore
-about **354 microseconds** of arithmetic in a 16.7 ms frame — a fiftieth of the
-budget — which is why the field has no spatial index, no sort and no second
-submission path. That prediction is what section 3.2 was told to wait for
-section 3.1 to produce, and it is the reason the cost of this feature was known
-before a line of it was written.
+(`docs/survey/2026-08-26-status.md`, section 3.1a). Ten thousand particles is
+therefore about **354 microseconds** of arithmetic in a 16.7 ms frame — a
+fiftieth of the budget — which is why the field has no spatial index, no sort
+and no second submission path. That prediction is what section 3.2 was told to
+wait for section 3.1 to produce, and it is the reason the cost of this feature
+was known before a line of it was written.
 
 It remains a prediction about arithmetic rather than a frame time, and the
 reference machine is still unnamed, so no number here is a floor. See *Still
@@ -487,12 +488,12 @@ which is the only thing that argument leaves room for.
   Known-absent), and one sample with no rebinding screen is not the second
   client that would justify one.
 
-  `docs/next.md` §5 asked for the second device to be priced before the
-  question was argued, and for the threshold to be named **first**, on the
-  grounds that a measurement whose threshold is chosen afterwards can only
-  agree with whoever ran it. So it was: under 25 lines confirms the refusal;
-  60+, or an engine header having to change, overturns it; between them is
-  inconclusive.
+  `docs/survey/2026-08-26.md` §5 asked for the second device to be priced
+  before the question was argued, and for the threshold to be named **first**,
+  on the grounds that a measurement whose threshold is chosen afterwards can
+  only agree with whoever ran it. So it was: under 25 lines confirms the
+  refusal; 60+, or an engine header having to change, overturns it; between
+  them is inconclusive.
 
   **The pad cost 26 lines here** — an include, a five-line struct, an
   eleven-line table, a seven-line loop, one line to reach the pads and one more

@@ -11,16 +11,17 @@ using namespace labrador;
 
 // The bank a missing container produces, and what it still answers.
 //
-// WHAT THIS FILE USED TO BE, AND WHY IT IS SHORTER NOW. docs/next.md 3.4a asked
-// for the written list of which of SoundBank's fourteen public methods
-// SoundBank::silent() leaves observable, and this file was that list: eight of
-// the thirteen instance methods had no observable behaviour anywhere in this
-// repository, "it did not throw" was the whole of what a case could assert
-// about them, and five sites of level clamping sat below the check for the
-// platform and had never executed. The reason was not the tests. An audible
-// SoundBank was UNCONSTRUCTIBLE here - its other constructor took a
-// std::unique_ptr<DirectX::WaveBank>, DirectXTK's WaveBank has exactly one
-// constructor taking a path to an .xwb, and there is no .xwb in this tree.
+// WHAT THIS FILE USED TO BE, AND WHY IT IS SHORTER NOW.
+// docs/survey/2026-08-26.md 3.4a asked for the written list of which of
+// SoundBank's fourteen public methods SoundBank::silent() leaves observable,
+// and this file was that list: eight of the thirteen instance methods had no
+// observable behaviour anywhere in this repository, "it did not throw" was
+// the whole of what a case could assert about them, and five sites of level
+// clamping sat below the check for the platform and had never executed. The
+// reason was not the tests. An audible SoundBank was UNCONSTRUCTIBLE here -
+// its other constructor took a std::unique_ptr<DirectX::WaveBank>,
+// DirectXTK's WaveBank has exactly one constructor taking a path to an .xwb,
+// and there is no .xwb in this tree.
 //
 // 3.4b IS WHAT THAT LIST WAS FOR AND IT HAS BEEN SPENT. engine/audio/ has a
 // seam now (audio_device.h) and a headless implementation behind it
@@ -167,16 +168,16 @@ TEST_CASE("a bank with no content still runs the arithmetic it owns")
 	// pan an order of magnitude outside their range - and none of it is
 	// refused, because there is nothing to play it.
 	//
-	// WHAT THIS CASE CANNOT SEE, AND WHY IT IS STILL HERE. The clamp runs now:
-	// it sits above the check for content rather than below it, which is where
-	// docs/next.md 3.4a measured that it belonged, because folding a volume
-	// into [0,1] is arithmetic this module owns and not the platform's. A bank
-	// with nothing behind it still cannot show you the result - there is no
-	// device to have received the clamped number. That is what null_tests.cpp
-	// is for, and the split between these two files is the honest statement of
-	// what a seam bought: the order is a claim about which side of the wall the
-	// arithmetic is on, and the headless backend is what makes the claim
-	// checkable.
+	// WHAT THIS CASE CANNOT SEE, AND WHY IT IS STILL HERE. The clamp runs
+	// now: it sits above the check for content rather than below it, which is
+	// where docs/survey/2026-08-26.md 3.4a measured that it belonged, because
+	// folding a volume into [0,1] is arithmetic this module owns and not the
+	// platform's. A bank with nothing behind it still cannot show you the
+	// result - there is no device to have received the clamped number. That
+	// is what null_tests.cpp is for, and the split between these two files is
+	// the honest statement of what a seam bought: the order is a claim about
+	// which side of the wall the arithmetic is on, and the headless backend
+	// is what makes the claim checkable.
 	CHECK_NOTHROW(bank->play_wave(wave, 500.0f, -12.0f, 9.0f));
 	CHECK_NOTHROW(bank->play_effect(effect, false, -1.0f, 40.0f, -40.0f));
 	CHECK_NOTHROW(bank->set_effect_volume(effect, 1000.0f));

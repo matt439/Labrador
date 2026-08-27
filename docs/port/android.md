@@ -194,34 +194,34 @@ the first place.
 > header inside it fails the build exactly as it does for `render/`.
 >
 > **It did not land for this document's reason, and that is worth recording.**
-> It landed for `docs/next.md` §3.4b, whose argument is about testability
-> rather than about a second platform: a seam with only the platform's own
-> implementation behind it cannot be constructed without the platform, so eight
-> of `SoundBank`'s thirteen instance methods and five sites of level clamping
-> were code no test in this repository could reach. The port's requirement and
-> the test's requirement turned out to be one piece of work, which is the
-> cheapest way for an item on this spine to be discharged and was not
-> predicted here.
+> It landed for `docs/survey/2026-08-26.md` §3.4b, whose argument is about
+> testability rather than about a second platform: a seam with only the
+> platform's own implementation behind it cannot be constructed without the
+> platform, so eight of `SoundBank`'s thirteen instance methods and five sites
+> of level clamping were code no test in this repository could reach. The
+> port's requirement and the test's requirement turned out to be one piece of
+> work, which is the cheapest way for an item on this spine to be discharged
+> and was not predicted here.
 >
 > **What is left of this item, and it is the smaller half.** One backend
 > against an existing seam — `audio/aaudio/` or `audio/opensles/`, sixteen
 > methods, no engine change — which is now the same shape as §3.5 and can be
 > costed the same way. Nothing above the seam has to move.
 >
-> **What is NOT settled is the sentence below about the container**, and it was
-> deliberately left open rather than decided in passing. The seam is cut
-> *above* the format: `open_wave_bank` takes a directory and a bank name, never
-> a file name, so the extension and the reader belong to the backend — an
-> `.xwb` on `xaudio2/`, and on `null/` the wave-name list the definition JSON
-> supplies, because that JSON is content the engine parses and the container is
-> not. So an Android backend still needs a container it can read, and the
-> in-doctrine answer is still the one below: write the format down, an
+> **What is NOT settled is the sentence below about the container**, and it
+> was deliberately left open rather than decided in passing. The seam is cut
+> *above* the format: `open_wave_bank` takes a directory and a bank name,
+> never a file name, so the extension and the reader belong to the backend —
+> an `.xwb` on `xaudio2/`, and on `null/` the wave-name list the definition
+> JSON supplies, because that JSON is content the engine parses and the
+> container is not. So an Android backend still needs a container it can read,
+> and the in-doctrine answer is still the one below: write the format down, an
 > `xwb_file.h` beside `dds_file.h`. **That is blocked on something this
 > repository does not have** — there is no `.xwb` in this tree to write a
 > reader against, for the same undistributable-source-audio reason the shipped
-> manifest marks the bank optional. `docs/next.md` §6's fourth decision is
-> therefore still unmade, and it is now the whole of the audio question rather
-> than half of it.
+> manifest marks the bank optional. `docs/survey/2026-08-26.md` §6's fourth
+> decision is therefore still unmade, and it is now the whole of the audio
+> question rather than half of it.
 
 **This is the one place the second-platform claim is provably false today, and
 it is false in a way a folder move does not fix.**

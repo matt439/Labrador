@@ -70,19 +70,20 @@ namespace labrador
 	// that a reader of sound_bank.cpp would have had to count by hand.
 	//
 	// WHAT THE SEAM DOES NOT DECIDE IS THE CONTAINER, AND THAT IS DELIBERATE.
-	// docs/next.md 6 leaves the .xwb question open - whether the wave-bank
-	// format moves with a port or the seam is cut above it with the format
-	// decision deferred - and this is cut above it. open_wave_bank takes a
-	// directory and a bank name, never a file name: the extension, the reader
-	// and the bytes are the backend's business, exactly as a swapchain is
-	// render/'s. What crosses instead is the list of wave NAMES the definition
-	// beside the container says it holds, because that list is content this
-	// engine parses out of its own JSON. A backend with no container answers
-	// from that list; a backend with one checks the list against it and throws
-	// naming the wave that is missing. Writing the container format down - an
-	// xwb_file.h beside dds_file.h, which is what dds_file.h's own precedent
-	// argues for - stays open, and is blocked on something this repository does
-	// not have: there is no .xwb in this tree to write a reader against.
+	// docs/survey/2026-08-26.md 6 leaves the .xwb question open - whether the
+	// wave-bank format moves with a port or the seam is cut above it with the
+	// format decision deferred - and this is cut above it. open_wave_bank
+	// takes a directory and a bank name, never a file name: the extension,
+	// the reader and the bytes are the backend's business, exactly as a
+	// swapchain is render/'s. What crosses instead is the list of wave NAMES
+	// the definition beside the container says it holds, because that list is
+	// content this engine parses out of its own JSON. A backend with no
+	// container answers from that list; a backend with one checks the list
+	// against it and throws naming the wave that is missing. Writing the
+	// container format down - an xwb_file.h beside dds_file.h, which is what
+	// dds_file.h's own precedent argues for - stays open, and is blocked on
+	// something this repository does not have: there is no .xwb in this tree
+	// to write a reader against.
 	class AudioDevice
 	{
 	public:

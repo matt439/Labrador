@@ -25,15 +25,15 @@
 // What the per-view render fan-out owes, asserted for the first time.
 //
 // PHILOSOPHY commits to one axis of parallelism "and that one alone" and
-// CLAUDE.md calls the const draw() discipline guarding it "load-bearing, not a
-// convenience" - and until this file the fan-out had never run. scene.cpp
+// CLAUDE.md calls the const draw() discipline guarding it "load-bearing, not
+// a convenience" - and until this file the fan-out had never run. scene.cpp
 // returns before it when the view count is one, or the pool is null, or the
 // partitioner is null; both samples construct Scene(nullptr, nullptr); and
 // scene_tests.cpp beside this one builds every scene the same way. So the
 // early-out was the only branch ever taken, and the guarantee draw()'s
-// constness exists to provide had never been asked for. docs/next.md 2.1 is
-// the finding; bench/fanout_bench_null.cpp measures what the path costs and
-// this file pins what it must produce.
+// constness exists to provide had never been asked for.
+// docs/survey/2026-08-26.md 2.1 is the finding; bench/fanout_bench_null.cpp
+// measures what the path costs and this file pins what it must produce.
 //
 // COMPILED ONLY IN THE null CONFIGURATION. Scene::draw takes a Renderer and
 // the null backend is the only one with a Renderer that needs no window and no
