@@ -93,8 +93,8 @@ namespace labrador
 
 	// The whole of this backend's share of loading content, and it is the
 	// second longest of the five because this API has no initial-data
-	// parameter. Vulkan's is longer still and for the same reason - 378 lines
-	// to this one's 310, with gl at 168, d3d11 at 115 and null at 48, which
+	// parameter. Vulkan's is longer still and for the same reason - 382 lines
+	// to this one's 342, with gl at 168, d3d11 at 116 and null at 49, which
 	// renderer.h lists in one place and holds all five against.
 	//
 	// WHAT A TEXTURE COSTS HERE THAT IT DOES NOT COST NEXT DOOR. D3D11 takes an
@@ -208,8 +208,9 @@ namespace labrador
 		// WHERE EACH LEVEL GOES IN THE STAGING BUFFER, ASKED RATHER THAN
 		// COMPUTED. A copy's rows are padded to 256 bytes and each level starts
 		// on a 512-byte boundary, and neither number is this engine's to assume
-		// - which matters most for the block-compressed levels that are 43 of
-		// the 45 images loaded, where a "row" is a row of 4x4 blocks and the
+		// - which matters most for the block-compressed levels that are 41 of
+		// the 43 images both clients load between them (docs/port/content-
+		// probe.md counted them), where a "row" is a row of 4x4 blocks and the
 		// obvious arithmetic is four times too large (texture_data.h).
 		const UINT subresources = level_count;
 		std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(

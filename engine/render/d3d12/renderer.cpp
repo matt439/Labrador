@@ -263,11 +263,13 @@ namespace labrador
 
 		// THE ALLOCATOR IS RESET HERE AND NOWHERE ELSE, AND SOMETHING HAS
 		// ALREADY WAITED FOR THE GPU TO FINISH WITH IT. That sentence is the
-		// whole of what this API asks of the engine that the other three do
+		// whole of what this API asks of the engine that D3D11, GL and null do
 		// not: the memory a command list records into belongs to the allocator,
 		// and reusing it while the GPU is still reading last time's commands is
 		// not an error anything reports - it is a frame drawn from two frames'
-		// commands at once.
+		// commands at once. Vulkan asks exactly the same thing about a command
+		// pool and opens its begin_frame with the same paragraph, which is what
+		// makes this an API property rather than this backend's habit.
 		//
 		// WHICH WAIT IT WAS DEPENDS ON WHO CALLED, and there are two callers.
 		// Renderer::begin_frame waits on the fence for this frame index before
@@ -901,7 +903,9 @@ namespace labrador
 		// this API has no initial-data parameter, so "upload it once at
 		// creation" is a staging buffer, a copy on a command list and a wait -
 		// the same three steps every texture takes (texture_factory.cpp), which
-		// is why the third file of this backend is the longest of the five.
+		// is why the third file of this backend is the second longest of the
+		// five. The longest is Vulkan's, for the same reason and one more: it
+		// owns the allocation as well as the copy.
 		std::vector<unsigned short> index_data;
 		index_data.reserve(static_cast<size_t>(DrawList::View::
 			MAX_PAGE_SPRITES) * INDICES_PER_SPRITE);

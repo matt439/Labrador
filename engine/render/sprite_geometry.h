@@ -23,17 +23,24 @@
 // backend receives is four SpriteVertex in view pixels; what it owes is a
 // buffer, a shader that multiplies each vertex by one four-float constant and
 // the sampled texel by the vertex's own colour, and the state that makes the
-// blend premultiplied. Four backends cannot disagree about where a sprite went,
-// because none of them decides.
+// blend premultiplied. Five backends cannot disagree about where a sprite went,
+// because none of them decides. (The count here has always been of backends
+// rather than of rasterisers: null runs this file too, which is what makes its
+// recording worth asserting on.)
 //
 // THE ONE TERM A BACKEND STILL OWNS is where the pane itself sits in the thing
 // being drawn into, because that is the one question the answer to which is not
-// the same shape on both APIs: D3D11 measures a viewport down from the render
-// target's top left and needs no height at all, GL measures up from the bottom
-// and so has to subtract from one. It held a cached copy of that height and it
-// was wrong for the whole of every drag-resize; it reads the window now
-// (engine/render/gl/backend.h, Impl::drawable_size), which is what makes the
-// sentence above true rather than nearly true.
+// the same shape on all three APIs behind this seam - and there are three
+// answers, not two. Direct3D measures a viewport down from the render target's
+// top left and needs no height at all. GL measures up from the bottom and so
+// has to subtract from one: it held a cached copy of that height and it was
+// wrong for the whole of every drag-resize; it reads the window now
+// (engine/render/gl/backend.h, Impl::drawable_size). Vulkan hands the
+// rasteriser a viewport whose origin is the pane's BOTTOM edge and whose height
+// is negative, which inverts y for the whole pipeline and makes the flip
+// pane-local rather than buffer-relative - so the shape of GL's defect cannot
+// be written there at all (engine/render/vulkan/renderer.cpp). All three keep
+// the sentence above true rather than nearly true.
 //
 // THE CORNER ORDER IS PART OF THE CONTRACT: 0 is the destination's top left, 1
 // its top right, 2 its bottom left, 3 its bottom right. A backend's index

@@ -98,8 +98,13 @@ namespace
 	// RESET ON REENTER AS WELL AS ON START, and that is not tidiness. A case
 	// with two subcases runs its body twice, so a frame drawn OUTSIDE the
 	// subcases is read back twice - it is the same frame both times and must
-	// find the same name, not a second ordinal. pixel_tests.cpp has exactly one
-	// case shaped like that today.
+	// find the same name, not a second ordinal. THE ONE CASE SHAPED LIKE THAT
+	// TODAY HAS ONE SUBCASE, NOT TWO: "read_back_buffer hands back exactly
+	// back_buffer_size" reads its frame outside its single SUBCASE, so doctest
+	// runs the body once and this reset has never yet been needed. It stays
+	// because the shape it guards is one line away - a second subcase in that
+	// case - and the failure would be an image quietly checked against the
+	// wrong name.
 	struct GoldenNames : doctest::IReporter
 	{
 		explicit GoldenNames(const doctest::ContextOptions&) {}
@@ -251,7 +256,8 @@ namespace
 		// and an alpha channel, so read_png returns exactly these bytes - and
 		// the check-mode run that follows every regeneration is what says so,
 		// because it compares the frame against the file just written from it.
-		// A build where that stopped being true would fail 39 times over.
+		// A build where that stopped being true would fail fifty-two times over,
+		// once per image in the set.
 		WICPixelFormatGUID format = GUID_WICPixelFormat32bppRGBA;
 		ComPtr<IWICBitmap> source;
 		if (FAILED(frame->SetPixelFormat(&format)) ||

@@ -8,10 +8,11 @@
 // The Direct3D 12 device, the queue, the swap chain and the fence.
 //
 // THE PART OF AN API THAT IS NOT ABOUT DRAWING, which is what renderer.h says
-// a backend's fourth translation unit is for. The D3D11 folder has one of
-// these and the GL folder has gl_functions.cpp; this is the same kind of file
-// and holds the same kind of thing - everything that exists before a frame
-// does and outlives every frame after it.
+// a backend's fourth translation unit is for. The D3D11 and Vulkan folders
+// have one of these too and the GL folder has gl_functions.cpp; only null
+// stops at three files. This is the same kind of file as those three and holds
+// the same kind of thing - everything that exists before a frame does and
+// outlives every frame after it.
 //
 // IT IS NOT THE D3D11 FILE TRANSLITERATED, and the naming says so. That one is
 // an upstream sample carried in with its own conventions - PascalCase methods,
@@ -123,8 +124,11 @@ namespace labrador
 
 		// Blocks until the work signal_frame recorded for THIS frame index has
 		// finished. Called once at the top of a frame, before anything resets a
-		// command allocator - which is the one rule this API has that the other
-		// three do not.
+		// command allocator - which is the one rule this API has that D3D11, GL
+		// and null do not. Vulkan has it identically, declared in the identical
+		// place (vulkan/device_resources.h, wait_for_frame) with a command pool
+		// where this says allocator, because a timeline semaphore is an
+		// ID3D12Fence spelt differently.
 		void wait_for_frame();
 
 		// Blocks until the GPU has finished everything. NOT A FRAME-PATH CALL:

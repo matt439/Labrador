@@ -24,8 +24,11 @@ namespace labrador
 	// ever been given - MakeSpriteFont's default region is the 95 characters
 	// U+0020 to U+007E - so until fonts carried a stand-in glyph, the graceful
 	// path here ended in the throw it was written to avoid. The resource factory
-	// installs one on every font it loads, so a replacement character draws as
-	// a question mark, and RenderResources::can_render is how a caller finds out
-	// before it gets that far.
+	// installs one on every font that HAS a candidate - the font's own choice,
+	// then '?', then ' ' - so on every font in this tree a replacement
+	// character draws as a question mark, and on a font carrying none of the
+	// three nothing is installed and the glyph is dropped.
+	// RenderResources::can_render is how a caller finds out before it gets that
+	// far.
 	std::wstring widen(std::string_view utf8);
 }

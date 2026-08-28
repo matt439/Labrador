@@ -357,10 +357,12 @@ namespace labrador
 			const Colour& colour;
 		};
 
-		// The lookup content files index by name. It was a chain of 149
+		// The lookup content files index by name. It was a chain of 148
 		// `if (name == "...")` in an `inline` function in the header, so every
-		// translation unit that called it compiled its own copy of all 149
-		// comparisons.
+		// translation unit that called it compiled its own copy of all 148
+		// comparisons - the same 148 the table below holds, which is why the
+		// two numbers have to match and why this one is worth counting rather
+		// than rounding.
 		constexpr std::array<NamedColour, 148> named_colours =
 		{{
 			{ "ALICE_BLUE", Colour::alice_blue },

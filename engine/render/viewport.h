@@ -13,8 +13,12 @@ namespace labrador
 	// conversion left with the rest of them; the type follows it into render/,
 	// which is the only module that has ever needed one.
 	//
-	// minDepth and maxDepth are camelCase because they are the field names
-	// D3D11_VIEWPORT uses, and this is the struct that mirrors it.
+	// minDepth and maxDepth are camelCase because they mirror D3D11_VIEWPORT's
+	// last two fields, which that header spells MinDepth and MaxDepth - so this
+	// is the API's name lowered to CONVENTIONS' initial letter rather than the
+	// API's name verbatim. The other four are not mirrored at all: this struct
+	// says x/y/width/height where D3D11_VIEWPORT says TopLeftX/TopLeftY/Width/
+	// Height.
 	struct Viewport
 	{
 	public:

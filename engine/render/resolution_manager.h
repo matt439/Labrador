@@ -37,7 +37,11 @@ namespace labrador
         // The size as given, with no preset anywhere near it. This is what a
         // real window is, and Application calls it from on_window_size_changed
         // so that a resize, a full-screen toggle and a dragged window edge all
-        // land here - they all arrive as WM_SIZE, so one call covers the three.
+        // land here. NOT ALL THREE ARRIVE AS WM_SIZE, which this used to say:
+        // engine/app/window.cpp drops every WM_SIZE sent inside the modal drag
+        // loop and forwards a GetClientRect on WM_EXITSIZEMOVE instead, so a
+        // dragged edge reaches this through that message. One call covers the
+        // three because the shell converges them, not because Windows does.
         //
         // IT MUST NOT BE ROUTED THROUGH set_resolution(const Vector2I&), and
         // that is not a style preference. That overload converts to the enum

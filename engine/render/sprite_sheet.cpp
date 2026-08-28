@@ -14,8 +14,9 @@ namespace labrador
 		// A position-and-scale draw is a destination-rectangle draw whose size
 		// came from the source. The old code handed both forms to SpriteBatch,
 		// which computed exactly this; the seam takes one destination rectangle,
-		// so the arithmetic surfaces here instead of being done twice inside two
-		// backends.
+		// so the arithmetic surfaces here instead of being done five times over
+		// inside five backends - DrawList::draw_sprite is implemented once per
+		// folder and this is the call it feeds.
 		RectangleF destination_from(const RectangleI& source,
 			const Vector2F& position, float scale)
 		{

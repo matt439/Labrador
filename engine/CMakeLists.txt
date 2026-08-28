@@ -1,8 +1,11 @@
 add_subdirectory(math)
 
 # LabradorEngine — the engine static library (docs/design/ARCHITECTURE.md).
-# Modules are folders; dependencies point one way, toward math. Files
-# migrate in from the game as they become dependency-clean.
+# Modules are folders; dependencies point one way, toward math. The sentence
+# that used to end this paragraph - "files migrate in from the game as they
+# become dependency-clean" - described a tree with a game in it, and the split
+# ended that migration: the client is its own repository and consumes this one
+# as a submodule (CLAUDE.md, ARCHITECTURE.md).
 
 # xaudio2redist first: directxtk's config references Microsoft::XAudio2Redist
 # but does not find it itself.
@@ -93,8 +96,8 @@ target_include_directories(LabradorEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..
 # translation units, at most one more for the part of the API that is not about
 # drawing, and whatever that backend needs to build its shader.
 #
-# Nothing outside engine/render/<backend>/ names either folder, which is what
-# makes this a list of files rather than a set of #ifdefs.
+# Nothing outside engine/render/<backend>/ names any of the five folders, which
+# is what makes this a list of files rather than a set of #ifdefs.
 set(LABRADOR_RENDER_BACKEND "d3d11" CACHE STRING
     "The render backend to build: d3d11, d3d12, gl, vulkan or null")
 set_property(CACHE LABRADOR_RENDER_BACKEND PROPERTY STRINGS
@@ -117,9 +120,11 @@ if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
     # header reads exactly the same for a generated one.
     #
     # THE SOURCE IS render/sprite.hlsl AND THE PROFILE IS THIS BACKEND'S, which
-    # is the whole of the split. Two backends compile that one file and neither
-    # owns it; what each owns is the profile it asks for and the header the
-    # bytes land in. That file says why it is not two files.
+    # is the whole of the split. Three backends compile that one file and none
+    # of them owns it - d3d11 here at 4_0_level_9_1, d3d12 below at 5_1, and
+    # vulkan at 6_0 through the Vulkan SDK's dxc; what each owns is the profile
+    # it asks for and the header the bytes land in. That file says why it is
+    # not three files.
     compile_hlsl(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
         vs_4_0_level_9_1 vertex_main SPRITE_VERTEX_SHADER
@@ -193,7 +198,8 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     find_package(Vulkan REQUIRED)
     target_link_libraries(LabradorEngine PRIVATE Vulkan::Vulkan)
 
-    # The same source as the three backends above, through a third compiler.
+    # The same source as the two backends above that compile it, through a
+    # third compiler - gl is between them and compiles none of it.
     # cmake/compile_shaders.cmake carries the whole argument - why dxc and not
     # glslc, which of the two dxc.exe on a Windows machine has a SPIR-V backend
     # compiled into it, and what the three register shifts are for. Shader model

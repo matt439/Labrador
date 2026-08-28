@@ -48,10 +48,14 @@
 // case names the term it fixes rather than describing what it does.
 //
 // WHAT THEY DO NOT PIN, said plainly rather than left to be discovered:
-// rotation, non-uniform scale, the difference between point and linear
-// filtering, flipped text, and the clamp that stops a glyph with a negative
-// left bearing hanging off the start of its line - which no glyph in this
-// font has, so no assertion here can reach it.
+// non-uniform scale, flipped text, and the clamp that stops a glyph with a
+// negative left bearing hanging off the start of its line - which no glyph in
+// this font has, so no assertion here can reach it. Rotation and the
+// difference between point and linear filtering were on this list and are not
+// any more: "a positive rotation turns the sprite clockwise on screen" pins
+// the first, and "a filter change mid-list applies to what follows it" the
+// second. Each was added later than this paragraph and neither amended it at
+// the time, which is how a list of gaps becomes a list of the wrong gaps.
 //
 // AND EVERY FRAME IS ALSO CHECKED WHOLE. Each case's read-back is compared
 // byte for byte against a PNG of it in tests/render/golden/, which is the one
@@ -59,14 +63,14 @@
 // assertion in this file holds one backend to a relationship, and two
 // hand-copied implementations can get the same relationship wrong in the same
 // direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Fifty-three frames; fifty of them are 64x64 on every backend
-// and identical across the four that rasterise, and those fifty are the
+// argument. Fifty-five frames; fifty-two of them are 64x64 on every backend
+// and identical across the four that rasterise, and those fifty-two are the
 // images in tests/render/golden/. The other three are not 64x64 - one because
 // the seam makes its size backend-specific, two because they ask for a
 // different size deliberately - and a golden set is one image per case at one
 // size. Harness::end_not_comparable is where that is written down, and the
 // count of images should be checkable against the count of frames from here:
-// fifty and three.
+// fifty-two and three.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
 // Because the text cases below are relationships (see two paragraphs down), a
@@ -232,6 +236,37 @@ namespace
 		return texture;
 	}
 
+	// Two by two, left column red and right column green, one level.
+	//
+	// FOR THE ONE TERM THAT NEEDS A TEXTURE WITH AN EDGE IN IT. Every other
+	// hand-built texture here is flat, which is what makes an assertion about
+	// a colour exact - and flat is exactly what a filter cannot be seen
+	// through, because point and linear differ only in what they do BETWEEN
+	// texels. Two columns put the boundary in the middle of a magnified draw,
+	// where point answers one of the two colours and linear answers a mix of
+	// them that neither texel contains.
+	TextureData two_colour_texture()
+	{
+		TextureData texture;
+		texture.width = 2;
+		texture.height = 2;
+		texture.format = TextureFormat::r8g8b8a8_unorm;
+		texture.levels.push_back(texture_level(texture.format, 2, 2, 0));
+		texture.pixels.resize(texture.levels[0].size);
+
+		for (size_t pixel = 0; pixel < 4; pixel++)
+		{
+			const size_t byte = pixel * 4;
+			const bool right = (pixel % 2) == 1;
+			texture.pixels[byte] = right ? 0 : 255;
+			texture.pixels[byte + 1] = right ? 255 : 0;
+			texture.pixels[byte + 2] = 0;
+			texture.pixels[byte + 3] = 255;
+		}
+
+		return texture;
+	}
+
 	// A device, a table with one texture in it, and a frame you can read back.
 	class Harness
 	{
@@ -298,8 +333,10 @@ namespace
 		// which is a state the seam names and nothing on a device has entered.
 		Renderer& renderer() { return this->renderer_; }
 
-		// For the one case that builds its own texture rather than loading
-		// one. Both are null_tests.cpp's accessors, spelt the same way.
+		// For the cases that build their own texture rather than loading one:
+		// the minified draw, the re-loaded name, and the two that finding 6 of
+		// docs/review/backend-equivalence-2/ asked for. Both are
+		// null_tests.cpp's accessors, spelt the same way.
 		RenderResources& resources() { return this->resources_; }
 
 		// Deliberately no end_frame(). Presenting a FLIP_DISCARD swap chain
@@ -648,8 +685,10 @@ TEST_CASE("CONTRACT: a positive rotation turns the sprite clockwise on screen")
 	// is never consulted; a turned one puts all four there at once. D3D11
 	// mandates the top-left rule exactly and GL 3.3 asks only that a shared
 	// edge be neither dropped nor drawn twice, leaving the tie-break to the
-	// implementation - so this is a term the two specifications do NOT agree
-	// on, and the golden image is what says whether the two devices do.
+	// implementation, and Vulkan specifies it again - so this is a term the
+	// three specifications do NOT agree on, and the golden image is what says
+	// whether the four devices do. They do: all four write this frame byte for
+	// byte.
 	CHECK(harness.ink_bounds() == RectangleI(28, 32, 4, 16));
 }
 
@@ -825,6 +864,112 @@ TEST_CASE("CONTRACT: layer_depth does not order draws, call order does")
 	// made to mean something, this is the test to change deliberately rather
 	// than the one that starts failing.
 	CHECK(harness.at(4, 4) == GREEN);
+}
+
+TEST_CASE("CONTRACT: a texture change keeps call order, it does not group runs")
+{
+	Harness harness;
+
+	// TWO OF THE THREE TERMS A DRAW CALL IS KEYED ON HAD NEVER RASTERISED,
+	// which is the five-backend sweep's finding 6 and TEST-GAP's B8 by another
+	// route. A run breaks on a viewport change, a texture change or a filter
+	// change; only the viewport one had ever reached a device from this file,
+	// and the only two-texture list in it is the one that is deliberately
+	// never submitted. Both stamps were asserted on the null backend, where
+	// nothing rasterises - so what a change of texture does to a frame was
+	// checked everywhere except on the four backends that draw.
+	add_texture_asset(harness.renderer(), harness.resources(), "run_red",
+		flat_texture(255, 0, 0));
+	add_texture_asset(harness.renderer(), harness.resources(), "run_green",
+		flat_texture(0, 255, 0));
+	const TextureHandle red = harness.resources().resolve_texture("run_red");
+	const TextureHandle green =
+		harness.resources().resolve_texture("run_green");
+
+	DrawList list = harness.begin();
+
+	// Three calls, three runs, and each one overlaps the one before it. A
+	// backend that grouped by texture to save a flush would draw both red
+	// calls and then the green one, which is a different picture rather than a
+	// faster one: the last overlap would come out green.
+	list.draw_sprite(red, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	list.draw_sprite(green, Harness::white_texel(),
+		RectangleF(8.0f, 8.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	list.draw_sprite(red, Harness::white_texel(),
+		RectangleF(16.0f, 16.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.end();
+
+	// Where only one call reached.
+	CHECK(harness.at(4, 4) == RED);
+	CHECK(harness.at(28, 28) == RED);
+
+	// Where the second covered the first, and the third covered the second.
+	// The second of these is the assertion: grouping answers GREEN here.
+	CHECK(harness.at(10, 10) == GREEN);
+	CHECK(harness.at(20, 20) == RED);
+}
+
+TEST_CASE("CONTRACT: a filter change mid-list applies to what follows it")
+{
+	Harness harness;
+
+	// The other half of finding 6. renderer.h says changing the filter
+	// mid-list is legal and costs a flush; until this case no submitted frame
+	// changed it at all, so "costs a flush" was a claim about a run stamp and
+	// not about a picture.
+	add_texture_asset(harness.renderer(), harness.resources(), "two_colour",
+		two_colour_texture());
+	const TextureHandle edge =
+		harness.resources().resolve_texture("two_colour");
+
+	DrawList list = harness.begin();
+
+	// Sixteen pixels wide from two texels, so each texel is eight pixels and
+	// the boundary between them is the middle of the sprite.
+	list.set_filter(TextureFilter::point);
+	list.draw_sprite(edge, RectangleI(0, 0, 2, 2),
+		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	list.set_filter(TextureFilter::linear);
+	list.draw_sprite(edge, RectangleI(0, 0, 2, 2),
+		RectangleF(24.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.end();
+
+	// Point: a hard edge in the middle, because every sample is a texel.
+	CHECK(harness.at(7, 8) == RED);
+	CHECK(harness.at(8, 8) == GREEN);
+
+	// Linear: the same two texels, mixed where the sample falls between them.
+	// Asserted as a relationship rather than as a number, for the reason the
+	// text cases are - what a driver rounds a weight to is not this engine's
+	// decision, and ALLOWED_CHANNEL_DRIFT is what holds the four backends to
+	// each other on it (tests/render/golden_image.cpp).
+	const Pixel blended = harness.at(31, 8);
+	CHECK(blended.r > 0);
+	CHECK(blended.g > 0);
+	CHECK(blended.b == 0);
+	CHECK(blended.a == 255);
+
+	// And still exactly the texel where the sample is outside both centres,
+	// which is the CLAMP address mode answering rather than the filter.
+	CHECK(harness.at(25, 8) == RED);
+	CHECK(harness.at(38, 8) == GREEN);
+
+	// THE FILTER IS PER RUN AND THE RUN IS WHAT THE CHANGE BREAKS, which is
+	// what the first sprite still being hard-edged says: a backend that
+	// applied the last filter to the whole frame - one sampler bound once, the
+	// mistake the seam's per-run stamp exists to prevent - would have blurred
+	// this boundary too.
+	CHECK(harness.at(6, 8) == RED);
+	CHECK(harness.at(9, 8) == GREEN);
 }
 
 TEST_CASE("CONTRACT: the camera maps the destination, and changes mid list")
@@ -1213,8 +1358,12 @@ TEST_CASE("CONTRACT: a character the font lacks draws the stand-in glyph")
 // backends were able to disagree about a pane for as long as they did. The
 // harness above builds one integral 64x64 view, both samples take their
 // resolution from a Vector2I, and the seam's only production caller of
-// set_viewport is engine/scene/scene.cpp, which no test reaches. So the pane
-// arithmetic was exercised by neither the pixel contract nor the recording.
+// set_viewport is engine/scene/scene.cpp, which no test reached when this was
+// written. So the pane arithmetic was exercised by neither the pixel contract
+// nor the recording. One test reaches that call site now -
+// tests/scene/fanout_tests.cpp drives Scene::draw in the null configuration -
+// so the production path is covered there and the pane it asks for is covered
+// here.
 //
 // THE RULE ITSELF IS PINNED HEADLESSLY, in tests/render/viewport_tests.cpp,
 // which runs in every configuration including the null one. What that file
@@ -1306,8 +1455,9 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 // a render target and a viewport into it, then finishes and executes one
 // command list per view; D3D12 gives each view a command list and an allocator
 // per frame in flight and hands the finished lists to its queue as one array;
-// GL gives each view a vector of runs and replays them. Those are not three
-// spellings of one thing, and view order, view isolation and what a view starts
+// GL and Vulkan each give a view a vector of runs and replay them in view
+// order, the second into one command buffer for the whole frame. Those are not
+// four spellings of one thing, and view order, view isolation and what a view starts
 // a frame holding are decided separately in each. What makes these worth
 // writing now rather than then is the golden set:
 // a multi-view frame is one more image, so agreeing about split-screen is
@@ -1411,10 +1561,11 @@ TEST_CASE("CONTRACT: a view starts every frame holding nothing")
 		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
 	harness.end();
 
-	// The same view index, the next frame, and it sets neither. The three
-	// backends reset in three different places - begin_frame on two of them,
-	// set_view_count's rebind on the third - so this is the term that says the
-	// three arrive at the same state rather than at three defensible ones.
+	// The same view index, the next frame, and it sets neither. The five
+	// backends reset in two places - begin_frame on gl, null and vulkan, and
+	// set_view_count's rebind on the two Direct3D ones - so this is the term
+	// that says the five arrive at the same state rather than at five
+	// defensible ones.
 	DrawList second = harness.begin();
 	second.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 64.0f, 64.0f), Colour(0.0f, 0.0f, 1.0f, 1.0f),
@@ -1500,9 +1651,12 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 {
 	Harness harness;
 
-	// back_buffer_size is called by nothing else in this file and by nothing
-	// in tests/ at all, so until now the seam's "exactly width * height * 4
-	// bytes" was a sentence and not an assertion.
+	// back_buffer_size is called by the harness on every frame now
+	// (Harness::read_frame, added a day after this comment so that at() could
+	// address the three frames whose buffer is not 64x64), but this case is
+	// still the only thing in tests/ that ASSERTS on it - which is what turns
+	// the seam's "exactly width * height * 4 bytes" from a sentence into
+	// something a build can fail.
 	std::ignore = harness.begin();
 	harness.end();
 
@@ -1633,8 +1787,8 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// Here, with a draw recorded and the list still in the caller's hand.
 	//
 	// THE WINDOW IS RESIZED TOO, AND NOT ONLY THE RENDERER TOLD, because
-	// otherwise this case would be asking two backends a different question
-	// from the third. back_buffer_size is answered from the swap chain on the
+	// otherwise this case would be asking one backend a different question
+	// from the other three. back_buffer_size is answered from the swap chain on the
 	// Direct3D backends and from the window on the OpenGL one - renderer.h
 	// says so, and the drag-resize case above is built on the difference - so
 	// telling the renderer about a resize the window never had would leave GL

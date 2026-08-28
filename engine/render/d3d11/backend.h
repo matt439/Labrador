@@ -24,8 +24,9 @@
 // count. cmake/check_engine_includes.cmake fails the build for any file outside
 // engine/render/<backend>/ that includes any header inside it - the folder, not
 // one filename in it, because device_resources.h was how the wall was climbed
-// last time. The three .cpp beside this file include it and so does the shader
-// header; nothing else in the tree may. This paragraph used to name its clients
+// last time. The three .cpp beside this file include it; nothing else in the
+// tree may, and nothing else does - the two generated shader headers are fxc
+// /Fh output, which is a comment and a byte array with no #include in it. This paragraph used to name its clients
 // individually and the list went stale twice: engine/app/application.cpp is on
 // the far side of the wall now and hands its window over as a void*, and
 // engine/render/d3d11/resource_factory.cpp never existed under that name.
@@ -78,7 +79,11 @@ namespace labrador
 		// data, so its table was never hiding anything from anybody.
 		ID3D11ShaderResourceView* texture(TextureHandle texture) const;
 
-		// By name, for the loader that has just created one and wants it back.
+		// By name. NOT FOR THE LOADER, which is what this used to say: the load
+		// path calls add_texture and then asks the seam for a handle
+		// (RenderResources::resolve_texture), because a handle is what a
+		// drawable holds. This overload is the by-name lookup the Registry
+		// offers, kept for parity with the other four backends' Impls.
 		ID3D11ShaderResourceView* texture(const std::string& name) const;
 
 		Registry<ID3D11ShaderResourceView,
@@ -200,8 +205,9 @@ namespace labrador
 		//
 		// FOR A FRAME THAT WAS BEGUN AND NEVER SUBMITTED, which is the one
 		// state where this backend could differ from the other four about what a
-		// frame is. A view's recording there is a std::vector that reset()
-		// empties; here it is a deferred context, which holds what has been
+		// frame is. On three of those four - gl, null and vulkan - a view's
+		// recording is a std::vector that reset() empties; on the fourth it is
+		// a command list that d3d12 closes without executing; here it is a deferred context, which holds what has been
 		// recorded into it until something takes it away - so clearing `bound`
 		// without draining first left an abandoned frame's already-flushed
 		// geometry to arrive prepended to the next frame's command list, over
@@ -250,10 +256,11 @@ namespace labrador
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> pixel_shader;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> input_layout;
 
-		// The three states a sprite pass needs, and there are only three
-		// because it needs no more: premultiplied alpha, no depth at all, and
-		// no culling. This replaced DirectX::CommonStates, which offered
-		// twenty-odd and was asked for four.
+		// The five state objects a sprite pass needs, and there are only five
+		// because it needs no more: premultiplied alpha, no depth at all, no
+		// culling, and one sampler for each filter the seam names. This
+		// replaced DirectX::CommonStates, which offered twenty-odd and was
+		// asked for four.
 		Microsoft::WRL::ComPtr<ID3D11BlendState> blend;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depth;
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizer;

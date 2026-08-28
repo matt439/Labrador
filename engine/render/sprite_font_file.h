@@ -20,9 +20,12 @@ namespace labrador
 	// backend parsing it, and disagreeing about it silently.
 	//
 	// IT LIVES IN render/ AND NOT IN assets/, which is where files are read,
-	// because its caller is the resource factory - which is backend code, and
-	// nothing may point at assets. The same rule already moved the factory
-	// itself out of assets/ (resource_factory.h).
+	// because its caller is the resource factory and nothing may point at
+	// assets. That caller has not been backend code since the factory was split
+	// - engine/render/resource_factory.cpp is in the unconditional source list
+	// and is compiled once for the whole build - which changes the argument's
+	// premise and not its conclusion: the file reader belongs beside the module
+	// that decides what a glyph is, and that is this one.
 	//
 	// THE PIXELS ARE A COPY AND THE STRUCT IS RETURNED BY VALUE. This is a load
 	// path, it runs once per font, and an atlas is a few tens of kilobytes; a

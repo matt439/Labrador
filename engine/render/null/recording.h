@@ -61,11 +61,12 @@
 // remove one line from the file that could not.
 //
 // IT RECORDS WHAT WAS DRAWN, NOT WHAT IT LOOKED LIKE, and that is a deliberate
-// floor rather than a first version. Rasterising would mean a third
+// floor rather than a first version. Rasterising would mean a FIFTH
 // implementation of the pixel contract, a BC2 and BC3 decoder to sample
-// textures with, and a fill rule that had to agree with two hardware ones to
-// the pixel - which is a large thing to build and a larger one to be wrong
-// about quietly. What a test can assert here is that an object emitted the
+// textures with, and a fill rule that had to agree with four hardware ones to
+// the pixel - four that already agree with each other on every image in
+// tests/render/golden/, so the bar has gone up rather than down since this was
+// written. A large thing to build and a larger one to be wrong about quietly. What a test can assert here is that an object emitted the
 // quads it should have, from the texture it should have, at the positions it
 // should have. Renderer::read_back_buffer therefore throws std::logic_error,
 // and RenderPixelTests is NOT BUILT AT ALL in this configuration rather than

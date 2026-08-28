@@ -16,8 +16,12 @@ namespace labrador
 	// path, read the file, put the result in the table. Only the third step
 	// names a graphics type. So the first two are written once, in
 	// resource_factory.cpp, and a backend supplies add_texture_asset and
-	// nothing else - which is thirty lines and the whole of what a port owes
-	// for content.
+	// nothing else - which is the whole of what a port owes for content, and
+	// costs what the API charges: twenty-three lines on null, forty-seven on
+	// d3d11 and eighty-six on gl, against a couple of hundred on each of the
+	// two that own their own uploads. "Thirty lines" was written when the
+	// smallest of them was the only one anybody had counted; renderer.h
+	// measures all five in one place.
 	//
 	// It was not always so. All of this lived in engine/assets/resource_loader.cpp,
 	// which made assets/ the home of a backend translation unit - and put

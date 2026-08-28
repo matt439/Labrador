@@ -259,7 +259,9 @@ namespace labrador
 		// axis is views; views record in parallel and are executed in view
 		// order, which is one ExecuteCommandLists on one queue. A copy queue
 		// for the load path would be a second thing to synchronise for work
-		// that already stalls (resource_factory.h says why loading stalls).
+		// that already stalls - texture_factory.cpp beside this file is where
+		// that stall is argued, and resource_factory.h is where the seam says
+		// loading is synchronous at all.
 		D3D12_COMMAND_QUEUE_DESC queue_description = {};
 		queue_description.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		queue_description.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;

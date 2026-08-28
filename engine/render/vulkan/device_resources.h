@@ -36,13 +36,13 @@
 // presentation model follows from insisting they are one:
 //
 //  - A Vulkan swapchain image must be ACQUIRED before it is drawn into and
-//    PRESENTED to give it back. tests/render/pixel_tests.cpp draws fifty-three
+//    PRESENTED to give it back. tests/render/pixel_tests.cpp draws fifty-five
 //    frames and presents exactly one of them - the case that exists to walk
 //    the far end of read_back_buffer's interval ("a frame may be read back and
 //    then presented"). Every other frame is deliberately never presented,
 //    because presenting a flip-model swap chain discards what it wants to
 //    read, so a backend that acquired per frame would block on the third one
-//    for ever - fifty-two consecutive frames that never present is more than
+//    for ever - fifty-four consecutive frames that never present is more than
 //    any swapchain has images. The seam permits a frame that is submitted and
 //    never presented (renderer.h, read_back_buffer); a swapchain image does
 //    not.

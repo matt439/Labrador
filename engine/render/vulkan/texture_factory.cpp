@@ -54,8 +54,10 @@ namespace labrador
 		// answer worth having is the one that names the feature and says how
 		// much of the content it is, not a texture that fails to create.
 		//
-		// b4g4r4a4_unorm is a BIT ORDER, and this is the third backend to
-		// refuse it. DXGI_FORMAT_B4G4R4A4_UNORM puts blue in the low nibble,
+		// b4g4r4a4_unorm is a BIT ORDER, and this is the second backend to
+		// refuse it: gl/texture_factory.cpp throws on it unconditionally, and
+		// both Direct3D backends take it, one of them only if the device says
+		// it can. DXGI_FORMAT_B4G4R4A4_UNORM puts blue in the low nibble,
 		// which is Vulkan's VK_FORMAT_A4R4G4B4_UNORM_PACK16 read the other way
 		// up - a format that arrived in 1.3, is optional there, and is not what
 		// VK_FORMAT_B4G4R4A4_UNORM_PACK16 means. No file in either client uses
@@ -108,8 +110,10 @@ namespace labrador
 	}
 
 	// The whole of this backend's share of loading content, and it is the
-	// second longest of the five for the reason the longest one gives: this API
-	// has no initial-data parameter either.
+	// LONGEST of the five for the reason the second longest gives and one more:
+	// this API has no initial-data parameter either, and nothing here owns
+	// anything - the image, its memory and the staging buffer are three
+	// handles this file has to put back on every path that can throw.
 	//
 	// WHAT A TEXTURE COSTS HERE. An image in device-local memory, an allocation
 	// to bind to it because this API never pairs the two, a staging buffer in

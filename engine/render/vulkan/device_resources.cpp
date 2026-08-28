@@ -1749,9 +1749,11 @@ namespace labrador
 		// THE SOURCE STAGE IS THE STAGE THE ACQUIRE SEMAPHORE IS WAITED AT, AND
 		// THE TWO HAVE TO BE THE SAME ONE - see the execute() below, which
 		// passes VK_PIPELINE_STAGE_TRANSFER_BIT as the wait stage. This was
-		// TOP_OF_PIPE, which is what the other three hand-written barriers in
-		// this folder say and is wrong on exactly this one, because this is the
-		// only image the presentation engine touched last. A semaphore wait's
+		// TOP_OF_PIPE, which exactly one of the five other hand-written
+		// barriers in this folder still says - the upload barrier in
+		// texture_factory.cpp, where it is right because nothing has touched
+		// that image at all - and which is wrong on this one, because this is
+		// the only image the presentation engine touched last. A semaphore wait's
 		// second scope is the batch's commands at the waited stages AND LATER;
 		// TOP_OF_PIPE is earlier than all of them, so the transition - which
 		// out of UNDEFINED may discard the contents and re-initialise the
@@ -2141,10 +2143,14 @@ namespace labrador
 		// off a disk.
 		//
 		// AND THE COMMAND BUFFER GOES BACK EVEN IF THE WAIT THROWS, which it
-		// can: this is the one place in the folder where a throwing call sits
-		// between a handle being taken and being released, and a device that
-		// answered a wait with an error is one whose next upload should not
-		// also have leaked a buffer from the pool.
+		// can: a throwing call sits between a handle being taken and being
+		// released, and a device that answered a wait with an error is one
+		// whose next upload should not also have leaked a buffer from the pool.
+		// THREE OTHER SITES IN THIS FOLDER HAVE THAT SHAPE and say so in the
+		// same words - the read-back buffer in renderer.cpp, the staging buffer
+		// in texture_factory.cpp, and the image-and-memory pair beside it -
+		// because this API has no ComPtr and every one of them has to put the
+		// handle back by hand.
 		try
 		{
 			this->wait_for_gpu();

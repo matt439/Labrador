@@ -18,8 +18,11 @@
 // renderer.h promises that reaching for the device is "a deliberate include of
 // engine/render/<backend>/ and not something a game file can do by accident".
 // This is that include. Every client of it is in this folder - the three .cpp
-// beside it and sprite_shader.h - and cmake/check_engine_includes.cmake fails
-// the build for anything outside the folder that names any header in it.
+// beside it, and nothing else: sprite_shader.h was named here as a fourth and
+// includes nothing at all, being two raw-string GLSL constants under a
+// #pragma once. The arrow runs the other way, from renderer.cpp to both. And
+// cmake/check_engine_includes.cmake fails the build for anything outside the
+// folder that names any header in it.
 //
 // WHAT THIS BACKEND DOES DIFFERENTLY FROM D3D11, AND IT IS NOT ONE THING. This
 // heading used to claim it was, and then said so again 111 lines further down
@@ -52,7 +55,11 @@ namespace labrador
 	// A texture, owned.
 	//
 	// A GL texture is a name rather than a pointer, so it needs a small owner
-	// for the registry to hold - which the other backend gets free from ComPtr.
+	// for the registry to hold - which the two Direct3D backends get free from
+	// ComPtr and which the Vulkan one writes by hand for a harder reason than
+	// this: a VkImage carries no reference to its device, so its owner holds
+	// one (vulkan/backend.h says what that costs). A hand-written owner is the
+	// majority case behind this seam, not this backend's peculiarity.
 	// The size rides along because the geometry needs it every draw and GL will
 	// only answer by binding the texture and asking, where D3D11's runtime
 	// keeps a description to hand.
@@ -145,9 +152,11 @@ namespace labrador
 	//
 	// NO DEVICE LOSS, AND THEREFORE NO D3DDeviceNotify EQUIVALENT. A WGL
 	// context survives everything a Direct3D device does not, so the seam's
-	// DeviceNotify is stored and never called here. That is not a gap: the
-	// interface exists because one backend needs it, and a backend that does
-	// not is allowed to say so.
+	// DeviceNotify is stored and never called here. That is not a gap: three of
+	// the five backends need the interface - d3d11, d3d12 and vulkan, the last
+	// of which reaches it from a VK_ERROR_DEVICE_LOST rather than from DXGI -
+	// and a backend that does not is allowed to say so. This is now the
+	// minority answer rather than the odd one out.
 	class Renderer::Impl
 	{
 	public:
@@ -189,10 +198,13 @@ namespace labrador
 		// looking: engine/app/window.cpp renders a full frame from WM_PAINT for
 		// every step of a drag-resize and discards every WM_SIZE until the drag
 		// ends, so the whole picture slid down the window under a black band
-		// for the duration. The other backend cannot have that bug, because it
-		// draws into a swap chain it created at a size it was told and needs no
-		// height at all to place a pane - which is why this is the file the
-		// number has to come out of.
+		// for the duration. No other backend can have that bug, and for two
+		// different reasons. The three that draw into a swap chain they created
+		// at a size they were told need no height at all to place a pane -
+		// that is both Direct3D ones, and it is why this is the file the number
+		// has to come out of. Vulkan needs a height and cannot go stale on it
+		// anyway: its flip is pane-local, so the origin it measures from is the
+		// pane's own bottom edge rather than the buffer's (vulkan/backend.h).
 		mattmath::Vector2I drawable_size() const;
 
 		// Makes a 3.3 core context on `window` and loads the entry points.

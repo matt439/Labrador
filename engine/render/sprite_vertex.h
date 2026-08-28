@@ -7,10 +7,15 @@ namespace labrador
 {
 	// One corner of one sprite, in the form a vertex buffer wants it.
 	//
-	// THE FIELD SET IS THE LAYOUT; THE DECLARATION ORDER IS NOT. Every backend
-	// with a vertex buffer builds its offsets from offsetof and binds by
-	// semantic (the two Direct3D ones) or by name (gl), so the three fields can
-	// be reordered here and all three follow silently and correctly. This
+	// THE FIELD SET IS THE LAYOUT; THE DECLARATION ORDER IS NOT, EXCEPT ON ONE
+	// BACKEND. Four backends have a vertex buffer and all four build their
+	// offsets from offsetof, but they bind by three different things: by
+	// semantic on the two Direct3D ones, by name on gl, and BY LOCATION NUMBER
+	// on vulkan - where dxc assigns SPIR-V locations in declaration order, so
+	// reordering these three fields silently renumbers what the pipeline binds.
+	// engine/render/sprite.hlsl says the same thing about VertexIn and is the
+	// other end of the same ABI. Reorder these and the three fields still
+	// follow correctly on d3d11, d3d12 and gl, and swap on vulkan. This
 	// paragraph used to say the opposite - that reordering them changed what
 	// every shader reads - and the rule had been copied verbatim into the
 	// backends, several statements of a constraint nothing enforced. What is

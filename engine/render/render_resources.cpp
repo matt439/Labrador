@@ -20,9 +20,9 @@ namespace labrador
 	// engine data and did not need to be there; render_resources.h says why at
 	// length. They are members of RenderResources now, so this file can exist.
 	//
-	// WHAT IS STILL THREE TIMES, and it is the honest remainder rather than an
-	// oversight: the constructor, the destructor, the moves, resolve_texture
-	// and release_device_resources. Every one of them either touches the
+	// WHAT IS STILL WRITTEN ONCE PER BACKEND - five times now, and it is the
+	// honest remainder rather than an oversight: the constructor, the
+	// destructor, the moves, resolve_texture and release_device_resources. Every one of them either touches the
 	// texture table or needs Impl complete in order to make or destroy one -
 	// which is the rule this class states, arriving at a file list instead of
 	// at a paragraph.

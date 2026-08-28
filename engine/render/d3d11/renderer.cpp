@@ -35,10 +35,12 @@ namespace labrador
 		// backend writes its own; it does not inherit this.
 		//
 		// D3D11_VIEWPORT's four extent members are FLOAT and a fractional
-		// viewport is legal, so this backend could keep the fraction and the
-		// other one cannot. It does not, because then the two would disagree
-		// about a pane and the seam's whole claim is that they cannot
-		// (viewport.h). A no-op on every viewport this tree produces, all of
+		// viewport is legal, so this backend could keep the fraction - as could
+		// d3d12, whose D3D12_VIEWPORT is this struct spelt differently, and
+		// vulkan, whose VkViewport is float too. GL is the one that cannot:
+		// glViewport takes GLint and GLsizei. None of the three keeps it,
+		// because then they would disagree about a pane and the seam's whole
+		// claim is that they cannot (viewport.h). A no-op on every viewport this tree produces, all of
 		// which are whole pixels already.
 		D3D11_VIEWPORT to_d3d_viewport(const Viewport& viewport)
 		{
@@ -70,10 +72,13 @@ namespace labrador
 		//
 		// THE ONE LINE WHERE Y RUNNING DOWN IS DECIDED. The seam's y increases
 		// down the screen and clip space's increases up, so the y scale is
-		// negative and the offset is +1 rather than -1. A second backend whose
-		// clip space matches this one writes the same four numbers; one whose
-		// framebuffer origin is at the bottom writes them differently, and this
-		// is the only place it has to.
+		// negative and the offset is +1 rather than -1. Every other backend
+		// writes the same four numbers, the OpenGL one included: a framebuffer
+		// origin at the bottom is a fact about where a PANE sits, which
+		// gl/renderer.cpp answers when it calls glViewport, and not about how a
+		// pixel maps into clip space. Vulkan reaches the same place from the
+		// other side, by handing the rasteriser a negative viewport height. The
+		// four numbers here are the seam's arithmetic and they do not vary.
 		//
 		// The viewport's position is not in it: the rasteriser already maps
 		// clip space onto the viewport rectangle, so a sprite at pixel (0,0)
@@ -127,12 +132,16 @@ namespace labrador
 		const int sprites =
 			static_cast<int>(this->batch.size()) / VERTICES_PER_SPRITE;
 
-		// DISCARD ON A WRAP, NO_OVERWRITE OTHERWISE, and the distinction is
-		// what keeps a flush from stalling. NO_OVERWRITE promises the driver
-		// that nothing already queued reads the range about to be written, so
-		// it need not wait; DISCARD asks for fresh memory, which is the only
-		// honest answer once the buffer is full and the earlier ranges are
-		// still being read by draws recorded this frame.
+		// DISCARD ON A WRAP OR AT THE TOP OF A FRAME, NO_OVERWRITE OTHERWISE,
+		// and the distinction is what keeps a flush from stalling. NO_OVERWRITE
+		// promises the driver that nothing already queued reads the range about
+		// to be written, so it need not wait; DISCARD asks for fresh memory,
+		// which is the only honest answer once the buffer is full and the
+		// earlier ranges are still being read by draws recorded this frame. THE
+		// SECOND DISCARD CASE IS THE FIRST WRITE AFTER A reset(), which
+		// begin_frame calls on every view: position zero is either a wrap that
+		// has just happened or a frame that has just started, and both want the
+		// same answer for the same reason.
 		D3D11_MAP how = D3D11_MAP_WRITE_NO_OVERWRITE;
 		if (this->buffer_position + sprites > MAX_BATCH_SPRITES)
 		{
@@ -262,8 +271,9 @@ namespace labrador
 		// FinishCommandList fails here is a device this frame's exception was
 		// probably reporting in the first place, on a context OnDeviceLost is
 		// about to release. Turning that into a throw out of begin_frame would
-		// make an abandoned frame kill the process on the one backend that has
-		// device loss at all.
+		// make an abandoned frame kill the process on one of the three backends
+		// that have device loss at all - this one, d3d12 and vulkan, the last
+		// reaching it from VK_ERROR_DEVICE_LOST rather than from DXGI.
 		ID3D11CommandList* stranded = nullptr;
 		if (SUCCEEDED(this->context->FinishCommandList(FALSE, &stranded)) &&
 			stranded != nullptr)
@@ -409,8 +419,8 @@ namespace labrador
 		// ASKED OF THE VIEW, EVERY DRAW. The alternative is a size cached
 		// beside each texture in the table, which is a second thing to keep
 		// right across a device loss for a value the runtime already holds -
-		// and this is two virtual calls into the runtime's own bookkeeping, not
-		// a GPU round trip. DirectXTK did exactly this, in the same place.
+		// and this is three virtual calls into the runtime's own bookkeeping,
+		// counting the QueryInterface the As() below is, not a GPU round trip. DirectXTK did exactly this, in the same place.
 		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
 		texture->GetResource(resource.GetAddressOf());
 

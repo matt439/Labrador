@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
-# Labrador — a 2D game engine, its sample, its tests and its benchmarks.
+# Labrador — a 2D game engine, its samples, its tests and its benchmarks.
 # docs/design/ARCHITECTURE.md describes the shape; this file is the whole of
 # the top-level build.
 project(Labrador LANGUAGES CXX)
@@ -29,7 +29,7 @@ add_subdirectory(engine)
 # A client consuming this as a submodule wants the library and nothing else:
 # its ctest should not run the engine's tests, and it should certainly not
 # build the engine's samples. Without this guard, adding Labrador as a
-# subdirectory drags in doctest, eleven test targets, a benchmark and two
+# subdirectory drags in doctest, thirteen test targets, a benchmark and two
 # sample executables, and puts them all in the client's ctest.
 if(PROJECT_IS_TOP_LEVEL)
     enable_testing()

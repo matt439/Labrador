@@ -20,11 +20,12 @@ namespace labrador
 		// One glyph is a character, four rectangle edges and three floats.
 		const size_t GLYPH_BYTES = 32;
 
-		// The format numbers are DXGI's, and this reader is one of the two
-		// places in the engine allowed to know one - because they are not the
-		// backend's choice here, they are what is written in the file. A file
-		// format that happens to be spelt in another API's constants is still a
-		// file format.
+		// The format numbers are DXGI's, and this reader is the one place
+		// outside engine/render/<backend>/ that knows any - because they are
+		// not the backend's choice here, they are what is written in the file.
+		// A file format that happens to be spelt in another API's constants is
+		// still a file format. (dds_file.cpp is the other reader and needs no
+		// DXGI number at all: a .dds says its format as a fourCC.)
 		const uint32_t DXGI_R8G8B8A8_UNORM = 28;
 		const uint32_t DXGI_BC2_UNORM = 74;
 		const uint32_t DXGI_B4G4R4A4_UNORM = 115;

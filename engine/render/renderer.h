@@ -599,7 +599,7 @@ namespace labrador
 //    gl_functions.cpp, and all four are the same kind of file, which is the
 //    part of an API that is not about drawing. The third file is where they
 //    diverge most and is the honest measure of what a port owes for content -
-//    115 lines on d3d11, 310 on d3d12, 168 on gl, 48 on null and 378 on
+//    116 lines on d3d11, 342 on d3d12, 168 on gl, 49 on null and 382 on
 //    vulkan - because it turns already-decoded bytes into a texture, and how
 //    much work that is depends on how much the API will take unchanged. THE
 //    LONGEST OF THEM IS THE ONE WHOSE API TAKES THE LEAST: D3D11 is handed
@@ -661,11 +661,11 @@ namespace labrador
 //    Every frame a case reads back is now also compared byte for byte against
 //    a PNG of it in tests/render/golden/, and those images are what hold the
 //    backends to each other rather than each to a sentence
-//    (tests/render/golden_image.h carries the argument). Fifty frames,
-//    six of which fill more than one view - the machinery the backends share
+//    (tests/render/golden_image.h carries the argument). Fifty-two frames,
+//    four of which fill more than one view - the machinery the backends share
 //    least, one a deferred context per view, one a command list per view and
 //    the third and the fourth a vector. On one machine's GPU, d3d11, d3d12,
-//    gl and vulkan reproduce all fifty exactly.
+//    gl and vulkan reproduce all fifty-two exactly.
 //
 //    WHAT IS STILL SEPARATE RUNS is the running of it. LABRADOR_RENDER_BACKEND
 //    picks a backend at configure time (T5), so these are still processes that

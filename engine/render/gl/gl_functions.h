@@ -24,11 +24,13 @@
 // number nothing checked. gl_function_count() below is the number now; this
 // sentence is a description of it and the message no longer spells one at all.
 //
-// THE VERSION IS 3.3 CORE, authored to the GLES 3.0 intersection. Nothing below
-// is outside that intersection except glDrawElementsBaseVertex, which ES 3.0
-// has as glDrawElementsBaseVertexOES, and the S3TC formats in
-// texture_factory.cpp, which ES has not got at all and which are named there as
-// the one real obstacle to an ES build.
+// THE VERSION IS 3.3 CORE, authored to the GLES 3.0 intersection. Three things
+// below are outside that intersection: glDrawElementsBaseVertex, which ES 3.0
+// has as glDrawElementsBaseVertexOES; GL_BGRA_ eighteen lines down, which is
+// not an accepted external format in ES at all and is the EXT_texture_format_
+// BGRA8888 token there; and the S3TC formats in texture_factory.cpp, which ES
+// has not got and which are named there as the one real obstacle to an ES
+// build. The first two are a token and a suffix; the third is the content.
 
 namespace labrador
 {

@@ -30,9 +30,10 @@ namespace labrador
 			sprite.corners[i] = corners[i];
 		}
 
-		// NO BATCHING, AND NOTHING TO BATCH FOR. The other two backends group a
-		// run of sprites sharing a texture into one draw call because a draw
-		// call costs something. Nothing here costs anything, and a test asking
+		// NO BATCHING, AND NOTHING TO BATCH FOR. The other four backends group
+		// a run of sprites sharing a texture into one draw call because a draw
+		// call costs something - one texture per call and a change is a flush,
+		// which is the same sentence in all four folders. Nothing here costs anything, and a test asking
 		// "what was drawn" wants the sprites it asked for rather than the runs
 		// a driver would have preferred.
 		this->sprites.push_back(sprite);
@@ -325,11 +326,13 @@ namespace labrador
 		std::ignore = pixels;
 
 		// THE ONE THING THIS BACKEND CANNOT DO, and it says so rather than
-		// answering with a black rectangle. Rasterising would mean a third
+		// answering with a black rectangle. Rasterising would mean a FIFTH
 		// implementation of the pixel contract plus a BC decoder plus a fill
-		// rule that agreed with two hardware ones exactly - a large thing to
-		// build and a larger one to be quietly wrong about. recording.h says
-		// what to read instead.
+		// rule that agreed with four hardware ones exactly - and those four
+		// already agree with each other byte for byte across fifty-two golden
+		// images, which is the standard a software one would have to meet. A
+		// large thing to build and a larger one to be quietly wrong about.
+		// recording.h says what to read instead.
 		throw std::logic_error("The null backend records what it was asked to "
 			"draw and never draws it, so there is no back buffer to read. Use "
 			"recorded_sprites() from engine/render/null/recording.h, or build "

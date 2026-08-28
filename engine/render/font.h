@@ -36,8 +36,12 @@
 //   - x_advance is an ADJUSTMENT to the advance, not the advance. The pen
 //     moves by the glyph's width plus x_advance, so a negative value - which
 //     most glyphs in a Courier atlas have - is normal and not corruption.
-//   - x_offset is a left bearing applied before the glyph is drawn and after
-//     the pen has already moved, so it does not accumulate.
+//   - x_offset is a left bearing, and it DOES accumulate: for_each_glyph adds
+//     it to the running pen and then advances from there, so glyph N's bearing
+//     is inside glyph N+1's position. That is what the walk has always done
+//     and what measure() measures, which is why the two agree - but the
+//     sentence here used to say the opposite, and a reader planning to change
+//     the walk would have changed the wrong half of it.
 //   - a whitespace glyph no larger than one texel in both axes steps the pen
 //     and draws nothing. MakeSpriteFont writes exactly such a glyph for U+0020,
 //     and it is not required to be transparent.
@@ -63,7 +67,9 @@ namespace labrador
 		// Where in the atlas, in texels.
 		mattmath::RectangleI subrect;
 
-		// Added to the pen before drawing, and not carried forward.
+		// Added to the pen before drawing, and carried forward with it: the
+		// walk writes it into the pen variable itself and nothing takes it out
+		// again. See the paragraph at the top of this file.
 		float x_offset = 0.0f;
 
 		// Added to the line's y before drawing, and not carried forward.
@@ -130,7 +136,9 @@ namespace labrador
 		// descriptions refused.
 		size_t first_unrenderable(std::wstring_view text) const;
 
-		// The pen walk both of the above and every draw_text share.
+		// The pen walk measure() above and every draw_text share. first_
+		// unrenderable does not: it walks the string against the glyph table
+		// and never moves a pen.
 		//
 		// `action` is called as action(glyph, pen) for each glyph that is to be
 		// drawn, where pen.x is the pen position with the glyph's left bearing

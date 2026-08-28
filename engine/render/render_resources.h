@@ -146,8 +146,10 @@ namespace labrador
 		// which is the opposite of the order they are CREATED in, and the
 		// paragraph on set_resources in renderer.h says why that order is
 		// forced the other way. Everything in this repository that holds both
-		// keeps it: engine/app/application.h, and the three test files whose
-		// harnesses stand in for a shell.
+		// keeps it: engine/app/application.h, and the four test files whose
+		// harnesses stand in for a shell - pixel_tests.cpp, null_tests.cpp,
+		// renderer_seam_tests.cpp and tests/scene/fanout_tests.cpp, each of
+		// which cites this paragraph where it declares the pair.
 		//
 		// Nothing here needs the renderer to still be alive: a texture releases
 		// itself, and an ID3D12Resource holds its own reference on the device.
@@ -227,8 +229,12 @@ namespace labrador
 		// reason the question exists; this is the reason it is asked here.
 		//
 		// ASKED OF THE ATLAS, NOT OF WHAT WOULD HAPPEN. The loader installs a
-		// stand-in glyph on every font it builds, so drawing an unrenderable
-		// string no longer fails; it draws question marks. "Will this throw"
+		// stand-in glyph on every font that offers a candidate - the font's own
+		// default character, then '?', then ' ' - which is every font in this
+		// tree, so drawing an unrenderable string no longer fails; it draws
+		// question marks. A font carrying none of the three gets no stand-in
+		// and drops the glyph, which is the case the word "every" used to
+		// cover and does not. "Will this throw"
 		// has therefore stopped being a question worth answering, and "will
 		// the player read what I wrote" has not.
 		//

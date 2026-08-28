@@ -316,17 +316,22 @@ TEST_CASE("reading pixels back says plainly that there are none")
 
 // --- the state a draw was recorded under ------------------------------------
 //
-// NOTHING ASSERTED EITHER OF THESE UNTIL NOW, on any backend. RecordedSprite
-// has carried filter and viewport since it was written; the pixel tests cannot
-// reach them, because that file creates one integral 64x64 view and never calls
-// set_viewport, and TextureFilter::linear has no caller anywhere in the tree.
-// So a backend that dropped either on the floor passed every configuration.
+// NOTHING ASSERTED EITHER OF THESE UNTIL NOW, on any backend - and both halves
+// of that have since stopped being true elsewhere, which is worth knowing
+// before reading these two cases as the only coverage there is. RecordedSprite
+// has carried filter and viewport since it was written; when this was written
+// the pixel tests created one integral 64x64 view, never called set_viewport
+// and never named TextureFilter::linear, so a backend that dropped either on
+// the floor passed every configuration. That file has an entire viewport
+// section now, and a case that changes the filter mid-list on a rasteriser.
+// What these two still hold that it cannot is the stamp itself: what a run was
+// recorded UNDER, rather than what came out of it.
 //
-// THE set_filter CASE IS ALSO THE ONLY ODR-USE OF IT IN THE REPOSITORY, which
-// is worth more than the assertion: until this file called it, a backend could
-// omit the definition entirely and all five builds would link. Now the one
-// configuration CI runs completely needs it to exist, which is the link error
-// T5 asks for rather than a silence.
+// THE set_filter CASE WAS ALSO THE ONLY ODR-USE OF IT IN THE REPOSITORY, and
+// is not any more: pixel_tests.cpp names DrawList::set_filter in two cases, so
+// the definition is needed in the four configurations this file is not
+// compiled in as well as in this one. It was the link error T5 asks for rather
+// than a silence, and it is that in five configurations now.
 
 TEST_CASE("the filter in force is stamped on each draw, and changes mid-list")
 {
@@ -444,10 +449,11 @@ TEST_CASE("a frame that is never submitted contributes nothing to the next")
 	// it is a push_back either way; on D3D11 the first draw's geometry is
 	// already inside a deferred context by the time the second one is
 	// recorded, and a deferred context keeps what is in it until something
-	// takes the command list away. Two of the four backends make this case
-	// trivially true and the third had to be taught it - which is the whole
-	// reason it is a case rather than an assumption. See
-	// docs/review/backend-equivalence/README.md, defect B.
+	// takes the command list away. Three of the five backends make this case
+	// trivially true - gl, null and vulkan, each of which holds a frame in
+	// vectors - and the two that record into a command list had to be taught
+	// it, which is the whole reason it is a case rather than an assumption.
+	// See docs/review/backend-equivalence/README.md, defect B.
 	DrawList abandoned = harness.begin();
 	abandoned.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,

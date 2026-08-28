@@ -46,7 +46,8 @@ namespace labrador
 		//
 		// It is not atomic: a bad frame name throws with the sheet already moved.
 		// That is tolerable only because an unresolvable name is fatal - the
-		// worker's exception is rethrown on the joining thread (ThreadPool::wait)
+		// worker's exception is rethrown on the joining thread
+		// (ThreadPool::wait_for_tasks_to_complete)
 		// and the process goes down, so nothing ever draws the mismatched pair.
 		void set_frame(const std::string& sheet_name,
 			const std::string& frame_name);
@@ -57,15 +58,22 @@ namespace labrador
 		virtual void draw(DrawList& draw_list,
 			const mattmath::Vector2F& position, float scale = 1.0f) const;
 
-		// Draws without reading any of the per-draw members, so callers can compute
-		// frame / colour / origin / flip / rotation into locals instead of
-		// assigning them to this object first.
+		// Draws reading only one per-draw member, layer_depth, which orders
+		// nothing on any backend - so callers can compute frame / colour /
+		// origin / flip / rotation into locals instead of assigning them to
+		// this object first. The one it still reads is named here rather than
+		// left to be found: "without reading any of the per-draw members" was
+		// what this said, and DrawObject::layer_depth_ is read on the last line
+		// of the body.
 		//
-		// Level::draw_active_level runs draw() on the SAME object from every render
-		// worker simultaneously, so "set members, then draw" is an unsynchronised
-		// data race - and back when the element was a std::string it was concurrent
-		// free/allocate on one control block, i.e. heap corruption. The frame is a
-		// handle now, so passing it costs a register rather than a string copy.
+		// A SCENE RUNS draw() ON THE SAME OBJECT FROM EVERY RENDER WORKER AT
+		// ONCE, so "set members, then draw" is an unsynchronised data race -
+		// and back when the element was a std::string it was concurrent
+		// free/allocate on one control block, i.e. heap corruption. The frame is
+		// a handle now, so passing it costs a register rather than a string
+		// copy. The fan-out this describes is engine/scene/scene.cpp's and is
+		// pinned by tests/scene/fanout_tests.cpp; the class that used to be
+		// named here left with the paint-shooter.
 		void draw_with(DrawList& draw_list,
 			const mattmath::RectangleF& destination_rectangle,
 			SpriteSheet::frame_handle frame,

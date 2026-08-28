@@ -108,9 +108,11 @@ namespace labrador
 		// left_edge/right_edge and top_edge/bottom_edge from them and assumes
 		// the first of each pair is the smaller.
 		//
-		// clamp_ref() cannot express this. It takes the min branch first, so
-		// with a floor above the ceiling the ceiling is never consulted and
-		// the floor is returned unchanged. At 1280x720 two-player - the
+		// An in-place clamp cannot express this. It takes the min branch first,
+		// so with a floor above the ceiling the ceiling is never consulted and
+		// the floor is returned unchanged. (mattmath::clamp_ref was the
+		// function this named; engine/math/scalar.h records that it was deleted
+		// for having no caller, so the sentence outlived its subject.) At 1280x720 two-player - the
 		// default resolution, and what an unparseable save file coerces to -
 		// each pane is 1280x360, both vertical floors are 250 against a
 		// ceiling of 180, and the result was top_edge sitting 140 px *below*

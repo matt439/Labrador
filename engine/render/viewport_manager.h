@@ -25,8 +25,11 @@ namespace labrador
 		// Takes no DeviceResources. It held one and no member function ever
 		// read it, and it was the only thing standing between this class and
 		// a test: a ResolutionManager needs no device, so a ViewportManager
-		// now needs no device either. The two members that do touch D3D take
-		// the context as a parameter.
+		// now needs no device either. NOR DOES ANY MEMBER OF IT: this used to
+		// end "the two members that do touch D3D take the context as a
+		// parameter", and there are none - apply_player_viewport was the last
+		// one and it became DrawList::set_viewport. Every member here hands out
+		// a rectangle.
 		explicit ViewportManager(ResolutionManager* resolution_manager);
 
 		void set_layout(ScreenLayout layout);

@@ -17,7 +17,13 @@
 // is the only way this repository can say "all five answer this the same way"
 // at all. RenderPixelTests needs an adapter and is not built against null;
 // null_tests.cpp compiles only against null. Between them they never hold two
-// backends to one statement.
+// backends to one statement - but something else does now, and this file was
+// the only mechanism that could when this was written: tests/render/golden/ is
+// one set of images that all four rasterising backends are held to, byte for
+// byte, which is a comparison across processes where this is a comparison
+// across configurations. The two answer different halves. This file says the
+// five agree about a refusal; the golden set says the four agree about a
+// pixel.
 //
 // WHAT BELONGS HERE is anything a Renderer answers before create_device, and
 // anything that is a throw rather than a pixel. What does not is anything that

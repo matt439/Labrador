@@ -49,8 +49,12 @@ namespace labrador
 		// same thing for the same reason.
 		void draw(DrawList& draw_list) const override;
 
-		// The measured box, taken when the string or the scale changed and not
-		// here: this is the culling path, and measuring walks the string.
+		// The measured box, taken when the string or the font changed and not
+		// here: this is the culling path, and measuring walks the string. A
+		// SCALE CHANGE TAKES NO MEASUREMENT - TextObject::set_scale stores and
+		// returns - so the box this hands back is the unscaled one whatever the
+		// scale is, which is a fact about the two setters that remeasure rather
+		// than about this call.
 		mattmath::RectangleF bounds() const override;
 	};
 }

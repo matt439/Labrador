@@ -76,7 +76,8 @@ namespace labrador
 		// is not one: the dereference happens first, so a load before the
 		// device existed was an access violation inside the D3D runtime with
 		// nothing catchable and no name in it. The seam states the ordering
-		// (resource_factory.h); this is one of the three places it is kept.
+		// (resource_factory.h); this is one of the FIVE places it is kept, one
+		// per backend, each throwing a runtime_error that names the texture.
 		if (device_of(renderer) == nullptr)
 		{
 			throw std::runtime_error("Texture '" + name + "' was loaded before "

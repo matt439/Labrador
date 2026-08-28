@@ -20,9 +20,12 @@ namespace labrador
 	// WHAT IT DELIBERATELY DOES NOT DO, all of which DDSTextureLoader did and
 	// no content here needs (T1): cube maps, volume textures, texture arrays,
 	// the DX10 extended header, sRGB forcing, mip generation, and every format
-	// outside texture_format.h. Each is a named throw rather than a silent
-	// difference, so a file that needs one says so at load rather than drawing
-	// something slightly wrong.
+	// outside texture_format.h. FOUR OF THE SEVEN ARE NAMED THROWS - cube maps,
+	// volume textures, the DX10 header and an unknown format - so a file that
+	// needs one of those says so at load rather than drawing something slightly
+	// wrong. The other three are absences rather than refusals: nothing here
+	// forces sRGB, generates a mip chain, or reads a texture array's slices,
+	// and a file asking for one gets the first slice or the levels it carries.
 	//
 	// Throws std::out_of_range naming the path if there is no file there, and
 	// std::runtime_error naming the path AND what is wrong with it otherwise -

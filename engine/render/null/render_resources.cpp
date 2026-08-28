@@ -48,7 +48,8 @@ namespace labrador
 	// kept is a texture table whose resource type is the struct declared just
 	// above it in backend.h, and that is real - a null texture is still a
 	// texture, and which table a TextureHandle indexes is this folder's
-	// business here exactly as it is in the two that have a device.
+	// business here exactly as it is in the four that have a device, each of
+	// which keeps the same table under its own resource type.
 
 	RenderResources::RenderResources() : impl_(std::make_unique<Impl>())
 	{

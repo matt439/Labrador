@@ -83,8 +83,11 @@ namespace labrador
 	void TextObject::remeasure()
 	{
 		// The font table measures, because the font table is the only thing
-		// that has the font. This is the whole of what a headless backend has
-		// to answer for a TextObject to be constructible without a device.
+		// that has the font. NO BACKEND ANSWERS IT: RenderResources::measure_
+		// text is compiled once, engine-side, and forwards to Font::measure -
+		// so what makes a TextObject constructible without a device is that
+		// this call never reaches a backend at all, which is a stronger
+		// statement than the one this used to make.
 		this->measured_size_ =
 			this->render_resources()->measure_text(this->font_, this->text_);
 	}

@@ -31,8 +31,10 @@
 // WHAT THIS BACKEND DOES DIFFERENTLY, AND WHY IT WAS WORTH WRITING AT ALL. It
 // reaches less hardware than the D3D11 backend, not more: feature level 11_0
 // and Windows 10 against that one's 10.0 (device_resources.cpp says so where
-// the floor is set). It is here for two things neither of the other three
-// could give.
+// the floor is set). It is here for two things none of the other backends
+// could give when it was written - there were three then and there are four
+// now, the fifth being the Vulkan one, which answers the first of the two the
+// same way and is the second answer to it rather than a repeat.
 //
 //  - THE SEAM HAD NEVER MET AN API WHERE THE ENGINE OWNS SYNCHRONISATION.
 //    D3D11 renames a mapped buffer for you and tracks what is still in flight;
@@ -89,7 +91,8 @@ namespace labrador
 	//
 	// The size rides along because engine/render/sprite_geometry.h needs it
 	// every draw and asking a D3D12 resource for its description is a copy of a
-	// struct rather than the two virtual calls the D3D11 backend makes.
+	// struct rather than the three virtual calls the D3D11 backend makes - a
+	// GetResource, the QueryInterface inside its As(), and a GetDesc.
 	class D3d12Texture
 	{
 	public:
@@ -325,8 +328,10 @@ namespace labrador
 		int next_texture_slot = 0;
 
 		// THE FRAME'S OWN LIST, WHICH IS EVERYTHING THAT IS NOT A VIEW DRAWING:
-		// the clear, the two back-buffer transitions, the read-back copy and
-		// every texture upload. A view's list may not carry them - a view is
+		// the clear, the two back-buffer transitions, the read-back copy, every
+		// texture upload, and the index buffer's own upload and barrier at
+		// device creation - which is on the list for the same reason as the
+		// rest and was the one item this census left out. A view's list may not carry them - a view is
 		// recorded on a worker thread and there are none of it or four,
 		// depending on the frame, so "the first one" is not a thing that
 		// exists.
