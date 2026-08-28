@@ -256,13 +256,25 @@ file of that format to read it against.
   here, and do not treat their line numbers as current. `docs/review/rtcd/` is
   a candidate list mined from Ericson's *Real-Time Collision Detection*, not a
   plan; the decisions live in `docs/review/round-2/PLAN.md`.
-  `docs/review/backend-equivalence/`, `docs/review/d3d12/` and
-  `docs/review/vulkan/` are the three exceptions to the `game/` caveat, because
-  all three postdate the split. The first
+  `docs/review/backend-equivalence/`, `docs/review/backend-equivalence-2/`,
+  `docs/review/d3d12/` and `docs/review/vulkan/` are the four exceptions to the
+  `game/` caveat, because all four postdate the split. The first
   holds the three render backends that existed when it was written against one
-  contract, and its `DRIFT.md` is a live list of comments in `engine/render/`
-  that the code no longer matches. The second reviews the fourth backend
-  against the seam it was written to test. **Its three must-fix findings, all
+  contract. **This line used to call its `DRIFT.md` a live list of comments in
+  `engine/render/` that the code no longer matches. It never was one**, and
+  `backend-equivalence-2` is the sweep that established it: all 28 of those
+  claims were adjudicated at `ca5b2e3` and **26 came back already amended**, one
+  was half-live and one was wrong when the audit wrote it. Nobody was ignoring
+  that list — the tree worked through it one commit at a time and no document
+  recorded that, which is the argument for `docs/survey/2026-08-26-status.md`'s
+  shape rather than for a fourth convention. Read it as historical like
+  everything else here. **`backend-equivalence-2` is where the render folder's
+  live drift now lives**: the same contract at five backends, 40 axes, 113
+  drifted comments of which 48 are one species — a sentence that counts the
+  backends while legislating a term — and all three of the 2026-08-19 defects
+  re-adjudicated and found fixed. Its own `GAPS.md` says what it did not do,
+  and the first item there costs one CI log. The third folder reviews the
+  fourth backend against the seam it was written to test. **Its three must-fix findings, all
   seven should-fix, every minor and the one item it left unresolved have been
   applied** — nine commits, each naming the section it answers, `6ae4a15`
   through `06f0b5f`. What has *not* been applied is section 6: nine findings
@@ -271,7 +283,7 @@ file of that format to read it against.
   check and went in with the rest; the other seven are behaviour and need
   verifying before anybody acts on them. The document itself still reads as it
   was written, line numbers included, so do not expect them to match.
-- **The third reviews the fifth backend.** `docs/review/vulkan/` holds
+- **The fourth reviews the fifth backend.** `docs/review/vulkan/` holds
   `engine/render/vulkan/` against the same seam: three must-fix, fifteen
   should-fix, eight minor, and sixty-five findings that ranked below its
   verification budget and were never checked, which are its section 7 and are
