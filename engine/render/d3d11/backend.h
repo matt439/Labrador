@@ -247,6 +247,10 @@ namespace labrador
 		// term for the same reason and a worse consequence.
 		bool frame_begun = false;
 
+		// Whether submit() has already run for this frame. renderer.h makes a
+		// second submit a no-op; this is the whole of what that costs.
+		bool frame_submitted = false;
+
 		// SHARED BY EVERY VIEW, because nothing writes to any of them. The
 		// index buffer is the one that would surprise somebody: it is the same
 		// two triangles per sprite for every sprite there will ever be, so it

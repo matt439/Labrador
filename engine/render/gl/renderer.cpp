@@ -667,6 +667,16 @@ namespace labrador
 
 	bool Renderer::window_size_changed(int width, int height)
 	{
+		// BEFORE THERE IS A DEVICE THERE IS NOTHING TO REBUILD, and the seam
+		// says the answer is false (renderer.h). Reached by a shell that gets a
+		// WM_SIZE between creating its window and creating its device, which is
+		// an ordering Win32 allows and nothing here forbids -
+		// tests/render/renderer_seam_tests.cpp holds all five backends to it.
+		if (this->impl_->gl_context == nullptr)
+		{
+			return false;
+		}
+
 		if (width == this->impl_->reported_width &&
 			height == this->impl_->reported_height)
 		{
@@ -751,6 +761,8 @@ namespace labrador
 
 	void Renderer::begin_frame()
 	{
+		this->impl_->frame_submitted = false;
+
 		const Vector2I drawable = this->impl_->drawable_size();
 
 		glViewport(0, 0, static_cast<GLsizei>(drawable.x),
@@ -822,6 +834,14 @@ namespace labrador
 
 	void Renderer::submit()
 	{
+		// ONCE PER FRAME, AND A SECOND CALL ADDS NOTHING (renderer.h). Cleared
+		// by begin_frame, which is the only thing that starts a frame.
+		if (this->impl_->frame_submitted)
+		{
+			return;
+		}
+		this->impl_->frame_submitted = true;
+
 		glUseProgram(this->impl_->program);
 		glBindVertexArray(this->impl_->vertex_array);
 		glBindBuffer(GL_ARRAY_BUFFER_, this->impl_->vertex_buffer);

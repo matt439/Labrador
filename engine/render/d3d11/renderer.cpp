@@ -697,6 +697,16 @@ namespace labrador
 	{
 		Impl& impl = *this->impl_;
 
+		// BEFORE THERE IS A DEVICE THERE IS NOTHING TO REBUILD, and the seam
+		// says the answer is false (renderer.h). Reached by a shell that gets a
+		// WM_SIZE between creating its window and creating its device, which is
+		// an ordering Win32 allows and nothing here forbids -
+		// tests/render/renderer_seam_tests.cpp holds all five backends to it.
+		if (impl.device_resources.GetD3DDevice() == nullptr)
+		{
+			return false;
+		}
+
 		// ASKED BEFORE ANYTHING IS THROWN AWAY, because most calls to this
 		// change nothing and a frame is not worth losing to one of them.
 		// Application::on_window_moved calls this with the size it already
@@ -839,6 +849,7 @@ namespace labrador
 		// at the top of this function is already this frame's. See
 		// Renderer::window_size_changed.
 		this->impl_->frame_begun = true;
+		this->impl_->frame_submitted = false;
 	}
 
 	void Renderer::end_frame()
@@ -913,6 +924,14 @@ namespace labrador
 
 	void Renderer::submit()
 	{
+		// ONCE PER FRAME, AND A SECOND CALL ADDS NOTHING (renderer.h). Cleared
+		// by begin_frame, which is the only thing that starts a frame.
+		if (this->impl_->frame_submitted)
+		{
+			return;
+		}
+		this->impl_->frame_submitted = true;
+
 		ID3D11DeviceContext1* immediate =
 			this->impl_->device_resources.GetD3DDeviceContext();
 
@@ -1012,18 +1031,37 @@ namespace labrador
 		context->Unmap(staging.Get(), 0);
 	}
 
+	// THE ONE BACKEND THAT FORWARDS THEM, and therefore the one that has
+	// anything to be null. ID3DUserDefinedAnnotation is made with the device,
+	// so a marker before create_device dereferenced a null ComPtr here while
+	// the other four discarded the call harmlessly - a divergence a caller
+	// could only find by crashing. renderer.h makes markers advisory and legal
+	// before there is a device; this is the line that makes that true, and
+	// tests/render/renderer_seam_tests.cpp is what holds all five to it.
 	void Renderer::begin_marker(const wchar_t* name)
 	{
+		if (this->impl_->device_resources.GetD3DDevice() == nullptr)
+		{
+			return;
+		}
 		this->impl_->device_resources.PIXBeginEvent(name);
 	}
 
 	void Renderer::end_marker()
 	{
+		if (this->impl_->device_resources.GetD3DDevice() == nullptr)
+		{
+			return;
+		}
 		this->impl_->device_resources.PIXEndEvent();
 	}
 
 	void Renderer::set_marker(const wchar_t* name)
 	{
+		if (this->impl_->device_resources.GetD3DDevice() == nullptr)
+		{
+			return;
+		}
 		this->impl_->device_resources.PIXSetMarker(name);
 	}
 }

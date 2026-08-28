@@ -105,6 +105,13 @@ namespace labrador
 		// the strictest of the five and not the most permissive.
 		bool device_created = false;
 
+		// Whether submit() has already run for this frame. renderer.h makes a
+		// second submit a no-op. This backend answered that correctly by
+		// accident - its submit re-gathers rather than appends - and keeps the
+		// flag anyway, because the one configuration that can assert the rule
+		// should be running the same mechanism as the four that cannot.
+		bool frame_submitted = false;
+
 		int width = 0;
 		int height = 0;
 

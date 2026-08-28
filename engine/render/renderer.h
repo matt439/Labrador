@@ -342,6 +342,11 @@ namespace labrador
 		// frame begun and never submitted does (begin_frame below), and the
 		// caller sees one frame's drawing lost rather than an exception it has
 		// nowhere to catch.
+		// AND BEFORE create_device IT REBUILDS NOTHING AND ANSWERS false, which
+		// is a statement about an ordering Win32 allows: a shell can be sent a
+		// WM_SIZE between making its window and making its device. Four
+		// backends answered that by walking a path with a null device in it and
+		// one answered false already.
 		bool window_size_changed(int width, int height);
 
 		// Borrowed; the shell owns it and outlives the renderer.
@@ -434,7 +439,18 @@ namespace labrador
 		// be used from two threads at once and a view's vertices are already
 		// built on the CPU before any backend sees them.
 		//
-		// Called once per frame, between begin_frame and end_frame.
+		// Called once per frame, between begin_frame and end_frame - AND A
+		// SECOND CALL ADDS NOTHING, which is a decision rather than a
+		// description. It was neither stated nor kept: the five backends
+		// answered a second submit three ways - the null one re-gathered and
+		// answered the same recording, the OpenGL one replayed every run and
+		// drew the frame twice, and the Vulkan one had a paragraph explaining
+		// which layout made a second submit legal. docs/review/backend-
+		// equivalence/TEST-GAP.md raised it as B6/C3 and asked for a decision;
+		// this is it, and hardening was chosen over declaring it undefined
+		// because "undefined" is the answer this seam exists to stop giving.
+		// One flag per backend, set here and cleared by begin_frame, off the
+		// per-sprite path entirely (T8).
 		void submit();
 
 		// Back-buffer size in pixels. Replaces DeviceResources::GetOutputSize
@@ -501,7 +517,22 @@ namespace labrador
 		// the GPU by construction.
 		void read_back_buffer(std::vector<unsigned char>& pixels);
 
-		// Debug markers. The only capability of the backend's device wrapper
+		// Debug markers, AND THEY ARE ADVISORY: a backend may forward them to a
+		// tool and may do nothing at all, and a caller may not tell which from
+		// anything it can observe. One of the five forwards them - d3d11, to
+		// ID3DUserDefinedAnnotation, which is what a PIX capture reads - and
+		// four discard them, each arguing the discard in its own file. That is
+		// the whole contract, and it is here because it was written in four
+		// backend folders and nowhere a caller may read (T6).
+		//
+		// LEGAL BEFORE create_device AND OUTSIDE A FRAME, which is the half a
+		// caller could otherwise only discover by crashing. begin_marker before
+		// there was a device dereferenced a null annotation interface on d3d11
+		// and did nothing on the other four; it does nothing on all five now.
+		// Nesting is the caller's business: begin/end are a pair, and a backend
+		// that forwards them forwards whatever nesting it is given.
+		//
+		// The only capability of the backend's device wrapper
 		// that reaches the seam unchanged - everything else a frame needs is
 		// expressed above in the engine's own terms. The accessors nothing
 		// called are not merely unexposed here; they are gone from the backend
@@ -661,11 +692,11 @@ namespace labrador
 //    Every frame a case reads back is now also compared byte for byte against
 //    a PNG of it in tests/render/golden/, and those images are what hold the
 //    backends to each other rather than each to a sentence
-//    (tests/render/golden_image.h carries the argument). Fifty-two frames,
+//    (tests/render/golden_image.h carries the argument). Fifty-seven frames,
 //    four of which fill more than one view - the machinery the backends share
 //    least, one a deferred context per view, one a command list per view and
 //    the third and the fourth a vector. On one machine's GPU, d3d11, d3d12,
-//    gl and vulkan reproduce all fifty-two exactly.
+//    gl and vulkan reproduce all fifty-seven exactly.
 //
 //    WHAT IS STILL SEPARATE RUNS is the running of it. LABRADOR_RENDER_BACKEND
 //    picks a backend at configure time (T5), so these are still processes that

@@ -170,6 +170,16 @@ namespace labrador
 
 	bool Renderer::window_size_changed(int width, int height)
 	{
+		// BEFORE THERE IS A DEVICE THERE IS NOTHING TO REBUILD, and the seam
+		// says the answer is false (renderer.h). Reached by a shell that gets a
+		// WM_SIZE between creating its window and creating its device, which is
+		// an ordering Win32 allows and nothing here forbids -
+		// tests/render/renderer_seam_tests.cpp holds all five backends to it.
+		if (!this->impl_->device_created)
+		{
+			return false;
+		}
+
 		if (width == this->impl_->width && height == this->impl_->height)
 		{
 			return false;
@@ -232,6 +242,8 @@ namespace labrador
 
 	void Renderer::begin_frame()
 	{
+		this->impl_->frame_submitted = false;
+
 		this->impl_->recorded.clear();
 
 		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
@@ -300,6 +312,14 @@ namespace labrador
 
 	void Renderer::submit()
 	{
+		// ONCE PER FRAME, AND A SECOND CALL ADDS NOTHING (renderer.h). Cleared
+		// by begin_frame, which is the only thing that starts a frame.
+		if (this->impl_->frame_submitted)
+		{
+			return;
+		}
+		this->impl_->frame_submitted = true;
+
 		// In view order, which is the only ordering guarantee the seam makes.
 		// Gathering here rather than in draw() is what makes the recording that
 		// order rather than the order several workers happened to finish in.
@@ -329,7 +349,7 @@ namespace labrador
 		// answering with a black rectangle. Rasterising would mean a FIFTH
 		// implementation of the pixel contract plus a BC decoder plus a fill
 		// rule that agreed with four hardware ones exactly - and those four
-		// already agree with each other byte for byte across fifty-two golden
+		// already agree with each other byte for byte across fifty-seven golden
 		// images, which is the standard a software one would have to meet. A
 		// large thing to build and a larger one to be quietly wrong about.
 		// recording.h says what to read instead.

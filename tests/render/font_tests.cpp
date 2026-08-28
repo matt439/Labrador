@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/font.h"
+#include "engine/render/text_encoding.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
@@ -304,4 +305,49 @@ TEST_CASE("measuring is the width of the longest line and the bottom of the last
 	// widest row, which is the number a centred label needs.
 	CHECK(font.measure(L"ABA\nB").x == doctest::Approx(30.0f));
 	CHECK(font.measure(L"ABA\nB").y == doctest::Approx(40.0f));
+}
+
+TEST_CASE("a surrogate pair is two code units, and the walk sees two of them")
+{
+	// THE ONE CROSSING BETWEEN text_encoding.h AND THIS FILE THAT NOTHING RAN.
+	// widen() is the only producer of std::wstring in this engine, and on
+	// Windows a wchar_t is sixteen bits - so a character outside the basic
+	// plane arrives here as a surrogate PAIR, two code units neither of which
+	// is a character. The walk casts each code unit straight to char32_t and
+	// asks the atlas for it, which means a font that has neither half draws two
+	// stand-ins where a reader would expect one glyph.
+	//
+	// That is a limitation rather than a defect, and it is here so that it is
+	// a stated one: no font this engine loads has a glyph outside U+0020 to
+	// U+007E (MakeSpriteFont's default region), so no atlas can contain either
+	// half of a pair, and the alternative - decoding pairs in the walk - buys
+	// nothing until an atlas does. docs/port/android.md prices the char16_t
+	// question this belongs to.
+	std::vector<Glyph> extra;
+	extra.push_back(cell(U'?', 8, 8));
+	Font font = square_font(std::move(extra));
+	font.set_stand_in(U'?');
+
+	// U+1F3AE VIDEO GAME, as UTF-8. widen() turns it into two code units.
+	const std::wstring pair = labrador::widen("\xF0\x9F\x8E\xAE");
+	REQUIRE(pair.size() == 2);
+
+	// Neither half is renderable, and the FIRST one is where it says so - not
+	// the pair, and not the second half.
+	CHECK(font.first_unrenderable(pair) == 0);
+
+	// And the pen steps twice, once per code unit, by the stand-in's width
+	// each time.
+	const std::vector<Placement> placements = walk(font, pair);
+	REQUIRE(placements.size() == 2);
+	CHECK(placements[0].character == U'?');
+	CHECK(placements[1].character == U'?');
+	CHECK(placements[0].x == doctest::Approx(0.0f));
+	CHECK(placements[1].x == doctest::Approx(8.0f));
+
+	// measure() agrees with the walk, because it is the walk - which is the
+	// property that makes a caption box the right size for a string nobody
+	// meant to write. Sixteen and not twenty: the step is the stand-in's own
+	// eight-texel cell, not the ten of the glyphs that are there.
+	CHECK(font.measure(pair).x == doctest::Approx(16.0f));
 }

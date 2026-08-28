@@ -202,6 +202,10 @@ namespace labrador
 		// as D3D12's, reached for a different reason.
 		bool frame_begun = false;
 
+		// Whether submit() has already run for this frame. renderer.h makes a
+		// second submit a no-op; this is the whole of what that costs.
+		bool frame_submitted = false;
+
 		// SHARED BY EVERY VIEW, because nothing writes to any of them once they
 		// are made. The index buffer is the same two triangles per sprite for
 		// every sprite there will ever be, uploaded once at device creation.

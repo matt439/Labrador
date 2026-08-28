@@ -17,6 +17,20 @@ namespace labrador
 		// so the arithmetic surfaces here instead of being done five times over
 		// inside five backends - DrawList::draw_sprite is implemented once per
 		// folder and this is the call it feeds.
+		//
+		// AND IT IS THE RECTANGLE FORM, SO A SPRITE PLACED THIS WAY SNAPS TO
+		// WHOLE PIXELS WHERE TEXT PLACED THE SAME WAY DOES NOT. build_sprite_
+		// quad truncates each edge of a destination rectangle; build_glyph_quad
+		// deliberately does not go through one, because an advance is
+		// fractional in most fonts and a line laid out through rectangles would
+		// jitter against itself (sprite_geometry.cpp says so where the two part
+		// company). The consequence lives here: a sprite at a fractional
+		// position moves in whole pixels while a caption beside it moves in
+		// fractions, so the two drift apart by up to a pixel and back. That is
+		// a property of the two quad builders rather than of this function, it
+		// is what every version of this engine has drawn, and it is stated here
+		// because this is the call a client reaches for when it wants a sprite
+		// at a position.
 		RectangleF destination_from(const RectangleI& source,
 			const Vector2F& position, float scale)
 		{

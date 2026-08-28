@@ -166,6 +166,12 @@ namespace labrador
 		HDC device_context = nullptr;
 		HGLRC gl_context = nullptr;
 
+		// Whether submit() has already run for this frame. renderer.h makes a
+		// second submit a no-op, and this backend is the one it was written
+		// for: replaying the runs a second time drew every sprite twice, which
+		// on a premultiplied blend is visible.
+		bool frame_submitted = false;
+
 		// The size the shell last reported, and the only thing
 		// window_size_changed answers against. NOT the size of anything this
 		// backend draws into - see drawable_size below.

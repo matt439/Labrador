@@ -1052,6 +1052,16 @@ namespace labrador
 	{
 		Impl& impl = *this->impl_;
 
+		// BEFORE THERE IS A DEVICE THERE IS NOTHING TO REBUILD, and the seam
+		// says the answer is false (renderer.h). Reached by a shell that gets a
+		// WM_SIZE between creating its window and creating its device, which is
+		// an ordering Win32 allows and nothing here forbids -
+		// tests/render/renderer_seam_tests.cpp holds all five backends to it.
+		if (impl.device_resources.device() == nullptr)
+		{
+			return false;
+		}
+
 		// ASKED BEFORE ANYTHING IS THROWN AWAY, because most calls to this
 		// change nothing and a frame is not worth losing to one of them.
 		// Application::on_window_moved calls this with the size it already
@@ -1149,6 +1159,7 @@ namespace labrador
 		// everything open_frame is about to do to the back buffer. From here
 		// until end_frame, window_size_changed has a frame to restart.
 		impl.frame_begun = true;
+		impl.frame_submitted = false;
 
 		impl.open_frame();
 	}
@@ -1227,6 +1238,14 @@ namespace labrador
 
 	void Renderer::submit()
 	{
+		// ONCE PER FRAME, AND A SECOND CALL ADDS NOTHING (renderer.h). Cleared
+		// by begin_frame, which is the only thing that starts a frame.
+		if (this->impl_->frame_submitted)
+		{
+			return;
+		}
+		this->impl_->frame_submitted = true;
+
 		// ONE CALL FOR THE WHOLE FRAME, WHICH IS THIS API'S SHAPE. The D3D11
 		// backend finishes a command list per view and executes them one at a
 		// time; here the finished lists are an array the queue takes in one go,

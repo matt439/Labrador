@@ -63,14 +63,14 @@
 // assertion in this file holds one backend to a relationship, and two
 // hand-copied implementations can get the same relationship wrong in the same
 // direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Fifty-five frames; fifty-two of them are 64x64 on every backend
-// and identical across the four that rasterise, and those fifty-two are the
+// argument. Sixty frames; fifty-seven of them are 64x64 on every backend
+// and identical across the four that rasterise, and those fifty-seven are the
 // images in tests/render/golden/. The other three are not 64x64 - one because
 // the seam makes its size backend-specific, two because they ask for a
 // different size deliberately - and a golden set is one image per case at one
 // size. Harness::end_not_comparable is where that is written down, and the
 // count of images should be checkable against the count of frames from here:
-// fifty-two and three.
+// fifty-seven and three.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
 // Because the text cases below are relationships (see two paragraphs down), a
@@ -687,8 +687,13 @@ TEST_CASE("CONTRACT: a positive rotation turns the sprite clockwise on screen")
 	// edge be neither dropped nor drawn twice, leaving the tie-break to the
 	// implementation, and Vulkan specifies it again - so this is a term the
 	// three specifications do NOT agree on, and the golden image is what says
-	// whether the four devices do. They do: all four write this frame byte for
-	// byte.
+	// whether the four devices do. They do, and the check has to be byte
+	// identity rather than a passing run: ALLOWED_CHANNEL_DRIFT is 8, which is
+	// enough to hide a one-row tie-break disagreement, so what settles it is
+	// regenerating the set on each backend and finding the file unchanged.
+	// All four write this frame byte for byte on this machine's adapter. What
+	// that does not settle is another driver, which is why the tie-break stays
+	// written down here rather than assumed.
 	CHECK(harness.ink_bounds() == RectangleI(28, 32, 4, 16));
 }
 
@@ -705,6 +710,55 @@ TEST_CASE("CONTRACT: the source rectangle selects, and is in texels")
 	// One texel stretched over the whole destination, so every sample is it.
 	CHECK(harness.at(1, 1) == RED);
 	CHECK(harness.at(6, 6) == RED);
+}
+
+TEST_CASE("CONTRACT: a source rectangle outside the texture clamps to the edge texel")
+{
+	Harness harness;
+
+	// TEST-GAP.md's B11. Four backends hard-code CLAMP in four vocabularies -
+	// D3D11_TEXTURE_ADDRESS_CLAMP, D3D12's the same, GL_CLAMP_TO_EDGE,
+	// VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE - and nothing held them together.
+	// The alternative a backend could reach for is WRAP, which is a different
+	// picture rather than a worse one: an atlas sampled past its edge would
+	// show the far side of itself, which is the artefact CLAMP exists to stop
+	// and which the sheets this engine draws are full of opportunities for.
+	add_texture_asset(harness.renderer(), harness.resources(), "edge",
+		two_colour_texture());
+	const TextureHandle edge = harness.resources().resolve_texture("edge");
+
+	DrawList list = harness.begin();
+
+	// Four texels wide out of a texture two texels wide, so the right half of
+	// the destination samples u in [1, 2) - off the end of the texture
+	// entirely. Under CLAMP every sample there is the right-hand column;
+	// under WRAP the first column would come round again.
+	list.draw_sprite(edge, RectangleI(0, 0, 4, 2),
+		RectangleF(0.0f, 0.0f, 32.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// The texture itself, in the left half: red then green.
+	CHECK(harness.at(3, 8) == RED);
+	CHECK(harness.at(12, 8) == GREEN);
+
+	// And the overhang, which is the case. Green all the way to the right
+	// edge; a wrapping sampler answers RED at x=17 and x=28.
+	CHECK(harness.at(17, 8) == GREEN);
+	CHECK(harness.at(28, 8) == GREEN);
+	CHECK(harness.at(31, 8) == GREEN);
+
+	// A negative source origin is the same question at the other end.
+	DrawList second = harness.begin();
+	second.draw_sprite(edge, RectangleI(-2, 0, 4, 2),
+		RectangleF(0.0f, 0.0f, 32.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	CHECK(harness.at(3, 8) == RED);
+	CHECK(harness.at(12, 8) == RED);
+	CHECK(harness.at(20, 8) == RED);
+	CHECK(harness.at(28, 8) == GREEN);
 }
 
 TEST_CASE("CONTRACT: a minified draw samples level zero, not the chain")
@@ -864,6 +918,55 @@ TEST_CASE("CONTRACT: layer_depth does not order draws, call order does")
 	// made to mean something, this is the test to change deliberately rather
 	// than the one that starts failing.
 	CHECK(harness.at(4, 4) == GREEN);
+}
+
+TEST_CASE("CONTRACT: a batch longer than one vertex buffer keeps its order")
+{
+	Harness harness;
+
+	// TEST-GAP.md's B7. Every rasterising backend caps a run at 2048 sprites -
+	// 16-bit indices cap it at 16384 and 2048 of them is a 256KB page, which
+	// all four say in their own words - and what happens at 2049 is a
+	// different mechanism in each: D3D11 maps its vertex buffer with DISCARD
+	// and starts again, D3D12 takes a fresh page from its per-frame ring, GL
+	// and Vulkan close the run and open another. Until this case nothing
+	// crossed that boundary anywhere, on any backend, in any configuration.
+	//
+	// WHAT IS ASSERTED IS ORDER AND COMPLETENESS, not a picture. Every sprite
+	// but the last is the same colour in the same place, so the frame says
+	// nothing about how many arrived; the last one is drawn somewhere else and
+	// in another colour, so a wrap that dropped the tail, replayed a page
+	// twice, or reordered the two pages is visible.
+	const int SPRITES = 2050;
+
+	DrawList list = harness.begin();
+	for (int i = 0; i < SPRITES - 1; i++)
+	{
+		list.draw_sprite(harness.quad, Harness::red_texel(),
+			RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	}
+
+	// The 2050th, on the far side of the wrap and on top of the pile, in a
+	// colour nothing before it used.
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(8.0f, 8.0f, 16.0f, 16.0f), Colour(0.0f, 1.0f, 0.0f, 1.0f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// The pile is there.
+	CHECK(harness.at(2, 2) == RED);
+
+	// The last sprite is on top of it, which is call order surviving a page
+	// boundary - the thing a backend that flushed pages out of order would
+	// get wrong.
+	CHECK(harness.at(12, 12) == GREEN);
+
+	// And it is where it was asked for rather than where the first page was:
+	// a wrap that reset the vertex offset without telling the draw call would
+	// put this quad at the pile's position instead.
+	CHECK(harness.at(20, 20) == GREEN);
+	CHECK(harness.at(2, 20) == BLACK);
 }
 
 TEST_CASE("CONTRACT: a texture change keeps call order, it does not group runs")
@@ -1403,6 +1506,43 @@ TEST_CASE("CONTRACT: a viewport offsets the pane and scales the whole of it")
 	CHECK(harness.at(0, 0) == BLACK);
 }
 
+TEST_CASE("CONTRACT: a viewport confines a sprite bigger than its pane")
+{
+	Harness harness;
+
+	// TEST-GAP.md's B2, and it is the half of "a viewport confines" that the
+	// case above cannot reach: there the sprite exactly fills its pane, so a
+	// backend that only OFFSET the pane and never clipped it would pass. Here
+	// the sprite is twice the pane in both axes and starts outside it, so what
+	// is being asserted is the clip.
+	//
+	// AND NO BACKEND OWNS THE ANSWER, which is why it belongs in a golden. The
+	// clip is not a scissor anybody sets: the pane's width and height are the
+	// pixels-to-clip constant (sprite_geometry.h), so a destination outside the
+	// pane is outside clip space and the rasteriser drops it. That is the same
+	// mechanism on all four, and this frame is where they are held to it.
+	DrawList list = harness.begin();
+	list.set_viewport(Viewport(16.0f, 16.0f, 16.0f, 16.0f));
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(-8.0f, -8.0f, 32.0f, 32.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// Every pixel of the pane is covered, corners included.
+	CHECK(harness.at(16, 16) == WHITE);
+	CHECK(harness.at(31, 31) == WHITE);
+	CHECK(harness.at(24, 24) == WHITE);
+
+	// And not one pixel outside it, on any side. A sprite that started eight
+	// pixels above and to the left of the pane would paint into the rows and
+	// columns before it if nothing clipped.
+	CHECK(harness.at(15, 16) == BLACK);
+	CHECK(harness.at(16, 15) == BLACK);
+	CHECK(harness.at(32, 31) == BLACK);
+	CHECK(harness.at(31, 32) == BLACK);
+	CHECK(harness.at(8, 8) == BLACK);
+}
+
 TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them")
 {
 	Harness harness;
@@ -1759,6 +1899,61 @@ TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not ZERO")
 	// is paused, so this is live behaviour and not a hypothetical.
 }
 
+TEST_CASE("CONTRACT: a tint with more colour than alpha saturates, it is not clamped to it")
+{
+	Harness harness;
+
+	// THE ONE COLOUR A PREMULTIPLIED BLEND CANNOT DESCRIBE, and Colour lets a
+	// caller write it: the channels are clamped independently
+	// (engine/render/colour.h), so (1, 1, 1, 0.5) is a legal tint whose colour
+	// is brighter than its own alpha. Nothing in this engine premultiplies for
+	// a caller and nothing rejects it, so what a backend does with it is a
+	// term of the seam whether anybody meant it to be or not - and the four
+	// rasterisers each hand it to a different blend unit.
+	//
+	// docs/review/backend-equivalence/ raised it twice as an open question and
+	// this is the answer: the blend is src + dst * (1 - src.a), the source term
+	// is 1.0 before the destination is even consulted, and the write to an
+	// 8-bit UNORM target is where the clamp happens - so the answer is white,
+	// on every backend, and no backend clamps rgb down to alpha on the way in.
+	DrawList list = harness.begin();
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour(1.0f, 1.0f, 1.0f, 0.5f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	// And over an opaque ground, where a backend that clamped the source to
+	// its alpha would leave the destination showing through at half strength.
+	list.draw_sprite(harness.quad, Harness::red_texel(),
+		RectangleF(32.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(32.0f, 0.0f, 16.0f, 16.0f), Colour(0.0f, 1.0f, 0.0f, 0.5f),
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// Over black: the source term alone is 1.0 in every colour channel.
+	const Pixel over_black = harness.at(8, 8);
+	CHECK(over_black.r == 255);
+	CHECK(over_black.g == 255);
+	CHECK(over_black.b == 255);
+
+	// The alpha channel is opaque as well, and for the destination's reason
+	// rather than the source's: begin_frame clears to opaque black, so the
+	// blend is 0.5 + 1.0 * (1 - 0.5) and lands exactly on 1. The case above
+	// pins the same term from the other side, where the source alpha is what
+	// the destination is asked through.
+	CHECK(over_black.a == 255);
+
+	// Over red: green saturates, red survives at half strength through
+	// INV_SRC_ALPHA, and a backend that had clamped the source would answer
+	// with a green no brighter than 128.
+	const Pixel over_red = harness.at(40, 8);
+	CHECK(over_red.g == 255);
+	CHECK(over_red.r > 100);
+	CHECK(over_red.r < 155);
+	CHECK(over_red.b == 0);
+}
+
 TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 {
 	// THE ONE CASE HERE THAT IS NOT ABOUT A PIXEL, and it is in this file
@@ -1931,6 +2126,80 @@ TEST_CASE("CONTRACT: a frame may be read back and then presented")
 
 	CHECK(harness.at(20, 20) == WHITE);
 	CHECK(harness.at(4, 4) == BLACK);
+}
+
+TEST_CASE("CONTRACT: every format the seam names is uploaded, or refused by name")
+{
+	Harness harness;
+
+	// TEST-GAP.md's B12, written as the one statement that is true on every
+	// backend rather than as a table of which backend takes what - because
+	// that table is exactly what the seam refuses to promise.
+	// engine/render/texture_format.h names six formats and no backend is
+	// obliged to take all six: D3D12 makes 4-bit-per-channel support optional,
+	// GL has no packing with those channels in that order, and a mobile Vulkan
+	// device may have no block compression at all. What every backend IS
+	// obliged to do is say so - resource_factory.h promises a
+	// std::runtime_error naming the texture and the format, "which is the
+	// answer a backend that cannot upload block compression owes rather than a
+	// blank texture".
+	//
+	// SO THE ASSERTION IS THE DISJUNCTION: for each of the six, either the load
+	// succeeds and the name resolves, or it throws with the format in the
+	// message. A backend that quietly substituted a blank texture, or threw an
+	// eight-digit code, fails this on the format it cannot take - which is the
+	// case nobody could reach before, because no file in either client is in
+	// four-bit or in a format the local driver refuses.
+	struct Named
+	{
+		TextureFormat format;
+		const char* name;
+	};
+
+	const Named FORMATS[] = {
+		{ TextureFormat::r8g8b8a8_unorm, "r8g8b8a8_unorm" },
+		{ TextureFormat::b8g8r8a8_unorm, "b8g8r8a8_unorm" },
+		{ TextureFormat::b4g4r4a4_unorm, "b4g4r4a4_unorm" },
+		{ TextureFormat::bc1_unorm, "bc1_unorm" },
+		{ TextureFormat::bc2_unorm, "bc2_unorm" },
+		{ TextureFormat::bc3_unorm, "bc3_unorm" },
+	};
+
+	for (const Named& entry : FORMATS)
+	{
+		// Four by four, which is one block of every compressed format and four
+		// rows of every uncompressed one, so texture_level answers a real size
+		// for all six and the bytes below are a valid bit pattern in each.
+		TextureData texture;
+		texture.width = 4;
+		texture.height = 4;
+		texture.format = entry.format;
+		texture.levels.push_back(texture_level(entry.format, 4, 4, 0));
+		texture.pixels.assign(texture.levels[0].size, 0x7Fu);
+
+		const std::string name = std::string("format_") + entry.name;
+
+		try
+		{
+			add_texture_asset(harness.renderer(), harness.resources(), name,
+				texture);
+
+			// Uploaded. Then the name is in the table and resolves, because a
+			// backend that returned quietly without adding one would pass the
+			// throw half of this case for the wrong reason.
+			CHECK_NOTHROW(std::ignore =
+				harness.resources().resolve_texture(name));
+		}
+		catch (const std::runtime_error& error)
+		{
+			// Refused. Then the message names the format, which is what makes
+			// the refusal actionable - a client learns which of its files to
+			// re-export rather than that something went wrong.
+			const std::string message = error.what();
+			CHECK(message.find(entry.name) != std::string::npos);
+			CHECK(message.find(name) != std::string::npos);
+		}
+	}
 }
 
 TEST_CASE("CONTRACT: re-loading a name reuses its slot, however many times")

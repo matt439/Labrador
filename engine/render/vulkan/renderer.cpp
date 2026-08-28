@@ -813,6 +813,16 @@ namespace labrador
 	{
 		Impl& impl = *this->impl_;
 
+		// BEFORE THERE IS A DEVICE THERE IS NOTHING TO REBUILD, and the seam
+		// says the answer is false (renderer.h). Reached by a shell that gets a
+		// WM_SIZE between creating its window and creating its device, which is
+		// an ordering Win32 allows and nothing here forbids -
+		// tests/render/renderer_seam_tests.cpp holds all five backends to it.
+		if (impl.device_resources.device() == VK_NULL_HANDLE)
+		{
+			return false;
+		}
+
 		// ASKED BEFORE ANYTHING IS THROWN AWAY, because most calls to this
 		// change nothing and a frame is not worth losing to one of them.
 		// Application::on_window_moved calls this with the size it already has
@@ -893,6 +903,7 @@ namespace labrador
 		// everything open_frame is about to do to the colour target. From here
 		// until end_frame, window_size_changed has a frame to restart.
 		impl.frame_begun = true;
+		impl.frame_submitted = false;
 
 		impl.open_frame();
 	}
@@ -958,6 +969,14 @@ namespace labrador
 
 	void Renderer::submit()
 	{
+		// ONCE PER FRAME, AND A SECOND CALL ADDS NOTHING (renderer.h). Cleared
+		// by begin_frame, which is the only thing that starts a frame.
+		if (this->impl_->frame_submitted)
+		{
+			return;
+		}
+		this->impl_->frame_submitted = true;
+
 		Impl& impl = *this->impl_;
 		DeviceResources& device_resources = impl.device_resources;
 
@@ -1193,8 +1212,11 @@ namespace labrador
 
 		// The pass' finalLayout says where it left the image, and nothing this
 		// class recorded put it there - so the tracking is told rather than
-		// asked. It is the same layout it went in as, which is what makes a
-		// second submit in one frame legal.
+		// asked. It is the same layout it went in as, which is what would make
+		// a second pass in one frame legal here - and renderer.h has since
+		// decided that a second submit does nothing on any backend, so what
+		// this line actually buys is the read-back path, which reopens the
+		// command buffer after this and needs the layout to be true.
 		device_resources.set_colour_layout(
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
@@ -1357,17 +1379,23 @@ namespace labrador
 	}
 
 	// THE THREE MARKERS DO NOTHING, AND THAT IS THE HONEST ANSWER RATHER THAN A
-	// GAP - which is worth arguing here rather than pointing at the other two
+	// GAP - which is worth arguing here rather than pointing at the other three
 	// backends that say it, because this is the one API that HAS the feature.
-	// VK_EXT_debug_utils' labels are real and are in the box. What they are
-	// not is available where this seam puts them: a label belongs to a COMMAND
-	// BUFFER, and these three may be called at any point a client likes,
-	// including when no frame is open and nothing is recording. D3D11 can
-	// answer because ID3DUserDefinedAnnotation hangs off the device context and
-	// is always there; this API has nothing at that level, so the honest
-	// choices are a marker that works sometimes or one that never does. A
-	// marker that silently depends on where in the frame it was called is
-	// worse than none (T6).
+	// VK_EXT_debug_utils' labels are real and are in the box. What they are not
+	// is available where this seam puts them WITHOUT A CHOICE THIS FILE WOULD
+	// HAVE TO MAKE: the useful label belongs to a COMMAND BUFFER, and these
+	// three may be called at any point a client likes, including when no frame
+	// is open and nothing is recording. The extension does have a queue-level
+	// pair - vkQueueBeginDebugUtilsLabelEXT and its end - so a marker outside a
+	// frame COULD be forwarded there; what it could not be is the same thing as
+	// a marker inside one, which would make the meaning of a marker depend on
+	// where it was called. D3D11 has no such split, because
+	// ID3DUserDefinedAnnotation hangs off the device context and is always
+	// there. So the honest choices here are a marker that means two things or
+	// one that never does anything, and renderer.h has since settled the axis
+	// for all five: markers are advisory, a backend may discard them, and this
+	// one does (T6, T9 - the extension is optional and nothing in this
+	// repository reads a capture).
 	void Renderer::begin_marker(const wchar_t* name)
 	{
 		std::ignore = name;

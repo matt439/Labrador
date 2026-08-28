@@ -2,6 +2,8 @@
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/vector2f.h"
 
+#include <cmath>
+
 using namespace mattmath;
 
 namespace labrador
@@ -65,8 +67,28 @@ namespace labrador
 	{
 		this->layer_depth_ = layer_depth;
 	}
-	void DrawObject::set_draw_rotation_by_rectangle_rotated(const RectangleRotated& /*rect*/)
+	// THE ANGLE THE RECTANGLE IS ALREADY TURNED BY, AND NOTHING ELSE. A
+	// RectangleRotated carries its rotation as an orthonormal axis pair rather
+	// than as a number (engine/math/rectangle_rotated.h says why: writing one
+	// axis against the other is how a rotation gets rejected), so the angle is
+	// atan2 of the x axis - clockwise-positive on screen, which is the seam's
+	// convention because y runs down (renderer.h, and the pixel contract's
+	// "a positive rotation turns the sprite clockwise on screen").
+	//
+	// IT SETS THE ROTATION AND NOT THE ORIGIN, which is the whole of the
+	// decision here. A rectangle turns about its centre and a sprite turns
+	// about its origin, so a caller that wants those to be the same point says
+	// so with set_origin - in unscaled source texels, which this class cannot
+	// convert to because it does not know the source. Setting both would make
+	// this the one setter with two effects and would be wrong for every caller
+	// whose origin is deliberate.
+	//
+	// It was an empty body with a TODO in it: a setter that took an argument
+	// and discarded it, which is the one shape of wrong a caller cannot see.
+	void DrawObject::set_draw_rotation_by_rectangle_rotated(
+		const RectangleRotated& rect)
 	{
-		// TODO: Implement this function
+		const Point2F axis = rect.x_axis();
+		this->set_draw_rotation(std::atan2(axis.y, axis.x));
 	}
 }

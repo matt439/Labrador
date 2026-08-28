@@ -444,9 +444,10 @@ and no second submission path. That prediction is what section 3.2 was told to
 wait for section 3.1 to produce, and it is the reason the cost of this feature
 was known before a line of it was written.
 
-It remains a prediction about arithmetic rather than a frame time, and the
-reference machine is still unnamed, so no number here is a floor. See *Still
-open*.
+It remains a prediction about arithmetic rather than a frame time. The
+reference machine is named now — `PHILOSOPHY.md`, Performance — and it is still
+unmeasured, so no number here is a floor. See *Still open*, which says which
+half of the claim landed and which did not.
 
 #### The banner had to leave the board view
 

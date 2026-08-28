@@ -25,9 +25,21 @@ namespace labrador
 		// strictly less hardware than the one beside it, which is worth stating
 		// plainly rather than leaving to be discovered - it is here to hold the
 		// seam to an API where the engine owns synchronisation, and to give the
-		// pixel contract a second rasteriser CI can actually run. It is not a
-		// shipping target on the low tier and nothing in this tree pretends it
-		// is.
+		// pixel contract a second rasteriser CI can actually run.
+		//
+		// AND "NOT A TARGET ON THE LOW TIER" IS NO LONGER THE RIGHT SENTENCE,
+		// which is what naming the low tier cost this comment. PHILOSOPHY.md,
+		// Performance names it - the Radeon iGPU in a Ryzen 9000 desktop
+		// package, at 1280x720, held to four cores - and that part is feature
+		// level 12_2 with a current driver, so this backend runs there as
+		// happily as the one next door. What the floor above actually excludes
+		// is hardware OLDER than the named configuration: a feature-level-10
+		// part, or a Haswell-era one whose vendor never shipped a D3D12 driver
+		// (docs/survey/2026-08-26-status.md's 2013 MacBook Air is exactly that
+		// machine, and it runs the D3D11 and GL backends and neither of the
+		// other two). That is a claim about the successor machine rather than
+		// about the reference one, and it is the only NEGATIVE low-tier
+		// sentence in the tree - which is why it is worth being exact in.
 		const D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 	}
 

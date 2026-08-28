@@ -283,7 +283,16 @@ file of that format to read it against.
   and the first item there costs one CI log. **Its `STATUS.md` is the one file
   in either folder that is kept current** — 162 boxes, ticked in the same commit
   as the change, which is the mechanism whose absence this whole sweep existed
-  to discover. Read that first; the other five are frozen at `ca5b2e3`. The
+  to discover. Read that first; the other five are frozen at `ca5b2e3`.
+  **All eight findings, all 110 drift items, the red team and three of the four
+  decisions have been applied**, over four commits from `13f5507`; what is left
+  is three boxes and `STATUS.md` says what each one needs, the largest being a
+  measured p99 on the named low tier, which is hardware rather than reading.
+  Two things the sweep could not know are recorded there too: the CI premise it
+  reasoned from is false — a GPU-less runner offers Direct3D an adapter rather
+  than falling back to WARP, which one job log settles — and the golden set is
+  fifty-seven images now, five of them added by the tests those findings
+  asked for. The
   third folder reviews the fourth backend against the seam it was written to
   test. **Its three must-fix findings, all
   seven should-fix, every minor and the one item it left unresolved have been

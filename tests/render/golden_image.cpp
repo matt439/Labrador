@@ -256,7 +256,7 @@ namespace
 		// and an alpha channel, so read_png returns exactly these bytes - and
 		// the check-mode run that follows every regeneration is what says so,
 		// because it compares the frame against the file just written from it.
-		// A build where that stopped being true would fail fifty-two times over,
+		// A build where that stopped being true would fail fifty-seven times over,
 		// once per image in the set.
 		WICPixelFormatGUID format = GUID_WICPixelFormat32bppRGBA;
 		ComPtr<IWICBitmap> source;
@@ -404,10 +404,12 @@ namespace
 	// them is 7 and most are 5, and the other twenty-eight frames - the ones
 	// carrying flat texels through no filter, the six multi-view ones among
 	// them - are identical to the byte. THE SET WAS 47 WHEN THAT WAS MEASURED
-	// AND IS 50 NOW, so 19 and 28 no longer sum to it: the two read-back-then-
-	// present frames and the re-loaded-name frame joined afterwards and are in
-	// neither number. All three carry flat texels through no filter, which is
-	// the half of the set the measurement found identical. That is the shape of a decode-and-filter
+	// AND IS 57 NOW, so 19 and 28 no longer sum to it: ten images joined
+	// afterwards and are in neither number. Nine of the ten carry flat texels
+	// through no filter, which is the half of the set the measurement found
+	// identical; the tenth is the filter case, and it is the only frame in the
+	// set that carries a filtered edge at all - all four rasterisers write it
+	// byte for byte, which is a stronger answer than this allowance needed. That is the shape of a decode-and-filter
 	// difference, and neither term is one this engine decides - pixel_tests.cpp
 	// has said from the beginning that "the coverage value at any one pixel is
 	// a fact about the compressor", which is why its text cases are written as

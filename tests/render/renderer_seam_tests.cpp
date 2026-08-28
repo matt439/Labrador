@@ -101,3 +101,87 @@ TEST_CASE("CONTRACT: a texture loaded before there is a device is refused, by na
 	CHECK_THROWS_AS(std::ignore = resources.resolve_texture("quad"),
 		std::out_of_range);
 }
+
+TEST_CASE("CONTRACT: a view capacity below one is refused, and it is invalid_argument")
+{
+	// TEST-GAP.md's A1, and what it is for is the ratchet rather than the
+	// behaviour: the check exists five times by hand-copy, one line at the top
+	// of each create_device, and until now nothing asserted any of them. A
+	// backend written next year gets this wrong silently - a capacity of zero
+	// then means a renderer with no views at all, and every view() call after
+	// it is an out_of_range a client reads as its own mistake.
+	//
+	// THE WINDOW IS NULL AND THAT IS THE POINT. The refusal happens before
+	// anything touches it, on every backend, so this case needs no device and
+	// runs in all five configurations - which is the only place a statement
+	// about all five can be made.
+	Renderer renderer;
+
+	CHECK_THROWS_AS(renderer.create_device(nullptr, 64, 64, 0),
+		std::invalid_argument);
+	CHECK_THROWS_AS(renderer.create_device(nullptr, 64, 64, -1),
+		std::invalid_argument);
+
+	// And it left nothing half-made behind it.
+	CHECK(renderer.view_count() == 0);
+}
+
+TEST_CASE("CONTRACT: a renderer with no device has no views")
+{
+	// TEST-GAP.md's A5, and the smallest claim in this file: the answer falls
+	// out of a default-initialised member rather than out of a hand-written
+	// guard per backend, so there is no copy to drift. What it pins is that
+	// view() refuses rather than answering with a fullscreen pane, which is
+	// what the seam says and what one backend used to do instead.
+	Renderer renderer;
+
+	CHECK(renderer.view_count() == 0);
+	CHECK_THROWS_AS(std::ignore = renderer.view(0), std::out_of_range);
+}
+
+TEST_CASE("CONTRACT: window_size_changed before there is a device rebuilds nothing")
+{
+	// TEST-GAP.md's A4. A shell can be sent a WM_SIZE between making its window
+	// and making its device - Win32 allows it and nothing in engine/app/
+	// forbids it - and four of the five backends answered that by walking a
+	// path with a null device in it. The seam says the answer is false, and
+	// this is where the five are held to it.
+	Renderer renderer;
+
+	CHECK_FALSE(renderer.window_size_changed(640, 480));
+
+	// Twice, with a different size, because the early-out that makes the first
+	// one false must not be the "nothing changed" comparison - that one would
+	// answer true here on any backend that had already recorded a size.
+	CHECK_FALSE(renderer.window_size_changed(1280, 720));
+	CHECK(renderer.view_count() == 0);
+}
+
+TEST_CASE("CONTRACT: a marker is legal before there is a device")
+{
+	// TEST-GAP.md's A2, and it is the executable half of the decision
+	// docs/review/backend-equivalence-2/ asked for: markers stay on the seam
+	// and renderer.h now calls them advisory. An advisory call that
+	// access-violates on one backend is not advisory, and that is exactly what
+	// begin_marker did on d3d11 - ID3DUserDefinedAnnotation is made with the
+	// device, so the ComPtr holding it was null and the forward dereferenced
+	// it. The other four discarded the call.
+	//
+	// THERE IS NOTHING TO OBSERVE AND THAT IS THE ASSERTION. A marker leaves
+	// no trace a test can read on any of the five - the one backend that
+	// forwards them forwards them to a tool that is not running - so what this
+	// case can say is that the calls are reachable, in any order, before a
+	// device exists and outside a frame, and that nothing throws. Without it
+	// the seam's one advisory-capability claim would be unexecutable in every
+	// configuration.
+	Renderer renderer;
+
+	CHECK_NOTHROW(renderer.begin_marker(L"before any device"));
+	CHECK_NOTHROW(renderer.set_marker(L"still no device"));
+	CHECK_NOTHROW(renderer.end_marker());
+
+	// Unpaired, because the seam does not say a backend tracks nesting and the
+	// four that discard cannot. A caller that ends a marker it never began gets
+	// the same nothing.
+	CHECK_NOTHROW(renderer.end_marker());
+}

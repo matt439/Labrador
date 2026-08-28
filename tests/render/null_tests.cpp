@@ -643,3 +643,100 @@ TEST_CASE("a strip's frame carries no authored origin, and says so by drawing")
 	CHECK(drawn[0].corners[0].position.x == doctest::Approx(10.0f));
 	CHECK(drawn[0].corners[0].position.y == doctest::Approx(20.0f));
 }
+
+TEST_CASE("submit is once per frame, and a second one adds nothing")
+{
+	Harness harness;
+
+	// TEST-GAP.md's C3, and the decision it asked for is now on the seam:
+	// renderer.h says a second submit adds nothing, and every backend keeps a
+	// flag begin_frame clears. This is the one configuration that can assert
+	// it, because "adds nothing" is a statement about a recording and the four
+	// that rasterise can only be asked what a picture looked like.
+	//
+	// WHAT IT WAS BEFORE THE DECISION: the OpenGL backend replayed every run
+	// and drew the frame twice, this backend re-gathered and answered the same
+	// list, and the Vulkan one carried a paragraph about which layout made a
+	// second submit legal. Three answers to a call the seam described in one
+	// line and legislated in none.
+	DrawList list = harness.begin();
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	harness.renderer().submit();
+	const std::vector<RecordedSprite> once = recorded_sprites(harness.renderer());
+	REQUIRE(once.size() == 1);
+
+	harness.renderer().submit();
+	const std::vector<RecordedSprite> twice =
+		recorded_sprites(harness.renderer());
+
+	// Not "the same size" - the same recording. A backend that appended would
+	// answer two, and one that re-gathered would answer one having done the
+	// work twice; the flag means neither happens.
+	REQUIRE(twice.size() == 1);
+	CHECK(twice[0].corners[0].position.x ==
+		doctest::Approx(once[0].corners[0].position.x));
+	CHECK(twice[0].corners[0].position.y ==
+		doctest::Approx(once[0].corners[0].position.y));
+
+	// And the next frame still submits, which is what the flag being cleared by
+	// begin_frame means.
+	DrawList second = harness.begin();
+	second.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(4.0f, 4.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	const std::vector<RecordedSprite> next = harness.end();
+
+	REQUIRE(next.size() == 1);
+	CHECK(next[0].corners[0].position.x == doctest::Approx(4.0f));
+}
+
+TEST_CASE("a handle resolved before release_device_resources draws after the reload")
+{
+	Harness harness;
+
+	// TEST-GAP.md's C5 and C6 in one case. release_device_resources() is public
+	// seam API with five implementations, one production caller - the shell's
+	// device-lost handler - and, until this, no assertion anywhere in tests/ on
+	// any backend. What it promises is stated at length in
+	// engine/render/render_resources.h: the names stay, so a drawable holding a
+	// handle from before the loss draws the right thing after the reload
+	// refills the slot.
+	//
+	// AND THE PRECONDITION IS WHY THIS CASE RELOADS. The same header says this
+	// call is the first half of a device loss and not a way to drop textures;
+	// what follows it here is the reload, which is the shape the shell uses.
+	const TextureHandle before = harness.resources().resolve_texture("quad");
+
+	harness.resources().release_device_resources();
+
+	// The name is still there - it is the resource behind it that went - so a
+	// resolve answers, and it answers the same slot.
+	const TextureHandle after_release =
+		harness.resources().resolve_texture("quad");
+	CHECK(after_release.index() == before.index());
+
+	// The reload, through the same load path a device restore uses.
+	load_texture_asset(harness.renderer(), harness.resources(), "./content/",
+		"quad");
+
+	const TextureHandle after_reload =
+		harness.resources().resolve_texture("quad");
+	CHECK(after_reload.index() == before.index());
+
+	// And the handle taken before the release draws the reloaded texture. This
+	// is the whole promise: a drawable that resolved a name at load time is
+	// still correct after a device has been lost and remade under it.
+	DrawList list = harness.begin();
+	list.draw_sprite(before, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 1);
+	CHECK(drawn[0].texture.index() == before.index());
+	CHECK(drawn[0].corners[3].position.x - drawn[0].corners[0].position.x ==
+		doctest::Approx(8.0f));
+}

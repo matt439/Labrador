@@ -35,10 +35,10 @@
 |---|---|---|
 | 1. The eight findings | 8 | 8 |
 | 2. Documentation drift | 110 | 110 |
-| 3. Tests and checks that never landed | 34 | 30 |
+| 3. Tests and checks that never landed | 34 | 32 |
 | 4. Decisions to make | 4 | 3 |
-| 5. Finishing the sweep | 6 | 5 |
-| **Total** | **162** | **156** |
+| 5. Finishing the sweep | 6 | 6 |
+| **Total** | **162** | **159** |
 
 ---
 
@@ -402,10 +402,11 @@ reason rather than implemented — the ledger says which, and TEST-GAP's own
       The case is cheap and is now MORE valuable than in August 2026, because two of the five backends gained an explicit run vector since: gl `DrawList::View::runs` (engine/render/gl/renderer.cpp:137) and vulkan `View::runs` (engine/render/vulkan/renderer.cpp:150),
 - [x] **B11** a source rectangle outside the texture clamps to the edge texel
       Cheap to write, and the argument for it is now stronger than in August 2026 because the number of independent copies of the decision doubled. What it costs to leave: four backends each hard-code CLAMP in their own vocabulary with no statement holding them toge
-- [ ] **B12** every format the seam names is uploaded, or refused by name
+- [x] **B12** every format the seam names is uploaded, or refused by name
       The lever is proven now — three hand-built TextureData helpers exist and one of them already carries a mip chain — so the remaining work is a loop over the six enumerators with valid block-compressed bytes and a `CHECK_THROWS`/`CHECK_NOTHROW` per backend expec
       **DONE — landed as finding 6 - see §1. The case is "a texture change keeps call order, it does not group runs"**
       **DONE — "a source rectangle outside the texture clamps to the edge texel", both ends: four texels out of a two-texel texture, and a negative source origin. A wrapping sampler answers RED where this asserts GREEN. Four backends hard-code CLAMP in four vocabularies and nothing held them together until this**
+      **DONE — `pixel_tests.cpp`, written as the disjunction rather than as a table: for each of the six formats in `texture_format.h`, either the load succeeds and the name resolves, or it throws with the format AND the texture in the message. That is the one statement true on every backend, because no backend is obliged to take all six and every backend is obliged to say which it will not. Passes on all four rasterisers**
 
 **TEST-GAP.md Vehicle C (five proposed null_tests cases + the release_device_resources grep) and the three structural claims about what CI cannot catch**
 
@@ -424,8 +425,9 @@ reason rather than implemented — the ledger says which, and TEST-GAP's own
 
 **GAPS.md "Where the next pass should start", items 1-4, against the five-backend tree (HEAD ca5b2e3)**
 
-- [ ] **GAPS-4** sprite_sheet.cpp destination_from written a second time and truncating where a glyph does not; is there a sprite_sheet_tests.cpp?
+- [x] **GAPS-4** sprite_sheet.cpp destination_from written a second time and truncating where a glyph does not; is there a sprite_sheet_tests.cpp?
       Two things, and they are small but neither is zero. First, an object placed by position-and-scale snaps to whole pixels while text placed identically does not, and a client hitting it sees a sprite jitter against a caption that does not — the engine states bot
+      **DONE — the first half is stated where a client meets it: `sprite_sheet.cpp`'s position-and-scale overload now says that it builds a destination rectangle, that `build_sprite_quad` truncates one and `build_glyph_quad` deliberately does not, and what that costs - a sprite moving in whole pixels beside a caption moving in fractions. The second half is answered rather than built: there is no `sprite_sheet_tests.cpp` and the coverage is in `null_tests.cpp`, which drives `SpriteSheet::draw` through the real seam and asserts the corners it produced. A second file would test the same call with less around it**
 
 **GAPS.md "Where the next pass should start", items 5-8, adjudicated against the five-backend tree at ca5b2e3**
 
@@ -445,6 +447,8 @@ reason rather than implemented — the ledger says which, and TEST-GAP's own
       **DONE — `tests/render/font_tests.cpp`, "a surrogate pair is two code units, and the walk sees two of them". The crossing between `widen()` and the pen walk had never run; it does now, and what it pins is the limitation - two stand-ins for one character - rather than a fix, because no atlas this engine loads holds either half**
       **DONE — `set_draw_rotation_by_rectangle_rotated` had an empty body and a TODO, so it took a `RectangleRotated` and discarded it. It sets the rotation from `atan2` of the rectangle's x axis and leaves the origin alone, and `tests/render/draw_object_tests.cpp` - a new file, which also answers part of G8a - states the whole of `DrawObject`'s surface around it**
       **DONE — nothing, and it comes off the list rather than forward. `rotation_origin.h` having no users is a design-document refusal (PHILOSOPHY.md), not an unfixed defect: the action GAPS implied is the action that document forbids on exactly this evidence**
+      **STILL OPEN — nothing structural is owed and the remaining hole needs a real `HWND`: a live `Application` keeping the two caches in step is an AppTests entry, and AppTests has no window today. Left where the ledger left it**
+      **STILL OPEN — one of the ten landed: `tests/render/draw_object_tests.cpp` states the whole of `DrawObject`'s surface, which is where the empty setter G7a found was hiding. The other nine are unstarted. `Label`, `Text` and `Visual` are the next cheap ones; `TextObject` is not, because its constructor measures and therefore wants a font, and a font wants an atlas, which wants a device**
 
 **DEFECT A — "GL anchors every pane to a cached back-buffer height; D3D11 needs no height at all" (docs/review/backend-equivalence/README.md:76-107, the**
 
@@ -531,6 +535,15 @@ long enough that the sweep found it twice.
       **DONE — a stated precondition. It is the device-loss half of a pair, and `render_resources.h` says so, says what a call outside that pair costs on D3D12, and says why the free list is the wrong trade**
       **DONE — they stay, and `renderer.h` declares them advisory: a backend may forward a marker and may do nothing, and a caller may not tell which from anything it can observe. TEST-GAP's A2 is answered in the same commit and by code rather than by a precondition - d3d11 guards its three forwards on the device, so a marker before `create_device` does nothing on all five - and `renderer_seam_tests.cpp` holds every configuration to it. `set_marker` keeps its zero callers: it is the odd one of the three to delete alone, and the pair above it has a real caller in `application.cpp`**
       **DONE — already decided, and decided the way TEST-GAP proposed. `renderer.h` states it beside `set_filter` - level zero always, under either filter - each rasteriser says it in its own vocabulary (`MaxLOD`, `GL_TEXTURE_MAX_LEVEL`, `maxLod`), and `pixel_tests.cpp`'s "a minified draw samples level zero, not the chain" pins it under both filters with a two-level texture built for the question. Ticked as decided-and-tested rather than open**
+      **STILL OPEN, and narrowed by two of its five sites landing.** `R7` and
+      `R9` above are amended, so the tree no longer contradicts itself about the
+      reference machine: `engine/render/d3d12/device_resources.cpp` says what
+      its floor actually excludes now that the low tier is named, and
+      `samples/linesweeper/README.md` says the machine is named and the
+      measurement is not. What is left is the measurement itself - a CPU half to
+      name and a p99 to take on the named configuration, four cores at 1280x720
+      - and it is the one item in this file that needs hardware rather than
+      reading.
 
 ---
 
@@ -567,6 +580,7 @@ close it.
       2026-08-19 audit failed to open and the lesson its `GAPS.md` drew.
 - [x] **Verify the 66 unchecked drift findings**, concentrated in `gl/` and the test
       files.
+      **DONE — verified as part of amending them, which is the only way that was ever going to happen: each was read against the code beneath it before a word was changed, and four came back needing a different amendment from the one the sweep predicted. §2 above names those four**
 - [x] **Re-run `RenderPixelTests` under the Khronos validation layer with
       `validate_sync` on**, per [docs/review/vulkan/](../vulkan/) §2. It settles
       finding 4 and the Vulkan half of finding 7.
@@ -576,18 +590,24 @@ close it.
       byte-identical afterwards. It settles finding 4. The Vulkan half of
       finding 7 is prose rather than a layer question and is answered on
       `resource_factory.h`.**
-- [ ] **The rasteriser fill rule against fractional edges**, still open from the
+- [x] **The rasteriser fill rule against fractional edges**, still open from the
       prior audit and now with a third specification. `build_scaled_quad` truncates
       nothing so every glyph quad has fractional edges; D3D mandates top-left
       exactly, GL 3.3 leaves the tie-break implementation-dependent, Vulkan
       specifies it again. The golden set makes this quieter but does not close it,
       because `ALLOWED_CHANNEL_DRIFT` is 8 per channel and a one-row tie-break
       disagreement hides under that.
+      **DONE — measured, and the measurement is in `pixel_tests.cpp` where the
+      term is. The rotation case is the only frame in the set with edges that
+      are not axis aligned, and all four rasterisers write it BYTE FOR BYTE -
+      checked by regenerating the whole set on each backend and hashing, because
+      the drift allowance would hide a one-row disagreement from a passing run.
+      What that settles is this machine's adapter; what it cannot settle is
+      another driver, and the three specifications still disagree, so the term
+      stays written down where it is decided.**
 - [x] **Blend-result clamping, and GL never learning its framebuffer format.** GL
       asks `ChoosePixelFormat` and never calls `DescribePixelFormat`. `Colour`
       clamps per channel independently, so a legal tint of `(1,1,1,0.5)` gives
       `src.rgb > src.a`. Also still open from the prior audit.
-
-      **DONE — verified as part of amending them, which is the only way that was ever going to happen: each was read against the code beneath it before a word was changed, and four came back needing a different amendment from the one the sweep predicted. §2 above names those four**
       **DONE — both halves, and one of them was already fixed. GL DOES learn its framebuffer format now - `gl/renderer.cpp` calls `DescribePixelFormat` after `ChoosePixelFormat` and refuses by name unless all four channels are eight bits, which is the demand D3D makes by naming a format. The clamping half is now a pixel case: "a tint with more colour than alpha saturates, it is not clamped to it" draws `(1,1,1,0.5)` over black and over an opaque ground, and all four rasterisers write it byte for byte - so no backend clamps rgb down to alpha on the way in, and the 8-bit UNORM write is where the clamp happens**
 
