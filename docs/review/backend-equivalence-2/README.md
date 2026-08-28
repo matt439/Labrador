@@ -22,6 +22,7 @@ fixed. What has not kept up is the seam's prose about itself: 113 comments in
 
 | Document | What it holds |
 |---|---|
+| [**STATUS.md**](STATUS.md) | **The only file here that is kept up to date.** 162 items with a box each — the eight findings, the drift by file, the tests that never landed, four decisions, and what finishes the sweep. Tick the box in the same commit as the change |
 | **README.md** (this file) | Method, the verdict, the three defects re-adjudicated, the eight findings, and what the folder should become |
 | [INVENTORY.md](INVENTORY.md) | The 40 axes at five backends — 29 of the audit's re-run, 11 it could not have had. The reference half |
 | [DRIFT.md](DRIFT.md) | The 113 comments the code no longer matches, ranked |
@@ -222,12 +223,18 @@ nine days ago for exactly this problem — a companion that carries the live sta
 beside a document that is frozen by design. The `d3d12/` and `vulkan/` reviews
 solved it a third way, by having CLAUDE.md name the commits that applied them.
 
-**The recommendation is to correct the sentence and not to invent a fourth
-convention.** `CLAUDE.md:263` should say what is true: that `DRIFT.md` is
-historical like everything else in `docs/review/`, that it was worked through,
-and that this document is where the render folder's live drift now lives. A
-review that acquires a status companion, a naming convention *and* a round two is
-three ways of recording one fact, and T3 says take the simpler model.
+**The recommendation is to correct the sentence and take the convention that
+already exists.** `CLAUDE.md` now says what is true: that `DRIFT.md` is
+historical like everything else in `docs/review/`, and that this folder is where
+the render folder's live drift lives. And this folder carries
+[STATUS.md](STATUS.md), which is `docs/survey/2026-08-26-status.md`'s shape — the
+one file here that is updated as items land, so that the next reader can answer
+in a second the question this whole sweep was run to answer.
+
+That is deliberately *not* a fourth convention. A review that acquires a status
+companion **and** a naming convention **and** a round two is three ways of
+recording one fact, and T3 says take the simpler model. The status companion is
+the one that already worked, nine days ago, on the survey.
 
 ## 7. What is not here
 

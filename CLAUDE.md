@@ -273,8 +273,12 @@ file of that format to read it against.
   drifted comments of which 48 are one species — a sentence that counts the
   backends while legislating a term — and all three of the 2026-08-19 defects
   re-adjudicated and found fixed. Its own `GAPS.md` says what it did not do,
-  and the first item there costs one CI log. The third folder reviews the
-  fourth backend against the seam it was written to test. **Its three must-fix findings, all
+  and the first item there costs one CI log. **Its `STATUS.md` is the one file
+  in either folder that is kept current** — 162 boxes, ticked in the same commit
+  as the change, which is the mechanism whose absence this whole sweep existed
+  to discover. Read that first; the other five are frozen at `ca5b2e3`. The
+  third folder reviews the fourth backend against the seam it was written to
+  test. **Its three must-fix findings, all
   seven should-fix, every minor and the one item it left unresolved have been
   applied** — nine commits, each naming the section it answers, `6ae4a15`
   through `06f0b5f`. What has *not* been applied is section 6: nine findings
