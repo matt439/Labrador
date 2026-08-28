@@ -33,12 +33,12 @@
 
 | Section | Items | Done |
 |---|---|---|
-| 1. The eight findings | 8 | 7 |
+| 1. The eight findings | 8 | 8 |
 | 2. Documentation drift | 110 | 110 |
-| 3. Tests and checks that never landed | 34 | 0 |
-| 4. Decisions to make | 4 | 1 |
-| 5. Finishing the sweep | 6 | 2 |
-| **Total** | **162** | **120** |
+| 3. Tests and checks that never landed | 34 | 30 |
+| 4. Decisions to make | 4 | 3 |
+| 5. Finishing the sweep | 6 | 5 |
+| **Total** | **162** | **156** |
 
 ---
 
@@ -67,8 +67,9 @@ lenses. None puts a wrong pixel on a screen. Ranked as the README ranks them.
       `cmake/check_engine_includes.cmake:97` and `:103`. So `engine/input/xinput/` — the third platform seam ARCHITECTURE names — is outside the wall, and `CLAUDE.md:149-159` repeats the false consequence clause in the section listing what fails the build. Documentation-accuracy finding with no behavioural component; the fix is either two literals or one sentence.
       **DONE — the module is captured now, and the claim is checked rather than made. Both regexes take any `[A-Za-z0-9_]+`, so `engine/input/xinput/` is inside the wall; the include must be the engine's own spelling — rooted at `engine/`, or relative with `../` — because a bare three-component path is not by itself an engine one (`<rapidjson/error/en.h>`). Tested against four spellings, including the `../../engine/audio/null/` form the old regex also missed. `CLAUDE.md` says what was true for nine days, and the header block at `:1-15` — the same file's other drift item — now says the game-header rule does fail standalone**
 
-- [ ] **6. Two of the three terms a draw call is keyed on have never rasterised**
+- [x] **6. Two of the three terms a draw call is keyed on have never rasterised**
       No submitted frame in `tests/render/pixel_tests.cpp` changes texture or filter mid-list — the only two-texture list is deliberately never submitted. Only the viewport break has ever reached a device. Both stamps are asserted on null. This is TEST-GAP's **B8** by another route.
+      **DONE — both terms rasterise now, in `3022ca0`. `tests/render/pixel_tests.cpp` gained "a texture change keeps call order, it does not group runs" - three interleaved runs whose overlaps say GREEN if a backend grouped by texture - and "a filter change mid-list applies to what follows it", which needed the first texture in this file with an edge in it, because point and linear differ only between texels. All four rasterisers write both images byte for byte, the filtered edge included**
 
 - [x] **7. Re-loading a texture name inside an open frame is undefined and differs across five**
       `resource_factory.h:79-87` states only the `create_device` ordering rule and is silent on the `begin_frame`/`submit` interval. The named contract at `pixel_tests.cpp:1782` pins re-load only *outside* an open frame. Four rasterising backends hold a non-owning reference until `submit()`; null does not.
@@ -370,43 +371,56 @@ reason rather than implemented — the ledger says which, and TEST-GAP's own
 
 **TEST-GAP.md Vehicle A (A1–A5): tests/render/renderer_seam_tests.cpp**
 
-- [ ] **A1** CONTRACT: a view capacity below one is refused, and it is invalid_argument
+- [x] **A1** CONTRACT: a view capacity below one is refused, and it is invalid_argument
       Low. The invariant holds in all five and the refusal is one line at the top of each create_device, so nothing is broken today. What is missing is the ratchet: the check exists five times by hand-copy, and the only assertion in the tree is against a different f
-- [ ] **A2** CONTRACT: a marker is legal before there is a device
+- [x] **A2** CONTRACT: a marker is legal before there is a device
       Low in practice, non-zero in principle. The only marker call site in the tree, application.cpp:293/:296, sits between begin_frame and submit — after create_device by construction — so no shipping path reaches the null deref. The cost is a seam call with an unw
-- [ ] **A4** CONTRACT: window_size_changed before there is a device rebuilds nothing and says so
+- [x] **A4** CONTRACT: window_size_changed before there is a device rebuilds nothing and says so
       Live but latent, and the honest severity is lower than the audit implied — because the return value has no reader. `engine/app/application.cpp:410` is `std::ignore = this->renderer_->window_size_changed(width, height);`, so the shell discards the "re-run the l
-- [ ] **A5** CONTRACT: a renderer with no device has no views
+- [x] **A5** CONTRACT: a renderer with no device has no views
       Lowest of the five, and arguably the case that least deserved to land. Nothing diverges, nothing plausibly will: the answer falls out of two default-initialised members rather than out of a hand-written guard per backend, so there is no copy to drift. The only
+      **DONE — `tests/render/renderer_seam_tests.cpp`, and the window is null because the refusal happens before anything touches it - so the case runs in all five configurations, which is where a statement about all five has to be made**
+      **DONE — and it is the executable half of the markers decision. `renderer.h` declares markers advisory and legal before `create_device`; `d3d11/renderer.cpp` gained the three guards that make that true, its `ID3DUserDefinedAnnotation` being made with the device and dereferenced unguarded before it. Answers M4 and M5 in the same commit, which is what the ledger asked**
+      **DONE — and the divergence it names is closed rather than described: all five backends early-out `false` before there is a device, each saying so in the same words, and the seam states it on `window_size_changed`**
+      **DONE — three lines against two default-initialised members, and it pins that `view()` refuses rather than answering with a fullscreen pane**
 
 **TEST-GAP.md Vehicle B — the harness prerequisite and B1..B7, against tests/render/pixel_tests.cpp at ca5b2e3**
 
-- [ ] **B2** A viewport confines a sprite bigger than its pane
+- [x] **B2** A viewport confines a sprite bigger than its pane
       No golden covers it and none can: a golden records what a case drew, so a draw nobody made has no image. The nearest coverage is the four BLACK checks at :1249-1253 in "a viewport offsets the pane and scales the whole of it", and those catch a pane offset appl
-- [ ] **B6** Submit is once per frame, and a second one adds nothing (said to FAIL on gl)
+- [x] **B6** Submit is once per frame, and a second one adds nothing (said to FAIL on gl)
       The behaviour is still divergent and is now written down in two places that contradict each other, which is the cheapest half of this to fix because it is prose. engine/render/vulkan/renderer.cpp:1195-1197 explicitly legalises the thing the seam describes as h
-- [ ] **B7** A batch longer than one vertex buffer wraps and keeps its order (2050 sprites)
+- [x] **B7** A batch longer than one vertex buffer wraps and keeps its order (2050 sprites)
       No golden covers it and no golden could, because a golden records a case and there is no case. A 2050-sprite frame at 64x64 would also be a poor golden subject; the assertion this needs is ordering and completeness (which sprite is on top after the wrap), not 
+      **DONE — "a viewport confines a sprite bigger than its pane" - a sprite twice the pane in both axes, starting outside it. The case that already existed fills its pane exactly, so a backend that offset a pane and never clipped it passed; this one cannot. Byte-identical on all four rasterisers**
+      **DONE — hardened rather than declared undefined, which is the decision §4 asked for. A second `submit()` is a no-op on all five - one flag per Impl, set by submit and cleared by begin_frame - `renderer.h` says so and says why "undefined" was refused, and `vulkan/renderer.cpp`'s contradicting paragraph now says what its render pass's finalLayout actually buys**
+      **DONE — "a batch longer than one vertex buffer keeps its order", 2050 sprites with the last one somewhere else in another colour. What it asserts is order and completeness across a page boundary rather than a picture, which is what the ledger said it should**
 
 **TEST-GAP.md Vehicle B, cases B8-B14, plus the "if only seven land" closing line**
 
-- [ ] **B8** a texture change keeps call order, it does not group runs
+- [x] **B8** a texture change keeps call order, it does not group runs
       The case is cheap and is now MORE valuable than in August 2026, because two of the five backends gained an explicit run vector since: gl `DrawList::View::runs` (engine/render/gl/renderer.cpp:137) and vulkan `View::runs` (engine/render/vulkan/renderer.cpp:150),
-- [ ] **B11** a source rectangle outside the texture clamps to the edge texel
+- [x] **B11** a source rectangle outside the texture clamps to the edge texel
       Cheap to write, and the argument for it is now stronger than in August 2026 because the number of independent copies of the decision doubled. What it costs to leave: four backends each hard-code CLAMP in their own vocabulary with no statement holding them toge
 - [ ] **B12** every format the seam names is uploaded, or refused by name
       The lever is proven now — three hand-built TextureData helpers exist and one of them already carries a mip chain — so the remaining work is a loop over the six enumerators with valid block-compressed bytes and a `CHECK_THROWS`/`CHECK_NOTHROW` per backend expec
+      **DONE — landed as finding 6 - see §1. The case is "a texture change keeps call order, it does not group runs"**
+      **DONE — "a source rectangle outside the texture clamps to the edge texel", both ends: four texels out of a two-texel texture, and a negative source origin. A wrapping sampler answers RED where this asserts GREEN. Four backends hard-code CLAMP in four vocabularies and nothing held them together until this**
 
 **TEST-GAP.md Vehicle C (five proposed null_tests cases + the release_device_resources grep) and the three structural claims about what CI cannot catch**
 
-- [ ] **C3** Vehicle C: null_tests case mirroring B6 — submit is once per frame, and a second one adds nothing
+- [x] **C3** Vehicle C: null_tests case mirroring B6 — submit is once per frame, and a second one adds nothing
       The exact state TEST-GAP existed to stop, one backend wider. TEST-GAP found a 2-1 split and asked for a decision — harden or declare undefined. No decision was made: engine/render/renderer.h:425 "Called once per frame, between begin_frame and end_frame" is unc
-- [ ] **C5** Vehicle C: a released-handle/reload case
+- [x] **C5** Vehicle C: a released-handle/reload case
       release_device_resources() empties the texture table and leaves every TextureHandle live — engine/render/renderer.h:357-361 and engine/render/render_resources.h:95-110 both state that a handle resolved before a loss draws the right thing after the reload refil
-- [ ] **C6** TEST-GAP's grep: release_device_resources() is public seam API that nothing in tests/ calls on any backend — re-run at HEAD
+- [x] **C6** TEST-GAP's grep: release_device_resources() is public seam API that nothing in tests/ calls on any backend — re-run at HEAD
       One entry point of the seam, five implementations, one production caller, zero assertions — unchanged since 2026-08-19 while the backend count went from three to five. The lever TEST-GAP identified for this class also landed in the meantime and is unused for i
-- [ ] **D-A** Drift found while adjudicating S1: renderer_seam_tests.cpp still says the two device-side test files never hold two backends to one statement
+- [x] **D-A** Drift found while adjudicating S1: renderer_seam_tests.cpp still says the two device-side test files never hold two backends to one statement
       The file a reader consults for "what does the seam answer identically everywhere" tells them no other file compares backends, in a tree where the mechanism that does is 550 lines away and was added specifically to end that state. The narrow half of the claim i
+      **DONE — `tests/render/null_tests.cpp`, "submit is once per frame, and a second one adds nothing" - the one configuration that can assert it, because "adds nothing" is a statement about a recording. B6 above carries the decision it pins**
+      **DONE — `null_tests.cpp`, "a handle resolved before release_device_resources draws after the reload" - release, resolve, reload through the real load path, then draw with the handle taken before any of it**
+      **DONE — the same case. `release_device_resources()` had five implementations, one production caller and zero assertions anywhere in `tests/`; it has one now, and the precondition finding 2 wrote onto the seam is what it exercises**
+      **DONE — amended in the drift pass. `renderer_seam_tests.cpp` now says what the golden set is and what the two mechanisms answer differently - configurations against processes**
 
 **GAPS.md "Where the next pass should start", items 1-4, against the five-backend tree (HEAD ca5b2e3)**
 
@@ -415,56 +429,73 @@ reason rather than implemented — the ledger says which, and TEST-GAP's own
 
 **GAPS.md "Where the next pass should start", items 5-8, adjudicated against the five-backend tree at ca5b2e3**
 
-- [ ] **G5a** text_encoding.cpp includes <Windows.h> and sits in the unconditional source list, so it is compiled into the null configuration
+- [x] **G5a** text_encoding.cpp includes <Windows.h> and sits in the unconditional source list, so it is compiled into the null configuration
       Nothing to do, and doing it would be net-negative today. Removing <Windows.h> here means writing a UTF-8 to UTF-16 decoder by hand or moving the render API to char16_t, which android.md:492-497 prices as touching font.h, text_object.h and both file readers, fo
-- [ ] **G5b** widen() is the only producer of surrogate pairs while font.h walks per UTF-16 code unit with a bare static_cast<char32_t>; that crossing was never run
+- [x] **G5b** widen() is the only producer of surrogate pairs while font.h walks per UTF-16 code unit with a bare static_cast<char32_t>; that crossing was never run
       Two CHECKs in tests/render/font_tests.cpp, no device: `font.first_unrenderable(widen("\xF0\x9F\x8E\xAE")) == 0` and a measure_text on the same string equal to two stand-in advances. That is the whole of it — RenderTests already links the engine and already bui
 - [ ] **G6a** ViewportManager::fullscreen_viewport() sizes from resolution_manager_->resolution_vec(), not Renderer::back_buffer_size(); two caches kept in step onl
       Nothing structural is owed. The remaining hole is a test that a live Application keeps the two in step, which needs a real HWND and is therefore an AppTests entry that does not currently exist (see G6b). If you wanted to close it without a window, the cheapest
-- [ ] **G7a** draw_object.cpp set_draw_rotation_by_rectangle_rotated is a setter with an empty body and a TODO, silently discarding its argument
+- [x] **G7a** draw_object.cpp set_draw_rotation_by_rectangle_rotated is a setter with an empty body and a TODO, silently discarding its argument
       Two lines and a test. `set_draw_rotation(rect.angle())` plus, if the pivot is wanted, `set_origin` at the rect's centre; then a Visual-level assertion in the null configuration, where a quad's four corners are readable (the machinery null_tests.cpp:553-636 alr
-- [ ] **G7c** rotation_origin.h has zero users anywhere
+- [x] **G7c** rotation_origin.h has zero users anywhere
       Nothing, and this should come off any list of open items rather than being carried forward. It is a design-document refusal, not an unfixed defect: the one action GAPS implied (deletion) is the action PHILOSOPHY.md:671-680 forbids on exactly this evidence. If 
 - [ ] **G8a** Twelve .cpp under engine/render/ with neither an axis nor a test file - how many have a test now?
       Ten files, ~700 lines of engine code, still with no executable statement of what they do. The cheap subset is large: DrawObject, Label, Text, TextObject and Visual are accessor-and-composition classes that need no device and would test in RenderTests. The thre
+      **DONE — nothing to do, and doing it would be net-negative today, which is the ledger's own answer. `<Windows.h>` in `text_encoding.cpp` buys the UTF-8 to UTF-16 conversion; removing it means hand-writing a decoder or moving the render API to `char16_t`, which `docs/port/android.md` prices at `font.h`, `text_object.h` and both file readers. Ticked as decided rather than done**
+      **DONE — `tests/render/font_tests.cpp`, "a surrogate pair is two code units, and the walk sees two of them". The crossing between `widen()` and the pen walk had never run; it does now, and what it pins is the limitation - two stand-ins for one character - rather than a fix, because no atlas this engine loads holds either half**
+      **DONE — `set_draw_rotation_by_rectangle_rotated` had an empty body and a TODO, so it took a `RectangleRotated` and discarded it. It sets the rotation from `atan2` of the rectangle's x axis and leaves the origin alone, and `tests/render/draw_object_tests.cpp` - a new file, which also answers part of G8a - states the whole of `DrawObject`'s surface around it**
+      **DONE — nothing, and it comes off the list rather than forward. `rotation_origin.h` having no users is a design-document refusal (PHILOSOPHY.md), not an unfixed defect: the action GAPS implied is the action that document forbids on exactly this evidence**
 
 **DEFECT A — "GL anchors every pane to a cached back-buffer height; D3D11 needs no height at all" (docs/review/backend-equivalence/README.md:76-107, the**
 
-- [ ] **A-b** (b) Is window.cpp unchanged? — yes in every respect the audit cited; the shell still produces the desync twice
+- [x] **A-b** (b) Is window.cpp unchanged? — yes in every respect the audit cited; the shell still produces the desync twice
       The shell half of defect A is untouched and still produces both desyncs. What it costs has changed completely, because no backend now mis-places a pane from it: during a drag, d3d11/d3d12 stretch at Present (`DXGI_SCALING_STRETCH`, `d3d11/device_resources.cpp:
-- [ ] **A-f** NEW — the sentence defect A's fix amended, engine/render/sprite_geometry.h, is stale at five backends: it counts four and enumerates two of three answ
+- [x] **A-f** NEW — the sentence defect A's fix amended, engine/render/sprite_geometry.h, is stale at five backends: it counts four and enumerates two of three answ
       A reader taking this file at its word gets a count that is off by one and a two-API framing of a three-answer term, in the one paragraph in the tree written specifically to record defect A's resolution. `docs/review/backend-equivalence/DRIFT.md:37` filed exact
-- [ ] **A-g** NEW — engine/render/renderer.h's back_buffer_size paragraph, the seam text that legislates defect A's term, enumerates three of five backends
+- [x] **A-g** NEW — engine/render/renderer.h's back_buffer_size paragraph, the seam text that legislates defect A's term, enumerates three of five backends
       Low. Nothing behaves wrongly and no reader is told anything false — they are told about three of five backends in the paragraph that specifies the term this whole defect turns on, and have to find the other two at their own sites. It is the same shape as the t
-- [ ] **A-h** NEW — the shell's restore-from-minimise hole now yields a different wrong picture per backend, because Application::on_window_moved feeds back_buffer_
+- [x] **A-h** NEW — the shell's restore-from-minimise hole now yields a different wrong picture per backend, because Application::on_window_moved feeds back_buffer_
       Low and strictly milder than what defect A cost. Before the fix GL displaced the whole frame downward under a black band in this state; now it top-anchors and letterboxes, which the fix's commit message anticipated and scoped out as "a layout question and not 
+      **DONE — nothing owed. The shell half of defect A is untouched and still produces both desyncs, and no backend now mis-places a pane from it - which is what the fix bought. Ticked as adjudicated**
+      **DONE — amended in the drift pass: `sprite_geometry.h` counts five backends and enumerates all three answers to the pane term**
+      **DONE — amended in the drift pass, with the same paragraph**
+      **DONE — left as the shell layout question the fix's commit message scoped it as, and it is milder than what defect A cost: a restore-from-minimise now letterboxes where it used to displace the frame under a black band. Ticked as adjudicated rather than fixed - it needs `Application::on_window_moved`, not a backend**
 
 **Defect B (docs/review/backend-equivalence/README.md §B) — begin_frame and the frame begun but never submitted, re-adjudicated at HEAD ca5b2e3 against **
 
-- [ ] **B-residual-drift** THE ONE THING STILL OPEN: the seam paragraph that specifies defect B's rule counts four of the five backends, and so does the test comment that pins i
+- [x] **B-residual-drift** THE ONE THING STILL OPEN: the seam paragraph that specifies defect B's rule counts four of the five backends, and so does the test comment that pins i
       Two sentences and one test comment. Confirming costs the three greps above; the fix is a two-word edit in engine/render/renderer.h:370 plus a clause naming Vulkan's pool-and-layout reset, and a one-word edit at tests/render/null_tests.cpp:444. Cheap now, and c
+      **DONE — both sentences and the test comment amended in the drift pass, and `renderer.h` now names four kinds of thing to drop rather than three, Vulkan's pool-and-layout reset being the fourth**
 
 **DEFECT C — add_texture_asset before create_device (backend-equivalence audit, 2026-08-19, 57b65b3) and its TEST-GAP vehicle A3**
 
-- [ ] **C-d-A1245** The A-vehicle carries one of its five proposed cases: A1, A2, A4 and A5 did not land anywhere
+- [x] **C-d-A1245** The A-vehicle carries one of its five proposed cases: A1, A2, A4 and A5 did not land anywhere
       The vehicle is built, unconditional, and cheap to extend — each of A1/A4/A5 is three to eight lines against an object that needs no device, and the file's own :22-25 states the admission rule ("anything a Renderer answers before create_device, and anything tha
+      **DONE — all four landed - A1, A2, A4 and A5 are in this file above**
 
 **survey 2026-08-26 §6 — the two render decisions (reference machine; markers on the seam), adjudicated at HEAD ca5b2e3**
 
-- [ ] **R7** SITE 5 of 5 — engine/render/d3d12/device_resources.cpp:20-30: the site the survey counted but never named, never amended, and now in direct tension wi
+- [x] **R7** SITE 5 of 5 — engine/render/d3d12/device_resources.cpp:20-30: the site the survey counted but never named, never amended, and now in direct tension wi
       A self-contradiction inside `engine/render/`, and it is exactly the class this half of the sweep is for. Before `c8176ef`, "the low tier" was undefined and could be read as feature-level-10-era hardware, on which the sentence is true. After `c8176ef` the term 
-- [ ] **R9** samples/linesweeper/README.md contradicts itself about the reference machine, 18 lines apart, at HEAD
+- [x] **R9** samples/linesweeper/README.md contradicts itself about the reference machine, 18 lines apart, at HEAD
       One sentence, and it is the sentence a reader hits first — it sits in the measured-cost section that reports the 35.4 ns figure, so the stale half is the half doing rhetorical work. The conclusion both sentences reach ("no number here is a floor") is unchanged
-- [ ] **M1** WHETHER MARKERS STAY ON THE SEAM — the decision was not made, and neither branch of it was taken
+- [x] **M1** WHETHER MARKERS STAY ON THE SEAM — the decision was not made, and neither branch of it was taken
       The seam is the only file a caller may read — `cmake/check_engine_includes.cmake` forbids any file outside `engine/render/<backend>/` from including anything in it — and it is the one file that does not say what a marker does. Every honest answer in this tree 
-- [ ] **M3** RECOMMENDATION — keep the three methods; amend renderer.h:490-502 to declare markers advisory. T6, PHILOSOPHY.md:106-119.
+- [x] **M3** RECOMMENDATION — keep the three methods; amend renderer.h:490-502 to declare markers advisory. T6, PHILOSOPHY.md:106-119.
       One sentence in one file, against a five-file deletion that would also have to rewrite `engine/app/application.cpp:293,296` — the engine's own frame annotation, which is a real caller, not a speculative one. Suggested content, matching what the four folders al
-- [ ] **M4** The amendment has to answer TEST-GAP A2 in the same commit — neither half of that 2026-08-19 either/or was ever done
+- [x] **M4** The amendment has to answer TEST-GAP A2 in the same commit — neither half of that 2026-08-19 either/or was ever done
       The prior sweep REFUTED this as a divergence and I concur: d3d11's `begin_frame` faults in the same state through a co-lifetime pointer (`d3d11/renderer.cpp:780` returns a null context, `:789` dereferences it), so markers add no hazard the seam does not alread
-- [ ] **M5** Zero marker coverage in all five configurations, and the vehicle for it exists and holds exactly one case
+- [x] **M5** Zero marker coverage in all five configurations, and the vehicle for it exists and holds exactly one case
       The seam's one advisory-capability claim would be unexecutable the moment it is written, unless A2 goes in with it. Everything else about markers has drifted precisely because nothing pins it (M6). The fix is small: the file compiles in all five configurations
-- [ ] **M6** gl/renderer.cpp:875 still says 'the other backend' — written at two backends, false at five
+- [x] **M6** gl/renderer.cpp:875 still says 'the other backend' — written at two backends, false at five
       Nothing executable. A reader of `engine/render/gl/` concludes markers are a two-backend affair in which GL is the outlier; at HEAD GL is in the majority of four and d3d11 is the outlier. Cost of the fix is one word. Listed here because it is the same class of 
+      **DONE — the fifth site is named and amended. "Not a shipping target on the low tier" was true while the low tier was undefined and is not now: the named configuration is feature level 12_2. What the floor excludes is hardware older than it, which is a claim about the successor machine**
+      **DONE — one sentence in `samples/linesweeper/README.md`. The reference machine is named; the p99 is what is still missing, and *Still open* eighteen lines down already said so**
+      **DONE — decided: markers stay. `renderer.h` declares them advisory - a backend may forward them and may do nothing, and a caller may not tell which - which is the branch the sweep recommended and the one T6's own carve-out points at**
+      **DONE — the amendment is on `renderer.h` beside the three declarations, and it says both halves: advisory, and legal before `create_device` and outside a frame**
+      **DONE — answered in the same commit, and by the three lines rather than by a precondition: d3d11 guards on the device, so all five discard a marker before there is one**
+      **DONE — `renderer_seam_tests.cpp` holds the marker case now, in all five configurations. There is nothing to observe and that is the assertion - the calls are reachable, in any order, before a device and outside a frame**
+      **DONE — amended in the drift pass: one backend forwards, four discard, and gl is in the majority of four**
 
 ---
 
@@ -474,7 +505,7 @@ These are not work items. Each is a question that has to be answered before the
 code or the document that depends on it can be written, and each has been open
 long enough that the sweep found it twice.
 
-- [ ] **Do markers stay on the seam?** `application.cpp` calls `begin_marker` on
+- [x] **Do markers stay on the seam?** `application.cpp` calls `begin_marker` on
       the frame path every frame; one backend forwards it and four discard it, and
       all four argue the discard in place. `set_marker` has zero callers
       tree-wide. No configuration covers any of it. The 2026-08-26 survey listed
@@ -490,7 +521,7 @@ long enough that the sweep found it twice.
       contradicts itself about the reference machine, 18 lines apart. This is a
       measurement rather than a sweep and it is the one item here that needs
       hardware. See [LEDGER.md](LEDGER.md) R1–R11.
-- [ ] **B13 — does a minified draw sample level 0 or the chain?** TEST-GAP called
+- [x] **B13 — does a minified draw sample level 0 or the chain?** TEST-GAP called
       it blocked on a decision in 2026-08-19 and proposed declaring level 0. The
       ledger records what the five backends answer now. Decide it, then the test.
 - [x] **Does `release_device_resources()` have a stated precondition, or does
@@ -498,6 +529,8 @@ long enough that the sweep found it twice.
       precondition on public seam API, so the fix is a sentence *or* code and the
       choice is the decision.
       **DONE — a stated precondition. It is the device-loss half of a pair, and `render_resources.h` says so, says what a call outside that pair costs on D3D12, and says why the free list is the wrong trade**
+      **DONE — they stay, and `renderer.h` declares them advisory: a backend may forward a marker and may do nothing, and a caller may not tell which from anything it can observe. TEST-GAP's A2 is answered in the same commit and by code rather than by a precondition - d3d11 guards its three forwards on the device, so a marker before `create_device` does nothing on all five - and `renderer_seam_tests.cpp` holds every configuration to it. `set_marker` keeps its zero callers: it is the odd one of the three to delete alone, and the pair above it has a real caller in `application.cpp`**
+      **DONE — already decided, and decided the way TEST-GAP proposed. `renderer.h` states it beside `set_filter` - level zero always, under either filter - each rasteriser says it in its own vocabulary (`MaxLOD`, `GL_TEXTURE_MAX_LEVEL`, `maxLod`), and `pixel_tests.cpp`'s "a minified draw samples level zero, not the chain" pins it under both filters with a two-level texture built for the question. Ticked as decided-and-tested rather than open**
 
 ---
 
@@ -508,17 +541,41 @@ close it.
 
 - [x] **Read one CI log** for `x64-release` and settle finding 1. Cheapest item in
       the folder.
-- [ ] **Run the red team.** It never executed. Fourteen axes were selected for it:
-      `viewport-origin`, `negative-viewport`, `owned-back-buffer`,
-      `barriers-and-layouts`, `frame-ordering`, `readback`, `resize`, `clear`,
-      `blend-state`, `sampler-state`, `error-parity`, `pixel-logic-leak`,
-      `upload-sync`, `frames-in-flight`. This is a hole in the same place the prior
-      audit put its best work.
-- [ ] **Verify the 66 unchecked drift findings**, concentrated in `gl/` and the test
+      **DONE — read. Finding 1 above carries what it said and what was amended
+      because of it.**
+- [x] **Run the red team.** **DONE — all fourteen axes, 61 candidates raised,
+      one survived two lenses, and it was a defect in this file rather than in
+      the engine.** Each agent was handed one specific assumption of the first
+      pass to attack and told to assume a divergence was present, because the
+      hunt and the verification passes are both conservative: the hunt tends to
+      conclude the backends agree, and verification can only subtract from what
+      the hunt raised. So this is the strongest statement the sweep can make —
+      **the invariant was attacked on the fourteen axes most likely to break it
+      and it held.**
+
+      One near-miss is worth keeping. The `viewport-origin` agent found that the
+      argument the sweep used to *kill* its own zero-extent candidate was wrong:
+      `Application::on_window_moved` round-trips `back_buffer_size()` into
+      `window_size_changed()`, which is a fixpoint for the two D3D backends
+      because theirs is a cache and is **not** one for GL, whose
+      `back_buffer_size()` is a live `GetClientRect`; and `window.cpp`'s
+      `WM_MOVE` is gated on `!in_sizemove_` with no `minimized_` guard where the
+      `WM_SIZE` handler below it has one. Both verifiers refuted the candidate on
+      reachability, so it is not a finding — but the reasoning that dismissed it
+      the first time was wrong, and it is recorded here rather than lost. It was
+      found by reading `engine/app/window.cpp` end to end, which is the file the
+      2026-08-19 audit failed to open and the lesson its `GAPS.md` drew.
+- [x] **Verify the 66 unchecked drift findings**, concentrated in `gl/` and the test
       files.
 - [x] **Re-run `RenderPixelTests` under the Khronos validation layer with
       `validate_sync` on**, per [docs/review/vulkan/](../vulkan/) §2. It settles
       finding 4 and the Vulkan half of finding 7.
+      **DONE — run, at the changed backend, with `validate_sync` and best
+      practices on: 34 cases, 336 assertions, no errors, no SYNC-HAZARD, only
+      `small-dedicated-allocation` performance warnings — and the fifty goldens
+      byte-identical afterwards. It settles finding 4. The Vulkan half of
+      finding 7 is prose rather than a layer question and is answered on
+      `resource_factory.h`.**
 - [ ] **The rasteriser fill rule against fractional edges**, still open from the
       prior audit and now with a third specification. `build_scaled_quad` truncates
       nothing so every glyph quad has fractional edges; D3D mandates top-left
@@ -526,10 +583,11 @@ close it.
       specifies it again. The golden set makes this quieter but does not close it,
       because `ALLOWED_CHANNEL_DRIFT` is 8 per channel and a one-row tie-break
       disagreement hides under that.
-- [ ] **Blend-result clamping, and GL never learning its framebuffer format.** GL
+- [x] **Blend-result clamping, and GL never learning its framebuffer format.** GL
       asks `ChoosePixelFormat` and never calls `DescribePixelFormat`. `Colour`
       clamps per channel independently, so a legal tint of `(1,1,1,0.5)` gives
       `src.rgb > src.a`. Also still open from the prior audit.
-      **DONE — read. Finding 1 above carries what it said and what was amended because of it**
-      **DONE — run, at the changed backend, with `validate_sync` and best practices on: 34 cases, 336 assertions, no errors, no SYNC-HAZARD, only `small-dedicated-allocation` performance warnings — and the fifty goldens byte-identical afterwards. It settles finding 4. The Vulkan half of finding 7 is prose rather than a layer question and is answered on `resource_factory.h`**
+
+      **DONE — verified as part of amending them, which is the only way that was ever going to happen: each was read against the code beneath it before a word was changed, and four came back needing a different amendment from the one the sweep predicted. §2 above names those four**
+      **DONE — both halves, and one of them was already fixed. GL DOES learn its framebuffer format now - `gl/renderer.cpp` calls `DescribePixelFormat` after `ChoosePixelFormat` and refuses by name unless all four channels are eight bits, which is the demand D3D makes by naming a format. The clamping half is now a pixel case: "a tint with more colour than alpha saturates, it is not clamped to it" draws `(1,1,1,0.5)` over black and over an opaque ground, and all four rasterisers write it byte for byte - so no backend clamps rgb down to alpha on the way in, and the 8-bit UNORM write is where the clamp happens**
 
