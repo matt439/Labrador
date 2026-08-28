@@ -1,17 +1,21 @@
 find_package(doctest CONFIG REQUIRED)
 
 add_executable(RenderTests
+    animation_object_tests.cpp
     camera_tests.cpp
     camera_tools_tests.cpp
     colour_tests.cpp
     dds_file_tests.cpp
     draw_object_tests.cpp
     font_tests.cpp
+    label_tests.cpp
     render_resources_tests.cpp
     renderer_seam_tests.cpp
     resolution_manager_tests.cpp
     sprite_font_file_tests.cpp
     sprite_geometry_tests.cpp
+    sprite_sheet_object_tests.cpp
+    text_drop_shadow_tests.cpp
     text_encoding_tests.cpp
     throw_if_failed_tests.cpp
     viewport_manager_tests.cpp

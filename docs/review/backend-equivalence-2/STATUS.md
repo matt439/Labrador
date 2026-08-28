@@ -42,10 +42,10 @@
 |---|---|---|
 | 1. The eight findings | 8 | 8 |
 | 2. Documentation drift | 110 | 110 |
-| 3. Tests and checks that never landed | 34 | 32 |
+| 3. Tests and checks that never landed | 34 | 33 |
 | 4. Decisions to make | 4 | 3 |
 | 5. Finishing the sweep | 6 | 6 |
-| **Total** | **162** | **159** |
+| **Total** | **162** | **160** |
 
 ---
 
@@ -448,10 +448,11 @@ reason rather than implemented — the ledger says which, and TEST-GAP's own
       Two lines and a test. `set_draw_rotation(rect.angle())` plus, if the pivot is wanted, `set_origin` at the rect's centre; then a Visual-level assertion in the null configuration, where a quad's four corners are readable (the machinery null_tests.cpp:553-636 alr
 - [x] **G7c** rotation_origin.h has zero users anywhere
       Nothing, and this should come off any list of open items rather than being carried forward. It is a design-document refusal, not an unfixed defect: the one action GAPS implied (deletion) is the action PHILOSOPHY.md:671-680 forbids on exactly this evidence. If 
-- [ ] **G8a** Twelve .cpp under engine/render/ with neither an axis nor a test file - how many have a test now?
+- [x] **G8a** Twelve .cpp under engine/render/ with neither an axis nor a test file - how many have a test now?
       Ten files, ~700 lines of engine code, still with no executable statement of what they do. The cheap subset is large: DrawObject, Label, Text, TextObject and Visual are accessor-and-composition classes that need no device and would test in RenderTests. The thre
       **DONE — nothing to do, and doing it would be net-negative today, which is the ledger's own answer. `<Windows.h>` in `text_encoding.cpp` buys the UTF-8 to UTF-16 conversion; removing it means hand-writing a decoder or moving the render API to `char16_t`, which `docs/port/android.md` prices at `font.h`, `text_object.h` and both file readers. Ticked as decided rather than done**
       **DONE — `tests/render/font_tests.cpp`, "a surrogate pair is two code units, and the walk sees two of them". The crossing between `widen()` and the pen walk had never run; it does now, and what it pins is the limitation - two stand-ins for one character - rather than a fix, because no atlas this engine loads holds either half**
+      **DONE (G8a itself) — all twelve are now named by a test, and the last four gained a file each: `animation_object_tests.cpp` (12 cases), `text_drop_shadow_tests.cpp` (5), `label_tests.cpp` (7) and `sprite_sheet_object_tests.cpp` (6). All four are in `RenderTests`, so they build and run in all five configurations and need no device. Three findings came out of writing them rather than out of reading. (1) `AnimationObject`'s advance is an `if` and not a `while`, so a long step moves one frame however much time arrived - a dropped frame handed whole to `update()` gives a slow animation, not a skipped one. (2) `TextDropShadow`'s shadow scale and offset are independent of the text's, so `set_scale(4)` leaves the shadow at 1x and two texels away, and `text_bounds()` excludes the shadow entirely - which is the relationship GAPS said no contract described, and it is now described. (3) `label.h` says of `bounds()` that "the box this hands back is the unscaled one whatever the scale is"; it is not - `text_bounds_at` multiplies by the scale, 20x20 becomes 40x40, and what is actually true is that no *remeasurement* happens. That sentence wants amending and is listed in section 2 as new drift rather than fixed here, because a review does not quietly rewrite what it reviews. `Text` and `TextObject` are covered through `draw_object_tests.cpp` and `sprite_geometry_tests.cpp` rather than files of their own, which is a judgement about where their surface actually lives rather than an omission**
       **DONE — `set_draw_rotation_by_rectangle_rotated` had an empty body and a TODO, so it took a `RectangleRotated` and discarded it. It sets the rotation from `atan2` of the rectangle's x axis and leaves the origin alone, and `tests/render/draw_object_tests.cpp` - a new file, which also answers part of G8a - states the whole of `DrawObject`'s surface around it**
       **DONE — nothing, and it comes off the list rather than forward. `rotation_origin.h` having no users is a design-document refusal (PHILOSOPHY.md), not an unfixed defect: the action GAPS implied is the action that document forbids on exactly this evidence**
       **STILL OPEN — nothing structural is owed and the remaining hole needs a real `HWND`: a live `Application` keeping the two caches in step is an AppTests entry, and AppTests has no window today. Left where the ledger left it**
