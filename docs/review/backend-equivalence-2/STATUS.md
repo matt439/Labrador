@@ -15,6 +15,13 @@
 ## How to use it
 
 - `- [ ]` open, `- [x]` done. Add the commit SHA after the item when you tick it.
+- **The commits, since most of this was ticked in four of them rather than one
+  each.** `13f5507` the eight findings bar 6, and the CI premise nine files
+  stated wrongly. `3022ca0` all 110 drift items, plus finding 6's two pixel
+  cases. `e7d0991` the red team, and the one defect it found - in this file.
+  `ab01309` the decisions, the tests that never landed, and the two
+  reference-machine contradictions. Ticks made after those name what changed
+  rather than repeating a SHA.
 - **An item that turns out to be wrong is ticked with a reason, not deleted.**
   The sweep itself found one claim the prior audit got wrong and one it got half
   right; the same will be true here, and a struck item with an argument beside it
