@@ -31,19 +31,32 @@ jobs:
     # compile long before it rots by drawing the wrong thing.
     #
     # THE GL PRESET SKIPS RenderPixelTests, AND THAT IS NOT A CONVENIENCE. A
-    # runner has no GPU. Direct3D falls back to WARP, an in-box, fully
-    # conformant software rasteriser, and that is a D3D-only luxury: Windows'
-    # fallback for OpenGL is the GDI generic implementation, which is version
-    # 1.1 and has no WGL_ARB_create_context, so create_device throws saying so.
-    # The pixel contract is checked on a machine with a driver; everything else
-    # about that backend is checked here.
+    # runner has no GPU. Direct3D makes a device there anyway and OpenGL does
+    # not: Windows' fallback for OpenGL is the GDI generic implementation,
+    # which is version 1.1 and has no WGL_ARB_create_context, so create_device
+    # throws saying so. The pixel contract is checked on a machine with a
+    # driver; everything else about that backend is checked here.
+    #
+    # AND IT IS NOT THE WARP FALLBACK THAT MAKES THE DIRECT3D JOBS WORK, WHICH
+    # THIS FILE SAID UNTIL ONE JOB LOG WAS READ. x64-release runs
+    # RenderPixelTests here and passes - run 33144174541, 14 of 14, that entry
+    # in 0.36s - and a release build has no WARP fallback at all:
+    # engine/render/d3d11/device_resources.cpp puts it in the #else of
+    # #if defined(NDEBUG) and throws "No Direct3D hardware device found"
+    # instead. So this runner offers a DXGI adapter that GetHardwareAdapter
+    # accepts - one without DXGI_ADAPTER_FLAG_SOFTWARE - and D3D11CreateDevice
+    # succeeds on it. WHICH RASTERISER THAT IS, A LOG CANNOT SAY: the two lines
+    # that would name it are OutputDebugString calls compiled only into _DEBUG
+    # builds, and nothing in ctest's output carries an adapter description. The
+    # checkable shape is what the matrix rests on and it is unchanged: Direct3D
+    # gets a device on this machine, GL and Vulkan do not.
     #
     # THE D3D12 PRESET SKIPS NOTHING, AND THAT IS THE REASON IT IS THE FOURTH
-    # BACKEND. Direct3D 12 has WARP as well, so this runner rasterises the
-    # whole pixel contract twice, against one set of images, on one software
-    # rasteriser - which is the cross-backend comparison the golden set was
-    # added for and which the GL preset cannot supply here. If the two ever
-    # disagree, this job is where it shows.
+    # BACKEND. Whatever adapter this runner offers, both Direct3D backends take
+    # it, so this runner rasterises the whole pixel contract twice, against one
+    # set of images, on one rasteriser - which is the cross-backend comparison
+    # the golden set was added for and which the GL preset cannot supply here.
+    # If the two ever disagree, this job is where it shows.
     #
     # THE VULKAN PRESET SKIPS RenderPixelTests FOR THE SAME REASON THE GL ONE
     # DOES, AND docs/port/android.md SAID SO BEFORE IT WAS WRITTEN: "it does not

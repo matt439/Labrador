@@ -54,7 +54,11 @@ add_test(NAME RenderTests COMMAND RenderTests)
 # build falls back to WARP and needs no GPU, but a release build has no such
 # fallback (device_resources.cpp), and neither the OpenGL backend nor the
 # Vulkan one has any fallback at all - Vulkan's software implementations are
-# installed rather than shipped - so all three need an adapter. Keeping it
+# installed rather than shipped - so all three need an adapter. THE RELEASE
+# HALF OF THAT IS ALSO A MEASUREMENT: CI runs this executable under x64-release
+# on a machine with no GPU and it passes, which is how a build machine is known
+# to offer an adapter rather than to fall back to one
+# (.github/workflows/ci.yml). Keeping it
 # apart means that failure names itself
 # instead of taking the arithmetic down with it.
 #

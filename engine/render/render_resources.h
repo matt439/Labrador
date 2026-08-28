@@ -107,6 +107,23 @@ namespace labrador
 		// is the shell - which learns from DeviceNotify that a device it has
 		// never heard of has gone away. Making the shell say which *kinds* of
 		// resource a loss takes would be the seam telling it what a texture is.
+		//
+		// PRECONDITION: IT IS THE FIRST HALF OF A DEVICE LOSS, NOT A WAY TO
+		// DROP TEXTURES. What may follow it is a device being remade and the
+		// names being reloaded into it - which is what DeviceNotify guarantees
+		// and what Application::on_device_lost/on_device_restored do. Calling
+		// it on a live device and reloading without one costs a descriptor-heap
+		// slot per name on the D3D12 backend, out of a fixed 256: the slot
+		// allocator there is a bump counter with no free list, reset by device
+		// creation and by nothing else, because a slot the GPU may still be
+		// reading cannot be handed out again and a device loss is the one
+		// moment nothing is reading. THE SENTENCE IS THE FIX AND THE FREE LIST
+		// IS NOT (T1, T3): a free list would buy back 256 slots for a call
+		// nothing in this repository makes, and would have to be told when the
+		// GPU had finished with each one - which is the frames-in-flight
+		// bookkeeping d3d12/backend.h keeps below the seam, arriving at the
+		// seam. If a client ever needs to drop content on a live device, that
+		// is a different entry point and it should be asked for by name.
 		void release_device_resources();
 
 		// CONSTRAINT: A RenderResources OUTLIVES THE Renderer IT WAS FILLED

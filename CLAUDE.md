@@ -75,10 +75,13 @@ a rasteriser has to reproduce. It runs against one backend at a time — but it 
 longer follows that they are never compared: every frame it reads back is also
 checked byte for byte against a PNG of it in
 [tests/render/golden/](tests/render/golden/), which is one set of images that
-all four rasterising backends are held to. CI checks two of them, because
-Direct3D falls back to WARP on a GPU-less runner where OpenGL falls back to GDI
+all four rasterising backends are held to. CI checks two of them, because a
+GPU-less runner still gives Direct3D an adapter where OpenGL falls back to GDI
 1.1 and Vulkan has no in-box fallback at all — its software implementations are
-installed rather than shipped. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
+installed rather than shipped. It is an adapter rather than the WARP fallback,
+which is a correction one job log made: `x64-release` passes `RenderPixelTests`
+with that fallback compiled out, and `.github/workflows/ci.yml` carries the
+evidence and the part a log cannot say. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
 and **review every image it changes** — a regeneration that is not looked at
 turns the contract into a recording of whatever the code does now.
 Two terms sit outside the images and both say so where they are decided:
@@ -87,8 +90,8 @@ holds the three frames that are not 64x64 — one whose size the seam makes
 backend-specific, two that resize to 32x32 mid-frame — and
 `ALLOWED_CHANNEL_DRIFT` in
 [golden_image.cpp](tests/render/golden_image.cpp) is the per-channel allowance
-that lets one set serve both a hardware adapter and the WARP one CI has, with
-the measurement that set it. What runs in all five configurations is
+that lets one set serve both this machine's hardware adapter and whatever CI's
+is, with the measurement that set it. What runs in all five configurations is
 [tests/render/renderer_seam_tests.cpp](tests/render/renderer_seam_tests.cpp) —
 everything the seam answers without a device. The
 samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and
@@ -146,17 +149,21 @@ file of that format to read it against.
   compiler's own error, but [cmake/check_engine_includes.cmake](cmake/check_engine_includes.cmake)
   greps for it on every build anyway, because the compiler only enforces it
   when this repository is built standalone.
-- **A file outside `engine/render/<backend>/` or `engine/audio/<backend>/`
-  including *any* header in that folder.** Second pass in the same script. It
+- **A file outside a backend folder — `engine/render/<backend>/`,
+  `engine/audio/<backend>/`, `engine/input/<backend>/` — including *any* header
+  in that folder.** Second pass in the same script. It
   guards the folder rather than one filename in it, and it reads headers as
   well as `.cpp` files, because `device_resources.h` beside `backend.h` is how
   the backend escaped last time — so naming `engine/render/gl/gl_functions.h`
   from `engine/app/` fails the build exactly as naming `backend.h` does. It
-  captures the module as well as the backend, so `engine/audio/null/` is
-  covered by the same six lines and a third module with backend folders would
-  be too. Audio is the module where this had already gone wrong unwatched:
-  the check only ever looked at `render/`, and `<Audio.h>` was in four public
-  engine headers across three modules.
+  captures the module as well as the backend, so `engine/audio/null/` and
+  `engine/input/xinput/` are covered by the same six lines and a fourth module
+  with backend folders would be too. **The module was a hard-coded
+  `(render|audio)` until 2026-08-28**, which this line described as a capture
+  for nine days while `engine/input/xinput/` — the third platform seam
+  ARCHITECTURE names — sat outside the wall. Audio is the module where this had
+  already gone wrong unwatched: the check only ever looked at `render/`, and
+  `<Audio.h>` was in four public engine headers across three modules.
 - **Adding a source file without listing it.** Sources are enumerated
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists

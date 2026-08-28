@@ -593,8 +593,9 @@ this exact term, the fifth backend is the one that asks whether the contract at
 `renderer.h:330-338` has the right shape.
 
 **It does not buy a CI rasteriser for free.** `d3d12/` earned its place partly
-on WARP: a GPU-less runner can rasterise Direct3D, and CI checks the pixel
-contract twice because of it
+on that: a GPU-less runner can rasterise Direct3D — through an adapter it
+offers rather than through the WARP fallback, which `.github/workflows/ci.yml`
+establishes and dates — and CI checks the pixel contract twice because of it
 ([`d3d12/backend.h`](../../engine/render/d3d12/backend.h) states the claim). Vulkan
 has no in-box equivalent on a Windows runner — it is lavapipe or SwiftShader,
 installed. That is a third CI install burden or a preset untested the way the GL

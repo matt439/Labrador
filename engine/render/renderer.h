@@ -34,8 +34,10 @@
 //     backend that was not built is a missing symbol.
 //   - If a real client ever needs runtime selection, promoting a concrete
 //     class to an interface is mechanical and no call site changes. That
-//     option is held, not spent - the same escalation ARCHITECTURE.md:122-126
-//     describes for promoting a folder to a library.
+//     option is held, not spent - the same escalation ARCHITECTURE.md
+//     describes under Modules, "Promoting a concrete class to an interface",
+//     for promoting a folder to a library. Cited by section rather than by
+//     line, because the line moved once already.
 //
 // HOW ONE HEADER SERVES FIVE BACKENDS. Renderer holds a pimpl and DrawList
 // holds a raw pointer to per-view state the backend owns; each backend
@@ -282,7 +284,9 @@ namespace labrador
 		// PROGRESS IS RESTARTED RATHER THAN REFUSED.
 		//
 		// This used to say nothing, and three backends answered it three ways
-		// - which was every backend there was when the rule was written:
+		// - which was every backend with a buffer to rebuild when the rule was
+		// written, the null one having landed five days earlier and having
+		// nothing to answer with:
 		// OpenGL carried on, because its default framebuffer follows the window
 		// and there is nothing to rebuild; D3D11 threw DXGI_ERROR_INVALID_CALL
 		// out of ResizeBuffers, because its views' deferred contexts still held
@@ -297,7 +301,9 @@ namespace labrador
 		// straight to the window procedure, on the calling thread, with no
 		// queue and no pump in between. engine/app/window.cpp's resize_client
 		// is a SetWindowPos, which does exactly that; Application::
-		// set_resolution and set_fullscreen call it; and Application::render
+		// set_resolution is its one caller, and set_fullscreen reaches the same
+		// SetWindowPos through enter_fullscreen/leave_fullscreen rather than
+		// through it; and Application::render
 		// runs the state's whole draw walk between begin_frame and submit. So a
 		// client that changes resolution from inside its own drawing lands here
 		// with a frame open, in one call stack, and no amount of care at the
@@ -355,9 +361,10 @@ namespace labrador
 		// a table, so the table cannot exist when the device is made.
 		//
 		// AND THE TEARDOWN ORDER IS FIXED THE OTHER WAY AGAIN. The table
-		// outlives the renderer, because on one backend it holds resources the
-		// GPU may still be reading and the only wait for them is inside this
-		// class's destructor. render_resources.h states it beside
+		// outlives the renderer, because on TWO backends it holds resources the
+		// GPU may still be reading - an ID3D12Resource on one and a VkImage on
+		// the other - and the only wait for them is inside this class's
+		// destructor. render_resources.h states it beside
 		// release_device_resources, where the resources in question are.
 		void set_resources(const RenderResources* resources);
 
@@ -366,14 +373,19 @@ namespace labrador
 		//
 		// A FRAME BEGUN AND NEVER SUBMITTED CONTRIBUTES NOTHING TO THE NEXT
 		// ONE, which is a statement about what "resets" means and is worth
-		// making because the five backends have three different things to
-		// reset. Two of them hold a frame in a vector, where dropping it is
-		// clearing the vector; the D3D11 one holds it in a deferred context,
-		// which keeps what was recorded into it until something takes the
-		// command list away, so it has to drain as well as forget; and the
-		// D3D12 one holds an open command list, which cannot be reset and whose
-		// allocator cannot be reset under it, so it has to be closed before its
-		// memory can be reused and what it holds goes nowhere. A client
+		// making because the five backends have four different things to
+		// reset. THREE of them hold a frame in vectors - gl, null and vulkan -
+		// where dropping it is clearing the vector; the D3D11 one holds it in a
+		// deferred context, which keeps what was recorded into it until
+		// something takes the command list away, so it has to drain as well as
+		// forget; the D3D12 one holds an open command list, which cannot be
+		// reset and whose allocator cannot be reset under it, so it has to be
+		// closed before its memory can be reused and what it holds goes nowhere;
+		// and the Vulkan one is the fourth kind, because clearing its vectors is
+		// not the whole of it - the command pool and the descriptor pools are
+		// reset too, and the tracked image layout goes back to what the last
+		// submit left, since the barriers that moved it were in what was thrown
+		// away. A client
 		// reaches this by catching an exception out of its own draw walk and
 		// carrying on - and so does a device event, which surfaces as a throw
 		// from a worker mid-frame.
@@ -388,12 +400,12 @@ namespace labrador
 		//
 		// AND std::logic_error FOR A COUNT LOWERED PAST A VIEW SOMETHING HAS
 		// ALREADY DRAWN INTO, which is a different mistake and gets a different
-		// type. The recording is stranded rather than absent: on two backends it
-		// is a vector nothing will replay, on the D3D11 one a deferred context
-		// holding commands submit() will not reach, and on the D3D12 one a
-		// closed command list submit() will not put in its array. All five throw
-		// it, which is what makes it a term of the seam rather than one
-		// backend's caution.
+		// type. The recording is stranded rather than absent: on three backends
+		// - gl, null and vulkan - it is a vector nothing will replay, on the
+		// D3D11 one a deferred context holding commands submit() will not reach,
+		// and on the D3D12 one a closed command list submit() will not put in
+		// its array. All five throw it, which is what makes it a term of the
+		// seam rather than one backend's caution.
 		// create_device throws std::invalid_argument for a view capacity below
 		// one, before it touches a window.
 		void set_view_count(int count);
@@ -458,11 +470,13 @@ namespace labrador
 		// RGBA REGARDLESS OF WHAT THE BACKEND STORES, so that the assertions
 		// another backend has to pass are the same bytes and not the same bytes
 		// after a per-backend swizzle. Whether that costs anything is the
-		// backend's business and is written down in the backend: both Direct3D
-		// back buffers are BGRA and are swapped on the way out, and the D3D12
-		// one additionally unpads a row pitch its API rounds up to 256 bytes;
-		// the GL one is asked for as RGBA and only flipped, because GL reads
-		// from the bottom.
+		// backend's business and is written down in the backend: three of the
+		// four rasterisers' buffers are BGRA and all three swap on the way out -
+		// both Direct3D ones and the Vulkan one, whose colour target is
+		// B8G8R8A8_UNORM for exactly that reason - the D3D12 one additionally
+		// unpads a row pitch its API rounds up to 256 bytes, and the GL one is
+		// asked for as RGBA and only flipped, because GL reads from the bottom.
+		// One swap and no flip on three, one flip and no swap on the fourth.
 		//
 		// A BACKEND MAY REFUSE, and one does. There is nothing for the null
 		// backend to copy - it records what it was asked to draw and never
@@ -609,8 +623,12 @@ namespace labrador
 //    second copy of it would be a file that can silently disagree with the
 //    first. What a backend owns there is the profile and how it binds b0 - a
 //    constant buffer on one, four root constants on the next, a uniform
-//    buffer at a shifted descriptor binding on the third - and no difference
-//    reaches the shader. Two of the three go through fxc into DXBC and one
+//    buffer at a shifted descriptor binding on the third - and ONE difference
+//    reaches the shader, which that file says twice and this line used to
+//    deny: the declaration order of VertexIn's three members is an ABI term
+//    on the Vulkan backend, because dxc assigns SPIR-V locations in
+//    declaration order and a Vulkan pipeline binds attributes by number
+//    rather than by semantic. Two of the three go through fxc into DXBC and one
 //    through the Vulkan SDK's dxc into SPIR-V, which is a second compiler for
 //    one unchanged source rather than a second source.
 //
@@ -653,11 +671,11 @@ namespace labrador
 //    picks a backend at configure time (T5), so these are still processes that
 //    never meet and the checked-in set is what passes between them. Two of the
 //    four now happen on the build machine as well as on a developer's, which
-//    is the reason the fourth backend is a Direct3D one: a runner has no GPU,
-//    Direct3D falls back to WARP where OpenGL falls back to GDI 1.1 and Vulkan
-//    has no in-box fallback at all - its software implementations are
-//    installed rather than shipped - so CI rasterises the whole contract twice
-//    against one set of images. And
+//    is the reason the fourth backend is a Direct3D one: a runner has no GPU
+//    and Direct3D gets a device there anyway, where OpenGL falls back to GDI
+//    1.1 and Vulkan has no in-box fallback at all - its software
+//    implementations are installed rather than shipped - so CI rasterises the
+//    whole contract twice against one set of images. And
 //    two terms sit outside it, both stated where they are decided rather than
 //    here. The size of a frame read back while the window has moved under an
 //    unresized swap chain differs by backend because back_buffer_size above
@@ -666,9 +684,10 @@ namespace labrador
 //    than by contract, because a golden set is one image per case at one size.
 //    Harness::end_not_comparable holds all three and separates the reasons. And
 //    a per-channel
-//    allowance of 8 is what lets one set serve both a hardware adapter and the
-//    WARP one CI has instead; golden_image.cpp carries the measurement that
-//    set it and the reason it is not zero.
+//    allowance of 8 is what lets one set serve both a developer's hardware
+//    adapter and whatever a build machine offers; golden_image.cpp carries the
+//    measurement that set it, the reason it is not zero, and the reason it no
+//    longer names CI's rasteriser.
 //
 //    tests/render/renderer_seam_tests.cpp is the part that runs in all five
 //    configurations, being everything the seam answers without a device. See

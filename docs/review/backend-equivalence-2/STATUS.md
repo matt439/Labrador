@@ -33,12 +33,12 @@
 
 | Section | Items | Done |
 |---|---|---|
-| 1. The eight findings | 8 | 0 |
+| 1. The eight findings | 8 | 7 |
 | 2. Documentation drift | 110 | 0 |
 | 3. Tests and checks that never landed | 34 | 0 |
-| 4. Decisions to make | 4 | 0 |
-| 5. Finishing the sweep | 6 | 0 |
-| **Total** | **162** | **0** |
+| 4. Decisions to make | 4 | 1 |
+| 5. Finishing the sweep | 6 | 2 |
+| **Total** | **162** | **10** |
 
 ---
 
@@ -47,29 +47,36 @@
 From [README.md](README.md) §5 — the candidates that survived two adversarial
 lenses. None puts a wrong pixel on a screen. Ranked as the README ranks them.
 
-- [ ] **1. CI runs `RenderPixelTests` where the WARP fallback is compiled out**
+- [x] **1. CI runs `RenderPixelTests` where the WARP fallback is compiled out**
       `.github/workflows/ci.yml:86-88` gives `x64-release` `skip_tests: ''`; `d3d11/device_resources.cpp:162-191` puts WARP in the `#else` of `#if defined(_DEBUG)`. Four statements in the tree about that job cannot all be true. **Settled by reading one job log** — do this first, it is the cheapest item in the folder and the only one that is not a question about the source.
+      **DONE — the log says the premise is false. Run 33144174541, job `windows (x64-release, false)`: 14 of 14 pass, `RenderPixelTests` in 0.36s, with the WARP fallback compiled out. So the runner offers a DXGI adapter that is not flagged software and `D3D11CreateDevice` succeeds on it; which rasteriser that is, a log cannot say, because the two lines that would name it are `OutputDebugString` calls in `_DEBUG` builds. All four statements amended to what is checkable: `.github/workflows/ci.yml` (the evidence), `tests/render/CMakeLists.txt`, `tests/render/null_tests.cpp`, `tests/render/golden_image.cpp` — and `CLAUDE.md`, `README.md`, `renderer.h`, `d3d12/backend.h`, `docs/port/android.md` with it**
 
-- [ ] **2. D3D12 leaks a descriptor-heap slot per texture name on a non-device-loss release**
+- [x] **2. D3D12 leaks a descriptor-heap slot per texture name on a non-device-loss release**
       `next_texture_slot` is a bump allocator with no free list, reset only at `d3d12/renderer.cpp:814` and `:994`. `RenderResources::release_device_resources()` empties the table without resetting it. Fixed heap of 256. Narrowed to an unstated precondition on public seam API — so the fix may be a sentence rather than code.
+      **DONE — the sentence, not the free list. `render_resources.h` now states the precondition on `release_device_resources()` — it is the first half of a device loss — and says why a free list is the wrong answer (T1, T3): it would buy back 256 slots for a call nothing makes, at the price of bringing frames-in-flight bookkeeping to the seam. `d3d12/render_resources.cpp` says what a release without a device costs there. Answers §4's fourth decision**
 
-- [ ] **3. D3D12 `handle_device_lost` can tear down with a live device still executing**
+- [x] **3. D3D12 `handle_device_lost` can tear down with a live device still executing**
       Of its three call sites, `d3d12/device_resources.cpp:320-324` — the ordinary `WM_EXITSIZEMOVE` resize path where `try_wait_for_gpu()` answered false — reaches `:444-449`, whose first statement is `notify_->on_device_lost()`, with no GPU wait.
+      **DONE — the branch now asks the device. `create_window_size_dependent_resources` calls `GetDeviceRemovedReason()` before recovering: a removal takes `handle_device_lost` as before, and a wait that failed for any other reason — `E_OUTOFMEMORY` out of `Signal` or `SetEventOnCompletion`, with the GPU still executing — is `ThrowIfFailed(E_FAIL)`, the same answer `wait_for_gpu` gives to the same question**
 
-- [ ] **4. Vulkan `abandon_commands` discards tracked image layout on a submitted-but-unpresented frame**
+- [x] **4. Vulkan `abandon_commands` discards tracked image layout on a submitted-but-unpresented frame**
       `vulkan/device_resources.cpp:1564`, `:1627-1630`. The residual half of the Vulkan review's C4/C5, on the branch the applied fix deliberately kept. **Verify under the validation layer with `validate_sync` on** before changing anything — see [docs/review/vulkan/](../vulkan/) §2.
+      **DONE — `colour_layout_submitted_` replaces the `discarded` flag. The flag asked whether a command buffer was open; the question is whether the transitions in it had run. `execute()` mirrors the layout on every successful submit and `abandon_commands` assigns the mirror back unconditionally — right for a frame thrown away, right for one that submitted and recorded again, and a no-op in the case the flag was written for. Verified under the Khronos validation layer with `validate_sync = true` and `validate_best_practices = true`: 34 cases, 336 assertions, zero errors and zero SYNC-HAZARDs, and all fifty goldens byte-identical**
 
-- [ ] **5. The folder wall's module is a hard-coded `(render|audio)` alternation**
+- [x] **5. The folder wall's module is a hard-coded `(render|audio)` alternation**
       `cmake/check_engine_includes.cmake:97` and `:103`. So `engine/input/xinput/` — the third platform seam ARCHITECTURE names — is outside the wall, and `CLAUDE.md:149-159` repeats the false consequence clause in the section listing what fails the build. Documentation-accuracy finding with no behavioural component; the fix is either two literals or one sentence.
+      **DONE — the module is captured now, and the claim is checked rather than made. Both regexes take any `[A-Za-z0-9_]+`, so `engine/input/xinput/` is inside the wall; the include must be the engine's own spelling — rooted at `engine/`, or relative with `../` — because a bare three-component path is not by itself an engine one (`<rapidjson/error/en.h>`). Tested against four spellings, including the `../../engine/audio/null/` form the old regex also missed. `CLAUDE.md` says what was true for nine days, and the header block at `:1-15` — the same file's other drift item — now says the game-header rule does fail standalone**
 
 - [ ] **6. Two of the three terms a draw call is keyed on have never rasterised**
       No submitted frame in `tests/render/pixel_tests.cpp` changes texture or filter mid-list — the only two-texture list is deliberately never submitted. Only the viewport break has ever reached a device. Both stamps are asserted on null. This is TEST-GAP's **B8** by another route.
 
-- [ ] **7. Re-loading a texture name inside an open frame is undefined and differs across five**
+- [x] **7. Re-loading a texture name inside an open frame is undefined and differs across five**
       `resource_factory.h:79-87` states only the `create_device` ordering rule and is silent on the `begin_frame`/`submit` interval. The named contract at `pixel_tests.cpp:1782` pins re-load only *outside* an open frame. Four rasterising backends hold a non-owning reference until `submit()`; null does not.
+      **DONE — written onto `resource_factory.h` beside the `create_device` ordering rule, which is where the other half of the same rule already lived. It names what each rasteriser holds and does not own until `submit()`, says the null backend answers differently, and says the supported thing: load content between frames**
 
-- [ ] **8. D3D12's texture factory discards its `HRESULT`**
+- [x] **8. D3D12's texture factory discards its `HRESULT`**
       `d3d12/texture_factory.cpp:159-175`. `E_OUTOFMEMORY`, `E_INVALIDARG`, `DXGI_ERROR_DEVICE_REMOVED` and an unsupported format all arrive as one sentence naming only the format and the dimensions. T6, and the only one of the five factories whose message both asserts a cause and carries no code.
+      **DONE — the message carries it. `hresult_name(created)` in the same position Vulkan's factory names its `VkResult`, and the comment names the four answers that used to arrive as one sentence**
 
 ---
 
@@ -465,10 +472,11 @@ long enough that the sweep found it twice.
 - [ ] **B13 — does a minified draw sample level 0 or the chain?** TEST-GAP called
       it blocked on a decision in 2026-08-19 and proposed declaring level 0. The
       ledger records what the five backends answer now. Decide it, then the test.
-- [ ] **Does `release_device_resources()` have a stated precondition, or does
+- [x] **Does `release_device_resources()` have a stated precondition, or does
       D3D12 gain a free list?** Finding 2 above is narrowed to an unstated
       precondition on public seam API, so the fix is a sentence *or* code and the
       choice is the decision.
+      **DONE — a stated precondition. It is the device-loss half of a pair, and `render_resources.h` says so, says what a call outside that pair costs on D3D12, and says why the free list is the wrong trade**
 
 ---
 
@@ -477,7 +485,7 @@ long enough that the sweep found it twice.
 From [GAPS.md](GAPS.md). The sweep is incomplete in ways it can name, and these
 close it.
 
-- [ ] **Read one CI log** for `x64-release` and settle finding 1. Cheapest item in
+- [x] **Read one CI log** for `x64-release` and settle finding 1. Cheapest item in
       the folder.
 - [ ] **Run the red team.** It never executed. Fourteen axes were selected for it:
       `viewport-origin`, `negative-viewport`, `owned-back-buffer`,
@@ -487,7 +495,7 @@ close it.
       audit put its best work.
 - [ ] **Verify the 66 unchecked drift findings**, concentrated in `gl/` and the test
       files.
-- [ ] **Re-run `RenderPixelTests` under the Khronos validation layer with
+- [x] **Re-run `RenderPixelTests` under the Khronos validation layer with
       `validate_sync` on**, per [docs/review/vulkan/](../vulkan/) §2. It settles
       finding 4 and the Vulkan half of finding 7.
 - [ ] **The rasteriser fill rule against fractional edges**, still open from the
@@ -501,4 +509,6 @@ close it.
       asks `ChoosePixelFormat` and never calls `DescribePixelFormat`. `Colour`
       clamps per channel independently, so a legal tint of `(1,1,1,0.5)` gives
       `src.rgb > src.a`. Also still open from the prior audit.
+      **DONE — read. Finding 1 above carries what it said and what was amended because of it**
+      **DONE — run, at the changed backend, with `validate_sync` and best practices on: 34 cases, 336 assertions, no errors, no SYNC-HAZARD, only `small-dedicated-allocation` performance warnings — and the fifty goldens byte-identical afterwards. It settles finding 4. The Vulkan half of finding 7 is prose rather than a layer question and is answered on `resource_factory.h`**
 

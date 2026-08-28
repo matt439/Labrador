@@ -85,6 +85,21 @@ namespace labrador
 	// end to end, a handle that resolved and drew. The ordering is fixed the
 	// other way round from set_resources, which is why it is easy to get wrong:
 	// the device comes first, then the table, then the content.
+	//
+	// AND NOT BETWEEN begin_frame AND submit, WHICH IS THE OTHER HALF OF THE
+	// SAME RULE AND WAS MISSING FROM IT. Re-loading a name is ordinary and
+	// supported - the table writes the new texture into the slot the name
+	// already holds, so every handle resolved from it stays valid, and
+	// RenderPixelTests pins that three hundred times over. What is not
+	// supported is doing it while a frame is open. A recorded draw holds
+	// whatever its backend calls a texture, taken at draw time and not owned:
+	// an ID3D11ShaderResourceView*, a const D3d12Texture*, a GL texture name, a
+	// const VulkanTexture* - and the four rasterising backends do not look at
+	// it again until submit(), by which time the re-load has released it.
+	// The null backend reads the texture at draw time and records a size, so it
+	// answers differently, which is what makes this undefined rather than
+	// merely dangerous: five backends, two behaviours, and no caller that could
+	// tell them apart on purpose. Load content between frames.
 	void add_texture_asset(const Renderer& renderer,
 		RenderResources& resources,
 		const std::string& name,

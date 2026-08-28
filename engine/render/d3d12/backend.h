@@ -47,9 +47,12 @@
 //
 //  - A SECOND RASTERISER CI CAN RUN. .github/workflows/ci.yml skips
 //    RenderPixelTests on the OpenGL preset, because a runner has no GPU and
-//    Windows' OpenGL fallback is GDI 1.1. Direct3D 12 has WARP, so this preset
-//    checks the pixel contract - against the same tests/render/golden/ images
-//    the D3D11 preset is checked against, on the same software rasteriser.
+//    Windows' OpenGL fallback is GDI 1.1. Direct3D gets a device on that
+//    machine, so this preset checks the pixel contract - against the same
+//    tests/render/golden/ images the D3D11 preset is checked against, on
+//    whatever adapter the runner offers both of them. That file says how the
+//    adapter is known to be an adapter rather than the WARP fallback, and why
+//    a log cannot say more than that.
 //
 // THE RECORDING SHAPE IS D3D11'S, NOT OPENGL'S. A view records into its own
 // ID3D12GraphicsCommandList on its own worker thread, and submit() hands the

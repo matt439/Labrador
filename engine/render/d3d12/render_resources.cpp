@@ -67,6 +67,14 @@ namespace labrador
 	// create_device_dependent_resources, which resets the allocator to zero for
 	// the reload to take again.
 	//
+	// WHICH IS A PRECONDITION ON THE SEAM AND IS NOW WRITTEN THERE. The heap is
+	// remade by device creation, so a release that is NOT followed by one
+	// leaves this backend's bump allocator where it was and a reload takes
+	// fresh slots: a slot per name, out of 256, per round trip. Nothing in this
+	// repository does that - the one caller is the shell's device-lost handler
+	// - and render_resources.h states it rather than this file growing a free
+	// list to make it safe, for the reason given there.
+	//
 	// A SLOT STOPS BEING NEEDED TWO WAYS AND ONLY ONE OF THEM IS THAT. The
 	// other is a texture re-added under a name that already has one, which
 	// Registry::add treats as the ordinary case and which is the reason

@@ -317,10 +317,30 @@ namespace labrador
 		// unwound into DispatchMessage instead, where the shell has nowhere to
 		// catch it. Same recovery, reached from the wait as well as from
 		// ResizeBuffers.
+		//
+		// AND WHAT MAKES IT A LOSS IS THE DEVICE SAYING SO, NOT THE WAIT
+		// ANSWERING FALSE. try_wait_for_gpu answers false for any failed
+		// Signal or SetEventOnCompletion, and an E_OUTOFMEMORY out of either
+		// is not a removal - it is a live device with work still executing on
+		// it. Recovering there ran handle_device_lost against exactly that:
+		// its first statement tells the client the device is gone and its next
+		// six release the queue, the fence and the device itself while the GPU
+		// is reading them. This is the ordinary WM_EXITSIZEMOVE path, not a
+		// rare one. So the device is asked, which is the same question
+		// wait_for_gpu asks below and the same E_FAIL for the answer that
+		// cannot be explained - and a throw is right here where it is wrong
+		// above, because there is no recovery being skipped: nothing has been
+		// lost, and continuing would release a back buffer the GPU still has.
 		if (!this->try_wait_for_gpu())
 		{
-			this->handle_device_lost();
-			return;
+			const HRESULT reason = this->device_->GetDeviceRemovedReason();
+			if (FAILED(reason))
+			{
+				this->handle_device_lost();
+				return;
+			}
+
+			ThrowIfFailed(E_FAIL);
 		}
 
 		for (int i = 0; i < FRAME_COUNT; i++)

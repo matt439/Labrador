@@ -9,6 +9,7 @@
 
 #include <wrl/client.h>
 
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <stdexcept>
@@ -28,6 +29,18 @@ namespace labrador
 		ID3D12Device* device_of(const Renderer& renderer)
 		{
 			return renderer.impl()->device_resources.device();
+		}
+
+		// The one hand-written message in this file that reports an HRESULT,
+		// spelt the way com_exception spells one so that a search for a code
+		// finds both. Not put beside that class, because throw_if_failed.h is
+		// carried with upstream's naming (its own header says why) and this is
+		// the engine's own sentence.
+		std::string hresult_name(HRESULT hr)
+		{
+			char text[24] = {};
+			sprintf_s(text, "HRESULT %08X", static_cast<unsigned int>(hr));
+			return text;
 		}
 
 		// The engine's format vocabulary, back into this API's. The other
@@ -79,7 +92,10 @@ namespace labrador
 	}
 
 	// The whole of this backend's share of loading content, and it is the
-	// longest of the three because this API has no initial-data parameter.
+	// second longest of the five because this API has no initial-data
+	// parameter. Vulkan's is longer still and for the same reason - 378 lines
+	// to this one's 310, with gl at 168, d3d11 at 115 and null at 48, which
+	// renderer.h lists in one place and holds all five against.
 	//
 	// WHAT A TEXTURE COSTS HERE THAT IT DOES NOT COST NEXT DOOR. D3D11 takes an
 	// array of D3D11_SUBRESOURCE_DATA and is done - the runtime copies the
@@ -91,11 +107,14 @@ namespace labrador
 	// reading it before it goes.
 	//
 	// A FULL STALL PER TEXTURE, AND THAT IS THE RIGHT ANSWER HERE RATHER THAN A
-	// SHORTCUT - and it is this backend's stall alone, which the sentence here
-	// used to get backwards. Loading is a synchronous, blocking path on all
-	// four (resource_factory.h says why it reads its file that way), but only
-	// this one waits on a GPU inside it; d3d11 hands the bytes to the runtime
-	// and gl hands them to the driver. It runs at load and never on the frame
+	// SHORTCUT - and it is the stall of the two backends that own their
+	// uploads, which the sentence here has now had wrong in both directions.
+	// Loading is a synchronous, blocking path on all five (resource_factory.h
+	// says why it reads its file that way); this backend and vulkan/ wait on a
+	// GPU inside it, because both record a copy and both own the staging buffer
+	// it reads - vulkan/texture_factory.cpp calls end_upload for exactly this
+	// reason. d3d11 hands the bytes to the runtime, gl hands them to the
+	// driver, and null keeps them. It runs at load and never on the frame
 	// path, and the alternative - keeping every upload buffer alive until some
 	// later fence - is a pool and a lifetime rule for a path that reads files
 	// off a disk.
@@ -167,11 +186,23 @@ namespace labrador
 			// D3D12 makes 4-bit-per-channel support optional, so a device that
 			// takes every other entry in texture_format.h can refuse that one.
 			// No file in either client uses it.
+			//
+			// AND THE CODE, BECAUSE THE SENTENCE ASSERTS A CAUSE AND ONLY ONE
+			// OF FOUR ANSWERS HAS IT. CreateCommittedResource returns
+			// E_OUTOFMEMORY for a heap it cannot make, E_INVALIDARG for a
+			// description it will not parse and DXGI_ERROR_DEVICE_REMOVED for a
+			// device that has gone, and this used to report all three as an
+			// unsupported format at a size. The Vulkan factory next door names
+			// its VkResult in the same position and for the same reason; both
+			// Direct3D backends have com_exception's "Failure with HRESULT of"
+			// available at every ThrowIfFailed site and this was the one place
+			// that both asserted a cause and threw the evidence away (T6).
 			throw std::runtime_error("Texture '" + name + "' is " +
 				format_name(texture.format) + " at " +
 				std::to_string(texture.width) + "x" +
 				std::to_string(texture.height) +
-				", which this device will not take.");
+				", which this device will not take (" +
+				hresult_name(created) + ").");
 		}
 
 		// WHERE EACH LEVEL GOES IN THE STAGING BUFFER, ASKED RATHER THAN

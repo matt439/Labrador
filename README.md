@@ -216,9 +216,9 @@ frame against one, which is the only mechanism that can catch two hand-copied
 backends drifting the same way. It turned the audit's argument from source into
 a measurement — on one machine's GPU the D3D11, D3D12, OpenGL and Vulkan
 backends reproduce all fifty frames exactly, split-screen included. Two
-of the four do it on the runner as well: CI has no GPU, and Direct3D falls back
-to WARP where OpenGL falls back to GDI 1.1 and Vulkan has no in-box fallback at
-all.
+of the four do it on the runner as well: CI has no GPU and Direct3D gets a
+device there anyway, where OpenGL falls back to GDI 1.1 and Vulkan has no
+in-box fallback at all.
 
 Not done, and known: an action-mapping layer over the input devices. That is
 the whole list — every render backend that was planned has landed.

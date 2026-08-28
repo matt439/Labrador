@@ -1,18 +1,24 @@
 # docs/design/ARCHITECTURE.md: an engine file including a game header "fails to
-# compile, and that is the feature (T5)". It does not fail yet, and E1 - the
-# item that was going to fix it - established why not rather than fixing it.
+# compile, and that is the feature (T5)". IT DOES FAIL NOW, AND THE SPLIT IS
+# WHAT MADE IT. This block was written when it did not, and E1 - the item that
+# was going to fix it - established why not rather than fixing it.
 #
 # Includes are written from the repository root (CONVENTIONS, Files), so an
 # engine file says "engine/render/renderer.h". That means the engine's own
-# include root has to be the directory above engine/ - and in this tree, that
-# directory also holds game/. There is no include path that admits the first
-# spelling and refuses the second while the two are siblings. What closes it is
-# the repo split: engine/ and samples/ in one repository, the paint-shooter in
-# its own, consuming the engine as a submodule. E1 made the include roots
-# relative so that split is a move and not a build rewrite.
+# include root has to be the directory above engine/, and while game/ was a
+# sibling of engine/ there was no include path that admitted the first spelling
+# and refused the second. What closed it was the repo split: engine/ and
+# samples/ here, the paint-shooter in its own repository consuming this one as
+# a submodule. E1 made the include roots relative so that split was a move and
+# not a build rewrite, and there is no game/ in this tree to reach for.
 #
-# Until then, this is the wall. It runs on every build, which is the property
-# that matters: the rule is enforced, not merely written down.
+# SO WHY THIS STILL RUNS. The compiler enforces the rule only when this
+# repository is built standalone, which is the configuration a contributor and
+# CI have and not the one a downstream game has: consumed as a submodule, its
+# own headers are on an include path again and "game/..." resolves. The wall
+# below is the half that does not depend on who is building. It runs on every
+# build, which is the property that matters: the rule is enforced, not merely
+# written down.
 #
 # Run with: cmake -DENGINE_DIR=<path> -P cmake/check_engine_includes.cmake
 
@@ -39,7 +45,7 @@ if(offenders)
     message(FATAL_ERROR
         "Dependencies point one way. These engine files include a game header:\n"
         "    ${report}\n"
-        "  See docs/design/ARCHITECTURE.md, The module graph.")
+        "  See docs/design/ARCHITECTURE.md, Modules.")
 endif()
 
 # The second wall: a backend's folder is for itself.
@@ -83,6 +89,19 @@ endif()
 # folders needs no edit here either - the same property the backend name has,
 # and the same reason.
 #
+# IT WAS LISTED UNTIL THE FIVE-BACKEND SWEEP READ THE LINE UNDER THE SENTENCE.
+# The regexes said "(render|audio)" while this paragraph claimed a capture, and
+# the module ARCHITECTURE names third - engine/input/xinput/, the third
+# platform seam - was outside the wall entirely. Nothing had reached across it,
+# which is the only reason this cost nothing: one #include of an xinput header
+# from engine/app/ would have passed the check that exists to refuse it.
+#
+# WHAT THE PATTERN PAYS FOR CAPTURING THE MODULE is that it can no longer match
+# on shape alone. A three-component include is not by itself an engine one -
+# <rapidjson/error/en.h> has that shape - so the path must be the engine's own
+# spelling: rooted at engine/, or relative with ../, which are the two forms
+# CONVENTIONS and the compiler between them admit.
+#
 # Deliberately not a compiler error: the include root has to admit
 # "engine/render/d3d11/backend.h" for the folder's own three files, and there is
 # no include path that admits it there and refuses it next door. Same shape as
@@ -94,13 +113,13 @@ foreach(source IN LISTS engine_sources)
     # rule that only catches one of three ways to write the same include is a
     # rule the next person writes around without meaning to.
     file(STRINGS "${source}" hits
-        REGEX "^[ \t]*#[ \t]*include[ \t]*[\"<](\\.\\./)*(engine/)?(render|audio)/[A-Za-z0-9_]+/[A-Za-z0-9_]+\\.h[\">]")
+        REGEX "^[ \t]*#[ \t]*include[ \t]*[\"<]((\\.\\./)*engine/|(\\.\\./)+)[A-Za-z0-9_]+/[A-Za-z0-9_]+/[A-Za-z0-9_]+\\.h[\">]")
     foreach(hit IN LISTS hits)
         # The folder a header lives in is the one folder allowed to name it.
         # Extract the module and the backend from the include and compare them
         # with the directory the file is in, so neither a new backend nor a new
         # module with backends needs an edit here.
-        string(REGEX MATCH "(render|audio)/([A-Za-z0-9_]+)/[A-Za-z0-9_]+\\.h" ignored "${hit}")
+        string(REGEX MATCH "([A-Za-z0-9_]+)/([A-Za-z0-9_]+)/[A-Za-z0-9_]+\\.h" ignored "${hit}")
         get_filename_component(source_dir "${source}" DIRECTORY)
         if(NOT source_dir MATCHES "/${CMAKE_MATCH_1}/${CMAKE_MATCH_2}$")
             string(STRIP "${hit}" hit)
@@ -117,5 +136,6 @@ if(backend_offenders)
         "  Everything that draws goes through DrawList, and everything that\n"
         "  builds a resource on a device goes through render/resource_factory.h.\n"
         "  Everything that makes a noise goes through audio/audio_device.h.\n"
+        "  Everything that reads a pad goes through input/gamepad_reader.h.\n"
         "  See docs/design/ARCHITECTURE.md, Modules.")
 endif()

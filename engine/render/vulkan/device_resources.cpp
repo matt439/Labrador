@@ -990,8 +990,11 @@ namespace labrador
 
 		// A fresh image is in no layout at all, which is what UNDEFINED means -
 		// and the first barrier out of it is free, because the contents it
-		// discards are contents nothing has written.
+		// discards are contents nothing has written. BOTH MEMBERS, because there
+		// is no submitted state to fall back to either: this image has never been
+		// in a command buffer.
 		this->colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+		this->colour_layout_submitted_ = VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 
 	void DeviceResources::destroy_colour_target()
@@ -1024,7 +1027,9 @@ namespace labrador
 			this->colour_memory_ = VK_NULL_HANDLE;
 		}
 
+		// The image is gone, so nothing is true of it in either sense.
 		this->colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+		this->colour_layout_submitted_ = VK_IMAGE_LAYOUT_UNDEFINED;
 		this->colour_extent_ = { 0, 0 };
 	}
 
@@ -1536,6 +1541,13 @@ namespace labrador
 		this->timeline_value_ = signalled;
 		this->submitted_ = true;
 
+		// EVERYTHING RECORDED HAS NOW BEEN SUBMITTED, which is the whole of
+		// what makes the tracked layout true rather than pending. Written here
+		// and nowhere else: a transition is recorded by transition_colour and
+		// by a render pass's finalLayout, and neither of those has happened
+		// until this line runs.
+		this->colour_layout_submitted_ = this->colour_layout_;
+
 		// WHICH FRAME'S WORK THIS WAS, RECORDED FOR THE PASS THAT REUSES IT.
 		// Written after every submit rather than only at a present, for the
 		// reason engine/render/d3d12/device_resources.h gives on signal_frame:
@@ -1559,10 +1571,6 @@ namespace labrador
 			return;
 		}
 
-		// WHETHER THERE WAS ANYTHING TO THROW AWAY, read before the reset that
-		// answers no. The tail of this function needs it.
-		const bool discarded = this->recording_;
-
 		// RESET, NOT EXECUTED, AND WHOEVER CALLS THIS HAS ALREADY WAITED. A
 		// command pool may not be reset while anything allocated from it is
 		// still executing: begin_frame has run wait_for_frame, and the resize
@@ -1582,14 +1590,14 @@ namespace labrador
 		frame.descriptor_pool_in_use = 0;
 		frame.descriptor_sets_taken = 0;
 
-		// AND THE LAYOUT TRACKING IS FORGOTTEN WHEN SOMETHING WAS ACTUALLY
-		// THROWN AWAY, WHICH IS NOT TIDINESS. The barriers that moved the
-		// colour target into a layout were IN the commands this just discarded,
-		// so the member saying where it is has stopped being true - it
-		// describes a transition that will never execute. UNDEFINED is the
-		// honest word for that: not a layout the image is in, but the statement
-		// that nothing here knows, which is exactly what a barrier out of
-		// UNDEFINED means and why one is always legal.
+		// AND THE LAYOUT TRACKING GOES BACK TO WHAT THE LAST SUBMIT LEFT, WHICH
+		// IS NOT TIDINESS. The barriers that moved the colour target into a
+		// layout were IN the commands this just discarded, so the member saying
+		// where it is has stopped being true - it describes a transition that
+		// will never execute. What IS true is what the executed commands left,
+		// which is the second member, and assigning it is right in both
+		// directions at once: it forgets a discarded transition and it keeps
+		// one that has already run.
 		//
 		// FOUND BY THE VALIDATION LAYERS AND BY NOTHING ELSE, on
 		// tests/render/pixel_tests.cpp's "a frame that is never submitted
@@ -1599,12 +1607,12 @@ namespace labrador
 		// while it was wrong, on this machine's driver, because the render pass
 		// loads an attachment the clear had just filled either way.
 		//
-		// AND THE CONDITION IS THE WHOLE OF IT, WHICH IS WHAT THE LAYERS SAID
-		// NEXT. This ran unconditionally, and its one per-frame caller is
-		// Renderer::begin_frame, where nothing has been thrown away at all:
-		// present() left the image a TRANSFER_SRC and execute() submitted the
-		// barrier that put it there, so the member was TRUE and was discarded
-		// anyway. transition_colour then built the frame's opening barrier with
+		// WHAT THE LAYERS SAID WHEN IT WAS UNCONDITIONAL, because it is the
+		// argument for this line existing at all. Its one per-frame caller is
+		// Renderer::begin_frame, where nothing has been thrown away: present()
+		// left the image a TRANSFER_SRC and execute() submitted the barrier
+		// that put it there, so the member was TRUE and was cleared anyway.
+		// transition_colour then built the frame's opening barrier with
 		// stage_of(UNDEFINED) as its source, which is TOP_OF_PIPE and orders
 		// nothing - leaving frame N+1's clear unordered against frame N's
 		// present-time read of the same image, one image being shared by both
@@ -1614,9 +1622,21 @@ namespace labrador
 		// backend was written against was silent. docs/review/vulkan/ carries
 		// the settings file that turns it on.
 		//
+		// THE FIX FOR THAT WAS A `discarded` FLAG AND IT WAS HALF OF ONE, which
+		// is the five-backend sweep's finding 4 and the residual half of this
+		// review's own C4/C5. The flag asked whether a command buffer was open,
+		// which is not the same question as whether the transitions in it had
+		// run: a frame that submits and then records again - read_back_buffer
+		// is the path that does, reopening the buffer through commands() - and
+		// is then abandoned had a live, executed layout thrown away by the
+		// branch that exists to protect it. Tracking the submitted layout
+		// answers both cases with one assignment and no branch, and when
+		// nothing has been recorded since the last submit the two are equal and
+		// this line does nothing, which is the case the flag was written for.
+		//
 		// THE RESIZE CALLER NEEDS NOTHING FROM THIS LINE, which is worth
-		// knowing before anybody widens it again: destroy_colour_target and
-		// create_colour_target both set the member themselves, immediately
+		// knowing before anybody narrows it again: destroy_colour_target and
+		// create_colour_target both set the members themselves, immediately
 		// after this returns.
 		//
 		// THE D3D12 BACKEND CANNOT HAVE THIS, AND THE DIFFERENCE IS ONE LINE OF
@@ -1624,10 +1644,7 @@ namespace labrador
 		// back_buffer_state is true the moment it is written. This backend
 		// records the whole frame into one command buffer and submits once,
 		// which is cheaper and puts the burden here.
-		if (discarded)
-		{
-			this->colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
-		}
+		this->colour_layout_ = this->colour_layout_submitted_;
 	}
 
 	// --- Presentation ---------------------------------------------------------

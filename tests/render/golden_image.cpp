@@ -375,22 +375,33 @@ namespace
 	// number is not zero.
 	//
 	// RenderPixelTests runs against a hardware adapter on a machine with a
-	// driver and against WARP on a machine without one, and CI is always the
-	// second (.github/workflows/ci.yml). WARP is in-box and conformant but it
-	// is not the same rasteriser, and there is no arrangement that lets one
-	// checked-in set be exact for both: the OpenGL backend cannot run on WARP
-	// at all - Windows' fallback for GL is the 1.1 GDI implementation - so a
-	// WARP-generated set would be inexact for every GL run in exchange for
-	// being exact in CI. Something has to give, and the honest place is here,
-	// stated with the measurement that set it.
+	// driver and against whatever adapter a build machine offers, which is not
+	// the same rasteriser and cannot be made to be one. There is no arrangement
+	// that lets one checked-in set be exact for both: the OpenGL backend cannot
+	// run on a software rasteriser at all - Windows' fallback for GL is the 1.1
+	// GDI implementation - so a set generated on one would be inexact for every
+	// GL run in exchange for being exact in CI. Something has to give, and the
+	// honest place is here, stated with the measurement that set it.
+	//
+	// WHAT CI'S RASTERISER IS, THIS FILE DOES NOT KNOW AND SHOULD NOT CLAIM TO.
+	// It said WARP until a job log was read: the x64-release job passes
+	// RenderPixelTests with the WARP fallback compiled out, so the runner has a
+	// DXGI adapter that is not flagged software and nothing in a log names it
+	// (.github/workflows/ci.yml carries the evidence). The number below is
+	// therefore an allowance against a rasteriser this repository has measured
+	// ONE candidate for, and the candidate is the strictest one available here.
 	//
 	// MEASURED, NOT GUESSED. Held against the same set, this machine's GPU and
-	// WARP differ on 19 of the 47 frames. Eighteen of those 19 draw text, so
+	// its WARP differ on 19 of the 47 frames. Eighteen of those 19 draw text, so
 	// their pixels came out of the block-compressed font atlas through a
 	// filter; the nineteenth is a blend case. The worst channel across all of
 	// them is 7 and most are 5, and the other twenty-eight frames - the ones
 	// carrying flat texels through no filter, the six multi-view ones among
-	// them - are identical to the byte. That is the shape of a decode-and-filter
+	// them - are identical to the byte. THE SET WAS 47 WHEN THAT WAS MEASURED
+	// AND IS 50 NOW, so 19 and 28 no longer sum to it: the two read-back-then-
+	// present frames and the re-loaded-name frame joined afterwards and are in
+	// neither number. All three carry flat texels through no filter, which is
+	// the half of the set the measurement found identical. That is the shape of a decode-and-filter
 	// difference, and neither term is one this engine decides - pixel_tests.cpp
 	// has said from the beginning that "the coverage value at any one pixel is
 	// a fact about the compressor", which is why its text cases are written as

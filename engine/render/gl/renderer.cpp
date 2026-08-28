@@ -31,7 +31,15 @@ namespace labrador
 		using CreateContextAttribs = HGLRC(WINAPI*)(HDC, HGLRC, const int*);
 
 		// Whether two viewports are the same pane. A run cannot span a viewport
-		// change, so this is what closes one.
+		// change - and this is not what closes one, which the sentence here
+		// used to claim. DrawList::set_viewport closes the run itself before it
+		// writes the new pane, and the only other two writes of View::viewport
+		// follow a reset(); every one of the three leaves open_valid false, and
+		// the join predicate below tests that first. So this term has never
+		// once answered false. It is kept because the predicate it belongs to
+		// is the same predicate on four backends and a term missing from one
+		// copy is how those four drift apart - not because anything here needs
+		// it today.
 		bool same_viewport(const Viewport& left, const Viewport& right)
 		{
 			return left.x == right.x && left.y == right.y &&
@@ -67,8 +75,10 @@ namespace labrador
 		}
 
 		// THE COMPILER'S OWN MESSAGE, NAMED (T6). A shader that will not compile
-		// is a build failure on the other backend and cannot be one here - GL
-		// 3.3 has no offline shader format - so the least this can do is say
+		// is a build failure on the three backends that compile sprite.hlsl
+		// ahead of time - d3d11 and d3d12 through fxc, vulkan through the SDK's
+		// dxc (engine/CMakeLists.txt) - and cannot be one here, because GL
+		// 3.3 has no offline shader format. So the least this can do is say
 		// which stage failed and repeat what the driver said about it, rather
 		// than drawing nothing and leaving somebody to guess.
 		GLuint compile_shader(GLenum stage, const char* source,
@@ -96,8 +106,11 @@ namespace labrador
 	// A DRAW TOUCHES NO DRIVER. Everything a view records is memory: the four
 	// corners the engine's geometry produced, and a run saying what to draw them
 	// with. That is what lets several workers record at once into a single-
-	// threaded API, and it is the one place this backend differs in shape from
-	// the D3D11 one rather than merely in spelling.
+	// threaded API. It is NOT the one place this backend differs in shape from
+	// D3D11 - gl/backend.h retracted that heading twelve files ago and this copy
+	// of it was left behind - and it is not this backend's alone either: null/
+	// and vulkan/ record a frame into vectors the same way, where the two
+	// Direct3D backends record into a deferred context and a command list.
 	void DrawList::View::draw(const GlTexture& texture,
 		const SpriteVertex* corners)
 	{
@@ -227,7 +240,7 @@ namespace labrador
 		const float screen_scale =
 			this->view_->camera.calculate_view_scale(scale);
 
-		// IDENTICAL TO THE OTHER BACKEND'S, LINE FOR LINE BAR THE TYPES, which
+		// IDENTICAL TO EVERY OTHER BACKEND'S, LINE FOR LINE BAR THE TYPES, which
 		// is the point of the walk and the quad both being the engine's. A
 		// glyph is a sprite; what is left here is resolving two handles.
 		DrawList::View& view = *this->view_;
@@ -536,7 +549,9 @@ namespace labrador
 
 		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
 		// RenderPixelTests calls this the term most likely to be got wrong, and
-		// it is the same two words here as in the other backend's descriptor.
+		// it is the same two words in every rasteriser's descriptor: ONE and
+		// INV_SRC_ALPHA on both Direct3D backends, ONE and
+		// ONE_MINUS_SRC_ALPHA on Vulkan, and the call below here.
 		glEnable(GL_BLEND);
 		glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA_, GL_ONE,
 			GL_ONE_MINUS_SRC_ALPHA_);
@@ -670,9 +685,10 @@ namespace labrador
 		// shell suppresses every WM_SIZE for the duration of a drag and then
 		// forwards GetClientRect on WM_EXITSIZEMOVE, so a backend that answered
 		// this against the live client rect would answer "nothing changed" to
-		// the one message that ends a resize, where the other backend answers
-		// true. Two backends disagreeing about the shell's signal is the same
-		// class of bug as two disagreeing about a pixel.
+		// the one message that ends a resize, where the other three answer true
+		// (the null backend has no client rect to disagree with). Two backends
+		// disagreeing about the shell's signal is the same class of bug as two
+		// disagreeing about a pixel.
 		this->impl_->reported_width = width;
 		this->impl_->reported_height = height;
 
@@ -690,14 +706,16 @@ namespace labrador
 		//
 		// It does not, because the difference would be observable. A caller
 		// that draws, is resized under it, and submits would see its drawing
-		// survive on one backend and vanish on two, from one call, with
-		// nothing in the seam to say which to expect. The paragraph above says
+		// survive on this backend and vanish on the other four, from one call,
+		// with nothing in the seam to say which to expect - and all four say so
+		// in their own files, d3d12 and vulkan in the same capitals. The
+		// paragraph above says
 		// what that class of disagreement is worth: two backends disagreeing
 		// about the shell's signal is the same class of bug as two disagreeing
 		// about a pixel. So the cheaper answer is thrown away deliberately, and
 		// what a client can rely on is the same sentence everywhere.
 		//
-		// The clear is here for the same reason: the other three hand back a
+		// The clear is here for the same reason: the other four hand back a
 		// cleared buffer, and the region a widened window just exposed would
 		// otherwise hold whatever was in it.
 		const Vector2I drawable = this->impl_->drawable_size();
@@ -767,9 +785,10 @@ namespace labrador
 		}
 
 		// Lowering it past a view something has already drawn into strands that
-		// recording. The other backend has a harder version of this problem -
-		// the commands are inside a deferred context - but the answer the seam
-		// gives is the same, so it is the same throw.
+		// recording. The two backends that record into a command list have a
+		// harder version of this problem - the commands are inside a deferred
+		// context on d3d11 and an ID3D12GraphicsCommandList on d3d12 - but the
+		// answer the seam gives is the same, so it is the same throw on all five.
 		for (int i = count; i < this->impl_->view_count; i++)
 		{
 			if (this->impl_->views[static_cast<size_t>(i)]->touched)
@@ -856,8 +875,9 @@ namespace labrador
 		// FLIPPED, BECAUSE GL READS FROM THE BOTTOM. The seam promises the top
 		// row first, and glReadPixels starts at the window's origin - which in
 		// GL is the bottom left. No swizzle, though: the seam promises RGBA and
-		// that is what was asked for, where the other backend's buffer is BGRA
-		// and has to swap on the way out.
+		// that is what was asked for, where the other three rasterisers' buffers
+		// are all B8G8R8A8 and all three swap on the way out. This backend is the
+		// only one that turns its rows over and the only one that does not swap.
 		for (size_t y = 0; y < height; y++)
 		{
 			const unsigned char* source =
@@ -872,7 +892,10 @@ namespace labrador
 	// an extension, it is a debugging convenience rather than anything a frame
 	// depends on, and a marker that does nothing is honest where a marker that
 	// silently needs an extension is not. The seam's three calls exist because
-	// the other backend has PIX to talk to (T1).
+	// ONE backend has PIX to talk to (T1) - d3d11, and it is the only one of the
+	// five that forwards them. d3d12, vulkan and null discard them exactly as
+	// this does, so the no-op is the ordinary case and not this backend's
+	// exception. renderer.h says what a marker is entitled to assume.
 	void Renderer::begin_marker(const wchar_t* name)
 	{
 		std::ignore = name;

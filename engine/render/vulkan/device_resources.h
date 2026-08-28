@@ -498,6 +498,15 @@ namespace labrador
 		VkExtent2D colour_extent_ = { 0, 0 };
 		VkImageLayout colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
 
+		// THE SAME THING AS OF THE LAST SUBMIT, WHICH IS THE ONLY ONE THAT IS
+		// TRUE OF THE IMAGE. The member above is where the recorded commands
+		// will have left it once they run; this one is where the executed ones
+		// have left it already. They differ for exactly as long as a command
+		// buffer is open, and abandon_commands is the function that has to tell
+		// them apart - a frame thrown away takes its transitions with it and
+		// leaves this, whatever else it recorded first.
+		VkImageLayout colour_layout_submitted_ = VK_IMAGE_LAYOUT_UNDEFINED;
+
 		// B8G8R8A8_UNORM, which is what both Direct3D backends' back buffers
 		// are and what a Win32 surface always offers. Matching them costs
 		// nothing and keeps read_back_buffer's swizzle the same sentence in
