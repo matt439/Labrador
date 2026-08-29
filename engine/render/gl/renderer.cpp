@@ -31,8 +31,8 @@ namespace labrador
 		using CreateContextAttribs = HGLRC(WINAPI*)(HDC, HGLRC, const int*);
 
 		// Whether two viewports are the same pane. A run cannot span a viewport
-		// change - and this is not what closes one, which the sentence here
-		// used to claim. DrawList::set_viewport closes the run itself before it
+		// change - and this is not what closes one.
+		// DrawList::set_viewport closes the run itself before it
 		// writes the new pane, and the only other two writes of View::viewport
 		// follow a reset(); every one of the three leaves open_valid false, and
 		// the join predicate below tests that first. So this term has never
@@ -592,8 +592,8 @@ namespace labrador
 			// engine's answer (viewport.h), not this file's, and the
 			// projection below must divide by the same numbers the rasteriser
 			// was given. Truncating for glViewport and dividing by the
-			// un-truncated float is what this used to do, and it scaled every
-			// sprite in a fractional pane by the ratio between the two.
+			// un-truncated float would scale every sprite in a fractional pane by
+			// the ratio between the two.
 			const RectangleI pixels = run.viewport.pixel_rect();
 
 			// GL'S WINDOW ORIGIN IS AT THE BOTTOM LEFT AND THE SEAM'S IS AT THE

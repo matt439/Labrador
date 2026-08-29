@@ -26,10 +26,8 @@
 // one filename in it, because device_resources.h was how the wall was climbed
 // last time. The three .cpp beside this file include it; nothing else in the
 // tree may, and nothing else does - the two generated shader headers are fxc
-// /Fh output, which is a comment and a byte array with no #include in it. This paragraph used to name its clients
-// individually and the list went stale twice: engine/app/application.cpp is on
-// the far side of the wall now and hands its window over as a void*, and
-// engine/render/d3d11/resource_factory.cpp never existed under that name.
+// /Fh output, which is a comment and a byte array with no #include in it.
+// Stated as the rule and not as a list of names, because a list goes stale.
 // Everything that draws goes through DrawList, and the whole point of the seam
 // is that draw code never learns which backend it is talking to.
 
@@ -54,10 +52,8 @@ namespace labrador
 	// ONE OF THE THREE TABLES IS THIS BACKEND'S AND TWO ARE NOT. Fonts and
 	// sheets are engine data (font.h, sprite_sheet.h) and are here only because
 	// the storage of a pimpl is the pimpl's; the textures are the sole reason
-	// this class cannot be written once for everybody. That is a smaller
-	// difference than it was - a font used to be a DirectX::SpriteFont, which
-	// is to say the pen arithmetic for every string this engine draws used to
-	// be in this table - and it is the shape a second backend inherits.
+	// this class cannot be written once for everybody. It is the shape every
+	// backend has.
 	class RenderResources::Impl
 	{
 	public:
@@ -74,12 +70,12 @@ namespace labrador
 		void release_all_textures();
 
 		// Per-draw, from DrawList. Throws std::out_of_range if the handle is
-		// unresolved or its slot has been released. The font lookup that used
-		// to sit beside this one is RenderResources::font: a Font is engine
-		// data, so its table was never hiding anything from anybody.
+		// unresolved or its slot has been released. The font lookup is
+		// RenderResources::font, not here: a Font is engine data, so its table
+		// hides nothing from anybody.
 		ID3D11ShaderResourceView* texture(TextureHandle texture) const;
 
-		// By name. NOT FOR THE LOADER, which is what this used to say: the load
+		// By name. NOT FOR THE LOADER: the load
 		// path calls add_texture and then asks the seam for a handle
 		// (RenderResources::resolve_texture), because a handle is what a
 		// drawable holds. This overload is the by-name lookup the Registry
@@ -230,7 +226,7 @@ namespace labrador
 		Impl();
 
 		// Renders only 2D, so there is no depth buffer to ask for - see the
-		// class comment on DeviceResources, which no longer has one to offer.
+		// class comment on DeviceResources, which has none to offer.
 		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };
 
 		std::vector<std::unique_ptr<DrawList::View>> views;

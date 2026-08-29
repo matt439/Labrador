@@ -10,16 +10,14 @@
 
 // A font, as engine data.
 //
-// WHAT CHANGED AND WHY IT MATTERS. A Font used to be one of the two phantom
-// types in renderer.h - a name with no definition, whose meaning the backend
-// chose, which in practice meant DirectX::SpriteFont. That put the pen
-// arithmetic, the glyph table, the line spacing and the measurement of every
-// string this engine draws inside a library only one backend can link. A
-// second backend would have had to find or write all of it again, and would
-// have had no way to check that its answers matched, because the answers were
+// WHY IT IS ENGINE DATA AND NOT A PHANTOM TYPE. Leave a Font to the backend
+// and the pen arithmetic, the glyph table, the line spacing and the
+// measurement of every string this engine draws sit inside whatever library
+// that backend links. A second backend then has to find or write all of it
+// again with no way to check its answers match, because the answers are
 // nowhere written down.
 //
-// So a Font is now what a SpriteSheet already is: engine data over a
+// So a Font is what a SpriteSheet already is: engine data over a
 // TextureHandle. The atlas is still the backend's - it is a texture, and only
 // the backend knows what one of those is - but where each glyph sits in it,
 // how far the pen moves and how tall a line is are the engine's, in this file,
@@ -27,31 +25,27 @@
 // it. Texture remains phantom; Font does not.
 //
 // THE ARITHMETIC IS DirectXTK'S, DELIBERATELY AND EXACTLY. Every quirk below
-// was SpriteFont::Impl::ForEachGlyph's, and the commit that moved it here
-// changed none of them, because RenderPixelTests pins what they produce and
-// the point of that commit was that the pixels did not move. They are written
-// down here rather than merely reproduced, so the next person to simplify one
-// is doing it on purpose:
+// is SpriteFont::Impl::ForEachGlyph's, unchanged, and RenderPixelTests pins
+// what they produce. They are written down here rather than merely
+// reproduced, so the next person to simplify one is doing it on purpose:
 //
 //   - x_advance is an ADJUSTMENT to the advance, not the advance. The pen
 //     moves by the glyph's width plus x_advance, so a negative value - which
 //     most glyphs in a Courier atlas have - is normal and not corruption.
 //   - x_offset is a left bearing, and it DOES accumulate: for_each_glyph adds
 //     it to the running pen and then advances from there, so glyph N's bearing
-//     is inside glyph N+1's position. That is what the walk has always done
-//     and what measure() measures, which is why the two agree - but the
-//     sentence here used to say the opposite, and a reader planning to change
-//     the walk would have changed the wrong half of it.
+//     is inside glyph N+1's position. The walk and measure() agree because
+//     both do this, so a change to one is a change to both.
 //   - a whitespace glyph no larger than one texel in both axes steps the pen
 //     and draws nothing. MakeSpriteFont writes exactly such a glyph for U+0020,
 //     and it is not required to be transparent.
 //   - a line is the taller of the glyph's own extent and the font's line
 //     spacing, so a line of full stops measures as tall as a line of capitals.
 //
-// WHAT WAS DROPPED, AND IT IS ONE THING. SpriteFont's walk took an
-// ignoreWhitespace flag; both callers in this engine passed the same value, so
-// there is no flag (T3). MeasureDrawBounds, the third caller upstream that
-// wanted the other value, has never existed here.
+// ONE THING UPSTREAM HAS THAT THIS DOES NOT. SpriteFont's walk takes an
+// ignoreWhitespace flag; both callers in this engine want the same value, so
+// there is no flag (T3). MeasureDrawBounds, the upstream caller that wants the
+// other value, has no counterpart here.
 
 namespace labrador
 {
@@ -90,7 +84,7 @@ namespace labrador
 
 		// The texture every glyph is cut from. A handle, so a device loss that
 		// empties the slot and a reload that refills it are invisible here -
-		// which is the whole reason a Font is no longer a device resource.
+		// which is why a Font is not itself a device resource.
 		TextureHandle atlas() const { return this->atlas_; }
 
 		float line_spacing() const { return this->line_spacing_; }

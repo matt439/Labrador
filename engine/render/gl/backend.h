@@ -24,9 +24,8 @@
 // cmake/check_engine_includes.cmake fails the build for anything outside the
 // folder that names any header in it.
 //
-// WHAT THIS BACKEND DOES DIFFERENTLY FROM D3D11, AND IT IS NOT ONE THING. This
-// heading used to claim it was, and then said so again 111 lines further down
-// about something else. The largest is the recording shape: D3D11 has deferred
+// WHAT THIS BACKEND DOES DIFFERENTLY FROM D3D11, AND IT IS NOT ONE THING.
+// The largest is the recording shape: D3D11 has deferred
 // contexts, so each view records GPU commands on its own worker thread and
 // submit() executes the command lists in order. OpenGL has no such thing - a
 // context belongs to one thread and every call is immediate - so a view here
@@ -198,17 +197,16 @@ namespace labrador
 		//
 		// THE DEFAULT FRAMEBUFFER OF A WGL CONTEXT IS ITS WINDOW'S CLIENT AREA,
 		// so the window is the only authority on this and the backend must not
-		// keep a second copy of it. It used to keep one, written by
-		// create_device and window_size_changed and read by every glViewport,
-		// and the shell guarantees that copy is wrong exactly when someone is
-		// looking: engine/app/window.cpp renders a full frame from WM_PAINT for
-		// every step of a drag-resize and discards every WM_SIZE until the drag
-		// ends, so the whole picture slid down the window under a black band
-		// for the duration. No other backend can have that bug, and for two
-		// different reasons. The three that draw into a swap chain they created
-		// at a size they were told need no height at all to place a pane -
-		// that is both Direct3D ones, and it is why this is the file the number
-		// has to come out of. Vulkan needs a height and cannot go stale on it
+		// keep a second copy of it. A cached size is wrong exactly when someone
+		// is looking: engine/app/window.cpp renders a full frame from WM_PAINT
+		// for every step of a drag-resize and discards every WM_SIZE until the
+		// drag ends, so a stale copy slides the whole picture down the window
+		// under a black band for the duration. No other backend can have that
+		// bug, and for two different reasons. The two that draw into a swap
+		// chain they created at a size they were told need no height at all to
+		// place a pane - that is both Direct3D ones, and it is why this is the
+		// file the number has to come out of. Vulkan needs a height and cannot
+		// go stale on it
 		// anyway: its flip is pane-local, so the origin it measures from is the
 		// pane's own bottom edge rather than the buffer's (vulkan/backend.h).
 		mattmath::Vector2I drawable_size() const;

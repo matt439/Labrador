@@ -22,24 +22,17 @@ namespace labrador
 		// hands out rectangles; what fills them is the game's business, and its
 		// one caller now says so itself.
 
-		// Takes no DeviceResources. It held one and no member function ever
-		// read it, and it was the only thing standing between this class and
-		// a test: a ResolutionManager needs no device, so a ViewportManager
-		// now needs no device either. NOR DOES ANY MEMBER OF IT: this used to
-		// end "the two members that do touch D3D take the context as a
-		// parameter", and there are none - apply_player_viewport was the last
-		// one and it became DrawList::set_viewport. Every member here hands out
-		// a rectangle.
+		// Takes no DeviceResources, and no member of this class touches a device
+		// either: a ResolutionManager needs none, and every member here hands out
+		// a rectangle. That is what makes it constructible in a test.
 		explicit ViewportManager(ResolutionManager* resolution_manager);
 
 		void set_layout(ScreenLayout layout);
 		ScreenLayout layout() const { return layout_; }
 
-		// Pure arithmetic, all of it. The two apply_player_viewport overloads
-		// that used to live here were three lines of RSSetViewports and
-		// SpriteBatch::SetViewport apiece, and they are DrawList::set_viewport
-		// now - which is why this class no longer names a graphics type and can
-		// be constructed in a test.
+		// Pure arithmetic, all of it. Applying a viewport to a device is
+		// DrawList::set_viewport, which is why this class names no graphics
+		// type.
 		Viewport player_viewport(int player_num) const;
 
 		std::vector<Viewport> all_viewports() const;

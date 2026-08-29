@@ -15,9 +15,8 @@ namespace labrador
     // That is the way round it has to be, because a window can be any size at
     // all - a user drags an edge, a borderless full-screen window takes the
     // whole monitor - and a closed enum of four 16:9 presets cannot hold most
-    // of them. The enum used to be the ONLY member, so any size outside those
-    // four was answered with 1280x720 and every layout above here was computed
-    // for a window that was not on the screen.
+    // of them. The size is the member and the enum is a label over it, so a
+    // window outside the four presets lays out against its own size.
     class ResolutionManager
     {
     public:
@@ -37,7 +36,7 @@ namespace labrador
         // The size as given, with no preset anywhere near it. This is what a
         // real window is, and Application calls it from on_window_size_changed
         // so that a resize, a full-screen toggle and a dragged window edge all
-        // land here. NOT ALL THREE ARRIVE AS WM_SIZE, which this used to say:
+        // land here. NOT ALL THREE ARRIVE AS WM_SIZE:
         // engine/app/window.cpp drops every WM_SIZE sent inside the modal drag
         // loop and forwards a GetClientRect on WM_EXITSIZEMOVE instead, so a
         // dragged edge reaches this through that message. One call covers the
@@ -64,11 +63,10 @@ namespace labrador
         // is guarded against SIZE_MINIMIZED and WM_GETMINMAXINFO floors the
         // drag - so this is aimed at a caller that computed a size wrongly.
         //
-        // ONE CONSEQUENCE WORTH A CLIENT'S ATTENTION: a game can now be handed
-        // a size that is not 16:9, which the closed enum used to make
-        // unreachable. Anything assuming a single scale factor from one axis
-        // has a letterboxing decision to make that it did not have before. That
-        // is correct rather than free.
+        // ONE CONSEQUENCE WORTH A CLIENT'S ATTENTION: a game can be handed a
+        // size that is not 16:9. Anything assuming a single scale factor from
+        // one axis has a letterboxing decision to make. That is correct rather
+        // than free.
         void set_resolution_exactly(const mattmath::Vector2I& size);
 
         static std::string convert_resolution_to_string(

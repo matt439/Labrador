@@ -22,10 +22,9 @@
 // This is that include, and EVERY CLIENT OF IT IS IN THIS FOLDER - which is the
 // rule rather than a count. cmake/check_engine_includes.cmake fails the build
 // for any file outside engine/render/<backend>/ that names any header inside
-// it: the folder, not one filename in it. The D3D11 backend's copy of this
-// paragraph used to list its clients and says the list went stale twice, so
-// this one does not list them either. device_resources.cpp is not among them
-// and structurally could not be - it is what this header includes, not
+// it: the folder, not one filename in it. Stated as the rule and not as a
+// list of names, because a list goes stale. device_resources.cpp is not among
+// them and structurally could not be - it is what this header includes, not
 // something that includes it.
 //
 // WHAT THIS BACKEND DOES DIFFERENTLY, AND WHY IT WAS WORTH WRITING AT ALL. It
@@ -36,7 +35,8 @@
 // now, the fifth being the Vulkan one, which answers the first of the two the
 // same way and is the second answer to it rather than a repeat.
 //
-//  - THE SEAM HAD NEVER MET AN API WHERE THE ENGINE OWNS SYNCHRONISATION.
+//  - THIS IS THE ONE API BEHIND THE SEAM WHERE THE ENGINE OWNS
+//    SYNCHRONISATION.
 //    D3D11 renames a mapped buffer for you and tracks what is still in flight;
 //    OpenGL's driver does the same behind glBufferSubData; the null backend has
 //    no GPU to be out of step with. Here the engine holds the fence: frames in

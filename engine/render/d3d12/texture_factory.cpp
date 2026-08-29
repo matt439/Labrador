@@ -135,15 +135,15 @@ namespace labrador
 		ID3D12Device* device = device_of(renderer);
 		Renderer::Impl& impl = *renderer.impl();
 
-		// ONE COUNT, DERIVED ONCE AND REFUSED IF IT WILL NOT FIT. It used to be
-		// two casts of texture.levels.size() at two different widths - UINT16
-		// into MipLevels below, UINT into GetCopyableFootprints after it - and
-		// a count that did not fit the first was truncated rather than
-		// rejected, so CreateCommittedResource SUCCEEDED on a number the file
-		// never said. That is the one way past the named throw this function
-		// has for a texture the device will not take, and it left
-		// GetCopyableFootprints being asked about a subresource count outside
-		// the range its annotation gives.
+		// ONE COUNT, DERIVED ONCE AND REFUSED IF IT WILL NOT FIT. Casting
+		// texture.levels.size() twice at two different widths - UINT16 into
+		// MipLevels below, UINT into GetCopyableFootprints after it - truncates
+		// a count that does not fit the first rather than rejecting it, so
+		// CreateCommittedResource succeeds on a number the file never said.
+		// That is the one way past the named throw this function has for a
+		// texture the device will not take, and it leaves GetCopyableFootprints
+		// asked about a subresource count outside the range its annotation
+		// gives.
 		//
 		// dds_file.cpp already bounds the count at what the dimensions can
 		// produce, for every backend. This is the wall behind that one, and it
@@ -191,12 +191,13 @@ namespace labrador
 			// OF FOUR ANSWERS HAS IT. CreateCommittedResource returns
 			// E_OUTOFMEMORY for a heap it cannot make, E_INVALIDARG for a
 			// description it will not parse and DXGI_ERROR_DEVICE_REMOVED for a
-			// device that has gone, and this used to report all three as an
-			// unsupported format at a size. The Vulkan factory next door names
-			// its VkResult in the same position and for the same reason; both
-			// Direct3D backends have com_exception's "Failure with HRESULT of"
-			// available at every ThrowIfFailed site and this was the one place
-			// that both asserted a cause and threw the evidence away (T6).
+			// device that has gone, so reporting all three as an unsupported
+			// format at a size asserts a cause the code has not established. The
+			// Vulkan factory next door names its VkResult in the same position and
+			// for the same reason; both Direct3D backends have com_exception's
+			// "Failure with HRESULT of" available at every ThrowIfFailed site, so
+			// there is no reason to assert a cause and throw the evidence away
+			// (T6).
 			throw std::runtime_error("Texture '" + name + "' is " +
 				format_name(texture.format) + " at " +
 				std::to_string(texture.width) + "x" +
@@ -313,8 +314,8 @@ namespace labrador
 		// - "Re-adding a name reuses its slot" - and Registry::add duly replaces
 		// the entry and destroys the old D3d12Texture. Its slot number is a
 		// plain int with no destructor, so allocating a second one per re-load
-		// spent the heap on textures that were no longer live: a client
-		// re-walking a manifest per level ran out of a 256-entry heap with a few
+		// spends the heap on textures that are no longer live: a client
+		// re-walking a manifest per level runs out of a 256-entry heap with a few
 		// dozen textures in it, and a single manifest naming one asset as both a
 		// texture and a sprite sheet does it inside one walk.
 		//

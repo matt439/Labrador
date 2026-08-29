@@ -28,11 +28,11 @@ namespace labrador
 {
 	namespace
 	{
-		// Where the engine's values become the backend's. This used to be a
-		// member of the mattmath type - Viewport::d3d_viewport() - which is
-		// what put <d3d11.h> in a library documented as depending on nothing.
-		// This file was its only caller, so this is where it goes. A second
-		// backend writes its own; it does not inherit this.
+		// Where the engine's values become the backend's. It belongs here and
+		// not on the mattmath type: a Viewport::d3d_viewport() would put
+		// <d3d11.h> in a library documented as depending on nothing, and this
+		// file is its only caller. A second backend writes its own; it does not
+		// inherit this.
 		//
 		// D3D11_VIEWPORT's four extent members are FLOAT and a fractional
 		// viewport is legal, so this backend could keep the fraction - as could
@@ -175,8 +175,8 @@ namespace labrador
 		// SET IN FULL ON EVERY FLUSH rather than once per view. A flush is
 		// already a draw call, these are a dozen more commands into the same
 		// deferred context, and the alternative is a rule about which of them
-		// survives a viewport change and which does not - which is the rule the
-		// four hand-written copies of this protocol used to disagree about.
+		// survives a viewport change and which does not - which is the kind of
+		// rule separate copies of a protocol disagree about.
 		this->context->IASetInputLayout(owner_impl.input_layout.Get());
 		this->context->IASetPrimitiveTopology(
 			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -378,8 +378,8 @@ namespace labrador
 		const float screen_scale =
 			this->view_->camera.calculate_view_scale(scale);
 
-		// THE PEN AND THE BEARING ARE THE ENGINE'S TOO, and this backend no
-		// longer spells either of them. build_glyph_quad takes the glyph and
+		// THE PEN AND THE BEARING ARE THE ENGINE'S TOO, and this backend spells
+		// neither of them. build_glyph_quad takes the glyph and
 		// the pen the walk reported and answers with four corners, so what is
 		// left here is resolving two handles and submitting.
 		DrawList::View& view = *this->view_;
@@ -404,11 +404,10 @@ namespace labrador
 	ID3D11SamplerState* Renderer::Impl::sampler(TextureFilter filter) const
 	{
 		// Held rather than demanded from a state cache, because there are two
-		// of them and they are made with the device. Two objects used to cache
-		// CommonStates::PointClamp() as a raw pointer and hold it across a
-		// device loss, which freed the CommonStates that owned it; these are
-		// remade in create_device_dependent_resources like everything else, and
-		// nothing outside this class ever holds one.
+		// of them and they are made with the device. Caching one as a raw
+		// pointer and holding it across a device loss frees the state object
+		// that owns it; these are remade in create_device_dependent_resources
+		// like everything else, and nothing outside this class ever holds one.
 		return filter == TextureFilter::linear
 			? this->linear_sampler.Get()
 			: this->point_sampler.Get();
@@ -576,11 +575,10 @@ namespace labrador
 		// DrawList a caller is holding must keep pointing at the same view.
 		//
 		// The context is created beside the buffers that record into it, which
-		// is the whole point of it living here. DeviceResources used to own a
-		// pool of them and this loop borrowed the i'th, so the ordering that
-		// made that work - rebuild the pool after the device and before
-		// OnDeviceRestored - was a rule spanning two classes with nowhere to
-		// write it down. Now there is no ordering to state.
+		// is the whole point of it living here. A pool owned by DeviceResources
+		// and borrowed by index would need an ordering rule spanning two classes
+		// - rebuild the pool after the device and before OnDeviceRestored - with
+		// nowhere to write it down. There is no ordering to state.
 		//
 		// ReleaseAndGetAddressOf, not GetAddressOf: this function can run
 		// twice over the same views for one device loss, because
@@ -724,11 +722,11 @@ namespace labrador
 		}
 
 		// A FRAME IN PROGRESS IS RESTARTED, NOT REFUSED (renderer.h), and this
-		// backend used to be the one that refused. Every bound view holds this
+		// is the backend that has to work for it. Every bound view holds this
 		// frame's render target view in its deferred context, and DXGI will
 		// not resize a swap chain while anything still references its buffers:
-		// ResizeBuffers answered DXGI_ERROR_INVALID_CALL and the throw came out
-		// of a window message, where the shell has nowhere to catch it. So the
+		// ResizeBuffers answers DXGI_ERROR_INVALID_CALL, and the throw comes out
+		// of a window message where the shell has nowhere to catch it. So the
 		// recordings go first, which is also what releases the reference.
 		//
 		// discard() rather than finish(): what these contexts hold was drawn
@@ -736,11 +734,11 @@ namespace labrador
 		// worth executing and no command list worth owning.
 		//
 		// AND WHETHER THERE IS A FRAME IS A THING THE FRAME SAYS, not a thing
-		// the views are asked. This used to be `restart || view.bound`, and no
-		// view is bound between begin_frame and the first set_view_count - so
-		// a resize arriving there rebuilt the buffer and then left it to be
-		// drawn into without the clear below. Impl::frame_begun is the
-		// interval renderer.h actually names.
+		// the views are asked. Asking the views - `restart || view.bound` - gets
+		// it wrong between begin_frame and the first set_view_count, where no
+		// view is bound: a resize arriving there rebuilds the buffer and then
+		// leaves it to be drawn into without the clear below. Impl::frame_begun
+		// is the interval renderer.h actually names.
 		const bool restart = impl.frame_begun;
 
 		const int capacity = static_cast<int>(impl.views.size());
@@ -829,10 +827,10 @@ namespace labrador
 		// "begin_frame resets every view's recording" (renderer.h) has to mean
 		// the same thing on all five, and on three of the other four a recording
 		// is a vector that reset() empties. Here it is a deferred context, and the
-		// commands in one outlive any flag this loop clears: a frame begun,
-		// drawn into and never submitted used to leave its flushed geometry
-		// where the next frame's ExecuteCommandList would find it at the head
-		// of the list, drawn over the top of the clear above. discard() is a
+		// commands in one outlive any flag this loop clears: without the drain, a
+		// frame begun, drawn into and never submitted leaves its flushed geometry
+		// where the next frame's ExecuteCommandList finds it at the head of the
+		// list, drawn over the top of the clear above. discard() is a
 		// no-op on every view submit() already finished, which is every view on
 		// every normal frame.
 		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
