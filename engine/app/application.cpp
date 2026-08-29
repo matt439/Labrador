@@ -106,17 +106,17 @@ namespace labrador
 		this->create_window(instance, show_command);
 
 		// Which audio API this opens, and whether it opens one at all, is
-		// engine/audio/<backend>/'s business and is chosen in CMake. The debug
-		// flags that used to be assembled here went with it.
+		// engine/audio/<backend>/'s business and is chosen in CMake, debug flags
+		// included.
 		this->audio_device_ = std::make_unique<AudioDevice>();
 
 		const mattmath::Vector2I size =
 			this->resolution_manager_->resolution_ivec();
 
-		// The layout's number, not the pool's. It used to be max_threads, which
-		// built one deferred context and one dynamic vertex buffer per thread
-		// the machine might ever run to draw a frame that has four panes at the
-		// very most - see ApplicationOptions::view_capacity.
+		// The layout's number, not the pool's. A thread count here builds one
+		// deferred context and one dynamic vertex buffer per thread the machine
+		// might ever run, to draw a frame that has four panes at the very most -
+		// see ApplicationOptions::view_capacity.
 		this->renderer_->create_device(this->window_->handle(), size.x, size.y,
 			this->options_.view_capacity);
 
@@ -232,8 +232,8 @@ namespace labrador
 		else
 		{
 			// BACK TO THE SIZE THE GAME ASKED FOR, WHICH IS NOT THE SIZE THE
-			// MANAGER HOLDS. resolution_ivec() used to be a synonym for the
-			// requested preset and is now the live window, so while full screen
+			// MANAGER HOLDS. resolution_ivec() is the live window rather than the
+			// requested preset, so while full screen
 			// it is the monitor - reading it here would keep the window at
 			// monitor size with a caption on it. options_.resolution is the last
 			// thing a game actually requested, so the manager is re-pointed at
@@ -418,9 +418,9 @@ namespace labrador
 		// renderer, which has already released them by the time this is called.
 		//
 		// Which resources those are is the table's business, not the shell's.
-		// This used to name textures and fonts, which meant the shell knew both
-		// what kinds of resource the backend keeps and that there were exactly
-		// two of them.
+		// Naming textures and fonts here would have the shell know both what
+		// kinds of resource the backend keeps and that there are exactly two of
+		// them.
 		this->render_resources_->release_device_resources();
 	}
 
@@ -429,10 +429,10 @@ namespace labrador
 		// Reload the GPU-side assets into the existing RenderResources, so every
 		// borrowed SpriteSheet* and SoundBank* stays valid.
 		//
-		// Nothing re-seats a device here any more. The restore hands back a
-		// different one, and the loader used to be told so - which was an
-		// ordering only this line knew about. The factory reads the device off
-		// the renderer as it builds, so the new device is simply what is there.
+		// Nothing re-seats a device here. The restore hands back a different
+		// one, and telling the loader so would be an ordering only this line
+		// knew about. The factory reads the device off the renderer as it
+		// builds, so the new device is simply what is there.
 		if (this->content_loaded_)
 		{
 			this->resource_loader_->reload_device_resources();

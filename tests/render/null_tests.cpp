@@ -316,15 +316,12 @@ TEST_CASE("reading pixels back says plainly that there are none")
 
 // --- the state a draw was recorded under ------------------------------------
 //
-// NOTHING ASSERTED EITHER OF THESE UNTIL NOW, on any backend - and both halves
-// of that have since stopped being true elsewhere, which is worth knowing
-// before reading these two cases as the only coverage there is. RecordedSprite
-// has carried filter and viewport since it was written; when this was written
-// the pixel tests created one integral 64x64 view, never called set_viewport
-// and never named TextureFilter::linear, so a backend that dropped either on
-// the floor passed every configuration. That file has an entire viewport
-// section now, and a case that changes the filter mid-list on a rasteriser.
-// What these two still hold that it cannot is the stamp itself: what a run was
+// THESE TWO ARE NOT THE ONLY COVERAGE OF FILTER AND VIEWPORT, and reading
+// them as such is the mistake worth heading off. pixel_tests.cpp has an entire
+// viewport section and a case that changes the filter mid-list on a
+// rasteriser, so both terms reach a device there.
+//
+// What these two hold that it cannot is the stamp itself: what a run was
 // recorded UNDER, rather than what came out of it.
 //
 // THE set_filter CASE WAS ALSO THE ONLY ODR-USE OF IT IN THE REPOSITORY, and
@@ -377,11 +374,11 @@ TEST_CASE("the viewport in force is stamped on each draw")
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
 		Vector2F::ZERO, SpriteFlip::none, 0.0f);
 
-	// A pane, and a fractional one - which is the shape that made the two
-	// device backends disagree, because GL has to reach whole pixels and used
-	// to reach them twice with two different answers. The recording keeps the
-	// float it was given; Viewport::pixel_rect is where the conversion lives
-	// and tests/render/viewport_tests.cpp is where it is pinned.
+	// A pane, and a fractional one - which is the shape that makes two device
+	// backends disagree if either reaches whole pixels twice with two different
+	// answers, as GL has to reach them at all. The recording keeps the float it
+	// was given; Viewport::pixel_rect is where the conversion lives and
+	// tests/render/viewport_tests.cpp is where it is pinned.
 	list.set_viewport(Viewport(0.0f, 240.5f, 640.0f, 239.5f));
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,

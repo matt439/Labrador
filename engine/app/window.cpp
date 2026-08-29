@@ -207,9 +207,9 @@ namespace labrador
 		// time the caller reads its resolution back for create_device, that is
 		// the client size the window really got. It matters most for the
 		// full-screen branch, where SW_SHOWMAXIMIZED decides the size and
-		// nothing here knows it: the swap chain used to be created at the saved
-		// preset and then stretched non-uniformly to the monitor
-		// (DXGI_SCALING_STRETCH), which is the one form of this bug the shipped
+		// nothing here knows it. Without that read-back the swap chain is
+		// created at the saved preset and then stretched non-uniformly to the
+		// monitor (DXGI_SCALING_STRETCH), which is the form of this a shipped
 		// sample hits.
 		ShowWindow(this->handle_,
 			options.fullscreen ? SW_SHOWMAXIMIZED : show_command);
@@ -365,10 +365,10 @@ namespace labrador
 			// date about. Two of the backends answer it from a swap chain and
 			// so answer the size they were last told, making the call a
 			// self-comparison that changes nothing; the GL backend answers it
-			// from the window (renderer.h, back_buffer_size), so every step
-			// used to hand it the already-current client rect. That cost a
+			// from the window (renderer.h, back_buffer_size), so ungated, every
+			// step hands it the already-current client rect. That costs a
 			// viewport, a clear and a per-view reset per mouse-move step, and
-			// then made gl answer "nothing changed" to the WM_EXITSIZEMOVE
+			// then has gl answer "nothing changed" to the WM_EXITSIZEMOVE
 			// below - the one message that ends a resize, which the other
 			// backends answer true to.
 			if (self && !self->in_sizemove_)

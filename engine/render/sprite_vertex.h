@@ -15,10 +15,7 @@ namespace labrador
 	// reordering these three fields silently renumbers what the pipeline binds.
 	// engine/render/sprite.hlsl says the same thing about VertexIn and is the
 	// other end of the same ABI. Reorder these and the three fields still
-	// follow correctly on d3d11, d3d12 and gl, and swap on vulkan. This
-	// paragraph used to say the opposite - that reordering them changed what
-	// every shader reads - and the rule had been copied verbatim into the
-	// backends, several statements of a constraint nothing enforced. What is
+	// follow correctly on d3d11, d3d12 and gl, and swap on vulkan. What is
 	// load-bearing is which fields exist, what types they are, and that this is
 	// one interleaved struct rather than three parallel streams.
 	//

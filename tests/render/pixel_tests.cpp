@@ -76,9 +76,9 @@
 // Because the text cases below are relationships (see two paragraphs down), a
 // term added EQUALLY TO EVERY GLYPH cancels out of every one of them and this
 // file cannot see it at all. The glyph's vertical bearing is exactly such a
-// term: deleting it used to leave this file green on every backend that
-// rasterises, the null backend's record test green, and the samples merely a
-// few pixels wrong.
+// term: deleting it leaves this file green on every backend that rasterises,
+// the null backend's record test green, and the samples merely a few pixels
+// wrong.
 // It is pinned in tests/render/sprite_geometry_tests.cpp instead, as a
 // difference between two glyphs whose bearings differ - which is the shape an
 // absolute term has to be asked about, and which needs no device. Anything
@@ -973,13 +973,12 @@ TEST_CASE("CONTRACT: a texture change keeps call order, it does not group runs")
 {
 	Harness harness;
 
-	// TWO OF THE THREE TERMS A DRAW CALL IS KEYED ON HAD NEVER RASTERISED,
-	// which is the five-backend sweep's finding 6 and TEST-GAP's B8 by another
-	// route. A run breaks on a viewport change, a texture change or a filter
-	// change; only the viewport one had ever reached a device from this file,
-	// and the only two-texture list in it is the one that is deliberately
-	// never submitted. Both stamps were asserted on the null backend, where
-	// nothing rasterises - so what a change of texture does to a frame was
+	// TWO OF THE THREE TERMS A DRAW CALL IS KEYED ON RASTERISE HERE AND
+	// NOWHERE ELSE - the five-backend sweep's finding 6 and TEST-GAP's B8 by
+	// another route. A run breaks on a viewport change, a texture change or a
+	// filter change; without these cases only the viewport one reaches a device
+	// from this file, and the stamps are asserted on the null backend alone,
+	// where nothing rasterises - so what a change of texture does to a frame is
 	// checked everywhere except on the four backends that draw.
 	add_texture_asset(harness.renderer(), harness.resources(), "run_red",
 		flat_texture(255, 0, 0));
@@ -1554,9 +1553,9 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 	// truncates and the size is the difference (Viewport::pixel_rect), so the
 	// panes come out 31 rows and 33 rows and meet exactly at row 31.
 	//
-	// TRUNCATING THE POSITION AND THE SIZE SEPARATELY - which is what the GL
-	// backend used to do, inline, in its own file - gives 31 rows and 32 rows.
-	// Those cover rows 0..30 and 31..62, and row 63 belongs to neither.
+	// TRUNCATING THE POSITION AND THE SIZE SEPARATELY - which is what a
+	// backend converting inline does - gives 31 rows and 32 rows. Those cover
+	// rows 0..30 and 31..62, and row 63 belongs to neither.
 	list.set_viewport(Viewport(0.0f, 0.0f, 64.0f, 31.5f));
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 64.0f, 31.0f), Colour::white, 0.0f,
@@ -1813,8 +1812,8 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 		// so the window moving under it changes nothing here and the stretch
 		// happens at Present. A WGL context has no such buffer - its default
 		// framebuffer is the window's client area - so the GL backend has to
-		// read the window, and it used to answer this from a cached int that
-		// only create_device and window_size_changed ever wrote.
+		// read the window, and answering from a cached int that only
+		// create_device and window_size_changed write is wrong exactly here.
 		//
 		// WHAT THIS CANNOT SEE is where the pane went, and the shrink below is
 		// as close as the seam gets. A stale flip height displaces the whole
@@ -2078,13 +2077,13 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 TEST_CASE("CONTRACT: a frame may be read back and then presented")
 {
 	// THE INTERVAL renderer.h NAMES, WALKED TO ITS END. read_back_buffer says
-	// it is called "BETWEEN submit() AND end_frame()", and until this case
-	// nothing in this file ever reached the second half of that sentence:
-	// Harness::end deliberately stops at the read, because presenting a
-	// flip-model swap chain discards the buffer it just read. So the sequence
-	// the seam explicitly permits - draw, submit, read, present - had never
-	// been run on any backend, and a client that screenshots a frame and then
-	// shows it is doing exactly that.
+	// it is called "BETWEEN submit() AND end_frame()", and this is the only
+	// case that reaches the second half of that sentence: Harness::end
+	// deliberately stops at the read, because presenting a flip-model swap
+	// chain discards the buffer it just read. Without it the sequence the seam
+	// explicitly permits - draw, submit, read, present - runs on no backend,
+	// and a client that screenshots a frame and then shows it is doing exactly
+	// that.
 	//
 	// IT WAS A LIVE DEFECT ON THE FIFTH BACKEND AND ONLY THE VALIDATION LAYERS
 	// COULD SEE IT. A read-back there submits the frame's command buffer

@@ -442,13 +442,12 @@ namespace mattmath
 		// A proper crossing, and nothing else - see the contract on
 		// test_2D_segment_segment.
 		//
-		// There used to be an `if (a == b)` shortcut here returning true with
-		// t = 0. It made the predicate disagree with itself: Segment's
-		// operator== compares point_0 to point_0, so it is direction
-		// sensitive, and segments_intersect(s, s) was therefore true while
-		// segments_intersect(s, reversed(s)) was false. The same two point
-		// sets, opposite answers, decided by which end the caller happened to
-		// write first.
+		// NO `if (a == b)` SHORTCUT returning true with t = 0. It would make the
+		// predicate disagree with itself: Segment's operator== compares point_0
+		// to point_0, so it is direction sensitive, and segments_intersect(s, s)
+		// would be true while segments_intersect(s, reversed(s)) was false. The
+		// same two point sets, opposite answers, decided by which end the caller
+		// happened to write first.
 		//
 		// It also did not fix the hole it sat in front of - collinear overlap
 		// is still not an intersection here - so it patched exactly one
@@ -502,16 +501,14 @@ namespace mattmath
 	{
 		// Straight onto the corner cache the rectangle already holds.
 		//
-		// This used to build a Quad from it and triangulate that - so a
-		// boolean query allocated twice, re-proved the convexity of a shape
-		// that is convex by construction, and could THROW: Quad's constructor
-		// rejects four coincident points, which is exactly what a
-		// default-constructed RectangleRotated holds. RectangleRotated::contains
-		// forwarded here, so a predicate returning bool terminated the caller
-		// with an invalid_argument naming a type it never mentioned. That
-		// member is gone now - it was one of five one-line contains(Point2F)
-		// forwards deleted with the intersection table - and this function is
-		// the only spelling left, which is where the guarantee below lives.
+		// NOT BY BUILDING A Quad FROM IT AND TRIANGULATING THAT. A boolean
+		// query would allocate twice, re-prove the convexity of a shape that is
+		// convex by construction, and could THROW: Quad's constructor rejects
+		// four coincident points, which is exactly what a default-constructed
+		// RectangleRotated holds - so a predicate returning bool would terminate
+		// the caller with an invalid_argument naming a type it never mentioned.
+		// This function is the only spelling of the query, which is where the
+		// guarantee below lives.
 		//
 		// point_in_convex_polygon gives the same answer for a convex
 		// quadrilateral - both take the boundary as inside and neither cares

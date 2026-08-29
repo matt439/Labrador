@@ -17,12 +17,12 @@ namespace labrador
 	// two indexed loads - the sheet out of its registry slot, the frame out of the
 	// sheet - with no string touched on the way.
 	//
-	// NO CAMERA PARAMETER. Every one of these used to come in two versions, one
-	// taking a Camera and one not, and the camera-taking version's whole body was
-	// a call to Camera::calculate_view_rectangle before the draw. The list holds
-	// the camera now (renderer.h, DrawList::set_camera), so a caller wanting
-	// screen space sets nothing and a caller wanting a player's view sets it once
-	// for the range rather than passing it down through every signature.
+	// NO CAMERA PARAMETER. Two versions of each of these, one taking a Camera
+	// and one not, put a call to Camera::calculate_view_rectangle in the whole
+	// body of half of them. The list holds the camera (renderer.h,
+	// DrawList::set_camera), so a caller wanting screen space sets nothing and a
+	// caller wanting a player's view sets it once for the range rather than
+	// passing it down through every signature.
 	class TextureObject : public SpriteSheetObject
 	{
 	public:
@@ -67,13 +67,12 @@ namespace labrador
 		// of the body.
 		//
 		// A SCENE RUNS draw() ON THE SAME OBJECT FROM EVERY RENDER WORKER AT
-		// ONCE, so "set members, then draw" is an unsynchronised data race -
-		// and back when the element was a std::string it was concurrent
-		// free/allocate on one control block, i.e. heap corruption. The frame is
-		// a handle now, so passing it costs a register rather than a string
-		// copy. The fan-out this describes is engine/scene/scene.cpp's and is
-		// pinned by tests/scene/fanout_tests.cpp; the class that used to be
-		// named here left with the paint-shooter.
+		// ONCE, so "set members, then draw" is an unsynchronised data race - and
+		// with a std::string element it is concurrent free/allocate on one
+		// control block, i.e. heap corruption. The frame is a handle, so passing
+		// it costs a register rather than a string copy. The fan-out this
+		// describes is engine/scene/scene.cpp's and is pinned by
+		// tests/scene/fanout_tests.cpp.
 		void draw_with(DrawList& draw_list,
 			const mattmath::RectangleF& destination_rectangle,
 			SpriteSheet::frame_handle frame,

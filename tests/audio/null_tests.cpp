@@ -77,10 +77,9 @@ TEST_CASE("a bank built over a device is audible, and audible is not audible")
 	const Fixture fixture;
 
 	// audible() is true and this configuration makes no noise whatever, which
-	// is the distinction sound_bank.h now spells out and the old code could not
-	// have: the two questions - is there content, and does this build have an
-	// audio API - used to have one answer because there was only ever one
-	// backend.
+	// is the distinction sound_bank.h spells out: is there content, and does
+	// this build have an audio API, are two questions and only the first is a
+	// property of a bank.
 	CHECK(fixture.bank->audible());
 
 	// A bank is the list of names it was handed, on this backend. There is no
@@ -132,14 +131,13 @@ TEST_CASE("the level clamp is engine arithmetic, and this is where it is read")
 	const SoundBank::EffectHandle effect =
 		fixture.bank->resolve_effect("engine_loop");
 
-	// FIVE SITES, AND THIS IS THE CASE docs/survey/2026-08-26.md 3.4a WAS
-	// BUYING. Every one of these had never executed in this repository: the
-	// clamp sat below the check for the platform, and no bank that reached it
-	// could be built. It sits above that check now, because folding a volume
-	// into [0,1] and a pitch and a pan into [-1,1] is arithmetic
-	// engine/audio/ owns - the same kind of engine-side decision as the glyph
-	// walk in render/font.h - and a seam drawn where the old check was would
-	// have put it on the platform's side of the wall.
+	// FIVE SITES, AND THIS IS WHERE THEY ARE ASSERTED - the case
+	// docs/survey/2026-08-26.md 3.4a asked for. The clamp sits ABOVE the check
+	// for the platform, because folding a volume into [0,1] and a pitch and a
+	// pan into [-1,1] is arithmetic engine/audio/ owns - the same kind of
+	// engine-side decision as the glyph walk in render/font.h. Below that
+	// check, no bank that could be built here would ever reach it and none of
+	// the five would execute.
 	fixture.bank->play_wave(wave, 500.0f, -12.0f, 9.0f);
 	fixture.bank->play_effect(effect, false, -1.0f, 40.0f, -40.0f);
 	fixture.bank->set_effect_volume(effect, 1000.0f);
@@ -196,9 +194,9 @@ TEST_CASE("all eight of the verbs that answered nothing now say what they did")
 	CHECK(played[7].call == SoundCall::set_voice_pitch);
 	CHECK(played[8].call == SoundCall::set_voice_pan);
 
-	// stop_effect's `immediate` used to be provably inert here - it was read by
-	// nothing this repository could reach. Both spellings arrive now, and they
-	// are different calls rather than the same one twice.
+	// stop_effect's `immediate` is readable here, which is what makes it more
+	// than provably inert: both spellings arrive, and they are different calls
+	// rather than the same one twice.
 	CHECK(played[2].immediate == false);
 	CHECK(played[3].immediate == true);
 

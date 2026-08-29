@@ -11,17 +11,16 @@ using namespace labrador;
 
 // The bank a missing container produces, and what it still answers.
 //
-// WHAT THIS FILE USED TO BE, AND WHY IT IS SHORTER NOW.
-// docs/survey/2026-08-26.md 3.4a asked for the written list of which of
-// SoundBank's fourteen public methods SoundBank::silent() leaves observable,
-// and this file was that list: eight of the thirteen instance methods had no
-// observable behaviour anywhere in this repository, "it did not throw" was
-// the whole of what a case could assert about them, and five sites of level
-// clamping sat below the check for the platform and had never executed. The
-// reason was not the tests. An audible SoundBank was UNCONSTRUCTIBLE here -
-// its other constructor took a std::unique_ptr<DirectX::WaveBank>,
-// DirectXTK's WaveBank has exactly one constructor taking a path to an .xwb,
-// and there is no .xwb in this tree.
+// WHAT THIS FILE CAN AND CANNOT REACH. Under the presets that build
+// audio/xaudio2/, an audible SoundBank is UNCONSTRUCTIBLE here: that
+// constructor takes a std::unique_ptr<DirectX::WaveBank>, DirectXTK's WaveBank
+// has exactly one constructor taking a path to an .xwb, and there is no .xwb
+// in this tree. So every case below runs against SoundBank::silent(), and what
+// they pin is the contract that survives missing content.
+//
+// tests/audio/null_tests.cpp is the other half and the only place in the tree
+// where a sound can be asserted to have happened. Read the two together before
+// concluding anything about audio coverage from this file alone.
 //
 // 3.4b IS WHAT THAT LIST WAS FOR AND IT HAS BEEN SPENT. engine/audio/ has a
 // seam now (audio_device.h) and a headless implementation behind it
@@ -99,8 +98,7 @@ TEST_CASE("a bank with no content plays nothing, and every verb still runs")
 	const SoundBank::WaveHandle wave = bank->resolve_wave("shot");
 	const SoundBank::EffectHandle effect = bank->resolve_effect("engine_loop");
 
-	// Still the whole of what can be asserted about these here, and it is no
-	// longer the whole of what can be asserted about them: null_tests.cpp reads
+	// The whole of what can be asserted about these HERE; null_tests.cpp reads
 	// each one back off a device. What this case pins is narrower and is the
 	// contract that survives a missing file - a game that is otherwise correct
 	// runs in silence rather than throwing on a file it was never going to
@@ -129,13 +127,11 @@ TEST_CASE("a handle nobody resolved is refused by a bank with no content too")
 	const SoundBank::WaveHandle never_resolved_wave;
 	const SoundBank::EffectHandle never_resolved_effect;
 
-	// THIS IS THE CASE THAT CHANGED, AND IT IS WHAT THE REORDER BOUGHT. Both
-	// guards used to sit BELOW the check for content, so the one mistake this
-	// class exists to catch loudly - a handle nobody resolved - was caught in a
-	// build with audio and went unmentioned in a build without it. 3.4a
-	// recorded that as a cost of where the seam was drawn. Drawing it properly
-	// moved every engine-side check above the platform-side one, and a program
-	// bug now fails the same way whatever content is on disk.
+	// A PROGRAM BUG FAILS THE SAME WAY WHATEVER CONTENT IS ON DISK, which is
+	// what putting every engine-side check above the platform-side one buys.
+	// With both guards BELOW the check for content, the one mistake this class
+	// exists to catch loudly - a handle nobody resolved - is caught in a build
+	// with audio and goes unmentioned in a build without it.
 	CHECK_THROWS_AS(bank->play_wave(never_resolved_wave), std::out_of_range);
 	CHECK_THROWS_AS(bank->play_effect(never_resolved_effect),
 		std::out_of_range);

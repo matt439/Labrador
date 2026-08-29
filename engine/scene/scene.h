@@ -107,9 +107,9 @@ namespace labrador
 		// Deferral is not tidiness. The one place objects enter the world
 		// mid-frame is a weapon firing, and with the players in the same list
 		// as their projectiles - which is what one object list means - a push
-		// from inside the update loop invalidates the iterator walking it. The
-		// old code got away with it only because players and projectiles were
-		// two lists and the push went into the one nobody was walking.
+		// from inside the update loop invalidates the iterator walking it. Two
+		// lists hide that only for as long as the push goes into the one nobody
+		// is walking.
 		//
 		// The returned pointer is valid immediately, and is the object's own
 		// type rather than the list's - it is what a caller that needs to keep
@@ -230,14 +230,12 @@ namespace labrador
 		// each one: the world through that view's camera, culled to what that
 		// view can see, then the game's overlay over it.
 		//
-		// The fan-out is here and nowhere else. There were two hand-written
-		// copies before the seam and they had already diverged - one per player
-		// in the level, one per widget in a menu, the second of which indexed
-		// deferred contexts by widget ordinal and so capped every menu at
-		// however many the shell happened to make. The unification the review
-		// asked for was "give ThreadPool a parallel_for"; this is it, and it is
-		// a scene function rather than a pool one because what it parallelises
-		// is views - which is a thing only a scene knows it has.
+		// The fan-out is here and nowhere else. Hand-written copies diverge -
+		// one per player in a level and one per widget in a menu is two, and the
+		// second indexing deferred contexts by widget ordinal caps every menu at
+		// however many the shell happened to make. It is a scene function rather
+		// than a ThreadPool::parallel_for because what it parallelises is views,
+		// which is a thing only a scene knows it has.
 		void draw(Renderer& renderer, const ViewOverlay& overlay = {}) const;
 
 	private:

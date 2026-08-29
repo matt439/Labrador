@@ -11,12 +11,12 @@
 // The XAudio2 backend, through DirectXTK, and the only file in this repository
 // that includes <Audio.h>.
 //
-// It used to be four public engine headers, which is what made
+// Spread across public engine headers instead, it is what made
 // docs/port/android.md 3.2 call audio "the one place the second-platform claim
-// is provably false today". A game that asked what its music was doing named a
-// Microsoft library to ask; a loader that built a bank handed one in. Nothing
-// above audio_device.h names an audio API now, and cmake/check_engine_includes
-// fails the build for a file outside this folder that reaches for one of ours.
+// is provably false today": a game asking what its music was doing named a
+// Microsoft library to ask. Nothing above audio_device.h names an audio API,
+// and cmake/check_engine_includes fails the build for a file outside this
+// folder that reaches for one of ours.
 //
 // WHAT THIS FILE OWNS THAT THE SEAM DOES NOT. Three things, and they are the
 // three the seam declines to decide:
@@ -27,15 +27,14 @@
 //    question open and this is the side of the cut it left it on.
 //  - THE LIFETIME RULE. DirectXTK requires the AudioEngine to outlive every
 //    WaveBank and SoundEffectInstance, because their destructors unregister
-//    themselves from it. That used to be a paragraph in engine/app/
-//    application.h's member list, keeping a DirectXTK ordering constraint in
-//    the shell of a 2D engine. It is Impl's declaration order now, six lines
-//    from the library that requires it.
+//    themselves from it. It is Impl's declaration order, six lines from the
+//    library that requires it, rather than a paragraph in the shell's member
+//    list - which is where a DirectXTK ordering constraint must not sit.
 //  - THE DEVICE-LOSS ANSWER, WHICH IS STILL TO IGNORE IT. AudioEngine::Update
 //    answers false when the audio device has gone, and DirectXTK's documented
-//    reply is to check IsCriticalError() and Reset(). Nothing in this tree has
-//    ever done that, and this port deliberately did not start: the ignore is
-//    below, where the platform is, instead of in the frame loop where it was.
+//    reply is to check IsCriticalError() and Reset(). Nothing in this tree
+//    does that, and the ignore is deliberate: it sits below, where the
+//    platform is, rather than in the frame loop.
 
 using namespace DirectX;
 
@@ -118,14 +117,14 @@ namespace labrador
 			throw std::runtime_error("Failed to open wave bank: " + path);
 		}
 
-		// EVERY NAME THE DEFINITION LISTS, CHECKED HERE, WHICH IS EARLIER AND
-		// STRICTER THAN IT USED TO BE. A wave the definition named and the
-		// container does not hold used to surface in one of two places
-		// depending on content that had nothing to do with it: at
-		// WaveBank::CreateInstance, if some effect instance happened to name
-		// it, and otherwise not until a resolve_wave that might never come.
-		// Both are the same content bug and it is found once, at load, naming
-		// the wave and the file (T6).
+		// EVERY NAME THE DEFINITION LISTS, CHECKED HERE, WHICH IS THE EARLIEST
+		// AND STRICTEST PLACE FOR IT. Left to the play path, a wave the
+		// definition names and the container does not hold surfaces in one of
+		// two places depending on content that has nothing to do with it: at
+		// WaveBank::CreateInstance, if some effect instance happens to name it,
+		// and otherwise not until a resolve_wave that may never come. Both are
+		// the same content bug and it is found once, at load, naming the wave
+		// and the file (T6).
 		for (const std::string& wave_name : wave_names)
 		{
 			if (bank->Find(wave_name.c_str()) < 0)
@@ -237,9 +236,9 @@ namespace labrador
 	{
 		// The answer is false when the audio device has gone, and the reply
 		// DirectXTK documents is IsCriticalError() then Reset(). Nothing here
-		// has ever made that reply, and the ignore is deliberate rather than
-		// forgotten - it just used to sit in Application::update, where a
-		// reader could not tell which of the two it was.
+		// makes that reply, and the ignore is deliberate rather than forgotten -
+		// which is why it sits here, beside the platform, and not in the frame
+		// loop where a reader could not tell which of the two it was.
 		std::ignore = this->impl_->engine->Update();
 	}
 

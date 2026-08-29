@@ -11,18 +11,16 @@ using namespace labrador;
 // over. engine/render/resource_factory.h says add_texture_asset throws
 // std::runtime_error naming the texture and the format when the device will not
 // take it. The GL backend does exactly that at four sites. Both Direct3D
-// backends route every failure through ThrowIfFailed, and com_exception used to
-// derive from std::exception - so that sentence had never once described the
-// implementation that existed when it was written, and git log -S over the
-// header shows it never could have.
+// backends route every failure through ThrowIfFailed, so com_exception's base
+// is what decides whether that sentence describes them. Deriving from
+// std::exception rather than std::runtime_error breaks it on two backends out
+// of five while leaving every one of them compiling.
 //
-// "ONE FILE OVER" USED TO READ "A DIFFERENT MODULE", and the difference is the
-// point of the move that brought this file here. throw_if_failed.h was in
-// core/, which is the module everything may lean on and the last place a COM
-// error type belongs; it is in render/ now, beside the resource_factory.h whose
-// promise it keeps, and this test moved with it - out of CoreTests and into
-// RenderTests, which is likewise built in every configuration. Not one
-// assertion below changed, which is what a static_assert is for.
+// "ONE FILE OVER" IS THE POINT. throw_if_failed.h belongs in render/, beside
+// the resource_factory.h whose promise it keeps, and not in core/ - the module
+// everything may lean on and the last place a COM error type belongs. This
+// test sits in RenderTests for the same reason, and RenderTests is built in
+// every configuration, so the assertions below run in all five.
 //
 // A CATCH SITE COULD NOT TELL, WHICH IS WHY NOTHING NOTICED. Every catch in
 // this repository is catch (const std::exception&), so both types were caught
@@ -83,13 +81,13 @@ namespace ThrowIfFailedTests
 
 		TEST_CASE("two live exceptions do not share one buffer")
 		{
-			// what() used to format into a function-local static char[64], so
-			// every com_exception in a process returned the same pointer and
-			// the last one to be asked overwrote the answer for all of them.
-			// The review that found this argued it could not race today -
-			// Scene::draw is the only add_task site and the pool catches per
-			// task - and that argument is correct and is not a fix. Holding
-			// the message in the base costs nothing and removes the question.
+			// A what() formatting into a function-local static char[64] has
+			// every com_exception in a process return the same pointer, so the
+			// last one asked overwrites the answer for all of them. That it
+			// cannot race in this tree today - Scene::draw is the only add_task
+			// site and the pool catches per task - is true and is not a fix.
+			// Holding the message in the base costs nothing and removes the
+			// question.
 			const com_exception first(E_FAIL);
 			const com_exception second(E_INVALIDARG);
 
