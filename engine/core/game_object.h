@@ -6,11 +6,11 @@
 namespace labrador
 {
 	// Declared, not included, and that is the point of the whole exercise.
-	// This header used to open with <SpriteBatch.h>, which is what put nine of
-	// the engine's translation units out of a headless test's reach and made
-	// `core | math` (ARCHITECTURE's module table) false at exactly one line.
+	// Opening this header with a graphics API puts nine of the engine's
+	// translation units out of a headless test's reach and makes `core | math`
+	// (ARCHITECTURE's module table) false at exactly one line.
 	// A reference parameter needs no definition; whoever implements draw()
-	// includes engine/render/renderer.h, and core still depends on math alone.
+	// includes engine/render/renderer.h, and core depends on math alone.
 	class DrawList;
 	// Anything the level can update and draw.
 	//
@@ -31,13 +31,13 @@ namespace labrador
 	{
 	public:
 		virtual ~GameObject() = default;
-		// dt arrives as a parameter rather than being read off a member.
-		// update() taking nothing meant every object that needed the frame time
-		// had to hold a const float* to the shell's dt and be handed it at
-		// construction - which put that pointer in eleven classes, in the
-		// constructors of everything that built one, and in the builders above
-		// those. It also made the object outlive-the-pointer question real:
-		// device loss used to reallocate the float behind it.
+		// dt arrives as a parameter rather than being read off a member. An
+		// update() taking nothing makes every object that needs the frame time
+		// hold a const float* to the shell's dt and be handed it at construction
+		// - which puts that pointer in eleven classes, in the constructors of
+		// everything that builds one, and in the builders above those. It also
+		// makes the outlive-the-pointer question real, because a device loss can
+		// reallocate the float behind it.
 		virtual void update(float dt) = 0;
 		// One draw, into one view's recording. There was a second, camera-less
 		// overload; nothing ever called it through this interface, and by the
@@ -45,15 +45,15 @@ namespace labrador
 		// stopped early-outing on death, dropped a whole sprite layer and lost
 		// the facing flip.
 		//
-		// The camera used to be the second parameter. It is on the DrawList
-		// now (engine/render/renderer.h, DrawList::set_camera): every one of
-		// these implementations either handed it straight down or called
+		// The camera is on the DrawList and not a parameter here
+		// (engine/render/renderer.h, DrawList::set_camera). An implementation of
+		// this either hands a camera straight down or calls
 		// Camera::calculate_view_rectangle with it, and the caller that knows
 		// which view this is is the caller that should say so - once for a
 		// range of draws, not once per object per draw.
 		//
-		// This is the line that used to make engine/core include <SpriteBatch.h>
-		// and put nine translation units out of a headless test's reach.
+		// This is the line that would make engine/core include a graphics API if
+		// the parameter were anything but a reference to a declared type.
 		virtual void draw(DrawList& draw_list) const = 0;
 		// The object's drawn extent, in world space.
 		//
@@ -70,8 +70,8 @@ namespace labrador
 		// structure. CollisionObject::shape() stays the fine half of that
 		// pair; this is the coarse half.
 		//
-		// Note what is no longer expressible: an object cannot report itself
-		// invisible. Whether anything is drawn is now a property of draw(),
+		// Note what is not expressible: an object cannot report itself
+		// invisible. Whether anything is drawn is a property of draw(),
 		// not of the extent.
 		virtual mattmath::RectangleF bounds() const = 0;
 	};

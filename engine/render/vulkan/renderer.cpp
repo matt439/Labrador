@@ -273,8 +273,7 @@ namespace labrador
 		// you.
 		//
 		// THE WAIT IS THE LINE BELOW AND NOT INSIDE
-		// destroy_device_dependent_resources, which this paragraph used to
-		// claim and which that function has never contained. It matters
+		// destroy_device_dependent_resources, which contains none. It matters
 		// because the OTHER caller is handle_device_lost, by way of
 		// on_device_lost, and that path does its own wait first - a second one
 		// inside would be on a device that has just gone.
@@ -1213,8 +1212,8 @@ namespace labrador
 		// The pass' finalLayout says where it left the image, and nothing this
 		// class recorded put it there - so the tracking is told rather than
 		// asked. It is the same layout it went in as, which is what would make
-		// a second pass in one frame legal here - and renderer.h has since
-		// decided that a second submit does nothing on any backend, so what
+		// a second pass in one frame legal here - and renderer.h decides
+		// that a second submit does nothing on any backend, so what
 		// this line actually buys is the read-back path, which reopens the
 		// command buffer after this and needs the layout to be true.
 		device_resources.set_colour_layout(
@@ -1392,7 +1391,7 @@ namespace labrador
 	// where it was called. D3D11 has no such split, because
 	// ID3DUserDefinedAnnotation hangs off the device context and is always
 	// there. So the honest choices here are a marker that means two things or
-	// one that never does anything, and renderer.h has since settled the axis
+	// one that never does anything, and renderer.h settles the axis
 	// for all five: markers are advisory, a backend may discard them, and this
 	// one does (T6, T9 - the extension is optional and nothing in this
 	// repository reads a capture).

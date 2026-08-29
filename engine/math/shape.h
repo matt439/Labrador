@@ -29,9 +29,9 @@ namespace mattmath
 		// contract, not an accident of the arithmetic - a collider that grows
 		// by less than it was asked to lets objects visibly interpenetrate
 		// while the collision system correctly reports no touch, which is the
-		// one failure a geometry simplifier must never have. Polygons used to
-		// have exactly that bug: they displaced each vertex away from the
-		// centroid by `amount`, which moves the adjacent edges out by only
+		// one failure a geometry simplifier must never have. Displacing each
+		// vertex away from the centroid by `amount` is exactly that bug: it
+		// moves the adjacent edges out by only
 		// amount * cos(angle between the vertex ray and the edge normal) -
 		// short of the request, by a different factor at every corner.
 		//
@@ -82,24 +82,23 @@ namespace mattmath
 		// answered the pure virtual with an empty vector because a circle has
 		// no edges - declares none at all.
 		//
-		// intersects() was the same mistake at seven times the size, and it is
-		// why this header used to declare eleven types before it defined one.
-		// Seven pure virtuals - one per shape a shape could be asked about -
-		// meant every concrete type had to name every other at declaration
-		// time, so the forward-declaration block above existed to let Shape do
-		// it, and nothing here could be filed apart from anything else. The
-		// thirty-seven overrides answering them were one-line forwards to the
-		// free predicates below, which held the bodies, the contracts and the
-		// documented degenerate cases the whole time. Two dispatchers on top
-		// recovered the concrete type with dynamic_cast to choose an overload:
-		// a downcast per query, on the narrow phase's own path, to reach a
+		// A virtual intersects() table is the same mistake at seven times the
+		// size, and it is what would make this header declare eleven types
+		// before it defined one. Seven pure virtuals - one per shape a shape can
+		// be asked about - make every concrete type name every other at
+		// declaration time, so nothing here could be filed apart from anything
+		// else, and the thirty-seven overrides answering them are one-line
+		// forwards to the free predicates below, which hold the bodies, the
+		// contracts and the documented degenerate cases. Two dispatchers on top
+		// recover the concrete type with dynamic_cast to choose an overload: a
+		// downcast per query, on the narrow phase's own path, to reach a
 		// function whose name the caller already knew (T8).
 		//
-		// Counted before it went, every production call of that table was a
-		// RectangleF against a RectangleF - which is why that one predicate
-		// survives as a member, and why it holds a body now instead of
-		// forwarding to a free function that no longer exists. The two
-		// dispatchers had no caller anywhere, tests included.
+		// Counted across the tree, every production call of that table is a
+		// RectangleF against a RectangleF - which is why that one predicate is a
+		// member and holds a body, and why the free predicates below are what
+		// everything else asks. A dispatcher over the seven has no caller
+		// anywhere, tests included.
 		//
 		// contains(const Point2F&) went with it, from all five shapes. Each
 		// was a one-line forward to that shape's own intersects(Point2F)

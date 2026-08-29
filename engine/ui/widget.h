@@ -15,17 +15,14 @@ namespace labrador
 {
 	// A named, hideable thing in a user interface.
 	//
-	// NO RESCALE. This class used to require every widget to implement
-	// scale_size_and_position(), and UiContainer shipped a
-	// scale_objects_to_new_resolution() that walked the tree applying it. That
-	// is a layout policy, and an engine base class is not where a game's
-	// answer to "what happens at 1280x720" belongs (T1). It was also
-	// destructive: the factor was recorded nowhere, so after the walk there was
-	// no authoritative geometry left to write against, and any later absolute
-	// setter wrote design-space units into a rescaled widget. The results
-	// screen did exactly that every frame - its team bars were 1.5x too wide
-	// for the box they sat in at the default resolution, because the box had
-	// been shrunk and the bars had not.
+	// NO RESCALE. A scale_size_and_position() on every widget, with a
+	// container walking the tree to apply it, is a layout policy - and an
+	// engine base class is not where a game's answer to "what happens at
+	// 1280x720" belongs (T1). It is also destructive: the factor is recorded
+	// nowhere, so after the walk no authoritative geometry is left to write
+	// against, and any later absolute setter writes design-space units into a
+	// rescaled widget. A screen mixing the two gets bars 1.5x too wide for the
+	// box they sit in, because the box was shrunk and the bars were not.
 	//
 	// A widget now holds one geometry, in whatever space the game authored it
 	// in, and nothing ever rewrites it. The mapping to the screen is a Camera,
@@ -82,7 +79,7 @@ namespace labrador
 
 	// A widget that is its children.
 	//
-	// IT IS A UiWidget, AND USED TO BE A UiObject, which is the difference
+	// IT IS A UiWidget AND NOT A UiObject, which is the difference
 	// between a compound widget being writable and not. FocusGroup::add takes
 	// a UiWidget*, so a container could not be focused - and a row that is a
 	// label and a value side by side, which is what every options screen is

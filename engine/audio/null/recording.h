@@ -18,22 +18,20 @@
 // RecordedSound is two handles, an index, two flags and three floats, every one
 // of them a type engine/audio/ already hands out.
 //
-// WHY THIS BACKEND EXISTS, AND WHY ITS ABSENCE WAS THE FINDING.
-// PHILOSOPHY.md:632-637 requires a seam to ship with a headless
-// implementation, "because a seam with only the platform's own implementation
-// behind it still requires the platform in order to construct anything".
-// Audio was the standing counter-example in this tree, and
-// SoundBank::silent() was the thing that made it look answered: a null
-// DirectX::WaveBank pointer inside DirectXTK's own class, checked at the top
-// of every method, which could DECLINE to play a sound and could not RECORD
-// one. Eight of SoundBank's thirteen instance methods had no observable
-// behaviour anywhere in this repository as a result, and "it did not throw"
-// was the whole of what a test could assert about them -
-// tests/audio/sound_bank_tests.cpp carried the list and
-// docs/survey/2026-08-26.md 3.4a is where it was asked for. This file is the
-// other half of that list: with a device that records, those eight say what
-// they did, and the five sites of level clamping that had never executed are
-// readable in the numbers below.
+// WHY THIS BACKEND EXISTS. PHILOSOPHY.md:632-637 requires a seam to ship with
+// a headless implementation, "because a seam with only the platform's own
+// implementation behind it still requires the platform in order to construct
+// anything".
+//
+// SoundBank::silent() is not that implementation, and the difference is what
+// this file is for. A bank with no content can DECLINE to play a sound; it
+// cannot RECORD one. Without a device that records, eight of SoundBank's
+// thirteen instance methods have no observable behaviour anywhere in this
+// repository and "it did not throw" is the whole of what a test can assert
+// about them, while the five sites of level clamping - engine arithmetic,
+// sitting below the check for the platform - never execute at all. With one,
+// those eight say what they did and the clamped levels are readable in the
+// numbers below.
 //
 // IT RECORDS WHAT WAS ASKED FOR, NOT WHAT IT SOUNDED LIKE, and that is a floor
 // rather than a first version. There is no mixer here, no sample rate and no

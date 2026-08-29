@@ -1077,13 +1077,13 @@ namespace labrador
 			// minimised is the ordinary case and not a mistake.
 			//
 			// AND THE OLD ONE IS RELEASED HERE, WHICH IS WHAT MAKES THAT
-			// SENTENCE TRUE. This branch used to return with swapchain_ still
-			// naming the swapchain it had declined to replace, so the two null
-			// checks in present() that the paragraph above points at could
-			// never fire: destroy_swapchain is the only place that member is
-			// ever cleared. What actually happened was that the acquire kept
-			// being answered VK_ERROR_OUT_OF_DATE_KHR by a swapchain nothing
-			// was remaking, and end_frame threw out of the message pump.
+			// SENTENCE TRUE. Returning from this branch with swapchain_ still
+			// naming the swapchain it declined to replace stops the two null
+			// checks in present() that the paragraph above points at from ever
+			// firing: destroy_swapchain is the only place that member is ever
+			// cleared. The acquire is then answered VK_ERROR_OUT_OF_DATE_KHR by
+			// a swapchain nothing is remaking, and end_frame throws out of the
+			// message pump.
 			//
 			// SAFE TO DESTROY IT HERE because both callers have already waited
 			// for the whole device - rebuild_swapchain does, and
@@ -1362,8 +1362,8 @@ namespace labrador
 
 	void DeviceResources::handle_device_lost()
 	{
-		// BEFORE ANYTHING IS DESTROYED, INCLUDING BY THE SHELL, and it used to
-		// be five lines below the notify that destroys most of it. Not every
+		// BEFORE ANYTHING IS DESTROYED, INCLUDING BY THE SHELL - not below the
+		// notify that destroys most of it. Not every
 		// route here is a device that has actually gone: an out-of-memory
 		// answer from try_wait_for_gpu reaches this function with a live device
 		// still executing a frame, and on_device_lost is what frees the

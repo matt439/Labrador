@@ -88,13 +88,13 @@ namespace labrador
 	// `before.connected` are both true, and that conjunction is part of the
 	// contract rather than an implementation detail.
 	//
-	// It did not used to be, and the absence was reachable three ways. The
+	// Without it the phantom edge is reachable three ways. The
 	// process's first poll compares against a default-constructed previous, so
-	// a pad already holding A when the game starts pressed it. A replug reads
-	// as absent and then present again, so it pressed everything it came back
-	// holding. And a reader that reports absence for any other reason - see
-	// GamepadReader::suspend - hands the same phantom edge to whatever
-	// resumes. None of it was a client's to guard: the obvious
+	// a pad already holding A when the game starts has pressed it. A replug
+	// reads as absent and then present again, so it presses everything it came
+	// back holding. And a reader that reports absence for any other reason -
+	// see GamepadReader::suspend - hands the same phantom edge to whatever
+	// resumes. None of it is a client's to guard: the obvious
 	// `if (pads.connected(slot))` is TRUE on the offending frame, which is
 	// precisely the frame the slot became occupied, so the guard a careful
 	// caller writes does not work and the correct one - gating every press site
@@ -111,7 +111,7 @@ namespace labrador
 	// making.
 	//
 	// THE DISCONNECT SIDE LOSES NOTHING, but it does change spelling. A pad
-	// that vanishes with a button down no longer produces released() on that
+	// that vanishes with a button down does not produce released() on that
 	// frame - held() is false there too - so a client keying "stop firing" off
 	// a release asks for the disconnect instead:
 	//

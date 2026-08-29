@@ -18,16 +18,16 @@ namespace labrador
 	// all. Resolved up front, the same typo throws at load, naming the wave
 	// (T6).
 	//
-	// WHAT IS ON THIS SIDE OF THE SEAM, WHICH IS THE THING THAT CHANGED.
-	// Everything in this class is engine arithmetic and engine policy: which
-	// name means which wave, which handles are valid, and the clamp that folds
-	// a volume into [0,1] and a pitch and a pan into [-1,1]. It calls
-	// audio_device.h for the four or five things an audio API actually does.
-	// That used to be untrue in a way nothing could see - this class held a
-	// DirectX::WaveBank and a Registry<DirectX::SoundEffectInstance>, and its
-	// effect handle and its effect_state return type were both spelt in a
-	// library's namespace, so a game asking what its music was doing named
-	// XAudio2 to ask.
+	// WHAT IS ON THIS SIDE OF THE SEAM. Everything in this class is engine
+	// arithmetic and engine policy: which name means which wave, which handles
+	// are valid, and the clamp that folds a volume into [0,1] and a pitch and a
+	// pan into [-1,1]. It calls audio_device.h for the four or five things an
+	// audio API actually does.
+	//
+	// Nothing here may name one. A bank holding a DirectX::WaveBank and a
+	// Registry<DirectX::SoundEffectInstance>, with its effect handle and its
+	// effect_state spelt in a library's namespace, makes a game name XAudio2 to
+	// ask what its music is doing.
 	//
 	// AND THE ORDER INSIDE EACH METHOD IS THE OTHER HALF OF IT. The clamp and
 	// the unresolved-handle check happen ABOVE the test for whether this bank
@@ -95,19 +95,17 @@ namespace labrador
 		// is why this is a named constructor a loader has to ask for and not a
 		// state the class can fall into.
 		//
-		// WHAT IT NO LONGER COSTS. A handle nobody resolved used to be accepted
-		// here as well, so the one mistake this class exists to catch loudly
-		// was caught in a build with audio and unmentioned in a build without
-		// it. That was a consequence of the check for content sitting above the
-		// check for the handle, and the order is the other way round now: a
-		// name always resolves, and a handle that was never resolved is refused
-		// by every bank.
+		// AND IT STILL REFUSES A BAD HANDLE. The check for the handle sits above
+		// the check for content, not below it: a name always resolves, and a
+		// handle that was never resolved is refused by every bank. The other
+		// order makes the one mistake this class exists to catch loudly depend on
+		// whether the build has audio in it.
 		static std::unique_ptr<SoundBank> silent();
 
 		// Whether this bank has content behind it. False only for silent().
 		//
-		// IT IS NOT A QUESTION ABOUT THE BUILD, and the two used to be the same
-		// question by accident. Under the null audio backend every bank here is
+		// IT IS NOT A QUESTION ABOUT THE BUILD, and the two are easily confused.
+		// Under the null audio backend every bank here is
 		// audible and none of them makes a noise: whether a device puts a wave
 		// through a speaker is chosen in CMake and is not a property of a bank.
 		// What this answers is narrower and is the only thing a caller can

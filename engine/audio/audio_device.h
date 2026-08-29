@@ -45,20 +45,14 @@ namespace labrador
 	// place the second-platform claim is provably false today". That is the
 	// architectural half.
 	//
-	// THE MEASURED HALF IS SHARPER AND IS WHY THIS LANDED WHEN IT DID.
-	// PHILOSOPHY.md:632-637 requires that "a seam ships with its headless
-	// implementation, or it has not shipped", because "a seam with only the
-	// platform's own implementation behind it still requires the platform in
-	// order to construct anything". Audio was the tree's standing proof of that
-	// sentence. SoundBank::silent() looked like the headless implementation the
-	// rule demands and was not one: it was a null DirectX::WaveBank pointer
-	// inside the platform's own class, checked at the top of every method, so
-	// it could DECLINE to do things and could not RECORD them. Eight of
-	// SoundBank's thirteen instance methods therefore had no observable
-	// behaviour anywhere in this repository, and five sites of level clamping -
-	// engine arithmetic, sitting below the check for the platform - had never
-	// executed. tests/audio/sound_bank_tests.cpp carried that list, and it is
-	// what this seam was built to spend.
+	// AND THE MEASURED HALF. PHILOSOPHY.md:632-637 requires that "a seam ships
+	// with its headless implementation, or it has not shipped", because "a seam
+	// with only the platform's own implementation behind it still requires the
+	// platform in order to construct anything". SoundBank::silent() does not
+	// satisfy that rule and must not be mistaken for something that does: it is
+	// a bank with no content, which is a question about content and not about
+	// the platform. engine/audio/null/ is the headless implementation, and
+	// engine/audio/null/recording.h says what it makes assertable.
 	//
 	// WHERE THE CUT IS, AND WHAT IS DELIBERATELY ABOVE IT. Everything this
 	// engine decides is above: which name means which wave, which handles are

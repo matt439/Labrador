@@ -20,22 +20,21 @@ namespace labrador
 	// matter:
 	//
 	//   - A wide thin platform crosses a standing player's left AND right
-	//     edges, so the old code compared centres horizontally and shoved the
-	//     player sideways off a platform they should have landed on. The
+	//     edges. Comparing centres horizontally there shoves the player
+	//     sideways off a platform they should have landed on. The
 	//     minimum-overlap axis for that pair is vertical, always, because the
 	//     platform is thin - which is the same fact the player can see.
-	//   - One shape wholly containing the other crossed all four edges or
-	//     none, and fell through to a helper whose comparison contradicted its
-	//     own comment. Containment has a well-defined minimum translation and
-	//     this returns it.
-	//   - A diagonal classification was renormalised by std::max over the two
-	//     *signed* components, so a left-and-up contact divided by the
-	//     negative one and resolved backwards. There are no diagonal
-	//     classifications here; there is one axis, and it came from an edge.
-	//   - Anything that was not two rectangles was resolved by bisection - 40
-	//     iterations of moving the shape back and forth by a shrinking
-	//     fraction of its own size - whose failure was unreportable and whose
-	//     answer, when it did converge, was approximate. This is analytic
+	//   - One shape wholly containing the other crosses all four edges or
+	//     none, so an edge-crossing classification has nothing to say about it.
+	//     Containment has a well-defined minimum translation and this returns
+	//     it.
+	//   - A diagonal classification renormalised by std::max over the two
+	//     *signed* components divides a left-and-up contact by the negative
+	//     one and resolves backwards. There are no diagonal classifications
+	//     here; there is one axis, and it came from an edge.
+	//   - Bisection - 40 iterations of moving the shape back and forth by a
+	//     shrinking fraction of its own size - has an unreportable failure and
+	//     an approximate answer when it converges. This is analytic
 	//     (PHILOSOPHY, Collision) and runs in the number of edges.
 	//
 	// The axis set is COMPLETE, not a good-enough sample of one. In two

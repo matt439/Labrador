@@ -30,7 +30,7 @@ namespace labrador
 	// answer sizes is the thread pool and nothing else: the renderer's view
 	// capacity is a property of the layout (ApplicationOptions::view_capacity)
 	// and the partition count is a property of the work (Scene::draw). One
-	// constant used to answer all three.
+	// constant answering all three conflates them.
 	int default_thread_count();
 
 	// What a game hands the shell before it opens a window. Everything here is a
@@ -65,13 +65,12 @@ namespace labrador
 		// renderer's per-view recording state - a backend that records into
 		// per-thread contexts has to make them before any frame starts.
 		//
-		// A PROPERTY OF THE LAYOUT, NOT OF THE MACHINE, and it used to be
-		// max_threads. That conflation was not merely untidy: every view costs a
-		// deferred context and a sprite batch's dynamic vertex buffer, built
-		// eagerly at create_device and rebuilt after every device restore,
-		// whether or not a frame ever uses it. A sixteen-thread default
-		// therefore built sixteen of them to draw one pane, out of the same
-		// memory the game runs in.
+		// A PROPERTY OF THE LAYOUT, NOT OF THE MACHINE, and taking it from a
+		// thread count is not merely untidy: every view costs a deferred context
+		// and a sprite batch's dynamic vertex buffer, built eagerly at
+		// create_device and rebuilt after every device restore, whether or not a
+		// frame ever uses it. A sixteen-thread default would build sixteen of
+		// them to draw one pane, out of the same memory the game runs in.
 		//
 		// Four is four-player split-screen, which is the widest layout either
 		// client has. A game drawing one pane says 1 and pays for one.
@@ -145,12 +144,12 @@ namespace labrador
 		// WM_SIZE, so on_window_size_changed is the single place that holds the
 		// invariant, and it cannot be got at from a game.
 		//
-		// It used to hold for neither. set_fullscreen restyled to WS_POPUP and
-		// showed maximized while the resolution manager reported the last
-		// requested preset, so ViewportManager laid out every viewport and
-		// divider for 1280x720 inside a 1440p back buffer, and the game rendered
-		// into the top-left corner of its own window with the rest cleared black.
-		// A dragged window edge was the same door with no guard on it at all.
+		// WITHOUT IT, NEITHER HOLDS. A set_fullscreen that restyles to WS_POPUP
+		// and shows maximized while the resolution manager still reports the last
+		// requested preset has ViewportManager lay out every viewport and divider
+		// for 1280x720 inside a 1440p back buffer, and the game renders into the
+		// top-left corner of its own window with the rest cleared black. A
+		// dragged window edge is the same door.
 
 		// Resizes the window so the game gets `resolution` pixels of CLIENT area,
 		// and re-points the resolution manager at what it actually got. The game
@@ -168,9 +167,9 @@ namespace labrador
 		// The step is fixed, so a long blocking call - loading a level, reading
 		// a save - is not one enormous dt. It is a backlog, and the next tick
 		// pays it off by running update() as many times as it takes, at full
-		// speed, on a world that has not been drawn yet. The paint-shooter used
-		// to swallow the first frame after a build and hope, which cost it a
-		// frame and fixed nothing beyond it.
+		// speed, on a world that has not been drawn yet. A client that swallows
+		// the first frame after a load instead pays for one frame and fixes
+		// nothing beyond it.
 		void reset_elapsed_time();
 
 		// The services. Every one of these is null until initialize() has run -
@@ -233,14 +232,12 @@ namespace labrador
 		// declared FIRST and dies LAST - after the AudioResources whose banks
 		// hold a borrowed pointer to it.
 		//
-		// THE PARAGRAPH THIS REPLACES WAS A DirectXTK RULE, and its leaving is
-		// the shape of what the audio seam was for. It read: "DirectXTK
-		// requires the AudioEngine to outlive every WaveBank and
-		// SoundEffectInstance - their destructors unregister themselves from
-		// it". True, still true, and no longer the shell's business: it is six
-		// lines from the library that requires it, in
-		// engine/audio/xaudio2/audio_device.cpp, where the next backend can
-		// have a different rule without this file learning it.
+		// WHAT ORDER THE AUDIO OBJECTS DIE IN IS NOT THE SHELL'S BUSINESS, which
+		// is what the seam bought. DirectXTK requires its AudioEngine to outlive
+		// every WaveBank and SoundEffectInstance; that rule is six lines from the
+		// library that imposes it, in engine/audio/xaudio2/audio_device.cpp,
+		// where the next backend can have a different one without this file
+		// learning it.
 		std::unique_ptr<AudioDevice> audio_device_ = nullptr;
 
 		ApplicationOptions options_;
@@ -287,12 +284,10 @@ namespace labrador
 		// through the base pointer the window holds.
 		//
 		// They stay on Application rather than moving into Window with the rest
-		// of the Win32, and that is now a choice about layering rather than a
-		// constraint: on_display_change used to end in
-		// DeviceResources::UpdateColorSpace and so pinned them here. Publishing
-		// a Renderer::display_changed() on the seam would have freed them too,
-		// at the price of a permanent seam method serving a call that could not
-		// change anything. Deleting the handler was cheaper and reverts.
+		// of the Win32, and that is a choice about layering rather than a
+		// constraint - nothing below the seam needs telling. Publishing a
+		// Renderer::display_changed() would free them, at the price of a
+		// permanent seam method serving a call that changes nothing.
 		void tick() override;
 
 		// The four that mean "the player is looking at us" or "the player is
