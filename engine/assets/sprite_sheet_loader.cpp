@@ -52,13 +52,13 @@ namespace labrador
 				// REFUSED, NOT IGNORED, AND THAT IS EVERYTHING THIS ENGINE
 				// KNOWS ABOUT PACKER ROTATION.
 				//
-				// This key used to be parsed into a SpriteFrame member that
-				// nothing ever read: the sheet said a frame was turned in the
-				// atlas, the engine drew it upright, and no line anywhere said
-				// so. Quiet disagreement with a content file is the T6 trap on
-				// the one path T7 says should be data, and it is worse here
-				// than a missing key would be, because the file is right and
-				// the engine is wrong.
+				// This key is refused rather than parsed into a SpriteFrame
+				// member nothing reads - which would have the sheet say a frame
+				// is turned in the atlas, the engine draw it upright, and no
+				// line anywhere say so. Quiet disagreement with a content file
+				// is the T6 trap on the one path T7 says should be data, and it
+				// is worse than a missing key, because the file is right and the
+				// engine is wrong.
 				//
 				// Drawing one is not refused on cost alone. A turned frame
 				// swaps its source width and height against the destination and

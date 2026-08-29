@@ -231,9 +231,9 @@ TEST_CASE("a contact an earlier response already separated is dropped")
 TEST_CASE("a contact is dropped when an earlier response retired a participant")
 {
 	// A bullet that hits a wall does not go on to hit the player standing
-	// behind it. That rule used to be a `continue` inside the sweep, so
-	// whether it held depended on which nested loop reached the pair; here it
-	// holds for both sides of every pair.
+	// behind it. As a `continue` inside the sweep the rule holds or not
+	// depending on which nested loop reached the pair; here it holds for both
+	// sides of every pair.
 	TestObject bullet(RectangleF(50.0f, 50.0f, 10.0f, 10.0f),
 		BULLET, WALL | PLAYER);
 	TestObject wall(RectangleF(0.0f, 0.0f, 100.0f, 55.0f), WALL, BULLET);

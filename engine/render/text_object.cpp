@@ -86,8 +86,8 @@ namespace labrador
 		// that has the font. NO BACKEND ANSWERS IT: RenderResources::measure_
 		// text is compiled once, engine-side, and forwards to Font::measure -
 		// so what makes a TextObject constructible without a device is that
-		// this call never reaches a backend at all, which is a stronger
-		// statement than the one this used to make.
+		// this call never reaches a backend at all - which is stronger than any
+		// claim about what a backend would answer.
 		this->measured_size_ =
 			this->render_resources()->measure_text(this->font_, this->text_);
 	}

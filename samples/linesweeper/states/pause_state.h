@@ -74,14 +74,10 @@ namespace linesweeper
 		// Which way the player is pushing, from the stick, the d-pad and the
 		// arrow keys at once.
 		//
-		// THIS USED TO BE NINE LINES OF TRANSLATION AND IS NOW A held().
-		// `navigation.h` said `Direction` was "produced by the input module
-		// from a stick or a d-pad" and no producer existed, so the first
-		// version of this file wrote the mapping itself - which was cheap
-		// precisely because it read only edge devices. `pad_direction` in
-		// `engine/input/direction.h` is that producer, and adding the stick
-		// costs nothing here now: the deadzone and the quadrant test are
-		// behind it, and `DirectionRepeat` below is the third piece.
+		// ONE held(), NOT NINE LINES OF TRANSLATION. `pad_direction` in
+		// `engine/input/direction.h` is the producer, so the deadzone and the
+		// quadrant test are behind it and adding the stick costs nothing here.
+		// `DirectionRepeat` below is the third piece.
 		//
 		// The keyboard is folded in here rather than in the engine, and that
 		// is the right split: which keys mean up is a binding, and this sample

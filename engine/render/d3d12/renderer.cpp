@@ -1094,12 +1094,11 @@ namespace labrador
 		// holding.
 		//
 		// AND WHETHER THERE IS A FRAME IS A THING THE FRAME SAYS, not a thing
-		// the command lists are asked. This used to read frame_open() - is
-		// anything recording right now - which is false for the whole interval
-		// between begin_frame and the first set_view_count, so a resize
-		// arriving there rebuilt the buffer and then left it to be drawn into
-		// with no barrier and no clear. Impl::frame_begun is the interval
-		// renderer.h actually names.
+		// the command lists are asked. frame_open() - is anything recording
+		// right now - is false for the whole interval between begin_frame and
+		// the first set_view_count, so a resize arriving there rebuilds the
+		// buffer and then leaves it to be drawn into with no barrier and no
+		// clear. Impl::frame_begun is the interval renderer.h actually names.
 		const bool restart = impl.frame_begun;
 		impl.abandon_recording();
 

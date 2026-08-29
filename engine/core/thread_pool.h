@@ -8,16 +8,15 @@ namespace labrador
     // A pool of worker threads, and the one place a task's exception is caught
     // and carried back to whoever waited for it.
     //
-    // NO <windows.h> HERE, WHICH IS WHAT Impl IS FOR. This header used to open
-    // with it, because the private members below were PTP_WORK, PTP_POOL,
-    // PTP_CLEANUP_GROUP and a TP_CALLBACK_ENVIRON, and a static callback
-    // spelt in PVOID. That handed the whole Win32 surface to every module that
-    // wanted a worker - engine/scene/scene.cpp and engine/app/application.h
-    // are the two - out of core/, which is the one module everything else is
-    // allowed to lean on. core/registry.h had already refused exactly this,
-    // deliberately, and says so: its COM-facing specialisation lives where COM
-    // is already in scope "rather than dragging <wrl/client.h> in here". The
-    // standard was stated in this folder and this file was not held to it.
+    // NO <windows.h> HERE, WHICH IS WHAT Impl IS FOR. Spelling the private
+    // members as PTP_WORK, PTP_POOL, PTP_CLEANUP_GROUP, a TP_CALLBACK_ENVIRON
+    // and a static callback taking PVOID would open this header with it, and
+    // hand the whole Win32 surface to every module that wants a worker -
+    // engine/scene/scene.cpp and engine/app/application.h are the two - out of
+    // core/, which is the one module everything else is allowed to lean on.
+    // core/registry.h refuses exactly this and says so: its COM-facing
+    // specialisation lives where COM is already in scope "rather than dragging
+    // <wrl/client.h> in here".
     //
     // WHAT IS BEHIND THE POINTER IS UNCHANGED, and that is deliberate too. The
     // implementation is still the Win32 thread pool - CreateThreadpoolWork,

@@ -109,12 +109,10 @@ namespace labrador
 	// Application and arrive through WindowNotify, because message translation
 	// lives here and what a message means does not.
 	//
-	// That used to be forced rather than chosen: on_display_change ended in
-	// DeviceResources::UpdateColorSpace, so a Window handling its own messages
-	// would have had to include the backend. The handler is gone and the
-	// constraint with it, so this is now a judgement about layering and nothing
-	// else - which is the better reason to keep them where they are, and a
-	// worse one to move them.
+	// Nothing forces it. No handler here ends below the seam, so a Window
+	// taking these messages would not have to include a backend - which makes
+	// this a judgement about layering and nothing else: the better reason to
+	// keep them where they are, and a worse one to move them.
 	class Window
 	{
 	public:

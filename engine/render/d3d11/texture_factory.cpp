@@ -21,13 +21,13 @@ namespace labrador
 	{
 		// Read fresh on every call rather than held.
 		//
-		// The loader used to cache the device and be told when it changed,
-		// because a device restore hands back a different object and a stale
-		// pointer builds resources on a dead one. That was a caller obligation -
-		// construct with the device, and remember to re-seat it from
-		// on_device_restored - stated in two places and enforced in none. Asking
-		// the renderer at the moment of use is one member read, on the load path
-		// rather than the frame path, and there is no ordering left to get wrong.
+		// The loader does not cache the device. A restore hands back a different
+		// object and a stale pointer builds resources on a dead one, so caching
+		// means a caller obligation - construct with the device, and remember to
+		// re-seat it from on_device_restored - of the kind stated in two places
+		// and enforced in none. Asking the renderer at the moment of use is one
+		// member read, on the load path rather than the frame path, and there is
+		// no ordering to get wrong.
 		ID3D11Device1* device_of(const Renderer& renderer)
 		{
 			return renderer.impl()->device_resources.GetD3DDevice();

@@ -36,9 +36,9 @@ TEST_SUITE("Colour")
 
 	TEST_CASE("hex parses the way the palette was built")
 	{
-		// The palette used to be 148 hex strings parsed into 148 Colours at
-		// start-up. The Colours are literal channel values now, so this is
-		// what pins the two spellings together.
+		// The palette is 148 literal channel values, not 148 hex strings
+		// parsed at start-up, so this is what pins the two spellings
+		// together.
 		CHECK(Colour("1e90ff") == Colour::dodger_blue);
 		CHECK(Colour("2f4f4f") == Colour::dark_slate_grey);
 		CHECK(Colour("ffffff") == Colour::white);
@@ -70,8 +70,8 @@ TEST_SUITE("Colour")
 
 	TEST_CASE("colour_from_name reports a name it does not know")
 	{
-		// It used to return WHITE for anything unrecognised, so a typo in a
-		// level file was a white structure and no other symptom.
+		// Returning WHITE for anything unrecognised makes a typo in a level
+		// file a white structure and no other symptom.
 		CHECK_FALSE(colour_from_name("NOT_A_COLOUR").has_value());
 		CHECK_FALSE(colour_from_name("").has_value());
 

@@ -213,9 +213,9 @@ TEST_CASE("a file that is not a texture this engine draws says which way")
 		// SEVENTY THOUSAND SPECIFICALLY, because the D3D12 backend narrowed
 		// this count to UINT16 for the resource description it builds: a value
 		// that fits UINT16 fails resource creation and hits that backend's
-		// named throw, and one that does not used to be TRUNCATED and succeed
-		// on a number no file ever said. Both walls stand now, and this is the
-		// first of them - the one every backend inherits.
+		// named throw, and one that does not would be TRUNCATED and succeed on
+		// a number no file ever said. Both walls stand, and this is the first
+		// of them - the one every backend inherits.
 		CHECK_THROWS_AS(read_dds_file(file.path()), std::runtime_error);
 	}
 }

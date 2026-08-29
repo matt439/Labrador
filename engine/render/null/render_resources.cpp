@@ -41,15 +41,14 @@ namespace labrador
 
 	// --- RenderResources -----------------------------------------------------
 	//
-	// The same short list the other four keep. THIS BACKEND IS WHERE THE COST
-	// OF THE OLD ARRANGEMENT WAS LEGIBLE: a third copy of a page of forwarding
-	// calls, in a backend that has no graphics API at all, none of it about one.
-	// Its own comment used to say exactly that and then keep the copy. What it
-	// kept is a texture table whose resource type is the struct declared just
-	// above it in backend.h, and that is real - a null texture is still a
-	// texture, and which table a TextureHandle indexes is this folder's
-	// business here exactly as it is in the four that have a device, each of
-	// which keeps the same table under its own resource type.
+	// The same short list the other four keep. THIS BACKEND IS WHERE A PAGE OF
+	// FORWARDING CALLS PER BACKEND WOULD BE MOST OBVIOUSLY WRONG: a third copy
+	// of it, in a backend that has no graphics API at all, none of it about
+	// one. What is here instead is a texture table whose resource type is the
+	// struct declared just above it in backend.h, and that is real - a null
+	// texture is still a texture, and which table a TextureHandle indexes is
+	// this folder's business exactly as it is in the four that have a device,
+	// each of which keeps the same table under its own resource type.
 
 	RenderResources::RenderResources() : impl_(std::make_unique<Impl>())
 	{

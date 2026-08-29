@@ -12,9 +12,8 @@
 namespace labrador
 {
     // The Win32 thread pool, and the whole of what this class knows about
-    // Windows. Every member below used to be a private member of ThreadPool
-    // itself, which is why the header used to include <windows.h>; nothing
-    // about what they do has changed in moving here.
+    // Windows. Every member below is here rather than on ThreadPool itself,
+    // which is what keeps <windows.h> out of the header (thread_pool.h).
     //
     // Public and bare, in the shape engine/render/<backend>/backend.h gives an
     // Impl: it is declared in a header nobody else can reach and defined in

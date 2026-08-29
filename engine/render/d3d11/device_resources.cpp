@@ -51,9 +51,8 @@ namespace labrador
         // warning suppressions. A switch over DXGI_FORMAT with a default is
         // C4061 under /W4 (an enumerator not explicitly handled), and there are
         // several hundred enumerators, so no amount of case labels answers it.
-        // The pragma that used to sit at the top of this file was the tree's
-        // only /W4 suppression, and it was disabling a warning about three
-        // comparisons.
+        // A pragma at the top of this file would be the tree's only /W4
+        // suppression, disabling a warning about three comparisons.
         inline DXGI_FORMAT NoSRGB(DXGI_FORMAT fmt) noexcept
         {
             if (fmt == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) return DXGI_FORMAT_R8G8B8A8_UNORM;

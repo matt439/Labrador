@@ -69,13 +69,13 @@ TEST_CASE("CONTRACT: a texture loaded before there is a device is refused, by na
 
 	const TextureData texture = two_by_two();
 
-	// THE ORDERING IS A RULE OF THE SEAM AND IT USED TO BE WRITTEN NOWHERE.
-	// Three backends answered this three ways: gl threw, d3d11 dereferenced a
-	// null device inside the D3D runtime and took the process with it, and null
-	// - the configuration CI runs end to end - succeeded and handed back a
-	// handle that resolved and drew. The permissive one being the one that
-	// always runs is the part that matters: a client could keep the rule wrong
-	// through every test it has and find out on the machine it ships to.
+	// THE ORDERING IS A RULE OF THE SEAM, AND UNSTATED IT GETS THREE ANSWERS.
+	// Left to the backends: gl throws, d3d11 dereferences a null device inside
+	// the D3D runtime and takes the process with it, and null - the
+	// configuration CI runs end to end - succeeds and hands back a handle that
+	// resolves and draws. The permissive one being the one that always runs is
+	// the part that matters: a client could keep the rule wrong through every
+	// test it has and find out on the machine it ships to.
 	CHECK_THROWS_AS(
 		add_texture_asset(renderer, resources, "quad", texture),
 		std::runtime_error);
@@ -132,7 +132,7 @@ TEST_CASE("CONTRACT: a renderer with no device has no views")
 	// out of a default-initialised member rather than out of a hand-written
 	// guard per backend, so there is no copy to drift. What it pins is that
 	// view() refuses rather than answering with a fullscreen pane, which is
-	// what the seam says and what one backend used to do instead.
+	// what the seam says and is not what a permissive backend would do.
 	Renderer renderer;
 
 	CHECK(renderer.view_count() == 0);

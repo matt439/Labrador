@@ -22,9 +22,9 @@ namespace labrador
 		//
 		// Preconditions, checked: num_partitions >= 1 and num_elements >= 0.
 		// num_partitions is a divisor on the first line, and it arrives from
-		// ApplicationOptions::max_threads by way of ThreadPool, neither of
-		// which used to validate it - so a zero in a config file was an
-		// integer divide-by-zero on the first frame of the first match.
+		// ApplicationOptions::max_threads by way of ThreadPool, and unchecked
+		// anywhere on that route a zero in a config file is an integer
+		// divide-by-zero on the first frame of the first match.
 		std::vector<std::pair<int, int>>
 			partition(int num_elements, int num_partitions) const;
 

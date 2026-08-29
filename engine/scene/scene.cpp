@@ -211,12 +211,10 @@ namespace labrador
 			list.set_viewport(view.viewport);
 			list.set_camera(view.camera);
 
-			// What this view can see, in world space. It used to be
-			// ViewportManager::camera_adjusted_player_viewport_rect(player_num,
-			// camera), which asked the layout for a viewport it had just been
-			// handed one of - the arithmetic is the camera's translation and
-			// the pane's size divided by its zoom, and it needs no layout at
-			// all.
+			// What this view can see, in world space, and computed here rather
+			// than asked of ViewportManager: the arithmetic is the camera's
+			// translation and the pane's size divided by its zoom, so asking the
+			// layout means asking it for a viewport this loop was just handed.
 			//
 			// It then wrote that arithmetic out inline and MULTIPLIED by the
 			// zoom, which the comment above it had already described

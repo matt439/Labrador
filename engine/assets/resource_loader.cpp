@@ -44,10 +44,10 @@ namespace labrador
 		this->register_kind("texture", { texture, texture });
 		this->register_kind("font", { font, font });
 
-		// A sheet's reload is its texture's reload and nothing else. It used to
-		// need a third function that re-seated the new ID3D11ShaderResourceView*
-		// into the existing SpriteSheet by hand; the sheet holds a TextureHandle
-		// now, the reload refills that handle's slot, and the sheet is untouched.
+		// A sheet's reload is its texture's reload and nothing else. No third
+		// function re-seating a new device resource into the existing SpriteSheet
+		// by hand: the sheet holds a TextureHandle, the reload refills that
+		// handle's slot, and the sheet is untouched.
 		this->register_kind("sprite_sheet",
 			{
 				[this](const std::string& directory, const std::string& name,
@@ -138,14 +138,14 @@ namespace labrador
 	void ResourceLoader::load_sound_bank(bool optional,
 		const std::string& directory, const std::string& name) const
 	{
-		// THE DEFINITION IS READ FIRST NOW, AND THAT IS A REORDER RATHER THAN A
-		// TIDY-UP. A backend with no container answers wave_index out of the
-		// wave list this parse produces, so the list has to exist before
-		// open_wave_bank is called. sound_bank_loader.h states what it costs: a
-		// bank whose container is missing and whose definition is also broken
-		// reports the broken definition, where it used to report the missing
-		// file. The definition is in every clone and the container is not, so
-		// that is the better of the two answers (T6).
+		// THE DEFINITION IS READ FIRST, AND THE ORDER IS LOAD-BEARING. A backend
+		// with no container answers wave_index out of the wave list this parse
+		// produces, so the list has to exist before open_wave_bank is called.
+		// sound_bank_loader.h states what it costs: a bank whose container is
+		// missing and whose definition is also broken reports the broken
+		// definition rather than the missing file. The definition is in every
+		// clone and the container is not, so that is the better of the two
+		// answers (T6).
 		const SoundBankDefinition definition =
 			read_sound_bank_definition((directory + name + ".json").c_str());
 

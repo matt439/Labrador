@@ -82,11 +82,11 @@ namespace mattmath
 	// The INTERIOR angle at each vertex - the one a reader means by "the
 	// angles of a triangle", and the one that makes angles() sum to PI.
 	//
-	// These used to be taken between the two edge DIRECTIONS meeting at the
-	// vertex, which is not the same thing: edge_2 runs p2 -> p0 while the
-	// interior angle at p0 is measured from p0 outwards, so the result was
-	// PI minus the interior angle and angles() summed to 2*PI. A right angle
-	// is its own supplement, which is why find_hypotenuse never noticed.
+	// NOT the angle between the two edge DIRECTIONS meeting at the vertex,
+	// which is a different quantity: edge_2 runs p2 -> p0 while the interior
+	// angle at p0 is measured from p0 outwards, so that gives PI minus the
+	// interior angle and makes angles() sum to 2*PI. A right angle is its own
+	// supplement, so find_hypotenuse cannot detect the difference.
 	float Triangle::angle_0() const
 	{
 		return Vector2F::angle_between(this->points[1] - this->points[0],

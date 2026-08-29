@@ -293,17 +293,17 @@ namespace labrador
 		// the transition back of a read-back.
 		//
 		// AND IT IS EXACTLY HOW ONE ENTRY POINT ADDS TO WHAT AN EARLIER ONE
-		// RECORDED, WHICH IS THIS BACKEND'S FRAME SHAPE. This paragraph used to
-		// say the opposite - "every entry point executes before it returns, so
-		// there is never an open buffer between them" - which is D3D12's
-		// protocol described on a backend that deliberately does not use it.
+		// RECORDED, WHICH IS THIS BACKEND'S FRAME SHAPE. It is NOT D3D12's
+		// protocol - "every entry point executes before it returns, so there is
+		// never an open buffer between them" - and reading it as though it were
+		// is the mistake this paragraph exists to prevent.
 		// Here begin_frame and every submit return with recording_ still true,
 		// and execute() is called from present() and read_back_buffer alone:
 		// one buffer holds the whole frame and goes to the queue once. That is
 		// cheaper, and it is why abandon_commands has a layout to think about
 		// and why the barrier that opens a frame has to order itself against
 		// the previous frame's submit - the hazard class the validation layers
-		// found here, which the sentence this replaces denied could exist.
+		// found here, and which the D3D12 reading says cannot exist.
 		VkCommandBuffer commands();
 		bool recording() const { return this->recording_; }
 

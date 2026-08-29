@@ -101,9 +101,9 @@ TEST_SUITE("Vector2")
 	TEST_CASE("angle_between survives a zero-length vector and its own rounding")
 	{
 		// Zero in, zero out - the contract normalized() already keeps.
-		// This used to be acos(0/0), and the NaN surfaced two call levels
-		// away as "Triangle is not a right triangle", thrown about a
-		// triangle that was one.
+		// acos(0/0) instead gives a NaN that surfaces two call levels away as
+		// "Triangle is not a right triangle", thrown about a triangle that
+		// is one.
 		CHECK(Vector2F::angle_between(Vector2F::ZERO,
 			Vector2F(1.0f, 0.0f)) == 0.0f);
 		CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),

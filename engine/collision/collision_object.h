@@ -9,15 +9,13 @@ namespace labrador
 {
 	// A GameObject the collision module can see.
 	//
-	// This is finding #13's home. The interface it replaces lived in
-	// game/objects/, took a game enum in its own signature and asked each
-	// object two questions the engine should never have delegated:
+	// This is finding #13's home. An interface that asks each object
 	// `is_colliding(other)` - "are you two overlapping?" - and, by way of the
-	// same predicate, "should you be tested at all?". Six classes answered the
-	// first with the same copied AABB-then-narrow block, and the second with
-	// hand-written type lists that had already diverged (see
-	// collision_layer.h). Both questions are the engine's, and both are
-	// answered once, in find_contacts.
+	// same predicate, "should you be tested at all?" delegates two questions
+	// the engine should keep: every class then answers the first with the same
+	// copied AABB-then-narrow block and the second with a hand-written type
+	// list, and the lists diverge (see collision_layer.h). Both are answered
+	// once, in find_contacts.
 	//
 	// What is left is what only the object can know: its shape, which groups
 	// it belongs to and responds to, what it is in the game's own vocabulary,

@@ -9,10 +9,9 @@ namespace labrador
 {
 	class UiWidget;
 
-	// `Direction` is engine/input/direction.h's, and this header used to
-	// declare it above a sentence saying it was "produced by the input module
-	// from a stick or a d-pad; consumed here as a pure direction with no
-	// device in it".
+	// `Direction` is engine/input/direction.h's and is included, not declared
+	// here: the module that names a type is the module that produces it, and
+	// what this header consumes is a pure direction with no device in it.
 	//
 	// THE SECOND HALF WAS TRUE AND THE FIRST WAS NOT. No producer existed
 	// anywhere in the tree - `grep -rn Direction engine/ | grep -v engine/ui/`

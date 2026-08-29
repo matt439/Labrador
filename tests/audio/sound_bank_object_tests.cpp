@@ -16,10 +16,10 @@ using namespace labrador;
 // clients that would inherit it are in the other repository - so it is a public
 // name with no caller here, which PHILOSOPHY.md:612-621 says is a count that
 // settles nothing. What it is not is a reason to leave the type unexercised,
-// and constructing it once turned up something a grep could not: a
-// default-constructed SoundBankObject used to dereference a null pointer on
-// every call, and there is no setter that could ever have repaired it. The last
-// case in this file is that finding, now that it says so instead.
+// and constructing it once turns up what a grep cannot: a default-constructed
+// SoundBankObject has a null table, no setter can repair it, and every call on
+// it therefore has to fail loudly rather than dereference. The last case in
+// this file is that contract.
 namespace
 {
 	// The whole surface is protected, because this class is inherited for the
@@ -129,7 +129,7 @@ TEST_CASE("a default-constructed object says so rather than crashing")
 	// every drawable object in this engine is. It leaves audio_resources_ null,
 	// and nothing can ever fill it in - set_sound_bank changes which bank, not
 	// which table - so an object built this way is permanently unusable, and
-	// both ways of touching it used to be a null dereference.
+	// both ways of touching it would otherwise be a null dereference.
 	//
 	// The throw is what the rest of the engine already does: Registry never
 	// answers nullptr, it says which resource was missing and stops (T6). A

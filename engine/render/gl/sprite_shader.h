@@ -4,9 +4,9 @@
 // this engine has.
 //
 // SIDE BY SIDE WITH engine/render/sprite.hlsl, deliberately - and that path is
-// the point of this line. The HLSL used to live under engine/render/d3d11/ and
-// moved up when a second backend started compiling it, because it is one source
-// at two profiles rather than one backend's file. Both do one multiply-add to
+// the point of this line. The HLSL is not under engine/render/d3d11/, because
+// it is one source at several profiles rather than one backend's file. Both do
+// one multiply-add to
 // reach clip space, one texture fetch and one multiply, because every term of
 // the pixel contract is settled on the CPU in engine/render/sprite_geometry.cpp
 // before either of them runs. The two files differing in more than syntax would

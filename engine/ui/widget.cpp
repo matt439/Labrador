@@ -121,9 +121,9 @@ namespace labrador
 		// An empty container occupies nothing.
 		//
 		// Empty-boxed children are skipped rather than unioned. RectangleF::ZERO
-		// is a point at the world origin, so an empty nested container used to
-		// drag its parent's box all the way back to (0,0) - a parent of one
-		// label at (900,400) and one empty container reported a box from the
+		// is a point at the world origin, so unioning an empty nested container
+		// drags its parent's box all the way back to (0,0) - a parent of one
+		// label at (900,400) and one empty container reporting a box from the
 		// origin to the label. Culling reads this, and so does the navigation
 		// walk, which is why the harmless-looking union is not harmless.
 		RectangleF result = RectangleF::ZERO;
@@ -180,8 +180,8 @@ namespace labrador
 	}
 	RectangleF UiTexture::bounds() const
 	{
-		// This used to call itself - infinite recursion, and /W4 had been
-		// reporting it as C4717 the whole time.
+		// Note the qualification: an unqualified call here is this function
+		// calling itself, which /W4 reports as C4717.
 		return this->rectangle_;
 	}
 	void UiTexture::set_texture(const std::string& sheet_name,

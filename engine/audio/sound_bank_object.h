@@ -23,7 +23,7 @@ namespace labrador
 		// set_sound_bank changes which bank, not which table it comes out of -
 		// so an object built this way is permanently unusable, and both ways of
 		// touching it throw std::logic_error saying so. That is T6 rather than
-		// the null dereference in somebody else's frame it used to be.
+		// a null dereference in somebody else's frame.
 		SoundBankObject() = default;
 
 		// Throws std::out_of_range naming the bank if nothing loaded it, and

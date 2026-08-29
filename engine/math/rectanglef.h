@@ -52,9 +52,9 @@ namespace mattmath
 
 		bool contains(const RectangleF& other) const;
 
-		// The one survivor of the table Shape used to carry, kept because
-		// broad_phase, scene and the benchmark all name it. Every other pair
-		// is a free predicate above.
+		// The one member predicate, kept because broad_phase, scene and the
+		// benchmark all name it. Every other pair is a free predicate above
+		// (shape.h says why there is no virtual table over them).
 		bool intersects(const RectangleF& other) const;
 
 		void inflate(float horizontal_amount, float vertical_amount);

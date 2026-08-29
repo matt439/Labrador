@@ -22,11 +22,11 @@ namespace mattmath
 	// which is complete in 2D and is not in 3D - the difference is documented
 	// at the point of use. See engine/collision/narrow_phase.h.
 	//
-	// The book's own Vector, Point, AABB, Sphere and OBB declarations used to
-	// sit here commented out, next to a list of its function signatures as
-	// printed. They are gone: mattmath supplies every one of those types, the
-	// declarations below are the ported forms, and a commented-out parallel
-	// vocabulary is a second definition waiting to disagree with the first.
+	// The book's own Vector, Point, AABB, Sphere and OBB declarations are NOT
+	// reproduced here, commented out or otherwise: mattmath supplies every one
+	// of those types, the declarations below are the ported forms, and a
+	// commented-out parallel vocabulary is a second definition waiting to
+	// disagree with the first.
 	//
 	// The file also ended on a bare `// 132`, marking the page the original
 	// porting effort stopped at. Pages 133 to 551 have since been read - see

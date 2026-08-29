@@ -21,9 +21,9 @@ TEST_CASE("the defaults are valid")
 
 TEST_CASE("the thread ceiling defaults to what the machine reports")
 {
-	// The whole point of the split: this number is a property of the MACHINE.
-	// It used to be a literal 16, which also doubled as the renderer's view
-	// capacity and as the partition count.
+	// The whole point of the split: this number is a property of the MACHINE,
+	// and not the renderer's view capacity or the partition count. One literal
+	// serving all three is what this pins apart.
 	CHECK(default_thread_count() >= 1);
 
 	const ApplicationOptions options;

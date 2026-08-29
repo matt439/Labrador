@@ -20,10 +20,9 @@ namespace labrador
 
 	// An RGBA colour, each channel clamped to [0, 1].
 	//
-	// It lived in MattMath, whose job is shapes and vectors and which is
-	// documented as depending on nothing. A colour is not geometry - it is what
-	// a renderer tints a sprite with - so it lives in render/ now, with the
-	// palette that used to sit beside it in math/.
+	// NOT IN MattMath, whose job is shapes and vectors and which is documented
+	// as depending on nothing. A colour is not geometry - it is what a renderer
+	// tints a sprite with - so it lives here, and so does the palette.
 	struct Colour
 	{
 		float r = 0.0f;
@@ -67,9 +66,9 @@ namespace labrador
 		void set_from_hex(const std::string& hex);
 
 		// Scales each channel's distance from the colour's luminance: 0 is
-		// fully grey, 1 leaves it alone, above 1 saturates. There used to be a
-		// desaturate(float) beside this with a byte-identical body and no
-		// callers either; one function with a documented range replaces both.
+		// fully grey, 1 leaves it alone, above 1 saturates. One function with a
+		// documented range, rather than this and a desaturate(float) beside it
+		// with a byte-identical body.
 		void saturate(float amount);
 
 		void brighten(float amount);

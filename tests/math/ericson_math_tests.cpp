@@ -274,8 +274,9 @@ TEST_SUITE("EricsonMath")
 	TEST_CASE("a NaN coordinate is inside nothing and hits nothing")
 	{
 		// The companion to "a NaN coordinate makes test_AABB_AABB report
-		// no intersection". All three predicates now answer a poisoned
-		// input the same way; two of them used to answer "yes".
+		// no intersection". All three predicates answer a poisoned input the
+		// same way, which is what these pin: the natural spelling of two of
+		// them answers "yes".
 		const float nan = std::numeric_limits<float>::quiet_NaN();
 
 		const Point2F polygon[4] = { Point2F(0.0f, 0.0f),
@@ -325,12 +326,11 @@ TEST_SUITE("EricsonMath")
 	}
 	TEST_CASE("a NaN coordinate makes test_AABB_AABB report no intersection")
 	{
-		// It used to report the opposite. The rejecting form - "return
-		// false if separated on either axis, otherwise true" - reaches its
-		// accept branch by falling through, and NaN fails every
-		// comparison, so a single bad coordinate produced a box that
-		// intersected everything in the level. This routine is live behind
-		// Level::is_object_out_of_bounds.
+		// The rejecting form - "return false if separated on either axis,
+		// otherwise true" - reports the opposite: it reaches its accept branch
+		// by falling through, and NaN fails every comparison, so a single bad
+		// coordinate gives a box that intersects everything in the level. This
+		// routine is live behind a client's out-of-bounds check.
 		const float nan = std::numeric_limits<float>::quiet_NaN();
 		const RectangleF good(0.0f, 0.0f, 10.0f, 10.0f);
 		const RectangleF poisoned(nan, 0.0f, 10.0f, 10.0f);

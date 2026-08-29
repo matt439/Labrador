@@ -112,12 +112,12 @@ void HelloState::update(float dt)
 	const Gamepads& pads = *this->app_->gamepads();
 	const Keyboard& keyboard = *this->app_->keyboard();
 
-	// BOTH DEVICES, AND NO connected() AROUND THE PAD. This function used to
-	// wrap everything below in `if (pads.connected(0))`, which is the guard
-	// gamepad.h asks callers not to write and which made this template - the
-	// one a new project is copied from - impossible to quit on a machine with
-	// no pad. Neither half needs it: pressed() answers false unless the slot
-	// was occupied on both frames, and an empty slot reads as a neutral state
+	// BOTH DEVICES, AND NO connected() AROUND THE PAD. Wrapping everything
+	// below in `if (pads.connected(0))` is the guard gamepad.h asks callers not
+	// to write, and in this template - the one a new project is copied from -
+	// it would make the sample impossible to quit on a machine with no pad.
+	// Neither half needs it: pressed() answers false unless the slot was
+	// occupied on both frames, and an empty slot reads as a neutral state
 	// rather than a stale one, so a pad that is not there contributes nothing
 	// and costs nothing to ask.
 	if (pads.pressed(0, GamepadButton::b) || keyboard.pressed(Key::escape))
@@ -200,8 +200,8 @@ void HelloState::draw(Renderer& renderer) const
 	//
 	// Nothing below names a graphics type. There is no deferred context to
 	// index, no sprite batch to Begin and End, and no command list to finish,
-	// execute and Release - which was five of the eleven lines this function
-	// used to be, and three caller obligations stated nowhere in the tree.
+	// execute and Release - which would be five more lines here and three
+	// caller obligations stated nowhere in the tree.
 	//
 	// A game with something over the world - a HUD, a divider, a countdown -
 	// passes a second argument, and it runs per view, on that view's worker.

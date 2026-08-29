@@ -11,8 +11,8 @@ namespace labrador
 	// A drawable that draws out of one sprite sheet.
 	//
 	// It holds a handle to that sheet, not its name. The name is resolved once,
-	// here in the constructor, because the alternative is what this class used to
-	// do: a std::map<std::string, ...> descent per draw, per drawable, from every
+	// here in the constructor, because holding the name means a
+	// std::map<std::string, ...> descent per draw, per drawable, from every
 	// render worker at once (PHILOSOPHY T7, T8).
 	//
 	// What a sheet *element* is depends on the subclass - a frame for

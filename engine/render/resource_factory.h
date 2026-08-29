@@ -38,20 +38,20 @@ namespace labrador
 	// is a missing symbol at link rather than a failure at run time (T5).
 	//
 	// THE FILE EXTENSION IS NOT A PARAMETER, AND IT IS NOT THE BACKEND'S. A kind
-	// owns its own file naming (resource_loader.h), and this used to say ".dds"
-	// and ".spritefont" were what a backend could decode. They are not: both
-	// readers are engine/render/dds_file.* and engine/render/sprite_font_file.*,
-	// so every backend reads the same two files the same way and neither
-	// extension appears in engine/render/<backend>/ at all.
+	// owns its own file naming (resource_loader.h), and ".dds" and
+	// ".spritefont" are not what a backend decodes: both readers are
+	// engine/render/dds_file.* and engine/render/sprite_font_file.*, so every
+	// backend reads the same two files the same way and neither extension
+	// appears in engine/render/<backend>/ at all.
 
 	// Loads the texture named by `directory` and `name` onto the renderer's
 	// device, and adds it to `resources` under `name`.
 	//
 	// Throws std::out_of_range naming the path if there is no file there, and
 	// std::runtime_error naming the path and the problem if there is one and it
-	// will not decode (T6). Those used to be one throw carrying an eight-digit
-	// HRESULT, so "the artist has not exported it yet" and "the artist exported
-	// a cube map" were the same message.
+	// will not decode (T6). One throw carrying an eight-digit HRESULT makes
+	// "the artist has not exported it yet" and "the artist exported a cube map"
+	// the same message.
 	void load_texture_asset(const Renderer& renderer,
 		RenderResources& resources,
 		const std::string& directory,

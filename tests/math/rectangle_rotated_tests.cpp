@@ -97,8 +97,9 @@ TEST_SUITE("RectangleRotated")
 	TEST_CASE("test_rectangle_rotated_segment_constructor")
 	{
 		// The (Segment, thickness) overload is what paint trails and thick
-		// line segments use. Segment::direction() is un-normalised, so
-		// this used to throw for every segment not exactly 1 unit long.
+		// line segments use. Segment::direction() is un-normalised, so taking
+		// it as a unit vector throws for every segment not exactly 1 unit
+		// long.
 		const float thickness = 2.0f;
 		Segment s(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f));
 		RectangleRotated rr(s, thickness);

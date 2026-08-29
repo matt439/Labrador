@@ -125,8 +125,8 @@ TEST_CASE("all_viewports tile the screen exactly, with no overlap")
 
 TEST_CASE("an out-of-range index does not answer from the next layout down")
 {
-	// Each layout's inner switch used to fall through to the next one's cases,
-	// so two_player(9) was answered by the three-player table.
+	// An inner switch that falls through to the next layout's cases has
+	// two_player(9) answered by the three-player table.
 	ResolutionManager resolution = default_resolution();
 	ViewportManager manager(&resolution);
 

@@ -58,9 +58,9 @@ namespace mattmath
 
 	private:
 		// The gradient helper the base class already provides is NOT
-		// redeclared here. It used to be, byte for byte, which hid the public
-		// one behind a private copy - so a fix to the base would have missed
-		// this type entirely.
+		// redeclared here. A byte-for-byte copy would hide the public one
+		// behind a private one, so a fix to the base would miss this type
+		// entirely.
 		int find_hypotenuse(const Triangle& tri) const;
 	};
 }

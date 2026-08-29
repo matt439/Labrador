@@ -73,9 +73,9 @@ namespace labrador
 		// THE CLAMP IS FIRST AND THAT IS THE POINT. Folding a level back into
 		// range is arithmetic this module owns - it is not XAudio2's and it is
 		// not any backend's, and it is the same kind of engine-side decision as
-		// the glyph walk in render/font.h. It used to sit below the test for
-		// content, where a tree that cannot build an audible bank - which this
-		// one could not - never reached it at all.
+		// the glyph walk in render/font.h. Below the test for content it would
+		// never execute at all in a tree that cannot build an audible bank,
+		// which is every clone of this one.
 		clamp_levels(volume, pitch, pan);
 
 		if (!wave.valid())

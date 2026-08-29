@@ -69,10 +69,9 @@ namespace labrador
 	//
 	//   - A response can retire an object, and a retired object's remaining
 	//     contacts are dropped. A projectile that hits a wall does not go on
-	//     to hit the player behind it. That rule used to be a `continue`
-	//     inside the sweep, so whether it applied depended on which of two
-	//     nested loops reached the pair; here it applies to both sides of
-	//     every pair.
+	//     to hit the player behind it. As a `continue` inside the sweep the
+	//     rule would apply or not depending on which of two nested loops
+	//     reached the pair; here it applies to both sides of every pair.
 	//   - A response can move an object, so every pair is measured again
 	//     immediately before it is dispatched, and a pair an earlier response
 	//     has already separated is dropped. The depths in the list describe

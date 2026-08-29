@@ -17,10 +17,10 @@ using namespace labrador;
 // read_sound_bank_definition is a parse and nothing else: it produces the
 // struct sound_bank_loader.h describes and touches no audio API, so the whole
 // of the content half of this module is assertable on a machine with no sound
-// card and no XAudio2. It could not be before. The parse used to happen inside
-// read_sound_bank, against a DirectX::WaveBank that had to be constructed
-// first - so testing what the JSON meant required an .xwb this repository
-// cannot contain, and none of it was tested at all.
+// card and no XAudio2. Folding the parse into read_sound_bank, against a
+// DirectX::WaveBank that has to be constructed first, is what makes that
+// impossible: testing what the JSON means then requires an .xwb this
+// repository cannot contain.
 //
 // WHERE THE OTHER HALF IS. build_sound_bank needs a device to create voices
 // against, so it is pinned in tests/audio/null_tests.cpp, which compiles in the
@@ -187,9 +187,9 @@ TEST_CASE("a repeated wave is one wave")
 	const SoundBankDefinition definition =
 		read_sound_bank_definition(definition_file.path().c_str());
 
-	// A repeat used to be absorbed by Registry::add refilling the slot, which
-	// is invisible and produced one instance. A list is not a registry, so it
-	// is dropped in the parse instead and the count is the same.
+	// A registry absorbs a repeat by refilling the slot, which is invisible and
+	// produces one instance. A list is not a registry, so the repeat is dropped
+	// in the parse instead and the count is the same.
 	const std::vector<std::string> waves = { "shot" };
 	CHECK(definition.waves == waves);
 	CHECK(definition.effects.size() == 1);

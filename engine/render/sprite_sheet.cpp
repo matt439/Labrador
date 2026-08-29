@@ -12,11 +12,10 @@ namespace labrador
 	namespace
 	{
 		// A position-and-scale draw is a destination-rectangle draw whose size
-		// came from the source. The old code handed both forms to SpriteBatch,
-		// which computed exactly this; the seam takes one destination rectangle,
-		// so the arithmetic surfaces here instead of being done five times over
-		// inside five backends - DrawList::draw_sprite is implemented once per
-		// folder and this is the call it feeds.
+		// came from the source. The seam takes one destination rectangle, so the
+		// arithmetic surfaces here rather than being done five times over inside
+		// five backends - DrawList::draw_sprite is implemented once per folder
+		// and this is the call it feeds.
 		//
 		// AND IT IS THE RECTANGLE FORM, SO A SPRITE PLACED THIS WAY SNAPS TO
 		// WHOLE PIXELS WHERE TEXT PLACED THE SAME WAY DOES NOT. build_sprite_

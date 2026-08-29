@@ -40,9 +40,9 @@ namespace labrador
 		virtual void draw(DrawList& draw_list) const;
 
 		// Draws with the given colour, position and scale without storing any of
-		// them. TextDropShadow used to draw its shadow by assigning those three
-		// members, drawing, and assigning them back - a save/restore that is a
-		// data race the moment two render workers run it on the same object.
+		// them. Drawing a shadow by assigning those three members, drawing, and
+		// assigning them back is a save/restore, and a data race the moment two
+		// render workers run it on the same object.
 		void draw_with(DrawList& draw_list,
 			const Colour& colour,
 			const mattmath::Vector2F& position,

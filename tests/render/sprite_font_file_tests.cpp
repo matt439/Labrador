@@ -19,10 +19,10 @@
 // names a number is naming a property of that file, and a fixture would have
 // let the parser and the fixture agree with each other and with nothing else.
 //
-// THE ERRORS MATTER AS MUCH AS THE GLYPHS. Loading a font used to report every
-// possible failure as "not found at <path>", so a truncated file, a file from
-// a newer tool and a genuinely missing one were one message. They are three
-// now, and a build step that half-writes a font is the reason to check.
+// THE ERRORS MATTER AS MUCH AS THE GLYPHS. One message for every failure -
+// "not found at <path>" - makes a truncated file, a file from a newer tool and
+// a genuinely missing one indistinguishable. They are three here, and a build
+// step that half-writes a font is the reason to check.
 
 namespace
 {

@@ -129,9 +129,9 @@ namespace labrador
 		// as well, but at x=10.9 the first gives 18 - 10 = 8 and rounding the
 		// size first would give 7. The edges-first order is the one this engine
 		// has always drawn, because the rectangle went through a RECT of four
-		// truncated longs before anything measured it. (The worked example here
-		// used to be x=10.9, which both orders answer 8 for - a demonstration
-		// of nothing.)
+		// truncated longs before anything measured it. (Pick the worked example
+		// with care: x=10.9 is answered 8 by both orders and demonstrates
+		// nothing.)
 		const float left = std::trunc(destination.left());
 		const float top = std::trunc(destination.top());
 		const float right = std::trunc(destination.right());

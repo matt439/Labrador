@@ -151,11 +151,11 @@ namespace labrador
 			}
 			case ShapeType::rectangle_rotated:
 			{
-				// Read straight off the shape. This used to build a
-				// mattmath::Quad from it, inside the one function whose
-				// comment above boasts about avoiding a heap allocation per
-				// shape per pair per frame - and that constructor allocates
-				// and validates twice over.
+				// Read straight off the shape, and NOT by building a
+				// mattmath::Quad from it: that constructor allocates and
+				// validates twice over, inside the one function whose comment
+				// above is about avoiding a heap allocation per shape per pair
+				// per frame.
 				const auto& rotated =
 					static_cast<const mattmath::RectangleRotated&>(shape);
 				polygon.points[0] = rotated.point_0();

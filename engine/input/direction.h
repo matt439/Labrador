@@ -8,13 +8,13 @@ namespace labrador
 
 	// Which way the player pushed.
 	//
-	// THIS TYPE USED TO LIVE IN engine/ui/navigation.h, above a sentence that
-	// said it was "produced by the input module from a stick or a d-pad;
-	// consumed here as a pure direction with no device in it". The second half
-	// was true. The first was not: `grep -rn Direction engine/ | grep -v
-	// engine/ui/` was empty, and no producer existed anywhere in the tree. A
-	// header stating a false fact about another module is a defect on its own,
-	// which is what docs/survey/2026-08-26.md section 3.3 called it.
+	// IT LIVES IN input/ AND NOT IN ui/, which is where the consumer is. A
+	// direction is a pure direction with no device in it, so ui/ can consume
+	// one - but the module that names the type is the module that produces it,
+	// and a header in ui/ claiming input/ produces something no producer in
+	// this tree makes is a false fact about another module.
+	// docs/survey/2026-08-26.md section 3.3 is where that was called a defect
+	// on its own.
 	//
 	// It moved here rather than the producer moving there, because the
 	// sentence had the dependency the right way round and ARCHITECTURE's module

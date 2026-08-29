@@ -71,13 +71,13 @@ namespace labrador
 		// why this one had to exist. on_suspend means "something was pushed
 		// above me" and is asked of one state; these mean "nobody is looking
 		// at any of us", which is a fact about the window that no state can
-		// see. The shell used to keep it entirely to itself - it suspended the
-		// pad reader and told the stack nothing - and a suspended reader
-		// answers "disconnected" for every slot, which becomes a neutral
-		// input, which is a legal input that nothing downstream questions. So
-		// a match alt-tabbed out of played itself out with nobody in it: the
-		// characters standing still, the clock running down, and the music at
-		// full volume over whatever the player had switched to.
+		// see. A shell that keeps it to itself - suspending the pad reader and
+		// telling the stack nothing - leaves a suspended reader answering
+		// "disconnected" for every slot, which becomes a neutral input, which
+		// is a legal input that nothing downstream questions. A match alt-tabbed
+		// out of then plays itself out with nobody in it: the characters
+		// standing still, the clock running down, and the music at full volume
+		// over whatever the player switched to.
 		//
 		// EVERY FRAME IS TOLD, top down, not the top one alone. A match under
 		// a pause menu is not being updated and is still holding the music and

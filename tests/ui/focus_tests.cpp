@@ -102,10 +102,10 @@ TEST_CASE("a widget with no action is focusable and activating it is a no-op")
 
 TEST_CASE("a disabled row is registered, painted apart, and jumped over")
 {
-	// Mode Select: four modes advertised, one built. The other three used to
-	// be left unregistered, which works and costs the beep - there is no way
-	// to be on Deathmatch, so there is no press to answer and no way to say
-	// why it is unavailable.
+	// Mode Select: four modes advertised, one built. Leaving the other three
+	// unregistered works and costs the beep - there is no way to be on
+	// Deathmatch, so there is no press to answer and no way to say why it is
+	// unavailable.
 	StubWidget standard(0.0f, 0.0f, 100.0f, 50.0f);
 	StubWidget deathmatch(0.0f, 100.0f, 100.0f, 50.0f);
 	StubWidget capture(0.0f, 200.0f, 100.0f, 50.0f);

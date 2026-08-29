@@ -638,11 +638,10 @@ TEST_SUITE("ShapeIntersect")
 		CHECK_FALSE(segments_intersect(a, b));
 
 		// Two identical segments do not CROSS, and this predicate only
-		// answers about crossing. It used to say true through an `a == b`
-		// shortcut, which made the answer depend on which end the caller
-		// wrote first: Segment's operator== is direction sensitive, so the
-		// identical segment matched and the reversed one did not, for the
-		// same two points.
+		// answers about crossing. An `a == b` shortcut answering true makes
+		// the result depend on which end the caller wrote first: Segment's
+		// operator== is direction sensitive, so the identical segment matches
+		// and the reversed one does not, for the same two points.
 		//
 		// Whatever the answer is, it has to be the same for both.
 		const Segment same(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f));

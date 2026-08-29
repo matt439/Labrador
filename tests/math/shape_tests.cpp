@@ -18,11 +18,11 @@ TEST_SUITE("Shape")
 {
 	TEST_CASE("edges are fixed-size and in the order the accessors name")
 	{
-		// edges() used to be a pure virtual on Shape returning
-		// std::vector<Segment> - a heap allocation, on the narrow phase's
-		// own path, for a list whose length is known at compile time. It
-		// is a std::array per shape now, and these checks are the
-		// contract: each slot is the matching named accessor.
+		// edges() is a std::array per shape, not a pure virtual on Shape
+		// returning std::vector<Segment> - which is a heap allocation, on the
+		// narrow phase's own path, for a list whose length is known at compile
+		// time. These checks are the contract: each slot is the matching named
+		// accessor.
 		//
 		// The order is worth a test rather than a comment. Encoding a
 		// rectangle's paintable faces as edges and recovering them by

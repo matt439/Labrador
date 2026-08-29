@@ -9,8 +9,8 @@ namespace labrador
 	{
 		// Every path into this class goes through the table, and there are two
 		// ways to arrive without one: default-construct, or hand the
-		// constructor a null. Both used to be a null dereference in a client's
-		// frame. This is the rest of the engine's answer instead - Registry
+		// constructor a null. Both would otherwise be a null dereference in a
+		// client's frame. This is the rest of the engine's answer instead - Registry
 		// never returns nullptr either, it says what was missing and stops
 		// (T6) - and it is one function because the alternative is the same
 		// sentence written three times and drifting apart.

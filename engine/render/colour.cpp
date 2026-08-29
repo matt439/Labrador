@@ -198,8 +198,7 @@ namespace labrador
 	}
 
 	// The palette. Constant-initialised, so these are 2368 bytes of .rdata and
-	// no start-up work; the hex strings they used to be parsed from at load
-	// time are gone with them.
+	// no start-up work - no hex strings parsed at load time.
 	const Colour Colour::alice_blue(0xf0, 0xf8, 0xff);
 	const Colour Colour::antique_white(0xfa, 0xeb, 0xd7);
 	const Colour Colour::aqua(0x00, 0xff, 0xff);

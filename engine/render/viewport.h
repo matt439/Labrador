@@ -57,10 +57,10 @@ namespace labrador
 		// IT EXISTS BECAUSE A BACKEND CANNOT BE TRUSTED TO AGREE WITH ITSELF.
 		// GL 3.3 core has no float glViewport - glViewportIndexedf is 4.1 - so
 		// the GL backend has to make this conversion whatever the seam says.
-		// It used to make it inline and then divide by the UN-truncated float
-		// when it built the pixels-to-clip transform, so the rasteriser and
-		// the projection disagreed about how big the viewport was and every
-		// sprite in a fractional pane was scaled by the ratio between them.
+		// Making it inline and then dividing by the UN-truncated float when
+		// building the pixels-to-clip transform has the rasteriser and the
+		// projection disagree about how big the viewport is, scaling every
+		// sprite in a fractional pane by the ratio between them.
 		// One rectangle, computed once, feeds both.
 		mattmath::RectangleI pixel_rect() const;
 

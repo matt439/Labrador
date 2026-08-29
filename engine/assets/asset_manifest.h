@@ -32,10 +32,10 @@ namespace labrador
 		//
 		// The one case that needs it: the paint-shooter's wave bank is built
 		// from source audio that cannot be distributed (see the repository's
-		// README), so a fresh clone has no ./sounds/sound_bank_1.xwb and used
-		// to throw at startup on the very file the shipped manifest named.
-		// What the loader substitutes is the kind's business; what this says
-		// is only that it may.
+		// README), so a fresh clone has no ./sounds/sound_bank_1.xwb and would
+		// otherwise throw at startup on the very file the shipped manifest
+		// names. What the loader substitutes is the kind's business; what this
+		// says is only that it may.
 		bool optional = false;
 	};
 

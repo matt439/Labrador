@@ -268,8 +268,8 @@ TEST_CASE("a NaN coordinate reports no contact, rather than a NaN one")
 
 TEST_CASE("a rotated rectangle is measured without being turned into a Quad")
 {
-	// Two distinct axes, read off the shape's own corners. This pair used to
-	// build a mattmath::Quad per shape per pair, which allocates and validates
+	// Two distinct axes, read off the shape's own corners rather than out of a
+	// mattmath::Quad built per shape per pair, which allocates and validates
 	// twice over - inside the function whose comment says it carries points in
 	// an array precisely to avoid a heap allocation per shape per pair.
 	const float diagonal = 0.70710678f;

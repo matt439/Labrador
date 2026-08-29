@@ -9,12 +9,10 @@ namespace mattmath
 	namespace
 	{
 		// Counteracts arithmetic error when a segment runs (near) parallel to a
-		// coordinate axis, in test_segment_AABB alone. It used to be a header
-		// constant called EPSILON, which collided with mattmath::EPSILON once
-		// the two namespaces merged - and the collision was the useful kind:
-		// this is a slab-test fudge two orders of magnitude tighter than the
-		// engine's general float tolerance, and the two were never the same
-		// quantity.
+		// coordinate axis, in test_segment_AABB alone. It is deliberately not
+		// spelt EPSILON and deliberately not shared with mattmath::EPSILON: this
+		// is a slab-test fudge two orders of magnitude tighter than the engine's
+		// general float tolerance, and the two are not the same quantity.
 		constexpr float SEGMENT_PARALLEL_EPSILON = 0.000001f;
 	}
 
@@ -357,7 +355,7 @@ namespace mattmath
 		// Every edge returned exactly zero, so the polygon has no interior:
 		// its vertices are coincident, or all of them are collinear. That is
 		// the case signed_area already calls "encloses nothing", and this
-		// function is the one place in the file that used to disagree with it.
+		// function is the one other place in the file that has to agree.
 		//
 		// The disagreement was not academic. A default-constructed Triangle is
 		// three copies of Vector2F::ZERO, so every edge vector was (0, 0),

@@ -140,12 +140,12 @@ namespace mattmath
 		{
 			// A zero-length vector points nowhere, so there is no angle to
 			// report. Zero is the same answer normalized() gives for the same
-			// reason, and it beats dividing by nothing: this used to return
-			// NaN, and NaN travelled. Triangle::angle_0/1/2 feed
+			// reason, and it beats dividing by nothing and returning NaN,
+			// because NaN travels. Triangle::angle_0/1/2 feed
 			// TriangleRightAxisAligned::find_hypotenuse, where every
-			// are_equal(NaN, PI_OVER_2) is false, so find_hypotenuse returned
-			// -1 and hypotenuse() threw "Triangle is not a right triangle" -
-			// about a triangle that was one, two call levels from the actual
+			// are_equal(NaN, PI_OVER_2) is false, so find_hypotenuse answers
+			// -1 and hypotenuse() throws "Triangle is not a right triangle" -
+			// about a triangle that is one, two call levels from the actual
 			// fault.
 			return 0.0f;
 		}
@@ -222,11 +222,10 @@ namespace mattmath
 	const Vector2F Vector2F::DIRECTION_DOWN = { 0.0f, 1.0f };
 	const Vector2F Vector2F::DIRECTION_LEFT = { -1.0f, 0.0f };
 	const Vector2F Vector2F::DIRECTION_UP = { 0.0f, -1.0f };
-	// Written out rather than derived. These four used to be
-	// unit_vector(DIRECTION_UP + DIRECTION_RIGHT) and so on, which is a
-	// function call and a square root per constant during dynamic
-	// initialisation, and which read the four cardinal constants above while
-	// they were being initialised themselves.
+	// Written out rather than derived. unit_vector(DIRECTION_UP +
+	// DIRECTION_RIGHT) and so on is a function call and a square root per
+	// constant during dynamic initialisation, and reads the four cardinal
+	// constants above while they are themselves being initialised.
 	//
 	// Inside this file that ordering is defined - initialisation runs in
 	// declaration order within a translation unit - but nothing extends that

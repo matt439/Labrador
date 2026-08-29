@@ -6,18 +6,18 @@
 
 // Which whole pixels a viewport covers, with no device.
 //
-// THE BACKENDS USED TO ANSWER THIS SEPARATELY AND ONE OF THEM DISAGREED WITH
-// ITSELF. GL 3.3 core has no float glViewport, so the GL backend had to reach
-// whole pixels somehow; it truncated the position and the size independently
-// for the rasteriser and then divided by the UN-truncated float to build the
-// pixels-to-clip transform. So the rasteriser and the projection were handed
-// two different viewport sizes, and every sprite in a fractional pane came out
-// scaled by the ratio between them. D3D11 could not have that bug - it passes
-// one D3D11_VIEWPORT to both consumers - which is precisely why nothing caught
-// it: RenderPixelTests creates one integral 64x64 view, both samples take their
-// resolution from a Vector2I, and set_viewport has exactly one caller in the
-// whole tree. The trigger is split-screen on an odd client extent, which lives
-// in a client repository and not in this one.
+// ONE CONVERSION, ON THE SEAM, BECAUSE A BACKEND ANSWERING IT SEPARATELY CAN
+// DISAGREE WITH ITSELF. GL 3.3 core has no float glViewport, so the GL backend
+// has to reach whole pixels somehow; truncating the position and the size
+// independently for the rasteriser and then dividing by the UN-truncated float
+// to build the pixels-to-clip transform hands the rasteriser and the
+// projection two different viewport sizes, and scales every sprite in a
+// fractional pane by the ratio between them. D3D11 cannot have that bug - it
+// passes one D3D11_VIEWPORT to both consumers - which is precisely why it is
+// hard to catch: RenderPixelTests creates one integral 64x64 view, both samples
+// take their resolution from a Vector2I, and set_viewport has exactly one
+// caller in the whole tree. The trigger is split-screen on an odd client
+// extent, which lives in a client repository and not in this one.
 //
 // SO THE CONVERSION IS THE ENGINE'S NOW, and this file is what says what it
 // answers. It needs no device and no driver, so it runs in every configuration

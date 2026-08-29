@@ -271,10 +271,9 @@ namespace mattmath
 	}
 	Quad RectangleRotated::quad() const
 	{
-		// Straight off the corner cache. This used to RECOMPUTE the four
-		// points into a fresh vector and hand that to a validating
-		// constructor, so it allocated and re-proved the convexity of a shape
-		// that is convex by construction.
+		// Straight off the corner cache, and NOT by recomputing the four points
+		// into a fresh vector for a validating constructor: that allocates and
+		// re-proves the convexity of a shape that is convex by construction.
 		return Quad(this->points_[0], this->points_[1],
 			this->points_[2], this->points_[3]);
 	}
@@ -379,13 +378,11 @@ namespace mattmath
 	{
 		const auto edges = this->edges();
 
-		// One pass, one square root per edge. This used to take twelve: each
-		// of the four loop iterations normalised two edges, so every edge was
-		// normalised twice, and then all four lengths were taken again from
-		// scratch - by length(), which is the same square root normalized()
-		// had just computed and thrown away. The check on edges.size() went
-		// with them; edges() returns a std::array<Segment, 4> and could not
-		// have answered anything else.
+		// One pass, one square root per edge - against the twelve a loop that
+		// normalises two edges per iteration and then re-measures all four with
+		// length() takes, every edge normalised twice and every root computed
+		// and thrown away once. No check on edges.size() either: edges() returns
+		// a std::array<Segment, 4> and cannot answer anything else.
 		Vector2F directions[4];
 		float lengths[4];
 		for (size_t i = 0; i < 4; i++)

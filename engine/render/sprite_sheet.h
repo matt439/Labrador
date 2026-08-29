@@ -14,13 +14,12 @@ namespace labrador
 {
 	// One texture, and the names of the rectangles inside it.
 	//
-	// The texture is a handle, not a pointer. It used to be a raw
-	// ID3D11ShaderResourceView* that a device restore had to re-seat by hand -
-	// which is what set_texture() was for, and why the sprite-sheet asset kind
-	// needed a reload function distinct from its load function. A handle names a
-	// registry slot and the reload refills that slot, so the sheet survives a
-	// device loss without being touched, and this class stops naming a backend
-	// type at all.
+	// The texture is a handle, not a pointer. A raw device resource here would
+	// need re-seating by hand after a device restore - a set_texture(), and a
+	// sprite-sheet asset kind whose reload function differs from its load
+	// function. A handle names a registry slot and the reload refills that
+	// slot, so the sheet survives a device loss without being touched, and this
+	// class names no backend type at all.
 	class SpriteSheet
 	{
 	public:
@@ -57,7 +56,7 @@ namespace labrador
 		//
 		// The destination is in world space and the list's current camera maps
 		// it; the position overloads are the same draw with the size taken from
-		// the source rectangle, which is what the backend used to compute.
+		// the source rectangle, which is arithmetic no backend performs.
 		//
 		// `origin` IS ADDED TO THE FRAME'S OWN, NOT SUBSTITUTED FOR IT. A sheet
 		// may author a pivot per frame (sprite_frame.h) and for years nothing

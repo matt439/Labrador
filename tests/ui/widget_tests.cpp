@@ -114,8 +114,8 @@ TEST_CASE("an empty container occupies nothing, and an empty child drags nothing
 	CHECK(empty.bounds().width == doctest::Approx(0.0f));
 	CHECK(empty.bounds().height == doctest::Approx(0.0f));
 
-	// RectangleF::ZERO is a point at the world origin, so a nested empty
-	// container used to drag its parent's box back to (0,0). Culling and the
+	// RectangleF::ZERO is a point at the world origin, so unioning a nested
+	// empty container drags its parent's box back to (0,0). Culling and the
 	// navigation walk both read this.
 	StubWidget label(900.0f, 400.0f, 100.0f, 50.0f);
 	UiContainer parent("parent");

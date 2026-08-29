@@ -52,8 +52,7 @@ namespace labrador
 	//
 	// Throws std::out_of_range naming the path if there is no file there, and
 	// std::runtime_error naming the path AND what is wrong with it if there is
-	// one and it is not a .spritefont this engine can read (T6). Those used to
-	// be the same throw with the same message - a font that existed and was
-	// corrupt reported itself as missing.
+	// one and it is not a .spritefont this engine can read (T6). One throw for
+	// both has a font that exists and is corrupt report itself as missing.
 	SpriteFontFile read_sprite_font_file(const std::string& path);
 }

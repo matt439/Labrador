@@ -106,11 +106,12 @@ namespace labrador
     // Pure arithmetic on a layout, an index and a size - no member is read, so
     // this is the piece of the class a test can drive without a device.
     //
-    // Every layout returns from its own block. The inner switches used to fall
-    // through: two_player's invalid-index `default: break` landed in
-    // three_player's cases, three_player's landed in four_player's, and
-    // four_player's landed in the fullscreen fallback. So an out-of-range
-    // index did not fail, it silently answered from the *next* layout down.
+    // Every layout returns from its own block, because inner switches that
+    // fall through chain the layouts together: two_player's invalid-index
+    // `default: break` lands in three_player's cases, three_player's in
+    // four_player's, and four_player's in the fullscreen fallback. An
+    // out-of-range index would not fail; it would silently answer from the
+    // *next* layout down.
     Viewport ViewportManager::calculate_viewport(ScreenLayout layout,
         int player_num, const Vector2F& screen_size) const
     {
@@ -153,9 +154,9 @@ namespace labrador
             // Three players occupy three quadrants; index 3 is the one nobody
             // is in. It is a real viewport rather than an error because
             // callers that cover the whole screen - the menus - still have to
-            // draw it. all_viewports() used to reach for it by asking for
-            // index *4*, which fell through to the fullscreen fallback, so
-            // every menu drew a fourth full-screen pass over the other three.
+            // draw it. Note the index: asking all_viewports() for *4* instead
+            // falls through to the fullscreen fallback, and every menu draws a
+            // fourth full-screen pass over the other three.
             case 3:
                 return top_right;
             default:

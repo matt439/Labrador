@@ -35,10 +35,10 @@ TEST_CASE("a preset sets the size and the label together")
 
 TEST_CASE("an exact size outside the presets is stored as given")
 {
-	// THE DEFECT, IN ONE ASSERTION. A window can be any size at all, and the
-	// enum has four values - so every size outside those four used to be
-	// answered with 1280x720 and every layout above here was computed for a
-	// window that was not on the screen.
+	// THE DEFECT, IN ONE ASSERTION. A window can be any size at all and the
+	// enum has four values, so coercing through the enum answers 1280x720 for
+	// every size outside those four and lays out every view above here for a
+	// window that is not on the screen.
 	ResolutionManager manager;
 
 	manager.set_resolution_exactly(Vector2I(1600, 900));

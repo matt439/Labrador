@@ -42,12 +42,12 @@ namespace mattmath
 	// is NOT commutative: rotate-then-move and move-then-rotate are different
 	// transforms, exactly as they are different actions.
 	//
-	// This is deliberately not the general 3x3 matrix that used to live in
-	// MattMath. That one had a dynamically sized base that never sized itself,
-	// so every factory wrote nine elements out of bounds; it had no tests and
-	// no callers, and round-2 review deleted it (docs/review/all-findings.md,
-	// findings 9, 39 and 40). What is here instead is the six floats a 2D game
-	// actually applies, with the contract stated and the behaviour pinned.
+	// This is deliberately not a general 3x3 matrix. MattMath carried one with
+	// a dynamically sized base that never sized itself, so every factory wrote
+	// nine elements out of bounds; it had no tests and no callers, and round-2
+	// review deleted it (docs/review/all-findings.md, findings 9, 39 and 40).
+	// What is here is the six floats a 2D game actually applies, with the
+	// contract stated and the behaviour pinned.
 	struct Matrix3x2F
 	{
 		// The identity, by default: a transform that does nothing is the one

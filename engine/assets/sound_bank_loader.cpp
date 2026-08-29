@@ -43,10 +43,10 @@ namespace labrador
 		SoundBankDefinition definition;
 		definition.source_path = document.source_path();
 
-		// The declared wave list, in order and without repeats. A repeat used
-		// to be absorbed by Registry::add refilling the name's slot, which is
-		// invisible; a list is not a registry, so it is dropped here instead
-		// and the result is the same one effect.
+		// The declared wave list, in order and without repeats. A registry
+		// absorbs a repeat by refilling the name's slot, which is invisible; a
+		// list is not a registry, so it is dropped here instead and the result
+		// is the same one effect.
 		const JsonValue waves = root.array("waves");
 		for (size_t index = 0; index < waves.size(); ++index)
 		{
@@ -73,10 +73,10 @@ namespace labrador
 			const std::string name = effect.string("name");
 
 			// Two definitions claiming one name is a content bug rather than an
-			// overwrite, and this is still the line that says so - it used to
-			// have to, because Registry::add refills a name's slot rather than
-			// rejecting it, and it still does because a silent second voice on
-			// one name is the same defect whatever holds them.
+			// overwrite, and this is the line that says so. Registry::add refills
+			// a name's slot rather than rejecting it, so nothing below here would
+			// - and a silent second voice on one name is the same defect whatever
+			// holds them.
 			if (names_effect(definition.effects, name))
 			{
 				throw std::runtime_error("'" + definition.source_path +
@@ -87,11 +87,9 @@ namespace labrador
 			definition.effects.push_back(
 				SoundBankDefinition::Effect{ name, wave });
 
-			// An effect may name a wave the `waves` array did not list, and
-			// that used to be how such a wave reached the bank at all. It has
-			// to be in this list now: the list is what a backend with no
-			// container answers wave_index out of, so a wave nothing declares
-			// is a wave nothing can find.
+			// An effect may not name a wave the `waves` array did not list. The
+			// list is what a backend with no container answers wave_index out of,
+			// so a wave nothing declares is a wave nothing can find.
 			if (!holds(definition.waves, wave))
 			{
 				definition.waves.push_back(wave);

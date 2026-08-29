@@ -29,10 +29,10 @@ TEST_CASE("multi-byte UTF-8 becomes the character it encodes")
 TEST_CASE("invalid UTF-8 becomes U+FFFD rather than nothing")
 {
 	// The promise this header makes - "text about to be drawn should show
-	// mojibake, not vanish" - and the one that used to lead into the throw it
-	// was written to avoid, because U+FFFD is outside the region
-	// MakeSpriteFont writes when nobody chooses one. It draws as the stand-in
-	// glyph the font kind now installs at load.
+	// mojibake, not vanish". U+FFFD is outside the region MakeSpriteFont writes
+	// when nobody chooses one, so without a stand-in it is the replacement
+	// character that leads into the throw. It draws as the stand-in glyph the
+	// font kind installs at load.
 	const std::wstring mojibake = widen("bad\xFF\xFE" "bytes");
 
 	CHECK(mojibake.find(L'\uFFFD') != std::wstring::npos);

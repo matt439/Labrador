@@ -48,12 +48,12 @@ namespace labrador
 
 	// --- RenderResources -----------------------------------------------------
 	//
-	// What is left of the front half here, and it is a short list on purpose.
-	// This file used to carry the whole public surface - a page of forwarding
-	// calls written out three times, once per backend, because Impl held all
-	// three resource tables and is a complete type only in this folder. Two of
-	// those tables hold engine data, so they are the class's own members now
-	// and their methods are compiled once in engine/render/render_resources.cpp.
+	// The front half, and it is a short list on purpose. Carrying the whole
+	// public surface here means a page of forwarding calls written out once per
+	// backend, because Impl is a complete type only inside a backend folder.
+	// Two of the three resource tables hold engine data, so they are the
+	// class's own members and their methods are compiled once in
+	// engine/render/render_resources.cpp.
 	//
 	// What stayed did so because each one either touches the texture table or
 	// needs Impl complete to make or destroy one. That is the rule

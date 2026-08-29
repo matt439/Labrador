@@ -29,7 +29,7 @@ namespace labrador
 	//
 	// Throws std::out_of_range naming the path if there is no file there, and
 	// std::runtime_error naming the path AND what is wrong with it otherwise -
-	// which is what CreateDDSTextureFromFile could not do, and why loading a
-	// texture used to report every failure as an eight-digit HRESULT.
+	// which is what CreateDDSTextureFromFile cannot do, and why routing through
+	// it reports every failure to load a texture as an eight-digit HRESULT.
 	TextureData read_dds_file(const std::string& path);
 }

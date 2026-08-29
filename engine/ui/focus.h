@@ -22,10 +22,9 @@ namespace labrador
 
 		// The third state, and the reason it is here rather than left to the
 		// page: derived paint and page paint cannot share a widget. Every
-		// mutation repaints every widget from focus, so a page that coloured a
-		// row itself was writing over a colour the next add() or move() would
-		// write back, and the header used to say so and offer nothing better.
-		// A colour this group derives is the only kind that survives.
+		// mutation repaints every widget from focus, so a page that colours a
+		// row itself is writing over a colour the next add() or move() writes
+		// back. A colour this group derives is the only kind that survives.
 		Colour disabled = Colour::dark_gray;
 	};
 
@@ -156,10 +155,10 @@ namespace labrador
 		// that recolours a widget for its own reasons - a team tint - has to
 		// put the focus paint back afterwards.
 		//
-		// A disabled row used to be the other example here, and it was the gap
-		// rather than the case. What this offered it was a repaint fighting a
-		// repaint, and the group won every time, because the next add() or
-		// move() paints all of them back to one of two colours.
+		// A disabled row is NOT the other example, though it looks like one:
+		// what this offers it is a repaint fighting a repaint, and the group
+		// wins every time, because the next add() or move() paints all of them
+		// back to one of two colours.
 		void refresh_style() const;
 
 	private:

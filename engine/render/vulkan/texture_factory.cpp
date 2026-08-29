@@ -210,11 +210,11 @@ namespace labrador
 		VkDeviceMemory memory = VK_NULL_HANDLE;
 		VkImageView view = VK_NULL_HANDLE;
 
-		// DECLARED OUT HERE SO THE catch CAN NAME IT. It used to be a local of
-		// the try below, which put a VkBuffer and a still-mapped allocation the
-		// full size of the texture outside the reach of the block whose own
-		// comment says every failure has to put everything back - with five
-		// throwing calls between its creation and its release.
+		// DECLARED OUT HERE SO THE catch CAN NAME IT. As a local of the try
+		// below, a VkBuffer and a still-mapped allocation the full size of the
+		// texture sit outside the reach of the block whose own comment says every
+		// failure has to put everything back - with five throwing calls between
+		// its creation and its release.
 		VulkanBuffer staging;
 
 		// FROM HERE THE IMAGE IS OWNED BY NOBODY UNTIL THE LAST LINE, so every

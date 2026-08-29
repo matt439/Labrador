@@ -48,7 +48,7 @@ TEST_CASE("separation along the normal itself is just separation")
 TEST_CASE("an axis that cannot separate the pair is refused, not answered")
 {
 	// Perpendicular: no distance along this axis closes any of the overlap.
-	// This used to return zero, which reads as a translation and is not one.
+	// Zero would read as a translation and is not one.
 	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_RIGHT, 10.0f,
 		Vector2F::DIRECTION_DOWN), std::invalid_argument);
 
