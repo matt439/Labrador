@@ -107,7 +107,7 @@ namespace labrador
 		// carries, under either filter. That is a term of this seam and not a
 		// backend's habit. Chains are read and uploaded - a .dds that has one is
 		// not rejected and its bytes reach the device - and nothing samples from
-		// them. SEAM.md says why the other answer is not the engine's to give.
+		// them. SEAM.md#6 says why the other answer is not the engine's to give.
 		void set_filter(TextureFilter filter);
 
 		// CONSTRAINT: sort depth is per draw, not per object.
@@ -271,7 +271,7 @@ namespace labrador
 		// which is a statement about what "resets" means. A client reaches that
 		// by catching an exception out of its own draw walk and carrying on - and
 		// so does a device event, which surfaces as a throw from a worker
-		// mid-frame. What each of the five has to reset to keep it is in SEAM.md.
+		// mid-frame. What each of the five resets to keep it is in SEAM.md#6.
 		void begin_frame();
 		void end_frame();
 
@@ -296,7 +296,7 @@ namespace labrador
 		// Draws every view in view order, which is the only ordering guarantee
 		// made here, and leaves nothing of the frame behind. What that costs
 		// depends on the backend and is deliberately not described on this line;
-		// SEAM.md has the five answers.
+		// SEAM.md#6 has the five answers.
 		//
 		// Called once per frame, between begin_frame and end_frame - AND A SECOND
 		// CALL ADDS NOTHING, which is a decision rather than a description. One

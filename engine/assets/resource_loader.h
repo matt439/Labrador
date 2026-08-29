@@ -50,8 +50,7 @@ namespace labrador
 		// wrong. It is the same source a Direct3D build compiles:
 		// LABRADOR_RENDER_BACKEND picks the backend at configure time (T5), so
 		// what varies is which build ever runs this function, not which source
-		// has to write it. engine/render/SEAM.md carries the argument in its
-		// section 8, and
+		// has to write it. engine/render/SEAM.md#8 carries the argument, and
 		// tests/assets/resource_loader_tests.cpp pins what a restore does with
 		// what is written here.
 		struct AssetKind

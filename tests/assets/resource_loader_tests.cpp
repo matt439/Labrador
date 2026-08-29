@@ -8,8 +8,8 @@ using namespace labrador;
 
 // What a device restore does to a manifest, asserted without a device.
 //
-// This is the file engine/render/SEAM.md's settled note on
-// AssetKind::reload_device (section 8) points at. The question that note closed was where
+// This is the file the settled note in engine/render/SEAM.md#8, on
+// AssetKind::reload_device, points at. The question that note closed was where
 // the device-loss rebuild belongs - on the loader, on DeviceNotify, or nowhere
 // - and the answer is the loader, because a rebuild has to refill the slots
 // the old resources were in and the manifest is the only thing that knows

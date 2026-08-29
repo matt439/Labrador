@@ -170,6 +170,14 @@ what this very comment used to say has lost the thread twice.
   change that fights it**, exactly as the design documents are. Prose one
   directory from its subject needs that rule more than prose in the same file,
   not less.
+- **A citation to one is written so a machine can check it**: the document by
+  its path from the repository root, a section as `<document>.md#<number>`, a
+  trade-off by the number PHILOSOPHY gives it.
+  [check_doc_citations.cmake](../../cmake/check_doc_citations.cmake) fails the
+  build for a pointer that resolves to nothing, and that is the whole of what
+  it proves — a green build says the pointer lands somewhere, never that what
+  it lands on is still true. Only the amendment rule above does that, and only
+  a reader keeps it.
 - **Growth is the signal, as it is for file length.** A header whose
   declarations have not changed in a month and whose comments have doubled is
   not better documented; it is accreting. The ratio worth watching is comment

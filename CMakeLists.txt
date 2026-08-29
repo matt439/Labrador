@@ -34,6 +34,23 @@ add_subdirectory(engine)
 if(PROJECT_IS_TOP_LEVEL)
     enable_testing()
 
+    # Citations from code to a document, enforced. Runs on every build.
+    #
+    # Top-level only, unlike the wall above it. That one guards a hazard a
+    # consumer really has - their tree may well have a game/ beside this one -
+    # where this guards the engine's own prose against the engine's own edits.
+    # A client that renames nothing and cites nothing should not be handed a
+    # build failure for a section number this repository moved, and the files
+    # it reads are tests/, samples/ and bench/, none of which a consumer
+    # builds.
+    add_custom_target(check_doc_citations ALL
+        COMMAND "${CMAKE_COMMAND}"
+            "-DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_doc_citations.cmake"
+        COMMENT "Checking that every document a comment cites resolves"
+        VERBATIM
+    )
+
     add_subdirectory(samples/minimal)
     add_subdirectory(samples/linesweeper)
     add_subdirectory(bench)

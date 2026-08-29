@@ -164,6 +164,16 @@ file of that format to read it against.
   ARCHITECTURE names — sat outside the wall. Audio is the module where this had
   already gone wrong unwatched: the check only ever looked at `render/`, and
   `<Audio.h>` was in four public engine headers across three modules.
+- **A comment citing a document, a section or a trade-off that does not
+  exist.** [cmake/check_doc_citations.cmake](cmake/check_doc_citations.cmake),
+  top-level builds only. `engine/render/SEAM.md` is the seam's charter — the
+  half of `renderer.h` that was rationale rather than caller contract — so the
+  pointer between them is load-bearing in a way a paragraph in one file was
+  not. It checks that every `<path>.md` a comment names exists, every
+  `<document>.md#<number>` names a real section, and every `T<n>` is one
+  PHILOSOPHY defines. **It proves name closure and nothing else**: the file
+  says so at length, and says why, from a repository that ran the same trade at
+  200x the scale and measured what its own green linter was not catching.
 - **Adding a source file without listing it.** Sources are enumerated
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
