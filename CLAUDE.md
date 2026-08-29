@@ -324,7 +324,24 @@ file of that format to read it against.
   applied is section 7, and two of section 6: the severity of the minimise
   throw, which needs somebody to minimise a sample under the layers, and
   `compositeAlpha`/`preTransform`, which the review declines to decide because
-  they are live only on a platform this tree does not build. The document
+  they are live only on a platform this tree does not build.
+
+  **That sentence was one finding short until 2026-08-29, and how G9 closed is
+  worth reading before trusting any other line like it.** The gap-probe series
+  G1–G16 is counted separately in the review's own README ("16 more raised by
+  gap probes and confirmed") and folded into the should-fix tally here, and
+  fifteen of the sixteen were applied. G9 was not: `renderer.h` went on saying
+  a device "can be lost on both of them, which is half the backends rather than
+  one" and citing, as its authority, a note fifty lines below that says three
+  of five. The count was right at four backends and went stale when Vulkan
+  landed. The comment sweep removed it — the whole parenthesis went, because
+  the paragraph around it was archaeology — which killed the contradiction and
+  left the header silent on a roster G9's stated failure is about a reader
+  getting wrong. So the finding is closed the other way instead: `DeviceNotify`
+  now says the roster is not a caller's question at all and cites
+  `SEAM.md#8`, which is the settlement. **Deleting a false sentence is not the
+  same as answering the question it got wrong**, and a sweep that only deletes
+  will leave that difference behind wherever it touches a finding. The document
   itself still reads as it was written, line numbers included, so do not expect
   them to match. It is the first review in
   this tree that **ran** anything — its section 2 is `RenderPixelTests` under

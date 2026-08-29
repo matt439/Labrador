@@ -159,6 +159,15 @@ namespace labrador
 	//
 	// Not a graphics type: a game object that has to rebuild something after a
 	// device loss implements this and knows nothing about what was lost.
+	//
+	// AND NOT A QUESTION ABOUT WHICH BACKEND YOU BUILT. A device is lost on
+	// three of the five, but that is a fact about a build and not about a
+	// caller: LABRADOR_RENDER_BACKEND picks one at configure time (T5) over one
+	// game source, so what varies is which build ever RUNS this path, never
+	// which source has to write it. A client that reasons "my preset cannot
+	// lose a device, so I need no rebuild" has written a shell that is wrong
+	// the moment it is configured against another backend. SEAM.md#8 settles
+	// it and says what the rebuild belongs to.
 	class DeviceNotify
 	{
 	public:
