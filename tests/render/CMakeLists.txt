@@ -28,16 +28,34 @@ target_link_libraries(RenderTests PRIVATE
     labrador_settings
 )
 
-# The same content, for the same reason, and it is new here: a font stopped
-# being a device resource, so reading one and measuring with it is now
-# arithmetic this executable can do. sprite_font_file_tests.cpp reads the real
-# file rather than a fixture, because a fixture could only agree with the parser
-# that wrote it.
-add_custom_command(TARGET RenderTests POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+# The test content, beside the executables. ctest runs from the build
+# directory and the harnesses load "./content/" relative to it - a four-colour
+# texture and a font, both owned by these tests rather than borrowed from a
+# sample, so that restyling a sample cannot move a pin in here. RenderTests
+# wants it because a font stopped being a device resource, so reading one and
+# measuring with it is now arithmetic this executable can do:
+# sprite_font_file_tests.cpp reads the real file rather than a fixture, because
+# a fixture could only agree with the parser that wrote it. RenderPixelTests
+# wants it to draw with.
+#
+# ONE TARGET FOR BOTH EXECUTABLES, AND THAT IS NOT TIDINESS. Both link into
+# this directory, so a POST_BUILD copy on each is two processes writing the
+# same two files, and Ninja links them concurrently - the loser fails with
+# "Error copying directory ...: Permission denied" and takes the build down
+# before a single test has run. It is a race, so it fires at whatever rate two
+# links happen to collide: twice in ninety-five CI runs, once under
+# x64-debug-gl and once under x64-debug-vulkan, which reads as a backend fault
+# and is nothing of the kind. A single node in the build graph cannot race
+# itself. The samples copy their content this way for a different reason and
+# the shape is the same one.
+add_custom_target(render_test_content ALL)
+add_custom_command(TARGET render_test_content POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/content"
         "$<TARGET_FILE_DIR:RenderTests>/content"
+    VERBATIM
 )
+add_dependencies(RenderTests render_test_content)
 
 # The null backend's own tests, in the one configuration that has it.
 #
@@ -98,16 +116,10 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         LABRADOR_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     )
 
-    # The test content, beside the executable. ctest runs from the build
-    # directory, and the harness loads "./content/" relative to it - a
-    # four-colour texture and a font, both owned by these tests rather than
-    # borrowed from a sample, so that restyling a sample cannot move a pin in
-    # here.
-    add_custom_command(TARGET RenderPixelTests POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/content"
-            "$<TARGET_FILE_DIR:RenderPixelTests>/content"
-    )
+    # The same content, copied by the same single target rather than by a
+    # second POST_BUILD of its own - see render_test_content above for what
+    # the second copy cost.
+    add_dependencies(RenderPixelTests render_test_content)
 
     add_test(NAME RenderPixelTests COMMAND RenderPixelTests)
 endif()
