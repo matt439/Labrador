@@ -136,6 +136,51 @@ Almost everything below falls out of one rule:
   own — then engine headers, then external, then standard library.
 - Tests are named for their subject: `vector2_tests.cpp`.
 
+## Comments
+
+A comment states what the code cannot. There are exactly three things it can
+be, and knowing which one is being written is most of the discipline:
+
+- **A contract.** What a caller is held to: a precondition, an invariant, what
+  is thrown and when, what a returned handle's lifetime is, which thread may
+  call. This is the most valuable kind and it lives **at the declaration**,
+  because the person about to violate it is reading the declaration and not
+  anything else. It never moves to a document.
+- **A rationale.** Why the code is this shape and not the obvious other one —
+  the alternative that was weighed and lost, the constraint that forced a hand.
+  Worth writing when the obvious reading is wrong; **cited rather than
+  re-derived** when it has a name. "T3: take the simpler model" is a complete
+  comment (PHILOSOPHY.md), and a paragraph re-arguing T8 next to a citation of
+  T8 is a paragraph that can go stale against its own source.
+- **Archaeology.** How the code came to be this way: what it used to be, which
+  commit moved it, what a previous version of the comment wrongly said. **This
+  is never a comment.** `git log -S` answers it precisely, on demand, and
+  without rotting. A tree that writes it down accumulates a changelog in its
+  headers that no build checks and no reader trusts.
+
+The test is the tense. A sentence about what the code *is* earns its place; a
+sentence about what it *was* belongs to the history, and a sentence narrating
+what this very comment used to say has lost the thread twice.
+
+- **Prose that outgrows the declaration it sits on becomes a document beside
+  the code**, not a longer comment: `engine/render/SEAM.md` is the seam's
+  charter and `renderer.h` cites it by section. Beside the code rather than in
+  `docs/design/`, which is written in the present tense of the target and says
+  nothing about the current tree — and **amended in the same commit as the
+  change that fights it**, exactly as the design documents are. Prose one
+  directory from its subject needs that rule more than prose in the same file,
+  not less.
+- **Growth is the signal, as it is for file length.** A header whose
+  declarations have not changed in a month and whose comments have doubled is
+  not better documented; it is accreting. The ratio worth watching is comment
+  lines against the code they describe, and the fix is almost always that a
+  rationale has outgrown its declaration and wants a document.
+- Commented-out code is deleted. It is the purest archaeology and the version
+  control system already has it.
+- A comment that restates the line below it is noise: `// increment the
+  counter` above `++count`. Naming (everything above) is what carries that
+  load.
+
 ## Data
 
 - JSON keys, asset names, registry keys, spawn-group names: snake_case,
@@ -152,5 +197,7 @@ Almost everything below falls out of one rule:
 - `get_` on accessors.
 - `using namespace` in a header.
 - Abbreviations off the allowlist.
+- Commented-out code, or a comment narrating what the code used to be.
+- A comment re-deriving a trade-off it could cite by number.
 - `auto` where the type can be written — a lambda variable is the only
   place it can't.
