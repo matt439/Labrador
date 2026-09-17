@@ -24,6 +24,19 @@ add_custom_target(check_engine_includes ALL
     VERBATIM
 )
 
+# AND EVERY REAL TARGET DEPENDS ON IT, which ALL alone did not give. ALL puts
+# a target in the default build and nowhere else: `ninja LabradorEngine`, an
+# IDE building the one target it has open, a client building its game target
+# - none of those is the default build, and every one of them skipped the
+# check while this file said "runs on every build"
+# (docs/review/gpt6/README.md, G6-10). labrador_settings is the interface
+# target every real target links (cmake/settings.cmake), and a dependency
+# on an interface library is followed to whatever links it, so this one line
+# is the dependency for the engine, the samples, the tests, the benchmark
+# and a consumer's game alike. It is deliberately here rather than on
+# LabradorEngine: MattMath is under engine/ too and builds without it.
+add_dependencies(labrador_settings check_engine_includes)
+
 add_subdirectory(engine)
 
 # A client consuming this as a submodule wants the library and nothing else:
@@ -50,6 +63,10 @@ if(PROJECT_IS_TOP_LEVEL)
         COMMENT "Checking that every document a comment cites resolves"
         VERBATIM
     )
+
+    # The same dependency the include check has, inside the same guard, so
+    # a targeted build here runs it and a consumer's never sees it.
+    add_dependencies(labrador_settings check_doc_citations)
 
     add_subdirectory(samples/minimal)
     add_subdirectory(samples/linesweeper)
