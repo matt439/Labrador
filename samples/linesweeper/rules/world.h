@@ -233,4 +233,35 @@ namespace linesweeper
 	// and the square the piece lands on are one function, so they cannot
 	// disagree.
 	Piece shadow(const World& world);
+
+	// WHAT ONE TICK DID THAT THE WORLD DOES NOT KEEP, handed back by tick().
+	//
+	// A tick locks and clears in one step, so the World after it holds
+	// neither the piece as it locked - `current` is already empty - nor the
+	// full rows, which are already gone. The presentation reconstructed both
+	// from shadow(before), which is where the piece locked in every case but
+	// one: a piece rotated or moved on the very tick it locked lands
+	// somewhere else, and the field then found a full row at the wrong
+	// height and threw its sparks there (docs/review/gpt6/README.md, G6-11).
+	// This is the exact answer, four bytes, returned rather than stored.
+	//
+	// RETURNED RATHER THAN STORED, AND THAT IS THE WHOLE DESIGN. The World's
+	// padding assert prices a byte on it at four, and README, The exact
+	// answer was priced and refused, declined to spend them on an effect. A
+	// return value costs the match nothing: it is not in the value, not in
+	// the memcmp, not in the replay, and a replay produces the same one on
+	// every tick because it is a function of the same bytes. It is the
+	// second value in this file and the last: a World is what the match is,
+	// and this is what the last step of it did.
+	//
+	// Declared here and not in tick.h because the presentation is allowed
+	// to read a value and not to name the verb (README, Three layers). The
+	// state that calls tick() keeps the latest one beside its World and hands
+	// the particle field a pointer to each.
+	struct TickResult
+	{
+		// The piece as it locked, in the position and rotation it locked in.
+		// Kind::none when nothing locked this tick, which is most ticks.
+		Piece locked;
+	};
 }

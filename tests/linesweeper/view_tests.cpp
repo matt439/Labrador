@@ -1,7 +1,9 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/renderer.h"
+#include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/particles.h"
+#include "samples/linesweeper/rules/tick.h"
 #include "samples/linesweeper/rules/world.h"
 
 #include <array>
@@ -13,6 +15,7 @@ using linesweeper::Coord;
 using linesweeper::Kind;
 using linesweeper::ParticleField;
 using linesweeper::Piece;
+using linesweeper::TickResult;
 using linesweeper::World;
 using linesweeper::cell_index;
 using linesweeper::particle_capacity;
@@ -76,7 +79,8 @@ namespace
 	int locked(int cells)
 	{
 		World world;
-		ParticleField field(&world, TextureHandle{});
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
 
 		for (int index = 0; index < cells; ++index)
 		{
@@ -154,10 +158,12 @@ namespace
 
 	// Locks the falling piece where a hard drop would put it, then clears -
 	// which is what one tick of tick.cpp does, in the one order that matters
-	// here: both, atomically, so no World ever holds a full row.
-	void lock_and_clear(World& world)
+	// here: both, atomically, so no World ever holds a full row. And says
+	// which piece it locked, which is what tick() says too.
+	void lock_and_clear(World& world, TickResult& result)
 	{
 		const Piece landed = shadow(world);
+		result.locked = landed;
 		const std::array<Coord, piece_cell_count> occupied =
 			piece_cells(landed);
 
@@ -177,7 +183,8 @@ namespace
 	TEST_CASE("a field starts empty and stays empty until something happens")
 	{
 		World world;
-		ParticleField field(&world, TextureHandle{});
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
 
 		CHECK(field.live() == 0);
 		CHECK(field.dropped() == 0);
@@ -224,10 +231,11 @@ namespace
 
 		// Constructed before the tick, so previous_ is the pre-lock match -
 		// exactly what the field sees on a real frame.
-		ParticleField field(&world, TextureHandle{});
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
 		REQUIRE(field.live() == 0);
 
-		lock_and_clear(world);
+		lock_and_clear(world, result);
 		REQUIRE(world.lines == 1);
 
 		// And no row is full now, which is the whole difficulty.
@@ -261,14 +269,101 @@ namespace
 		}
 	}
 
+	// How many sparks one cleared row is worth, by the hand-rolled path the
+	// case above proves.
+	int one_row_cleared()
+	{
+		World world = about_to_clear();
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
+		lock_and_clear(world, result);
+		field.update(0.0f);
+		return field.live();
+	}
+
+	// THE TICK THAT ROTATES AND LOCKS, through the real tick(). The field
+	// used to rebuild the board from where a hard drop would have put LAST
+	// frame's piece, and README said the failure on a piece that turned on
+	// its locking tick was a missed burst. It was a burst from the wrong row
+	// (docs/review/gpt6/README.md, G6-11): this is the review's board, and
+	// the sparks have to come out of the row that went.
+	TEST_CASE("a piece that turns on the tick it locks sparks from the row that went")
+	{
+		World world;
+
+		// A horizontal I above a stack shaped so that the horizontal piece
+		// would complete row 20 and the vertical one completes row 21: row
+		// 20 is full except for columns 3..6, row 21 full except column 5.
+		world.current = Piece{ Kind::i, 0, 3, 5 };
+		for (int x = 0; x < well_columns; ++x)
+		{
+			if (x < 3 || x > 6)
+			{
+				fill(world, x, 20);
+			}
+			if (x != 5)
+			{
+				fill(world, x, 21);
+			}
+		}
+
+		// The setup's own proof, from the position the field will read: the
+		// horizontal shadow lands across row 20, completing it, which is the
+		// row the old answer threw its sparks from.
+		const Piece horizontal = shadow(world);
+		REQUIRE(horizontal.rotation == 0);
+		for (const Coord& cell : piece_cells(horizontal))
+		{
+			REQUIRE(cell.y == 20);
+		}
+
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
+
+		// Rotate clockwise and hard drop in one tick, which tick.cpp applies
+		// in that order: the vertical I drops down column 5 into row 21.
+		result = linesweeper::tick(world, static_cast<std::uint8_t>(
+			linesweeper::button_rotate_clockwise |
+			linesweeper::button_hard_drop));
+		REQUIRE(world.lines == 1);
+		REQUIRE(result.locked.kind == Kind::i);
+		REQUIRE(result.locked.rotation == 1);
+
+		bool reached_the_floor = false;
+		for (const Coord& cell : piece_cells(result.locked))
+		{
+			reached_the_floor = reached_the_floor || (cell.x == 5 && cell.y == 21);
+		}
+		REQUIRE(reached_the_floor);
+
+		// dt of zero, so the sparks sit where they were thrown from.
+		field.update(0.0f);
+		REQUIRE(field.live() > 0);
+
+		// Every spark is inside row 21's band of the screen. Row 20's band
+		// is the 28 pixels above it, and the review measured the old answer
+		// at y = 576..604 - that band exactly.
+		const float row_top = linesweeper::well_origin_y +
+			static_cast<float>(21 - linesweeper::well_buffer_rows) *
+			linesweeper::cell_size;
+		CHECK(field.bounds().top() >= row_top - 0.01f);
+		CHECK(field.bounds().bottom() <= row_top + linesweeper::cell_size + 0.01f);
+
+		// And it is one row's worth: the same count the single-row clear
+		// above produces, not that plus a lock and not two rows.
+		CHECK(field.live() % well_columns == 0);
+		CHECK(field.live() == one_row_cleared());
+	}
+
 	TEST_CASE("a lock that clears nothing is read as a lock")
 	{
 		World world;
 		world.current = Piece{ Kind::o, 0, 4, 0 };
 
-		ParticleField field(&world, TextureHandle{});
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
 
-		lock_and_clear(world);
+		lock_and_clear(world, result);
 		REQUIRE(world.lines == 0);
 
 		field.update(frame);
@@ -283,7 +378,8 @@ namespace
 		SUBCASE("an empty well tops out with nothing to shatter")
 		{
 			World world;
-			ParticleField field(&world, TextureHandle{});
+			TickResult result;
+			ParticleField field(&world, &result, TextureHandle{});
 
 			world.topped_out = 1;
 			++world.tick;
@@ -297,7 +393,8 @@ namespace
 			World world;
 			fill_row(world, well_rows - 1);
 
-			ParticleField field(&world, TextureHandle{});
+			TickResult result;
+			ParticleField field(&world, &result, TextureHandle{});
 
 			world.topped_out = 1;
 			++world.tick;
@@ -316,7 +413,8 @@ namespace
 				fill_row(world, y);
 			}
 
-			ParticleField field(&world, TextureHandle{});
+			TickResult result;
+			ParticleField field(&world, &result, TextureHandle{});
 
 			world.topped_out = 1;
 			++world.tick;
@@ -335,7 +433,8 @@ namespace
 		World world;
 		fill_row(world, well_rows - 1);
 
-		ParticleField field(&world, TextureHandle{});
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
 
 		world.topped_out = 1;
 		++world.tick;
@@ -364,7 +463,8 @@ namespace
 		world.tick = 500;
 		fill_row(world, well_rows - 1);
 
-		ParticleField field(&world, TextureHandle{});
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
 
 		world.topped_out = 1;
 		++world.tick;
@@ -385,7 +485,8 @@ namespace
 	TEST_CASE("the field is bounded, and says how many it refused")
 	{
 		World world;
-		ParticleField field(&world, TextureHandle{});
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
 
 		// dt of zero, so nothing ages and every burst accumulates. Sixty
 		// rounds of filling four rows and clearing them is far past the
@@ -419,7 +520,8 @@ namespace
 		World world;
 		fill_row(world, well_rows - 1);
 
-		ParticleField field(&world, TextureHandle{});
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
 
 		SUBCASE("an empty field has no area")
 		{

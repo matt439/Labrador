@@ -415,23 +415,34 @@ from outside the simulation — not in last frame's match, not in this frame's. 
 field looking for one finds none, ever. That was found by writing the obvious
 thing first and watching it never fire.
 
-So the board between the lock and the clear is reconstructed, out of the two
-pure queries `world.h` declares for exactly this kind of reader: `shadow()`
-gives where a hard drop would have put the falling piece, which is where it
-locked in every case but one — gravity and soft drop lock a piece that is
-already resting, and a hard drop locks it at the shadow by definition. The
-exception is a piece that moved sideways or rotated on the very tick it locked,
-and the failure mode there is that no row comes back full and no sparks are
-thrown. **A missed burst on a rare frame is a cost worth paying; a burst on the
-wrong row is not.**
+So the board between the lock and the clear is rebuilt: last frame's cells,
+plus the piece as it locked. **Where the piece as it locked comes from is the
+part this section got wrong once.** It was reconstructed, from `shadow()` of
+last frame's match — where a hard drop would have put the falling piece, which
+is where it locked in every case but one: a piece that moved sideways or
+rotated on the very tick it locked. This section said the failure mode there
+was that no row came back full and no sparks were thrown, and closed with "a
+missed burst on a rare frame is a cost worth paying; a burst on the wrong row
+is not." The second half of that sentence was the actual failure. A horizontal
+I rotated and hard-dropped in one tick locks vertically and clears row 21; the
+horizontal shadow completed row 20; two hundred and twenty sparks came out of a
+row that was still on the board (`docs/review/gpt6/README.md`, G6-11).
 
 **The exact answer was priced and refused, by the same assert that priced a
-rule out once already.** A field on `World` naming the rows that went would
-cost four bytes, not one: 277 pads to 280, and `sizeof(World) == 276` and
-`has_unique_object_representations_v` both fire. *The padding assert priced a
-rule out* records that trade being made for a rule. This is it made again for
-an effect, and an effect has even less claim on the value than the lock-delay
-low-water mark did.
+rule out once already — and then bought another way.** A field on `World`
+naming the rows that went would cost four bytes, not one: 277 pads to 280, and
+`sizeof(World) == 276` and `has_unique_object_representations_v` both fire.
+*The padding assert priced a rule out* records that trade being made for a
+rule. This is it made again for an effect, and an effect has even less claim on
+the value than the lock-delay low-water mark did — so the value is untouched.
+`tick()` returns the piece as it locked instead (`world.h`, `TickResult`, four
+bytes, `Kind::none` on the ticks that lock nothing), the state keeps the
+latest one beside its `World`, and the field borrows a pointer to each. A
+return value costs the match nothing: it is not in the memcmp, not in the
+replay, and a replay produces the same one on every tick because it is a
+function of the same bytes. The field is still a reader and there is still no
+bus; what changed is that the one fact the diff cannot recover is now handed to
+it rather than guessed at.
 
 #### What it costs, measured against what was predicted
 

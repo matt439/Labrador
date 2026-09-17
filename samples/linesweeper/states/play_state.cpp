@@ -113,13 +113,16 @@ namespace linesweeper
 		// in is the order the quads are submitted in and sparks are drawn over
 		// the stack they came out of.
 		//
-		// It is handed the same const World* the board holds and nothing else.
-		// The state never tells it a line was cleared: it works that out by
-		// keeping last frame's match and comparing, which is a thing only a
-		// 276-byte trivially copyable value makes cheap enough to do every
-		// frame (particles.h).
+		// It is handed the same const World* the board holds, and a pointer
+		// to what the latest tick() returned. The state never tells it a line
+		// was cleared: it works that out by keeping last frame's match and
+		// comparing, which is a thing only a 276-byte trivially copyable
+		// value makes cheap enough to do every frame - and the second pointer
+		// is the one fact that comparison cannot recover, the piece as it
+		// locked (particles.h).
 		this->particles_ = this->scene_->add(std::make_unique<ParticleField>(
-			&this->world_, resources->resolve_texture(block_texture_name)));
+			&this->world_, &this->last_tick_,
+			resources->resolve_texture(block_texture_name)));
 
 		// LAST, AND OVER THE SPARKS. The top-out banner appears on the exact
 		// frame the field throws its largest burst, so the one screen a player
@@ -284,8 +287,10 @@ namespace linesweeper
 		// fixed-step game makes and the right one for a game where a tick is
 		// a rule.
 		// Through the gate, which is a no-op on every frame but the ones
-		// after a pause menu closed with a key the match also reads.
-		tick(this->world_, this->gate_.pass(this->read_input()));
+		// after a pause menu closed with a key the match also reads. What
+		// comes back is kept for the field, which reads it on this frame's
+		// update below.
+		this->last_tick_ = tick(this->world_, this->gate_.pass(this->read_input()));
 
 		this->scene_->update(dt);
 		this->scene_->end_tick();

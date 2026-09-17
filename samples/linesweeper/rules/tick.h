@@ -54,5 +54,9 @@ namespace linesweeper
 	// A topped-out World ignores this entirely. Restarting is not a verb
 	// either - it is `world = World{}` at the call site, which is the whole
 	// argument of README's "The match is one value".
-	void tick(World& world, std::uint8_t input);
+	//
+	// What comes back is the one thing the step knew and the World cannot
+	// say afterwards - the piece as it locked, if one did (world.h,
+	// TickResult). Every caller that wants only the match ignores it.
+	TickResult tick(World& world, std::uint8_t input);
 }

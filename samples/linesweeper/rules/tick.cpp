@@ -552,8 +552,13 @@ namespace linesweeper
 				reached < max_level ? reached : max_level);
 		}
 
-		void lock_piece(World& world)
+		void lock_piece(World& world, TickResult& result)
 		{
+			// Recorded before the cells are written and before `current` is
+			// emptied: this is the piece as it locked, and the one fact about
+			// the tick that nothing in the World will say afterwards.
+			result.locked = world.current;
+
 			const Spin spin = detect_spin(world);
 			const std::array<Coord, piece_cell_count> cells =
 				piece_cells(world.current);
@@ -591,7 +596,7 @@ namespace linesweeper
 			}
 		}
 
-		void apply_hard_drop(World& world)
+		void apply_hard_drop(World& world, TickResult& result)
 		{
 			const Piece landing = shadow(world);
 			const int rows = landing.y - world.current.y;
@@ -608,7 +613,7 @@ namespace linesweeper
 				world.last_action_rotation = 0;
 			}
 
-			lock_piece(world);
+			lock_piece(world, result);
 		}
 
 		void apply_gravity(World& world)
@@ -667,7 +672,7 @@ namespace linesweeper
 			}
 		}
 
-		void apply_lock_delay(World& world)
+		void apply_lock_delay(World& world, TickResult& result)
 		{
 			Piece below = world.current;
 			below.y = static_cast<std::int8_t>(below.y + 1);
@@ -684,19 +689,23 @@ namespace linesweeper
 
 			if (world.lock_timer >= lock_delay_ticks)
 			{
-				lock_piece(world);
+				lock_piece(world, result);
 			}
 		}
 	}
 
-	void tick(World& world, std::uint8_t input)
+	TickResult tick(World& world, std::uint8_t input)
 	{
+		// Nothing locked until something does, which is what every early
+		// return below hands back.
+		TickResult result;
+
 		// A finished match is finished. It does not advance its own tick
 		// count, so the number is the length of the game rather than the
 		// length of time the window was open.
 		if (world.topped_out != 0)
 		{
-			return;
+			return result;
 		}
 
 		world.previous_input = world.input;
@@ -709,7 +718,7 @@ namespace linesweeper
 
 			if (world.topped_out != 0)
 			{
-				return;
+				return result;
 			}
 		}
 
@@ -717,7 +726,7 @@ namespace linesweeper
 
 		if (world.topped_out != 0)
 		{
-			return;
+			return result;
 		}
 
 		apply_rotation(world);
@@ -727,11 +736,12 @@ namespace linesweeper
 		{
 			// Locks now, so there is no piece left for gravity to pull on and
 			// no clock left to run down.
-			apply_hard_drop(world);
-			return;
+			apply_hard_drop(world, result);
+			return result;
 		}
 
 		apply_gravity(world);
-		apply_lock_delay(world);
+		apply_lock_delay(world, result);
+		return result;
 	}
 }

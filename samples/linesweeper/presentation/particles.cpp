@@ -60,34 +60,28 @@ namespace linesweeper
 		// visible from outside the simulation - not in last frame's match, not
 		// in this frame's. A field looking for one finds none, ever.
 		//
-		// So it is reconstructed, out of the two pure queries world.h declares
-		// for exactly this reason. shadow(before) is where a hard drop would
-		// have put the falling piece, which is where it locked in every case
-		// but one: gravity and soft drop lock a piece that is already resting,
-		// so the shadow is the piece; a hard drop locks it at the shadow by
-		// definition. The exception is a piece that moved sideways or rotated
-		// on the very tick it locked, and the failure mode there is that no
-		// row comes back full and no sparks are thrown. A missed burst on a
-		// rare frame is a cost worth paying; a burst on the wrong row is not.
-		//
-		// THE EXACT ANSWER WAS PRICED AND REFUSED. A byte on World saying which
-		// rows went would need four, because 277 bytes pads to 280 and both
-		// sizeof and has_unique_object_representations fire (world.h). README,
-		// The padding assert priced a rule out, is the same trade made once
-		// already for a rule; this is it made again for an effect, and an
-		// effect has even less claim on the value.
+		// So it is rebuilt: last frame's cells, plus the piece as it locked,
+		// which is the one value tick() hands back (world.h, TickResult). It
+		// used to be shadow(before) instead - where a hard drop would have
+		// put last frame's piece - on the argument that a piece which moved
+		// or rotated on its locking tick would merely produce no full row and
+		// no sparks. That argument was wrong about the failure: a horizontal
+		// I rotated and dropped in one tick cleared row 21, and the shadow of
+		// the horizontal one filled row 20, so two hundred and twenty sparks
+		// came out of a row that was still there
+		// (docs/review/gpt6/README.md, G6-11). The exact piece costs the
+		// World nothing, which is why it is a return value and not a member.
 		std::array<std::uint8_t, well_columns * well_rows> board_at_lock(
-			const World& before)
+			const World& before, const Piece& landed)
 		{
 			std::array<std::uint8_t, well_columns * well_rows> cells =
 				before.cells;
 
-			if (before.current.kind == Kind::none)
+			if (landed.kind == Kind::none)
 			{
 				return cells;
 			}
 
-			const Piece landed = shadow(before);
 			const std::array<Coord, piece_cell_count> occupied =
 				piece_cells(landed);
 
@@ -124,8 +118,10 @@ namespace linesweeper
 		}
 	}
 
-	ParticleField::ParticleField(const World* world, TextureHandle block) :
+	ParticleField::ParticleField(const World* world,
+		const TickResult* last_tick, TextureHandle block) :
 		world_(world),
+		last_tick_(last_tick),
 		previous_(*world),
 		block_(block)
 	{
@@ -231,15 +227,16 @@ namespace linesweeper
 		// Clearing a row shifts everything above it down, so on a clear frame
 		// most of the board's cells differ and a cell-by-cell diff says
 		// nothing useful. The counter says a clear happened; the rows it
-		// happened to come out of the board reconstructed at the moment
-		// between the lock and the clear, which is the arrangement no World
-		// holds - board_at_lock above is the whole argument. The lock is not
-		// drawn separately on this frame because its four cells are inside the
-		// rows that just exploded.
+		// happened to come out of the board rebuilt at the moment between the
+		// lock and the clear, which is the arrangement no World holds -
+		// board_at_lock above is the whole argument, and the piece it takes
+		// is the one the tick that cleared them locked. The lock is not drawn
+		// separately on this frame because its four cells are inside the rows
+		// that just exploded.
 		if (now.lines > before.lines)
 		{
 			const std::array<std::uint8_t, well_columns * well_rows> locked =
-				board_at_lock(before);
+				board_at_lock(before, this->last_tick_->locked);
 
 			for (int y = well_buffer_rows; y < well_rows; ++y)
 			{

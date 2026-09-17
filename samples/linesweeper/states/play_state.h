@@ -66,6 +66,12 @@ namespace linesweeper
 		// update() below.
 		World world_;
 
+		// What the latest tick() said, beside the World it said it about. The
+		// particle field borrows both (particles.h): the World is the match
+		// and this is the one thing about the last step of it that the match
+		// does not keep.
+		TickResult last_tick_;
+
 		// Between read_input() and tick(): the keys the pause menu was closed
 		// with, kept out of the byte until released. Not part of World,
 		// because it is not part of the match - a recording of the bytes

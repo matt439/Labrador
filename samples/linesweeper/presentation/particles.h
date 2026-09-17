@@ -144,6 +144,16 @@ namespace linesweeper
 	// same argument README makes for restart being an assignment, arriving
 	// from the other side.
 	//
+	// PLUS ONE VALUE THE DIFFERENCE CANNOT HOLD. A tick locks and clears in
+	// one step, so no World ever shows the piece as it locked or the rows
+	// that went - and the field used to reconstruct both from where a hard
+	// drop would have put last frame's piece, which is wrong on the tick a
+	// piece rotates or moves before it locks. tick() now hands back the
+	// piece as it locked (world.h, TickResult), the state keeps the latest
+	// one beside its World, and this reads it through a second borrowed
+	// pointer. Still a reader, still no bus: a return value the caller kept
+	// is not an event, and the rules still do not know this file exists.
+	//
 	// THE LAYER RULE, AND THIS FILE OBEYS THE SAME HALF board_view.h DOES: it
 	// includes rules/world.h - the value - and does not include rules/tick.h.
 	// There is no way to step a match from here, so a particle can be a
@@ -151,9 +161,10 @@ namespace linesweeper
 	class ParticleField final : public labrador::GameObject
 	{
 	public:
-		// A borrowed match and a resolved handle - NOT the resource table
-		// board_view.h takes, and the difference is what makes this the one
-		// drawable in the sample that can be stepped with no device.
+		// A borrowed match, the result of its latest tick, and a resolved
+		// handle - NOT the resource table board_view.h takes, and the
+		// difference is what makes this the one drawable in the sample that
+		// can be stepped with no device.
 		//
 		// BoardView needs the table because it measures text, and measuring
 		// walks a font atlas. A particle needs one texture handle, which is an
@@ -166,7 +177,12 @@ namespace linesweeper
 		//
 		// The state spells the asset name and resolves it, the same way it
 		// spells the font name for the labels beside this (play_state.cpp).
-		ParticleField(const World* world, labrador::TextureHandle block);
+		//
+		// `last_tick` is what tick() returned for the World as it stands now,
+		// kept by the same owner that keeps the World, and read only on a
+		// frame the tick count advanced.
+		ParticleField(const World* world, const TickResult* last_tick,
+			labrador::TextureHandle block);
 
 		// Reads the difference against last frame's match, emits whatever it
 		// finds, then integrates and compacts. One pass, one thread.
@@ -235,8 +251,10 @@ namespace linesweeper
 		float random_signed();
 
 		const World* world_ = nullptr;
+		const TickResult* last_tick_ = nullptr;
 
-		// Last frame's match, by value. The whole event system.
+		// Last frame's match, by value. The whole event system, bar the one
+		// value above.
 		World previous_{};
 
 		// 320 KB, one allocation, at construction. Per-frame code performs no
