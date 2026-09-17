@@ -674,6 +674,51 @@ TEST_SUITE("ShapeIntersect")
 		 s = Segment(Point2F(2.0f, 2.0f), Point2F(3.0f, 3.0f));
 		 CHECK(segment_rectangle_rotated_intersect(s, rr));
 	}
+	TEST_CASE("a segment through opposite corners meets the shape, whichever way it runs")
+	{
+		// (-5,-5) to (15,15) enters the square (0,0)..(10,10) at one corner
+		// and leaves at the other, through the whole of its interior. Both
+		// endpoints are outside and every crossing is at a vertex, which the
+		// proper segment primitive excludes by contract - so the
+		// containment-plus-crossing routines this replaced answered false
+		// to a traversal (docs/review/gpt6/README.md, G6-05). Each of the
+		// three shape routines, each direction.
+		const Segment across(Point2F(-5.0f, -5.0f), Point2F(15.0f, 15.0f));
+		const Segment back(Point2F(15.0f, 15.0f), Point2F(-5.0f, -5.0f));
+
+		const Quad quad(RectangleF(0.0f, 0.0f, 10.0f, 10.0f));
+		CHECK(quad_segment_intersect(quad, across));
+		CHECK(quad_segment_intersect(quad, back));
+
+		// An axis-aligned RectangleRotated over the same square.
+		const RectangleRotated rotated(Point2F(5.0f, 5.0f),
+			Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN,
+			Vector2F(5.0f, 5.0f));
+		CHECK(segment_rectangle_rotated_intersect(across, rotated));
+		CHECK(segment_rectangle_rotated_intersect(back, rotated));
+
+		// The triangle's version: through the right-angle corner and out
+		// through the hypotenuse's far vertex is one edge, so (0,0) to
+		// (10,0) along it; the traversal is corner (0,0) to corner (10,0)
+		// with both ends past them.
+		const Triangle triangle(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+			Point2F(0.0f, 10.0f));
+		CHECK(triangle_segment_intersect(triangle,
+			Segment(Point2F(-5.0f, 0.0f), Point2F(15.0f, 0.0f))));
+		CHECK(triangle_segment_intersect(triangle,
+			Segment(Point2F(15.0f, 0.0f), Point2F(-5.0f, 0.0f))));
+		// And a vertex-to-vertex traversal with a proper interior: (0,10)
+		// to (10,0) is the hypotenuse; (-5,15) to (15,-5) runs along it.
+		CHECK(triangle_segment_intersect(triangle,
+			Segment(Point2F(-5.0f, 15.0f), Point2F(15.0f, -5.0f))));
+
+		// A near miss stays a miss: one unit outside the corner, parallel to
+		// the diagonal.
+		CHECK_FALSE(quad_segment_intersect(quad,
+			Segment(Point2F(-5.0f, -4.0f), Point2F(-1.0f, 0.0f))));
+		CHECK_FALSE(segment_rectangle_rotated_intersect(
+			Segment(Point2F(-5.0f, -4.0f), Point2F(-1.0f, 0.0f)), rotated));
+	}
 	TEST_CASE("test_point_rectangle_rotated_intersect")
 	{
 		RectangleRotated rr(Vector2F::ZERO,

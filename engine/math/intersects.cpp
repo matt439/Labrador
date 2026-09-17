@@ -301,24 +301,13 @@ namespace mattmath
 
 	bool mattmath::triangle_segment_intersect(const Triangle& triangle, const Segment& segment)
 	{
-		// check if the segment's end points are contained within the triangle
-		if (triangle_point_intersect(triangle, segment.point_0) ||
-			triangle_point_intersect(triangle, segment.point_1))
-		{
-			return true;
-		}
-
-		// check if the segment intersects any of the triangle's edges
-		const auto edges = triangle.edges();
-		for (const Segment& edge : edges)
-		{
-			if (segments_intersect(edge, segment))
-			{
-				return true;
-			}
-		}
-
-		return false;
+		// One closed clip, not endpoint containment followed by a proper
+		// crossing per edge. That pair missed a segment entering at one
+		// vertex and leaving at another; test_segment_convex_polygon says
+		// why, and it is the definition every segment-against-shape routine
+		// in this file now shares.
+		return test_segment_convex_polygon(triangle.points,
+			segment.point_0, segment.point_1);
 	}
 
 	bool mattmath::triangle_point_intersect(const Triangle& triangle, const Point2F& point)
@@ -389,19 +378,15 @@ namespace mattmath
 
 	bool mattmath::quad_segment_intersect(const Quad& quad, const Segment& segment)
 	{
-		// get the triangles of the quad
-		const auto triangles = quad.triangles();
-
-		// check each triangle against the segment
-		for (const Triangle& triangle : triangles)
-		{
-			if (triangle_segment_intersect(triangle, segment))
-			{
-				return true;
-			}
-		}
-
-		return false;
+		// The quad itself, not its two triangles. A Quad is convex by
+		// construction (Quad::is_valid), so the clip applies to it directly -
+		// and applying it to the halves instead would put the diagonal back
+		// as an edge, which is exactly the line a corner-to-corner segment
+		// runs along.
+		const Point2F points[4] = { quad.point_0(), quad.point_1(),
+			quad.point_2(), quad.point_3() };
+		return test_segment_convex_polygon(points,
+			segment.point_0, segment.point_1);
 	}
 
 	bool mattmath::quad_point_intersect(const Quad& quad, const Point2F& point)
@@ -476,24 +461,10 @@ namespace mattmath
 			return false;
 		}
 
-		// check if the segment's end points are contained within the rectangle
-		if (point_rectangle_rotated_intersect(segment.point_0, rect_rotated) ||
-			point_rectangle_rotated_intersect(segment.point_1, rect_rotated))
-		{
-			return true;
-		}
-
-		// check if the segment intersects any of the rectangle's edges
-		const auto edges = rect_rotated.edges();
-		for (const Segment& edge : edges)
-		{
-			if (segments_intersect(segment, edge))
-			{
-				return true;
-			}
-		}
-
-		return false;
+		// Then the closed clip against the four corners, for the reason
+		// triangle_segment_intersect gives.
+		return test_segment_convex_polygon(rect_rotated.points(),
+			segment.point_0, segment.point_1);
 	}
 
 	bool mattmath::point_rectangle_rotated_intersect(const Point2F& point,

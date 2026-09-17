@@ -188,6 +188,40 @@ namespace mattmath
 		const mattmath::Point2F& b, const mattmath::Point2F& c,
 		const mattmath::Point2F& d, float& t, mattmath::Point2F& p);
 
+	// Whether segment ab meets a convex polygon anywhere, treating the
+	// boundary as inside - point_in_convex_polygon's rule, extended from a
+	// point to a segment.
+	//
+	// This is 5.3.8's segment-against-polyhedron clip (pp.198-201) with one
+	// dimension removed: the polygon is the intersection of the half-planes
+	// its edges bound, so the part of ab inside it is the part inside every
+	// one of them. Each edge either leaves the segment alone, discards it
+	// whole, or moves one end of a parameter interval that starts as [0, 1];
+	// the segment meets the polygon exactly when that interval is still
+	// non-empty at the end. No triangulation, no per-edge segment test, and
+	// four signed areas per edge, which is the same arithmetic the point
+	// test spends.
+	//
+	// WHY NOT CONTAINMENT PLUS test_2D_segment_segment, which is what every
+	// segment-against-shape routine was built from. That pair checks the
+	// two endpoints and then asks each edge for a PROPER crossing, and a
+	// segment that enters through one vertex and leaves through another -
+	// (-5,-5) to (15,15) across the square (0,0)..(10,10), corner to
+	// opposite corner through the whole interior - does neither: both
+	// endpoints outside, every crossing exactly at an edge's end, which the
+	// proper test excludes by contract. The pair answered false to a
+	// segment that traverses the shape (docs/review/gpt6/README.md, G6-05).
+	// The proper primitive keeps its contract; this is the closed operation
+	// the shape routines needed and did not have.
+	//
+	// Winding-agnostic like the point test, by reading the winding off
+	// signed_area once and orienting every edge by it. Degenerate polygons -
+	// which signed_area reports as enclosing nothing - meet nothing, and a
+	// NaN anywhere is false, both by the point test's rules and for its
+	// reasons.
+	bool test_segment_convex_polygon(std::span<const mattmath::Point2F> polygon,
+		const mattmath::Point2F& a, const mattmath::Point2F& b);
+
 	// Whether p lies in triangle abc, boundary included, for either winding.
 	//
 	// This is point_in_convex_polygon over three vertices, and it is written

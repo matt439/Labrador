@@ -366,6 +366,87 @@ namespace mattmath
 		return any_signed;
 	}
 
+	bool test_segment_convex_polygon(std::span<const Point2F> polygon,
+		const Point2F& a, const Point2F& b)
+	{
+		// The winding, so that "inside" has a sign. Zero is a polygon with no
+		// interior, and a NaN is neither positive nor negative - both fall
+		// through the pair of comparisons, and both are false by the rule
+		// test_AABB_AABB states at the top of this file.
+		const float area = signed_area(polygon);
+		if (!(area > 0.0f || area < 0.0f))
+		{
+			return false;
+		}
+		const float orientation = area > 0.0f ? 1.0f : -1.0f;
+
+		// The part of ab inside every half-plane so far, as a parameter
+		// interval along ab. It starts as the whole segment and each edge can
+		// only shrink it.
+		float t_first = 0.0f;
+		float t_last = 1.0f;
+
+		for (size_t i = 0; i < polygon.size(); i++)
+		{
+			const Point2F& from = polygon[i];
+			const Point2F& to = polygon[(i + 1) % polygon.size()];
+			const Vector2F edge = to - from;
+
+			// Twice the signed area of the edge with each endpoint, oriented
+			// so that positive is the polygon's side. Differences first, as
+			// the point test takes them, so this stays exact at world
+			// coordinates. The magnitude is not a distance - it is scaled by
+			// the edge's length - but the ratio below cancels that, and only
+			// the signs and the ratio are used.
+			const float side_a = Vector2F::cross(edge, a - from) * orientation;
+			const float side_b = Vector2F::cross(edge, b - from) * orientation;
+
+			if (!(side_a >= 0.0f || side_a <= 0.0f) ||
+				!(side_b >= 0.0f || side_b <= 0.0f))
+			{
+				return false;
+			}
+
+			// Both ends outside this edge: nothing of the segment is inside
+			// the polygon, whatever the other edges say.
+			if (side_a < 0.0f && side_b < 0.0f)
+			{
+				return false;
+			}
+
+			// Both ends inside or on it, which includes a segment lying along
+			// the edge: this edge clips nothing.
+			if (side_a >= 0.0f && side_b >= 0.0f)
+			{
+				continue;
+			}
+
+			// One end on each side, so the segment crosses this edge's line
+			// at t, and that crossing moves whichever end of the interval it
+			// is: entering, if a is the outside end, or leaving.
+			const float t = side_a / (side_a - side_b);
+			if (side_a < 0.0f)
+			{
+				t_first = t > t_first ? t : t_first;
+			}
+			else
+			{
+				t_last = t < t_last ? t : t_last;
+			}
+
+			// The interval has closed, so the segment leaves one half-plane
+			// before it enters another and misses the polygon between them.
+			if (t_first > t_last)
+			{
+				return false;
+			}
+		}
+
+		// Equal is a segment that touches at one parameter - a vertex grazed
+		// from outside - and the boundary is inside.
+		return true;
+	}
+
 	// Test if segments ab and cd overlap. If they do, compute and return
 	// intersection t value along ab and intersection position p
 	bool test_2D_segment_segment(const Point2F& a,

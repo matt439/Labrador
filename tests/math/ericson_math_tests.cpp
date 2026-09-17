@@ -378,6 +378,82 @@ TEST_SUITE("EricsonMath")
 		CHECK_FALSE(test_2D_segment_segment(s1.point_0, s1.point_1,
 			s2.point_0, s2.point_1, t, p));
 	}
+	TEST_CASE("test_segment_convex_polygon: the segment clip, closed at the boundary")
+	{
+		// The unit square scaled to ten, listed one way round and then the
+		// other, because nothing here may depend on the winding.
+		const Point2F square[4] = { Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+			Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f) };
+		const Point2F reversed[4] = { Point2F(0.0f, 10.0f),
+			Point2F(10.0f, 10.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f) };
+
+		// THE CASE THIS EXISTS FOR: corner to opposite corner, through the
+		// whole interior, with both endpoints outside and every crossing
+		// exactly at a vertex. Containment plus a proper crossing per edge
+		// answered false (docs/review/gpt6/README.md, G6-05).
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(-5.0f, -5.0f), Point2F(15.0f, 15.0f)));
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(15.0f, 15.0f), Point2F(-5.0f, -5.0f)));
+		CHECK(test_segment_convex_polygon(reversed,
+			Point2F(-5.0f, -5.0f), Point2F(15.0f, 15.0f)));
+		CHECK(test_segment_convex_polygon(reversed,
+			Point2F(15.0f, 15.0f), Point2F(-5.0f, -5.0f)));
+
+		// The other diagonal, and a segment that ends on a vertex.
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(-5.0f, 15.0f), Point2F(15.0f, -5.0f)));
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(-5.0f, -5.0f), Point2F(0.0f, 0.0f)));
+
+		// Ordinary answers: a proper crossing, a segment wholly inside, one
+		// wholly outside, and one that passes beside the square.
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(5.0f, -5.0f), Point2F(5.0f, 15.0f)));
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(2.0f, 2.0f), Point2F(8.0f, 8.0f)));
+		CHECK_FALSE(test_segment_convex_polygon(square,
+			Point2F(20.0f, 20.0f), Point2F(30.0f, 30.0f)));
+		CHECK_FALSE(test_segment_convex_polygon(square,
+			Point2F(-5.0f, 11.0f), Point2F(15.0f, 11.0f)));
+
+		// The near miss: parallel to the diagonal, one unit past the corner,
+		// which a vertex test with any slack in it would call a hit.
+		CHECK_FALSE(test_segment_convex_polygon(square,
+			Point2F(-5.0f, -4.0f), Point2F(-1.0f, 0.0f)));
+		CHECK_FALSE(test_segment_convex_polygon(square,
+			Point2F(-5.0f, 6.0f), Point2F(4.0f, 15.0f)));
+
+		// THE BOUNDARY IS INSIDE, as it is for point_in_convex_polygon: a
+		// segment grazing one vertex from outside touches the polygon at a
+		// point, and a segment lying along an edge shares a whole edge with
+		// it. Both are true, and the second is the collinear case the proper
+		// primitive is contracted to refuse.
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(-5.0f, 5.0f), Point2F(5.0f, -5.0f)));
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(-5.0f, 0.0f), Point2F(15.0f, 0.0f)));
+		CHECK(test_segment_convex_polygon(square,
+			Point2F(3.0f, 10.0f), Point2F(7.0f, 10.0f)));
+
+		// A polygon with no interior meets nothing, not even a segment lying
+		// on it - signed_area's rule, and point_in_convex_polygon's.
+		const Point2F flat[3] = { Point2F(0.0f, 0.0f), Point2F(5.0f, 0.0f),
+			Point2F(10.0f, 0.0f) };
+		CHECK_FALSE(test_segment_convex_polygon(flat,
+			Point2F(-5.0f, 0.0f), Point2F(15.0f, 0.0f)));
+		CHECK_FALSE(test_segment_convex_polygon(std::span<const Point2F>(),
+			Point2F(-5.0f, 0.0f), Point2F(15.0f, 0.0f)));
+
+		// And a NaN anywhere is false, for the reason test_AABB_AABB gives.
+		const float nan = std::numeric_limits<float>::quiet_NaN();
+		CHECK_FALSE(test_segment_convex_polygon(square,
+			Point2F(nan, 5.0f), Point2F(5.0f, 15.0f)));
+		const Point2F poisoned[4] = { Point2F(0.0f, 0.0f), Point2F(10.0f, nan),
+			Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f) };
+		CHECK_FALSE(test_segment_convex_polygon(poisoned,
+			Point2F(5.0f, -5.0f), Point2F(5.0f, 15.0f)));
+	}
 	TEST_CASE("test_closest_pt_point_triangle")
 	{
 		Triangle t(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f));
