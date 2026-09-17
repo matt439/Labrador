@@ -246,12 +246,61 @@ namespace DirectionTests
 			REQUIRE(repeat.update(Direction::up, 0.0f) == Direction::up);
 			REQUIRE(repeat.update(Direction::up, 0.3f) == Direction::none);
 
-			// A menu opening over a stick that is already held: without this
-			// the cursor is off the first row before the screen is visible.
+			// What a freshly constructed repeat does, for one reused across
+			// pages. This case used to say it was what a menu opening over a
+			// held stick wanted; the line below is the cursor moving on the
+			// first frame, which is the opposite. That case is start_held.
 			repeat.reset();
 
 			CHECK(repeat.update(Direction::up, 0.0f) == Direction::up);
 			CHECK(repeat.update(Direction::up, 0.2f) == Direction::none);
+		}
+
+		TEST_CASE("a push the page was opened under is not a press and never repeats")
+		{
+			// A menu opening over a stick that is already held: the first
+			// frame must not move the cursor, and neither may any later one
+			// while the thumb stays where it was - a repeat firing 0.4s into
+			// the page would be the same jump, later
+			// (docs/review/gpt6/README.md, G6-08).
+			DirectionRepeat repeat(0.4f, 0.1f);
+			repeat.start_held(Direction::down);
+
+			CHECK(repeat.update(Direction::down, 1.0f / 60.0f) == Direction::none);
+			for (int frame = 0; frame < 120; ++frame)
+			{
+				CHECK(repeat.update(Direction::down, 1.0f / 60.0f) ==
+					Direction::none);
+			}
+
+			// Letting go arms the next press, as it always does.
+			CHECK(repeat.update(Direction::none, 0.0f) == Direction::none);
+			CHECK(repeat.update(Direction::down, 0.0f) == Direction::down);
+			CHECK(repeat.update(Direction::down, 0.5f) == Direction::down);
+		}
+
+		TEST_CASE("pushing another way from under an opened page is a press")
+		{
+			// The thumb that was resting on down flicks to up: that is the
+			// player's, and it fires at once and repeats as any press does.
+			DirectionRepeat repeat(0.4f, 0.1f);
+			repeat.start_held(Direction::down);
+
+			CHECK(repeat.update(Direction::up, 0.0f) == Direction::up);
+			CHECK(repeat.update(Direction::up, 0.3f) == Direction::none);
+			CHECK(repeat.update(Direction::up, 0.2f) == Direction::up);
+
+			// And back to down is a press too, now: the page has seen the
+			// thumb leave.
+			CHECK(repeat.update(Direction::down, 0.0f) == Direction::down);
+		}
+
+		TEST_CASE("opening under nothing is the same as reset")
+		{
+			DirectionRepeat repeat(0.4f, 0.1f);
+			repeat.start_held(Direction::none);
+
+			CHECK(repeat.update(Direction::up, 0.0f) == Direction::up);
 		}
 	}
 }

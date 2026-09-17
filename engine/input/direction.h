@@ -130,15 +130,35 @@ namespace labrador
 		// accumulating, and the cursor loses a step instead of gaining one.
 		Direction update(Direction held, float dt);
 
-		// Forgets what is held, so the next frame's direction is a fresh press.
-		// A page that has just opened over a still-held stick calls this; a
-		// cursor that jumped a row on the frame a menu appeared is the reason
-		// it is public.
+		// Forgets what is held, so the next frame's direction is a fresh press
+		// - which is what a newly constructed one does, for a repeat that is
+		// reused across pages rather than built per page.
+		//
+		// NOT WHAT A PAGE OPENING OVER A HELD STICK WANTS, and this comment
+		// used to say it was. Forgetting makes the held direction a change on
+		// the next frame, and a change fires at once: the cursor was off the
+		// first row before the screen was visible, which is the exact thing
+		// the sentence claimed to prevent. The one client that called it here
+		// had a freshly built repeat, so the call changed nothing and the
+		// cursor jumped anyway (docs/review/gpt6/README.md, G6-08). That case
+		// is start_held.
 		void reset();
+
+		// Starts with `held` already pushed, so it is not a press. Nothing
+		// fires for it, and nothing repeats from it, until the player lets go
+		// or pushes another way - a thumb that was on the stick when the page
+		// opened has to leave it before the page reads that thumb. A page
+		// that opens over whatever the player is holding calls this from its
+		// init() with what is held now; `none` is the same as reset().
+		void start_held(Direction held);
 
 	private:
 		Direction held_ = Direction::none;
 		float timer_ = 0.0f;
+
+		// True while held_ is a push the page was opened under rather than a
+		// press the page saw. Cleared by any change of direction.
+		bool opened_under_ = false;
 		float first_delay_ = 0.4f;
 		float repeat_interval_ = 0.1f;
 	};

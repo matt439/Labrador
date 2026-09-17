@@ -105,9 +105,9 @@ namespace linesweeper
 
 		// Turns "the stick is pushed up" into "move the cursor now", with the
 		// long-then-short repeat a menu wants. It is a member because a repeat
-		// is a clock and a clock is state; `reset()` in `init()` is what stops
-		// a stick that was already held when the menu opened from stealing the
-		// first row.
+		// is a clock and a clock is state; `start_held()` in `init()` is what
+		// stops a stick that was already held when the menu opened from
+		// stealing the first row.
 		labrador::DirectionRepeat repeat_;
 	};
 }

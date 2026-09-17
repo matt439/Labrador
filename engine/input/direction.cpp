@@ -71,11 +71,14 @@ namespace labrador
 		{
 			this->held_ = held;
 			this->timer_ = this->first_delay_;
+			this->opened_under_ = false;
 
 			return held;
 		}
 
-		if (held == Direction::none)
+		// Still the push the page was opened under: not a press then, and
+		// not a repeat now. Only a change above ends it.
+		if (held == Direction::none || this->opened_under_)
 		{
 			return Direction::none;
 		}
@@ -99,5 +102,13 @@ namespace labrador
 	{
 		this->held_ = Direction::none;
 		this->timer_ = 0.0f;
+		this->opened_under_ = false;
+	}
+
+	void DirectionRepeat::start_held(Direction held)
+	{
+		this->held_ = held;
+		this->timer_ = 0.0f;
+		this->opened_under_ = held != Direction::none;
 	}
 }
