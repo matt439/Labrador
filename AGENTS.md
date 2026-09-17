@@ -1,0 +1,377 @@
+# Labrador — notes for Codex
+
+A 2D game engine in C++20, Windows-only, built with CMake + vcpkg. This
+repository is the **engine half of a split**: the client that drives it,
+ColourWars, lives in its own repository and consumes this one as a submodule.
+Nothing here depends on it — this tree builds, tests and benchmarks standalone,
+and `samples/` holds the only two clients in it: `minimal` (~450 lines), the
+new-project template you copy, and `linesweeper`, a falling-block game you read
+— whose own [README](samples/linesweeper/README.md) records its design
+decisions and is the first thing to read before changing it.
+
+Start from [README.md](README.md). The three design documents are authoritative
+on intent: [PHILOSOPHY.md](docs/design/PHILOSOPHY.md) (the trade-offs T1–T12,
+and the review vocabulary — "T3: take the simpler model" is a complete comment),
+[ARCHITECTURE.md](docs/design/ARCHITECTURE.md) (targets, tree, module table),
+[CONVENTIONS.md](docs/design/CONVENTIONS.md) (naming).
+
+## Build, test, run
+
+```
+cmake --preset x64-debug          # or x64-release
+cmake --build --preset x64-debug
+ctest --preset x64-debug
+```
+
+`VCPKG_ROOT` must be set — `CMakePresets.json` reads it for the toolchain file
+and configuring fails without it. For the two Direct3D backends `fxc` must also
+be on `PATH`, because they compile [engine/render/sprite.hlsl](engine/render/sprite.hlsl)
+at build time into a byte array
+([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)) — one source, two
+profiles, two generated headers; the GL backend compiles its GLSL at device
+creation and needs no tool. Both come with the Visual Studio install.
+**The Vulkan preset is the one exception to that**, and it is the only thing in
+this repository that has to be installed: it needs the
+[Vulkan SDK](https://vulkan.lunarg.com/) — `VULKAN_SDK` set — for its headers,
+its import library and a `dxc` that can emit SPIR-V from the same `sprite.hlsl`.
+There are two `dxc.exe` on a normal machine and only one of them has a SPIR-V
+backend compiled in; `compile_shaders.cmake` says which, why it is looked for in
+`$VULKAN_SDK/Bin` and nowhere else, and what the error looks like when the wrong
+one is found. Ninja generator, out-of-source in `out/build/<preset>/`.
+
+**There are five render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
+configure time — so asking for one that was not built is a missing symbol at
+link (T5). A change to anything in `engine/render/` should be checked against
+all five; CI builds all five.
+
+**And two audio backends**, on a second and independent axis:
+`LABRADOR_AUDIO_BACKEND` is `xaudio2` or `null`, and only `x64-debug-null`
+asks for the second. That preset is therefore the one that takes no platform
+API at all, which is what makes it the configuration a build machine runs end
+to end.
+
+| Preset | Backend | ctest |
+|---|---|---|
+| `x64-debug`, `x64-release` | `render/d3d11/` | 14 entries; WARP fallback in debug |
+| `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 14 entries; WARP fallback in debug |
+| `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 14 entries; needs a real driver |
+| `x64-debug-vulkan` | `render/vulkan/` — the one that reaches other platforms | 14 entries; needs a driver and the Vulkan SDK |
+| `x64-debug-null` | `render/null/` — no graphics API; records draws. **The only preset that also takes `audio/null/`** | 13 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
+
+`RenderPixelTests` is the pixel contract and needs a device. The null backend's
+`read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
+— compiled only in that configuration — asserts the other half: which sprites a
+frame submitted, in what order, from which texture, into which view. Fourteen ctest entries: `MattMathTests`, `CoreTests`,
+`CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
+`InputTests`, `UiTests`, `AssetsTests`, `AudioTests`, `AppTests`,
+`LineSweeperTests`, `LineSweeperViewTests` (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
+device — a hidden window and a WARP fallback in debug under `x64-debug` and
+`x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
+`x64-debug-vulkan` — and asserts on the
+pixels
+`Renderer::read_back_buffer` hands back. It is the only test that rasterises
+anything, and the executable statement of the pixel contract every backend with
+a rasteriser has to reproduce. It runs against one backend at a time — but it no
+longer follows that they are never compared: every frame it reads back is also
+checked byte for byte against a PNG of it in
+[tests/render/golden/](tests/render/golden/), which is one set of images that
+all four rasterising backends are held to. CI checks two of them, because a
+GPU-less runner still gives Direct3D an adapter where OpenGL falls back to GDI
+1.1 and Vulkan has no in-box fallback at all — its software implementations are
+installed rather than shipped. It is an adapter rather than the WARP fallback,
+which is a correction one job log made: `x64-release` passes `RenderPixelTests`
+with that fallback compiled out, and `.github/workflows/ci.yml` carries the
+evidence and the part a log cannot say. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
+and **review every image it changes** — a regeneration that is not looked at
+turns the contract into a recording of whatever the code does now.
+Two terms sit outside the images and both say so where they are decided:
+`Harness::end_not_comparable` in [pixel_tests.cpp](tests/render/pixel_tests.cpp)
+holds the three frames that are not 64x64 — one whose size the seam makes
+backend-specific, two that resize to 32x32 mid-frame — and
+`ALLOWED_CHANNEL_DRIFT` in
+[golden_image.cpp](tests/render/golden_image.cpp) is the per-channel allowance
+that lets one set serve both this machine's hardware adapter and whatever CI's
+is, with the measurement that set it. What runs in all five configurations is
+[tests/render/renderer_seam_tests.cpp](tests/render/renderer_seam_tests.cpp) —
+everything the seam answers without a device. The
+samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and
+`out/build/x64-debug/samples/linesweeper/LineSweeperSample.exe`.
+
+`LineSweeperTests` links no engine at all — the sample's rules are a static
+library that links only `labrador_settings` — so the whole falling-block game
+runs there with no window and no device. A rule is asserted rather than played.
+**`LineSweeperViewTests` is the other wall and a different one**: it links the
+engine and still creates no window, no adapter and no device, because the
+sample's particle field takes a resolved texture handle rather than the
+resource table and nothing in its `update()` reads one. Ten thousand particles,
+the compaction and the event reconstruction all run headlessly; the board view
+cannot, because measuring text walks an atlas a device filled, and what it
+draws is checked by looking at it.
+
+**`AudioTests` is headless in every configuration and can say what a sound did
+in only one of them, and that split is the finding.** This paragraph used to
+read: `engine/audio/` has no backend folder and no seam, DirectXTK is in the
+public headers of three modules, and the only `SoundBank` this repository can
+construct is `SoundBank::silent()` — so eight of that class's thirteen
+instance methods have no observable behaviour at all here, and five sites of
+level clamping, engine arithmetic sitting *below* the check for the platform,
+have never executed. All of it was true, it was `docs/survey/2026-08-26.md`
+§3.4a's measured product, and §3.4b is what spent it. There is a seam now
+([engine/audio/audio_device.h](engine/audio/audio_device.h)); the clamp and
+every handle check are above it; and [engine/audio/null/](engine/audio/null/)
+records what it was asked to play.
+
+So what to know before reading a green `AudioTests` is narrower than "audio is
+not covered". Under the five presets that build `audio/xaudio2/` this target
+still constructs no device, and every case runs against `SoundBank::silent()` —
+the substitute a missing `.xwb` produces, which is a question about content
+rather than about the seam. **Under `x64-debug-null` it also compiles
+[tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and that is the one
+place in the tree where a sound can be asserted to have happened: which wave,
+out of which bank, at which clamped levels, in what order. A change under
+`engine/audio/` checked only on the default preset has not been checked.
+
+What is still absent, on purpose: there is no `.xwb` in this tree and there
+cannot be one, so nothing here ever plays anything, and writing that container
+format down — an `xwb_file.h` beside
+[dds_file.h](engine/render/dds_file.h), which is the precedent
+`docs/port/android.md` §3.2 argues from — is open and is blocked on having a
+file of that format to read it against.
+
+## What will fail the build
+
+- **`/W4 /WX /permissive- /sdl /fp:precise`**, with **zero suppressions**. One
+  `INTERFACE` target, `labrador_settings` in [cmake/settings.cmake](cmake/settings.cmake),
+  carries it; every real target links it. `/fp:precise` is load-bearing, not
+  inherited — exact `operator==` against `Vector2F::ZERO`, tolerance
+  assumptions and NaN propagation all depend on it.
+- **An engine file including a game header.** Standalone that is now the
+  compiler's own error, but [cmake/check_engine_includes.cmake](cmake/check_engine_includes.cmake)
+  greps for it on every build anyway, because the compiler only enforces it
+  when this repository is built standalone.
+- **A file outside a backend folder — `engine/render/<backend>/`,
+  `engine/audio/<backend>/`, `engine/input/<backend>/` — including *any* header
+  in that folder.** Second pass in the same script. It
+  guards the folder rather than one filename in it, and it reads headers as
+  well as `.cpp` files, because `device_resources.h` beside `backend.h` is how
+  the backend escaped last time — so naming `engine/render/gl/gl_functions.h`
+  from `engine/app/` fails the build exactly as naming `backend.h` does. It
+  captures the module as well as the backend, so `engine/audio/null/` and
+  `engine/input/xinput/` are covered by the same six lines and a fourth module
+  with backend folders would be too. **The module was a hard-coded
+  `(render|audio)` until 2026-08-28**, which this line described as a capture
+  for nine days while `engine/input/xinput/` — the third platform seam
+  ARCHITECTURE names — sat outside the wall. Audio is the module where this had
+  already gone wrong unwatched: the check only ever looked at `render/`, and
+  `<Audio.h>` was in four public engine headers across three modules.
+- **A comment citing a document, a section or a trade-off that does not
+  exist.** [cmake/check_doc_citations.cmake](cmake/check_doc_citations.cmake),
+  top-level builds only. `engine/render/SEAM.md` is the seam's charter — the
+  half of `renderer.h` that was rationale rather than caller contract — so the
+  pointer between them is load-bearing in a way a paragraph in one file was
+  not. It checks that every `<path>.md` a comment names exists, every
+  `<document>.md#<number>` names a real section, and every `T<n>` is one
+  PHILOSOPHY defines. **It proves name closure and nothing else**: the file
+  says so at length, and says why, from a repository that ran the same trade at
+  200x the scale and measured what its own green linter was not catching.
+- **Adding a source file without listing it.** Sources are enumerated
+  explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
+  folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
+  silently is not compiled.
+
+## Rules that are not checked, and matter anyway
+
+- **Dependencies point one way, toward `math`.** The module table is
+  ARCHITECTURE's; `core` is the only module everything may lean on, `app` is
+  the only one allowed to depend on everything, and nothing may point back at
+  `app` or at `assets`. A module is a folder inside `engine/`, not a build
+  target — the walls are include discipline plus review.
+- **Includes are written from the repository root**: `#include
+  "engine/render/renderer.h"`. Own header first, then engine, then external,
+  then standard library. `#pragma once`, never include guards.
+- **Naming**: PascalCase types, snake_case everything else, SCREAMING_SNAKE
+  for macros alone. Trailing underscore on private members (`frame_time_`),
+  bare on public struct fields. Accessors are the noun (`bounds()`, never
+  `get_bounds()`). Never an `I`/`M`/`F` type prefix, never `m_`, never
+  SCREAMING constants, never `using namespace` in a header.
+- **`update()` writes, `draw()` is `const` all the way down** and takes what it
+  needs as parameters. The parallelism axis is views, not objects — several
+  workers enter `draw()` on the *same* object at once, so the pure read is
+  load-bearing, not a convenience. It is exercised in the null configuration
+  and nowhere else, because `Scene::draw` needs a `Renderer`:
+  [tests/scene/fanout_tests.cpp](tests/scene/fanout_tests.cpp) pins what the
+  fan-out must produce and
+  [bench/fanout_bench_null.cpp](bench/fanout_bench_null.cpp) prices it against
+  one thread. Both are compiled only under `x64-debug-null`, and until they
+  existed the early-out beside the fan-out was the only branch that had ever
+  been taken.
+- **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`,
+  `input/xinput/`.
+  `Renderer` is a concrete class with one implementation selected at build
+  time, not an abstract base — T8 does not permit a virtual call per sprite.
+  Every backend has the same three translation units — `renderer.cpp`,
+  `render_resources.cpp`, `texture_factory.cpp` — and at most one more, being
+  the part of an API that is not about drawing: `d3d11/`, `d3d12/` and
+  `vulkan/` each add `device_resources.cpp`, `gl/` adds `gl_functions.cpp` and
+  compiles its GLSL at device creation, `null/` adds nothing. The HLSL three of
+  the five compile is **not** in any of their folders — it is
+  `render/sprite.hlsl`, one file at three profiles through two compilers, and
+  that file says why. Note the name collision, because it is
+  deliberate: [engine/render/render_resources.cpp](engine/render/render_resources.cpp)
+  is a shared file, and the backend one beside it holds only the calls that
+  touch a texture. Two of the three resource tables hold engine data and are
+  members of `RenderResources` itself, so their methods — `measure_text` and
+  `first_unrenderable` among them — are compiled once rather than once per
+  backend. Everything a backend owns lives in
+  `render/<backend>/`. Nothing outside that folder includes anything from it,
+  the shell included: it hands its window handle to `create_device` as a
+  `void*`. `check_engine_includes.cmake` fails the build for a file that
+  reaches across, headers included.
+- **Nothing a backend does decides where a pixel goes.** The glyph walk
+  ([render/font.h](engine/render/font.h)), both file readers
+  ([dds_file.h](engine/render/dds_file.h),
+  [sprite_font_file.h](engine/render/sprite_font_file.h)) and the quad
+  arithmetic ([sprite_geometry.h](engine/render/sprite_geometry.h)) are engine
+  code, tested headlessly, shared by every backend. A backend supplies a
+  device, a texture from bytes, a vertex buffer, a shader, and whatever its API
+  spells the blend, the rasteriser state and the two filters as — five state
+  objects on `d3d11/`, one pipeline state object and two samplers on `d3d12/`,
+  two sampler objects and some `glEnable` on `gl/`, one pipeline and two
+  samplers on `vulkan/`, none at all on `null/`. The
+  one term a backend still decides is where a pane sits in the buffer, and the
+  three answers to it are the map of the folder: Direct3D measures down from
+  the top, GL up from the bottom, and Vulkan hands the rasteriser a negative
+  viewport height so that one shader serves all three. `gl/backend.h` and
+  `vulkan/renderer.cpp` each say what theirs costs. What `d3d12/` decides that
+  no other backend does is **when** rather than where: frames in flight,
+  fence-gated allocator reuse, a per-frame vertex ring and an upload the load
+  path waits for. None of it reaches the seam, which is why that backend
+  exists — `d3d12/backend.h` states the claim, and `vulkan/` is the second
+  answer to it, a timeline semaphore being an `ID3D12Fence` spelt differently.
+  What `vulkan/` decides that no other backend does is what a **back buffer**
+  is: the frame is drawn into an image the engine owns and blitted into a
+  swapchain image at present, because the seam permits a frame that is never
+  presented and a swapchain image does not. `vulkan/device_resources.h` carries
+  that argument and it is the largest decision in the port.
+- **A new public primitive ships with behavioural tests in the same commit.**
+  Benchmarks assert on **complexity class**, not wall-clock — a phase linear in
+  the object count must stay linear when the count quadruples, whatever the
+  machine.
+
+## Reading the documents correctly
+
+- `docs/design/` is written in **the present tense of the target**. It
+  describes the destination, deliberately says nothing about the current
+  codebase, and **changes by amendment in the same commit as the change that
+  fights it** — a change that contradicts a philosophy means either the change
+  is wrong or the philosophy is, and if the philosophy is, say so there with
+  the reason. Several commits in the history do nothing else.
+- `docs/review/` is **historical**. It is the review as written and is not
+  updated as findings are fixed. Both full rounds were written while the
+  paint-shooter was still in this tree, so any finding citing `game/...` refers
+  to code that now lives in ColourWars — do not go looking for those files
+  here, and do not treat their line numbers as current. `docs/review/rtcd/` is
+  a candidate list mined from Ericson's *Real-Time Collision Detection*, not a
+  plan; the decisions live in `docs/review/round-2/PLAN.md`.
+  `docs/review/backend-equivalence/`, `docs/review/backend-equivalence-2/`,
+  `docs/review/d3d12/` and `docs/review/vulkan/` are the four exceptions to the
+  `game/` caveat, because all four postdate the split. The first
+  holds the three render backends that existed when it was written against one
+  contract. **This line used to call its `DRIFT.md` a live list of comments in
+  `engine/render/` that the code no longer matches. It never was one**, and
+  `backend-equivalence-2` is the sweep that established it: all 28 of those
+  claims were adjudicated at `ca5b2e3` and **26 came back already amended**, one
+  was half-live and one was wrong when the audit wrote it. Nobody was ignoring
+  that list — the tree worked through it one commit at a time and no document
+  recorded that, which is the argument for `docs/survey/2026-08-26-status.md`'s
+  shape rather than for a fourth convention. Read it as historical like
+  everything else here. **`backend-equivalence-2` is where the render folder's
+  live drift now lives**: the same contract at five backends, 40 axes, 113
+  drifted comments of which 48 are one species — a sentence that counts the
+  backends while legislating a term — and all three of the 2026-08-19 defects
+  re-adjudicated and found fixed. Its own `GAPS.md` says what it did not do,
+  and the first item there costs one CI log. **Its `STATUS.md` is the one file
+  in either folder that is kept current** — 162 boxes, ticked in the same commit
+  as the change, which is the mechanism whose absence this whole sweep existed
+  to discover. Read that first; the other five are frozen at `ca5b2e3`.
+  **All eight findings, all 110 drift items, the red team and three of the four
+  decisions have been applied**, over four commits from `13f5507`; what is left
+  is three boxes and `STATUS.md` says what each one needs, the largest being a
+  measured p99 on the named low tier, which is hardware rather than reading.
+  Two things the sweep could not know are recorded there too: the CI premise it
+  reasoned from is false — a GPU-less runner offers Direct3D an adapter rather
+  than falling back to WARP, which one job log settles — and the golden set is
+  fifty-seven images now, five of them added by the tests those findings
+  asked for. The
+  third folder reviews the fourth backend against the seam it was written to
+  test. **Its three must-fix findings, all
+  seven should-fix, every minor and the one item it left unresolved have been
+  applied** — nine commits, each naming the section it answers, `6ae4a15`
+  through `06f0b5f`. What has *not* been applied is section 6: nine findings
+  that ranked below the review's own verification budget and were never checked,
+  which are questions rather than findings. Two of them were counts a reader can
+  check and went in with the rest; the other seven are behaviour and need
+  verifying before anybody acts on them. The document itself still reads as it
+  was written, line numbers included, so do not expect them to match.
+- **The fourth reviews the fifth backend.** `docs/review/vulkan/` holds
+  `engine/render/vulkan/` against the same seam: three must-fix, fifteen
+  should-fix, eight minor, and sixty-five findings that ranked below its
+  verification budget and were never checked, which are its section 7 and are
+  questions rather than findings. **All three must-fix, every should-fix and
+  every minor have been applied**, along with two of the four items its section
+  6 left unresolved — the index buffer's missing barrier, and the disclosure
+  that nothing in this tree has ever run two frames in flight. What is **not**
+  applied is section 7, and two of section 6: the severity of the minimise
+  throw, which needs somebody to minimise a sample under the layers, and
+  `compositeAlpha`/`preTransform`, which the review declines to decide because
+  they are live only on a platform this tree does not build.
+
+  **That sentence was one finding short until 2026-08-29, and how G9 closed is
+  worth reading before trusting any other line like it.** The gap-probe series
+  G1–G16 is counted separately in the review's own README ("16 more raised by
+  gap probes and confirmed") and folded into the should-fix tally here, and
+  fifteen of the sixteen were applied. G9 was not: `renderer.h` went on saying
+  a device "can be lost on both of them, which is half the backends rather than
+  one" and citing, as its authority, a note fifty lines below that says three
+  of five. The count was right at four backends and went stale when Vulkan
+  landed. The comment sweep removed it — the whole parenthesis went, because
+  the paragraph around it was archaeology — which killed the contradiction and
+  left the header silent on a roster G9's stated failure is about a reader
+  getting wrong. So the finding is closed the other way instead: `DeviceNotify`
+  now says the roster is not a caller's question at all and cites
+  `SEAM.md#8`, which is the settlement. **Deleting a false sentence is not the
+  same as answering the question it got wrong**, and a sweep that only deletes
+  will leave that difference behind wherever it touches a finding. The document
+  itself still reads as it was written, line numbers included, so do not expect
+  them to match. It is the first review in
+  this tree that **ran** anything — its section 2 is `RenderPixelTests` under
+  the Khronos validation layer with `validate_sync` on, which is not what the
+  layers check by default and is not what this backend was written against.
+  That sweep found two synchronisation hazards on the present path and both are
+  findings below it, so **re-run it after any change under
+  `engine/render/vulkan/`**: section 2 carries the `vk_layer_settings.txt` that
+  makes the layer's output visible to a shell, which the backend's own messenger
+  (it writes to `OutputDebugStringA`) does not.
+
+## Known-absent, on purpose
+
+An action-mapping layer over the input devices — neither client has a rebinding
+screen, so a binding table would be the speculative framework T1 rules out.
+That is the whole list now; every render backend that was planned has landed.
+
+This section used to end "a fifth is not planned and is not refused either —
+Vulkan was weighed against D3D12 and lost on cost, not on principle — but the
+seam claim a fourth backend existed to test is now tested, so a fifth would
+need a reason of its own." **It found one, and it was not a seam claim.**
+`render/vulkan/` is here because it is the single API that reaches Android,
+Linux and, through MoltenVK, the Apple platforms — [the Android
+port](docs/port/android.md) is where that is argued, and it is the only item
+on that document's spine that runs on hardware this repository already has. It
+did test something the other four could not: Vulkan is the first API behind
+this seam where the *presentation engine* says the window changed, rather than
+Win32, and `renderer.h`'s resize contract turned out to have the right shape
+for it. A sixth is not planned. Metal would be a build target rather than a
+backend if MoltenVK holds, which is the one unmeasured claim that port rests
+on.
+Also permanently out of scope: online play, 3D, an editor, and a scripting
+layer.
