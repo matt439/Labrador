@@ -509,6 +509,58 @@ TEST_CASE("clear destroys the live states from the top down")
 	CHECK(context.depth() == 0);
 }
 
+TEST_CASE("leaving scope destroys the live states from the top down too")
+{
+	// The same order, without anyone asking for it. A context that is not an
+	// Application's base - a nested one, this one - has nobody calling
+	// clear() on its behalf, and a defaulted destructor let the vector go
+	// front to back: "menu", then "match", then "pause", each one destroyed
+	// before the state above it that borrowed from it had finished
+	// (docs/review/gpt6/README.md, G6-02).
+	std::vector<std::string> log;
+	{
+		StateContext context;
+		context.transition_to(std::make_unique<RecordingState>("menu", &log));
+		context.push(std::make_unique<RecordingState>("match", &log));
+		context.push(std::make_unique<RecordingState>("pause", &log));
+		REQUIRE(context.depth() == 3);
+		log.clear();
+	}
+
+	CHECK(log == std::vector<std::string>{
+		"pause:dtor", "match:dtor", "menu:dtor"});
+}
+
+TEST_CASE("leaving scope drops a queued state ahead of the live ones")
+{
+	// clear()'s other half, reached the same way: a drain that did not
+	// finish, then the scope ends.
+	std::vector<std::string> log;
+	{
+		StateContext context;
+
+		std::unique_ptr<RecordingState> level =
+			std::make_unique<RecordingState>("level", &log);
+		RecordingState* level_raw = level.get();
+		context.transition_to(std::move(level));
+
+		level_raw->on_update([&]()
+			{
+				std::unique_ptr<RecordingState> bad =
+					std::make_unique<RecordingState>("bad", &log);
+				bad->on_init([]() { throw std::runtime_error("init failed"); });
+				context.push(std::move(bad));
+				context.push(std::make_unique<RecordingState>("never", &log));
+			});
+
+		CHECK_THROWS_AS(context.update(0.0f), std::runtime_error);
+		log.clear();
+	}
+
+	CHECK(log == std::vector<std::string>{
+		"never:dtor", "bad:dtor", "level:dtor"});
+}
+
 TEST_CASE("clear fires no result callbacks")
 {
 	std::vector<std::string> log;

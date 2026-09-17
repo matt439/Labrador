@@ -6,7 +6,19 @@
 namespace labrador
 {
 	StateContext::StateContext() = default;
-	StateContext::~StateContext() = default;
+
+	// clear(), for clear()'s order. Defaulted, this let the vector destroy
+	// frames_ in its own element order - front to back, the bottom state
+	// first - which is the dependency order backwards, and the one exit that
+	// mattered was already protected by ~Application calling clear() itself.
+	// A context that is not an Application's base - a nested one, a test's -
+	// had no such line, and a state pushed above a screen died after the
+	// screen it borrowed from. Application's own call stays, because it has
+	// to run before Application's members go and this one runs after.
+	StateContext::~StateContext()
+	{
+		this->clear();
+	}
 
 	void StateContext::update(float dt)
 	{

@@ -193,6 +193,13 @@ namespace labrador
 		// still full, on every exit there is. ~Application calls this as its
 		// first statement, while the services are all still alive.
 		//
+		// ~StateContext CALLS IT TOO, for a context that is nobody's base. The
+		// vector would otherwise destroy the frames front to back - the bottom
+		// state first, which is the dependency order backwards - and only
+		// Application had the line that prevented it. Calling it twice on the
+		// way out of an Application costs nothing: the second call finds an
+		// empty stack.
+		//
 		// IT DOES NOT DEFER. The other three operations queue, because each is
 		// issued from inside the update() of a state it may destroy. This one is
 		// issued by a destructor, from outside every state's call frame, so
@@ -210,8 +217,8 @@ namespace labrador
 		// on_result reopens the menu, which pushes.
 		//
 		// noexcept, and T6 is the reason rather than an accident: "not a licence
-		// for throwing on the way out - teardown stays silent". Its one caller
-		// is a destructor. What this newly does is let state destructors run for
+		// for throwing on the way out - teardown stays silent". Its callers
+		// are destructors. What this newly does is let state destructors run for
 		// real, where before they ran against freed services, so a state that
 		// throws from one was already unwinding through a noexcept destructor
 		// and still is.
