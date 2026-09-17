@@ -38,3 +38,39 @@ endif()
 # months. It asserts on complexity class rather than on wall-clock, so it is
 # not a flaky test on a busy machine; see main.cpp.
 add_test(NAME Benchmarks COMMAND LabradorBench)
+
+# An absolute frame-time measurement, deliberately not a ctest. Its result is
+# a property of the selected hardware, driver and backend rather than a
+# machine-independent pass/fail gate. The cloud reference lane invokes this
+# console target directly and retains its JSON artifact.
+add_executable(LineSweeperFrameBench
+    frame_statistics.cpp
+    linesweeper_frame_bench.cpp
+    linesweeper_frame_result.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/board_view.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/particles.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/top_out_banner.cpp"
+)
+target_link_libraries(LineSweeperFrameBench PRIVATE
+    LineSweeperRules
+    LabradorEngine
+    labrador_settings
+)
+target_include_directories(LineSweeperFrameBench SYSTEM PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
+)
+
+# The benchmark resolves the same real font and white texel as PlayState. Keep
+# a private copy beside this executable so it runs from any working directory.
+add_custom_command(TARGET LineSweeperFrameBench POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/manifest.json"
+        "$<TARGET_FILE_DIR:LineSweeperFrameBench>/manifest.json"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/fonts"
+        "$<TARGET_FILE_DIR:LineSweeperFrameBench>/fonts"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/textures"
+        "$<TARGET_FILE_DIR:LineSweeperFrameBench>/textures"
+    VERBATIM
+)

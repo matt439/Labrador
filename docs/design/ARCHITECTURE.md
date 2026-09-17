@@ -9,8 +9,9 @@ describes the destination, not the current codebase.
 
 ## The targets
 
-Three build targets plus tests, one dependency direction, one shared
-compiler-settings target (see the target table in PHILOSOPHY.md).
+Product libraries, sample applications, benchmark executables and tests; one
+dependency direction and one shared compiler-settings target (see the target
+table in PHILOSOPHY.md).
 An arrow reads "links against"; no arrow ever points the other way — an
 engine file including a game header fails the build, and that is the
 feature (T5).
@@ -44,21 +45,31 @@ line. It runs on every build and fails with the offending file and line.
 flowchart TD
     subgraph apps["applications"]
         game["ColourWarsGame<br/>the paint-shooter"]
-        sample["MinimalSample<br/>minimal sample game"]
+        sample["MinimalSample<br/>new-project template"]
+        linesweeper["LineSweeperSample<br/>whole sample game"]
+        throughput["LabradorBench<br/>complexity gates"]
+        frame["LineSweeperFrameBench<br/>declared hardware measurement"]
         tests["tests"]
     end
     subgraph libs["static libraries"]
         engine["LabradorEngine"]
         math["MattMath"]
+        rules["LineSweeperRules"]
     end
     subgraph edge["the bought edge (T9)"]
-        sdks["platform SDKs<br/>D3D11 or OpenGL · DirectXTK · XInput"]
+        sdks["platform SDKs<br/>graphics · DirectXTK · XInput"]
         rapidjson["rapidjson"]
     end
     game --> engine
     sample --> engine
+    linesweeper --> engine
+    linesweeper --> rules
+    throughput --> engine
+    frame --> engine
+    frame --> rules
     tests --> engine
     tests --> math
+    tests --> rules
     engine --> math
     engine --> sdks
     engine --> rapidjson
@@ -107,9 +118,8 @@ being load-bearing.
 ```
 /
 ├── CMakeLists.txt          the root build file: lists the targets, nothing else
-├── CMakePresets.json       the configurations: debug and release on the
-│                           default backend, and a debug preset for each
-│                           of the other four — six in all
+├── CMakePresets.json       the configurations: debug and release for each
+│                           of the five render backends — ten in all
 ├── vcpkg.json              the bought edge, declared (T9)
 ├── cmake/                  the shared settings target, helper modules
 ├── engine/                 the product
@@ -198,7 +208,10 @@ being load-bearing.
 │   ├── render/
 │   ├── scene/
 │   └── ui/
-├── bench/                  throughput, registered with ctest beside the tests
+├── bench/                  complexity gates beside ctest, plus the explicit
+│                           hardware frame-cadence executable outside it
+├── tools/                  development operations outside the product targets
+│   └── cloud_performance/  one frozen, one-shot EC2 reference measurement
 ├── external/               third-party source: rapidjson. DirectXTK is not
 │                           here — it is a vcpkg package (vcpkg.json)
 ├── .github/workflows/      CI

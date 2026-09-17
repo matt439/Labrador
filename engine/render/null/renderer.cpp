@@ -166,6 +166,21 @@ namespace labrador
 			this->impl_->views.back()->owner = this->impl_.get();
 			this->impl_->views.back()->reset();
 		}
+
+		this->impl_->device_info.backend = "null";
+		this->impl_->device_info.api = "none";
+		this->impl_->device_info.device_name = "No render device";
+		this->impl_->device_info.kind = RenderDeviceKind::null_device;
+	}
+
+	const RenderDeviceInfo& Renderer::device_info() const
+	{
+		if (!this->impl_->device_created)
+		{
+			throw std::logic_error(
+				"Renderer::device_info requires create_device.");
+		}
+		return this->impl_->device_info;
 	}
 
 	bool Renderer::window_size_changed(int width, int height)

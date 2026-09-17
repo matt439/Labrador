@@ -550,6 +550,17 @@ namespace
 	};
 }
 
+TEST_CASE("the renderer reports the rasterising device it selected")
+{
+	Harness harness;
+	const RenderDeviceInfo& info = harness.renderer().device_info();
+
+	CHECK_FALSE(info.backend.empty());
+	CHECK_FALSE(info.api.empty());
+	CHECK_FALSE(info.device_name.empty());
+	CHECK(info.kind != RenderDeviceKind::null_device);
+}
+
 TEST_CASE("a frame nobody drew into is cleared to opaque black")
 {
 	Harness harness;

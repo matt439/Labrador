@@ -275,8 +275,9 @@ that outranks it.
 
 ### Targets and layout
 
-Three build targets, one dependency direction, one shared
-compiler-settings target (CMake — see ARCHITECTURE.md, The build):
+The product libraries, the sample applications, two benchmark executables and
+the tests share one dependency direction and one compiler-settings target
+(CMake — see ARCHITECTURE.md, The build):
 
 | Target | Type | Directory | Depends on |
 |---|---|---|---|
@@ -285,11 +286,12 @@ compiler-settings target (CMake — see ARCHITECTURE.md, The build):
 | `MinimalSample` | application | `samples/minimal/` | LabradorEngine |
 | `LineSweeperRules` | static library | `samples/linesweeper/rules/` | nothing — the settings target carries no libraries |
 | `LineSweeperSample` | application | `samples/linesweeper/` | LineSweeperRules, LabradorEngine |
+| `LabradorBench` | benchmark application | `bench/` | LabradorEngine |
+| `LineSweeperFrameBench` | hardware-measurement application | `bench/` | LineSweeperRules, LabradorEngine |
 | tests | applications | `tests/` | the libraries they test |
 
-A client's own application target is a fourth, in the client's own
-repository, linking `LabradorEngine` and `labrador_settings` across the
-submodule boundary.
+A client's own application target lives in the client's repository, linking
+`LabradorEngine` and `labrador_settings` across the submodule boundary.
 
 The disk layout mirrors the targets — `engine/math/`, `engine/core/`,
 `engine/render/`, `engine/collision/`, `engine/input/`, `engine/audio/` —
@@ -643,6 +645,17 @@ engine API to depend on.
   two about pipeline depth are latency and need a measured p99. Until that
   exists no number here is a floor, and `samples/linesweeper/README.md` says so
   again where the claim is actually made.
+- **Absolute frame timing is a declared hardware experiment, not an ordinary
+  benchmark assertion.** `LineSweeperFrameBench` runs one fixed top-out frame,
+  retains the software-paced start intervals and the separate update, begin,
+  record-and-submit and present phases, and records the device the renderer
+  actually selected. It calls none of that display scan-out. It is deliberately
+  outside CTest: the complexity gates above are portable, while a millisecond
+  threshold belongs to one named machine, driver, build and display session.
+  `tools/cloud_performance/` freezes those inputs for a disposable EC2 reference
+  run. That profile is useful regression evidence and still is not the low tier
+  named above: a partition of a modern discrete GPU does not become a two-CU
+  shared-memory Radeon because it is repeatable.
 
 ### The public face
 

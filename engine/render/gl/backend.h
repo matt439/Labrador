@@ -164,6 +164,8 @@ namespace labrador
 		HWND window = nullptr;
 		HDC device_context = nullptr;
 		HGLRC gl_context = nullptr;
+		RenderDeviceInfo device_info;
+		bool generic_pixel_format = false;
 
 		// Whether submit() has already run for this frame. renderer.h makes a
 		// second submit a no-op, and this backend is the one it was written

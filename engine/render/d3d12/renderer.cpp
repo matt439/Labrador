@@ -29,6 +29,73 @@ namespace labrador
 {
 	namespace
 	{
+		std::string utf8(const wchar_t* text)
+		{
+			const int bytes = WideCharToMultiByte(CP_UTF8,
+				WC_ERR_INVALID_CHARS, text, -1, nullptr, 0, nullptr, nullptr);
+			if (bytes <= 1)
+			{
+				throw std::runtime_error(
+					"The selected Direct3D adapter has no readable name.");
+			}
+
+			std::string result(static_cast<size_t>(bytes), '\0');
+			if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text, -1,
+				result.data(), bytes, nullptr, nullptr) == 0)
+			{
+				throw std::runtime_error(
+					"The selected Direct3D adapter name is not valid Unicode.");
+			}
+			result.pop_back();
+			return result;
+		}
+
+		RenderDeviceInfo selected_device(ID3D12Device* device)
+		{
+			ComPtr<IDXGIFactory4> factory;
+			ThrowIfFailed(CreateDXGIFactory1(
+				IID_PPV_ARGS(factory.GetAddressOf())));
+
+			ComPtr<IDXGIAdapter1> adapter;
+			const LUID selected = device->GetAdapterLuid();
+			const HRESULT enumeration = factory->EnumAdapterByLuid(selected,
+				IID_PPV_ARGS(adapter.GetAddressOf()));
+			if (FAILED(enumeration))
+			{
+				// WARP is obtained through EnumWarpAdapter rather than the
+				// ordinary adapter walk. Some DXGI versions therefore do not
+				// return it from EnumAdapterByLuid even though the device exposes
+				// its LUID. Ask for that one explicitly, then prove it is the
+				// device's rather than silently reporting a fallback that was not
+				// selected.
+				ComPtr<IDXGIAdapter> warp;
+				ThrowIfFailed(factory->EnumWarpAdapter(
+					IID_PPV_ARGS(warp.GetAddressOf())));
+				ThrowIfFailed(warp.As(&adapter));
+
+				DXGI_ADAPTER_DESC1 warp_description = {};
+				ThrowIfFailed(adapter->GetDesc1(&warp_description));
+				if (warp_description.AdapterLuid.HighPart != selected.HighPart ||
+					warp_description.AdapterLuid.LowPart != selected.LowPart)
+				{
+					ThrowIfFailed(enumeration);
+				}
+			}
+
+			DXGI_ADAPTER_DESC1 description = {};
+			ThrowIfFailed(adapter->GetDesc1(&description));
+
+			RenderDeviceInfo info;
+			info.backend = "d3d12";
+			info.api = "Direct3D 12";
+			info.device_name = utf8(description.Description);
+			info.vendor_id = description.VendorId;
+			info.device_id = description.DeviceId;
+			info.kind = (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0
+				? RenderDeviceKind::software : RenderDeviceKind::hardware;
+			return info;
+		}
+
 		// Four corners, two triangles, and the winding the corner order in
 		// sprite_geometry.h fixes.
 		const int VERTICES_PER_SPRITE = 4;
@@ -967,6 +1034,8 @@ namespace labrador
 
 	void Renderer::Impl::on_device_lost()
 	{
+		this->device_info = {};
+
 		for (std::unique_ptr<DrawList::View>& view : this->views)
 		{
 			view->list.Reset();
@@ -1006,6 +1075,7 @@ namespace labrador
 	void Renderer::Impl::on_device_restored()
 	{
 		this->create_device_dependent_resources();
+		this->device_info = selected_device(this->device_resources.device());
 
 		if (this->notify != nullptr)
 		{
@@ -1046,6 +1116,18 @@ namespace labrador
 
 		this->impl_->create_device_dependent_resources();
 		this->impl_->device_resources.create_window_size_dependent_resources();
+		this->impl_->device_info = selected_device(
+			this->impl_->device_resources.device());
+	}
+
+	const RenderDeviceInfo& Renderer::device_info() const
+	{
+		if (this->impl_->device_info.backend.empty())
+		{
+			throw std::logic_error(
+				"Renderer::device_info requires create_device.");
+		}
+		return this->impl_->device_info;
 	}
 
 	bool Renderer::window_size_changed(int width, int height)

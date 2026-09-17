@@ -8,6 +8,8 @@
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 
+#include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
@@ -23,6 +25,52 @@ namespace labrador
 	{
 		const int VERTICES_PER_SPRITE = 4;
 		const int INDICES_PER_SPRITE = 6;
+
+		std::string driver_string(GLenum name, const char* what)
+		{
+			const GLubyte* value = glGetString(name);
+			if (value == nullptr)
+			{
+				throw std::runtime_error(std::string(
+					"The selected OpenGL implementation did not report its ") +
+					what + ".");
+			}
+			return reinterpret_cast<const char*>(value);
+		}
+
+		bool names_software(const std::string& vendor,
+			const std::string& renderer)
+		{
+			std::string description = vendor + " " + renderer;
+			std::transform(description.begin(), description.end(),
+				description.begin(), [](unsigned char character)
+				{
+					return static_cast<char>(std::tolower(character));
+				});
+
+			return description.find("gdi generic") != std::string::npos ||
+				description.find("microsoft basic render") != std::string::npos ||
+				description.find("llvmpipe") != std::string::npos ||
+				description.find("lavapipe") != std::string::npos ||
+				description.find("softpipe") != std::string::npos ||
+				description.find("swiftshader") != std::string::npos ||
+				description.find("software rasterizer") != std::string::npos;
+		}
+
+		RenderDeviceInfo selected_device(bool generic_pixel_format)
+		{
+			const std::string vendor = driver_string(GL_VENDOR, "vendor");
+			const std::string renderer = driver_string(GL_RENDERER, "renderer");
+			const std::string version = driver_string(GL_VERSION, "version");
+
+			RenderDeviceInfo info;
+			info.backend = "gl";
+			info.api = "OpenGL " + version;
+			info.device_name = vendor + " / " + renderer;
+			info.kind = generic_pixel_format || names_software(vendor, renderer)
+				? RenderDeviceKind::software : RenderDeviceKind::hardware;
+			return info;
+		}
 
 		// wglCreateContextAttribsARB, which is itself an extension and so has
 		// to be fetched through a context that already exists. That is the
@@ -367,6 +415,8 @@ namespace labrador
 				"two buffers. ChoosePixelFormat answers with the nearest it "
 				"has rather than refusing, so this is where it is refused.");
 		}
+		this->generic_pixel_format =
+			(given.dwFlags & PFD_GENERIC_FORMAT) != 0;
 
 		if (!SetPixelFormat(this->device_context, format, &wanted))
 		{
@@ -663,6 +713,18 @@ namespace labrador
 		}
 
 		this->impl_->create_gl_resources();
+		this->impl_->device_info = selected_device(
+			this->impl_->generic_pixel_format);
+	}
+
+	const RenderDeviceInfo& Renderer::device_info() const
+	{
+		if (this->impl_->device_info.backend.empty())
+		{
+			throw std::logic_error(
+				"Renderer::device_info requires create_device.");
+		}
+		return this->impl_->device_info;
 	}
 
 	bool Renderer::window_size_changed(int width, int height)

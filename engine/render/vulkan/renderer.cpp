@@ -16,6 +16,7 @@
 #include "engine/render/vulkan/sprite_vertex_shader.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <cstring>
 #include <memory>
@@ -34,6 +35,40 @@ namespace labrador
 		// sprite_geometry.h fixes.
 		const int VERTICES_PER_SPRITE = 4;
 		const int INDICES_PER_SPRITE = 6;
+
+		bool names_software(std::string name)
+		{
+			std::transform(name.begin(), name.end(), name.begin(),
+				[](unsigned char character)
+				{
+					return static_cast<char>(std::tolower(character));
+				});
+
+			return name.find("llvmpipe") != std::string::npos ||
+				name.find("lavapipe") != std::string::npos ||
+				name.find("swiftshader") != std::string::npos ||
+				name.find("software rasterizer") != std::string::npos;
+		}
+
+		RenderDeviceInfo selected_device(const VulkanDevice& device)
+		{
+			VkPhysicalDeviceProperties properties = {};
+			vkGetPhysicalDeviceProperties(device.physical_device, &properties);
+
+			RenderDeviceInfo info;
+			info.backend = "vulkan";
+			info.api = "Vulkan " +
+				std::to_string(VK_VERSION_MAJOR(properties.apiVersion)) + "." +
+				std::to_string(VK_VERSION_MINOR(properties.apiVersion)) + "." +
+				std::to_string(VK_VERSION_PATCH(properties.apiVersion));
+			info.device_name = properties.deviceName;
+			info.vendor_id = properties.vendorID;
+			info.device_id = properties.deviceID;
+			info.kind = properties.deviceType ==
+				VK_PHYSICAL_DEVICE_TYPE_CPU || names_software(info.device_name)
+				? RenderDeviceKind::software : RenderDeviceKind::hardware;
+			return info;
+		}
 
 		// Whether two viewports are the same pane. A run cannot span a viewport
 		// change, so this is what closes one.
@@ -745,6 +780,7 @@ namespace labrador
 
 	void Renderer::Impl::on_device_lost()
 	{
+		this->device_info = {};
 		this->destroy_device_dependent_resources();
 
 		if (this->notify != nullptr)
@@ -756,6 +792,7 @@ namespace labrador
 	void Renderer::Impl::on_device_restored()
 	{
 		this->create_device_dependent_resources();
+		this->device_info = selected_device(this->device_resources.owner());
 
 		if (this->notify != nullptr)
 		{
@@ -806,6 +843,17 @@ namespace labrador
 		impl.device_resources.create_window_size_dependent_resources();
 
 		impl.reset_views();
+		impl.device_info = selected_device(impl.device_resources.owner());
+	}
+
+	const RenderDeviceInfo& Renderer::device_info() const
+	{
+		if (this->impl_->device_info.backend.empty())
+		{
+			throw std::logic_error(
+				"Renderer::device_info requires create_device.");
+		}
+		return this->impl_->device_info;
 	}
 
 	bool Renderer::window_size_changed(int width, int height)

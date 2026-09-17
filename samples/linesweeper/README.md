@@ -482,7 +482,13 @@ which is the only thing that argument leaves room for.
   the 1280x720 `main.cpp` already asks for. The p99 has not been taken, and it
   is the half that carries the claim. So what changed is the shape of this gap
   rather than its size — until that measurement exists, no number in this
-  repository should be described as a floor.
+  repository should be described as a floor. `LineSweeperFrameBench` is now the
+  vehicle for taking it: the actual board, banner and 9,600-particle top-out at
+  this resolution, through one selected backend, with every software-paced
+  frame-start interval and renderer phase retained. That interval is not
+  claimed as display scan-out. The EC2 runner beside it is a reproducible
+  reference profile, not the missing Radeon result; neither tool is itself a
+  measurement.
 - **Whether the layer rule gets a build check.** It is now checkable and
   unchecked, which is the worst of the three states, and `presentation/`
   has five files in it rather than three.

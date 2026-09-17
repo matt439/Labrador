@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "run_id": "g6f-reference-001",
+  "region": "ap-southeast-2",
+  "availability_zone": "ap-southeast-2a",
+  "ami_id": "ami-0123456789abcdef0",
+  "instance_type": "g6f.2xlarge",
+  "cpu_options": {
+    "core_count": 4,
+    "threads_per_core": 1
+  },
+  "vpc_id": "vpc-0123456789abcdef0",
+  "subnet_id": "subnet-0123456789abcdef0",
+  "artifact_bucket": "replace-with-private-versioned-bucket",
+  "artifact_prefix": "labrador-performance",
+  "bundle": {
+    "path": "out/cloud/labrador-performance.zip",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "release_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "expected_ami_tags": {
+    "Project": "Labrador",
+    "ImageRole": "performance-runner-v1",
+    "WindowsBuild": "REPLACE_WITH_NUMERIC_WINDOWS_BUILD",
+    "NvidiaDriver": "REPLACE_WITH_NVIDIA_DRIVER_VERSION"
+  },
+  "root_device_name": "/dev/sda1",
+  "root_volume_gib": 100,
+  "associate_public_ip": true,
+  "authorization": {
+    "allow_launch": false,
+    "deadline_utc": "REPLACE_WITH_ABSOLUTE_UTC_DEADLINE",
+    "max_elapsed_hours": 2,
+    "max_hourly_usd": 2,
+    "max_compute_usd": 5
+  },
+  "workload": {
+    "width": 1280,
+    "height": 720,
+    "live_particles": 9600,
+    "warmup_frames": 1800,
+    "sample_frames": 3600,
+    "refresh_hz": 60,
+    "repetitions": 5,
+    "backends": [
+      {
+        "name": "d3d11",
+        "executable": "payload/d3d11/LineSweeperFrameBench.exe",
+        "expected_device": "NVIDIA.*L4",
+        "expected_vendor_id": 4318
+      },
+      {
+        "name": "d3d12",
+        "executable": "payload/d3d12/LineSweeperFrameBench.exe",
+        "expected_device": "NVIDIA.*L4",
+        "expected_vendor_id": 4318
+      },
+      {
+        "name": "gl",
+        "executable": "payload/gl/LineSweeperFrameBench.exe",
+        "expected_device": "NVIDIA.*L4",
+        "expected_vendor_id": 0
+      },
+      {
+        "name": "vulkan",
+        "executable": "payload/vulkan/LineSweeperFrameBench.exe",
+        "expected_device": "NVIDIA.*L4",
+        "expected_vendor_id": 4318
+      }
+    ]
+  }
+}

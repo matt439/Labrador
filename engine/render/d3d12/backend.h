@@ -293,6 +293,7 @@ namespace labrador
 		static const int TEXTURE_CAPACITY = 256;
 
 		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };
+		RenderDeviceInfo device_info;
 
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;

@@ -28,6 +28,53 @@ namespace labrador
 {
 	namespace
 	{
+		std::string utf8(const wchar_t* text)
+		{
+			const int bytes = WideCharToMultiByte(CP_UTF8,
+				WC_ERR_INVALID_CHARS, text, -1, nullptr, 0, nullptr, nullptr);
+			if (bytes <= 1)
+			{
+				throw std::runtime_error(
+					"The selected Direct3D adapter has no readable name.");
+			}
+
+			std::string result(static_cast<size_t>(bytes), '\0');
+			if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text, -1,
+				result.data(), bytes, nullptr, nullptr) == 0)
+			{
+				throw std::runtime_error(
+					"The selected Direct3D adapter name is not valid Unicode.");
+			}
+			result.pop_back();
+			return result;
+		}
+
+		RenderDeviceInfo selected_device(ID3D11Device* device)
+		{
+			Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
+			ThrowIfFailed(device->QueryInterface(
+				IID_PPV_ARGS(dxgi_device.GetAddressOf())));
+
+			Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+			ThrowIfFailed(dxgi_device->GetAdapter(adapter.GetAddressOf()));
+
+			Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter1;
+			ThrowIfFailed(adapter.As(&adapter1));
+
+			DXGI_ADAPTER_DESC1 description = {};
+			ThrowIfFailed(adapter1->GetDesc1(&description));
+
+			RenderDeviceInfo info;
+			info.backend = "d3d11";
+			info.api = "Direct3D 11";
+			info.device_name = utf8(description.Description);
+			info.vendor_id = description.VendorId;
+			info.device_id = description.DeviceId;
+			info.kind = (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0
+				? RenderDeviceKind::software : RenderDeviceKind::hardware;
+			return info;
+		}
+
 		// Where the engine's values become the backend's. It belongs here and
 		// not on the mattmath type: a Viewport::d3d_viewport() would put
 		// <d3d11.h> in a library documented as depending on nothing, and this
@@ -616,6 +663,8 @@ namespace labrador
 
 	void Renderer::Impl::OnDeviceLost()
 	{
+		this->device_info = {};
+
 		for (std::unique_ptr<DrawList::View>& view : this->views)
 		{
 			view->vertices.Reset();
@@ -649,6 +698,8 @@ namespace labrador
 	void Renderer::Impl::OnDeviceRestored()
 	{
 		this->create_device_dependent_resources();
+		this->device_info = selected_device(
+			this->device_resources.GetD3DDevice());
 
 		if (this->notify != nullptr)
 		{
@@ -689,6 +740,18 @@ namespace labrador
 
 		this->impl_->create_device_dependent_resources();
 		this->impl_->device_resources.CreateWindowSizeDependentResources();
+		this->impl_->device_info = selected_device(
+			this->impl_->device_resources.GetD3DDevice());
+	}
+
+	const RenderDeviceInfo& Renderer::device_info() const
+	{
+		if (this->impl_->device_info.backend.empty())
+		{
+			throw std::logic_error(
+				"Renderer::device_info requires create_device.");
+		}
+		return this->impl_->device_info;
 	}
 
 	bool Renderer::window_size_changed(int width, int height)

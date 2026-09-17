@@ -33,11 +33,29 @@
       }
     },
     {
+      "name": "x64-release-d3d12",
+      "displayName": "x64 Release (Direct3D 12)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "LABRADOR_RENDER_BACKEND": "d3d12"
+      }
+    },
+    {
       "name": "x64-debug-gl",
       "displayName": "x64 Debug (OpenGL)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "LABRADOR_RENDER_BACKEND": "gl"
+      }
+    },
+    {
+      "name": "x64-release-gl",
+      "displayName": "x64 Release (OpenGL)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "LABRADOR_RENDER_BACKEND": "gl"
       }
     },
@@ -51,11 +69,30 @@
       }
     },
     {
+      "name": "x64-release-vulkan",
+      "displayName": "x64 Release (Vulkan)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "LABRADOR_RENDER_BACKEND": "vulkan"
+      }
+    },
+    {
       "name": "x64-debug-null",
       "displayName": "x64 Debug (no platform API)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "LABRADOR_RENDER_BACKEND": "null",
+        "LABRADOR_AUDIO_BACKEND": "null"
+      }
+    },
+    {
+      "name": "x64-release-null",
+      "displayName": "x64 Release (no platform API)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "LABRADOR_RENDER_BACKEND": "null",
         "LABRADOR_AUDIO_BACKEND": "null"
       }
@@ -65,9 +102,13 @@
     { "name": "x64-debug", "configurePreset": "x64-debug" },
     { "name": "x64-release", "configurePreset": "x64-release" },
     { "name": "x64-debug-d3d12", "configurePreset": "x64-debug-d3d12" },
+    { "name": "x64-release-d3d12", "configurePreset": "x64-release-d3d12" },
     { "name": "x64-debug-gl", "configurePreset": "x64-debug-gl" },
+    { "name": "x64-release-gl", "configurePreset": "x64-release-gl" },
     { "name": "x64-debug-vulkan", "configurePreset": "x64-debug-vulkan" },
-    { "name": "x64-debug-null", "configurePreset": "x64-debug-null" }
+    { "name": "x64-release-vulkan", "configurePreset": "x64-release-vulkan" },
+    { "name": "x64-debug-null", "configurePreset": "x64-debug-null" },
+    { "name": "x64-release-null", "configurePreset": "x64-release-null" }
   ],
   "testPresets": [
     {
@@ -86,8 +127,18 @@
       "output": { "outputOnFailure": true }
     },
     {
+      "name": "x64-release-d3d12",
+      "configurePreset": "x64-release-d3d12",
+      "output": { "outputOnFailure": true }
+    },
+    {
       "name": "x64-debug-gl",
       "configurePreset": "x64-debug-gl",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "x64-release-gl",
+      "configurePreset": "x64-release-gl",
       "output": { "outputOnFailure": true }
     },
     {
@@ -96,8 +147,18 @@
       "output": { "outputOnFailure": true }
     },
     {
+      "name": "x64-release-vulkan",
+      "configurePreset": "x64-release-vulkan",
+      "output": { "outputOnFailure": true }
+    },
+    {
       "name": "x64-debug-null",
       "configurePreset": "x64-debug-null",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "x64-release-null",
+      "configurePreset": "x64-release-null",
       "output": { "outputOnFailure": true }
     }
   ]

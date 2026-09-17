@@ -52,6 +52,10 @@ add_test(NAME LineSweeperTests COMMAND LineSweeperTests)
 # a second presentation file ever becomes testable, that is the moment to
 # revisit it.
 add_executable(LineSweeperViewTests
+	"${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_statistics.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../../bench/linesweeper_frame_result.cpp"
+	frame_result_tests.cpp
+	frame_statistics_tests.cpp
     test_main.cpp
     view_tests.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/particles.cpp"
@@ -64,6 +68,9 @@ target_link_libraries(LineSweeperViewTests PRIVATE
 )
 target_include_directories(LineSweeperViewTests PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../.."
+)
+target_include_directories(LineSweeperViewTests SYSTEM PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../external/rapidjson/include"
 )
 
 add_test(NAME LineSweeperViewTests COMMAND LineSweeperViewTests)

@@ -5,6 +5,7 @@
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -62,6 +63,38 @@ namespace labrador
 	{
 		point,
 		linear,
+	};
+
+	// What kind of device the selected backend actually created.
+	//
+	// `null_device` is not a software rasteriser. It means the null backend,
+	// which records draws and never produces pixels. The distinction is what
+	// lets a measurement refuse WARP or another CPU rasteriser without also
+	// refusing the deliberately headless configuration.
+	enum class RenderDeviceKind
+	{
+		hardware,
+		software,
+		null_device,
+	};
+
+	// The device a Renderer selected, in backend-neutral terms.
+	//
+	// A performance result without this record cannot say which hardware it
+	// measured: listing the machine's adapters is not enough when an API may
+	// select a different one or fall back to software. `backend` and `api` are
+	// stable engine-facing names; `device_name` is what the selected API reports
+	// for the device. Vendor and device IDs are zero where that API exposes no
+	// portable numeric answer (OpenGL and the null backend). Why this is a
+	// description rather than a device accessor is in engine/render/SEAM.md#3.
+	struct RenderDeviceInfo
+	{
+		std::string backend;
+		std::string api;
+		std::string device_name;
+		std::uint32_t vendor_id = 0;
+		std::uint32_t device_id = 0;
+		RenderDeviceKind kind = RenderDeviceKind::null_device;
 	};
 
 	// A recording target for one view.
@@ -208,6 +241,12 @@ namespace labrador
 		// touches a window.
 		void create_device(void* native_window, int width, int height,
 			int view_capacity);
+
+		// The actual device create_device selected. Throws std::logic_error before
+		// create_device, when there is no truthful answer. In particular, this is
+		// not an enumeration of what else the machine has: it names the adapter or
+		// implementation this Renderer is using.
+		const RenderDeviceInfo& device_info() const;
 
 		// Returns whether anything was rebuilt, which is the signal the shell
 		// wants for "re-run the layout".

@@ -127,6 +127,20 @@ namespace
 	};
 }
 
+TEST_CASE("the null renderer reports that it selected no device")
+{
+	Renderer renderer;
+	renderer.create_device(nullptr, 640, 480, 1);
+
+	const RenderDeviceInfo& info = renderer.device_info();
+	CHECK(info.backend == "null");
+	CHECK(info.api == "none");
+	CHECK(info.device_name == "No render device");
+	CHECK(info.vendor_id == 0);
+	CHECK(info.device_id == 0);
+	CHECK(info.kind == RenderDeviceKind::null_device);
+}
+
 TEST_CASE("a sprite is recorded with the corners a device would have been given")
 {
 	Harness harness;

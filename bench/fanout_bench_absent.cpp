@@ -22,5 +22,5 @@
 std::string run_fanout_benchmarks()
 {
 	return "note    the Scene::draw fan-out is measured against the null "
-		"backend alone; configure x64-debug-null for it";
+		"backend alone; configure a -null preset for it";
 }

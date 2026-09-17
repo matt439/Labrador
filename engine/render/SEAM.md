@@ -79,6 +79,15 @@ Creating a texture from a file is a resource factory's job, not a renderer's,
 and `RenderResources` already speaks in handles — so only the handle's payload
 type changes when the backend does.
 
+`Renderer::device_info()` is a diagnostic description, not the missing device
+accessor. It reports which implementation `create_device` actually selected in
+backend-neutral strings, IDs and a hardware/software/null classification; it
+hands out no graphics object and enables no capability branch. The distinction
+is load-bearing for an absolute hardware measurement: enumerating the adapters a
+machine owns does not establish which one rendered the measured frame, while a
+pointer to that adapter would undo this section's boundary to answer the same
+question.
+
 DirectXTK is no longer on the render path at all. It remains bought for audio
 and for the gamepad reader, which are seams of their own.
 

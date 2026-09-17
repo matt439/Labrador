@@ -228,6 +228,7 @@ namespace labrador
 		// Renders only 2D, so there is no depth buffer to ask for - see the
 		// class comment on DeviceResources, which has none to offer.
 		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };
+		RenderDeviceInfo device_info;
 
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;

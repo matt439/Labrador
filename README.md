@@ -58,9 +58,9 @@ Linux and — through MoltenVK — the Apple ones, which
 that is the only item on its list that runs on hardware already here. The
 audio backend is XAudio2 — `audio/xaudio2/`, behind a seam of its own — and
 it has a null one beside it that records what it was asked to play. Both
-backends and both seams are chosen at configure time, and `x64-debug-null`
-is the preset that takes neither platform API: it is the one configuration a
-machine with no GPU and no sound card runs end to end.
+backends and both seams are chosen at configure time, and the debug/release
+`-null` pair takes neither platform API: those are the configurations a machine
+with no GPU and no sound card runs end to end.
 
 ### Prerequisites
 
@@ -70,7 +70,7 @@ machine with no GPU and no sound card runs end to end.
   two Direct3D backends compile their shader at build time and the build fails
   without it. The OpenGL one needs no tool.
 - **The [Vulkan SDK](https://vulkan.lunarg.com/)**, with `VULKAN_SDK` set, and
-  **only for `x64-debug-vulkan`**. It is the one dependency here that does not
+  **only for the two Vulkan presets**. It is the one dependency here that does not
   come with Visual Studio or with Windows. That backend compiles the same
   `sprite.hlsl` to SPIR-V, and the `dxc` that can do it is the SDK's rather
   than the Windows SDK's — `cmake/compile_shaders.cmake` says how to tell them
@@ -86,15 +86,16 @@ at configure time. rapidjson is vendored in `external/`.
 
 ```
 cmake --preset x64-debug          # or x64-release, x64-debug-d3d12,
-                                  # x64-debug-gl, x64-debug-vulkan
+                                  # x64-release-d3d12, and the gl/vulkan/null
+                                  # debug/release pairs
 cmake --build --preset x64-debug
 ctest --preset x64-debug
 ```
 
-`x64-debug-d3d12` builds against the Direct3D 12 backend, `x64-debug-gl`
-against the OpenGL one, `x64-debug-vulkan` against the Vulkan one and
-`x64-debug-null` against no platform API at all — no graphics API and no audio
-API, which is what makes it the preset a build machine runs end to end. They
+Each backend has a Debug and a Release preset: the unqualified pair selects
+Direct3D 11, and `-d3d12`, `-gl`, `-vulkan` and `-null` select the other four.
+The null pair takes no platform API at all — no graphics API and no audio API —
+which is what makes it the configuration a build machine runs end to end. They
 are separate configurations rather than a runtime switch because a backend is
 chosen at compile time (`LABRADOR_RENDER_BACKEND`, `LABRADOR_AUDIO_BACKEND`),
 so asking for one that was not built is a missing symbol at link rather than a
@@ -189,6 +190,17 @@ rather than on wall-clock — a phase that is linear in the object count must
 stay linear when the count quadruples, whatever the machine. An absolute
 threshold would either fail on a slow box or pass on a fast one after a real
 regression. Run `LabradorBench` directly to see the table.
+
+`LineSweeperFrameBench` is deliberately different and is not a CTest entry. It
+runs a fixed 9,600-particle LineSweeper top-out through the selected renderer at
+1280x720, retains every software-paced frame-start interval and every measured
+frame phase, and writes a JSON result for a declared machine. It does not call
+that interval display scan-out. The one-shot EC2 reference lane under
+[`tools/cloud_performance/`](tools/cloud_performance/) freezes those binaries,
+and the current source bytes into a reviewed bundle, then binds that bundle to
+a separately reviewed run declaration by hash. Its numbers describe that
+declared host; they do not turn a shared build runner into the low tier or
+replace the Radeon configuration in PHILOSOPHY.
 
 ## Status
 

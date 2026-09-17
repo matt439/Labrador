@@ -139,6 +139,18 @@ TEST_CASE("CONTRACT: a renderer with no device has no views")
 	CHECK_THROWS_AS(std::ignore = renderer.view(0), std::out_of_range);
 }
 
+TEST_CASE("CONTRACT: device information names a device that was actually created")
+{
+	// Enumerating the machine is not the same answer: a machine may have
+	// several adapters and two backends have a software fallback. Until
+	// create_device has selected one, there is no truthful device to report.
+	// This case is device-free so all five hand-written implementations are
+	// held to the same refusal.
+	Renderer renderer;
+
+	CHECK_THROWS_AS(std::ignore = renderer.device_info(), std::logic_error);
+}
+
 TEST_CASE("CONTRACT: window_size_changed before there is a device rebuilds nothing")
 {
 	// TEST-GAP.md's A4. A shell can be sent a WM_SIZE between making its window

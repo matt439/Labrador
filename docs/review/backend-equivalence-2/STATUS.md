@@ -551,7 +551,12 @@ long enough that the sweep found it twice.
       measurement is not. What is left is the measurement itself - a CPU half to
       name and a p99 to take on the named configuration, four cores at 1280x720
       - and it is the one item in this file that needs hardware rather than
-      reading.
+      reading. **The measurement vehicle now exists without closing the item:**
+      `LineSweeperFrameBench` retains the raw cadence of a fixed 9,600-particle
+      top-out, and `tools/cloud_performance/` binds one run to its binaries,
+      source, AMI, instance profile and deadline. An EC2 result is a reference
+      profile; this box stays open until the CPU half is named and the declared
+      p99 is actually taken on the Radeon configuration above.
 
 ---
 

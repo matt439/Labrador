@@ -104,6 +104,7 @@ namespace labrador
 		// what this one is for. It is what CI runs completely, so it has to be
 		// the strictest of the five and not the most permissive.
 		bool device_created = false;
+		RenderDeviceInfo device_info;
 
 		// Whether submit() has already run for this frame. renderer.h makes a
 		// second submit a no-op. This backend answered that correctly by

@@ -30,7 +30,7 @@ at build time into a byte array
 ([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)) — one source, two
 profiles, two generated headers; the GL backend compiles its GLSL at device
 creation and needs no tool. Both come with the Visual Studio install.
-**The Vulkan preset is the one exception to that**, and it is the only thing in
+**The Vulkan presets are the exception to that**, and the SDK is the only thing in
 this repository that has to be installed: it needs the
 [Vulkan SDK](https://vulkan.lunarg.com/) — `VULKAN_SDK` set — for its headers,
 its import library and a `dxc` that can emit SPIR-V from the same `sprite.hlsl`.
@@ -45,18 +45,27 @@ link (T5). A change to anything in `engine/render/` should be checked against
 all five; CI builds all five.
 
 **And two audio backends**, on a second and independent axis:
-`LABRADOR_AUDIO_BACKEND` is `xaudio2` or `null`, and only `x64-debug-null`
-asks for the second. That preset is therefore the one that takes no platform
-API at all, which is what makes it the configuration a build machine runs end
-to end.
+`LABRADOR_AUDIO_BACKEND` is `xaudio2` or `null`, and the two `-null` presets
+ask for the second. Those presets therefore take no platform API at all, which
+is what makes them the configurations a build machine runs end to end.
 
 | Preset | Backend | ctest |
 |---|---|---|
 | `x64-debug`, `x64-release` | `render/d3d11/` | 14 entries; WARP fallback in debug |
-| `x64-debug-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 14 entries; WARP fallback in debug |
-| `x64-debug-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 14 entries; needs a real driver |
-| `x64-debug-vulkan` | `render/vulkan/` — the one that reaches other platforms | 14 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null` | `render/null/` — no graphics API; records draws. **The only preset that also takes `audio/null/`** | 13 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
+| `x64-debug-d3d12`, `x64-release-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 14 entries; WARP fallback in debug |
+| `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 14 entries; needs a real driver |
+| `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 14 entries; needs a driver and the Vulkan SDK |
+| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only presets that also take `audio/null/`** | 13 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
+
+`LineSweeperFrameBench` is the absolute hardware measurement and is
+deliberately **not** a ctest entry. Run its Release binary: it holds the real
+LineSweeper presentation at a fixed 9,600-particle top-out, retains
+software-paced frame-start intervals and separate phase samples, and records
+the device the selected backend actually created. It does not claim scan-out.
+`tools/cloud_performance/` packages one reviewed set of those binaries and the
+current source bytes for a one-shot EC2 reference run. Its launch and stop verbs
+are dry-run by default. An EC2 result is evidence for that declared profile, not
+the still-unmeasured Radeon low tier in PHILOSOPHY.
 
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
@@ -125,7 +134,7 @@ So what to know before reading a green `AudioTests` is narrower than "audio is
 not covered". Under the five presets that build `audio/xaudio2/` this target
 still constructs no device, and every case runs against `SoundBank::silent()` —
 the substitute a missing `.xwb` produces, which is a question about content
-rather than about the seam. **Under `x64-debug-null` it also compiles
+rather than about the seam. **Under either `-null` preset it also compiles
 [tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and that is the one
 place in the tree where a sound can be asserted to have happened: which wave,
 out of which bank, at which clamped levels, in what order. A change under
@@ -202,7 +211,7 @@ file of that format to read it against.
   [tests/scene/fanout_tests.cpp](tests/scene/fanout_tests.cpp) pins what the
   fan-out must produce and
   [bench/fanout_bench_null.cpp](bench/fanout_bench_null.cpp) prices it against
-  one thread. Both are compiled only under `x64-debug-null`, and until they
+  one thread. Both are compiled only under the two `-null` presets, and until they
   existed the early-out beside the fan-out was the only branch that had ever
   been taken.
 - **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`,
@@ -296,7 +305,7 @@ file of that format to read it against.
   to discover. Read that first; the other five are frozen at `ca5b2e3`.
   **All eight findings, all 110 drift items, the red team and three of the four
   decisions have been applied**, over four commits from `13f5507`; what is left
-  is three boxes and `STATUS.md` says what each one needs, the largest being a
+  is two boxes and `STATUS.md` says what each one needs, the larger being a
   measured p99 on the named low tier, which is hardware rather than reading.
   Two things the sweep could not know are recorded there too: the CI premise it
   reasoned from is false — a GPU-less runner offers Direct3D an adapter rather

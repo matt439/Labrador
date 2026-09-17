@@ -65,14 +65,11 @@
 // not a limitation but the faster path, and above it the fan-out earns its
 // keep. The counts here bracket that crossing deliberately.
 //
-// AND ctest MEASURES IT IN A DEBUG BUILD, because x64-debug-null is the only
-// preset that builds this backend and CMakePresets.json has no release one.
-// That flatters the fan-out: an unoptimised per-view body is more work for the
-// workers to divide, so the crossing sits at a lower object count than a
-// release build of the same backend puts it. Configuring one by hand
-// (-DLABRADOR_RENDER_BACKEND=null -DCMAKE_BUILD_TYPE=Release) is how that was
-// checked, and anybody quoting a crossover from a ctest run is quoting the
-// friendlier of the two numbers.
+// AND ctest MEASURES IT ON BOTH NULL PRESETS. The Debug one flatters the
+// fan-out: an unoptimised per-view body is more work for the workers to divide,
+// so the crossing sits at a lower object count than the Release build puts it.
+// `x64-release-null` is therefore the run to quote for a crossover; the Debug
+// row exists to keep the mechanism built and exercised, not to price it.
 
 using labrador::Camera;
 using labrador::Colour;

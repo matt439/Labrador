@@ -223,8 +223,8 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")
 
     # Nothing to link and nothing to compile. This backend records what it was
     # asked to draw and never draws it, so it needs no graphics library, no
-    # shader and no display - which is what makes it the one configuration a
-    # build machine can run from end to end.
+    # shader and no display - which is what makes this the backend a build
+    # machine can run from end to end.
 else()
     message(FATAL_ERROR
         "LABRADOR_RENDER_BACKEND is '${LABRADOR_RENDER_BACKEND}'. "
@@ -238,9 +238,9 @@ endif()
 # A SECOND AXIS, NOT A SECOND VALUE ON THE FIRST ONE. Which audio API a build
 # opens has nothing to do with which graphics API it draws with, so they are two
 # cache variables and a preset sets whichever it means. What ties them in
-# practice is x64-debug-null, which sets both: that preset is the configuration
-# a machine with no hardware at all can run end to end, and audio was the half
-# of that claim which was not true.
+# practice is the debug/release `-null` pair, which sets both: those presets are
+# the configurations a machine with no hardware at all can run end to end, and
+# audio was the half of that claim which was not true.
 #
 # ONE TRANSLATION UNIT PER BACKEND, which is the whole of what selecting one
 # involves - an audio API is a smaller surface than a graphics API, and
