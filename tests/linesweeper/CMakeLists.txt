@@ -10,6 +10,7 @@ find_package(doctest CONFIG REQUIRED)
 # agent with no display attached.
 add_executable(LineSweeperTests
     replay_tests.cpp
+    resume_gate_tests.cpp
     scoring_tests.cpp
     test_main.cpp
     tick_tests.cpp

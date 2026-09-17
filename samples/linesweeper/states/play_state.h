@@ -8,6 +8,7 @@
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
 #include "samples/linesweeper/states/pause_state.h"
+#include "samples/linesweeper/states/resume_gate.h"
 #include "samples/linesweeper/rules/world.h"
 
 #include <cstdint>
@@ -32,6 +33,11 @@ namespace linesweeper
 		void init() override;
 		void update(float dt) override;
 		void draw(labrador::Renderer& renderer) const override;
+
+		// The pause menu has closed over this state. Whatever is held right
+		// now was held to close it - or was held since before it opened - and
+		// none of it is the match's until it is let go (resume_gate.h).
+		void on_resume() override;
 
 	private:
 		// Both devices as one of tick.h's button masks. A method on the state
@@ -59,6 +65,12 @@ namespace linesweeper
 		// does, and restarting is `this->world_ = World{};` on one line of
 		// update() below.
 		World world_;
+
+		// Between read_input() and tick(): the keys the pause menu was closed
+		// with, kept out of the byte until released. Not part of World,
+		// because it is not part of the match - a recording of the bytes
+		// this lets through replays without it.
+		ResumeGate gate_;
 
 		// The scene owns what it is given; these are the pointers add() hands
 		// back for the things the state still has something to say to. The

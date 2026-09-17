@@ -231,6 +231,13 @@ namespace linesweeper
 			});
 	}
 
+	void PlayState::on_resume()
+	{
+		// Before on_result runs, which is the order state_context.h fixes -
+		// so this covers RESTART's fresh World as well as RESUME's.
+		this->gate_.close_over(this->read_input());
+	}
+
 	void PlayState::update(float dt)
 	{
 		// Before the restart test and before tick(), so the frame a player
@@ -276,7 +283,9 @@ namespace linesweeper
 		// than dropping a piece through the floor, which is the trade every
 		// fixed-step game makes and the right one for a game where a tick is
 		// a rule.
-		tick(this->world_, this->read_input());
+		// Through the gate, which is a no-op on every frame but the ones
+		// after a pause menu closed with a key the match also reads.
+		tick(this->world_, this->gate_.pass(this->read_input()));
 
 		this->scene_->update(dt);
 		this->scene_->end_tick();
