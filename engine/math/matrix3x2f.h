@@ -59,9 +59,13 @@ namespace mattmath
 
 		Matrix3x2F() = default;
 		Matrix3x2F(const Matrix3x2F&) = default;
-		Matrix3x2F(float m11, float m12,
+		// constexpr and defined here so `identity` is constant-initialised.
+		// See Vector2F's constants for what the dynamic alternative did: for
+		// this type it was a zero matrix, which maps everything to the origin.
+		constexpr Matrix3x2F(float m11, float m12,
 			float m21, float m22,
-			float m31, float m32);
+			float m31, float m32) :
+			m11(m11), m12(m12), m21(m21), m22(m22), m31(m31), m32(m32) {}
 
 		// Moving. The offset is where the origin ends up.
 		static Matrix3x2F translation(const Vector2F& offset);

@@ -1,6 +1,7 @@
 find_package(doctest CONFIG REQUIRED)
 
 add_executable(MattMathTests
+    constant_initialisation_tests.cpp
     ericson_math_tests.cpp
     inflate_tests.cpp
     matrix3x2f_tests.cpp

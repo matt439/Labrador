@@ -21,7 +21,10 @@ namespace labrador
 		Camera() = default;
 		Camera(const Camera&) = default;
 		Camera(const mattmath::Vector2F& translation, float scale);
-		Camera(float x, float y, float scale);
+		// constexpr and defined here so DEFAULT_CAMERA is constant-initialised
+		// - see Vector2F's constants for what the dynamic alternative did.
+		constexpr Camera(float x, float y, float scale) :
+			translation(x, y), scale(scale) {}
 		Camera(const Viewport& viewport, float scale = 1.0f);
 
 		bool operator==(const Camera& other) const;

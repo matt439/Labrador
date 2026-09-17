@@ -12,7 +12,9 @@ namespace mattmath
 
 		Vector2I() = default;
 		Vector2I(const Vector2I&) = default;
-		Vector2I(int x, int y);
+		// constexpr and defined here so ZERO is constant-initialised. See
+		// Vector2F's constants for what the dynamic alternative did.
+		constexpr Vector2I(int x, int y) : x(x), y(y) {}
 		explicit Vector2I(const mattmath::Vector2F& vector);
 
 		bool operator==(const Vector2I& other) const;

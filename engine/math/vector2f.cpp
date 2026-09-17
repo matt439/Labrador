@@ -9,16 +9,6 @@
 namespace mattmath
 {
 
-	Vector2F::Vector2F(float f)
-	{
-		this->x = f;
-		this->y = f;
-	}
-	Vector2F::Vector2F(float x, float y)
-	{
-		this->x = x;
-		this->y = y;
-	}
 	Vector2F::Vector2F(const Vector2I& vector)
 	{
 		this->x = static_cast<float>(vector.x);
@@ -216,23 +206,25 @@ namespace mattmath
 		return Vector2F(-vec.y, vec.x);
 	}
 
-	const Vector2F Vector2F::ZERO = { 0.0f, 0.0f };
-	const Vector2F Vector2F::ONE = { 1.0f, 1.0f };
-	const Vector2F Vector2F::DIRECTION_RIGHT = { 1.0f, 0.0f };
-	const Vector2F Vector2F::DIRECTION_DOWN = { 0.0f, 1.0f };
-	const Vector2F Vector2F::DIRECTION_LEFT = { -1.0f, 0.0f };
-	const Vector2F Vector2F::DIRECTION_UP = { 0.0f, -1.0f };
+	// constinit: a definition the compiler rejects unless it can evaluate the
+	// initialiser at compile time. The header says what went wrong without
+	// it. The constructor is constexpr and the arguments are literals, so
+	// none of these exists at all before main - there is no dynamic
+	// initialisation for another translation unit to run ahead of.
+	constinit const Vector2F Vector2F::ZERO = { 0.0f, 0.0f };
+	constinit const Vector2F Vector2F::ONE = { 1.0f, 1.0f };
+	constinit const Vector2F Vector2F::DIRECTION_RIGHT = { 1.0f, 0.0f };
+	constinit const Vector2F Vector2F::DIRECTION_DOWN = { 0.0f, 1.0f };
+	constinit const Vector2F Vector2F::DIRECTION_LEFT = { -1.0f, 0.0f };
+	constinit const Vector2F Vector2F::DIRECTION_UP = { 0.0f, -1.0f };
 	// Written out rather than derived. unit_vector(DIRECTION_UP +
-	// DIRECTION_RIGHT) and so on is a function call and a square root per
-	// constant during dynamic initialisation, and reads the four cardinal
-	// constants above while they are themselves being initialised.
-	//
-	// Inside this file that ordering is defined - initialisation runs in
-	// declaration order within a translation unit - but nothing extends that
-	// guarantee across one. Any other TU whose own namespace-scope initialiser
-	// named a diagonal would have got (0, 0), silently and depending on link
-	// order. The engine has already been bitten by exactly this shape once,
-	// with ViewportManager::DIVIDER_COLOUR.
+	// DIRECTION_RIGHT) is a function call and a square root, and neither is
+	// a constant expression - std::sqrt is not constexpr here - so a diagonal
+	// spelt that way would not pass constinit. Before constinit it was worse
+	// than a compile error: it read the four cardinal constants during
+	// dynamic initialisation, which is ordered within this file and
+	// unordered across any other, and the engine had already been bitten by
+	// exactly that shape once, with ViewportManager::DIVIDER_COLOUR.
 	//
 	// The literal is the float nearest 1/sqrt(2), which is the value the
 	// square root produced.
@@ -240,10 +232,10 @@ namespace mattmath
 	{
 		constexpr float ROOT_HALF = 0.70710678f;
 	}
-	const Vector2F Vector2F::DIRECTION_UP_RIGHT = { ROOT_HALF, -ROOT_HALF };
-	const Vector2F Vector2F::DIRECTION_DOWN_RIGHT = { ROOT_HALF, ROOT_HALF };
-	const Vector2F Vector2F::DIRECTION_DOWN_LEFT = { -ROOT_HALF, ROOT_HALF };
-	const Vector2F Vector2F::DIRECTION_UP_LEFT = { -ROOT_HALF, -ROOT_HALF };
+	constinit const Vector2F Vector2F::DIRECTION_UP_RIGHT = { ROOT_HALF, -ROOT_HALF };
+	constinit const Vector2F Vector2F::DIRECTION_DOWN_RIGHT = { ROOT_HALF, ROOT_HALF };
+	constinit const Vector2F Vector2F::DIRECTION_DOWN_LEFT = { -ROOT_HALF, ROOT_HALF };
+	constinit const Vector2F Vector2F::DIRECTION_UP_LEFT = { -ROOT_HALF, -ROOT_HALF };
 
 
 	Vector2F mattmath::operator- (const Vector2F& V)

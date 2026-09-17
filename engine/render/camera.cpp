@@ -12,10 +12,6 @@ namespace labrador
 		translation(translation), scale(scale)
 	{
 	}
-	Camera::Camera(float x, float y, float scale) :
-		translation(x, y), scale(scale)
-	{
-	}
 	Camera::Camera(const Viewport& viewport, float scale)
 	{
 		this->translation.x = viewport.x;
@@ -121,5 +117,8 @@ namespace labrador
 	{
 		return world_scale * this->scale;
 	}
-	const Camera Camera::DEFAULT_CAMERA = { Vector2F::ZERO, 1.0f };
+	// Literals rather than Vector2F::ZERO, because a const object is not a
+	// constant expression even when it was constant-initialised, and this
+	// definition has to be one to say constinit.
+	constinit const Camera Camera::DEFAULT_CAMERA = { 0.0f, 0.0f, 1.0f };
 }

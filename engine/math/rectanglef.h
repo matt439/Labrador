@@ -20,7 +20,10 @@ namespace mattmath
 
 		RectangleF() = default;
 		RectangleF(const RectangleF&) = default;
-		RectangleF(float x, float y, float width, float height);
+		// constexpr and defined here so ZERO is constant-initialised. See
+		// Vector2F's constants for what the dynamic alternative did.
+		constexpr RectangleF(float x, float y, float width, float height) :
+			x(x), y(y), width(width), height(height) {}
 		RectangleF(const mattmath::Vector2F& position,
 							const mattmath::Vector2F& size);
 		RectangleF(const mattmath::Vector2F& center, float horiz_half_width,

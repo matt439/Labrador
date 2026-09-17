@@ -9,21 +9,10 @@ namespace mattmath
 {
 	// Spelled out rather than defaulted, so the constant states its own value
 	// instead of inheriting it from six member initialisers in another file.
-	const Matrix3x2F Matrix3x2F::identity = Matrix3x2F(1.0f, 0.0f,
+	// constinit for the reason vector2f.cpp gives at its constants.
+	constinit const Matrix3x2F Matrix3x2F::identity = Matrix3x2F(1.0f, 0.0f,
 		0.0f, 1.0f,
 		0.0f, 0.0f);
-
-	Matrix3x2F::Matrix3x2F(float m11, float m12,
-		float m21, float m22,
-		float m31, float m32)
-	{
-		this->m11 = m11;
-		this->m12 = m12;
-		this->m21 = m21;
-		this->m22 = m22;
-		this->m31 = m31;
-		this->m32 = m32;
-	}
 	Matrix3x2F Matrix3x2F::translation(const Vector2F& offset)
 	{
 		return Matrix3x2F(1.0f, 0.0f,

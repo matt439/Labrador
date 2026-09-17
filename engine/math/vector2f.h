@@ -19,8 +19,12 @@ namespace mattmath
 		// /W4 /WX. Two of the Quad forms end in a throw, so a wrong-typed
 		// argument became a runtime exception from inside the callee with no
 		// conversion visible at the call site.
-		explicit Vector2F(float f);
-		Vector2F(float x, float y);
+		//
+		// constexpr and defined here, the two that take only floats, so the
+		// constants at the bottom of this struct are constant-initialised:
+		// see them for what that buys and what it cost before.
+		constexpr explicit Vector2F(float f) : x(f), y(f) {}
+		constexpr Vector2F(float x, float y) : x(x), y(y) {}
 		explicit Vector2F(const mattmath::Vector2I& vector);
 
 		bool operator==(const Vector2F& other) const;
@@ -123,6 +127,14 @@ namespace mattmath
 		
 		static Vector2F normal(const Vector2F& vec);
 
+		// CONSTANT-INITIALISED, and the definitions say constinit so that the
+		// compiler refuses if that ever stops being true. It was not true:
+		// the constructors were out of line, so every one of these was
+		// dynamically initialised, and a namespace-scope object in any other
+		// translation unit that copied one - a client's own direction table,
+		// a default in a static - read (0, 0) or the real value depending on
+		// link order, with no error anywhere. A probe against a Debug build
+		// caught DIRECTION_RIGHT as (0, 0) at startup and (1, 0) afterwards.
 		static const Vector2F ZERO;
 		static const Vector2F ONE;
 		static const Vector2F DIRECTION_RIGHT;

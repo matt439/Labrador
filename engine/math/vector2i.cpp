@@ -5,11 +5,6 @@
 namespace mattmath
 {
 
-	Vector2I::Vector2I(int x, int y)
-	{
-		this->x = x;
-		this->y = y;
-	}
 	Vector2I::Vector2I(const Vector2F& vector)
 	{
 		this->x = static_cast<int>(vector.x);
@@ -74,7 +69,7 @@ namespace mattmath
 		this->x = new_x;
 		this->y = new_y;
 	}
-	const Vector2I Vector2I::ZERO = { 0, 0 };
+	constinit const Vector2I Vector2I::ZERO = { 0, 0 };
 	Vector2I mattmath::operator+ (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x + V2.x, V1.y + V2.y);

@@ -10,10 +10,6 @@
 namespace mattmath
 {
 
-	RectangleF::RectangleF(float x, float y, float width, float height) :
-		x(x), y(y), width(width), height(height)
-	{
-	}
 	RectangleF::RectangleF(const Vector2F& position,
 		const Vector2F& size)
 	{
@@ -309,6 +305,6 @@ namespace mattmath
 	{
 		return RectangleF(left, top, right - left, bottom - top);
 	}
-	const RectangleF RectangleF::ZERO = { 0.0f, 0.0f, 0.0f, 0.0f };
+	constinit const RectangleF RectangleF::ZERO = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 }

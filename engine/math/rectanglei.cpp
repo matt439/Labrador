@@ -6,13 +6,6 @@
 namespace mattmath
 {
 
-	RectangleI::RectangleI(int x, int y, int width, int height)
-	{
-		this->x = x;
-		this->y = y;
-		this->width = width;
-		this->height = height;
-	}
 	RectangleI::RectangleI(const Vector2I& position,
 		const Vector2I& size)
 	{
@@ -152,6 +145,6 @@ namespace mattmath
 		this->x = top_left.x;
 		this->y = top_left.y;
 	}
-	const RectangleI RectangleI::ZERO = { 0, 0, 0, 0 };
+	constinit const RectangleI RectangleI::ZERO = { 0, 0, 0, 0 };
 
 }
