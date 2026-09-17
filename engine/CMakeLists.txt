@@ -14,6 +14,7 @@ find_package(directxtk CONFIG REQUIRED)
 
 add_library(LabradorEngine STATIC
     app/application.cpp
+    app/content_root.cpp
     app/window.cpp
     assets/asset_manifest_loader.cpp
     assets/json.cpp

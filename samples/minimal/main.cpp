@@ -41,6 +41,11 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 		// Everything this sample draws, named in content/manifest.json. A game
 		// with its own kinds of asset - levels, dialogue, whatever it has -
 		// teaches them to app.resource_loader() before this line.
+		//
+		// Beside the executable, wherever the executable was started from:
+		// a relative path here is relative to the game, not to the working
+		// directory (Application::load_manifest), and the build copies the
+		// content there.
 		app.load_manifest("./manifest.json");
 
 		return app.run(std::make_unique<HelloState>(&app));

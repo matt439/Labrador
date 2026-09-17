@@ -26,11 +26,14 @@ namespace labrador
 {
 	// How many logical processors the machine reports, and never fewer than one.
 	//
-	// THE SHELL ASKS THE MACHINE EXACTLY ONE QUESTION, AND THIS IS IT. What the
-	// answer sizes is the thread pool and nothing else: the renderer's view
-	// capacity is a property of the layout (ApplicationOptions::view_capacity)
-	// and the partition count is a property of the work (Scene::draw). One
-	// constant answering all three conflates them.
+	// THE SHELL ASKS THE MACHINE TWO QUESTIONS, AND THIS IS ONE OF THEM - the
+	// other is where the executable is (content_root.h), and it was one until
+	// a sample started from the wrong folder could not find its own content.
+	// What this answer sizes is the thread pool and nothing else: the
+	// renderer's view capacity is a property of the layout
+	// (ApplicationOptions::view_capacity) and the partition count is a
+	// property of the work (Scene::draw). One constant answering all three
+	// conflates them.
 	int default_thread_count();
 
 	// What a game hands the shell before it opens a window. Everything here is a
@@ -127,6 +130,14 @@ namespace labrador
 
 		// Loads everything the manifest names. Register any game-specific kinds
 		// before calling this, or the walk throws naming the kind it does not know.
+		//
+		// A RELATIVE PATH IS RELATIVE TO THE EXECUTABLE, not to the working
+		// directory, and a relative directory inside the manifest is relative
+		// to the manifest (engine/app/content_root.h says why, and what the
+		// alternative did to a sample started from anywhere but its build
+		// folder). "./manifest.json" therefore means the file beside the
+		// game, wherever the game was started from. An absolute path is
+		// taken as it is.
 		void load_manifest(const std::string& manifest_path);
 
 		// Takes the first state and runs until the window closes. Returns the

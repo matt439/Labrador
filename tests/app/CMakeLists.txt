@@ -2,6 +2,7 @@ find_package(doctest CONFIG REQUIRED)
 
 add_executable(AppTests
     application_options_tests.cpp
+    content_root_tests.cpp
     window_tests.cpp
     test_main.cpp
 )

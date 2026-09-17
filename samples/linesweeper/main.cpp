@@ -42,6 +42,10 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 
 		Application app(std::move(options));
 		app.initialize(instance, show_command);
+
+		// Beside the executable, wherever it was started from - the path is
+		// relative to the game, not to the working directory
+		// (Application::load_manifest).
 		app.load_manifest("./manifest.json");
 
 		return app.run(std::make_unique<linesweeper::PlayState>(&app));

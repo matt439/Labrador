@@ -1,4 +1,5 @@
 #include "engine/app/application.h"
+#include "engine/app/content_root.h"
 #include "engine/assets/asset_manifest_loader.h"
 #include "engine/math/vector2f.h"
 #include <DirectXMath.h>
@@ -191,8 +192,13 @@ namespace labrador
 
 	void Application::load_manifest(const std::string& manifest_path)
 	{
+		// Both sentences of content_root.h: the manifest under the
+		// executable's directory unless it is absolute, and every relative
+		// directory inside it under the manifest's.
+		const std::string path =
+			resolved_under(executable_directory(), manifest_path);
 		this->resource_loader_->load_manifest(
-			read_asset_manifest(manifest_path.c_str()));
+			anchored_to_source(read_asset_manifest(path.c_str())));
 		this->content_loaded_ = true;
 	}
 
