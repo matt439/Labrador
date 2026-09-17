@@ -129,11 +129,37 @@ namespace labrador
 		// floor and silently reinstates the bug.
 		Window(HINSTANCE instance, int show_command,
 			const WindowOptions& options, WindowNotify* notify);
+
+		// Destroys the native window if it still exists, and unregisters the
+		// class either way. What the constructor makes, this unmakes, on every
+		// path out - not only the one where the pump returned.
+		//
+		// IT WAS DEFAULTED, on the argument that by the time it runs the pump
+		// has returned, which only happens on WM_QUIT, which only comes from
+		// WM_DESTROY - so the native window was already gone. Every clause of
+		// that is true and the conclusion is not, because the pump is not the
+		// only way out of the scope that owns a Window. create_device throwing,
+		// a manifest that does not open, a state's update() throwing out of
+		// tick(): each unwinds Application while the window still exists, and
+		// the window's user data went on pointing at the destroyed Window. The
+		// samples then put up a message box, which runs a modal message loop,
+		// which is a way back into a window procedure that reads that pointer.
+		//
+		// `notify` is never called from in here. The messages DestroyWindow
+		// sends arrive after the owner has started destroying itself - in
+		// Application's case with the renderer and the input devices already
+		// gone - so the user data is detached before the call and every one of
+		// them goes to DefWindowProc. That includes WM_DESTROY, so nothing is
+		// posted to the thread's queue: a WM_QUIT left there would dismiss the
+		// very message box the samples show next.
 		~Window();
 
 		Window(const Window&) = delete;
 		Window& operator=(const Window&) = delete;
 
+		// Null once the native window is gone, whether close() took it or the
+		// user did. Nothing that reaches a stale HWND is a valid call, and a
+		// caller holding one after run() has returned would be making one.
 		HWND handle() const;
 
 		// The process exit code, valid once pump_until_quit has returned.
@@ -148,6 +174,8 @@ namespace labrador
 
 		// Destroys the window, which ends the pump. The whole of the quit
 		// path: a game asking to exit does not need to know it is on Win32.
+		// A second call, or a call after the user has already closed it, does
+		// nothing: the handle is null by then.
 		void close() const;
 
 		// Resizes so `client_size` pixels are left to draw into, under
@@ -219,6 +247,16 @@ namespace labrador
 		// Zero when nothing is pending, which no real high surrogate is.
 		wchar_t pending_high_surrogate_ = 0;
 
+		// What the destructor needs to unregister the class, kept because the
+		// class is registered in the constructor and a registration outlives
+		// the window it was made for: a second Window with the same name in
+		// the same process is a failed RegisterClassExW otherwise.
+		HINSTANCE instance_ = nullptr;
+		std::wstring class_name_;
+
+		// Null before CreateWindowExW returns and null again from WM_NCDESTROY
+		// on, which is the last message a window receives. The destructor
+		// reads it to decide whether there is anything left to destroy.
 		HWND handle_ = nullptr;
 	};
 }

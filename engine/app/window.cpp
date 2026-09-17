@@ -152,7 +152,9 @@ namespace labrador
 		const WindowOptions& options, WindowNotify* notify) :
 		notify_(notify),
 		min_width_(options.min_window_width),
-		min_height_(options.min_window_height)
+		min_height_(options.min_window_height),
+		instance_(instance),
+		class_name_(options.window_class_name)
 	{
 		WNDCLASSEXW window_class = {};
 		window_class.cbSize = sizeof(WNDCLASSEXW);
@@ -197,6 +199,12 @@ namespace labrador
 
 		if (this->handle_ == nullptr)
 		{
+			// The destructor does not run for an object whose constructor
+			// threw, so the registration above is this line's to undo. Left
+			// registered, the caller's retry - or the next test in the same
+			// process - fails one step earlier, with a message about the class
+			// rather than about whatever was actually wrong.
+			UnregisterClassW(this->class_name_.c_str(), this->instance_);
 			throw std::runtime_error("Could not create the window.");
 		}
 
@@ -215,11 +223,42 @@ namespace labrador
 			options.fullscreen ? SW_SHOWMAXIMIZED : show_command);
 	}
 
-	// No DestroyWindow here, deliberately. By the time this runs the pump has
-	// returned, and it only returns on WM_QUIT, which came from
-	// PostQuitMessage inside WM_DESTROY - so the handle is already gone and
-	// destroying it again would be an error on a stale HWND.
-	Window::~Window() = default;
+	Window::~Window()
+	{
+		// Null on the ordinary exit: the pump returned on WM_QUIT, which came
+		// from WM_DESTROY, and WM_NCDESTROY below cleared it on the way out.
+		// Non-null is every other exit - an initialisation step that threw
+		// after the window was up, a manifest that would not open, an
+		// exception out of the loop - and on those the native window is still
+		// there with its user data pointing at this object.
+		if (this->handle_ != nullptr)
+		{
+			// DETACH FIRST. DestroyWindow sends WM_DESTROY and WM_NCDESTROY
+			// synchronously, and whatever else the window's state earns it -
+			// a focused window is told it lost focus, an active one that it
+			// was deactivated. Every one of those forwards through notify_,
+			// whose owner is mid-destruction: Application destroys its members
+			// in reverse declaration order, so the keyboard and the renderer
+			// those handlers reach are already gone. With the user data at
+			// zero, window_proc's `self` is null for all of them and they fall
+			// through to DefWindowProc.
+			//
+			// It also means WM_DESTROY does not post WM_QUIT, which is the
+			// point rather than a side effect. Nobody is pumping, and the next
+			// thing the samples do on this path is MessageBoxA, which runs its
+			// own modal loop - and that loop treats a queued WM_QUIT as an
+			// instruction to return at once, before the player has read the
+			// error the box exists to show.
+			SetWindowLongPtr(this->handle_, GWLP_USERDATA, 0);
+			DestroyWindow(this->handle_);
+			this->handle_ = nullptr;
+		}
+
+		// After the window, because it refuses while one of the class exists.
+		// The return value is not checked: this is teardown, and T6 says it
+		// stays silent.
+		UnregisterClassW(this->class_name_.c_str(), this->instance_);
+	}
 
 	HWND Window::handle() const
 	{
@@ -399,6 +438,32 @@ namespace labrador
 			else if (self && self->minimized_)
 			{
 				self->minimized_ = false;
+
+				// THE SIZE GOES OUT TOO, and before the resume. This branch
+				// used to end at on_resuming() and swallow the dimensions the
+				// message carries, on the assumption that a window comes back
+				// the size it left - and a window restored from the taskbar
+				// into the maximised state it held before, or restored after
+				// the monitor changed under it, does not. Both arrive as one
+				// WM_SIZE, the first this branch has seen since the minimise,
+				// so what it does not deliver is never delivered: the layout
+				// and the back buffer stayed at the pre-minimise size while
+				// the window drew at the new one.
+				//
+				// Size first because of what the two mean to the owner. The
+				// size re-points the layout and resizes the swap chain; the
+				// resume is the one that reaches the state stack, and
+				// application.cpp's rule for that is that a state hears the
+				// news last of all, into a shell that has already finished
+				// becoming what the news describes.
+				//
+				// Gated on in_sizemove_ exactly as the ordinary branch below
+				// is, for the reason given at WM_MOVE.
+				if (!self->in_sizemove_)
+				{
+					self->notify_->on_window_size_changed(
+						LOWORD(l_param), HIWORD(l_param));
+				}
 				if (self->in_suspend_)
 				{
 					self->notify_->on_resuming();
@@ -662,8 +727,27 @@ namespace labrador
 			}
 			break;
 
+		// ONLY WHILE OWNED. The user data is zero for a window the destructor
+		// is taking down, and that destructor says why the quit must not be
+		// posted then. For close() and for the user's own X it is set, and
+		// this is the quit the pump is waiting for.
 		case WM_DESTROY:
-			PostQuitMessage(0);
+			if (self)
+			{
+				PostQuitMessage(0);
+			}
+			break;
+
+		// The last message a window receives. The handle is invalid the
+		// moment this returns, so the object stops naming it here - which is
+		// what lets the destructor tell an ordinary exit from an unwind, and
+		// makes a second close() a no-op rather than a call on a stale HWND.
+		case WM_NCDESTROY:
+			if (self)
+			{
+				self->handle_ = nullptr;
+				SetWindowLongPtr(window, GWLP_USERDATA, 0);
+			}
 			break;
 
 		case WM_MENUCHAR:
