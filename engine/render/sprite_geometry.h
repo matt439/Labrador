@@ -118,4 +118,43 @@ namespace labrador
 		float rotation,
 		const mattmath::Vector2F& origin,
 		SpriteVertex* corners);
+
+	// THE AXIS-ALIGNED BOX AROUND THE QUAD build_sprite_quad WOULD BUILD from
+	// the same four arguments: the same truncated edges, the same origin
+	// shift, the same turn about the destination's top left. Tight, not
+	// merely conservative - it is the bounding box of the four corners.
+	//
+	// This is what a GameObject::bounds() has to answer for a sprite, and it
+	// lives here because it has to agree with build_quad to the term. It did
+	// not: Visual::bounds() handed back its destination rectangle, which is
+	// where a sprite lands only when its origin is zero and its rotation is
+	// zero. An authored frame origin shifts the sprite by that many texels'
+	// worth of destination, and a rotation turns it about its top left, so a
+	// sprite at x=100 with an origin of its own width drew across x=80..100
+	// while reporting x=100..120 - and Scene::draw, culling against the
+	// report, dropped it from any view that ended at x=90 while it was
+	// plainly inside (docs/review/gpt6/README.md, G6-04). The cull is the
+	// only consumer that can make the disagreement visible, and it does so
+	// on every backend at once, because none of them decides this.
+	//
+	// `origin` is the WHOLE origin - the frame's authored one plus the
+	// caller's, summed the way SpriteSheet::draw sums them - in unscaled
+	// source texels, exactly as build_sprite_quad takes it.
+	mattmath::RectangleF sprite_quad_bounds(
+		const mattmath::RectangleF& destination,
+		const mattmath::RectangleI& source,
+		float rotation,
+		const mattmath::Vector2F& origin);
+
+	// The same, for a string laid out by build_glyph_quad: `measured_size`
+	// is what the font's walk reported for the whole string, unscaled, and
+	// the box is that size, scaled, sitting `origin` scaled texels up and
+	// left of `position`, turned about `position`. Every glyph's quad falls
+	// inside it because every glyph's pen falls inside the measurement,
+	// which is font.h's contract rather than this file's.
+	mattmath::RectangleF text_quad_bounds(const mattmath::Vector2F& position,
+		float scale,
+		const mattmath::Vector2F& measured_size,
+		float rotation,
+		const mattmath::Vector2F& origin);
 }

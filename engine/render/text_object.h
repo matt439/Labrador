@@ -62,8 +62,15 @@ namespace labrador
 		// but it is rebuilt from the same font, so the metrics are the same -
 		// it is the pointer that goes stale, not the measurement.
 		//
-		// Ignores draw_rotation(): the box is the unrotated one. Nothing
-		// rotates text today, and a rotated string wants its rotated AABB.
+		// Turned by draw_rotation(), about the position, because that is
+		// what draw() does to every glyph - so for a rotated string this is
+		// the axis-aligned box around the turned one, which is the box a cull
+		// has to see. It used to hand back the unrotated box on the argument
+		// that nothing rotated text; a Label is a GameObject, and a rotated
+		// one reporting its unrotated box was culled at the edge of a view it
+		// was drawn inside (docs/review/gpt6/README.md, G6-04). The arithmetic
+		// is sprite_geometry.h's text_quad_bounds, beside the glyph quad it
+		// has to agree with, and an unrotated string costs it no trigonometry.
 		mattmath::RectangleF text_bounds() const;
 
 		// The same box for a hypothetical draw at another position and scale,

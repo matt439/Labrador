@@ -1,5 +1,7 @@
 #include "engine/render/visual.h"
 
+#include "engine/render/sprite_geometry.h"
+
 #include <string>
 
 using namespace mattmath;
@@ -19,6 +21,7 @@ namespace labrador
 			color, rotation, origin, flip, layer_depth),
 		rectangle_(rectangle)
 	{
+		this->bounds_ = this->drawn_bounds();
 	}
 
 	Visual::Visual(const std::string& sheet_name,
@@ -34,6 +37,7 @@ namespace labrador
 			color, rotation, origin, flip, layer_depth)
 	{
 		this->rectangle_ = rect_rotated.rectangle_rotated_to_axis();
+		this->bounds_ = this->drawn_bounds();
 	}
 
 
@@ -47,6 +51,17 @@ namespace labrador
 	}
 	RectangleF Visual::bounds() const
 	{
-		return this->rectangle_;
+		return this->bounds_;
+	}
+
+	RectangleF Visual::drawn_bounds() const
+	{
+		// The frame's origin and the caller's, summed the way
+		// SpriteSheet::draw sums them on the way to build_sprite_quad, so the
+		// box answers for the quad that is actually built.
+		const SpriteFrame& frame =
+			this->sprite_sheet()->sprite_frame(this->frame());
+		return sprite_quad_bounds(this->rectangle_, frame.source_rectangle(),
+			this->draw_rotation(), frame.origin() + this->origin());
 	}
 }

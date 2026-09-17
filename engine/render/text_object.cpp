@@ -1,6 +1,8 @@
 #include "engine/render/text_object.h"
+
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/sprite_geometry.h"
 
 #include <string>
 
@@ -98,9 +100,8 @@ namespace labrador
 	RectangleF TextObject::text_bounds_at(const Vector2F& position,
 		float scale) const
 	{
-		const Vector2F size = this->measured_size_ * scale;
-		const Vector2F top_left = position - this->origin() * scale;
-		return { top_left, size };
+		return text_quad_bounds(position, scale, this->measured_size_,
+			this->draw_rotation(), this->origin());
 	}
 	void TextObject::set_position(const Vector2F& position)
 	{

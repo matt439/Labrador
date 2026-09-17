@@ -160,3 +160,25 @@ TEST_CASE("a label is a game object, which is the whole reason it exists")
 
 	CHECK(object.bounds() == RectangleF(100.0f, 50.0f, 20.0f, 20.0f));
 }
+
+TEST_CASE("a turned label reports the box around the turned string")
+{
+	// A half turn about (100, 20) of a 20x20 string puts every glyph up and
+	// left of the position, across x=80..100 - and this is what a scene
+	// culls against, so the unrotated box the old answer gave had the label
+	// disappear from any view that ended at x=90 while it was drawn inside
+	// it (docs/review/gpt6/README.md, G6-04). The arithmetic is
+	// sprite_geometry.h's and is held to the glyph quads there; this pins
+	// that a Label hands it on through the base a scene holds.
+	Content content;
+	const float HALF_TURN = 3.14159265f;
+	const Label label(L"AB", "font", Vector2F(100.0f, 20.0f),
+		&content.resources, labrador::Colour::white, 1.0f, HALF_TURN);
+
+	const GameObject& object = label;
+	const RectangleF box = object.bounds();
+	CHECK(box.x == doctest::Approx(80.0f).epsilon(0.001));
+	CHECK(box.y == doctest::Approx(0.0f).epsilon(0.001));
+	CHECK(box.width == doctest::Approx(20.0f).epsilon(0.001));
+	CHECK(box.height == doctest::Approx(20.0f).epsilon(0.001));
+}

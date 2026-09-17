@@ -20,6 +20,7 @@ add_executable(RenderTests
     throw_if_failed_tests.cpp
     viewport_manager_tests.cpp
     viewport_tests.cpp
+    visual_tests.cpp
     test_main.cpp
 )
 target_link_libraries(RenderTests PRIVATE

@@ -111,6 +111,40 @@ namespace labrador
 					uv_origin + CORNERS[i ^ mirror] * uv_size;
 			}
 		}
+
+		// The box around the four positions build_quad would write, given
+		// the origin already in view pixels rather than as a fraction of the
+		// source. Same corners, same turn about `position`; the texture
+		// terms play no part in where a corner lands and are not taken.
+		RectangleF quad_bounds(const Vector2F& position,
+			const Vector2F& size,
+			float rotation,
+			const Vector2F& origin_pixels)
+		{
+			const Vector2F top_left = position - origin_pixels;
+
+			// The same branch build_quad takes, for the same reason: this
+			// runs on the cull path, per object per view, and almost nothing
+			// is rotated. For an unrotated sprite the box is the rectangle
+			// itself, and no corner needs folding.
+			if (rotation == 0.0f)
+			{
+				return RectangleF(top_left, size);
+			}
+
+			const float cosine = std::cos(rotation);
+			const float sine = std::sin(rotation);
+
+			Point2F points[4];
+			for (int i = 0; i < 4; i++)
+			{
+				const Vector2F offset = CORNERS[i] * size - origin_pixels;
+				points[i] = Vector2F(
+					position.x + offset.x * cosine - offset.y * sine,
+					position.y + offset.x * sine + offset.y * cosine);
+			}
+			return RectangleF::bounding_box_of(points);
+		}
 	}
 
 	void build_sprite_quad(const RectangleF& destination,
@@ -176,5 +210,43 @@ namespace labrador
 
 		build_scaled_quad(position, scale, glyph.subrect, texture_size, tint,
 			rotation, glyph_origin, corners);
+	}
+
+	RectangleF sprite_quad_bounds(const RectangleF& destination,
+		const RectangleI& source,
+		float rotation,
+		const Vector2F& origin)
+	{
+		// The edges build_sprite_quad truncates, truncated the same way, so
+		// the box is the drawn one and not the one asked for: a destination
+		// at x=10.9 draws from x=10, and a box that started at 10.9 would be
+		// a column short on its left.
+		const float left = std::trunc(destination.left());
+		const float top = std::trunc(destination.top());
+		const float right = std::trunc(destination.right());
+		const float bottom = std::trunc(destination.bottom());
+		const Vector2F size(right - left, bottom - top);
+
+		// Unscaled source texels into destination pixels, which is the
+		// origin_ratio * size term of build_quad in one step, with the same
+		// stand-in for a source of no width.
+		const Vector2F origin_pixels(
+			origin.x / without_zero(static_cast<float>(source.width)) * size.x,
+			origin.y / without_zero(static_cast<float>(source.height)) * size.y);
+
+		return quad_bounds(Vector2F(left, top), size, rotation, origin_pixels);
+	}
+
+	RectangleF text_quad_bounds(const Vector2F& position,
+		float scale,
+		const Vector2F& measured_size,
+		float rotation,
+		const Vector2F& origin)
+	{
+		// A string's origin is in the same unscaled texels a glyph's is, and
+		// build_glyph_quad scales it with the glyph - so in pixels it is the
+		// origin times the scale, whatever the string measures.
+		return quad_bounds(position, measured_size * scale, rotation,
+			origin * scale);
 	}
 }
