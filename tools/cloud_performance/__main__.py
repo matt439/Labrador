@@ -186,6 +186,54 @@ def _powershell_quote(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
+def worker_dispatch(config: dict[str, Any], instance_id: str, *, config_sha: str,
+                    worker_sha: str, template_sha: str,
+                    now: datetime | None = None) -> dict[str, Any]:
+    """The exact send_command call that starts the worker on the runner.
+
+    Kept whole in one place so the offline suite can assert on what the agent
+    will parse. The first launch idled its runner for an hour because the
+    worker's location was written as an s3:// URI and nothing before the
+    agent looked at it; the second did the same because the corrected form
+    existed as a function nobody called.
+    """
+    keys = object_keys(config)
+    arguments = {
+        "Bucket": config["artifact_bucket"],
+        "ConfigKey": keys["config"],
+        "ConfigSHA256": config_sha,
+        "BundleKey": keys["bundle"],
+        "BundleSHA256": config["bundle"]["sha256"],
+        "WorkerSHA256": worker_sha,
+        "TemplateKey": keys["template"],
+        "TemplateSHA256": template_sha,
+        "OutputPrefix": keys["output"],
+        "Region": config["region"],
+    }
+    command_line = (
+        "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass "
+        "-File .\\worker.ps1 "
+        + " ".join(f"-{name} {_powershell_quote(value)}"
+                   for name, value in arguments.items())
+    )
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    seconds = max(30, int((deadline(config) - current).total_seconds()))
+    return {
+        "InstanceIds": [instance_id],
+        "DocumentName": "AWS-RunRemoteScript",
+        "Comment": f"Labrador performance {config['run_id']}",
+        "TimeoutSeconds": min(600, seconds),
+        "Parameters": {
+            "sourceType": ["S3"],
+            "sourceInfo": [json.dumps(worker_source_info(config))],
+            "commandLine": [command_line],
+            "executionTimeout": [str(seconds)],
+        },
+        "OutputS3BucketName": config["artifact_bucket"],
+        "OutputS3KeyPrefix": keys["ssm"],
+    }
+
+
 def _launch(config_path: str, execute: bool) -> dict[str, Any]:
     config = load_config(config_path)
     bundle_path = inside(ROOT, config["bundle"]["path"], field="bundle.path")
@@ -277,41 +325,9 @@ def _launch(config_path: str, execute: bool) -> dict[str, Any]:
             datetime.now(timezone.utc) + timedelta(seconds=RUN_STARTUP_SLACK_SECONDS),
         )
         _wait_for_ssm(ssm, instance_id, startup_deadline)
-        arguments = {
-            "Bucket": config["artifact_bucket"],
-            "ConfigKey": keys["config"],
-            "ConfigSHA256": config_sha,
-            "BundleKey": keys["bundle"],
-            "BundleSHA256": config["bundle"]["sha256"],
-            "WorkerSHA256": worker_sha,
-            "TemplateKey": keys["template"],
-            "TemplateSHA256": template_sha,
-            "OutputPrefix": keys["output"],
-            "Region": config["region"],
-        }
-        command_line = (
-            "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass "
-            "-File .\\worker.ps1 "
-            + " ".join(f"-{name} {_powershell_quote(value)}"
-                       for name, value in arguments.items())
-        )
-        seconds = max(30, int((deadline(config) - datetime.now(timezone.utc)).total_seconds()))
-        command_id = ssm.send_command(
-            InstanceIds=[instance_id],
-            DocumentName="AWS-RunRemoteScript",
-            Comment=f"Labrador performance {config['run_id']}",
-            TimeoutSeconds=min(600, seconds),
-            Parameters={
-                "sourceType": ["S3"],
-                "sourceInfo": [json.dumps({
-                    "path": f"s3://{config['artifact_bucket']}/{keys['worker']}",
-                })],
-                "commandLine": [command_line],
-                "executionTimeout": [str(seconds)],
-            },
-            OutputS3BucketName=config["artifact_bucket"],
-            OutputS3KeyPrefix=keys["ssm"],
-        )["Command"]["CommandId"]
+        command_id = ssm.send_command(**worker_dispatch(
+            config, instance_id, config_sha=config_sha, worker_sha=worker_sha,
+            template_sha=template_sha))["Command"]["CommandId"]
         launch_record = canonical({
             "schema_version": 1,
             "run_id": config["run_id"],
