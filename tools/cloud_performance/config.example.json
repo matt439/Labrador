@@ -21,6 +21,7 @@
   "expected_ami_tags": {
     "Project": "Labrador",
     "ImageRole": "performance-runner-v1",
+    "ConsoleUser": "labrador-bench",
     "WindowsBuild": "REPLACE_WITH_NUMERIC_WINDOWS_BUILD",
     "NvidiaDriver": "REPLACE_WITH_NVIDIA_DRIVER_VERSION"
   },

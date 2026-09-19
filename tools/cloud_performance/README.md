@@ -26,8 +26,32 @@ Prepare a Sysprepped, account-owned Windows Server 2022 AMI with:
   import `MSVCP140.dll`, `VCRUNTIME140.dll` and `VCRUNTIME140_1.dll`;
 - current EC2Launch v2, SSM Agent, `AWS.Tools.S3` and
   `AWS.Tools.SecurityToken` for Windows PowerShell 5.1, with both modules
-  installed for `AllUsers` so the SSM `SYSTEM` process can import them;
-- no source, credentials or previous benchmark evidence.
+  installed for `AllUsers` so the SSM `SYSTEM` process can import them — and
+  the legacy monolithic `AWSPowerShell` module removed, because the worker
+  relies on command auto-loading and two modules exporting `Write-S3Object`
+  make that ambiguous;
+- **a local, non-administrator user that Windows logs on to the console
+  automatically**, named in the image's `ConsoleUser` tag. The benchmark
+  cannot run where the worker runs: SSM executes the worker as `SYSTEM` in
+  session 0, whose window station has no display, and there DXGI refuses a
+  swap chain with `DXGI_ERROR_NOT_CURRENTLY_AVAILABLE` — so neither Direct3D
+  backend can start — while OpenGL and Vulkan start and present into nothing
+  at a throttled rate. The worker starts every repetition in that user's
+  console session through a scheduled task with an interactive logon type,
+  which is what a player's game gets. Write the logon into EC2Launch v2's
+  Sysprep answer file as `<AutoLogon>` rather than into Winlogon's registry
+  values: generalisation strips those, and the first image built here came
+  back with nobody on the console. Setup keeps the answer file's password as
+  an LSA secret, and Winlogon prefers a registry `DefaultPassword` to that
+  secret when one exists — the second image failed its logon on a stale
+  registry value, so make sure none is left behind. The account's password
+  is only ever used by Winlogon; nothing in this lane needs it afterwards;
+- **the Nitro "Microsoft Basic Display Adapter" disabled**, so the NVIDIA
+  adapter owns the only display. With both enabled the basic adapter's
+  1024x768 phantom monitor is primary: a window placed by default lands on
+  it, every Direct3D frame is copied across adapters through DWM at roughly
+  125 ms each, and WGL binds the GDI fallback instead of the NVIDIA ICD;
+- no source, AWS credentials or previous benchmark evidence.
 
 The supplied profile uses `g6f.2xlarge` with four cores and SMT disabled, plus
 one quarter of an NVIDIA L4. Check the current AWS
@@ -36,12 +60,17 @@ one quarter of an NVIDIA L4. Check the current AWS
 and [GRID driver requirements](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/nvidia-GRID-driver.html)
 when qualifying or replacing the image.
 
-Tag it `Project=Labrador`, `ImageRole=performance-runner-v1`, and with the exact
-numeric `WindowsBuild` and `NvidiaDriver` that qualification observed. The worker
-checks the live OS and driver against those tags. Qualify that the four raster
-backends run from the non-interactive SSM service session before treating the
-image as usable. The deployment rejects an AMI that is not owned, available,
-x86-64, Windows, encrypted and tagged as declared.
+Tag it `Project=Labrador`, `ImageRole=performance-runner-v1`, `ConsoleUser`
+with the auto-logon account's name, and with the exact numeric `WindowsBuild`
+and `NvidiaDriver` that qualification observed. The worker checks the live OS,
+driver and console session against those tags. Qualify that the four raster
+backends produce `hardware_raster` results on the NVIDIA adapter **when a
+scheduled task started from the SSM service session runs them in the console
+session of an instance launched from the finished image** — Sysprep is the
+step most likely to undo the auto-logon or re-enable the basic adapter, so a
+builder that passed before imaging proves nothing about the image. The
+deployment rejects an AMI that is not owned, available, x86-64, Windows,
+encrypted and tagged as declared.
 
 Supply an existing same-Region S3 bucket with default SSE-S3 encryption,
 versioning and all four
@@ -156,9 +185,11 @@ identity-checked stack remains for `status`, evidence inspection and `stop`, and
 the independent deadline watchdog remains the second stop path.
 
 The worker rechecks its own hash, configuration, bundle, release manifest, AMI,
-instance type, Region, Availability Zone, CPU topology and GPU. It runs the
-fixed benchmark repetitions and uploads configuration, host identity, raw JSON,
-stdout and stderr. `success.json` or `failure.json` is uploaded last. It then
+instance type, Region, Availability Zone, CPU topology, GPU and the console
+session — the declared `ConsoleUser` must be logged on there with a desktop
+shell. It runs the fixed benchmark repetitions in that session, one scheduled
+task each, and uploads configuration, host identity, raw JSON, stdout and
+stderr. `success.json` or `failure.json` is uploaded last. It then
 initiates OS shutdown; the EC2 setting turns that into termination. An
 independent EventBridge/Lambda watchdog terminates the instance at the absolute
 deadline even if the worker, SSM or invoking workstation disappears.

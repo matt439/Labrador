@@ -64,6 +64,51 @@ function Convert-VendorId($Value) {
     return [int64]$Value
 }
 
+# The benchmark cannot run where this worker runs. SSM executes it as SYSTEM
+# in session 0, whose window station has no display: DXGI refuses a swap chain
+# there (DXGI_ERROR_NOT_CURRENTLY_AVAILABLE), and the two APIs that do not
+# refuse present into nothing at a throttled rate. The console session is
+# where the NVIDIA display, DWM and a logged-on user are, which is also what a
+# player's game gets. A scheduled task with an interactive logon type is the
+# supported way for a service to start a process on that desktop, and the
+# task's last result is the process exit code.
+function Invoke-ConsoleBenchmark([string]$User, [string]$Executable, [string[]]$Arguments,
+    [string]$StdoutPath, [string]$StderrPath, [string]$TaskName, [int]$TimeoutSeconds) {
+    $quoted = @($Arguments | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ' '
+    $inner = "& '" + $Executable.Replace("'", "''") + "' $quoted 1> '" +
+        $StdoutPath.Replace("'", "''") + "' 2> '" + $StderrPath.Replace("'", "''") +
+        "'; exit `$LASTEXITCODE"
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($inner))
+    $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+        -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand $encoded" `
+        -WorkingDirectory (Split-Path -Parent $Executable)
+    $principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive -RunLevel Limited
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+        -ExecutionTimeLimit (New-TimeSpan -Seconds $TimeoutSeconds) -MultipleInstances IgnoreNew
+    Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
+    Register-ScheduledTask -TaskName $TaskName -Action $action -Principal $principal `
+        -Settings $settings | Out-Null
+    try {
+        Start-ScheduledTask -TaskName $TaskName
+        $stopwatch = [Diagnostics.Stopwatch]::StartNew()
+        do {
+            Start-Sleep -Milliseconds 500
+            $state = [string](Get-ScheduledTask -TaskName $TaskName).State
+            $result = [int64](Get-ScheduledTaskInfo -TaskName $TaskName).LastTaskResult
+            # 0x41301 is "currently running" and 0x41303 "has not yet run".
+            $busy = ($state -eq 'Running') -or ($result -in 267009, 267011)
+        } while ($busy -and $stopwatch.Elapsed.TotalSeconds -lt ($TimeoutSeconds + 30))
+        if ($busy) {
+            Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+            throw "Benchmark task '$TaskName' did not finish within $TimeoutSeconds seconds"
+        }
+        return $result
+    }
+    finally {
+        Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
+    }
+}
+
 function Write-Json([string]$Path, $Value) {
     $Value | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $Path -Encoding UTF8
 }
@@ -121,6 +166,34 @@ try {
     $sessionUser = [Environment]::UserName
     Assert-Equal $sessionId 0 'SSM session ID'
     Assert-Equal $sessionUser 'SYSTEM' 'SSM session user'
+    $consoleUser = [string]$config.expected_ami_tags.ConsoleUser
+    if ([string]::IsNullOrWhiteSpace($consoleUser)) {
+        throw 'The declared image tags name no ConsoleUser for the benchmark to run as'
+    }
+    # The image logs that user on to the console automatically. Its desktop
+    # takes a few seconds after boot, so wait for the shell rather than the
+    # session alone; Invoke-ConsoleBenchmark needs both.
+    $consoleSessionId = -1
+    $consoleWait = [Diagnostics.Stopwatch]::StartNew()
+    do {
+        $consoleSessionId = -1
+        foreach ($line in @(& query.exe session 2>&1)) {
+            if ($line -match '^\s*>?console\s+(\S+)\s+(\d+)\s+Active\b') {
+                Assert-Equal $Matches[1] $consoleUser 'console session user'
+                $consoleSessionId = [int]$Matches[2]
+            }
+        }
+        $shell = @(Get-Process -Name explorer -ErrorAction SilentlyContinue |
+            Where-Object { $_.SessionId -eq $consoleSessionId })
+        if ($consoleSessionId -ge 0 -and $shell.Count -gt 0) { break }
+        Start-Sleep -Seconds 2
+    } while ($consoleWait.Elapsed.TotalSeconds -lt 120)
+    if ($consoleSessionId -lt 0) {
+        throw "No active console session for '$consoleUser'; the benchmark needs an interactive desktop"
+    }
+    if ($shell.Count -eq 0) {
+        throw "The console session for '$consoleUser' has no desktop shell yet"
+    }
     $declaredInstance = $true
     if ($env:AWS_ACCESS_KEY_ID -or $env:AWS_SECRET_ACCESS_KEY -or $env:AWS_SESSION_TOKEN -or
         $env:AWS_PROFILE -or (Test-Path -LiteralPath (Join-Path $env:USERPROFILE '.aws\credentials'))) {
@@ -255,6 +328,7 @@ try {
         power_plan = $powerPlan
         nvidia_smi_before = $nvidiaBefore
         session = [ordered]@{ id = $sessionId; user = $sessionUser; session_name = $env:SESSIONNAME }
+        console_session = [ordered]@{ id = $consoleSessionId; user = $consoleUser }
         aws_identity = [ordered]@{
             role_name = $roleName; account_id = $caller.Account; caller_arn = $caller.Arn
         }
@@ -268,6 +342,15 @@ try {
 
     $resultRoot = Join-Path $evidenceRoot 'results'
     New-Item -ItemType Directory -Path $resultRoot | Out-Null
+    # The console user is not an administrator. It reads the payload and
+    # writes its result and logs; everything else stays SYSTEM's.
+    & icacls.exe $extractRoot /grant "${consoleUser}:(OI)(CI)RX" /T /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Could not grant the console user read access to the payload' }
+    & icacls.exe $resultRoot /grant "${consoleUser}:(OI)(CI)M" /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Could not grant the console user write access to the results' }
+    $repetitionSeconds = [int][Math]::Ceiling(
+        ([int]$config.workload.warmup_frames + [int]$config.workload.sample_frames) /
+        [double]$config.workload.refresh_hz) + 120
     foreach ($backend in $config.workload.backends) {
         $executable = Resolve-Inside $extractRoot $backend.executable
         if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
@@ -289,8 +372,10 @@ try {
                 '--sample', [string]$config.workload.sample_frames,
                 '--refresh', [string]$config.workload.refresh_hz
             )
-            & $executable @arguments 1> $stdoutPath 2> $stderrPath
-            $exitCode = $LASTEXITCODE
+            $exitCode = Invoke-ConsoleBenchmark -User $consoleUser -Executable $executable `
+                -Arguments $arguments -StdoutPath $stdoutPath -StderrPath $stderrPath `
+                -TaskName "LabradorPerformance-$($backend.name)-$ordinal" `
+                -TimeoutSeconds $repetitionSeconds
             if ($exitCode -ne 0) {
                 throw "Benchmark '$($backend.name)' repetition $repetition exited $exitCode"
             }
