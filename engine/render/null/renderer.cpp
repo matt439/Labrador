@@ -168,6 +168,7 @@ namespace labrador
 		}
 
 		this->impl_->device_info.backend = "null";
+		this->impl_->device_info.present_mode = "none";
 		this->impl_->device_info.api = "none";
 		this->impl_->device_info.device_name = "No render device";
 		this->impl_->device_info.kind = RenderDeviceKind::null_device;

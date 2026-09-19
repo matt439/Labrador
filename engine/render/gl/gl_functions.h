@@ -64,8 +64,7 @@ namespace labrador
 	const GLenum GL_FUNC_ADD_ = 0x8006;
 	const GLenum GL_ONE_MINUS_SRC_ALPHA_ = 0x0303;
 
-	// The context attributes wglCreateContextAttribsARB takes, which is the one
-	// piece of WGL that is itself an extension.
+	// The context attributes wglCreateContextAttribsARB takes.
 	const int WGL_CONTEXT_MAJOR_VERSION_ARB_ = 0x2091;
 	const int WGL_CONTEXT_MINOR_VERSION_ARB_ = 0x2092;
 	const int WGL_CONTEXT_PROFILE_MASK_ARB_ = 0x9126;
@@ -154,6 +153,12 @@ namespace labrador
 	// which call it stopped at rather than crashing on the first frame through
 	// a null pointer.
 	void load_gl_functions();
+
+	// Requires this device context's GL context to be current. Requests an
+	// interval in video frames and returns the driver's stored interval.
+	// WGL_EXT_swap_control is required; absence and setter failure throw.
+	// This is API state, not proof of when a compositor displays a frame.
+	int configure_swap_interval(HDC device_context, int interval);
 
 	// Whether the current context advertises `extension`, by its registry name
 	// - "GL_EXT_texture_compression_s3tc" and so on.

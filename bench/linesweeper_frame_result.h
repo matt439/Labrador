@@ -31,6 +31,8 @@ namespace linesweeper_frame_bench
 		std::int64_t present_ns = 0;
 		std::int64_t whole_frame_ns = 0;
 		std::int64_t scheduled_interval_ns = 0;
+		std::int64_t pacing_wait_ns = 0;
+		std::int64_t start_lateness_ns = 0;
 	};
 
 	struct Result

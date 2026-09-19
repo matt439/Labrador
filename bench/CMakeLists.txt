@@ -44,6 +44,7 @@ add_test(NAME Benchmarks COMMAND LabradorBench)
 # machine-independent pass/fail gate. The cloud reference lane invokes this
 # console target directly and retains its JSON artifact.
 add_executable(LineSweeperFrameBench
+    frame_pacer.cpp
     frame_statistics.cpp
     linesweeper_frame_bench.cpp
     linesweeper_frame_result.cpp

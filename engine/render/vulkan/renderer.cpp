@@ -57,6 +57,7 @@ namespace labrador
 
 			RenderDeviceInfo info;
 			info.backend = "vulkan";
+			info.present_mode = "fifo";
 			info.api = "Vulkan " +
 				std::to_string(VK_VERSION_MAJOR(properties.apiVersion)) + "." +
 				std::to_string(VK_VERSION_MINOR(properties.apiVersion)) + "." +

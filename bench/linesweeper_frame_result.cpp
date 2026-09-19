@@ -291,6 +291,26 @@ namespace linesweeper_frame_bench
 		writer.String(device_kind(device.kind));
 		writer.Key("api");
 		writer.String(device.api.c_str());
+		writer.Key("present_mode");
+		writer.String(device.present_mode.c_str());
+		writer.Key("requested_swap_interval");
+		if (device.requested_swap_interval)
+		{
+			writer.Int(*device.requested_swap_interval);
+		}
+		else
+		{
+			writer.Null();
+		}
+		writer.Key("reported_swap_interval");
+		if (device.reported_swap_interval)
+		{
+			writer.Int(*device.reported_swap_interval);
+		}
+		else
+		{
+			writer.Null();
+		}
 		writer.EndObject();
 
 		writer.Key("workload");
@@ -334,6 +354,10 @@ namespace linesweeper_frame_bench
 		writer.String("nearest-rank");
 		writer.Key("interval_scope");
 		writer.String("software-paced frame-start interval; not display scan-out");
+		writer.Key("pacer");
+		writer.String("win32_high_resolution_waitable_timer");
+		writer.Key("deadline_policy");
+		writer.String("absolute_catch_up");
 		writer.Key("sample_count");
 		writer.Uint64(static_cast<std::uint64_t>(samples.size()));
 		writer.Key("scheduled_interval_ns");
@@ -365,6 +389,10 @@ namespace linesweeper_frame_bench
 			writer.Int64(sample.whole_frame_ns);
 			writer.Key("scheduled_interval_ns");
 			writer.Int64(sample.scheduled_interval_ns);
+			writer.Key("pacing_wait_ns");
+			writer.Int64(sample.pacing_wait_ns);
+			writer.Key("start_lateness_ns");
+			writer.Int64(sample.start_lateness_ns);
 			writer.EndObject();
 		}
 		writer.EndArray();
@@ -386,6 +414,10 @@ namespace linesweeper_frame_bench
 		writer.Key("scheduled_interval_ns");
 		write_summary(writer,
 			phase_samples(samples, &FrameSample::scheduled_interval_ns));
+		writer.Key("pacing_wait_ns");
+		write_summary(writer, phase_samples(samples, &FrameSample::pacing_wait_ns));
+		writer.Key("start_lateness_ns");
+		write_summary(writer, phase_samples(samples, &FrameSample::start_lateness_ns));
 		writer.EndObject();
 		writer.EndObject();
 

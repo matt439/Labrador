@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include "engine/render/colour.h"
@@ -95,6 +96,14 @@ namespace labrador
 		std::uint32_t vendor_id = 0;
 		std::uint32_t device_id = 0;
 		RenderDeviceKind kind = RenderDeviceKind::null_device;
+
+		// The API's configured presentation policy, not measured scan-out.
+		// Intervals count video frames; absent means not applicable or, for
+		// reported_swap_interval, that the API supplies no state query. A
+		// reported value is driver state and cannot detect compositor overrides.
+		std::string present_mode;
+		std::optional<int> requested_swap_interval;
+		std::optional<int> reported_swap_interval;
 	};
 
 	// A recording target for one view.
@@ -238,7 +247,8 @@ namespace labrador
 		// machine with no display.
 		//
 		// Throws std::invalid_argument for a view capacity below one, before it
-		// touches a window.
+		// touches a window. The GL backend requires WGL_EXT_swap_control and
+		// throws std::runtime_error if requesting its swap interval fails.
 		void create_device(void* native_window, int width, int height,
 			int view_capacity);
 

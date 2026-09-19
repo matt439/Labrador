@@ -93,13 +93,15 @@ TEST_SUITE("LineSweeper frame result")
 		options.refresh = 60;
 
 		Result result;
-		result.samples.push_back(FrameSample{ 1, 2, 3, 4, 10, 16 });
+		result.samples.push_back(FrameSample{ 1, 2, 3, 4, 10, 16, 6, 2 });
 		result.device.backend = "d3d11";
 		result.device.api = "Direct3D 11";
 		result.device.device_name = "test adapter";
 		result.device.vendor_id = 1;
 		result.device.device_id = 2;
 		result.device.kind = labrador::RenderDeviceKind::hardware;
+		result.device.present_mode = "dxgi_sync_interval";
+		result.device.requested_swap_interval = 1;
 		result.measurement_class = "hardware_raster";
 		result.started_utc = "2030-01-01T00:00:00Z";
 		result.finished_utc = "2030-01-01T00:00:01Z";
@@ -115,7 +117,27 @@ TEST_SUITE("LineSweeper frame result")
 		CHECK(document["samples"][0]["update_ns"].GetInt64() == 1);
 		CHECK(document["samples"][0]["whole_frame_ns"].GetInt64() == 10);
 		CHECK(document["summary"]["scheduled_interval_ns"]["p99"].GetInt64() == 16);
+		CHECK(document["timing"]["pacer"].GetString() ==
+			std::string("win32_high_resolution_waitable_timer"));
+		CHECK(document["timing"]["deadline_policy"].GetString() ==
+			std::string("absolute_catch_up"));
+		CHECK(document["samples"][0]["pacing_wait_ns"].GetInt64() == 6);
+		CHECK(document["samples"][0]["start_lateness_ns"].GetInt64() == 2);
+		CHECK(document["summary"]["pacing_wait_ns"]["p99"].GetInt64() == 6);
+		CHECK(document["summary"]["start_lateness_ns"]["p99"].GetInt64() == 2);
+		CHECK(document["render_device"]["present_mode"].GetString() ==
+			std::string("dxgi_sync_interval"));
+		CHECK(document["render_device"]["requested_swap_interval"].GetInt() == 1);
+		CHECK(document["render_device"]["reported_swap_interval"].IsNull());
 		CHECK_FALSE(document.HasMember("device"));
+
+		result.device.backend = "gl";
+		result.device.present_mode = "wgl_swap_interval";
+		result.device.reported_swap_interval = 0;
+		const std::string gl_json = result_json(options, result);
+		document.Parse(gl_json.c_str());
+		REQUIRE_FALSE(document.HasParseError());
+		CHECK(document["render_device"]["reported_swap_interval"].GetInt() == 0);
 	}
 
 	TEST_CASE("atomic publication refuses to overwrite evidence")

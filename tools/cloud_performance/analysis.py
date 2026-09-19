@@ -16,6 +16,8 @@ PHASES = (
     "update_ns", "begin_ns", "record_submit_ns", "present_ns", "whole_frame_ns",
     "scheduled_interval_ns",
 )
+FRAME_PHASES = PHASES[:4]
+PACING_PHASES = ("pacing_wait_ns", "start_lateness_ns")
 
 
 def _json(path: Path) -> Any:
@@ -52,6 +54,53 @@ def _summary(values: list[int]) -> dict[str, int]:
         "p95": _percentile(values, 0.95),
         "p99": _percentile(values, 0.99),
         "max": max(values),
+    }
+
+
+def _diagnostics(phases: dict[str, list[int]], target_frame_ns: int) -> dict[str, Any]:
+    """Describe cadence and long calls without inferring why a call took time."""
+    intervals = phases["scheduled_interval_ns"]
+    count = len(intervals)
+    interval_total = sum(intervals)
+    threshold = target_frame_ns // 2
+    long_begin = [value > threshold for value in phases["begin_ns"]]
+    long_present = [value > threshold for value in phases["present_ns"]]
+    long_calls = [begin or present for begin, present in zip(long_begin, long_present)]
+    over_budget = sum(value > target_frame_ns for value in phases["whole_frame_ns"])
+    return {
+        "cadence": {
+            "mean_interval_ns": interval_total / count,
+            "realized_hz": 1_000_000_000 * count / interval_total if interval_total else None,
+            "over_target_count": sum(value > target_frame_ns for value in intervals),
+            "under_half_target_count": sum(2 * value < target_frame_ns for value in intervals),
+            "over_one_and_half_target_count": sum(
+                2 * value > 3 * target_frame_ns for value in intervals),
+        },
+        "whole_frame_over_target_count": over_budget,
+        "whole_frame_over_target_fraction": over_budget / count,
+        "long_begin_or_present": {
+            "threshold_ns": threshold,
+            "begin_count": sum(long_begin),
+            "present_count": sum(long_present),
+            "either_count": sum(long_calls),
+            # A count of N/2 alone cannot distinguish alternating long/short
+            # calls from one contiguous slow half. Do not join repetitions.
+            "adjacent_transition_count": sum(
+                left != right for left, right in zip(long_calls, long_calls[1:])),
+        },
+    }
+
+
+def _repetition_ranges(observations: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        phase: {
+            percentile: {
+                "min": min(item["summary"][phase][percentile] for item in observations),
+                "max": max(item["summary"][phase][percentile] for item in observations),
+            }
+            for percentile in ("p50", "p99")
+        }
+        for phase in PHASES
     }
 
 
@@ -303,19 +352,32 @@ def _validate_result(result: dict[str, Any], backend: dict[str, Any],
     samples = result.get("samples")
     if not isinstance(samples, list) or len(samples) != expected["sample_frames"]:
         raise ValueError("raw benchmark sample count differs from the declaration")
-    phases: dict[str, list[int]] = {phase: [] for phase in PHASES}
+    reported = result.get("summary")
+    if not isinstance(reported, dict):
+        raise TypeError("benchmark summary must be an object")
+    pacing_recorded = (
+        any(key in timing for key in ("pacer", "deadline_policy"))
+        or any(phase in reported for phase in PACING_PHASES)
+        or any(isinstance(sample, dict) and any(phase in sample for phase in PACING_PHASES)
+               for sample in samples)
+    )
+    if pacing_recorded and (
+            timing.get("pacer") != "win32_high_resolution_waitable_timer"
+            or timing.get("deadline_policy") != "absolute_catch_up"):
+        raise ValueError("benchmark pacing metadata is incomplete or unknown")
+    phase_names = PHASES + PACING_PHASES if pacing_recorded else PHASES
+    phases: dict[str, list[int]] = {phase: [] for phase in phase_names}
     for ordinal, sample in enumerate(samples):
         if not isinstance(sample, dict) or sample.get("ordinal") != ordinal:
             raise ValueError("benchmark sample ordinals are not contiguous")
-        for phase in PHASES:
+        for phase in phase_names:
             phases[phase].append(_integer(sample.get(phase), f"sample.{phase}"))
+        if sample["whole_frame_ns"] != sum(sample[phase] for phase in FRAME_PHASES):
+            raise ValueError("benchmark whole-frame duration differs from its phase sum")
     if timing.get("sample_count") != len(samples):
         raise ValueError("timing sample_count differs from raw samples")
     if timing.get("scheduled_interval_ns") != phases["scheduled_interval_ns"]:
         raise ValueError("timing scheduled_interval_ns differs from raw scheduled intervals")
-    reported = result.get("summary")
-    if not isinstance(reported, dict):
-        raise TypeError("benchmark summary must be an object")
     for phase, samples_for_phase in phases.items():
         if reported.get(phase) != _summary(samples_for_phase):
             raise ValueError(f"benchmark {phase} summary differs from raw samples")
@@ -374,6 +436,8 @@ def analyze(folder: str | Path) -> dict[str, Any]:
     }
     devices: dict[str, tuple[Any, ...]] = {}
     seen: set[tuple[str, int]] = set()
+    refresh_hz = config["workload"]["refresh_hz"]
+    target_frame_ns = (1_000_000_000 + refresh_hz // 2) // refresh_hz
     try:
         for path in result_files:
             result = _json(path)
@@ -403,10 +467,20 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             devices[backend_name] = device_identity
             observations[backend_name].append({
                 "repetition": repetition,
+                "source": path.relative_to(root).as_posix(),
+                "started_utc": result["started_utc"],
+                "finished_utc": result["finished_utc"],
+                "sample_count": len(phases["whole_frame_ns"]),
+                "render_device": device,
+                "pacing_measurement": (
+                    "recorded" if "pacing_wait_ns" in phases else "unrecorded_legacy"),
+                "timing": {key: value for key, value in result["timing"].items()
+                           if key != "scheduled_interval_ns"},
                 "summary": {phase: _summary(values) for phase, values in phases.items()},
+                **_diagnostics(phases, target_frame_ns),
             })
-            for phase, values_for_phase in phases.items():
-                pooled[backend_name][phase].extend(values_for_phase)
+            for phase in PHASES:
+                pooled[backend_name][phase].extend(phases[phase])
         expected_seen = {
             (name, repetition)
             for name in declared
@@ -416,8 +490,6 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             raise ValueError("fixed repetition matrix is incomplete")
     except (OSError, ValueError, KeyError, TypeError) as exc:
         return _withheld("result_validation_failed", error=str(exc))
-    refresh_hz = config["workload"]["refresh_hz"]
-    target_frame_ns = (1_000_000_000 + refresh_hz // 2) // refresh_hz
     summaries: dict[str, Any] = {}
     for name, phases in pooled.items():
         summaries[name] = {
@@ -428,11 +500,23 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             "over_target_scheduled_count": sum(
                 value > target_frame_ns for value in phases["scheduled_interval_ns"]),
             "summary": {phase: _summary(values) for phase, values in phases.items()},
-            "repetitions": observations[name],
+            "repetition_ranges": _repetition_ranges(observations[name]),
+            "repetitions": sorted(observations[name], key=lambda item: item["repetition"]),
         }
     return {
         "schema_version": 1,
         "complete": True,
+        "interpretation": {
+            "pooled_summary": (
+                "All declared samples and repetitions are retained. Pooled percentiles can "
+                "hide differences between processes; inspect repetitions and repetition_ranges."),
+            "long_begin_or_present": (
+                "CPU-observed begin/present durations exceeding half the target frame period. "
+                "These include work and waits; their cause and GPU time are not measured."),
+            "cadence": (
+                "Frame-start intervals, not display scan-out. Realized Hz uses the mean "
+                "interval; a median alone can hide alternating short and long intervals."),
+        },
         "run_id": config["run_id"],
         "bundle_sha256": config["bundle"]["sha256"],
         "release_sha256": config["bundle"]["release_sha256"],

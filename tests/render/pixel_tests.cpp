@@ -559,6 +559,28 @@ TEST_CASE("the renderer reports the rasterising device it selected")
 	CHECK_FALSE(info.api.empty());
 	CHECK_FALSE(info.device_name.empty());
 	CHECK(info.kind != RenderDeviceKind::null_device);
+	if (info.backend == "gl")
+	{
+		CHECK(info.present_mode == "wgl_swap_interval");
+		REQUIRE(info.requested_swap_interval.has_value());
+		CHECK(*info.requested_swap_interval == 1);
+		REQUIRE(info.reported_swap_interval.has_value());
+		CHECK(*info.reported_swap_interval == 1);
+	}
+	else if (info.backend == "d3d11" || info.backend == "d3d12")
+	{
+		CHECK(info.present_mode == "dxgi_sync_interval");
+		REQUIRE(info.requested_swap_interval.has_value());
+		CHECK(*info.requested_swap_interval == 1);
+		CHECK_FALSE(info.reported_swap_interval.has_value());
+	}
+	else
+	{
+		CHECK(info.backend == "vulkan");
+		CHECK(info.present_mode == "fifo");
+		CHECK_FALSE(info.requested_swap_interval.has_value());
+		CHECK_FALSE(info.reported_swap_interval.has_value());
+	}
 }
 
 TEST_CASE("a frame nobody drew into is cleared to opaque black")

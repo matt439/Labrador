@@ -1,5 +1,6 @@
 #include "bench/linesweeper_frame_result.h"
 
+#include "bench/frame_pacer.h"
 #include "engine/app/content_root.h"
 #include "engine/app/window.h"
 #include "engine/math/rectanglef.h"
@@ -28,7 +29,6 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -264,13 +264,16 @@ namespace
 
 				// A SOFTWARE DEADLINE, NOT A CLAIM ABOUT SCAN-OUT. The four APIs do
 				// not expose one common present mode here: both Direct3D backends ask
-				// for sync interval one, Vulkan uses FIFO, and GL inherits its driver
-				// default. Pacing the workload at the declared rate makes a missed
+				// for sync interval one, Vulkan uses FIFO, and GL requests interval
+				// one. Pacing the workload at the declared rate makes a missed
 				// budget visible on every backend. The result calls this the scheduled
 				// interval and reports present() separately; the cloud host record is
-				// what attests that a 60 Hz display mode existed.
-				std::this_thread::sleep_until(this->next_frame_);
-				const Clock::time_point frame_start = Clock::now();
+				// what records the actual display mode, which may differ from that
+				// rate. Keep absolute deadlines and catch up after stalls; retain
+				// lateness so a burst of catch-up frames is visible in the result.
+				const Clock::time_point pacing_start = Clock::now();
+				const Clock::time_point deadline = this->next_frame_;
+				const Clock::time_point frame_start = this->pacer_.wait_until(deadline);
 				const Clock::duration period = std::chrono::duration_cast<Clock::duration>(
 					std::chrono::duration<double>(1.0 /
 						static_cast<double>(this->options_.refresh)));
@@ -316,6 +319,8 @@ namespace
 						nanoseconds(present_end - submit_end),
 						nanoseconds(present_end - frame_start),
 						scheduled_interval,
+						nanoseconds(frame_start - pacing_start),
+						nanoseconds(frame_start - deadline),
 					});
 				}
 
@@ -407,6 +412,7 @@ namespace
 		ParticleField* particles_ = nullptr;
 
 		std::vector<FrameSample> samples_;
+		bench::FramePacer pacer_;
 		Clock::time_point next_frame_;
 		Clock::time_point previous_frame_;
 		int completed_frames_ = 0;

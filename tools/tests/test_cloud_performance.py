@@ -433,7 +433,7 @@ class AnalysisTests(unittest.TestCase):
                 "begin_ns": 10 + ordinal,
                 "record_submit_ns": 20 + ordinal,
                 "present_ns": 30 + ordinal,
-                "whole_frame_ns": 60 + ordinal,
+                "whole_frame_ns": 65 + 4 * ordinal,
                 "scheduled_interval_ns": 16_666_667 + ordinal,
             })
         summary = {phase: phase_summary([sample[phase] for sample in samples])
@@ -472,6 +472,19 @@ class AnalysisTests(unittest.TestCase):
         })
         return document
 
+    def replace_samples(self, root: Path, repetition: int, samples: list[dict]) -> None:
+        path = root / "output" / "results" / f"result-d3d11-{repetition:03d}.json"
+        result = json.loads(path.read_text())
+        result["samples"] = samples
+        result["timing"]["scheduled_interval_ns"] = [
+            sample["scheduled_interval_ns"] for sample in samples]
+        result["summary"] = {
+            phase: phase_summary([sample[phase] for sample in samples])
+            for phase in analysis.PHASES
+        }
+        write_json(path, result)
+        refresh_terminal_manifest(root / "output")
+
     def test_complete_evidence_reports_pooled_percentiles(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -480,6 +493,122 @@ class AnalysisTests(unittest.TestCase):
             self.assertTrue(report["complete"])
             self.assertEqual(report["backends"]["d3d11"]["sample_count"], 200)
             self.assertIn("p99", report["backends"]["d3d11"]["summary"]["whole_frame_ns"])
+
+    def test_first_repetition_with_long_present_is_retained_and_exposed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            samples = [{
+                "ordinal": ordinal, "update_ns": 1_000_000, "begin_ns": 0,
+                "record_submit_ns": 2_000_000, "present_ns": 14_000_000,
+                "whole_frame_ns": 17_000_000, "scheduled_interval_ns": 17_000_000,
+            } for ordinal in range(100)]
+            self.replace_samples(root, 1, samples)
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            backend = report["backends"]["d3d11"]
+            first, second = backend["repetitions"]
+            self.assertEqual(backend["sample_count"], 200)
+            self.assertEqual(backend["summary"]["whole_frame_ns"]["p99"], 17_000_000)
+            self.assertEqual([first["repetition"], second["repetition"]], [1, 2])
+            self.assertEqual(first["sample_count"], 100)
+            self.assertEqual(first["whole_frame_over_target_count"], 100)
+            self.assertEqual(first["whole_frame_over_target_fraction"], 1.0)
+            self.assertEqual(first["long_begin_or_present"]["present_count"], 100)
+            self.assertEqual(first["long_begin_or_present"]["adjacent_transition_count"], 0)
+            self.assertEqual(second["long_begin_or_present"]["either_count"], 0)
+            self.assertEqual(backend["repetition_ranges"]["present_ns"]["p50"],
+                             {"min": 79, "max": 14_000_000})
+            self.assertEqual(first["source"], "output/results/result-d3d11-001.json")
+            self.assertNotIn("scheduled_interval_ns", first["timing"])
+            self.assertEqual(first["pacing_measurement"], "unrecorded_legacy")
+
+    def test_alternating_begin_cost_does_not_turn_median_interval_into_rate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            samples = [{
+                "ordinal": ordinal, "update_ns": 200_000,
+                "begin_ns": 30_000_000 if ordinal % 2 == 0 else 0,
+                "record_submit_ns": 1_000_000, "present_ns": 100_000,
+                "whole_frame_ns": 31_300_000 if ordinal % 2 == 0 else 1_300_000,
+                "scheduled_interval_ns": 2_000_000 if ordinal % 2 == 0 else 31_333_334,
+            } for ordinal in range(100)]
+            self.replace_samples(root, 1, samples)
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            first = report["backends"]["d3d11"]["repetitions"][0]
+            self.assertEqual(first["summary"]["scheduled_interval_ns"]["p50"], 2_000_000)
+            self.assertEqual(first["cadence"]["mean_interval_ns"], 16_666_667)
+            self.assertAlmostEqual(first["cadence"]["realized_hz"], 60, places=4)
+            self.assertEqual(first["cadence"]["under_half_target_count"], 50)
+            self.assertEqual(first["cadence"]["over_one_and_half_target_count"], 50)
+            self.assertEqual(first["whole_frame_over_target_count"], 50)
+            self.assertEqual(first["long_begin_or_present"]["begin_count"], 50)
+            self.assertEqual(first["long_begin_or_present"]["present_count"], 0)
+            self.assertEqual(first["long_begin_or_present"]["adjacent_transition_count"], 99)
+
+    def test_self_consistent_summary_cannot_hide_invalid_phase_arithmetic(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            path = root / "output" / "results" / "result-d3d11-001.json"
+            samples = json.loads(path.read_text())["samples"]
+            samples[0]["whole_frame_ns"] += 1
+            self.replace_samples(root, 1, samples)
+
+            report = analysis.analyze(root)
+
+            self.assertFalse(report["complete"])
+            self.assertEqual(report["analysis_withheld"], "result_validation_failed")
+            self.assertIn("phase sum", report["error"])
+
+    def test_recorded_pacing_and_present_policy_survive_analysis(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            path = root / "output" / "results" / "result-d3d11-001.json"
+            result = json.loads(path.read_text())
+            result["timing"].update({"pacer": "win32_high_resolution_waitable_timer",
+                                     "deadline_policy": "absolute_catch_up"})
+            result["render_device"].update({"present_mode": "dxgi_sync_interval",
+                                            "requested_swap_interval": 1,
+                                            "reported_swap_interval": None})
+            for sample in result["samples"]:
+                sample.update({"pacing_wait_ns": 1000, "start_lateness_ns": 100})
+            for phase in analysis.PACING_PHASES:
+                result["summary"][phase] = phase_summary(
+                    [sample[phase] for sample in result["samples"]])
+            write_json(path, result)
+            refresh_terminal_manifest(root / "output")
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            first = report["backends"]["d3d11"]["repetitions"][0]
+            self.assertEqual(first["pacing_measurement"], "recorded")
+            self.assertEqual(first["summary"]["start_lateness_ns"]["p99"], 100)
+            self.assertEqual(first["summary"]["pacing_wait_ns"]["p99"], 1000)
+            self.assertEqual(first["timing"]["deadline_policy"], "absolute_catch_up")
+            self.assertEqual(first["render_device"]["requested_swap_interval"], 1)
+            self.assertIsNone(first["render_device"]["reported_swap_interval"])
+
+            del result["samples"][0]["start_lateness_ns"]
+            write_json(path, result)
+            refresh_terminal_manifest(root / "output")
+            self.assertEqual(analysis.analyze(root)["analysis_withheld"],
+                             "result_validation_failed")
+
+            result["samples"][0]["start_lateness_ns"] = 100
+            del result["timing"]["deadline_policy"]
+            write_json(path, result)
+            refresh_terminal_manifest(root / "output")
+            self.assertEqual(analysis.analyze(root)["analysis_withheld"],
+                             "result_validation_failed")
 
     def test_incomplete_or_identity_drift_withholds_analysis(self):
         with tempfile.TemporaryDirectory() as temporary:

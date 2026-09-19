@@ -157,6 +157,23 @@ time across update and renderer calls, including any waits they perform, not a
 GPU timestamp. Five repetitions over four backends therefore occupy about
 thirty minutes before startup and collection overhead.
 
+The benchmark uses a high-resolution Windows waitable timer (Windows 10 1803
+or later), with absolute deadlines and immediate catch-up after a late frame.
+It does not spin or request a process timer-resolution change. Each retained
+frame includes `pacing_wait_ns` and `start_lateness_ns`, outside the whole-frame
+work measurement, and the JSON names the pacer and deadline policy. OS scheduling
+and renderer waits can still cause late or alternating frame starts. Use mean
+interval to derive the realized average rate; reciprocal median is not average
+Hz. Older captures lack these two fields and analysis labels them as legacy.
+
+The selected device record also carries `present_mode` and nullable requested
+and reported swap intervals. GL requires `WGL_EXT_swap_control`, requests one,
+and records the getter's answer. Direct3D requests one without a corresponding
+query; Vulkan selects FIFO. These values describe API state, not whether a
+driver, compositor or virtual display obeyed it. Existing binaries and frozen
+bundles retain their old behavior; rebuild and create a new bundle to use these
+changes.
+
 ```powershell
 python -m tools.cloud_performance render `
     --config out/cloud/run.json --out out/cloud/template.json
@@ -209,6 +226,16 @@ python -m tools.cloud_performance analyze `
 Analysis refuses to report percentiles unless the terminal marker, launch,
 configuration, host, release, adapter, workload and complete repetition matrix
 all agree. Raw samples remain the authority.
+
+Read `repetitions` and `repetition_ranges` before the pooled `summary`.
+Per-repetition diagnostics show mean cadence, counts over the frame budget,
+short/long intervals, and long begin/present calls including alternation.
+The long-call threshold is half the declared frame budget and is reported in
+the output; it does not prove that a call waited or identify what it waited on.
+On Vulkan, begin includes the frame-slot timeline wait and present includes
+image acquisition and submission. All repetitions remain in the report,
+including a slow first process. A complete artifact is an evidence-integrity
+result, not a claim that a timing target passed.
 
 Stopping is also dry-run by default. The preview names the exact requested
 stack without contacting AWS; `--execute` then refuses unless that stack's

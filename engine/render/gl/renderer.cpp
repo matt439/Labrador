@@ -57,7 +57,8 @@ namespace labrador
 				description.find("software rasterizer") != std::string::npos;
 		}
 
-		RenderDeviceInfo selected_device(bool generic_pixel_format)
+		RenderDeviceInfo selected_device(bool generic_pixel_format,
+			HDC device_context)
 		{
 			const std::string vendor = driver_string(GL_VENDOR, "vendor");
 			const std::string renderer = driver_string(GL_RENDERER, "renderer");
@@ -65,6 +66,10 @@ namespace labrador
 
 			RenderDeviceInfo info;
 			info.backend = "gl";
+			info.present_mode = "wgl_swap_interval";
+			info.requested_swap_interval = 1;
+			info.reported_swap_interval = configure_swap_interval(device_context,
+				*info.requested_swap_interval);
 			info.api = "OpenGL " + version;
 			info.device_name = vendor + " / " + renderer;
 			info.kind = generic_pixel_format || names_software(vendor, renderer)
@@ -714,7 +719,7 @@ namespace labrador
 
 		this->impl_->create_gl_resources();
 		this->impl_->device_info = selected_device(
-			this->impl_->generic_pixel_format);
+			this->impl_->generic_pixel_format, this->impl_->device_context);
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const

@@ -1,8 +1,10 @@
 #include "engine/render/gl/gl_functions.h"
 
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace labrador
 {
@@ -24,8 +26,76 @@ namespace labrador
 		// opengl32.lib - so the fallback would never fire and is not here.
 		void* load_entry_point(const char* name)
 		{
-			return reinterpret_cast<void*>(wglGetProcAddress(name));
+			void* address = reinterpret_cast<void*>(wglGetProcAddress(name));
+			const std::intptr_t value = reinterpret_cast<std::intptr_t>(address);
+			// ICDs may use these failure sentinels instead of a null pointer.
+			return value == 1 || value == 2 || value == 3 || value == -1
+				? nullptr : address;
 		}
+
+		bool has_wgl_extension(HDC device_context, std::string_view extension)
+		{
+			using ExtensionsArb = const char*(WINAPI*)(HDC);
+			using ExtensionsExt = const char*(WINAPI*)();
+			const ExtensionsArb extensions_arb =
+				reinterpret_cast<ExtensionsArb>(
+					load_entry_point("wglGetExtensionsStringARB"));
+			const ExtensionsExt extensions_ext =
+				reinterpret_cast<ExtensionsExt>(
+					load_entry_point("wglGetExtensionsStringEXT"));
+			const char* names = extensions_arb != nullptr
+				? extensions_arb(device_context)
+				: (extensions_ext != nullptr ? extensions_ext() : nullptr);
+			if (names == nullptr)
+			{
+				return false;
+			}
+
+			std::string_view remaining(names);
+			while (!remaining.empty())
+			{
+				const std::size_t end = remaining.find(' ');
+				if (remaining.substr(0, end) == extension)
+				{
+					return true;
+				}
+				if (end == std::string_view::npos)
+				{
+					break;
+				}
+				remaining.remove_prefix(end + 1);
+			}
+			return false;
+		}
+	}
+
+	int configure_swap_interval(HDC device_context, int interval)
+	{
+		using SwapInterval = BOOL(WINAPI*)(int);
+		using CurrentSwapInterval = int(WINAPI*)();
+		if (!has_wgl_extension(device_context, "WGL_EXT_swap_control"))
+		{
+			throw std::runtime_error("The OpenGL renderer requires "
+				"WGL_EXT_swap_control to configure its presentation interval.");
+		}
+		const SwapInterval swap_interval = reinterpret_cast<SwapInterval>(
+			load_entry_point("wglSwapIntervalEXT"));
+		const CurrentSwapInterval current_swap_interval =
+			reinterpret_cast<CurrentSwapInterval>(
+				load_entry_point("wglGetSwapIntervalEXT"));
+		if (swap_interval == nullptr || current_swap_interval == nullptr)
+		{
+			throw std::runtime_error("The OpenGL driver advertises "
+				"WGL_EXT_swap_control but lacks its setter or getter.");
+		}
+		if (swap_interval(interval) == FALSE)
+		{
+			const DWORD error = GetLastError();
+			throw std::runtime_error("wglSwapIntervalEXT(" +
+				std::to_string(interval) + ") failed with Windows error " +
+				std::to_string(error) + ".");
+		}
+		return current_swap_interval();
 	}
 
 	void load_gl_functions()

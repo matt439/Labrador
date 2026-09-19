@@ -1,5 +1,11 @@
 # The first EC2 reference run — `g6f-reference-003`, 2026-09-19
 
+**Investigation correction, 2026-09-19.** The original report mistook Vulkan's
+frame-slot timeline wait for image acquisition, inferred a swapchain image count
+that was never recorded, and converted a median interval into average Hz. Those
+interpretations are corrected below; the retained samples and percentile tables
+are unchanged. Section 7 records the resulting fixes and their verification.
+
 **What this is.** The first complete run of the lane under
 [`tools/cloud_performance/`](../../tools/cloud_performance/README.md):
 `LineSweeperFrameBench` on one declared `g6f.2xlarge`, five repetitions of
@@ -15,8 +21,8 @@ desktop the engine was written on, and a record of what it took to get one.
 **Why the raw samples matter more than the table.** The tool's aggregate for
 two backends says p99 ≈ 17 ms and ≈ 32 ms. Both numbers are true and both are
 misleading: they come from one repetition each, in which every frame — or
-exactly every second frame — waited on the display path, and the other four
-repetitions of the same backend show nothing of the kind. §3 gives the
+exactly every second frame — spent that time inside renderer calls, and the
+other four repetitions of the same backend show nothing of the kind. §3 gives the
 aggregate as the artefact states it and §4 gives the repetitions, because the
 second table is the one a reader should reason from.
 
@@ -30,7 +36,7 @@ second table is the one a reader should reason from.
 | Instance | `i-06a54363af83973e8`, `g6f.2xlarge`, ap-southeast-2a: AMD EPYC 7R13 at 2.65 GHz, **4 cores, SMT off**, 30.8 GiB; **one quarter of an NVIDIA L4** presented as `NVIDIA L4-6Q` (PCI `10DE:27B8`); one display, 2560×1600 at 59 Hz, High performance power plan |
 | Sessions | worker as `SYSTEM` in session 0; each benchmark process in session 1 (console) as `labrador-bench`, started by a scheduled task with an interactive logon type |
 | Workload | `full_well_top_out`: 1280×720 client window, 9,600 live particles, 1,800 warm-up frames then 3,600 retained frames per repetition, paced at 60 Hz; five repetitions per backend, d3d11 → d3d12 → gl → vulkan |
-| When | host captured 05:03:39Z; first frame 05:03:49Z; last 05:34:50Z; `success.json` 05:35:08Z (13:03–13:35 AEST) |
+| When | host captured 05:03:39Z; first frame 05:03:49Z; last 05:34:50Z; `success.json` 05:35:08Z (15:03–15:35 AEST) |
 | Evidence | `s3://labrador-performance-077207386906-apse2/labrador-performance/runs/g6f-reference-003/` — 64 files under `output/`, hashed in `success.json`; local copy `out/cloud/g6f-reference-003/`, analysis `out/cloud/g6f-reference-003-analysis.json` (`complete: true`, 18,000 samples per backend) |
 | Cost | about US$0.60 of compute for the run itself; the day's three builders, three verifications and two failed runs (§6) came to roughly US$6 |
 
@@ -43,23 +49,28 @@ including any wait the call performs, and nothing is a GPU timestamp.
 
 - **update** — `Scene::update` and `end_tick`: the game's own work, the
   particle field included.
-- **begin** — `Renderer::begin_frame`. On Vulkan this acquires the swap
-  chain image and is where that backend waits; on D3D12 it is the fence wait
-  for the frame's allocator; on D3D11 and GL it does nearly nothing.
+- **begin** — `Renderer::begin_frame`. On Vulkan this waits for the prior
+  submission using the current frame slot, through `vkWaitSemaphores`; on
+  D3D12 it is the fence wait for the frame's allocator; on D3D11 and GL it
+  does nearly nothing. This phase does **not** acquire a Vulkan swapchain image.
 - **record + submit** — `Scene::draw` and `Renderer::submit`: the draw
   walk and the command recording, which is the cost this workload exists to
   measure.
 - **present** — `Renderer::end_frame`: `Present` with sync interval one on
   both Direct3D backends, `SwapBuffers` under the driver's default on GL,
-  `vkQueuePresentKHR` in FIFO on Vulkan.
+  image acquisition, command submission and `vkQueuePresentKHR` in FIFO on
+  Vulkan. An acquired image may still require a GPU semaphore wait after the
+  acquisition call returns; these CPU timings cannot measure that wait directly.
 - **whole frame** — frame start to the end of present.
 - **interval** — this frame's start minus the last one's: what the
   software pacer actually delivered. It asked for 16.67 ms and delivered
-  **17.00 ms at the median on this host, on every backend** (58.8 Hz), with
-  a p99 of 18.0 ms. The bench says of itself that this is a software
-  deadline and not a claim about scan-out; that the four backends share the
-  same realised interval is what keeps them comparable, and the 0.33 ms is a
-  fact about `sleep_until` on this Windows Server, not about any of them.
+  **about 17.00 ms at the median in nineteen repetitions**, with
+  a p99 near 18.0 ms; Vulkan-001 alternates long and short intervals instead.
+  Every repetition's **mean** is 16.6664–16.6669 ms, approximately 60 Hz. The
+  pacer uses absolute deadlines and catches up after a late frame, so the
+  reciprocal of the median is not its average rate. The 0.33 ms median
+  difference measures interval unevenness, not sustained rate loss or an
+  independently measured sleep overshoot. No number here measures scan-out.
 
 Percentiles are nearest-rank, as the tool computes them.
 
@@ -78,7 +89,7 @@ Percentiles are nearest-rank, as the tool computes them.
 
 Whole frame, p50 / p99 in milliseconds, with the share of frames over 10 ms
 and which phase held them. Each repetition is a separate process, started
-by its own scheduled task, ninety seconds apart.
+by its own scheduled task, 92–96 seconds apart including dispatch overhead.
 
 | rep | d3d11 | d3d12 | gl | vulkan |
 |---|---|---|---|---|
@@ -88,27 +99,28 @@ by its own scheduled task, ninety seconds apart.
 | 004 | 2.52 / 3.11 | 1.66 / 2.53 | 5.11 / 6.14 — present 3.51 / 4.65 | 1.59 / 2.45 |
 | 005 | 2.42 / 3.17 | 1.67 / 2.42 | 1.84 / 2.49 | 1.54 / 2.46 |
 
-Update, begin and record + submit are stable across all twenty repetitions
+Update and record + submit are comparatively stable across the repetitions
 — update p99 never above 0.60 ms, record + submit p50 within 0.15 ms of its
-backend's pooled value — so the table is a table of presentation behaviour
-and nothing else moved.
+backend's pooled value. The large changes occur in present and, for Vulkan,
+begin. CPU phase timings locate those changes but do not distinguish GPU work,
+GPU semaphore readiness, driver scheduling and presentation backpressure.
 
-**What the four backends cost when nothing waits.** Taking every frame
+**What the frames below 10 ms cost.** Taking every frame
 under 10 ms: d3d11 2.43 / 3.14, d3d12 1.68 / 2.48, gl 2.11 / 6.12, vulkan
 1.55 / 2.48 (p50 / p99 ms). A short local smoke of the same workload on the
 desktop this engine is written on, an RTX 5080, puts the median near 1.5 ms;
 a quarter of an L4 behind four EPYC cores is within a millisecond of that
 at the median, and D3D11 is the slowest of the four to record and submit by
 roughly 0.8 ms, which reads as the immediate context's per-draw state cost.
-Against a 16.67 ms budget the p99 leaves a factor of five or more on three
-backends and two and a half on GL, whose swap is the reason (below).
+These conditional percentiles exclude the long frames; they cannot establish
+whole-run headroom against a 16.67 ms budget.
 
 **Two repetitions differ in kind, not degree, and both are a backend's
-first.** d3d11-001 spent 14.1 ms of every frame in `Present`: the whole
-repetition ran at the display's cadence, and its interval column (16.98 /
-17.12) says the pacer never had to sleep. Its next four repetitions never
-waited at all. vulkan-001 blocked in the acquire for ~30.7 ms — two refresh
-periods — on exactly every second frame, and the frame after each stall
+first.** d3d11-001 spent 14.1 ms at the median in `Present`: the whole
+repetition ran near the display's cadence. The old artifact does not measure
+pacer sleep separately. Its next four repetitions never waited that long.
+vulkan-001 blocked waiting for its frame slot's previous submission for
+~30.7 ms on exactly every second frame, and the frame after each stall
 ran immediately (interval p50 1.45 ms) because the pacer was behind; its
 next four repetitions have a p99 of 2.5 ms. d3d12's and gl's first
 repetitions show nothing of the sort, so "first process after boot" is not
@@ -118,49 +130,55 @@ processes later. What the two share is being the first process of their
 API on the host. Whether the presentation engine, DWM or the vGPU's display
 path holds a different mode for a first swap chain, and releases it after
 the first process exits, is a question this run poses and cannot answer;
-§5 says what would.
+§5 says what would. Vulkan-001's entire present phase, which includes the
+CPU acquisition call, never exceeds 0.118 ms. The 30 ms stall therefore cannot
+be a blocking CPU acquisition call in these samples.
 
-**GL's swap is the one that moves between repetitions.** No frame over
-10 ms, but `SwapBuffers` cost 0.02 ms in two repetitions, ~1 ms in one and
+**GL's swap is the one that moves between repetitions.** Three isolated
+frames exceed 10 ms (one each in repetitions 001, 003 and 004), and
+`SwapBuffers` cost 0.02 ms in two repetitions, ~1 ms in one and
 ~3.5 ms in another, which is the difference between a swap that returns
-and one that waits part of a refresh. The bench inherits the driver's
-default swap interval on GL rather than setting one, and that is the first
-thing to fix before reading this column again.
+and one that waits part of a refresh. The benchmark used for this run inherited
+the driver's default swap interval on GL rather than setting one. Section 7
+records the fix for future captures.
 
 **D3D12 is clean in all five**, p99 2.42–2.53 ms, present 0.10–0.14 ms:
-the backend that owns its fence never waited on the display path here.
+neither its begin nor present call shows the large waits seen elsewhere.
 
 ## 5. What this run asks, and what would answer it
 
-These are questions rather than findings, in the sense the review folders
-use: nothing below has been verified beyond what the tables above show.
+These questions came from the first run. The corrected attribution and the
+code changes in section 7 are verified locally; the host-specific cause remains
+unresolved.
 
 1. **Is the first-process presentation mode repeatable?** Run the lane
    again on the same image. If d3d11-001 and vulkan-001 misbehave the same
-   way and 002–005 do not, the cause is on the host and the analysis
-   should either discard a backend's first repetition or the worker should
-   run a throwaway process per backend before the retained ones. If it does
-   not recur, it was a state of that boot.
-2. **What does Vulkan's acquire wait on?** A 30 ms stall on every second
-   frame is a two-image swap chain being handed back at half rate. The
-   review of that backend recorded that nothing in the tree had run two
-   frames in flight; this is the first run that has, on a virtual display,
-   and `engine/render/vulkan/device_resources.h` should say what it expects
-   from `vkAcquireNextImageKHR` under FIFO on a presentation engine that
-   pauses.
-3. **Set GL's swap interval.** The GL backend should ask for an interval
-   rather than inherit one, and the bench should record what it got.
-4. **What is the 0.33 ms?** `sleep_until` overshoots by a third of a
-   millisecond on this host, consistently; a `timeBeginPeriod` request or
-   a spin for the last millisecond would pin the pacer at 16.67 ms, at the
-   cost of a core. Decide which the benchmark wants before comparing across
-   hosts.
-5. **This host is a virtual display on a shared GPU.** 59 Hz rather than
-   60, a quarter of an L4 time-sliced with three other tenants, and a
-   frame-rate limiter somewhere in the vGPU stack are all plausible actors
-   in §4 and none of them exist on a player's machine. The run is worth
-   more as a regression reference for the engine's own CPU cost than as a
-   statement about presentation.
+   way and 002–005 do not, first-use host or driver state becomes a stronger
+   hypothesis. Keep the first repetition: discarding it after inspecting the
+   result would hide the observed condition. Any process preconditioning
+   belongs in a separately declared experiment with its own retained evidence.
+   If it does not recur, this run alone cannot identify the cause.
+2. **What delays Vulkan's frame-slot completion?** The two-slot submission
+   ring is known; the actual swapchain image count was not retained and cannot
+   be inferred from the alternation. The stall waits on a timeline value for a
+   submission that also depends on the acquired-image semaphore. GPU tracing
+   or a controlled repeat is needed to distinguish that dependency from GPU
+   scheduling and execution. `engine/render/vulkan/device_resources.h` now
+   states these separate waits and why FIFO gives no one-refresh latency bound.
+3. **Set GL's swap interval.** Fixed in section 7: the GL backend asks for
+   interval one and the benchmark records the request and queried driver state.
+4. **What is the 0.33 ms?** The original report called this `sleep_until`
+   overshoot, but it is only median interval minus target. A `timeBeginPeriod`
+   request or a spin for the last millisecond might reduce jitter but neither guarantees
+   a wake-up deadline. The raw means show no sustained 0.33 ms overshoot;
+   measure lateness against the deadline before assigning a sleep error.
+   Section 7 records the chosen wait and the new retained timing fields.
+5. **This host is a virtual display on a fractional GPU.** Its reported
+   display rate is 59 Hz while the benchmark requests 60 Hz. Fractional-vGPU
+   scheduling, contention and any driver frame-rate limit are possible
+   influences, but other tenant occupancy and an active limiter were not
+   measured. The run provides a reference for this declared host; it cannot
+   establish presentation behavior on a player's machine.
 
 ## 6. How it was produced
 
@@ -200,3 +218,54 @@ and `stop --execute`. The image-building steps are not in the tree; the
 README's recipe is what a script under `out/cloud/image-builder/` on the
 machine that built this image reproduced three times, and turning it into
 `tools/cloud_performance/build_image.py` is the obvious next addition.
+
+## 7. Investigation and fixes after the first run
+
+The retained evidence passes the revised analyzer without alteration: all
+72,000 samples remain present and every pooled percentile is unchanged.
+`out/cloud/g6f-reference-003-reanalysis.json` adds per-repetition mean cadence,
+budget exceedances, counts of long begin/present calls and transitions between
+long and short calls, and ranges of phase percentiles across repetitions.
+Vulkan-001 has 1,800 long begin calls and 3,599 transitions in 3,600 samples:
+exact alternation. The realized mean rates across all twenty repetitions are
+59.9991–60.0009 Hz. No first repetition is discarded.
+
+The GL backend now requires `WGL_EXT_swap_control`, explicitly requests interval
+one, and records both the request and `wglGetSwapIntervalEXT`'s result. Missing
+extension support or a failed setter is a device-creation error. Every backend's
+device record names its presentation mode; intervals without an applicable
+query remain absent. These values record API state, not the compositor's actual
+behavior, as the [WGL extension contract](https://registry.khronos.org/OpenGL/extensions/EXT/WGL_EXT_swap_control.txt)
+defines it.
+
+The benchmark replaces `sleep_until` with a
+[high-resolution Windows waitable timer](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw),
+requiring Windows 10 1803 or later. Absolute deadlines and immediate catch-up
+remain the policy. It uses neither a spin loop nor a timer-resolution request.
+Each frame now retains pacing wait and start lateness outside `whole_frame_ns`;
+the analyzer verifies these fields when present and labels old captures as
+legacy. The scheduler and renderer may still make a frame late. In short local
+null-backend captures (120 warm-up, 300 retained frames), interval p99 changed
+from 30.57 ms with the previous sleep to 17.30 ms with the timer. That is a
+desktop smoke observation, not an EC2 result or a guaranteed latency bound.
+
+Vulkan's synchronization algorithm is unchanged. Its header now describes
+the frame-slot timeline wait separately from acquisition and the acquired-image
+semaphore. [Vulkan's acquisition contract](https://docs.vulkan.org/spec/latest/chapters/VK_KHR_surface/wsi.html#_acquiring_presentable_images)
+allows the call to return before an image is ready; the later GPU wait can
+delay submission completion and therefore frame-slot reuse. The CPU samples
+locate the wait but do not establish why completion was delayed. A new bounded
+EC2 run or GPU trace is still needed to resolve the first-process behavior.
+
+Verification of the changed code: all five Release builds and all 69 CTest
+entries pass, including the four hardware pixel suites; the 25 offline cloud
+tests pass. Each new Release benchmark completed 120 warm-up and 300 retained
+frames on the local desktop (RTX 5080 for raster backends); GL reported requested
+and stored interval one. Logs and JSON are under `out/validation/ec2-fixes/`.
+The rebuilt Vulkan pixel suite (42 cases, 417 assertions) and a further 240
+presented benchmark frames also pass with Khronos synchronization validation
+enabled, with no validation errors or synchronization hazards. Only existing
+small dedicated-allocation performance warnings remain.
+No new EC2 instance was launched, and the original bundle and evidence remain
+unchanged. The session-0, display-adapter, auto-logon and SSM dispatch fixes in
+section 6 were already present before this investigation.

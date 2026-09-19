@@ -87,6 +87,8 @@ namespace labrador
 
 			RenderDeviceInfo info;
 			info.backend = "d3d12";
+			info.present_mode = "dxgi_sync_interval";
+			info.requested_swap_interval = 1;
 			info.api = "Direct3D 12";
 			info.device_name = utf8(description.Description);
 			info.vendor_id = description.VendorId;

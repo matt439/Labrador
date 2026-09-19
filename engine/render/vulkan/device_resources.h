@@ -199,20 +199,13 @@ namespace labrador
 		// this backend takes what it is given, because the frame is not drawn
 		// into one of them - see the top of this file.
 		//
-		// AND NOTHING IN THIS TREE HAS EVER RUN TWO FRAMES IN FLIGHT, WHICH IS
-		// DISCLOSED RATHER THAN LEFT TO BE FOUND. frame_index_ advances only
-		// inside present(), and tests/render/pixel_tests.cpp presents exactly
-		// once - so the ring's second half is entered by that one case's second
-		// frame and never wraps, and even that frame sits behind the full
-		// wait_for_gpu the read-back before it performs. The samples are the
-		// only things that pace frames against this at all. So the mechanism
-		// this number exists for - recording frame N+1 while frame N is still
-		// executing - is not what any test covers, and a defect that needs it
-		// will surface on a screen rather than under ctest. That is exactly
-		// where abandon_commands' forgotten layout lived - a write-after-read
-		// between the two frames that share one colour image - and the whole of
-		// what caught it was the validation layers with synchronization
-		// validation on. docs/review/vulkan/ carries the settings file.
+		// The samples and LineSweeperFrameBench repeatedly wrap this ring.
+		// tests/render/pixel_tests.cpp presents only once and its read-back
+		// waits for the GPU, so its pixel assertions do not verify overlapping
+		// frames. Exercise the presented loop under synchronization validation
+		// as well; docs/review/vulkan/ carries the settings file. Reusing a slot
+		// waits for its earlier submission; that does not establish how many
+		// swapchain images exist or whether both frames execute concurrently.
 		static const int FRAME_COUNT = 2;
 
 		// Everything one frame in flight owns.
@@ -339,6 +332,14 @@ namespace labrador
 		// Acquires a swapchain image, blits the colour target into it, presents
 		// it, and moves to the next frame in flight. The whole of what this
 		// backend does with a swapchain is in here.
+		//
+		// FIFO supplies back-pressure, not a bound of one refresh period on
+		// this call. Acquire uses an infinite timeout and may wait for an image;
+		// it may also return before the acquired semaphore signals. execute()
+		// waits on that semaphore on the GPU before transferring into the image,
+		// so a delayed presentation engine can instead delay the submission's
+		// timeline signal and surface at wait_for_frame() when its slot is reused.
+		// A short present() does not establish that the GPU finished the frame.
 		void present();
 
 		// --- The timeline, and the whole of what this backend owes it ---------
@@ -346,6 +347,9 @@ namespace labrador
 		// Blocks until everything submitted against THIS frame index has
 		// finished. Called once at the top of a frame, before anything resets a
 		// command pool or overwrites a vertex buffer.
+		// This waits on the submission's timeline, not on vkAcquireNextImageKHR;
+		// its duration includes any GPU work and semaphore waits delaying that
+		// submission. CPU timing alone cannot distinguish those causes.
 		void wait_for_frame();
 
 		// Blocks until the queue has finished everything. NOT A FRAME-PATH

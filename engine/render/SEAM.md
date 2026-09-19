@@ -88,6 +88,16 @@ machine owns does not establish which one rendered the measured frame, while a
 pointer to that adapter would undo this section's boundary to answer the same
 question.
 
+The same record names the configured presentation mode. Direct3D requests
+sync interval one, Vulkan selects FIFO, and OpenGL explicitly requests swap
+interval one through `WGL_EXT_swap_control`. That WGL extension is required:
+device creation throws if it is absent or the setter fails, rather than
+inheriting an unreported driver default. OpenGL records the setter's request
+and `wglGetSwapIntervalEXT`'s answer separately; Direct3D has no corresponding
+query and its reported interval is absent. The null backend reports `none`,
+with no intervals. These are API configuration records, not a claim that a
+compositor or virtual display obeyed them, and no value measures scan-out.
+
 DirectXTK is no longer on the render path at all. It remains bought for audio
 and for the gamepad reader, which are seams of their own.
 

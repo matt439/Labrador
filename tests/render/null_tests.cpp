@@ -139,6 +139,9 @@ TEST_CASE("the null renderer reports that it selected no device")
 	CHECK(info.vendor_id == 0);
 	CHECK(info.device_id == 0);
 	CHECK(info.kind == RenderDeviceKind::null_device);
+	CHECK(info.present_mode == "none");
+	CHECK_FALSE(info.requested_swap_interval.has_value());
+	CHECK_FALSE(info.reported_swap_interval.has_value());
 }
 
 TEST_CASE("a sprite is recorded with the corners a device would have been given")
