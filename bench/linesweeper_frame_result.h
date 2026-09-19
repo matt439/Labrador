@@ -13,6 +13,12 @@ namespace linesweeper_frame_bench
 	inline constexpr int height = 720;
 	inline constexpr int expected_particles = 9600;
 
+	enum class PacingMode
+	{
+		software,
+		presentation,
+	};
+
 	struct Options
 	{
 		std::filesystem::path output;
@@ -21,6 +27,7 @@ namespace linesweeper_frame_bench
 		int warmup = 1800;
 		int sample = 3600;
 		int refresh = 60;
+		PacingMode pacing = PacingMode::software;
 	};
 
 	struct FrameSample

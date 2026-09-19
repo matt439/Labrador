@@ -485,6 +485,22 @@ class AnalysisTests(unittest.TestCase):
         write_json(path, result)
         refresh_terminal_manifest(root / "output")
 
+    def record_policies(self, root: Path) -> None:
+        for path in (root / "output" / "results").glob("result-*.json"):
+            result = json.loads(path.read_text())
+            result["timing"].update({"pacer": "win32_high_resolution_waitable_timer",
+                                     "deadline_policy": "absolute_catch_up"})
+            result["render_device"].update({"present_mode": "dxgi_sync_interval",
+                                            "requested_swap_interval": 1,
+                                            "reported_swap_interval": None})
+            for sample in result["samples"]:
+                sample.update({"pacing_wait_ns": 1000, "start_lateness_ns": 100})
+            for phase in analysis.PACING_PHASES:
+                result["summary"][phase] = phase_summary(
+                    [sample[phase] for sample in result["samples"]])
+            write_json(path, result)
+        refresh_terminal_manifest(root / "output")
+
     def test_complete_evidence_reports_pooled_percentiles(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -493,6 +509,11 @@ class AnalysisTests(unittest.TestCase):
             self.assertTrue(report["complete"])
             self.assertEqual(report["backends"]["d3d11"]["sample_count"], 200)
             self.assertIn("p99", report["backends"]["d3d11"]["summary"]["whole_frame_ns"])
+            backend = report["backends"]["d3d11"]
+            self.assertEqual(backend["presentation_measurement"], "unrecorded_legacy")
+            self.assertEqual(backend["pacing_measurement"], "unrecorded_legacy")
+            self.assertNotIn("present_mode", backend["render_device"])
+            self.assertNotIn("start_lateness_ns", backend["summary"])
 
     def test_first_repetition_with_long_present_is_retained_and_exposed(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -518,6 +539,12 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(first["whole_frame_over_target_fraction"], 1.0)
             self.assertEqual(first["long_begin_or_present"]["present_count"], 100)
             self.assertEqual(first["long_begin_or_present"]["adjacent_transition_count"], 0)
+            episode = first["long_begin_or_present"]["present"]
+            self.assertEqual(episode["first_sample"], 0)
+            self.assertEqual(episode["last_sample"], 99)
+            self.assertEqual(episode["longest_consecutive_count"], 100)
+            self.assertEqual(episode["longest_consecutive_start_sample"], 0)
+            self.assertEqual(episode["longest_alternating_count"], 0)
             self.assertEqual(second["long_begin_or_present"]["either_count"], 0)
             self.assertEqual(backend["repetition_ranges"]["present_ns"]["p50"],
                              {"min": 79, "max": 14_000_000})
@@ -552,6 +579,44 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(first["long_begin_or_present"]["present_count"], 0)
             self.assertEqual(first["long_begin_or_present"]["adjacent_transition_count"], 99)
 
+    def test_mid_run_alternation_and_sustained_episode_keep_their_onsets(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            for repetition in (1, 2):
+                samples = []
+                for ordinal in range(100):
+                    slow = (ordinal >= 30 and ordinal % 2 == 0 if repetition == 1
+                            else ordinal >= 20)
+                    samples.append({
+                        "ordinal": ordinal, "update_ns": 200_000,
+                        "begin_ns": 20_000_000 if slow else 0,
+                        "record_submit_ns": 1_000_000, "present_ns": 100_000,
+                        "whole_frame_ns": 21_300_000 if slow else 1_300_000,
+                        "scheduled_interval_ns": 16_666_667,
+                    })
+                self.replace_samples(root, repetition, samples)
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            first, second = report["backends"]["d3d11"]["repetitions"]
+            alternating = first["long_begin_or_present"]["begin"]
+            self.assertEqual(alternating["count"], 35)
+            self.assertEqual(alternating["first_sample"], 30)
+            self.assertEqual(alternating["last_sample"], 98)
+            self.assertEqual(alternating["longest_consecutive_count"], 1)
+            self.assertEqual(alternating["longest_alternating_count"], 71)
+            self.assertEqual(alternating["longest_alternating_start_sample"], 29)
+            sustained = second["long_begin_or_present"]["begin"]
+            self.assertEqual(sustained["count"], 80)
+            self.assertEqual(sustained["first_sample"], 20)
+            self.assertEqual(sustained["last_sample"], 99)
+            self.assertEqual(sustained["longest_consecutive_count"], 80)
+            self.assertEqual(sustained["longest_consecutive_start_sample"], 20)
+            self.assertEqual(second["whole_frame_over_target"], sustained)
+            self.assertIsNone(second["long_begin_or_present"]["present"]["first_sample"])
+
     def test_self_consistent_summary_cannot_hide_invalid_phase_arithmetic(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -571,20 +636,9 @@ class AnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.evidence(root)
+            self.record_policies(root)
             path = root / "output" / "results" / "result-d3d11-001.json"
             result = json.loads(path.read_text())
-            result["timing"].update({"pacer": "win32_high_resolution_waitable_timer",
-                                     "deadline_policy": "absolute_catch_up"})
-            result["render_device"].update({"present_mode": "dxgi_sync_interval",
-                                            "requested_swap_interval": 1,
-                                            "reported_swap_interval": None})
-            for sample in result["samples"]:
-                sample.update({"pacing_wait_ns": 1000, "start_lateness_ns": 100})
-            for phase in analysis.PACING_PHASES:
-                result["summary"][phase] = phase_summary(
-                    [sample[phase] for sample in result["samples"]])
-            write_json(path, result)
-            refresh_terminal_manifest(root / "output")
 
             report = analysis.analyze(root)
 
@@ -596,6 +650,14 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(first["timing"]["deadline_policy"], "absolute_catch_up")
             self.assertEqual(first["render_device"]["requested_swap_interval"], 1)
             self.assertIsNone(first["render_device"]["reported_swap_interval"])
+            self.assertEqual(first["presentation_measurement"], "recorded")
+            backend = report["backends"]["d3d11"]
+            self.assertEqual(backend["summary"]["pacing_wait_ns"]["count"], 200)
+            self.assertEqual(backend["summary"]["start_lateness_ns"]["p99"], 100)
+            self.assertEqual(backend["repetition_ranges"]["start_lateness_ns"]["p99"],
+                             {"min": 100, "max": 100})
+            self.assertEqual(backend["render_device"]["present_mode"], "dxgi_sync_interval")
+            self.assertEqual(first["start_lateness_over_target"]["count"], 0)
 
             del result["samples"][0]["start_lateness_ns"]
             write_json(path, result)
@@ -609,6 +671,156 @@ class AnalysisTests(unittest.TestCase):
             refresh_terminal_manifest(root / "output")
             self.assertEqual(analysis.analyze(root)["analysis_withheld"],
                              "result_validation_failed")
+
+    def test_persistent_lateness_is_reported_separately_from_frame_work(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            self.record_policies(root)
+            path = root / "output" / "results" / "result-d3d11-001.json"
+            result = json.loads(path.read_text())
+            for sample in result["samples"][20:]:
+                sample["start_lateness_ns"] = 20_000_000
+                sample["pacing_wait_ns"] = 0
+            for phase in analysis.PACING_PHASES:
+                result["summary"][phase] = phase_summary(
+                    [sample[phase] for sample in result["samples"]])
+            write_json(path, result)
+            refresh_terminal_manifest(root / "output")
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            backend = report["backends"]["d3d11"]
+            first, second = backend["repetitions"]
+            self.assertEqual(first["whole_frame_over_target_count"], 0)
+            self.assertEqual(first["start_lateness_over_target"]["count"], 80)
+            self.assertEqual(first["start_lateness_over_target"]["first_sample"], 20)
+            self.assertEqual(first["start_lateness_over_target"]["longest_consecutive_count"], 80)
+            self.assertEqual(second["start_lateness_over_target"]["count"], 0)
+            self.assertEqual(backend["summary"]["start_lateness_ns"]["p99"], 20_000_000)
+            self.assertEqual(backend["repetition_ranges"]["start_lateness_ns"]["p99"],
+                             {"min": 100, "max": 20_000_000})
+
+    def test_partial_or_changed_presentation_metadata_is_refused(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            self.record_policies(root)
+            path = root / "output" / "results" / "result-d3d11-002.json"
+            original = json.loads(path.read_text())
+            changes = [
+                ("present_mode", "fifo"), ("requested_swap_interval", 0),
+                ("requested_swap_interval", True), ("requested_swap_interval", 1.0),
+                ("reported_swap_interval", 1),
+            ]
+            for key, value in changes:
+                with self.subTest(field=key, value=value):
+                    result = copy.deepcopy(original)
+                    result["render_device"][key] = value
+                    write_json(path, result)
+                    refresh_terminal_manifest(root / "output")
+                    report = analysis.analyze(root)
+                    self.assertFalse(report["complete"])
+                    self.assertIn("presentation", report["error"])
+            for field in analysis.PRESENTATION_FIELDS:
+                with self.subTest(missing=field):
+                    result = copy.deepcopy(original)
+                    del result["render_device"][field]
+                    write_json(path, result)
+                    refresh_terminal_manifest(root / "output")
+                    report = analysis.analyze(root)
+                    self.assertFalse(report["complete"])
+                    self.assertIn("presentation metadata is incomplete", report["error"])
+
+    def test_backend_presentation_contracts_are_checked(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            document = self.evidence(root)
+            self.record_policies(root)
+            original = json.loads((root / "output" / "results" /
+                                   "result-d3d11-001.json").read_text())
+            policies = {
+                "d3d12": ("dxgi_sync_interval", 1, None),
+                "gl": ("wgl_swap_interval", 1, 1),
+                "vulkan": ("fifo", None, None),
+            }
+            for name, policy in policies.items():
+                with self.subTest(backend=name):
+                    result = copy.deepcopy(original)
+                    result["build"]["render_backend"] = name
+                    result["render_device"].update(dict(zip(analysis.PRESENTATION_FIELDS, policy)))
+                    backend = document["workload"]["backends"][0] | {"name": name}
+                    phases = analysis._validate_result(result, backend, document)
+                    self.assertEqual(len(phases["pacing_wait_ns"]), 100)
+                    result["render_device"]["reported_swap_interval"] = 0
+                    with self.assertRaisesRegex(ValueError, "presentation policy"):
+                        analysis._validate_result(result, backend, document)
+
+    def test_legacy_and_recorded_policies_cannot_be_mixed_in_one_run(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            self.record_policies(root)
+            path = root / "output" / "results" / "result-d3d11-002.json"
+            result = json.loads(path.read_text())
+            for field in analysis.PRESENTATION_FIELDS:
+                del result["render_device"][field]
+            del result["timing"]["pacer"]
+            del result["timing"]["deadline_policy"]
+            for phase in analysis.PACING_PHASES:
+                del result["summary"][phase]
+                for sample in result["samples"]:
+                    del sample[phase]
+            write_json(path, result)
+            refresh_terminal_manifest(root / "output")
+
+            report = analysis.analyze(root)
+
+            self.assertFalse(report["complete"])
+            self.assertIn("policies are mixed", report["error"])
+
+    def test_omitting_a_whole_metadata_group_cannot_downgrade_the_run(self):
+        for category in ("presentation", "pacing"):
+            with self.subTest(category=category), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                self.evidence(root)
+                self.record_policies(root)
+                for path in (root / "output" / "results").glob("result-*.json"):
+                    result = json.loads(path.read_text())
+                    if category == "presentation":
+                        for field in analysis.PRESENTATION_FIELDS:
+                            del result["render_device"][field]
+                    else:
+                        del result["timing"]["pacer"]
+                        del result["timing"]["deadline_policy"]
+                        for phase in analysis.PACING_PHASES:
+                            del result["summary"][phase]
+                            for sample in result["samples"]:
+                                del sample[phase]
+                    write_json(path, result)
+                refresh_terminal_manifest(root / "output")
+
+                report = analysis.analyze(root)
+
+                self.assertFalse(report["complete"])
+                self.assertIn("must be recorded together", report["error"])
+
+    def test_presentation_driven_diagnostic_cannot_pass_as_cloud_workload(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            path = root / "output" / "results" / "result-d3d11-001.json"
+            result = json.loads(path.read_text())
+            result["timing"].update({"pacer": "presentation_driven",
+                                     "deadline_policy": "none"})
+            write_json(path, result)
+            refresh_terminal_manifest(root / "output")
+
+            report = analysis.analyze(root)
+
+            self.assertFalse(report["complete"])
+            self.assertIn("pacing metadata", report["error"])
 
     def test_incomplete_or_identity_drift_withholds_analysis(self):
         with tempfile.TemporaryDirectory() as temporary:

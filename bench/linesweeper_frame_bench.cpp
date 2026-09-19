@@ -27,6 +27,7 @@
 #include <ctime>
 #include <exception>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -92,6 +93,10 @@ namespace
 			scene_(nullptr, nullptr)
 		{
 			this->samples_.reserve(static_cast<std::size_t>(options.sample));
+			if (options.pacing == linesweeper_frame_bench::PacingMode::software)
+			{
+				this->pacer_.emplace();
+			}
 
 			WindowOptions window_options;
 			window_options.window_class_name = L"LineSweeperFrameBenchWindowClass";
@@ -153,6 +158,11 @@ namespace
 			const RenderDeviceInfo& info = this->renderer_.device_info();
 			if (info.backend == "null")
 			{
+				if (!this->pacer_)
+				{
+					throw std::runtime_error(
+						"Presentation-driven pacing requires a raster backend.");
+				}
 				if (info.kind != RenderDeviceKind::null_device)
 				{
 					throw std::runtime_error(
@@ -273,11 +283,17 @@ namespace
 				// lateness so a burst of catch-up frames is visible in the result.
 				const Clock::time_point pacing_start = Clock::now();
 				const Clock::time_point deadline = this->next_frame_;
-				const Clock::time_point frame_start = this->pacer_.wait_until(deadline);
+				// The diagnostic presentation mode removes only the software wait.
+				// Renderer synchronization and work per frame remain identical.
+				const Clock::time_point frame_start = this->pacer_
+					? this->pacer_->wait_until(deadline) : pacing_start;
 				const Clock::duration period = std::chrono::duration_cast<Clock::duration>(
 					std::chrono::duration<double>(1.0 /
 						static_cast<double>(this->options_.refresh)));
-				this->next_frame_ += period;
+				if (this->pacer_)
+				{
+					this->next_frame_ += period;
+				}
 
 				std::int64_t scheduled_interval = 0;
 				if (this->has_previous_frame_)
@@ -320,7 +336,7 @@ namespace
 						nanoseconds(present_end - frame_start),
 						scheduled_interval,
 						nanoseconds(frame_start - pacing_start),
-						nanoseconds(frame_start - deadline),
+						this->pacer_ ? nanoseconds(frame_start - deadline) : 0,
 					});
 				}
 
@@ -412,7 +428,7 @@ namespace
 		ParticleField* particles_ = nullptr;
 
 		std::vector<FrameSample> samples_;
-		bench::FramePacer pacer_;
+		std::optional<bench::FramePacer> pacer_;
 		Clock::time_point next_frame_;
 		Clock::time_point previous_frame_;
 		int completed_frames_ = 0;

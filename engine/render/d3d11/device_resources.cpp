@@ -389,9 +389,9 @@ namespace labrador
     // Present the contents of the swap chain to the screen.
     void DeviceResources::Present()
     {
-        // The first argument instructs DXGI to block until VSync, putting the application
-        // to sleep until the next VSync. This ensures we don't waste any cycles rendering
-        // frames that will never be displayed to the screen.
+        // Request a display interval of one. Present may return before the next
+        // VSync or block on presentation backpressure; its CPU duration is not
+        // the display interval and does not measure when this frame scans out.
         HRESULT hr = m_swapChain->Present(1, 0);
 
         // Discard the contents of the render target.

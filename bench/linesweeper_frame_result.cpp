@@ -165,7 +165,7 @@ namespace linesweeper_frame_bench
 		std::fwprintf(stderr,
 			L"Usage: LineSweeperFrameBench --output FILE.json --run ID "
 			L"--release-hash SHA256 [--warmup FRAMES] [--sample FRAMES] "
-			L"[--refresh HZ]\n");
+			L"[--refresh HZ] [--pacing software|presentation]\n");
 	}
 
 	Options parse_options(int argc, wchar_t* argv[])
@@ -177,6 +177,7 @@ namespace linesweeper_frame_bench
 		bool warmup_seen = false;
 		bool sample_seen = false;
 		bool refresh_seen = false;
+		bool pacing_seen = false;
 
 		for (int index = 1; index < argc; index += 2)
 		{
@@ -218,6 +219,17 @@ namespace linesweeper_frame_bench
 				options.refresh = positive_integer(value, "--refresh", max_refresh);
 				refresh_seen = true;
 			}
+			else if (name == L"--pacing" && !pacing_seen)
+			{
+				if (value != L"software" && value != L"presentation")
+				{
+					throw std::invalid_argument(
+						"--pacing must be software or presentation.");
+				}
+				options.pacing = value == L"software"
+					? PacingMode::software : PacingMode::presentation;
+				pacing_seen = true;
+			}
 			else
 			{
 				throw std::invalid_argument(
@@ -248,6 +260,7 @@ namespace linesweeper_frame_bench
 		rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
 		const labrador::RenderDeviceInfo& device = result.device;
 		const std::vector<FrameSample>& samples = result.samples;
+		const bool software_pacing = options.pacing == PacingMode::software;
 
 		writer.StartObject();
 		writer.Key("schema_version");
@@ -353,11 +366,14 @@ namespace linesweeper_frame_bench
 		writer.Key("summary_method");
 		writer.String("nearest-rank");
 		writer.Key("interval_scope");
-		writer.String("software-paced frame-start interval; not display scan-out");
+		writer.String(software_pacing
+			? "software-paced frame-start interval; not display scan-out"
+			: "presentation-driven frame-start interval; not display scan-out");
 		writer.Key("pacer");
-		writer.String("win32_high_resolution_waitable_timer");
+		writer.String(software_pacing
+			? "win32_high_resolution_waitable_timer" : "presentation_driven");
 		writer.Key("deadline_policy");
-		writer.String("absolute_catch_up");
+		writer.String(software_pacing ? "absolute_catch_up" : "none");
 		writer.Key("sample_count");
 		writer.Uint64(static_cast<std::uint64_t>(samples.size()));
 		writer.Key("scheduled_interval_ns");
@@ -389,10 +405,13 @@ namespace linesweeper_frame_bench
 			writer.Int64(sample.whole_frame_ns);
 			writer.Key("scheduled_interval_ns");
 			writer.Int64(sample.scheduled_interval_ns);
-			writer.Key("pacing_wait_ns");
-			writer.Int64(sample.pacing_wait_ns);
-			writer.Key("start_lateness_ns");
-			writer.Int64(sample.start_lateness_ns);
+			if (software_pacing)
+			{
+				writer.Key("pacing_wait_ns");
+				writer.Int64(sample.pacing_wait_ns);
+				writer.Key("start_lateness_ns");
+				writer.Int64(sample.start_lateness_ns);
+			}
 			writer.EndObject();
 		}
 		writer.EndArray();
@@ -414,10 +433,13 @@ namespace linesweeper_frame_bench
 		writer.Key("scheduled_interval_ns");
 		write_summary(writer,
 			phase_samples(samples, &FrameSample::scheduled_interval_ns));
-		writer.Key("pacing_wait_ns");
-		write_summary(writer, phase_samples(samples, &FrameSample::pacing_wait_ns));
-		writer.Key("start_lateness_ns");
-		write_summary(writer, phase_samples(samples, &FrameSample::start_lateness_ns));
+		if (software_pacing)
+		{
+			writer.Key("pacing_wait_ns");
+			write_summary(writer, phase_samples(samples, &FrameSample::pacing_wait_ns));
+			writer.Key("start_lateness_ns");
+			write_summary(writer, phase_samples(samples, &FrameSample::start_lateness_ns));
+		}
 		writer.EndObject();
 		writer.EndObject();
 

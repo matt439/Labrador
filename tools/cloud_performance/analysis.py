@@ -18,6 +18,10 @@ PHASES = (
 )
 FRAME_PHASES = PHASES[:4]
 PACING_PHASES = ("pacing_wait_ns", "start_lateness_ns")
+PRESENTATION_FIELDS = (
+    "present_mode", "requested_swap_interval", "reported_swap_interval",
+)
+DEVICE_FIELDS = ("api", "device_name", "vendor_id", "device_id", "kind")
 
 
 def _json(path: Path) -> Any:
@@ -57,6 +61,30 @@ def _summary(values: list[int]) -> dict[str, int]:
     }
 
 
+def _long_call_pattern(flags: list[bool]) -> dict[str, Any]:
+    """Locate slow episodes without losing their onset to a pooled percentile."""
+    indices = [index for index, flagged in enumerate(flags) if flagged]
+    longest = alternating = 0
+    longest_start = alternating_start = None
+    consecutive = changing = 0
+    for index, flagged in enumerate(flags):
+        consecutive = consecutive + 1 if flagged else 0
+        if consecutive > longest:
+            longest, longest_start = consecutive, index - consecutive + 1
+        changing = (changing + 1 if index and flagged != flags[index - 1] else 1)
+        if changing > 1 and changing > alternating:
+            alternating, alternating_start = changing, index - changing + 1
+    return {
+        "count": len(indices),
+        "first_sample": indices[0] if indices else None,
+        "last_sample": indices[-1] if indices else None,
+        "longest_consecutive_count": longest,
+        "longest_consecutive_start_sample": longest_start,
+        "longest_alternating_count": alternating,
+        "longest_alternating_start_sample": alternating_start,
+    }
+
+
 def _diagnostics(phases: dict[str, list[int]], target_frame_ns: int) -> dict[str, Any]:
     """Describe cadence and long calls without inferring why a call took time."""
     intervals = phases["scheduled_interval_ns"]
@@ -67,7 +95,7 @@ def _diagnostics(phases: dict[str, list[int]], target_frame_ns: int) -> dict[str
     long_present = [value > threshold for value in phases["present_ns"]]
     long_calls = [begin or present for begin, present in zip(long_begin, long_present)]
     over_budget = sum(value > target_frame_ns for value in phases["whole_frame_ns"])
-    return {
+    diagnostics = {
         "cadence": {
             "mean_interval_ns": interval_total / count,
             "realized_hz": 1_000_000_000 * count / interval_total if interval_total else None,
@@ -78,6 +106,8 @@ def _diagnostics(phases: dict[str, list[int]], target_frame_ns: int) -> dict[str
         },
         "whole_frame_over_target_count": over_budget,
         "whole_frame_over_target_fraction": over_budget / count,
+        "whole_frame_over_target": _long_call_pattern([
+            value > target_frame_ns for value in phases["whole_frame_ns"]]),
         "long_begin_or_present": {
             "threshold_ns": threshold,
             "begin_count": sum(long_begin),
@@ -87,8 +117,15 @@ def _diagnostics(phases: dict[str, list[int]], target_frame_ns: int) -> dict[str
             # calls from one contiguous slow half. Do not join repetitions.
             "adjacent_transition_count": sum(
                 left != right for left, right in zip(long_calls, long_calls[1:])),
+            "begin": _long_call_pattern(long_begin),
+            "present": _long_call_pattern(long_present),
+            "either": _long_call_pattern(long_calls),
         },
     }
+    if "start_lateness_ns" in phases:
+        diagnostics["start_lateness_over_target"] = _long_call_pattern([
+            value > target_frame_ns for value in phases["start_lateness_ns"]])
+    return diagnostics
 
 
 def _repetition_ranges(observations: list[dict[str, Any]]) -> dict[str, Any]:
@@ -100,8 +137,28 @@ def _repetition_ranges(observations: list[dict[str, Any]]) -> dict[str, Any]:
             }
             for percentile in ("p50", "p99")
         }
-        for phase in PHASES
+        for phase in observations[0]["summary"]
     }
+
+
+def _validate_presentation(device: dict[str, Any], backend_name: str) -> bool:
+    recorded = any(field in device for field in PRESENTATION_FIELDS)
+    if not recorded:
+        return False
+    if not all(field in device for field in PRESENTATION_FIELDS):
+        raise ValueError("benchmark presentation metadata is incomplete")
+    expected = {
+        "d3d11": ("dxgi_sync_interval", 1, None),
+        "d3d12": ("dxgi_sync_interval", 1, None),
+        "gl": ("wgl_swap_interval", 1, 1),
+        "vulkan": ("fifo", None, None),
+    }[backend_name]
+    actual = tuple(device[field] for field in PRESENTATION_FIELDS)
+    if (actual != expected or any(isinstance(value, bool) for value in actual)
+            or any(value is not None and not isinstance(value, int)
+                   for value in actual[1:])):
+        raise ValueError("benchmark presentation policy differs from its backend contract")
+    return True
 
 
 def _utc(value: Any, name: str) -> datetime:
@@ -318,6 +375,7 @@ def _validate_result(result: dict[str, Any], backend: dict[str, Any],
         raise TypeError("benchmark render_device must be an object")
     if device.get("kind") != "hardware":
         raise ValueError("benchmark backend or device kind differs from the declaration")
+    presentation_recorded = _validate_presentation(device, backend["name"])
     if _vendor_id(device.get("vendor_id")) != backend["expected_vendor_id"]:
         raise ValueError("benchmark used an unexpected GPU vendor")
     if (re.search(backend["expected_device"], str(device.get("device_name", "")),
@@ -365,6 +423,10 @@ def _validate_result(result: dict[str, Any], backend: dict[str, Any],
             timing.get("pacer") != "win32_high_resolution_waitable_timer"
             or timing.get("deadline_policy") != "absolute_catch_up"):
         raise ValueError("benchmark pacing metadata is incomplete or unknown")
+    # Both groups entered the producer together. Accept the old contract only
+    # when neither is present, rather than silently downgrading a partial one.
+    if pacing_recorded != presentation_recorded:
+        raise ValueError("benchmark pacing and presentation metadata must be recorded together")
     phase_names = PHASES + PACING_PHASES if pacing_recorded else PHASES
     phases: dict[str, list[int]] = {phase: [] for phase in phase_names}
     for ordinal, sample in enumerate(samples):
@@ -435,6 +497,7 @@ def analyze(folder: str | Path) -> dict[str, Any]:
         name: {phase: [] for phase in PHASES} for name in declared
     }
     devices: dict[str, tuple[Any, ...]] = {}
+    measurement_identity: tuple[bool, bool] | None = None
     seen: set[tuple[str, int]] = set()
     refresh_hz = config["workload"]["refresh_hz"]
     target_frame_ns = (1_000_000_000 + refresh_hz // 2) // refresh_hz
@@ -460,8 +523,13 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             seen.add(identity)
             phases = _validate_result(result, declared[backend_name], config)
             device = result["render_device"]
-            device_identity = tuple(device.get(key) for key in (
-                "api", "device_name", "vendor_id", "device_id", "kind"))
+            recorded = ("pacing_wait_ns" in phases,
+                        all(field in device for field in PRESENTATION_FIELDS))
+            if measurement_identity is not None and measurement_identity != recorded:
+                raise ValueError("recorded and legacy measurement policies are mixed in one run")
+            measurement_identity = recorded
+            device_fields = DEVICE_FIELDS + (PRESENTATION_FIELDS if recorded[1] else ())
+            device_identity = tuple(device.get(key) for key in device_fields)
             if backend_name in devices and devices[backend_name] != device_identity:
                 raise ValueError("render device identity changed between repetitions")
             devices[backend_name] = device_identity
@@ -473,14 +541,16 @@ def analyze(folder: str | Path) -> dict[str, Any]:
                 "sample_count": len(phases["whole_frame_ns"]),
                 "render_device": device,
                 "pacing_measurement": (
-                    "recorded" if "pacing_wait_ns" in phases else "unrecorded_legacy"),
+                    "recorded" if recorded[0] else "unrecorded_legacy"),
+                "presentation_measurement": (
+                    "recorded" if recorded[1] else "unrecorded_legacy"),
                 "timing": {key: value for key, value in result["timing"].items()
                            if key != "scheduled_interval_ns"},
                 "summary": {phase: _summary(values) for phase, values in phases.items()},
                 **_diagnostics(phases, target_frame_ns),
             })
-            for phase in PHASES:
-                pooled[backend_name][phase].extend(phases[phase])
+            for phase, values in phases.items():
+                pooled[backend_name].setdefault(phase, []).extend(values)
         expected_seen = {
             (name, repetition)
             for name in declared
@@ -492,9 +562,13 @@ def analyze(folder: str | Path) -> dict[str, Any]:
         return _withheld("result_validation_failed", error=str(exc))
     summaries: dict[str, Any] = {}
     for name, phases in pooled.items():
+        first = observations[name][0]
+        device_fields = DEVICE_FIELDS + (
+            PRESENTATION_FIELDS if first["presentation_measurement"] == "recorded" else ())
         summaries[name] = {
-            "render_device": dict(zip(
-                ("api", "device_name", "vendor_id", "device_id", "kind"), devices[name])),
+            "render_device": dict(zip(device_fields, devices[name])),
+            "pacing_measurement": first["pacing_measurement"],
+            "presentation_measurement": first["presentation_measurement"],
             "sample_count": len(phases["whole_frame_ns"]),
             "target_frame_ns": target_frame_ns,
             "over_target_scheduled_count": sum(
@@ -512,7 +586,9 @@ def analyze(folder: str | Path) -> dict[str, Any]:
                 "hide differences between processes; inspect repetitions and repetition_ranges."),
             "long_begin_or_present": (
                 "CPU-observed begin/present durations exceeding half the target frame period. "
-                "These include work and waits; their cause and GPU time are not measured."),
+                "These include work and waits; their cause and GPU time are not measured. "
+                "Episode sample indices are zero-based within each retained repetition. "
+                "Alternating spans include both short and long samples; ties retain the first span."),
             "cadence": (
                 "Frame-start intervals, not display scan-out. Realized Hz uses the mean "
                 "interval; a median alone can hide alternating short and long intervals."),

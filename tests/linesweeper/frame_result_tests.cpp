@@ -14,6 +14,7 @@
 
 using linesweeper_frame_bench::FrameSample;
 using linesweeper_frame_bench::Options;
+using linesweeper_frame_bench::PacingMode;
 using linesweeper_frame_bench::Result;
 using linesweeper_frame_bench::atomic_write;
 using linesweeper_frame_bench::parse_options;
@@ -81,6 +82,54 @@ TEST_SUITE("LineSweeper frame result")
 		CHECK(options.warmup == 12);
 		CHECK(options.sample == 345);
 		CHECK(options.refresh == 60);
+		CHECK(options.pacing == PacingMode::software);
+	}
+
+	TEST_CASE("presentation pacing is explicit and rejects misspelled or repeated modes")
+	{
+		std::vector<std::wstring> values = {
+			L"LineSweeperFrameBench", L"--output", temporary_result().wstring(),
+			L"--run", L"diagnostic", L"--release-hash", std::wstring(64, L'a'),
+			L"--pacing", L"presentation",
+		};
+		std::vector<wchar_t*> argv = arguments(values);
+		CHECK(parse_options(static_cast<int>(argv.size()), argv.data()).pacing ==
+			PacingMode::presentation);
+
+		values.back() = L"unpaced";
+		argv = arguments(values);
+		CHECK_THROWS_AS(parse_options(static_cast<int>(argv.size()), argv.data()),
+			std::invalid_argument);
+
+		values.back() = L"software";
+		values.push_back(L"--pacing");
+		values.push_back(L"presentation");
+		argv = arguments(values);
+		CHECK_THROWS_AS(parse_options(static_cast<int>(argv.size()), argv.data()),
+			std::invalid_argument);
+	}
+
+	TEST_CASE("presentation diagnostics do not fabricate software waits or deadlines")
+	{
+		Options options;
+		options.pacing = PacingMode::presentation;
+		Result result;
+		result.samples.push_back(FrameSample{ 1, 2, 3, 4, 10, 16, 6, 2 });
+		const std::string json = result_json(options, result);
+		rapidjson::Document document;
+		document.Parse(json.c_str());
+		REQUIRE_FALSE(document.HasParseError());
+		CHECK(document["timing"]["interval_scope"].GetString() ==
+			std::string("presentation-driven frame-start interval; not display scan-out"));
+		CHECK(document["timing"]["pacer"].GetString() == std::string("presentation_driven"));
+		CHECK(document["timing"]["deadline_policy"].GetString() ==
+			std::string("none"));
+		CHECK_FALSE(document["samples"][0].HasMember("pacing_wait_ns"));
+		CHECK_FALSE(document["samples"][0].HasMember("start_lateness_ns"));
+		CHECK_FALSE(document["summary"].HasMember("pacing_wait_ns"));
+		CHECK_FALSE(document["summary"].HasMember("start_lateness_ns"));
+		CHECK(document["samples"][0]["whole_frame_ns"].GetInt64() == 10);
+		CHECK(document["summary"]["scheduled_interval_ns"]["p99"].GetInt64() == 16);
 	}
 
 	TEST_CASE("the JSON names scheduled cadence and every measured phase")

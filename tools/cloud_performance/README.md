@@ -225,11 +225,24 @@ python -m tools.cloud_performance analyze `
 
 Analysis refuses to report percentiles unless the terminal marker, launch,
 configuration, host, release, adapter, workload and complete repetition matrix
-all agree. Raw samples remain the authority.
+all agree. Recorded presentation metadata must be complete and match the
+backend's synchronization contract. A run cannot mix captures with recorded
+pacing or presentation policy and legacy captures without it. Entire legacy
+runs remain readable and explicitly labelled `unrecorded_legacy`; missing
+measurements are never synthesized. Pacing and presentation metadata entered
+the producer together, so a capture must include both groups or neither.
+Raw samples remain the authority.
 
 Read `repetitions` and `repetition_ranges` before the pooled `summary`.
 Per-repetition diagnostics show mean cadence, counts over the frame budget,
-short/long intervals, and long begin/present calls including alternation.
+short/long intervals, and long begin/present calls including alternation. They
+also retain the first and last affected sample and the longest consecutive and
+alternating spans, with zero-based sample indices local to each repetition.
+An alternating span includes both its long and short samples; ties retain the
+first span. Pacing wait and start lateness appear in the pooled summaries and
+repetition ranges when recorded, with separate episodes of start lateness over
+the target period. These locate a mid-run onset or a persistent late schedule
+that a pooled p99 cannot describe.
 The long-call threshold is half the declared frame budget and is reported in
 the output; it does not prove that a call waited or identify what it waited on.
 On Vulkan, begin includes the frame-slot timeline wait and present includes
@@ -267,3 +280,54 @@ When `cfn-lint` and AWS credentials are available, also validate a rendered
 template with those tools before the first real launch. The first real
 acceptance remains a manual image/session qualification plus a bounded run;
 passing the offline suite cannot establish GPU availability or price.
+
+## Local GPU trace diagnostics
+
+`trace_benchmark.ps1` captures one bounded benchmark process with the installed
+Windows Performance Recorder `GPU` profile. Run it from an elevated PowerShell
+in the interactive desktop session. It uses an already extracted, reviewed
+bundle, verifies its release hash and every manifest member, and refuses an
+existing output directory. It creates no AWS resources.
+
+```powershell
+powershell -NoProfile -File tools/cloud_performance/trace_benchmark.ps1 `
+    -BundleRoot out/cloud/extracted-bundle `
+    -ReleaseSHA256 <the-reviewed-release-manifest-sha256> `
+    -Backend vulkan -OutputDirectory out/cloud/local-vulkan-gpu-trace
+```
+
+The defaults retain the reference workload: 1,800 warm-up frames, 3,600 measured
+frames, software pacing at nominal 60 Hz, and a 210-second benchmark deadline.
+For a separately declared pacing experiment, pass `-Pacing presentation` with a
+freshly rebuilt bundle and a different output directory. That removes the
+software pacer while retaining the backend's configured presentation mode;
+`-Refresh` remains the comparison budget. `-Warmup`, `-Sample`, `-Refresh` and
+`-TimeoutSeconds` are bounded and recorded; the deadline is at most ten minutes.
+Tracing changes the measured workload, so compare these captures as diagnostics,
+not as another untraced reference repetition.
+
+Each capture retains the exact arguments and executable hash, release manifest,
+WPR status/profile/start/stop logs, benchmark stdout/stderr and raw result, and
+`gpu.etl`. `capture.json` records completion or failure and file hashes. A failed
+benchmark or its deadline still triggers a trace save. WPR commands have their
+own finite deadlines, so trace finalization can take up to two additional minutes.
+The wrapper starts a unique named WPR instance and stops only that instance;
+it never cancels an existing recording. A failed start does not launch the
+benchmark; it still attempts a stop of its own name to clean up any partial
+start. If start or cleanup fails, preserve the directory and inspect the
+logs; `request.json` contains the exact named stop command for recovery.
+
+The default WPR status is recorded for context, not treated as a complete list
+of named recordings. Session ownership uses Microsoft's documented
+[`-instancename` isolation](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/wpr-command-line-options#instancename),
+with the name last on start and stop. Open the ETL in Windows Performance
+Analyzer and correlate the benchmark process's renderer waits with GPU queue,
+DXGI/presentation and CPU scheduling events. A successful recording alone does
+not establish which dependency caused a stall.
+
+The wrapper's failure and ownership paths can be exercised without administrator
+rights or an ETW session using fake subprocesses:
+
+```powershell
+python -m unittest tools.tests.test_trace_benchmark
+```
