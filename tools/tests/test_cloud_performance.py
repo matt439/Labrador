@@ -14,7 +14,9 @@ from pathlib import Path
 
 from tools.cloud_performance import __main__ as cli
 from tools.cloud_performance import analysis, infrastructure, release
-from tools.cloud_performance.common import canonical, load_config, validate_config
+from tools.cloud_performance.common import (
+    canonical, load_config, validate_config, worker_source_info,
+)
 
 
 def config(now: datetime | None = None) -> dict:
@@ -603,3 +605,22 @@ class AnalysisTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DispatchTests(unittest.TestCase):
+    def test_worker_source_is_an_https_object_url_in_the_run_region(self):
+        # AWS-RunRemoteScript's downloadContent rejects an s3:// URI as an
+        # "invalid S3 path parameter", and the first thing that parses the
+        # value is the agent on the runner - the first real launch idled for
+        # an hour on it. Pin the form here, where a dry run can see it.
+        document = config()
+        document["artifact_bucket"] = "example-bucket"
+        document["region"] = "ap-southeast-2"
+
+        source = worker_source_info(document)
+
+        self.assertEqual(source, {
+            "path": "https://example-bucket.s3.ap-southeast-2.amazonaws.com/"
+                    "labrador-performance/runs/reference-001/input/worker.ps1",
+        })
+        self.assertFalse(source["path"].startswith("s3://"))

@@ -20,6 +20,7 @@ from .common import (
     object_keys,
     run_prefix,
     safe_relative,
+    worker_source_info,
 )
 
 ROOT = Path(__file__).resolve().parents[2]

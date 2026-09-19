@@ -121,6 +121,21 @@ def object_keys(config: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def worker_source_info(config: dict[str, Any]) -> dict[str, str]:
+    """The AWS-RunRemoteScript sourceInfo that fetches the worker.
+
+    That document's downloadContent step takes an HTTPS URL of the object and
+    rejects an s3:// URI as "invalid S3 path parameter" - which no dry run can
+    see, because the first thing that parses the value is the agent on the
+    runner. The regional virtual-hosted form keeps the request in the run's
+    Region rather than bouncing through the global endpoint.
+    """
+    return {
+        "path": f"https://{config['artifact_bucket']}.s3.{config['region']}.amazonaws.com/"
+                f"{object_keys(config)['worker']}",
+    }
+
+
 def validate_config(document: dict[str, Any], *, now: datetime | None = None,
                     check_time: bool = True) -> dict[str, Any]:
     """Validate and return a normalized copy of a deployment document."""
