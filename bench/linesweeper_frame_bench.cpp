@@ -289,7 +289,7 @@ namespace
 				// engine consumes, so every later wait lands in begin_frame or
 				// end_frame instead of here and whole_frame_ns reads one period
 				// for the rest of the process. Both EC2 reference runs did this in
-				// six of forty repetitions and the desktop reproduces it by pacing
+				// five of forty repetitions and the desktop reproduces it by pacing
 				// a little faster than its display —
 				// docs/performance/2026-09-19-g6f-ratchet.md#2. record_submit_ns
 				// and update_ns measure the work in either state; that document's

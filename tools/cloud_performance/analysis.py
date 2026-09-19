@@ -85,6 +85,63 @@ def _long_call_pattern(flags: list[bool]) -> dict[str, Any]:
     }
 
 
+def _presentation_lock(phases: dict[str, list[int]], target_frame_ns: int) -> dict[str, Any]:
+    """Recognise a loop the presentation engine paces instead of the benchmark.
+
+    The signature is docs/performance/2026-09-19-g6f-ratchet.md#5: from some
+    sample to the end of the retained minute the pacer never waits, and the
+    whole frame and the frame-start interval both average one period, because
+    the wait moved into begin or present and nothing drains it. The verdict is
+    over that tail only, so a mid-run onset is reported rather than diluted,
+    and the tail must last at least a second so that one catch-up frame at the
+    end of a free repetition cannot pass. The pacer's own wait is used where it
+    was recorded; a legacy capture retains only the gap between one frame's
+    end and the next frame's start, which cannot be seen for the first sample.
+    """
+    whole_frames = phases["whole_frame_ns"]
+    intervals = phases["scheduled_interval_ns"]
+    count = len(whole_frames)
+    if "pacing_wait_ns" in phases:
+        source = "pacing_wait_ns"
+        idle_flags = [wait * 100 < target_frame_ns for wait in phases["pacing_wait_ns"]]
+    else:
+        source = "frame_end_to_next_start"
+        idle_flags = [False] + [
+            (intervals[index] - whole_frames[index - 1]) * 100 < target_frame_ns
+            for index in range(1, count)
+        ]
+    onset = count
+    while onset > 0 and idle_flags[onset - 1]:
+        onset -= 1
+    tail = count - onset
+    minimum_tail = round(1_000_000_000 / target_frame_ns)
+    tolerance = target_frame_ns * 2 // 100
+    tail_whole_frame = sum(whole_frames[onset:]) / tail if tail else None
+    tail_interval = sum(intervals[onset:]) / tail if tail else None
+    locked = (tail >= minimum_tail
+              and abs(tail_whole_frame - target_frame_ns) <= tolerance
+              and abs(tail_interval - target_frame_ns) <= tolerance)
+    verdict: dict[str, Any] = {
+        "verdict": "locked_to_presentation_cadence" if locked else "not_locked",
+        "pacer_idle_source": source,
+        "pacer_idle_threshold_ns": target_frame_ns // 100,
+        "pacer_idle_count": sum(idle_flags),
+        "tail_first_sample": onset if tail else None,
+        "tail_sample_count": tail,
+        "minimum_tail_sample_count": minimum_tail,
+        "tail_mean_whole_frame_ns": tail_whole_frame,
+        "tail_mean_interval_ns": tail_interval,
+        "tolerance_ns": tolerance,
+    }
+    if tail and "start_lateness_ns" in phases:
+        lateness = phases["start_lateness_ns"][onset:]
+        verdict["tail_start_lateness_ns"] = {
+            "first": lateness[0], "last": lateness[-1],
+            "min": min(lateness), "max": max(lateness),
+        }
+    return verdict
+
+
 def _diagnostics(phases: dict[str, list[int]], target_frame_ns: int) -> dict[str, Any]:
     """Describe cadence and long calls without inferring why a call took time."""
     intervals = phases["scheduled_interval_ns"]
@@ -125,6 +182,7 @@ def _diagnostics(phases: dict[str, list[int]], target_frame_ns: int) -> dict[str
     if "start_lateness_ns" in phases:
         diagnostics["start_lateness_over_target"] = _long_call_pattern([
             value > target_frame_ns for value in phases["start_lateness_ns"]])
+    diagnostics["presentation_lock"] = _presentation_lock(phases, target_frame_ns)
     return diagnostics
 
 
@@ -575,6 +633,9 @@ def analyze(folder: str | Path) -> dict[str, Any]:
                 value > target_frame_ns for value in phases["scheduled_interval_ns"]),
             "summary": {phase: _summary(values) for phase, values in phases.items()},
             "repetition_ranges": _repetition_ranges(observations[name]),
+            "presentation_locked_repetitions": sorted(
+                item["repetition"] for item in observations[name]
+                if item["presentation_lock"]["verdict"] == "locked_to_presentation_cadence"),
             "repetitions": sorted(observations[name], key=lambda item: item["repetition"]),
         }
     return {
@@ -592,6 +653,14 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             "cadence": (
                 "Frame-start intervals, not display scan-out. Realized Hz uses the mean "
                 "interval; a median alone can hide alternating short and long intervals."),
+            "presentation_lock": (
+                "A repetition whose pacer never waits from tail_first_sample to the end "
+                "while the whole frame and the interval both average one period is locked "
+                "to the presentation cadence: its long begin or present calls and its "
+                "whole_frame_ns are the period, not the work. Read update_ns and "
+                "record_submit_ns for the work, and do not quote a pooled whole_frame_ns "
+                "across presentation_locked_repetitions. "
+                "docs/performance/2026-09-19-g6f-ratchet.md#2 is the mechanism."),
         },
         "run_id": config["run_id"],
         "bundle_sha256": config["bundle"]["sha256"],

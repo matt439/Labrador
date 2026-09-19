@@ -480,7 +480,8 @@ class AnalysisTests(unittest.TestCase):
             sample["scheduled_interval_ns"] for sample in samples]
         result["summary"] = {
             phase: phase_summary([sample[phase] for sample in samples])
-            for phase in analysis.PHASES
+            for phase in analysis.PHASES + analysis.PACING_PHASES
+            if phase in samples[0]
         }
         write_json(path, result)
         refresh_terminal_manifest(root / "output")
@@ -701,6 +702,138 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(backend["summary"]["start_lateness_ns"]["p99"], 20_000_000)
             self.assertEqual(backend["repetition_ranges"]["start_lateness_ns"]["p99"],
                              {"min": 100, "max": 20_000_000})
+
+    def locked_samples(self, count: int, *, onset: int, whole_frame_ns: int = 16_664_000,
+                       alternate: bool = False) -> list[dict]:
+        """Free frames before the onset; after it the wait sits in present, not the pacer."""
+        samples = []
+        for ordinal in range(count):
+            locked = ordinal >= onset
+            if locked and alternate and ordinal % 2:
+                present, wait = 1_000_000, 100
+            elif locked and alternate:
+                present, wait = 2 * whole_frame_ns - 4_000_000 - 3_000_000, 100
+            elif locked:
+                present, wait = whole_frame_ns - 3_000_000, 100
+            else:
+                present, wait = 40_000, 14_000_000
+            samples.append({
+                "ordinal": ordinal, "update_ns": 1_000_000, "begin_ns": 0,
+                "record_submit_ns": 2_000_000, "present_ns": present,
+                "whole_frame_ns": 3_000_000 + present,
+                "scheduled_interval_ns": 16_666_667 if ordinal else 0,
+                "pacing_wait_ns": wait, "start_lateness_ns": 24_000_000 if locked else 100,
+            })
+        return samples
+
+    def test_locked_repetition_is_named_and_listed_rather_than_counted_as_slow(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            self.record_policies(root)
+            self.replace_samples(root, 1, self.locked_samples(100, onset=30))
+            self.replace_samples(root, 2, self.locked_samples(100, onset=100))
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            backend = report["backends"]["d3d11"]
+            first, second = backend["repetitions"]
+            lock = first["presentation_lock"]
+            self.assertEqual(lock["verdict"], "locked_to_presentation_cadence")
+            self.assertEqual(lock["pacer_idle_source"], "pacing_wait_ns")
+            self.assertEqual(lock["tail_first_sample"], 30)
+            self.assertEqual(lock["tail_sample_count"], 70)
+            self.assertEqual(lock["minimum_tail_sample_count"], 60)
+            self.assertEqual(lock["pacer_idle_count"], 70)
+            self.assertEqual(lock["tail_mean_whole_frame_ns"], 16_664_000)
+            self.assertEqual(lock["tail_mean_interval_ns"], 16_666_667)
+            self.assertEqual(lock["tail_start_lateness_ns"],
+                             {"first": 24_000_000, "last": 24_000_000,
+                              "min": 24_000_000, "max": 24_000_000})
+            # The counts that read a locked tail as slow frames are still there,
+            # unchanged, so the verdict beside them is what says what they are.
+            self.assertEqual(first["whole_frame_over_target_count"], 0)
+            self.assertEqual(first["long_begin_or_present"]["present_count"], 70)
+            self.assertEqual(second["presentation_lock"]["verdict"], "not_locked")
+            self.assertEqual(second["presentation_lock"]["tail_sample_count"], 0)
+            self.assertIsNone(second["presentation_lock"]["tail_first_sample"])
+            self.assertNotIn("tail_start_lateness_ns", second["presentation_lock"])
+            self.assertEqual(backend["presentation_locked_repetitions"], [1])
+            self.assertIn("presentation_lock", report["interpretation"])
+
+    def test_alternating_lock_is_recognised_from_the_tail_mean(self):
+        # Vulkan's two-slot ring against three FIFO images blocks every second
+        # frame for two periods; the median whole frame is nowhere near the
+        # period, the mean over the tail is exactly it.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            self.record_policies(root)
+            self.replace_samples(root, 1, self.locked_samples(100, onset=0, alternate=True))
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            first = report["backends"]["d3d11"]["repetitions"][0]
+            self.assertEqual(first["summary"]["whole_frame_ns"]["p50"], 4_000_000)
+            self.assertEqual(first["presentation_lock"]["verdict"],
+                             "locked_to_presentation_cadence")
+            self.assertEqual(first["presentation_lock"]["tail_first_sample"], 0)
+            self.assertEqual(first["presentation_lock"]["tail_mean_whole_frame_ns"], 16_664_000)
+            self.assertEqual(first["long_begin_or_present"]["present_count"], 50)
+
+    def test_catch_up_and_short_idle_tails_are_not_locks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            self.record_policies(root)
+            # An idle tail shorter than a second: the pacer stopped waiting
+            # only for the last frames, which is a catch-up, not a lock.
+            self.replace_samples(root, 1, self.locked_samples(100, onset=50))
+            # An idle tail whose frames are far shorter than the period: a
+            # late loop catching up, with nothing blocking it.
+            samples = self.locked_samples(100, onset=0)
+            for sample in samples:
+                sample["present_ns"] = 40_000
+                sample["whole_frame_ns"] = 3_040_000
+            self.replace_samples(root, 2, samples)
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            backend = report["backends"]["d3d11"]
+            first, second = backend["repetitions"]
+            self.assertEqual(first["presentation_lock"]["verdict"], "not_locked")
+            self.assertEqual(first["presentation_lock"]["tail_sample_count"], 50)
+            self.assertEqual(first["presentation_lock"]["tail_first_sample"], 50)
+            self.assertEqual(second["presentation_lock"]["verdict"], "not_locked")
+            self.assertEqual(second["presentation_lock"]["tail_sample_count"], 100)
+            self.assertEqual(second["presentation_lock"]["tail_mean_whole_frame_ns"], 3_040_000)
+            self.assertEqual(backend["presentation_locked_repetitions"], [])
+
+    def test_legacy_lock_is_read_from_the_gap_and_cannot_see_the_first_sample(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            samples = self.locked_samples(100, onset=0)
+            for sample in samples:
+                for phase in analysis.PACING_PHASES:
+                    del sample[phase]
+            self.replace_samples(root, 1, samples)
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            first = report["backends"]["d3d11"]["repetitions"][0]
+            self.assertEqual(first["pacing_measurement"], "unrecorded_legacy")
+            lock = first["presentation_lock"]
+            self.assertEqual(lock["verdict"], "locked_to_presentation_cadence")
+            self.assertEqual(lock["pacer_idle_source"], "frame_end_to_next_start")
+            self.assertEqual(lock["tail_first_sample"], 1)
+            self.assertEqual(lock["tail_sample_count"], 99)
+            self.assertNotIn("tail_start_lateness_ns", lock)
+            self.assertEqual(report["backends"]["d3d11"]["presentation_locked_repetitions"], [1])
 
     def test_partial_or_changed_presentation_metadata_is_refused(self):
         with tempfile.TemporaryDirectory() as temporary:

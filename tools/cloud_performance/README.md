@@ -171,12 +171,22 @@ on a host whose presentation cadence equals the pacer's rate that is a one-way
 ratchet: once a stall fills the present queue, every later wait lands in the
 renderer call instead of the pacer, `whole_frame_ns` reads one period for the
 rest of the process, and nothing drains it. Both reference runs did this in
-six of forty repetitions and the desktop reproduces it on demand;
-`docs/performance/2026-09-19-g6f-ratchet.md` is the finding, its signature
-(mean interval equal to the period, whole frame at the period, pacing wait
-zero, lateness constant) is what to look for in `repetitions`, and its §5 says
-which clock a reference capture should keep. Until then read `record_submit_ns`
-and `update_ns` as the work and a 17 ms whole frame as the period.
+five of forty repetitions and the desktop reproduces it on demand;
+`docs/performance/2026-09-19-g6f-ratchet.md` is the finding and its §5 says
+which clock a reference capture should keep. The analyzer applies that
+document's signature: each repetition carries a `presentation_lock` verdict —
+`locked_to_presentation_cadence` when, from `tail_first_sample` to the end of
+the retained minute, the pacer never waits (under 1 % of a period, from
+`pacing_wait_ns` where recorded and otherwise from the gap between one frame's
+end and the next start, which cannot see the first sample), the tail lasts at
+least a second, and the whole frame and the interval both average the period
+within 2 % — and each backend lists its `presentation_locked_repetitions`.
+The mean is used rather than the median because an alternating lock never puts
+the median at the period. The long-call counts beside the verdict are
+unchanged and still count every locked frame; the verdict is what says those
+frames are the period. Until the benchmark keeps one clock, read
+`record_submit_ns` and `update_ns` as the work, and do not quote a pooled
+`whole_frame_ns` across a locked repetition.
 
 The selected device record also carries `present_mode` and nullable requested
 and reported swap intervals. GL requires `WGL_EXT_swap_control`, requests one,
