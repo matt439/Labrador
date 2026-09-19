@@ -65,13 +65,21 @@ the device the selected backend actually created. It does not claim scan-out.
 `tools/cloud_performance/` packages one reviewed set of those binaries and the
 current source bytes for a one-shot EC2 reference run. Its launch and stop verbs
 are dry-run by default. An EC2 result is evidence for that declared profile, not
-the still-unmeasured Radeon low tier in PHILOSOPHY. **The lane has run once**:
-`docs/performance/2026-09-19-g6f-reference.md` holds `g6f-reference-003` — a
-quarter L4 in a Windows Server console session, all four backends, whole-frame
-p99 within 3.2 ms on seventeen of twenty repetitions; the other three — D3D11's
-first, Vulkan's first and one GL swap — that document treats as questions
-rather than findings. Read its §4 before
-its §3: the tool's pooled p99 is true and misleading in the same breath.
+the still-unmeasured Radeon low tier in PHILOSOPHY. **The lane has run twice**
+— `docs/performance/2026-09-19-g6f-reference.md` (`g6f-reference-003`) and
+`2026-09-19-g6f-follow-up.md` (`004`), a quarter L4 in a Windows Server console
+session, all four backends — **and `2026-09-19-g6f-ratchet.md` is what their
+long waits turned out to be, which is not the GPU.** Whole-frame p99 is
+2.2–3.2 ms wherever a repetition's wait landed in the pacer and exactly one
+16.667 ms period wherever it landed in the renderer call, because the bench's
+60 Hz software pacer sits on a synchronised present whose cadence on that host
+is exactly 60.000 Hz: two clocks at one rate are a one-way ratchet, a stall
+moves the wait from one to the other for the rest of the process, and the
+desktop reproduces every state on demand by pacing a little faster or slower
+than its display. Read the ratchet document before either run's tables. The
+pooled p99 is true and misleading in the same breath, `record + submit` is the
+column that measures the work, and the benchmark still has both clocks —
+ratchet §5 says which one to keep.
 
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)

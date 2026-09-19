@@ -8,6 +8,17 @@ repeat the first-repetition symptoms, and additional slow repetitions appear
 in D3D11 and D3D12. The results do not support a cause confined to first use of
 an API.
 
+**Resolved, 2026-09-19.** Every long wait in this run is
+[the ratchet](2026-09-19-g6f-ratchet.md): the software pacer at 60 Hz against
+a synchronised present at exactly 60.000 Hz on this host, locked by a stall
+and never released. d3d11-001 and d3d12-005 are locked from their first
+retained frame, d3d11-002 blocks with slack from sample 1209 and locks at
+1218, vulkan-001 blocks with slack from sample 8 and locks at 1114, and gl-004
+is the slack state throughout — its improvement over run 003 is a different
+phase of the same state, not the swap-interval request. The tables below
+stand; read the whole-frame column as the period wherever it reads 17 ms, and
+`record + submit` as the work.
+
 This is the same EC2 reference profile as
 [run 003](2026-09-19-g6f-reference.md), not a measurement of the consumer
 minimum in PHILOSOPHY. Both the pacer and GL swap-interval setting changed
@@ -126,7 +137,9 @@ explanation: D3D11-002 and D3D12-005 now also stall, and two episodes begin
 partway through retained measurements. Another uninstrumented repeat cannot
 by itself assign a cause. A separately declared run with GPU/ETW tracing or a
 controlled presentation/pacing change would be a more discriminating next
-experiment. No additional run or implementation change was made here.
+experiment. No additional run or implementation change was made here. The
+pacing change was run on the desktop later the same day and is §3 of
+[the ratchet document](2026-09-19-g6f-ratchet.md).
 
 ## 4. Evidence and cleanup
 

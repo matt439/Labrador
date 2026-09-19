@@ -560,7 +560,14 @@ long enough that the sweep found it twice.
       now run** — `docs/performance/2026-09-19-g6f-reference.md`, four EPYC cores
       and a quarter L4 at 1280x720, which is the shape of the measurement this
       box wants on hardware that is not the machine it names — and the box
-      stays open for exactly the reason the previous sentence gives.
+      stays open for exactly the reason the previous sentence gives. **It has
+      run twice, and what the two runs settled between them is about the
+      vehicle**:
+      `docs/performance/2026-09-19-g6f-ratchet.md` finds the runs' 17–32 ms
+      whole-frame tails to be the bench's own 60 Hz software pacer locked
+      behind a synchronised present at the same rate, so until the bench keeps
+      one clock its whole-frame p99 is not the number this box wants even on
+      the right hardware; its `record + submit` column is sound.
 
 ---
 

@@ -281,6 +281,19 @@ namespace
 				// what records the actual display mode, which may differ from that
 				// rate. Keep absolute deadlines and catch up after stalls; retain
 				// lateness so a burst of catch-up frames is visible in the result.
+				//
+				// TWO CLOCKS. This deadline and the backend's synchronised present
+				// are separate clocks, and on a host whose presentation cadence is
+				// exactly this rate they are a one-way ratchet: once a stall fills
+				// the present queue, a late loop never presents slower than the
+				// engine consumes, so every later wait lands in begin_frame or
+				// end_frame instead of here and whole_frame_ns reads one period
+				// for the rest of the process. Both EC2 reference runs did this in
+				// six of forty repetitions and the desktop reproduces it by pacing
+				// a little faster than its display —
+				// docs/performance/2026-09-19-g6f-ratchet.md#2. record_submit_ns
+				// and update_ns measure the work in either state; that document's
+				// section 5 says which clock a reference capture should keep.
 				const Clock::time_point pacing_start = Clock::now();
 				const Clock::time_point deadline = this->next_frame_;
 				// The diagnostic presentation mode removes only the software wait.

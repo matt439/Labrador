@@ -166,6 +166,18 @@ and renderer waits can still cause late or alternating frame starts. Use mean
 interval to derive the realized average rate; reciprocal median is not average
 Hz. Older captures lack these two fields and analysis labels them as legacy.
 
+Software pacing against the backends' synchronised present is two clocks, and
+on a host whose presentation cadence equals the pacer's rate that is a one-way
+ratchet: once a stall fills the present queue, every later wait lands in the
+renderer call instead of the pacer, `whole_frame_ns` reads one period for the
+rest of the process, and nothing drains it. Both reference runs did this in
+six of forty repetitions and the desktop reproduces it on demand;
+`docs/performance/2026-09-19-g6f-ratchet.md` is the finding, its signature
+(mean interval equal to the period, whole frame at the period, pacing wait
+zero, lateness constant) is what to look for in `repetitions`, and its §5 says
+which clock a reference capture should keep. Until then read `record_submit_ns`
+and `update_ns` as the work and a 17 ms whole frame as the period.
+
 The selected device record also carries `present_mode` and nullable requested
 and reported swap intervals. GL requires `WGL_EXT_swap_control`, requests one,
 and records the getter's answer. Direct3D requests one without a corresponding

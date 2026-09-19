@@ -5,6 +5,15 @@ evidence and the renderer source. **The long EC2 waits remain unresolved.**
 The changes here fix evidence validation and reporting, and supply a controlled
 diagnostic capture. They do not establish a GPU performance improvement.
 
+**Resolved, 2026-09-19.** The waits are resolved in
+[the ratchet document](2026-09-19-g6f-ratchet.md) without the trace this
+document asks for: the benchmark's software pacer and the synchronised present
+are two clocks at one rate on that host, and a stall moves the wait from the
+first to the second for the rest of the process. The validation, reporting
+and diagnostic-mode changes recorded below stand and were used there. The
+remaining experiment below is superseded for that question; §5 of the ratchet
+document says what to change instead.
+
 ## What the evidence establishes
 
 The run's samples locate the sustained stalls in D3D11 `present` and
@@ -64,6 +73,9 @@ profile and retains the ETL, result, process identity and logs. The
 and recording requirements.
 
 ## Remaining experiment
+
+**Superseded for the renderer waits** — see the note at the head of this
+document. What follows is as written.
 
 Capture the affected EC2 profile with GPU/ETW tracing, retaining every
 repetition. Compare separately declared software and presentation-driven

@@ -202,7 +202,10 @@ a separately reviewed run declaration by hash. Its numbers describe that
 declared host; they do not turn a shared build runner into the low tier or
 replace the Radeon configuration in PHILOSOPHY. The first complete run is
 [`docs/performance/2026-09-19-g6f-reference.md`](docs/performance/2026-09-19-g6f-reference.md),
-and its per-repetition table is the one to read rather than its aggregate.
+its per-repetition table is the one to read rather than its aggregate, and
+[`2026-09-19-g6f-ratchet.md`](docs/performance/2026-09-19-g6f-ratchet.md) is
+what its long tails were: the benchmark's own 60 Hz pacer locked behind a
+synchronised present at the same rate, not the GPU — read that one first.
 
 ## Status
 

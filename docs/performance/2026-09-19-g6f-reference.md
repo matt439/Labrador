@@ -6,6 +6,18 @@ that was never recorded, and converted a median interval into average Hz. Those
 interpretations are corrected below; the retained samples and percentile tables
 are unchanged. Section 7 records the resulting fixes and their verification.
 
+**Resolved, 2026-09-19, later the same day.** [The ratchet
+document](2026-09-19-g6f-ratchet.md) settles what §4 could not: d3d11-001 and
+vulkan-001 are not a first-process presentation mode but the benchmark's own
+60 Hz software pacer locked behind a synchronised present whose cadence on
+this host is exactly 60.000 Hz, and gl-003 and gl-004 are the same lock with
+slack left over — their swaps return on the same 60 Hz grid, so the driver's
+default swap interval was already synchronised and §7's request changed
+nothing this run measured. §5's questions 1, 2 and 4 are answered there. The
+tables below are unchanged; their `record + submit` column is the
+measurement, and the whole-frame column, wherever it reads 17 ms, is the
+period.
+
 **What this is.** The first complete run of the lane under
 [`tools/cloud_performance/`](../../tools/cloud_performance/README.md):
 `LineSweeperFrameBench` on one declared `g6f.2xlarge`, five repetitions of
