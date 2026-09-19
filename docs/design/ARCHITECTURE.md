@@ -218,6 +218,8 @@ being load-bearing.
 └── docs/
     ├── design/             philosophies, conventions, this document
     ├── file-length-audit.md  which files are long, and which of them earn it
+    ├── performance/        what a declared host measured: one dated file per
+    │                       complete run of the cloud lane, raw evidence cited
     ├── port/               what a second platform costs, and in what order
     ├── repo-split.md       the verified procedure for splitting engine from game
     ├── review/             findings against the current code

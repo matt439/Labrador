@@ -65,7 +65,13 @@ the device the selected backend actually created. It does not claim scan-out.
 `tools/cloud_performance/` packages one reviewed set of those binaries and the
 current source bytes for a one-shot EC2 reference run. Its launch and stop verbs
 are dry-run by default. An EC2 result is evidence for that declared profile, not
-the still-unmeasured Radeon low tier in PHILOSOPHY.
+the still-unmeasured Radeon low tier in PHILOSOPHY. **The lane has run once**:
+`docs/performance/2026-09-19-g6f-reference.md` holds `g6f-reference-003` — a
+quarter L4 in a Windows Server console session, all four backends, whole-frame
+p99 within 3.2 ms on seventeen of twenty repetitions; the other three — D3D11's
+first, Vulkan's first and one GL swap — that document treats as questions
+rather than findings. Read its §4 before
+its §3: the tool's pooled p99 is true and misleading in the same breath.
 
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)

@@ -200,7 +200,9 @@ that interval display scan-out. The one-shot EC2 reference lane under
 and the current source bytes into a reviewed bundle, then binds that bundle to
 a separately reviewed run declaration by hash. Its numbers describe that
 declared host; they do not turn a shared build runner into the low tier or
-replace the Radeon configuration in PHILOSOPHY.
+replace the Radeon configuration in PHILOSOPHY. The first complete run is
+[`docs/performance/2026-09-19-g6f-reference.md`](docs/performance/2026-09-19-g6f-reference.md),
+and its per-repetition table is the one to read rather than its aggregate.
 
 ## Status
 

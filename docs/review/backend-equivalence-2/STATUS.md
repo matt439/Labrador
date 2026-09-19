@@ -556,7 +556,11 @@ long enough that the sweep found it twice.
       top-out, and `tools/cloud_performance/` binds one run to its binaries,
       source, AMI, instance profile and deadline. An EC2 result is a reference
       profile; this box stays open until the CPU half is named and the declared
-      p99 is actually taken on the Radeon configuration above.
+      p99 is actually taken on the Radeon configuration above. **The vehicle has
+      now run** — `docs/performance/2026-09-19-g6f-reference.md`, four EPYC cores
+      and a quarter L4 at 1280x720, which is the shape of the measurement this
+      box wants on hardware that is not the machine it names — and the box
+      stays open for exactly the reason the previous sentence gives.
 
 ---
 
