@@ -45,7 +45,8 @@ namespace labrador
 	// init(), which is to say from inside a call frame belonging to a state one
 	// of them may be about to destroy - so none of them takes effect where it
 	// is written. They queue, and the queue drains once the stack's own call
-	// returns. See transition_to.
+	// returns. Nested callbacks retain the outer call's protection, and a
+	// drain never reenters itself. See transition_to.
 	class StateContext
 	{
 	public:
@@ -160,7 +161,9 @@ namespace labrador
 		// IT DEFERS, like update() and for update()'s reason: these callbacks
 		// are a state's own code and may push, pop or transition, and the walk
 		// is indexing frames_ while they run. Whatever they ask for applies
-		// once every frame has been told.
+		// once every frame has been told and the outermost callback or active
+		// drain has returned. A notification inside update/init cannot drain
+		// operations while that enclosing callback is still running.
 		void notify_activation(bool active);
 
 		// Whether the application has the foreground, as last reported.

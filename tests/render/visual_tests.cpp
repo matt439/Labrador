@@ -128,3 +128,19 @@ TEST_CASE("a visual has nothing to step")
 	visual.update(1.0f / 60.0f);
 	CHECK(visual.bounds() == before);
 }
+
+TEST_CASE("rotated shape visuals preserve their center and orientation")
+{
+	Content content;
+	for (float angle : { 0.0f, 1.57079633f, 0.7f, -0.7f })
+	{
+		const mattmath::RectangleRotated shape(Vector2F(50, 50),
+			Vector2F(std::cos(angle), std::sin(angle)),
+			Vector2F(-std::sin(angle), std::cos(angle)), Vector2F(20, 10));
+		const Visual visual("sheet", "plain", shape, &content.resources);
+		CHECK(close(visual.bounds(), shape.bounding_box()));
+		const Visual extra("sheet", "plain", shape, &content.resources,
+			labrador::Colour::white, -angle);
+		CHECK(close(extra.bounds(), RectangleF(30, 40, 40, 20)));
+	}
+}

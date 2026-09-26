@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstdint>
 #include <exception>
+#include <limits>
+#include <stdexcept>
 
 
 namespace labrador
@@ -58,14 +60,35 @@ namespace labrador
         void SetFixedTimeStep(bool isFixedTimestep) noexcept { m_isFixedTimeStep = isFixedTimestep; }
 
         // Set how often to call Update when in fixed timestep mode.
-        void SetTargetElapsedTicks(uint64_t targetElapsed) noexcept { m_targetElapsedTicks = targetElapsed; }
-        void SetTargetElapsedSeconds(double targetElapsed) noexcept { m_targetElapsedTicks = SecondsToTicks(targetElapsed); }
+        // A fixed step must advance time. Invalid setters leave the old period intact.
+        void SetTargetElapsedTicks(uint64_t targetElapsed)
+        {
+            if (targetElapsed == 0)
+            {
+                throw std::invalid_argument("StepTimer target period must be positive.");
+            }
+            m_targetElapsedTicks = targetElapsed;
+        }
+        void SetTargetElapsedSeconds(double targetElapsed)
+        {
+            SetTargetElapsedTicks(SecondsToTicks(targetElapsed));
+        }
 
         // Integer format represents time using 10,000,000 ticks per second.
         static constexpr uint64_t TicksPerSecond = 10000000;
 
         static constexpr double TicksToSeconds(uint64_t ticks) noexcept { return static_cast<double>(ticks) / TicksPerSecond; }
-        static constexpr uint64_t SecondsToTicks(double seconds) noexcept { return static_cast<uint64_t>(seconds * TicksPerSecond); }
+        static uint64_t SecondsToTicks(double seconds)
+        {
+            const double ticks = seconds * TicksPerSecond;
+            // The rounded double representation of UINT64_MAX is 2^64.
+            if (!std::isfinite(ticks) || ticks < 0.0 ||
+                ticks >= static_cast<double>((std::numeric_limits<uint64_t>::max)()))
+            {
+                throw std::invalid_argument("StepTimer seconds are outside the tick range.");
+            }
+            return static_cast<uint64_t>(ticks);
+        }
 
         // After an intentional timing discontinuity (for instance a blocking IO operation)
         // call this to avoid having the fixed timestep logic attempt a set of catch-up

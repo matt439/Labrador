@@ -174,19 +174,25 @@ rest of the process, and nothing drains it. Both reference runs did this in
 five of forty repetitions and the desktop reproduces it on demand;
 `docs/performance/2026-09-19-g6f-ratchet.md` is the finding and its §5 says
 which clock a reference capture should keep. The analyzer applies that
-document's signature: each repetition carries a `presentation_lock` verdict —
-`locked_to_presentation_cadence` when, from `tail_first_sample` to the end of
+document's signature: each repetition carries a `presentation_lock` record.
+Its `cadence_signature` is true when, from `tail_first_sample` to the end of
 the retained minute, the pacer never waits (under 1 % of a period, from
 `pacing_wait_ns` where recorded and otherwise from the gap between one frame's
 end and the next start, which cannot see the first sample), the tail lasts at
 least a second, and the whole frame and the interval both average the period
-within 2 % — and each backend lists its `presentation_locked_repetitions`.
+within 2 %.
 The mean is used rather than the median because an alternating lock never puts
-the median at the period. The long-call counts beside the verdict are
-unchanged and still count every locked frame; the verdict is what says those
-frames are the period. Until the benchmark keeps one clock, read
-`record_submit_ns` and `update_ns` as the work, and do not quote a pooled
-`whole_frame_ns` across a locked repetition.
+the median at the period. That signature alone also admits CPU work exhausting
+the budget. The verdict is `work_limited` when mean update plus record/submit
+uses at least 98 % of the period, `presentation_wait_candidate` when mean
+begin plus present exceeds half the period and update plus record/submit stays
+below half, and `ambiguous_cadence` otherwise. Repetitions without the
+signature retain `not_locked`. Each backend lists
+`presentation_wait_candidate_repetitions` (replacing the former
+`presentation_locked_repetitions` key). A candidate is an inference: CPU
+durations do not establish why begin/present took time, nor measure GPU cost.
+The long-call counts remain unchanged. Read the individual phases and
+repetitions before interpreting pooled `whole_frame_ns`.
 
 The selected device record also carries `present_mode` and nullable requested
 and reported swap intervals. GL requires `WGL_EXT_swap_control`, requests one,

@@ -36,6 +36,7 @@ namespace labrador
 	// pieces, public so that a game with its own loading order can apply
 	// them itself, and so that they are testable without a window.
 
+	// All content path strings in this API are UTF-8.
 	// The directory the running executable was loaded from, with a trailing
 	// separator, so that a relative path appended to it is a path.
 	std::string executable_directory();

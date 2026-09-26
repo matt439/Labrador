@@ -1,4 +1,5 @@
 #include "engine/app/content_root.h"
+#include "engine/core/file_path.h"
 
 #include <Windows.h>
 #include <filesystem>
@@ -11,12 +12,8 @@ namespace labrador
 {
 	std::string executable_directory()
 	{
-		// Wide, then narrowed by the filesystem library, because the narrow
-		// GetModuleFileNameA answers in the ANSI code page and a path with a
-		// character outside it comes back with question marks in it. The
-		// buffer grows until the answer fits: the documented failure is a
-		// truncated path with the buffer's size as the return value, which is
-		// the one outcome a caller cannot use.
+		// Keep the native path wide until explicitly encoding it as UTF-8.
+		// Grow the buffer until GetModuleFileNameW returns an untruncated path.
 		std::vector<wchar_t> buffer(MAX_PATH);
 		for (;;)
 		{
@@ -35,7 +32,7 @@ namespace labrador
 		}
 
 		const std::filesystem::path executable(buffer.data());
-		std::string directory = executable.parent_path().string();
+		std::string directory = path_to_utf8(executable.parent_path());
 		if (directory.empty() || (directory.back() != '\\' &&
 			directory.back() != '/'))
 		{
@@ -47,7 +44,7 @@ namespace labrador
 	std::string resolved_under(const std::string& directory,
 		const std::string& path)
 	{
-		if (std::filesystem::path(path).is_absolute())
+		if (path_from_utf8(path).is_absolute())
 		{
 			return path;
 		}
@@ -71,8 +68,8 @@ namespace labrador
 
 		// The manifest's own folder, from the path it was read at - which is
 		// already resolved, so this is absolute whenever that was.
-		const std::string base = std::filesystem::path(manifest.source_path)
-			.parent_path().string();
+		const std::string base = path_to_utf8(
+			path_from_utf8(manifest.source_path).parent_path());
 
 		for (AssetEntry& entry : manifest.entries)
 		{

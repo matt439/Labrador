@@ -77,6 +77,12 @@ namespace labrador
 				"different order, so it is a conversion rather than a "
 				"constant and is not written until something needs it.");
 		}
+
+		struct TextureOwner
+		{
+			GLuint name = 0;
+			~TextureOwner() { glDeleteTextures(1, &name); }
+		};
 	}
 
 	void add_texture_asset(const Renderer& renderer,
@@ -103,9 +109,14 @@ namespace labrador
 
 		}
 
-		GLuint name_gl = 0;
-		glGenTextures(1, &name_gl);
-		glBindTexture(GL_TEXTURE_2D, name_gl);
+		const bool compressed = is_block_compressed(texture.format);
+		const GLenum upload_format = compressed
+			? compressed_format(texture.format, name)
+			: source_format(texture.format, name);
+
+		TextureOwner pending;
+		glGenTextures(1, &pending.name);
+		glBindTexture(GL_TEXTURE_2D, pending.name);
 
 		// The level range, stated rather than left at the default. GL's default
 		// max level is 1000, and a texture whose chain stops earlier than the
@@ -127,7 +138,6 @@ namespace labrador
 		// default of four-byte alignment.
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-		const bool compressed = is_block_compressed(texture.format);
 		for (size_t i = 0; i < texture.levels.size(); i++)
 		{
 			const TextureLevel& level = texture.levels[i];
@@ -136,7 +146,7 @@ namespace labrador
 			if (compressed)
 			{
 				glCompressedTexImage2D(GL_TEXTURE_2D, static_cast<GLint>(i),
-					compressed_format(texture.format, name),
+					upload_format,
 					static_cast<GLsizei>(level.width),
 					static_cast<GLsizei>(level.height), 0,
 					static_cast<GLsizei>(level.size), bytes);
@@ -146,7 +156,7 @@ namespace labrador
 				glTexImage2D(GL_TEXTURE_2D, static_cast<GLint>(i), GL_RGBA8,
 					static_cast<GLsizei>(level.width),
 					static_cast<GLsizei>(level.height), 0,
-					source_format(texture.format, name), GL_UNSIGNED_BYTE,
+					upload_format, GL_UNSIGNED_BYTE,
 					bytes);
 			}
 		}
@@ -155,14 +165,14 @@ namespace labrador
 
 		if (glGetError() != GL_NO_ERROR)
 		{
-			glDeleteTextures(1, &name_gl);
 			throw std::runtime_error("The driver rejected texture '" + name +
 				"' at " + std::to_string(texture.width) + "x" +
 				std::to_string(texture.height) + ".");
 		}
 
-		resources.impl()->add_texture(name,
-			std::make_unique<GlTexture>(name_gl, texture.width,
-				texture.height));
+		std::unique_ptr<GlTexture> owned = std::make_unique<GlTexture>(pending.name,
+			texture.width, texture.height);
+		pending.name = 0;
+		resources.impl()->add_texture(name, std::move(owned));
 	}
 }

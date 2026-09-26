@@ -7,112 +7,127 @@ namespace labrador
 {
 	namespace
 	{
-		// THE TWO VOCABULARIES MEET HERE AND NOWHERE ELSE. Above this file a
-		// key is a Key, which is an engine name for a position on a keyboard;
-		// below it a key is a VK_ constant, which is Microsoft's. Keeping the
-		// translation in one function is what lets engine/input/keyboard.h be
-		// a file with no platform in it at all.
-		//
-		// Unknown codes answer Key::none, which the device drops. A keyboard
-		// with a key this engine has never heard of is not an error - it is a
-		// keyboard (T6: loud is for broken contracts, not for the world being
-		// the world).
-		Key key_from_virtual_key(WPARAM w_param)
+		// Set-1 scan positions preserve physical bindings across keyboard layouts.
+		// The extended bit distinguishes the navigation cluster from the numpad;
+		// WM_CHAR remains the layout-aware text channel. Unknown positions drop.
+		Key key_from_message(WPARAM w_param, LPARAM l_param)
 		{
-			const int code = static_cast<int>(w_param);
-
-			const auto offset = [](Key first, int distance)
+			// Pause and NumLock share scan 0x45; Windows identifies the E1 Pause
+			// sequence through its virtual key rather than the E0 extended bit.
+			if (w_param == VK_PAUSE) { return Key::pause; }
+			if (w_param == VK_NUMLOCK) { return Key::num_lock; }
+			const unsigned int scan = (static_cast<unsigned long long>(l_param) >> 16) & 0xffu;
+			const bool extended = (l_param & (1LL << 24)) != 0;
+			if (extended)
 			{
-				return static_cast<Key>(
-					static_cast<unsigned int>(first) +
-					static_cast<unsigned int>(distance));
-			};
-
-			// FOUR RUNS THAT ARE CONTIGUOUS IN BOTH VOCABULARIES, which is
-			// what keeps this function from being a hundred cases long. The
-			// enumerators were declared in these orders on purpose; a Key
-			// added into the middle of one of them breaks this arithmetic
-			// silently, which is what the tests beside this file check.
-			if (code >= 'A' && code <= 'Z')
-			{
-				return offset(Key::a, code - 'A');
+				switch (scan)
+				{
+				case 0x1c: return Key::enter;
+				case 0x1d: return Key::control;
+				case 0x35: return Key::numpad_divide;
+				case 0x37: return Key::print_screen;
+				case 0x38: return Key::alt;
+				case 0x47: return Key::home;
+				case 0x48: return Key::up;
+				case 0x49: return Key::page_up;
+				case 0x4b: return Key::left;
+				case 0x4d: return Key::right;
+				case 0x4f: return Key::end;
+				case 0x50: return Key::down;
+				case 0x51: return Key::page_down;
+				case 0x52: return Key::insert;
+				case 0x53: return Key::del;
+				default: return Key::none;
+				}
 			}
-			if (code >= '0' && code <= '9')
+			switch (scan)
 			{
-				return offset(Key::digit_0, code - '0');
-			}
-			if (code >= VK_F1 && code <= VK_F12)
-			{
-				return offset(Key::f1, code - VK_F1);
-			}
-			if (code >= VK_NUMPAD0 && code <= VK_NUMPAD9)
-			{
-				return offset(Key::numpad_0, code - VK_NUMPAD0);
-			}
-
-			switch (code)
-			{
-			case VK_ESCAPE:		return Key::escape;
-			case VK_TAB:		return Key::tab;
-			case VK_CAPITAL:	return Key::caps_lock;
-			case VK_SPACE:		return Key::space;
-			case VK_RETURN:		return Key::enter;
-			case VK_BACK:		return Key::backspace;
-
-			// The sided codes fold onto the generic ones, which is the limit
-			// keyboard.h documents rather than an omission here. A message
-			// pump sees VK_SHIFT for both, and the side is in the scan code -
-			// a second lookup no client has asked for (T1).
-			case VK_SHIFT:
-			case VK_LSHIFT:
-			case VK_RSHIFT:		return Key::shift;
-			case VK_CONTROL:
-			case VK_LCONTROL:
-			case VK_RCONTROL:	return Key::control;
-			case VK_MENU:
-			case VK_LMENU:
-			case VK_RMENU:		return Key::alt;
-
-			case VK_INSERT:		return Key::insert;
-			case VK_DELETE:		return Key::del;
-			case VK_HOME:		return Key::home;
-			case VK_END:		return Key::end;
-			case VK_PRIOR:		return Key::page_up;
-			case VK_NEXT:		return Key::page_down;
-
-			case VK_LEFT:		return Key::left;
-			case VK_RIGHT:		return Key::right;
-			case VK_UP:			return Key::up;
-			case VK_DOWN:		return Key::down;
-
-			case VK_SNAPSHOT:	return Key::print_screen;
-			case VK_SCROLL:		return Key::scroll_lock;
-			case VK_PAUSE:		return Key::pause;
-			case VK_NUMLOCK:	return Key::num_lock;
-
-			// The OEM codes are positions on a US layout and are documented as
-			// such. A different layout puts a different character there, which
-			// is exactly why Key is a position and typed() is the other
-			// question.
-			case VK_OEM_MINUS:	return Key::minus;
-			case VK_OEM_PLUS:	return Key::equals;
-			case VK_OEM_4:		return Key::left_bracket;
-			case VK_OEM_6:		return Key::right_bracket;
-			case VK_OEM_5:		return Key::backslash;
-			case VK_OEM_1:		return Key::semicolon;
-			case VK_OEM_7:		return Key::apostrophe;
-			case VK_OEM_3:		return Key::grave;
-			case VK_OEM_COMMA:	return Key::comma;
-			case VK_OEM_PERIOD:	return Key::period;
-			case VK_OEM_2:		return Key::slash;
-
-			case VK_ADD:		return Key::numpad_add;
-			case VK_SUBTRACT:	return Key::numpad_subtract;
-			case VK_MULTIPLY:	return Key::numpad_multiply;
-			case VK_DIVIDE:		return Key::numpad_divide;
-			case VK_DECIMAL:	return Key::numpad_decimal;
-
-			default:			return Key::none;
+			case 0x01: return Key::escape;
+			case 0x02: return Key::digit_1;
+			case 0x03: return Key::digit_2;
+			case 0x04: return Key::digit_3;
+			case 0x05: return Key::digit_4;
+			case 0x06: return Key::digit_5;
+			case 0x07: return Key::digit_6;
+			case 0x08: return Key::digit_7;
+			case 0x09: return Key::digit_8;
+			case 0x0a: return Key::digit_9;
+			case 0x0b: return Key::digit_0;
+			case 0x0c: return Key::minus;
+			case 0x0d: return Key::equals;
+			case 0x0e: return Key::backspace;
+			case 0x0f: return Key::tab;
+			case 0x10: return Key::q;
+			case 0x11: return Key::w;
+			case 0x12: return Key::e;
+			case 0x13: return Key::r;
+			case 0x14: return Key::t;
+			case 0x15: return Key::y;
+			case 0x16: return Key::u;
+			case 0x17: return Key::i;
+			case 0x18: return Key::o;
+			case 0x19: return Key::p;
+			case 0x1a: return Key::left_bracket;
+			case 0x1b: return Key::right_bracket;
+			case 0x1c: return Key::enter;
+			case 0x1d: return Key::control;
+			case 0x1e: return Key::a;
+			case 0x1f: return Key::s;
+			case 0x20: return Key::d;
+			case 0x21: return Key::f;
+			case 0x22: return Key::g;
+			case 0x23: return Key::h;
+			case 0x24: return Key::j;
+			case 0x25: return Key::k;
+			case 0x26: return Key::l;
+			case 0x27: return Key::semicolon;
+			case 0x28: return Key::apostrophe;
+			case 0x29: return Key::grave;
+			case 0x2a: return Key::shift;
+			case 0x2b: return Key::backslash;
+			case 0x2c: return Key::z;
+			case 0x2d: return Key::x;
+			case 0x2e: return Key::c;
+			case 0x2f: return Key::v;
+			case 0x30: return Key::b;
+			case 0x31: return Key::n;
+			case 0x32: return Key::m;
+			case 0x33: return Key::comma;
+			case 0x34: return Key::period;
+			case 0x35: return Key::slash;
+			case 0x36: return Key::shift;
+			case 0x37: return Key::numpad_multiply;
+			case 0x38: return Key::alt;
+			case 0x39: return Key::space;
+			case 0x3a: return Key::caps_lock;
+			case 0x3b: return Key::f1;
+			case 0x3c: return Key::f2;
+			case 0x3d: return Key::f3;
+			case 0x3e: return Key::f4;
+			case 0x3f: return Key::f5;
+			case 0x40: return Key::f6;
+			case 0x41: return Key::f7;
+			case 0x42: return Key::f8;
+			case 0x43: return Key::f9;
+			case 0x44: return Key::f10;
+			case 0x45: return Key::num_lock;
+			case 0x46: return Key::scroll_lock;
+			case 0x47: return Key::numpad_7;
+			case 0x48: return Key::numpad_8;
+			case 0x49: return Key::numpad_9;
+			case 0x4a: return Key::numpad_subtract;
+			case 0x4b: return Key::numpad_4;
+			case 0x4c: return Key::numpad_5;
+			case 0x4d: return Key::numpad_6;
+			case 0x4e: return Key::numpad_add;
+			case 0x4f: return Key::numpad_1;
+			case 0x50: return Key::numpad_2;
+			case 0x51: return Key::numpad_3;
+			case 0x52: return Key::numpad_0;
+			case 0x53: return Key::numpad_decimal;
+			case 0x57: return Key::f11;
+			case 0x58: return Key::f12;
+			default: return Key::none;
 			}
 		}
 
@@ -360,6 +375,15 @@ namespace labrador
 			static_cast<DWORD>(GetWindowLongPtrW(this->handle_, GWL_EXSTYLE)));
 	}
 
+	void Window::update_suspension()
+	{
+		const bool suspended = this->minimized_ || this->power_suspended_;
+		if (suspended == this->in_suspend_) { return; }
+		this->in_suspend_ = suspended;
+		if (suspended) { this->notify_->on_suspending(); }
+		else { this->notify_->on_resuming(); }
+	}
+
 	// Every message either forwards through WindowNotify or is Windows
 	// housekeeping. There is nothing game-specific here, which is the reason
 	// it is in the engine and not copied into every project's main.cpp.
@@ -417,23 +441,10 @@ namespace labrador
 			break;
 
 		case WM_SIZE:
-			// in_suspend_ and minimized_ are the two flags here that call no
-			// Win32 at all. They live on the window anyway, because between
-			// them they collapse two independent Windows suspend sources - a
-			// minimise and a power-suspend broadcast - into the single
-			// on_suspending/on_resuming pair the owner sees. That collapsing
-			// is message translation, which is this file's whole job.
 			if (self && w_param == SIZE_MINIMIZED)
 			{
-				if (!self->minimized_)
-				{
-					self->minimized_ = true;
-					if (!self->in_suspend_)
-					{
-						self->notify_->on_suspending();
-					}
-					self->in_suspend_ = true;
-				}
+				self->minimized_ = true;
+				self->update_suspension();
 			}
 			else if (self && self->minimized_)
 			{
@@ -464,11 +475,7 @@ namespace labrador
 					self->notify_->on_window_size_changed(
 						LOWORD(l_param), HIWORD(l_param));
 				}
-				if (self->in_suspend_)
-				{
-					self->notify_->on_resuming();
-				}
-				self->in_suspend_ = false;
+				self->update_suspension();
 			}
 			else if (self && !self->in_sizemove_)
 			{
@@ -520,31 +527,22 @@ namespace labrador
 			break;
 
 		case WM_POWERBROADCAST:
-			switch (w_param)
+			if (self)
 			{
-			case PBT_APMQUERYSUSPEND:
-				if (self)
+				switch (w_param)
 				{
-					if (!self->in_suspend_)
-					{
-						self->notify_->on_suspending();
-					}
-					self->in_suspend_ = true;
+				case PBT_APMSUSPEND:
+					self->power_suspended_ = true;
+					self->update_suspension();
+					return TRUE;
+				case PBT_APMRESUMEAUTOMATIC:
+				case PBT_APMRESUMESUSPEND:
+					self->power_suspended_ = false;
+					self->update_suspension();
+					return TRUE;
+				default:
+					break;
 				}
-				return TRUE;
-
-			case PBT_APMRESUMESUSPEND:
-				if (self && !self->minimized_)
-				{
-					if (self->in_suspend_)
-					{
-						self->notify_->on_resuming();
-					}
-					self->in_suspend_ = false;
-				}
-				return TRUE;
-			default:
-				break;
 			}
 			break;
 
@@ -562,7 +560,7 @@ namespace labrador
 		case WM_SYSKEYDOWN:
 			if (self)
 			{
-				self->notify_->on_key_down(key_from_virtual_key(w_param));
+				self->notify_->on_key_down(key_from_message(w_param, l_param));
 			}
 			break;
 
@@ -570,7 +568,7 @@ namespace labrador
 		case WM_SYSKEYUP:
 			if (self)
 			{
-				self->notify_->on_key_up(key_from_virtual_key(w_param));
+				self->notify_->on_key_up(key_from_message(w_param, l_param));
 			}
 			break;
 
@@ -696,14 +694,12 @@ namespace labrador
 			break;
 
 		case WM_CAPTURECHANGED:
-			// Something took the capture away - a system drag, an Alt-Tab, a
-			// modal the driver put up. The count has to go with it or the next
-			// SetCapture never happens, because the count would never return
-			// to zero to trigger one. The buttons themselves are cleared by
-			// Mouse::set_focused when the deactivation arrives.
-			if (self)
+			// Normal last-button release has already reduced the count to zero.
+			// Transfer/cancellation can happen while the application keeps focus.
+			if (self && self->held_buttons_ > 0)
 			{
 				self->held_buttons_ = 0;
+				self->notify_->on_mouse_capture_lost();
 			}
 			break;
 

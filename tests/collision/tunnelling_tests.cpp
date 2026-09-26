@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 
 #include "engine/collision/tunnelling.h"
+#include "engine/collision/narrow_phase.h"
+#include "engine/math/rectanglef.h"
 
 #include <limits>
 
@@ -8,7 +10,7 @@ using labrador::can_tunnel;
 using labrador::max_safe_displacement;
 using labrador::max_safe_speed;
 
-TEST_CASE("the budget is the combined extent along the direction of travel")
+TEST_CASE("axis-parallel boxes have a budget equal to their combined travel-axis extent")
 {
 	// A 20-unit projectile against a 10-unit wall is in contact over 30 units
 	// of travel, so a step shorter than 30 cannot step over the contact.
@@ -36,7 +38,7 @@ TEST_CASE("speeds are converted against the step the application actually runs")
 	// 30 units of contact at 60 steps a second is 1800 units a second.
 	CHECK(max_safe_speed(20.0f, 10.0f, 1.0f / 60.0f) == doctest::Approx(1800.0f));
 
-	// Halving the step halves what is safe, which is the reason a speed cap
+	// Halving the step doubles the boundary speed, which is the reason a speed cap
 	// cannot be stated without naming the frame rate it assumes.
 	CHECK(max_safe_speed(20.0f, 10.0f, 1.0f / 120.0f)
 		== doctest::Approx(3600.0f));
@@ -80,4 +82,22 @@ TEST_CASE("the shipping sniper exceeds the budget, and this is the record of it"
 	// Which is the number the tuning would have to come down to, or the
 	// geometry would have to come up to 13.34 units thick.
 	CHECK(SNIPER_SPEED > max_safe_speed(JET_EXTENT, THINNEST_CEILING, STEP));
+}
+
+TEST_CASE("projected extents cannot rule out a diagonal corner crossing")
+{
+	const mattmath::RectangleF fixed(0.0f, 0.0f, 1.0f, 1.0f);
+	const mattmath::RectangleF before(-1.1f, 0.8f, 1.0f, 1.0f);
+	const mattmath::RectangleF middle(-0.95f, 0.95f, 1.0f, 1.0f);
+	const mattmath::RectangleF after(-0.8f, 1.1f, 1.0f, 1.0f);
+	const float displacement = (after.position() - before.position()).length();
+	const float projected_extent = mattmath::Vector2F(1.0f, 1.0f).length();
+
+	// Outside the helper's axis-parallel assumptions, its numeric result is
+	// only a heuristic. This finite counterexample must not become a claim
+	// that a smaller displacement guarantees collision detection.
+	CHECK_FALSE(can_tunnel(displacement, projected_extent, projected_extent));
+	CHECK_FALSE(labrador::narrow_phase(fixed, before).has_value());
+	CHECK(labrador::narrow_phase(fixed, middle).has_value());
+	CHECK_FALSE(labrador::narrow_phase(fixed, after).has_value());
 }

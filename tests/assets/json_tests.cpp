@@ -308,3 +308,16 @@ namespace JsonTests
 		}
 	}
 }
+
+
+TEST_CASE("JSON strings retain embedded NUL while identifier access rejects it")
+{
+    const TempJson file(R"({"name":"asset\u0000other","names":["asset\u0000other"]})");
+    const JsonDocument document = read_json_file(file.path().c_str());
+    CHECK(document.root().string("name") == std::string("asset\0other", 11));
+    CHECK(document.root().array("names").at(0).as_string() == std::string("asset\0other", 11));
+    CHECK_THROWS_WITH_AS(document.root().identifier("name"),
+        doctest::Contains("name contains an embedded NUL"), std::runtime_error);
+    CHECK_THROWS_WITH_AS(document.root().array("names").at(0).as_identifier(),
+        doctest::Contains("names[0] contains an embedded NUL"), std::runtime_error);
+}

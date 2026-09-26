@@ -324,3 +324,32 @@ TEST_CASE("the view list is the game's, and it is refilled not appended to")
 // configuration out of four, the way tests/render/null_tests.cpp is, and this
 // target is built in all five - so the test is owed rather than blocked, which
 // is a different sentence from the one that was here.
+
+TEST_CASE("end_tick expires contacts whether or not their participants retire")
+{
+	Scene scene = make_scene();
+	TestCollider* player = scene.add(std::make_unique<TestCollider>(
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL));
+	scene.add(std::make_unique<TestCollider>(
+		RectangleF(8.0f, 0.0f, 10.0f, 10.0f), WALL, PLAYER));
+	scene.end_tick();
+	scene.resolve();
+	REQUIRE(scene.contacts().size() == 1);
+
+	SUBCASE("surviving pairs are measured afresh on the next resolve")
+	{
+		scene.end_tick();
+		CHECK(scene.contacts().empty());
+		scene.resolve();
+		CHECK(scene.contacts().size() == 1);
+	}
+	SUBCASE("retired participants never remain in a fresh contacts span")
+	{
+		player->set_for_deletion(true);
+		scene.end_tick();
+		CHECK(scene.collision_objects().size() == 1);
+		CHECK(scene.contacts().empty());
+		scene.resolve();
+		CHECK(scene.contacts().empty());
+	}
+}

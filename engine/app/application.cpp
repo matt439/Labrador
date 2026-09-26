@@ -35,6 +35,8 @@ namespace labrador
 
 		require(this->target_fps > 0,
 			"ApplicationOptions::target_fps must be greater than zero.");
+		require(StepTimer::SecondsToTicks(1.0 / this->target_fps) > 0,
+			"ApplicationOptions::target_fps exceeds the timer resolution.");
 		require(this->min_threads >= 1,
 			"ApplicationOptions::min_threads must be at least 1.");
 		require(this->max_threads >= this->min_threads,
@@ -533,6 +535,14 @@ namespace labrador
 		if (this->mouse_)
 		{
 			this->mouse_->on_button_up(button);
+		}
+	}
+
+	void Application::on_mouse_capture_lost() const
+	{
+		if (this->mouse_)
+		{
+			this->mouse_->cancel_buttons();
 		}
 	}
 

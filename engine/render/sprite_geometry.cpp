@@ -1,5 +1,6 @@
 #include "engine/render/sprite_geometry.h"
 
+#include <algorithm>
 #include <cmath>
 
 using namespace mattmath;
@@ -235,6 +236,26 @@ namespace labrador
 			origin.y / without_zero(static_cast<float>(source.height)) * size.y);
 
 		return quad_bounds(Vector2F(left, top), size, rotation, origin_pixels);
+	}
+
+	RectangleF sprite_world_bounds(const RectangleF& destination,
+		const RectangleI& source, float rotation, const Vector2F& origin,
+		float units_per_pixel)
+	{
+		const Vector2F ratio(
+			origin.x / without_zero(static_cast<float>(source.width)),
+			origin.y / without_zero(static_cast<float>(source.height)));
+		const Vector2F size(destination.width, destination.height);
+		RectangleF result = quad_bounds(Vector2F(destination.x, destination.y),
+			size, rotation, ratio * size);
+		const float x = std::max(std::abs(ratio.x), std::abs(1.0f - ratio.x));
+		const float y = std::max(std::abs(ratio.y), std::abs(1.0f - ratio.y));
+		const float cosine = std::abs(std::cos(rotation));
+		const float sine = std::abs(std::sin(rotation));
+		const float pad_x = units_per_pixel * (1.0f + 2.0f * (x * cosine + y * sine));
+		const float pad_y = units_per_pixel * (1.0f + 2.0f * (x * sine + y * cosine));
+		return RectangleF(result.x - pad_x, result.y - pad_y,
+			result.width + 2.0f * pad_x, result.height + 2.0f * pad_y);
 	}
 
 	RectangleF text_quad_bounds(const Vector2F& position,

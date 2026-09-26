@@ -1,4 +1,5 @@
 #include "engine/ui/widget.h"
+#include "engine/render/sprite_geometry.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 
@@ -116,6 +117,10 @@ namespace labrador
 	}
 	RectangleF UiContainer::bounds() const
 	{
+		return this->cull_bounds(0.0f);
+	}
+	RectangleF UiContainer::cull_bounds(float units_per_pixel) const
+	{
 		// The union of the children's, which is the recursive definition the
 		// predicate form could only approximate by asking every child in turn.
 		// An empty container occupies nothing.
@@ -130,7 +135,7 @@ namespace labrador
 		bool any = false;
 		for (auto const& child : this->children_)
 		{
-			const RectangleF child_bounds = child.second->bounds();
+			const RectangleF child_bounds = child.second->cull_bounds(units_per_pixel);
 			if (child_bounds.width <= 0.0f || child_bounds.height <= 0.0f)
 			{
 				continue;
@@ -180,9 +185,16 @@ namespace labrador
 	}
 	RectangleF UiTexture::bounds() const
 	{
-		// Note the qualification: an unqualified call here is this function
-		// calling itself, which /W4 reports as C4717.
-		return this->rectangle_;
+		return this->cull_bounds(0.0f);
+	}
+	RectangleF UiTexture::cull_bounds(float units_per_pixel) const
+	{
+		if (this->render_resources() == nullptr) return this->rectangle_;
+		// Read current geometry/frame so every setter and derived-class origin
+		// or rotation change is reflected without a stale cache.
+		const SpriteFrame& frame = this->sprite_sheet()->sprite_frame(this->frame());
+		return sprite_world_bounds(this->rectangle_, frame.source_rectangle(),
+			this->draw_rotation(), frame.origin() + this->origin(), units_per_pixel);
 	}
 	void UiTexture::set_texture(const std::string& sheet_name,
 		const std::string& frame_name)

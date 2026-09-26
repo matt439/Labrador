@@ -122,5 +122,13 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     # the second copy cost.
     add_dependencies(RenderPixelTests render_test_content)
 
+    if(LABRADOR_RENDER_BACKEND STREQUAL "gl")
+        target_sources(RenderPixelTests PRIVATE gl_texture_tests.cpp)
+    elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
+        find_package(Vulkan REQUIRED)
+        target_sources(RenderPixelTests PRIVATE vulkan_texture_tests.cpp)
+        target_link_libraries(RenderPixelTests PRIVATE Vulkan::Vulkan)
+    endif()
+
     add_test(NAME RenderPixelTests COMMAND RenderPixelTests)
 endif()

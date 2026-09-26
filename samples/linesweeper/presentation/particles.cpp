@@ -4,6 +4,7 @@
 #include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/palette.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 
@@ -172,24 +173,25 @@ namespace linesweeper
 				continue;
 			}
 
+			const float half = particle.size * (0.35f + 0.65f * particle.life) * 0.5f;
+			const float left = particle.position.x - half;
+			const float top = particle.position.y - half;
+			const float right = particle.position.x + half;
+			const float bottom = particle.position.y + half;
 			if (!any)
 			{
-				min_x = particle.position.x;
-				min_y = particle.position.y;
-				max_x = particle.position.x;
-				max_y = particle.position.y;
+				min_x = left;
+				min_y = top;
+				max_x = right;
+				max_y = bottom;
 				any = true;
 			}
 			else
 			{
-				min_x = particle.position.x < min_x ? particle.position.x
-					: min_x;
-				min_y = particle.position.y < min_y ? particle.position.y
-					: min_y;
-				max_x = particle.position.x > max_x ? particle.position.x
-					: max_x;
-				max_y = particle.position.y > max_y ? particle.position.y
-					: max_y;
+				min_x = std::min(min_x, left);
+				min_y = std::min(min_y, top);
+				max_x = std::max(max_x, right);
+				max_y = std::max(max_y, bottom);
 			}
 
 			++index;
@@ -398,6 +400,17 @@ namespace linesweeper
 	RectangleF ParticleField::bounds() const
 	{
 		return this->extent_;
+	}
+
+	RectangleF ParticleField::cull_bounds(float units_per_pixel) const
+	{
+		// These quads have neither rotation nor origin: each view-space edge
+		// truncates by less than one pixel. Empty fields stay empty.
+		if (this->count_ == 0) return this->extent_;
+		return RectangleF(this->extent_.x - units_per_pixel,
+			this->extent_.y - units_per_pixel,
+			this->extent_.width + 2.0f * units_per_pixel,
+			this->extent_.height + 2.0f * units_per_pixel);
 	}
 
 	std::uint32_t ParticleField::next_random()

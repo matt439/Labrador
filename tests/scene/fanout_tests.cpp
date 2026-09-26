@@ -3,6 +3,8 @@
 #include "engine/render/null/recording.h"
 #include "engine/collision/partitioner.h"
 #include "engine/core/game_object.h"
+#include "engine/core/state.h"
+#include "engine/core/state_context.h"
 #include "engine/core/thread_pool.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
@@ -312,4 +314,47 @@ TEST_CASE("CONTRACT: a throw inside a worker reaches the thread that drew")
 
 	harness.renderer().begin_frame();
 	CHECK_THROWS_AS(scene->draw(harness.renderer()), std::runtime_error);
+}
+
+TEST_CASE("a state stack composes split gameplay and a fullscreen scene in order")
+{
+	class SceneState final : public State
+	{
+	public:
+		SceneState(std::unique_ptr<Scene> scene, bool covers) :
+			scene_(std::move(scene)), covers_(covers) {}
+		void update(float) override {}
+		void init() override {}
+		bool covers_screen() const override { return covers_; }
+		void draw(Renderer& renderer) const override { scene_->draw(renderer); }
+	private:
+		std::unique_ptr<Scene> scene_;
+		bool covers_;
+	};
+	Harness harness(2);
+	std::unique_ptr<Scene> base = std::make_unique<Scene>(nullptr, nullptr);
+	base->add(std::make_unique<Block>(RectangleF(0, 0, 10, 10), harness.quad));
+	base->end_tick();
+	base->add_view(Viewport(0, 0, 640, 720));
+	base->add_view(Viewport(640, 0, 640, 720));
+	std::unique_ptr<Scene> overlay = std::make_unique<Scene>(nullptr, nullptr);
+	overlay->add(std::make_unique<Block>(RectangleF(20, 20, 10, 10), harness.quad));
+	overlay->end_tick();
+	overlay->add_view(Viewport(0, 0, 1280, 720));
+	StateContext states;
+	states.transition_to(std::make_unique<SceneState>(std::move(base), true));
+	states.push(std::make_unique<SceneState>(std::move(overlay), false));
+	for (int frame = 0; frame < 2; ++frame)
+	{
+		harness.renderer().begin_frame();
+		states.draw(harness.renderer());
+		harness.renderer().submit();
+		const std::vector<RecordedSprite>& sprites = recorded_sprites(harness.renderer());
+		REQUIRE(sprites.size() == 3);
+		CHECK(sprites[0].viewport.width == 640);
+		CHECK(sprites[1].viewport.x == 640);
+		CHECK(sprites[2].viewport.width == 1280);
+		CHECK(sprites[2].corners[0].position == Vector2F(20, 20));
+		CHECK(harness.renderer().view_count() == 2);
+	}
 }

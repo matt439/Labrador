@@ -498,3 +498,30 @@ TEST_CASE("BOUNDS: a string's box turns about its position, scaled")
 		CHECK(corners[i].position.y <= box.bottom() + 0.001f);
 	}
 }
+
+TEST_CASE("world cull bounds contain camera-snapped corners with distant pivots")
+{
+	const RectangleI source(0, 0, 8, 6);
+	for (float scale : { 0.1f, 1.0f, 10.0f })
+	for (float rotation : { 0.0f, 0.7f, 1.57079633f, 3.14159265f })
+	for (const Vector2F origin : { Vector2F::ZERO, Vector2F(4, 3), Vector2F(-40, 90) })
+	for (const Vector2F translation : { Vector2F(0.2f, 0.2f), Vector2F(-2.3f, 5.7f) })
+	{
+		const RectangleF world(0.1f, 0.1f, 0.8f, 0.7f);
+		const RectangleF view((world.x - translation.x) * scale,
+			(world.y - translation.y) * scale, world.width * scale, world.height * scale);
+		SpriteVertex corners[4];
+		build_sprite_quad(view, source, Vector2F(8, 6), Colour::white,
+			rotation, origin, SpriteFlip::none, corners);
+		const RectangleF box = sprite_world_bounds(world, source, rotation,
+			origin, 1.0f / scale);
+		for (const SpriteVertex& corner : corners)
+		{
+			const Vector2F position = corner.position / scale + translation;
+			CHECK(position.x >= box.left() - 0.001f);
+			CHECK(position.x <= box.right() + 0.001f);
+			CHECK(position.y >= box.top() - 0.001f);
+			CHECK(position.y <= box.bottom() + 0.001f);
+		}
+	}
+}

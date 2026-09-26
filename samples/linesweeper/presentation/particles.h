@@ -202,6 +202,7 @@ namespace linesweeper
 		// update loop four comparisons a particle and it costs draw() nothing,
 		// which is the right side of the split for it to be on.
 		mattmath::RectangleF bounds() const override;
+		mattmath::RectangleF cull_bounds(float units_per_pixel) const override;
 
 		// How many particles are alive. The array's live prefix is [0, live()).
 		int live() const

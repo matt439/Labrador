@@ -20,8 +20,10 @@
 #include "engine/render/viewport.h"
 #include "engine/render/visual.h"
 #include "engine/scene/scene.h"
+#include "engine/ui/widget.h"
 
 #include <memory>
+#include <cmath>
 #include <string>
 #include <utility>
 #include <vector>
@@ -113,6 +115,11 @@ namespace
 
 		RenderResources* resources() { return &this->resources_; }
 
+		const std::vector<RecordedSprite>& recording() const
+		{
+			return recorded_sprites(this->renderer_);
+		}
+
 	private:
 		RenderResources resources_;
 		Renderer renderer_;
@@ -176,4 +183,80 @@ TEST_CASE("CONTRACT: a sprite whose drawn pixels are all outside is not")
 	scene->end_tick();
 
 	CHECK(harness.sprites_drawn(*scene) == 0);
+}
+
+TEST_CASE("fractional world sprites survive translated zoomed camera culling")
+{
+	Harness harness;
+	Scene scene(nullptr, nullptr);
+	scene.add_view(Viewport(0, 0, 10, 10), Camera(0.2f, 0.2f, 10.0f));
+	scene.add(std::make_unique<Visual>("sheet", "plain",
+		RectangleF(0.1f, 0.1f, 0.8f, 0.8f), harness.resources()));
+	scene.end_tick();
+	CHECK(harness.sprites_drawn(scene) == 1);
+}
+
+TEST_CASE("rotated UI textures and container unions follow current geometry")
+{
+	Harness harness;
+	Scene scene(nullptr, nullptr);
+	scene.add_view(Viewport(0, 0, 9, 8), Camera(0, 12, 1));
+	std::unique_ptr<UiTexture> texture = std::make_unique<UiTexture>("image", "sheet", "plain",
+		RectangleF(10, 10, 20, 10), harness.resources(), Colour::white,
+		false, 1.57079633f);
+	UiTexture* image = texture.get();
+	UiContainer group("group");
+	group.add_child(image);
+	CHECK(group.bounds().left() == doctest::Approx(0.0f).epsilon(0.001));
+	CHECK(group.bounds().bottom() == doctest::Approx(30.0f));
+	scene.add(std::move(texture));
+	scene.end_tick();
+	CHECK(harness.sprites_drawn(scene) == 1);
+	image->set_sprite_frame("pinned");
+	CHECK(group.bounds().left() == doctest::Approx(10.0f));
+	image->set_position(Vector2F(20, 20));
+	image->set_size(Vector2F(40, 20));
+	CHECK(group.bounds().left() == doctest::Approx(20.0f));
+	CHECK(group.bounds().width == doctest::Approx(20.0f));
+	CHECK(group.bounds().height == doctest::Approx(40.0f));
+	CHECK(group.cull_bounds(10).width > group.bounds().width);
+}
+
+TEST_CASE("rotated shape visuals emit their centered geometry with local origins")
+{
+	Harness harness;
+	for (float angle : { 0.0f, 1.57079633f, 0.7f, -0.7f })
+	for (float extra : { 0.0f, 0.3f })
+	for (bool authored : { false, true })
+	{
+		const Vector2F center(100, 100);
+		const Vector2F half(20, 10);
+		const Vector2F caller_origin(2, -1);
+		const Vector2F frame_origin = authored ? Vector2F(8, 8) : Vector2F::ZERO;
+		const RectangleRotated shape(center,
+			Vector2F(std::cos(angle), std::sin(angle)),
+			Vector2F(-std::sin(angle), std::cos(angle)), half);
+		Scene scene(nullptr, nullptr);
+		scene.add_view(Viewport(0, 0, 200, 200));
+		scene.add(std::make_unique<Visual>("sheet", authored ? "pinned" : "plain",
+			shape, harness.resources(), Colour::white, extra, caller_origin));
+		scene.end_tick();
+		REQUIRE(harness.sprites_drawn(scene) == 1);
+		const RecordedSprite& sprite = harness.recording().front();
+		const float cosine = std::cos(angle + extra);
+		const float sine = std::sin(angle + extra);
+		for (int corner = 0; corner < 4; ++corner)
+		{
+			// Independent shape-space geometry: the half extents center the
+			// quad and each extra source texel shifts 40/8 or 20/8 world units.
+			const float x = ((corner & 1) ? half.x : -half.x) -
+				(frame_origin.x + caller_origin.x) * 5.0f;
+			const float y = ((corner & 2) ? half.y : -half.y) -
+				(frame_origin.y + caller_origin.y) * 2.5f;
+			CHECK(sprite.corners[corner].position.x ==
+				doctest::Approx(center.x + x * cosine - y * sine));
+			CHECK(sprite.corners[corner].position.y ==
+				doctest::Approx(center.y + x * sine + y * cosine));
+		}
+	}
 }

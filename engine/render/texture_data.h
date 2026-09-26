@@ -3,6 +3,7 @@
 #include "engine/render/texture_format.h"
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace labrador
@@ -73,6 +74,8 @@ namespace labrador
 	// to know, and every reader that guessed it got the block case wrong. It is
 	// in one place so that the .dds reader, which must compute it for every mip,
 	// and any later reader agree by construction.
+	// Throws std::runtime_error naming context for nonpositive dimensions,
+	// a row wider than int can hold, or an unrepresentable size/end offset.
 	TextureLevel texture_level(TextureFormat format, int width, int height,
-		size_t offset);
+		size_t offset, const std::string& context = "texture_level");
 }

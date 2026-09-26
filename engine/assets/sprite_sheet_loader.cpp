@@ -24,7 +24,7 @@ namespace labrador
 				// carry it. The name is required either way - NameTable::add
 				// needs one - so hoisting it adds no failure, it only decides
 				// which of two complaints a doubly-broken frame gets.
-				const std::string name = frame.string("name");
+				const std::string name = frame.identifier("name");
 
 				const JsonValue position = frame.object("position");
 				const JsonValue size = frame.object("size");
@@ -96,7 +96,7 @@ namespace labrador
 					first_frame_json.integer("w"),
 					first_frame_json.integer("h"));
 
-				animation_strips.add(strip.string("name"), AnimationStrip(
+				animation_strips.add(strip.identifier("name"), AnimationStrip(
 					first_frame,
 					strip.integer("frame_count"),
 					strip.number("frame_time"),

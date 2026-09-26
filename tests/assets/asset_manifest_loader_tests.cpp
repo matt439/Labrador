@@ -217,3 +217,14 @@ namespace AssetManifestLoaderTests
 		}
 	}
 }
+
+
+TEST_CASE("manifest identifiers and directories reject embedded NULs with field context")
+{
+    CHECK_THROWS_WITH_AS(load(R"({"assets":[{"kind":"texture\u0000other","directory":"./","names":["tile"]}]})"),
+        doctest::Contains("assets[0].kind contains an embedded NUL"), std::runtime_error);
+    CHECK_THROWS_WITH_AS(load(R"({"assets":[{"kind":"texture","directory":"./\u0000other","names":["tile"]}]})"),
+        doctest::Contains("assets[0].directory contains an embedded NUL"), std::runtime_error);
+    CHECK_THROWS_WITH_AS(load(R"({"assets":[{"kind":"texture","directory":"./","names":["tile\u0000other"]}]})"),
+        doctest::Contains("assets[0].names[0] contains an embedded NUL"), std::runtime_error);
+}

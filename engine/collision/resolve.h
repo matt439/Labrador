@@ -45,7 +45,7 @@ namespace labrador
 	//   - `normal` and `axis` are unit length. The arithmetic is a cosine only
 	//     if they are, and every quantity here is measured in the units the
 	//     caller's world uses.
-	//   - `penetration` is greater than zero, which is what a manifold
+	//   - `penetration` is finite and greater than zero, which is what a manifold
 	//     promises - a contact that does not overlap is not a contact.
 	//   - `axis` is no more than MIN_AXIS_ALIGNMENT away from being useless.
 	//

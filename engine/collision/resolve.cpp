@@ -22,7 +22,7 @@ namespace labrador
 			// deliberately, since the point is to catch a vector that was
 			// never normalised, not to police the last bit of one that was.
 			const float length_squared = Vector2F::dot(vector, vector);
-			if (std::abs(length_squared - 1.0f) > 0.001f)
+			if (!(std::abs(length_squared - 1.0f) <= 0.001f))
 			{
 				throw std::invalid_argument(
 					std::string("separation_along: ") + name +
@@ -38,12 +38,12 @@ namespace labrador
 		require_unit(normal, "normal");
 		require_unit(axis, "axis");
 
-		if (!(penetration > 0.0f))
+		if (!(penetration > 0.0f) || !std::isfinite(penetration))
 		{
 			// Written as "not greater than", so a NaN penetration is caught
 			// here rather than multiplied into a position.
 			throw std::invalid_argument(
-				"separation_along: penetration must be greater than zero, and "
+				"separation_along: penetration must be finite and greater than zero, and "
 				"it is " + std::to_string(penetration));
 		}
 

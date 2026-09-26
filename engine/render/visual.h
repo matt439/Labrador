@@ -25,6 +25,8 @@ namespace labrador
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
+		// The shape's angle plus rotation, about its center. Frame/caller
+		// origins are additional local source-texel offsets from that center.
 		Visual(const std::string& sheet_name,
 			const std::string& frame_name,
 			const mattmath::RectangleRotated& rect_rotated,
@@ -38,31 +40,22 @@ namespace labrador
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
 
-		// The box the sprite is drawn into, in world space: the destination
-		// rectangle with the frame's authored origin, the caller's origin and
-		// the rotation applied, exactly as draw() applies them
-		// (sprite_geometry.h, sprite_quad_bounds). It was the destination
-		// rectangle alone, which is the drawn extent only for a sprite with
-		// no origin and no turn, and a scene culling against it dropped the
-		// others at the edge of every view.
-		//
-		// COMPUTED ONCE, IN THE CONSTRUCTOR, and that is safe because nothing
-		// it reads can change afterwards: this class is final, rectangle_ is
-		// set nowhere but the two constructors, and the frame, origin and
-		// rotation setters it inherits are protected. That is what keeps the
-		// cull path - per object, per view, per frame - to one return, with
-		// no sheet lookup and no trigonometry on it. A setter added to this
-		// class has to recompute it, and that sentence is the whole of the
-		// contract.
+		// Unsnapped world geometry, including both authored and caller origin.
+		// cull_bounds additionally covers view-pixel quantization at this zoom.
+		// Both the geometry and per-pixel padding are cached at construction;
+		// this final class exposes no geometry/frame setters. Adding one must
+		// refresh both, keeping lookups and trigonometry off the cull path.
 		mattmath::RectangleF bounds() const override;
+		mattmath::RectangleF cull_bounds(float units_per_pixel) const override;
 
 	protected:
 		mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;
 
 	private:
 		mattmath::RectangleF bounds_ = mattmath::RectangleF::ZERO;
+		mattmath::Vector2F pixel_padding_ = mattmath::Vector2F::ZERO;
 
 		// From rectangle_ and the frame, once both are set.
-		mattmath::RectangleF drawn_bounds() const;
+		void initialize_bounds();
 	};
 }

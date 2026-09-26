@@ -51,6 +51,7 @@ namespace labrador
 		bool fullscreen = false;
 
 		// The fixed step the simulation advances at. Rendering is not capped by it.
+		// Must convert to at least one StepTimer tick (at most 10,000,000 FPS).
 		int target_fps = 60;
 
 		// The render thread pool's floor and ceiling.
@@ -320,6 +321,7 @@ namespace labrador
 		void on_mouse_move(int x, int y) const override;
 		void on_mouse_button_down(MouseButton button) const override;
 		void on_mouse_button_up(MouseButton button) const override;
+		void on_mouse_capture_lost() const override;
 		void on_mouse_wheel(float notches) const override;
 		void on_mouse_wheel_horizontal(float notches) const override;
 

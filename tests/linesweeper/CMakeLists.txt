@@ -76,3 +76,7 @@ target_include_directories(LineSweeperViewTests SYSTEM PRIVATE
 )
 
 add_test(NAME LineSweeperViewTests COMMAND LineSweeperViewTests)
+
+if(LABRADOR_RENDER_BACKEND STREQUAL "null")
+    target_sources(LineSweeperViewTests PRIVATE particle_draw_tests.cpp)
+endif()

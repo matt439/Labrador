@@ -285,3 +285,62 @@ TEST_CASE("a rotated rectangle is measured without being turned into a Quad")
 	CHECK_FALSE(narrow_phase(tilted,
 		RectangleF(100.0f, 100.0f, 4.0f, 4.0f)).has_value());
 }
+
+TEST_CASE("thin rotated rectangles retain both separating axes")
+{
+	const RectangleRotated first(Point2F(0.0f, 0.0f),
+		Vector2F(1.0f, 0.0f), Vector2F(0.0f, 1.0f), Vector2F(0.0001f, 1.0f));
+	const RectangleRotated second(Point2F(0.0f, 100.0f),
+		Vector2F(1.0f, 0.0f), Vector2F(0.0f, 1.0f), Vector2F(0.0001f, 1.0f));
+	CHECK_FALSE(narrow_phase(first, second).has_value());
+	CHECK_FALSE(narrow_phase(second, first).has_value());
+	CHECK(narrow_phase(first, first).has_value());
+}
+
+TEST_CASE("tiny nonzero polygon edges still contribute separating axes")
+{
+	for (const float size : { 0.0001f, 1.0e-20f })
+	{
+		const Triangle first(Point2F(0.0f, 0.0f), Point2F(size, 0.0f),
+			Point2F(0.0f, size));
+		const Triangle far(Point2F(size * 2.0f, 0.0f), Point2F(size * 3.0f, 0.0f),
+			Point2F(size * 2.0f, size));
+		CHECK(narrow_phase(first, first).has_value());
+		CHECK_FALSE(narrow_phase(first, far).has_value());
+	}
+	const mattmath::Quad first(Point2F(0.0f, 0.0f), Point2F(0.0001f, 0.0f),
+		Point2F(0.0001f, 1.0f), Point2F(0.0f, 1.0f));
+	const mattmath::Quad second(Point2F(0.0f, 2.0f), Point2F(0.0001f, 2.0f),
+		Point2F(0.0001f, 3.0f), Point2F(0.0f, 3.0f));
+	CHECK_FALSE(narrow_phase(first, second).has_value());
+}
+
+TEST_CASE("nonfinite geometry is rejected even inside an otherwise containing polygon")
+{
+	const RectangleF outer(0.0f, 0.0f, 20.0f, 20.0f);
+	for (const float poison : { std::numeric_limits<float>::quiet_NaN(),
+		std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity() })
+	{
+		for (const RectangleF invalid : { RectangleF(poison, 5.0f, 10.0f, 10.0f),
+			RectangleF(5.0f, poison, 10.0f, 10.0f),
+			RectangleF(5.0f, 5.0f, poison, 10.0f),
+			RectangleF(5.0f, 5.0f, 10.0f, poison) })
+		{
+			CHECK_FALSE(narrow_phase(invalid, outer).has_value());
+			CHECK_FALSE(narrow_phase(outer, invalid).has_value());
+		}
+		for (int vertex = 0; vertex < 3; vertex++)
+		{
+			for (int coordinate = 0; coordinate < 2; coordinate++)
+			{
+				Point2F points[] = { Point2F(5.0f, 5.0f), Point2F(15.0f, 5.0f),
+					Point2F(5.0f, 15.0f) };
+				if (coordinate == 0) { points[vertex].x = poison; }
+				else { points[vertex].y = poison; }
+				const Triangle invalid(points[0], points[1], points[2]);
+				CHECK_FALSE(narrow_phase(invalid, outer).has_value());
+				CHECK_FALSE(narrow_phase(outer, invalid).has_value());
+			}
+		}
+	}
+}

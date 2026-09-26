@@ -63,10 +63,12 @@ namespace
 		void on_suspend() override
 		{
 			this->log_->push_back(this->name_ + ":suspend");
+			if (this->on_suspension_) { this->on_suspension_(); }
 		}
 		void on_resume() override
 		{
 			this->log_->push_back(this->name_ + ":resume");
+			if (this->on_resumption_) { this->on_resumption_(); }
 		}
 		void on_activated() override
 		{
@@ -99,6 +101,14 @@ namespace
 		{
 			this->covers_screen_ = covers_screen;
 		}
+		void on_suspension(std::function<void()> action)
+		{
+			this->on_suspension_ = std::move(action);
+		}
+		void on_resumption(std::function<void()> action)
+		{
+			this->on_resumption_ = std::move(action);
+		}
 
 	private:
 		std::string name_;
@@ -106,6 +116,8 @@ namespace
 		std::function<void()> on_init_;
 		std::function<void()> on_update_;
 		std::function<void()> on_deactivation_;
+		std::function<void()> on_suspension_;
+		std::function<void()> on_resumption_;
 		bool covers_screen_ = true;
 		bool touched_ = false;
 	};
@@ -726,4 +738,128 @@ TEST_CASE("the shape the game is built out of")
 	log.clear();
 	context.draw(renderer);
 	CHECK(log == std::vector<std::string>{"menu:draw"});
+}
+
+TEST_CASE("nested activation preserves update deferral before and after notification")
+{
+	for (const int transition_at : { 0, 1, 2 })
+	{
+		std::vector<std::string> log;
+		StateContext context;
+		std::unique_ptr<RecordingState> state = std::make_unique<RecordingState>("a", &log);
+		auto transition = [&]()
+			{
+				context.transition_to(std::make_unique<RecordingState>("b", &log));
+			};
+		if (transition_at == 1) { state->on_deactivation(transition); }
+		state->on_update([&]()
+			{
+				if (transition_at == 0) { transition(); }
+				context.notify_activation(false);
+				if (transition_at == 2) { transition(); }
+				CHECK(std::find(log.begin(), log.end(), "a:dtor") == log.end());
+			});
+		context.transition_to(std::move(state));
+		context.update(0.0f);
+		CHECK(ran_before(log, "a:update-exit", "a:dtor"));
+		CHECK(ran_before(log, "a:dtor", "b:init"));
+	}
+}
+
+TEST_CASE("nested activation inside init keeps the current drain nonreentrant")
+{
+	for (const bool transition_before : { false, true })
+	{
+		std::vector<std::string> log;
+		StateContext context;
+		std::unique_ptr<RecordingState> state = std::make_unique<RecordingState>("a", &log);
+		state->on_init([&]()
+			{
+				if (transition_before)
+				{
+					context.transition_to(std::make_unique<RecordingState>("b", &log));
+				}
+				context.notify_activation(false);
+				if (!transition_before)
+				{
+					context.transition_to(std::make_unique<RecordingState>("b", &log));
+				}
+				log.push_back("a:init-exit");
+			});
+		context.transition_to(std::move(state));
+		CHECK(ran_before(log, "a:init-exit", "a:dtor"));
+		CHECK(ran_before(log, "a:dtor", "b:init"));
+	}
+}
+
+TEST_CASE("nested activation in suspend resume and result callbacks cannot reenter a drain")
+{
+	std::vector<std::string> log;
+	StateContext context;
+	std::unique_ptr<RecordingState> base = std::make_unique<RecordingState>("base", &log);
+	RecordingState* base_raw = base.get();
+	context.transition_to(std::move(base));
+
+	SUBCASE("suspend queues against the stack after the push finishes")
+	{
+		base_raw->on_suspension([&]()
+			{
+				context.notify_activation(false);
+				context.transition_to(std::make_unique<RecordingState>("replacement", &log));
+				log.push_back("suspend-exit");
+			});
+		context.push(std::make_unique<RecordingState>("overlay", &log));
+		CHECK(context.depth() == 2);
+		CHECK(ran_before(log, "suspend-exit", "overlay:init"));
+		CHECK(ran_before(log, "overlay:init", "overlay:dtor"));
+		CHECK(ran_before(log, "overlay:dtor", "replacement:init"));
+	}
+	SUBCASE("resume and result both finish before the resumed state is replaced")
+	{
+		base_raw->on_resumption([&]()
+			{
+				context.notify_activation(false);
+				context.transition_to(std::make_unique<RecordingState>("replacement", &log));
+				log.push_back("resume-exit");
+			});
+		context.push(std::make_unique<RecordingState>("overlay", &log), [&]()
+			{
+				context.notify_activation(true);
+				log.push_back("result-exit");
+			});
+		context.pop();
+		CHECK(ran_before(log, "resume-exit", "result-exit"));
+		CHECK(ran_before(log, "result-exit", "base:dtor"));
+		CHECK(ran_before(log, "base:dtor", "replacement:init"));
+	}
+	SUBCASE("result may queue a transition after a nested notification")
+	{
+		context.push(std::make_unique<RecordingState>("overlay", &log), [&]()
+			{
+				context.notify_activation(false);
+				context.transition_to(std::make_unique<RecordingState>("replacement", &log));
+				log.push_back("result-exit");
+			});
+		context.pop();
+		CHECK(ran_before(log, "result-exit", "base:dtor"));
+	}
+}
+
+TEST_CASE("throwing callbacks restore deferral without draining during unwinding")
+{
+	std::vector<std::string> log;
+	StateContext context;
+	std::unique_ptr<RecordingState> state = std::make_unique<RecordingState>("a", &log);
+	state->on_deactivation([&]()
+		{
+			context.transition_to(std::make_unique<RecordingState>("queued", &log));
+			throw std::runtime_error("activation failed");
+		});
+	state->on_update([&]() { context.notify_activation(false); });
+	context.transition_to(std::move(state));
+	CHECK_THROWS_AS(context.update(0.0f), std::runtime_error);
+	CHECK(std::find(log.begin(), log.end(), "a:dtor") == log.end());
+	context.transition_to(std::make_unique<RecordingState>("replacement", &log));
+	CHECK(ran_before(log, "a:dtor", "replacement:init"));
+	CHECK(std::find(log.begin(), log.end(), "queued:init") == log.end());
 }

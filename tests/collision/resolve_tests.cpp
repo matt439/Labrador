@@ -159,3 +159,20 @@ TEST_CASE("a velocity already along the surface keeps all of it")
 
 	CHECK(after == along);
 }
+
+TEST_CASE("separation_along rejects every nonfinite unit-vector component")
+{
+	for (const float poison : { std::numeric_limits<float>::quiet_NaN(),
+		std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity() })
+	{
+		for (const Vector2F invalid : { Vector2F(poison, 1.0f), Vector2F(1.0f, poison) })
+		{
+			CHECK_THROWS_AS(separation_along(invalid, 1.0f, Vector2F(0.0f, 1.0f)),
+				std::invalid_argument);
+			CHECK_THROWS_AS(separation_along(Vector2F(0.0f, 1.0f), 1.0f, invalid),
+				std::invalid_argument);
+		}
+		CHECK_THROWS_AS(separation_along(Vector2F(0.0f, 1.0f), poison,
+			Vector2F(0.0f, 1.0f)), std::invalid_argument);
+	}
+}

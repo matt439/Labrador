@@ -124,7 +124,8 @@ namespace labrador
 	// shift, the same turn about the destination's top left. Tight, not
 	// merely conservative - it is the bounding box of the four corners.
 	//
-	// This is what a GameObject::bounds() has to answer for a sprite, and it
+	// This is a view-space measurement, not a world-space cull bound.
+	// sprite_world_bounds accounts for the camera-dependent quantization. It
 	// lives here because it has to agree with build_quad to the term. It did
 	// not: Visual::bounds() handed back its destination rectangle, which is
 	// where a sprite lands only when its origin is zero and its rotation is
@@ -145,6 +146,16 @@ namespace labrador
 		const mattmath::RectangleI& source,
 		float rotation,
 		const mattmath::Vector2F& origin);
+
+	// World geometry before view-space quantization, expanded by a bound on
+	// its error at nonnegative world units per pixel (zero for layout).
+	// Each truncated edge moves by less than one pixel; a size moves by less
+	// than two. Rotation mixes those errors and the source-relative pivot
+	// scales them, including origins outside the source rectangle.
+	mattmath::RectangleF sprite_world_bounds(
+		const mattmath::RectangleF& destination,
+		const mattmath::RectangleI& source, float rotation,
+		const mattmath::Vector2F& origin, float units_per_pixel = 0.0f);
 
 	// The same, for a string laid out by build_glyph_quad: `measured_size`
 	// is what the font's walk reported for the whole string, unscaled, and

@@ -3,6 +3,8 @@
 #include "engine/ui/focus.h"
 #include "tests/ui/stub_widget.h"
 
+#include <memory>
+
 using labrador::Direction;
 using labrador::FocusGroup;
 using labrador::Activation;
@@ -348,4 +350,61 @@ TEST_CASE("clear empties the group and focus reports nothing")
 	CHECK(group.focused(0) == nullptr);
 	CHECK(group.activate(0) == Activation::none);
 	CHECK_FALSE(group.move(0, Direction::down));
+}
+
+TEST_CASE("an action survives rebuilding its focus group")
+{
+	StubWidget original(0.0f, 0.0f, 100.0f, 50.0f);
+	StubWidget replacement(0.0f, 100.0f, 100.0f, 50.0f);
+	FocusGroup group;
+	std::shared_ptr<int> captured = std::make_shared<int>(42);
+	const std::weak_ptr<int> lifetime = captured;
+	int replacement_calls = 0;
+	group.add(&original, [&, captured]()
+		{
+			group.clear();
+			CHECK_FALSE(lifetime.expired());
+			CHECK(*captured == 42);
+			group.add(&replacement, [&]() { replacement_calls++; });
+		});
+	captured.reset();
+	CHECK(group.activate(0) == Activation::ran);
+	CHECK(lifetime.expired());
+	CHECK(group.focused(0) == &replacement);
+	CHECK(group.activate(0) == Activation::ran);
+	CHECK(replacement_calls == 1);
+}
+
+TEST_CASE("vector growth during activation preserves mutable action state")
+{
+	StubWidget original(0.0f, 0.0f, 100.0f, 50.0f);
+	StubWidget added(0.0f, 100.0f, 100.0f, 50.0f);
+	FocusGroup group;
+	int observed = 0;
+	group.add(&original, [&, count = 0]() mutable
+		{
+			for (int i = 0; i < 64; i++) { group.add(&added); }
+			observed = ++count;
+		});
+	CHECK(group.activate(0) == Activation::ran);
+	CHECK(observed == 1);
+	CHECK(group.activate(0) == Activation::ran);
+	CHECK(observed == 2);
+}
+
+TEST_CASE("copying a button retains independent mutable action state")
+{
+	int observed = 0;
+	labrador::Button original(nullptr, [&, count = 0]() mutable { observed = ++count; });
+	labrador::Button copy = original;
+	CHECK(original.activate());
+	CHECK(original.activate());
+	CHECK(observed == 2);
+	CHECK(copy.activate());
+	CHECK(observed == 1);
+	copy = original;
+	CHECK(copy.activate());
+	CHECK(observed == 3);
+	CHECK(original.activate());
+	CHECK(observed == 3);
 }

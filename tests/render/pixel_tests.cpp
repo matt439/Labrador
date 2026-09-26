@@ -1,4 +1,6 @@
 #include "engine/render/renderer.h"
+#include "engine/scene/scene.h"
+#include "engine/core/game_object.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
 #include "engine/render/render_resources.h"
@@ -18,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <ostream>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -57,20 +60,13 @@
 // second. Each was added later than this paragraph and neither amended it at
 // the time, which is how a list of gaps becomes a list of the wrong gaps.
 //
-// AND EVERY FRAME IS ALSO CHECKED WHOLE. Each case's read-back is compared
-// byte for byte against a PNG of it in tests/render/golden/, which is the one
-// statement here that a difference BETWEEN two backends can fail - every
-// assertion in this file holds one backend to a relationship, and two
-// hand-copied implementations can get the same relationship wrong in the same
-// direction without either noticing. tests/render/golden_image.h has the whole
-// argument. Sixty frames; fifty-seven of them are 64x64 on every backend
-// and identical across the four that rasterise, and those fifty-seven are the
-// images in tests/render/golden/. The other three are not 64x64 - one because
-// the seam makes its size backend-specific, two because they ask for a
-// different size deliberately - and a golden set is one image per case at one
-// size. Harness::end_not_comparable is where that is written down, and the
-// count of images should be checkable against the count of frames from here:
-// fifty-seven and three.
+// Most frames are also checked against the PNG set in tests/render/golden/,
+// holding every rasterising backend to the same fixed reference. Fifty-seven
+// frames have those references. Three resize cases opt out because their size
+// changes or differs by backend; the scene-composition case instead asserts
+// every pixel against its analytically known red/blue image. No reference is
+// generated from the output being tested. Harness::end_not_comparable marks
+// these exceptions explicitly.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
 // Because the text cases below are relationships (see two paragraphs down), a
@@ -366,36 +362,11 @@ namespace
 				static_cast<int>(this->buffer_.y), this->pixels_);
 		}
 
-		// end(), for the frames in this file that no golden image can hold -
-		// and it is the seam that says so, not a tolerance this harness needed.
-		//
-		// THERE ARE THREE OF THEM AND THEY ARE EXEMPT FOR THE SAME REASON:
-		// none is 64x64. One is the drag-resize below, whose buffer is a
-		// different size on different backends by contract; the other two are
-		// the mid-frame resize cases at the end of this file, which ask for a
-		// 32x32 buffer deliberately and get it on every backend. A golden set
-		// is one image per case at one size, so a case that changes the size
-		// mid-frame has no image to be - and all three assert on pixels they
-		// address themselves, which is what a golden image would have added
-		// nothing to.
-		//
-		// THE FIRST IS EXEMPT FOR A STRONGER REASON THAN THE OTHER TWO, and
-		// the difference is worth keeping. renderer.h, back_buffer_size: "a
-		// swap chain does not follow its window, so both Direct3D backends
-		// answer the size they were told and let Present stretch; a WGL
-		// context's default framebuffer is the window's client area, so the GL
-		// backend answers the window." A frame read back while the two
-		// disagree is therefore 64x64 on some backends and 64x48 on others BY
-		// CONTRACT, and one file cannot be both - so no image could hold it
-		// however the set were organised. The other two could be held to an
-		// image and are not; that is a choice about how much of the newest
-		// path belongs in a set whose every other member is one size, not a
-		// fact about the seam. Every frame here that is not one of these three
-		// is 64x64 on every backend and is compared byte for byte.
-		//
-		// Named rather than filtered by slug inside golden_image.cpp, so that
-		// the reason sits with the case that needs it and renaming the case
-		// cannot quietly move the exemption somewhere else.
+		// Readback without a golden image. Three resize cases use this: one
+		// has backend-dependent dimensions, and two deliberately leave the
+		// reference set's 64x64 size. The scene-composition regression also
+		// uses it, asserting every pixel against a known red/blue image.
+		// Each call site states its reason; ordinary pixel cases use end().
 		void end_not_comparable()
 		{
 			this->read_frame();
@@ -414,7 +385,7 @@ namespace
 		}
 
 		// What the last end() read back, and how big the renderer said it was.
-		// Every case but the three that resize knows both are BUFFER_SIZE;
+		// Every case except the three that resize knows both are BUFFER_SIZE;
 		// at() goes through the reported width anyway so that the three which
 		// do not can be written in the same vocabulary as the rest.
 		Vector2F buffer_size() const { return this->buffer_; }
@@ -2275,4 +2246,44 @@ TEST_CASE("CONTRACT: re-loading a name reuses its slot, however many times")
 	harness.end();
 
 	CHECK(harness.at(4, 4) == GREEN);
+}
+
+TEST_CASE("a fullscreen scene overlays both split viewports after their drawing")
+{
+	class Solid final : public GameObject
+	{
+	public:
+		Solid(TextureHandle texture, RectangleF rectangle) : texture_(texture), rectangle_(rectangle) {}
+		void update(float) override {}
+		RectangleF bounds() const override { return rectangle_; }
+		void draw(DrawList& list) const override
+		{
+			list.draw_sprite(texture_, RectangleI(0, 0, 2, 2), rectangle_,
+				Colour::white, 0, Vector2F::ZERO, SpriteFlip::none, 0);
+		}
+	private:
+		TextureHandle texture_;
+		RectangleF rectangle_;
+	};
+	Harness h;
+	add_texture_asset(h.renderer(), h.resources(), "base-red", flat_texture(255, 0, 0));
+	add_texture_asset(h.renderer(), h.resources(), "overlay-blue", flat_texture(0, 0, 255));
+	Scene base(nullptr, nullptr);
+	base.add(std::make_unique<Solid>(h.resources().resolve_texture("base-red"), RectangleF(0, 0, 32, 64)));
+	base.end_tick();
+	base.add_view(Viewport(0, 0, 32, 64));
+	base.add_view(Viewport(32, 0, 32, 64));
+	Scene overlay(nullptr, nullptr);
+	overlay.add(std::make_unique<Solid>(h.resources().resolve_texture("overlay-blue"), RectangleF(16, 16, 32, 32)));
+	overlay.end_tick();
+	overlay.add_view(Viewport(0, 0, 64, 64));
+	h.renderer().begin_frame();
+	base.draw(h.renderer());
+	overlay.draw(h.renderer());
+	// This new composition contract is asserted at every pixel, so it needs
+	// no generated reference image to accept the implementation's output.
+	h.end_not_comparable();
+	for (int y = 0; y < 64; ++y)
+	for (int x = 0; x < 64; ++x)
+		CHECK(h.at(x, y) == ((x >= 16 && x < 48 && y >= 16 && y < 48) ? BLUE : RED));
 }

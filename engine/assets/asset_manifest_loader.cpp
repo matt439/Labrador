@@ -24,8 +24,8 @@ namespace labrador
 			// the list, which is the whole reason the file groups and the loader
 			// does not.
 			AssetEntry entry;
-			entry.kind = group.string("kind");
-			entry.directory = group.string("directory");
+			entry.kind = group.identifier("kind");
+			entry.directory = group.identifier("directory");
 
 			// Absent means required, which is the safe default and the one
 			// every existing manifest already meant.
@@ -35,7 +35,7 @@ namespace labrador
 			const JsonValue names = group.array("names");
 			for (size_t name_index = 0; name_index < names.size(); ++name_index)
 			{
-				entry.name = names.at(name_index).as_string();
+				entry.name = names.at(name_index).as_identifier();
 				manifest.entries.push_back(entry);
 			}
 		}

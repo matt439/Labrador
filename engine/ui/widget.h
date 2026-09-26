@@ -114,6 +114,7 @@ namespace labrador
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
+		mattmath::RectangleF cull_bounds(float units_per_pixel) const override;
 
 		// Every child, in the order they were added, and whatever a child
 		// makes of it - a nested container passes it down, and a child with no
@@ -157,6 +158,7 @@ namespace labrador
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
 		mattmath::RectangleF bounds() const override;
+		mattmath::RectangleF cull_bounds(float units_per_pixel) const override;
 
 		void set_texture(const std::string& sheet_name, const std::string& frame_name);
 		void set_sprite_frame(const std::string& frame_name);

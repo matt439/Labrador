@@ -340,14 +340,15 @@ namespace
 		field.update(0.0f);
 		REQUIRE(field.live() > 0);
 
-		// Every spark is inside row 21's band of the screen. Row 20's band
-		// is the 28 pixels above it, and the review measured the old answer
+		// Spark centers are inside row 21; their shrinking quads extend past
+		// the band by at most half their initial side: 2.5 pixels. Row 20's
+		// band is 28 pixels above it, and the review measured the old answer
 		// at y = 576..604 - that band exactly.
 		const float row_top = linesweeper::well_origin_y +
 			static_cast<float>(21 - linesweeper::well_buffer_rows) *
 			linesweeper::cell_size;
-		CHECK(field.bounds().top() >= row_top - 0.01f);
-		CHECK(field.bounds().bottom() <= row_top + linesweeper::cell_size + 0.01f);
+		CHECK(field.bounds().top() >= row_top - 2.5f);
+		CHECK(field.bounds().bottom() <= row_top + linesweeper::cell_size + 2.5f);
 
 		// And it is one row's worth: the same count the single-row clear
 		// above produces, not that plus a lock and not two rows.

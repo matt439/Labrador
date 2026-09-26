@@ -193,7 +193,11 @@ namespace labrador
 		// reason find_contacts fills a vector instead of firing a callback from
 		// inside the sweep, and the reason there is no event bus here. A test
 		// asserts on the list; a game that wants to know what touched what this
-		// frame reads it.
+		// frame reads it before end_tick(). The span and copied participant
+		// pointers are borrowed only until the next resolve(), end_tick(), or
+		// scene destruction. end_tick() clears all contacts, including pairs
+		// whose participants survive; inspection after it needs copied values
+		// such as geometry, not participant pointers.
 		void resolve();
 		std::span<const Contact> contacts() const;
 
@@ -226,7 +230,15 @@ namespace labrador
 		// frame. Whoever fills the scene calls this once.
 		void end_tick();
 
-		// The frame. Declares this frame's views to the renderer, then fills
+		// Appends this scene after earlier draws in the frame. Its first view
+		// reuses the final declared renderer view, preserving its earlier draws;
+		// additional views occupy new slots. A fullscreen overlay therefore
+		// needs no extra capacity. Multiple multiview scenes need capacity for
+		// 1 + sum(scene.view_count() - 1). Submission follows scene order,
+		// then each scene's view order; overlay callback indices stay local.
+		// An empty scene leaves the existing frame alone.
+		//
+		// Fills
 		// each one: the world through that view's camera, culled to what that
 		// view can see, then the game's overlay over it.
 		//
@@ -241,7 +253,7 @@ namespace labrador
 	private:
 		// One worker's share of the views. Every worker on a different range,
 		// all of them reading the same objects.
-		void draw_views(int start, int end, Renderer& renderer,
+		void draw_views(int start, int end, int offset, Renderer& renderer,
 			const ViewOverlay& overlay) const;
 
 		std::vector<std::unique_ptr<GameObject>> objects_;

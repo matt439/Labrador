@@ -33,7 +33,7 @@ namespace labrador
 	bool pressed(const MouseState& now, const MouseState& before,
 		MouseButton button)
 	{
-		if (!now.focused || !before.focused)
+		if (!now.focused || !before.focused || now.button_epoch != before.button_epoch)
 		{
 			return false;
 		}
@@ -43,7 +43,7 @@ namespace labrador
 	bool released(const MouseState& now, const MouseState& before,
 		MouseButton button)
 	{
-		if (!now.focused || !before.focused)
+		if (!now.focused || !before.focused || now.button_epoch != before.button_epoch)
 		{
 			return false;
 		}
@@ -95,6 +95,12 @@ namespace labrador
 		}
 		this->live_.buttons = static_cast<uint8_t>(
 			this->live_.buttons & ~bit_of(button));
+	}
+
+	void Mouse::cancel_buttons()
+	{
+		this->live_.buttons = 0;
+		++this->live_.button_epoch;
 	}
 
 	void Mouse::on_wheel(float notches)

@@ -3,6 +3,7 @@
 #include "engine/core/byte_reader.h"
 
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -163,8 +164,15 @@ namespace labrador
 		}
 
 		std::ignore = reader.read_u32();                       // flags
-		const int height = static_cast<int>(reader.read_u32());
-		const int width = static_cast<int>(reader.read_u32());
+		const uint32_t raw_height = reader.read_u32();
+		const uint32_t raw_width = reader.read_u32();
+		if (raw_height > static_cast<uint32_t>((std::numeric_limits<int>::max)()) ||
+			raw_width > static_cast<uint32_t>((std::numeric_limits<int>::max)()))
+		{
+			throw std::runtime_error(path + ": texture dimensions exceed int range.");
+		}
+		const int height = static_cast<int>(raw_height);
+		const int width = static_cast<int>(raw_width);
 		std::ignore = reader.read_u32();                       // pitch or size
 		const uint32_t depth = reader.read_u32();
 		const uint32_t mip_count = reader.read_u32();
@@ -255,7 +263,7 @@ namespace labrador
 		for (uint32_t i = 0; i < levels; i++)
 		{
 			const TextureLevel level = texture_level(texture.format,
-				level_width, level_height, offset);
+				level_width, level_height, offset, path);
 			texture.levels.push_back(level);
 			offset += level.size;
 

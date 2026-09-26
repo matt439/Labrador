@@ -74,12 +74,10 @@ namespace labrador
 	// must never reject something the expensive one would have accepted, and
 	// the expensive one owns the answer. See contacts.h.
 	//
-	// A coordinate that is not a number reports no contact. Every comparison
-	// against NaN is false, so the axis test is written to make overlap
-	// something a comparison has to reach rather than something reached by
-	// falling through - a missed collision is survivable, and a manifold
-	// carrying a NaN penetration is not, because it goes on to be applied to
-	// a position.
+	// Nonfinite polygon coordinates report no contact, checked before any
+	// projection can hide a poisoned vertex in a min/max reduction. Axis
+	// tests also reject nonfinite depths: no manifold may carry a NaN or
+	// infinite penetration into a position.
 	//
 	// Supported shape types are the convex polygons - rectangle, rotated
 	// rectangle, triangle and quad. A circle throws std::invalid_argument

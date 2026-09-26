@@ -44,6 +44,8 @@ namespace mattmath
 		const mattmath::Point2F& a, const mattmath::Point2F& b,
 		const mattmath::Point2F& c);
 
+	// Both overloads reject nonfinite geometry and negative radii. The
+	// closest-point overload leaves p unchanged when rejecting such input.
 	bool test_circle_AABB(const mattmath::Circle& s,
 		const mattmath::RectangleF& b);
 

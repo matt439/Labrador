@@ -63,7 +63,10 @@ target_include_directories(LineSweeperFrameBench SYSTEM PRIVATE
 
 # The benchmark resolves the same real font and white texel as PlayState. Keep
 # a private copy beside this executable so it runs from any working directory.
-add_custom_command(TARGET LineSweeperFrameBench POST_BUILD
+# Run even when no C++ needs relinking: content-only changes and deleted
+# deployed files must reach the next benchmark invocation.
+add_custom_target(linesweeper_frame_bench_content ALL)
+add_custom_command(TARGET linesweeper_frame_bench_content POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/manifest.json"
         "$<TARGET_FILE_DIR:LineSweeperFrameBench>/manifest.json"
@@ -75,3 +78,4 @@ add_custom_command(TARGET LineSweeperFrameBench POST_BUILD
         "$<TARGET_FILE_DIR:LineSweeperFrameBench>/textures"
     VERBATIM
 )
+add_dependencies(LineSweeperFrameBench linesweeper_frame_bench_content)

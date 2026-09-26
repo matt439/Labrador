@@ -4,6 +4,7 @@
 #include "engine/math/rectanglei.h"
 
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -96,19 +97,20 @@ namespace labrador
 		font.line_spacing = reader.read_f32();
 		font.stand_in = static_cast<char32_t>(reader.read_u32());
 
-		const int width = static_cast<int>(reader.read_u32());
-		const int height = static_cast<int>(reader.read_u32());
-		const TextureFormat format = to_texture_format(reader.read_u32(), path);
-		const int stride = static_cast<int>(reader.read_u32());
-		const int rows = static_cast<int>(reader.read_u32());
-
-		if (width <= 0 || height <= 0 || stride <= 0 || rows <= 0)
+		const auto positive_field = [&reader, &path]()
 		{
-			throw std::runtime_error(path + " describes an atlas of " +
-				std::to_string(width) + "x" + std::to_string(height) +
-				" in " + std::to_string(rows) + " rows of " +
-				std::to_string(stride) + " bytes, which is not an atlas.");
-		}
+			const uint32_t value = reader.read_u32();
+			if (value == 0 || value > static_cast<uint32_t>((std::numeric_limits<int>::max)()))
+			{
+				throw std::runtime_error(path + ": atlas field is outside positive int range.");
+			}
+			return static_cast<int>(value);
+		};
+		const int width = positive_field();
+		const int height = positive_field();
+		const TextureFormat format = to_texture_format(reader.read_u32(), path);
+		const int stride = positive_field();
+		const int rows = positive_field();
 
 		// THE FILE'S OWN STRIDE AND ROW COUNT, NOT THE COMPUTED ONES. A
 		// .spritefont states both, and it is the only file this engine reads
@@ -116,7 +118,7 @@ namespace labrador
 		// what the format says they should be. A disagreement is a file this
 		// engine would read the wrong number of bytes from, which is worth a
 		// message rather than a texture full of noise.
-		const TextureLevel expected = texture_level(format, width, height, 0);
+		const TextureLevel expected = texture_level(format, width, height, 0, path);
 		if (stride != expected.stride || rows != expected.rows)
 		{
 			throw std::runtime_error(path + " says its atlas is " +

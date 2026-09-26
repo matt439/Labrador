@@ -155,6 +155,9 @@ try {
     Assert-Equal $identity.imageId $config.ami_id 'AMI'
     Assert-Equal $identity.region $config.region 'region'
     Assert-Equal $identity.availabilityZone $config.availability_zone 'availability zone'
+    # Identity establishes ownership. Any later environment refusal must take
+    # the immediate shutdown path, including CPU/session/console failures.
+    $declaredInstance = $true
     $processors = @(Get-CimInstance -ClassName Win32_Processor)
     $coreCount = ($processors | Measure-Object -Property NumberOfCores -Sum).Sum
     $logicalCount = ($processors | Measure-Object -Property NumberOfLogicalProcessors -Sum).Sum
@@ -194,7 +197,6 @@ try {
     if ($shell.Count -eq 0) {
         throw "The console session for '$consoleUser' has no desktop shell yet"
     }
-    $declaredInstance = $true
     if ($env:AWS_ACCESS_KEY_ID -or $env:AWS_SECRET_ACCESS_KEY -or $env:AWS_SESSION_TOKEN -or
         $env:AWS_PROFILE -or (Test-Path -LiteralPath (Join-Path $env:USERPROFILE '.aws\credentials'))) {
         throw 'Static or profile AWS credentials are forbidden on the runner'

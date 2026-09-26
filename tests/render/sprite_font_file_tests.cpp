@@ -168,3 +168,35 @@ TEST_CASE("a file that is not a font says which way it is not one")
 			std::runtime_error);
 	}
 }
+
+TEST_CASE("spritefont rejects overflowed atlas layouts with the source name")
+{
+	for (unsigned int width : { 0x20000000u, 0x40000001u, 0x7fffffffu, 0x80000000u })
+	{
+		std::vector<unsigned char> bytes{ 'D', 'X', 'T', 'K', 'f', 'o', 'n', 't' };
+		const auto append = [&bytes](unsigned int value)
+		{
+			for (int shift = 0; shift < 32; shift += 8)
+				bytes.push_back(static_cast<unsigned char>(value >> shift));
+		};
+		append(0); // glyph count
+		append(0x3f800000); // line spacing = 1
+		append(0); // fallback character
+		append(width);
+		append(1); // height
+		append(28); // RGBA
+		append(4); // wrapped stride from the old arithmetic
+		append(1); // rows
+		append(0xffffffff); // only four payload bytes
+		const ScratchFile file("overflow_atlas.spritefont", bytes);
+		try
+		{
+			(void)read_sprite_font_file(file.path());
+			FAIL("malformed atlas was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			CHECK(std::string(error.what()).find(file.path()) != std::string::npos);
+		}
+	}
+}

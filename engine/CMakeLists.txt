@@ -30,6 +30,7 @@ add_library(LabradorEngine STATIC
     collision/partitioner.cpp
     collision/resolve.cpp
     core/byte_reader.cpp
+    core/file_path.cpp
     core/moving_object.cpp
     core/state.cpp
     core/state_context.cpp

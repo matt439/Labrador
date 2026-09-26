@@ -193,6 +193,8 @@ def validate_config(document: dict[str, Any], *, now: datetime | None = None,
     required_image_tags = {"Project", "ImageRole", "WindowsBuild", "NvidiaDriver"}
     if not required_image_tags <= set(tags):
         raise ValueError("expected_ami_tags must bind project, image role, Windows build and driver")
+    if not tags.get("ConsoleUser", "").strip():
+        raise ValueError("expected_ami_tags.ConsoleUser must name a non-whitespace console user")
     if tags["Project"] != "Labrador" or not tags["WindowsBuild"].isdigit():
         raise ValueError("expected AMI project or Windows build is invalid")
     if (not isinstance(config["root_device_name"], str)

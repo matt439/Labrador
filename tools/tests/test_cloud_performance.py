@@ -5,12 +5,14 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import shutil
 import subprocess
 import tempfile
 import unittest
 import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import Mock
 
 from tools.cloud_performance import __main__ as cli
 from tools.cloud_performance import analysis, infrastructure, release
@@ -41,6 +43,7 @@ def config(now: datetime | None = None) -> dict:
         "expected_ami_tags": {
             "Project": "Labrador", "ImageRole": "performance-runner-v1",
             "WindowsBuild": "20348", "NvidiaDriver": "555.1",
+            "ConsoleUser": "benchmark",
         },
         "root_device_name": "/dev/sda1",
         "root_volume_gib": 100,
@@ -106,6 +109,21 @@ def phase_summary(values: list[int]) -> dict[str, int]:
 
 
 class ConfigTests(unittest.TestCase):
+    def test_console_user_is_required_before_authorized_template_generation(self):
+        now = datetime(2030, 1, 1, tzinfo=timezone.utc)
+        for value in (None, "", " ", "\t\r\n"):
+            with self.subTest(value=value):
+                document = config(now)
+                document["authorization"]["allow_launch"] = True
+                if value is None:
+                    del document["expected_ami_tags"]["ConsoleUser"]
+                else:
+                    document["expected_ami_tags"]["ConsoleUser"] = value
+                with self.assertRaises(ValueError):
+                    validate_config(document, now=now)
+                with self.assertRaises(ValueError):
+                    infrastructure.template(document, require_authorization=True, now=now)
+
     def test_valid_config_is_normalized(self):
         now = datetime(2030, 1, 1, tzinfo=timezone.utc)
         document = config(now)
@@ -190,6 +208,58 @@ class ConfigTests(unittest.TestCase):
 
 
 class InfrastructureTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("powershell"), "Windows PowerShell is required")
+    def test_worker_early_refusal_shuts_down_only_after_identity_matches(self):
+        for wrong_identity, upload_failure in ((False, False), (True, False), (False, True)):
+            with self.subTest(wrong_identity=wrong_identity, upload_failure=upload_failure):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    write_json(root / "declaration.json", config())
+                    commands = [
+                        shutil.which("powershell"), "-NoProfile", "-NonInteractive", "-File",
+                        str(Path(__file__).with_name("worker_failure_fixture.ps1")),
+                        "-FixtureRoot", str(root), "-WorkerSource",
+                        str(Path(__file__).parents[1] / "cloud_performance" / "worker.ps1"),
+                    ]
+                    if wrong_identity:
+                        commands.append("-WrongIdentity")
+                    if upload_failure:
+                        commands.append("-UploadFailure")
+                    process = subprocess.run(commands, capture_output=True, timeout=30)
+                    output = (process.stdout + process.stderr).decode("utf-8", errors="replace")
+                    self.assertNotEqual(process.returncode, 0, output)
+                    shutdown = root / "shutdown.json"
+                    self.assertEqual(shutdown.exists(), not wrong_identity, output)
+                    if shutdown.exists():
+                        self.assertEqual(json.loads(shutdown.read_text(encoding="utf-8-sig")),
+                                         ["/s", "/t", 0, "/f"])
+                    if not upload_failure:
+                        terminal = json.loads((root / "work/evidence/failure.json").read_text(
+                            encoding="utf-8-sig"))
+                        self.assertEqual(terminal["status"], "failure")
+                        self.assertIn("AMI differs" if wrong_identity else "early processor refusal",
+                                      terminal["error"])
+
+    def test_ami_must_have_the_declared_console_user(self):
+        document = config()
+        tags = document["expected_ami_tags"]
+        for actual in (None, "other-user", " "):
+            with self.subTest(actual=actual):
+                image_tags = dict(tags)
+                if actual is None:
+                    del image_tags["ConsoleUser"]
+                else:
+                    image_tags["ConsoleUser"] = actual
+                ec2 = Mock()
+                ec2.describe_images.return_value = {"Images": [{
+                    "State": "available", "Architecture": "x86_64", "Platform": "windows",
+                    "RootDeviceName": document["root_device_name"],
+                    "Tags": [{"Key": key, "Value": value} for key, value in image_tags.items()],
+                }]}
+                with self.assertRaisesRegex(ValueError, "ConsoleUser"):
+                    cli._verify_ami(ec2, document)
+                ec2.describe_instance_type_offerings.assert_not_called()
+
     def test_terminated_instance_purge_is_recognized(self):
         error = RuntimeError("gone")
         error.response = {"Error": {"Code": "InvalidInstanceID.NotFound"}}
@@ -726,7 +796,7 @@ class AnalysisTests(unittest.TestCase):
             })
         return samples
 
-    def test_locked_repetition_is_named_and_listed_rather_than_counted_as_slow(self):
+    def test_wait_dominated_repetition_is_a_candidate_without_claiming_a_cause(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.evidence(root)
@@ -740,7 +810,10 @@ class AnalysisTests(unittest.TestCase):
             backend = report["backends"]["d3d11"]
             first, second = backend["repetitions"]
             lock = first["presentation_lock"]
-            self.assertEqual(lock["verdict"], "locked_to_presentation_cadence")
+            self.assertEqual(lock["verdict"], "presentation_wait_candidate")
+            self.assertTrue(lock["cadence_signature"])
+            self.assertEqual(lock["tail_mean_update_record_submit_ns"], 3_000_000)
+            self.assertEqual(lock["tail_mean_begin_present_ns"], 13_664_000)
             self.assertEqual(lock["pacer_idle_source"], "pacing_wait_ns")
             self.assertEqual(lock["tail_first_sample"], 30)
             self.assertEqual(lock["tail_sample_count"], 70)
@@ -751,16 +824,49 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(lock["tail_start_lateness_ns"],
                              {"first": 24_000_000, "last": 24_000_000,
                               "min": 24_000_000, "max": 24_000_000})
-            # The counts that read a locked tail as slow frames are still there,
-            # unchanged, so the verdict beside them is what says what they are.
+            # Keep observed counts; phase timing supports an inference, not a
+            # claim that the recorded whole-frame cost can be discarded.
             self.assertEqual(first["whole_frame_over_target_count"], 0)
             self.assertEqual(first["long_begin_or_present"]["present_count"], 70)
             self.assertEqual(second["presentation_lock"]["verdict"], "not_locked")
             self.assertEqual(second["presentation_lock"]["tail_sample_count"], 0)
             self.assertIsNone(second["presentation_lock"]["tail_first_sample"])
             self.assertNotIn("tail_start_lateness_ns", second["presentation_lock"])
-            self.assertEqual(backend["presentation_locked_repetitions"], [1])
+            self.assertEqual(backend["presentation_wait_candidate_repetitions"], [1])
             self.assertIn("presentation_lock", report["interpretation"])
+
+    def test_work_and_mixed_cost_cadence_signatures_do_not_claim_presentation_lock(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            self.record_policies(root)
+            for repetition, update, record, begin, present in (
+                    (1, 16_750_000, 100_000, 30_000, 20_000),
+                    (2, 10_000_000, 100_000, 30_000, 6_770_000)):
+                samples = [{
+                    "ordinal": index, "update_ns": update, "record_submit_ns": record,
+                    "begin_ns": begin, "present_ns": present,
+                    "whole_frame_ns": 16_900_000,
+                    "scheduled_interval_ns": 16_900_100,
+                    "pacing_wait_ns": 100,
+                    "start_lateness_ns": (index + 1) * (16_900_100 - 16_666_667),
+                } for index in range(100)]
+                self.replace_samples(root, repetition, samples)
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            backend = report["backends"]["d3d11"]
+            first, second = backend["repetitions"]
+            self.assertEqual(first["presentation_lock"]["verdict"], "work_limited")
+            self.assertEqual(first["presentation_lock"]["tail_mean_update_record_submit_ns"],
+                             16_850_000)
+            self.assertEqual(first["long_begin_or_present"]["either_count"], 0)
+            self.assertEqual(first["whole_frame_over_target_count"], 100)
+            self.assertEqual(second["presentation_lock"]["verdict"], "ambiguous_cadence")
+            self.assertTrue(first["presentation_lock"]["cadence_signature"])
+            self.assertTrue(second["presentation_lock"]["cadence_signature"])
+            self.assertEqual(backend["presentation_wait_candidate_repetitions"], [])
 
     def test_alternating_lock_is_recognised_from_the_tail_mean(self):
         # Vulkan's two-slot ring against three FIFO images blocks every second
@@ -778,7 +884,7 @@ class AnalysisTests(unittest.TestCase):
             first = report["backends"]["d3d11"]["repetitions"][0]
             self.assertEqual(first["summary"]["whole_frame_ns"]["p50"], 4_000_000)
             self.assertEqual(first["presentation_lock"]["verdict"],
-                             "locked_to_presentation_cadence")
+                             "presentation_wait_candidate")
             self.assertEqual(first["presentation_lock"]["tail_first_sample"], 0)
             self.assertEqual(first["presentation_lock"]["tail_mean_whole_frame_ns"], 16_664_000)
             self.assertEqual(first["long_begin_or_present"]["present_count"], 50)
@@ -810,7 +916,7 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(second["presentation_lock"]["verdict"], "not_locked")
             self.assertEqual(second["presentation_lock"]["tail_sample_count"], 100)
             self.assertEqual(second["presentation_lock"]["tail_mean_whole_frame_ns"], 3_040_000)
-            self.assertEqual(backend["presentation_locked_repetitions"], [])
+            self.assertEqual(backend["presentation_wait_candidate_repetitions"], [])
 
     def test_legacy_lock_is_read_from_the_gap_and_cannot_see_the_first_sample(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -828,12 +934,12 @@ class AnalysisTests(unittest.TestCase):
             first = report["backends"]["d3d11"]["repetitions"][0]
             self.assertEqual(first["pacing_measurement"], "unrecorded_legacy")
             lock = first["presentation_lock"]
-            self.assertEqual(lock["verdict"], "locked_to_presentation_cadence")
+            self.assertEqual(lock["verdict"], "presentation_wait_candidate")
             self.assertEqual(lock["pacer_idle_source"], "frame_end_to_next_start")
             self.assertEqual(lock["tail_first_sample"], 1)
             self.assertEqual(lock["tail_sample_count"], 99)
             self.assertNotIn("tail_start_lateness_ns", lock)
-            self.assertEqual(report["backends"]["d3d11"]["presentation_locked_repetitions"], [1])
+            self.assertEqual(report["backends"]["d3d11"]["presentation_wait_candidate_repetitions"], [1])
 
     def test_partial_or_changed_presentation_metadata_is_refused(self):
         with tempfile.TemporaryDirectory() as temporary:

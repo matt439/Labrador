@@ -1,7 +1,6 @@
 #pragma once
 
 #include "engine/math/rectanglef.h"
-#include "engine/render/camera.h"
 
 namespace labrador
 {
@@ -55,7 +54,7 @@ namespace labrador
 		// This is the line that would make engine/core include a graphics API if
 		// the parameter were anything but a reference to a declared type.
 		virtual void draw(DrawList& draw_list) const = 0;
-		// The object's drawn extent, in world space.
+		// The object's geometry in world space, before view-pixel quantization.
 		//
 		// This replaced is_visible_in_viewport(view), which asked the object
 		// "are you inside this box?". That phrasing can only ever be answered
@@ -74,5 +73,15 @@ namespace labrador
 		// invisible. Whether anything is drawn is a property of draw(),
 		// not of the extent.
 		virtual mattmath::RectangleF bounds() const = 0;
+
+		// Conservative drawn extent for culling at this view's world units per
+		// pixel (nonnegative). Ordinary geometry needs no adjustment. Drawables
+		// that snap in view pixels override this: quantization happens after the camera, so
+		// its world-space allowance depends on zoom. bounds() remains the
+		// unsnapped geometry used by layout and collision.
+		virtual mattmath::RectangleF cull_bounds(float /*units_per_pixel*/) const
+		{
+			return this->bounds();
+		}
 	};
 }

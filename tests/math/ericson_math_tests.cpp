@@ -561,3 +561,36 @@ TEST_SUITE("EricsonMath")
 		CHECK(are_equal(q.y, half_diagonal / 2.0f));
 	}
 }
+
+TEST_CASE("circle AABB overloads consistently reject contained nonfinite geometry")
+{
+	const RectangleF box(0.0f, 0.0f, 20.0f, 20.0f);
+	const Circle circle(Point2F(10.0f, 10.0f), 1.0f);
+	for (const float poison : { std::numeric_limits<float>::quiet_NaN(),
+		std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity() })
+	{
+		for (const Circle invalid : { Circle(Point2F(poison, 10.0f), 1.0f),
+			Circle(Point2F(10.0f, poison), 1.0f), Circle(Point2F(10.0f, 10.0f), poison) })
+		{
+			Point2F closest(-7.0f, -8.0f);
+			CHECK_FALSE(test_circle_AABB(invalid, box));
+			CHECK_FALSE(test_circle_AABB(invalid, box, closest));
+			CHECK(closest == Point2F(-7.0f, -8.0f));
+		}
+		for (const RectangleF invalid : { RectangleF(poison, 0.0f, 20.0f, 20.0f),
+			RectangleF(0.0f, poison, 20.0f, 20.0f),
+			RectangleF(0.0f, 0.0f, poison, 20.0f),
+			RectangleF(0.0f, 0.0f, 20.0f, poison) })
+		{
+			Point2F closest(-7.0f, -8.0f);
+			CHECK_FALSE(test_circle_AABB(circle, invalid));
+			CHECK_FALSE(test_circle_AABB(circle, invalid, closest));
+			CHECK(closest == Point2F(-7.0f, -8.0f));
+		}
+	}
+	Point2F closest;
+	CHECK(test_circle_AABB(circle, box));
+	CHECK(test_circle_AABB(circle, box, closest));
+	CHECK(closest == circle.center());
+	CHECK_FALSE(test_circle_AABB(Circle(Point2F(10.0f, 10.0f), -1.0f), box));
+}

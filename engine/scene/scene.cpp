@@ -5,6 +5,7 @@
 #include "engine/core/thread_pool.h"
 #include "engine/render/renderer.h"
 
+#include <algorithm>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -101,6 +102,10 @@ namespace labrador
 
 	void Scene::end_tick()
 	{
+		// Contacts borrow their participants. Expire the whole tick's snapshot
+		// before any participant can be destroyed, even when none retires.
+		this->contacts_.clear();
+
 		// The bounds sweep. Flagging rather than erasing, so an object that has
 		// left the world is retired by the same line as an object that asked to
 		// be - and so a game that wants to hear about it first can look at the
@@ -163,7 +168,9 @@ namespace labrador
 	void Scene::draw(Renderer& renderer, const ViewOverlay& overlay) const
 	{
 		const int count = static_cast<int>(this->views_.size());
-		renderer.set_view_count(count);
+		const int offset = std::max(0, renderer.view_count() - 1);
+		if (count == 0) return;
+		renderer.set_view_count(offset + count);
 
 		// One view is not worth a fan-out, and neither is a scene with no pool:
 		// a menu, a sample and a headless test all draw one pane, and the pool
@@ -180,7 +187,7 @@ namespace labrador
 		if (count <= 1 || this->thread_pool_ == nullptr ||
 			this->partitioner_ == nullptr)
 		{
-			this->draw_views(0, count, renderer, overlay);
+			this->draw_views(0, count, offset, renderer, overlay);
 			return;
 		}
 
@@ -190,9 +197,9 @@ namespace labrador
 
 		for (const std::pair<int, int>& range : ranges)
 		{
-			this->thread_pool_->add_task([this, range, &renderer, &overlay]()
+			this->thread_pool_->add_task([this, range, offset, &renderer, &overlay]()
 				{
-					this->draw_views(range.first, range.second, renderer,
+					this->draw_views(range.first, range.second, offset, renderer,
 						overlay);
 				});
 		}
@@ -200,14 +207,14 @@ namespace labrador
 		this->thread_pool_->wait_for_tasks_to_complete();
 	}
 
-	void Scene::draw_views(int start, int end, Renderer& renderer,
+	void Scene::draw_views(int start, int end, int offset, Renderer& renderer,
 		const ViewOverlay& overlay) const
 	{
 		for (int i = start; i < end; i++)
 		{
 			const View& view = this->views_[static_cast<size_t>(i)];
 
-			DrawList list = renderer.view(i);
+			DrawList list = renderer.view(offset + i);
 			list.set_viewport(view.viewport);
 			list.set_camera(view.camera);
 
@@ -233,7 +240,7 @@ namespace labrador
 			// frame, single-threaded, behind an opaque results box.
 			for (const std::unique_ptr<GameObject>& object : this->objects_)
 			{
-				if (object->bounds().intersects(visible))
+				if (object->cull_bounds(1.0f / view.camera.scale).intersects(visible))
 				{
 					object->draw(list);
 				}
@@ -242,7 +249,7 @@ namespace labrador
 			for (const std::unique_ptr<CollisionObject>& object :
 				this->collision_objects_)
 			{
-				if (object->bounds().intersects(visible))
+				if (object->cull_bounds(1.0f / view.camera.scale).intersects(visible))
 				{
 					object->draw(list);
 				}

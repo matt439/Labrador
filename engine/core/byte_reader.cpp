@@ -1,4 +1,5 @@
 #include "engine/core/byte_reader.h"
+#include "engine/core/file_path.h"
 
 #include <cstring>
 #include <fstream>
@@ -71,7 +72,7 @@ namespace labrador
 
 	std::vector<unsigned char> read_file_bytes(const std::string& path)
 	{
-		std::ifstream file(path, std::ios::binary | std::ios::ate);
+		std::ifstream file(path_from_utf8(path), std::ios::binary | std::ios::ate);
 		if (!file)
 		{
 			throw std::out_of_range("No file at " + path + ".");

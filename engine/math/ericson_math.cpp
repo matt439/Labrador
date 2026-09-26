@@ -127,11 +127,8 @@ namespace mattmath
 	// Returns true if sphere s intersects AABB b, false otherwise
 	bool test_circle_AABB(const Circle& s, const RectangleF& b)
 	{
-		// Compute squared distance between sphere center and AABB
-		float sqDist = sq_dist_point_AABB(s.center(), b);
-		// Sphere and AABB intersect if the (squared) distance
-		// between them is less than the (squared) sphere radius
-		return sqDist <= s.radius() * s.radius();
+		Point2F closest;
+		return test_circle_AABB(s, b, closest);
 	}
 
 	// Returns true if sphere s intersects AABB b, false otherwise.
@@ -139,12 +136,26 @@ namespace mattmath
 	bool test_circle_AABB(const Circle& s,
 		const RectangleF& b, Point2F& p)
 	{
+		// Validate before clamping: failed comparisons against a NaN can
+		// otherwise turn an invalid center or box into zero distance.
+		const Point2F center = s.center();
+		if (!std::isfinite(center.x) || !std::isfinite(center.y)
+			|| !std::isfinite(s.radius()) || !(s.radius() >= 0.0f)
+			|| !std::isfinite(b.x) || !std::isfinite(b.y)
+			|| !std::isfinite(b.width) || !std::isfinite(b.height)
+			|| !std::isfinite(b.right()) || !std::isfinite(b.bottom()))
+		{
+			return false;
+		}
+
 		// Find point p on AABB closest to sphere center
 		closest_pt_point_AABB(s.center(), b, p);
 		// Sphere and AABB intersect if the (squared) distance from sphere
 		// center to point p is less than the (squared) sphere radius
-		Vector2F v = p - s.center();
-		return Vector2F::dot(v, v) <= s.radius() * s.radius();
+		const double x = static_cast<double>(p.x) - center.x;
+		const double y = static_cast<double>(p.y) - center.y;
+		const double radius = s.radius();
+		return x * x + y * y <= radius * radius;
 	}
 
 	// Computes the square distance between a point p and an AABB b

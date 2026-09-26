@@ -195,6 +195,18 @@ namespace labrador
 				"at most " + std::to_string(limits.maxMipLevels) + " for " +
 				format_name(texture.format) + ".");
 		}
+		if (description.extent.width == 0 || description.extent.height == 0 ||
+			description.extent.width > limits.maxExtent.width ||
+			description.extent.height > limits.maxExtent.height ||
+			description.extent.depth > limits.maxExtent.depth)
+		{
+			throw std::runtime_error("Texture '" + name + "' at " +
+				std::to_string(texture.width) + "x" + std::to_string(texture.height) +
+				" exceeds this device's image extent limit of " +
+				std::to_string(limits.maxExtent.width) + "x" +
+				std::to_string(limits.maxExtent.height) + "x" +
+				std::to_string(limits.maxExtent.depth) + ".");
+		}
 
 		VkImage image = VK_NULL_HANDLE;
 		check_vk(vkCreateImage(device, &description, nullptr, &image),

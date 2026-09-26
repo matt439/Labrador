@@ -64,6 +64,8 @@ namespace labrador
 		virtual void on_mouse_move(int x, int y) const = 0;
 		virtual void on_mouse_button_down(MouseButton button) const = 0;
 		virtual void on_mouse_button_up(MouseButton button) const = 0;
+		// Cancel any held gesture without treating capture transfer as release.
+		virtual void on_mouse_capture_lost() const {}
 
 		// Notches, signed, fractional on a high-resolution wheel. Two
 		// functions rather than one with an axis flag, because a caller
@@ -199,6 +201,8 @@ namespace labrador
 			const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style);
 
 	private:
+		void update_suspension();
+		bool power_suspended_ = false;
 		// The same, for the style the window is wearing right now.
 		mattmath::Vector2I outer_size_for_client(
 			const mattmath::Vector2I& client_size) const;

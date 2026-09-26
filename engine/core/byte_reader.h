@@ -53,7 +53,7 @@ namespace labrador
 		size_t at_ = 0;
 	};
 
-	// The whole file at `path`, as bytes.
+	// The whole file at the UTF-8 `path`, as bytes.
 	//
 	// Throws std::out_of_range naming the path when there is no file there, and
 	// std::runtime_error when there is one and it cannot be read. Those are

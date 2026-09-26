@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <fstream>
 #include <stdexcept>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -217,5 +218,39 @@ TEST_CASE("a file that is not a texture this engine draws says which way")
 		// a number no file ever said. Both walls stand, and this is the first
 		// of them - the one every backend inherits.
 		CHECK_THROWS_AS(read_dds_file(file.path()), std::runtime_error);
+	}
+}
+
+TEST_CASE("texture layouts reject stride and accumulated offset overflow")
+{
+	const int limit = (std::numeric_limits<int>::max)();
+	CHECK(texture_level(TextureFormat::r8g8b8a8_unorm, limit / 4, 1, 0).stride == (limit / 4) * 4);
+	CHECK_THROWS_AS(texture_level(TextureFormat::r8g8b8a8_unorm, limit / 4 + 1, 1, 0), std::runtime_error);
+	CHECK(texture_level(TextureFormat::bc1_unorm, (limit / 8) * 4, 1, 0).stride == (limit / 8) * 8);
+	CHECK_THROWS_AS(texture_level(TextureFormat::bc1_unorm, (limit / 8) * 4 + 1, 1, 0), std::runtime_error);
+	CHECK(texture_level(TextureFormat::bc1_unorm, 1, limit, 0).rows == limit / 4 + 1);
+	CHECK_THROWS_AS(texture_level(TextureFormat::bc3_unorm, limit, limit, 0), std::runtime_error);
+	CHECK_THROWS_AS(texture_level(TextureFormat::r8g8b8a8_unorm, 1, 1,
+		(std::numeric_limits<size_t>::max)() - 3), std::runtime_error);
+}
+
+TEST_CASE("DDS rejects malformed large dimensions before payload acceptance")
+{
+	for (unsigned int width : { 0x20000000u, 0x40000001u, 0x7fffffffu, 0x80000000u })
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, 12, 1);
+		poke(bytes, 16, width);
+		bytes.resize(132);
+		const ScratchFile file("overflow_width.dds", bytes);
+		try
+		{
+			(void)read_dds_file(file.path());
+			FAIL("malformed DDS was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			CHECK(std::string(error.what()).find(file.path()) != std::string::npos);
+		}
 	}
 }

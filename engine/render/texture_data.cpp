@@ -1,5 +1,8 @@
 #include "engine/render/texture_data.h"
 
+#include <limits>
+#include <stdexcept>
+
 namespace labrador
 {
 	namespace
@@ -30,13 +33,19 @@ namespace labrador
 	}
 
 	TextureLevel texture_level(TextureFormat format, int width, int height,
-		size_t offset)
+		size_t offset, const std::string& context)
 	{
+		if (width <= 0 || height <= 0)
+		{
+			throw std::runtime_error(context + ": texture dimensions must be positive.");
+		}
 		TextureLevel level;
 		level.width = width;
 		level.height = height;
 		level.offset = offset;
 
+		size_t columns = static_cast<size_t>(width);
+		size_t rows = static_cast<size_t>(height);
 		if (is_block_compressed(format))
 		{
 			// A ROUND UP AND A FLOOR OF ONE, both of which matter at the bottom
@@ -44,20 +53,22 @@ namespace labrador
 			// half, and a 1x1 level is still a whole block - so a chain that
 			// walked down to nothing would stop one level early and leave the
 			// last level's bytes unread, shifting every level after it.
-			const int blocks_wide = (width + 3) / 4;
-			const int blocks_high = (height + 3) / 4;
-			level.stride = (blocks_wide < 1 ? 1 : blocks_wide) *
-				unit_bytes(format);
-			level.rows = blocks_high < 1 ? 1 : blocks_high;
+			columns = (columns + 3) / 4;
+			rows = (rows + 3) / 4;
 		}
-		else
+		const size_t bytes = static_cast<size_t>(unit_bytes(format));
+		if (columns > static_cast<size_t>((std::numeric_limits<int>::max)()) / bytes)
 		{
-			level.stride = width * unit_bytes(format);
-			level.rows = height;
+			throw std::runtime_error(context + ": texture row stride exceeds int range.");
 		}
-
-		level.size = static_cast<size_t>(level.stride) *
-			static_cast<size_t>(level.rows);
+		const size_t stride = columns * bytes;
+		if (rows > ((std::numeric_limits<size_t>::max)() - offset) / stride)
+		{
+			throw std::runtime_error(context + ": texture size or accumulated offset overflow.");
+		}
+		level.stride = static_cast<int>(stride);
+		level.rows = static_cast<int>(rows);
+		level.size = stride * rows;
 		return level;
 	}
 }

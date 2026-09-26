@@ -8,7 +8,7 @@ namespace labrador
 {
 	class JsonDocument;
 
-	// Reads the file at `path` in full and parses it as JSON.
+	// Reads the UTF-8 file path in full and parses it as JSON.
 	//
 	// Throws std::runtime_error naming the path if the file cannot be opened,
 	// cannot be read, or does not parse. The returned document is therefore
@@ -35,6 +35,8 @@ namespace labrador
 		JsonValue object(const char* key) const;
 		JsonValue array(const char* key) const;
 		std::string string(const char* key) const;
+		// Identifier/path strings cannot contain NULs; errors name the field.
+		std::string identifier(const char* key) const;
 		int integer(const char* key) const;
 		float number(const char* key) const;
 		bool boolean(const char* key) const;
@@ -49,6 +51,7 @@ namespace labrador
 
 		// This node read as a scalar, for array elements, which have no key.
 		std::string as_string() const;
+		std::string as_identifier() const;
 
 		// Where this node is, as `'./levels/turbulence.json': objects[17]`, for
 		// a caller with its own reason to reject what it read. An unknown

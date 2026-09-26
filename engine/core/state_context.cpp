@@ -5,6 +5,28 @@
 
 namespace labrador
 {
+	namespace
+	{
+		// Restore the enclosing callback's deferral, including on exceptions.
+		// A nested notification must never release its caller's protection.
+		class Deferral
+		{
+		public:
+			explicit Deferral(bool& deferring) :
+				deferring_(deferring), previous_(deferring)
+			{
+				this->deferring_ = true;
+			}
+			~Deferral() { this->deferring_ = this->previous_; }
+			Deferral(const Deferral&) = delete;
+			Deferral& operator=(const Deferral&) = delete;
+
+		private:
+			bool& deferring_;
+			bool previous_;
+		};
+	}
+
 	StateContext::StateContext() = default;
 
 	// clear(), for clear()'s order. Defaulted, this let the vector destroy
@@ -29,9 +51,10 @@ namespace labrador
 
 		// Only the top. Everything under it was told on_suspend() when it was
 		// covered and will be told on_resume() when it is uncovered again.
-		this->deferring_ = true;
-		this->frames_.back().state->update(dt);
-		this->deferring_ = false;
+		{
+			const Deferral deferral(this->deferring_);
+			this->frames_.back().state->update(dt);
+		}
 
 		// After update() returns, so a state that transitioned or popped is
 		// destroyed with nothing of its own on the call stack.
@@ -156,20 +179,21 @@ namespace labrador
 		// Deferring across the whole walk, not per frame. A state that closes
 		// itself when the player looks away would otherwise resize frames_
 		// from inside the loop that is indexing it.
-		this->deferring_ = true;
-		for (size_t i = this->frames_.size(); i > 0; i--)
 		{
-			State* state = this->frames_[i - 1].state.get();
-			if (active)
+			const Deferral deferral(this->deferring_);
+			for (size_t i = this->frames_.size(); i > 0; i--)
 			{
-				state->on_activated();
-			}
-			else
-			{
-				state->on_deactivated();
+				State* state = this->frames_[i - 1].state.get();
+				if (active)
+				{
+					state->on_activated();
+				}
+				else
+				{
+					state->on_deactivated();
+				}
 			}
 		}
-		this->deferring_ = false;
 
 		this->apply_pending();
 	}
@@ -246,10 +270,15 @@ namespace labrador
 
 	void StateContext::apply_pending()
 	{
+		if (this->deferring_)
+		{
+			return;
+		}
+
 		// Deferring through the drain itself: init() and on_resume() run in
 		// here, and anything they ask for joins the back of this queue rather
 		// than reentering.
-		this->deferring_ = true;
+		const Deferral deferral(this->deferring_);
 		while (!this->pending_.empty())
 		{
 			PendingOp op = std::move(this->pending_.front());
@@ -268,7 +297,6 @@ namespace labrador
 				break;
 			}
 		}
-		this->deferring_ = false;
 	}
 
 	void StateContext::apply_transition(std::unique_ptr<State> state)

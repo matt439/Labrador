@@ -68,8 +68,11 @@ behaviour can be predicted, debugged and explained, not because they mirror
 reality. If the player can't feel the difference, the simpler model is the
 correct one — and it is usually the faster one too.
 
-**The price:** real ceilings, accepted. Projectile speeds get capped so
-nothing tunnels, instead of building continuous collision detection. Paint
+**The price:** real ceilings, accepted. Projectile speeds and permitted
+trajectories are constrained for the collision geometry instead of building
+continuous collision detection. A speed cap based on projected extents alone
+does not prevent diagonal corner crossings; the game must validate its motion
+and content together. Paint
 area is quantised to tiles. There is no stacking physics and no rotational
 dynamics.
 
@@ -212,6 +215,14 @@ style on the engine's users: T11 governs the engine's own code and
 everything it ships, while game code meets the engine at small interfaces
 and chooses its own grammar behind them — full OOP or full performance
 (see The object model).
+
+**Bounded exception:** a `Button` action may share ownership with its active
+invocations, so a callback can remove its button or rebuild the menu without
+destroying its own callable. Each invocation releases that ownership on return
+or exception; if the button has gone, the last invocation destroys the callable.
+Copying a button copies the callable using its normal value semantics, while
+invoking it preserves its mutable state. This permits temporary callable
+retention across a known call boundary, not shared object webs.
 
 **What "everything it ships" means, exactly:** the engine and `samples/`.
 That is now the literal contents of this repository rather than a promise
@@ -469,7 +480,8 @@ engine API to depend on.
 
 ### Services and lifetimes
 
-- Every resource has exactly one owner. A non-owning pointer is a documented
+- Every resource has exactly one owner, except for the bounded retention of
+  an executing callback described in T11. A non-owning pointer is a documented
   loan: the member declaration says who owns the object and why it outlives
   the holder.
 - Services are created once, at initialisation, and never reseated. Device

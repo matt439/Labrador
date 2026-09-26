@@ -1,6 +1,5 @@
 #include "engine/collision/narrow_phase.h"
 
-#include "engine/math/ericson_math.h"
 #include "engine/math/quad.h"
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/rectanglef.h"
@@ -9,8 +8,8 @@
 #include "engine/math/vector2f.h"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
-#include <span>
 #include <stdexcept>
 
 using mattmath::RectangleF;
@@ -50,44 +49,27 @@ namespace labrador
 			int axis_count = 0;
 		};
 
-		// The shortest edge that still says something about direction.
-		//
-		// An edge is a subtraction of two nearby coordinates, so its absolute
-		// error is set by where it is, not by how long it is: out at 6200,
-		// where consecutive floats are 4.88e-4 apart, an edge a thousandth of
-		// a unit long is built almost entirely from the bits that subtraction
-		// destroyed. Normalising it produces a confident unit vector pointing
-		// in a direction nothing measured.
-		//
-		// A thousandth of a world unit is also far below anything the content
-		// contains - level geometry is authored in multiples of five - so
-		// nothing real is discarded here.
-		constexpr float MIN_EDGE_LENGTH = 0.001f;
-
 		// Fills `axes` from the first `edge_count` edges. Degenerate edges
-		// contribute nothing.
+		// contribute nothing. Every represented nonzero edge matters, however
+		// short: removing one can remove the only separating axis of a thin
+		// polygon. Double intermediates keep subtraction and normalization from
+		// overflowing or underflowing for finite float coordinates.
 		void fill_axes(Polygon& polygon, int edge_count)
 		{
 			for (int i = 0; i < edge_count; i++)
 			{
-				const Vector2F edge =
-					polygon.points[(i + 1) % polygon.count] - polygon.points[i];
-
-				// Tested on the edge, before normalising, and not on the
-				// result afterwards. normalized() returns zero only when the
-				// length is exactly 0.0f, so an edge of 1e-7 passed that guard
-				// and contributed an axis whose direction was noise - and a
-				// bogus axis either falsely separates the pair or wins the
-				// least-penetration contest with a meaningless normal.
-				if (Vector2F::dot(edge, edge) < MIN_EDGE_LENGTH * MIN_EDGE_LENGTH)
+				const Vector2F& start = polygon.points[i];
+				const Vector2F& end = polygon.points[(i + 1) % polygon.count];
+				const double x = static_cast<double>(end.x) - start.x;
+				const double y = static_cast<double>(end.y) - start.y;
+				const double length = std::hypot(x, y);
+				if (!(length > 0.0) || !std::isfinite(length))
 				{
 					continue;
 				}
 
-				const Vector2F direction = edge.normalized();
-
 				polygon.axes[polygon.axis_count] =
-					Vector2F(-direction.y, direction.x);
+					Vector2F(static_cast<float>(-y / length), static_cast<float>(x / length));
 				polygon.axis_count++;
 			}
 		}
@@ -164,9 +146,11 @@ namespace labrador
 				polygon.points[3] = rotated.point_3();
 				polygon.count = 4;
 
-				// Still a rectangle, so still two distinct axes - they are
-				// simply no longer the cardinal ones.
-				fill_axes(polygon, 2);
+				// The shape already validates these orthonormal axes. Reading
+				// them avoids reconstructing a thin edge from rounded corners.
+				polygon.axes[0] = rotated.x_axis();
+				polygon.axes[1] = rotated.y_axis();
+				polygon.axis_count = 2;
 				return polygon;
 			}
 			case ShapeType::circle:
@@ -210,10 +194,29 @@ namespace labrador
 		// than being assumed away.
 		bool has_interior(const Polygon& polygon)
 		{
-			const std::span<const mattmath::Point2F> points(
-				polygon.points, static_cast<size_t>(polygon.count));
+			for (int i = 0; i < polygon.count; i++)
+			{
+				if (!std::isfinite(polygon.points[i].x)
+					|| !std::isfinite(polygon.points[i].y))
+				{
+					return false;
+				}
+			}
 
-			return mattmath::signed_area(points) != 0.0f;
+			// A fan around the first vertex avoids subtracting large products
+			// of world coordinates. Double also retains tiny nonzero areas.
+			double area = 0.0;
+			const Vector2F& origin = polygon.points[0];
+			for (int i = 1; i + 1 < polygon.count; i++)
+			{
+				const Vector2F& a = polygon.points[i];
+				const Vector2F& b = polygon.points[i + 1];
+				area += (static_cast<double>(a.x) - origin.x)
+					* (static_cast<double>(b.y) - origin.y)
+					- (static_cast<double>(a.y) - origin.y)
+					* (static_cast<double>(b.x) - origin.x);
+			}
+			return std::isfinite(area) && area != 0.0;
 		}
 
 		// What one candidate axis has to say about the pair.
@@ -259,7 +262,8 @@ namespace labrador
 			// which then went into a manifold and out to a resolver as a
 			// distance to move something. Written this way, a NaN reports a
 			// separating axis, and one separating axis means no contact.
-			const bool overlapping = forwards > 0.0f && backwards > 0.0f;
+			const bool overlapping = forwards > 0.0f && backwards > 0.0f
+				&& std::isfinite(forwards) && std::isfinite(backwards);
 			if (!overlapping)
 			{
 				return AxisTest{};

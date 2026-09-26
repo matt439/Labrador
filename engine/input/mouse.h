@@ -76,6 +76,10 @@ namespace labrador
 		// One bit per MouseButton, indexed by the enumerator.
 		uint8_t buttons = 0;
 
+		// Different epochs mean capture was cancelled between snapshots.
+		// Button edges across that boundary are suppressed, without changing focus.
+		uint64_t button_epoch = 0;
+
 		// NOTCHES TURNED DURING THIS FRAME, not a position - there is no such
 		// thing for a wheel. Positive is away from the user (scroll up) and
 		// away from the left, matching the platform's own sign.
@@ -102,6 +106,8 @@ namespace labrador
 
 	// The edges between two frames, and the rule they inherit.
 	//
+	// Button edges also require matching button_epoch values: cancelled capture
+	// ends a gesture without inventing a release.
 	// AN EDGE REQUIRES THE WINDOW TO HAVE BEEN FOCUSED ON BOTH FRAMES,
 	// identically to keyboard.h and for the same three reasons. A client
 	// keying off a release asks for the focus change instead:
@@ -139,6 +145,9 @@ namespace labrador
 		void on_move(const mattmath::Vector2I& position);
 		void on_button_down(MouseButton button);
 		void on_button_up(MouseButton button);
+		// Clears buttons at the next poll without synthesizing normal release
+		// edges. Focus, position, and wheel input are preserved.
+		void cancel_buttons();
 
 		// Accumulated until the next poll, not replaced. Several wheel
 		// messages inside one frame is ordinary - a flicked wheel sends a

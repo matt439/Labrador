@@ -1,9 +1,11 @@
 #include <doctest/doctest.h>
 
 #include "engine/collision/collision_object.h"
+#include "engine/collision/broad_phase.h"
 #include "engine/collision/contacts.h"
 #include "engine/collision/resolve.h"
 #include "engine/math/rectanglef.h"
+#include "engine/math/rectangle_rotated.h"
 #include "engine/math/vector2f.h"
 
 #include <algorithm>
@@ -253,4 +255,33 @@ TEST_CASE("a contact is dropped when an earlier response retired a participant")
 	CHECK(bullet.received().size() == 1);
 	CHECK(wall.received().size() == 1);
 	CHECK(player.received().empty());
+}
+
+TEST_CASE("overlapping AABBs do not manufacture contact between disjoint thin polygons")
+{
+	class ThinCollider : public TestObject
+	{
+	public:
+		explicit ThinCollider(const mattmath::RectangleRotated& shape) :
+			TestObject(shape.bounding_box(), PLAYER, PLAYER), shape_(shape) {}
+		const mattmath::Shape* shape() const override { return &this->shape_; }
+	private:
+		mattmath::RectangleRotated shape_;
+	};
+
+	const Vector2F x_axis(0.70710678f, 0.70710678f);
+	const Vector2F y_axis(-0.70710678f, 0.70710678f);
+	const Vector2F half_extents(0.0001f, 1.0f);
+	ThinCollider first(mattmath::RectangleRotated(Vector2F(0.0f, 0.0f),
+		x_axis, y_axis, half_extents));
+	ThinCollider second(mattmath::RectangleRotated(y_axis * 2.0001f,
+		x_axis, y_axis, half_extents));
+	REQUIRE(first.bounds().intersects(second.bounds()));
+	REQUIRE(Vector2F::dot(second.shape()->center() - first.shape()->center(), y_axis) > 2.0f);
+
+	labrador::BroadPhase broad_phase;
+	std::vector<CollisionObject*> objects{ &first, &second };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts, &broad_phase);
+	CHECK(contacts.empty());
 }

@@ -50,7 +50,7 @@ namespace labrador
 		const JsonValue waves = root.array("waves");
 		for (size_t index = 0; index < waves.size(); ++index)
 		{
-			const std::string wave = waves.at(index).as_string();
+			const std::string wave = waves.at(index).as_identifier();
 			if (!holds(definition.waves, wave))
 			{
 				definition.waves.push_back(wave);
@@ -70,7 +70,7 @@ namespace labrador
 		for (size_t index = 0; index < effects.size(); ++index)
 		{
 			const JsonValue effect = effects.at(index);
-			const std::string name = effect.string("name");
+			const std::string name = effect.identifier("name");
 
 			// Two definitions claiming one name is a content bug rather than an
 			// overwrite, and this is the line that says so. Registry::add refills
@@ -83,7 +83,7 @@ namespace labrador
 					"': two sound effect instances are named '" + name + "'");
 			}
 
-			const std::string wave = effect.string("wave");
+			const std::string wave = effect.identifier("wave");
 			definition.effects.push_back(
 				SoundBankDefinition::Effect{ name, wave });
 
