@@ -1,0 +1,14 @@
+input_rotated_bounds=(40.000, 30.000, 20.000, 40.000)
+visual_bounds=(30.000, 40.000, 40.000, 20.000)
+visual_corner=(30.000, 40.000)
+visual_corner=(70.000, 40.000)
+visual_corner=(30.000, 60.000)
+visual_corner=(70.000, 60.000)
+fractional_visual_bounds=(0.000, 0.000, 0.000, 0.000)
+camera_visible_world=(0.200, 0.200, 10.000, 10.000)
+fractional_visual_passes_cull=0
+fractional_actual_corner=(-1.000, -1.000)
+fractional_actual_corner=(7.000, -1.000)
+fractional_actual_corner=(-1.000, 7.000)
+fractional_actual_corner=(7.000, 7.000)
+dds_accepted width=1073741825 height=1 stride=4 size=4 bytes=4

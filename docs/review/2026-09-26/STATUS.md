@@ -1,0 +1,33 @@
+# September 26 review status
+
+The findings in [README.md](README.md) describe revision
+`03c3b96f58345191a340b7db664401510a09c1d4`. This file is the live ledger.
+Nothing below has been implemented by the review itself.
+
+Update each row in the same commit as its resolution. Record the commit and
+regression evidence, or a reasoned rejection/deferment with a re-entry condition.
+Do not rewrite the historical finding to make it appear never to have existed.
+
+| ID | Priority | Status | Required closure evidence |
+|---|---|---|---|
+| R26-01 | P1 | Open | Nested update/init/activation callbacks defer destruction to the outer safe boundary |
+| R26-02 | P2 | Open | Explicit contact lifetime; retired and surviving participant cases |
+| R26-03 | P2 | Open | Scene retains fractional sprites under translated/zoomed cameras |
+| R26-04 | P2 | Open | Transformed UI drawn extents, setters, and container/camera interaction |
+| R26-05 | P2 | Open | Thin separated shapes rejected by direct and full collision queries |
+| R26-06 | P2 | Open | Recorded geometry preserves a non-square rotated rectangle and pivot |
+| R26-07 | P2 | Open | Documented physical-key mapping holds across representative layouts |
+| R26-08 | P2 | Open | Capture cancellation/transfer clears stuck state without false normal releases |
+| R26-09 | P2 | Open | DDS/spritefont overflow inputs rejected before unsafe layout arithmetic |
+| R26-10 | P2 | Open | Oversized valid texture refused before invalid Vulkan image creation |
+| R26-11 | P2 | Open | Asset-only changes refresh deployed bytes; missing outputs are restored |
+| R26-12 | P2 | Open | ConsoleUser omissions refused locally; owned early worker failures clean up |
+| R26-13 | P2 | Open | Nonfinite geometry rejection and consistent overload/validator behavior |
+| R26-14 | P3 | Open | Particle quads enclosed and visible edge views retained |
+| R26-15 | P3 | Open | JSON strings preserve length; unsupported identifier bytes rejected explicitly |
+
+Suggested order: R26-01 first; then contact lifetime and common rendering/input
+boundaries; then finite-shape and asset/build validation; finally the smaller
+presentation/content cases. Group related fixes only when their tests and
+contracts remain independently reviewable. The README's hardening candidates
+and coverage limits are not automatically an implementation backlog.

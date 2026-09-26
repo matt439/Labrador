@@ -1,0 +1,11 @@
+# This bounded invalid-input probe needs API validation, shell-visible logs,
+# and a validation failure before an invalid call can reach the driver.
+khronos_validation.validate_core = true
+khronos_validation.stateless_param = true
+khronos_validation.object_lifetime = true
+khronos_validation.validate_sync = false
+khronos_validation.validate_best_practices = false
+khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG,VK_DBG_LAYER_ACTION_FAIL
+khronos_validation.report_flags = error
+khronos_validation.log_filename = stdout
+khronos_validation.enable_message_limit = false

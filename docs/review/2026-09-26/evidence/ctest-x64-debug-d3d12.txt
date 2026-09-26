@@ -1,0 +1,33 @@
+Test project C:/VSProjects/Labrador/out/build/x64-debug-d3d12
+      Start  1: Benchmarks
+ 1/14 Test  #1: Benchmarks .......................   Passed   14.24 sec
+      Start  2: AppTests
+ 2/14 Test  #2: AppTests .........................   Passed    0.33 sec
+      Start  3: AssetsTests
+ 3/14 Test  #3: AssetsTests ......................   Passed    0.63 sec
+      Start  4: AudioTests
+ 4/14 Test  #4: AudioTests .......................   Passed    0.22 sec
+      Start  5: CollisionTests
+ 5/14 Test  #5: CollisionTests ...................   Passed    0.06 sec
+      Start  6: CoreTests
+ 6/14 Test  #6: CoreTests ........................   Passed    0.07 sec
+      Start  7: InputTests
+ 7/14 Test  #7: InputTests .......................   Passed    0.07 sec
+      Start  8: LineSweeperTests
+ 8/14 Test  #8: LineSweeperTests .................   Passed    0.07 sec
+      Start  9: LineSweeperViewTests
+ 9/14 Test  #9: LineSweeperViewTests .............   Passed    0.11 sec
+      Start 10: MattMathTests
+10/14 Test #10: MattMathTests ....................   Passed    0.08 sec
+      Start 11: RenderTests
+11/14 Test #11: RenderTests ......................   Passed    0.12 sec
+      Start 12: RenderPixelTests
+12/14 Test #12: RenderPixelTests .................   Passed   26.43 sec
+      Start 13: SceneTests
+13/14 Test #13: SceneTests .......................   Passed    0.03 sec
+      Start 14: UiTests
+14/14 Test #14: UiTests ..........................   Passed    0.04 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) =  43.16 sec

@@ -1,0 +1,2 @@
+direct_sprites=48 bounds=(500.969,604.218)-(527.041,631.478) drawn=(497.000,601.000)-(530.000,634.000)
+edge_view=(497.000,498.000) bounds_intersects=0 scene_sprites=0

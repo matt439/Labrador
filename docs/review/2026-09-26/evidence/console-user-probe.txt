@@ -1,0 +1,3 @@
+﻿Validated AMI tags: ['ImageRole', 'NvidiaDriver', 'Project', 'WindowsBuild']
+Authorized template Runner: AWS::EC2::Instance
+ConsoleUser: None

@@ -1,0 +1,9 @@
+backend=vulkan device=NVIDIA GeForce RTX 5080 vendor=4318 device_id=11266
+matched_devices=1 max_extent_width=32768
+FACTORY_BEGIN width=32769 height=1 bytes=131076
+Validation Error: [ VUID-VkImageCreateInfo-extent-02252 ] | MessageID = 0x49991c2f
+vkCreateImage(): pCreateInfo->extent.width (32769) exceeds the maximum image extent width (32768) for format VK_FORMAT_R8G8B8A8_UNORM.
+The Vulkan spec states: extent.width must be less than or equal to imageCreateMaxExtent.width (as defined in Image Creation Limits) (https://docs.vulkan.org/spec/latest/chapters/resources.html#VUID-VkImageCreateInfo-extent-02252)
+
+FACTORY_THROW=A texture image could not be created (VkResult -1000011001).
+FACTORY_END

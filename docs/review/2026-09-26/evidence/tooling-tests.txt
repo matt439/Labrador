@@ -1,0 +1,6 @@
+﻿Manual tooling test run at reviewed HEAD:
+python -m unittest discover -s tools/tests -v
+45 tests ran in 13.712s; all passed.
+
+This is a transcribed result from the review tool output, not a retained raw log.
+Native test logs beside this file are copied verbatim from CTest output.
