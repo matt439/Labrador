@@ -1,0 +1,10 @@
+device=NVIDIA Corporation / NVIDIA GeForce RTX 5080/PCIe/SSE2
+attempt=0 refusal=Texture 'unsupported' is in a pixel format this backend cannot upload (texture_format.h). b4g4r4a4 is the one this reaches: no file in either client uses it, and GL's nearest packing puts the channels in a different order, so it is a conversion rather than a constant and is not written until something needs it.
+attempt=0 bound_texture=1 alive=1
+attempt=1 refusal=Texture 'unsupported' is in a pixel format this backend cannot upload (texture_format.h). b4g4r4a4 is the one this reaches: no file in either client uses it, and GL's nearest packing puts the channels in a different order, so it is a conversion rather than a constant and is not written until something needs it.
+attempt=1 bound_texture=2 alive=1
+attempt=2 refusal=Texture 'unsupported' is in a pixel format this backend cannot upload (texture_format.h). b4g4r4a4 is the one this reaches: no file in either client uses it, and GL's nearest packing puts the channels in a different order, so it is a conversion rather than a constant and is not written until something needs it.
+attempt=2 bound_texture=3 alive=1
+after_release_texture=1 alive=1
+after_release_texture=2 alive=1
+after_release_texture=3 alive=1

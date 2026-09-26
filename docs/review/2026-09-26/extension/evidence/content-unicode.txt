@@ -1,0 +1,2 @@
+Windows ANSI code page=1252
+content discovery threw: No mapping for the Unicode character exists in the target multi-byte code page.

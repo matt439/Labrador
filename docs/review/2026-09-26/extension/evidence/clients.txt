@@ -1,0 +1,5 @@
+modern power suspend/resume: suspending=0 resuming=0
+obsolete query-suspend/resume: suspending=1 resuming=1
+callback token alive before rebuilding=1
+callback still executing: token already destroyed=1
+activation returned ran=1 group empty=1 captured expired=1

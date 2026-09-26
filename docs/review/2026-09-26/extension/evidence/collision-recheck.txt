@@ -1,0 +1,3 @@
+contacts before retirement=1
+doomed destroyed=1; contacts after retirement=1
+diagonal thin OBBs: boxes overlap=1; positive longitudinal gap=9.98974e-05; full contacts=1

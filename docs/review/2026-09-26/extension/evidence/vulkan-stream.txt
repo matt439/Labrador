@@ -1,0 +1,2 @@
+device=NVIDIA GeForce RTX 5080 backend=vulkan
+completed_frames=240 readbacks=0 runs_per_frame=200 views=2

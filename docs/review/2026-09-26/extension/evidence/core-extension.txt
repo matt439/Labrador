@@ -1,0 +1,9 @@
+target_fps=10000001 accepted; converted timer ticks=0
+timer callback=1 elapsed_ticks=0 total_ticks=0
+timer callback=2 elapsed_ticks=0 total_ticks=0
+timer callback=3 elapsed_ticks=0 total_ticks=0
+timer stopped by probe: bounded probe stops zero-step loop
+tunnelling: displacement=0.424264073 budget=2.82842708 can_tunnel=0
+actual overlap before=0 middle=1 after=0
+nested init callback still running; destroyed=1
+nested init final context depth=1

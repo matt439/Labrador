@@ -1,0 +1,6 @@
+complete= True
+presentation_locked_repetitions= [1, 2]
+work_ns= 16850000
+long_begin_or_present_count= 0
+{"minimum_tail_sample_count": 60, "pacer_idle_count": 100, "pacer_idle_source": "pacing_wait_ns", "pacer_idle_threshold_ns": 166666, "tail_first_sample": 0, "tail_mean_interval_ns": 16900100.0, "tail_mean_whole_frame_ns": 16900000.0, "tail_sample_count": 100, "tail_start_lateness_ns": {"first": 233433, "last": 23343300, "max": 23343300, "min": 233433}, "tolerance_ns": 333333, "verdict": "locked_to_presentation_cadence"}
+A repetition whose pacer never waits from tail_first_sample to the end while the whole frame and the interval both average one period is locked to the presentation cadence: its long begin or present calls and its whole_frame_ns are the period, not the work. Read update_ns and record_submit_ns for the work, and do not quote a pooled whole_frame_ns across presentation_locked_repetitions. docs/performance/2026-09-19-g6f-ratchet.md#2 is the mechanism.

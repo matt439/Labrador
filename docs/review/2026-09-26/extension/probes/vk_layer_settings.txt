@@ -1,0 +1,9 @@
+khronos_validation.validate_core = true
+khronos_validation.stateless_param = true
+khronos_validation.object_lifetime = true
+khronos_validation.validate_sync = true
+khronos_validation.validate_best_practices = false
+khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
+khronos_validation.report_flags = error,warn
+khronos_validation.log_filename = stdout
+khronos_validation.enable_message_limit = false

@@ -1,0 +1,4 @@
+NaN width rectangle has contact=1; penetration=5
+NaN normal accepted; movement finite=0
+Separated thin rectangles: boxes overlap=0; narrow contact=1
+NaN circle/AABB boolean=1 versus contact overload=0

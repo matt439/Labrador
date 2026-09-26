@@ -1,0 +1,5 @@
+update enters
+old state destroyed
+update still running; state already destroyed=1
+insert threw: move failure
+failed name present=1; failed resolves to other's value=2

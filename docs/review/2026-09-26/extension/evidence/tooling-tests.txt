@@ -1,0 +1,100 @@
+python : test_alternating_begin_cost_does_not_turn_median_interval_into_rate
+(test_cloud_performance.AnalysisTests.test_alternating_begin_cost_does_not_turn_median_interval_into_rate) ... ok
+At line:2 char:1
++ python -m unittest discover -s tools/tests -v *> out/review-2026-09-2 ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_alternatin...to_rate) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_alternating_lock_is_recognised_from_the_tail_mean
+(test_cloud_performance.AnalysisTests.test_alternating_lock_is_recognised_from_the_tail_mean) ... ok
+test_backend_presentation_contracts_are_checked
+(test_cloud_performance.AnalysisTests.test_backend_presentation_contracts_are_checked) ... ok
+test_catch_up_and_short_idle_tails_are_not_locks
+(test_cloud_performance.AnalysisTests.test_catch_up_and_short_idle_tails_are_not_locks) ... ok
+test_complete_evidence_reports_pooled_percentiles
+(test_cloud_performance.AnalysisTests.test_complete_evidence_reports_pooled_percentiles) ... ok
+test_first_repetition_with_long_present_is_retained_and_exposed
+(test_cloud_performance.AnalysisTests.test_first_repetition_with_long_present_is_retained_and_exposed) ... ok
+test_incomplete_or_identity_drift_withholds_analysis
+(test_cloud_performance.AnalysisTests.test_incomplete_or_identity_drift_withholds_analysis) ... ok
+test_legacy_and_recorded_policies_cannot_be_mixed_in_one_run
+(test_cloud_performance.AnalysisTests.test_legacy_and_recorded_policies_cannot_be_mixed_in_one_run) ... ok
+test_legacy_lock_is_read_from_the_gap_and_cannot_see_the_first_sample
+(test_cloud_performance.AnalysisTests.test_legacy_lock_is_read_from_the_gap_and_cannot_see_the_first_sample) ... ok
+test_locked_repetition_is_named_and_listed_rather_than_counted_as_slow
+(test_cloud_performance.AnalysisTests.test_locked_repetition_is_named_and_listed_rather_than_counted_as_slow) ... ok
+test_mid_run_alternation_and_sustained_episode_keep_their_onsets
+(test_cloud_performance.AnalysisTests.test_mid_run_alternation_and_sustained_episode_keep_their_onsets) ... ok
+test_nested_non_objects_are_withheld_instead_of_crashing
+(test_cloud_performance.AnalysisTests.test_nested_non_objects_are_withheld_instead_of_crashing) ... ok
+test_omitting_a_whole_metadata_group_cannot_downgrade_the_run
+(test_cloud_performance.AnalysisTests.test_omitting_a_whole_metadata_group_cannot_downgrade_the_run) ... ok
+test_partial_or_changed_presentation_metadata_is_refused
+(test_cloud_performance.AnalysisTests.test_partial_or_changed_presentation_metadata_is_refused) ... ok
+test_persistent_lateness_is_reported_separately_from_frame_work
+(test_cloud_performance.AnalysisTests.test_persistent_lateness_is_reported_separately_from_frame_work) ... ok
+test_presentation_driven_diagnostic_cannot_pass_as_cloud_workload
+(test_cloud_performance.AnalysisTests.test_presentation_driven_diagnostic_cannot_pass_as_cloud_workload) ... ok
+test_recorded_pacing_and_present_policy_survive_analysis
+(test_cloud_performance.AnalysisTests.test_recorded_pacing_and_present_policy_survive_analysis) ... ok
+test_self_consistent_summary_cannot_hide_invalid_phase_arithmetic
+(test_cloud_performance.AnalysisTests.test_self_consistent_summary_cannot_hide_invalid_phase_arithmetic) ... ok
+test_session_gpu_and_deadline_identity_are_enforced
+(test_cloud_performance.AnalysisTests.test_session_gpu_and_deadline_identity_are_enforced) ... ok
+test_cloud_workload_cannot_drift_from_the_native_reference
+(test_cloud_performance.ConfigTests.test_cloud_workload_cannot_drift_from_the_native_reference) ... ok
+test_expired_deadline_and_excess_budget_are_refused
+(test_cloud_performance.ConfigTests.test_expired_deadline_and_excess_budget_are_refused) ... ok
+test_external_and_ambiguous_paths_are_refused
+(test_cloud_performance.ConfigTests.test_external_and_ambiguous_paths_are_refused) ... ok
+test_unknown_field_is_refused_in_versioned_schema
+(test_cloud_performance.ConfigTests.test_unknown_field_is_refused_in_versioned_schema) ... ok
+test_valid_config_is_normalized (test_cloud_performance.ConfigTests.test_valid_config_is_normalized) ... ok
+test_windows_powershell_utf8_bom_is_accepted
+(test_cloud_performance.ConfigTests.test_windows_powershell_utf8_bom_is_accepted) ... ok
+test_launch_dispatches_the_worker_from_an_https_object_url
+(test_cloud_performance.DispatchTests.test_launch_dispatches_the_worker_from_an_https_object_url) ... ok
+test_worker_source_is_an_https_object_url_in_the_run_region
+(test_cloud_performance.DispatchTests.test_worker_source_is_an_https_object_url_in_the_run_region) ... ok
+test_destructive_target_requires_exact_stack_identity
+(test_cloud_performance.InfrastructureTests.test_destructive_target_requires_exact_stack_identity) ... ok
+test_execute_requires_explicit_authorization
+(test_cloud_performance.InfrastructureTests.test_execute_requires_explicit_authorization) ... ok
+test_template_is_one_on_demand_terminated_instance
+(test_cloud_performance.InfrastructureTests.test_template_is_one_on_demand_terminated_instance) ... ok
+test_template_scopes_evidence_and_has_independent_watchdog
+(test_cloud_performance.InfrastructureTests.test_template_scopes_evidence_and_has_independent_watchdog) ... ok
+test_terminated_instance_purge_is_recognized
+(test_cloud_performance.InfrastructureTests.test_terminated_instance_purge_is_recognized) ... ok
+test_worker_uses_single_backslash_path_normalization
+(test_cloud_performance.InfrastructureTests.test_worker_uses_single_backslash_path_normalization) ... ok
+test_archive_traversal_and_output_overwrite_are_refused
+(test_cloud_performance.ReleaseTests.test_archive_traversal_and_output_overwrite_are_refused) ... ok
+test_bundle_records_dirty_source_and_detects_tamper
+(test_cloud_performance.ReleaseTests.test_bundle_records_dirty_source_and_detects_tamper) ... ok
+test_declared_backend_requires_executable_and_both_assets
+(test_cloud_performance.ReleaseTests.test_declared_backend_requires_executable_and_both_assets) ... ok
+test_benchmark_failure_still_saves_trace
+(test_trace_benchmark.TraceBenchmarkTests.test_benchmark_failure_still_saves_trace) ... ok
+test_changed_payload_is_rejected_before_any_process
+(test_trace_benchmark.TraceBenchmarkTests.test_changed_payload_is_rejected_before_any_process) ... ok
+test_debug_capture_is_rejected_after_trace_saved
+(test_trace_benchmark.TraceBenchmarkTests.test_debug_capture_is_rejected_after_trace_saved) ... ok
+test_existing_directory_is_not_overwritten
+(test_trace_benchmark.TraceBenchmarkTests.test_existing_directory_is_not_overwritten) ... ok
+test_process_record_failure_kills_started_child_and_saves_trace
+(test_trace_benchmark.TraceBenchmarkTests.test_process_record_failure_kills_started_child_and_saves_trace) ... ok
+test_start_failure_never_runs_benchmark_and_cleans_only_its_name
+(test_trace_benchmark.TraceBenchmarkTests.test_start_failure_never_runs_benchmark_and_cleans_only_its_name) ... ok
+test_stop_failure_preserves_named_recovery
+(test_trace_benchmark.TraceBenchmarkTests.test_stop_failure_preserves_named_recovery) ... ok
+test_success_preserves_evidence_and_named_session
+(test_trace_benchmark.TraceBenchmarkTests.test_success_preserves_evidence_and_named_session) ... ok
+test_timeout_kills_only_benchmark_and_saves_trace
+(test_trace_benchmark.TraceBenchmarkTests.test_timeout_kills_only_benchmark_and_saves_trace) ... ok
+
+----------------------------------------------------------------------
+Ran 45 tests in 15.798s
+
+OK

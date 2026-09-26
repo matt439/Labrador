@@ -1,0 +1,5 @@
+mouse held before capture loss=1 captured=1
+mouse held after capture loss=1 captured=0 focused=1
+French US-W position: w=0 z=1
+right shift still physically down: aggregate shift held=0 released=1
+JSON embedded NUL: expected length 11 actual=5; number finite=0

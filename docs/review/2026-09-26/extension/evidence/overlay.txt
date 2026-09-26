@@ -1,0 +1,2 @@
+underlying_views=1 overlay_views=1 covers_screen=false recorded=2 result=drawn
+underlying_views=2 overlay_views=1 covers_screen=false result=throws message=Renderer::set_view_count(1) would drop view 1, which has already been drawn into this frame.

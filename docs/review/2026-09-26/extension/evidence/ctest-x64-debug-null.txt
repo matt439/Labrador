@@ -1,0 +1,31 @@
+Test project C:/VSProjects/Labrador/out/build/x64-debug-null
+      Start  1: Benchmarks
+ 1/13 Test  #1: Benchmarks .......................   Passed    5.43 sec
+      Start  2: AppTests
+ 2/13 Test  #2: AppTests .........................   Passed    0.06 sec
+      Start  3: AssetsTests
+ 3/13 Test  #3: AssetsTests ......................   Passed    0.19 sec
+      Start  4: AudioTests
+ 4/13 Test  #4: AudioTests .......................   Passed    0.39 sec
+      Start  5: CollisionTests
+ 5/13 Test  #5: CollisionTests ...................   Passed    0.02 sec
+      Start  6: CoreTests
+ 6/13 Test  #6: CoreTests ........................   Passed    0.01 sec
+      Start  7: InputTests
+ 7/13 Test  #7: InputTests .......................   Passed    0.01 sec
+      Start  8: LineSweeperTests
+ 8/13 Test  #8: LineSweeperTests .................   Passed    0.01 sec
+      Start  9: LineSweeperViewTests
+ 9/13 Test  #9: LineSweeperViewTests .............   Passed    0.03 sec
+      Start 10: MattMathTests
+10/13 Test #10: MattMathTests ....................   Passed    0.03 sec
+      Start 11: RenderTests
+11/13 Test #11: RenderTests ......................   Passed    0.04 sec
+      Start 12: SceneTests
+12/13 Test #12: SceneTests .......................   Passed    0.01 sec
+      Start 13: UiTests
+13/13 Test #13: UiTests ..........................   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 13
+
+Total Test time (real) =   6.29 sec
