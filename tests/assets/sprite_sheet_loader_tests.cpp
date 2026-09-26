@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "engine/assets/sprite_sheet_loader.h"
+#include "engine/core/file_path.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_frame.h"
@@ -57,7 +58,7 @@ namespace
 		TempSheet(const TempSheet&) = delete;
 		TempSheet& operator=(const TempSheet&) = delete;
 
-		std::string path() const { return this->path_.string(); }
+		std::string path() const { return labrador::path_to_utf8(this->path_); }
 
 	private:
 		static int next_id()

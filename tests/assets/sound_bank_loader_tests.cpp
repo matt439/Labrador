@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "engine/assets/sound_bank_loader.h"
+#include "engine/core/file_path.h"
 
 #include <filesystem>
 #include <fstream>
@@ -55,7 +56,7 @@ namespace
 		TempDefinition(const TempDefinition&) = delete;
 		TempDefinition& operator=(const TempDefinition&) = delete;
 
-		std::string path() const { return this->path_.string(); }
+		std::string path() const { return labrador::path_to_utf8(this->path_); }
 
 	private:
 		static int next_id()

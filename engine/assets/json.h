@@ -8,7 +8,7 @@ namespace labrador
 {
 	class JsonDocument;
 
-	// Reads the file at `path` in full and parses it as JSON.
+	// Reads the file at the UTF-8 `path` in full and parses it as JSON.
 	//
 	// Throws std::runtime_error naming the path if the file cannot be opened,
 	// cannot be read, or does not parse. The returned document is therefore

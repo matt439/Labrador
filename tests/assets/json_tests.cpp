@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "engine/assets/json.h"
+#include "engine/core/file_path.h"
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -34,7 +35,7 @@ namespace
 		TempJson(const TempJson&) = delete;
 		TempJson& operator=(const TempJson&) = delete;
 
-		std::string path() const { return this->path_.string(); }
+		std::string path() const { return labrador::path_to_utf8(this->path_); }
 
 	private:
 		static int next_id()

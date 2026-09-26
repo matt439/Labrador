@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "engine/assets/asset_manifest_loader.h"
+#include "engine/core/file_path.h"
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
@@ -33,7 +34,7 @@ namespace
 		TempManifest(const TempManifest&) = delete;
 		TempManifest& operator=(const TempManifest&) = delete;
 
-		std::string path() const { return this->path_.string(); }
+		std::string path() const { return labrador::path_to_utf8(this->path_); }
 
 	private:
 		// Every case gets its own file, so a leftover from a crashed run cannot

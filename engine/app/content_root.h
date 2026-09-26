@@ -37,7 +37,8 @@ namespace labrador
 	// them itself, and so that they are testable without a window.
 
 	// The directory the running executable was loaded from, with a trailing
-	// separator, so that a relative path appended to it is a path.
+	// separator, so that a relative path appended to it is a path. All paths
+	// returned or accepted here are UTF-8, independent of the system code page.
 	std::string executable_directory();
 
 	// `path` itself if it is absolute, and otherwise `directory` + `path`.

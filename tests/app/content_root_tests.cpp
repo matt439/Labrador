@@ -3,6 +3,7 @@
 #include "engine/app/content_root.h"
 #include "engine/assets/asset_manifest.h"
 #include "engine/assets/asset_manifest_loader.h"
+#include "engine/core/file_path.h"
 
 #include <filesystem>
 #include <fstream>
@@ -29,11 +30,11 @@ TEST_CASE("the executable directory is where this test binary is")
 
 	REQUIRE(!directory.empty());
 	CHECK((directory.back() == '\\' || directory.back() == '/'));
-	CHECK(std::filesystem::path(directory).is_absolute());
+	CHECK(labrador::path_from_utf8(directory).is_absolute());
 
 	// AppTests.exe is the executable, so it is in there.
 	CHECK(std::filesystem::exists(
-		std::filesystem::path(directory) / "AppTests.exe"));
+		labrador::path_from_utf8(directory) / "AppTests.exe"));
 }
 
 TEST_CASE("a relative path resolves under the directory and an absolute one does not")
@@ -95,7 +96,8 @@ TEST_CASE("a real manifest read from elsewhere names the folders beside itself")
 	// Application::load_manifest takes, the directory the loader would open
 	// is the one beside the file.
 	const std::filesystem::path folder =
-		std::filesystem::temp_directory_path() / "labrador_content_root_test";
+		std::filesystem::temp_directory_path() /
+		L"labrador_content_root_test_\u6D4B\u8BD5_\U0001F3A8";
 	std::filesystem::create_directories(folder);
 	const std::filesystem::path file = folder / "manifest.json";
 	{
@@ -105,15 +107,15 @@ TEST_CASE("a real manifest read from elsewhere names the folders beside itself")
 	}
 
 	const std::string path = resolved_under(executable_directory(),
-		file.string());
-	CHECK(path == file.string());
+		labrador::path_to_utf8(file));
+	CHECK(path == labrador::path_to_utf8(file));
 
 	const AssetManifest anchored =
 		anchored_to_source(labrador::read_asset_manifest(path.c_str()));
 
 	REQUIRE(anchored.entries.size() == 1);
 	CHECK(anchored.entries[0].directory ==
-		(folder / "./fonts/").string());
+		labrador::path_to_utf8(folder / "./fonts/"));
 
 	std::filesystem::remove_all(folder);
 }

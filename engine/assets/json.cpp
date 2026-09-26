@@ -1,4 +1,5 @@
 #include "engine/assets/json.h"
+#include "engine/core/file_path.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
@@ -52,7 +53,8 @@ namespace labrador
 		}
 
 		FILE* raw_file = nullptr;
-		if (fopen_s(&raw_file, path, "rb") != 0 || raw_file == nullptr)
+		if (_wfopen_s(&raw_file, path_from_utf8(path).c_str(), L"rb") != 0 ||
+			raw_file == nullptr)
 		{
 			throw std::runtime_error(
 				std::string("read_json_file - cannot open '") + path + "'");

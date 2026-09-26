@@ -1,4 +1,5 @@
 #include "engine/audio/audio_device.h"
+#include "engine/core/file_path.h"
 
 #include <Audio.h>
 
@@ -106,7 +107,7 @@ namespace labrador
 		try
 		{
 			bank = std::make_unique<WaveBank>(this->impl_->engine.get(),
-				std::wstring(path.begin(), path.end()).c_str());
+				path_from_utf8(path).c_str());
 		}
 		catch (const std::exception&)
 		{
