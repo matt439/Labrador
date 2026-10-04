@@ -34,7 +34,8 @@ file(GLOB_RECURSE sources
     "${REPO_DIR}/engine/*.h" "${REPO_DIR}/engine/*.cpp"
     "${REPO_DIR}/samples/*.h" "${REPO_DIR}/samples/*.cpp"
     "${REPO_DIR}/tests/*.h" "${REPO_DIR}/tests/*.cpp"
-    "${REPO_DIR}/bench/*.h" "${REPO_DIR}/bench/*.cpp")
+    "${REPO_DIR}/bench/*.h" "${REPO_DIR}/bench/*.cpp"
+    "${REPO_DIR}/tools/*.h" "${REPO_DIR}/tools/*.cpp")
 
 # Every document in the tree, for resolving a citation that gives a bare
 # filename. out/ is build output and external/ is vendored; neither is ours to
@@ -42,10 +43,12 @@ file(GLOB_RECURSE sources
 # same twice over: a separate build that installs its dependencies inside
 # itself - website/node_modules/ holds hundreds of .md files, one of them a
 # CLAUDE.md - and whose pages cite this tree rather than being cited by it.
+# .claude/ is ignored by git and can hold whole checkouts of this repository,
+# as worktrees an agent works in, each with a copy of every document here.
 file(GLOB_RECURSE all_docs "${REPO_DIR}/*.md")
 set(docs "")
 foreach(doc IN LISTS all_docs)
-    if(NOT doc MATCHES "/(out|external|website)/")
+    if(NOT doc MATCHES "/(out|external|website|\\.claude)/")
         list(APPEND docs "${doc}")
     endif()
 endforeach()

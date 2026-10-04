@@ -49,6 +49,7 @@ flowchart TD
         linesweeper["LineSweeperSample<br/>whole sample game"]
         throughput["LabradorBench<br/>complexity gates"]
         frame["LineSweeperFrameBench<br/>declared hardware measurement"]
+        capture["LineSweeperCapture<br/>exact images of the sample"]
         tests["tests"]
     end
     subgraph libs["static libraries"]
@@ -67,6 +68,8 @@ flowchart TD
     throughput --> engine
     frame --> engine
     frame --> rules
+    capture --> engine
+    capture --> rules
     tests --> engine
     tests --> math
     tests --> rules
@@ -211,7 +214,10 @@ being load-bearing.
 ├── bench/                  complexity gates beside ctest, plus the explicit
 │                           hardware frame-cadence executable outside it
 ├── tools/                  development operations outside the product targets
-│   └── cloud_performance/  one frozen, one-shot EC2 reference measurement
+│   ├── cloud_performance/  one frozen, one-shot EC2 reference measurement
+│   └── linesweeper_capture/  exact, repeatable images of the sample, for
+│                           the website: a scripted match through the rules,
+│                           drawn on a device and read back
 ├── external/               third-party source: rapidjson. DirectXTK is not
 │                           here — it is a vcpkg package (vcpkg.json)
 ├── website/                the public website, built with npm and never by

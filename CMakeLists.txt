@@ -54,8 +54,8 @@ if(PROJECT_IS_TOP_LEVEL)
     # where this guards the engine's own prose against the engine's own edits.
     # A client that renames nothing and cites nothing should not be handed a
     # build failure for a section number this repository moved, and the files
-    # it reads are tests/, samples/ and bench/, none of which a consumer
-    # builds.
+    # it reads are tests/, samples/, bench/ and tools/, none of which a
+    # consumer builds.
     add_custom_target(check_doc_citations ALL
         COMMAND "${CMAKE_COMMAND}"
             "-DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
@@ -71,6 +71,7 @@ if(PROJECT_IS_TOP_LEVEL)
     add_subdirectory(samples/minimal)
     add_subdirectory(samples/linesweeper)
     add_subdirectory(bench)
+    add_subdirectory(tools/linesweeper_capture)
     add_subdirectory(tests/app)
     add_subdirectory(tests/assets)
     add_subdirectory(tests/audio)

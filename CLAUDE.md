@@ -81,6 +81,16 @@ pooled p99 is true and misleading in the same breath, `record + submit` is the
 column that measures the work, and the benchmark still has both clocks —
 ratchet §5 says which one to keep.
 
+`LineSweeperCapture` (`tools/linesweeper_capture/`) is the other executable
+that needs a device and is not a ctest entry. It plays a checked-in script
+through LineSweeper's rules, draws it with the sample's own presentation and
+writes the website's images from `read_back_buffer`, byte for byte repeatable
+on one machine and backend. A change to the sample's presentation changes
+them: regenerate on `x64-release` and look at every image that moved before
+committing it. Its README records one thing it found and did not chase: GL
+draws two measured-and-centred text rows differently from the other three
+rasterising backends.
+
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
 — compiled only in that configuration — asserts the other half: which sprites a

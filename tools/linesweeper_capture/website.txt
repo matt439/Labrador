@@ -1,0 +1,161 @@
+# The website's LineSweeper captures: one match from World{}, and the four
+# frames read back along the way. README.md beside this file is the reference
+# for the commands; in short:
+#
+#   place <piece> <turns> <column>   turn clockwise, slide until the piece's
+#                                    leftmost cell is in <column>, hard drop
+#   steer <piece> <turns> <column>   the same, without the drop
+#   drop                             hard drop whatever is falling
+#   hold <piece>                     put the falling piece in the hold slot
+#   wait <ticks>                     let ticks pass with nothing held
+#   capture <file> [paused]          read the frame back into <file>
+#
+# Every press is one tick down and one tick up, so each tap is two ticks of
+# presentation time. Column 9 is kept empty as the well for the I pieces
+# throughout, and the deal is the default seed's: s i o t z l j, j i s l t z o,
+# l j i z o s t, ...
+
+# --- The opening: three tetrises, which takes the match to 12 lines, level 2.
+
+hold s
+place i 0 0
+place o 0 0
+place t 0 4
+place z 0 6
+place l 0 2
+place j 2 6
+hold j
+place s 0 2
+hold i
+place j 0 0
+hold s
+place i 0 1
+place l 2 5
+place t 3 7
+hold z
+place s 0 5
+place o 0 0
+place l 0 2
+hold j
+place z 0 1
+place i 1 9          # the first tetris
+place z 1 5
+place o 0 7
+hold s
+place j 0 3
+place t 1 0
+hold j
+place s 1 1
+place l 0 4
+place o 0 7
+place t 0 3
+place i 1 9          # the second, back to back
+place s 0 2
+hold z
+place j 0 5
+place j 2 6
+place o 0 7
+place s 0 1
+place z 0 3
+place l 2 2
+place i 1 0
+place t 3 5
+place i 1 9          # the third
+
+# --- Building the stack up nine rows, holding an I back for the well.
+
+place j 2 3
+place z 0 6
+place o 0 3
+place l 3 0
+place s 1 7
+place t 0 0
+place j 1 2
+hold l
+place z 1 0
+place o 0 5
+hold i
+place l 2 0
+place z 0 3
+place t 3 7
+place s 1 5
+
+# --- A game in progress: the O slid to the left wall and falling, its shadow
+# on the stack, an I in hold and five pieces in the queue. The pause screen is
+# the same frame with the menu over it, as the sample draws it on the frame a
+# player presses Escape.
+
+steer o 0 0
+wait 90
+capture linesweeper-play.png
+capture linesweeper-pause.png paused
+
+# --- The fourth tetris, read back on the eighth frame of its burst - the lock,
+# the release and six more - with the bottom four rows thrown sideways out of
+# the well.
+
+drop
+place s 1 6
+place i 1 9
+wait 6
+capture linesweeper-clear.png
+
+# --- Filling the well to the top with column 9 still empty, so nothing clears
+# but one single near the end. The last piece locks entirely above the visible
+# well, which ends the match.
+
+place j 0 2
+place z 0 2
+place l 1 0
+place t 2 4
+place i 0 1
+hold o
+place i 0 1
+place s 1 7
+hold t
+place o 0 5
+hold j
+place t 3 7
+place z 1 7
+place l 0 4
+place o 0 0
+place j 3 2
+hold t
+place j 2 0
+hold i
+place t 2 6
+hold s
+place i 0 0
+hold z
+place s 1 4
+place l 0 5
+place o 0 0
+place z 1 6
+hold s
+place z 1 6
+place i 0 2
+place l 0 3
+place j 2 0
+hold t
+place s 0 3
+place l 0 1
+hold z
+place t 0 4
+place s 0 1
+place t 2 3
+place o 0 6
+place j 0 0
+hold i
+place z 0 7
+hold o
+place i 0 3
+hold s
+place o 0 1
+place l 0 3          # tops out
+
+# --- The top-out, on the twenty-fourth frame of its burst: the banner over the
+# stack, and the stack coming apart around it. A finished match no longer
+# ticks, so the readout stops at the lock while the sparks keep moving.
+
+wait 22
+capture linesweeper-top-out.png
