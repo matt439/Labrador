@@ -1,0 +1,20 @@
+---
+// A frame of LineSweeper, as tools/linesweeper_capture/ wrote it: a scripted
+// match played through the sample's rules and drawn by the engine, read back
+// from the device. The PNG is served as it is, not re-encoded, because the
+// point of it is that it is the exact frame.
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+	src: ImageMetadata;
+	alt: string;
+	caption?: string;
+}
+
+const { src, alt, caption } = Astro.props;
+---
+
+<figure class="capture">
+	<img src={src.src} width={src.width} height={src.height} alt={alt} loading="lazy" decoding="async" />
+	{caption && <figcaption>{caption}</figcaption>}
+</figure>

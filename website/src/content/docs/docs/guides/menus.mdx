@@ -1,0 +1,103 @@
+---
+title: Menus
+description: Building a controller-friendly menu from widgets, a focus group and directional navigation, as a state that answers with a choice.
+sidebar:
+  order: 3
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+import Capture from '~/components/Capture.astro';
+import pause from '~/assets/captures/linesweeper-pause.png';
+
+A Labrador menu is a [state](/docs/concepts/states/) with a scene of **widgets** in it and a
+**focus group** that knows which widget the cursor is on. The engine solves the two things every
+controller-driven menu needs, focus and moving between widgets with a stick or d-pad, and leaves
+the layout, the look and what each choice does to your game.
+
+This guide follows LineSweeper's pause menu,
+<RepoLink path="samples/linesweeper/states/pause_state.cpp">`states/pause_state.cpp`</RepoLink>:
+three rows, *Resume*, *Restart* and *Quit*, over the dimmed game.
+
+<Capture
+	src={pause}
+	alt="LineSweeper's pause menu: the word PAUSED and three rows, RESUME in white and RESTART and QUIT in grey, over the game darkened behind them."
+	caption="The pause menu as it opens: the focused row is white, the others grey."
+/>
+
+## The widgets
+
+Widgets are game objects, so they go in a scene like anything else. The engine's set is small:
+
+| Widget | What it is |
+| --- | --- |
+| `UiText` | A line of text. |
+| `UiTextDropShadow` | A line of text with a shadow. |
+| `UiTexture` | A frame from a sprite sheet, in a rectangle. |
+| `UiContainer` | A widget holding other widgets, so a compound row can be one thing. |
+
+Each takes a name first, which is how a container finds a child. The set is small because it is
+open: a widget is a class you can derive from, and a game's own widgets (a slider, a row with a
+label and a value) are classes the game writes.
+
+**There is no layout engine.** You position widgets yourself. The pause menu measures each row's
+text and centres it, as the [Sprites and text guide](/docs/guides/sprites-and-text/#text) shows.
+
+## The focus group
+
+A `FocusGroup` holds the widgets the cursor can land on, each with the action that runs when it is
+chosen. The pause menu adds its three rows, and each action pops the menu with its answer:
+
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="for (int index = 0; index < 3; ++index)" to="}" />
+
+Popping from inside an action is safe: the action runs inside the menu's `update()`, and the stack
+waits for that to return before it destroys the menu.
+
+The group colours its widgets to show focus: white for the focused one, grey for the rest, dark
+grey for one that is disabled. Pass a `FocusStyle` to the constructor for other colours, and call
+`set_enabled(widget, false)` to grey out a choice that is not available.
+
+## Moving and choosing
+
+Each step the menu turns input into a direction, moves the focus, and activates on confirm:
+
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="void PauseState::update(float dt)" to="}" />
+
+`move(slot, direction)` finds the **nearest widget in that direction** by looking at where the
+widgets are on screen, not at the order they were added. A grid of buttons, a column and a row
+all navigate correctly with no extra code, and by default moving off one edge wraps to the other.
+`move` returns whether the focus actually moved, which is when a menu would play a cursor sound.
+
+`activate(slot)` runs the focused widget's action, and reports whether it ran, or was refused
+because the widget is disabled.
+
+Directions come from [`DirectionRepeat`](/docs/guides/input/#directions-for-menus), which turns a
+held stick or key into one move at once and then repeated moves, the way menus in console games
+behave. The pause menu handles cancel first, so the button that opened the menu always closes it,
+whatever the cursor is on.
+
+## A menu that answers
+
+The pause menu returns its choice the way any pushed state does, as a typed result:
+
+<SourceFile path="samples/linesweeper/states/pause_state.h" from="enum class PauseChoice" to="};" />
+
+and the play state that opened it decides what each answer means:
+
+<SourceFile path="samples/linesweeper/states/play_state.cpp" from="void PlayState::open_pause_menu()" to="}" />
+
+Because the menu only reports a choice, the same menu could be opened from anywhere that wants
+those three answers.
+
+## Drawing over the game
+
+The pause menu says `covers_screen()` is false, so the match keeps drawing underneath it, and its
+first object is a full-screen rectangle of translucent black that dims the match. Its scene is
+drawn after the match's, so it draws on top. See
+[Drawing over the world](/docs/concepts/drawing/#drawing-over-the-world).
+
+## Split-screen menus
+
+`FocusGroup` takes a number of **slots**, one per player, and every call names the slot it is
+for. Each player has their own cursor in the same group, which is what a character-select screen
+needs. The pause menu is single-player and uses slot 0 throughout.

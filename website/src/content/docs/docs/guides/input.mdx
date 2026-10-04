@@ -1,0 +1,122 @@
+---
+title: Input
+description: Reading the keyboard, gamepads and mouse; held, pressed and released; deadzones; binding tables; menu directions; and typed text.
+sidebar:
+  order: 2
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+The application owns three input devices and lends them to your states: `app->keyboard()`,
+`app->gamepads()` and `app->mouse()`. All three are read once at the start of every step, before
+any state updates ([The tick](/docs/concepts/tick/#input-is-read-first)), and you ask them
+questions from `update()`.
+
+## Held, pressed and released
+
+Every device answers the same three questions about a key or button:
+
+| Question | Meaning |
+| --- | --- |
+| `held(...)` | Down now. |
+| `pressed(...)` | Down now, and not down at the previous step. True for one step per press. |
+| `released(...)` | Up now, and down at the previous step. |
+
+Use `held` for anything continuous (moving, charging, scrolling) and `pressed` for anything that
+happens once per press (jumping, confirming, opening a menu). Because each step compares against
+the one before it, a state pushed by a press does not see that same press: the button was already
+down at the previous step.
+
+## Keyboard
+
+Keys are named by **position**, not by the character printed on them. `Key::w`, `Key::a`,
+`Key::s` and `Key::d` are the block under the left hand on any layout, which is what a movement
+binding wants. The minimal sample reads arrows and WASD together:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="Vector2F keyboard_direction(const Keyboard& keyboard)" to="}" />
+
+**Typed text is separate.** `keyboard.typed()` returns what the player typed during the step, as
+UTF-8, with the keyboard layout, dead keys and input methods already applied by the system. It is
+valid until the next step, so copy it to keep it. Use it for a name-entry box, never for
+movement.
+
+When the window loses focus, every held key is treated as released, so a character does not walk
+on by itself after an alt-tab.
+
+## Gamepads
+
+`Gamepads` has four slots, numbered 0 to 3, and answers `held`, `pressed` and `released` with a
+slot and a `GamepadButton`. The full state of a slot, sticks and triggers included, is
+`state(slot)`.
+
+**Do not check whether a pad is connected before reading it.** An empty slot reads as a neutral
+pad with nothing pressed, and `pressed` is false unless the slot was occupied at both steps. So
+reading a pad that is not there costs nothing and does nothing, and a game that reads keyboard
+and pad side by side works with either. The minimal sample's quit check:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="if (pads.pressed(0, GamepadButton::b) || keyboard.pressed(Key::escape))"
+	to="if (pads.pressed(0, GamepadButton::b) || keyboard.pressed(Key::escape))"
+/>
+
+`connected(slot)`, `just_connected(slot)` and `just_disconnected(slot)` are there for when the
+answer matters to the game, such as showing "Player 2, press Start".
+
+**Sticks are raw**, from −1 to 1 on each axis, with **+y pointing down** like every other
+coordinate in the engine. Choosing a deadzone is the game's decision, made once with
+`apply_deadzone(stick, deadzone)`. It is circular, and rescales what is left so a small push
+outside the deadzone moves slowly rather than jumping to the threshold:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="Vector2F move = apply_deadzone(" to="this->position_ += move" />
+
+The minimal sample adds the keyboard's direction to the stick's and clamps the sum, so both work
+at once and neither is the "real" device.
+
+Triggers are read as numbers from 0 to 1, or as buttons with `trigger_held`, `trigger_pressed`
+and `trigger_released`, each taking the threshold that counts as pulled.
+
+## Binding tables
+
+Labrador has no action-mapping layer: what each key does is your game's, written in your game.
+For more than a handful of bindings, a table keeps it in one place. LineSweeper has nine for the
+keyboard and nine for the pad:
+
+<SourceFile path="samples/linesweeper/states/play_state.cpp" from="constexpr Binding bindings[] = {" to="};" />
+
+and reads them into one byte per step, which is the whole of what its rules see:
+
+<SourceFile path="samples/linesweeper/states/play_state.cpp" from="for (const Binding& binding : bindings)" to="return input;" />
+
+LineSweeper reads `held` rather than `pressed` for these, and works out the presses inside its
+rules by comparing each step's byte with the last. That keeps a recorded match replayable: the
+recording carries its own presses. The
+<RepoLink path="samples/linesweeper/README.md" hash="input-is-read-as-held-never-as-pressed">sample's design notes</RepoLink>
+explain the choice.
+
+## Directions for menus
+
+Menus want "up, down, left, right" rather than a stick vector, with a repeat when a direction is
+held. `pad_direction(state)` turns a pad's d-pad and left stick into a `Direction`, and
+`DirectionRepeat` turns a held direction into presses: one at once, another after a delay, then
+one every interval. LineSweeper's pause menu combines the keyboard and the pad, then repeats:
+
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="Direction PauseState::held_direction() const" to="}" />
+
+<SourceFile
+	path="samples/linesweeper/states/pause_state.cpp"
+	from="const Direction direction ="
+	to="this->repeat_.update(this->held_direction(), dt);"
+/>
+
+When a menu opens while a direction is already held, call `repeat.start_held(direction)` in
+`init()`: the held direction then has to be let go before it counts, so the cursor does not jump
+before the menu is on screen. The [Menus guide](/docs/guides/menus/) continues from here.
+
+## Mouse
+
+`Mouse` answers `held`, `pressed` and `released` for `MouseButton::left`, `right`, `middle`, `x1`
+and `x2`, and also reports `position()` in window pixels, `motion()` since the last step, and
+`wheel()` and `wheel_horizontal()` in notches. While a button is held the mouse keeps reporting
+movement outside the window, so a drag is one gesture.

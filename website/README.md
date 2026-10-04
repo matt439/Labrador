@@ -54,7 +54,9 @@ astro.config.ts           Starlight, the sidebar, and the two Markdown plugins
 src/content.config.ts     one collection, filled by src/lib/content-loader.ts
 src/content/docs/         pages written for the site (.mdx)
   index.mdx, why.mdx, examples.mdx    the three splash pages
-  docs/                               everything under /docs/
+  docs/                               everything under /docs/: get-started/,
+                                      concepts/, guides/, troubleshooting.mdx,
+                                      and the reference's introduction
 src/lib/
   repository.ts           where the checkout is, its revision, GitHub links
   published.ts            THE list of documents and headers the site publishes
@@ -63,8 +65,11 @@ src/lib/
   cpp-header.ts           the line reader behind the reference pages
   reference.ts            a parsed header as a page, with symbol links
   excerpt.ts              a passage of a file, found by its text
-src/components/           SourceFile, RepoLink and friends; overrides/ holds
-                          the Starlight components the site replaces
+src/components/           SourceFile, RepoLink, Capture and friends;
+                          overrides/ holds the Starlight components the site
+                          replaces
+src/assets/captures/      frames of LineSweeper, written by
+                          tools/linesweeper_capture/ and never edited by hand
 src/walkthrough/          the files Get Started tells a reader to create
 src/styles/site.css       colours and the few layouts Starlight lacks
 ```
@@ -88,6 +93,12 @@ fails the build. A header that the reader rejects names its file and line; see
 the reference's own introduction page for what the reader does and does not
 understand, and why it was chosen over Doxygen and Clang.
 
+**Show a frame of the sample.** Import it from `src/assets/captures/` and use
+`<Capture>`, which serves the PNG as it is. The frames are made by
+`tools/linesweeper_capture/`, whose README says how to change the script and
+regenerate them; regenerate rather than edit, and look at every image that
+changes.
+
 **Change the Get Started project files.** Edit them in `src/walkthrough/`, then
 build the walkthrough again by hand before publishing; its README says how it
 was built.
@@ -96,5 +107,6 @@ was built.
 
 Hosting, the domain and deployment are undecided, so nothing here publishes
 anything; there is no `site` URL in the config, and so no sitemap. There is no
-screenshot or footage of either sample: none exists in the repository yet.
-The plan's *Open decisions* table is the list.
+footage, only the four stills. The collision, audio and local-multiplayer
+guides wait on a sample that does each. The plan's *Open decisions* table is
+the list.

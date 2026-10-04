@@ -1,0 +1,99 @@
+---
+title: Troubleshooting
+description: The failures most likely when building Labrador or a game on it, what each message means, and how to get past it.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This page collects the failures people are most likely to meet, by the message they see. It
+starts from what [Get Started](/docs/get-started/) has already run into and will grow from
+reports. If your problem is not here, the
+[issue tracker](https://github.com/matt439/Labrador/issues) is the place to say so.
+
+## Setting up and cloning
+
+### `Filename too long` while cloning
+
+Windows limits a path to 260 characters unless long paths are enabled, and a few files in the
+repository have long paths. Clone into a short folder such as `C:\dev`, or enable long paths with
+`git config --global core.longpaths true`, then delete the partial clone and clone again
+([Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder)).
+
+### `cmake`, `cl` or `fxc` is not recognised
+
+The command prompt does not have Visual Studio's tools on its path. Open the
+**x64 Native Tools Command Prompt** for your Visual Studio version and run the command again.
+An ordinary Command Prompt or PowerShell window does not have them.
+
+## Configuring
+
+### `Could not find toolchain file: "/scripts/buildsystems/vcpkg.cmake"`
+
+`VCPKG_ROOT` is not set, so the path to vcpkg's toolchain starts with nothing. The errors about
+Ninja and the compiler that follow are consequences of this one. Set `VCPKG_ROOT` as in step 4 of
+[Install the tools](/docs/get-started/prerequisites/), delete the half-configured build folder
+under `out\build\`, and configure again.
+
+### A preset fails on `dxc` or the Vulkan SDK
+
+Only the Vulkan presets need the [Vulkan SDK](https://vulkan.lunarg.com/), with `VULKAN_SDK` set,
+because they compile the shader to SPIR-V with the SDK's `dxc`. Windows also ships a `dxc.exe`
+without SPIR-V support, which is why the build looks only in the SDK. If you do not need Vulkan,
+use the default `x64-debug` preset (Direct3D 11).
+
+## Building
+
+### A warning stops the build
+
+Labrador builds with warnings as errors (`/W4 /WX`), and a game that links `labrador_settings`
+does too. That is deliberate: fix the warning rather than turning the setting off. If the warning
+is in engine code you have not changed, please report it with your compiler version.
+
+### `labrador_settings` is defined twice
+
+A project defined its own target with that name. The engine defines it, and every target that
+links the engine should link the engine's copy rather than declare another
+([Start your own project](/docs/get-started/your-project/)).
+
+### An include such as `"game/states/hello_state.h"` is not found
+
+Includes in a Labrador project are written from the project's root, so the folder *above*
+`game\` has to be on the include path. The `target_include_directories` line in
+[Start your own project](/docs/get-started/your-project/) adds it.
+
+## Running
+
+<Aside type="tip">
+A game started from Visual Studio, a shortcut or the command line behaves the same way: content
+paths are relative to the executable, not to the folder it was started from.
+</Aside>
+
+### `read_json_file - cannot open './manifest.json'`, or a file in the manifest is missing
+
+The content was not copied beside the executable. The build copies it with a custom target
+([Getting content beside the executable](/docs/guides/assets/#getting-content-beside-the-executable));
+check that your `CMakeLists.txt` has the copy lines for every content folder, and build again.
+
+### `... was never loaded`
+
+Code resolved a name that is not in the manifest. The message names the asset; check its
+spelling in the code and in `manifest.json`, which must match exactly and leave off the file
+extension.
+
+### `... was read through an unresolved handle`
+
+A handle was used before it was resolved, usually because a drawable was default-constructed or
+built before the manifest was loaded. Build drawables in a state's `init()`
+([States and the stack](/docs/concepts/states/#a-states-life)).
+
+### The window opens and nothing moves when I press keys
+
+Keys are read once per step, and a key pressed and released between two steps is not seen. More
+often the cause is reading `pressed` where `held` was meant, or the other way round
+([Held, pressed and released](/docs/guides/input/#held-pressed-and-released)). If only the gamepad
+is ignored, check it is in slot 0 if the game reads slot 0.
+
+### `No Direct3D hardware device found` in a release build
+
+The release build does not fall back to Microsoft's software renderer, WARP; the debug build does.
+Update the graphics driver, or use a debug build on a machine without a usable graphics adapter.

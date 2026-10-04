@@ -1,0 +1,115 @@
+---
+title: What a game is to the engine
+description: The three interfaces a game implements, the machinery it drives, and the things Labrador deliberately has no type for.
+sidebar:
+  order: 1
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+To Labrador, a game is **a set of states plus content**. There is no `Game` class to derive from
+and no `IGame` to implement. Your program constructs the engine's
+<RepoLink path="engine/app/application.h">`Application`</RepoLink>, says what it needs before a
+window exists, loads the content its manifest names, and hands the engine a first state. This is
+the whole of the minimal sample's `main.cpp` once the comments are taken out:
+
+<SourceFile path="samples/minimal/main.cpp" from="ApplicationOptions options;" to="return app.run(" />
+
+`run` returns when the window closes. Everything between those lines (the window, the graphics
+device, the input devices, the frame loop) is the engine's.
+
+## Three kinds of type
+
+One rule decides what form each idea in the engine takes
+([Structural types](/docs/design/philosophy/#structural-types)):
+
+| Where | Form | Examples |
+| --- | --- | --- |
+| The engine calls code it has never seen | **An interface you implement** | [`State`](/docs/reference/core/state/), [`GameObject`](/docs/reference/core/game-object/), `CollisionObject` |
+| The engine provides machinery you drive | **A concrete class you use** | `Application`, [`Scene`](/docs/reference/scene/scene/), the widgets, the resource tables |
+| The idea is your game's policy | **No type at all** | There is no `Player`, `Level`, `Match` or `Team` |
+
+The third row matters as much as the first two. The parts of "a player" that every game needs
+already exist as an input slot and a view, and everything else about one belongs to your game.
+A game's level is a class of yours that owns a `Scene` and adds the rules.
+
+## The interfaces are small
+
+[`State`](/docs/reference/core/state/) is a screen or mode: a title screen, a match, a pause menu.
+The engine calls its `init()` once, then `update(dt)` and `draw(renderer)` every frame, and tells
+it when something covers it. [States and the stack](/docs/concepts/states/) covers the rest.
+
+[`GameObject`](/docs/reference/core/game-object/) is anything a scene updates and draws. It has
+three obligations:
+
+```cpp
+virtual void update(float dt) = 0;                       // change things here
+virtual void draw(DrawList& draw_list) const = 0;        // and only read them here
+virtual mattmath::RectangleF bounds() const = 0;         // where it is, for culling
+```
+
+`CollisionObject` is a `GameObject` that also has a shape, a collision layer and mask, a tag the
+engine never interprets, and an `on_contact` callback. Its header,
+<RepoLink path="engine/collision/collision_object.h">`collision_object.h`</RepoLink>, has the
+details.
+
+## How big an object is, is your choice
+
+What stands behind those interfaces is up to you. A game can register one object per entity,
+with as deep a class hierarchy as its author likes, or one object that stands for thousands of
+values updated in a tight loop. The engine treats both the same: interface granularity is the
+dial you turn for performance.
+
+LineSweeper turns it both ways in the same scene. Its board, its particle field and its game-over
+banner are one object each, and the particle field is ten thousand particles in one flat array,
+which costs three virtual calls a frame however many are alive. Beside them are two ordinary
+labels. All five are added to one scene in the play state's `init()`:
+
+<SourceFile
+	path="samples/linesweeper/states/play_state.cpp"
+	from="this->board_ = this->scene_->add("
+	to="std::make_unique<TopOutBanner>(&this->world_, resources));"
+/>
+
+Each of those objects holds a pointer to the match, `world_`, and reads it. None of them can
+change it: the match is a value the play state owns, and the presentation code that draws it
+does not include the code that steps it.
+
+## Ownership is explicit
+
+There is no garbage collector and no object graph kept alive behind your back. Every allocation
+has exactly one owner ([T11](/docs/design/philosophy/#t11-the-stack-over-the-heap)), and the API
+says which side owns what:
+
+- **The application owns the services.** `app.renderer()`, `app.keyboard()`,
+  `app.render_resources()` and the rest return pointers you borrow. They are created once, in
+  `initialize()`, and are never replaced, so a state may hold one for its whole life.
+- **The scene owns what you add to it.** [`Scene::add`](/docs/reference/scene/scene/#add) takes a
+  `std::unique_ptr` and returns a plain pointer of the object's own type, for the things your
+  game still needs to speak to. The minimal sample keeps the greeting this way, to move it each
+  frame.
+- **States are owned by the stack.** You construct one with `std::make_unique` and hand it over;
+  the stack destroys it when it pops or is replaced.
+
+This is not a promise that Labrador avoids the heap or virtual calls. The interfaces above are
+virtual, and containers own heap memory. The rule is about ownership, not about allocation.
+
+## What the engine provides, and what it leaves to you
+
+| The engine provides | Your game provides |
+| --- | --- |
+| The window, the device, the frame loop and a fixed time step | What happens each step |
+| A scene that updates, collides, culls and draws what you add | The objects, and what a contact means |
+| Views and cameras, and drawing them in parallel | Where the views go and what the cameras follow |
+| Keyboard, mouse and four gamepads, with press edges and deadzones | What each key and button does |
+| A widget set with focus and directional navigation | The menus |
+| A manifest of named content, resolved to handles at load | The content |
+| The state stack | The states |
+
+The engine routes on data it does not interpret: collision layers and masks, tags, names. Its
+headers contain no game nouns. If a file would have to change for your game to work, it is game
+code, and it belongs in your project rather than in the engine
+([The boundary](/docs/design/philosophy/#the-boundary)).
+
+Next: [States and the stack](/docs/concepts/states/).

@@ -1,0 +1,52 @@
+---
+title: Guides
+description: Task-by-task guides to drawing, input, menus and content, each built on a sample that already does it.
+sidebar:
+  order: 0
+  label: Introduction
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
+
+Each guide takes one job and shows how a sample in the repository does it, quoting the sample's
+code as it is at the revision this site was built from. Where neither sample does part of a job,
+the guide says so. They assume the model described in [Concepts](/docs/concepts/).
+
+<CardGrid>
+	<LinkCard
+		title="Sprites and text"
+		description="Textures, fonts and sprite sheets; the engine's drawables; drawing a solid rectangle."
+		href="/docs/guides/sprites-and-text/"
+	/>
+	<LinkCard
+		title="Input"
+		description="Keyboard, gamepads and mouse; held versus pressed; deadzones; typed text."
+		href="/docs/guides/input/"
+	/>
+	<LinkCard
+		title="Menus"
+		description="Widgets, a focus group, directional navigation with repeat, and a menu that returns a choice."
+		href="/docs/guides/menus/"
+	/>
+	<LinkCard
+		title="Content and the manifest"
+		description="Adding files, the formats the engine reads, JSON it checks, and your own kinds of asset."
+		href="/docs/guides/assets/"
+	/>
+</CardGrid>
+
+## Not written yet
+
+Three guides wait on a worked example, because neither sample does the job yet and a guide here
+only shows code that runs:
+
+- **Collision.** The engine has layers and masks, a broad phase, a narrow phase that reports
+  contact normals and depths, and resolution, all tested. Until a sample uses them, the headers in
+  <RepoLink path="engine/collision">engine/collision/</RepoLink> and
+  [the tick](/docs/concepts/tick/#a-scenes-four-phases) are the guide.
+- **Audio.** Sound banks load from the manifest and play through `SoundBank`, but there is no
+  sound in the repository to play.
+- **Local multiplayer.** Split-screen is covered in
+  [Drawing, views and cameras](/docs/concepts/drawing/#split-screen); a sample with more than one
+  player is planned.

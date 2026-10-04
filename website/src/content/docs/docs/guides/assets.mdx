@@ -1,0 +1,144 @@
+---
+title: Content and the manifest
+description: Adding a file to a game, how content reaches the executable, reading JSON safely, and teaching the loader a kind of asset of your own.
+sidebar:
+  order: 4
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+A Labrador game's content lives in files beside the executable, listed in a manifest the game
+loads at startup. [Names, handles and resources](/docs/concepts/resources/) explains the model;
+this guide is the practical side: adding a file, getting it beside the executable, and loading
+content the engine has never heard of.
+
+## Adding a texture or a font
+
+1. Put the file in your content folder, under the directory its group names. A project made from
+   the minimal sample has `content/fonts/`; add `content/textures/` for textures.
+2. List it in `content/manifest.json` by name, without its extension, in a group of the right
+   kind. A new kind of file needs a new group:
+
+   <SourceFile path="samples/linesweeper/content/manifest.json" />
+
+3. Make sure the build copies it beside the executable (next section).
+4. In code, refer to it by that name once, where you build the thing that draws it. The
+   [Sprites and text guide](/docs/guides/sprites-and-text/) covers the drawing.
+
+If the name in code does not match the manifest, the game stops with an error naming the asset
+when it resolves the name. If the file is missing, it stops at load, naming the file.
+
+## Getting content beside the executable
+
+The game reads its manifest from the folder the executable is in, wherever it was started from,
+so the build copies the content there. The minimal sample does it with a custom target that runs
+on every build, so an edited file arrives even when no code changed:
+
+<SourceFile path="samples/minimal/CMakeLists.txt" from="add_custom_target(sample_content ALL)" to="add_dependencies(MinimalSample sample_content)" />
+
+When you add a folder of content, add a `copy_directory_if_different` line for it beside the
+`fonts` one. LineSweeper copies `fonts` and `textures` this way.
+
+## Reading JSON
+
+Content is the one input a person types by hand, so the engine reads JSON through a checked
+wrapper, <RepoLink path="engine/assets/json.h">`engine/assets/json.h`</RepoLink>. Every accessor
+checks that the key is there and has the right type, and if not, throws an error that names the
+file, where in it, and the key:
+
+```cpp
+JsonDocument read_json_file(const char* path);   // throws naming the path if it cannot be read or parsed
+
+// On a JsonValue:
+JsonValue object(const char* key) const;
+JsonValue array(const char* key) const;
+std::string string(const char* key) const;
+int integer(const char* key) const;
+float number(const char* key) const;
+bool boolean(const char* key) const;
+bool has(const char* key) const;                 // the one way to make a key optional
+size_t size() const;                             // for an array
+JsonValue at(size_t index) const;                // for an array
+std::string where() const;                       // e.g. 'levels/forest.json': spawns[2]
+```
+
+A `JsonValue` is a view into its `JsonDocument`, valid only while the document is alive, so read
+what you need into your own types before the document goes out of scope. Use `where()` in your
+own errors when a value is the right type but not an acceptable one, such as an unknown enemy
+name.
+
+## A kind of asset of your own
+
+The engine knows four kinds: `texture`, `font`, `sprite_sheet` and `sound_bank`. A game teaches it
+more (levels, dialogue, enemy definitions) by registering a loader for each kind **before** it
+loads the manifest:
+
+```cpp
+void register_kind(const std::string& kind, AssetKind asset_kind);
+
+struct AssetKind
+{
+    LoadAsset load;            // void(const std::string& directory, const std::string& name, bool optional)
+    LoadAsset reload_device;   // the same, after a graphics device is restored; nullptr if not on the GPU
+};
+```
+
+`load` is called once for each name in each group of that kind, with the group's directory
+already resolved relative to the manifest. Content that does not live on the graphics card leaves
+`reload_device` empty. This is a level kind that reads one JSON file per level into a
+[`Registry`](/docs/reference/core/registry/) the game owns:
+
+```cpp
+#include "engine/assets/json.h"
+#include "engine/assets/resource_loader.h"
+#include "engine/core/registry.h"
+
+#include <memory>
+#include <string>
+
+struct Level
+{
+    std::string title;
+    int width = 0;
+    int height = 0;
+};
+
+void register_levels(labrador::ResourceLoader& loader, labrador::Registry<Level>& levels)
+{
+    loader.register_kind("level",
+        {
+            [&levels](const std::string& directory, const std::string& name, bool /*optional*/)
+            {
+                const labrador::JsonDocument document =
+                    labrador::read_json_file((directory + name + ".json").c_str());
+                const labrador::JsonValue root = document.root();
+
+                std::unique_ptr<Level> level = std::make_unique<Level>();
+                level->title = root.string("title");
+                level->width = root.integer("width");
+                level->height = root.integer("height");
+                levels.add(name, std::move(level));
+            },
+            nullptr
+        });
+}
+```
+
+The game creates the registry before the `Application`, so that it outlives the loader, and
+calls `register_levels(*app.resource_loader(), levels)` before `app.load_manifest`. The manifest
+then lists levels like any other content:
+
+```json
+{ "kind": "level", "directory": "./levels/", "names": [ "forest", "caves" ] }
+```
+
+and a state that is handed the registry resolves a level once and reads it by handle:
+
+```cpp
+const labrador::Registry<Level>::handle forest = levels->resolve("forest");
+const Level& level = *levels->get(forest);
+```
+
+A misspelt kind in the manifest stops the game naming the kind; a misspelt level name throws
+naming the level, on the line that resolves it.

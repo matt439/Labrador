@@ -1,0 +1,118 @@
+---
+title: States and the stack
+description: Screens and modes as states, the three stack operations, typed results, and what a state is told when it is covered or the window loses focus.
+sidebar:
+  order: 2
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+
+A **state** is a screen or a mode of your game: a title screen, a match, a pause menu, a "Really
+quit?" box. Each is a class implementing [`State`](/docs/reference/core/state/), and the engine
+keeps them on a stack, [`StateContext`](/docs/reference/core/state-context/), which `Application`
+is. The stack is the only flow machinery the engine has. Where another engine would have a scene
+graph of menus or a state-machine asset, Labrador has states you push and pop from C++.
+
+## A state's life
+
+1. **You construct it**, usually with `std::make_unique`, and hand it to the stack.
+2. **The stack makes it live**: it gives the state its context and calls `init()`, before the
+   state's first `update()` and before it is next drawn. Build what the state draws in `init()`:
+   anything that resolves a resource by name needs the content loaded, and a game loads its
+   content before `app.run` makes the first state live.
+3. **Every frame it is on top**, it gets `update(dt)`, and every frame it is visible it gets
+   `draw(renderer)`.
+4. **When it is popped or replaced**, the stack destroys it. Release what it set up in its
+   destructor; the services it borrowed are still alive at that point, even when the application
+   is shutting down.
+
+## Three operations
+
+All three are called on `this->context()` from inside a state:
+
+| Call | What it does |
+| --- | --- |
+| `transition_to(state)` | Replaces the top state. The first state is installed this way by `app.run`. |
+| `push(state)` | Puts a state above the current one, which is **suspended**: it stops being updated. |
+| `pop()` | Takes the top state off. The one below resumes. |
+
+**They are safe to call from inside your own `update()`**, which is where you will almost always
+call them. Replacing or popping a state destroys it, so taking effect immediately would destroy
+the object whose `update()` is still running. Instead the operation is queued and applied once
+that call returns. You can call `pop()` and then simply `return`.
+
+## Asking a question, and getting an answer
+
+A pushed state can hand a result back to whoever pushed it. The type is named at the push and
+checked at the pop. This is how the minimal sample asks before quitting:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="this->context()->push<bool>("
+	to="return;"
+/>
+
+The question, `ConfirmState`, knows nothing about the screen below it. It answers by popping,
+with `true` here and `false` when B or Escape is pressed:
+
+<SourceFile
+	path="samples/minimal/states/confirm_state.cpp"
+	from="if (pads.pressed(0, GamepadButton::a) || keyboard.pressed(Key::enter))"
+	to="}"
+/>
+
+The callback runs once, after `ConfirmState` has been destroyed and `HelloState` has resumed.
+There is no flag to poll every frame and no pointer from the question back to its asker. Popping
+with a type the push did not ask for throws, rather than reinterpreting the value.
+
+The result does not have to be a `bool`. LineSweeper's pause menu answers with an
+`enum class PauseChoice { resume, restart, quit }`, and the play state's callback is a `switch`.
+There is also a `push(state, on_closed)` for a screen whose only answer is that it closed.
+
+## What a covered state sees
+
+Only the top state is updated. Whether the states below it are **drawn** depends on the top
+state's `covers_screen()`, which is `true` by default. The stack finds the topmost state that
+covers the screen and draws from there upward, so a box over a running game says `false`:
+
+<SourceFile
+	path="samples/minimal/states/confirm_state.h"
+	from="// A box over the screen, not a replacement for it"
+	to="bool covers_screen() const override"
+/>
+
+and then draws over whatever is already in the view:
+
+<SourceFile path="samples/minimal/states/confirm_state.cpp" from="void ConfirmState::draw" to="}" />
+
+A state that is covered is told twice: `on_suspend()` when something is pushed above it, and
+`on_resume()` when that has popped. Not being updated stops a state's simulation and nothing
+else, so these are where a game does the rest: pauses its music, stops a looping sound, dims
+itself. The minimal sample dims its greeting:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="void HelloState::on_suspend()" to="}" />
+
+## When the window loses focus
+
+Alt-tab, minimising and the machine going to sleep are a different question from being covered.
+They mean nobody is looking at *any* state, so every live state is told, from the top down,
+through `on_deactivated()` and later `on_activated()`. The states below the top need this most: a
+match under a pause menu is not being updated, but it may still be holding a music track.
+
+While the window is in the background, gamepads read as disconnected, which is a neutral input.
+A match that ignores `on_deactivated()` therefore keeps running with nobody playing it. Each
+change arrives once, however many separate Windows messages caused it, so a state can pause in
+one and resume in the other without keeping a flag. A state created while the window is already
+in the background asks `context()->active()` in its `init()`, because it missed the change.
+
+## Patterns
+
+- **A level is a state that owns a scene.** Both samples do exactly this: `init()` creates a
+  `Scene` and fills it, `update()` steps it, `draw()` draws it.
+- **Menus are states.** A main menu at the bottom of the stack, a match pushed above it, and a
+  pause menu pushed above that. Leaving the match pops back to the menu, which was never
+  destroyed.
+- **One answer per question.** If two screens need to report the same choice, give it a type
+  (an `enum class`) and let each push name it.
+
+Next: [The tick](/docs/concepts/tick/).

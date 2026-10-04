@@ -1,0 +1,45 @@
+---
+title: Concepts
+description: The model Labrador asks you to work in, in five short pages, each tied to code you can run.
+sidebar:
+  order: 0
+  label: Introduction
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+These pages explain how Labrador sees a game: what it calls, what it owns, what it leaves to you,
+and in what order things happen. They assume you have
+[built and run the minimal sample](/docs/get-started/run-minimal/), and they point at its code
+throughout, so having it open helps.
+
+Each idea here also appears in the [design documents](/docs/design/), which give the reasons in
+full. The pages below give enough of the reasons to use the engine well, and link to the rest.
+
+<CardGrid>
+	<LinkCard
+		title="What a game is to the engine"
+		description="Three interfaces you implement, the machinery you drive, and what the engine has no type for."
+		href="/docs/concepts/game/"
+	/>
+	<LinkCard
+		title="States and the stack"
+		description="Screens and modes as states; push, pop and typed results; what a covered state is told."
+		href="/docs/concepts/states/"
+	/>
+	<LinkCard
+		title="The tick"
+		description="The fixed step, input, update, collision, the end of the tick, and then drawing."
+		href="/docs/concepts/tick/"
+	/>
+	<LinkCard
+		title="Drawing, views and cameras"
+		description="Why draw() is const, what a view is, and how a frame is recorded."
+		href="/docs/concepts/drawing/"
+	/>
+	<LinkCard
+		title="Names, handles and resources"
+		description="Content named in a manifest, resolved once at load, read by handle every frame."
+		href="/docs/concepts/resources/"
+	/>
+</CardGrid>

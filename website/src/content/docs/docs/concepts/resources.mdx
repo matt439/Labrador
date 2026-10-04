@@ -1,0 +1,106 @@
+---
+title: Names, handles and resources
+description: Content named in a manifest, loaded at startup, resolved to handles once, and read by handle every frame.
+sidebar:
+  order: 5
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+A game's content (its textures, fonts, sprite sheets and sound banks) is **named in a manifest**
+and loaded when the game starts. Code refers to each item by its name exactly once, to turn the
+name into a **handle**, and uses the handle from then on. No frame ever looks anything up by name.
+
+## The manifest
+
+The manifest is a JSON file listing what to load, in groups by kind and folder. This is
+LineSweeper's, which loads one font and one texture:
+
+<SourceFile path="samples/linesweeper/content/manifest.json" />
+
+Each name is a file in the group's directory, with an extension that depends on the kind:
+
+| Kind | Files | What it is |
+| --- | --- | --- |
+| `texture` | `name.dds` | An image. |
+| `font` | `name.spritefont` | A font, as a pre-rendered glyph atlas. |
+| `sprite_sheet` | `name.dds` and `name.json` | A texture plus named frames and animations cut from it. |
+| `sound_bank` | `name.xwb` and `name.json` | A bank of sounds, and the names of the sounds in it. |
+
+A group can say `"optional": true`. Only sound banks honour it today: a missing optional bank
+gives the game silence instead of an error. Anything else that is missing stops the game at
+startup with a message naming the file
+([T6, loud failure](/docs/design/philosophy/#t6-loud-failure-over-graceful-degradation)).
+
+The game loads its manifest once, after `initialize()` and before `run()`:
+
+<SourceFile path="samples/minimal/main.cpp" from="app.load_manifest(" to="app.load_manifest(" />
+
+A relative path is relative to the executable, not to the folder the game was started from, and
+directories inside the manifest are relative to the manifest. Both samples' builds copy their
+content beside the executable, so each runs from anywhere. A game with content of its own kinds
+(levels, dialogue) registers a loader for each kind with `app.resource_loader()->register_kind`
+before loading the manifest.
+
+## Names become handles once
+
+A **handle** is a resolved name: a small value that says which slot of which table the item is
+in. `RenderResources` hands them out, by kind:
+
+```cpp
+TextureHandle resolve_texture(const std::string& texture_name) const;
+FontHandle resolve_sprite_font(const std::string& font_name) const;
+SpriteSheetHandle resolve_sprite_sheet(const std::string& sprite_sheet_name) const;
+```
+
+Resolving a name nothing loaded throws, naming it, so a misspelt asset name fails on the line
+that misspells it rather than drawing nothing. LineSweeper spells its two asset names once, at
+the top of its play state, and resolves the texture when it builds the particle field:
+
+<SourceFile
+	path="samples/linesweeper/states/play_state.cpp"
+	from="this->particles_ = this->scene_->add(std::make_unique<ParticleField>("
+	to="resources->resolve_texture(block_texture_name)));"
+/>
+
+Handles are typed. A [`Handle<Texture>`](/docs/reference/core/handle/) cannot be passed where a
+font handle is expected, though both are an integer underneath. A default-constructed handle is
+unresolved, and reading through one throws rather than quietly using whatever loaded first.
+
+The engine's drawables do this for you. A `Label` takes a font *name* in its constructor, resolves
+it there, and keeps the handle; that is why the minimal sample builds its labels in `init()`,
+after the content is loaded.
+
+## Why handles
+
+**Speed.** Reading through a handle is a bounds check and an array index. A string lookup in a map
+every frame, for every sprite, is the kind of cost the engine refuses on the frame path
+([T7](/docs/design/philosophy/#t7-data-over-code), [T8](/docs/design/philosophy/#t8-performance-over-customisability)).
+
+**Device loss.** A graphics device can be lost (a driver update, a GPU reset) and recreated. When
+that happens, the engine releases every texture and font and loads them again from the same
+manifest into the same slots. A handle names a slot rather than a pointer, so every handle your
+game holds is still right afterwards, and your code is never told it happened. Reading a
+released resource in between throws, naming it.
+
+**Errors at the right time.** Names are checked when they are resolved, which is at load or in
+`init()`. By the time the game is running, every handle it holds was valid when it was made.
+
+## The tables underneath
+
+[`Registry`](/docs/reference/core/registry/) is the table behind textures and fonts: names to
+slots, each slot owning a resource that can be released and refilled.
+[`NameTable`](/docs/reference/core/name-table/) is the lighter version for things that are filled
+once and never change, such as the frames and animations inside a sprite sheet. Both are ordinary
+templates, and a game can use them for its own named data.
+
+## Text and other content
+
+Fonts are glyph atlases, so text can only use characters the font contains.
+`RenderResources::can_render(font, text)` says whether a string can be drawn, and
+`measure_text` how big it will be. The [Sprites and text guide](/docs/guides/sprites-and-text/)
+covers making and using fonts and textures.
+
+Sound banks are loaded by the same manifest and live in `app.audio_resources()`. Neither sample
+plays sound yet.

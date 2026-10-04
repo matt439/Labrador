@@ -20,6 +20,9 @@ hero:
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import Capture from '~/components/Capture.astro';
+import play from '~/assets/captures/linesweeper-play.png';
+import clear from '~/assets/captures/linesweeper-clear.png';
 
 <ul class="facts">
 	<li><strong>Windows</strong> today</li>
@@ -28,6 +31,30 @@ import SourceFile from '~/components/SourceFile.astro';
 	<li><strong>MIT</strong> licence</li>
 	<li>Early: no versioned releases yet</li>
 </ul>
+
+<section class="home-section">
+
+## LineSweeper, the sample game
+
+<div class="captures">
+	<Capture
+		src={play}
+		alt="LineSweeper mid-game: a falling-block well two-thirds full of coloured blocks, a hold slot, a queue of five next pieces, and the score, lines and level."
+		caption="A match in progress."
+	/>
+	<Capture
+		src={clear}
+		alt="LineSweeper a few frames after clearing four lines: sparks in each block's colour burst sideways out of the well."
+		caption="Four lines cleared, eight frames later: about nine hundred sparks from a field of up to ten thousand."
+	/>
+</div>
+
+<p class="lead">
+Exact frames, drawn by the engine from a scripted match and read back from the graphics device,
+not screenshots of a window. The <a href="/examples/">Examples</a> page says how the game is built.
+</p>
+
+</section>
 
 <section class="home-section">
 

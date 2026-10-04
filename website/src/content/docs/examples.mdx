@@ -7,6 +7,8 @@ template: splash
 import { LinkButton } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import Capture from '~/components/Capture.astro';
+import topOut from '~/assets/captures/linesweeper-top-out.png';
 
 The repository has two samples. They answer different questions, so they are kept separate:
 the minimal sample is what you **copy** to start a game, and LineSweeper is what you **read** to
@@ -50,6 +52,12 @@ drop, wall kicks, T-spins and back-to-back scoring, and a field of up to ten tho
 that bursts when a piece locks, when lines clear and when the game ends. It is about 4,000 lines,
 with about 2,000 more of tests, and it is there to show what a whole game on Labrador looks like
 and what it costs.
+
+<Capture
+	src={topOut}
+	alt="LineSweeper at the end of a game: a full well, the banner 'TOPPED OUT - PRESS R OR START', and thousands of coloured sparks thrown out across the screen."
+	caption="The end of a game: about 8,200 particles live in one game object."
+/>
 
 It is built in three layers, and the walls between them are the point:
 

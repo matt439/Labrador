@@ -105,6 +105,41 @@
 	font-size: var(--sl-text-sm);
 }
 
+/* ------------------------------------------------------------- the captures */
+
+/* Frames of the sample, at their own aspect ratio and never wider than they
+ * are. Two side by side where there is room, one above the other on a phone. */
+.capture {
+	margin: 1.5rem 0 0;
+}
+.capture img {
+	display: block;
+	width: 100%;
+	max-width: 1280px;
+	height: auto;
+	border: 1px solid var(--sl-color-gray-5);
+	border-radius: var(--labrador-radius);
+	background-color: #000;
+}
+.capture figcaption {
+	margin-top: 0.5rem;
+	color: var(--sl-color-gray-3);
+	font-size: var(--sl-text-sm);
+}
+.captures {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1rem;
+}
+@media (min-width: 50rem) {
+	.captures {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+.captures > .capture {
+	margin: 0;
+}
+
 /* ----------------------------------------------------- quoted repository code */
 
 .source-file {

@@ -1,0 +1,158 @@
+---
+title: Drawing, views and cameras
+description: Why draw() only reads, what a view is, how cameras map the world into a pane, and how a frame is recorded.
+sidebar:
+  order: 4
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+Everything in Labrador is drawn **into a view**: a rectangle of the window, and a camera looking
+at the world through it. A game with one screen has one view covering the window. A split-screen
+game has one per player. The engine draws each view in turn, or several at once on worker threads
+if the game asks, and everything else on this page follows from that.
+
+## `update()` writes, `draw()` reads
+
+Every `draw` in the engine is `const`, from [`State::draw`](/docs/reference/core/state/#draw)
+down through [`GameObject::draw`](/docs/reference/core/game-object/#draw):
+
+```cpp
+virtual void draw(DrawList& draw_list) const = 0;
+```
+
+When views are drawn in parallel, the work is divided **by view, not by object**. Every worker
+draws every visible object into its own view, so several threads call `draw()` on the *same*
+object at the same moment. That is only safe if drawing changes nothing, and `const` is how the
+compiler holds your code to it.
+
+In practice this means:
+
+- **Anything that changes from frame to frame is decided in `update()`**: which animation frame
+  shows, which way a character faces, where the camera is.
+- **Anything that varies per draw is a local variable**, passed down as a parameter: a tint, a
+  flip, a shadow offset. It is never stored in a member first.
+- **Draw order within a view is the order of the calls.** Each draw also takes a layer depth, but
+  if every draw uses the same depth, as LineSweeper's do, the order objects were added to the
+  scene is the order they are drawn in. A scene draws its plain objects, then its collision
+  objects.
+
+## A view is a viewport and a camera
+
+A **viewport** is where the view lands, in back-buffer pixels: `Viewport(x, y, width, height)`.
+
+A **camera** maps world coordinates into the viewport. It is a translation and a scale:
+
+```text
+position in the pane = (position in the world - camera.translation) × camera.scale
+```
+
+so `translation` is the world point shown at the pane's top-left corner, and `scale` is the zoom.
+The default camera, `Camera::DEFAULT_CAMERA`, is the identity: world coordinates are pane pixels.
+Both samples use it, with one view covering the window, which makes their world coordinates the
+same as window pixels:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="this->scene_->add_view(" to="this->scene_->add_view(" />
+
+`Camera::frame(world_rectangle, viewport)` builds the camera that fits a region of the world into
+a pane without stretching it, and
+<RepoLink path="engine/render/camera_tools.h">`CameraTools`</RepoLink> computes a camera that
+follows a player, with a dead zone the player can move in before the camera moves.
+
+## Split-screen
+
+A [`Scene`](/docs/reference/scene/scene/) keeps a list of views that the game fills. For
+split-screen, that is one view per player, side by side. This is two panes from the engine's own
+tests, the first zoomed in on part of the world and the second showing it unscaled:
+
+<SourceFile
+	path="tests/scene/scene_tests.cpp"
+	from="scene.add_view(Viewport(0.0f, 0.0f, 640.0f, 360.0f),"
+	to="scene.add_view(Viewport(640.0f, 0.0f, 640.0f, 360.0f));"
+/>
+
+A camera that follows a player moves when the player moves, which happens in `update()`. So a
+split-screen game calls `clear_views()` and refills the list every tick, and `draw()` only reads
+it.
+
+Two settings go with more than one view:
+
+- **`ApplicationOptions::view_capacity`** is the most views a frame will ever have. Every view
+  costs memory on the graphics device whether it is used or not, so it defaults to four (four-player
+  split-screen) and a game with one pane says 1, as both samples do.
+- **The scene's constructor** takes a thread pool and a partitioner. Passing
+  `app.thread_pool()` and `app.partitioner()` draws the views on worker threads; passing `nullptr`
+  draws them one after another on the calling thread. Below a few hundred objects the
+  single-threaded path is faster, because dividing the work costs more than the work, so the
+  choice is the game's ([Performance](/docs/design/philosophy/#performance)).
+
+The engine's tests draw split-screen frames and compare them against reference images, but
+neither sample uses more than one view yet.
+
+## Culling
+
+The scene does not draw what a view cannot see. For each view it works out the rectangle of the
+world that view shows, and draws an object only if the object's
+[`bounds()`](/docs/reference/core/game-object/#bounds) overlap it. That is why `bounds()` is part of
+`GameObject`: it is how the scene decides visibility, so objects never have to. An object that
+draws outside its bounds (a glow, a shadow, text snapped to whole pixels) says so by overriding
+`cull_bounds()`.
+
+## What a draw looks like
+
+Objects draw into a `DrawList`: a recording target for one view, which already carries that
+view's viewport and camera. It has two drawing calls:
+
+```cpp
+void draw_sprite(TextureHandle texture, const RectangleI& source, const RectangleF& destination,
+                 const Colour& tint, float rotation, const Vector2F& origin,
+                 SpriteFlip flip, float layer_depth);
+
+void draw_text(FontHandle font, const std::wstring& text, const Vector2F& position,
+               const Colour& tint, float scale, float rotation, const Vector2F& origin,
+               float layer_depth);
+```
+
+The destination and position are in world space, and the list's camera maps them. Textures and
+fonts are passed as handles, never as names (see
+[Names, handles and resources](/docs/concepts/resources/)). Most games rarely call these directly:
+the engine's drawable classes, such as `Label`, `TextureObject` and `AnimationObject`, call them
+for you, and the [Sprites and text guide](/docs/guides/sprites-and-text/) covers those.
+
+The list also has `set_camera`, `set_viewport` and `set_filter`, which apply to the draws after
+them. Changing the camera partway through is normal: the world through the player's camera, then
+a HUD in the pane's own coordinates.
+
+## Drawing over the world
+
+`Scene::draw` takes an optional second argument, an **overlay**: a function called once per view,
+after the world has been drawn into it, with the view's index and its `DrawList`. That is where a
+HUD, a split-screen divider or a countdown goes. It runs on the same worker as the view, so it is
+held to the same rule as `draw()`: read your game's state, change nothing. The list still has
+the view's camera when the overlay starts, so an overlay laid out in pane pixels sets
+`Camera::DEFAULT_CAMERA` first.
+
+A state drawn over another one has two ways to add to the frame. It can draw without a scene:
+`renderer.view(0)` hands back the `DrawList` for the first view, and the minimal sample's question
+draws over the state below it this way:
+
+<SourceFile path="samples/minimal/states/confirm_state.cpp" from="void ConfirmState::draw" to="}" />
+
+Or it can have a scene of its own, as LineSweeper's pause menu does. A scene drawn after another
+one reuses the last view for its first, so its objects land on top of what is already there,
+and a full-screen menu needs no extra view capacity.
+
+## The frame, from the engine's side
+
+You never begin or end a frame yourself. Once per frame the engine clears the back buffer, asks
+the states to draw (from the topmost state that covers the screen upward), sends every view's
+recording to the graphics device in view order, and presents. A scene declares how many views
+the frame has when it draws; a state drawn over it, like the question above, draws into a view
+that already exists.
+
+The renderer behind all this is one of five, chosen when the engine is configured: Direct3D 11,
+Direct3D 12, OpenGL, Vulkan, or a null renderer that records draws for tests. Game code is the same
+for all of them. Nothing above the renderer names a graphics API.
+
+Next: [Names, handles and resources](/docs/concepts/resources/).

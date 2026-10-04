@@ -1,0 +1,137 @@
+---
+title: Sprites and text
+description: Getting textures and fonts into a game, drawing text and sprites, solid rectangles from one white texel, and how colours blend.
+sidebar:
+  order: 1
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+Everything Labrador draws is a textured rectangle: a sprite. Text is sprites cut from a font's
+glyph atlas, and a solid rectangle is a sprite from a texture one pixel across. This guide covers
+the files, the classes that draw them, and the colours.
+
+## The files
+
+| Kind | File | Made with |
+| --- | --- | --- |
+| Texture | `.dds` | Any tool that writes DDS, such as `texconv` from Microsoft's DirectXTex. |
+| Font | `.spritefont` | `MakeSpriteFont` from Microsoft's DirectX Tool Kit, which renders a system font into an atlas. |
+| Sprite sheet | `.dds` and `.json` with the same name | A texture, plus a JSON file naming rectangles in it (below). |
+
+A texture can be uncompressed 32-bit colour (`R8G8B8A8` or `B8G8R8A8`), 16-bit `B4G4R4A4`, or
+block-compressed BC1, BC2 or BC3. Anything else is refused at load, with the file named. Each
+file is listed in the [manifest](/docs/concepts/resources/#the-manifest) by name, without its
+extension.
+
+## Text
+
+There are three text classes, for three places text appears:
+
+| Class | Is a | Use it for |
+| --- | --- | --- |
+| `Label` | `GameObject` | Text in a scene: added once, culled and drawn with everything else. |
+| `Text` | a drawable you draw yourself | Text a state draws directly, without a scene. |
+| `UiText` | a widget | A row in a menu that can take focus ([Menus](/docs/guides/menus/)). |
+
+All three take the same core arguments: the text as a **wide string**, the font's name from the
+manifest, a position, and the render resources the font is resolved against. The minimal sample's
+greeting is a `Label`:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="this->greeting_ = this->scene_->add(std::make_unique<Label>("
+	to="labrador::Colour::white));"
+/>
+
+The font name is resolved to a handle in the constructor, so a misspelt name throws there, and
+the text is measured once whenever it changes rather than on every frame. `set_text`,
+`set_position`, `set_colour` and `set_scale` change it afterwards, from `update()`.
+
+**Text is wide** (`std::wstring`, written `L"..."`) all the way to the renderer, so drawing it
+never converts or allocates. A font can only draw the characters it was made with. Before showing
+text that came from outside the game, such as a player's name, check it with
+`RenderResources::can_render(font, text)`.
+
+**Centring text means measuring it.** `RenderResources::measure_text(font, text)` returns its
+size. LineSweeper's pause menu centres each row this way, once, when the menu is built:
+
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="const auto centred = [&]" to="};" />
+
+The engine has no layout system: positions are numbers your game works out, as here.
+
+## Sprites from a sheet
+
+A sprite sheet is one texture with named rectangles in it. Its JSON file lists **frames**, each a
+named rectangle, and **animation strips**, each a run of equal-sized frames laid out left to right
+from a first frame:
+
+```json
+{
+    "sprite_frames": [
+        { "name": "coin", "position": { "x": 0, "y": 0 }, "size": { "w": 16, "h": 16 } },
+        { "name": "hero_idle", "position": { "x": 0, "y": 16 }, "size": { "w": 16, "h": 32 },
+          "origin": { "x": 8, "y": 32 } }
+    ],
+    "animation_strips": [
+        { "name": "hero_walk", "first_frame": { "x": 16, "y": 16, "w": 16, "h": 32 },
+          "frame_count": 6, "frame_time": 0.1, "looping": true }
+    ]
+}
+```
+
+`origin` is optional, in texels from the frame's top-left; it is the point a sprite is placed and
+rotated by, such as the middle of a character's feet. A sheet whose packer rotated frames to fit
+them is refused, because the engine draws frames as they are stored. Every key is checked when the
+sheet loads, and a missing or mistyped one names the file and the key.
+
+Two classes draw from a sheet, and both are designed to be **inherited alongside `GameObject`**,
+so your own class gets their drawing and keeps its own update:
+
+- <RepoLink path="engine/render/texture_object.h">`TextureObject`</RepoLink> draws one named
+  frame. Its constructor takes the sheet name and the frame name.
+- <RepoLink path="engine/render/animation_object.h">`AnimationObject`</RepoLink> plays a strip.
+  Its `update(dt)` advances the frame, and `play`, `pause`, `stop`, `reset` and
+  `set_animation_strip_and_reset` control it from your own `update()`.
+
+Both have `draw(draw_list, destination_rectangle)` and `draw(draw_list, position, scale)`, and a
+`draw_with` that takes the colour or flip as a parameter instead. Because several views can draw
+the same object at once, a tint or flip that varies from draw to draw is passed through
+`draw_with` rather than set on the object first. Neither sample uses a sprite sheet yet; the
+engine's tests do.
+
+## Solid rectangles
+
+There is no rectangle-drawing call, because a solid rectangle is a sprite. LineSweeper's content
+includes a texture one white pixel across, and every block, panel and line on its screen is that
+pixel stretched and tinted. This is the darkening layer its pause menu draws over the game:
+
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="void draw(DrawList& draw_list) const override" to="}" />
+
+`draw_sprite` takes a source rectangle in texels, here the one pixel, and a destination rectangle
+in world space, here the whole screen.
+
+## Colours and blending
+
+`Colour` holds four floats from 0 to 1, and can be built from floats, from bytes
+(`Colour(240, 152, 0)`), or from a hex string. It has the usual named colours:
+`Colour::white`, `Colour::goldenrod`, `Colour::dark_gray` and so on.
+
+**Blending is premultiplied.** A drawn pixel lands as `source + destination × (1 − source alpha)`.
+For an ordinary translucent colour, multiply the colour by its alpha as well, which is what
+LineSweeper's `faded` does:
+
+<SourceFile path="samples/linesweeper/presentation/palette.h" from="constexpr labrador::Colour faded(" to="}" />
+
+The same rule gives additive light for free. With alpha at zero the destination is untouched and
+the colour is simply added, so overlapping draws brighten towards white. That is LineSweeper's
+`glowing`, and its whole particle effect:
+
+<SourceFile path="samples/linesweeper/presentation/palette.h" from="constexpr labrador::Colour glowing(" to="}" />
+
+## Filtering
+
+`DrawList::set_filter` chooses between smooth (linear) and blocky (point) sampling when a texture
+is scaled, for every draw after it in that view. Pixel art usually wants point sampling. Changing
+the filter partway through a view is allowed and costs a little, so group draws by filter.

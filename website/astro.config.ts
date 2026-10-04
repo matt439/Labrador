@@ -46,6 +46,8 @@ export default defineConfig({
 						{ label: 'Make a first change', link: '/docs/get-started/first-change/' },
 					],
 				},
+				{ label: 'Concepts', items: [{ autogenerate: { directory: 'docs/concepts' } }] },
+				{ label: 'Guides', items: [{ autogenerate: { directory: 'docs/guides' } }] },
 				{
 					label: 'API Reference',
 					items: [
@@ -59,6 +61,7 @@ export default defineConfig({
 					],
 				},
 				{ label: 'Design', items: [{ autogenerate: { directory: 'docs/design' } }] },
+				{ label: 'Troubleshooting', link: '/docs/troubleshooting/' },
 			],
 			plugins: [starlightLinksValidator()],
 		}),
