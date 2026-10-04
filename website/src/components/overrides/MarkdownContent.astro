@@ -1,5 +1,6 @@
 ---
-// Starlight's Markdown wrapper, plus the script that draws diagrams.
+// Starlight's Markdown wrapper, plus the script that draws diagrams and the
+// one that lets a keyboard scroll a wide table.
 //
 // A ```mermaid block arrives as <pre class="mermaid"> (markdown-plugins.ts).
 // The library is loaded only on a page that has one, and the diagram is drawn
@@ -10,12 +11,36 @@ import Default from '@astrojs/starlight/components/MarkdownContent.astro';
 <Default><slot /></Default>
 
 <script>
+	// Starlight lets a table wider than the column scroll sideways. Without
+	// focus a keyboard cannot scroll it, so a table that overflows takes focus,
+	// and one that fits does not add a stop to the tab order.
+	for (const table of document.querySelectorAll<HTMLTableElement>('.sl-markdown-content table')) {
+		new ResizeObserver(() => {
+			if (table.scrollWidth > table.clientWidth) {
+				table.tabIndex = 0;
+			} else {
+				table.removeAttribute('tabindex');
+			}
+		}).observe(table);
+	}
+</script>
+
+<script>
 	const diagrams = [...document.querySelectorAll<HTMLElement>('pre.mermaid')];
+
+	// Mermaid's dark theme sets edge labels in a grey that falls just short of
+	// 4.5:1 against their own background.
+	const DARK_CSS = '.edgeLabel, .edgeLabel p { color: #eceef2; }';
 
 	async function draw(): Promise<void> {
 		const { default: mermaid } = await import('mermaid');
 		const dark = document.documentElement.dataset.theme === 'dark';
-		mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'neutral' });
+		mermaid.initialize({
+			startOnLoad: false,
+			securityLevel: 'strict',
+			theme: dark ? 'dark' : 'neutral',
+			themeCSS: dark ? DARK_CSS : '',
+		});
 		for (const diagram of diagrams) {
 			diagram.dataset.source ??= diagram.textContent ?? '';
 			diagram.removeAttribute('data-processed');

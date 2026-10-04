@@ -27,12 +27,12 @@ function language(file: string): string {
 }
 
 const where = passage.whole ? undefined : { start: passage.start, end: passage.end };
+const lines = !where ? '' : where.start === where.end ? `, line ${where.start}` : `, lines ${where.start}–${where.end}`;
 ---
 
 <div class="source-file">
 	<Code code={passage.code} lang={lang ?? language(path)} title={title ?? path} mark={mark} />
 	<p class="source-link">
-		<a href={sourceUrl(path, where)}>{path}{where && `, lines ${where.start}–${where.end}`}</a>
-		at <code>{REVISION.short}</code>
+		<a href={sourceUrl(path, where)}>{path}{lines}</a>{' '}at <code>{REVISION.short}</code>
 	</p>
 </div>

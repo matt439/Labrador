@@ -152,6 +152,18 @@
 	text-align: end;
 }
 
+/* Muted text keeps 4.5:1 against the page, but not against the tint Starlight
+ * puts behind inline code, nor in the dark theme against the file tree's
+ * background. So code inside a muted caption has no tint, and the file tree's
+ * comments are a step lighter in the dark theme. */
+:is(.source-link, .ref-qualified) code {
+	padding-inline: 0;
+	background: transparent;
+}
+:root[data-theme='dark'] starlight-file-tree .comment {
+	color: var(--sl-color-gray-2);
+}
+
 /* --------------------------------------------------------------- the diagrams */
 
 .sl-markdown-content pre.mermaid {
