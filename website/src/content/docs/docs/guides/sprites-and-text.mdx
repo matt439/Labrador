@@ -6,7 +6,6 @@ sidebar:
 ---
 
 import SourceFile from '~/components/SourceFile.astro';
-import RepoLink from '~/components/RepoLink.astro';
 
 Everything Labrador draws is a textured rectangle: a sprite. Text is sprites cut from a font's
 glyph atlas, and a solid rectangle is a sprite from a texture one pixel across. This guide covers
@@ -89,11 +88,9 @@ sheet loads, and a missing or mistyped one names the file and the key.
 Two classes draw from a sheet, and both are designed to be **inherited alongside `GameObject`**,
 so your own class gets their drawing and keeps its own update:
 
-- <RepoLink path="engine/render/texture_object.h">`TextureObject`</RepoLink> draws one named
-  frame. Its constructor takes the sheet name and the frame name.
-- <RepoLink path="engine/render/animation_object.h">`AnimationObject`</RepoLink> plays a strip.
-  Its `update(dt)` advances the frame, and `play`, `pause`, `stop`, `reset` and
-  `set_animation_strip_and_reset` control it from your own `update()`.
+- `TextureObject` draws one named frame. Its constructor takes the sheet name and the frame name.
+- `AnimationObject` plays a strip. Its `update(dt)` advances the frame, and `play`, `pause`,
+  `stop`, `reset` and `set_animation_strip_and_reset` control it from your own `update()`.
 
 Both have `draw(draw_list, destination_rectangle)` and `draw(draw_list, position, scale)`, and a
 `draw_with` that takes the colour or flip as a parameter instead. Because several views can draw

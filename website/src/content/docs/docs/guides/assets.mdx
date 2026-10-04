@@ -6,7 +6,6 @@ sidebar:
 ---
 
 import SourceFile from '~/components/SourceFile.astro';
-import RepoLink from '~/components/RepoLink.astro';
 
 A Labrador game's content lives in files beside the executable, listed in a manifest the game
 loads at startup. [Names, handles and resources](/docs/concepts/resources/) explains the model;
@@ -43,9 +42,8 @@ When you add a folder of content, add a `copy_directory_if_different` line for i
 ## Reading JSON
 
 Content is the one input a person types by hand, so the engine reads JSON through a checked
-wrapper, <RepoLink path="engine/assets/json.h">`engine/assets/json.h`</RepoLink>. Every accessor
-checks that the key is there and has the right type, and if not, throws an error that names the
-file, where in it, and the key:
+wrapper, `engine/assets/json.h`. Every accessor checks that the key is there and has the right
+type, and if not, throws an error that names the file, where in it, and the key:
 
 ```cpp
 JsonDocument read_json_file(const char* path);   // throws naming the path if it cannot be read or parsed

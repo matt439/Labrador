@@ -1,13 +1,14 @@
-// The site's two additions to the Markdown pipeline.
+// The site's three additions to the Markdown pipeline.
 //
-// Both are Sätteri mdast plugins, which is what Astro's default Markdown
+// All are Sätteri mdast plugins, which is what Astro's default Markdown
 // processor takes; Starlight registers its own transforms beside them.
 
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { defineMdastPlugin, type MdastPluginEntry } from 'satteri';
+import { defineMdastPlugin, type MdastPluginEntry, type MdastVisitorContext } from 'satteri';
 import { DESIGN_DOCUMENTS, publishedPages } from './published';
+import { codeLink } from './reference';
 import { REPOSITORY_ROOT, absolutePath, sourceUrl, toRepositoryPath } from './repository';
 
 // Where the site's own pages live, from the repository root. A document read
@@ -84,6 +85,60 @@ export const checkoutLinks: MdastPluginEntry = ({ fileURL }) => {
 					`'${source}' has a relative image, '${node.url}', and the site does not copy ` +
 						`images out of the checkout yet. Add that before publishing this document.`
 				);
+			}
+		},
+	});
+};
+
+// What a node sits inside that a link cannot go in: a link already, or a
+// heading, whose own anchor a link would compete with. A JSX component whose
+// name ends in Link renders a link.
+function enclosing(node: Parameters<MdastVisitorContext['parent']>[0], ctx: MdastVisitorContext): 'link' | 'heading' | undefined {
+	for (let parent = ctx.parent(node); parent; parent = ctx.parent(parent)) {
+		const { type, name } = parent as { type: string; name?: string | null };
+		if (type === 'heading') {
+			return 'heading';
+		}
+		if (type === 'link' || type === 'linkReference') {
+			return 'link';
+		}
+		if ((type === 'mdxJsxTextElement' || type === 'mdxJsxFlowElement') && /^a$|Link$/.test(name ?? '')) {
+			return 'link';
+		}
+	}
+	return undefined;
+}
+
+// A name the engine defines, written as code - `Scene`, `StateContext::push`,
+// `Key::w`, `engine/scene/scene.h` - links to its place in the API reference
+// (reference.ts, codeLink). This is how the guides, the concepts and the design
+// documents reach the reference without a link written by hand for each name,
+// and a link to a section that is not there fails the build like any other.
+// Only the first mention in each section is linked, so a paragraph that names
+// `Scene` five times still reads as prose; a mention the page already links
+// by hand counts as the first.
+export const referenceLinks: MdastPluginEntry = ({ fileURL }) => {
+	const page = (fileURL && sourceOf(fileURL)) ?? 'A page';
+	let linked = new Set<string>();
+	return defineMdastPlugin({
+		name: 'labrador-reference-links',
+		heading(node) {
+			if (node.depth <= 2) {
+				linked = new Set();
+			}
+		},
+		inlineCode(node, ctx) {
+			const url = codeLink(node.value, page);
+			if (!url || linked.has(url)) {
+				return;
+			}
+			const inside = enclosing(node, ctx);
+			if (inside === 'heading') {
+				return;
+			}
+			linked.add(url);
+			if (inside !== 'link') {
+				ctx.wrapNode(node, { type: 'link', url, children: [] });
 			}
 		},
 	});

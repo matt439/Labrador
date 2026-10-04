@@ -1,6 +1,6 @@
 ---
 title: About the reference
-description: How the API reference is generated from the engine's headers, what the text on each page is, and what it does not do yet.
+description: How the API reference is generated from the engine's headers, what the text on each page is, how it is linked, and what it does not do yet.
 sidebar:
   order: 0
   label: About the reference
@@ -85,13 +85,19 @@ Clang would read the headers exactly, but `application.h` includes `<Windows.h>`
 the site's build to Windows.
 
 **Links.** A type defined anywhere in the engine's public headers is linked wherever a page names
-it, to its section on its page. So are a qualified member such as `GameObject::draw`, a header
-path, and a trade-off number such as T8.
+it, to its section on its page, and a qualified member such as `GameObject::draw` to the member's
+own section. So are a header path and a trade-off number such as T8. The rest of the site links
+here the same way: a name written as code in a guide, a concept page or a design document links to
+its section, the first time each section of that page names it.
+
+**Where it is used.** Each page ends with the samples and tests that include its header. Only a
+direct `#include` is found, and a file can reach a header through another one, so the list is
+where to start reading rather than every use. The samples are the best examples;
+[Examples](/examples/) says where to start reading them.
 
 ## What it does not do yet
 
-- Members are not linked individually: a link to `Scene::add` goes to `Scene`.
 - Names inside the code blocks are not linked.
 - A name defined in two headers is not linked at all, rather than risk landing on the wrong one.
-- A page does not yet list where in the samples and tests its type is used. The samples are the
-  best examples; [Examples](/examples/) says where to start reading them.
+- Free functions are not linked from other pages, and an enumerator links to its enumeration:
+  `Key::w` goes to `Key`.

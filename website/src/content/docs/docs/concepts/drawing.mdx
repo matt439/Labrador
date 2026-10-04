@@ -6,7 +6,6 @@ sidebar:
 ---
 
 import SourceFile from '~/components/SourceFile.astro';
-import RepoLink from '~/components/RepoLink.astro';
 
 Everything in Labrador is drawn **into a view**: a rectangle of the window, and a camera looking
 at the world through it. A game with one screen has one view covering the window. A split-screen
@@ -56,9 +55,8 @@ same as window pixels:
 <SourceFile path="samples/minimal/states/hello_state.cpp" from="this->scene_->add_view(" to="this->scene_->add_view(" />
 
 `Camera::frame(world_rectangle, viewport)` builds the camera that fits a region of the world into
-a pane without stretching it, and
-<RepoLink path="engine/render/camera_tools.h">`CameraTools`</RepoLink> computes a camera that
-follows a player, with a dead zone the player can move in before the camera moves.
+a pane without stretching it, and `CameraTools` computes a camera that follows a player, with a
+dead zone the player can move in before the camera moves.
 
 ## Split-screen
 

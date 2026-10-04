@@ -6,13 +6,11 @@ sidebar:
 ---
 
 import SourceFile from '~/components/SourceFile.astro';
-import RepoLink from '~/components/RepoLink.astro';
 
 To Labrador, a game is **a set of states plus content**. There is no `Game` class to derive from
-and no `IGame` to implement. Your program constructs the engine's
-<RepoLink path="engine/app/application.h">`Application`</RepoLink>, says what it needs before a
-window exists, loads the content its manifest names, and hands the engine a first state. This is
-the whole of the minimal sample's `main.cpp` once the comments are taken out:
+and no `IGame` to implement. Your program constructs the engine's `Application`, says what it
+needs before a window exists, loads the content its manifest names, and hands the engine a first
+state. This is the whole of the minimal sample's `main.cpp` once the comments are taken out:
 
 <SourceFile path="samples/minimal/main.cpp" from="ApplicationOptions options;" to="return app.run(" />
 
@@ -51,8 +49,7 @@ virtual mattmath::RectangleF bounds() const = 0;         // where it is, for cul
 
 `CollisionObject` is a `GameObject` that also has a shape, a collision layer and mask, a tag the
 engine never interprets, and an `on_contact` callback. Its header,
-<RepoLink path="engine/collision/collision_object.h">`collision_object.h`</RepoLink>, has the
-details.
+`engine/collision/collision_object.h`, has the details.
 
 ## How big an object is, is your choice
 

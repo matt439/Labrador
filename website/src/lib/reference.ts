@@ -4,8 +4,12 @@
 // reference is a view of the header, not an edit of it. What the page adds is
 // structure - a heading per declaration group, the signatures as code, the
 // public and protected members only - and links: a type the engine defines,
-// a header path, and a trade-off number each become a link to where they are
-// defined.
+// a member of one, a header path, and a trade-off number each become a link to
+// where they are defined. Last, it lists the samples and tests that include
+// the header.
+//
+// The same index links the rest of the site: a name written as code in a
+// guide reaches its section here through codeLink.
 
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
@@ -78,7 +82,16 @@ export function symbols(): Map<string, SymbolTarget> {
 		const lines = readRepositoryFile(header).split('\n');
 		lines.forEach((line, index) => {
 			const match = line.match(TYPE_DEFINITION);
-			if (!match || lines[index + 1]?.trim() !== '{') {
+			if (!match) {
+				return;
+			}
+			// A list of bases can continue across lines, each ending in a comma,
+			// before the brace that makes this a definition.
+			let next = index + 1;
+			while (lines[next - 1].trimEnd().endsWith(',') && next < lines.length - 1) {
+				next++;
+			}
+			if (lines[next]?.trim() !== '{') {
 				return;
 			}
 			const [, indent, keyword, name] = match;
@@ -99,6 +112,36 @@ export function symbols(): Map<string, SymbolTarget> {
 		}
 	}
 	return symbolIndex;
+}
+
+// The folders whose files show the API in use: the two samples, and the tests
+// that state its behaviour.
+const EXAMPLE_FOLDERS = ['samples', 'tests'];
+
+let includerIndex: Map<string, string[]> | undefined;
+
+// Every file in the example folders that includes an engine header, by header,
+// in path order.
+function includers(): Map<string, string[]> {
+	if (includerIndex) {
+		return includerIndex;
+	}
+	const index = new Map<string, string[]>();
+	const walk = (directory: string) => {
+		for (const entry of readdirSync(path.join(REPOSITORY_ROOT, directory)).sort()) {
+			const child = `${directory}/${entry}`;
+			if (statSync(path.join(REPOSITORY_ROOT, child)).isDirectory()) {
+				walk(child);
+			} else if (/\.(?:h|cpp)$/.test(entry)) {
+				for (const [, header] of readRepositoryFile(child).matchAll(/^#include "(engine\/[^"]+\.h)"/gm)) {
+					index.set(header, [...new Set([...(index.get(header) ?? []), child])]);
+				}
+			}
+		}
+	};
+	EXAMPLE_FOLDERS.forEach(walk);
+	includerIndex = index;
+	return index;
 }
 
 let tradeOffs: Map<string, string> | undefined;
@@ -161,8 +204,12 @@ function linkSymbols(escaped: string, inCode: boolean): string {
 			if (!target) {
 				return match;
 			}
+			if (member) {
+				const name = member.slice(2).replace(/\(\)$/, '');
+				return link(memberAnchors().get(`${type}::${name}`) ?? target.url, match);
+			}
 			const compound = /^[A-Z][a-z0-9]+[A-Z]/.test(type!);
-			if (member || inCode || compound) {
+			if (inCode || compound) {
 				return link(target.url, match);
 			}
 			return match;
@@ -237,6 +284,23 @@ export function commentHtml(comment: CommentBlock | undefined): string {
 }
 
 // ------------------------------------------------------------------ the page
+//
+// A page is laid out as a list of blocks: headings, which follow from the
+// header's structure alone, and content, which is rendered only when the page
+// is. Keeping them apart is what lets the anchor of every member on every page
+// be known before any prose is rendered - and the prose links to those
+// anchors.
+
+interface Heading {
+	depth: 2 | 3;
+	text: string;
+	// For `Type::member` links: the type the section belongs to, and the
+	// members and nested types it documents.
+	owner?: string;
+	names?: string[];
+}
+
+type Block = Heading | (() => string);
 
 function fence(code: string): string {
 	return '```cpp\n' + code + '\n```';
@@ -316,30 +380,27 @@ function visible(item: Item): boolean {
 
 // A nested type small enough to read whole is shown whole, private members
 // excepted; that is clearer than a heading per field.
-function nestedType(item: TypeItem, qualifier: string): string {
-	const out: string[] = [`### ${item.name}`];
-	out.push(fence(definitionWithoutComments(item)));
-	out.push(commentHtml(item.comment));
-	out.push(`<p class="ref-qualified">Declared as <code>${escapeHtml(qualifier)}::${item.name}</code>.</p>`);
-	return out.filter(Boolean).join('\n\n');
+function nestedType(blocks: Block[], item: TypeItem, qualifier: string): void {
+	blocks.push({ depth: 3, text: item.name, owner: qualifier, names: [item.name] });
+	blocks.push(() => fence(definitionWithoutComments(item)));
+	blocks.push(() => commentHtml(item.comment));
+	blocks.push(() => `<p class="ref-qualified">Declared as <code>${escapeHtml(qualifier)}::${item.name}</code>.</p>`);
 }
 
-function members(type: TypeItem): string {
-	const out: string[] = [];
+function members(blocks: Block[], type: TypeItem): void {
 	for (const item of type.items.filter(visible)) {
 		if (item.kind === 'note') {
-			out.push(`<div class="ref-note">${commentHtml(item.comment)}</div>`);
+			blocks.push(() => `<div class="ref-note">${commentHtml(item.comment)}</div>`);
 		} else if (item.kind === 'type') {
-			out.push(nestedType(item, type.name));
+			nestedType(blocks, item, type.name);
 		} else if (item.kind === 'group') {
 			const names = [...new Set(item.declarations.map((declaration) => declaration.name))];
 			const label = item.access === 'protected' ? ' (protected)' : '';
-			out.push(`### ${names.join(' · ')}${label}`);
-			out.push(fence(item.declarations.map((declaration) => signature(declaration.text)).join('\n')));
-			out.push(commentHtml(item.comment));
+			blocks.push({ depth: 3, text: `${names.join(' · ')}${label}`, owner: type.name, names });
+			blocks.push(() => fence(item.declarations.map((declaration) => signature(declaration.text)).join('\n')));
+			blocks.push(() => commentHtml(item.comment));
 		}
 	}
-	return out.filter(Boolean).join('\n\n');
 }
 
 function typesUsed(document: ReturnType<typeof parseHeader>, own: Set<string>): string[] {
@@ -381,45 +442,71 @@ function outOfLineMember(text: string): boolean {
 	return call >= 0 && /[A-Za-z_]\w*::~?[A-Za-z_]\w*\s*$/.test(flat.slice(0, call));
 }
 
-export interface ReferencePage {
-	header: ReferenceHeader;
-	markdown: string;
+// The samples and tests that include a header, grouped by folder. Only a
+// direct include is found, and the conventions do not ask a file to include
+// everything it uses, so this is where to start reading rather than every use.
+function includedBy(source: string): string {
+	const files = includers().get(source) ?? [];
+	if (files.length === 0) {
+		return '<p>No sample or test includes this header directly.</p>';
+	}
+	const folders = new Map<string, string[]>();
+	for (const file of files) {
+		const folder = file.slice(0, file.lastIndexOf('/') + 1);
+		folders.set(folder, [...(folders.get(folder) ?? []), file.slice(folder.length)]);
+	}
+	const items = [...folders].map(
+		([folder, names]) =>
+			`<li><code>${escapeHtml(folder)}</code> ${names
+				.map((name) => link(sourceUrl(folder + name), `<code>${escapeHtml(name)}</code>`))
+				.join(', ')}</li>`
+	);
+	return (
+		'<p>The files that include this header directly. A file can also reach it through another header.</p>\n\n' +
+		`<ul class="ref-includers">${items.join('')}</ul>`
+	);
+}
+
+interface Layout {
+	blocks: Block[];
 	description: string;
 }
 
-export function referencePage(header: ReferenceHeader): ReferencePage {
+function layout(header: ReferenceHeader): Layout {
 	const document = parseHeader(header.source, readRepositoryFile(header.source));
 	const types = document.items.filter((item): item is TypeItem => item.kind === 'type');
 	const own = new Set(types.map((type) => type.name));
 	const namespace = document.namespaces.join('::');
 
-	const out: string[] = [];
-	out.push(
-		`<p class="ref-source">Generated from <a href="${sourceUrl(header.source)}"><code>${escapeHtml(header.source)}</code></a> ` +
+	const blocks: Block[] = [];
+	blocks.push(
+		() =>
+			`<p class="ref-source">Generated from <a href="${sourceUrl(header.source)}"><code>${escapeHtml(header.source)}</code></a> ` +
 			`at <a href="${commitUrl()}"><code>${REVISION.short}</code></a>. The text under each declaration is the ` +
 			`header's own comment, word for word. <a href="/docs/reference/">About the reference</a> says how these ` +
 			`pages are made.</p>`
 	);
-	out.push(
-		`<p class="ref-include"><code>#include "${escapeHtml(header.source)}"</code>` +
+	blocks.push(
+		() =>
+			`<p class="ref-include"><code>#include "${escapeHtml(header.source)}"</code>` +
 			(namespace ? ` · namespace <code>${escapeHtml(namespace)}</code>` : '') +
 			`</p>`
 	);
 
 	for (const item of document.items) {
 		if (item.kind === 'note') {
-			out.push(`<div class="ref-note">${commentHtml(item.comment)}</div>`);
+			blocks.push(() => `<div class="ref-note">${commentHtml(item.comment)}</div>`);
 		}
 		if (item.kind === 'type') {
-			out.push(`## ${typeHeading(item)}`);
+			blocks.push({ depth: 2, text: typeHeading(item) });
 			if (item.keyword.startsWith('enum')) {
-				out.push(fence(definitionWithoutComments(item)));
-				out.push(commentHtml(item.comment));
-				out.push(enumerators(item));
+				blocks.push(() => fence(definitionWithoutComments(item)));
+				blocks.push(() => commentHtml(item.comment));
+				blocks.push(() => enumerators(item));
 			} else {
-				out.push(fence(typeSignature(item)));
-				out.push(commentHtml(item.comment));
-				out.push(members(item));
+				blocks.push(() => fence(typeSignature(item)));
+				blocks.push(() => commentHtml(item.comment));
+				members(blocks, item);
 			}
 		}
 		if (item.kind === 'group') {
@@ -432,28 +519,119 @@ export function referencePage(header: ReferenceHeader): ReferencePage {
 				continue;
 			}
 			const names = [...new Set(declarations.map((declaration) => declaration.name))];
-			out.push(`## ${names.join(' · ')}`);
-			out.push(fence(declarations.map((declaration) => signature(declaration.text)).join('\n')));
-			out.push(commentHtml(item.comment));
+			blocks.push({ depth: 2, text: names.join(' · ') });
+			blocks.push(() => fence(declarations.map((declaration) => signature(declaration.text)).join('\n')));
+			blocks.push(() => commentHtml(item.comment));
 		}
 	}
 
 	const used = typesUsed(document, own);
 	if (used.length > 0) {
 		const index = symbols();
-		out.push('## Related types');
-		out.push(
-			`<p>Named in the public declarations above: ${used
-				.map((name) => link(index.get(name)!.url, `<code>${name}</code>`))
-				.join(', ')}.</p>`
+		blocks.push({ depth: 2, text: 'Related types' });
+		blocks.push(
+			() =>
+				`<p>Named in the public declarations above: ${used
+					.map((name) => link(index.get(name)!.url, `<code>${name}</code>`))
+					.join(', ')}.</p>`
 		);
 	}
+
+	blocks.push({ depth: 2, text: 'In the samples and tests' });
+	blocks.push(() => includedBy(header.source));
 
 	const primary = types[0];
 	const description = primary
 		? `${typeHeading(primary)}, from ${header.source}.`
 		: `${header.source}.`;
-	return { header, markdown: out.filter(Boolean).join('\n\n'), description };
+	return { blocks, description };
+}
+
+// The anchor each heading on a page gets: its text as GitHub slugs it,
+// numbered when an earlier heading on the same page slugs the same, which is
+// what the site's Markdown does.
+function anchors(blocks: Block[]): [Heading, string][] {
+	const slugger = new GithubSlugger();
+	return blocks
+		.filter((block): block is Heading => typeof block !== 'function')
+		.map((heading) => [heading, slugger.slug(heading.text)]);
+}
+
+let memberIndex: Map<string, string> | undefined;
+
+// `Type::member` for every member and nested type that has a section of its
+// own, pointing at that section. A name documented in two sections, such as
+// overloads with different comments, points at the first.
+function memberAnchors(): Map<string, string> {
+	if (memberIndex) {
+		return memberIndex;
+	}
+	memberIndex = new Map();
+	const index = symbols();
+	const pages = publishedPages();
+	for (const header of REFERENCE_HEADERS) {
+		for (const [heading, anchor] of anchors(layout(header).blocks)) {
+			// Only a type the symbol index places on this page: a name it left
+			// out as ambiguous has no members to link either.
+			if (!heading.owner || index.get(heading.owner)?.header !== header.source) {
+				continue;
+			}
+			for (const name of heading.names ?? []) {
+				const key = `${heading.owner}::${name}`;
+				if (!memberIndex.has(key)) {
+					memberIndex.set(key, `${pages.get(header.source)}#${anchor}`);
+				}
+			}
+		}
+	}
+	return memberIndex;
+}
+
+// Where a name written as code in a page's prose links to: a header path, an
+// engine type, or `Type::member` - the member's own section where it has one,
+// otherwise its type's. A call is allowed, so `Scene::draw()` and
+// `Camera::frame(world_rectangle, viewport)` link as `Scene::draw` and
+// `Camera::frame` do. Anything else is not a name this site can place, and has
+// no link - except a header path the checkout does not have, which is a page
+// gone stale and fails the build naming it (PHILOSOPHY T6).
+export function codeLink(code: string, page: string): string | undefined {
+	if (/^engine\/[\w/]+\.h$/.test(code)) {
+		if (!readableFile(code)) {
+			throw new Error(`'${page}' names \`${code}\`, and the checkout has no such header.`);
+		}
+		return publishedPages().get(code) ?? sourceUrl(code);
+	}
+	const name = code.match(/^([A-Z][A-Za-z0-9]*)(?:::(~?[A-Za-z_]\w*))?(?:\(.*\))?$/);
+	const target = name ? symbols().get(name[1]) : undefined;
+	if (!name || !target) {
+		return undefined;
+	}
+	return (name[2] && memberAnchors().get(`${name[1]}::${name[2]}`)) || target.url;
+}
+
+// The indexes are built once and kept. The dev server rebuilds the pages when
+// a header changes, which can move what the indexes hold, so it forgets them
+// first.
+export function forgetIndexes(): void {
+	symbolIndex = undefined;
+	memberIndex = undefined;
+	includerIndex = undefined;
+	tradeOffs = undefined;
+}
+
+export interface ReferencePage {
+	header: ReferenceHeader;
+	markdown: string;
+	description: string;
+}
+
+export function referencePage(header: ReferenceHeader): ReferencePage {
+	const { blocks, description } = layout(header);
+	const markdown = blocks
+		.map((block) => (typeof block === 'function' ? block() : `${'#'.repeat(block.depth)} ${block.text}`))
+		.filter(Boolean)
+		.join('\n\n');
+	return { header, markdown, description };
 }
 
 export function referencePages(): ReferencePage[] {

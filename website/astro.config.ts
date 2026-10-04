@@ -10,13 +10,13 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { satteri } from '@astrojs/markdown-satteri';
 import starlightLinksValidator from 'starlight-links-validator';
-import { checkoutLinks, mermaidBlocks } from './src/lib/markdown-plugins';
+import { checkoutLinks, mermaidBlocks, referenceLinks } from './src/lib/markdown-plugins';
 import { GITHUB_REPOSITORY, EDIT_BRANCH } from './src/lib/repository';
 import { REFERENCE_MODULES } from './src/lib/published';
 
 export default defineConfig({
 	markdown: {
-		processor: satteri({ mdastPlugins: [checkoutLinks, mermaidBlocks] }),
+		processor: satteri({ mdastPlugins: [checkoutLinks, mermaidBlocks, referenceLinks] }),
 	},
 	integrations: [
 		starlight({

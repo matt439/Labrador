@@ -11,7 +11,7 @@ import type { Loader, LoaderContext } from 'astro/loaders';
 import { docsLoader } from '@astrojs/starlight/loaders';
 import { siteContentFileURL } from './markdown-plugins';
 import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, type PublishedDocument } from './published';
-import { referencePage, unlistedHeaders } from './reference';
+import { forgetIndexes, referencePage, unlistedHeaders } from './reference';
 import { REVISION, absolutePath, commitUrl, editUrl, readRepositoryFile, sourceUrl } from './repository';
 
 async function store(
@@ -109,6 +109,7 @@ export function labradorDocsLoader(): Loader {
 			context.watcher?.on('change', async (changed) => {
 				if (watched.has(changed)) {
 					context.logger.info(`Reloading pages read from the checkout (${changed})`);
+					forgetIndexes();
 					await loadCheckout(context);
 				}
 			});

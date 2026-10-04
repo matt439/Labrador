@@ -183,8 +183,9 @@ can be built from.
 It reads the rest of this checkout at build time rather than copying it: the
 three design documents as written, every public engine header turned into an
 API reference page (`website/src/lib/published.ts` is the list), the root
-`vcpkg.json`, and passages of `samples/` and `tests/` that pages quote, located
-by the text of their first and last lines. **So an edit outside `website/` can
+`vcpkg.json`, passages of `samples/` and `tests/` that pages quote, located by
+the text of their first and last lines, and which files in those two folders
+include each header, for its reference page. **So an edit outside `website/` can
 fail the website build**, and is meant to: rewording a line a page quotes,
 renaming a file a design document links to, or giving a public header a shape
 the reference reader does not follow - a `/* */` comment, or a body opened on a

@@ -26,6 +26,7 @@ it reads:
 | --- | --- | --- |
 | The three design documents, as written | `docs/design/*.md` | `/docs/design/...` |
 | A reference page for every public header | `engine/<module>/*.h` | `/docs/reference/<module>/...` |
+| Which samples and tests include each header | `samples/`, `tests/` | the foot of its reference page |
 | Quoted passages of code | `samples/`, `tests/` | wherever a page uses `<SourceFile>` |
 | The `vcpkg.json` a new project needs | `vcpkg.json` | Get Started |
 | The include lines a copied sample must change | `samples/minimal/` | Get Started |
@@ -40,6 +41,8 @@ wrong (PHILOSOPHY T6):
 - a relative link in a published design document to a file that does not
   exist (`src/lib/markdown-plugins.ts`);
 - a header the reference reader does not understand (`src/lib/cpp-header.ts`);
+- a header path written as code in a page, such as `engine/scene/scene.h`, that the checkout
+  does not have (`src/lib/reference.ts`, `codeLink`);
 - a public header that `src/lib/published.ts` neither publishes nor leaves out
   by name (`src/lib/reference.ts`, `unlistedHeaders`);
 - any internal link or `#anchor` that does not resolve
@@ -50,7 +53,7 @@ wrong (PHILOSOPHY T6):
 ## Where things are
 
 ```
-astro.config.ts           Starlight, the sidebar, and the two Markdown plugins
+astro.config.ts           Starlight, the sidebar, and the three Markdown plugins
 src/content.config.ts     one collection, filled by src/lib/content-loader.ts
 src/content/docs/         pages written for the site (.mdx)
   index.mdx, why.mdx, examples.mdx    the three splash pages
@@ -61,9 +64,11 @@ src/lib/
   repository.ts           where the checkout is, its revision, GitHub links
   published.ts            THE list of documents and headers the site publishes
   content-loader.ts       adds those to the collection beside the site's pages
-  markdown-plugins.ts     relative links in published documents, and diagrams
+  markdown-plugins.ts     relative links in published documents, diagrams, and
+                          code-formatted names linked to the reference
   cpp-header.ts           the line reader behind the reference pages
-  reference.ts            a parsed header as a page, with symbol links
+  reference.ts            a parsed header as a page, and the index of names
+                          and members every page links through
   excerpt.ts              a passage of a file, found by its text
 src/components/           SourceFile, RepoLink, Capture and friends;
                           overrides/ holds the Starlight components the site
@@ -81,8 +86,14 @@ where `from` and `to` are the beginnings of the first and last lines wanted -
 never line numbers, which would quietly quote the wrong lines after an edit. A
 `to` that starts with `}` means the brace at the same depth as `from`.
 
+**Link to the API reference.** Write the name as code: `` `Scene` ``,
+`` `StateContext::push` `` or `` `engine/scene/scene.h` ``. The first mention in
+each section links to its place in the reference by itself, a member to its own
+section where it has one. Nothing written by hand has to track the anchors.
+
 **Link to a file in the repository.** Use `<RepoLink path="...">`, which links
-to it at the built revision and fails the build if it is not there.
+to it at the built revision and fails the build if it is not there. For an
+engine header, write its path as code instead, which reaches its reference page.
 
 **Publish another design document or header.** Add it to `src/lib/published.ts`:
 a design document to `DESIGN_DOCUMENTS`, a header to its module in
