@@ -171,16 +171,24 @@ thing it needs. [website/README.md](website/README.md) is its guide,
 can be built from.
 
 It reads the rest of this checkout at build time rather than copying it: the
-three design documents as written, three engine headers turned into reference
-pages (`website/src/lib/published.ts` is the list), the root `vcpkg.json`, and
-passages of `samples/` and `tests/` that pages quote, located by the text of
-their first and last lines. **So an edit outside `website/` can fail the
-website build**, and is meant to: rewording a line a page quotes, renaming a
-file a design document links to, or giving a published header a shape the
-reference reader does not follow. The failure names the file; fix the page in
-the same commit. `.github/workflows/website.yml` runs it on every push.
+three design documents as written, every public engine header turned into an
+API reference page (`website/src/lib/published.ts` is the list), the root
+`vcpkg.json`, and passages of `samples/` and `tests/` that pages quote, located
+by the text of their first and last lines. **So an edit outside `website/` can
+fail the website build**, and is meant to: rewording a line a page quotes,
+renaming a file a design document links to, or giving a public header a shape
+the reference reader does not follow - a `/* */` comment, or a body opened on a
+declaration's own line. The failure names the file; fix the page in the same
+commit. `.github/workflows/website.yml` runs it on every push.
 `check_doc_citations.cmake` skips `website/`, whose `node_modules/` holds
 hundreds of `.md` files.
+
+**A header comment is published word for word**, so the rule CONVENTIONS
+already states - a comment is contract or rationale, never the history of the
+code - now has readers outside the repository. Every public header was swept
+for history on 2026-10-04, and the site build fails on a public header that
+`published.ts` neither lists nor names as left out, so a new one is added there
+in the commit that creates it.
 
 ## What will fail the build
 

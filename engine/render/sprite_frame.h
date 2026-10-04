@@ -8,16 +8,13 @@ namespace labrador
 	// One named rectangle inside a sprite sheet, and the pivot the sheet
 	// authored for it.
 	//
-	// THERE IS NO `rotated` HERE, AND THERE WAS. A packer can store a frame
-	// turned ninety degrees to pack it tighter, and the sheet schema has always
-	// had a key saying so; this class stored the answer in a bool that had no
-	// accessor and that nothing on any draw path ever read. The sheet said
-	// turned, the engine drew upright, and the disagreement was invisible.
-	// engine/assets/sprite_sheet_loader.cpp refuses such a frame by name now,
-	// which is the whole of the engine's position on packer rotation, and the
-	// member went with it: a capability the engine does not have should not
-	// have somewhere to be stored, or the next person to want it finds the
-	// field already there and fills it in rather than arguing for the feature.
+	// THERE IS NO `rotated` HERE. A packer can store a frame turned ninety
+	// degrees to pack it tighter, and the sheet schema has a key saying so;
+	// engine/assets/sprite_sheet_loader.cpp refuses such a frame by name,
+	// which is the whole of the engine's position on packer rotation. A
+	// capability the engine does not have has nowhere to be stored, or the
+	// next person to want it finds the field already there and fills it in
+	// rather than arguing for the feature.
 	class SpriteFrame
 	{
 	public:

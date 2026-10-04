@@ -6,14 +6,14 @@
 
 namespace labrador
 {
-	// WHAT IS DELIBERATELY ABSENT: an action map. ARCHITECTURE gives this
-	// module "devices and action mapping", and this half is the devices. A
-	// table from a named action to a button, filled from data, is the other
-	// half - and neither client has asked for one: the paint-shooter and the
-	// sample both spell their bindings in code, and neither has a rebinding
-	// screen to fill such a table from. Building it now would be a speculative
-	// framework (T1). What is here is what both clients actually use, and an
-	// action map is a layer above it rather than a change to it.
+	// WHAT IS DELIBERATELY ABSENT: an action map. PHILOSOPHY's boundary table
+	// gives this module "input devices and action mapping", and this half is
+	// the devices. A table from a named action to a button, filled from data,
+	// is the other half - and no client has asked for one: the samples spell
+	// their bindings in code, and none has a rebinding screen to fill such a
+	// table from. Building it now would be a speculative framework (T1). What
+	// is here is what the clients actually use, and an action map is a layer
+	// above it rather than a change to it.
 
 	// Every button a pad has, one bit each in GamepadState::buttons.
 	enum class GamepadButton : uint16_t
@@ -118,7 +118,7 @@ namespace labrador
 	//     just_disconnected(slot) && previous_state(slot).is_down(button)
 	//
 	// One consequence for a hand-written state: a test double or a replay
-	// source that fills a GamepadState and forgets `connected = true` now gets
+	// source that fills a GamepadState and forgets `connected = true` gets
 	// silence from every edge rather than working by accident. That is the
 	// useful direction to fail in, and it is the reason the field is documented
 	// as neutral-not-stale above.

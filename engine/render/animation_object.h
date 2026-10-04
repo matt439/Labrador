@@ -15,7 +15,7 @@ namespace labrador
 	// Like TextureObject, the element name is resolved once and kept as a handle -
 	// and it matters more here, because the strip is read on the update path as
 	// well as the draw path: once for the frame advance, again for the source
-	// rectangle, every frame, for every animated object in the level.
+	// rectangle, every frame, for every animated object in the scene.
 	class AnimationObject : public SpriteSheetObject
 	{
 	public:

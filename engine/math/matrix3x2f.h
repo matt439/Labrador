@@ -41,13 +41,6 @@ namespace mattmath
 	// of what a reader has to get right (T4). Composition is associative and
 	// is NOT commutative: rotate-then-move and move-then-rotate are different
 	// transforms, exactly as they are different actions.
-	//
-	// This is deliberately not a general 3x3 matrix. MattMath carried one with
-	// a dynamically sized base that never sized itself, so every factory wrote
-	// nine elements out of bounds; it had no tests and no callers, and round-2
-	// review deleted it (docs/review/all-findings.md, findings 9, 39 and 40).
-	// What is here is the six floats a 2D game actually applies, with the
-	// contract stated and the behaviour pinned.
 	struct Matrix3x2F
 	{
 		// The identity, by default: a transform that does nothing is the one
@@ -60,8 +53,8 @@ namespace mattmath
 		Matrix3x2F() = default;
 		Matrix3x2F(const Matrix3x2F&) = default;
 		// constexpr and defined here so `identity` is constant-initialised.
-		// See Vector2F's constants for what the dynamic alternative did: for
-		// this type it was a zero matrix, which maps everything to the origin.
+		// See Vector2F's constants for what the dynamic alternative risks: for
+		// this type it is a zero matrix, which maps everything to the origin.
 		constexpr Matrix3x2F(float m11, float m12,
 			float m21, float m22,
 			float m31, float m32) :

@@ -11,7 +11,7 @@ import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import GithubSlugger from 'github-slugger';
 import { parseHeader, type CommentBlock, type Item, type TypeItem } from './cpp-header';
-import { REFERENCE_HEADERS, publishedPages, type ReferenceHeader } from './published';
+import { REFERENCE_HEADERS, UNPUBLISHED_HEADERS, publishedPages, type ReferenceHeader } from './published';
 import { REPOSITORY_ROOT, REVISION, absolutePath, commitUrl, readRepositoryFile, sourceUrl } from './repository';
 
 // ------------------------------------------------------------------ the index
@@ -39,6 +39,17 @@ function engineHeaders(): string[] {
 	};
 	walk('engine');
 	return headers;
+}
+
+// Every public header - one directly in a module's folder - that published.ts
+// neither publishes nor leaves out by name. The site build fails on any, so
+// that a header added to the engine cannot quietly have no page.
+export function unlistedHeaders(): string[] {
+	const listed = new Set([
+		...REFERENCE_HEADERS.map((header) => header.source),
+		...UNPUBLISHED_HEADERS.map(([source]) => source),
+	]);
+	return engineHeaders().filter((header) => /^engine\/[^/]+\/[^/]+\.h$/.test(header) && !listed.has(header));
 }
 
 const TYPE_DEFINITION =
@@ -239,6 +250,63 @@ function typeSignature(item: TypeItem): string {
 	return item.bases.length > 0 ? `${item.keyword} ${item.name} : ${item.bases.join(', ')}` : `${item.keyword} ${item.name}`;
 }
 
+// A declaration as a caller needs it: the signature, without an inline body or
+// a constructor's initialiser list, which are implementation and name private
+// members. `= default`, `= delete` and `= 0` stay, because they are contract.
+function signature(text: string): string {
+	let open = text.indexOf('(');
+	if (open < 0) {
+		return text;
+	}
+	// operator() spells its own parentheses before the parameter list.
+	if (/operator\s*$/.test(text.slice(0, open)) && text.startsWith('()', open)) {
+		open = text.indexOf('(', open + 2);
+	}
+	let depth = 0;
+	let close = -1;
+	for (let index = open; index >= 0 && index < text.length; index++) {
+		if (text[index] === '(') {
+			depth++;
+		} else if (text[index] === ')' && --depth === 0) {
+			close = index;
+			break;
+		}
+	}
+	if (close < 0) {
+		return text;
+	}
+	const rest = text.slice(close + 1);
+	const cut = rest.search(/(?<!:):(?!:)|\{/);
+	return cut < 0 ? text : `${(text.slice(0, close + 1) + rest.slice(0, cut)).trimEnd()};`;
+}
+
+// The definition as written, without its comments: for an enumeration, the
+// list of values is the clearest thing to show.
+function definitionWithoutComments(item: TypeItem): string {
+	return item.source
+		.split('\n')
+		.filter((line) => !line.trim().startsWith('//'))
+		.map((line) => line.replace(/\s*\/\/.*$/, ''))
+		.join('\n');
+}
+
+function enumerators(type: TypeItem): string {
+	const out: string[] = [];
+	const described: string[] = [];
+	for (const item of type.items) {
+		if (item.kind === 'note') {
+			out.push(`<div class="ref-note">${commentHtml(item.comment)}</div>`);
+		} else if (item.kind === 'group' && item.comment) {
+			const names = item.declarations.map((declaration) => escapeHtml(declaration.text)).join(', ');
+			described.push(`<dt><code>${names}</code></dt><dd>${commentHtml(item.comment)}</dd>`);
+		}
+	}
+	if (described.length > 0) {
+		out.unshift(`<dl class="ref-enumerators">${described.join('')}</dl>`);
+	}
+	return out.join('\n\n');
+}
+
 function visible(item: Item): boolean {
 	if (item.kind === 'group' || item.kind === 'type') {
 		return item.access !== 'private';
@@ -250,11 +318,7 @@ function visible(item: Item): boolean {
 // excepted; that is clearer than a heading per field.
 function nestedType(item: TypeItem, qualifier: string): string {
 	const out: string[] = [`### ${item.name}`];
-	const definition = item.source
-		.split('\n')
-		.filter((line) => !line.trim().startsWith('//'))
-		.join('\n');
-	out.push(fence(definition));
+	out.push(fence(definitionWithoutComments(item)));
 	out.push(commentHtml(item.comment));
 	out.push(`<p class="ref-qualified">Declared as <code>${escapeHtml(qualifier)}::${item.name}</code>.</p>`);
 	return out.filter(Boolean).join('\n\n');
@@ -271,7 +335,7 @@ function members(type: TypeItem): string {
 			const names = [...new Set(item.declarations.map((declaration) => declaration.name))];
 			const label = item.access === 'protected' ? ' (protected)' : '';
 			out.push(`### ${names.join(' · ')}${label}`);
-			out.push(fence(item.declarations.map((declaration) => declaration.text).join('\n')));
+			out.push(fence(item.declarations.map((declaration) => signature(declaration.text)).join('\n')));
 			out.push(commentHtml(item.comment));
 		}
 	}
@@ -308,6 +372,15 @@ function typesUsed(document: ReturnType<typeof parseHeader>, own: Set<string>): 
 	return [...used].sort();
 }
 
+// A member template defined below its class - `void StateContext::push(...)`
+// - is the definition of something the class's own section already lists.
+// What tells it from a free function is that its name is qualified.
+function outOfLineMember(text: string): boolean {
+	const flat = text.replace(/\s+/g, ' ').replace(/^template\s*<[^]*?>\s*/, '');
+	const call = flat.indexOf('(');
+	return call >= 0 && /[A-Za-z_]\w*::~?[A-Za-z_]\w*\s*$/.test(flat.slice(0, call));
+}
+
 export interface ReferencePage {
 	header: ReferenceHeader;
 	markdown: string;
@@ -322,12 +395,10 @@ export function referencePage(header: ReferenceHeader): ReferencePage {
 
 	const out: string[] = [];
 	out.push(
-		`:::caution[Prototype]\n` +
-			`Generated at build time from [\`${header.source}\`](${sourceUrl(header.source)}) at ` +
-			`[\`${REVISION.short}\`](${commitUrl()}). The text under each declaration is the header's comment, ` +
-			`published as written. This page is one of three made to evaluate how the reference should be ` +
-			`generated; see [About the reference](/docs/reference/) for what it does not yet do.\n` +
-			`:::`
+		`<p class="ref-source">Generated from <a href="${sourceUrl(header.source)}"><code>${escapeHtml(header.source)}</code></a> ` +
+			`at <a href="${commitUrl()}"><code>${REVISION.short}</code></a>. The text under each declaration is the ` +
+			`header's own comment, word for word. <a href="/docs/reference/">About the reference</a> says how these ` +
+			`pages are made.</p>`
 	);
 	out.push(
 		`<p class="ref-include"><code>#include "${escapeHtml(header.source)}"</code>` +
@@ -341,9 +412,29 @@ export function referencePage(header: ReferenceHeader): ReferencePage {
 		}
 		if (item.kind === 'type') {
 			out.push(`## ${typeHeading(item)}`);
-			out.push(fence(typeSignature(item)));
+			if (item.keyword.startsWith('enum')) {
+				out.push(fence(definitionWithoutComments(item)));
+				out.push(commentHtml(item.comment));
+				out.push(enumerators(item));
+			} else {
+				out.push(fence(typeSignature(item)));
+				out.push(commentHtml(item.comment));
+				out.push(members(item));
+			}
+		}
+		if (item.kind === 'group') {
+			// A static_assert guards the implementation; the comment beside the
+			// thing it guards is where a caller reads the rule.
+			const declarations = item.declarations.filter(
+				(declaration) => !outOfLineMember(declaration.text) && !declaration.text.startsWith('static_assert')
+			);
+			if (declarations.length === 0) {
+				continue;
+			}
+			const names = [...new Set(declarations.map((declaration) => declaration.name))];
+			out.push(`## ${names.join(' · ')}`);
+			out.push(fence(declarations.map((declaration) => signature(declaration.text)).join('\n')));
 			out.push(commentHtml(item.comment));
-			out.push(members(item));
 		}
 	}
 

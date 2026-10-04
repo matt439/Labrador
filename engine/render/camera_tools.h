@@ -22,10 +22,6 @@ namespace labrador
         // Passing pixels is correct only at scale 1, silently and everywhere -
         // the borders, the edges and the bounds test all drift together, so
         // the camera simply chases wrong without ever looking broken.
-        //
-        // Written down rather than fixed because there is nothing here to fix:
-        // the arithmetic is right for its stated input. What was missing was
-        // the sentence saying which input that is.
         Camera calculate_camera(
             const mattmath::Vector2F& player_center,
             const mattmath::Vector2F& viewport_size,

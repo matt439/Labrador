@@ -18,8 +18,8 @@ namespace labrador
 	// The action is stored once, when the page is built. It is not on the
 	// frame path: nothing here is called per frame, only on the frame a
 	// player activates something, so the indirection std::function costs is
-	// paid once per press rather than per widget per frame - which is what
-	// the string-keyed if-chain it replaces costs today.
+	// paid once per press rather than per widget per frame - which is what a
+	// string-keyed if-chain compared every frame would cost.
 	class Button
 	{
 	public:

@@ -14,15 +14,15 @@ namespace mattmath
 		Vector2F() = default;
 		Vector2F(const Vector2F&) = default;
 		// explicit, all of them. A float is not a vector, a Vector2I is not a
-		// Vector2F, and a RectangleF is not a Quad - and while these
-		// conversions were implicit the compiler inserted them silently at
-		// /W4 /WX. Two of the Quad forms end in a throw, so a wrong-typed
-		// argument became a runtime exception from inside the callee with no
+		// Vector2F, and a RectangleF is not a Quad - and an implicit
+		// conversion is one the compiler inserts silently, even at /W4 /WX.
+		// Two of the Quad forms end in a throw, so a wrong-typed argument
+		// would become a runtime exception from inside the callee with no
 		// conversion visible at the call site.
 		//
 		// constexpr and defined here, the two that take only floats, so the
 		// constants at the bottom of this struct are constant-initialised:
-		// see them for what that buys and what it cost before.
+		// see them for what that buys.
 		constexpr explicit Vector2F(float f) : x(f), y(f) {}
 		constexpr Vector2F(float x, float y) : x(x), y(y) {}
 		explicit Vector2F(const mattmath::Vector2I& vector);
@@ -44,8 +44,8 @@ namespace mattmath
 
 		// Zero-length in, zero-length out. A zero vector has no direction, and
 		// returning zero lets the caller detect that; dividing by the length
-		// produced NaN, which then propagated silently through velocities and
-		// shape validation.
+		// would produce NaN, which would then propagate silently through
+		// velocities and shape validation.
 		//
 		// Note this is deliberately NOT the same contract as to_unit_vector()
 		// and unit_vector(), which substitute (1, 0) for a zero vector. Use
@@ -112,14 +112,10 @@ namespace mattmath
 		// so rotating (1, 0) by a right angle lands a few ulps off the y
 		// axis. Where a right angle is what is wanted, want normal().
 		//
-		// THIS WAS DELETED ONCE AND CAME BACK. It went in the math review as
-		// a name with no caller, counted in this repository - where the count
-		// was right and the question was wrong. ColourWars called it twice,
-		// stopped compiling at the pin bump, and carried a byte-for-byte copy
-		// of this body for two weeks: a second definition of engine
-		// arithmetic, living outside the engine's tests. A 2D vector that
-		// answers angle(), unit_vec_from_angle() and normal() and cannot turn
-		// a vector has a hole in it, whoever happens to be calling today.
+		// HERE WHATEVER ITS CALL COUNT. A 2D vector that answers angle(),
+		// unit_vec_from_angle() and normal() and cannot turn a vector has a
+		// hole in it, and a game fills that hole with a second definition of
+		// engine arithmetic, living outside the engine's tests.
 		static Vector2F rotate_vector(const Vector2F& vec, float angle);
 
 		// Returns (1, 0) for a zero-length vector. See to_unit_vector().
@@ -128,13 +124,11 @@ namespace mattmath
 		static Vector2F normal(const Vector2F& vec);
 
 		// CONSTANT-INITIALISED, and the definitions say constinit so that the
-		// compiler refuses if that ever stops being true. It was not true:
-		// the constructors were out of line, so every one of these was
-		// dynamically initialised, and a namespace-scope object in any other
-		// translation unit that copied one - a client's own direction table,
-		// a default in a static - read (0, 0) or the real value depending on
-		// link order, with no error anywhere. A probe against a Debug build
-		// caught DIRECTION_RIGHT as (0, 0) at startup and (1, 0) afterwards.
+		// compiler refuses if that ever stops being true. Dynamically
+		// initialised, a namespace-scope object in any other translation unit
+		// that copied one - a game's own direction table, a default in a
+		// static - would read (0, 0) or the real value depending on link
+		// order, with no error anywhere.
 		static const Vector2F ZERO;
 		static const Vector2F ONE;
 		static const Vector2F DIRECTION_RIGHT;
@@ -147,15 +141,14 @@ namespace mattmath
 		static const Vector2F DIRECTION_UP_LEFT;
 	};
 
-	// A point and a vector are the same two floats, and the library has always
-	// said so. The name is here rather than beside a forward declaration
-	// because this is the type it names.
+	// A point and a vector are the same two floats, and the library says so.
+	// The name is here rather than beside a forward declaration because this
+	// is the type it names.
 	typedef Vector2F Point2F;
 
 	// Reversing a direction. The collision module does this constantly - a
 	// contact normal points from the first shape to the second, so the second
-	// needs the other one - and every site wrote Vector2F(-v.x, -v.y) or
-	// v * -1.0f by hand, in two spellings.
+	// needs the other one.
 	Vector2F operator- (const Vector2F& V);
 
 	Vector2F operator+ (const Vector2F& V1, const Vector2F& V2);

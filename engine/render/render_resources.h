@@ -20,9 +20,9 @@ namespace labrador
 	//
 	// BEHIND THE SEAM, and this is why the pimpl: the storage of a texture is
 	// whatever the backend calls one, and a translation unit that resolved a
-	// name would otherwise compile a graphics API to do it. A headless test
-	// could not construct a TextObject even with draw() clean, because that
-	// constructor resolves a font and measures a string.
+	// name would otherwise compile a graphics API to do it. Without it a
+	// headless test could not construct a TextObject, whose constructor
+	// resolves a font and measures a string.
 	//
 	// THE RULE ABOUT WHICH HALF LIVES WHERE, and it is one rule rather than a
 	// decision per method: a call whose signature names a backend type is on
@@ -91,37 +91,35 @@ namespace labrador
 		// on the D3D12 backend, out of a fixed 256: the slot allocator there is a
 		// bump counter with no free list, reset by device creation and by nothing
 		// else, because a slot the GPU may still be reading cannot be handed out
-		// again and a device loss is the one moment nothing is reading. THE
-		// SENTENCE IS THE FIX AND THE FREE LIST IS NOT (T1, T3): a free list would
-		// buy back 256 slots for a call nothing in this repository makes, and
-		// would have to be told when the GPU had finished with each one - which is
-		// the frames-in-flight bookkeeping d3d12/backend.h keeps below the seam,
+		// again and a device loss is the one moment nothing is reading. A
+		// PRECONDITION RATHER THAN A FREE LIST (T1, T3): a free list would buy
+		// back 256 slots for a call nothing in this repository makes, and would
+		// have to be told when the GPU had finished with each one - which is the
+		// frames-in-flight bookkeeping d3d12/backend.h keeps below the seam,
 		// arriving at the seam. If a client ever needs to drop content on a live
 		// device, that is a different entry point and it should be asked for by
 		// name.
 		void release_device_resources();
 
 		// CONSTRAINT: A RenderResources OUTLIVES THE Renderer IT WAS FILLED
-		// AGAINST. This class holds whatever a backend calls a texture, and on TWO
-		// of the five that is a resource the GPU may still be reading - an
-		// ID3D12Resource on one and a VkImage on the other - whose only wait is
-		// ~Renderer::Impl, so a shell that declares its table before its renderer
+		// AGAINST. This class holds whatever a backend calls a texture, and on
+		// some backends that is a resource the GPU may still be reading - an
+		// ID3D12Resource on d3d12, a VkImage on vulkan - whose only wait is
+		// ~Renderer::Impl, so a shell that declares its table after its renderer
 		// releases every texture ahead of the one wait on the whole shutdown path.
 		// The D3D12 debug layer calls that OBJECT_DELETED_WHILE_STILL_IN_USE and
 		// engine/render/d3d12/device_resources.cpp asks it to break on one; the
 		// Vulkan validation layers report the same thing about a VkImage.
 		//
-		// It is stated here rather than only kept, because it costs nothing on
-		// three of the five backends and is therefore invisible in three
-		// configurations out of five. Members destruct in reverse declaration
-		// order, so keeping it means declaring the table BEFORE the renderer -
-		// which is the opposite of the order they are CREATED in, and the
-		// paragraph on set_resources in renderer.h says why that order is forced
-		// the other way. Everything in this repository that holds both keeps it:
-		// engine/app/application.h, and the four test files whose harnesses stand
-		// in for a shell - pixel_tests.cpp, null_tests.cpp, renderer_seam_tests.cpp
-		// and tests/scene/fanout_tests.cpp, each of which cites this paragraph
-		// where it declares the pair.
+		// It is stated here rather than only kept, because breaking it costs
+		// nothing on any other backend, so a shell built against one of those
+		// never finds out. Members destruct in reverse declaration order, so
+		// keeping it means declaring the table BEFORE the renderer - which is
+		// the opposite of the order they are CREATED in, and the paragraph on
+		// set_resources in renderer.h says why that order is forced the other
+		// way. Everything in this repository that holds both keeps it:
+		// engine/app/application.h, and every test and benchmark harness that
+		// stands in for a shell.
 		//
 		// Nothing here needs the renderer to still be alive, and on the Vulkan
 		// backend that is true by construction rather than by luck: a VkImage is a
@@ -192,9 +190,9 @@ namespace labrador
 		//
 		// WHY A CLIENT WANTS TO ASK. Without it a client can only guess, or convert
 		// every content string through a hand-written table of what it believes the
-		// font holds. One did, and only after measuring the alternative: a curly
-		// apostrophe in a weapon description let the game start, load and reach the
-		// menu, and would have failed four screens later, during play.
+		// font holds. With it, a string the font cannot spell can be refused while
+		// content loads, rather than shown as question marks when a player reaches
+		// the screen that draws it.
 		//
 		// Per UTF-16 unit, so a character outside the basic plane is two and
 		// reports at the first of them - which is where a caller pointing at the

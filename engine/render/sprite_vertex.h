@@ -7,8 +7,8 @@ namespace labrador
 {
 	// One corner of one sprite, in the form a vertex buffer wants it.
 	//
-	// THE FIELD SET IS THE LAYOUT; THE DECLARATION ORDER IS NOT, EXCEPT ON ONE
-	// BACKEND. Four backends have a vertex buffer and all four build their
+	// THE FIELD SET IS THE LAYOUT; THE DECLARATION ORDER IS NOT, EXCEPT WHERE A
+	// BACKEND BINDS BY LOCATION. Every backend with a vertex buffer builds its
 	// offsets from offsetof, but they bind by three different things: by
 	// semantic on the two Direct3D ones, by name on gl, and BY LOCATION NUMBER
 	// on vulkan - where dxc assigns SPIR-V locations in declaration order, so
@@ -19,17 +19,16 @@ namespace labrador
 	// load-bearing is which fields exist, what types they are, and that this is
 	// one interleaved struct rather than three parallel streams.
 	//
-	// NO DEPTH, AND THAT IS A DELETION RATHER THAN AN OMISSION. DirectXTK's
-	// sprite vertex carried a float3 position whose z was the layer_depth the
-	// seam takes. Nothing read it: there is no depth buffer
+	// NO DEPTH, AND THAT IS A DECISION RATHER THAN AN OMISSION. The seam takes
+	// a layer_depth, and a float3 position could carry it as z, but nothing
+	// would read it: there is no depth buffer
 	// (engine/render/d3d11/device_resources.h says why it has none, and no
-	// other backend ever makes one) and no sort mode that consults it,
-	// which
+	// other backend makes one) and no sort mode that consults it, which
 	// RenderPixelTests pins - "layer_depth does not order draws, call order
-	// does". So the value was written into every vertex of every sprite and
+	// does". The value would be written into every vertex of every sprite and
 	// then ignored by the rasteriser. Four bytes a vertex is not the point; the
-	// point is that a second backend reading this struct should not have to
-	// wonder what the third float means.
+	// point is that a backend reading this struct should not have to wonder
+	// what a third float means.
 	struct SpriteVertex
 	{
 		// In view pixels: x right, y down, origin at the viewport's top left.

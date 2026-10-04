@@ -12,12 +12,10 @@ namespace labrador
 	// normal pointing from `a` towards `b`.
 	//
 	// This is the separating-axis theorem, run over both shapes' edge normals,
-	// and the axis it keeps is the one with the smallest overlap. That single
-	// choice is the fix for the resolver this replaces, whose four defects
-	// were all the same defect wearing different clothes - it classified the
-	// contact by asking which of the collider's bounding-box edges the other
-	// shape crossed, and that question has no answer for the cases that
-	// matter:
+	// and the axis it keeps is the one with the smallest overlap. The obvious
+	// alternatives - classifying the contact by which of the collider's
+	// bounding-box edges the other shape crossed, or searching for the depth -
+	// have no answer for the cases that matter:
 	//
 	//   - A wide thin platform crosses a standing player's left AND right
 	//     edges. Comparing centres horizontally there shoves the player
@@ -28,14 +26,10 @@ namespace labrador
 	//     none, so an edge-crossing classification has nothing to say about it.
 	//     Containment has a well-defined minimum translation and this returns
 	//     it.
-	//   - A diagonal classification renormalised by std::max over the two
-	//     *signed* components divides a left-and-up contact by the negative
-	//     one and resolves backwards. There are no diagonal classifications
-	//     here; there is one axis, and it came from an edge.
-	//   - Bisection - 40 iterations of moving the shape back and forth by a
-	//     shrinking fraction of its own size - has an unreportable failure and
-	//     an approximate answer when it converges. This is analytic
-	//     (PHILOSOPHY, Collision) and runs in the number of edges.
+	//   - Bisection - moving the shape back and forth by a shrinking fraction
+	//     of its own size - has an unreportable failure and an approximate
+	//     answer when it converges. This is analytic (PHILOSOPHY, Collision)
+	//     and runs in the number of edges.
 	//
 	// The axis set is COMPLETE, not a good-enough sample of one. In two
 	// dimensions, testing the face normals of both shapes decides convex
@@ -61,7 +55,7 @@ namespace labrador
 	// self-enforcing. The separating-axis theorem decides nothing for a
 	// concave shape: it will report a confident overlap and a meaningless
 	// normal. Quad's constructor checks it. Triangle's does not - a collinear
-	// triangle is constructible today - and RectangleF and RectangleRotated
+	// triangle is constructible - and RectangleF and RectangleRotated
 	// are convex by construction. Degenerate edges are skipped rather than
 	// contributing a bogus axis, and a shape left with no axes at all reports
 	// no contact.

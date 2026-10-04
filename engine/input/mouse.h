@@ -140,7 +140,7 @@ namespace labrador
 	public:
 		// THE FEEDING SIDE, public for the reasons keyboard.h gives: `input`
 		// may not name a class in `app` to friend it, and a test double or a
-		// replay source wants exactly this seam. The tests beside this file
+		// replay source wants exactly this seam. The tests in tests/input/
 		// drive a Mouse with no window anywhere.
 		void on_move(const mattmath::Vector2I& position);
 		void on_button_down(MouseButton button);

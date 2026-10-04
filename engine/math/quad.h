@@ -11,10 +11,8 @@ namespace mattmath
 {
 	struct RectangleRotated;
 
-	/*
-	* A quadrilateral with four points.
-	* The points are ordered in a clockwise direction, starting from the top left.
-	*/
+	// A quadrilateral with four points, ordered clockwise starting from the top
+	// left.
 	struct Quad : public Shape
 	{
 		Quad() = default;

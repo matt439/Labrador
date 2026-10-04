@@ -50,16 +50,13 @@ namespace labrador
 		TextureFormat format = TextureFormat::r8g8b8a8_unorm;
 
 		// At least one, and level zero is the full-size image. More only when
-		// the file carried a mip chain, which no file in either client does -
-		// all forty-three .dds between them are single-level.
+		// the file carried a mip chain.
 		//
 		// A CHAIN IS READ AND UPLOADED AND NEVER SAMPLED FROM. A minified draw
-		// samples level zero, which renderer.h states beside set_filter and
-		// which the rasterising backends answered differently until it was
-		// stated - one walked the chain, the others did not, and they agreed
-		// only because there has never been a chain to disagree about. The levels
-		// stay here and still reach the device: refusing them would make this
-		// struct a worse description of a .dds without making anything safer.
+		// samples level zero, which renderer.h states beside set_filter. The
+		// levels stay here and still reach the device: refusing them would make
+		// this struct a worse description of a .dds without making anything
+		// safer.
 		std::vector<TextureLevel> levels;
 
 		std::vector<unsigned char> pixels;
@@ -71,9 +68,10 @@ namespace labrador
 	// The layout of one level of `format` at this size, starting at `offset`.
 	//
 	// This is the arithmetic a file format either states or expects the reader
-	// to know, and every reader that guessed it got the block case wrong. It is
-	// in one place so that the .dds reader, which must compute it for every mip,
-	// and any later reader agree by construction.
+	// to know, and the block case is the one a reader that guesses gets wrong.
+	// It is in one place so that the .dds reader, which computes it for every
+	// mip, and the .spritefont reader, which checks an atlas against it, agree
+	// by construction.
 	// Throws std::runtime_error naming context for nonpositive dimensions,
 	// a row wider than int can hold, or an unrepresentable size/end offset.
 	TextureLevel texture_level(TextureFormat format, int width, int height,

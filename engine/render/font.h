@@ -122,12 +122,10 @@ namespace labrador
 		//
 		// LAYOUT CONTROLS ARE NOT LOOKED UP, HERE OR ANYWHERE. No atlas holds
 		// a glyph for U+000A, because the walk below answers a line feed
-		// itself before it ever looks a character up. So a version of this
-		// that asked the atlas about one condemned every string with a
-		// newline in it - and a caller asking "will this string draw" about
-		// text it has laid out in two lines wants "yes", which is also the
-		// truth. A client found this by having all four of its weapon
-		// descriptions refused.
+		// itself before it ever looks a character up. So asking the atlas
+		// about one would condemn every string with a newline in it - and a
+		// caller asking "will this string draw" about text it has laid out in
+		// two lines wants "yes", which is also the truth.
 		size_t first_unrenderable(std::wstring_view text) const;
 
 		// The pen walk measure() above and every draw_text share. first_
@@ -203,13 +201,12 @@ namespace labrador
 
 		// The whitespace the walk skips.
 		//
-		// SPELT OUT RATHER THAN ASKED OF <cwctype>. SpriteFont called iswspace,
+		// SPELT OUT RATHER THAN ASKED OF <cwctype>. SpriteFont asks iswspace,
 		// which answers by the process's current C locale - so which characters
-		// stepped the pen without drawing depended on whether anything in the
+		// step the pen without drawing would depend on whether anything in the
 		// process had ever called setlocale, and a client that localised its
-		// number formatting could move its own text. Nothing in this tree calls
-		// setlocale, so this set is exactly what iswspace answered here; it is
-		// now what it answers everywhere.
+		// number formatting could move its own text. This set is the C
+		// standard's six white-space characters, whatever the locale.
 		static bool is_blank(char32_t character)
 		{
 			return character == U' ' || character == U'\t' ||

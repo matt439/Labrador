@@ -14,16 +14,12 @@ namespace labrador
     // hand the whole Win32 surface to every module that wants a worker -
     // engine/scene/scene.cpp and engine/app/application.h are the two - out of
     // core/, which is the one module everything else is allowed to lean on.
-    // core/registry.h refuses exactly this and says so: its COM-facing
-    // specialisation lives where COM is already in scope "rather than dragging
-    // <wrl/client.h> in here".
+    // core/registry.h makes the same refusal for COM.
     //
-    // WHAT IS BEHIND THE POINTER IS UNCHANGED, and that is deliberate too. The
-    // implementation is still the Win32 thread pool - CreateThreadpoolWork,
-    // SubmitThreadpoolWork, a cleanup group - because it works, it is tested,
-    // and replacing it with std::thread would be rewriting a working primitive
-    // for a platform this engine does not build for yet (T1). What moved is
-    // where the API is named, not which API it is.
+    // WHAT IS BEHIND THE POINTER IS THE WIN32 THREAD POOL - CreateThreadpoolWork,
+    // SubmitThreadpoolWork, a cleanup group - because it works and it is
+    // tested, and replacing it with std::thread would be rewriting a working
+    // primitive for a platform this engine does not build for yet (T1).
     //
     // THE INDIRECTION IS NOT ON A HOT PATH. Scene::draw submits one task per
     // slice of the view list per frame, and the slices are bounded by

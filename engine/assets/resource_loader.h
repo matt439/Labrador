@@ -26,8 +26,7 @@ namespace labrador
 		// name rather than a finished path.
 		// `optional` is the manifest's own word for "the game still runs
 		// without this" (asset_manifest.h). A kind that has no substitute to
-		// offer ignores it and throws as it always did; the sound bank is the
-		// one that has one.
+		// offer ignores it and throws; the sound bank is the one that has one.
 		using LoadAsset = std::function<void(const std::string& directory,
 			const std::string& name, bool optional)>;
 
@@ -42,10 +41,9 @@ namespace labrador
 		// rebuilt at all.
 		//
 		// THE CRITERION IS WHAT THE GPU HOLDS, NEVER WHETHER THIS BUILD'S
-		// BACKEND CAN LOSE A DEVICE, and this paragraph did not say so until a
-		// port asked where the rebuild belonged. Two of the five backends never
-		// call reload_device at all - a WGL context is not lost, and the null
-		// one has nothing to lose - so a game written and run against either of
+		// BACKEND CAN LOSE A DEVICE. Two of the five backends never call
+		// reload_device at all - a WGL context is not lost, and the null one
+		// has nothing to lose - so a game written and run against either of
 		// those presets can leave every one of these empty and watch nothing go
 		// wrong. It is the same source a Direct3D build compiles:
 		// LABRADOR_RENDER_BACKEND picks the backend at configure time (T5), so
@@ -65,16 +63,15 @@ namespace labrador
 		// The renderer rather than a device, and this file names no graphics type
 		// as a result: the two kinds that need one go through
 		// engine/render/resource_factory.h, which reads the device off the
-		// renderer at the moment it builds. That also deletes a caller
-		// obligation. A device restore hands back a different device, so a loader
-		// holding one had to be re-seated from on_device_restored - a rule with
-		// no home, stated in two places, enforced in none.
+		// renderer at the moment it builds. A device restore hands back a
+		// different device, and a loader that held one would have to be
+		// re-seated from on_device_restored; read at build time, there is
+		// nothing for a caller to re-seat.
 		// The audio device rather than a library's engine object, and for the
-		// same reason: this file named DirectX::AudioEngine in a constructor
-		// parameter and included <Audio.h> to do it, which put XAudio2's
-		// headers on the command line of every client that loads an asset.
-		// engine/audio/audio_device.h is the seam now, and which audio API is
-		// behind it is chosen in CMake and named nowhere above it.
+		// same reason: this file names no audio API, so a client that loads an
+		// asset does not compile one. Which audio API is behind
+		// engine/audio/audio_device.h is chosen in CMake and named nowhere
+		// above it.
 		ResourceLoader(RenderResources* render_resources,
 			const Renderer* renderer, AudioResources* audio_resources,
 			AudioDevice* audio_device);

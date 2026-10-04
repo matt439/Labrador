@@ -14,9 +14,9 @@ namespace labrador
 	// Names resolve once and are never seen again (PHILOSOPHY T7, T8). That is
 	// worth more here than it looks: an audio API searches a bank's name table
 	// on every play-by-name, and DirectXTK's WaveBank writes a debug trace and
-	// plays nothing on a miss - so a misspelt wave was silence with no error at
-	// all. Resolved up front, the same typo throws at load, naming the wave
-	// (T6).
+	// plays nothing on a miss - so a misspelt wave played by name is silence
+	// with no error at all. Resolved up front, the same typo throws at load,
+	// naming the wave (T6).
 	//
 	// WHAT IS ON THIS SIDE OF THE SEAM. Everything in this class is engine
 	// arithmetic and engine policy: which name means which wave, which handles
@@ -31,13 +31,11 @@ namespace labrador
 	//
 	// AND THE ORDER INSIDE EACH METHOD IS THE OTHER HALF OF IT. The clamp and
 	// the unresolved-handle check happen ABOVE the test for whether this bank
-	// has anything behind it, not below. docs/survey/2026-08-26.md 3.4a
-	// measured what the old order cost: five sites of level clamping and
-	// eight of this class's thirteen instance methods sat below that test, so
-	// in a tree that cannot construct an audible bank they were engine code
-	// no test could reach. The arithmetic is this module's, so it belongs on
-	// this module's side of the wall, and it now runs whether or not there is
-	// a sound at the end of it.
+	// has anything behind it, not below. The arithmetic is this module's, so
+	// it belongs on this module's side of the wall, and it runs whether or not
+	// there is a sound at the end of it - so a silent bank exercises it as
+	// fully as an audible one, and a build that cannot open a wave bank can
+	// still test it.
 	class SoundBank
 	{
 	public:
@@ -74,15 +72,13 @@ namespace labrador
 
 		// A bank with nothing in it, for content that is not there.
 		//
-		// IT IS NOT THE HEADLESS IMPLEMENTATION OF THE SEAM AND NEVER WAS, and
-		// that distinction is now something a reader can act on: the headless
-		// implementation is engine/audio/null/, chosen at build time, and it
-		// records what it was asked to play. This is the answer to a different
-		// question - a wave bank that is not on disk at run time. The
-		// paint-shooter's is built from source audio that cannot be distributed
-		// (README), so a fresh clone has no container and the manifest marks
-		// the bank optional. This is what the loader puts in its place: every
-		// resolve succeeds, every play does nothing, and a game that is
+		// IT IS NOT THE HEADLESS IMPLEMENTATION OF THE SEAM. That is
+		// engine/audio/null/, chosen at build time, and it records what it was
+		// asked to play. This is the answer to a different question - a wave
+		// bank that is not on disk at run time. A bank built from source audio
+		// that cannot be distributed is not in a fresh clone, so the manifest
+		// marks it optional, and this is what the loader puts in its place:
+		// every resolve succeeds, every play does nothing, and a game that is
 		// otherwise correct runs in silence rather than throwing at startup on
 		// a file it was never going to have.
 		//

@@ -25,7 +25,7 @@ it reads:
 | What | From | Into |
 | --- | --- | --- |
 | The three design documents, as written | `docs/design/*.md` | `/docs/design/...` |
-| Reference pages for a slice of the public headers | `engine/**/*.h` | `/docs/reference/...` |
+| A reference page for every public header | `engine/<module>/*.h` | `/docs/reference/<module>/...` |
 | Quoted passages of code | `samples/`, `tests/` | wherever a page uses `<SourceFile>` |
 | The `vcpkg.json` a new project needs | `vcpkg.json` | Get Started |
 | The include lines a copied sample must change | `samples/minimal/` | Get Started |
@@ -40,6 +40,8 @@ wrong (PHILOSOPHY T6):
 - a relative link in a published design document to a file that does not
   exist (`src/lib/markdown-plugins.ts`);
 - a header the reference reader does not understand (`src/lib/cpp-header.ts`);
+- a public header that `src/lib/published.ts` neither publishes nor leaves out
+  by name (`src/lib/reference.ts`, `unlistedHeaders`);
 - any internal link or `#anchor` that does not resolve
   ([starlight-links-validator](https://github.com/HiDeoo/starlight-links-validator)).
 
@@ -77,9 +79,12 @@ never line numbers, which would quietly quote the wrong lines after an edit. A
 **Link to a file in the repository.** Use `<RepoLink path="...">`, which links
 to it at the built revision and fails the build if it is not there.
 
-**Publish another design document or header.** Add it to `src/lib/published.ts`.
-That is the whole of it: the loader, the link rewriting and the sidebar all
-read that list. A header that the reader rejects names its file and line; see
+**Publish another design document or header.** Add it to `src/lib/published.ts`:
+a design document to `DESIGN_DOCUMENTS`, a header to its module in
+`REFERENCE_MODULES` with the label the sidebar shows. That is the whole of it:
+the loader, the link rewriting and the sidebar all read those lists. A new
+public header that is in neither `REFERENCE_MODULES` nor `UNPUBLISHED_HEADERS`
+fails the build. A header that the reader rejects names its file and line; see
 the reference's own introduction page for what the reader does and does not
 understand, and why it was chosen over Doxygen and Clang.
 

@@ -8,16 +8,13 @@ namespace labrador
 {
 	// Where a game's content is, settled once, here, in the shell.
 	//
-	// THE WORKING DIRECTORY IS NOT AN ANSWER. Both samples loaded
-	// "./manifest.json", and the manifest's own groups name "./fonts/" and
-	// "./textures/"; every one of those was resolved by the C runtime against
-	// wherever the process happened to be started from. Launched from the
-	// build directory it worked, because the build copies the content beside
-	// the executable; launched from the repository root, a shortcut, a
-	// debugger with its own idea of a start directory or a file manager, it
-	// threw "cannot open './manifest.json'" before the window had drawn a
-	// frame - and README said it ran from anywhere
-	// (docs/review/gpt6/README.md, G6-09).
+	// THE WORKING DIRECTORY IS NOT AN ANSWER. A relative path handed to the C
+	// runtime is resolved against wherever the process happened to be
+	// started from: the build directory, which has the content beside the
+	// executable because the build copies it there, or equally the
+	// repository root, a shortcut, a debugger with its own idea of a start
+	// directory, or a file manager, which do not. A game has to open its
+	// content from all of them.
 	//
 	// THE POLICY IS TWO SENTENCES. A relative manifest path is relative to the
 	// directory the executable was loaded from, which is where a build puts

@@ -16,12 +16,10 @@ namespace labrador
 	// backend with no container - engine/audio/null/ - has no name table of its
 	// own and answers wave_index out of this list, so the definition has to be
 	// read before AudioDevice::open_wave_bank is called rather than after it.
-	// That inverts the old order, where the wave bank was constructed first and
-	// the JSON read against it, and it is the one behaviour change a reader
-	// might notice: a bank whose container is missing AND whose definition is
-	// malformed now reports the malformed definition. It is the better of the
-	// two answers - the definition is in every clone, the container is not (T6)
-	// - but it is a change and this is where it is written down.
+	// One consequence a reader might notice: a bank whose container is missing
+	// AND whose definition is malformed reports the malformed definition. It
+	// is the better of the two answers - the definition is in every clone, the
+	// container is not (T6).
 	struct SoundBankDefinition
 	{
 		// Every wave the definition names, in the order it names them and with

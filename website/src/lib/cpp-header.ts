@@ -1,18 +1,17 @@
 // Reads a Labrador header into the declarations and comments a reference page
 // is built from.
 //
-// THIS IS NOT A C++ PARSER, and the reference is labelled a prototype because
-// of it. It is a line reader that leans on the shape CONVENTIONS fixes for
-// every engine header: Allman braces, one statement per line or a statement
-// continued across lines, and a `//` comment directly above the declaration it
-// describes. A comment separated from the next declaration by a blank line
+// THIS IS NOT A C++ PARSER. It is a line reader that leans on the shape
+// CONVENTIONS fixes for every engine header: Allman braces, one statement per
+// line or a statement continued across lines, and a `//` comment directly above
+// the declaration it describes. A comment separated from the next declaration by a blank line
 // describes nothing below it and is kept as a free-standing note. What the
 // reader does not understand it reports by file and line rather than guessing
 // (PHILOSOPHY T6), so a header that outgrows it fails the site build instead
 // of publishing a wrong page.
 //
-// The alternatives, and why this was tried first, are in the reference's own
-// introduction page (src/content/docs/docs/reference/index.mdx).
+// The alternatives, and why this was chosen over them, are in the reference's
+// own introduction page (src/content/docs/docs/reference/index.mdx).
 
 export type Access = 'public' | 'protected' | 'private';
 
@@ -223,7 +222,7 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 
 		if (scope().kind === 'enum') {
 			const enumerator = scan(lines[index]).code.trim().replace(/,$/, '');
-			const name = enumerator.split(/[\s=]/)[0];
+			const name = enumerator.split(/[\s=,]/)[0];
 			const declaration = { text: enumerator, name, line: index };
 			if (pending || !group) {
 				group = { kind: 'group', access: 'public', declarations: [], comment: pending };
@@ -264,6 +263,11 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 				break;
 			}
 			if (braces > 0) {
+				// A braced initialiser continued on the next line -
+				// `points_ = { a, b,` - is a value, not a body.
+				if (/=\s*\{/.test(code)) {
+					continue;
+				}
 				throw new HeaderError(path, start, 'a body opened on the declaration line; engine headers put braces on their own line');
 			}
 			const next = lines[index]?.trim();
@@ -289,6 +293,12 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 		const namespace = head.match(/^namespace\s+([\w:]+)$/);
 		if (namespace && opensBody) {
 			endGroup();
+			// `detail` holds internals a header must expose and a user must not
+			// touch (CONVENTIONS, Namespaces), so it is read and not published.
+			if (namespace[1] === 'detail') {
+				stack.push({ kind: 'namespace', items: [], access: 'public', startIndex: start });
+				continue;
+			}
 			if (comment) {
 				scope().items.push({ kind: 'note', comment });
 			}

@@ -171,7 +171,7 @@ namespace labrador
 	// obvious test is true on precisely the frame that is wrong.
 	//
 	// THE FOCUS-LOSS SIDE LOSES NOTHING BUT CHANGES SPELLING. A key held when
-	// the window goes away no longer produces released() - held() is false
+	// the window goes away does not produce released() - held() is false
 	// there too - so a client keying "stop firing" off a release asks for the
 	// focus change instead:
 	//
@@ -190,8 +190,8 @@ namespace labrador
 	// Application owns one, feeds it from the window's messages and polls it
 	// once per frame before any state updates - which is what makes "down now,
 	// up last frame" true for every reader, and what stops two states keeping
-	// two edge detectors that advance on different frames (gamepads.h has the
-	// bug that shape shipped).
+	// two edge detectors that advance on different frames (gamepads.h says
+	// what goes wrong with that shape).
 	class Keyboard
 	{
 	public:
@@ -202,7 +202,7 @@ namespace labrador
 		// friend declaration naming a class in `app`, which is the module
 		// `input` is forbidden to know about. It is also the seam a test
 		// double or a replay source drives, and both want it reachable - the
-		// tests beside this file construct a Keyboard and type into it with no
+		// tests in tests/input/ construct a Keyboard and type into it with no
 		// window anywhere.
 		//
 		// Nothing here is visible to a reader until the next poll(). A key

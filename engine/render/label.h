@@ -13,12 +13,10 @@ namespace labrador
 	// A string a scene can hold, which is what Text on its own is not.
 	//
 	// Text is the drawing half - a wide string, a font handle, a measurement
-	// and a draw(). What it has never had is the three things
+	// and a draw(). What it does not have is the three things
 	// engine/core/game_object.h asks for: something to step, an extent to cull
 	// against, and the GameObject base that lets a container hold it next to a
-	// sprite. Every screen that wanted text therefore kept its own
-	// unique_ptr<Text> and its own loop over it, which is what the sample did
-	// and what every menu page did before engine/ui.
+	// sprite.
 	//
 	// It is a separate class rather than a base added to Text, and that is not
 	// a style choice: engine/ui pairs a GameObject-derived UiWidget with the
@@ -45,16 +43,14 @@ namespace labrador
 
 		// One declaration overriding two virtuals, because GameObject::draw and
 		// TextObject::draw have the same signature in unrelated bases - without
-		// it, this class is abstract and the call is ambiguous. Visual does the
-		// same thing for the same reason.
+		// it, this class is abstract and the call is ambiguous.
 		void draw(DrawList& draw_list) const override;
 
-		// The measured box, taken when the string or the font changed and not
-		// here: this is the culling path, and measuring walks the string. A
-		// SCALE CHANGE TAKES NO MEASUREMENT - TextObject::set_scale stores and
-		// returns - so the box this hands back is the unscaled one whatever the
-		// scale is, which is a fact about the two setters that remeasure rather
-		// than about this call.
+		// The drawn box: TextObject::text_bounds, which scales and turns the
+		// stored measurement at the current scale and rotation. The measurement
+		// is taken when the string or the font changes and not here: this is
+		// the culling path, and measuring walks the string. A scale or rotation
+		// change takes no measurement and needs none.
 		mattmath::RectangleF bounds() const override;
 	};
 }

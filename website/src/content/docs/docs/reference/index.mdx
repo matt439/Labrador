@@ -1,87 +1,96 @@
 ---
 title: About the reference
-description: How the API reference is generated, what the three prototype pages show, and what has to be decided before the rest are published.
+description: How the API reference is generated from the engine's headers, what the text on each page is, and what it does not do yet.
 sidebar:
   order: 0
   label: About the reference
 ---
 
 import RepoLink from '~/components/RepoLink.astro';
+import { REFERENCE_MODULES } from '~/lib/published';
 
-The API reference is meant to give the exact contract of every public type and function, tied to
-the revision of the engine it describes. So far three headers have pages, generated as a
-prototype to settle how the rest should be made:
+The API reference gives the exact contract of every public type and function in the engine,
+generated from its headers at the revision named at the foot of each page. It is organised by
+module, in the order the modules depend on one another: each one depends only on modules above
+it in this table.
 
-- [`State`](/docs/reference/core/state/), the interface the engine calls for each screen or mode
-  of a game;
-- [`GameObject`](/docs/reference/core/game-object/), the interface a game implements for
-  anything that updates and draws;
-- [`Scene`](/docs/reference/scene/scene/), a concrete class with a template member, a nested
-  type and grouped overloads.
+<table>
+	<thead>
+		<tr>
+			<th>Module</th>
+			<th>What it is</th>
+			<th>Headers</th>
+		</tr>
+	</thead>
+	<tbody>
+		{REFERENCE_MODULES.map((module) => {
+			const [first] = module.headers[0];
+			const slug = first.replace(/\.h$/, '').replace(/_/g, '-');
+			return (
+				<tr>
+					<td>
+						<a href={`/docs/reference/${module.name}/${slug}/`}>
+							<code>{module.name}</code>
+						</a>
+					</td>
+					<td>{module.summary}</td>
+					<td>{module.headers.length}</td>
+				</tr>
+			);
+		})}
+	</tbody>
+</table>
 
-Until the rest are published, the headers themselves are the reference. Every public engine
-header is commented, and the
-<RepoLink path="docs/design/ARCHITECTURE.md">architecture document</RepoLink> lists which module
-each lives in.
+If you are starting out, the pages you will use most are
+[`State`](/docs/reference/core/state/), [`Scene`](/docs/reference/scene/scene/),
+[`Application`](/docs/reference/app/application/), [`Label`](/docs/reference/render/label/),
+[`Keyboard`](/docs/reference/input/keyboard/) and [`Gamepads`](/docs/reference/input/gamepads/).
+
+Some headers in `render` are there for whoever writes a renderer rather than for game code: the
+file readers, the sprite geometry, the vertex layout and the texture formats. They are published
+because they are public, and because the engine decides where every pixel goes in them, not in
+the graphics backend. The backends themselves, in `render/d3d11/` and the folders beside it, are
+not API and are not published.
+
+## What the text on each page is
+
+Each page is the header's own comment, word for word, under the declaration it describes. A
+header comment in Labrador says one of two things: the **contract** a caller is held to (what is
+thrown and when, how long a pointer stays valid, which thread may call), or the **rationale** for
+the design (the alternative that was weighed and why it lost). Rationale usually cites one of the
+[twelve trade-offs](/docs/design/philosophy/#the-trade-offs) by number, and the number links to
+it. How the code came to be the way it is belongs in the version history, not in a comment
+([Conventions](/docs/design/conventions/#comments)), so it is not here.
+
+The prose is the engine author's, written for someone reading the header in an editor, and it is
+denser than the guides. Where a sentence uses capitals for its first few words, that is the
+header's way of giving a paragraph a heading.
 
 ## How the pages are made
 
 Each page is built when the site is built, from the header in the same checkout. A short reader,
 <RepoLink path="website/src/lib/cpp-header.ts">`cpp-header.ts`</RepoLink>, takes the header's
-declarations and the comments directly above them. A comment separated from the next
-declaration by a blank line is kept as a note of its own. Private members are left out, and a
-function defined in the header is shown as its signature. Nothing is written by hand, so the
-page cannot disagree with the header.
+declarations and the comments directly above them. A comment separated from the next declaration
+by a blank line is shown as a note of its own. Private members and the `detail` namespace are left
+out, and a function defined in the header is shown as its signature. Nothing is written by hand,
+so a page cannot disagree with its header.
 
-The reader is not a C++ parser. It relies on the shape
-[the conventions](/docs/design/conventions/) fix for every engine header: braces on their own
-lines, and a comment directly above what it describes. When it meets something it does not
-understand, it stops the site build and names the file and line, rather than publishing a page
-that might be wrong.
+The reader is not a C++ parser. It relies on the shape [the conventions](/docs/design/conventions/)
+fix for every engine header: braces on their own lines, and a comment directly above what it
+describes. When it meets something it does not understand, it stops the site build and names the
+file and line, rather than publishing a page that might be wrong. Doxygen was considered and does
+not fit: it reads only comments in its own markers, such as `///`, and Labrador's are plain `//`.
+Clang would read the headers exactly, but `application.h` includes `<Windows.h>`, which would tie
+the site's build to Windows.
 
-## What the prototype showed
+**Links.** A type defined anywhere in the engine's public headers is linked wherever a page names
+it, to its section on its page. So are a qualified member such as `GameObject::draw`, a header
+path, and a trade-off number such as T8.
 
-Four questions decide how the rest of the reference should be made. Here is what these three
-pages answer.
+## What it does not do yet
 
-**Symbol links work, with limits.** A type defined anywhere in the engine's public headers is
-linked wherever a page names it: to its reference page if it has one, otherwise to its
-definition on GitHub at the built revision. A qualified member such as `GameObject::draw`, a
-header path, and a trade-off number such as T8 are linked too. Three things are not done yet:
-members are not linked individually (a link goes to the type), signatures inside code blocks are
-not linked, and a name defined in two headers is not linked at all, to avoid landing on the
-wrong one.
-
-**The pages fit the documentation.** They are entries in the same collection as every other page,
-so search, the table of contents, the sidebar and "Edit page" all work. "Edit page" opens the
-header itself.
-
-**Code examples are mostly elsewhere.** Few header comments contain example code, and where one
-does it is shown as code. The real examples are the samples and the tests, and the reference
-does not link to them yet. A page should eventually list where each type is used.
-
-**The contract text is there, mixed with other things.** The engine's headers are thoroughly
-commented: across the 94 public headers there are more comment lines than code. But the
-conventions distinguish three kinds of comment (the contract a caller is held to, the rationale
-for a design, and the history of how the code came to be) and say the third never belongs in a
-comment. A reading of all 94 headers found that kind of history in roughly two-thirds of them,
-including all three here: `Scene` opens with the review finding that created it. Published as
-written, the reference presents that history as if it were contract.
-
-## The generators considered
-
-| Generator | For it | Against it |
-| --- | --- | --- |
-| This reader | Nothing to install. Runs anywhere the site builds. Fails loudly on what it does not understand. | Not a parser: a header outside the conventions' shape has to be accommodated by extending it. |
-| Doxygen | Mature, widely used, full C++ understanding. | Reads only comments in its own markers, such as `///` and `/** */`, and Labrador's are plain `//`. Without rewriting every comment it would extract declarations and no documentation, and its output would still need rendering into these pages. |
-| Clang, with `-fparse-all-comments` | Compiler-accurate declarations, with ordinary comments attached. | Has to parse the headers' includes, and `application.h` includes `<Windows.h>`, which ties the site build to Windows and its SDK or to generated files checked in. Not tried: Clang is not installed where this prototype was built. |
-
-## What has to be decided
-
-The generator is the smaller decision. The recommendation is to keep this reader, extend it as
-each module's headers need, and revisit Clang only if the headers outgrow it.
-
-The larger decision is about content. Either the reference keeps publishing comments exactly as
-written, or the history comes out of the headers first, as the conventions already ask, module
-by module, with each module's reference published once its headers are clean. Until that is
-decided, these three pages stay marked as a prototype, and the other headers are not published.
+- Members are not linked individually: a link to `Scene::add` goes to `Scene`.
+- Names inside the code blocks are not linked.
+- A name defined in two headers is not linked at all, rather than risk landing on the wrong one.
+- A page does not yet list where in the samples and tests its type is used. The samples are the
+  best examples; [Examples](/examples/) says where to start reading them.

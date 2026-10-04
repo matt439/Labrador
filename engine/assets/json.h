@@ -53,8 +53,8 @@ namespace labrador
 		std::string as_string() const;
 		std::string as_identifier() const;
 
-		// Where this node is, as `'./levels/turbulence.json': objects[17]`, for
-		// a caller with its own reason to reject what it read. An unknown
+		// Where this node is, as `'./manifest.json': assets[1]`, for a caller
+		// with its own reason to reject what it read. An unknown
 		// colour name or object type is a content mistake exactly like a
 		// missing key, and it deserves the same sentence pointing at it (T6).
 		std::string where() const;

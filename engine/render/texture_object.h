@@ -17,9 +17,7 @@ namespace labrador
 	// two indexed loads - the sheet out of its registry slot, the frame out of the
 	// sheet - with no string touched on the way.
 	//
-	// NO CAMERA PARAMETER. Two versions of each of these, one taking a Camera
-	// and one not, put a call to Camera::calculate_view_rectangle in the whole
-	// body of half of them. The list holds the camera (renderer.h,
+	// NO CAMERA PARAMETER. The list holds the camera (renderer.h,
 	// DrawList::set_camera), so a caller wanting screen space sets nothing and a
 	// caller wanting a player's view sets it once for the range rather than
 	// passing it down through every signature.
@@ -61,10 +59,7 @@ namespace labrador
 		// Draws reading only one per-draw member, layer_depth, which orders
 		// nothing on any backend - so callers can compute frame / colour /
 		// origin / flip / rotation into locals instead of assigning them to
-		// this object first. The one it still reads is named here rather than
-		// left to be found: "without reading any of the per-draw members" was
-		// what this said, and DrawObject::layer_depth_ is read on the last line
-		// of the body.
+		// this object first.
 		//
 		// A SCENE RUNS draw() ON THE SAME OBJECT FROM EVERY RENDER WORKER AT
 		// ONCE, so "set members, then draw" is an unsynchronised data race - and

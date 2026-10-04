@@ -46,8 +46,8 @@ namespace labrador
         // that is not a style preference. That overload converts to the enum
         // first, and the conversion answers 1280x720 for anything outside the
         // four presets - so pushing a window size through it reports 720p for
-        // every window that is not exactly one of them, which is the bug rather
-        // than the fix. This setter exists because a non-coercing path had to.
+        // every window that is not exactly one of them. This setter is the
+        // path that does not coerce.
         //
         // The label follows only on an EXACT match. Ask for 1920x1080 and
         // resolution() becomes s_1920_1080; ask for 1600x900 and it keeps

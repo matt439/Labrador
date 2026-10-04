@@ -11,40 +11,31 @@ namespace labrador
 	// wrote one down. A DXGI number is a thing the engine may not repeat outside
 	// engine/render/<backend>/. This enum is the translation, and the two
 	// readers that produce one and the backends that consume one are the whole
-	// of its traffic - four of the five do, by different routes and with
-	// different answers about what they will take, and the null backend reads
-	// it never, because it keeps a width and a height and throws the bytes
-	// away.
+	// of its traffic - every backend with a device consumes it, by a different
+	// route and with a different answer about what it will take, and the null
+	// backend never reads it, because it keeps a width and a height and throws
+	// the bytes away.
 	//
-	// THE LIST IS WHAT THE CONTENT IS, AND NOTHING ELSE (T1). Between this
-	// repository and the client that consumes it there are 43 .dds files, and
-	// they are: 41 block-compressed, all DXT4 or DXT5 and so all bc3_unorm; and
-	// two uncompressed, both b8g8r8a8_unorm. A font atlas is a texture too and
-	// is bc2_unorm - the one this repository ships is pinned as such by
-	// sprite_font_file_tests.cpp. THE FONT COUNT IS NOT A CENSUS AND WAS ONCE
-	// WRITTEN AS ONE: there are 32 .spritefont files in the client and three
-	// copies of a single font here, most of them loaded by nothing. What is on
-	// the render path is a handful. bc1_unorm and r8g8b8a8_unorm are here
-	// because they complete a switch over what a .dds and a .spritefont can say
-	// rather than because a file says them, and b4g4r4a4_unorm because
-	// MakeSpriteFont offers it. A file naming anything else is rejected by name
-	// (T6) rather than passed through to fail as a device error, and this list
-	// grows when a real file needs it to.
+	// THE LIST IS WHAT THE CONTENT IS, AND NOTHING ELSE (T1). Art arrives
+	// block-compressed as DXT4 or DXT5, and so as bc3_unorm, or uncompressed as
+	// b8g8r8a8_unorm. A font atlas is a texture too and is bc2_unorm - the one
+	// this repository ships is pinned as such by sprite_font_file_tests.cpp.
+	// bc1_unorm and r8g8b8a8_unorm are here because they complete a switch over
+	// what a .dds and a .spritefont can say rather than because a file says
+	// them, and b4g4r4a4_unorm because MakeSpriteFont offers it. A file naming
+	// anything else is rejected by name (T6) rather than passed through to fail
+	// as a device error, and this list grows when a real file needs it to.
 	//
-	// THE BLOCK-COMPRESSED ENTRIES WERE THE ONES TO WATCH ON A SECOND BACKEND,
-	// and they are not a corner of the content - they are 41 of the 43 .dds
-	// there are, and every font atlas besides. That was written before the port
-	// and the port has happened twice.
-	// engine/render/gl/texture_factory.cpp queries
-	// GL_EXT_texture_compression_s3tc once and names it in the throw if it is
-	// absent, which is universally present on a desktop driver and absent from
-	// GLES 3.0 entirely. engine/render/vulkan/texture_factory.cpp asks the
-	// device for textureCompressionBC, and asks at device SELECTION rather than
-	// at the first texture, so the refusal can name the whole content set
-	// rather than the one file that happened to be loaded first - which is the
-	// same distinction one level earlier. A backend that skipped them would
-	// have no art and no text, so the failure worth having is the one that says
-	// which feature is missing rather than the one that draws nothing.
+	// THE BLOCK-COMPRESSED ENTRIES ARE THE ONES TO WATCH ON A BACKEND, and they
+	// are not a corner of the content: compressed art is the common case and
+	// every font atlas is one, so a backend that cannot sample them has no text
+	// and, for most content, no art. The failure worth having is the one that
+	// says which feature is missing rather than the one that draws nothing.
+	// engine/render/gl/texture_factory.cpp names
+	// GL_EXT_texture_compression_s3tc in its throw - universally present on a
+	// desktop driver and absent from GLES 3.0 entirely - and
+	// engine/render/vulkan/texture_factory.cpp names textureCompressionBC,
+	// which the device is asked for when it is selected.
 	enum class TextureFormat
 	{
 		r8g8b8a8_unorm,

@@ -8,10 +8,8 @@ namespace labrador
 	// and how deep it is.
 	//
 	// This is the value PHILOSOPHY's Collision section names, and having it be
-	// a value is most of the point. What it replaces returned one of eight
-	// cardinal Vector2F directions - a classification, not a measurement - and
-	// then a separate call re-derived the depth by cloning the shape, resolving
-	// the clone and subtracting the centres.
+	// a value is most of the point: it is a measurement - an axis and a
+	// depth, from one query - rather than a classification.
 	struct Manifold
 	{
 		// Unit length, pointing from the first shape towards the second.

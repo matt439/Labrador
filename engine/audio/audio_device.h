@@ -12,10 +12,9 @@ namespace labrador
 	//
 	// It is three values because that is what the thing has: a voice is
 	// stopped, playing, or paused, and every audio API this engine is likely
-	// to sit on spells those three. It exists at all because the type it
-	// replaces was DirectX::SoundState - an XAudio2 library's enum, returned
-	// from a public engine method, so a game asking what its music was doing
-	// had to name a platform to ask.
+	// to sit on spells those three. It is the engine's own enum rather than an
+	// audio library's so that a game asking what its music is doing does not
+	// have to name a platform to ask.
 	enum class SoundState
 	{
 		stopped,
@@ -26,32 +25,30 @@ namespace labrador
 	// The audio backend seam.
 	//
 	// A concrete class with one implementation chosen at build time, for the
-	// reasons renderer.h gives at length and gamepad_reader.h repeats in two
-	// sentences: asking for a backend that was not built is a missing symbol
-	// rather than a run-time answer (T5), a vtable is a tax nothing has asked
-	// to pay (T8), and promoting a concrete class to an interface later is
-	// mechanical and changes no call site. The XAudio2/DirectXTK implementation
-	// is engine/audio/xaudio2/, the headless one is engine/audio/null/, and
-	// nothing outside those folders names an audio API.
+	// reasons engine/render/SEAM.md#2 gives for the renderer and
+	// gamepad_reader.h repeats in two sentences: asking for a backend that was
+	// not built is a missing symbol rather than a run-time answer (T5), a
+	// vtable is a tax nothing has asked to pay (T8), and promoting a concrete
+	// class to an interface later is mechanical and changes no call site. The
+	// XAudio2/DirectXTK implementation is engine/audio/xaudio2/, the headless
+	// one is engine/audio/null/, and nothing outside those folders names an
+	// audio API.
 	//
-	// WHY IT EXISTS, WHICH IS NOT THE SAME AS WHY THE OTHER TWO SEAMS DO.
-	// ARCHITECTURE's module table has promised "audio | core, math - the audio
-	// backend at its edge only" since it was written, and there was no edge:
-	// DirectXTK's <Audio.h> was in the public headers of three modules, and the
-	// engine's own vocabulary was spelt in its types - a SoundBank was
-	// constructed from a DirectX::WaveBank, an effect handle was a
-	// Registry<DirectX::SoundEffectInstance>::handle, and effect_state answered
-	// with a DirectX::SoundState. docs/port/android.md 3.2 called that "the one
-	// place the second-platform claim is provably false today". That is the
-	// architectural half.
+	// IT IS WHAT MAKES THE MODULE TABLE TRUE. ARCHITECTURE has `audio`
+	// depending on core and math, with XAudio2 inside xaudio2/ only, so the
+	// engine's own vocabulary is spelt in its own types - a bank is a
+	// WaveBankHandle, a persistent voice a VoiceHandle, and what a voice is
+	// doing the SoundState above - and no header outside a backend folder
+	// includes an audio library to say any of it.
 	//
-	// AND THE MEASURED HALF. PHILOSOPHY.md:632-637 requires that "a seam ships
-	// with its headless implementation, or it has not shipped", because "a seam
-	// with only the platform's own implementation behind it still requires the
-	// platform in order to construct anything". SoundBank::silent() does not
-	// satisfy that rule and must not be mistaken for something that does: it is
-	// a bank with no content, which is a question about content and not about
-	// the platform. engine/audio/null/ is the headless implementation, and
+	// IT SHIPS WITH A HEADLESS IMPLEMENTATION, because PHILOSOPHY (Tests and
+	// toolchain) requires that "a seam ships with its headless implementation,
+	// or it has not shipped", since "a seam with only the platform's own
+	// implementation behind it still requires the platform in order to
+	// construct anything". SoundBank::silent() does not satisfy that rule and
+	// must not be mistaken for something that does: it is a bank with no
+	// content, which is a question about content and not about the platform.
+	// engine/audio/null/ is the headless implementation, and
 	// engine/audio/null/recording.h says what it makes assertable.
 	//
 	// WHERE THE CUT IS, AND WHAT IS DELIBERATELY ABOVE IT. Everything this
@@ -60,13 +57,11 @@ namespace labrador
 	// into [-1,1]. Levels arrive here already clamped and handles arrive here
 	// already checked. Below is what an audio API actually does - open a
 	// container, find a name in it, build a voice, and start, stop, adjust or
-	// report one - and nothing else. That line is the one thing 3.4a measured
-	// that a reader of sound_bank.cpp would have had to count by hand.
+	// report one - and nothing else.
 	//
 	// WHAT THE SEAM DOES NOT DECIDE IS THE CONTAINER, AND THAT IS DELIBERATE.
-	// docs/survey/2026-08-26.md 6 leaves the .xwb question open - whether the
-	// wave-bank format moves with a port or the seam is cut above it with the
-	// format decision deferred - and this is cut above it. open_wave_bank
+	// Whether the wave-bank format moves with a port is an open question, and
+	// the seam is cut above it so that the answer can wait. open_wave_bank
 	// takes a directory and a bank name, never a file name: the extension,
 	// the reader and the bytes are the backend's business, exactly as a
 	// swapchain is render/'s. What crosses instead is the list of wave NAMES
@@ -146,9 +141,9 @@ namespace labrador
 		// The shell's three, and the whole of what app/ knows about audio.
 		//
 		// update() is called once a frame, after the states have updated, and
-		// answers nothing: a device that has been lost is a case this tree has
-		// never handled and this seam does not pretend to. The backend says so
-		// where it ignores the answer, which is one place rather than the
+		// answers nothing: a device that has been lost is a case this engine
+		// does not handle and this seam does not pretend to. The backend says
+		// so where it ignores the answer, which is one place rather than the
 		// caller's.
 		void update();
 

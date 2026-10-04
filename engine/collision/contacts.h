@@ -52,11 +52,6 @@ namespace labrador
 	// `broad_phase` is borrowed, and it holds the buffers that make the steady
 	// state allocation-free, so a caller that wants that keeps one across
 	// frames - exactly as it does with `contacts`.
-	//
-	// What it replaces: two hand-written nested loops that tested (player,
-	// object) and then (object, player) and then (object, object) with both
-	// orderings, so most pairs were measured twice and every pair's response
-	// depended on which loop reached it first.
 	void find_contacts(std::span<CollisionObject* const> objects,
 		std::vector<Contact>& contacts,
 		BroadPhase* broad_phase = nullptr);
@@ -69,9 +64,8 @@ namespace labrador
 	//
 	//   - A response can retire an object, and a retired object's remaining
 	//     contacts are dropped. A projectile that hits a wall does not go on
-	//     to hit the player behind it. As a `continue` inside the sweep the
-	//     rule would apply or not depending on which of two nested loops
-	//     reached the pair; here it applies to both sides of every pair.
+	//     to hit the player behind it. The rule applies to both sides of
+	//     every pair.
 	//   - A response can move an object, so every pair is measured again
 	//     immediately before it is dispatched, and a pair an earlier response
 	//     has already separated is dropped. The depths in the list describe

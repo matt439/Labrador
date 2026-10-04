@@ -9,13 +9,12 @@ namespace labrador
 {
 	// A GameObject the collision module can see.
 	//
-	// This is finding #13's home. An interface that asks each object
-	// `is_colliding(other)` - "are you two overlapping?" - and, by way of the
-	// same predicate, "should you be tested at all?" delegates two questions
-	// the engine should keep: every class then answers the first with the same
-	// copied AABB-then-narrow block and the second with a hand-written type
-	// list, and the lists diverge (see collision_layer.h). Both are answered
-	// once, in find_contacts.
+	// An interface that asks each object `is_colliding(other)` - "are you two
+	// overlapping?" - and, by way of the same predicate, "should you be
+	// tested at all?" delegates two questions the engine should keep: every
+	// class then answers the first with the same copied AABB-then-narrow block
+	// and the second with a hand-written type list, and the lists diverge (see
+	// collision_layer.h). Both are answered once, in find_contacts.
 	//
 	// What is left is what only the object can know: its shape, which groups
 	// it belongs to and responds to, what it is in the game's own vocabulary,
@@ -39,10 +38,7 @@ namespace labrador
 		// `normal` is a unit vector pointing from this object towards `other`,
 		// and `penetration` is how far they overlap along it - so the two
 		// participants of one contact are told the same overlap with opposite
-		// normals, and each is told exactly once. That is the fix for a
-		// dispatch that fired *both* objects' responses off *one* object's
-		// predicate, and then tested every pair a second time with the roles
-		// reversed.
+		// normals, and each is told exactly once.
 		//
 		// Separation is the game's call, not the engine's, which is why this
 		// hands over the measurement rather than the movement: a one-way
@@ -59,8 +55,8 @@ namespace labrador
 		virtual bool for_deletion() const = 0;
 
 		// Requests removal at the end of the frame. Objects that are part of
-		// the level's fixed geometry (structures, paint tiles) cannot be
-		// removed and ignore this by default.
+		// a level's fixed geometry (walls, platforms) cannot be removed and
+		// ignore this by default.
 		virtual void set_for_deletion(bool /*for_deletion*/) {}
 	};
 }

@@ -31,10 +31,11 @@ namespace labrador
 		void add_sound_bank(const std::string& sound_bank_name,
 			std::unique_ptr<SoundBank> sound_bank);
 
-		// There is deliberately no reset_all_sounds(). Banks are not device
-		// resources, and releasing them on device loss left every live object
-		// holding a freed SoundBank* - so the only teardown is the destructor,
-		// where SoundBank drops its instances before the wave bank they play from.
+		// Deliberately nothing releases a bank short of the destructor. Banks
+		// are not device resources, so a device loss leaves them alone, and
+		// releasing one would leave every live object holding a freed
+		// SoundBank*. A bank holds only handles: the voices and the wave bank
+		// behind them belong to the AudioDevice, which releases them itself.
 
 	private:
 		Registry<SoundBank> sound_banks_{ "SoundBank" };

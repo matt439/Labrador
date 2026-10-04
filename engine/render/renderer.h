@@ -14,15 +14,15 @@
 #include "engine/render/camera.h"
 #include "engine/render/viewport.h"
 
-// The renderer seam: one header, five backends, one of them chosen at build
-// time (T5).
+// The renderer seam: one header, several backends, one of them chosen at
+// build time (T5).
 //
 // THIS FILE STATES THE CONTRACT A CALLER IS HELD TO, and nothing else. Why the
 // seam has the shape it does - why Renderer is concrete rather than an
-// abstract base, how one header serves five backends, what a backend supplies
-// and what it may never decide, and what holds the five to one another - is
-// engine/render/SEAM.md. Terms below cite it where the reason is longer than
-// the rule.
+// abstract base, how one header serves every backend, what a backend supplies
+// and what it may never decide, and what holds the backends to one another -
+// is engine/render/SEAM.md. Terms below cite it where the reason is longer
+// than the rule.
 
 namespace labrador
 {
@@ -203,13 +203,13 @@ namespace labrador
 	// device loss implements this and knows nothing about what was lost.
 	//
 	// AND NOT A QUESTION ABOUT WHICH BACKEND YOU BUILT. A device is lost on
-	// three of the five, but that is a fact about a build and not about a
-	// caller: LABRADOR_RENDER_BACKEND picks one at configure time (T5) over one
-	// game source, so what varies is which build ever RUNS this path, never
-	// which source has to write it. A client that reasons "my preset cannot
-	// lose a device, so I need no rebuild" has written a shell that is wrong
-	// the moment it is configured against another backend. SEAM.md#8 settles
-	// it and says what the rebuild belongs to.
+	// some backends and never on others, but that is a fact about a build and
+	// not about a caller: LABRADOR_RENDER_BACKEND picks one at configure time
+	// (T5) over one game source, so what varies is which build ever RUNS this
+	// path, never which source has to write it. A client that reasons "my
+	// preset cannot lose a device, so I need no rebuild" has written a shell
+	// that is wrong the moment it is configured against another backend.
+	// SEAM.md#8 settles it and says what the rebuild belongs to.
 	class DeviceNotify
 	{
 	public:
@@ -306,7 +306,7 @@ namespace labrador
 		//
 		// draw_sprite takes a TextureHandle, and the only thing that can turn one
 		// back into whatever this backend calls a texture is the table that
-		// issued it. The alternative was for the caller to resolve first and hand
+		// issued it. The alternative is for the caller to resolve first and hand
 		// the resolved resource in - which is the backend's own type, in a game
 		// file's hands, which is the seam undone on the first call.
 		//
@@ -315,9 +315,9 @@ namespace labrador
 		// table, so the table cannot exist when the device is made.
 		//
 		// AND THE TEARDOWN ORDER IS FIXED THE OTHER WAY AGAIN. The table outlives
-		// the renderer, because on TWO backends it holds resources the GPU may
-		// still be reading - an ID3D12Resource on one and a VkImage on the other
-		// - and the only wait for them is inside this class's destructor.
+		// the renderer, because on some backends it holds resources the GPU may
+		// still be reading - an ID3D12Resource on d3d12, a VkImage on vulkan -
+		// and the only wait for them is inside this class's destructor.
 		// render_resources.h states it beside release_device_resources, where the
 		// resources in question are.
 		void set_resources(const RenderResources* resources);
@@ -329,7 +329,7 @@ namespace labrador
 		// which is a statement about what "resets" means. A client reaches that
 		// by catching an exception out of its own draw walk and carrying on - and
 		// so does a device event, which surfaces as a throw from a worker
-		// mid-frame. What each of the five resets to keep it is in SEAM.md#6.
+		// mid-frame. What each backend resets to keep it is in SEAM.md#6.
 		void begin_frame();
 		void end_frame();
 
@@ -341,8 +341,8 @@ namespace labrador
 		//
 		// AND std::logic_error FOR A COUNT LOWERED PAST A VIEW SOMETHING HAS
 		// ALREADY DRAWN INTO, which is a different mistake and gets a different
-		// type: the recording is stranded rather than absent. All five backends
-		// throw it, which is what makes it a term of the seam rather than one
+		// type: the recording is stranded rather than absent. Every backend
+		// throws it, which is what makes it a term of the seam rather than one
 		// backend's caution.
 		void set_view_count(int count);
 		int view_count() const;
@@ -354,7 +354,7 @@ namespace labrador
 		// Draws every view in view order, which is the only ordering guarantee
 		// made here, and leaves nothing of the frame behind. What that costs
 		// depends on the backend and is deliberately not described on this line;
-		// SEAM.md#6 has the five answers.
+		// SEAM.md#6 has each backend's answer.
 		//
 		// Called once per frame, between begin_frame and end_frame - AND A SECOND
 		// CALL ADDS NOTHING, which is a decision rather than a description. One
@@ -406,11 +406,10 @@ namespace labrador
 
 		// Debug markers, AND THEY ARE ADVISORY: a backend may forward them to a
 		// tool and may do nothing at all, and a caller may not tell which from
-		// anything it can observe. One of the five forwards them - d3d11, to
-		// ID3DUserDefinedAnnotation, which is what a PIX capture reads - and four
-		// discard them, each arguing the discard in its own file. That is the
-		// whole contract, and it is here because it was written in four backend
-		// folders and nowhere a caller may read (T6).
+		// anything it can observe. The d3d11 backend forwards them, to
+		// ID3DUserDefinedAnnotation, which is what a PIX capture reads, and every
+		// other backend discards them, each arguing the discard in its own file.
+		// That is the whole contract (T6).
 		//
 		// LEGAL BEFORE create_device AND OUTSIDE A FRAME, which is the half a
 		// caller could otherwise only discover by crashing. Nesting is the

@@ -21,8 +21,7 @@ namespace labrador
 	// indirection on the read.
 	//
 	// Because it never grows after loading, references into it are stable, which
-	// is what lets a caller hold a `const Element&` (or a pointer into one, as
-	// SpriteFrame's RECT is) across a frame.
+	// is what lets a caller hold a `const Element&` across a frame.
 	template <typename Element>
 	class NameTable
 	{

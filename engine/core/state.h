@@ -11,10 +11,9 @@ namespace labrador
 		State() = default;
 		virtual ~State() = default;
 
-		// dt arrives as a parameter, for the same reason GameObject::update
-		// takes one: reading it off a member meant the shell owned a heap float
-		// and handed a const float* to everything that wanted the frame time -
-		// eleven classes, their constructors, and the builders above those.
+		// The seconds since the last update. Frame time is a parameter, not
+		// shared state, for the reason GameObject::update gives (PHILOSOPHY,
+		// Services and lifetimes).
 		//
 		// Only the top of the stack is updated. A state with something above it
 		// is suspended: see on_suspend().
@@ -24,9 +23,8 @@ namespace labrador
 		//
 		// const is not decoration here. Every draw below this line runs on the
 		// same objects from every render worker at once, and this is the line
-		// where the compiler starts holding them to it - MenuPage's non-const
-		// draw helpers, running on sixteen threads, become a compile error
-		// rather than a comment.
+		// where the compiler starts holding them to it: a draw helper that
+		// writes a member is a compile error rather than a race.
 		//
 		// The state declares how many views this frame has and fills them; it
 		// does not submit. begin_frame / submit / end_frame belong to whoever
@@ -53,10 +51,10 @@ namespace labrador
 		// and - unless the state above covers the screen - keeps receiving
 		// draw() until that thing pops.
 		//
-		// This is where "quiet down while something is above me" goes, and it
-		// is the half of the pause bug no amount of not-calling-update fixes:
-		// a looping voice keeps playing precisely because the update that would
-		// have stopped it is the one being skipped.
+		// This is where "quiet down while something is above me" goes, because
+		// not being updated cannot do it: a looping voice keeps playing
+		// precisely because the update that would have stopped it is the one
+		// being skipped.
 		virtual void on_suspend() {}
 
 		// Whatever was above this state popped, and it is the top again. Runs
@@ -67,17 +65,15 @@ namespace labrador
 		// The application got or lost the foreground: alt-tab, minimise, a
 		// power suspend, or coming back from any of them.
 		//
-		// A DIFFERENT QUESTION FROM on_suspend, and the pair above is exactly
-		// why this one had to exist. on_suspend means "something was pushed
-		// above me" and is asked of one state; these mean "nobody is looking
-		// at any of us", which is a fact about the window that no state can
-		// see. A shell that keeps it to itself - suspending the pad reader and
-		// telling the stack nothing - leaves a suspended reader answering
-		// "disconnected" for every slot, which becomes a neutral input, which
-		// is a legal input that nothing downstream questions. A match alt-tabbed
-		// out of then plays itself out with nobody in it: the characters
-		// standing still, the clock running down, and the music at full volume
-		// over whatever the player switched to.
+		// A DIFFERENT QUESTION FROM on_suspend. on_suspend means "something
+		// was pushed above me" and is asked of one state; these mean "nobody is
+		// looking at any of us", which is a fact about the window that no state
+		// can see. While the application is in the background the pad reader
+		// is suspended and answers "disconnected" for every slot, which is a
+		// neutral input that nothing downstream questions - so a match that is
+		// not told plays itself out with nobody in it: the characters standing
+		// still, the clock running down, and the music at full volume over
+		// whatever the player switched to.
 		//
 		// EVERY FRAME IS TOLD, top down, not the top one alone. A match under
 		// a pause menu is not being updated and is still holding the music and

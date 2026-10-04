@@ -11,7 +11,7 @@ import type { Loader, LoaderContext } from 'astro/loaders';
 import { docsLoader } from '@astrojs/starlight/loaders';
 import { siteContentFileURL } from './markdown-plugins';
 import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, type PublishedDocument } from './published';
-import { referencePage } from './reference';
+import { referencePage, unlistedHeaders } from './reference';
 import { REVISION, absolutePath, commitUrl, editUrl, readRepositoryFile, sourceUrl } from './repository';
 
 async function store(
@@ -68,11 +68,18 @@ async function loadReference(context: LoaderContext, index: number): Promise<voi
 		title: header.title,
 		description: page.description,
 		editUrl: editUrl(header.source),
-		sidebar: { order: header.order, badge: { text: 'prototype', variant: 'caution' } },
+		sidebar: { order: header.order },
 	});
 }
 
 async function loadCheckout(context: LoaderContext): Promise<void> {
+	const unlisted = unlistedHeaders();
+	if (unlisted.length > 0) {
+		throw new Error(
+			`Public engine headers with no reference page and no reason given: ${unlisted.join(', ')}. ` +
+				`Add each to REFERENCE_MODULES or UNPUBLISHED_HEADERS in website/src/lib/published.ts.`
+		);
+	}
 	for (const document of DESIGN_DOCUMENTS) {
 		await loadDesignDocument(context, document);
 	}

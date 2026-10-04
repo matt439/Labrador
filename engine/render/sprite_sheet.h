@@ -59,18 +59,18 @@ namespace labrador
 		// the source rectangle, which is arithmetic no backend performs.
 		//
 		// `origin` IS ADDED TO THE FRAME'S OWN, NOT SUBSTITUTED FOR IT. A sheet
-		// may author a pivot per frame (sprite_frame.h) and for years nothing
-		// read it; these two overloads are where it now reaches a quad. Both
-		// quantities are in unscaled source texels - the same units, so they
-		// compose with no conversion, exactly as build_glyph_quad composes a
-		// pen with a string's origin (sprite_geometry.h).
+		// may author a pivot per frame (sprite_frame.h), and these two overloads
+		// are where it reaches a quad. Both quantities are in unscaled source
+		// texels - the same units, so they compose with no conversion, exactly
+		// as build_glyph_quad composes a pen with a string's origin
+		// (sprite_geometry.h).
 		//
 		// Addition rather than "the caller's if it gave one" because the second
 		// needs a sentinel this signature does not have: a default argument
 		// cannot tell a caller that said nothing from one that asked for the
 		// top-left corner, so the rule would be a silent policy hanging off
 		// whether a Vector2F happened to be zero. A frame with no authored
-		// pivot adds zero and every existing caller draws exactly where it did.
+		// pivot adds zero, so the caller's origin is the whole of it.
 		void draw(DrawList& draw_list,
 			frame_handle frame,
 			const mattmath::RectangleF& destination,

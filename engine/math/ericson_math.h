@@ -27,11 +27,6 @@ namespace mattmath
 	// of those types, the declarations below are the ported forms, and a
 	// commented-out parallel vocabulary is a second definition waiting to
 	// disagree with the first.
-	//
-	// The file also ended on a bare `// 132`, marking the page the original
-	// porting effort stopped at. Pages 133 to 551 have since been read - see
-	// docs/review/rtcd/ - so the marker meant nothing any more and went with
-	// them.
 
 	bool test_AABB_AABB(const mattmath::RectangleF& a,
 		const mattmath::RectangleF& b);
@@ -68,8 +63,7 @@ namespace mattmath
 	// three, which is exactly what narrow_phase already runs for any pair of
 	// convex polygons. Porting it would add a second implementation of a test
 	// the engine has, differing only in that this one could not report a
-	// penetration depth. Its commented-out body lived here for a long time and
-	// is gone; the decision is the thing worth keeping.
+	// penetration depth.
 
 
 	// Whether the segment p0p1 meets the box, boundary included.
@@ -93,15 +87,14 @@ namespace mattmath
 	// results for sign - never multiply two of them together. Use
 	// strictly_opposite_sides below, which is what that comparison is called.
 	//
-	// The hazard the multiply carries is UNDERFLOW, not the overflow an
-	// earlier version of this note claimed. signed_2D_tri_area subtracts
-	// before it multiplies, so its result is the size of the triangle rather
-	// than the size of the world, and even at 600,000 units the product of two
-	// of them stays fifteen orders inside float's range. What it does not
-	// survive is the other end: two small opposite-signed areas - a crossing
-	// that is nearly a graze - multiply to exactly 0.0f, and a test written as
-	// `a * b < 0.0f` then reports no crossing at all. A NaN in either operand
-	// does the same.
+	// The hazard the multiply carries is UNDERFLOW, not overflow.
+	// signed_2D_tri_area subtracts before it multiplies, so its result is the
+	// size of the triangle rather than the size of the world, and even at
+	// 600,000 units the product of two of them stays fifteen orders inside
+	// float's range. What it does not survive is the other end: two small
+	// opposite-signed areas - a crossing that is nearly a graze - multiply to
+	// exactly 0.0f, and a test written as `a * b < 0.0f` then reports no
+	// crossing at all. A NaN in either operand does the same.
 	float signed_2D_tri_area(const mattmath::Point2F& a,
 		const mattmath::Point2F& b, const mattmath::Point2F& c);
 
@@ -131,13 +124,13 @@ namespace mattmath
 	//
 	// Vertices are taken relative to the first before anything is multiplied.
 	// Without that the products are the size of the world squared - near 3e7
-	// out where the levels run, where consecutive floats are 2 apart - and the
-	// sum must then cancel back down to the size of the polygon. The error
-	// that survives is set by the coordinates, not by the shape, so it is a
-	// rounding artefact on a large polygon and comparable to the answer on a
-	// small one: a 13.3-unit square at (6232.75, 5408.46) comes out as 176.0
-	// against a true 176.88. Working relative to a vertex makes every product
-	// the size of the polygon instead.
+	// a few thousand units from the origin, where consecutive floats are 2
+	// apart - and the sum must then cancel back down to the size of the
+	// polygon. The error that survives is set by the coordinates, not by the
+	// shape, so it is a rounding artefact on a large polygon and comparable to
+	// the answer on a small one: a 13.3-unit square at (6232.75, 5408.46)
+	// comes out as 176.0 against a true 176.88. Working relative to a vertex
+	// makes every product the size of the polygon instead.
 	float signed_area(std::span<const mattmath::Point2F> polygon);
 
 	// Whether a point lies inside a convex polygon, treating the boundary as
@@ -204,17 +197,15 @@ namespace mattmath
 	// four signed areas per edge, which is the same arithmetic the point
 	// test spends.
 	//
-	// WHY NOT CONTAINMENT PLUS test_2D_segment_segment, which is what every
-	// segment-against-shape routine was built from. That pair checks the
+	// WHY NOT CONTAINMENT PLUS test_2D_segment_segment. That pair checks the
 	// two endpoints and then asks each edge for a PROPER crossing, and a
 	// segment that enters through one vertex and leaves through another -
 	// (-5,-5) to (15,15) across the square (0,0)..(10,10), corner to
 	// opposite corner through the whole interior - does neither: both
 	// endpoints outside, every crossing exactly at an edge's end, which the
-	// proper test excludes by contract. The pair answered false to a
-	// segment that traverses the shape (docs/review/gpt6/README.md, G6-05).
-	// The proper primitive keeps its contract; this is the closed operation
-	// the shape routines needed and did not have.
+	// proper test excludes by contract. The pair answers false to a segment
+	// that traverses the shape. The proper primitive keeps its contract; this
+	// is the closed operation the segment-against-shape routines need.
 	//
 	// Winding-agnostic like the point test, by reading the winding off
 	// signed_area once and orienting every edge by it. Degenerate polygons -
@@ -228,20 +219,15 @@ namespace mattmath
 	//
 	// This is point_in_convex_polygon over three vertices, and it is written
 	// that way rather than duplicated so the engine has one definition of
-	// "inside" (5.4.2, pp.203-206). The barycentric form it replaces divided
-	// by the triangle's determinant, which is zero for a collinear triangle -
-	// and every comparison against the resulting NaN was false, so a
-	// degenerate triangle reported "outside" for every point in the plane
-	// rather than reporting anything a caller could act on.
+	// "inside" (5.4.2, pp.203-206). It is not the barycentric form, which
+	// divides by the triangle's determinant: that is zero for a collinear
+	// triangle, and every comparison against the resulting NaN is false.
 	//
-	// A triangle with no area answers false for every point, which is
-	// deliberate and is not the old NaN behaviour wearing a new hat: it is
-	// what signed_area says about the same three points, reached by a
-	// comparison rather than by a division nobody guarded. The sign form
-	// first shipped returning TRUE for points on a collinear triangle's
-	// supporting line - the whole infinite line, not merely the part between
-	// the vertices - and true for every point in the plane once two vertices
-	// coincided. Degenerate in, "contains nothing" out.
+	// A triangle with no area answers false for every point - points on its
+	// supporting line included, and every point once two vertices coincide.
+	// That is deliberate: it is what signed_area says about the same three
+	// points, reached by a comparison rather than by an unguarded division.
+	// Degenerate in, "contains nothing" out.
 	bool test_point_triangle(const mattmath::Point2F& p,
 		const mattmath::Point2F& a, const mattmath::Point2F& b,
 		const mattmath::Point2F& c);

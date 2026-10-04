@@ -12,6 +12,7 @@ import { satteri } from '@astrojs/markdown-satteri';
 import starlightLinksValidator from 'starlight-links-validator';
 import { checkoutLinks, mermaidBlocks } from './src/lib/markdown-plugins';
 import { GITHUB_REPOSITORY, EDIT_BRANCH } from './src/lib/repository';
+import { REFERENCE_MODULES } from './src/lib/published';
 
 export default defineConfig({
 	markdown: {
@@ -45,7 +46,18 @@ export default defineConfig({
 						{ label: 'Make a first change', link: '/docs/get-started/first-change/' },
 					],
 				},
-				{ label: 'API Reference', items: [{ autogenerate: { directory: 'docs/reference' } }] },
+				{
+					label: 'API Reference',
+					items: [
+						{ label: 'About the reference', link: '/docs/reference/' },
+						// One collapsed group per module, in the order published.ts lists them.
+						...REFERENCE_MODULES.map((module) => ({
+							label: module.name,
+							collapsed: true,
+							items: [{ autogenerate: { directory: `docs/reference/${module.name}` } }],
+						})),
+					],
+				},
 				{ label: 'Design', items: [{ autogenerate: { directory: 'docs/design' } }] },
 			],
 			plugins: [starlightLinksValidator()],

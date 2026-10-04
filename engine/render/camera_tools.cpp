@@ -108,16 +108,14 @@ namespace labrador
 		// left_edge/right_edge and top_edge/bottom_edge from them and assumes
 		// the first of each pair is the smaller.
 		//
-		// An in-place clamp cannot express this. It takes the min branch first,
-		// so with a floor above the ceiling the ceiling is never consulted and
-		// the floor is returned unchanged. (mattmath::clamp_ref was the
-		// function this named; engine/math/scalar.h records that it was deleted
-		// for having no caller, so the sentence outlived its subject.) At 1280x720 two-player - the
-		// default resolution, and what an unparseable save file coerces to -
-		// each pane is 1280x360, both vertical floors are 250 against a
-		// ceiling of 180, and the result was top_edge sitting 140 px *below*
-		// bottom_edge. A motionless player then satisfied both branches in
-		// turn, every frame, forever.
+		// mattmath::clamp cannot express this. With a floor above the ceiling
+		// it returns the floor for a value below the floor and the ceiling for
+		// anything else, so which bound wins depends on the value. At 1280x720
+		// two-player - the default resolution, and what an unparseable save
+		// file coerces to - each pane is 1280x360 and both vertical floors are
+		// 250 against a ceiling of 180, so a floor that won would put top_edge
+		// 140 px *below* bottom_edge, and a motionless player would satisfy
+		// both branches in turn, every frame.
 		result.left = std::min(std::max(result.left, MIN_BORDER_LEFT),
 			viewport_size.x / 2.0f);
 		result.right = std::min(std::max(result.right, MIN_BORDER_RIGHT),

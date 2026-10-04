@@ -7,23 +7,21 @@
 
 namespace labrador
 {
-    // WHERE THIS LIVES, and why it is not in core/. Its
-    // only includers are the two Direct3D backends - three translation units
-    // each, and nothing else in the tree - so the rule that a backend's
-    // headers are its own leaves two shapes: a copy in d3d11/ and a copy in
-    // d3d12/, or one file here that neither owns. It is the second, for the
-    // reason render/sprite.hlsl beside it gives for being one file compiled
-    // twice: a second copy is a file that can silently disagree with the
-    // first, and what these two would disagree about is an exception type
-    // whose whole point is that a catch site cannot tell (see
-    // tests/render/throw_if_failed_tests.cpp, which is why that test is in
-    // this module now and still compiles in all five configurations).
+    // WHERE THIS LIVES, and why it is not in core/. Its only engine
+    // includers are the two Direct3D backends - three translation units each
+    // - so the rule that a backend's headers are its own leaves two shapes: a
+    // copy in d3d11/ and a copy in d3d12/, or one file here that neither owns.
+    // It is the second, for the reason render/sprite.hlsl beside it gives for
+    // being one file rather than one per backend: a second copy is a file
+    // that can silently disagree with the first, and what these two would
+    // disagree about is an exception type whose whole point is that a catch
+    // site cannot tell (tests/render/throw_if_failed_tests.cpp pins it, and
+    // compiles in every configuration).
     //
-    // NOT core/, WHICH HAD ALREADY REFUSED IT. core/registry.h keeps its
-    // COM-facing specialisation out - "rather than dragging <wrl/client.h> in
-    // here" - and puts it in render/d3d11/backend.h, where COM is already in
-    // scope. This file carries <Windows.h> and an HRESULT, which is exactly
-    // what the one module everything may lean on must not.
+    // NOT core/. This file carries <Windows.h> and an HRESULT, which is
+    // exactly what the one module everything may lean on must not - and
+    // core/registry.h keeps COM out for the same reason, specialising for a
+    // ComPtr in render/d3d11/backend.h, where COM is already in scope.
     //
     // THE NAMES ARE MICROSOFT'S AND STAY THAT WAY. NOTICE lists this file
     // among those adopted from the DirectX samples. ThrowIfFailed is

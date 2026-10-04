@@ -21,7 +21,7 @@ namespace mattmath
 		RectangleF() = default;
 		RectangleF(const RectangleF&) = default;
 		// constexpr and defined here so ZERO is constant-initialised. See
-		// Vector2F's constants for what the dynamic alternative did.
+		// Vector2F's constants for what the dynamic alternative risks.
 		constexpr RectangleF(float x, float y, float width, float height) :
 			x(x), y(y), width(width), height(height) {}
 		RectangleF(const mattmath::Vector2F& position,
@@ -55,9 +55,10 @@ namespace mattmath
 
 		bool contains(const RectangleF& other) const;
 
-		// The one member predicate, kept because broad_phase, scene and the
-		// benchmark all name it. Every other pair is a free predicate above
-		// (shape.h says why there is no virtual table over them).
+		// The one member predicate, because box against box is what the
+		// broad phase and the scene's view cull ask. Every other pair is a
+		// free predicate in intersects.h (shape.h says why there is no
+		// virtual table over them).
 		bool intersects(const RectangleF& other) const;
 
 		void inflate(float horizontal_amount, float vertical_amount);
@@ -90,9 +91,8 @@ namespace mattmath
 
 		// The smallest axis-aligned box containing every point.
 		//
-		// Triangle, Quad and RectangleRotated each wrote this fold out; the
-		// last two were character for character identical. Empty in, ZERO out
-		// - a box around nothing.
+		// Triangle, Quad and RectangleRotated all take their bounding_box()
+		// from this. Empty in, ZERO out - a box around nothing.
 		//
 		// A non-finite coordinate is NOT rejected. std::min(a, NaN) returns a,
 		// so a poisoned vertex is silently dropped rather than poisoning the

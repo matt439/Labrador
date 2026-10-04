@@ -10,9 +10,9 @@ namespace labrador
 	// become screen coordinates. One per view, held by DrawList and applied as
 	// each draw is recorded.
 	//
-	// It was a mattmath type, which put the word "camera" in a library whose
-	// contract is that it knows nothing about drawing - and it is constructible
-	// from a Viewport, which was the same problem twice.
+	// A render type and not a mattmath one, because mattmath's contract is that
+	// it knows nothing about drawing - and a camera is constructible from a
+	// Viewport, which is a render type for the same reason.
 	struct Camera
 	{
 		mattmath::Vector2F translation = mattmath::Vector2F::ZERO;
@@ -22,7 +22,8 @@ namespace labrador
 		Camera(const Camera&) = default;
 		Camera(const mattmath::Vector2F& translation, float scale);
 		// constexpr and defined here so DEFAULT_CAMERA is constant-initialised
-		// - see Vector2F's constants for what the dynamic alternative did.
+		// (camera.cpp defines it constinit), and a static in another
+		// translation unit that copies it can never read it before it is set.
 		constexpr Camera(float x, float y, float scale) :
 			translation(x, y), scale(scale) {}
 		Camera(const Viewport& viewport, float scale = 1.0f);
@@ -47,19 +48,18 @@ namespace labrador
 
 		// What `viewport` actually shows of the world under this camera - the
 		// inverse of calculate_view_rectangle, and the only inverse this type
-		// has ever offered.
+		// offers.
 		//
 		// The forward transform is view = (world - translation) * scale, so
 		// the world extent behind `viewport.width` pixels is
-		// viewport.width / scale. Every caller that needed this wrote it by
-		// hand and most of them wrote a MULTIPLY, which is the right
-		// arithmetic upside down: it agrees at scale 1, is merely
-		// over-inclusive above it, and collapses below it. Camera::frame
-		// produces exactly the below-one case whenever a world rectangle is
-		// larger than the viewport showing it - framing 6000 world units into
-		// 1080 pixels gives scale 0.18, where the multiply reports a visible
-		// region 31 times too small in each axis and a cull built on it throws
-		// away almost everything on screen.
+		// viewport.width / scale. Written by hand, the tempting arithmetic is
+		// a MULTIPLY, which is the right arithmetic upside down: it agrees at
+		// scale 1, is merely over-inclusive above it, and collapses below it.
+		// Camera::frame produces exactly the below-one case whenever a world
+		// rectangle is larger than the viewport showing it - framing 6000
+		// world units into 1080 pixels gives scale 0.18, where the multiply
+		// reports a visible region 31 times too small in each axis and a cull
+		// built on it throws away almost everything on screen.
 		//
 		// Throws std::invalid_argument for a zero scale, which is not a
 		// viewpoint but a division by nothing. Camera::frame cannot produce
@@ -70,18 +70,11 @@ namespace labrador
 		//
 		// Both axes are honoured: the scale is whichever of the two ratios
 		// fits, and the surplus on the other axis is split evenly so the
-		// requested rectangle ends up centred. What this replaces,
-		// `calculate_camera_from_view_rectangle`, derived the scale from the
-		// widths alone and silently discarded the height it was given - so an
-		// end-of-match shot authored as 3840x2160 was framed as "3840 wide,
-		// and however tall the back buffer's aspect makes that". Its two
-		// parameters were also named the wrong way round: the first was the
-		// world rectangle and the second the view.
+		// requested rectangle ends up centred.
 		//
 		// Throws std::invalid_argument if either rectangle has a
-		// non-positive extent - the old form divided by view_rectangle.width
-		// with no guard, and a zero there is an infinite scale that poisons
-		// every cull and every draw taken through the result.
+		// non-positive extent: a zero there is an infinite or a zero scale,
+		// which poisons every cull and every draw taken through the result.
 		static Camera frame(const mattmath::RectangleF& world_rectangle,
 			const Viewport& viewport);
 

@@ -27,9 +27,7 @@ namespace labrador
 	// How many logical processors the machine reports, and never fewer than one.
 	//
 	// THE SHELL ASKS THE MACHINE TWO QUESTIONS, AND THIS IS ONE OF THEM - the
-	// other is where the executable is (content_root.h), and it was one until
-	// a sample started from the wrong folder could not find its own content.
-	// What this answer sizes is the thread pool and nothing else: the
+	// other is where the executable is (content_root.h). What this answer sizes is the thread pool and nothing else: the
 	// renderer's view capacity is a property of the layout
 	// (ApplicationOptions::view_capacity) and the partition count is a
 	// property of the work (Scene::draw). One constant answering all three
@@ -60,7 +58,7 @@ namespace labrador
 		// machine reports rather than to a number written here. A fan-out wider
 		// than the box has hardware for is slower than not fanning out at all,
 		// and the box least able to absorb that mistake is the one this engine
-		// most wants to run on: the old default of 16 made four tasks plus a
+		// most wants to run on: a fixed sixteen would make four tasks plus a
 		// blocked submitter out of a four-view frame on a two-core part.
 		int min_threads = 1;
 		int max_threads = default_thread_count();
@@ -76,8 +74,8 @@ namespace labrador
 		// frame ever uses it. A sixteen-thread default would build sixteen of
 		// them to draw one pane, out of the same memory the game runs in.
 		//
-		// Four is four-player split-screen, which is the widest layout either
-		// client has. A game drawing one pane says 1 and pays for one.
+		// Four is four-player split-screen. A game drawing one pane says 1 and
+		// pays for one.
 		int view_capacity = 4;
 
 		// Smallest the user may drag the window; below this the swap chain is not
@@ -89,10 +87,10 @@ namespace labrador
 		// a bad number reach the code that divides by it. Application calls
 		// this before it opens a window.
 		//
-		// Nothing checked these. max_threads reaches Partitioner as a divisor
-		// on every frame of every view, and target_fps reaches StepTimer as
-		// one, so a zero in either was a hang or a crash on the first frame -
-		// and the game reads both from a save file it does not control.
+		// max_threads reaches Partitioner as a divisor on every frame of every
+		// view, and target_fps reaches StepTimer as one, so a zero in either
+		// would be a hang or a crash on the first frame - and a game may read
+		// both from a save file it does not control.
 		// view_capacity is the same shape: create_device throws below 1, and
 		// throwing here instead names the field rather than the parameter.
 		void validate() const;
@@ -134,10 +132,9 @@ namespace labrador
 		//
 		// A RELATIVE PATH IS RELATIVE TO THE EXECUTABLE, not to the working
 		// directory, and a relative directory inside the manifest is relative
-		// to the manifest (engine/app/content_root.h says why, and what the
-		// alternative did to a sample started from anywhere but its build
-		// folder). "./manifest.json" therefore means the file beside the
-		// game, wherever the game was started from. An absolute path is
+		// to the manifest (engine/app/content_root.h says why).
+		// "./manifest.json" therefore means the file beside the game,
+		// wherever the game was started from. An absolute path is
 		// taken as it is.
 		void load_manifest(const std::string& manifest_path);
 
@@ -196,21 +193,20 @@ namespace labrador
 		// Borrowed, every one: the Application owns them and outlives the states
 		// it runs.
 		//
-		// THAT SENTENCE IS TRUE BECAUSE ~Application DRAINS THE STACK FIRST, and
-		// it was false by construction until it did. The states live in the
-		// StateContext base and every service below is a member, so member
-		// destruction runs first and each of these was already gone by the time
-		// the states holding them were destroyed. ~Application calls
-		// StateContext::clear() as its first statement; that is the whole of
-		// what makes a state safe to release a service in its destructor, which
-		// is the teardown pattern state_context.h documents.
+		// THAT SENTENCE IS TRUE BECAUSE ~Application DRAINS THE STACK FIRST.
+		// The states live in the StateContext base and every service below is a
+		// member, so member destruction would otherwise run first and each of
+		// these would be gone by the time the states holding them were
+		// destroyed. ~Application calls StateContext::clear() as its first
+		// statement; that is the whole of what makes a state safe to release a
+		// service in its destructor, which is the teardown pattern
+		// state_context.h documents.
 		//
 		// The tidier arrangement is for StateContext to be a member declared
-		// last rather than a base - then the ordering is designed rather than
-		// repaired. It is deferred because it removes push/pop/transition_to
+		// last rather than a base, so that the ordering needs no first
+		// statement. It is not taken because it removes push/pop/transition_to
 		// /depth from every Application*, and PHILOSOPHY batches source breaks.
-		// If it is ever done, ~StateContext's `virtual` goes with it: it is
-		// virtual only because it is inherited from.
+		// ~StateContext is virtual only because it is inherited from.
 		Renderer* renderer() const;
 		RenderResources* render_resources() const;
 		AudioResources* audio_resources() const;
@@ -258,13 +254,12 @@ namespace labrador
 		// AND THE TABLE IS DECLARED BEFORE THE RENDERER, so it dies after one.
 		// render_resources.h states it as a term of the seam and says what it
 		// costs to get wrong: the table holds whatever a backend calls a
-		// texture, and on two of the five backends that is a resource the GPU
-		// may still be reading - an ID3D12Resource on D3D12, a VkImage on
-		// Vulkan - whose only wait is in ~Renderer::Impl. Declared the other
-		// way round - which is the order they are created in, and the order
-		// this list had - every texture is released ahead of that wait on every
-		// normal exit. It costs nothing on the other three backends, which is
-		// why it survived.
+		// texture, and on a backend that owns its own synchronisation that is a
+		// resource the GPU may still be reading - an ID3D12Resource on D3D12, a
+		// VkImage on Vulkan - whose only wait is in ~Renderer::Impl. Declared
+		// the other way round, which is the order they are created in, every
+		// texture would be released ahead of that wait on every normal exit,
+		// and only those backends would show it.
 		std::unique_ptr<RenderResources> render_resources_ = nullptr;
 		std::unique_ptr<Renderer> renderer_ = nullptr;
 		StepTimer timer_ = StepTimer();

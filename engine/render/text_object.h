@@ -15,14 +15,14 @@ namespace labrador
 	// short of it: a glyph table is keyed by code unit, so a narrow entry point
 	// is a conversion, and a conversion on the draw path is either an
 	// allocation per string per view per frame or a buffer shared between
-	// workers. DirectXTK chose the second and it was a data race. widen() in
-	// text_encoding.h is where narrow content comes across, once.
+	// workers. widen() in text_encoding.h is where narrow content comes across,
+	// once.
 	//
 	// The font name is resolved to a handle at construction. A handle rather than
-	// a cached font pointer, because the table is what survives a device loss: a
-	// font is engine data now, but its atlas is not, and it is the registry slot
-	// that a reload refills. A pointer taken before a loss would still be a
-	// pointer into a table that a move of RenderResources could reseat.
+	// a cached font pointer, because the registry slot is what survives a device
+	// loss: a font is engine data, but its atlas is not, and the reload remakes
+	// the font into the same slot. A pointer taken before the loss would dangle
+	// after it.
 	class TextObject : public DrawObject
 	{
 	public:
@@ -65,12 +65,11 @@ namespace labrador
 		// Turned by draw_rotation(), about the position, because that is
 		// what draw() does to every glyph - so for a rotated string this is
 		// the axis-aligned box around the turned one, which is the box a cull
-		// has to see. It used to hand back the unrotated box on the argument
-		// that nothing rotated text; a Label is a GameObject, and a rotated
-		// one reporting its unrotated box was culled at the edge of a view it
-		// was drawn inside (docs/review/gpt6/README.md, G6-04). The arithmetic
-		// is sprite_geometry.h's text_quad_bounds, beside the glyph quad it
-		// has to agree with, and an unrotated string costs it no trigonometry.
+		// has to see: a Label is a GameObject, and a rotated one reporting its
+		// unrotated box would be culled at the edge of a view it is drawn
+		// inside. The arithmetic is sprite_geometry.h's text_quad_bounds,
+		// beside the glyph quad it has to agree with, and an unrotated string
+		// costs it no trigonometry.
 		mattmath::RectangleF text_bounds() const;
 
 		// The same box for a hypothetical draw at another position and scale,

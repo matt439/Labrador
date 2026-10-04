@@ -10,23 +10,14 @@ namespace labrador
 	//
 	// IT LIVES IN input/ AND NOT IN ui/, which is where the consumer is. A
 	// direction is a pure direction with no device in it, so ui/ can consume
-	// one - but the module that names the type is the module that produces it,
-	// and a header in ui/ claiming input/ produces something no producer in
-	// this tree makes is a false fact about another module.
-	// docs/survey/2026-08-26.md section 3.3 is where that was called a defect
-	// on its own.
+	// one - but the module that names the type is the module that produces it.
 	//
-	// It moved here rather than the producer moving there, because the
-	// sentence had the dependency the right way round and ARCHITECTURE's module
-	// table already allows it: `ui` may depend on `input`, and `input` may
-	// depend on core and math alone. A direction is what a device reports;
-	// navigating widgets with one is what a menu does with it. Putting the
-	// producer in `ui` would have made the input module depend on the widget
-	// set to describe a stick, which is the table read backwards.
-	//
-	// That edge of the table had never been exercised - nothing in engine/ui/
-	// included anything from engine/input/ - so this is the first thing that
-	// stands on it.
+	// That is the dependency the right way round, and ARCHITECTURE's module
+	// table allows it: `ui` may depend on `input`, and `input` may depend on
+	// core and math alone. A direction is what a device reports; navigating
+	// widgets with one is what a menu does with it. Putting the producer in
+	// `ui` would make the input module depend on the widget set to describe a
+	// stick, which is the table read backwards.
 	enum class Direction
 	{
 		none,
@@ -69,9 +60,8 @@ namespace labrador
 	//
 	// The two are one question to a player and two to a device, and collapsing
 	// them is the line every client would otherwise write - so it is written
-	// once, here, where navigation.h has been claiming it lived. The d-pad
-	// wins a disagreement, because it is the deliberate input of the two: a
-	// thumb resting on a stick should not fight a press.
+	// once, here. The d-pad wins a disagreement, because it is the deliberate
+	// input of the two: a thumb resting on a stick should not fight a press.
 	//
 	// ONE STATE AND NOT A Gamepads, which is gamepad.h's own rule for
 	// everything beside it: "free functions over two values, and Gamepads'
@@ -134,14 +124,11 @@ namespace labrador
 		// - which is what a newly constructed one does, for a repeat that is
 		// reused across pages rather than built per page.
 		//
-		// NOT WHAT A PAGE OPENING OVER A HELD STICK WANTS, and this comment
-		// used to say it was. Forgetting makes the held direction a change on
-		// the next frame, and a change fires at once: the cursor was off the
-		// first row before the screen was visible, which is the exact thing
-		// the sentence claimed to prevent. The one client that called it here
-		// had a freshly built repeat, so the call changed nothing and the
-		// cursor jumped anyway (docs/review/gpt6/README.md, G6-08). That case
-		// is start_held.
+		// NOT WHAT A PAGE OPENING OVER A HELD STICK WANTS. Forgetting makes
+		// the held direction a change on the next frame, and a change fires at
+		// once, so the cursor is off the first row before the screen is
+		// visible - and a freshly built repeat has nothing to forget, so
+		// calling this on one changes nothing. That case is start_held.
 		void reset();
 
 		// Starts with `held` already pushed, so it is not a press. Nothing

@@ -24,7 +24,7 @@ namespace labrador
 	// rescaled widget. A screen mixing the two gets bars 1.5x too wide for the
 	// box they sit in, because the box was shrunk and the bars were not.
 	//
-	// A widget now holds one geometry, in whatever space the game authored it
+	// A widget holds one geometry, in whatever space the game authored it
 	// in, and nothing ever rewrites it. The mapping to the screen is a Camera,
 	// and it is set on the draw list once for the whole menu rather than passed
 	// to every widget in turn (renderer.h, DrawList::set_camera).
@@ -81,11 +81,12 @@ namespace labrador
 	//
 	// IT IS A UiWidget AND NOT A UiObject, which is the difference
 	// between a compound widget being writable and not. FocusGroup::add takes
-	// a UiWidget*, so a container could not be focused - and a row that is a
-	// label and a value side by side, which is what every options screen is
-	// made of, is exactly a container the cursor lands on. A client without
-	// this recovers the label-to-value relationship by comparing the focused
-	// pointer against each label in turn, and cannot write a slider at all.
+	// a UiWidget*, so a container that was only a UiObject could not be
+	// focused - and a row that is a label and a value side by side, which is
+	// what every options screen is made of, is exactly a container the cursor
+	// lands on. A client without this recovers the label-to-value relationship
+	// by comparing the focused pointer against each label in turn, and cannot
+	// write a slider at all.
 	//
 	// SO IT IS NOT final EITHER, and deriving from it is how a compound
 	// widget is written: build the parts in the constructor, hand them to
@@ -93,12 +94,12 @@ namespace labrador
 	// written. set_colour reaches every child, so a focus group holding one of
 	// these paints the whole row.
 	//
-	// Children are loans, as they were, and the container outlives nothing. A
-	// deriving class that owns its children holds them as members and calls
+	// Children are loans, and the container outlives nothing. A deriving
+	// class that owns its children holds them as members and calls
 	// add_child from its constructor body: members are built after the base,
 	// so there is nothing to add during the initialiser list, and destruction
-	// runs the other way - the container is emptied before the members it was
-	// pointing at go.
+	// runs the other way - the members go first, and the container destroyed
+	// after them drops their pointers without reading any of them.
 	class UiContainer : public UiWidget
 	{
 	public:
@@ -124,12 +125,12 @@ namespace labrador
 		std::vector<std::pair<std::string, UiObject*>> children_;
 	};
 
-	// THE THREE LEAVES ARE NOT final, and it is worth saying because they
-	// were, with no reason given anywhere - which reads as unconsidered rather
-	// than decided. A client wanting a text object with one extra behaviour -
-	// a line that builds itself from a list of parts, say - had to compose one
-	// and forward update, draw, bounds and set_colour to it by hand: four
-	// functions of boilerplate to add one.
+	// THE THREE LEAVES ARE NOT final, deliberately: PHILOSOPHY (UI) has every
+	// leaf open to derivation. A client wanting a text object with one extra
+	// behaviour - a line that builds itself from a list of parts, say -
+	// derives from UiText, where composing one would mean forwarding update,
+	// draw, bounds and set_colour to it by hand: four functions of boilerplate
+	// to add one.
 	//
 	// Deriving costs nothing structural. The destructor is virtual from
 	// GameObject down, so these are safe to hold and delete as UiWidget*, and

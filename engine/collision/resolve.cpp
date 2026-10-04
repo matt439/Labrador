@@ -17,10 +17,11 @@ namespace labrador
 	{
 		void require_unit(const Vector2F& vector, const char* name)
 		{
-			// Squared, so this costs no square root. The tolerance is on the
-			// squared length, which is twice as loose as one on the length -
-			// deliberately, since the point is to catch a vector that was
-			// never normalised, not to police the last bit of one that was.
+			// Squared, so this costs no square root. 1e-3 on the squared length
+			// is about 5e-4 on the length, which is still far wider than what
+			// normalising leaves behind - deliberately, since the point is to
+			// catch a vector that was never normalised, not to police the last
+			// bit of one that was.
 			const float length_squared = Vector2F::dot(vector, vector);
 			if (!(std::abs(length_squared - 1.0f) <= 0.001f))
 			{

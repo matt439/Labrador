@@ -20,9 +20,7 @@ namespace labrador
 	// bytes would only say "whatever this machine is".
 	//
 	// IN core/ RATHER THAN render/, which is where both of its callers are,
-	// because nothing about it is a picture: it reads numbers out of a file. The
-	// second caller is what moved it here; the first one had a copy of it in an
-	// anonymous namespace.
+	// because nothing about it is a picture: it reads numbers out of a file.
 	class ByteReader
 	{
 	public:

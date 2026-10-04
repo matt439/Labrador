@@ -17,21 +17,8 @@ namespace labrador
 	// names a graphics type. So the first two are written once, in
 	// resource_factory.cpp, and a backend supplies add_texture_asset and
 	// nothing else - which is the whole of what a port owes for content, and
-	// costs what the API charges: twenty-three lines on null, forty-seven on
-	// d3d11 and eighty-six on gl, against a couple of hundred on each of the
-	// two that own their own uploads. "Thirty lines" was written when the
-	// smallest of them was the only one anybody had counted; renderer.h
-	// measures all five in one place.
-	//
-	// It was not always so. All of this lived in engine/assets/resource_loader.cpp,
-	// which made assets/ the home of a backend translation unit - and put
-	// <d3d11_1.h> in engine/assets/resource_loader.h, which engine/app/application.h
-	// includes, which every state file in every client includes. The seam promises
-	// that reaching for the device is "a deliberate include of
-	// engine/render/<backend>/ and not something a game file can do by accident";
-	// transitively it already was. Moving the whole factory to the backend closed
-	// that, and this splits the factory again now that only one line of it is
-	// actually the backend's.
+	// costs what the API charges. engine/render/SEAM.md#4 orders the backends
+	// by it.
 	//
 	// Nothing declared here names a graphics type, so a caller compiles against
 	// it with no backend header in scope. Asking for a backend that was not built
@@ -83,27 +70,24 @@ namespace labrador
 	// AFTER create_device, AND THAT IS A RULE OF THE SEAM RATHER THAN ONE
 	// BACKEND'S PREFERENCE. `renderer` is named here only because a texture is
 	// made on a device, so there has to be one; a call before there is throws
-	// std::runtime_error naming `name`. It was written down nowhere, and the
-	// three backends answered it three ways - a named throw, an access
-	// violation inside the D3D runtime, and, on the one configuration CI runs
-	// end to end, a handle that resolved and drew. The ordering is fixed the
-	// other way round from set_resources, which is why it is easy to get wrong:
-	// the device comes first, then the table, then the content.
+	// std::runtime_error naming `name`. The ordering is fixed the other way
+	// round from set_resources, which is why it is easy to get wrong: the
+	// device comes first, then the table, then the content.
 	//
 	// AND NOT BETWEEN begin_frame AND submit, WHICH IS THE OTHER HALF OF THE
-	// SAME RULE AND WAS MISSING FROM IT. Re-loading a name is ordinary and
-	// supported - the table writes the new texture into the slot the name
-	// already holds, so every handle resolved from it stays valid, and
-	// RenderPixelTests pins that three hundred times over. What is not
-	// supported is doing it while a frame is open. A recorded draw holds
-	// whatever its backend calls a texture, taken at draw time and not owned:
-	// an ID3D11ShaderResourceView*, a const D3d12Texture*, a GL texture name, a
-	// const VulkanTexture* - and the four rasterising backends do not look at
-	// it again until submit(), by which time the re-load has released it.
-	// The null backend reads the texture at draw time and records a size, so it
-	// answers differently, which is what makes this undefined rather than
-	// merely dangerous: five backends, two behaviours, and no caller that could
-	// tell them apart on purpose. Load content between frames.
+	// SAME RULE. Re-loading a name is ordinary and supported - the table
+	// writes the new texture into the slot the name already holds, so every
+	// handle resolved from it stays valid, and RenderPixelTests pins that
+	// three hundred times over. What is not supported is doing it while a
+	// frame is open. A recorded draw holds whatever its backend calls a
+	// texture, taken at draw time and not owned: an ID3D11ShaderResourceView*,
+	// a const D3d12Texture*, a GL texture name, a const VulkanTexture* - and a
+	// rasterising backend does not look at it again until submit(), by which
+	// time the re-load has released it. The null backend reads the texture at
+	// draw time and records a size, so it answers differently, which is what
+	// makes this undefined rather than merely dangerous: the backends behave
+	// two ways, and no caller could tell them apart on purpose. Load content
+	// between frames.
 	void add_texture_asset(const Renderer& renderer,
 		RenderResources& resources,
 		const std::string& name,

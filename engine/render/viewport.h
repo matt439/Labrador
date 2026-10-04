@@ -7,11 +7,8 @@
 namespace labrador
 {
 	// A rectangle of the back buffer, plus a depth range, in the shape every
-	// graphics API wants it. It was a mattmath type carrying a D3D11_VIEWPORT
-	// conversion, a SimpleMath::Viewport conversion and a reinterpret_cast to
-	// the first, in a library documented as depending on nothing. The
-	// conversion left with the rest of them; the type follows it into render/,
-	// which is the only module that has ever needed one.
+	// graphics API wants it. A render type and not a mattmath one, because
+	// mattmath depends on nothing and knows nothing about drawing.
 	//
 	// minDepth and maxDepth are camelCase because they mirror D3D11_VIEWPORT's
 	// last two fields, which that header spells MinDepth and MaxDepth - so this

@@ -26,32 +26,25 @@ namespace labrador
 	// What is in the world, where the world is seen from, and the four phases
 	// that step it and draw it.
 	//
-	// This is finding #18, outstanding since the 2023 review. What it replaces
-	// is a 766-line Level that was three classes wearing one name: the object
-	// lists and their loops, the collision sweep and the per-view render
-	// fan-out - none of which is about a paint match - wrapped around a state
-	// machine, four timers, a music track and a HUD, which all are. Every
-	// engine that has ever been written has the first half; only this game has
-	// the second. A second game got none of it.
+	// The scene is the mechanism every game needs: the objects and their
+	// loops, the collision sweep and the per-view render fan-out. What a level
+	// means - its rules, its timers, its music, its HUD - is the game's, so a
+	// game's level is a class of its own that owns a Scene (PHILOSOPHY,
+	// Structural types).
 	//
-	// WHY THIS IS ITS OWN MODULE, AND NOT engine/core/.
-	//
-	// The plan filed this as engine/core/scene.*, written before
-	// engine/collision/ existed. It cannot live there. A scene owns collision
-	// objects and sweeps them, so it depends on `collision` - and `collision`
-	// depends on `core` (CollisionObject is a GameObject), so core -> collision
-	// closes a cycle the module table forbids. It also drives the renderer, and
-	// `core` may depend on math alone. Both walls are real and neither is worth
-	// breaking for a filing convenience: the arrows here point one way, at
-	// core, math, collision and render, which is the same shape `ui` already
-	// has for the same reason (ARCHITECTURE, Modules).
+	// IT IS ITS OWN MODULE, AND NOT PART OF engine/core/. A scene owns
+	// collision objects and sweeps them, so it depends on `collision` - and
+	// `collision` depends on `core` (CollisionObject is a GameObject), so a
+	// scene in core would close a cycle the module table forbids. It also
+	// drives the renderer, and `core` may depend on math alone. The arrows
+	// here point one way, at core, math, collision and render, which is the
+	// shape `ui` has for the same reason (ARCHITECTURE, Modules).
 	//
 	// WHAT IS DELIBERATELY NOT HERE. No ViewportManager, no CameraTools, no
 	// ResolutionManager, no RenderResources. Where the panes are, how a camera
 	// follows a player and what filtering the pixels want are all policy, and
-	// policy belongs to the client - which is why the view list below is
-	// something the game fills rather than something the scene computes. The
-	// scene owns the mechanism: one object list, one sweep, one fan-out.
+	// policy belongs to the client (T1) - which is why the view list below is
+	// something the game fills rather than something the scene computes.
 	class Scene
 	{
 	public:
@@ -64,12 +57,9 @@ namespace labrador
 		// is why GameObject::draw is const. This struct is the thing they own
 		// disjointly instead.
 		//
-		// Before it existed, the renderer's only source of view information was
-		// the player list: the view count was player_objects_->size(), each
-		// viewport came off a Player::player_num() and each camera off a
-		// Player::camera(). So folding the players into one object list - which
-		// is the whole point of having one - deleted the renderer's view
-		// information, and the view list had to exist before the fold could.
+		// A view is not a player. Split-screen is one view per player, but a
+		// title screen is a view with nobody behind it, so the scene keeps the
+		// list and the game decides what fills it.
 		struct View
 		{
 			Viewport viewport;
@@ -95,6 +85,11 @@ namespace labrador
 		// Borrowed, both of them: the shell owns the pool and outlives every
 		// scene. They are the fan-out and nothing else - a scene with one view
 		// touches neither.
+		//
+		// Either may be nullptr, and then every view is drawn on the calling
+		// thread. That pair is the dial: below a few hundred objects, dividing
+		// the views across workers costs more than the work it divides, and only
+		// the game knows its own counts (PHILOSOPHY, Performance).
 		Scene(ThreadPool* thread_pool, const Partitioner* partitioner);
 		~Scene();
 
@@ -104,12 +99,10 @@ namespace labrador
 		// Takes ownership, and does not insert yet: the object is pending until
 		// the next end_tick().
 		//
-		// Deferral is not tidiness. The one place objects enter the world
-		// mid-frame is a weapon firing, and with the players in the same list
-		// as their projectiles - which is what one object list means - a push
-		// from inside the update loop invalidates the iterator walking it. Two
-		// lists hide that only for as long as the push goes into the one nobody
-		// is walking.
+		// Deferral is not tidiness. Objects enter the world mid-tick - a weapon
+		// fires, a piece spawns - from inside an update() the scene is running,
+		// and a push into the list being walked invalidates the iterator
+		// walking it.
 		//
 		// The returned pointer is valid immediately, and is the object's own
 		// type rather than the list's - it is what a caller that needs to keep
@@ -117,10 +110,10 @@ namespace labrador
 		// retires the object, which is the end of the tick in which something
 		// called set_for_deletion(true) on it.
 		//
-		// One name and not two, because a Player is both: it derives from
-		// CollisionObject, which derives from GameObject, so an overload pair
-		// would be ambiguous at every call that names a concrete type. Which
-		// list an object joins is a property of the object, so the object
+		// One name and not two, because a collision object is both: it derives
+		// from CollisionObject, which derives from GameObject, so an overload
+		// pair would be ambiguous at every call that names a concrete type.
+		// Which list an object joins is a property of the object, so the object
 		// decides it - here, at compile time, with no runtime test and no
 		// dynamic_cast.
 		template <typename T>
@@ -148,8 +141,8 @@ namespace labrador
 		// This is what the sweep is handed, so it exists either way; exposing
 		// it costs nothing and saves the game keeping a parallel list of its
 		// own. What the game wants it for is the questions only the game can
-		// ask - "how much of this arena is painted my colour" - and the answer
-		// to those is a walk, once, not a virtual on the object.
+		// ask - "how many of these are still standing" - and the answer to
+		// those is a walk, once, not a virtual on the object.
 		std::span<CollisionObject* const> collision_objects() const;
 
 		// The view list, refilled by the game each tick.
@@ -203,18 +196,16 @@ namespace labrador
 
 		// PHASE 3 is the game's, and it has no function on this class.
 		//
-		// Between resolution and the end of the tick, the paint-shooter moves
-		// each player's weapon to follow the body a contact just pushed, and
-		// records the rectangle next frame's sweep measures movement against.
-		// The plan offered two homes for that: name the phase for everyone with
-		// a virtual on GameObject, or let the game run it after resolve().
-		//
-		// It is the game's, because the alternative is a virtual call with an
-		// empty body on five thousand paint tiles per frame to serve one class,
-		// which is exactly the frame-loop tax T8 refuses. A game that wants the
-		// phase writes a loop over the objects it already holds pointers to,
-		// between resolve() and end_tick(), and the ordering is lexical and
-		// visible where a hook's would not be.
+		// Between resolution and the end of the tick is where a game does what
+		// depends on where the contacts left things: a weapon moved to follow
+		// the body a contact just pushed, or the rectangle next tick's sweep
+		// measures movement against. A virtual on GameObject would name that
+		// phase for everyone, at the price of a call with an empty body on
+		// every object of every tick to serve the few that need it, which is
+		// the frame-loop tax T8 refuses. A game that wants the phase writes a
+		// loop over the objects it already holds pointers to, between
+		// resolve() and end_tick(), and the ordering is lexical and visible
+		// where a hook's would not be.
 
 		// PHASE 4. Applies everything that was waiting for the tick to be over:
 		// the bounds sweep, then the retirements, then the pending adds.
@@ -238,16 +229,13 @@ namespace labrador
 		// then each scene's view order; overlay callback indices stay local.
 		// An empty scene leaves the existing frame alone.
 		//
-		// Fills
-		// each one: the world through that view's camera, culled to what that
-		// view can see, then the game's overlay over it.
+		// Fills each one: the world through that view's camera, culled to what
+		// that view can see, then the game's overlay over it.
 		//
-		// The fan-out is here and nowhere else. Hand-written copies diverge -
-		// one per player in a level and one per widget in a menu is two, and the
-		// second indexing deferred contexts by widget ordinal caps every menu at
-		// however many the shell happened to make. It is a scene function rather
-		// than a ThreadPool::parallel_for because what it parallelises is views,
-		// which is a thing only a scene knows it has.
+		// The fan-out is here and nowhere else, because hand-written copies of
+		// it diverge. It is a scene function rather than a general parallel-for
+		// on ThreadPool because what it parallelises is views, which is a thing
+		// only a scene knows it has.
 		void draw(Renderer& renderer, const ViewOverlay& overlay = {}) const;
 
 	private:
@@ -264,8 +252,7 @@ namespace labrador
 
 		// The collision objects as bare pointers, which is what the sweep takes
 		// and what collision_objects() hands out. Rebuilt in end_tick(), the
-		// only phase that changes the list - not per frame, which is what the
-		// loop it replaces did.
+		// only phase that changes the list, and not per frame.
 		std::vector<CollisionObject*> collidables_;
 
 		// Kept across ticks so a busy frame allocates nothing after the first.

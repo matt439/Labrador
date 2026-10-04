@@ -17,7 +17,7 @@ namespace mattmath
 		RectangleI() = default;
 		RectangleI(const RectangleI&) = default;
 		// constexpr and defined here so ZERO is constant-initialised. See
-		// Vector2F's constants for what the dynamic alternative did.
+		// Vector2F's constants for what the dynamic alternative risks.
 		constexpr RectangleI(int x, int y, int width, int height) :
 			x(x), y(y), width(width), height(height) {}
 		RectangleI(const mattmath::Vector2I& position,

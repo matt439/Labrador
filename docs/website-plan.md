@@ -89,7 +89,9 @@ Astro pre-renders pages by default. Starlight supplies documentation navigation,
 
 The proposed first version needs static pages, search, images, and recorded footage. Accounts, a database, and server-side application features are not currently requirements. Browser-playable engine demos would be a separate technical project because Labrador currently targets Windows.
 
-**API reference generation has been prototyped; the content question it raised is open.** Three headers (`state.h`, `game_object.h`, `scene.h`) are generated into pages by a line reader in the site build, which needs no tool beyond Node and fails naming the file and line on anything it does not understand. Doxygen does not read Labrador’s plain `//` comments; Clang would have to parse `<Windows.h>`. The recommendation is to keep the reader. The larger finding is in the headers themselves: about two thirds carry history of the code, which CONVENTIONS says is never a comment, and a reference that publishes comments as written presents it as contract. The site’s *About the reference* page sets out both, and [the inventory](website-inventory.md) has the counts. Generated symbols need explanatory guides alongside them; extraction alone does not make a complete manual.
+**API reference: decided and published.** A line reader in the site build generates a page for every public header in all ten modules, which needs no tool beyond Node and fails naming the file and line on anything it does not understand. Doxygen does not read Labrador’s plain `//` comments; Clang would have to parse `<Windows.h>`. One header is left out by name, Microsoft’s `StepTimer`, which is private to `Application`, and the build fails on a public header that is neither published nor left out, so a new one cannot quietly go without a page.
+
+The prototype’s finding was in the headers themselves: about two thirds carried history of the code, which CONVENTIONS says is never a comment, and a reference that publishes comments word for word presents that history as contract ([the inventory](website-inventory.md) has the counts). It was settled by taking the history out. Every public header was swept on 4 October 2026, comment-only: contract kept as written, rationale restated in the present tense where history had been carrying it, and the comments the sweep found to be false against the code corrected. Generated symbols still need explanatory guides alongside them, and the Concepts and Guides sections are those.
 
 The visual direction remains open. Start from readable C++ examples and actual sample imagery, with clear navigation and comfortable reading on desktop and phone.
 
@@ -136,7 +138,7 @@ The requirements and the use of `website/` in this repository are established; t
 | Hosting | Cloudflare Workers Static Assets; compare with GitHub Pages. |
 | Domain and budget | Check the three candidate names and renewal costs before choosing. |
 | Documentation release scope | Inventory taken; [its last table](website-inventory.md) proposes the first release’s coverage, to be agreed. |
-| API reference | Keep the line reader (recommended). Decide whether history in header comments is published or removed before more headers are published. |
+| API reference | **Decided:** the line reader, with history taken out of the headers first. Every public header is published. |
 | Visual identity and media | Provisional: the accent and the favicon come from LineSweeper’s own palette and L piece. No captures exist; a capture driven by a recorded LineSweeper input script is the recommended way to make them. |
 | Version and publishing policy | Every page shows the commit it was built from, and the pages read from the checkout read it at that commit. Release-specific documentation waits on releases. |
 

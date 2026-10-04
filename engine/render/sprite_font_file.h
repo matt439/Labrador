@@ -16,16 +16,14 @@ namespace labrador
 	// half a texture. MakeSpriteFont writes a magic, the glyphs, the line
 	// spacing, a default character and then an atlas as raw bytes and a
 	// DXGI_FORMAT - and every one of those but the last two lines is arithmetic
-	// this engine now owns (font.h). Parsing it in the backend would mean every
+	// this engine owns (font.h). Parsing it in the backend would mean every
 	// backend parsing it, and disagreeing about it silently.
 	//
 	// IT LIVES IN render/ AND NOT IN assets/, which is where files are read,
-	// because its caller is the resource factory and nothing may point at
-	// assets. That caller has not been backend code since the factory was split
-	// - engine/render/resource_factory.cpp is in the unconditional source list
-	// and is compiled once for the whole build - which changes the argument's
-	// premise and not its conclusion: the file reader belongs beside the module
-	// that decides what a glyph is, and that is this one.
+	// because its caller is the resource factory
+	// (engine/render/resource_factory.cpp) and nothing may point at assets -
+	// and because a file reader belongs beside the module that decides what a
+	// glyph is, which is this one.
 	//
 	// THE PIXELS ARE A COPY AND THE STRUCT IS RETURNED BY VALUE. This is a load
 	// path, it runs once per font, and an atlas is a few tens of kilobytes; a

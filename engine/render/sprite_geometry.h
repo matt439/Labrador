@@ -16,31 +16,28 @@
 // texture and not the rectangle, that the source rectangle is in texels, that
 // the tint multiplies, that a fractional destination truncates with an
 // exclusive right edge, and that the origin is measured in unscaled source
-// texels. They were DirectXTK's, inside SpriteBatch::Impl::RenderSprite, where
-// nothing outside that library could read them and no test could reach them.
+// texels.
 //
 // A BACKEND DOES NOT DO THIS ARITHMETIC, WHICH IS THE WHOLE POINT. What a
 // backend receives is four SpriteVertex in view pixels; what it owes is a
 // buffer, a shader that multiplies each vertex by one four-float constant and
 // the sampled texel by the vertex's own colour, and the state that makes the
-// blend premultiplied. Five backends cannot disagree about where a sprite went,
-// because none of them decides. (The count here has always been of backends
-// rather than of rasterisers: null runs this file too, which is what makes its
-// recording worth asserting on.)
+// blend premultiplied. No two backends can disagree about where a sprite went,
+// because none of them decides - the null backend included, which runs this
+// file too, and that is what makes its recording worth asserting on.
 //
 // THE ONE TERM A BACKEND STILL OWNS is where the pane itself sits in the thing
-// being drawn into, because that is the one question the answer to which is not
-// the same shape on all three APIs behind this seam - and there are three
-// answers, not two. Direct3D measures a viewport down from the render target's
-// top left and needs no height at all. GL measures up from the bottom and so
-// has to subtract from one: it held a cached copy of that height and it was
-// wrong for the whole of every drag-resize; it reads the window now
-// (engine/render/gl/backend.h, Impl::drawable_size). Vulkan hands the
-// rasteriser a viewport whose origin is the pane's BOTTOM edge and whose height
-// is negative, which inverts y for the whole pipeline and makes the flip
-// pane-local rather than buffer-relative - so the shape of GL's defect cannot
-// be written there at all (engine/render/vulkan/renderer.cpp). All three keep
-// the sentence above true rather than nearly true.
+// being drawn into, because that is the one question whose answer is not the
+// same shape on every API behind this seam. Direct3D measures a viewport down
+// from the render target's top left and needs no height at all. GL measures up
+// from the bottom and so has to subtract from one, which it reads from the
+// window rather than from a cached copy, because a cached copy is wrong for the
+// whole of every drag-resize (engine/render/gl/backend.h, Impl::drawable_size).
+// Vulkan hands the rasteriser a viewport whose origin is the pane's BOTTOM edge
+// and whose height is negative, which inverts y for the whole pipeline and
+// makes the flip pane-local rather than buffer-relative - so the buffer's
+// height never enters it (engine/render/vulkan/renderer.cpp). Each keeps the
+// sentence above true rather than nearly true.
 //
 // THE CORNER ORDER IS PART OF THE CONTRACT: 0 is the destination's top left, 1
 // its top right, 2 its bottom left, 3 its bottom right. A backend's index
@@ -97,12 +94,7 @@ namespace labrador
 	// THIS IS THE TERM THE WALK DELIBERATELY DOES NOT CARRY. for_each_glyph
 	// reports pen.y as the TOP OF THE LINE and leaves the glyph's own y_offset
 	// out, because measurement wants the line and drawing wants the bearing;
-	// this is where drawing adds it back. It lived in each backend's
-	// draw_text until it was written here, which meant three copies of the one
-	// line that decides how high a glyph sits, none of them reachable by a
-	// test - deleting it from any single copy left every configuration green,
-	// because the pixel contract's text cases compare two glyphs drawn by the
-	// same code and a term applied to both cancels out of the comparison.
+	// this is where drawing adds it back.
 	//
 	// The pen subtracts because it moves the glyph and an origin moves the
 	// string: shifting the origin left by the pen puts the glyph right of the
@@ -126,17 +118,14 @@ namespace labrador
 	//
 	// This is a view-space measurement, not a world-space cull bound.
 	// sprite_world_bounds accounts for the camera-dependent quantization. It
-	// lives here because it has to agree with build_quad to the term. It did
-	// not: Visual::bounds() handed back its destination rectangle, which is
-	// where a sprite lands only when its origin is zero and its rotation is
-	// zero. An authored frame origin shifts the sprite by that many texels'
-	// worth of destination, and a rotation turns it about its top left, so a
-	// sprite at x=100 with an origin of its own width drew across x=80..100
-	// while reporting x=100..120 - and Scene::draw, culling against the
-	// report, dropped it from any view that ended at x=90 while it was
-	// plainly inside (docs/review/gpt6/README.md, G6-04). The cull is the
-	// only consumer that can make the disagreement visible, and it does so
-	// on every backend at once, because none of them decides this.
+	// lives here because it has to agree with build_sprite_quad to the term.
+	// The destination rectangle is where a sprite lands only when its origin
+	// is zero and its rotation is zero. An authored frame origin shifts the
+	// sprite by that many texels' worth of destination, and a rotation turns
+	// it about its top left, so a sprite at x=100 with an origin of its own
+	// width draws across x=80..100 - and a cull against x=100..120 would drop
+	// it from any view that ends at x=90 while it is plainly inside, on every
+	// backend at once, because none of them decides this.
 	//
 	// `origin` is the WHOLE origin - the frame's authored one plus the
 	// caller's, summed the way SpriteSheet::draw sums them - in unscaled

@@ -56,19 +56,16 @@ namespace labrador
 		Colour& operator/=(const Colour& other);
 		Colour& operator/=(float f);
 
-		// Gone with the move, and none of them had a caller: red()/green()/
-		// blue()/alpha() and their four setters, which duplicated the public
-		// fields; set(r, g, b, a) and set_from_int_rgba(r, g, b, a), which
-		// duplicated the constructors. The names were the tell - the four
-		// channels cannot be spelled as parameters without shadowing either
-		// the fields or, now, the palette below. The fields are the interface
-		// and a whole colour is assigned, not four channels.
+		// Assigns the whole colour from `hex`: RRGGBB or RRGGBBAA, hex digits of
+		// either case and no leading '#'. Any other string makes it opaque
+		// black. There are no per-channel accessors or setters beside this: the
+		// fields are the interface, and a whole colour is assigned, not four
+		// channels.
 		void set_from_hex(const std::string& hex);
 
 		// Scales each channel's distance from the colour's luminance: 0 is
 		// fully grey, 1 leaves it alone, above 1 saturates. One function with a
-		// documented range, rather than this and a desaturate(float) beside it
-		// with a byte-identical body.
+		// documented range: desaturating is an amount below 1.
 		void saturate(float amount);
 
 		void brighten(float amount);
@@ -82,15 +79,10 @@ namespace labrador
 		void clamp_colours();
 
 		// The CSS named colours. Declared here and defined once in colour.cpp,
-		// which is the whole of the linkage fix: they were 296 `const` objects
-		// at namespace scope in a header, so every translation unit that
-		// included it built its own 296 - half of them std::string, all of them
-		// dynamically initialised. These are constant-initialised and there is
-		// one set.
+		// constant-initialised, so there is one set however many translation
+		// units include this header.
 		//
-		// CONVENTIONS names `Colour::white` as what a constant looks like. It
-		// was a SCREAMING name in a `colour_consts` namespace, which broke
-		// that rule and the one-namespace-per-library rule at once.
+		// CONVENTIONS names `Colour::white` as what a constant looks like.
 		static const Colour alice_blue;
 		static const Colour antique_white;
 		static const Colour aqua;
@@ -250,7 +242,7 @@ namespace labrador
 	Colour operator* (float S, const Colour& V);
 
 	// Looks up one of the 148 names above, spelt as content files spell them
-	// (SCREAMING_SNAKE - `game/content/levels/*.json` says "DARK_SLATE_GREY").
+	// (SCREAMING_SNAKE - "DARK_SLATE_GREY" for dark_slate_grey).
 	// Returns nothing for a name that is not one of them; the caller decides
 	// whether that is a default or an error.
 	std::optional<Colour> colour_from_name(std::string_view name);

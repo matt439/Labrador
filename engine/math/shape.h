@@ -45,10 +45,10 @@ namespace mattmath
 		//   A polygon with no interior is left EXACTLY AS IT WAS. Collinear or
 		//   coincident vertices give a shape with no outward direction to grow
 		//   along - the centroid is on the same line as every vertex, so no
-		//   edge normal can be oriented - and inventing one moved two of a
+		//   edge normal can be oriented - and inventing one moves two of a
 		//   collinear triangle's three vertices outside the result. Unchanged
-		//   still contains the original; a guess did not. This matches the
-		//   existing policy for a single degenerate edge.
+		//   still contains the original; a guess does not. A single
+		//   degenerate edge leaves the polygon unchanged in the same way.
 		//
 		//   A needle-sharp corner produces a FAR mitre. Two edges that double
 		//   back on each other still meet, and the point where their offset
@@ -64,48 +64,34 @@ namespace mattmath
 
 		// NOT HERE: clone(), edges(), and the intersection table.
 		//
-		// A polymorphic clone() on the engine's most-copied value was filed
-		// `high` twice, and counting said it had one caller in the whole
-		// repository: a Structure constructor that took a borrowed
-		// `const Shape*` and secretly copied it. That constructor takes a
-		// unique_ptr now, so the copy is at the call site where it is visible
-		// and the virtual has nothing left to serve. Every other shape here is
-		// copied by its own copy constructor, which is what a value does.
+		// No clone(). Every shape is copied by its own copy constructor, which
+		// is what a value does (T11).
 		//
-		// edges() was a pure virtual returning std::vector<Segment> - a heap
-		// allocation per call for three or four segments known at compile
-		// time - and it was called only through concrete types, never through
-		// a Shape&. So the polymorphism paid for nothing and the allocation
-		// paid for less: the callers are the intersection routines below, on
-		// the narrow phase's own path. Each shape declares its own edges()
-		// returning std::array of the right length, and Circle - which
-		// answered the pure virtual with an empty vector because a circle has
-		// no edges - declares none at all.
+		// No virtual edges(). A shape's edges are three or four segments known
+		// at compile time, and a virtual returning them would have to return a
+		// heap-allocated std::vector per call so that every shape could answer
+		// it. Nothing asks for them through a Shape&: the callers - the
+		// intersection routines in intersects.h among them - already hold the
+		// concrete type. So each shape declares its own edges() returning
+		// std::array of the right length, and Circle, which has no edges,
+		// declares none at all.
 		//
-		// A virtual intersects() table is the same mistake at seven times the
-		// size, and it is what would make this header declare eleven types
-		// before it defined one. Seven pure virtuals - one per shape a shape can
-		// be asked about - make every concrete type name every other at
+		// No virtual intersects() table, which is the same mistake at seven
+		// times the size and would make this header declare eleven types before
+		// it defined one. Seven pure virtuals - one per shape a shape can be
+		// asked about - would make every concrete type name every other at
 		// declaration time, so nothing here could be filed apart from anything
-		// else, and the thirty-seven overrides answering them are one-line
-		// forwards to the free predicates below, which hold the bodies, the
-		// contracts and the documented degenerate cases. Two dispatchers on top
-		// recover the concrete type with dynamic_cast to choose an overload: a
-		// downcast per query, on the narrow phase's own path, to reach a
-		// function whose name the caller already knew (T8).
+		// else, and every override would be a one-line forward to a free
+		// predicate in intersects.h, which holds the body, the contract and the
+		// documented degenerate cases. Choosing an overload from a Shape& means
+		// recovering the concrete type with dynamic_cast: a downcast per query
+		// to reach a function whose name the caller already knew (T8). The one
+		// member predicate is RectangleF::intersects(const RectangleF&),
+		// because box against box is what the broad phase and the scene's view
+		// cull ask.
 		//
-		// Counted across the tree, every production call of that table is a
-		// RectangleF against a RectangleF - which is why that one predicate is a
-		// member and holds a body, and why the free predicates below are what
-		// everything else asks. A dispatcher over the seven has no caller
-		// anywhere, tests included.
-		//
-		// contains(const Point2F&) went with it, from all five shapes. Each
-		// was a one-line forward to that shape's own intersects(Point2F)
-		// override - a second spelling of a second spelling. The surviving
-		// spelling is the *_point_intersect predicate below. Not affected:
-		// RectangleF::contains(const RectangleF&), which asks a different
-		// question and has a caller, and RectangleI's pair, which is not a
-		// Shape.
+		// No contains(const Point2F&) either: the *_point_intersect predicates
+		// in intersects.h are that question. RectangleF::contains(const
+		// RectangleF&) asks a different one, and RectangleI is not a Shape.
 	};
 }

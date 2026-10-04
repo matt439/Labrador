@@ -10,19 +10,14 @@
 namespace labrador
 {
 	// What a window has to tell whoever owns it. Modelled on DeviceNotify
-	// (engine/render/renderer.h) and const-qualified to match, because these
-	// are the handlers Application already had: some of them read the world
-	// and some change it, and copying that distinction wrong makes Application
-	// abstract.
+	// (engine/render/renderer.h) and const-qualified the same way: a handler
+	// that only reads the world is const, and one that changes it is not.
 	//
-	// THE ACTIVATION FOUR ARE ON THE CHANGING SIDE, and three of them were
-	// not. They were const while all they did was suspend a borrowed pad
-	// reader and mark two borrowed devices unfocused; they now carry the same
+	// THE ACTIVATION FOUR ARE ON THE CHANGING SIDE, because they carry the
 	// news into the state stack, where a game's own code runs and may push,
-	// pop or transition. Fanning that out from a const handler would have
-	// compiled - the states hang off unique_ptrs, whose constness is one level
-	// deep - which is the reason to change the signature rather than lean on
-	// it.
+	// pop or transition. Fanning that out from a const handler would compile
+	// - the states hang off unique_ptrs, whose constness is one level deep -
+	// which is the reason the signature says so rather than leaning on it.
 	class WindowNotify
 	{
 	public:
@@ -127,8 +122,8 @@ namespace labrador
 		// that WM_SIZE is load-bearing - it is what corrects the caller to the
 		// client size the window really got, which matters most going full
 		// screen at launch, where the monitor decides the size and nothing
-		// here knows it. A setter-based design drops those two messages on the
-		// floor and silently reinstates the bug.
+		// here knows it. A notify set after construction would miss both
+		// messages, and the owner would never learn the size it got.
 		Window(HINSTANCE instance, int show_command,
 			const WindowOptions& options, WindowNotify* notify);
 
@@ -136,16 +131,13 @@ namespace labrador
 		// class either way. What the constructor makes, this unmakes, on every
 		// path out - not only the one where the pump returned.
 		//
-		// IT WAS DEFAULTED, on the argument that by the time it runs the pump
-		// has returned, which only happens on WM_QUIT, which only comes from
-		// WM_DESTROY - so the native window was already gone. Every clause of
-		// that is true and the conclusion is not, because the pump is not the
-		// only way out of the scope that owns a Window. create_device throwing,
-		// a manifest that does not open, a state's update() throwing out of
-		// tick(): each unwinds Application while the window still exists, and
-		// the window's user data went on pointing at the destroyed Window. The
-		// samples then put up a message box, which runs a modal message loop,
-		// which is a way back into a window procedure that reads that pointer.
+		// THE PUMP IS NOT THE ONLY WAY OUT of the scope that owns a Window.
+		// create_device throwing, a manifest that does not open, a state's
+		// update() throwing out of tick(): each unwinds Application while the
+		// window still exists. A window left behind would go on pointing at the
+		// destroyed Window through its user data, and a message box shown
+		// afterwards - the samples show one - runs a modal message loop, which
+		// is a way back into a window procedure that reads that pointer.
 		//
 		// `notify` is never called from in here. The messages DestroyWindow
 		// sends arrive after the owner has started destroying itself - in
@@ -192,7 +184,7 @@ namespace labrador
 		// under `style`/`ex_style`. Every Win32 call that sizes a window takes
 		// the outer rect and every resolution this engine is asked for is
 		// client area, so this conversion sits between the two - without it a
-		// windowed 1280x720 delivered about 1264x681, silently, at every
+		// windowed 1280x720 would deliver about 1264x681, silently, at every
 		// preset.
 		//
 		// Public and static because it is the one piece of this class that can
@@ -213,9 +205,7 @@ namespace labrador
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE, for the reason
 		// the constructor gives: messages arrive while it is still running, so
 		// everything window_proc reads has to be initialised before handle_ is
-		// assigned. These were function-local statics in window_proc, which
-		// worked only because there is one window per process - and which
-		// zero-initialised before main, so the safety was free and accidental.
+		// assigned.
 		WindowNotify* notify_ = nullptr;
 		bool in_sizemove_ = false;
 		bool in_suspend_ = false;

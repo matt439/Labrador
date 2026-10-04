@@ -26,9 +26,10 @@ namespace labrador
 					float layer_depth = 0.0f);
 
 		// const, like every draw below it - and here const also buys correctness
-		// rather than only safety. While this was non-const it did not override
-		// TextObject::draw(...) const at all, it *hid* it, so a TextDropShadow
-		// reached through a Text& drew its text with no shadow.
+		// rather than only safety. A non-const draw would not override
+		// TextObject::draw(...) const at all, it would *hide* it, so a
+		// TextDropShadow reached through a Text& would draw its text with no
+		// shadow.
 		void draw(DrawList& draw_list) const override;
 
 		mattmath::Vector2F shadow_offset() const;

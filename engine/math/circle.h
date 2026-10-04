@@ -7,9 +7,9 @@ namespace mattmath
 {
 	struct Circle : public Shape
 	{
-		// Private, unlike the other shapes' data, because Shape's polymorphic
-		// accessor is center() and a field of that name cannot coexist with
-		// it. radius() is here to keep the pair symmetrical.
+		// Private, unlike RectangleF's and Triangle's data, because Shape's
+		// polymorphic accessor is center() and a field of that name cannot
+		// coexist with it. radius() is here to keep the pair symmetrical.
 
 		Circle() = default;
 		Circle(const Circle&) = default;

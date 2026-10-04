@@ -4,19 +4,12 @@
 
 namespace labrador
 {
-	// A velocity and a rotation, with the accessors that are called.
+	// A velocity and a rotation, for a derived class to read and write.
 	//
-	// Twenty bytes of state and no accessor families around them. Three of
-	// those (unit_*, *_magnitude, *_angle, alter_*) come to 27 virtual
-	// protected accessors with about one real override between them, on the
-	// base class of every player and projectile a client has - which is a
-	// vtable per object for calls nobody makes. A displacement written and
-	// read inside a single call chain is not a member either: it is a return
-	// value and a local.
-	//
-	// Not virtual. Nothing overrode any of these, and a virtual accessor on
-	// the object the simulation touches most is a cost with no client
-	// (PHILOSOPHY, T8).
+	// Plain accessors, none of them virtual: a virtual accessor on the object
+	// the simulation touches most is a cost with no client (T8). A
+	// displacement written and read inside a single call chain is not a
+	// member: it is a return value and a local.
 	class MovingObject
 	{
 	public:

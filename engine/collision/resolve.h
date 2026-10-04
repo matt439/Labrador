@@ -50,15 +50,14 @@ namespace labrador
 	//   - `axis` is no more than MIN_AXIS_ALIGNMENT away from being useless.
 	//
 	// It throws rather than returning zero, or an optional, or a very large
-	// vector. The version this replaces guarded the divisor and returned zero
-	// only when it was smaller than mattmath::EPSILON - so a dot product of
-	// 1.0001e-4 passed the guard and returned a translation ten thousand times
-	// the penetration, which the caller then applied to a position. A silent
+	// vector. A guard that returns zero only below some small divisor still
+	// passes one just above it, and returns a translation thousands of times
+	// the penetration, which the caller then applies to a position. A silent
 	// teleport out of the one primitive whose job is safe arithmetic is
 	// exactly the failure T6 exists to prevent, and there is no answer to
-	// return that the caller could have used: an axis perpendicular to the
-	// normal does not separate the pair however far you travel along it, so
-	// zero was never a translation - it was a shrug.
+	// return that the caller could use: an axis perpendicular to the normal
+	// does not separate the pair however far you travel along it, so zero is
+	// not a translation - it is a shrug.
 	mattmath::Vector2F separation_along(const mattmath::Vector2F& normal,
 		float penetration, const mattmath::Vector2F& axis);
 

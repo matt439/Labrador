@@ -9,14 +9,12 @@ namespace labrador
 	//
 	// WHY THE ENGINE POLLS THIS AND A GAME DOES NOT. An edge is "down now, up
 	// last frame", so it is only right if "last frame" is the frame before this
-	// one. The paint-shooter had two edge detectors, one for gameplay and one
-	// for menus, each advancing its own "previous" only on the frames its owner
-	// happened to be running. Both therefore needed priming by hand at every
-	// transition; both carried a prime() with a paragraph of comment describing
-	// a bug it had shipped; and the two copies had already drifted apart - one
-	// asked the pad API for a circular deadzone and the other for none, so the
-	// same stick position meant two things. Application polls this once per
-	// frame, before any state updates, and the whole shape goes with it.
+	// one. An edge detector a game keeps for itself advances its "previous"
+	// only on the frames its owner happens to be running, so it needs priming
+	// by hand at every transition, and a second one - menus beside gameplay -
+	// drifts from the first. Application polls this once per frame, before
+	// any state updates, so every reader measures across the same two frames
+	// and nothing is primed.
 	//
 	// A slot is a slot. It is the index the pad API answers for, not the order
 	// pads were plugged in, and it is not stable across a replug - a controller

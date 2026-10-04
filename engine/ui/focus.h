@@ -12,9 +12,9 @@ namespace labrador
 
 	// How a focused widget is told apart from an unfocused one.
 	//
-	// A colour swap is what the game does today and it is all the mechanism
-	// there is here; anything richer - a ring, a scale pulse, a sound - is the
-	// game's, and it has the focus change to hang it on.
+	// A colour swap is all the mechanism there is here; anything richer - a
+	// ring, a scale pulse, a sound - is the game's, and it has the focus
+	// change to hang it on.
 	struct FocusStyle
 	{
 		Colour focused = Colour::white;
@@ -30,11 +30,11 @@ namespace labrador
 
 	// What activating a slot's focused entry did.
 	//
-	// AN ENUM RATHER THAN THE bool IT REPLACES, because that bool already
-	// carried two meanings - "nothing is focused" and "this row has no action
-	// bound", the second of which is most option rows - and a third would have
-	// left it meaning nothing a caller could act on. The one a page has to act
-	// on is `refused`: a screen that cannot say why a row is unavailable is a
+	// AN ENUM RATHER THAN A bool. A bool's false would already carry two
+	// meanings - "nothing is focused" and "this row has no action bound", the
+	// second of which is most option rows - and a third would leave it
+	// meaning nothing a caller could act on. The one a page has to act on is
+	// `refused`: a screen that cannot say why a row is unavailable is a
 	// screen that appears to have ignored the press.
 	enum class Activation
 	{
@@ -56,23 +56,20 @@ namespace labrador
 	// A set of focusable widgets, which one each input slot is on, and the
 	// walk between them.
 	//
-	// SLOTS. Focus is per slot from the start rather than retrofitted, because
+	// SLOTS. Focus is per slot, built in rather than retrofitted, because
 	// split-screen is the stated case (PHILOSOPHY/UI: "per-viewport focus for
 	// split-screen") and because retrofitting it means revisiting every page.
-	// A page where every pad drives one shared cursor - which is every page in
-	// the paint-shooter's main menu - uses one slot and passes 0. A page where
-	// each player picks their own team or weapon gives each player a slot, and
-	// gets for free the thing that currently does not exist anywhere in the
-	// tree.
+	// A page with one shared cursor - LineSweeper's pause screen is one - uses
+	// one slot and passes 0. A page where each player picks their own team or
+	// weapon gives each player a slot, and each player a cursor of their own.
 	//
 	// WHY THE PAINT IS DERIVED, NOT APPLIED. Every mutation repaints every
 	// widget from the focus of every slot. It would be cheaper to repaint only
-	// the two that changed, and that is exactly the bug the game has: with one
-	// cursor per pad, slot 0 leaving a widget slot 1 is still on would paint it
-	// unfocused. Deriving the paint makes "focused" mean "some slot is on it",
-	// which is the only definition that survives more than one cursor. The
-	// cost is O(widgets) on a press, on a menu, and the widget count is single
-	// digits.
+	// the two that changed, and that is wrong: with one cursor per pad, slot 0
+	// leaving a widget slot 1 is still on would paint it unfocused. Deriving
+	// the paint makes "focused" mean "some slot is on it", which is the only
+	// definition that survives more than one cursor. The cost is O(widgets)
+	// on a press, on a menu, and the widget count is single digits.
 	//
 	// LOANS. Every widget here is a loan; the group stores raw pointers and
 	// outlives nothing. The page owns its widgets and must outlive its

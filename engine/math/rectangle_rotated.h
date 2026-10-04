@@ -87,12 +87,10 @@ namespace mattmath
 		Vector2F y_axis_ = Vector2F::DIRECTION_UP;
 		Vector2F hw_extents_ = Vector2F::ZERO;
 
-		// Four points of fixed size, in fixed storage. This was a
-		// std::vector, so every construction, copy and assignment of an OBB
-		// allocated, and each of the ten places that write a defining member
-		// paid a malloc/free pair to refresh the cache. The argument is the
-		// one already written above Shape for edges(); this member is where it
-		// stopped one short.
+		// Four points of fixed size, in fixed storage, so constructing,
+		// copying or assigning an OBB never allocates and neither does
+		// refreshing this cache when a defining member is written - the
+		// argument Shape's note on edges() makes.
 		std::array<Point2F, 4> points_ = { Point2F::ZERO, Point2F::ZERO,
 					Point2F::ZERO, Point2F::ZERO };
 

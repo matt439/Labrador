@@ -19,11 +19,11 @@ namespace labrador
 	// than loaded and then drawn upright. A sheet is authored content, so a key
 	// the engine reads and disagrees with is a worse failure than one it
 	// rejects - the .cpp carries the argument, and engine/render/sprite_frame.h
-	// is why there is no member left to hold the answer.
+	// is why there is no member to hold the answer.
 	//
-	// `origin` is the other half of that finding and went the other way: it is
-	// honoured, because it costs one addition on a path that already carries an
-	// origin (engine/render/sprite_sheet.h).
+	// `origin` goes the other way: it is honoured, because it costs one
+	// addition on a path that already carries an origin
+	// (engine/render/sprite_sheet.h).
 	std::unique_ptr<SpriteSheet> read_sprite_sheet(const char* json_path,
 		TextureHandle texture);
 }
