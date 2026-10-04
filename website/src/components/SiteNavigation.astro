@@ -1,0 +1,47 @@
+---
+import { NAVIGATION, isCurrent } from '../lib/navigation';
+
+interface Props {
+	class?: string;
+}
+
+const { class: className } = Astro.props;
+const pathname = Astro.url.pathname;
+---
+
+<nav class:list={['site-nav', className]} aria-label="Site">
+	<ul>
+		{
+			NAVIGATION.map((item) => (
+				<li>
+					<a href={item.href} aria-current={isCurrent(pathname, item.href) ? 'page' : undefined}>
+						{item.label}
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</nav>
+
+<style>
+	.site-nav ul {
+		display: flex;
+		gap: 1.25rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.site-nav a {
+		color: var(--sl-color-gray-2);
+		font-size: var(--sl-text-sm);
+		font-weight: 600;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.site-nav a:hover {
+		color: var(--sl-color-white);
+	}
+	.site-nav a[aria-current='page'] {
+		color: var(--sl-color-text-accent);
+	}
+</style>

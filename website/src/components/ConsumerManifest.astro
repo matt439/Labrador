@@ -1,0 +1,31 @@
+---
+// The vcpkg.json a project consuming Labrador needs, derived from Labrador's
+// own so that the two cannot drift apart.
+//
+// vcpkg reads the manifest of the top-level project only, so a game has to
+// name the engine's dependencies itself, and should pin them to the same
+// baseline the engine is built and tested against. doctest is left out because
+// only the engine's own tests use it, and a consumer does not build those.
+import { Code } from '@astrojs/starlight/components';
+import { readRepositoryFile } from '../lib/repository';
+
+interface Props {
+	name: string;
+}
+
+const TEST_ONLY = new Set(['doctest']);
+
+const engine = JSON.parse(readRepositoryFile('vcpkg.json'));
+const dependencies = (engine.dependencies as (string | { name: string })[]).filter(
+	(dependency) => !TEST_ONLY.has(typeof dependency === 'string' ? dependency : dependency.name)
+);
+
+const manifest = {
+	name: Astro.props.name,
+	'version-string': '0.1.0',
+	dependencies,
+	'builtin-baseline': engine['builtin-baseline'],
+};
+---
+
+<Code code={JSON.stringify(manifest, null, 2)} lang="json" title="vcpkg.json" />

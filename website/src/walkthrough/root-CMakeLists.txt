@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.26)
+project(MyGame LANGUAGES CXX)
+
+# Defines LabradorEngine and labrador_settings. Labrador is not the top-level
+# project here, so its tests, benchmarks and samples are not built.
+add_subdirectory(external/labrador)
+
+add_subdirectory(game)

@@ -1,0 +1,75 @@
+---
+title: Make a first change
+description: Change what your game says, how fast it moves and what its window is called, then rebuild.
+---
+
+import { Steps, LinkCard, CardGrid } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+Everything in `game\` is yours now. This page changes three things you can see, so you know the
+whole loop works: edit, build, run.
+
+<Steps>
+
+1. **Change the greeting.** In `game\states\hello_state.cpp`, find where the greeting is
+   created:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->greeting_ = this->scene_->add("
+   	to="labrador::Colour::white));"
+   	mark="Hello from the engine."
+   />
+
+   Change its text:
+
+   ```cpp
+   L"Hello from my game.", font_name, this->position_, resources,
+   ```
+
+   The `L` makes it a wide string, which is what the engine's text drawing takes.
+
+2. **Make it spin faster.** Near the top of the same file, the speed is a constant beside the
+   one thing it configures:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="constexpr float spin_speed"
+   	to="constexpr float spin_speed"
+   />
+
+   Change `1.2f` to `3.0f`. The unit is radians per second.
+
+3. **Name the window.** In `game\main.cpp`, change the window's class name and title:
+
+   <SourceFile path="samples/minimal/main.cpp" from="options.window_class_name" to="options.window_title" />
+
+   ```cpp
+   options.window_class_name = L"MyGameWindowClass";
+   // ...
+   options.window_title = L"My game";
+   ```
+
+4. **Rebuild and run:**
+
+   ```bat
+   cmake --build --preset x64-debug
+   out\build\x64-debug\game\MyGame.exe
+   ```
+
+   Only the two files you changed are compiled again. The window has your title, and your
+   greeting circles faster.
+
+</Steps>
+
+## Where to go next
+
+The comments in `hello_state.cpp` explain why each part of it is written the way it is, and they
+are the best next thing to read. After that:
+
+<CardGrid>
+	<LinkCard title="Examples" description="LineSweeper: a whole game, and the order to read it in." href="/examples/" />
+	<LinkCard title="Why Labrador?" description="What the engine is built to be good at, and what it gives up." href="/why/" />
+	<LinkCard title="API reference" description="The contracts of State, GameObject and Scene, read from their headers." href="/docs/reference/" />
+	<LinkCard title="Design" description="The twelve trade-offs every part of the engine is built on." href="/docs/design/" />
+</CardGrid>

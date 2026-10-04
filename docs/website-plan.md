@@ -1,8 +1,8 @@
 # Labrador Website Plan
 
-**Planning draft · 4 October 2026**
+**Planning draft · 4 October 2026 · amended the same day as stage 2 landed**
 
-This plan defines Labrador’s public website: a showcase that explains why a developer would choose the engine, a practical getting-started path, and a complete documentation area. The website will live under `website/` in the Labrador repository. Astro with Starlight and static hosting on Cloudflare remain recommendations; the repository choice and the requirements below are agreed.
+This plan defines Labrador’s public website: a showcase that explains why a developer would choose the engine, a practical getting-started path, and a complete documentation area. The website lives under `website/` in the Labrador repository. The stack is decided and the representative slice of stage 2 is built ([website/README.md](../website/README.md)); hosting, domain and the first release’s coverage remain open. The repository choice and the requirements below are agreed.
 
 ## Purpose and agreed requirements
 
@@ -83,19 +83,19 @@ The exact technical documentation subfolders can be settled during the content i
 
 ## Web stack
 
-**Recommendation, still open:** Astro + TypeScript + Starlight, using static output, Markdown for ordinary documentation, and custom Astro components where a demonstration needs them. Start with ordinary CSS and a small shared set of colours, typography, and spacing.
+**Decided:** Astro + TypeScript + Starlight, using static output, Markdown for ordinary documentation, and custom Astro components where a demonstration needs them. Start with ordinary CSS and a small shared set of colours, typography, and spacing. The slice is built on Astro 7 and Starlight 0.42; Astro 7’s Markdown processor is Sätteri rather than remark, so the site’s two Markdown plugins are Sätteri plugins.
 
 Astro pre-renders pages by default. Starlight supplies documentation navigation, search, code highlighting, and other documentation features. This supports a custom showcase and structured docs within one site. [Astro rendering](https://docs.astro.build/en/guides/on-demand-rendering/), [Starlight features](https://starlight.astro.build/).
 
 The proposed first version needs static pages, search, images, and recorded footage. Accounts, a database, and server-side application features are not currently requirements. Browser-playable engine demos would be a separate technical project because Labrador currently targets Windows.
 
-**API reference generation remains unresolved.** Test a small public-header slice with a candidate generator before selecting the toolchain. Check symbol links, code examples, contract text, and integration with the documentation layout. Generated symbols need explanatory guides alongside them; extraction alone does not make a complete manual.
+**API reference generation has been prototyped; the content question it raised is open.** Three headers (`state.h`, `game_object.h`, `scene.h`) are generated into pages by a line reader in the site build, which needs no tool beyond Node and fails naming the file and line on anything it does not understand. Doxygen does not read Labrador’s plain `//` comments; Clang would have to parse `<Windows.h>`. The recommendation is to keep the reader. The larger finding is in the headers themselves: about two thirds carry history of the code, which CONVENTIONS says is never a comment, and a reference that publishes comments as written presents it as contract. The site’s *About the reference* page sets out both, and [the inventory](website-inventory.md) has the counts. Generated symbols need explanatory guides alongside them; extraction alone does not make a complete manual.
 
 The visual direction remains open. Start from readable C++ examples and actual sample imagery, with clear navigation and comfortable reading on desktop and phone.
 
 ## Hosting and domain
 
-**Hosting recommendation, still open:** Cloudflare Workers Static Assets. GitHub Pages is the main alternative if keeping publishing close to GitHub is preferred.
+**Hosting recommendation, still open:** Cloudflare Workers Static Assets. GitHub Pages is the main alternative if keeping publishing close to GitHub is preferred. The site is plain static output, so neither choice changes it. `.github/workflows/website.yml` checks and builds it on every push and keeps the result as an artifact; it deploys nothing.
 
 Cloudflare currently charges nothing for static asset requests and storage; build and platform limits still apply, while requests that invoke application code have separate pricing. A small static site can therefore target zero recurring hosting cost within those limits. GitHub Pages supports custom domains and is available for public repositories on GitHub Free. [Cloudflare billing](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/), [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
 
@@ -109,8 +109,8 @@ Expected recurring costs are the domain renewal plus any deliberately selected m
 
 The following stages are proposed; no dates are assigned.
 
-1. **Settle the foundation.** Choose stack, host, domain budget, and initial documentation coverage. Inventory the available guides, source comments, screenshots, and footage within the agreed repository layout.
-2. **Build a representative slice.** Create a homepage section, a Why Labrador? example, one Get Started walkthrough, and one API reference sample. Use these to validate visual design, reading documentation from the same checkout, and the reference-generation approach.
+1. **Settle the foundation.** Choose stack, host, domain budget, and initial documentation coverage. Inventory the available guides, source comments, screenshots, and footage within the agreed repository layout. *Stack chosen and inventory taken ([website-inventory.md](website-inventory.md)); host, domain and coverage open.*
+2. **Build a representative slice.** Create a homepage section, a Why Labrador? example, one Get Started walkthrough, and one API reference sample. Use these to validate visual design, reading documentation from the same checkout, and the reference-generation approach. *Built: home, Why Labrador?, Examples, the full five-page Get Started path, the three design documents read from the checkout, and three reference pages. The walkthrough’s project was built from the public repository exactly as written.*
 3. **Complete the agreed first release.** Write and review the selected guides and reference coverage, capture real sample media, and connect examples to their source. Keep the full documentation goal visible in the content inventory.
 4. **Validate and publish.** Check the new-user walkthrough on the named Windows toolchain; verify links, code snippets, search, keyboard navigation, narrow layouts, and contrast. Configure the chosen domain and deployment workflow when moving from planning into implementation.
 5. **Maintain with engine changes.** Update canonical technical content alongside relevant code, preview affected website pages in the same change, and retain a known working deployment for rollback.
@@ -132,12 +132,12 @@ The requirements and the use of `website/` in this repository are established; t
 
 | Decision | Current recommendation or next action |
 | --- | --- |
-| Stack | Astro + TypeScript + Starlight; validate with a representative page and reference sample. |
+| Stack | **Decided:** Astro + TypeScript + Starlight, validated by the slice. |
 | Hosting | Cloudflare Workers Static Assets; compare with GitHub Pages. |
 | Domain and budget | Check the three candidate names and renewal costs before choosing. |
-| Documentation release scope | Inventory all public modules and agree the content required for the first release. |
-| API reference | Evaluate generation from the current headers and comments; select the renderer after a small prototype. |
-| Visual identity and media | Choose logo treatment, typography, colours, and sample captures. |
-| Version and publishing policy | Begin with one documented engine revision; decide when release-specific documentation and automated updates are worthwhile. |
+| Documentation release scope | Inventory taken; [its last table](website-inventory.md) proposes the first release’s coverage, to be agreed. |
+| API reference | Keep the line reader (recommended). Decide whether history in header comments is published or removed before more headers are published. |
+| Visual identity and media | Provisional: the accent and the favicon come from LineSweeper’s own palette and L piece. No captures exist; a capture driven by a recorded LineSweeper input script is the recommended way to make them. |
+| Version and publishing policy | Every page shows the commit it was built from, and the pages read from the checkout read it at that commit. Release-specific documentation waits on releases. |
 
-The next planning step is to settle the web stack and hosting, check domain availability and cost, and define the initial documentation coverage. Those decisions make the first implementation stage concrete.
+The next planning step is to choose hosting, check domain availability and cost, and agree the first release’s coverage. Those decisions make stage 3 concrete.

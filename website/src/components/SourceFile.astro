@@ -1,0 +1,38 @@
+---
+// A file from the checkout, or a passage of one, shown as code with a link to
+// it on GitHub at the revision the site was built from.
+//
+// `from` and `to` are the beginnings of the first and last lines wanted, not
+// line numbers; see src/lib/excerpt.ts for why.
+import { Code } from '@astrojs/starlight/components';
+import { excerpt } from '../lib/excerpt';
+import { REVISION, sourceUrl } from '../lib/repository';
+
+interface Props {
+	path: string;
+	from?: string;
+	to?: string;
+	lang?: string;
+	title?: string;
+	mark?: string | string[];
+}
+
+const { path, from, to, lang, title, mark } = Astro.props;
+const passage = excerpt(path, from, to);
+
+function language(file: string): string {
+	if (file.endsWith('.json')) return 'json';
+	if (file.endsWith('CMakeLists.txt') || file.endsWith('.cmake')) return 'cmake';
+	return 'cpp';
+}
+
+const where = passage.whole ? undefined : { start: passage.start, end: passage.end };
+---
+
+<div class="source-file">
+	<Code code={passage.code} lang={lang ?? language(path)} title={title ?? path} mark={mark} />
+	<p class="source-link">
+		<a href={sourceUrl(path, where)}>{path}{where && `, lines ${where.start}–${where.end}`}</a>
+		at <code>{REVISION.short}</code>
+	</p>
+</div>

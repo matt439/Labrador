@@ -1,0 +1,128 @@
+---
+title: Labrador
+description: A 2D game engine for developers who want to write games in ordinary C++ and understand the machinery beneath them.
+template: splash
+hero:
+  title: Labrador
+  tagline: A 2D game engine for developers who want to write games in ordinary C++, and understand the machinery beneath them.
+  actions:
+    - text: Get started
+      link: /docs/get-started/
+      icon: right-arrow
+    - text: Why Labrador?
+      link: /why/
+      variant: minimal
+    - text: Source on GitHub
+      link: https://github.com/matt439/Labrador
+      icon: external
+      variant: minimal
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+<ul class="facts">
+	<li><strong>Windows</strong> today</li>
+	<li><strong>C++20</strong>, built with CMake and vcpkg</li>
+	<li>Direct3D 11, Direct3D 12, OpenGL 3.3 and Vulkan renderers</li>
+	<li><strong>MIT</strong> licence</li>
+	<li>Early: no versioned releases yet</li>
+</ul>
+
+<section class="home-section">
+
+## Four choices, and what each one costs
+
+<p class="lead">
+Labrador is a small engine with firm opinions. Each one below helps some games and gets in the
+way of others, so each comes with its price.
+</p>
+
+<div class="choices">
+	<article class="choice" style="--choice-colour: #00f0f0">
+		<h3>Ordinary C++ and standard tools</h3>
+		<p>
+			A game is a C++ program that links two static libraries. Its build file is a dozen lines of
+			CMake. There is no project format, no code generator and no macro dialect between your source
+			and the compiler.
+		</p>
+		<p class="cost"><strong>The cost:</strong> all behaviour is C++, and every change to it is a compile. There is no visual editor, no scripting language and no hot reload.</p>
+		<p class="evidence"><a href="/why/#ordinary-c-and-standard-tools">The full argument</a></p>
+	</article>
+	<article class="choice" style="--choice-colour: #f09800">
+		<h3>Your data, your lifetimes</h3>
+		<p>
+			The engine meets a game at a few small interfaces, and what stands behind them is the
+			game's choice: one class per entity, or one object holding ten thousand particles in a flat
+			array.
+		</p>
+		<p class="cost"><strong>The cost:</strong> storage and ownership are your decisions. The engine does not manage objects for you, and those interfaces are virtual calls.</p>
+		<p class="evidence"><a href="/why/#your-data-your-lifetimes">The full argument</a></p>
+	</article>
+	<article class="choice" style="--choice-colour: #00d050">
+		<h3>Built for local 2D games</h3>
+		<p>
+			A scene can be drawn through several cameras into several viewports in one frame, which is
+			what split-screen is. Gamepads come with deadzones, press edges and menu navigation.
+		</p>
+		<p class="cost"><strong>The cost:</strong> online play and 3D are out of scope for good, not just for now.</p>
+		<p class="evidence"><a href="/why/#built-for-local-2d-games">The full argument</a></p>
+	</article>
+	<article class="choice" style="--choice-colour: #a830f0">
+		<h3>Rules you can test without a window</h3>
+		<p>
+			The falling-block sample keeps its whole game in a library that links nothing from the
+			engine, so its tests play complete matches with no window and compare them byte for byte.
+		</p>
+		<p class="cost"><strong>The cost:</strong> that separation is a design you choose and keep. The engine makes it possible; it does not make it automatic.</p>
+		<p class="evidence"><a href="/why/#rules-you-can-test-without-a-window">The full argument</a></p>
+	</article>
+</div>
+
+</section>
+
+<section class="home-section">
+
+## A whole game's entry point
+
+<p class="lead">
+This is <code>main.cpp</code> from the minimal sample, the project you copy to start a game. It names
+the window, loads the content and hands the engine a first state. Everything it leaves out
+belongs to the engine.
+</p>
+
+<SourceFile path="samples/minimal/main.cpp" from="int WINAPI wWinMain" to="}" />
+
+</section>
+
+<section class="home-section">
+
+## What Labrador is not
+
+<p class="lead">
+Knowing these before you start will save you time.
+</p>
+
+- **Not cross-platform yet.** It builds and runs on Windows only. The Vulkan renderer is the
+  route to other platforms, but no other platform builds today.
+- **Not an editor.** Content is JSON and standard file formats, edited in a text editor.
+  Behaviour is C++, edited in yours.
+- **Not 3D, and not online.** Labrador is for 2D games played on one machine: alone,
+  side by side, or split-screen.
+- **Not finished.** There are no versioned releases yet, and the public API can still change.
+  The [design documents](/docs/design/) say where it is going.
+
+</section>
+
+<section class="home-section">
+
+## Start here
+
+<CardGrid>
+	<LinkCard title="Get started" description="Install the tools, build the engine, run the minimal sample and start a project of your own." href="/docs/get-started/" />
+	<LinkCard title="Examples" description="What to copy from the minimal sample, and what to learn from LineSweeper." href="/examples/" />
+	<LinkCard title="Why Labrador?" description="How it compares with Godot, Unreal, raylib and SDL, and what each choice costs." href="/why/" />
+	<LinkCard title="Design" description="The twelve trade-offs the engine is built on, the module architecture and the conventions." href="/docs/design/" />
+</CardGrid>
+
+</section>

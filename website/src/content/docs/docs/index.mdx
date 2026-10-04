@@ -1,0 +1,25 @@
+---
+title: Documentation
+description: What the Labrador documentation covers today, and what is still to be written.
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+The documentation is split by what you are trying to do: build something, understand the
+engine's model, finish a task, look up an exact contract, or understand why the engine is the
+way it is. Parts of it are written and parts are not, and this page says which.
+
+| Section | When you want to | Status |
+| --- | --- | --- |
+| [Get Started](/docs/get-started/) | Build something that runs, then a project of your own | **Written.** Five steps, each checked on a real machine. |
+| Concepts | Understand the model: ownership, objects, states, update and draw, scenes, views, resources | **Not written yet.** The [philosophy](/docs/design/philosophy/) covers the same ideas, written for the engine's developers. |
+| Guides | Do a particular job: sprites and text, input, collision, audio, assets, menus, local multiplayer | **Not written yet.** The [samples](/examples/) show sprites, text, input, assets and menus. Neither sample uses collision or audio. |
+| [API Reference](/docs/reference/) | Find the exact contract of a type or function | **Prototype.** Three headers, generated from the source. The headers are the reference for everything else. |
+| [Design](/docs/design/) | Understand the reasons behind the engine | **Written.** The three design documents, read from the repository. |
+| Troubleshooting | Recover from a problem | **Not written yet.** [Build Labrador](/docs/get-started/build-labrador/#if-something-fails) covers the failures most likely on a first build. |
+
+Every page says at the bottom which revision of Labrador it was built from. Pages that quote the
+engine's source, its headers or its design documents read them from that revision, so what they
+show is what that commit contains.
+
+<LinkCard title="Get started" description="From an empty Windows machine to a project of your own that builds against Labrador." href="/docs/get-started/" />

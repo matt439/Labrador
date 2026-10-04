@@ -26,6 +26,7 @@ samples/   ~5.3k lines  two clients: minimal, the template you copy; linesweeper
 tests/     ~16k lines   doctest, thirteen targets, run by ctest
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
+website/                the public site, built with npm from this same checkout
 ```
 
 - **[docs/design/PHILOSOPHY.md](docs/design/PHILOSOPHY.md)** — what this engine

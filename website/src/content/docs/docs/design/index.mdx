@@ -1,0 +1,33 @@
+---
+title: About the design documents
+description: The three documents that say what Labrador is for, how it is laid out, and how its code is written.
+sidebar:
+  order: 0
+  label: About these documents
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
+
+Three documents in the repository decide how Labrador is built. They are published here exactly as
+they are written in <RepoLink path="docs/design">`docs/design/`</RepoLink>, read from the same
+revision as the rest of this site.
+
+<LinkCard title="Philosophy" description="The twelve trade-offs, T1 to T12, each with the side the engine takes, the price it accepts and the point where leaning further becomes a mistake." href="/docs/design/philosophy/" />
+<LinkCard title="Architecture" description="The build targets, the source tree, the ten modules and which may depend on which, and what a game project looks like." href="/docs/design/architecture/" />
+<LinkCard title="Conventions" description="Naming, files, and what a comment is for." href="/docs/design/conventions/" />
+
+## How to read them
+
+**They describe where the engine is going, not a status report.** They are written in the present
+tense of the target. When code moves, it moves towards them. When a change contradicts one, either
+the change is wrong or the document is, and the document is amended in the same commit, with the
+reason.
+
+**The trade-offs are vocabulary.** Each has a number, and the number stands for the whole
+argument. "T3: take the simpler model" is a complete comment in a code review. Pages on this site
+link those numbers to their entries in the philosophy.
+
+**They were written for the people building the engine.** That makes them the deepest
+explanation of why Labrador is the way it is, and not a tutorial. If you are new to the engine,
+[Get started](/docs/get-started/) and [Why Labrador?](/why/) are the better first reads.

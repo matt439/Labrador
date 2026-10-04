@@ -214,7 +214,11 @@ being load-bearing.
 │   └── cloud_performance/  one frozen, one-shot EC2 reference measurement
 ├── external/               third-party source: rapidjson. DirectXTK is not
 │                           here — it is a vcpkg package (vcpkg.json)
-├── .github/workflows/      CI
+├── website/                the public website, built with npm and never by
+│                           CMake. It reads docs/design/, the samples and the
+│                           engine headers from this same checkout, so what it
+│                           publishes is the revision it was built from
+├── .github/workflows/      CI: the engine, and the website beside it
 └── docs/
     ├── design/             philosophies, conventions, this document
     ├── file-length-audit.md  which files are long, and which of them earn it
@@ -224,10 +228,12 @@ being load-bearing.
     ├── port/               what a second platform costs, and in what order
     ├── repo-split.md       the verified procedure for splitting engine from game
     ├── review/             findings against the current code
-    └── survey/             a sweep of the whole tree asking what to build next.
-                            One per sweep, dated, in pairs: <date>.md is the
-                            survey as written and is not updated as items land,
-                            <date>-status.md is what landed and what it returned
+    ├── survey/             a sweep of the whole tree asking what to build next.
+    │                       One per sweep, dated, in pairs: <date>.md is the
+    │                       survey as written and is not updated as items land,
+    │                       <date>-status.md is what landed and what it returned
+    ├── website-plan.md     what the website is for, and what is decided about it
+    └── website-inventory.md  what its documentation can be built from, by module
 ```
 
 Every target directory owns its own `CMakeLists.txt`; the root file only

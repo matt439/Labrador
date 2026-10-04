@@ -38,11 +38,14 @@ file(GLOB_RECURSE sources
 
 # Every document in the tree, for resolving a citation that gives a bare
 # filename. out/ is build output and external/ is vendored; neither is ours to
-# cite and both would make a basename ambiguous for no reason.
+# cite and both would make a basename ambiguous for no reason. website/ is the
+# same twice over: a separate build that installs its dependencies inside
+# itself - website/node_modules/ holds hundreds of .md files, one of them a
+# CLAUDE.md - and whose pages cite this tree rather than being cited by it.
 file(GLOB_RECURSE all_docs "${REPO_DIR}/*.md")
 set(docs "")
 foreach(doc IN LISTS all_docs)
-    if(NOT doc MATCHES "/(out|external)/")
+    if(NOT doc MATCHES "/(out|external|website)/")
         list(APPEND docs "${doc}")
     endif()
 endforeach()

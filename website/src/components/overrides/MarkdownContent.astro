@@ -1,0 +1,34 @@
+---
+// Starlight's Markdown wrapper, plus the script that draws diagrams.
+//
+// A ```mermaid block arrives as <pre class="mermaid"> (markdown-plugins.ts).
+// The library is loaded only on a page that has one, and the diagram is drawn
+// again when the reader switches between light and dark.
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+---
+
+<Default><slot /></Default>
+
+<script>
+	const diagrams = [...document.querySelectorAll<HTMLElement>('pre.mermaid')];
+
+	async function draw(): Promise<void> {
+		const { default: mermaid } = await import('mermaid');
+		const dark = document.documentElement.dataset.theme === 'dark';
+		mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'neutral' });
+		for (const diagram of diagrams) {
+			diagram.dataset.source ??= diagram.textContent ?? '';
+			diagram.removeAttribute('data-processed');
+			diagram.textContent = diagram.dataset.source;
+		}
+		await mermaid.run({ nodes: diagrams });
+	}
+
+	if (diagrams.length > 0) {
+		void draw();
+		new MutationObserver(() => void draw()).observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-theme'],
+		});
+	}
+</script>

@@ -1,0 +1,65 @@
+# Build the website and fail on anything it says that the checkout no longer
+# backs up.
+#
+# The site is built from this checkout rather than beside it: the design
+# documents, the API reference pages, every quoted passage of sample code and
+# the vcpkg.json the guide tells a reader to write are all read from the tree at
+# build time (website/src/lib/). So a change to engine/, samples/, tests/ or
+# docs/design/ can break the site without touching website/ at all - a quoted
+# line that moved, a header the reference reader cannot follow, a relative
+# link in a design document to a file that was renamed. Each of those fails
+# the build naming the file, and this job is where that shows. There is
+# deliberately no paths filter: the set of files the site reads is the set
+# above, and keeping a second copy of it here is a list that would rot.
+#
+# Ubuntu rather than Windows, because nothing here compiles C++ and the site's
+# build must not need the engine's toolchain (docs/website-plan.md). Node is
+# the only dependency.
+#
+# IT DOES NOT DEPLOY. No host has been chosen. The built site is kept as an
+# artifact so a change can be looked at before anything publishes it.
+
+name: website
+
+on:
+  push:
+    branches: [master, 'review-*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - run: npm ci
+
+      # Types first: a mistake in the code that reads the checkout is cheaper
+      # to read here than as a failed page.
+      - run: npm run check
+
+      # Fails on a broken internal link or anchor (starlight-links-validator),
+      # on a quoted passage whose first or last line has gone, and on a header
+      # the reference reader does not understand.
+      - run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: website/dist
+          retention-days: 14

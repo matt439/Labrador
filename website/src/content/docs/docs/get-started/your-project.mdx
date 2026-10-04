@@ -1,0 +1,122 @@
+---
+title: Start your own project
+description: A repository of your own, with Labrador as a submodule and the minimal sample copied in as your starting point.
+---
+
+import { Code, FileTree, Steps, Aside } from '@astrojs/starlight/components';
+import ConsumerManifest from '~/components/ConsumerManifest.astro';
+import IncludeChanges from '~/components/IncludeChanges.astro';
+import rootCMake from '~/walkthrough/root-CMakeLists.txt?raw';
+import gameCMake from '~/walkthrough/game-CMakeLists.txt?raw';
+import presets from '~/walkthrough/CMakePresets.json?raw';
+import gitignore from '~/walkthrough/gitignore.txt?raw';
+
+Starting a game on Labrador means copying the minimal sample and owning everything inside it.
+Your project is its own repository. Labrador sits inside it as a Git submodule, pinned to the
+commit you chose, and is built as part of your build.
+
+This page calls the project `mygame`. Use your own name wherever that appears.
+
+When you have finished, the project looks like this:
+
+<FileTree>
+- mygame/
+  - CMakeLists.txt your build, which builds Labrador first
+  - CMakePresets.json
+  - vcpkg.json the engine's dependencies, at the engine's versions
+  - .gitignore
+  - external/
+    - labrador/ the engine, as a submodule
+  - game/
+    - CMakeLists.txt
+    - main.cpp
+    - content/
+    - states/
+</FileTree>
+
+<Steps>
+
+1. **Make the repository.** In the x64 Native Tools Command Prompt:
+
+   ```bat
+   cd C:\dev
+   mkdir mygame
+   cd mygame
+   git init
+   ```
+
+2. **Add Labrador as a submodule:**
+
+   ```bat
+   git submodule add https://github.com/matt439/Labrador.git external/labrador
+   ```
+
+   Your repository now records exactly which commit of Labrador it builds against, and moving
+   to a newer one is a change you make deliberately and commit. Anyone cloning your project
+   needs `git clone --recurse-submodules` to get the engine too.
+
+3. **Copy the minimal sample** into a folder called `game`:
+
+   ```bat
+   xcopy external\labrador\samples\minimal game /E /I
+   ```
+
+4. **Point its includes at the new folder.** Includes in Labrador are written from the root of
+   the repository, so the sample names its own headers as `samples/minimal/...`. In your project
+   they are under `game/`. Change these lines:
+
+   <IncludeChanges />
+
+5. **Replace `game\CMakeLists.txt`** with this:
+
+   <Code code={gameCMake} lang="cmake" title="game/CMakeLists.txt" />
+
+   It is the sample's build file with three changes. The program is called `MyGame`. The
+   content target is `game_content`. And `target_include_directories` makes the folder above
+   `game` the place your includes start from, which the sample did not need because Labrador's
+   root already was.
+
+6. **Add the project's own build files** to the `mygame` folder.
+
+   <Code code={rootCMake} lang="cmake" title="CMakeLists.txt" />
+
+   `add_subdirectory(external/labrador)` builds the engine library and defines two targets:
+   `LabradorEngine`, and `labrador_settings`, which applies the engine's compiler settings to
+   your code too, warnings as errors included. Do not define your own `labrador_settings`; CMake
+   stops at a second target with the same name.
+
+   <ConsumerManifest name="mygame" />
+
+   vcpkg reads only the top-level project's manifest, so your project names the engine's
+   dependencies itself. The `builtin-baseline` is Labrador's own, which pins them to the
+   versions the engine is built and tested with.
+
+   <Code code={presets} lang="json" title="CMakePresets.json" />
+
+   <Code code={gitignore} lang="text" title=".gitignore" />
+
+7. **Build and run it:**
+
+   ```bat
+   cmake --preset x64-debug
+   cmake --build --preset x64-debug
+   out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The window is the minimal sample's, because so far the game is the minimal sample. The
+   configure step installs the dependencies for this project; vcpkg reuses what it built for
+   Labrador, so it is quicker than the first time.
+
+8. **Commit it:**
+
+   ```bat
+   git add .
+   git commit -m "Start from Labrador's minimal sample"
+   ```
+
+</Steps>
+
+<Aside title="Only the library is built">
+Because Labrador is not the top-level project here, its tests, benchmarks and samples are left
+out of your build. You get the engine and nothing else.
+</Aside>

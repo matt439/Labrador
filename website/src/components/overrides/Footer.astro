@@ -1,0 +1,17 @@
+---
+// Starlight's footer, then the revision every page on the site describes.
+import Default from '@astrojs/starlight/components/Footer.astro';
+import Revision from '../Revision.astro';
+---
+
+<Default />
+<p class="site-revision"><Revision /></p>
+
+<style>
+	.site-revision {
+		margin-top: 2rem;
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+		text-align: center;
+	}
+</style>

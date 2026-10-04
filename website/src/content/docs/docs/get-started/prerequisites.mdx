@@ -1,0 +1,67 @@
+---
+title: Install the tools
+description: Visual Studio with the C++ workload, Git, and the command prompt every later step runs in.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Labrador builds on **Windows**, with the Microsoft C++ compiler. Everything it needs comes
+with two installs.
+
+<Steps>
+
+1. **Install Visual Studio 2022 or newer**, with the **Desktop development with C++**
+   workload. The free Community edition is enough.
+
+   That workload brings the compiler, CMake, Ninja, vcpkg and the Windows SDK. In the installer,
+   check that **C++ CMake tools for Windows** and **vcpkg package manager** are ticked under the
+   workload; current versions tick both by default.
+
+2. **Install [Git for Windows](https://git-scm.com/download/win)**, if you do not have it.
+
+3. **Open the x64 Native Tools Command Prompt.** Type "x64 Native Tools" into the Start menu;
+   it is installed with Visual Studio. Every command in this guide runs in it.
+
+   It has to be the **x64** prompt. It puts the 64-bit compiler, CMake, Ninja and the shader
+   compiler on your `PATH` and points `VCPKG_ROOT` at the copy of vcpkg that Visual Studio
+   installed. The plain Developer Command Prompt sets up 32-bit tools, and an ordinary command
+   prompt sets up none.
+
+4. **Check it.** Each of these should print a version or a path rather than an error:
+
+   ```bat
+   cmake --version
+   ninja --version
+   where cl fxc git
+   echo %VCPKG_ROOT%
+   ```
+
+   If `echo %VCPKG_ROOT%` prints `%VCPKG_ROOT%` back, your version of Visual Studio did not set
+   it. Set it to the `VC\vcpkg` folder inside your Visual Studio installation, for example:
+
+   ```bat
+   set VCPKG_ROOT=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\vcpkg
+   ```
+
+</Steps>
+
+## Choose a short folder
+
+Make a folder for your projects close to the root of a drive, such as `C:\dev`, and use it in
+the steps that follow.
+
+The longest path inside the Labrador repository is 148 characters, and Windows limits a whole
+path to 260 unless long paths are enabled. A clone into a deeply nested folder fails with
+`Filename too long`. If you would rather keep your usual folder, tell Git to use long paths
+first:
+
+```bat
+git config --global core.longpaths true
+```
+
+<Aside title="Only for the Vulkan renderer">
+Labrador builds its Direct3D 11 renderer by default, and nothing else on this page is needed for
+it. To build the Vulkan renderer as well, install the
+[Vulkan SDK](https://vulkan.lunarg.com/) and make sure `VULKAN_SDK` is set. It is the one
+dependency that does not come with Visual Studio or Windows.
+</Aside>

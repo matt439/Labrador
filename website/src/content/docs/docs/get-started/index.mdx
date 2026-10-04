@@ -1,0 +1,29 @@
+---
+title: Get started
+description: From an empty Windows machine to a game of your own that builds against Labrador.
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+This path takes you from a Windows machine with nothing installed to a project of your own that
+builds against Labrador, runs, and shows a change you made. It has five steps, and each page
+ends where the next begins.
+
+<LinkCard title="1. Install the tools" description="Visual Studio with the C++ workload, and Git." href="/docs/get-started/prerequisites/" />
+<LinkCard title="2. Build Labrador" description="Clone the engine, build it, and run its tests." href="/docs/get-started/build-labrador/" />
+<LinkCard title="3. Run the minimal sample" description="See the smallest game on the engine, and know what you are looking at." href="/docs/get-started/run-minimal/" />
+<LinkCard title="4. Start your own project" description="A repository of your own, with Labrador as a submodule and the minimal sample as its starting point." href="/docs/get-started/your-project/" />
+<LinkCard title="5. Make a first change" description="Change what the game says and how it moves, rebuild, and see it." href="/docs/get-started/first-change/" />
+
+## What you need to know already
+
+Some C++, and how to use a command prompt. The guide explains every command it asks you to
+type, but it does not teach the language.
+
+## What it was checked against
+
+Every command on these pages was run on Windows 11 with Visual Studio's x64 Native Tools
+Command Prompt, against the revision of Labrador shown at the bottom of each page. The project
+in step 4 was built from the public repository exactly as the page describes. If a step does not
+do what the page says, that is a bug in the page:
+[report it](https://github.com/matt439/Labrador/issues).

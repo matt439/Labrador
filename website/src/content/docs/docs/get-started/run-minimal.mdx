@@ -1,0 +1,55 @@
+---
+title: Run the minimal sample
+description: Start the smallest game on Labrador, and see which code makes each thing on screen.
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+
+The build you just ran also built the minimal sample. Start it from the `Labrador` folder:
+
+```bat
+out\build\x64-debug\samples\minimal\MinimalSample.exe
+```
+
+A 1280×720 window opens with the line *Hello from the engine.* circling a point, and a hint
+along the bottom. Move the point with the left stick of a gamepad, the arrow keys or WASD. Press
+**B** or **Escape** and the sample asks whether you really want to quit; **A** or **Enter**
+quits, and **B** or **Escape** goes back.
+
+The sample copies its content beside the executable when it builds, so it runs from any folder.
+
+## What you are looking at
+
+The sample is about 450 lines, and most of them are comments explaining the line below. Three
+parts are worth knowing before you copy it in the next step.
+
+**`main.cpp` makes the decisions only a game can make**: the window's title and size, where the
+content is, and which state runs first. Everything else is the engine's.
+
+<SourceFile path="samples/minimal/main.cpp" from="ApplicationOptions options;" to="return app.run(" />
+
+**A state is a screen or mode of the game.** The engine calls a state's `init()` once, then its
+`update()` and `draw()` every frame. `HelloState` puts its two lines of text in a scene and
+gives the scene one view covering the whole window:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="this->scene_ = std::make_unique<Scene>(nullptr, nullptr);"
+	to="this->scene_->add_view("
+/>
+
+**The question is a second state, pushed on top of the first.** `ConfirmState` knows nothing
+about the screen below it. It hands back a `bool` when it closes, and `HelloState` decides what
+the answer means. While the question is up, `HelloState` stops updating and dims its greeting,
+and because the question does not cover the whole screen, the greeting stays visible underneath.
+
+## The other sample
+
+LineSweeper, the falling-block game, was built too:
+
+```bat
+out\build\x64-debug\samples\linesweeper\LineSweeperSample.exe
+```
+
+[Examples](/examples/) lists its controls and the order in which to read its code. It is there to
+be read, though. The minimal sample is the one you copy, and the next step does that.

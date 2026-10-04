@@ -161,6 +161,27 @@ format down — an `xwb_file.h` beside
 `docs/port/android.md` §3.2 argues from — is open and is blocked on having a
 file of that format to read it against.
 
+## The website
+
+`website/` is the public site: Astro and Starlight, built from inside that
+folder with `npm ci` then `npm run build`, never by CMake, with Node the only
+thing it needs. [website/README.md](website/README.md) is its guide,
+[docs/website-plan.md](docs/website-plan.md) what is decided about it, and
+[docs/website-inventory.md](docs/website-inventory.md) what its documentation
+can be built from.
+
+It reads the rest of this checkout at build time rather than copying it: the
+three design documents as written, three engine headers turned into reference
+pages (`website/src/lib/published.ts` is the list), the root `vcpkg.json`, and
+passages of `samples/` and `tests/` that pages quote, located by the text of
+their first and last lines. **So an edit outside `website/` can fail the
+website build**, and is meant to: rewording a line a page quotes, renaming a
+file a design document links to, or giving a published header a shape the
+reference reader does not follow. The failure names the file; fix the page in
+the same commit. `.github/workflows/website.yml` runs it on every push.
+`check_doc_citations.cmake` skips `website/`, whose `node_modules/` holds
+hundreds of `.md` files.
+
 ## What will fail the build
 
 - **`/W4 /WX /permissive- /sdl /fp:precise`**, with **zero suppressions**. One

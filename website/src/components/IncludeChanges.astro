@@ -1,0 +1,55 @@
+---
+// The include lines a copy of the minimal sample has to change, read from the
+// sample itself.
+//
+// The sample's includes are written from the Labrador repository's root, as
+// "samples/minimal/...". In a project of your own the same files live under
+// game/, so each of those lines changes to "game/...". Reading them from the
+// checkout means the list cannot fall behind the sample.
+import { readdirSync, statSync } from 'node:fs';
+import path from 'node:path';
+import { absolutePath, readRepositoryFile } from '../lib/repository';
+
+const SAMPLE = 'samples/minimal';
+const PREFIX = `#include "${SAMPLE}/`;
+
+function sources(directory: string): string[] {
+	return readdirSync(absolutePath(directory)).flatMap((entry) => {
+		const child = `${directory}/${entry}`;
+		if (statSync(absolutePath(child)).isDirectory()) return sources(child);
+		return /\.(h|cpp)$/.test(entry) ? [child] : [];
+	});
+}
+
+const changes = sources(SAMPLE).flatMap((file) =>
+	readRepositoryFile(file)
+		.split('\n')
+		.filter((line) => line.startsWith(PREFIX))
+		.map((line) => ({
+			file: `game/${path.posix.relative(SAMPLE, file)}`,
+			from: line.trim(),
+			to: line.trim().replace(PREFIX, '#include "game/'),
+		}))
+);
+
+if (changes.length === 0) {
+	throw new Error(`No line in ${SAMPLE} starts with ${PREFIX}; the Get Started page needs rewriting.`);
+}
+---
+
+<table>
+	<thead>
+		<tr><th>File</th><th>Change this line</th><th>To this</th></tr>
+	</thead>
+	<tbody>
+		{
+			changes.map((change) => (
+				<tr>
+					<td><code>{change.file}</code></td>
+					<td><code>{change.from}</code></td>
+					<td><code>{change.to}</code></td>
+				</tr>
+			))
+		}
+	</tbody>
+</table>

@@ -1,0 +1,99 @@
+---
+title: Examples
+description: The two samples in the Labrador repository, what each is for, and where to start reading.
+template: splash
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+The repository has two samples. They answer different questions, so they are kept separate:
+the minimal sample is what you **copy** to start a game, and LineSweeper is what you **read** to
+see what a finished one looks like. Both are built by the same build as the engine, so neither
+can quietly fall out of date.
+
+## The minimal sample: the one you copy
+
+`samples/minimal` is about 450 lines, comments included. It opens a 1280×720 window with a line
+of text that circles a point you move with a gamepad stick, the arrow keys or WASD. Press B or
+Escape and it asks, in a second screen on top of the first, whether you really want to quit.
+
+That is small, but it is a complete game on the engine. It has a first state, a second state
+pushed on top that returns a result, a scene that owns what is on screen, input from two kinds
+of device, content named in a manifest, and the build file that copies that content beside the
+executable.
+
+| File | What it shows |
+| --- | --- |
+| <RepoLink path="samples/minimal/main.cpp">`main.cpp`</RepoLink> | Window options, loading the content manifest, and handing the engine its first state. |
+| <RepoLink path="samples/minimal/states/hello_state.cpp">`states/hello_state.cpp`</RepoLink> | A scene with two labels and one view, input from a pad and a keyboard at once, and a transform built each frame. |
+| <RepoLink path="samples/minimal/states/confirm_state.cpp">`states/confirm_state.cpp`</RepoLink> | A state pushed above another that hands a `bool` back when it closes. |
+| <RepoLink path="samples/minimal/content/manifest.json">`content/manifest.json`</RepoLink> | The one font the sample uses, named once and resolved to a handle at load. |
+| <RepoLink path="samples/minimal/CMakeLists.txt">`CMakeLists.txt`</RepoLink> | The whole build file: sources, two libraries, and the content copied beside the executable. |
+
+This is how the minimal sample asks before quitting. The question is a state of its own that
+knows nothing about the screen below it, and the answer comes back once, when it closes:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="if (pads.pressed(0, GamepadButton::b) || keyboard.pressed(Key::escape))"
+	to="}"
+/>
+
+<LinkButton href="/docs/get-started/your-project/" icon="right-arrow">Start a project from it</LinkButton>
+
+## LineSweeper: the one you read
+
+`samples/linesweeper` is a falling-block game with seven pieces, a next queue, a hold slot, hard
+drop, wall kicks, T-spins and back-to-back scoring, and a field of up to ten thousand particles
+that bursts when a piece locks, when lines clear and when the game ends. It is about 4,000 lines,
+with about 2,000 more of tests, and it is there to show what a whole game on Labrador looks like
+and what it costs.
+
+It is built in three layers, and the walls between them are the point:
+
+- **`rules/`**, the simulation: a static library that links nothing from the engine, so the
+  whole game can be played and checked inside the test suite with no window.
+- **`presentation/`** reads a match and draws it. It may read the rules' data but may not call
+  the functions that change it.
+- **`states/`** is the only layer that sees both, and where key presses become moves.
+
+Start with its <RepoLink path="samples/linesweeper/README.md">design notes</RepoLink>. They
+record every decision in the sample with its reasons, including the ones that went the other
+way. Then read the code in this order:
+
+1. <RepoLink path="samples/linesweeper/rules/world.h">`rules/world.h`</RepoLink>: the whole match as one 276-byte value, and the four compile-time checks that keep it one.
+2. <RepoLink path="samples/linesweeper/rules/tick.h">`rules/tick.h`</RepoLink>: the one function that advances the game by a step.
+3. <RepoLink path="tests/linesweeper/replay_tests.cpp">`tests/linesweeper/replay_tests.cpp`</RepoLink>: whole matches played, recorded and replayed with no window.
+4. <RepoLink path="samples/linesweeper/presentation/particles.h">`presentation/particles.h`</RepoLink>: ten thousand particles behind one game object.
+5. <RepoLink path="samples/linesweeper/states/play_state.cpp">`states/play_state.cpp`</RepoLink>: keyboard and gamepad bindings, and the frame that ties the layers together.
+
+### Controls
+
+| Action | Keyboard | Gamepad |
+| --- | --- | --- |
+| Move | Left, Right | D-pad left, right |
+| Soft drop | Down | D-pad down |
+| Hard drop | Space | Y |
+| Rotate clockwise | Up or X | D-pad up or A |
+| Rotate anticlockwise | Z | B |
+| Hold | C or Shift | X or left shoulder |
+| Pause | Escape or P | Start |
+| Restart after the game ends | R | Start |
+
+<p class="source-link">
+	From the binding tables in <RepoLink path="samples/linesweeper/states/play_state.cpp">states/play_state.cpp</RepoLink>.
+</p>
+
+## Running them
+
+Both samples build with the engine. After [building Labrador](/docs/get-started/build-labrador/),
+they are at:
+
+```text
+out\build\x64-debug\samples\minimal\MinimalSample.exe
+out\build\x64-debug\samples\linesweeper\LineSweeperSample.exe
+```
+
+Each copies its content beside its executable, so you can start it from anywhere.

@@ -1,0 +1,21 @@
+---
+// A link to a file or folder in the repository, as it was at the revision the
+// site was built from. The path is checked when the site is built, so a page
+// cannot keep pointing at a file that has moved.
+import { existsSync } from 'node:fs';
+import { absolutePath, sourceUrl } from '../lib/repository';
+
+interface Props {
+	path: string;
+	// A heading anchor in the target, without the '#'.
+	hash?: string;
+}
+
+const { path, hash } = Astro.props;
+if (!existsSync(absolutePath(path))) {
+	throw new Error(`A page links to '${path}', and the checkout has no such file.`);
+}
+const href = sourceUrl(path) + (hash ? `#${hash}` : '');
+---
+
+<a href={href}><slot /></a>

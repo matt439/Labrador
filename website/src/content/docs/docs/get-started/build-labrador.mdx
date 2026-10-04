@@ -1,0 +1,90 @@
+---
+title: Build Labrador
+description: Clone the engine, configure it with a preset, build it and run its tests.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+You build Labrador on its own first. That proves the tools work before your own project adds
+anything, and it builds the two samples you will look at next.
+
+<Steps>
+
+1. **Clone the repository** into your projects folder:
+
+   ```bat
+   cd C:\dev
+   git clone https://github.com/matt439/Labrador.git
+   cd Labrador
+   ```
+
+2. **Configure the build:**
+
+   ```bat
+   cmake --preset x64-debug
+   ```
+
+   A *preset* is a named configuration in the repository's `CMakePresets.json`. `x64-debug` is a
+   64-bit debug build using the Direct3D 11 renderer, with its output in `out\build\x64-debug`.
+
+   The first time you run this, vcpkg downloads and builds Labrador's dependencies: DirectX Tool
+   Kit, the XAudio2 redistributable and the doctest test framework. That takes several minutes,
+   and vcpkg keeps the results, so later configures are quick.
+
+3. **Build it:**
+
+   ```bat
+   cmake --build --preset x64-debug
+   ```
+
+   This builds the engine, both samples, the tests and the benchmarks. Warnings are errors in
+   every Labrador build, so a successful build has none.
+
+4. **Run the tests:**
+
+   ```bat
+   ctest --preset x64-debug
+   ```
+
+   Fourteen test programs run, and ctest should report
+   `100% tests passed, 0 tests failed out of 14`. One of them, `RenderPixelTests`, draws real
+   frames through Direct3D and compares them with reference images, so a pass also tells you the
+   renderer works on your machine.
+
+</Steps>
+
+## Other configurations
+
+The repository has a debug and a release preset for each renderer. Swap the preset name in all
+three commands to use one:
+
+| Preset | Renderer |
+| --- | --- |
+| `x64-debug`, `x64-release` | Direct3D 11 |
+| `x64-debug-d3d12`, `x64-release-d3d12` | Direct3D 12 |
+| `x64-debug-gl`, `x64-release-gl` | OpenGL 3.3 |
+| `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan, which needs the Vulkan SDK |
+| `x64-debug-null`, `x64-release-null` | None: records what it was asked to draw, for testing on machines without a graphics card |
+
+The renderer is chosen when you configure rather than when the game starts. Asking for one that
+was not built is a link error, not a crash on the first frame.
+
+## If something fails
+
+<Aside type="caution" title="Filename too long">
+The clone was made in a folder whose path is too long. Move to a shorter folder, or run
+`git config --global core.longpaths true`, delete the partial clone and clone again. See
+[Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder).
+</Aside>
+
+<Aside type="caution" title="cmake, cl or fxc is not recognised">
+The command prompt is not the x64 Native Tools Command Prompt. Open that one and run the
+command again from the `Labrador` folder.
+</Aside>
+
+<Aside type="caution" title={'Could not find toolchain file: "/scripts/buildsystems/vcpkg.cmake"'}>
+`VCPKG_ROOT` is not set, so the preset's path to vcpkg starts with nothing. The errors about
+Ninja and the compiler that follow it are consequences of the first one. Set `VCPKG_ROOT` as in
+step 4 of [Install the tools](/docs/get-started/prerequisites/), delete the half-configured
+`outuildd-debug` folder, and configure again.
+</Aside>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <!-- The L piece: three cells down and one across, in LineSweeper's orange. -->
+  <g fill="#f09800" stroke="#7a4d00" stroke-width="1">
+    <rect x="3.5" y="0.5" width="9" height="9" rx="1"/>
+    <rect x="3.5" y="10.5" width="9" height="9" rx="1"/>
+    <rect x="3.5" y="20.5" width="9" height="9" rx="1"/>
+    <rect x="13.5" y="20.5" width="9" height="9" rx="1"/>
+  </g>
+</svg>

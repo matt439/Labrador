@@ -1,0 +1,196 @@
+---
+title: Why Labrador?
+description: What Labrador is for, how it differs from Godot, Unreal, raylib and SDL, and what each of its choices costs.
+template: splash
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+Labrador is a 2D game engine for people who want to build games in ordinary C++ and be able to
+read everything underneath them. It is small, it has firm opinions, and it is young. This page
+sets out the four choices that define it, what each one buys and what each one costs, so you
+can tell quickly whether it suits the game you want to make.
+
+## Who it is for
+
+It suits you if:
+
+- you want to write a 2D game in C++, and you are comfortable compiling it;
+- you want to understand the engine your game runs on, and be able to read any part of it;
+- your game is played on one machine: alone, or with friends on a shared or split screen, with gamepads;
+- you would like to test your game's rules the way you test any other code.
+
+It does not suit you yet if you want a visual editor or a scripting language, 3D, online play,
+a platform other than Windows, or a large community with an asset store and years of answered
+questions. Several of those are permanent decisions, explained below; the platform is not.
+
+## Ordinary C++ and standard tools
+
+A Labrador game is an ordinary C++20 program. It links the engine's static libraries, its
+dependencies come from vcpkg, and its build file is plain CMake. This is the whole build file of
+the minimal sample, comments included:
+
+<SourceFile path="samples/minimal/CMakeLists.txt" />
+
+There is no project format and no code generator. The engine has no reflection macros, no second
+standard library beside `std::` and no scripting language. Its headers contain classes,
+templates and the standard library, so reading the source is enough to know what it does
+([T12, the language over a dialect](/docs/design/philosophy/#t12-the-language-over-a-dialect)).
+Behaviour is written in C++ by everyone who writes it
+([T10](/docs/design/philosophy/#t10-one-language-over-a-scripting-layer)), and your debugger,
+profiler and editor work on your game as they would on any other C++ program.
+
+**The cost.** Every change to behaviour is a compile, and there is no hot reload. There is no
+visual editor and no property inspector, and nothing is serialised for you, because there is no
+reflection to do it with. Content (which textures and fonts, and in a larger game the levels and
+tuning) lives in JSON files read at startup, so changing it means restarting rather than
+rebuilding.
+
+## Your data, your lifetimes
+
+The engine meets your code at a few small interfaces: a
+[`State`](/docs/reference/core/state/) is a screen or mode of the game, a
+[`GameObject`](/docs/reference/core/game-object/) is anything that updates, draws and has
+bounds, and a `CollisionObject` is a game object that collides. What stands behind those
+interfaces is your choice. It can be a class per entity, as deep a hierarchy as you like, or one
+object standing for thousands of values.
+
+LineSweeper, the falling-block sample, stands at the second end of that range twice. Its whole
+match is one 276-byte value with no pointers and nothing to destroy. Restarting is
+`world = World{}`, taking a snapshot is a copy, and comparing two matches is `std::memcmp`. Four
+compile-time checks keep it that way:
+
+<SourceFile
+	path="samples/linesweeper/rules/world.h"
+	from="static_assert(std::is_trivially_copyable_v<World>,"
+	to={'"assert above is about to fire too.");'}
+/>
+
+Its particle effect is ten thousand particles in one flat array behind one `GameObject`. That is
+three virtual calls a frame however many particles are alive, and one allocation when it is
+created. The <RepoLink path="samples/linesweeper/README.md" hash="the-particle-field">sample's design notes</RepoLink>
+explain both decisions in detail.
+
+**The cost.** The engine does not manage objects for you. There is no garbage collector, no
+entity-component system and no automatic serialisation, and ownership is explicit:
+[`Scene::add`](/docs/reference/scene/scene/#add) takes a `std::unique_ptr` and hands back a
+pointer you may use until the object is retired. Labrador is also not "stack-only" or free of
+virtual calls. The interfaces above are virtual, and containers own heap memory. The rule the
+engine follows is that every allocation has exactly one owner
+([T11](/docs/design/philosophy/#t11-the-stack-over-the-heap)), not that allocation is forbidden.
+
+## Built for local 2D games
+
+Labrador is for games played on one machine: single-player, side by side or split-screen. That
+focus shows up in three places.
+
+- **Views.** A [`Scene`](/docs/reference/scene/scene/) is drawn once per *view*: a rectangle of
+  the window and a camera looking at the world. Split-screen is one view per player, refilled
+  every tick as the cameras follow them. Drawing is `const` all the way down, so the views can
+  be drawn on worker threads at the same time if a game asks for it.
+- **Input.** Four gamepad slots, with deadzones the game applies and press edges that ignore a
+  pad that was not connected on both frames. Keyboard and mouse have the same shape, and a stick
+  or a d-pad can be turned into menu directions with repeat.
+- **Interface.** A small widget set with focus and directional navigation, so menus work with a
+  controller without a mouse.
+
+Neither sample in the repository draws a second view yet. Split-screen is exercised by the
+engine's tests, whose reference images include split-screen frames, and by the engine's first
+client, a four-player split-screen game that is not public. A public multiplayer example is
+planned.
+
+**The cost.** Online play is out of scope permanently, not for now: no netcode, replication or
+rollback will ever shape the engine's design. 3D is out of scope too. The math library is 2D by
+design, not by omission
+([Non-goals](/docs/design/philosophy/#non-goals-today)).
+
+## Rules you can test without a window
+
+LineSweeper is built in three layers. `rules/` is the whole game: piece movement, rotation,
+gravity, scoring. It is a static library that links nothing from the engine. `presentation/`
+reads a match and draws it. `states/` is the only layer that sees both, and it turns key presses
+into moves. Because the rules link nothing, the test suite can play complete matches with no
+window, no graphics device and no engine at all. This test records a match as a list of input
+bytes, replays it, and requires the two results to be identical byte for byte:
+
+<SourceFile
+	path="tests/linesweeper/replay_tests.cpp"
+	from={'SUBCASE("the recording is a vector of bytes and nothing else")'}
+	to="}"
+/>
+
+The engine is held to the same standard. Each platform interface ships with an implementation
+that needs no hardware: a renderer that records what it was asked to draw, and an audio device
+that records what it was asked to play. Tests can therefore check drawing and sound on a machine
+with no graphics driver and no sound card.
+
+**The cost.** This separation is a design you choose and maintain. The engine makes it possible;
+it does not make it automatic, and a game that mixes its rules into its drawing code gets no
+help here. LineSweeper pays for its version with integer-only rules, durations counted in fixed
+ticks and tuning tables compiled into the code. Its
+<RepoLink path="samples/linesweeper/README.md">design notes</RepoLink> say what each of those
+cost.
+
+## How it compares
+
+### With Godot and Unreal
+
+Godot and Unreal are complete environments: an editor, an asset pipeline, an object model built
+around the editor, scripting (GDScript in Godot, Blueprint in Unreal) and export to many
+platforms. If you want to lay out levels visually, let designers change behaviour without
+compiling, or ship to many platforms, they are the better choice today.
+
+Labrador gives those up to stay small enough to read. Your game is a C++ program you own rather
+than a project inside an environment. The engine's object model is a few interfaces rather than
+a node tree or a reflected object graph, and nothing is collected behind your back. Unreal's C++
+is the comparison
+[the design documents draw directly](/docs/design/philosophy/#t12-the-language-over-a-dialect):
+its reflection macros and its own containers buy editor integration, serialisation, network
+replication and hot reload, and they mean reading the source is not enough to know what it does.
+Labrador has none of those features, and that is the trade.
+
+### With raylib, SDL and SFML
+
+These are libraries. They give you a window, input, drawing and sound, and leave the structure of
+your game to you. raylib in particular [describes itself](https://www.raylib.com/) as
+programming without an editor or visual tools, so "no editor" is not what separates Labrador from
+them. What Labrador adds is the structure above the drawing calls:
+
+- a **scene** that owns your objects and runs each tick in order: update, collision, then the
+  adds and removals that were requested during the tick, applied together at its end, so
+  spawning something in the middle of an update is safe;
+- a **state stack** with typed results: push a "Really quit?" screen and receive a `bool` when
+  it closes;
+- **collision**: layers and masks, a broad phase, a narrow phase that reports contact normals
+  and depths, and resolution;
+- **resources** named in a manifest and resolved to handles once, at load;
+- **views and cameras** for split-screen, and a **widget set** with controller navigation.
+
+**The cost**, measured against them: more structure to learn and accept, Windows only where they
+run nearly everywhere, a far smaller community, and C++ only, with no bindings for other
+languages.
+
+## The engineering behind it
+
+- **Five renderers behind one interface**, chosen when you configure the build: Direct3D 11,
+  Direct3D 12, OpenGL 3.3, Vulkan, and a null renderer for tests. The four that draw pixels are
+  held to the same pixel tests and the same fifty-seven reference images. CI runs those tests on
+  both Direct3D renderers; OpenGL and Vulkan are checked on a machine with a graphics driver.
+- **Warnings are errors**, with no exceptions, and your game is compiled with the same settings
+  as the engine.
+- **Continuous integration builds all five renderers** on every change.
+- **Benchmarks check scaling, not stopwatch times**: a step that is linear in the number of
+  objects has to stay linear when the count quadruples, on any machine.
+
+Labrador does not publish frame-time figures yet. Its low-end target is named (an integrated
+Radeon GPU at 1280×720, with the game held to four CPU cores) and has not been measured. When
+figures appear here, each will state the workload, the hardware, the configuration and how it
+was measured.
+
+## Platform support
+
+Labrador builds and runs on **Windows**, with Visual Studio 2022 or newer. The Vulkan renderer
+exists because Vulkan is the graphics interface that reaches Android, Linux and, through
+MoltenVK, Apple's platforms, but none of those are supported or built today. Treat Vulkan as the
+route to them, not as support for them.

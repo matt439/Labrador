@@ -1,0 +1,29 @@
+add_executable(MyGame WIN32
+    main.cpp
+    states/confirm_state.cpp
+    states/hello_state.cpp
+)
+target_link_libraries(MyGame PRIVATE
+    LabradorEngine
+    labrador_settings
+)
+
+# Includes are written from the project root - "game/states/hello_state.h" -
+# so the directory above game/ is this target's include root.
+target_include_directories(MyGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+# Content is found beside the executable, so copy it there on every build.
+add_custom_target(game_content ALL)
+add_custom_command(TARGET game_content POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
+        "$<TARGET_FILE_DIR:MyGame>/manifest.json"
+    VERBATIM
+)
+add_custom_command(TARGET game_content POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts"
+        "$<TARGET_FILE_DIR:MyGame>/fonts"
+    VERBATIM
+)
+add_dependencies(MyGame game_content)

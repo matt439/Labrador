@@ -1,0 +1,19 @@
+---
+// The phone menu on a page with a sidebar: the site's sections first, because
+// the header has no room for them there, then Starlight's own preferences.
+import Default from '@astrojs/starlight/components/MobileMenuFooter.astro';
+import SiteNavigation from '../SiteNavigation.astro';
+---
+
+<SiteNavigation class="menu-nav" />
+<Default />
+
+<style>
+	.menu-nav {
+		border-top: 1px solid var(--sl-color-gray-6);
+		padding-block: 1rem;
+	}
+	.menu-nav :global(ul) {
+		flex-wrap: wrap;
+	}
+</style>

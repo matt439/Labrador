@@ -1,0 +1,11 @@
+---
+// Which revision of Labrador this page describes. Every page that quotes the
+// repository read it at this commit.
+import { REVISION, commitUrl } from '../lib/repository';
+---
+
+<span class="revision">
+	Built from Labrador <a href={commitUrl()}><code>{REVISION.short}</code></a> of {REVISION.date}{
+		REVISION.modified && <strong> with uncommitted changes</strong>
+	}.
+</span>

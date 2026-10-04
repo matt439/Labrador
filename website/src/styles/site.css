@@ -1,0 +1,150 @@
+/*
+ * The site's colours and the few layouts Starlight does not already have.
+ *
+ * The accent is the L piece from LineSweeper (samples/linesweeper/presentation/
+ * palette.h, 240 152 0): a colour the engine actually draws. In the light theme
+ * it is darkened until link text keeps at least 4.5:1 against white.
+ */
+
+:root {
+	--sl-color-accent-low: hsl(34, 62%, 17%);
+	--sl-color-accent: hsl(38, 100%, 47%);
+	--sl-color-accent-high: hsl(38, 100%, 74%);
+
+	--labrador-space-section: 4rem;
+	--labrador-radius: 0.5rem;
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: hsl(37, 100%, 90%);
+	--sl-color-accent: hsl(32, 100%, 29%);
+	--sl-color-accent-high: hsl(28, 90%, 18%);
+}
+
+/* ----------------------------------------------------------- the splash pages */
+
+/* A splash page has no sidebar to narrow it, so its prose would otherwise run
+ * the full width of a desktop window. Prose keeps a reading measure; code,
+ * tables and the card grid keep the width. */
+:root:not([data-has-sidebar]) .sl-markdown-content :is(p, li, h2, h3) {
+	max-width: 72ch;
+}
+:root:not([data-has-sidebar]) .sl-markdown-content :is(.choice p, .choice h3, .source-link, .facts li) {
+	max-width: none;
+}
+
+.home-section {
+	margin-block: var(--labrador-space-section) 0;
+}
+.home-section > h2 {
+	margin-bottom: 0.5rem;
+}
+.home-section > .lead {
+	max-width: 46rem;
+	color: var(--sl-color-gray-2);
+	font-size: var(--sl-text-lg);
+}
+
+.facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	color: var(--sl-color-gray-2);
+	font-size: var(--sl-text-sm);
+}
+.facts li {
+	margin: 0;
+}
+.facts strong {
+	color: var(--sl-color-white);
+}
+
+/* Four cards: two by two where there is room, one column on a phone. Never
+ * three and one. */
+.choices {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1rem;
+	margin-top: 1.5rem;
+}
+@media (min-width: 50rem) {
+	.choices {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+.choice {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin: 0;
+	padding: 1.25rem 1.5rem;
+	border: 1px solid var(--sl-color-gray-5);
+	border-top: 4px solid var(--choice-colour, var(--sl-color-accent));
+	border-radius: var(--labrador-radius);
+	background-color: var(--sl-color-black);
+}
+.choice h3 {
+	margin: 0;
+	font-size: var(--sl-text-h4);
+}
+.choice p {
+	margin: 0;
+}
+.choice .cost {
+	color: var(--sl-color-gray-2);
+	font-size: var(--sl-text-sm);
+}
+.choice .cost strong {
+	color: var(--sl-color-white);
+}
+.choice .evidence {
+	margin-top: auto;
+	font-size: var(--sl-text-sm);
+}
+
+/* ----------------------------------------------------- quoted repository code */
+
+.source-file {
+	margin-top: 1rem;
+}
+.source-link {
+	margin-top: 0.35rem !important;
+	color: var(--sl-color-gray-3);
+	font-size: var(--sl-text-xs);
+	text-align: end;
+}
+
+/* --------------------------------------------------------------- the diagrams */
+
+.sl-markdown-content pre.mermaid {
+	display: flex;
+	justify-content: center;
+	border: 0;
+	background: transparent;
+	overflow-x: auto;
+}
+
+/* ------------------------------------------------------------ the reference */
+
+.ref-include {
+	color: var(--sl-color-gray-2);
+	font-size: var(--sl-text-sm);
+}
+.ref-note {
+	padding: 0.25rem 1rem;
+	border-inline-start: 3px solid var(--sl-color-gray-4);
+	color: var(--sl-color-gray-2);
+}
+.ref-qualified {
+	color: var(--sl-color-gray-3);
+	font-size: var(--sl-text-sm);
+}
+.sl-markdown-content pre.ref-comment-code {
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--sl-color-gray-5);
+	background-color: var(--sl-color-gray-6);
+	font-size: var(--sl-text-code-sm);
+}
