@@ -1,6 +1,7 @@
 # The Labrador website
 
 The public site: a showcase, a getting-started path and the documentation.
+Live at **[labradorengine.com](https://labradorengine.com/)** since 8 October 2026.
 [docs/website-plan.md](../docs/website-plan.md) is the plan it implements and
 says what is decided and what is not.
 
@@ -178,9 +179,39 @@ A preview with local changes says so, including changes to the website itself.
 commit-bound snapshots and the implementation checks required at the first
 published engine release. There are no release snapshots or version selector yet.
 
-## Not done yet
+## Hosting and deployment
 
-Hosting, the domain and deployment are undecided, so nothing here publishes
-anything; there is no `site` URL in the config, and so no sitemap.
-The plan's *Open decisions* table is the list. The collision, audio and
-local-multiplayer guides have runnable examples under `samples/`.
+Cloudflare Workers Static Assets serves the site at
+[https://labradorengine.com/](https://labradorengine.com/). The domain is
+purchased, and the owner selected the Workers Paid plan. The launch was
+confirmed on 8 October 2026; the public HTTPS homepage and its MP4 were fetched
+successfully. This launch check does not repeat the full browser validation
+recorded in the plan.
+
+Cloudflare Workers Builds connects to `matt439/Labrador` and deploys `master`.
+The dashboard build settings are:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `website` |
+| Production branch | `master` |
+| Build variable | `NODE_VERSION=24` |
+| Build command | `npm ci && npm run check && npm test && npm run build` |
+| Deploy command | `npx wrangler deploy` |
+
+Keep the complete checkout available and build on changes throughout the
+repository: the site reads engine headers, design documents, samples and tests
+outside `website/`. The build creates `website/dist/`;
+[`wrangler.jsonc`](wrangler.jsonc) tells Wrangler to upload that output, serve
+it as static files and use the generated 404 page for missing routes. Running
+only the deploy command in a fresh checkout does not build the site.
+
+These build settings live in Cloudflare's dashboard. The separate
+`.github/workflows/website.yml` continues to check, build and retain an artifact;
+Cloudflare performs production deployment.
+
+## Remaining launch follow-up
+
+`astro.config.ts` still has no `site` URL. Set it to
+`https://labradorengine.com` and verify canonical URLs and sitemap generation
+in a subsequent change.

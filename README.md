@@ -2,6 +2,8 @@
 
 A 2D game engine in C++.
 
+**Website and documentation: [labradorengine.com](https://labradorengine.com/).**
+
 The engine is the point, but an engine with no client is a library of guesses.
 Labrador has one: ColourWars, a split-screen paint-shooter that consumes this
 repository as a submodule and is the thing that keeps saying "this API is

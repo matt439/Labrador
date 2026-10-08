@@ -1,8 +1,8 @@
 # Labrador Website Plan
 
-**Planning draft · 4 October 2026 · amended through stage 4, and on 8 October 2026 for sample footage**
+**Created 4 October 2026 · amended through launch on 8 October 2026**
 
-This plan defines Labrador’s public website: a showcase that explains why a developer would choose the engine, a practical getting-started path, and a complete documentation area. The website lives under `website/` in the Labrador repository. The stack and the first release’s coverage are decided, and most of that release is written ([website/README.md](../website/README.md)); hosting and the domain remain open. The repository choice and the requirements below are agreed.
+This plan defines Labrador’s public website: a showcase that explains why a developer would choose the engine, a practical getting-started path, and a complete documentation area. The website lives under `website/` in the Labrador repository and launched on **8 October 2026 at [labradorengine.com](https://labradorengine.com/)**, hosted by Cloudflare Workers Static Assets. The stack, initial coverage, hosting and domain are decided ([website/README.md](../website/README.md)). The repository choice and the requirements below are agreed.
 
 ## Purpose and agreed requirements
 
@@ -16,7 +16,7 @@ Confirmed requirements:
 - Keep the website in this repository under `website/`, with its build and deployment independent of CMake.
 - Plan hosting, domain, and web stack before implementation.
 
-There is no existing domain or hosting account selected for this project. Domain, budget, branding, implementation dates, and launch scope remain open.
+The owner purchased `labradorengine.com` and selected the Cloudflare Workers Paid plan. The exact billing amount and currency are not recorded here. The visual identity and initial documentation scope are settled below.
 
 ## Positioning and differentiation
 
@@ -113,32 +113,22 @@ checked-in media keeps the website and CI independent of the engine toolchain.
 
 ## Hosting and domain
 
-**Hosting recommendation, still open:** Cloudflare Workers Static Assets. GitHub Pages is the main alternative if keeping publishing close to GitHub is preferred. The site is plain static output, so neither choice changes it. `.github/workflows/website.yml` checks and builds it on every push and keeps the result as an artifact; it deploys nothing.
+**Launched 8 October 2026:** [https://labradorengine.com/](https://labradorengine.com/), served by Cloudflare Workers Static Assets. The owner confirmed the domain purchase and Workers Paid plan. Account billing is the authority for renewal and plan costs; the earlier candidate-domain availability and price comparison is no longer the deployment record.
 
-Cloudflare currently charges nothing for static asset requests and storage; build and platform limits still apply, while requests that invoke application code have separate pricing. A small static site can therefore target zero recurring hosting cost within those limits. GitHub Pages supports custom domains and is available for public repositories on GitHub Free. [Cloudflare billing](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/), [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
+Cloudflare Workers Builds deploys from `master`, using `website` as the root directory and Node 24. Its build command is `npm ci && npm run check && npm test && npm run build`; its deploy command is `npx wrangler deploy`. The whole checkout remains available because site generation reads engine headers, samples and documentation outside `website/`. The committed [Wrangler configuration](../website/wrangler.jsonc) selects `dist` as the static assets directory. [website/README.md](../website/README.md) records the operational settings. `.github/workflows/website.yml` independently checks and builds the site and retains an artifact; production deployment is handled by Cloudflare.
 
-**Domain candidates, checked 4 October 2026:** none of `labradorengine.com`, `labradorengine.dev` or `labradorengine.org` is registered; each registry’s RDAP service answered *not found*. (`labradorengine.io` is also free; `labrador.dev` is taken.) A name the registry does not hold can still be reserved or premium-priced, which only a registrar’s own search shows, so the price is confirmed at the point of purchase.
+The live HTTPS homepage and hosted MP4 were checked on 8 October. The MP4 has a video stream and no audio track, matching the documented silent capture. This was a launch check, not a repeat of all the local browser and accessibility validation recorded below.
 
-| Name | Cloudflare, first year | Cloudflare, renewal | Porkbun, first year | Porkbun, renewal |
-| --- | --- | --- | --- | --- |
-| `.com` | US$10.46 | US$10.46 | US$11.08 | US$11.08 |
-| `.dev` | US$12.20 | US$12.20 | US$8.75 | US$12.87 |
-| `.org` | US$8.50 | US$11.20 | US$7.98 | US$11.84 |
-
-Cloudflare publishes no per-name prices on its own pages; its figures here are from a third-party mirror of its at-cost list ([cfdomainpricing.com](https://cfdomainpricing.com/), entries dated 17 September to 2 October 2026). Porkbun’s are from its public pricing API, read on 4 October 2026. Prices exclude any tax. Verisign raises the `.com` wholesale price on 1 November 2026, which should take Cloudflare’s `.com` to about US$11.17. Over five years each name costs US$52–61 at either registrar, so the name matters more than the registrar. A `.dev` name only works over HTTPS, because the whole domain is on the browsers’ HSTS preload list; both candidate hosts serve HTTPS, so that constrains nothing here.
-
-Cloudflare Registrar is a candidate for keeping domain and DNS management together. It registers and renews domains at cost, but requires Cloudflare DNS. The registrar and website host are separate choices even if both use Cloudflare. [Registrar pricing model](https://developers.cloudflare.com/registrar/), [DNS requirement](https://developers.cloudflare.com/registrar/get-started/transfer-domain-to-cloudflare/).
-
-Expected recurring costs are the domain renewal, about US$11–13 a year at the prices above, plus any deliberately selected media, email, or paid hosting services. Plan sample downloads and larger videos separately from ordinary page assets.
+One post-launch configuration task remains: `site` is still unset in `website/astro.config.ts`. Set it to the production URL and verify canonical URLs and sitemap output in the resulting build and deployment.
 
 ## Delivery and maintenance
 
-The following stages are proposed; no dates are assigned.
+The stages below record delivery through the 8 October 2026 launch and the ongoing maintenance work.
 
-1. **Settle the foundation.** Choose stack, host, domain budget, and initial documentation coverage. Inventory the available guides, source comments, screenshots, and footage within the agreed repository layout. *Stack chosen, inventory taken ([website-inventory.md](website-inventory.md)) and coverage agreed; host and domain open.*
+1. **Settle the foundation.** Choose stack, host, domain budget, and initial documentation coverage. Inventory the available guides, source comments, screenshots, and footage within the agreed repository layout. *Complete: stack chosen, inventory taken ([website-inventory.md](website-inventory.md)), coverage agreed, and Cloudflare Workers Static Assets with `labradorengine.com` selected. The owner purchased the domain and Workers Paid plan.*
 2. **Build a representative slice.** Create a homepage section, a Why Labrador? example, one Get Started walkthrough, and one API reference sample. Use these to validate visual design, reading documentation from the same checkout, and the reference-generation approach. *Built: home, Why Labrador?, Examples, the full five-page Get Started path, the three design documents read from the checkout, and three reference pages. The walkthrough’s project was built from the public repository exactly as written.*
 3. **Complete the agreed first release.** Write and review the selected guides and reference coverage, capture real sample media, and connect examples to their source. Keep the full documentation goal visible in the content inventory. *Written: five Concepts pages, seven Guides, a Troubleshooting page and the whole API reference, with four LineSweeper captures and a silent gameplay video. Collision, audio and local-multiplayer guides quote dedicated runnable samples, including original playable audio content.*
-4. **Validate and publish.** Check the new-user walkthrough on the named Windows toolchain; verify links, code snippets, search, keyboard navigation, narrow layouts, and contrast. Configure the chosen domain and deployment workflow when moving from planning into implementation. *Validated on 4 October 2026, the walkthrough having been built in stage 2 and the code snippets being quoted from the checkout: every internal link and anchor resolves; search finds reference types, members and guide topics; the tab order starts at the skip link and every stop shows a focus ring; no page scrolls sideways at 360 pixels; and axe-core finds no WCAG 2.2 A or AA violation on any page in either theme. That check found dark-theme text below 4.5:1 in four places and wide tables a keyboard could not scroll, and both are fixed. Publishing waits on a host and a domain.*
+4. **Validate and publish.** Check the new-user walkthrough on the named Windows toolchain; verify links, code snippets, search, keyboard navigation, narrow layouts, and contrast. Configure the chosen domain and deployment workflow when moving from planning into implementation. *Validated locally on 4 October 2026, the walkthrough having been built in stage 2 and the code snippets being quoted from the checkout: every internal link and anchor resolves; search finds reference types, members and guide topics; the tab order starts at the skip link and every stop shows a focus ring; no page scrolls sideways at 360 pixels; and axe-core finds no WCAG 2.2 A or AA violation on any page in either theme. That check found dark-theme text below 4.5:1 in four places and wide tables a keyboard could not scroll, and both are fixed. Published on 8 October through Workers Builds at `https://labradorengine.com/`; live checks are scoped in Hosting and domain above. The production `site` configuration and canonical URL/sitemap verification remain follow-up work.*
 5. **Maintain with engine changes.** Update canonical technical content alongside relevant code, preview affected website pages in the same change, and retain a known working deployment for rollback.
 
 The 8 October footage addition was checked separately: the Release capture
@@ -192,8 +182,8 @@ The website builds 134 pages with valid internal links and a clean type check.
 The three guides, guide index and Examples passed 20 browser combinations:
 1440- and 360-pixel widths, light and dark themes, no horizontal overflow or
 automated WCAG 2.2 A/AA violations, and keyboard access to the skip link.
-Desktop and phone screenshots were reviewed. Hosting and publishing remain
-the separate decisions below.
+Desktop and phone screenshots were reviewed. These checks preceded the launch
+recorded under Hosting and domain above.
 
 The 8 October polish pass added API links inside C++ code blocks, including
 sample excerpts and header-comment examples, and links for qualified or
@@ -227,18 +217,19 @@ Proposed readiness criteria:
 
 Keep the site’s build independent of the Windows engine build. Validate examples through the engine’s appropriate checks, then use web checks for page generation, links, and presentation. A website preview should be reviewed before the corresponding production deployment.
 
-## Open decisions
+## Decisions and remaining work
 
-The requirements and the use of `website/` in this repository are established; these implementation choices still need settling.
+The requirements and implementation choices are established. The remaining launch follow-up is recorded alongside the settled decisions.
 
 | Decision | Current recommendation or next action |
 | --- | --- |
 | Stack | **Decided:** Astro + TypeScript + Starlight, validated by the slice. |
-| Hosting | Cloudflare Workers Static Assets; compare with GitHub Pages. |
-| Domain and budget | All three candidates are unregistered; prices are above. Choose a name. |
+| Hosting | **Live:** Cloudflare Workers Static Assets, deployed by Workers Builds from `master`; the owner selected Workers Paid. |
+| Domain and budget | **Purchased and live:** `labradorengine.com`. Exact billing amount and currency are not recorded here. |
 | Documentation release scope | **Agreed** as [the inventory’s last table](website-inventory.md) proposed. Written, including the three guides backed by the collision, audio and local-multiplayer samples. |
 | API reference | **Decided:** the line reader, with history taken out of the headers first. Every public header is published. |
 | Visual identity and media | **Decided:** amber four-cell L mark and Labrador wordmark, neutral light/dark surfaces, system sans-serif and monospace type. The mark is shared by the header and favicon; text uses contrast-safe amber shades. Original sample captures and footage supply the imagery. |
-| Version and publishing policy | **Decided:** development label and source commit today; complete immutable snapshots start with the first published engine release. [The versioning policy](website-versioning.md) records the routes and first-release checks. Hosting and deployment remain separate. |
+| Version and publishing policy | **Decided:** development label and source commit today; complete immutable snapshots start with the first published engine release. [The versioning policy](website-versioning.md) records the routes and first-release checks. The website launch does not declare an engine release. |
+| Production URL metadata | **Remaining:** set `site` in `website/astro.config.ts` to `https://labradorengine.com` and verify canonical URLs and sitemap output. |
 
-What stands between the validated site and publishing it is the owner’s to decide: a host and a domain. The collision, audio and local-multiplayer guides and their worked examples are included.
+The site is published. The collision, audio and local-multiplayer guides and their worked examples are included; ongoing changes follow the maintenance stage above.
