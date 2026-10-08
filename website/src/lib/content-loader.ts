@@ -10,8 +10,8 @@
 import type { Loader, LoaderContext } from 'astro/loaders';
 import { docsLoader } from '@astrojs/starlight/loaders';
 import { siteContentFileURL } from './markdown-plugins';
-import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, type PublishedDocument } from './published';
-import { forgetIndexes, referencePage, unlistedHeaders } from './reference';
+import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, REFERENCE_MODULES, moduleSlug, type PublishedDocument } from './published';
+import { forgetIndexes, moduleReferencePage, referencePage, unlistedHeaders } from './reference';
 import { REVISION, absolutePath, commitUrl, editUrl, readRepositoryFile, sourceUrl } from './repository';
 
 async function store(
@@ -82,6 +82,14 @@ async function loadCheckout(context: LoaderContext): Promise<void> {
 	}
 	for (const document of DESIGN_DOCUMENTS) {
 		await loadDesignDocument(context, document);
+	}
+	for (const module of REFERENCE_MODULES) {
+		await store(context, moduleSlug(module), moduleReferencePage(module), {
+			title: `${module.name} module`,
+			description: module.summary,
+			editUrl: editUrl('website/src/lib/published.ts'),
+			sidebar: { order: 0, label: 'Overview' },
+		});
 	}
 	for (let index = 0; index < REFERENCE_HEADERS.length; index++) {
 		await loadReference(context, index);

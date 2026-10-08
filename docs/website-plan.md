@@ -148,6 +148,19 @@ navigation now takes a second header row. Home, Why, Examples and Get Started
 passed header checks at 320, 360, 430 and 1440 pixels in both themes, with the
 full title visible and no overflow or automated accessibility violations.
 
+A second 8 October pass added an overview for each of the ten API modules.
+The reference's module table and sidebar now lead to those overviews, each
+listing the same public headers as the publishing inventory; all 93 header
+pages link back to their module. The site builds 131 pages with valid internal
+links and a clean type check. All ten overviews passed browser checks at 320
+and 1440 pixels in both themes, including sidebar selection, search and
+keyboard scrolling of wide tables. Each module-to-header-to-module navigation
+path was exercised. Home, Why and Examples also gained the theme selector
+their narrow headers lacked. At 320, 360, 430, 799, 800 and 1440 pixels in both
+themes, the title remains visible, theme selection is keyboard-accessible and
+survives reload, and the pages have no horizontal overflow or automated WCAG
+2.2 A/AA violations. Desktop and phone screenshots were reviewed.
+
 Proposed readiness criteria:
 
 - A new visitor can identify what Labrador is, who it suits, its current platform support, and its meaningful trade-offs.

@@ -12,7 +12,7 @@ import { satteri } from '@astrojs/markdown-satteri';
 import starlightLinksValidator from 'starlight-links-validator';
 import { checkoutLinks, mermaidBlocks, referenceLinks } from './src/lib/markdown-plugins';
 import { GITHUB_REPOSITORY, EDIT_BRANCH } from './src/lib/repository';
-import { REFERENCE_MODULES } from './src/lib/published';
+import { REFERENCE_MODULES, moduleSlug } from './src/lib/published';
 
 export default defineConfig({
 	markdown: {
@@ -56,7 +56,10 @@ export default defineConfig({
 						...REFERENCE_MODULES.map((module) => ({
 							label: module.name,
 							collapsed: true,
-							items: [{ autogenerate: { directory: `docs/reference/${module.name}` } }],
+							items: [
+								{ label: 'Overview', link: `/${moduleSlug(module)}/` },
+								{ autogenerate: { directory: `docs/reference/${module.name}` } },
+							],
 						})),
 					],
 				},

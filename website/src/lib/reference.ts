@@ -15,7 +15,7 @@ import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import GithubSlugger from 'github-slugger';
 import { parseHeader, type CommentBlock, type Item, type TypeItem } from './cpp-header';
-import { REFERENCE_HEADERS, UNPUBLISHED_HEADERS, publishedPages, type ReferenceHeader } from './published';
+import { REFERENCE_HEADERS, UNPUBLISHED_HEADERS, publishedPages, type ReferenceHeader, type ReferenceModule } from './published';
 import { REPOSITORY_ROOT, REVISION, absolutePath, commitUrl, readRepositoryFile, sourceUrl } from './repository';
 
 // ------------------------------------------------------------------ the index
@@ -487,6 +487,9 @@ function layout(header: ReferenceHeader): Layout {
 			`pages are made.</p>`
 	);
 	blocks.push(
+		() => `<p><a href="/docs/reference/${header.module}/">Browse the ${header.module} module</a></p>`
+	);
+	blocks.push(
 		() =>
 			`<p class="ref-include"><code>#include "${escapeHtml(header.source)}"</code>` +
 			(namespace ? ` · namespace <code>${escapeHtml(namespace)}</code>` : '') +
@@ -636,4 +639,25 @@ export function referencePage(header: ReferenceHeader): ReferencePage {
 
 export function referencePages(): ReferencePage[] {
 	return REFERENCE_HEADERS.map(referencePage);
+}
+
+// Module lists use the same inventory as the sidebar and the header pages, so
+// adding a published header also makes it discoverable from its module.
+export function moduleReferencePage(module: ReferenceModule): string {
+	const headers = REFERENCE_HEADERS.filter((header) => header.module === module.name);
+	const rows = headers.map((header) => {
+		const file = header.source.slice(header.source.lastIndexOf('/') + 1);
+		return `| [${header.title}](/${header.slug}/) | \`${file}\` |`;
+	});
+	return [
+		module.summary,
+		`The public headers in \`engine/${module.name}/\`. Choose a page for its declarations, ` +
+			`contracts, related types, and links to the samples and tests that include it.`,
+		'## Headers',
+		['| Reference page | Header |', '| --- | --- |', ...rows].join('\n'),
+		'## Keep reading',
+		'[Concepts](/docs/concepts/) explains how the engine fits together. ' +
+			'[Guides](/docs/guides/) walks through tasks using code from the samples. ' +
+			'[About the reference](/docs/reference/) lists every module and explains how these pages are generated.',
+	].join('\n\n');
 }

@@ -46,6 +46,7 @@ export const DESIGN_DOCUMENTS: PublishedDocument[] = [
 ];
 
 export interface ReferenceHeader {
+	module: string;
 	// The header, from the repository root.
 	source: string;
 	slug: string;
@@ -58,7 +59,7 @@ export interface ReferenceHeader {
 export interface ReferenceModule {
 	// The folder under engine/, which is also the module's name.
 	name: string;
-	// What the module is, for the reference's introduction page.
+	// What the module is, for the reference's introduction and module pages.
 	summary: string;
 	// The headers, by file name, in the order a reader meets them, each with
 	// its sidebar label.
@@ -241,12 +242,17 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 
 export const REFERENCE_HEADERS: ReferenceHeader[] = REFERENCE_MODULES.flatMap((module) =>
 	module.headers.map(([file, title], index) => ({
+		module: module.name,
 		source: `engine/${module.name}/${file}`,
 		slug: `docs/reference/${module.name}/${file.replace(/\.h$/, '').replace(/_/g, '-')}`,
 		title,
 		order: index + 1,
 	}))
 );
+
+export function moduleSlug(module: ReferenceModule): string {
+	return `docs/reference/${module.name}`;
+}
 
 // Every repository file that has a page of its own, keyed by repository path.
 export function publishedPages(): Map<string, string> {

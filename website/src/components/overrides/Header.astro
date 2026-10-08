@@ -4,8 +4,9 @@
 // On a wide screen the sections sit beside the search box. On a phone they
 // stay in the header only on pages with no sidebar - the home, Why and
 // Examples pages - because a page with a sidebar has a menu button there
-// instead, and the menu lists them (MobileMenuFooter.astro). On narrow splash
-// pages the sections take a second row so the full site title stays visible.
+// instead, and the menu lists them (MobileMenuFooter.astro). Narrow splash
+// pages keep search and the theme selector beside the title, with the site
+// sections in a second row. They have no sidebar menu to hold preferences.
 import Search from '@astrojs/starlight/components/Search.astro';
 import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
 import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
@@ -17,15 +18,15 @@ import SiteNavigation from '../SiteNavigation.astro';
 	<div class="title-wrapper sl-flex">
 		<SiteTitle />
 	</div>
-	<div class="sl-flex print:hidden">
+	<div class="sl-flex print:hidden search">
 		<Search />
 	</div>
 	<div class="sl-flex print:hidden right-group">
 		<SiteNavigation class="header-nav" />
-		<div class="sl-hidden md:sl-flex wide-only">
-			<div class="sl-flex social-icons">
-				<SocialIcons />
-			</div>
+		<div class="sl-hidden md:sl-flex social-icons">
+			<SocialIcons />
+		</div>
+		<div class="sl-flex theme-select">
 			<ThemeSelect />
 		</div>
 	</div>
@@ -48,7 +49,6 @@ import SiteNavigation from '../SiteNavigation.astro';
 	}
 
 	.right-group,
-	.wide-only,
 	.social-icons {
 		gap: 1rem;
 		align-items: center;
@@ -71,24 +71,29 @@ import SiteNavigation from '../SiteNavigation.astro';
 		.right-group :global(.site-nav ul) {
 			gap: 0.875rem;
 		}
-	}
-
-	@media (max-width: 29.99rem) {
 		:global(:root:not([data-has-sidebar])) {
 			--sl-nav-height: 6rem;
 		}
 		:global(:root:not([data-has-sidebar])) .header {
-			flex-wrap: wrap;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto auto;
+			grid-template-rows: 1fr 1fr;
 			row-gap: 0;
 		}
-		:global(:root:not([data-has-sidebar])) .title-wrapper {
-			flex-shrink: 0;
+		:global(:root:not([data-has-sidebar])) .search {
+			grid-column: 2;
+			grid-row: 1;
 		}
 		:global(:root:not([data-has-sidebar])) .right-group {
-			width: 100%;
+			display: contents;
 		}
-		:global(:root:not([data-has-sidebar])) .right-group :global(.site-nav) {
-			width: 100%;
+		:global(:root:not([data-has-sidebar])) .theme-select {
+			grid-column: 3;
+			grid-row: 1;
+		}
+		:global(:root:not([data-has-sidebar])) .header :global(.header-nav) {
+			grid-column: 1 / -1;
+			grid-row: 2;
 		}
 		:global(:root:not([data-has-sidebar])) .right-group :global(.site-nav ul) {
 			justify-content: space-between;

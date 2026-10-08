@@ -7,12 +7,13 @@ sidebar:
 ---
 
 import RepoLink from '~/components/RepoLink.astro';
-import { REFERENCE_MODULES } from '~/lib/published';
+import { REFERENCE_MODULES, moduleSlug } from '~/lib/published';
 
 The API reference gives the exact contract of every public type and function in the engine,
 generated from its headers at the revision named at the foot of each page. It is organised by
 module, in the order the modules depend on one another: each one depends only on modules above
-it in this table.
+it in this table. Choose a module to browse its public headers. Each header page links back to
+its module, and every module has an Overview in the sidebar.
 
 <table>
 	<thead>
@@ -23,21 +24,17 @@ it in this table.
 		</tr>
 	</thead>
 	<tbody>
-		{REFERENCE_MODULES.map((module) => {
-			const [first] = module.headers[0];
-			const slug = first.replace(/\.h$/, '').replace(/_/g, '-');
-			return (
-				<tr>
-					<td>
-						<a href={`/docs/reference/${module.name}/${slug}/`}>
-							<code>{module.name}</code>
-						</a>
-					</td>
-					<td>{module.summary}</td>
-					<td>{module.headers.length}</td>
-				</tr>
-			);
-		})}
+		{REFERENCE_MODULES.map((module) => (
+			<tr>
+				<td>
+					<a href={`/${moduleSlug(module)}/`}>
+						<code>{module.name}</code>
+					</a>
+				</td>
+				<td>{module.summary}</td>
+				<td>{module.headers.length}</td>
+			</tr>
+		))}
 	</tbody>
 </table>
 

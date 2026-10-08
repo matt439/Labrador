@@ -26,6 +26,7 @@ it reads:
 | --- | --- | --- |
 | The three design documents, as written | `docs/design/*.md` | `/docs/design/...` |
 | A reference page for every public header | `engine/<module>/*.h` | `/docs/reference/<module>/...` |
+| An overview listing each module's public headers | `src/lib/published.ts` | `/docs/reference/<module>/` |
 | Which samples and tests include each header | `samples/`, `tests/` | the foot of its reference page |
 | Quoted passages of code | `samples/`, `tests/` | wherever a page uses `<SourceFile>` |
 | The `vcpkg.json` a new project needs | `vcpkg.json` | Get Started |
@@ -68,7 +69,8 @@ src/lib/
                           code-formatted names linked to the reference
   cpp-header.ts           the line reader behind the reference pages
   reference.ts            a parsed header as a page, and the index of names
-                          and members every page links through
+                          and members every page links through; module overviews
+                          list the same headers as the sidebar
   excerpt.ts              a passage of a file, found by its text
 src/components/           SourceFile, RepoLink, Capture and friends;
                           overrides/ holds the Starlight components the site
@@ -100,7 +102,7 @@ engine header, write its path as code instead, which reaches its reference page.
 **Publish another design document or header.** Add it to `src/lib/published.ts`:
 a design document to `DESIGN_DOCUMENTS`, a header to its module in
 `REFERENCE_MODULES` with the label the sidebar shows. That is the whole of it:
-the loader, the link rewriting and the sidebar all read those lists. A new
+the loader, module overviews, link rewriting and sidebar all read those lists. A new
 public header that is in neither `REFERENCE_MODULES` nor `UNPUBLISHED_HEADERS`
 fails the build. A header that the reader rejects names its file and line; see
 the reference's own introduction page for what the reader does and does not
