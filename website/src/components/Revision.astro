@@ -1,10 +1,10 @@
 ---
-// Which revision of Labrador this page describes. Every page that quotes the
-// repository read it at this commit.
+// The development documentation names its checkout commit and flags local edits.
 import { REVISION, commitUrl } from '../lib/repository';
 ---
 
 <span class="revision">
+	Development documentation (unreleased).
 	Built from Labrador <a href={commitUrl()}><code>{REVISION.short}</code></a> of {REVISION.date}{
 		REVISION.modified && <strong> with uncommitted changes</strong>
 	}.

@@ -53,6 +53,8 @@ jobs:
       # to read here than as a failed page.
       - run: npm run check
 
+      - run: npm test
+
       # Fails on a broken internal link or anchor (starlight-links-validator),
       # on a quoted passage whose first or last line has gone, and on a header
       # the reference reader does not understand.

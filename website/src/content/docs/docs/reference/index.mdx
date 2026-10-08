@@ -83,18 +83,25 @@ the site's build to Windows.
 
 **Links.** A type defined anywhere in the engine's public headers is linked wherever a page names
 it, to its section on its page, and a qualified member such as `GameObject::draw` to the member's
-own section. So are a header path and a trade-off number such as T8. The rest of the site links
+own section. Free functions such as `labrador::resolve_walls` link to their declaration group;
+overloads in the same header share a destination. Header paths and trade-off numbers such as T8
+also link to their definitions. The rest of the site links
 here the same way: a name written as code in a guide, a concept page or a design document links to
 its section, the first time each section of that page names it.
+
+C++ code blocks, including quoted sample source, link the first occurrence of each API target
+in that block. Underlined names are keyboard-accessible links; syntax highlighting and copied
+code are unchanged. Comments and string literals are left as written.
 
 **Where it is used.** Each page ends with the samples and tests that include its header. Only a
 direct `#include` is found, and a file can reach a header through another one, so the list is
 where to start reading rather than every use. The samples are the best examples;
 [Examples](/examples/) says where to start reading them.
 
-## What it does not do yet
+## Linking boundaries
 
-- Names inside the code blocks are not linked.
 - A name defined in two headers is not linked at all, rather than risk landing on the wrong one.
-- Free functions are not linked from other pages, and an enumerator links to its enumeration:
+- Links identify declarations, not the overload selected by a C++ compiler. Calls through an
+  object and local aliases are not resolved; local shadowing is not inferred.
+- An enumerator links to its enumeration:
   `Key::w` goes to `Key`.

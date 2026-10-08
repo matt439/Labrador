@@ -24,6 +24,7 @@ export default defineConfig({
 			description:
 				'A 2D game engine for developers who want to write games in ordinary C++ and understand the machinery beneath them.',
 			favicon: '/favicon.svg',
+			logo: { src: './src/assets/mark.svg', alt: '', replacesTitle: false },
 			social: [{ icon: 'github', label: 'Labrador on GitHub', href: GITHUB_REPOSITORY }],
 			editLink: { baseUrl: `${GITHUB_REPOSITORY}/edit/${EDIT_BRANCH}/website/` },
 			customCss: ['./src/styles/site.css'],

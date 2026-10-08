@@ -23,6 +23,9 @@ export interface Declaration {
 	// `~Scene`, an alias.
 	name: string;
 	line: number;
+	// The enclosing namespace, kept even though namespace scopes are flattened
+	// into the page's declaration list.
+	namespace: string;
 }
 
 export interface CommentBlock {
@@ -47,6 +50,7 @@ export interface TypeItem {
 	kind: 'type';
 	keyword: string;
 	name: string;
+	namespace: string;
 	// The declaration line, e.g. `class Scene` or `struct View`.
 	head: string;
 	bases: string[];
@@ -70,6 +74,7 @@ interface Scope {
 	items: Item[];
 	access: Access;
 	type?: TypeItem;
+	namespace?: string;
 	startIndex: number;
 }
 
@@ -156,6 +161,7 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 	let group: Extract<Item, { kind: 'group' }> | undefined;
 
 	const scope = () => stack[stack.length - 1];
+	const namespaceName = () => stack.flatMap((entry) => entry.namespace ? [entry.namespace] : []).join('::');
 	const endGroup = () => {
 		group = undefined;
 	};
@@ -223,7 +229,7 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 		if (scope().kind === 'enum') {
 			const enumerator = scan(lines[index]).code.trim().replace(/,$/, '');
 			const name = enumerator.split(/[\s=,]/)[0];
-			const declaration = { text: enumerator, name, line: index };
+			const declaration = { text: enumerator, name, line: index, namespace: namespaceName() };
 			if (pending || !group) {
 				group = { kind: 'group', access: 'public', declarations: [], comment: pending };
 				pending = undefined;
@@ -295,8 +301,8 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 			endGroup();
 			// `detail` holds internals a header must expose and a user must not
 			// touch (CONVENTIONS, Namespaces), so it is read and not published.
-			if (namespace[1] === 'detail') {
-				stack.push({ kind: 'namespace', items: [], access: 'public', startIndex: start });
+			if (namespace[1].split('::').includes('detail')) {
+				stack.push({ kind: 'namespace', namespace: namespace[1], items: [], access: 'public', startIndex: start });
 				continue;
 			}
 			if (comment) {
@@ -305,7 +311,7 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 			document.namespaces.push(namespace[1]);
 			// A namespace adds no structure a reader needs: its contents are
 			// listed as the file's.
-			stack.push({ kind: 'namespace', items: scope().items, access: 'public', startIndex: start });
+			stack.push({ kind: 'namespace', namespace: namespace[1], items: scope().items, access: 'public', startIndex: start });
 			continue;
 		}
 
@@ -317,6 +323,7 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 				kind: 'type',
 				keyword,
 				name: type[2],
+				namespace: namespaceName(),
 				head,
 				bases: type[3] ? type[3].split(',').map((base) => base.trim()) : [],
 				access: scope().access,
@@ -356,7 +363,12 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 			declarationText = `${text};`;
 		}
 
-		const declaration: Declaration = { text: declarationText, name: declarationName(declarationText), line: start };
+		const declaration: Declaration = {
+			text: declarationText,
+			name: declarationName(declarationText),
+			line: start,
+			namespace: namespaceName(),
+		};
 		if (comment || !group || group.access !== scope().access) {
 			group = { kind: 'group', access: scope().access, declarations: [], comment };
 			scope().items.push(group);

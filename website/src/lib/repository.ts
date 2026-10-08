@@ -38,9 +38,9 @@ export interface Revision {
 	short: string;
 	// The committer date, as YYYY-MM-DD.
 	date: string;
-	// Whether files outside website/ differ from the commit. A preview built
-	// from uncommitted engine or documentation changes says so, because the
-	// commit alone no longer describes what the pages show.
+	// Whether the checkout differs from the commit, including authored pages
+	// and the website's generator. A preview with local changes says so because
+	// the commit alone no longer describes what the pages show.
 	modified: boolean;
 }
 
@@ -76,7 +76,7 @@ function readRevision(): Revision {
 		commit,
 		short: commit.slice(0, 7),
 		date: git('show', '-s', '--format=%cs', commit),
-		modified: git('status', '--porcelain', '--', '.', ':(exclude)website').length > 0,
+		modified: git('status', '--porcelain').length > 0,
 	};
 }
 

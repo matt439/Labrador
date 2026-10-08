@@ -14,9 +14,9 @@
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import GithubSlugger from 'github-slugger';
-import { parseHeader, type CommentBlock, type Item, type TypeItem } from './cpp-header';
-import { REFERENCE_HEADERS, UNPUBLISHED_HEADERS, publishedPages, type ReferenceHeader, type ReferenceModule } from './published';
-import { REPOSITORY_ROOT, REVISION, absolutePath, commitUrl, readRepositoryFile, sourceUrl } from './repository';
+import { parseHeader, type CommentBlock, type Declaration, type Item, type TypeItem } from './cpp-header.ts';
+import { REFERENCE_HEADERS, UNPUBLISHED_HEADERS, publishedPages, type ReferenceHeader, type ReferenceModule } from './published.ts';
+import { REPOSITORY_ROOT, REVISION, absolutePath, commitUrl, readRepositoryFile, sourceUrl } from './repository.ts';
 
 // ------------------------------------------------------------------ the index
 
@@ -111,6 +111,25 @@ export function symbols(): Map<string, SymbolTarget> {
 			symbolIndex.set(name, targets[0]);
 		}
 	}
+	// Qualified spellings must name the namespace that actually declares the
+	// type. In particular, mattmath::Scene must not borrow labrador::Scene's
+	// destination just because its final identifier is familiar.
+	for (const header of REFERENCE_HEADERS) {
+		const qualify = (items: Item[], owners: string[] = []) => {
+			for (const item of items) {
+				if (item.kind !== 'type' || item.access === 'private') {
+					continue;
+				}
+				const target = symbolIndex!.get(item.name);
+				if (target?.header === header.source) {
+					const qualified = [item.namespace, ...owners, item.name].filter(Boolean).join('::');
+					symbolIndex!.set(qualified, target);
+				}
+				qualify(item.items, [...owners, item.name]);
+			}
+		};
+		qualify(parseHeader(header.source, readRepositoryFile(header.source)).items);
+	}
 	return symbolIndex;
 }
 
@@ -178,18 +197,17 @@ function link(url: string, html: string): string {
 	return `<a href="${url}">${html}</a>`;
 }
 
-// A qualified member - `GameObject::draw`, `Camera::calculate_view_rectangle()`
-// - or a header path is unambiguous anywhere in prose. A bare type name is
-// linked when it is written as code, or when it is a compound PascalCase name
-// that cannot be an ordinary English word at the start of a sentence: "Scene"
-// and "State" are both.
+// A qualified member, function or header path is unambiguous in prose. Bare
+// function names need code formatting or call parentheses; bare type names
+// need code formatting or compound PascalCase, since "Scene" and "State" can
+// both be ordinary words at the start of a sentence.
 function linkSymbols(escaped: string, inCode: boolean): string {
 	const index = symbols();
 	const pages = publishedPages();
 
 	return escaped.replace(
-		/\b(engine\/[\w/]+\.(?:h|md))\b|\b([A-Z][A-Za-z0-9]*)(::~?[a-z_]\w*(?:\(\))?)?|\b(T(?:1[0-2]|[1-9]))\b/g,
-		(match, header: string | undefined, type: string | undefined, member: string | undefined, tradeOff: string | undefined) => {
+		/\b(engine\/[\w/]+\.(?:h|md))\b|\b(T(?:1[0-2]|[1-9]))\b|\b([A-Za-z_]\w*(?:::(?:~?[A-Za-z_]\w*))*)(\(\))?/g,
+		(match, header: string | undefined, tradeOff: string | undefined, name: string | undefined, call: string | undefined, offset: number) => {
 			if (header) {
 				if (!readableFile(header)) {
 					return match;
@@ -200,16 +218,26 @@ function linkSymbols(escaped: string, inCode: boolean): string {
 				const anchor = tradeOffAnchors().get(tradeOff);
 				return anchor ? link(anchor, match) : match;
 			}
+			// Member access and file extensions are not free-function names.
+			if (/(?:\.|-&gt;|::)\s*$/.test(escaped.slice(0, offset)) || /^\.\w/.test(escaped.slice(offset + match.length))) {
+				return match;
+			}
+			const fn = name ? freeFunctions().get(name) : undefined;
+			if (fn && (inCode || call || name!.includes('::'))) {
+				return link(fn.url, match);
+			}
+			const separator = name?.lastIndexOf('::') ?? -1;
+			const type = name && (index.has(name) ? name : separator >= 0 ? name.slice(0, separator) : undefined);
+			const member = name && type !== name ? name.slice(separator + 2) : undefined;
 			const target = type ? index.get(type) : undefined;
 			if (!target) {
 				return match;
 			}
 			if (member) {
-				const name = member.slice(2).replace(/\(\)$/, '');
-				return link(memberAnchors().get(`${type}::${name}`) ?? target.url, match);
+				return link(memberAnchors().get(`${type!.split('::').at(-1)}::${member}`) ?? target.url, match);
 			}
 			const compound = /^[A-Z][a-z0-9]+[A-Z]/.test(type!);
-			if (inCode || compound) {
+			if (inCode || compound || type!.includes('::')) {
 				return link(target.url, match);
 			}
 			return match;
@@ -240,9 +268,9 @@ function inline(text: string): string {
 		.join('');
 }
 
-// A comment block as HTML: paragraphs split at blank comment lines, `- `
-// lines as a list, and lines indented past the paragraph as code. Written as
-// HTML rather than Markdown because comment prose is not Markdown - a
+// A comment block as HTML prose and fenced C++: paragraphs split at blank
+// comment lines, `- ` lines as a list, and indented lines as code. Prose is
+// HTML rather than Markdown because header prose is not Markdown - a
 // `std::vector<Segment>` or a `const float*` in a sentence would be read as a
 // tag or as emphasis.
 export function commentHtml(comment: CommentBlock | undefined): string {
@@ -261,7 +289,7 @@ export function commentHtml(comment: CommentBlock | undefined): string {
 	const blocks: string[] = [];
 	for (const paragraph of paragraphs.filter((lines) => lines.length > 0)) {
 		if (paragraph.every((line) => /^(?: {4}|\t)/.test(line))) {
-			blocks.push(`<pre class="ref-comment-code"><code>${escapeHtml(paragraph.map((line) => line.replace(/^(?: {4}|\t)/, '')).join('\n'))}</code></pre>`);
+			blocks.push(fence(paragraph.map((line) => line.replace(/^(?: {4}|\t)/, '')).join('\n')));
 			continue;
 		}
 		if (paragraph[0].startsWith('- ')) {
@@ -283,6 +311,11 @@ export function commentHtml(comment: CommentBlock | undefined): string {
 	return blocks.join('\n\n');
 }
 
+function noteHtml(comment: CommentBlock): string {
+	// Blank lines let Markdown recognise fenced examples inside the wrapper.
+	return `<div class="ref-note">\n\n${commentHtml(comment)}\n\n</div>`;
+}
+
 // ------------------------------------------------------------------ the page
 //
 // A page is laid out as a list of blocks: headings, which follow from the
@@ -298,6 +331,8 @@ interface Heading {
 	// members and nested types it documents.
 	owner?: string;
 	names?: string[];
+	// Namespace-qualified free functions documented by this heading.
+	functions?: string[];
 }
 
 type Block = Heading | (() => string);
@@ -359,14 +394,14 @@ function enumerators(type: TypeItem): string {
 	const described: string[] = [];
 	for (const item of type.items) {
 		if (item.kind === 'note') {
-			out.push(`<div class="ref-note">${commentHtml(item.comment)}</div>`);
+			out.push(noteHtml(item.comment));
 		} else if (item.kind === 'group' && item.comment) {
 			const names = item.declarations.map((declaration) => escapeHtml(declaration.text)).join(', ');
-			described.push(`<dt><code>${names}</code></dt><dd>${commentHtml(item.comment)}</dd>`);
+			described.push(`<dt><code>${names}</code></dt>\n<dd>\n\n${commentHtml(item.comment)}\n\n</dd>`);
 		}
 	}
 	if (described.length > 0) {
-		out.unshift(`<dl class="ref-enumerators">${described.join('')}</dl>`);
+		out.unshift(`<dl class="ref-enumerators">\n${described.join('\n')}\n</dl>`);
 	}
 	return out.join('\n\n');
 }
@@ -390,7 +425,7 @@ function nestedType(blocks: Block[], item: TypeItem, qualifier: string): void {
 function members(blocks: Block[], type: TypeItem): void {
 	for (const item of type.items.filter(visible)) {
 		if (item.kind === 'note') {
-			blocks.push(() => `<div class="ref-note">${commentHtml(item.comment)}</div>`);
+			blocks.push(() => noteHtml(item.comment));
 		} else if (item.kind === 'type') {
 			nestedType(blocks, item, type.name);
 		} else if (item.kind === 'group') {
@@ -440,6 +475,24 @@ function outOfLineMember(text: string): boolean {
 	const flat = text.replace(/\s+/g, ' ').replace(/^template\s*<[^]*?>\s*/, '');
 	const call = flat.indexOf('(');
 	return call >= 0 && /[A-Za-z_]\w*::~?[A-Za-z_]\w*\s*$/.test(flat.slice(0, call));
+}
+
+// Only named functions at namespace scope participate. Aliases, initialised
+// values, assertions and out-of-line members can all contain parentheses too.
+// Operators stay on their declaring page: their punctuation is not an
+// identifier a prose or code-token link can resolve without parsing C++.
+function freeFunctionName(declaration: Declaration): string | undefined {
+	const flat = declaration.text.replace(/\s+/g, ' ').replace(/^template\s*<[^]*?>\s*/, '').trim();
+	if (/^(?:using|typedef|static_assert)\b/.test(flat) || outOfLineMember(flat)) {
+		return undefined;
+	}
+	const call = flat.indexOf('(');
+	const before = call < 0 ? '' : flat.slice(0, call);
+	if (/[=;{}]/.test(before) || !/^[A-Za-z_]\w*$/.test(declaration.name) ||
+		!new RegExp(`\\S\\s+${declaration.name}\\s*$`).test(before)) {
+		return undefined;
+	}
+	return [declaration.namespace, declaration.name].filter(Boolean).join('::');
 }
 
 // The samples and tests that include a header, grouped by folder. Only a
@@ -498,7 +551,7 @@ function layout(header: ReferenceHeader): Layout {
 
 	for (const item of document.items) {
 		if (item.kind === 'note') {
-			blocks.push(() => `<div class="ref-note">${commentHtml(item.comment)}</div>`);
+			blocks.push(() => noteHtml(item.comment));
 		}
 		if (item.kind === 'type') {
 			blocks.push({ depth: 2, text: typeHeading(item) });
@@ -522,7 +575,8 @@ function layout(header: ReferenceHeader): Layout {
 				continue;
 			}
 			const names = [...new Set(declarations.map((declaration) => declaration.name))];
-			blocks.push({ depth: 2, text: names.join(' · ') });
+			const functions = declarations.map(freeFunctionName).filter((name): name is string => !!name);
+			blocks.push({ depth: 2, text: names.join(' · '), functions });
 			blocks.push(() => fence(declarations.map((declaration) => signature(declaration.text)).join('\n')));
 			blocks.push(() => commentHtml(item.comment));
 		}
@@ -561,6 +615,50 @@ function anchors(blocks: Block[]): [Heading, string][] {
 }
 
 let memberIndex: Map<string, string> | undefined;
+let functionIndex: Map<string, SymbolTarget> | undefined;
+
+// Free functions by qualified name and, when only one namespace supplies that
+// name, by bare name. Overloads on one header page share the first heading that
+// documents them. A family spread across pages has no unique destination and
+// is omitted in both forms rather than choosing an arbitrary header.
+export function freeFunctions(): Map<string, SymbolTarget> {
+	if (functionIndex) {
+		return functionIndex;
+	}
+	const found = new Map<string, Map<string, SymbolTarget>>();
+	const bareNames = new Map<string, Set<string>>();
+	const pages = publishedPages();
+	for (const header of REFERENCE_HEADERS) {
+		for (const [heading, anchor] of anchors(layout(header).blocks)) {
+			for (const qualified of heading.functions ?? []) {
+				const targets = found.get(qualified) ?? new Map<string, SymbolTarget>();
+				if (!targets.has(header.source)) {
+					targets.set(header.source, { header: header.source, url: `${pages.get(header.source)}#${anchor}` });
+				}
+				found.set(qualified, targets);
+				const bare = qualified.split('::').at(-1)!;
+				const names = bareNames.get(bare) ?? new Set<string>();
+				names.add(qualified);
+				bareNames.set(bare, names);
+			}
+		}
+	}
+	functionIndex = new Map();
+	for (const [qualified, targets] of found) {
+		if (targets.size === 1) {
+			functionIndex.set(qualified, targets.values().next().value!);
+		}
+	}
+	for (const [bare, names] of bareNames) {
+		if (names.size === 1) {
+			const target = functionIndex.get(names.values().next().value!);
+			if (target && !symbols().has(bare)) {
+				functionIndex.set(bare, target);
+			}
+		}
+	}
+	return functionIndex;
+}
 
 // `Type::member` for every member and nested type that has a section of its
 // own, pointing at that section. A name documented in two sections, such as
@@ -604,12 +702,27 @@ export function codeLink(code: string, page: string): string | undefined {
 		}
 		return publishedPages().get(code) ?? sourceUrl(code);
 	}
-	const name = code.match(/^([A-Z][A-Za-z0-9]*)(?:::(~?[A-Za-z_]\w*))?(?:\(.*\))?$/);
-	const target = name ? symbols().get(name[1]) : undefined;
-	if (!name || !target) {
+	const functionName = code.match(/^((?:[A-Za-z_]\w*::)*[A-Za-z_]\w*)(?:\([^]*\))?$/)?.[1];
+	const functionTarget = functionName ? freeFunctions().get(functionName) : undefined;
+	if (functionTarget) {
+		return functionTarget.url;
+	}
+	const name = code.match(/^([A-Za-z_]\w*(?:::(?:~?[A-Za-z_]\w*))*)(?:\([^]*\))?$/)?.[1];
+	if (!name) {
 		return undefined;
 	}
-	return (name[2] && memberAnchors().get(`${name[1]}::${name[2]}`)) || target.url;
+	const type = symbols().get(name);
+	if (type) {
+		return type.url;
+	}
+	const separator = name.lastIndexOf('::');
+	const owner = name.slice(0, separator);
+	const target = separator >= 0 ? symbols().get(owner) : undefined;
+	if (!target) {
+		return undefined;
+	}
+	const member = name.slice(separator + 2);
+	return memberAnchors().get(`${owner.split('::').at(-1)}::${member}`) ?? target.url;
 }
 
 // The indexes are built once and kept. The dev server rebuilds the pages when
@@ -618,6 +731,7 @@ export function codeLink(code: string, page: string): string | undefined {
 export function forgetIndexes(): void {
 	symbolIndex = undefined;
 	memberIndex = undefined;
+	functionIndex = undefined;
 	includerIndex = undefined;
 	tradeOffs = undefined;
 }

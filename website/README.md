@@ -5,7 +5,8 @@ The public site: a showcase, a getting-started path and the documentation.
 says what is decided and what is not.
 
 It is a static site built with [Astro](https://astro.build/) and
-[Starlight](https://starlight.astro.build/). Node is the only thing it needs.
+[Starlight](https://starlight.astro.build/). Use Node 22.18+ in the 22.x line,
+or Node 24 or newer. Node is the only tool it needs.
 Nothing in the engine's CMake build depends on this folder, and nothing here
 needs the engine's toolchain.
 
@@ -13,6 +14,7 @@ needs the engine's toolchain.
 npm ci            # once, and after package-lock.json changes
 npm run dev       # a local server that reloads on edits, including to the files below
 npm run check     # types
+npm test          # API indexing and rendered code-link regressions
 npm run build     # the site, into dist/ - fails on any broken internal link
 npm run preview   # serve dist/
 ```
@@ -55,6 +57,7 @@ wrong (PHILOSOPHY T6):
 
 ```
 astro.config.ts           Starlight, the sidebar, and the three Markdown plugins
+ec.config.mjs             shared code-block API links (Markdown and SourceFile)
 src/content.config.ts     one collection, filled by src/lib/content-loader.ts
 src/content/docs/         pages written for the site (.mdx)
   index.mdx, why.mdx, examples.mdx    the three splash pages
@@ -71,6 +74,7 @@ src/lib/
   reference.ts            a parsed header as a page, and the index of names
                           and members every page links through; module overviews
                           list the same headers as the sidebar
+  code-links.ts           C++ tokens linked without changing highlighted or copied code
   excerpt.ts              a passage of a file, found by its text
 src/components/           SourceFile, RepoLink, Capture and friends;
                           overrides/ holds the Starlight components the site
@@ -91,9 +95,19 @@ never line numbers, which would quietly quote the wrong lines after an edit. A
 `to` that starts with `}` means the brace at the same depth as `from`.
 
 **Link to the API reference.** Write the name as code: `` `Scene` ``,
-`` `StateContext::push` `` or `` `engine/scene/scene.h` ``. The first mention in
+`` `StateContext::push` ``, `` `labrador::resolve_walls` `` or
+`` `engine/scene/scene.h` ``. The first mention in
 each section links to its place in the reference by itself, a member to its own
 section where it has one. Nothing written by hand has to track the anchors.
+
+C++ fenced blocks and `<SourceFile>` excerpts link the first occurrence of
+each known target in that block. Links preserve syntax colours, selection and
+copied text; they have an underline and a visible keyboard focus ring. Function
+overloads in one header share a destination. Ambiguous names, comments, string
+literals and calls through an object are left alone. This is lexical navigation,
+not compiler name resolution: it does not infer local variable types or overloads.
+The Expressive Code config loads the TypeScript index directly with Node's
+native type stripping, which is enabled by default in the supported Node versions.
 
 **Link to a file in the repository.** Use `<RepoLink path="...">`, which links
 to it at the built revision and fails the build if it is not there. For an
@@ -147,6 +161,22 @@ description. It neither autoplays nor preloads the video.
 **Change the Get Started project files.** Edit them in `src/walkthrough/`, then
 build the walkthrough again by hand before publishing; its README says how it
 was built.
+
+## Identity and documentation versions
+
+The visual identity is settled: the amber four-cell L mark with the Labrador
+wordmark, neutral light and dark surfaces, and system sans-serif and monospace
+type. The mark appears in the header and favicon. Its orange is LineSweeper's
+`#f09800`; link text uses the theme's darker or lighter contrast-safe shade.
+Actual sample captures and footage supply the imagery. The design uses no
+downloaded fonts. Keep `src/assets/mark.svg` and `public/favicon.svg` identical
+when changing the mark, and review both themes at desktop and phone widths.
+
+Every page is labelled development documentation and shows its source commit.
+A preview with local changes says so, including changes to the website itself.
+[The versioning policy](../docs/website-versioning.md) defines complete,
+commit-bound snapshots and the implementation checks required at the first
+published engine release. There are no release snapshots or version selector yet.
 
 ## Not done yet
 
