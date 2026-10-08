@@ -8,6 +8,7 @@ import { LinkButton } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
 import Capture from '~/components/Capture.astro';
+import LineSweeperFootage from '~/components/LineSweeperFootage.astro';
 import topOut from '~/assets/captures/linesweeper-top-out.png';
 
 The repository has two samples. They answer different questions, so they are kept separate:
@@ -52,6 +53,8 @@ drop, wall kicks, T-spins and back-to-back scoring, and a field of up to ten tho
 that bursts when a piece locks, when lines clear and when the game ends. It is about 4,000 lines,
 with about 2,000 more of tests, and it is there to show what a whole game on Labrador looks like
 and what it costs.
+
+<LineSweeperFootage />
 
 <Capture
 	src={topOut}

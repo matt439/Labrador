@@ -75,6 +75,8 @@ src/components/           SourceFile, RepoLink, Capture and friends;
                           replaces
 src/assets/captures/      frames of LineSweeper, written by
                           tools/linesweeper_capture/ and never edited by hand
+src/assets/footage/       the encoded LineSweeper video, served on Home and Examples
+scripts/encode-footage.mjs  offline PNG-to-MP4 encoding and format verification
 src/walkthrough/          the files Get Started tells a reader to create
 src/styles/site.css       colours and the few layouts Starlight lacks
 ```
@@ -110,6 +112,36 @@ understand, and why it was chosen over Doxygen and Clang.
 regenerate them; regenerate rather than edit, and look at every image that
 changes.
 
+**Regenerate the video.** Build `LineSweeperCapture` with `x64-release`, then
+run these from the repository root with FFmpeg (`ffmpeg` and `ffprobe`) on
+`PATH`:
+
+```powershell
+out\build\x64-release\tools\linesweeper_capture\LineSweeperCapture.exe out\website-footage tools\linesweeper_capture\footage.txt --sequence
+if ($LASTEXITCODE -eq 0) {
+    node website/scripts/encode-footage.mjs out/website-footage/frames
+} else {
+    throw 'Capture failed; do not encode its partial frames.'
+}
+```
+
+Choose a fresh capture output directory for each run: the tool refuses a
+nonempty `frames/` folder so old frames cannot become part of the next clip.
+Encode only after capture exits successfully; a refused script can leave a
+partial sequence, which is useful for diagnosis but is not the finished video.
+The script and the capture tool's README describe the match. Each PNG is one
+presentation update at 1/60 second, including the particles after top-out;
+the encoder verifies that every frame reached a silent 1280×720, 60 fps H.264
+MP4. It uses CRF 20 and YUV 4:2:0, so the video is compressed rather than an
+exact pixel contract. The four PNG stills remain the exact frames.
+
+Watch the whole clip before keeping a regeneration, including the clear and
+top-out effects. Encoding needs FFmpeg only when replacing the checked-in
+MP4: `npm ci`, `npm run check`, `npm run build` and CI still need only Node.
+`LineSweeperFootage` shares the player across Home and Examples, with an
+existing still as its poster, native controls, a download link and a text
+description. It neither autoplays nor preloads the video.
+
 **Change the Get Started project files.** Edit them in `src/walkthrough/`, then
 build the walkthrough again by hand before publishing; its README says how it
 was built.
@@ -117,7 +149,6 @@ was built.
 ## Not done yet
 
 Hosting, the domain and deployment are undecided, so nothing here publishes
-anything; there is no `site` URL in the config, and so no sitemap. There is no
-footage, only the four stills. The collision, audio and local-multiplayer
-guides wait on a sample that does each. The plan's *Open decisions* table is
-the list.
+anything; there is no `site` URL in the config, and so no sitemap. The
+collision, audio and local-multiplayer guides wait on a sample that does each.
+The plan's *Open decisions* table is the list.

@@ -1,0 +1,34 @@
+---
+import footage from '~/assets/footage/linesweeper.mp4?url';
+import poster from '~/assets/captures/linesweeper-play.png';
+---
+
+<figure class="capture footage">
+	<video
+		controls
+		playsinline
+		preload="none"
+		poster={poster.src}
+		width="1280"
+		height="720"
+		aria-label="LineSweeper gameplay"
+		aria-describedby="linesweeper-footage-description"
+	>
+		<source src={footage} type="video/mp4" />
+		Your browser cannot play this video. Use the download link below to watch it.
+	</video>
+	<figcaption>
+		A complete scripted match. 35 seconds, no sound.{' '}
+		<a href={footage} download="linesweeper.mp4">Download the MP4</a>.
+	</figcaption>
+	<details class="footage-description">
+		<summary>Read a description of the video</summary>
+		<p id="linesweeper-footage-description">
+			Coloured pieces turn and slide into a falling-block well. Completed rows disappear,
+			throwing matching sparks sideways as the score and line count rise. The hold slot keeps
+			one piece in reserve, and the next five pieces appear beside the board. Later the stack
+			reaches the top: a “TOPPED OUT” banner appears and thousands of coloured particles burst
+			across the screen, then fade. The game has no sound or spoken commentary.
+		</p>
+	</details>
+</figure>

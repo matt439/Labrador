@@ -1,0 +1,305 @@
+# A complete scripted match for the website video at 60 frames per second.
+# The placements match website.txt; a short wait between steering and dropping
+# gives each piece time on screen. Each command still runs through the rules.
+# Encode frames/ with a 60 fps input; no captured frame is skipped or interpolated.
+
+# Three tetrises take the match to level 2. Column 9 stays open for the I pieces.
+hold s
+steer i 0 0
+wait 14
+drop
+steer o 0 0
+wait 14
+drop
+steer t 0 4
+wait 14
+drop
+steer z 0 6
+wait 14
+drop
+steer l 0 2
+wait 14
+drop
+steer j 2 6
+wait 14
+drop
+hold j
+steer s 0 2
+wait 14
+drop
+hold i
+steer j 0 0
+wait 14
+drop
+hold s
+steer i 0 1
+wait 14
+drop
+steer l 2 5
+wait 14
+drop
+steer t 3 7
+wait 14
+drop
+hold z
+steer s 0 5
+wait 14
+drop
+steer o 0 0
+wait 14
+drop
+steer l 0 2
+wait 14
+drop
+hold j
+steer z 0 1
+wait 14
+drop
+steer i 1 9
+wait 14
+drop
+steer z 1 5
+wait 14
+drop
+steer o 0 7
+wait 14
+drop
+hold s
+steer j 0 3
+wait 14
+drop
+steer t 1 0
+wait 14
+drop
+hold j
+steer s 1 1
+wait 14
+drop
+steer l 0 4
+wait 14
+drop
+steer o 0 7
+wait 14
+drop
+steer t 0 3
+wait 14
+drop
+steer i 1 9
+wait 14
+drop
+steer s 0 2
+wait 14
+drop
+hold z
+steer j 0 5
+wait 14
+drop
+steer j 2 6
+wait 14
+drop
+steer o 0 7
+wait 14
+drop
+steer s 0 1
+wait 14
+drop
+steer z 0 3
+wait 14
+drop
+steer l 2 2
+wait 14
+drop
+steer i 1 0
+wait 14
+drop
+steer t 3 5
+wait 14
+drop
+steer i 1 9
+wait 14
+drop
+
+# Build a nine-row stack, keeping an I in hold.
+steer j 2 3
+wait 14
+drop
+steer z 0 6
+wait 14
+drop
+steer o 0 3
+wait 14
+drop
+steer l 3 0
+wait 14
+drop
+steer s 1 7
+wait 14
+drop
+steer t 0 0
+wait 14
+drop
+steer j 1 2
+wait 14
+drop
+hold l
+steer z 1 0
+wait 14
+drop
+steer o 0 5
+wait 14
+drop
+hold i
+steer l 2 0
+wait 14
+drop
+steer z 0 3
+wait 14
+drop
+steer t 3 7
+wait 14
+drop
+steer s 1 5
+wait 14
+drop
+
+# A longer fall gives the viewer time to see the shadow, hold and next queue.
+steer o 0 0
+wait 90
+capture linesweeper-play.png
+
+# The fourth tetris throws the bottom four rows out of the well.
+drop
+steer s 1 6
+wait 14
+drop
+steer i 1 9
+wait 14
+drop
+wait 6
+capture linesweeper-clear.png
+
+# Fill the stack to the top, leaving the rightmost column open.
+steer j 0 2
+wait 14
+drop
+steer z 0 2
+wait 14
+drop
+steer l 1 0
+wait 14
+drop
+steer t 2 4
+wait 14
+drop
+steer i 0 1
+wait 14
+drop
+hold o
+steer i 0 1
+wait 14
+drop
+steer s 1 7
+wait 14
+drop
+hold t
+steer o 0 5
+wait 14
+drop
+hold j
+steer t 3 7
+wait 14
+drop
+steer z 1 7
+wait 14
+drop
+steer l 0 4
+wait 14
+drop
+steer o 0 0
+wait 14
+drop
+steer j 3 2
+wait 14
+drop
+hold t
+steer j 2 0
+wait 14
+drop
+hold i
+steer t 2 6
+wait 14
+drop
+hold s
+steer i 0 0
+wait 14
+drop
+hold z
+steer s 1 4
+wait 14
+drop
+steer l 0 5
+wait 14
+drop
+steer o 0 0
+wait 14
+drop
+steer z 1 6
+wait 14
+drop
+hold s
+steer z 1 6
+wait 14
+drop
+steer i 0 2
+wait 14
+drop
+steer l 0 3
+wait 14
+drop
+steer j 2 0
+wait 14
+drop
+hold t
+steer s 0 3
+wait 14
+drop
+steer l 0 1
+wait 14
+drop
+hold z
+steer t 0 4
+wait 14
+drop
+steer s 0 1
+wait 14
+drop
+steer t 2 3
+wait 14
+drop
+steer o 0 6
+wait 14
+drop
+steer j 0 0
+wait 14
+drop
+hold i
+steer z 0 7
+wait 14
+drop
+hold o
+steer i 0 3
+wait 14
+drop
+hold s
+steer o 0 1
+wait 14
+drop
+steer l 0 3
+wait 14
+drop
+
+# The rules stop counting at top-out; its presentation keeps updating.
+wait 22
+capture linesweeper-top-out.png
+wait 98
+capture linesweeper-end.png

@@ -21,6 +21,7 @@ hero:
 import { LinkCard, CardGrid } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import Capture from '~/components/Capture.astro';
+import LineSweeperFootage from '~/components/LineSweeperFootage.astro';
 import play from '~/assets/captures/linesweeper-play.png';
 import clear from '~/assets/captures/linesweeper-clear.png';
 
@@ -36,6 +37,8 @@ import clear from '~/assets/captures/linesweeper-clear.png';
 
 ## LineSweeper, the sample game
 
+<LineSweeperFootage />
+
 <div class="captures">
 	<Capture
 		src={play}
@@ -50,8 +53,9 @@ import clear from '~/assets/captures/linesweeper-clear.png';
 </div>
 
 <p class="lead">
-Exact frames, drawn by the engine from a scripted match and read back from the graphics device,
-not screenshots of a window. The <a href="/examples/">Examples</a> page says how the game is built.
+Watch the pieces lock, the rows clear and the sparks fade. The stills below the video are exact
+frames read back from the graphics device; the video is compressed for playback.
+The <a href="/examples/">Examples</a> page says how the game is built.
 </p>
 
 </section>

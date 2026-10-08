@@ -4,7 +4,8 @@
 // On a wide screen the sections sit beside the search box. On a phone they
 // stay in the header only on pages with no sidebar - the home, Why and
 // Examples pages - because a page with a sidebar has a menu button there
-// instead, and the menu lists them (MobileMenuFooter.astro).
+// instead, and the menu lists them (MobileMenuFooter.astro). On narrow splash
+// pages the sections take a second row so the full site title stays visible.
 import Search from '@astrojs/starlight/components/Search.astro';
 import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
 import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
@@ -69,6 +70,28 @@ import SiteNavigation from '../SiteNavigation.astro';
 		}
 		.right-group :global(.site-nav ul) {
 			gap: 0.875rem;
+		}
+	}
+
+	@media (max-width: 29.99rem) {
+		:global(:root:not([data-has-sidebar])) {
+			--sl-nav-height: 6rem;
+		}
+		:global(:root:not([data-has-sidebar])) .header {
+			flex-wrap: wrap;
+			row-gap: 0;
+		}
+		:global(:root:not([data-has-sidebar])) .title-wrapper {
+			flex-shrink: 0;
+		}
+		:global(:root:not([data-has-sidebar])) .right-group {
+			width: 100%;
+		}
+		:global(:root:not([data-has-sidebar])) .right-group :global(.site-nav) {
+			width: 100%;
+		}
+		:global(:root:not([data-has-sidebar])) .right-group :global(.site-nav ul) {
+			justify-content: space-between;
 		}
 	}
 

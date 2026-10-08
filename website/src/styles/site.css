@@ -112,7 +112,7 @@
 .capture {
 	margin: 1.5rem 0 0;
 }
-.capture img {
+.capture :is(img, video) {
 	display: block;
 	width: 100%;
 	max-width: 1280px;
@@ -125,6 +125,16 @@
 	margin-top: 0.5rem;
 	color: var(--sl-color-gray-3);
 	font-size: var(--sl-text-sm);
+}
+.footage video:focus-visible {
+	outline: 2px solid var(--sl-color-text-accent);
+	outline-offset: 4px;
+}
+.footage-description {
+	font-size: var(--sl-text-sm);
+}
+.footage + .captures {
+	margin-top: 1.5rem;
 }
 .captures {
 	display: grid;

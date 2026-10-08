@@ -44,12 +44,15 @@
 
 #include <Windows.h>
 
+#include <cstddef>
 #include <cstdio>
 #include <exception>
 #include <filesystem>
+#include <format>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -79,7 +82,8 @@ namespace
 	public:
 		// The shell is borrowed and must have loaded the sample's manifest:
 		// every drawable here resolves its handles on construction.
-		CaptureSession(Application* app, std::filesystem::path output);
+		CaptureSession(Application* app, std::filesystem::path output,
+			bool sequence);
 
 		void run(const std::vector<capture::Command>& script);
 
@@ -89,9 +93,12 @@ namespace
 		void after_tick();
 
 		void capture_frame(const capture::Command& command);
+		void write_frame(const std::filesystem::path& file, bool paused);
 
 		Application* app_ = nullptr;
 		std::filesystem::path output_;
+		bool sequence_ = false;
+		std::size_t frames_ = 0;
 
 		// Declared before the scene, so the World and the TickResult every
 		// drawable borrows outlive them - the same order PlayState's members
@@ -105,9 +112,10 @@ namespace
 	};
 
 	CaptureSession::CaptureSession(Application* app,
-		std::filesystem::path output) :
+		std::filesystem::path output, bool sequence) :
 		app_(app),
 		output_(std::move(output)),
+		sequence_(sequence),
 		match_([this]() { this->after_tick(); }),
 		scene_(nullptr, nullptr),
 		pause_(app)
@@ -160,12 +168,27 @@ namespace
 				this->match_.run(command);
 			}
 		}
+
+		if (this->sequence_)
+		{
+			std::printf("Sequence: %zu frames at 60 fps (%.3f seconds).\n",
+				this->frames_, static_cast<double>(this->frames_) / 60.0);
+		}
 	}
 
 	void CaptureSession::after_tick()
 	{
 		this->scene_.update(tick_seconds);
 		this->scene_.end_tick();
+
+		if (this->sequence_)
+		{
+			// The World stops counting at top-out, while its presentation keeps
+			// moving. Number presentation updates, including that final burst.
+			this->write_frame(this->output_ / "frames" /
+				std::format("{:06}.png", this->frames_), false);
+			++this->frames_;
+		}
 	}
 
 	void CaptureSession::capture_frame(const capture::Command& command)
@@ -182,24 +205,7 @@ namespace
 				" would be a frame it never draws.");
 		}
 
-		// Application::render's frame, with the read-back between submit and
-		// end_frame, which is the one interval every backend can keep
-		// (renderer.h).
-		Renderer& renderer = *this->app_->renderer();
-		renderer.begin_frame();
-		this->scene_.draw(renderer);
-		if (command.paused)
-		{
-			this->pause_.draw(renderer);
-		}
-		renderer.submit();
-
-		std::vector<unsigned char> pixels;
-		renderer.read_back_buffer(pixels);
-		renderer.end_frame();
-
-		const std::filesystem::path file = this->output_ / command.file;
-		capture::write_png(file, frame_width, frame_height, pixels);
+		this->write_frame(this->output_ / command.file, command.paused);
 
 		std::printf("%-28s tick %5u  score %6u  lines %3u  level %2u  "
 			"%5d particles%s%s\n",
@@ -210,10 +216,33 @@ namespace
 			command.paused ? "  paused" : "");
 	}
 
+	void CaptureSession::write_frame(const std::filesystem::path& file,
+		bool paused)
+	{
+		// Application::render's frame, with the read-back between submit and
+		// end_frame, which is the one interval every backend can keep
+		// (renderer.h).
+		Renderer& renderer = *this->app_->renderer();
+		renderer.begin_frame();
+		this->scene_.draw(renderer);
+		if (paused)
+		{
+			this->pause_.draw(renderer);
+		}
+		renderer.submit();
+
+		std::vector<unsigned char> pixels;
+		renderer.read_back_buffer(pixels);
+		renderer.end_frame();
+
+		capture::write_png(file, frame_width, frame_height, pixels);
+	}
+
 	void print_usage()
 	{
 		std::fprintf(stderr,
-			"usage: LineSweeperCapture <output-directory> [<script>]\n"
+			"usage: LineSweeperCapture <output-directory> [<script>] [--sequence]\n"
+			"  --sequence also writes every 60 Hz update to frames/000000.png, ...\n"
 			"  The script defaults to the checked-in one:\n"
 			"  %s\n", LINESWEEPER_CAPTURE_SCRIPT);
 	}
@@ -221,6 +250,13 @@ namespace
 
 int wmain(int argc, wchar_t* argv[])
 {
+	const bool sequence = argc > 1 &&
+		std::wstring_view(argv[argc - 1]) == L"--sequence";
+	if (sequence)
+	{
+		--argc;
+	}
+
 	if (argc < 2 || argc > 3)
 	{
 		print_usage();
@@ -237,6 +273,14 @@ int wmain(int argc, wchar_t* argv[])
 		// The whole script is read and checked before a window exists.
 		const std::vector<capture::Command> script =
 			capture::read_script(script_path);
+
+		const std::filesystem::path frames = output / "frames";
+		if (sequence && std::filesystem::exists(frames) &&
+			!std::filesystem::is_empty(frames))
+		{
+			throw std::runtime_error(frames.string() +
+				" is not empty; use a fresh directory for a complete sequence.");
+		}
 
 		ApplicationOptions options;
 		options.window_class_name = L"LineSweeperCaptureWindowClass";
@@ -268,8 +312,12 @@ int wmain(int argc, wchar_t* argv[])
 				: "software");
 
 		std::filesystem::create_directories(output);
+		if (sequence)
+		{
+			std::filesystem::create_directories(frames);
+		}
 
-		CaptureSession session(&app, output);
+		CaptureSession session(&app, output, sequence);
 		session.run(script);
 		return 0;
 	}

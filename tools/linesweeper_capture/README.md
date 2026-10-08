@@ -46,7 +46,7 @@ out\build\x64-release\tools\linesweeper_capture\LineSweeperCapture.exe website\s
 ```
 
 ```
-LineSweeperCapture <output-directory> [<script>]
+LineSweeperCapture <output-directory> [<script>] [--sequence]
 ```
 
 The output directory is created if it is missing. The script defaults to
@@ -58,6 +58,42 @@ with a message naming the script line when anything is not as the script says.
 
 The images are 1280x720, the size both samples ask for. The tool refuses to run
 if the back buffer is any other size.
+
+### Footage
+
+`--sequence` also writes one PNG after every presentation update to
+`<output-directory>/frames/000000.png`, `000001.png`, and so on. Numbering
+counts presentation updates rather than the match's tick counter, which stops
+at top-out while the particles keep moving. The named `capture` commands still
+write their images but add no frames to the sequence; a paused capture is a
+still image only.
+
+Use [footage.txt](footage.txt) for the website's complete demonstration:
+
+```powershell
+out\build\x64-release\tools\linesweeper_capture\LineSweeperCapture.exe out\website-footage tools\linesweeper_capture\footage.txt --sequence
+if ($LASTEXITCODE -eq 0) {
+    node website/scripts/encode-footage.mjs out/website-footage/frames
+} else {
+    throw 'Capture failed; do not encode its partial frames.'
+}
+```
+
+It follows the placements in `website.txt`, with fourteen ticks between steering
+and dropping each piece so the viewer can follow it, and two seconds of
+presentation after top-out: 2,095 frames, or 34.917 seconds. The rules still
+receive every input and every wait: there is no skipped simulation, edited
+board or wall-clock pacing. The website's encoder uses a **60 fps input rate**
+to preserve the sample's timing, checks the output frame count and writes its
+MP4 to `website/src/assets/footage/`. It needs Node and FFmpeg (`ffmpeg` and
+`ffprobe`) on `PATH`; [website/README.md](../../website/README.md) records the
+encoding settings and review procedure. These tools are only needed to
+regenerate footage, not to build the engine or the website.
+
+The tool refuses an existing nonempty `frames` directory before creating a
+device. Use a fresh output directory for each run so that an interrupted or
+shorter sequence cannot leave stale frames at its end. The source PNGs are
+scratch output; only the encoded video belongs in the website.
 
 ## The script
 
@@ -82,10 +118,11 @@ none is falling, by one tick with nothing held.
 tool checks it. A script that has drifted from the deal fails on the line that
 drifted. Otherwise it would quietly draw a different game. The tool also
 refuses a slide the well blocks, a piece that locks before it is steered,
-a hold of a piece that has just come out of the hold slot, any command after
-the match is over, and
+a hold of a piece that has just come out of the hold slot, steering, dropping or
+holding after the match is over, and
 `capture ... paused` over a finished match. The sample never opens its menu
-there.
+there. `wait` and an ordinary `capture` remain valid after top-out, so its burst
+can finish.
 
 ### Changing it
 
