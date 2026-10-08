@@ -67,7 +67,8 @@ steps it in four phases, in this order:
    objects outside the scene's bounds, if it has bounds, are flagged for deletion; every flagged
    collision object is destroyed; and every object added during the tick joins the scene.
 
-A game with no collision skips phases 2 and 3. That is both samples, and this is LineSweeper's
+A game with no collision skips phases 2 and 3. The minimal sample and LineSweeper do this;
+the [collision guide](/docs/guides/collision/) runs all four. This is LineSweeper's
 whole play-state update after its pause and restart checks:
 
 <SourceFile
@@ -88,7 +89,7 @@ walking, it could invalidate that walk. Waiting also means an object added this 
 collided with on the next one, so a shot does not hit something on the frame it leaves the
 barrel.
 
-The same rule explains a line both samples have after filling their scene in `init()`:
+The same rule explains a line the minimal sample and LineSweeper have after filling their scene in `init()`:
 
 <SourceFile path="samples/minimal/states/hello_state.cpp" from="// Every add is pending until a tick ends" to="this->scene_->end_tick();" />
 

@@ -1,0 +1,142 @@
+---
+title: Audio
+description: Load a required sound bank, play one-shots, and control a looping voice with runnable original sound content.
+sidebar:
+  order: 6
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+The <RepoLink path="samples/audio">audio sample</RepoLink> is a playable sound board:
+two short tones and a looping drone, with volume, pitch and stereo pan controls.
+Its original PCM sounds and the built wave bank are in the repository. Build it
+in the [developer shell](/docs/get-started/build-labrador/):
+
+```powershell
+cmake --preset x64-debug
+cmake --build --preset x64-debug --target AudioSample
+& ./out/build/x64-debug/samples/audio/AudioSample.exe
+```
+
+Press **1** for a ping, **2** for an ascending chime and **3** to start the drone.
+**Space** pauses or resumes the drone; **S** stops it. Hold **Up/Down** for volume,
+**Left/Right** for stereo pan and **Q/E** for pitch. **Escape** quits. The screen
+shows the current values and loop state. An active Windows audio output is
+required to hear the normal XAudio2 build; `-null` presets record calls without
+sound and label that mode on screen.
+
+## Declare a required bank
+
+A bank has two files: a JSON definition and the XAudio2 backend's `.xwb` wave
+container. The manifest names their shared stem, without either extension:
+
+<SourceFile path="samples/audio/content/manifest.json" />
+
+This bank is required. A missing or unreadable container stops loading with its
+path in the error. `optional: true` is only for content a game can run without:
+it substitutes a silent bank and cannot demonstrate playback. A required bank
+with a misspelt wave also fails during loading.
+
+The definition lists waves and persistent effect instances:
+
+<SourceFile path="samples/audio/content/sounds/tones.json" />
+
+`ping` and `chime` need only waves. The named `drone_loop` instance retains a
+voice so it can loop, pause and change levels. Several named instances may use
+the same wave when a game needs separately controlled voices. Setting
+`create_effect_instance_for_each_wave` to true instead creates an instance with
+each wave's own name.
+
+The sample's <RepoLink path="samples/audio/CMakeLists.txt">content target</RepoLink>
+copies the bank beside the executable on every build, including asset-only
+edits. `Application::load_manifest("./manifest.json")` resolves the manifest
+relative to the executable, and its directories relative to that manifest.
+
+## Resolve names once
+
+After loading the manifest, the state borrows the bank from `AudioResources`:
+
+<SourceFile path="samples/audio/audio_state.cpp" from="SoundBank* bank =" to="this->board_ =" />
+
+The sound board resolves its wave and effect names in its constructor:
+
+<SourceFile path="samples/audio/sound_board.cpp" from="SoundBoard::SoundBoard" to="}" />
+
+Keep the handles, and play through them during `update()`. Wave and effect
+handles are different types: a one-shot wave is not a persistent voice. The
+borrowed bank must outlive the board; `Application` keeps audio resources alive
+until its states are destroyed.
+
+`audible()` distinguishes a loaded bank from the missing-content substitute.
+It is also true on the null backend and says nothing about speakers, mute
+settings or whether the machine has an active audio output.
+
+## One-shots and a looping instance
+
+`play_wave` starts a separate voice each time, useful for hits, jumps and menu
+clicks. There is no handle for stopping or adjusting that individual playback:
+
+<SourceFile path="samples/audio/sound_board.cpp" from="void SoundBoard::play_ping()" to="}" />
+
+Use an effect instance when the voice must persist. The loop flag belongs to
+the play call, not the bank definition:
+
+<SourceFile path="samples/audio/sound_board.cpp" from="void SoundBoard::start_loop()" to="}" />
+
+The same instance can be paused and resumed without starting a second voice:
+
+<SourceFile path="samples/audio/sound_board.cpp" from="void SoundBoard::toggle_pause()" to="}" />
+
+`stop_effect(effect, true)` stops immediately. With the default `false`, a
+loop exits its loop and the platform can finish its tails; the observed state
+can remain playing briefly. The sample uses immediate stop and also stops the drone on
+state destruction.
+
+## Levels and lifecycle
+
+Volume is in `[0, 1]`, pitch in `[-1, 1]` (one octave down to one octave up),
+and pan in `[-1, 1]` (left to right). `SoundBank` clamps values at the engine
+boundary. The sample also clamps its own displayed settings:
+
+<SourceFile path="samples/audio/sound_board.cpp" from="void SoundBoard::set_volume" to="}" />
+
+Changing a retained voice takes effect while it plays. One-shots take their
+levels when launched, so new settings affect the next one-shot. The sample
+pauses a playing loop on deactivation and resumes only that loop when focus
+returns; a loop paused by the player stays paused.
+
+`Application` updates the audio device every tick and owns its lifetime. A
+client that uses `AudioDevice` directly must update it and keep it alive longer
+than all the banks that borrow it; the sample's
+<RepoLink path="samples/audio/smoke_test.cpp">finite audio check</RepoLink> shows
+that order without creating a graphics device.
+
+## Make sound content and verify it
+
+The three checked-in WAV files were synthesized by
+<RepoLink path="samples/audio/source/generate_waves.py">a Python standard-library script</RepoLink>;
+they use no third-party audio and carry the repository's MIT licence. The
+<RepoLink path="samples/audio/README.md">sample README</RepoLink> records the exact
+tool version, provenance, regeneration commands and content verifier. Neither
+Python nor an authoring tool is needed to run the existing example.
+
+For your own bank, Microsoft's
+[XWBTool](https://github.com/microsoft/DirectXTK/wiki/XWBTool) combines WAV files:
+
+```powershell
+xwbtool -f -o tones.xwb ping.wav chime.wav drone.wav
+```
+
+The **`-f` is required**: it retains each file's stem as a friendly name in the
+bank, which is how Labrador checks and resolves waves. Use an in-memory bank
+for this API; streaming banks are outside this example.
+
+`AudioSample.exe --smoke-test` loads the packaged required bank, plays both
+one-shots, and verifies loop play, pause, resume and immediate stop before
+exiting. Run the normal `x64-debug` or `x64-release` executable for actual
+XAudio2 coverage. A missing bank or unavailable output fails that check.
+Under a null preset the same check records the calls and reports no playback;
+it cannot validate the container or sound quality. `AudioSampleTests` also
+checks the real definition, and under null audio asserts exactly which waves
+the sound board requests and the levels it sends.

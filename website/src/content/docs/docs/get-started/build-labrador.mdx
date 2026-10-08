@@ -6,7 +6,7 @@ description: Clone the engine, configure it with a preset, build it and run its 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 You build Labrador on its own first. That proves the tools work before your own project adds
-anything, and it builds the two samples you will look at next.
+anything, and it builds the samples you will look at next.
 
 <Steps>
 
@@ -37,7 +37,7 @@ anything, and it builds the two samples you will look at next.
    cmake --build --preset x64-debug
    ```
 
-   This builds the engine, both samples, the tests and the benchmarks. Warnings are errors in
+   This builds the engine, all five samples, the tests and the benchmarks. Warnings are errors in
    every Labrador build, so a successful build has none.
 
 4. **Run the tests:**
@@ -47,7 +47,7 @@ anything, and it builds the two samples you will look at next.
    ```
 
    Fourteen test programs run, and ctest should report
-   `100% tests passed, 0 tests failed out of 14`. One of them, `RenderPixelTests`, draws real
+   `100% tests passed, 0 tests failed out of 17`. One of them, `RenderPixelTests`, draws real
    frames through Direct3D and compares them with reference images, so a pass also tells you the
    renderer works on your machine.
 

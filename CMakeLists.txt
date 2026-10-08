@@ -42,8 +42,8 @@ add_subdirectory(engine)
 # A client consuming this as a submodule wants the library and nothing else:
 # its ctest should not run the engine's tests, and it should certainly not
 # build the engine's samples. Without this guard, adding Labrador as a
-# subdirectory drags in doctest, thirteen test targets, a benchmark and two
-# sample executables, and puts them all in the client's ctest.
+# subdirectory would otherwise drag in the sample and test targets and put
+# the repository's tests in the client's ctest.
 if(PROJECT_IS_TOP_LEVEL)
     enable_testing()
 
@@ -70,6 +70,9 @@ if(PROJECT_IS_TOP_LEVEL)
 
     add_subdirectory(samples/minimal)
     add_subdirectory(samples/linesweeper)
+    add_subdirectory(samples/collision)
+    add_subdirectory(samples/audio)
+    add_subdirectory(samples/local_multiplayer)
     add_subdirectory(bench)
     add_subdirectory(tools/linesweeper_capture)
     add_subdirectory(tests/app)
@@ -79,6 +82,7 @@ if(PROJECT_IS_TOP_LEVEL)
     add_subdirectory(tests/core)
     add_subdirectory(tests/input)
     add_subdirectory(tests/linesweeper)
+    add_subdirectory(tests/local_multiplayer)
     add_subdirectory(tests/math)
     add_subdirectory(tests/render)
     add_subdirectory(tests/scene)

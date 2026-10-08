@@ -1,16 +1,15 @@
 ---
 title: Guides
-description: Task-by-task guides to drawing, input, menus and content, each built on a sample that already does it.
+description: Task-by-task guides to drawing, input, menus, content, collision, audio and local multiplayer, each backed by a runnable sample.
 sidebar:
   order: 0
   label: Introduction
 ---
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components';
-import RepoLink from '~/components/RepoLink.astro';
 
 Each guide takes one job and shows how a sample in the repository does it, quoting the sample's
-code as it is at the revision this site was built from. Where neither sample does part of a job,
+code as it is at the revision this site was built from. Where the samples do not cover part of a job,
 the guide says so. They assume the model described in [Concepts](/docs/concepts/).
 
 <CardGrid>
@@ -34,19 +33,19 @@ the guide says so. They assume the model described in [Concepts](/docs/concepts/
 		description="Adding files, the formats the engine reads, JSON it checks, and your own kinds of asset."
 		href="/docs/guides/assets/"
 	/>
+	<LinkCard
+		title="Collision"
+		description="Layers and masks, contact normals, wall resolution and a trigger in a playable arena."
+		href="/docs/guides/collision/"
+	/>
+	<LinkCard
+		title="Audio"
+		description="A playable wave bank, named sounds, one-shot effects and a controllable loop."
+		href="/docs/guides/audio/"
+	/>
+	<LinkCard
+		title="Local multiplayer"
+		description="Two players in one world, independent input, following cameras and a HUD in each view."
+		href="/docs/guides/local-multiplayer/"
+	/>
 </CardGrid>
-
-## Not written yet
-
-Three guides wait on a worked example, because neither sample does the job yet and a guide here
-only shows code that runs:
-
-- **Collision.** The engine has layers and masks, a broad phase, a narrow phase that reports
-  contact normals and depths, and resolution, all tested. Until a sample uses them, the headers in
-  <RepoLink path="engine/collision">engine/collision/</RepoLink> and
-  [the tick](/docs/concepts/tick/#a-scenes-four-phases) are the guide.
-- **Audio.** Sound banks load from the manifest and play through `SoundBank`, but there is no
-  sound in the repository to play.
-- **Local multiplayer.** Split-screen is covered in
-  [Drawing, views and cameras](/docs/concepts/drawing/#split-screen); a sample with more than one
-  player is planned.

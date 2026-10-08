@@ -151,6 +151,6 @@ was built.
 ## Not done yet
 
 Hosting, the domain and deployment are undecided, so nothing here publishes
-anything; there is no `site` URL in the config, and so no sitemap. The
-collision, audio and local-multiplayer guides wait on a sample that does each.
-The plan's *Open decisions* table is the list.
+anything; there is no `site` URL in the config, and so no sitemap.
+The plan's *Open decisions* table is the list. The collision, audio and
+local-multiplayer guides have runnable examples under `samples/`.

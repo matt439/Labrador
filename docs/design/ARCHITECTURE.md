@@ -47,6 +47,8 @@ flowchart TD
         game["ColourWarsGame<br/>the paint-shooter"]
         sample["MinimalSample<br/>new-project template"]
         linesweeper["LineSweeperSample<br/>whole sample game"]
+        collision_sample["CollisionSample"]
+        guides["AudioSample<br/>LocalMultiplayerSample"]
         throughput["LabradorBench<br/>complexity gates"]
         frame["LineSweeperFrameBench<br/>declared hardware measurement"]
         capture["LineSweeperCapture<br/>exact images of the sample"]
@@ -56,6 +58,7 @@ flowchart TD
         engine["LabradorEngine"]
         math["MattMath"]
         rules["LineSweeperRules"]
+        collision_example["CollisionExample"]
     end
     subgraph edge["the bought edge (T9)"]
         sdks["platform SDKs<br/>graphics · DirectXTK · XInput"]
@@ -65,6 +68,9 @@ flowchart TD
     sample --> engine
     linesweeper --> engine
     linesweeper --> rules
+    collision_sample --> collision_example
+    collision_example --> engine
+    guides --> engine
     throughput --> engine
     frame --> engine
     frame --> rules
@@ -102,8 +108,9 @@ platform (Targets and layout, PHILOSOPHY.md) cannot be reached from a
 - Tests use a portable test framework and register with CTest: `ctest`
   runs everything, on a contributor's machine or in CI, with no IDE
   present. CI is `.github/workflows/ci.yml` - debug and release, configure,
-  build and test, on a runner with no wave bank, which is what a fresh clone
-  gets.
+  build and test. Headless audio checks use the null backend; the audio sample's
+  checked-in wave bank also permits a separate playback check on a machine
+  with an audio endpoint.
 - Benchmarks register with CTest too, and assert on complexity class rather
   than on wall-clock: a phase that is linear in the object count must stay
   linear when the count quadruples, whatever the machine. An absolute
@@ -184,12 +191,15 @@ being load-bearing.
 │   ├── assets/             JSON loading, resource loaders, manifest, factories
 │   └── app/                the application shell: window, device, services,
 │                           main loop, state stack
-├── samples/               two clients, answering two different questions
+├── samples/               a starter, a whole game and focused guide examples
 │   ├── minimal/            the new-project template: the smallest thing
 │                           that runs, and the one you copy. The
 │                           paint-shooter that used to sit beside it under
 │                           game/ is its own repository now, and consumes
 │                           this one as a submodule
+│   ├── collision/          layers, wall resolution and a trigger
+│   ├── audio/              original playable tones and a sound bank
+│   ├── local_multiplayer/  two players and two views of one world
 │   └── linesweeper/        a whole game, and the one you read. Three
 │       ├── rules/          layers: rules/ links nothing, so the game is
 │       ├── presentation/   playable from tests/ with no device;
@@ -197,17 +207,19 @@ being load-bearing.
 │                           states/ is the only place that includes both
 │                           rules/ and engine/. Its own README records the
 │                           decisions behind it
-├── tests/                  one folder per module under test, plus the one
-│   ├── app/                sample that has rules to assert on
+├── tests/                  module tests and sample behavior tests; collision
+│   ├── app/                and audio examples keep theirs beside the sample
 │   ├── assets/
 │   ├── audio/
 │   ├── collision/
 │   ├── core/
 │   ├── input/
 │   ├── linesweeper/        the falling-block game and its particle field,
-│   ├── math/               in two targets: one links LineSweeperRules and
+│   │                       in two targets: one links LineSweeperRules and
 │   │                       no engine, the other links the engine and still
 │   │                       needs no device
+│   ├── local_multiplayer/  input ownership, cameras and per-view drawing
+│   ├── math/
 │   ├── render/
 │   ├── scene/
 │   └── ui/

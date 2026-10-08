@@ -78,15 +78,16 @@ Two settings go with more than one view:
 
 - **`ApplicationOptions::view_capacity`** is the most views a frame will ever have. Every view
   costs memory on the graphics device whether it is used or not, so it defaults to four (four-player
-  split-screen) and a game with one pane says 1, as both samples do.
+  split-screen) and a game with one pane says 1, as the minimal sample and LineSweeper do.
 - **The scene's constructor** takes a thread pool and a partitioner. Passing
   `app.thread_pool()` and `app.partitioner()` draws the views on worker threads; passing `nullptr`
   draws them one after another on the calling thread. Below a few hundred objects the
   single-threaded path is faster, because dividing the work costs more than the work, so the
   choice is the game's ([Performance](/docs/design/philosophy/#performance)).
 
-The engine's tests draw split-screen frames and compare them against reference images, but
-neither sample uses more than one view yet.
+The [local-multiplayer guide](/docs/guides/local-multiplayer/) runs two players in a shared world
+through two following cameras. The engine's pixel tests also compare split-screen frames
+against reference images.
 
 ## Culling
 

@@ -297,6 +297,10 @@ the tests share one dependency direction and one compiler-settings target
 | `MinimalSample` | application | `samples/minimal/` | LabradorEngine |
 | `LineSweeperRules` | static library | `samples/linesweeper/rules/` | nothing — the settings target carries no libraries |
 | `LineSweeperSample` | application | `samples/linesweeper/` | LineSweeperRules, LabradorEngine |
+| `CollisionExample` | static library | `samples/collision/` | LabradorEngine |
+| `CollisionSample` | application | `samples/collision/` | CollisionExample |
+| `AudioSample` | application | `samples/audio/` | LabradorEngine |
+| `LocalMultiplayerSample` | application | `samples/local_multiplayer/` | LabradorEngine |
 | `LabradorBench` | benchmark application | `bench/` | LabradorEngine |
 | `LineSweeperFrameBench` | hardware-measurement application | `bench/` | LineSweeperRules, LabradorEngine |
 | tests | applications | `tests/` | the libraries they test |
@@ -641,7 +645,7 @@ engine API to depend on.
   `render/d3d12/device_resources.h`, which `render/vulkan/device_resources.h`
   defers to. It means the Radeon Graphics adapter integrated into the Ryzen
   9000 desktop package (PCI `1002:13C0`) — two RDNA 2 compute units drawing on
-  shared system memory — at the 1280x720 both samples ask for, with the process
+  shared system memory — at 1280x720, with the process
   held to four cores. **A configuration rather than a purchased part**, because
   naming hardware nobody can boot leaves every number exactly where it was
   while reading as though something had been decided, and because this one is a

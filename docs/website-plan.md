@@ -28,7 +28,7 @@ The homepage should communicate explicit ownership, freedom over game data, and 
 | --- | --- | --- |
 | Ordinary C++ and standard tools | A small complete example from `minimal`, with its CMake integration | Game behaviour requires C++ and compilation; there is no visual editor or scripting layer. |
 | Control over game data and lifetimes | LineSweeper’s copyable world and one particle object containing thousands of values | The game author chooses storage and ownership. The engine is not stack-only or free of virtual calls. |
-| A focus on local 2D games | Multiple cameras and viewports drawing one scene, with controller input | Online play and 3D are outside the engine’s intended scope. A public multiplayer demonstration still needs selecting or creating. |
+| A focus on local 2D games | Multiple cameras and viewports drawing one scene, with controller input | Online play and 3D are outside the engine’s intended scope. The local-multiplayer sample demonstrates two players and two cameras in one shared world. |
 | Rules that can be tested independently | A LineSweeper rule or replay test alongside its visible result | Separating rules from presentation is a game architecture choice, not an automatic guarantee for every client. |
 
 Compare workflows fairly. For readers considering Godot or Unreal, explain Labrador’s code, ownership, and tooling choices. For readers considering raylib or similar libraries, explain the value of its scene orchestration, state stack, collision handling, resource management, and view system. A coding-only workflow is already part of [raylib’s positioning](https://www.raylib.com/), so “no editor” is insufficient on its own.
@@ -129,7 +129,7 @@ The following stages are proposed; no dates are assigned.
 
 1. **Settle the foundation.** Choose stack, host, domain budget, and initial documentation coverage. Inventory the available guides, source comments, screenshots, and footage within the agreed repository layout. *Stack chosen, inventory taken ([website-inventory.md](website-inventory.md)) and coverage agreed; host and domain open.*
 2. **Build a representative slice.** Create a homepage section, a Why Labrador? example, one Get Started walkthrough, and one API reference sample. Use these to validate visual design, reading documentation from the same checkout, and the reference-generation approach. *Built: home, Why Labrador?, Examples, the full five-page Get Started path, the three design documents read from the checkout, and three reference pages. The walkthrough’s project was built from the public repository exactly as written.*
-3. **Complete the agreed first release.** Write and review the selected guides and reference coverage, capture real sample media, and connect examples to their source. Keep the full documentation goal visible in the content inventory. *Written: five Concepts pages, four Guides, a Troubleshooting page and the whole API reference, with four LineSweeper captures and a silent gameplay video. Collision, audio and local-multiplayer guides wait on a sample that does each, and the site lists them as not written.*
+3. **Complete the agreed first release.** Write and review the selected guides and reference coverage, capture real sample media, and connect examples to their source. Keep the full documentation goal visible in the content inventory. *Written: five Concepts pages, seven Guides, a Troubleshooting page and the whole API reference, with four LineSweeper captures and a silent gameplay video. Collision, audio and local-multiplayer guides quote dedicated runnable samples, including original playable audio content.*
 4. **Validate and publish.** Check the new-user walkthrough on the named Windows toolchain; verify links, code snippets, search, keyboard navigation, narrow layouts, and contrast. Configure the chosen domain and deployment workflow when moving from planning into implementation. *Validated on 4 October 2026, the walkthrough having been built in stage 2 and the code snippets being quoted from the checkout: every internal link and anchor resolves; search finds reference types, members and guide topics; the tab order starts at the skip link and every stop shows a focus ring; no page scrolls sideways at 360 pixels; and axe-core finds no WCAG 2.2 A or AA violation on any page in either theme. That check found dark-theme text below 4.5:1 in four places and wide tables a keyboard could not scroll, and both are fixed. Publishing waits on a host and a domain.*
 5. **Maintain with engine changes.** Update canonical technical content alongside relevant code, preview affected website pages in the same change, and retain a known working deployment for rollback.
 
@@ -161,6 +161,32 @@ themes, the title remains visible, theme selection is keyboard-accessible and
 survives reload, and the pages have no horizontal overflow or automated WCAG
 2.2 A/AA violations. Desktop and phone screenshots were reviewed.
 
+The remaining three guides were completed on 8 October with dedicated
+`samples/collision`, `samples/audio` and `samples/local_multiplayer` executables.
+Their code is quoted directly by the guides. Collision demonstrates filtering,
+wall separation and trigger entry; audio includes original source WAVs and a
+required named XWB bank; local multiplayer demonstrates two input owners and
+two following views of one shared simulation. Headless tests cover the sample
+behavior, with audio calls and per-view drawings observable under the null
+backends.
+
+Validation passed in D3D11 and null Debug/Release builds: 17 CTest entries per
+D3D11 configuration and 16 per null configuration. All three finite sample
+checks passed from an unrelated working directory in each configuration,
+including actual XAudio2 bank playback and loop play/pause/resume/stop on this
+machine. Collision and split-screen captures were reviewed. The audio source
+generator reproduces the WAVs, and its authoring verifier matches every named
+bank entry to the source PCM. Manual audio UI review confirmed the initial
+layout; the keyboard/focus retest was stopped with Escape and is not claimed
+as verified.
+
+The website builds 134 pages with valid internal links and a clean type check.
+The three guides, guide index and Examples passed 20 browser combinations:
+1440- and 360-pixel widths, light and dark themes, no horizontal overflow or
+automated WCAG 2.2 A/AA violations, and keyboard access to the skip link.
+Desktop and phone screenshots were reviewed. Hosting and publishing remain
+the separate decisions below.
+
 Proposed readiness criteria:
 
 - A new visitor can identify what Labrador is, who it suits, its current platform support, and its meaningful trade-offs.
@@ -181,9 +207,9 @@ The requirements and the use of `website/` in this repository are established; t
 | Stack | **Decided:** Astro + TypeScript + Starlight, validated by the slice. |
 | Hosting | Cloudflare Workers Static Assets; compare with GitHub Pages. |
 | Domain and budget | All three candidates are unregistered; prices are above. Choose a name. |
-| Documentation release scope | **Agreed** as [the inventory’s last table](website-inventory.md) proposed. Written, except the three guides that wait on worked examples. |
+| Documentation release scope | **Agreed** as [the inventory’s last table](website-inventory.md) proposed. Written, including the three guides backed by the collision, audio and local-multiplayer samples. |
 | API reference | **Decided:** the line reader, with history taken out of the headers first. Every public header is published. |
 | Visual identity and media | Provisional: the accent and the favicon come from LineSweeper’s own palette and L piece. Four exact stills and a silent gameplay video from `tools/linesweeper_capture/`. |
 | Version and publishing policy | Every page shows the commit it was built from, and the pages read from the checkout read it at that commit. Release-specific documentation waits on releases. |
 
-What stands between the validated site and publishing it is the owner’s to decide: a host and a domain. The rest of the documentation goal (the collision, audio and local-multiplayer guides) waits on worked examples in the samples rather than on the site.
+What stands between the validated site and publishing it is the owner’s to decide: a host and a domain. The collision, audio and local-multiplayer guides and their worked examples are included.

@@ -1,0 +1,114 @@
+---
+title: Collision
+description: A runnable scene with a movable player, solid walls, layer filtering and a trigger that counts entries.
+sidebar:
+  order: 5
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+The collision sample puts a blue player in an arena with grey walls, a green
+trigger and a purple rectangle that deliberately rejects contacts. Move into a
+wall to stop and slide along it; walk through the trigger to count an entry.
+All the code below comes from the runnable
+<RepoLink path="samples/collision/README.md">collision sample</RepoLink>.
+
+## Run it
+
+Complete the [build prerequisites](/docs/get-started/prerequisites/) first.
+From the repository root in a Visual Studio developer shell:
+
+```powershell
+cmake --preset x64-debug
+cmake --build --preset x64-debug --target CollisionSample CollisionSampleTests
+.\out\build\x64-debug\samples\collision\CollisionSample.exe
+```
+
+Use **WASD, arrows or the left stick** to move, **R or gamepad Y** to reset,
+and **Escape or gamepad B** to quit. The content is copied beside the executable,
+so it can start from any working directory. The whole arena fits the window
+when it is resized.
+
+Walk right through the purple rectangle, stop at the grey wall, then go around
+the wall into the green trigger. Gold means the player measured a wall contact
+this tick; green means it is overlapping the trigger. The HUD shows the current
+contact count and how many times the player has entered the trigger.
+
+## Give each object a shape, layer and mask
+
+`CollisionObject` extends `GameObject`: it can update and draw, and also supplies
+its collision shape, layer, mask, tag and contact callback. `bounds()` is the
+broad-phase extent; `shape()` is the geometry the narrow phase measures. Here
+both come from the same rectangle, which is also the sprite destination:
+
+<SourceFile path="samples/collision/body.cpp" from="RectangleF Body::bounds() const" to="const Shape* Body::shape() const" />
+
+A layer is one bit. A mask is the set of layers the object accepts. The engine
+does not name them for you:
+
+<SourceFile path="samples/collision/body.h" from="constexpr labrador::CollisionLayer player_layer" to="constexpr labrador::CollisionLayer decoration_layer" />
+
+**Both masks must agree.** The player accepts walls, triggers and decoration,
+but decoration accepts nothing, so walking through purple produces no contact:
+
+<SourceFile path="samples/collision/body.cpp" from="CollisionMask Body::mask() const" to="}" />
+
+`tag()` carries the sample's `BodyKind` classification. Unlike a layer, the tag
+does not filter anything; the callback reads it to choose what a contact means.
+
+## Separate walls, observe triggers
+
+The engine measures overlaps and calls both participants once with opposite
+normals. The normal points **from this object towards the other**. The sample
+moves the player away using `separation(normal, penetration)` and removes only
+the velocity component into the wall using `slide(velocity, normal)`:
+
+<SourceFile path="samples/collision/body.cpp" from="void Body::on_contact(" to="}" />
+
+The wall ignores its callback. A trigger marks the player's overlap without
+moving it or changing its velocity. These are game decisions: `Scene::resolve`
+does not automatically push every pair apart.
+
+`Body::update` clears the contact flags before each sweep and moves its rectangle
+by velocity times `dt`. The same rectangle supplies collision and drawing, so
+there is no second position to synchronise.
+
+## Keep the tick order visible
+
+The arena owns one `Scene` and keeps a borrowed pointer to its player.
+`Scene::add` takes ownership but defers admission until `end_tick`; the arena
+calls it once after adding its initial objects so the first frame can draw them.
+
+Each step clamps the input direction, moves the objects, measures and responds
+to collisions, observes the results, and finishes the tick:
+
+<SourceFile path="samples/collision/arena.cpp" from="void Arena::step(" to="}" />
+
+The trigger-entry counter compares this tick's overlap with the previous tick's.
+Staying inside does not count again; leaving and returning does. Multiple
+triggers would need the game's own per-trigger membership tracking.
+
+**Read `Scene::contacts()` before `end_tick()`.** Its participant pointers are
+borrowed, and the list expires when the next resolve or end-tick begins. The
+HUD copies just a count; it never keeps a contact pointer for the next frame.
+
+## Verify and adapt it
+
+```powershell
+ctest --preset x64-debug -R '^CollisionSampleTests$'
+.\out\build\x64-debug\samples\collision\CollisionSample.exe --smoke-test
+```
+
+The tests run the sample's own arena without creating a window or device. They
+check separation, preserved tangential velocity, two-sided filtering, trigger
+entry and exit, and the route around the wall. The finite smoke runs the real
+application hidden, loads its content, draws the scripted route and checks that
+the wall was hit and the trigger entered before exiting.
+
+This is discrete collision, not continuous collision detection or rigid-body
+physics. At the sample's 60 Hz fixed step, its 240-unit speed moves a 32-unit
+player four units per tick through this particular layout. A speed limit alone
+does not prove arbitrary diagonal corner crossings safe. Validate your movement
+and geometry together; faster objects, narrow obstacles and moving-body response
+need their own tested policy.

@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: The two samples in the Labrador repository, what each is for, and where to start reading.
+description: Runnable Labrador samples for starting a project, a whole game, collision, audio and local multiplayer.
 template: splash
 ---
 
@@ -11,10 +11,10 @@ import Capture from '~/components/Capture.astro';
 import LineSweeperFootage from '~/components/LineSweeperFootage.astro';
 import topOut from '~/assets/captures/linesweeper-top-out.png';
 
-The repository has two samples. They answer different questions, so they are kept separate:
+The repository has five samples. They answer different questions, so they are kept separate:
 the minimal sample is what you **copy** to start a game, and LineSweeper is what you **read** to
-see what a finished one looks like. Both are built by the same build as the engine, so neither
-can quietly fall out of date.
+see what a finished one looks like. Three focused examples teach collision, audio and local
+multiplayer. All build with the engine.
 
 ## The minimal sample: the one you copy
 
@@ -97,14 +97,28 @@ way. Then read the code in this order:
 	From the binding tables in <RepoLink path="samples/linesweeper/states/play_state.cpp">states/play_state.cpp</RepoLink>.
 </p>
 
+## Focused guide examples
+
+Each example comes with a guide quoting its source, a README with controls, and automated
+checks of the behavior it teaches.
+
+| Sample | What to try | Guide |
+| --- | --- | --- |
+| <RepoLink path="samples/collision">Collision</RepoLink> | Move into a wall, pass through masked geometry and enter a trigger. | [Collision](/docs/guides/collision/) |
+| <RepoLink path="samples/audio">Audio</RepoLink> | Play original tones from a named sound bank and control a looping instance. | [Audio](/docs/guides/audio/) |
+| <RepoLink path="samples/local_multiplayer">Local multiplayer</RepoLink> | Move two players in a shared world through two following cameras, with WASD and arrows or two gamepads. | [Local multiplayer](/docs/guides/local-multiplayer/) |
+
 ## Running them
 
-Both samples build with the engine. After [building Labrador](/docs/get-started/build-labrador/),
+All samples build with the engine. After [building Labrador](/docs/get-started/build-labrador/),
 they are at:
 
 ```text
 out\build\x64-debug\samples\minimal\MinimalSample.exe
 out\build\x64-debug\samples\linesweeper\LineSweeperSample.exe
+out\build\x64-debug\samples\collision\CollisionSample.exe
+out\build\x64-debug\samples\audio\AudioSample.exe
+out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe
 ```
 
 Each copies its content beside its executable, so you can start it from anywhere.

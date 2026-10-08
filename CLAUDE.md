@@ -4,8 +4,9 @@ A 2D game engine in C++20, Windows-only, built with CMake + vcpkg. This
 repository is the **engine half of a split**: the client that drives it,
 ColourWars, lives in its own repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
-and `samples/` holds the only two clients in it: `minimal` (~450 lines), the
-new-project template you copy, and `linesweeper`, a falling-block game you read
+and `samples/` holds five clients: `minimal` (~450 lines), the new-project
+template you copy; `collision`, `audio` and `local_multiplayer`, the focused
+guide examples; and `linesweeper`, a falling-block game you read
 — whose own [README](samples/linesweeper/README.md) records its design
 decisions and is the first thing to read before changing it.
 
@@ -51,11 +52,11 @@ is what makes them the configurations a build machine runs end to end.
 
 | Preset | Backend | ctest |
 |---|---|---|
-| `x64-debug`, `x64-release` | `render/d3d11/` | 14 entries; WARP fallback in debug |
-| `x64-debug-d3d12`, `x64-release-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 14 entries; WARP fallback in debug |
-| `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 14 entries; needs a real driver |
-| `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 14 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only presets that also take `audio/null/`** | 13 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
+| `x64-debug`, `x64-release` | `render/d3d11/` | 17 entries; WARP fallback in debug |
+| `x64-debug-d3d12`, `x64-release-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 17 entries; WARP fallback in debug |
+| `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
+| `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
+| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -94,9 +95,10 @@ rasterising backends.
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
 — compiled only in that configuration — asserts the other half: which sprites a
-frame submitted, in what order, from which texture, into which view. Fourteen ctest entries: `MattMathTests`, `CoreTests`,
+frame submitted, in what order, from which texture, into which view. Seventeen ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
 `InputTests`, `UiTests`, `AssetsTests`, `AudioTests`, `AppTests`,
+`CollisionSampleTests`, `AudioSampleTests`, `LocalMultiplayerTests`,
 `LineSweeperTests`, `LineSweeperViewTests` (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
 device — a hidden window and a WARP fallback in debug under `x64-debug` and
 `x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
@@ -155,21 +157,20 @@ every handle check are above it; and [engine/audio/null/](engine/audio/null/)
 records what it was asked to play.
 
 So what to know before reading a green `AudioTests` is narrower than "audio is
-not covered". Under the five presets that build `audio/xaudio2/` this target
+not covered". Under the presets that build `audio/xaudio2/` this target
 still constructs no device, and every case runs against `SoundBank::silent()` —
 the substitute a missing `.xwb` produces, which is a question about content
 rather than about the seam. **Under either `-null` preset it also compiles
-[tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and that is the one
-place in the tree where a sound can be asserted to have happened: which wave,
+[tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and its recording cases assert which wave,
 out of which bank, at which clamped levels, in what order. A change under
 `engine/audio/` checked only on the default preset has not been checked.
 
-What is still absent, on purpose: there is no `.xwb` in this tree and there
-cannot be one, so nothing here ever plays anything, and writing that container
-format down — an `xwb_file.h` beside
-[dds_file.h](engine/render/dds_file.h), which is the precedent
-`docs/port/android.md` §3.2 argues from — is open and is blocked on having a
-file of that format to read it against.
+`samples/audio/` supplies original synthesized WAVs and a named `.xwb` bank,
+with an authoring script and tool provenance in its README. Its playback smoke
+requires an audio endpoint on XAudio2; its null-backend checks assert recorded
+operations without one. `AudioTests` itself retains the split above. An
+engine-owned `.xwb` reader remains unimplemented; the playable example uses
+DirectXTK's reader behind the existing seam.
 
 ## The website
 

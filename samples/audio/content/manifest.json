@@ -1,0 +1,15 @@
+{
+    "assets": [
+        {
+            "kind": "font",
+            "directory": "./fonts/",
+            "names": ["courier_new_bold_16"]
+        },
+        {
+            "kind": "sound_bank",
+            "directory": "./sounds/",
+            "names": ["tones"],
+            "optional": false
+        }
+    ]
+}

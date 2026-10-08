@@ -13,17 +13,22 @@ accident of it — see [The wall](#the-wall).
 to 404. Nothing here depends on it: this repository builds, tests and
 benchmarks standalone.)*
 
-Two samples come with it, and they answer different questions.
+Five samples come with it, and they answer different questions.
 `samples/minimal` is about 450 lines and is the answer to "how do I start a
 project on this" — copy it. `samples/linesweeper` is a falling-block game and
 is the answer to "what does a finished game look like on this engine" — read
 it, and read [its README](samples/linesweeper/README.md) for the decisions
 behind it.
 
+`samples/collision`, `samples/audio` and `samples/local_multiplayer` are
+focused examples for the website's guides: a collision arena, a playable
+sound bank and two players sharing a world through separate views. Each has
+its own README with controls and build commands.
+
 ```
 engine/    ~34k lines   the engine: ten modules with a fixed dependency direction
-samples/   ~5.3k lines  two clients: minimal, the template you copy; linesweeper, the game you read
-tests/     ~16k lines   doctest, thirteen targets, run by ctest
+samples/                the starter template, LineSweeper, and three focused guide examples
+tests/     ~16k lines   doctest, sixteen targets, run by ctest
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 website/                the public site, built with npm from this same checkout
@@ -124,7 +129,7 @@ target_include_directories(YourGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 Three things worth knowing:
 
-- **You get the library and nothing else.** The tests, the benchmark and both
+- **You get the library and nothing else.** The tests, the benchmark and the
   samples are behind `PROJECT_IS_TOP_LEVEL`, so consuming Labrador does not put
   this repository's test targets into your `ctest`, or its executables into
   your build.
@@ -182,7 +187,7 @@ the line.
 ctest --preset x64-debug
 ```
 
-Thirteen doctest targets plus the benchmark. How many cases and how many
+Sixteen doctest targets plus the benchmark (one fewer with the null renderer). How many cases and how many
 assertions ran is what `ctest` prints on the day - a pair of numbers this line
 used to carry and got wrong, which is why it no longer does.
 

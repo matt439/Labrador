@@ -1,0 +1,131 @@
+---
+title: Local multiplayer
+description: Two players in one world, independent input, following cameras and per-view drawing, backed by a runnable sample.
+sidebar:
+  order: 7
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+The <RepoLink path="samples/local_multiplayer">local multiplayer sample</RepoLink> puts two
+players in one arena. The top pane follows the cyan player and the bottom pane follows the
+orange player. Both panes show the same world: head toward the purple cross to meet, or move
+apart to see each camera follow its own player.
+
+## Run it
+
+With the [build prerequisites](/docs/get-started/prerequisites/) installed, run these commands
+from the repository root in a Visual Studio developer shell:
+
+```powershell
+cmake --preset x64-debug
+cmake --build --preset x64-debug --target LocalMultiplayerSample LocalMultiplayerTests
+ctest --preset x64-debug -R LocalMultiplayerTests --output-on-failure
+out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe
+```
+
+| Player | Keyboard | Optional gamepad | Pane |
+| --- | --- | --- | --- |
+| 1, cyan | WASD | Slot 0, left stick | Top |
+| 2, orange | Arrow keys | Slot 1, left stick | Bottom |
+
+Escape, or B on either gamepad, exits. No controllers are required. Some keyboards cannot
+report every combination of simultaneously held keys; use a controller if a combination fails
+to register. Keys are physical positions, as described in [Input](/docs/guides/input/).
+
+The build copies all content beside the executable, so it can be launched from any working
+directory. The default preset needs a Direct3D 11 device; the other rasterising presets use
+their usual device prerequisites. A null preset records draws without showing a picture.
+
+## Give each player their own input
+
+Player identity belongs to the sample. The same index selects a keyboard binding, a gamepad
+slot, a position and a view. The state reads both slots without checking `connected`: an absent
+slot contributes a neutral stick, leaving keyboard input available.
+
+<SourceFile path="samples/local_multiplayer/play_state.cpp" from="const std::array<Vector2F, Arena::player_count> sticks" to="std::array<Vector2F, Arena::player_count> directions" />
+
+The input helper keeps the two sets of keys separate and adds each player's stick after a
+deadzone:
+
+<SourceFile path="samples/local_multiplayer/controls.cpp" from="std::array<Vector2F, Arena::player_count> read_directions" to="}" />
+
+`Arena::set_directions` caps each resulting vector to unit length before movement. A diagonal,
+or holding the keyboard and stick together, therefore cannot exceed the player's movement
+speed. Controller slots are fixed here; joining, choosing a slot and reassignment on reconnect
+are game policy rather than an engine player-management service.
+
+## Update one world once
+
+The scene owns one `Arena`, a `GameObject` that holds both players. It is admitted at startup,
+and the state chooses the two-player layout:
+
+<SourceFile path="samples/local_multiplayer/play_state.cpp" from="this->scene_ = std::make_unique<Scene>" to="this->rebuild_views();" />
+
+Every update supplies the current directions, steps the scene once and then rebuilds its views:
+
+<SourceFile path="samples/local_multiplayer/play_state.cpp" from="this->arena_->set_directions(directions);" to="this->rebuild_views();" />
+
+The number of views does not change simulation time. Two panes mean two drawings of the same
+positions. The sample clamps players at the arena boundary; that is movement policy. For
+contact detection and resolution, continue with [Collision](/docs/guides/collision/).
+
+## Follow each player with a camera
+
+`ViewportManager`'s `two_player` layout makes top and bottom panes from the current window
+size. The sample clears and refills the scene's view list after movement, so cameras track the
+new positions and the layout follows window resizing:
+
+<SourceFile path="samples/local_multiplayer/play_state.cpp" from="void PlayState::rebuild_views()" to="}" />
+
+The camera's translation is the player's world position minus half the pane size. At scale 1,
+this puts the player at the pane centre:
+
+<SourceFile path="samples/local_multiplayer/arena.cpp" from="Camera Arena::camera" to="}" />
+
+The viewport's back-buffer offset is separate. In particular, the bottom player's camera does
+not add the bottom pane's y-offset: the camera maps into pane coordinates, and the viewport
+places that pane on the buffer. Near an arena edge the camera shows the empty space beyond it.
+
+`ApplicationOptions::view_capacity` is 2, reserving exactly the two recordings the layout needs.
+The thread pool ceiling is a separate choice, capped at two workers for this sample:
+
+<SourceFile path="samples/local_multiplayer/main.cpp" from="options.view_capacity = 2;" to="options.max_threads" />
+
+## Draw shared state without changing it
+
+The scene borrows the shell's thread pool and partitioner, so each view can be recorded on its
+own worker. Both workers call `Arena::draw` on the same object. That method is `const`; its
+temporary drawing values are locals, and positions change only in `update`.
+
+The HUD runs after the world, on that view's worker. It selects the player from `view_index`
+and switches the list to the identity camera, keeping text fixed in its pane while the world
+moves beneath it:
+
+<SourceFile path="samples/local_multiplayer/play_state.cpp" from="this->scene_->draw(renderer, [this]" to="list.set_camera(Camera::DEFAULT_CAMERA);" />
+
+The rest of <RepoLink path="samples/local_multiplayer/play_state.cpp">the callback</RepoLink>
+draws the player's controls and a coloured separator. It reads shared state and writes only
+its own `DrawList`. This small scene uses fan-out to demonstrate the contract, rather than as
+a performance claim: constructing `Scene(nullptr, nullptr)` draws the same two views serially.
+See [Drawing, views and cameras](/docs/concepts/drawing/) for the rendering model.
+
+## Verify the example
+
+`LocalMultiplayerTests` drives input routing, player movement and following cameras without a
+window or device. With `x64-debug-null`, it additionally draws the real arena into the recording
+backend and compares serial and parallel output, including both players in both views.
+
+For a finite check of the selected renderer and the sample's actual state:
+
+```powershell
+out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe --smoke-test
+```
+
+This renders 120 scripted ticks in a hidden window, checks the two independent final positions
+and view count, and exits with a nonzero status on failure. It does not test physical input.
+Add `--capture out\multiplayer.png` to save an early frame on a rasterising backend; the
+destination's parent directory must exist. The sample's
+<RepoLink path="samples/local_multiplayer/README.md">README</RepoLink> describes its scope
+and verification in full.
