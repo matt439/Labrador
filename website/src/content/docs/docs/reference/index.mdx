@@ -78,8 +78,8 @@ fix for every engine header: braces on their own lines, and a comment directly a
 describes. When it meets something it does not understand, it stops the site build and names the
 file and line, rather than publishing a page that might be wrong. Doxygen was considered and does
 not fit: it reads only comments in its own markers, such as `///`, and Labrador's are plain `//`.
-Clang would read the headers exactly, but `application.h` includes `<Windows.h>`, which would tie
-the site's build to Windows.
+Clang would read the headers exactly, but `throw_if_failed.h`, which the two Direct3D backends
+share, includes `<Windows.h>`, which would tie the site's build to Windows.
 
 **Links.** A type defined anywhere in the engine's public headers is linked wherever a page names
 it, to its section on its page, and a qualified member such as `GameObject::draw` to the member's

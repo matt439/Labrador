@@ -103,8 +103,7 @@ namespace
 			window_options.window_title = L"LineSweeper frame benchmark";
 			window_options.client_size = Vector2I(frame_width, frame_height);
 
-			this->window_ = std::make_unique<Window>(GetModuleHandleW(nullptr),
-				SW_SHOWNORMAL, window_options, this);
+			this->window_ = std::make_unique<Window>(window_options, this);
 			if (this->width_ != frame_width || this->height_ != frame_height)
 			{
 				throw std::runtime_error(

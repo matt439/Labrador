@@ -10,13 +10,14 @@
 #include "engine/app/application.h"
 #include "samples/linesweeper/states/play_state.h"
 
+#include <Windows.h>
+
 #include <exception>
 #include <cstdio>
 #include <memory>
 using namespace labrador;
 
-int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
-	_In_ int show_command)
+int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 {
 	try
 	{
@@ -41,7 +42,7 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 		options.target_fps = 60;
 
 		Application app(std::move(options));
-		app.initialize(instance, show_command);
+		app.initialize();
 
 		// Beside the executable, wherever it was started from - the path is
 		// relative to the game, not to the working directory

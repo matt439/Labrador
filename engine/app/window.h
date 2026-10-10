@@ -4,7 +4,7 @@
 #include "engine/input/mouse.h"
 #include "engine/math/vector2i.h"
 
-#include <Windows.h>
+#include <memory>
 #include <string>
 
 namespace labrador
@@ -21,10 +21,12 @@ namespace labrador
 	class WindowNotify
 	{
 	public:
-		// The queue is empty, so this is the frame. It is not a window event -
-		// it is what the pump does when there is nothing else to do, and it is
-		// here because WM_PAINT needs it too: while the user drags an edge
-		// Windows owns the loop, and painting is the only way back in.
+		// The frame. It is not a window event - it is what the loop does
+		// when there is nothing else to do. On Windows that is an empty
+		// queue, and WM_PAINT needs it too: while the user drags an edge
+		// Windows owns the loop, and painting is the only way back in. In a
+		// browser it is the animation-frame callback, which is the only loop
+		// there is.
 		virtual void tick() = 0;
 
 		virtual void on_activated() = 0;
@@ -38,20 +40,22 @@ namespace labrador
 		// reader in engine/input/ because there is nowhere else they could be.
 		// A pad is polled: input/xinput/ asks XInput for a snapshot and owes
 		// this file nothing. These two arrive as messages in this window's
-		// queue, so the only way into the input module is out through here -
-		// which is the whole reason `input` is fed rather than read, and the
-		// reason nothing in it names a window (keyboard.h says it at length).
+		// queue, or as events on its canvas, so the only way into the input
+		// module is out through here - which is the whole reason `input` is
+		// fed rather than read, and the reason nothing in it names a window
+		// (keyboard.h says it at length).
 		//
 		// const, like on_window_moved and for the same reason: they change
 		// nothing about the window, and everything they do reach is borrowed and
 		// fed rather than asked anything.
 		//
 		// Already translated, both directions. `Key` and `MouseButton` are the
-		// engine's own names, decided in window.cpp from the platform's codes,
-		// and `codepoint` is UTF-32 with any surrogate pair already assembled.
-		// Nothing above this line meets a VK_ constant or a UTF-16 unit -
-		// message translation lives here, and that is the whole of the job
-		// this class exists to hand over.
+		// engine's own names, decided by the window's implementation from the
+		// platform's codes, and `codepoint` is UTF-32 with any surrogate pair
+		// already assembled. Nothing above this line meets a VK_ constant, a
+		// KeyboardEvent.code string or a UTF-16 unit - message translation
+		// lives in the window, and that is the whole of the job this class
+		// exists to hand over.
 		virtual void on_key_down(Key key) const = 0;
 		virtual void on_key_up(Key key) const = 0;
 		virtual void on_text(char32_t codepoint) const = 0;
@@ -79,6 +83,8 @@ namespace labrador
 	struct WindowOptions
 	{
 		// Unique per process, so a game that ever opens two windows needs two.
+		// A browser has neither a window class nor a title of the game's - the
+		// page owns both - so neither is read there.
 		std::wstring window_class_name = L"LabradorWindowClass";
 		std::wstring window_title = L"Labrador";
 
@@ -88,19 +94,29 @@ namespace labrador
 
 		bool fullscreen = false;
 
+		// Whether the window is shown at all. A hidden window still has a
+		// client area, a device still draws into it and its messages still
+		// arrive, which is what a smoke test or a capture tool wants: a whole
+		// shell that puts nothing on screen and takes no focus. A browser
+		// shows whatever the page shows, so it is not read there.
+		bool visible = true;
+
 		int min_window_width = 320;
 		int min_window_height = 200;
 	};
 
-	// The Win32 window, and the only file in the engine that knows the game
-	// runs on Windows at all outside the render and input backends.
+	// The platform's window: a Win32 window on Windows (engine/app/win32/) and
+	// the page's canvas in a browser (engine/app/web/). Exactly one is
+	// compiled, chosen by the platform being built for rather than by a cache
+	// variable, because neither half can be built for the other's platform.
 	//
-	// ARCHITECTURE says platform code lives in the backend subfolders. This is
-	// the third case, named there rather than smuggled: `app` is already the
-	// module allowed to depend on everything, PHILOSOPHY already lists
-	// windowing alongside the rendering backend as platform code at the edge,
-	// and a second platform moves this pair down a folder without renaming the
-	// class or touching a call site.
+	// THIS HEADER IS NEUTRAL AND THE PLATFORM IS BEHIND Impl, which is the
+	// shape GamepadReader and ThreadPool have and for a reason that is not
+	// taste: application.h includes this file, and check_engine_includes.cmake
+	// fails the build for any file outside a platform folder that includes a
+	// header inside one. A window.h in app/win32/ would make application.h a
+	// platform header. What the pointer costs is one hop on a path that runs
+	// once per message.
 	//
 	// WHAT IS DELIBERATELY NOT HERE: the handlers themselves. They stay on
 	// Application and arrive through WindowNotify, because message translation
@@ -113,144 +129,108 @@ namespace labrador
 	class Window
 	{
 	public:
-		// Registers the class, creates the window and shows it. Throws
-		// std::runtime_error naming the step that failed (T6).
+		// Creates the window, or takes the page's canvas, and shows it.
+		// Throws std::runtime_error naming the step that failed (T6).
 		//
 		// `notify` is taken here rather than set afterwards, and that is a
-		// contract rather than a preference: WM_CREATE and the WM_SIZE that
-		// ShowWindow fires both arrive before this constructor returns, and
-		// that WM_SIZE is load-bearing - it is what corrects the caller to the
-		// client size the window really got, which matters most going full
-		// screen at launch, where the monitor decides the size and nothing
-		// here knows it. A notify set after construction would miss both
-		// messages, and the owner would never learn the size it got.
-		Window(HINSTANCE instance, int show_command,
-			const WindowOptions& options, WindowNotify* notify);
+		// contract rather than a preference: the first size report arrives
+		// before this constructor returns, and it is load-bearing - it is what
+		// corrects the caller to the client size the window really got. On
+		// Windows that is the WM_SIZE ShowWindow fires, and it matters most
+		// going full screen at launch, where the monitor decides the size and
+		// nothing here knows it. In a browser it is the canvas, measured here,
+		// because the page laid it out and nothing here chose its size. A
+		// notify set after construction would miss it, and the owner would
+		// never learn the size it got.
+		Window(const WindowOptions& options, WindowNotify* notify);
 
-		// Destroys the native window if it still exists, and unregisters the
-		// class either way. What the constructor makes, this unmakes, on every
-		// path out - not only the one where the pump returned.
+		// Takes down what the constructor made, on every path out - not only
+		// the one where the loop ended.
 		//
-		// THE PUMP IS NOT THE ONLY WAY OUT of the scope that owns a Window.
+		// THE LOOP IS NOT THE ONLY WAY OUT of the scope that owns a Window.
 		// create_device throwing, a manifest that does not open, a state's
-		// update() throwing out of tick(): each unwinds Application while the
-		// window still exists. A window left behind would go on pointing at the
-		// destroyed Window through its user data, and a message box shown
-		// afterwards - the samples show one - runs a modal message loop, which
-		// is a way back into a window procedure that reads that pointer.
+		// update() throwing out of tick(): each unwinds the owner while the
+		// window still exists, and a window left behind would go on calling
+		// into an object that is gone.
 		//
-		// `notify` is never called from in here. The messages DestroyWindow
-		// sends arrive after the owner has started destroying itself - in
-		// Application's case with the renderer and the input devices already
-		// gone - so the user data is detached before the call and every one of
-		// them goes to DefWindowProc. That includes WM_DESTROY, so nothing is
-		// posted to the thread's queue: a WM_QUIT left there would dismiss the
-		// very message box the samples show next.
+		// `notify` is never called from in here. Whatever the platform says
+		// while the window is taken down arrives after the owner has started
+		// destroying itself - in Application's case with the renderer and the
+		// input devices already gone - so none of it is forwarded, and nothing
+		// is left queued that would end a message loop run afterwards.
 		~Window();
 
 		Window(const Window&) = delete;
 		Window& operator=(const Window&) = delete;
 
-		// Null once the native window is gone, whether close() took it or the
-		// user did. Nothing that reaches a stale HWND is a valid call, and a
+		// The native window, as Renderer::create_device takes it: an HWND on
+		// Windows, and in a browser the canvas's event target as Emscripten's
+		// html5 functions name it, which is a C string.
+		//
+		// Null once the window is gone, whether close() took it or the user
+		// did. Nothing that reaches a stale handle is a valid call, and a
 		// caller holding one after run() has returned would be making one.
-		HWND handle() const;
+		void* handle() const;
 
 		// The process exit code, valid once pump_until_quit has returned.
 		int exit_code() const;
 
-		// Runs the message loop until WM_QUIT: one message if one is waiting,
-		// and otherwise notify->tick(). Ticking only on an empty queue is the
-		// loop, not an implementation detail of it - draining the queue first
-		// is a defensible design and a different one, and it changes frame
-		// pacing.
+		// Runs the frame loop until the window closes, calling notify->tick()
+		// once per frame.
+		//
+		// On Windows: one message if one is waiting, and otherwise tick().
+		// Ticking only on an empty queue is the loop, not an implementation
+		// detail of it - draining the queue first is a defensible design and
+		// a different one, and it changes frame pacing. An exception out of
+		// tick() or out of a handler comes out of this call.
+		//
+		// IN A BROWSER THIS CALL DOES NOT RETURN, and the stack below it does
+		// not survive it. The loop is the browser's: tick() runs once per
+		// animation frame, after control has gone back to the page, and
+		// Emscripten gets there by throwing through every frame between here
+		// and main - which runs their destructors before the first tick. So
+		// nothing tick() reaches may live on that stack; Application::run says
+		// what that means for a game. And with no caller left to throw to, an
+		// exception out of tick() or out of a handler ends the loop the way
+		// close() does and is reported instead: to stderr, and to the page's
+		// Module.onError if it supplied one.
 		void pump_until_quit();
 
-		// Destroys the window, which ends the pump. The whole of the quit
-		// path: a game asking to exit does not need to know it is on Win32.
-		// A second call, or a call after the user has already closed it, does
-		// nothing: the handle is null by then.
+		// Ends the loop. A game asking to exit does not need to know which
+		// platform it is on, so this is the whole of the quit path.
+		//
+		// On Windows it destroys the window, which ends the pump. In a browser
+		// it cancels the frame loop, stops listening to the canvas and calls
+		// the page's Module.onQuit if it supplied one, because the page is
+		// what decides what a finished game looks like. A second call, or a
+		// call after the window has already gone, does nothing.
 		void close() const;
 
 		// Resizes so `client_size` pixels are left to draw into, under
-		// whatever frame the window is currently wearing.
+		// whatever frame the window is currently wearing, and reports what it
+		// actually got - a size past the monitor's comes back clamped.
+		//
+		// In a browser the page lays the canvas out and the drawing buffer
+		// follows that box, so there is nothing to ask for. The report is
+		// still made, of the size the canvas already has, because it is the
+		// report that corrects the caller (Application::set_resolution).
 		void resize_client(const mattmath::Vector2I& client_size) const;
 
 		// Borderless and monitor-sized, and back again at `client_size`.
+		//
+		// In a browser, the Fullscreen API on the canvas. A browser grants it
+		// only inside an input event, so a request made from a frame waits
+		// for the next key or button event and is made there.
 		void enter_fullscreen() const;
 		void leave_fullscreen(const mattmath::Vector2I& client_size) const;
 
-		// The outer window size that leaves `client_size` pixels to draw into
-		// under `style`/`ex_style`. Every Win32 call that sizes a window takes
-		// the outer rect and every resolution this engine is asked for is
-		// client area, so this conversion sits between the two - without it a
-		// windowed 1280x720 would deliver about 1264x681, silently, at every
-		// preset.
-		//
-		// Public and static because it is the one piece of this class that can
-		// be tested without an HINSTANCE and a message pump.
-		static mattmath::Vector2I outer_size_for_client(
-			const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style);
-
 	private:
-		void update_suspension();
-		bool power_suspended_ = false;
-		// The same, for the style the window is wearing right now.
-		mattmath::Vector2I outer_size_for_client(
-			const mattmath::Vector2I& client_size) const;
-
-		static LRESULT CALLBACK window_proc(HWND window, UINT message,
-			WPARAM w_param, LPARAM l_param);
-
-		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE, for the reason
-		// the constructor gives: messages arrive while it is still running, so
-		// everything window_proc reads has to be initialised before handle_ is
-		// assigned.
-		WindowNotify* notify_ = nullptr;
-		bool in_sizemove_ = false;
-		bool in_suspend_ = false;
-		bool minimized_ = false;
-		int min_width_ = 0;
-		int min_height_ = 0;
-		int exit_code_ = 0;
-
-		// How many mouse buttons are down, and it exists to balance SetCapture
-		// against ReleaseCapture.
-		//
-		// Without capture, WM_MOUSEMOVE stops the instant the cursor crosses
-		// the client edge - so a slider dragged too far, or a marquee pulled
-		// past the corner, freezes where it left and then jumps when the
-		// cursor comes back. Capture is what makes a drag one gesture.
-		//
-		// It is a COUNT and not a flag because capture is per window, not per
-		// button. Pressing left, then right, then releasing left would release
-		// the capture with the right button still held if this were a bool,
-		// and the drag would break in the middle for no reason the player
-		// could see. Capture is taken when the count leaves zero and released
-		// when it returns.
-		int held_buttons_ = 0;
-
-		// The high half of a surrogate pair, waiting for its low half.
-		//
-		// WM_CHAR carries one UTF-16 code unit, so anything past the basic
-		// plane - an emoji, most of the CJK extensions - arrives as two
-		// messages that mean one character. Assembling them is message
-		// translation and therefore this file's job: engine/input/keyboard.h
-		// takes a char32_t and never learns that Windows speaks UTF-16.
-		//
-		// Zero when nothing is pending, which no real high surrogate is.
-		wchar_t pending_high_surrogate_ = 0;
-
-		// What the destructor needs to unregister the class, kept because the
-		// class is registered in the constructor and a registration outlives
-		// the window it was made for: a second Window with the same name in
-		// the same process is a failed RegisterClassExW otherwise.
-		HINSTANCE instance_ = nullptr;
-		std::wstring class_name_;
-
-		// Null before CreateWindowExW returns and null again from WM_NCDESTROY
-		// on, which is the last message a window receives. The destructor
-		// reads it to decide whether there is anything left to destroy.
-		HWND handle_ = nullptr;
+		// Declared here and defined once per platform, so the platform's
+		// types stay in the translation unit that calls them. The platform
+		// holds Impl's address for the window's whole life - as the window's
+		// user data on Windows, as every html5 callback's in a browser - which
+		// is why a Window is neither copied nor moved.
+		struct Impl;
+		std::unique_ptr<Impl> impl_;
 	};
 }

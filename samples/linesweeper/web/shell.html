@@ -1,0 +1,67 @@
+<!doctype html>
+<!--
+  The development page for LineSweeper's browser build: Emscripten writes the
+  module's script tag where SCRIPT is marked below, and the result is
+  LineSweeperSample.html beside the .js and the .wasm. Serve that folder over
+  HTTP - a browser will not compile a module read from file:// - and open it.
+
+  It is the smallest page that keeps the engine's side of the bargain, and
+  each line of that is something the page owes the module, not a preference:
+
+  - Module.canvas is the canvas. The engine finds it there and nowhere else.
+  - The canvas is sized by CSS. Its drawing buffer follows its box times
+    devicePixelRatio, so a canvas left at its default size would follow
+    itself.
+  - The canvas is focusable, and is focused. Keys go to the focused element,
+    so a canvas that cannot take focus cannot be played.
+  - Module.onQuit and Module.onError are the module's two calls to the page:
+    the pause menu's QUIT, and a failure the engine could not recover from.
+
+  The site's page is a different one (docs/port/web.md, section 7).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LineSweeper</title>
+<style>
+  body { margin: 0; background: #111; color: #ddd; font: 15px/1.4 system-ui, sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 16px; }
+  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; outline: none; }
+  canvas:focus-visible { outline: 2px solid #5a9; }
+  #status { margin: 10px 0 0; min-height: 1.4em; }
+  #status.error { color: #f77; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="canvas" tabindex="0"></canvas>
+  <p id="status">Loading...</p>
+</main>
+<script>
+  var canvas = document.getElementById("canvas");
+  var statusLine = document.getElementById("status");
+
+  // A right click is a button the game may read, not a request for the
+  // browser's menu over it.
+  canvas.addEventListener("contextmenu", function (event) { event.preventDefault(); });
+
+  var Module = {
+    canvas: canvas,
+    onRuntimeInitialized: function () {
+      statusLine.textContent =
+        "Arrows move, Up or X rotates, Space drops, C holds, Escape pauses.";
+      canvas.focus();
+    },
+    onQuit: function () {
+      statusLine.textContent = "Quit. Reload the page to play again.";
+    },
+    onError: function (message) {
+      statusLine.className = "error";
+      statusLine.textContent = message;
+    },
+  };
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

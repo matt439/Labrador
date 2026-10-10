@@ -1665,9 +1665,9 @@ namespace labrador
 			}
 
 			// AND THIS IS WHERE THE WINDOW COMING BACK IS NOTICED, because
-			// nothing else in the tree will notice it. engine/app/window.cpp
-			// turns a restore into on_resuming and forwards no size, so
-			// window_size_changed is never called and
+			// nothing else in the tree will notice it.
+			// engine/app/win32/window.cpp turns a restore into on_resuming and
+			// forwards no size, so window_size_changed is never called and
 			// create_window_size_dependent_resources never runs - which would
 			// make the state create_swapchain calls temporary permanent
 			// instead, and a window that stops drawing when it is restored is

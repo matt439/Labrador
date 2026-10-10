@@ -1,5 +1,8 @@
 #include "engine/app/window.h"
 
+#include <Windows.h>
+
+#include <memory>
 #include <stdexcept>
 #include <tuple>
 
@@ -161,26 +164,126 @@ namespace labrador
 		{
 			return static_cast<int>(static_cast<short>(HIWORD(l_param)));
 		}
+
+		// The outer window size that leaves `client_size` pixels to draw into
+		// under `style`/`ex_style`. Every Win32 call that sizes a window takes
+		// the outer rect and every resolution this engine is asked for is
+		// client area, so this conversion sits between the two - without it a
+		// windowed 1280x720 would deliver about 1264x681, silently, at every
+		// preset.
+		mattmath::Vector2I outer_size_for_client(
+			const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style)
+		{
+			RECT rect = { 0, 0, static_cast<LONG>(client_size.x),
+				static_cast<LONG>(client_size.y) };
+
+			// FALSE: no menu bar. This engine's window never has one, and a menu
+			// would change the answer by its height.
+			if (AdjustWindowRectEx(&rect, style, FALSE, ex_style) == 0)
+			{
+				// Nothing to fall back to but the request. A style this call cannot
+				// account for costs the game its frame's worth of pixels, which is
+				// where it started.
+				return client_size;
+			}
+
+			return mattmath::Vector2I(static_cast<int>(rect.right - rect.left),
+				static_cast<int>(rect.bottom - rect.top));
+		}
 	}
 
-	Window::Window(HINSTANCE instance, int show_command,
-		const WindowOptions& options, WindowNotify* notify) :
-		notify_(notify),
-		min_width_(options.min_window_width),
-		min_height_(options.min_window_height),
-		instance_(instance),
-		class_name_(options.window_class_name)
+	// The Win32 window. Everything a message needs to find is here, and the
+	// window's user data points at it from WM_CREATE to WM_NCDESTROY.
+	struct Window::Impl
+	{
+		Impl(const WindowOptions& options, WindowNotify* window_notify);
+		~Impl();
+
+		Impl(const Impl&) = delete;
+		Impl& operator=(const Impl&) = delete;
+
+		void update_suspension();
+
+		// outer_size_for_client, for the style the window is wearing right now.
+		mattmath::Vector2I outer_size(
+			const mattmath::Vector2I& client_size) const;
+
+		static LRESULT CALLBACK window_proc(HWND window, UINT message,
+			WPARAM w_param, LPARAM l_param);
+
+		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE, for the reason
+		// the constructor gives: messages arrive while it is still running, so
+		// everything window_proc reads has to be initialised before handle is
+		// assigned.
+		WindowNotify* notify = nullptr;
+		bool in_sizemove = false;
+		bool in_suspend = false;
+		bool minimized = false;
+		bool power_suspended = false;
+		int min_width = 0;
+		int min_height = 0;
+		int exit_code = 0;
+
+		// How many mouse buttons are down, and it exists to balance SetCapture
+		// against ReleaseCapture.
+		//
+		// Without capture, WM_MOUSEMOVE stops the instant the cursor crosses
+		// the client edge - so a slider dragged too far, or a marquee pulled
+		// past the corner, freezes where it left and then jumps when the
+		// cursor comes back. Capture is what makes a drag one gesture.
+		//
+		// It is a COUNT and not a flag because capture is per window, not per
+		// button. Pressing left, then right, then releasing left would release
+		// the capture with the right button still held if this were a bool,
+		// and the drag would break in the middle for no reason the player
+		// could see. Capture is taken when the count leaves zero and released
+		// when it returns.
+		int held_buttons = 0;
+
+		// The high half of a surrogate pair, waiting for its low half.
+		//
+		// WM_CHAR carries one UTF-16 code unit, so anything past the basic
+		// plane - an emoji, most of the CJK extensions - arrives as two
+		// messages that mean one character. Assembling them is message
+		// translation and therefore this file's job: engine/input/keyboard.h
+		// takes a char32_t and never learns that Windows speaks UTF-16.
+		//
+		// Zero when nothing is pending, which no real high surrogate is.
+		wchar_t pending_high_surrogate = 0;
+
+		// What the destructor needs to unregister the class, kept because the
+		// class is registered in the constructor and a registration outlives
+		// the window it was made for: a second Window with the same name in
+		// the same process is a failed RegisterClassExW otherwise.
+		//
+		// The executable's own module, which is what wWinMain is handed and
+		// what the window class and the icon resource are looked up in.
+		HINSTANCE instance = GetModuleHandleW(nullptr);
+		std::wstring class_name;
+
+		// Null before CreateWindowExW returns and null again from WM_NCDESTROY
+		// on, which is the last message a window receives. The destructor
+		// reads it to decide whether there is anything left to destroy.
+		HWND handle = nullptr;
+	};
+
+	Window::Impl::Impl(const WindowOptions& options,
+		WindowNotify* window_notify) :
+		notify(window_notify),
+		min_width(options.min_window_width),
+		min_height(options.min_window_height),
+		class_name(options.window_class_name)
 	{
 		WNDCLASSEXW window_class = {};
 		window_class.cbSize = sizeof(WNDCLASSEXW);
 		window_class.style = CS_HREDRAW | CS_VREDRAW;
 		window_class.lpfnWndProc = window_proc;
-		window_class.hInstance = instance;
-		window_class.hIcon = LoadIconW(instance, L"IDI_ICON");
+		window_class.hInstance = this->instance;
+		window_class.hIcon = LoadIconW(this->instance, L"IDI_ICON");
 		window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
 		window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
 		window_class.lpszClassName = options.window_class_name.c_str();
-		window_class.hIconSm = LoadIconW(instance, L"IDI_ICON");
+		window_class.hIconSm = LoadIconW(this->instance, L"IDI_ICON");
 
 		if (RegisterClassExW(&window_class) == 0)
 		{
@@ -202,24 +305,24 @@ namespace labrador
 		const mattmath::Vector2I outer =
 			outer_size_for_client(options.client_size, style, ex_style);
 
-		// This Window rides in as the create parameter and is stashed in the
+		// This Impl rides in as the create parameter and is stashed in the
 		// window's user data by WM_CREATE, so window_proc can find it without
 		// a global. Every member window_proc reads is already initialised -
-		// see the declaration order in the header.
-		this->handle_ = CreateWindowExW(ex_style,
+		// see the declaration order above.
+		this->handle = CreateWindowExW(ex_style,
 			options.window_class_name.c_str(),
 			options.window_title.c_str(), style,
 			CW_USEDEFAULT, CW_USEDEFAULT, outer.x, outer.y,
-			nullptr, nullptr, instance, this);
+			nullptr, nullptr, this->instance, this);
 
-		if (this->handle_ == nullptr)
+		if (this->handle == nullptr)
 		{
 			// The destructor does not run for an object whose constructor
 			// threw, so the registration above is this line's to undo. Left
 			// registered, the caller's retry - or the next test in the same
 			// process - fails one step earlier, with a message about the class
 			// rather than about whatever was actually wrong.
-			UnregisterClassW(this->class_name_.c_str(), this->instance_);
+			UnregisterClassW(this->class_name.c_str(), this->instance);
 			throw std::runtime_error("Could not create the window.");
 		}
 
@@ -234,11 +337,16 @@ namespace labrador
 		// created at the saved preset and then stretched non-uniformly to the
 		// monitor (DXGI_SCALING_STRETCH), which is the form of this a shipped
 		// sample hits.
-		ShowWindow(this->handle_,
-			options.fullscreen ? SW_SHOWMAXIMIZED : show_command);
+		//
+		// SW_SHOWDEFAULT is what wWinMain's own show command would have said:
+		// it asks for whatever the process that started this one put in its
+		// STARTUPINFO, which is where that argument comes from.
+		ShowWindow(this->handle,
+			!options.visible ? SW_HIDE :
+			options.fullscreen ? SW_SHOWMAXIMIZED : SW_SHOWDEFAULT);
 	}
 
-	Window::~Window()
+	Window::Impl::~Impl()
 	{
 		// Null on the ordinary exit: the pump returned on WM_QUIT, which came
 		// from WM_DESTROY, and WM_NCDESTROY below cleared it on the way out.
@@ -246,12 +354,12 @@ namespace labrador
 		// after the window was up, a manifest that would not open, an
 		// exception out of the loop - and on those the native window is still
 		// there with its user data pointing at this object.
-		if (this->handle_ != nullptr)
+		if (this->handle != nullptr)
 		{
 			// DETACH FIRST. DestroyWindow sends WM_DESTROY and WM_NCDESTROY
 			// synchronously, and whatever else the window's state earns it -
 			// a focused window is told it lost focus, an active one that it
-			// was deactivated. Every one of those forwards through notify_,
+			// was deactivated. Every one of those forwards through notify,
 			// whose owner is mid-destruction: Application destroys its members
 			// in reverse declaration order, so the keyboard and the renderer
 			// those handlers reach are already gone. With the user data at
@@ -264,25 +372,32 @@ namespace labrador
 			// own modal loop - and that loop treats a queued WM_QUIT as an
 			// instruction to return at once, before the player has read the
 			// error the box exists to show.
-			SetWindowLongPtr(this->handle_, GWLP_USERDATA, 0);
-			DestroyWindow(this->handle_);
-			this->handle_ = nullptr;
+			SetWindowLongPtr(this->handle, GWLP_USERDATA, 0);
+			DestroyWindow(this->handle);
+			this->handle = nullptr;
 		}
 
 		// After the window, because it refuses while one of the class exists.
 		// The return value is not checked: this is teardown, and T6 says it
 		// stays silent.
-		UnregisterClassW(this->class_name_.c_str(), this->instance_);
+		UnregisterClassW(this->class_name.c_str(), this->instance);
 	}
 
-	HWND Window::handle() const
+	Window::Window(const WindowOptions& options, WindowNotify* notify) :
+		impl_(std::make_unique<Impl>(options, notify))
 	{
-		return this->handle_;
+	}
+
+	Window::~Window() = default;
+
+	void* Window::handle() const
+	{
+		return this->impl_->handle;
 	}
 
 	int Window::exit_code() const
 	{
-		return this->exit_code_;
+		return this->impl_->exit_code;
 	}
 
 	void Window::pump_until_quit()
@@ -297,17 +412,17 @@ namespace labrador
 			}
 			else
 			{
-				this->notify_->tick();
+				this->impl_->notify->tick();
 			}
 		}
-		this->exit_code_ = static_cast<int>(message.wParam);
+		this->impl_->exit_code = static_cast<int>(message.wParam);
 	}
 
 	void Window::close() const
 	{
-		if (this->handle_ != nullptr)
+		if (this->impl_->handle != nullptr)
 		{
-			DestroyWindow(this->handle_);
+			DestroyWindow(this->impl_->handle);
 		}
 	}
 
@@ -318,79 +433,62 @@ namespace labrador
 		// caption. The WM_SIZE this produces reports what the window actually
 		// became, which is not always what was asked for - a size past the
 		// monitor's comes back clamped.
-		const mattmath::Vector2I outer = this->outer_size_for_client(client_size);
-		SetWindowPos(this->handle_, HWND_TOP, 0, 0, outer.x, outer.y,
+		const mattmath::Vector2I outer = this->impl_->outer_size(client_size);
+		SetWindowPos(this->impl_->handle, HWND_TOP, 0, 0, outer.x, outer.y,
 			SWP_NOMOVE | SWP_NOZORDER);
 	}
 
 	void Window::enter_fullscreen() const
 	{
-		SetWindowLongPtr(this->handle_, GWL_STYLE, WS_POPUP);
-		SetWindowLongPtr(this->handle_, GWL_EXSTYLE, WS_EX_TOPMOST);
-		SetWindowPos(this->handle_, HWND_TOP, 0, 0, 0, 0,
+		const HWND handle = this->impl_->handle;
+		SetWindowLongPtr(handle, GWL_STYLE, WS_POPUP);
+		SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_TOPMOST);
+		SetWindowPos(handle, HWND_TOP, 0, 0, 0, 0,
 			SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-		ShowWindow(this->handle_, SW_SHOWMAXIMIZED);
+		ShowWindow(handle, SW_SHOWMAXIMIZED);
 	}
 
 	void Window::leave_fullscreen(const mattmath::Vector2I& client_size) const
 	{
+		const HWND handle = this->impl_->handle;
+
 		// The style is restored BEFORE the frame arithmetic below, so that
 		// arithmetic reads the ordinary window's frame and not WS_POPUP's
 		// nothing.
-		SetWindowLongPtr(this->handle_, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-		SetWindowLongPtr(this->handle_, GWL_EXSTYLE, 0);
+		SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+		SetWindowLongPtr(handle, GWL_EXSTYLE, 0);
 
-		const mattmath::Vector2I outer = this->outer_size_for_client(client_size);
+		const mattmath::Vector2I outer = this->impl_->outer_size(client_size);
 
-		ShowWindow(this->handle_, SW_SHOWNORMAL);
-		SetWindowPos(this->handle_, HWND_TOP, 0, 0, outer.x, outer.y,
+		ShowWindow(handle, SW_SHOWNORMAL);
+		SetWindowPos(handle, HWND_TOP, 0, 0, outer.x, outer.y,
 			SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 	}
 
-	mattmath::Vector2I Window::outer_size_for_client(
-		const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style)
-	{
-		RECT rect = { 0, 0, static_cast<LONG>(client_size.x),
-			static_cast<LONG>(client_size.y) };
-
-		// FALSE: no menu bar. This engine's window never has one, and a menu
-		// would change the answer by its height.
-		if (AdjustWindowRectEx(&rect, style, FALSE, ex_style) == 0)
-		{
-			// Nothing to fall back to but the request. A style this call cannot
-			// account for costs the game its frame's worth of pixels, which is
-			// where it started.
-			return client_size;
-		}
-
-		return mattmath::Vector2I(static_cast<int>(rect.right - rect.left),
-			static_cast<int>(rect.bottom - rect.top));
-	}
-
-	mattmath::Vector2I Window::outer_size_for_client(
+	mattmath::Vector2I Window::Impl::outer_size(
 		const mattmath::Vector2I& client_size) const
 	{
 		return outer_size_for_client(client_size,
-			static_cast<DWORD>(GetWindowLongPtrW(this->handle_, GWL_STYLE)),
-			static_cast<DWORD>(GetWindowLongPtrW(this->handle_, GWL_EXSTYLE)));
+			static_cast<DWORD>(GetWindowLongPtrW(this->handle, GWL_STYLE)),
+			static_cast<DWORD>(GetWindowLongPtrW(this->handle, GWL_EXSTYLE)));
 	}
 
-	void Window::update_suspension()
+	void Window::Impl::update_suspension()
 	{
-		const bool suspended = this->minimized_ || this->power_suspended_;
-		if (suspended == this->in_suspend_) { return; }
-		this->in_suspend_ = suspended;
-		if (suspended) { this->notify_->on_suspending(); }
-		else { this->notify_->on_resuming(); }
+		const bool suspended = this->minimized || this->power_suspended;
+		if (suspended == this->in_suspend) { return; }
+		this->in_suspend = suspended;
+		if (suspended) { this->notify->on_suspending(); }
+		else { this->notify->on_resuming(); }
 	}
 
 	// Every message either forwards through WindowNotify or is Windows
 	// housekeeping. There is nothing game-specific here, which is the reason
 	// it is in the engine and not copied into every project's main.cpp.
-	LRESULT CALLBACK Window::window_proc(HWND window, UINT message,
+	LRESULT CALLBACK Window::Impl::window_proc(HWND window, UINT message,
 		WPARAM w_param, LPARAM l_param)
 	{
-		auto* self = reinterpret_cast<Window*>(
+		auto* self = reinterpret_cast<Impl*>(
 			GetWindowLongPtr(window, GWLP_USERDATA));
 
 		switch (message)
@@ -407,9 +505,9 @@ namespace labrador
 		case WM_PAINT:
 			// While the user drags the window Windows owns the loop, so the only
 			// way to keep drawing is from inside the paint message.
-			if (self && self->in_sizemove_)
+			if (self && self->in_sizemove)
 			{
-				self->notify_->tick();
+				self->notify->tick();
 			}
 			else
 			{
@@ -420,7 +518,7 @@ namespace labrador
 			break;
 
 		case WM_MOVE:
-			// GATED ON !in_sizemove_, THE SAME WAY WM_SIZE BELOW IS, and the
+			// GATED ON !in_sizemove, THE SAME WAY WM_SIZE BELOW IS, and the
 			// two have to be gated together. Dragging the LEFT or TOP edge
 			// moves the origin as well as the size, so Windows sends WM_MOVE
 			// per step of the drag - and this handler asks the renderer for a
@@ -434,21 +532,21 @@ namespace labrador
 			// then has gl answer "nothing changed" to the WM_EXITSIZEMOVE
 			// below - the one message that ends a resize, which the other
 			// backends answer true to.
-			if (self && !self->in_sizemove_)
+			if (self && !self->in_sizemove)
 			{
-				self->notify_->on_window_moved();
+				self->notify->on_window_moved();
 			}
 			break;
 
 		case WM_SIZE:
 			if (self && w_param == SIZE_MINIMIZED)
 			{
-				self->minimized_ = true;
+				self->minimized = true;
 				self->update_suspension();
 			}
-			else if (self && self->minimized_)
+			else if (self && self->minimized)
 			{
-				self->minimized_ = false;
+				self->minimized = false;
 
 				// THE SIZE GOES OUT TOO, and before the resume. This branch
 				// used to end at on_resuming() and swallow the dimensions the
@@ -468,18 +566,18 @@ namespace labrador
 				// news last of all, into a shell that has already finished
 				// becoming what the news describes.
 				//
-				// Gated on in_sizemove_ exactly as the ordinary branch below
+				// Gated on in_sizemove exactly as the ordinary branch below
 				// is, for the reason given at WM_MOVE.
-				if (!self->in_sizemove_)
+				if (!self->in_sizemove)
 				{
-					self->notify_->on_window_size_changed(
+					self->notify->on_window_size_changed(
 						LOWORD(l_param), HIWORD(l_param));
 				}
 				self->update_suspension();
 			}
-			else if (self && !self->in_sizemove_)
+			else if (self && !self->in_sizemove)
 			{
-				self->notify_->on_window_size_changed(
+				self->notify->on_window_size_changed(
 					LOWORD(l_param), HIWORD(l_param));
 			}
 			break;
@@ -487,18 +585,18 @@ namespace labrador
 		case WM_ENTERSIZEMOVE:
 			if (self)
 			{
-				self->in_sizemove_ = true;
+				self->in_sizemove = true;
 			}
 			break;
 
 		case WM_EXITSIZEMOVE:
 			if (self)
 			{
-				self->in_sizemove_ = false;
+				self->in_sizemove = false;
 
 				RECT client;
 				GetClientRect(window, &client);
-				self->notify_->on_window_size_changed(
+				self->notify->on_window_size_changed(
 					client.right - client.left, client.bottom - client.top);
 			}
 			break;
@@ -507,8 +605,8 @@ namespace labrador
 			if (l_param && self)
 			{
 				auto info = reinterpret_cast<MINMAXINFO*>(l_param);
-				info->ptMinTrackSize.x = self->min_width_;
-				info->ptMinTrackSize.y = self->min_height_;
+				info->ptMinTrackSize.x = self->min_width;
+				info->ptMinTrackSize.y = self->min_height;
 			}
 			break;
 
@@ -517,11 +615,11 @@ namespace labrador
 			{
 				if (w_param)
 				{
-					self->notify_->on_activated();
+					self->notify->on_activated();
 				}
 				else
 				{
-					self->notify_->on_deactivated();
+					self->notify->on_deactivated();
 				}
 			}
 			break;
@@ -532,12 +630,12 @@ namespace labrador
 				switch (w_param)
 				{
 				case PBT_APMSUSPEND:
-					self->power_suspended_ = true;
+					self->power_suspended = true;
 					self->update_suspension();
 					return TRUE;
 				case PBT_APMRESUMEAUTOMATIC:
 				case PBT_APMRESUMESUSPEND:
-					self->power_suspended_ = false;
+					self->power_suspended = false;
 					self->update_suspension();
 					return TRUE;
 				default:
@@ -560,7 +658,7 @@ namespace labrador
 		case WM_SYSKEYDOWN:
 			if (self)
 			{
-				self->notify_->on_key_down(key_from_message(w_param, l_param));
+				self->notify->on_key_down(key_from_message(w_param, l_param));
 			}
 			break;
 
@@ -568,7 +666,7 @@ namespace labrador
 		case WM_SYSKEYUP:
 			if (self)
 			{
-				self->notify_->on_key_up(key_from_message(w_param, l_param));
+				self->notify->on_key_up(key_from_message(w_param, l_param));
 			}
 			break;
 
@@ -588,18 +686,18 @@ namespace labrador
 				// low half is the very next message.
 				if (unit >= 0xD800 && unit <= 0xDBFF)
 				{
-					self->pending_high_surrogate_ = unit;
+					self->pending_high_surrogate = unit;
 					break;
 				}
 
 				char32_t codepoint = static_cast<char32_t>(unit);
 
 				if (unit >= 0xDC00 && unit <= 0xDFFF &&
-					self->pending_high_surrogate_ != 0)
+					self->pending_high_surrogate != 0)
 				{
 					codepoint = 0x10000u +
 						((static_cast<char32_t>(
-							self->pending_high_surrogate_) - 0xD800u) << 10) +
+							self->pending_high_surrogate) - 0xD800u) << 10) +
 						(static_cast<char32_t>(unit) - 0xDC00u);
 				}
 
@@ -608,16 +706,16 @@ namespace labrador
 				// unrelated character would corrupt a good one as well as the
 				// lost one. An unpaired half passed on as-is becomes U+FFFD
 				// inside Keyboard::on_text, which is where that rule lives.
-				self->pending_high_surrogate_ = 0;
+				self->pending_high_surrogate = 0;
 
-				self->notify_->on_text(codepoint);
+				self->notify->on_text(codepoint);
 			}
 			break;
 
 		case WM_MOUSEMOVE:
 			if (self)
 			{
-				self->notify_->on_mouse_move(low_word_signed(l_param),
+				self->notify->on_mouse_move(low_word_signed(l_param),
 					high_word_signed(l_param));
 			}
 			break;
@@ -642,15 +740,15 @@ namespace labrador
 
 				if (button != MouseButton::none)
 				{
-					// Capture on the way out of zero. See held_buttons_ in the
-					// header for why this counts rather than flags.
-					if (self->held_buttons_ == 0)
+					// Capture on the way out of zero. See held_buttons above
+					// for why this counts rather than flags.
+					if (self->held_buttons == 0)
 					{
 						SetCapture(window);
 					}
-					++self->held_buttons_;
+					++self->held_buttons;
 
-					self->notify_->on_mouse_button_down(button);
+					self->notify->on_mouse_button_down(button);
 				}
 			}
 			// The X button messages are documented as returning TRUE; the
@@ -675,16 +773,16 @@ namespace labrador
 
 				if (button != MouseButton::none)
 				{
-					if (self->held_buttons_ > 0)
+					if (self->held_buttons > 0)
 					{
-						--self->held_buttons_;
-						if (self->held_buttons_ == 0)
+						--self->held_buttons;
+						if (self->held_buttons == 0)
 						{
 							ReleaseCapture();
 						}
 					}
 
-					self->notify_->on_mouse_button_up(button);
+					self->notify->on_mouse_button_up(button);
 				}
 			}
 			if (message == WM_XBUTTONUP)
@@ -696,17 +794,17 @@ namespace labrador
 		case WM_CAPTURECHANGED:
 			// Normal last-button release has already reduced the count to zero.
 			// Transfer/cancellation can happen while the application keeps focus.
-			if (self && self->held_buttons_ > 0)
+			if (self && self->held_buttons > 0)
 			{
-				self->held_buttons_ = 0;
-				self->notify_->on_mouse_capture_lost();
+				self->held_buttons = 0;
+				self->notify->on_mouse_capture_lost();
 			}
 			break;
 
 		case WM_MOUSEWHEEL:
 			if (self)
 			{
-				self->notify_->on_mouse_wheel(
+				self->notify->on_mouse_wheel(
 					static_cast<float>(
 						static_cast<short>(HIWORD(w_param))) /
 					static_cast<float>(WHEEL_DELTA));
@@ -716,7 +814,7 @@ namespace labrador
 		case WM_MOUSEHWHEEL:
 			if (self)
 			{
-				self->notify_->on_mouse_wheel_horizontal(
+				self->notify->on_mouse_wheel_horizontal(
 					static_cast<float>(
 						static_cast<short>(HIWORD(w_param))) /
 					static_cast<float>(WHEEL_DELTA));
@@ -741,7 +839,7 @@ namespace labrador
 		case WM_NCDESTROY:
 			if (self)
 			{
-				self->handle_ = nullptr;
+				self->handle = nullptr;
 				SetWindowLongPtr(window, GWLP_USERDATA, 0);
 			}
 			break;

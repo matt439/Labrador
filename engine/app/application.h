@@ -17,7 +17,6 @@
 #include "engine/render/screen_resolution.h"
 #include "engine/render/viewport_manager.h"
 #include "engine/math/vector2i.h"
-#include <Windows.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -41,12 +40,19 @@ namespace labrador
 	struct ApplicationOptions
 	{
 		// The window class name has to be unique per process, so a game that ever
-		// opens two windows needs two of these.
+		// opens two windows needs two of these. In a browser the page owns its
+		// title and there is no class, so neither is read there.
 		std::wstring window_class_name = L"LabradorWindowClass";
 		std::wstring window_title = L"Labrador";
 
 		ScreenResolution resolution = ScreenResolution::s_1280_720;
 		bool fullscreen = false;
+
+		// Whether the window is shown. A smoke test or a capture tool says
+		// false and gets the whole shell - window, device, services - with
+		// nothing on screen and no focus taken. A browser shows whatever the
+		// page shows, so it is not read there.
+		bool visible = true;
 
 		// The fixed step the simulation advances at. Rendering is not capped by it.
 		// Must convert to at least one StepTimer tick (at most 10,000,000 FPS).
@@ -105,7 +111,7 @@ namespace labrador
 	// each pair:
 	//
 	//     Application app(options);
-	//     app.initialize(instance, show_command);   // window, device, services
+	//     app.initialize();                          // window, device, services
 	//     app.resource_loader()->register_kind(...); // the game's own asset kinds
 	//     app.load_manifest("./manifest.json");
 	//     return app.run(std::make_unique<MyFirstState>(...));
@@ -125,7 +131,7 @@ namespace labrador
 
 		// Opens the window, creates the device, and builds the services. Throws
 		// std::runtime_error naming the step that failed (T6).
-		void initialize(HINSTANCE instance, int show_command);
+		void initialize();
 
 		// Loads everything the manifest names. Register any game-specific kinds
 		// before calling this, or the walk throws naming the kind it does not know.
@@ -140,18 +146,30 @@ namespace labrador
 
 		// Takes the first state and runs until the window closes. Returns the
 		// process exit code.
+		//
+		// IN A BROWSER IT DOES NOT RETURN, AND THE APPLICATION MUST NOT BE A
+		// LOCAL IN main. The frame loop is the browser's, so this hands it the
+		// first frame and gives control back to the page by unwinding the
+		// stack, main's included and destructors and all, before that frame
+		// runs (Window::pump_until_quit). An Application declared in main is
+		// destroyed there, and its window says so on the way out; one that
+		// outlives main - a static - is the shape a web entry point has.
+		// Nothing after this call in main ever runs, and quit() ends the loop
+		// rather than returning here.
 		int run(std::unique_ptr<State> first_state);
 
 		// Closes the window, which ends run(). This is the whole of the quit path:
-		// a game asking to exit does not need to know it is on Win32.
+		// a game asking to exit does not need to know which platform it is on.
+		// In a browser the page is told, and decides what comes next.
 		void quit() const;
 
 		// THE LAYOUT SIZE FOLLOWS THE WINDOW. However the window comes to change
 		// size - either call below, or a user dragging an edge, which no game
 		// asked for at all - ResolutionManager is re-pointed at the new CLIENT
 		// size before the renderer resizes its back buffer. All three arrive as
-		// WM_SIZE, so on_window_size_changed is the single place that holds the
-		// invariant, and it cannot be got at from a game.
+		// the window's size report - WM_SIZE on Windows - so
+		// on_window_size_changed is the single place that holds the invariant,
+		// and it cannot be got at from a game.
 		//
 		// WITHOUT IT, NEITHER HOLDS. A set_fullscreen that restyles to WS_POPUP
 		// and shows maximized while the resolution manager still reports the last
@@ -230,7 +248,9 @@ namespace labrador
 		Keyboard* keyboard() const;
 		Mouse* mouse() const;
 
-		HWND window() const;
+		// The native window, as Renderer::create_device takes it
+		// (Window::handle): an HWND on Windows, the canvas in a browser.
+		void* window() const;
 
 	private:
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE.
@@ -280,7 +300,9 @@ namespace labrador
 		std::unique_ptr<Keyboard> keyboard_ = nullptr;
 		std::unique_ptr<Mouse> mouse_ = nullptr;
 
-		bool com_initialized_ = false;
+		// Whether initialize() opened a COM apartment the destructor has to
+		// close. Only a Windows build has one to open.
+		[[maybe_unused]] bool com_initialized_ = false;
 		bool content_loaded_ = false;
 
 		void update();
@@ -309,7 +331,7 @@ namespace labrador
 
 		// Straight into the devices, every one of them. Nothing is interpreted
 		// on the way past: what a key means is the game's, and what a key IS
-		// was decided in window.cpp.
+		// was decided by the window.
 		void on_key_down(Key key) const override;
 		void on_key_up(Key key) const override;
 		void on_text(char32_t codepoint) const override;
@@ -327,7 +349,7 @@ namespace labrador
 		// alternative is the same pair of lines written four times.
 		void set_input_focus(bool focused) const;
 
-		void create_window(HINSTANCE instance, int show_command);
+		void create_window();
 		void create_services();
 
 		// DeviceNotify

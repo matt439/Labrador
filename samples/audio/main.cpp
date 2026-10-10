@@ -2,6 +2,7 @@
 #include "samples/audio/audio_state.h"
 #include "samples/audio/smoke_test.h"
 
+#include <Windows.h>
 #include <objbase.h>
 #include <shellapi.h>
 
@@ -12,8 +13,8 @@
 #include <stdexcept>
 #include <utility>
 
-int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE,
-	_In_ LPWSTR command_line, _In_ int show_command)
+int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
+	_In_ LPWSTR command_line, _In_ int)
 {
 	const bool interactive = command_line[0] == L'\0';
 	bool com_initialized = false;
@@ -50,7 +51,7 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE,
 		options.view_capacity = 1;
 		options.max_threads = 1;
 		labrador::Application app(std::move(options));
-		app.initialize(instance, show_command);
+		app.initialize();
 		app.load_manifest("./manifest.json");
 		return app.run(std::make_unique<audio_sample::AudioState>(&app));
 	}

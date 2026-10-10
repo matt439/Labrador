@@ -71,17 +71,15 @@ if(PROJECT_IS_TOP_LEVEL)
     add_subdirectory(samples/linesweeper)
     add_subdirectory(bench)
 
-    # Windows only, each until it has a reason not to be. Four samples whose
-    # main is wWinMain and whose shell is the Win32 window, a capture tool
-    # that reads back a device, and AppTests, which is the shell's own tests
-    # (docs/port/web.md, section 5).
+    # Windows only, each until it has a reason not to be: four samples whose
+    # only entry point is wWinMain, and a capture tool that reads back a
+    # device (docs/port/web.md, section 6 says which sample goes next).
     if(WIN32)
         add_subdirectory(samples/minimal)
         add_subdirectory(samples/collision)
         add_subdirectory(samples/audio)
         add_subdirectory(samples/local_multiplayer)
         add_subdirectory(tools/linesweeper_capture)
-        add_subdirectory(tests/app)
     endif()
 
     # A browser build's tests run under Node, which ctest reaches through the
@@ -92,6 +90,7 @@ if(PROJECT_IS_TOP_LEVEL)
         add_link_options(-sNODERAWFS=1 -sENVIRONMENT=node)
     endif()
 
+    add_subdirectory(tests/app)
     add_subdirectory(tests/assets)
     add_subdirectory(tests/audio)
     add_subdirectory(tests/collision)

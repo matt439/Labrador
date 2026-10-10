@@ -200,17 +200,17 @@ namespace labrador
 		// THE DEFAULT FRAMEBUFFER OF A WGL CONTEXT IS ITS WINDOW'S CLIENT AREA,
 		// so the window is the only authority on this and the backend must not
 		// keep a second copy of it. A cached size is wrong exactly when someone
-		// is looking: engine/app/window.cpp renders a full frame from WM_PAINT
-		// for every step of a drag-resize and discards every WM_SIZE until the
-		// drag ends, so a stale copy slides the whole picture down the window
-		// under a black band for the duration. No other backend can have that
-		// bug, and for two different reasons. The two that draw into a swap
-		// chain they created at a size they were told need no height at all to
-		// place a pane - that is both Direct3D ones, and it is why this is the
-		// file the number has to come out of. Vulkan needs a height and cannot
-		// go stale on it
-		// anyway: its flip is pane-local, so the origin it measures from is the
-		// pane's own bottom edge rather than the buffer's (vulkan/backend.h).
+		// is looking: engine/app/win32/window.cpp renders a full frame from
+		// WM_PAINT for every step of a drag-resize and discards every WM_SIZE
+		// until the drag ends, so a stale copy slides the whole picture down
+		// the window under a black band for the duration. No other backend can
+		// have that bug, and for two different reasons. The two that draw into
+		// a swap chain they created at a size they were told need no height at
+		// all to place a pane - that is both Direct3D ones, and it is why this
+		// is the file the number has to come out of. Vulkan needs a height and
+		// cannot go stale on it anyway: its flip is pane-local, so the origin
+		// it measures from is the pane's own bottom edge rather than the
+		// buffer's (vulkan/backend.h).
 		mattmath::Vector2I drawable_size() const;
 
 		// Makes a 3.3 core context on `window` and loads the entry points.

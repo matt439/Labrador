@@ -2,15 +2,17 @@
 #include "engine/app/content_root.h"
 #include "engine/assets/asset_manifest_loader.h"
 #include "engine/math/vector2f.h"
+
+#if defined(_WIN32)
 #include <DirectXMath.h>
-#include <memory>
 #include <objbase.h>
+#endif
+
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <thread>
 #include <tuple>
-
-using namespace DirectX;
 
 namespace labrador
 {
@@ -82,15 +84,22 @@ namespace labrador
 		{
 			this->audio_device_->suspend();
 		}
+#if defined(_WIN32)
 		if (this->com_initialized_)
 		{
 			CoUninitialize();
 		}
+#endif
 	}
 
-	void Application::initialize(HINSTANCE instance, int show_command)
+	void Application::initialize()
 	{
-		if (!XMVerifyCPUSupport())
+		// Two duties of a Windows shell that a browser has no counterpart
+		// for: DirectXMath's check that this CPU has the instructions it was
+		// compiled against, and the COM apartment the Windows audio and image
+		// APIs are called from.
+#if defined(_WIN32)
+		if (!DirectX::XMVerifyCPUSupport())
 		{
 			throw std::runtime_error(
 				"This CPU does not support the instruction set the renderer needs.");
@@ -102,11 +111,12 @@ namespace labrador
 			throw std::runtime_error("CoInitializeEx failed.");
 		}
 		this->com_initialized_ = true;
+#endif
 
 		this->resolution_manager_ = std::make_unique<ResolutionManager>();
 		this->resolution_manager_->set_resolution(this->options_.resolution);
 
-		this->create_window(instance, show_command);
+		this->create_window();
 
 		// Which audio API this opens, and whether it opens one at all, is
 		// engine/audio/<backend>/'s business and is chosen in CMake, debug flags
@@ -150,7 +160,7 @@ namespace labrador
 			1.0 / static_cast<double>(this->options_.target_fps));
 	}
 
-	void Application::create_window(HINSTANCE instance, int show_command)
+	void Application::create_window()
 	{
 		WindowOptions window_options;
 		window_options.window_class_name = this->options_.window_class_name;
@@ -158,15 +168,15 @@ namespace labrador
 		window_options.client_size =
 			this->resolution_manager_->resolution_ivec();
 		window_options.fullscreen = this->options_.fullscreen;
+		window_options.visible = this->options_.visible;
 		window_options.min_window_width = this->options_.min_window_width;
 		window_options.min_window_height = this->options_.min_window_height;
 
-		// `this` is handed over in the constructor, not after it: the WM_SIZE
-		// ShowWindow fires arrives before this call returns, and it is what
+		// `this` is handed over in the constructor, not after it: the window's
+		// first size report arrives before this call returns, and it is what
 		// corrects resolution_manager_ to the client size the window really
 		// got before create_device reads it back.
-		this->window_ = std::make_unique<Window>(
-			instance, show_command, window_options, this);
+		this->window_ = std::make_unique<Window>(window_options, this);
 	}
 
 	void Application::create_services()
@@ -576,7 +586,7 @@ namespace labrador
 	{
 		return this->gamepads_.get();
 	}
-	HWND Application::window() const
+	void* Application::window() const
 	{
 		return this->window_->handle();
 	}

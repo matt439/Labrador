@@ -48,9 +48,17 @@ which is the version CI pins; `emsdk_env.bat` sets `EMSDK`, and vcvars is still
 what puts cmake and ninja on the path. They are the first configurations built
 by a second compiler, so `cmake/settings.cmake` has a clang branch, argued
 rather than translated. [docs/port/web.md](docs/port/web.md) is the plan, and
-M1 of it is what exists: the engine and every headless test, with no shell yet
-- `app/application.cpp` and `app/window.cpp` are Win32 code and are not
-compiled there until M2, so no sample builds for a browser yet either.
+M1 and M2 of it are what exists: the engine and every headless test, and the
+shell's browser half, so LineSweeper runs in a page -
+`out/build/wasm-*/samples/linesweeper/LineSweeperSample.html`, served over
+HTTP, from the development page
+[samples/linesweeper/web/shell.html](samples/linesweeper/web/shell.html). It
+draws nothing yet, because the render backend there is null until M3, and the
+other four samples are still Windows-only. **In a browser `Application::run`
+does not return and the stack below it is unwound, destructors included,
+before the first frame**, so a web entry point keeps its `Application` in a
+static: `samples/linesweeper/main_web.cpp` is the shape, and `application.h`
+says why.
 
 **There are five render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
 configure time — so asking for one that was not built is a missing symbol at
@@ -74,7 +82,7 @@ default under Emscripten; it compiles, and no pad has driven it yet.
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
 | `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
-| `wasm-debug`, `wasm-release` | `render/null/`, `audio/null/`, `input/web/` — clang and libc++, run under Node. `gl/` replaces null when it has a WebGL2 context (web.md M3) | 13 entries: the null set without `AppTests`, `CollisionSampleTests`, `AudioSampleTests` |
+| `wasm-debug`, `wasm-release` | `render/null/`, `audio/null/`, `input/web/` — clang and libc++, run under Node. `gl/` replaces null when it has a WebGL2 context (web.md M3) | 14 entries: the null set without `CollisionSampleTests` and `AudioSampleTests`. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -245,8 +253,9 @@ in the commit that creates it.
   the backend escaped last time — so naming `engine/render/gl/gl_functions.h`
   from `engine/app/` fails the build exactly as naming `backend.h` does. It
   captures the module as well as the backend, so `engine/audio/null/` and
-  `engine/input/xinput/` are covered by the same six lines and a fourth module
-  with backend folders would be too. **The module was a hard-coded
+  `engine/input/xinput/` are covered by the same six lines, and so were
+  `engine/app/win32/` and `engine/app/web/`, the fourth module to grow
+  platform folders, without an edit. **The module was a hard-coded
   `(render|audio)` until 2026-08-28**, which this line described as a capture
   for nine days while `engine/input/xinput/` — the third platform seam
   ARCHITECTURE names — sat outside the wall. Audio is the module where this had
@@ -294,7 +303,9 @@ in the commit that creates it.
   existed the early-out beside the fan-out was the only branch that had ever
   been taken.
 - **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`,
-  `input/xinput/`.
+  `input/xinput/`, `app/win32/`. The window is the one chosen by the platform
+  being built for rather than by a cache variable, and the one whose header,
+  `app/window.h`, stays neutral above both of its folders.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
   Every backend has the same three translation units — `renderer.cpp`,

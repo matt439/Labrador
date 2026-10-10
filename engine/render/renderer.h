@@ -266,16 +266,16 @@ namespace labrador
 		//
 		// IT IS NOT A RULE THE CALLER COULD KEEP EVEN IF THIS FILE STATED ONE.
 		// A resize reaches the shell as a window message, and a window message
-		// can be SENT - straight to the window procedure, on the calling thread,
-		// with no queue and no pump in between. engine/app/window.cpp's
-		// resize_client is a SetWindowPos, which does exactly that, and
-		// Application::render runs the state's whole draw walk between
-		// begin_frame and submit. So a client that changes resolution from inside
-		// its own drawing lands here with a frame open, in one call stack, and no
-		// amount of care at the call site would have told it so. "Do not call
-		// this between begin_frame and submit" would be a prohibition on
-		// something the caller does not control, which is the kind of rule T6
-		// says to make impossible rather than to document.
+		// can be SENT - straight to the window procedure, on the calling
+		// thread, with no queue and no pump in between.
+		// engine/app/win32/window.cpp's resize_client is a SetWindowPos, which
+		// does exactly that, and Application::render runs the state's whole
+		// draw walk between begin_frame and submit. So a client that changes
+		// resolution from inside its own drawing lands here with a frame open,
+		// in one call stack, and no amount of care at the call site would have
+		// told it so. "Do not call this between begin_frame and submit" would
+		// be a prohibition on something the caller does not control, which is
+		// the kind of rule T6 says to make impossible rather than to document.
 		//
 		// WHAT RESTARTED MEANS, EXACTLY, because a caller may be holding a
 		// DrawList when this lands and that list must not become a trap:
@@ -367,14 +367,14 @@ namespace labrador
 		// THE SIZE OF THE BUFFER, NOT OF THE LAST THING ANYONE SAID. The two
 		// agree whenever the shell is keeping up, and the one state where they
 		// need not is a drag-resize, during which the shell discards every
-		// WM_SIZE and still asks for frames (engine/app/window.cpp). What a
-		// backend answers then is whatever it is really drawing into: a swap
-		// chain does not follow its window, so both Direct3D backends answer the
-		// size they were told and let Present stretch; a WGL context's default
-		// framebuffer is the window's client area, so the GL backend answers the
-		// window. read_back_buffer below is sized from this and a viewport is
-		// placed inside it, so a backend that answered from a cache would have
-		// both of those disagree with the pixels it just drew.
+		// WM_SIZE and still asks for frames (engine/app/win32/window.cpp). What
+		// a backend answers then is whatever it is really drawing into: a swap
+		// chain does not follow its window, so both Direct3D backends answer
+		// the size they were told and let Present stretch; a WGL context's
+		// default framebuffer is the window's client area, so the GL backend
+		// answers the window. read_back_buffer below is sized from this and a
+		// viewport is placed inside it, so a backend that answered from a cache
+		// would have both of those disagree with the pixels it just drew.
 		mattmath::Vector2F back_buffer_size() const;
 
 		// Copies the back buffer out: 8-bit RGBA, row-major, top row first,

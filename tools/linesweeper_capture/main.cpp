@@ -291,8 +291,9 @@ int wmain(int argc, wchar_t* argv[])
 		// The shell's window, device and services, and none of its loop:
 		// run() is never called, so nothing steps but the script. The window
 		// is never shown, because nothing is presented to anybody.
+		options.visible = false;
 		Application app(std::move(options));
-		app.initialize(GetModuleHandleW(nullptr), SW_HIDE);
+		app.initialize();
 		app.load_manifest("./manifest.json");
 
 		const Vector2F size = app.renderer()->back_buffer_size();

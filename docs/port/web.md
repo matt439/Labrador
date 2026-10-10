@@ -364,7 +364,8 @@ selector is compiled in. It creates a WebGL2 context with
 (the engine's blend is premultiplied and the page must not show through),
 `antialias = false` and `preserveDrawingBuffer = false`. It hands the context
 to the renderer as the same `void*` that `create_device` already takes for an
-`HWND`. The drawing buffer follows the canvas's CSS box times
+`HWND`. *(M2 hands over the canvas instead, and leaves the context to `gl/`:
+D7.)* The drawing buffer follows the canvas's CSS box times
 `devicePixelRatio`, observed with a `ResizeObserver`. Each change goes through
 `on_window_size_changed`, the door every Win32 resize already uses
 ([`application.cpp:395-419`](../../engine/app/application.cpp#L395-L419)).
@@ -377,7 +378,15 @@ gesture.
 `requestAnimationFrame`. The `true` (*simulate infinite loop*) means `main`
 never returns, and its stack is not unwound. That is why `Application`, a
 local in `main`, stays alive. *Emscripten's documented behaviour, unverified
-here.* The consequences:
+here.*
+
+> **Measured in M2, and false under `-fwasm-exceptions`, which T6 needs.** The
+> stack is unwound, destructors included, before the first frame, so an
+> `Application` that is a local in `main` is destroyed and then ticked. A web
+> `main` keeps it in a static; §9 has the measurement and what the shell does
+> about it. The rest of this list stands.
+
+The consequences:
 
 - **`run()` never returns on the web, and no destructor runs.** That matters to
   a state that saves on exit. LineSweeper has none.
@@ -644,6 +653,17 @@ needs a yes before the milestone that depends on it.
 | **P1** | How a touchscreen plays a game | **An engine touch device**, fed from the window like the keyboard and mouse, on **every** touchscreen rather than only phones: Win32 touch through `WM_POINTER` as well as the browser. The owner had wanted touch support regardless of the web port | `input/` gains a device; `WindowNotify` gains touch calls; `ARCHITECTURE.md`'s fed-devices paragraph |
 | **P2** | Whether an action-mapping layer comes with touch | **Not yet.** Agreed by the owner. LineSweeper already maps keys onto its own buttons in a sample-level table ([`play_state.cpp:46-54`](../../samples/linesweeper/states/play_state.cpp#L46-L54)), and on-screen controls can feed the same buttons. The engine gains a device, and the binding layer stays in `CLAUDE.md`'s known-absent list until a second client needs one (T1). [android.md](android.md) §3.3 expected touch to force that layer; this plan argues that it does not | `CLAUDE.md` known-absent list, only if the answer is yes |
 
+### Made in M2, for the owner to confirm
+
+Both change a public header, so by the rule below they should have come back
+here before they were built. Each was the smallest reading of a decided row
+that the code forced, and each is one commit to reverse.
+
+| | Decision | Answer as built | What it amends |
+|---|---|---|---|
+| **D6** | How a caller asks for a hidden window once `initialize()` takes no arguments (D2). Three did, by passing `SW_HIDE`: the collision and local-multiplayer smoke tests and `LineSweeperCapture` | **`ApplicationOptions::visible`**, copied into `WindowOptions::visible`, default true. Hidden is still a whole shell with a device and messages; a browser does not read it | `application.h`, `window.h`, three callers |
+| **D7** | Who makes the WebGL2 context: the window (§4) or `gl/`'s web context TU (D1) | **`gl/`, in M3.** `Window::handle()` is the canvas's html5 target, `"!canvas"`, as `create_device` takes an `HWND`, so the backend that draws makes its own context as WGL's TU does, and a build drawing with null makes none | `window.h`'s `handle()`; §4 |
+
 ### Open
 
 Nothing. Anything else this plan meets that would change a design document, a public header or a rule in `CLAUDE.md` comes back here as a new row before it is built.
@@ -654,8 +674,8 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 
 ### Where it stands, 2026-10-10
 
-**S1, S2 and M1 are done; S3 is not started.** What they measured, against the
-guesses this plan made:
+**S1, S2, M1 and M2 are done; S3 is not started.** What they measured, against
+the guesses this plan made:
 
 - **S1 was hours, not a milestone.** Emscripten 6.0.12, every portable `.cpp`
   in `engine/` and LineSweeper under `-Wall -Wextra -Wpedantic`: 61 distinct
@@ -698,6 +718,58 @@ because `application.h` includes `<Windows.h>` until D2 lands in M2. Both
 close in the milestone that owns them. `input/web/gamepad_reader.cpp` exists a
 milestone early, because the input-backend variable needed something to
 select. It compiles, and M4 is still the pad that proves it.
+
+**M2 met its row: LineSweeper reaches its frames in a browser and takes keys,
+and the Windows samples behave as they did.** D2 and D3 are as decided:
+`initialize()` takes nothing, `window()` is a `void*`, `app/window.h` is
+neutral and `app/win32/` and `app/web/` each define its `Impl`. What it found:
+
+- **§4's frame loop premise was false.** Simulating an infinite loop unwinds
+  the stack by throwing, and with `-fwasm-exceptions` the unwinding runs
+  destructors. A probe with a local in `main` printed its destructor before
+  the first tick and then ticked three times on the destroyed object; the
+  same probe under Emscripten's JavaScript exceptions did not, which is
+  presumably where the documented behaviour comes from. So a web `main`
+  keeps its `Application` in a static (`samples/linesweeper/main_web.cpp`),
+  `Application::run` says so, and the web window reports the mistake rather
+  than letting the loop call into freed memory: built with the local and
+  loaded in Chrome, the page's `onError` receives the reason.
+- **An exception out of a frame has no caller to reach**, because main's
+  catch is no longer on the stack. The web window catches at its edge - the
+  frame and every html5 callback - stops the loop and reports to stderr and
+  `Module.onError`. That brought `onQuit` and `onError` forward from M5, which
+  keeps the module packaging, the component and the deploy.
+- **D2 met three callers that hid their window**, and D6 is how they still
+  do. D7 is the other choice it made.
+- **The drawing buffer is measured, not observed**: CSS box times
+  `devicePixelRatio`, once a frame before the tick, rather than a
+  `ResizeObserver`. It is one code path, and it sees a zoom and a move to a
+  denser display, which no layout event announces. The page must size the
+  canvas in CSS, since a canvas at its default layout is as big as its buffer.
+- **The keyboard keeps every unmodified key but Tab and the function keys**,
+  so the arrows and Space do not scroll the page and Firefox's find bar does
+  not open, and gives every chord back to the browser. Text is keydown's
+  `key` when it is one code point and no command modifier is down; AltGr is
+  text. The mouse is pressed on the canvas and followed on the page's window,
+  which is `SetCapture`'s analogue. The wheel is the game's only while the
+  canvas has focus, so a visitor scrolling past the demo is not trapped.
+- **`AppTests` is in the browser build**: 14 ctest entries under Node, with
+  the DOM translation pinned in place of the Win32 window cases. Two of
+  `content_root_tests.cpp`'s cases do not ask Node to resolve a temporary
+  path, because under `NODERAWFS` a Windows host's temporary directory is a
+  drive path and no POSIX build counts it absolute.
+- **Checked**: `x64-debug`, `-null`, `-gl`, `-d3d12`, `-vulkan`,
+  `x64-release`, `wasm-debug` and `wasm-release`, every ctest entry green;
+  headless Chrome loading the build's page, counting animation frames,
+  following a resize at ratio 1 and 2, and taking Escape, Down, Down, Enter
+  through the pause menu to the page's `onQuit`, after which the loop stops;
+  and the Win32 LineSweeper and minimal samples on screen at 1280x720 client
+  pixels, the pause menu opening on Escape and both exiting 0.
+
+What M2 could not show is a frame: the browser build draws with null until
+M3. The first size number is in, without a renderer: at `wasm-release` the
+module is 343 KB and its loader 85 KB, 109 KB and 20 KB under Brotli, below
+§7.1's estimate before `gl/` adds to it.
 
 ### Spikes — *days*, before any milestone is committed to
 

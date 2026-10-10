@@ -171,10 +171,12 @@ being load-bearing.
 │   │                       binding table would be a speculative framework
 │   │                       (T1). A Direction is not one: it names what a
 │   │                       device did, not what the game calls it
-│   │   └── xinput/         the XInput backend. There is no win32/ beside
-│   │                       it: the keyboard and mouse have no backend to
-│   │                       select, because their platform edge is the
-│   │                       window and it already exists
+│   │   ├── xinput/         the XInput backend. There is no win32/ beside
+│   │   │                   it: the keyboard and mouse have no backend to
+│   │   │                   select, because their platform edge is the
+│   │   │                   window and it already exists
+│   │   └── web/            the browser Gamepad API, which is polled exactly
+│   │                       as XInput is
 │   ├── audio/              playback, mixing. AudioDevice is the seam and it
 │   │   │                   is the whole of what an audio API does - open a
 │   │   │                   container, find a name in it, build a voice, and
@@ -190,7 +192,12 @@ being load-bearing.
 │   ├── ui/                 widgets, focus, controller navigation
 │   ├── assets/             JSON loading, resource loaders, manifest, factories
 │   └── app/                the application shell: window, device, services,
-│                           main loop, state stack
+│       │                   main loop, state stack. window.h is neutral and
+│       │                   stays here, with the platform behind it below
+│       ├── win32/          the Win32 window: the pump, and every message
+│       │                   translated into WindowNotify
+│       └── web/            the page's canvas: its DOM events translated the
+│                           same way, and a frame loop the browser owns
 ├── samples/               a starter, a whole game and focused guide examples
 │   ├── minimal/            the new-project template: the smallest thing
 │                           that runs, and the one you copy. The
@@ -258,34 +265,51 @@ Every target directory owns its own `CMakeLists.txt`; the root file only
 lists them. Every file picks its home the day it is created.
 Platform-specific code
 lives only in the backend subfolders (`render/d3d11/`, `audio/xaudio2/`,
-`input/xinput/`), behind engine-owned interfaces, so a second platform is
-an addition, not a rewrite. There is a third case and it is named here rather than left to
-be discovered: the shell's window, `app/window.{h,cpp}`. `app` is already
-the one module allowed to depend on everything, PHILOSOPHY lists
+`input/xinput/`, `app/win32/`), behind engine-owned interfaces, so a second
+platform is an addition, not a rewrite. The last of those is the shell's
+window, and it is named here rather than left to be discovered. `app` is
+already the one module allowed to depend on everything, PHILOSOPHY lists
 windowing alongside the rendering backend as platform code at the edge,
 and the seam is the same shape as the others — `Window` translates
 messages and `WindowNotify` is what the owner implements, so nothing
-above it names a Win32 type. It is not in `app/win32/` because there is
-no second platform to select between and inventing the folder now is the
-speculative framework T1 rules out; when one arrives the pair moves down
-a folder without renaming the class or touching a call site.
+above it names a platform type. `app/window.h` is neutral, `Window` holds
+an `Impl` that `app/win32/` and `app/web/` each define, and the platform
+being built for picks one, which is the one way this seam differs from
+the three backend axes: there is no cache variable, because neither half
+can be built for the other's platform.
+
+**This paragraph used to say that when a second platform arrived the pair
+would move down a folder without renaming the class or touching a call
+site, and that move is the one the build refuses.** The include check
+fails any file outside a platform folder that includes a header inside
+one, and `app/application.h` includes `window.h`, so a `window.h` in
+`app/win32/` would have made the shell's public header a platform header.
+The class name survived by the shape `GamepadReader` and `ThreadPool`
+already had — a neutral header and an `Impl` per platform, for one
+pointer hop on a path that runs once per message. The call sites did not
+quite: the constructor lost the two Win32 arguments it took, and
+`Application::initialize` lost the same two, which was a source break
+for every client and was made once, deliberately (docs/port/web.md, D2).
+The check refused the move before anybody had argued for it, which is
+what a check is for.
 
 That third case now carries two of the three input devices, and the
 asymmetry is worth stating because it looks like an inconsistency and is
 not. A gamepad is **read**: `input/xinput/` asks XInput for a complete
 snapshot whenever `Gamepads::poll` wants one, and owes the window
 nothing. A keyboard and a mouse are **fed**: they reach a Win32 program
-only as messages in a window's queue, and one of their channels — typed
-text — cannot be rebuilt from device state at any price, because the
-shift resolution, the key repeat, the dead keys and the IME have all
-happened inside the OS before the character exists. The wheel is the same
+only as messages in a window's queue, and a page only as events on its
+canvas, and one of their channels — typed text — cannot be rebuilt from
+device state at any price, because the shift resolution, the key repeat,
+the dead keys and the IME have all happened inside the OS or the browser
+before the character exists. The wheel is the same
 shape for a different reason: it has no position to sample, only deltas
 that are gone if nobody was listening.
 
 So the flow for those two is `app → input`, never the reverse. `Window`
 translates the messages into `Key` and `MouseButton` — the engine's own
-names, so nothing above `window.cpp` meets a `VK_` constant or a UTF-16
-code unit — `WindowNotify` carries them out, `Application` forwards them
+names, so nothing above the window meets a `VK_` constant, a DOM key code
+or a UTF-16 code unit — `WindowNotify` carries them out, `Application` forwards them
 into the devices, and the devices latch them into frames. The module
 table is untouched by all of it: `input` still depends on `core` and
 `math` alone, and nothing in it knows a window exists.

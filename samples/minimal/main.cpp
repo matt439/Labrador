@@ -10,13 +10,14 @@
 #include "engine/app/application.h"
 #include "samples/minimal/states/hello_state.h"
 
+#include <Windows.h>
+
 #include <exception>
 #include <cstdio>
 #include <memory>
 using namespace labrador;
 
-int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
-	_In_ int show_command)
+int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 {
 	try
 	{
@@ -36,7 +37,7 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ LPWSTR,
 		options.view_capacity = 1;
 
 		Application app(std::move(options));
-		app.initialize(instance, show_command);
+		app.initialize();
 
 		// Everything this sample draws, named in content/manifest.json. A game
 		// with its own kinds of asset - levels, dialogue, whatever it has -

@@ -8,6 +8,7 @@ add_subdirectory(math)
 # as a submodule (CLAUDE.md, ARCHITECTURE.md).
 
 add_library(LabradorEngine STATIC
+    app/application.cpp
     app/content_root.cpp
     assets/asset_manifest_loader.cpp
     assets/json.cpp
@@ -81,15 +82,24 @@ add_library(LabradorEngine STATIC
 # tree that may well have a game/ in it.
 target_include_directories(LabradorEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-# The shell's window and the Application that drives it are Win32 code, public
-# signatures included, and docs/port/web.md (D2, D3) is the plan that makes
-# them neither. Until then a browser build has the rest of the engine and no
-# shell: enough for every headless test, and not yet for a game.
-if(WIN32)
+# The shell's window, which is the platform's: app/win32/ or app/web/, behind
+# the one neutral app/window.h (its header says why the class is not in either
+# folder). Chosen by the platform being built for rather than by a cache
+# variable like the three backends below, because neither half can be built
+# for the other's platform - there is no choice to make.
+if(EMSCRIPTEN)
     target_sources(LabradorEngine PRIVATE
-        app/application.cpp
-        app/window.cpp
+        app/web/dom_events.cpp
+        app/web/window.cpp
     )
+elseif(WIN32)
+    target_sources(LabradorEngine PRIVATE
+        app/win32/window.cpp
+    )
+else()
+    message(FATAL_ERROR
+        "There is no window for this platform. engine/app/ has a Win32 "
+        "window and a browser one, and a third is a folder beside them.")
 endif()
 
 # The backend, chosen at build time.

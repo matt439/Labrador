@@ -373,11 +373,11 @@ namespace
 		}
 
 		// Changes the window's client area and TELLS THE RENDERER NOTHING,
-		// which is not a contrived state: engine/app/window.cpp discards every
-		// WM_SIZE for the duration of a drag and renders a full frame from
-		// WM_PAINT for every step of it, so a frame drawn into a window whose
-		// size the renderer was never told is the normal case while a user is
-		// dragging an edge.
+		// which is not a contrived state: engine/app/win32/window.cpp discards
+		// every WM_SIZE for the duration of a drag and renders a full frame
+		// from WM_PAINT for every step of it, so a frame drawn into a window
+		// whose size the renderer was never told is the normal case while a
+		// user is dragging an edge.
 		void resize_window(int width, int height)
 		{
 			REQUIRE(SetWindowPos(this->window_, nullptr, 0, 0, width, height,

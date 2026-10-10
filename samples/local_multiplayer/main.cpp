@@ -4,6 +4,7 @@
 #include "tools/linesweeper_capture/png_file.h"
 #endif
 
+#include <Windows.h>
 #include <shellapi.h>
 
 #include <algorithm>
@@ -38,8 +39,8 @@ namespace
 	}
 }
 
-int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE,
-	_In_ LPWSTR command_line, _In_ int show_command)
+int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
+	_In_ LPWSTR command_line, _In_ int)
 {
 	const bool interactive = *command_line == L'\0';
 	try
@@ -65,8 +66,9 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE,
 		options.resolution = ScreenResolution::s_1280_720;
 		options.view_capacity = 2;
 		options.max_threads = std::min(2, default_thread_count());
+		options.visible = !smoke_test;
 		Application app(std::move(options));
-		app.initialize(instance, smoke_test ? SW_HIDE : show_command);
+		app.initialize();
 		app.load_manifest("./manifest.json");
 
 		if (smoke_test)

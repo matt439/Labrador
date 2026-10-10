@@ -459,7 +459,8 @@ namespace labrador
 		// Whether the surface has any area to present into, asked of the
 		// surface rather than of the shell. It is how present() notices a
 		// minimised window coming back, because no Win32 message says so:
-		// engine/app/window.cpp's restore branch sends on_resuming and no size.
+		// engine/app/win32/window.cpp's restore branch sends on_resuming and no
+		// size.
 		bool surface_has_area() const noexcept;
 
 		// The swapchain alone, waited for and remade. What present() does about

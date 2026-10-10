@@ -1150,10 +1150,10 @@ namespace labrador
 		// change nothing and a frame is not worth losing to one of them.
 		// Application::on_window_moved calls this with the size it already
 		// has on every move of the window outside a drag - inside one,
-		// window.cpp gates WM_MOVE the way it gates WM_SIZE, because that
-		// argument is a swap chain's size here and the live client rect on the
-		// GL backend - and the shell calls it again on WM_EXITSIZEMOVE with a
-		// size the drag may well have returned to. The comparison is the one
+		// app/win32/window.cpp gates WM_MOVE the way it gates WM_SIZE, because
+		// that argument is a swap chain's size here and the live client rect on
+		// the GL backend - and the shell calls it again on WM_EXITSIZEMOVE with
+		// a size the drag may well have returned to. The comparison is the one
 		// DeviceResources::window_size_changed makes itself; it is repeated
 		// here rather than reached for through a new accessor because this is
 		// the only caller and the alternative is a method whose whole purpose

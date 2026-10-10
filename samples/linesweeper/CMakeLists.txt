@@ -23,21 +23,60 @@ target_include_directories(LineSweeperRules PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/../.."
 )
 
-# The game itself is a Win32 executable until the shell has a browser half
-# (docs/port/web.md, M2). The rules above are not: LineSweeperTests links them
-# in every build, a browser's included.
-if(WIN32)
-    # --- LineSweeperSample — the game ---
+# --- LineSweeperSample — the game ---
+#
+# One game and two entry points: main.cpp is wWinMain and main_web.cpp is a
+# browser's main, and everything else is the same files. The rules above are in
+# both, and in LineSweeperTests, which links them in every build.
+#
+# Sources are enumerated, never globbed, matching engine/CMakeLists.txt: a new
+# .cpp that nobody lists is a file that silently is not compiled.
+set(linesweeper_game_sources
+    presentation/board_view.cpp
+    presentation/particles.cpp
+    presentation/top_out_banner.cpp
+    states/pause_state.cpp
+    states/play_state.cpp
+)
+
+if(EMSCRIPTEN)
+    add_executable(LineSweeperSample
+        main_web.cpp
+        ${linesweeper_game_sources}
+    )
+    target_link_libraries(LineSweeperSample PRIVATE
+        LineSweeperRules
+        LabradorEngine
+        labrador_settings
+    )
+
+    # A page, its loader and the module: LineSweeperSample.html, .js and
+    # .wasm. The page is web/shell.html, a development page that hands the
+    # module its canvas; web/shell.html says what any page owes it.
     #
-    # Sources are enumerated, never globbed, matching engine/CMakeLists.txt: a new
-    # .cpp that nobody lists is a file that silently is not compiled.
+    # The content is embedded in the module rather than fetched beside it,
+    # mounted at the root of its file system, which is where a relative
+    # manifest path resolves in a browser. At 21.6 KB a second request would
+    # cost more than the bytes; docs/port/web.md puts the point at which that
+    # turns round at about a megabyte.
+    set_target_properties(LineSweeperSample PROPERTIES SUFFIX ".html")
+    target_link_options(LineSweeperSample PRIVATE
+        "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content@/"
+        "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
+        -sENVIRONMENT=web
+    )
+    # Neither the page nor the content is a source, so a change to either
+    # relinks only because it is named here.
+    set_property(TARGET LineSweeperSample APPEND PROPERTY LINK_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/courier_new_bold_16.spritefont"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/white.dds"
+    )
+elseif(WIN32)
     add_executable(LineSweeperSample WIN32
         main.cpp
-        presentation/board_view.cpp
-        presentation/particles.cpp
-        presentation/top_out_banner.cpp
-        states/pause_state.cpp
-        states/play_state.cpp
+        ${linesweeper_game_sources}
     )
     target_link_libraries(LineSweeperSample PRIVATE
         LineSweeperRules

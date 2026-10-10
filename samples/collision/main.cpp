@@ -6,6 +6,8 @@
 #include "tools/linesweeper_capture/png_file.h"
 #endif
 
+#include <Windows.h>
+
 #include <cstdio>
 #include <cmath>
 #include <exception>
@@ -147,8 +149,8 @@ namespace
 	};
 }
 
-int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE,
-	_In_ LPWSTR command_line, _In_ int show_command)
+int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
+	_In_ LPWSTR command_line, _In_ int)
 {
 	const std::wstring_view arguments = trim_arguments(command_line);
 	const bool smoke_test = arguments.starts_with(L"--smoke-test");
@@ -178,8 +180,9 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE,
 		options.window_title = L"Labrador - collision sample";
 		options.view_capacity = 1;
 		options.max_threads = 1;
+		options.visible = !smoke_test;
 		Application app(std::move(options));
-		app.initialize(instance, smoke_test ? SW_HIDE : show_command);
+		app.initialize();
 		app.load_manifest("./manifest.json");
 		if (smoke_test)
 		{
