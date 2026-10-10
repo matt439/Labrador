@@ -17,6 +17,7 @@ namespace mattmath
 	{
 		Quad() = default;
 		Quad(const Quad&) = default;
+		Quad& operator=(const Quad&) = default;
 		Quad(const Vector2F& point1, const Vector2F& point2,
 			const Vector2F& point3, const Vector2F& point4);
 		explicit Quad(const RectangleF& rectangle);

@@ -57,5 +57,11 @@ namespace labrador
 
 		// From rectangle_ and the frame, once both are set.
 		void initialize_bounds();
+
+		// TextureObject's two positioned draws, kept out of reach. draw()
+		// above hides them by name, which is what this class wants - a visual
+		// draws where its own rectangle says - and clang asks for the hiding
+		// to be stated rather than inferred.
+		using TextureObject::draw;
 	};
 }

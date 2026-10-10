@@ -174,6 +174,13 @@ namespace labrador
 		const mattmath::RectangleF& rectangle() const;
 	private:
 		mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;
+
+		// TextureObject's two positioned draws, kept out of reach: draw()
+		// above hides them by name, because a widget draws where its own
+		// rectangle says, and clang asks for the hiding to be stated rather
+		// than inferred. A deriving class that wants one names
+		// TextureObject:: to get it.
+		using TextureObject::draw;
 	};
 
 	class UiText : public UiWidget, public Text

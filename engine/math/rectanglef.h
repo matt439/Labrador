@@ -20,6 +20,7 @@ namespace mattmath
 
 		RectangleF() = default;
 		RectangleF(const RectangleF&) = default;
+		RectangleF& operator=(const RectangleF&) = default;
 		// constexpr and defined here so ZERO is constant-initialised. See
 		// Vector2F's constants for what the dynamic alternative risks.
 		constexpr RectangleF(float x, float y, float width, float height) :

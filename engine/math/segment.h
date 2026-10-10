@@ -11,6 +11,7 @@ namespace mattmath
 
 		Segment() = default;
 		Segment(const Segment&) = default;
+		Segment& operator=(const Segment&) = default;
 		Segment(const mattmath::Point2F& point_0,
 			const mattmath::Point2F& point_1);
 		Segment(float x0, float y0, float x1, float y1);

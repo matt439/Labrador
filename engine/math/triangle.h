@@ -14,6 +14,7 @@ namespace mattmath
 
 		Triangle() = default;
 		Triangle(const Triangle&) = default;
+		Triangle& operator=(const Triangle&) = default;
 		Triangle(const mattmath::Vector2F& point0,
 			const mattmath::Vector2F& point1,
 			const mattmath::Vector2F& point2);
@@ -48,6 +49,7 @@ namespace mattmath
 	{
 		TriangleRightAxisAligned() = default;
 		TriangleRightAxisAligned(const TriangleRightAxisAligned&) = default;
+		TriangleRightAxisAligned& operator=(const TriangleRightAxisAligned&) = default;
 		TriangleRightAxisAligned(const mattmath::Vector2F& top,
 			const mattmath::Vector2F& left, const mattmath::Vector2F& right);
 		TriangleRightAxisAligned(float x0, float y0, float x1, float y1,

@@ -12,18 +12,18 @@
 namespace mattmath
 {
 
-	bool mattmath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle,
+	bool rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle,
 		Point2F& point)
 	{
 		return test_circle_AABB(circle, rectangle, point);
 	}
 
-	bool mattmath::rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle)
+	bool rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle)
 	{
 		return test_circle_AABB(circle, rectangle);
 	}
 
-	bool mattmath::rectangle_triangle_intersect(const RectangleF& rectangle, const Triangle& triangle)
+	bool rectangle_triangle_intersect(const RectangleF& rectangle, const Triangle& triangle)
 	{
 		// AABB vs AABB
 		if (!rectangle.intersects(triangle.bounding_box()))
@@ -61,7 +61,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::rectangle_quad_intersect(const RectangleF& rectangle, const Quad& quad)
+	bool rectangle_quad_intersect(const RectangleF& rectangle, const Quad& quad)
 	{
 		// get the triangles of the quad
 		const auto triangles = quad.triangles();
@@ -77,12 +77,12 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::rectangle_segment_intersect(const RectangleF& rectangle, const Segment& segment)
+	bool rectangle_segment_intersect(const RectangleF& rectangle, const Segment& segment)
 	{
 		return test_segment_AABB(segment.point_0, segment.point_1, rectangle);
 	}
 
-	bool mattmath::rectangle_point_intersect(const RectangleF& rectangle, const Point2F& point)
+	bool rectangle_point_intersect(const RectangleF& rectangle, const Point2F& point)
 	{
 		return point.x >= rectangle.x &&
 			point.x <= rectangle.x + rectangle.width &&
@@ -90,7 +90,7 @@ namespace mattmath
 			point.y <= rectangle.y + rectangle.height;
 	}
 
-	bool mattmath::rectangle_rotated_rectangle_intersect(const RectangleF& rect,
+	bool rectangle_rotated_rectangle_intersect(const RectangleF& rect,
 		const RectangleRotated& rotated_rect)
 	{
 		// check if the rectangles' bounding boxes intersect
@@ -130,7 +130,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::circles_intersect(const Circle& a, const Circle& b)
+	bool circles_intersect(const Circle& a, const Circle& b)
 	{
 		// The squared form, which is the same answer without the square root.
 		// Squaring preserves order on non-negative quantities, so a predicate
@@ -144,20 +144,20 @@ namespace mattmath
 		return test_circle_circle(a, b);
 	}
 
-	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle, Point2F& point)
+	bool circle_triangle_intersect(const Circle& circle, const Triangle& triangle, Point2F& point)
 	{
 		return test_circle_triangle(circle, triangle.point_0(),
 			triangle.point_1(), triangle.point_2(), point);
 	}
 
-	bool mattmath::circle_triangle_intersect(const Circle& circle, const Triangle& triangle)
+	bool circle_triangle_intersect(const Circle& circle, const Triangle& triangle)
 	{
 		Point2F point;
 		return test_circle_triangle(circle, triangle.point_0(),
 			triangle.point_1(), triangle.point_2(), point);
 	}
 
-	bool mattmath::circle_quad_intersect(const Circle& circle, const Quad& quad)
+	bool circle_quad_intersect(const Circle& circle, const Quad& quad)
 	{
 		const auto triangles = quad.triangles();
 
@@ -171,7 +171,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment, Point2F& point)
+	bool circle_segment_intersect(const Circle& circle, const Segment& segment, Point2F& point)
 	{
 		float t;
 		closest_pt_point_segment(circle.center(),
@@ -184,19 +184,19 @@ namespace mattmath
 			circle.radius() * circle.radius();
 	}
 
-	bool mattmath::circle_segment_intersect(const Circle& circle, const Segment& segment)
+	bool circle_segment_intersect(const Circle& circle, const Segment& segment)
 	{
 		Point2F point;
 		return circle_segment_intersect(circle, segment, point);
 	}
 
-	bool mattmath::circle_point_intersect(const Circle& circle, const Point2F& point)
+	bool circle_point_intersect(const Circle& circle, const Point2F& point)
 	{
 		return Vector2F::distance_squared(circle.center(), point) <=
 			circle.radius() * circle.radius();
 	}
 
-	bool mattmath::circle_rectangle_rotated_intersect(const Circle& circle,
+	bool circle_rectangle_rotated_intersect(const Circle& circle,
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the circle intersects the rectangle's bounding box
@@ -224,7 +224,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::triangles_intersect(const Triangle& a, const Triangle& b)
+	bool triangles_intersect(const Triangle& a, const Triangle& b)
 	{
 		// check if any of the points are contained within each other
 		for (int i = 0; i < 3; i++)
@@ -282,7 +282,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::triangle_quad_intersect(const Triangle& triangle, const Quad& quad)
+	bool triangle_quad_intersect(const Triangle& triangle, const Quad& quad)
 	{
 		// get the triangles of the quad
 		const auto triangles = quad.triangles();
@@ -299,7 +299,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::triangle_segment_intersect(const Triangle& triangle, const Segment& segment)
+	bool triangle_segment_intersect(const Triangle& triangle, const Segment& segment)
 	{
 		// One closed clip, not endpoint containment followed by a proper
 		// crossing per edge. That pair missed a segment entering at one
@@ -310,13 +310,13 @@ namespace mattmath
 			segment.point_0, segment.point_1);
 	}
 
-	bool mattmath::triangle_point_intersect(const Triangle& triangle, const Point2F& point)
+	bool triangle_point_intersect(const Triangle& triangle, const Point2F& point)
 	{
 		return test_point_triangle(point, triangle.points[0],
 			triangle.points[1], triangle.points[2]);
 	}
 
-	bool mattmath::triangle_rectangle_rotated_intersect(const Triangle& triangle,
+	bool triangle_rectangle_rotated_intersect(const Triangle& triangle,
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the triangle intersects the rectangle's bounding box
@@ -355,7 +355,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::quads_intersect(const Quad& a, const Quad& b)
+	bool quads_intersect(const Quad& a, const Quad& b)
 	{
 		// get the triangles of each quad
 		const auto a_triangles = a.triangles();
@@ -376,7 +376,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::quad_segment_intersect(const Quad& quad, const Segment& segment)
+	bool quad_segment_intersect(const Quad& quad, const Segment& segment)
 	{
 		// The quad itself, not its two triangles. A Quad is convex by
 		// construction (Quad::is_valid), so the clip applies to it directly -
@@ -389,7 +389,7 @@ namespace mattmath
 			segment.point_0, segment.point_1);
 	}
 
-	bool mattmath::quad_point_intersect(const Quad& quad, const Point2F& point)
+	bool quad_point_intersect(const Quad& quad, const Point2F& point)
 	{
 		// check if the point is contained within any of the quad's triangles
 		const auto triangles = quad.triangles();
@@ -404,7 +404,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::quad_rectangle_rotated_intersect(const Quad& quad,
+	bool quad_rectangle_rotated_intersect(const Quad& quad,
 		const RectangleRotated& rect_rotated)
 	{
 		// get the triangles of the quad
@@ -422,7 +422,7 @@ namespace mattmath
 		return false;
 	}
 
-	bool mattmath::segments_intersect(const Segment& a, const Segment& b, float& t, Point2F& p)
+	bool segments_intersect(const Segment& a, const Segment& b, float& t, Point2F& p)
 	{
 		// A proper crossing, and nothing else - see the contract on
 		// test_2D_segment_segment.
@@ -445,14 +445,14 @@ namespace mattmath
 			b.point_0, b.point_1, t, p);
 	}
 
-	bool mattmath::segments_intersect(const Segment& a, const Segment& b)
+	bool segments_intersect(const Segment& a, const Segment& b)
 	{
 		float t;
 		Point2F p;
 		return segments_intersect(a, b, t, p);
 	}
 
-	bool mattmath::segment_rectangle_rotated_intersect(const Segment& segment,
+	bool segment_rectangle_rotated_intersect(const Segment& segment,
 		const RectangleRotated& rect_rotated)
 	{
 		// check if the segment intersects the rectangle's bounding box
@@ -467,7 +467,7 @@ namespace mattmath
 			segment.point_0, segment.point_1);
 	}
 
-	bool mattmath::point_rectangle_rotated_intersect(const Point2F& point,
+	bool point_rectangle_rotated_intersect(const Point2F& point,
 		const RectangleRotated& rect_rotated)
 	{
 		// Straight onto the corner cache the rectangle already holds.
@@ -489,7 +489,7 @@ namespace mattmath
 		return point_in_convex_polygon(rect_rotated.points(), point);
 	}
 
-	bool mattmath::rectangles_rotated_intersect(const RectangleRotated& a,
+	bool rectangles_rotated_intersect(const RectangleRotated& a,
 		const RectangleRotated& b)
 	{
 		// check if the rectangles' bounding boxes intersect

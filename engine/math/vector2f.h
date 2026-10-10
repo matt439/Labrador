@@ -13,6 +13,7 @@ namespace mattmath
 
 		Vector2F() = default;
 		Vector2F(const Vector2F&) = default;
+		Vector2F& operator=(const Vector2F&) = default;
 		// explicit, all of them. A float is not a vector, a Vector2I is not a
 		// Vector2F, and a RectangleF is not a Quad - and an implicit
 		// conversion is one the compiler inserts silently, even at /W4 /WX.

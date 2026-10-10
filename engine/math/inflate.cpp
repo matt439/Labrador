@@ -26,7 +26,7 @@ namespace mattmath
 		// Extending the edges to meet instead - a mitre - keeps the result a
 		// polygon and always contains the true shape, so it errs outward,
 		// which is the safe direction. T3: nobody will see the corner.
-		void detail::inflate_convex_polygon(Vector2F* points, int count, float amount)
+		void inflate_convex_polygon(Vector2F* points, int count, float amount)
 		{
 			constexpr int MAX_POINTS = 4;
 			if (count < 3 || count > MAX_POINTS)

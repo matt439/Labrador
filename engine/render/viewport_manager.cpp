@@ -1,5 +1,6 @@
 #include "engine/render/viewport_manager.h"
 
+#include <stdexcept>
 #include <vector>
 
 using namespace mattmath;
@@ -99,7 +100,7 @@ namespace labrador
         }
         else
         {
-            throw std::exception("Invalid screen layout");
+            throw std::invalid_argument("Invalid screen layout");
         }
     }
 

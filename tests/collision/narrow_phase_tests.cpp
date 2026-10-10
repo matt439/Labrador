@@ -321,7 +321,7 @@ TEST_CASE("nonfinite geometry is rejected even inside an otherwise containing po
 	for (const float poison : { std::numeric_limits<float>::quiet_NaN(),
 		std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity() })
 	{
-		for (const RectangleF invalid : { RectangleF(poison, 5.0f, 10.0f, 10.0f),
+		for (const RectangleF& invalid : { RectangleF(poison, 5.0f, 10.0f, 10.0f),
 			RectangleF(5.0f, poison, 10.0f, 10.0f),
 			RectangleF(5.0f, 5.0f, poison, 10.0f),
 			RectangleF(5.0f, 5.0f, 10.0f, poison) })

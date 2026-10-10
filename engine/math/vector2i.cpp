@@ -70,31 +70,31 @@ namespace mattmath
 		this->y = new_y;
 	}
 	constinit const Vector2I Vector2I::ZERO = { 0, 0 };
-	Vector2I mattmath::operator+ (const Vector2I& V1, const Vector2I& V2)
+	Vector2I operator+ (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x + V2.x, V1.y + V2.y);
 	}
-	Vector2I mattmath::operator- (const Vector2I& V1, const Vector2I& V2)
+	Vector2I operator- (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x - V2.x, V1.y - V2.y);
 	}
-	Vector2I mattmath::operator* (const Vector2I& V1, const Vector2I& V2)
+	Vector2I operator* (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x * V2.x, V1.y * V2.y);
 	}
-	Vector2I mattmath::operator* (const Vector2I& V, int S)
+	Vector2I operator* (const Vector2I& V, int S)
 	{
 		return Vector2I(V.x * S, V.y * S);
 	}
-	Vector2I mattmath::operator/ (const Vector2I& V1, const Vector2I& V2)
+	Vector2I operator/ (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x / V2.x, V1.y / V2.y);
 	}
-	Vector2I mattmath::operator/ (const Vector2I& V, int S)
+	Vector2I operator/ (const Vector2I& V, int S)
 	{
 		return Vector2I(V.x / S, V.y / S);
 	}
-	Vector2I mattmath::operator* (int S, const Vector2I& V)
+	Vector2I operator* (int S, const Vector2I& V)
 	{
 		return Vector2I(V.x * S, V.y * S);
 	}

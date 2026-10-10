@@ -52,6 +52,7 @@ namespace mattmath
 
 		Matrix3x2F() = default;
 		Matrix3x2F(const Matrix3x2F&) = default;
+		Matrix3x2F& operator=(const Matrix3x2F&) = default;
 		// constexpr and defined here so `identity` is constant-initialised.
 		// See Vector2F's constants for what the dynamic alternative risks: for
 		// this type it is a zero matrix, which maps everything to the origin.

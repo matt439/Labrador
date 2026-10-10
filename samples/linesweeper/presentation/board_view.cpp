@@ -73,7 +73,6 @@ namespace linesweeper
 	BoardView::BoardView(const World* world,
 		RenderResources* render_resources) :
 		world_(world),
-		render_resources_(render_resources),
 		block_(render_resources->resolve_texture(block_texture_name)),
 		font_(render_resources->resolve_sprite_font(font_name))
 	{

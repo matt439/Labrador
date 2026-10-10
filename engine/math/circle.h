@@ -13,6 +13,7 @@ namespace mattmath
 
 		Circle() = default;
 		Circle(const Circle&) = default;
+		Circle& operator=(const Circle&) = default;
 		Circle(const mattmath::Vector2F& center, float radius);
 		Circle(float x, float y, float radius);
 

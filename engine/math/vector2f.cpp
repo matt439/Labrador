@@ -238,35 +238,35 @@ namespace mattmath
 	constinit const Vector2F Vector2F::DIRECTION_UP_LEFT = { -ROOT_HALF, -ROOT_HALF };
 
 
-	Vector2F mattmath::operator- (const Vector2F& V)
+	Vector2F operator- (const Vector2F& V)
 	{
 		return Vector2F(-V.x, -V.y);
 	}
-	Vector2F mattmath::operator+ (const Vector2F& V1, const Vector2F& V2)
+	Vector2F operator+ (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x + V2.x, V1.y + V2.y);
 	}
-	Vector2F mattmath::operator- (const Vector2F& V1, const Vector2F& V2)
+	Vector2F operator- (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x - V2.x, V1.y - V2.y);
 	}
-	Vector2F mattmath::operator* (const Vector2F& V1, const Vector2F& V2)
+	Vector2F operator* (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x * V2.x, V1.y * V2.y);
 	}
-	Vector2F mattmath::operator* (const Vector2F& V, float S)
+	Vector2F operator* (const Vector2F& V, float S)
 	{
 		return Vector2F(V.x * S, V.y * S);
 	}
-	Vector2F mattmath::operator/ (const Vector2F& V1, const Vector2F& V2)
+	Vector2F operator/ (const Vector2F& V1, const Vector2F& V2)
 	{
 		return Vector2F(V1.x / V2.x, V1.y / V2.y);
 	}
-	Vector2F mattmath::operator/ (const Vector2F& V, float S)
+	Vector2F operator/ (const Vector2F& V, float S)
 	{
 		return Vector2F(V.x / S, V.y / S);
 	}
-	Vector2F mattmath::operator* (float S, const Vector2F& V)
+	Vector2F operator* (float S, const Vector2F& V)
 	{
 		return Vector2F(V.x * S, V.y * S);
 	}

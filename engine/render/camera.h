@@ -20,6 +20,7 @@ namespace labrador
 
 		Camera() = default;
 		Camera(const Camera&) = default;
+		Camera& operator=(const Camera&) = default;
 		Camera(const mattmath::Vector2F& translation, float scale);
 		// constexpr and defined here so DEFAULT_CAMERA is constant-initialised
 		// (camera.cpp defines it constinit), and a static in another

@@ -86,12 +86,6 @@ namespace linesweeper
 
 		const World* world_ = nullptr;
 
-		// Kept for measure_text, which is the font table's job and not the
-		// renderer's - measuring needs the atlas, and the atlas is here
-		// (render_resources.h). Read in update() only: it is not const, and
-		// draw() is.
-		labrador::RenderResources* render_resources_ = nullptr;
-
 		labrador::TextureHandle block_;
 		labrador::FontHandle font_;
 

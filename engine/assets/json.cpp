@@ -4,7 +4,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 
-#include <cstdio>
+#include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -20,18 +20,6 @@ namespace labrador
 
 	namespace
 	{
-		struct FileCloser
-		{
-			void operator()(FILE* fp) const noexcept
-			{
-				if (fp != nullptr)
-				{
-					std::fclose(fp);
-				}
-			}
-		};
-		using UniqueFile = std::unique_ptr<FILE, FileCloser>;
-
 		// Big enough that every asset in the project is read in one or two calls,
 		// small enough to sit comfortably on the stack.
 		constexpr size_t read_chunk_size = 64 * 1024;
@@ -52,26 +40,22 @@ namespace labrador
 			throw std::invalid_argument("read_json_file - null path");
 		}
 
-		FILE* raw_file = nullptr;
-		if (_wfopen_s(&raw_file, path_from_utf8(path).c_str(), L"rb") != 0 || raw_file == nullptr)
+		// A path, not a narrow string, so the UTF-8 name reaches the platform
+		// as UTF-8 wherever narrow is not already that - wide on Windows.
+		std::ifstream file(path_from_utf8(path), std::ios::binary);
+		if (!file)
 		{
 			throw std::runtime_error(
 				std::string("read_json_file - cannot open '") + path + "'");
 		}
-		UniqueFile file(raw_file);
 
 		std::string text;
 		char chunk[read_chunk_size];
-		for (;;)
+		while (file.read(chunk, sizeof(chunk)) || file.gcount() > 0)
 		{
-			const size_t read = std::fread(chunk, 1, sizeof(chunk), file.get());
-			if (read == 0)
-			{
-				break;
-			}
-			text.append(chunk, read);
+			text.append(chunk, static_cast<size_t>(file.gcount()));
 		}
-		if (std::ferror(file.get()) != 0)
+		if (file.bad())
 		{
 			throw std::runtime_error(
 				std::string("read_json_file - read error in '") + path + "'");

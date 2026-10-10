@@ -14,6 +14,7 @@ namespace mattmath
 	{
 		RectangleRotated() = default;
 		RectangleRotated(const RectangleRotated&) = default;
+		RectangleRotated& operator=(const RectangleRotated&) = default;
 		RectangleRotated(const mattmath::Point2F& center,
 			const mattmath::Vector2F& x_axis, const mattmath::Vector2F& y_axis,
 			const mattmath::Vector2F& hw_extents);

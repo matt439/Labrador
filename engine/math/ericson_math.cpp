@@ -339,7 +339,7 @@ namespace mattmath
 			// comparison against NaN is false, so a test whose accept branch
 			// is the fall-through accepts every poisoned input
 			// (11.2.2, pp.436-437).
-			if (!(side >= 0.0f || side <= 0.0f))
+			if (std::isnan(side))
 			{
 				return false;
 			}
@@ -412,8 +412,7 @@ namespace mattmath
 			const float side_a = Vector2F::cross(edge, a - from) * orientation;
 			const float side_b = Vector2F::cross(edge, b - from) * orientation;
 
-			if (!(side_a >= 0.0f || side_a <= 0.0f) ||
-				!(side_b >= 0.0f || side_b <= 0.0f))
+			if (std::isnan(side_a) || std::isnan(side_b))
 			{
 				return false;
 			}

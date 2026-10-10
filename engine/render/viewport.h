@@ -28,6 +28,7 @@ namespace labrador
 
 		Viewport() {}
 		Viewport(const Viewport&) = default;
+		Viewport& operator=(const Viewport&) = default;
 		Viewport(float x, float y, float width, float height,
 			float minDepth = 0.0f, float maxDepth = 1.0f);
 		Viewport(const mattmath::RectangleF& rectangle,
