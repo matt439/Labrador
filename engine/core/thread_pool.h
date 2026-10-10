@@ -16,10 +16,14 @@ namespace labrador
     // core/, which is the one module everything else is allowed to lean on.
     // core/registry.h makes the same refusal for COM.
     //
-    // WHAT IS BEHIND THE POINTER IS THE WIN32 THREAD POOL - CreateThreadpoolWork,
-    // SubmitThreadpoolWork, a cleanup group - because it works and it is
-    // tested, and replacing it with std::thread would be rewriting a working
-    // primitive for a platform this engine does not build for yet (T1).
+    // WHAT IS BEHIND THE POINTER ON WINDOWS IS THE WIN32 THREAD POOL -
+    // CreateThreadpoolWork, SubmitThreadpoolWork, a cleanup group - because it
+    // works and it is tested, and replacing it with std::thread would be
+    // rewriting a working primitive (T1). Everywhere else it is serial: each
+    // task runs inside add_task and the wait reports what happened, which
+    // keeps every promise below, because none of them is that two tasks
+    // overlap. That is the WebAssembly build, which has no threads
+    // (docs/port/web.md).
     //
     // THE INDIRECTION IS NOT ON A HOT PATH. Scene::draw submits one task per
     // slice of the view list per frame, and the slices are bounded by

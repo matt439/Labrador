@@ -46,6 +46,15 @@ departures from upstream are written down:
   `engine/render/renderer.h` and is what a game implements.
 - `device_resources.cpp` includes this repository's `throw_if_failed.h` in
   place of the sample's own copy.
+- `step_timer.h` reads `std::chrono::steady_clock` where upstream calls
+  `QueryPerformanceFrequency` and `QueryPerformanceCounter`, so that it
+  compiles with no `<Windows.h>` behind it and builds for the browser. Its
+  three members named for QPC are named for the clock instead, and the two
+  `throw std::exception()` paths a failed QPC call took are gone with the
+  calls. On Windows the standard library's clock is QPC itself, and the
+  change was measured against direct calls before it was made: 600 frames
+  of 16.7 ms, every delta within 2 of StepTimer's 100 ns ticks, which is the
+  gap between the two reads.
 - The pool of deferred contexts was engine code, not Microsoft's, and has
   been removed: each of the renderer's views owns the context it records
   into, which is where that lifetime always belonged.

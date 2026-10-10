@@ -1,7 +1,10 @@
 #include "engine/app/content_root.h"
 #include "engine/core/file_path.h"
 
+#if defined(_WIN32)
 #include <Windows.h>
+#endif
+
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -10,8 +13,23 @@
 
 namespace labrador
 {
+	namespace
+	{
+		// The platform's own separator, so that a joined path is one name on
+		// every platform: a backslash means nothing to a POSIX path.
+		constexpr char separator =
+			static_cast<char>(std::filesystem::path::preferred_separator);
+	}
+
 	std::string executable_directory()
 	{
+#if defined(__EMSCRIPTEN__)
+		// A browser has no executable directory. The build packs a game's
+		// content into the root of Emscripten's in-memory file system, so
+		// the root is where the content is, which is the question this
+		// function answers.
+		return "/";
+#else
 		// Keep the native path wide until explicitly encoding it as UTF-8.
 		// Grow the buffer until GetModuleFileNameW returns an untruncated path.
 		std::vector<wchar_t> buffer(MAX_PATH);
@@ -36,9 +54,10 @@ namespace labrador
 		if (directory.empty() || (directory.back() != '\\' &&
 			directory.back() != '/'))
 		{
-			directory += '\\';
+			directory += separator;
 		}
 		return directory;
+#endif
 	}
 
 	std::string resolved_under(const std::string& directory,
@@ -53,7 +72,7 @@ namespace labrador
 		if (!resolved.empty() && resolved.back() != '\\' &&
 			resolved.back() != '/')
 		{
-			resolved += '\\';
+			resolved += separator;
 		}
 		resolved += path;
 		return resolved;

@@ -1,6 +1,8 @@
 #include "engine/core/thread_pool.h"
 
+#if defined(_WIN32)
 #include <windows.h>
+#endif
 
 #include <exception>
 #include <memory>
@@ -11,6 +13,7 @@
 
 namespace labrador
 {
+#if defined(_WIN32)
     // The Win32 thread pool, and the whole of what this class knows about
     // Windows. Every member below is here rather than on ThreadPool itself,
     // which is what keeps <windows.h> out of the header (thread_pool.h).
@@ -154,6 +157,63 @@ namespace labrador
             first_exception = exception;
         }
     }
+
+#else
+    // No threads: every task runs inside add_task, on the thread that owns
+    // the pool, and the wait has only to report what happened.
+    //
+    // THIS IS EVERY PROMISE thread_pool.h MAKES, NOT A REDUCED SET OF THEM. A
+    // pool is allowed to run its tasks on one thread, every task has finished
+    // when the wait returns, and the first exception comes back from the wait
+    // and not from add_task - so a task that throws is caught here exactly as
+    // a worker would catch it, and the tasks after it still run. Nothing a
+    // caller can observe tells this from a pool that happened to schedule
+    // everything onto one worker.
+    //
+    // It is what a build with no thread support gets: WebAssembly without
+    // pthreads, which docs/port/web.md chooses for the host page's sake
+    // rather than settles for. max_num_threads still reports what the pool
+    // was asked for, because Scene::draw slices its view list by it and the
+    // slices are as correct run in sequence as in parallel.
+    class ThreadPool::Impl
+    {
+    public:
+        Impl(int minimum, int maximum) :
+            min_num_threads(minimum),
+            max_num_threads(maximum)
+        {
+        }
+
+        void add_task(std::function<void()> task)
+        {
+            try
+            {
+                task();
+            }
+            catch (...)
+            {
+                if (!first_exception)
+                {
+                    first_exception = std::current_exception();
+                }
+            }
+        }
+
+        void wait_for_tasks_to_complete()
+        {
+            std::exception_ptr failure = first_exception;
+            first_exception = nullptr;
+            if (failure)
+            {
+                std::rethrow_exception(failure);
+            }
+        }
+
+        int min_num_threads = -1;
+        int max_num_threads = -1;
+        std::exception_ptr first_exception;
+    };
+#endif
 
     // What is left of ThreadPool is the seam: five calls that forward, and a
     // destructor that has to be here rather than defaulted in the header,

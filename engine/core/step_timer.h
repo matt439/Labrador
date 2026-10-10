@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <exception>
 #include <limits>
 #include <stdexcept>
 
@@ -14,6 +14,14 @@
 namespace labrador
 {
     // Helper class for animation and simulation timing.
+    //
+    // The source clock is std::chrono::steady_clock, on every platform. On
+    // Windows that is QueryPerformanceCounter read through the standard
+    // library, which agrees with a direct QPC call to within the time
+    // between two reads of it, and in a
+    // browser it is performance.now(), coarsened by the browser to somewhere
+    // between 0.1 and 1 ms - which a 60 Hz step clamped at a tenth of a
+    // second does not notice.
     class StepTimer
     {
     public:
@@ -24,22 +32,14 @@ namespace labrador
             m_frameCount(0),
             m_framesPerSecond(0),
             m_framesThisSecond(0),
-            m_qpcSecondCounter(0),
+            m_secondCounter(0),
             m_isFixedTimeStep(false),
             m_targetElapsedTicks(TicksPerSecond / 60)
         {
-            if (!QueryPerformanceFrequency(&m_qpcFrequency))
-            {
-                throw std::exception();
-            }
-
-            if (!QueryPerformanceCounter(&m_qpcLastTime))
-            {
-                throw std::exception();
-            }
+            m_lastTime = Clock::now();
 
             // Initialize max delta to 1/10 of a second.
-            m_qpcMaxDelta = static_cast<uint64_t>(m_qpcFrequency.QuadPart / 10);
+            m_maxDelta = ClockFrequency / 10;
         }
 
         // Get elapsed time since the previous Update call.
@@ -96,15 +96,12 @@ namespace labrador
 
         void ResetElapsedTime()
         {
-            if (!QueryPerformanceCounter(&m_qpcLastTime))
-            {
-                throw std::exception();
-            }
+            m_lastTime = Clock::now();
 
             m_leftOverTicks = 0;
             m_framesPerSecond = 0;
             m_framesThisSecond = 0;
-            m_qpcSecondCounter = 0;
+            m_secondCounter = 0;
         }
 
         // Update timer state, calling the specified Update function the appropriate number of times.
@@ -112,27 +109,22 @@ namespace labrador
         void Tick(const TUpdate& update)
         {
             // Query the current time.
-            LARGE_INTEGER currentTime;
+            const Clock::time_point currentTime = Clock::now();
 
-            if (!QueryPerformanceCounter(&currentTime))
-            {
-                throw std::exception();
-            }
+            uint64_t timeDelta = static_cast<uint64_t>((currentTime - m_lastTime).count());
 
-            uint64_t timeDelta = static_cast<uint64_t>(currentTime.QuadPart - m_qpcLastTime.QuadPart);
-
-            m_qpcLastTime = currentTime;
-            m_qpcSecondCounter += timeDelta;
+            m_lastTime = currentTime;
+            m_secondCounter += timeDelta;
 
             // Clamp excessively large time deltas (e.g. after paused in the debugger).
-            if (timeDelta > m_qpcMaxDelta)
+            if (timeDelta > m_maxDelta)
             {
-                timeDelta = m_qpcMaxDelta;
+                timeDelta = m_maxDelta;
             }
 
-            // Convert QPC units into a canonical tick format. This cannot overflow due to the previous clamp.
+            // Convert clock units into a canonical tick format. This cannot overflow due to the previous clamp.
             timeDelta *= TicksPerSecond;
-            timeDelta /= static_cast<uint64_t>(m_qpcFrequency.QuadPart);
+            timeDelta /= ClockFrequency;
 
             const uint32_t lastFrameCount = m_frameCount;
 
@@ -181,19 +173,23 @@ namespace labrador
                 m_framesThisSecond++;
             }
 
-            if (m_qpcSecondCounter >= static_cast<uint64_t>(m_qpcFrequency.QuadPart))
+            if (m_secondCounter >= ClockFrequency)
             {
                 m_framesPerSecond = m_framesThisSecond;
                 m_framesThisSecond = 0;
-                m_qpcSecondCounter %= static_cast<uint64_t>(m_qpcFrequency.QuadPart);
+                m_secondCounter %= ClockFrequency;
             }
         }
 
     private:
-        // Source timing data uses QPC units.
-        LARGE_INTEGER m_qpcFrequency;
-        LARGE_INTEGER m_qpcLastTime;
-        uint64_t m_qpcMaxDelta;
+        // Source timing data uses the clock's own units.
+        using Clock = std::chrono::steady_clock;
+        static_assert(Clock::period::num == 1,
+            "StepTimer assumes a clock whose tick is a whole fraction of a second.");
+        static constexpr uint64_t ClockFrequency = Clock::period::den;
+
+        Clock::time_point m_lastTime;
+        uint64_t m_maxDelta;
 
         // Derived timing data uses a canonical tick format.
         uint64_t m_elapsedTicks;
@@ -204,7 +200,7 @@ namespace labrador
         uint32_t m_frameCount;
         uint32_t m_framesPerSecond;
         uint32_t m_framesThisSecond;
-        uint64_t m_qpcSecondCounter;
+        uint64_t m_secondCounter;
 
         // Members for configuring fixed timestep mode.
         bool m_isFixedTimeStep;

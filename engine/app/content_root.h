@@ -35,7 +35,9 @@ namespace labrador
 
 	// All content path strings in this API are UTF-8.
 	// The directory the running executable was loaded from, with a trailing
-	// separator, so that a relative path appended to it is a path.
+	// separator, so that a relative path appended to it is a path. In a
+	// browser there is no such directory, and this is "/", the root of the
+	// in-memory file system the build packs a game's content into.
 	std::string executable_directory();
 
 	// `path` itself if it is absolute, and otherwise `directory` + `path`.
