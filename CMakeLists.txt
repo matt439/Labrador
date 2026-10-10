@@ -68,14 +68,30 @@ if(PROJECT_IS_TOP_LEVEL)
     # a targeted build here runs it and a consumer's never sees it.
     add_dependencies(labrador_settings check_doc_citations)
 
-    add_subdirectory(samples/minimal)
     add_subdirectory(samples/linesweeper)
-    add_subdirectory(samples/collision)
-    add_subdirectory(samples/audio)
-    add_subdirectory(samples/local_multiplayer)
     add_subdirectory(bench)
-    add_subdirectory(tools/linesweeper_capture)
-    add_subdirectory(tests/app)
+
+    # Windows only, each until it has a reason not to be. Four samples whose
+    # main is wWinMain and whose shell is the Win32 window, a capture tool
+    # that reads back a device, and AppTests, which is the shell's own tests
+    # (docs/port/web.md, section 5).
+    if(WIN32)
+        add_subdirectory(samples/minimal)
+        add_subdirectory(samples/collision)
+        add_subdirectory(samples/audio)
+        add_subdirectory(samples/local_multiplayer)
+        add_subdirectory(tools/linesweeper_capture)
+        add_subdirectory(tests/app)
+    endif()
+
+    # A browser build's tests run under Node, which ctest reaches through the
+    # emulator Emscripten's toolchain sets. NODERAWFS hands them the real file
+    # system, so a harness that loads "./content/" beside itself reads the
+    # same files it reads on Windows, from the same build directory.
+    if(EMSCRIPTEN)
+        add_link_options(-sNODERAWFS=1 -sENVIRONMENT=node)
+    endif()
+
     add_subdirectory(tests/assets)
     add_subdirectory(tests/audio)
     add_subdirectory(tests/collision)

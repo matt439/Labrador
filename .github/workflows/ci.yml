@@ -217,3 +217,76 @@ jobs:
       # developer machine's and are not meant to be.
       - name: Benchmark numbers
         run: out\build\${{ matrix.preset }}\bench\LabradorBench.exe
+
+  # The browser build, configured, built and tested - and nothing about it is
+  # drawn, which is the reason it needs no matrix. Its render backend is null
+  # until gl/ has a WebGL2 context (docs/port/web.md, M3), so what this checks
+  # is the second compiler and the second standard library: clang under
+  # -Werror with zero suppressions, libc++, a 32-bit size_t, and LineSweeper's
+  # rules replayed tick for tick on a second floating-point code generator.
+  #
+  # Its tests run under Node, which ctest reaches through the emulator
+  # Emscripten's toolchain sets, so the step is the same ctest call the job
+  # above makes. There is no rasteriser here and none is needed.
+  #
+  # EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the
+  # reason vcvars64 is found through vswhere above: the tools to do it are
+  # git and the SDK itself, and a build that can be done with those should not
+  # add a supply chain to do it. The version is pinned because it is the one
+  # this build was proven on, and a compiler that moves under a -Werror build
+  # moves it from green to red with no commit to blame.
+  wasm:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: cmd
+
+    env:
+      EMSDK_VERSION: 6.0.12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Point at the runner's vcpkg
+        shell: pwsh
+        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-wasm-
+
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git C:\emsdk
+          call C:\emsdk\emsdk.bat install %EMSDK_VERSION% || exit /b 1
+          call C:\emsdk\emsdk.bat activate %EMSDK_VERSION% || exit /b 1
+
+      # Ninja and cmake come with Visual Studio, so the MSVC environment is
+      # still what puts them on the path, though nothing here compiles with
+      # MSVC. emsdk_env sets EMSDK, which the preset reads for the toolchain
+      # file exactly as the x64 presets read VCPKG_ROOT.
+      - name: Find vcvars64
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
+
+      - name: Configure
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          cmake --preset wasm-release
+
+      - name: Build
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          cmake --build --preset wasm-release
+
+      - name: Test
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          ctest --preset wasm-release

@@ -39,43 +39,49 @@ endif()
 # not a flaky test on a busy machine; see main.cpp.
 add_test(NAME Benchmarks COMMAND LabradorBench)
 
-# An absolute frame-time measurement, deliberately not a ctest. Its result is
-# a property of the selected hardware, driver and backend rather than a
-# machine-independent pass/fail gate. The cloud reference lane invokes this
-# console target directly and retains its JSON artifact.
-add_executable(LineSweeperFrameBench
-    frame_pacer.cpp
-    frame_statistics.cpp
-    linesweeper_frame_bench.cpp
-    linesweeper_frame_result.cpp
-    "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/board_view.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/particles.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/top_out_banner.cpp"
-)
-target_link_libraries(LineSweeperFrameBench PRIVATE
-    LineSweeperRules
-    LabradorEngine
-    labrador_settings
-)
-target_include_directories(LineSweeperFrameBench SYSTEM PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
-)
+# Windows only. Its pacer waits on a Win32 waitable timer and its result file
+# is written through the Win32 file API so that it lands whole or not at all,
+# and a browser build has neither - nor would a browser let it pace: a browser
+# paces its own frames (docs/port/web.md, the frame loop).
+if(WIN32)
+    # An absolute frame-time measurement, deliberately not a ctest. Its result is
+    # a property of the selected hardware, driver and backend rather than a
+    # machine-independent pass/fail gate. The cloud reference lane invokes this
+    # console target directly and retains its JSON artifact.
+    add_executable(LineSweeperFrameBench
+        frame_pacer.cpp
+        frame_statistics.cpp
+        linesweeper_frame_bench.cpp
+        linesweeper_frame_result.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/board_view.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/particles.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/top_out_banner.cpp"
+    )
+    target_link_libraries(LineSweeperFrameBench PRIVATE
+        LineSweeperRules
+        LabradorEngine
+        labrador_settings
+    )
+    target_include_directories(LineSweeperFrameBench SYSTEM PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
+    )
 
-# The benchmark resolves the same real font and white texel as PlayState. Keep
-# a private copy beside this executable so it runs from any working directory.
-# Run even when no C++ needs relinking: content-only changes and deleted
-# deployed files must reach the next benchmark invocation.
-add_custom_target(linesweeper_frame_bench_content ALL)
-add_custom_command(TARGET linesweeper_frame_bench_content POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/manifest.json"
-        "$<TARGET_FILE_DIR:LineSweeperFrameBench>/manifest.json"
-    COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/fonts"
-        "$<TARGET_FILE_DIR:LineSweeperFrameBench>/fonts"
-    COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/textures"
-        "$<TARGET_FILE_DIR:LineSweeperFrameBench>/textures"
-    VERBATIM
-)
-add_dependencies(LineSweeperFrameBench linesweeper_frame_bench_content)
+    # The benchmark resolves the same real font and white texel as PlayState. Keep
+    # a private copy beside this executable so it runs from any working directory.
+    # Run even when no C++ needs relinking: content-only changes and deleted
+    # deployed files must reach the next benchmark invocation.
+    add_custom_target(linesweeper_frame_bench_content ALL)
+    add_custom_command(TARGET linesweeper_frame_bench_content POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/manifest.json"
+            "$<TARGET_FILE_DIR:LineSweeperFrameBench>/manifest.json"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/fonts"
+            "$<TARGET_FILE_DIR:LineSweeperFrameBench>/fonts"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/textures"
+            "$<TARGET_FILE_DIR:LineSweeperFrameBench>/textures"
+        VERBATIM
+    )
+    add_dependencies(LineSweeperFrameBench linesweeper_frame_bench_content)
+endif()

@@ -40,6 +40,18 @@ backend compiled in; `compile_shaders.cmake` says which, why it is looked for in
 `$VULKAN_SDK/Bin` and nowhere else, and what the error looks like when the wrong
 one is found. Ninja generator, out-of-source in `out/build/<preset>/`.
 
+**The two `wasm-*` presets are the browser build**, and the second thing here
+that has to be installed: [Emscripten](https://emscripten.org/), with `EMSDK`
+set, for the compiler, the toolchain file the preset chains vcpkg to, and the
+Node its tests run under. On this machine it is `C:\Tools\emsdk` at 6.0.12,
+which is the version CI pins; `emsdk_env.bat` sets `EMSDK`, and vcvars is still
+what puts cmake and ninja on the path. They are the first configurations built
+by a second compiler, so `cmake/settings.cmake` has a clang branch, argued
+rather than translated. [docs/port/web.md](docs/port/web.md) is the plan, and
+M1 of it is what exists: the engine and every headless test, with no shell yet
+- `app/application.cpp` and `app/window.cpp` are Win32 code and are not
+compiled there until M2, so no sample builds for a browser yet either.
+
 **There are five render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
 configure time — so asking for one that was not built is a missing symbol at
 link (T5). A change to anything in `engine/render/` should be checked against
@@ -50,13 +62,19 @@ all five; CI builds all five.
 ask for the second. Those presets therefore take no platform API at all, which
 is what makes them the configurations a build machine runs end to end.
 
+**And two input backends, on a third**: `LABRADOR_INPUT_BACKEND` is `xinput`
+or `web`, and only the pad is behind it, because the keyboard and mouse are fed
+by the window rather than read. `web` is the browser Gamepad API and is the
+default under Emscripten; it compiles, and no pad has driven it yet.
+
 | Preset | Backend | ctest |
 |---|---|---|
 | `x64-debug`, `x64-release` | `render/d3d11/` | 17 entries; WARP fallback in debug |
 | `x64-debug-d3d12`, `x64-release-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 17 entries; WARP fallback in debug |
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
+| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
+| `wasm-debug`, `wasm-release` | `render/null/`, `audio/null/`, `input/web/` — clang and libc++, run under Node. `gl/` replaces null when it has a WebGL2 context (web.md M3) | 13 entries: the null set without `AppTests`, `CollisionSampleTests`, `AudioSampleTests` |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -208,7 +226,13 @@ in the commit that creates it.
   `INTERFACE` target, `labrador_settings` in [cmake/settings.cmake](cmake/settings.cmake),
   carries it; every real target links it. `/fp:precise` is load-bearing, not
   inherited — exact `operator==` against `Vector2F::ZERO`, tolerance
-  assumptions and NaN propagation all depend on it.
+  assumptions and NaN propagation all depend on it. **Under clang, the
+  `wasm-*` presets, it is `-Wall -Wextra -Wpedantic -Werror -ffp-contract=off`**,
+  also with zero suppressions, so a change that is clean under MSVC is not yet
+  known to be clean. Clang warns about what MSVC does not, and the two that
+  will come up are an implicitly declared copy assignment beside a defaulted
+  copy constructor (declare both) and a derived `draw` hiding a base class's
+  overloads (a `using` declaration says it is meant).
 - **An engine file including a game header.** Standalone that is now the
   compiler's own error, but [cmake/check_engine_includes.cmake](cmake/check_engine_includes.cmake)
   greps for it on every build anyway, because the compiler only enforces it

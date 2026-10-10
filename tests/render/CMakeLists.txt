@@ -17,7 +17,6 @@ add_executable(RenderTests
     sprite_sheet_object_tests.cpp
     text_drop_shadow_tests.cpp
     text_encoding_tests.cpp
-    throw_if_failed_tests.cpp
     viewport_manager_tests.cpp
     viewport_tests.cpp
     visual_tests.cpp
@@ -66,6 +65,12 @@ add_dependencies(RenderTests render_test_content)
 # identical in every configuration.
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(RenderTests PRIVATE null_tests.cpp)
+endif()
+
+# The two Direct3D backends' HRESULT translation, which is Windows code by
+# construction and so is tested only where it compiles.
+if(WIN32)
+    target_sources(RenderTests PRIVATE throw_if_failed_tests.cpp)
 endif()
 
 add_test(NAME RenderTests COMMAND RenderTests)

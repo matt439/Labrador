@@ -652,6 +652,53 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 
 ## 9. Milestones, and what to spike first
 
+### Where it stands, 2026-10-10
+
+**S1, S2 and M1 are done; S3 is not started.** What they measured, against the
+guesses this plan made:
+
+- **S1 was hours, not a milestone.** Emscripten 6.0.12, every portable `.cpp`
+  in `engine/` and LineSweeper under `-Wall -Wextra -Wpedantic`: 61 distinct
+  warning sites of seven kinds, 49 of them one pattern (a definition qualified
+  with its own namespace inside that namespace's block). The full build found
+  more of the second-largest kind than the sweep did, because clang reports an
+  implicit copy assignment only where one is used: thirteen types in all had a
+  defaulted copy constructor and no declared assignment. Two
+  `-Wtautological-overlap-compare` hits in `ericson_math.cpp` were the NaN
+  rejections, deliberate and correct, and are `std::isnan` now. One
+  `-Wunused-private-field` was a real dead member in LineSweeper's board view.
+  Two errors were real portability bugs rather than platform files:
+  `_wfopen_s` in the JSON reader and `std::exception("...")`, which only MSVC
+  accepts.
+- **S2 passed.** `LineSweeperTests` replays its scripted ticks and compares
+  worlds with `std::memcmp`, and all of it holds under clang on WebAssembly, so
+  R3 is retired for the rules. All thirteen ctest entries pass under Node.
+- **Three things nobody predicted**, all fixed where they belong. wasm32 has a
+  32-bit `size_t`, and one `texture_level` test asserted a 4 GiB level was
+  representable, which it is only on 64-bit. Emscripten's stack is 64 KiB
+  against Windows' 1 MiB, and the particle field's tests and the JSON reader's
+  buffer were sized against the larger one, so the browser build links with
+  the same 1 MiB. And `content_root.cpp` joined paths with a literal `'\\'`,
+  which is not a separator on a POSIX file system.
+- **D4 was measured as it asked.** MSVC's `steady_clock` is QPC converted to
+  nanoseconds. Over 600 frames of 16.7 ms, every delta agreed with a direct QPC
+  call to within 2 of StepTimer's 100 ns ticks, which is the gap between the
+  two reads.
+- **`widen` has one implementation, checked against the call it replaced.** A
+  million random byte strings weighted towards the boundary bytes agree with
+  `MultiByteToWideChar(CP_UTF8)` exactly. That needed one departure from the
+  Unicode Standard's maximal subparts, which Windows makes and which the
+  first draft did not: a continuation byte refused by the narrowed range after
+  E0, ED, F0 or F4 goes with its lead.
+
+**M1 departs from its row below in two places.** The `wasm-*` presets build
+`render/null/` rather than `gl/`, because `gl/` has only a WGL context until
+M3, and `AppTests` is not in the browser build at all rather than split,
+because `application.h` includes `<Windows.h>` until D2 lands in M2. Both
+close in the milestone that owns them. `input/web/gamepad_reader.cpp` exists a
+milestone early, because the input-backend variable needed something to
+select. It compiles, and M4 is still the pad that proves it.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:

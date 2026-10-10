@@ -228,7 +228,17 @@ TEST_CASE("texture layouts reject stride and accumulated offset overflow")
 	CHECK_THROWS_AS(texture_level(TextureFormat::r8g8b8a8_unorm, limit / 4 + 1, 1, 0), std::runtime_error);
 	CHECK(texture_level(TextureFormat::bc1_unorm, (limit / 8) * 4, 1, 0).stride == (limit / 8) * 8);
 	CHECK_THROWS_AS(texture_level(TextureFormat::bc1_unorm, (limit / 8) * 4 + 1, 1, 0), std::runtime_error);
-	CHECK(texture_level(TextureFormat::bc1_unorm, 1, limit, 0).rows == limit / 4 + 1);
+	// One block column, as tall as int allows: exactly 4 GiB. That fits a
+	// 64-bit size_t and is one byte past a 32-bit one, which is WebAssembly's,
+	// so the same wall answers both ways and each is the right answer.
+	if constexpr (sizeof(size_t) > 4)
+	{
+		CHECK(texture_level(TextureFormat::bc1_unorm, 1, limit, 0).rows == limit / 4 + 1);
+	}
+	else
+	{
+		CHECK_THROWS_AS(texture_level(TextureFormat::bc1_unorm, 1, limit, 0), std::runtime_error);
+	}
 	CHECK_THROWS_AS(texture_level(TextureFormat::bc3_unorm, limit, limit, 0), std::runtime_error);
 	CHECK_THROWS_AS(texture_level(TextureFormat::r8g8b8a8_unorm, 1, 1,
 		(std::numeric_limits<size_t>::max)() - 3), std::runtime_error);

@@ -6,7 +6,8 @@
       "name": "directxtk",
       "features": [
         "xaudio2redist"
-      ]
+      ],
+      "platform": "windows"
     },
     "doctest"
   ],

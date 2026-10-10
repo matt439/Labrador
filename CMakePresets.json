@@ -96,6 +96,33 @@
         "LABRADOR_RENDER_BACKEND": "null",
         "LABRADOR_AUDIO_BACKEND": "null"
       }
+    },
+    {
+      "name": "wasm-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "VCPKG_TARGET_TRIPLET": "wasm32-emscripten",
+        "LABRADOR_RENDER_BACKEND": "null",
+        "LABRADOR_AUDIO_BACKEND": "null",
+        "LABRADOR_INPUT_BACKEND": "web"
+      }
+    },
+    {
+      "name": "wasm-debug",
+      "displayName": "WebAssembly Debug (Emscripten)",
+      "inherits": "wasm-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "wasm-release",
+      "displayName": "WebAssembly Release (Emscripten)",
+      "inherits": "wasm-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
     }
   ],
   "buildPresets": [
@@ -108,7 +135,9 @@
     { "name": "x64-debug-vulkan", "configurePreset": "x64-debug-vulkan" },
     { "name": "x64-release-vulkan", "configurePreset": "x64-release-vulkan" },
     { "name": "x64-debug-null", "configurePreset": "x64-debug-null" },
-    { "name": "x64-release-null", "configurePreset": "x64-release-null" }
+    { "name": "x64-release-null", "configurePreset": "x64-release-null" },
+    { "name": "wasm-debug", "configurePreset": "wasm-debug" },
+    { "name": "wasm-release", "configurePreset": "wasm-release" }
   ],
   "testPresets": [
     {
@@ -159,6 +188,16 @@
     {
       "name": "x64-release-null",
       "configurePreset": "x64-release-null",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "wasm-debug",
+      "configurePreset": "wasm-debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "wasm-release",
+      "configurePreset": "wasm-release",
       "output": { "outputOnFailure": true }
     }
   ]

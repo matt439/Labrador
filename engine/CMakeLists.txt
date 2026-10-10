@@ -7,15 +7,8 @@ add_subdirectory(math)
 # ended that migration: the client is its own repository and consumes this one
 # as a submodule (CLAUDE.md, ARCHITECTURE.md).
 
-# xaudio2redist first: directxtk's config references Microsoft::XAudio2Redist
-# but does not find it itself.
-find_package(xaudio2redist CONFIG REQUIRED)
-find_package(directxtk CONFIG REQUIRED)
-
 add_library(LabradorEngine STATIC
-    app/application.cpp
     app/content_root.cpp
-    app/window.cpp
     assets/asset_manifest_loader.cpp
     assets/json.cpp
     assets/resource_loader.cpp
@@ -40,7 +33,6 @@ add_library(LabradorEngine STATIC
     input/gamepads.cpp
     input/keyboard.cpp
     input/mouse.cpp
-    input/xinput/gamepad_reader.cpp
     render/animation_object.cpp
     render/animation_strip.cpp
     render/camera.cpp
@@ -88,6 +80,17 @@ add_library(LabradorEngine STATIC
 # true when this repository is built standalone - a consumer builds it from a
 # tree that may well have a game/ in it.
 target_include_directories(LabradorEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+# The shell's window and the Application that drives it are Win32 code, public
+# signatures included, and docs/port/web.md (D2, D3) is the plan that makes
+# them neither. Until then a browser build has the rest of the engine and no
+# shell: enough for every headless test, and not yet for a game.
+if(WIN32)
+    target_sources(LabradorEngine PRIVATE
+        app/application.cpp
+        app/window.cpp
+    )
+endif()
 
 # The backend, chosen at build time.
 #
@@ -164,6 +167,12 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
         render/gl/renderer.cpp
         render/gl/texture_factory.cpp
     )
+    if(EMSCRIPTEN)
+        message(FATAL_ERROR
+            "LABRADOR_RENDER_BACKEND is 'gl' in a browser build, and gl/ has "
+            "only a WGL context so far. docs/port/web.md (D1) puts WebGL2 in "
+            "this folder; until it is there, a browser build draws with null.")
+    endif()
     target_link_libraries(LabradorEngine PUBLIC opengl32)
 
     # No shader step. GL 3.3 has no offline shader format, so the GLSL ships
@@ -267,6 +276,35 @@ else()
         "holding audio_device.cpp.")
 endif()
 
+# The input backend, a third axis chosen the same way. Only the pad is behind
+# it: the keyboard and the mouse are fed by the window rather than read from a
+# pad API, so they are engine code on every platform and need no backend
+# (ARCHITECTURE.md, the fed devices). xinput is DirectXTK's GamePad, and web is
+# the browser Gamepad API, which is polled exactly as read(slot) asks.
+if(EMSCRIPTEN)
+    set(labrador_default_input_backend "web")
+else()
+    set(labrador_default_input_backend "xinput")
+endif()
+set(LABRADOR_INPUT_BACKEND "${labrador_default_input_backend}" CACHE STRING
+    "The input backend to build: xinput or web")
+set_property(CACHE LABRADOR_INPUT_BACKEND PROPERTY STRINGS xinput web)
+
+if(LABRADOR_INPUT_BACKEND STREQUAL "xinput")
+    target_sources(LabradorEngine PRIVATE
+        input/xinput/gamepad_reader.cpp
+    )
+elseif(LABRADOR_INPUT_BACKEND STREQUAL "web")
+    target_sources(LabradorEngine PRIVATE
+        input/web/gamepad_reader.cpp
+    )
+else()
+    message(FATAL_ERROR
+        "LABRADOR_INPUT_BACKEND is '${LABRADOR_INPUT_BACKEND}'. "
+        "It must be xinput or web - a backend is a folder in engine/input/ "
+        "holding gamepad_reader.cpp.")
+endif()
+
 # rapidjson is PRIVATE and SYSTEM. It used to be PUBLIC, so a sample that
 # parses nothing still had a JSON parser's headers on its command line, and
 # their warnings were measured against /W4 /WX.
@@ -292,5 +330,17 @@ target_include_directories(LabradorEngine SYSTEM PRIVATE
 # engine/audio/<backend>/ as well as engine/render/<backend>/.
 target_link_libraries(LabradorEngine
     PUBLIC MattMath
-    PRIVATE Microsoft::DirectXTK labrador_settings
+    PRIVATE labrador_settings
 )
+
+# And only the two backends that call it link it at all: audio/xaudio2/ and
+# input/xinput/. A build with neither - the browser's - has no DirectXTK to
+# find, and vcpkg.json does not install it there.
+if(LABRADOR_AUDIO_BACKEND STREQUAL "xaudio2" OR
+    LABRADOR_INPUT_BACKEND STREQUAL "xinput")
+    # xaudio2redist first: directxtk's config references
+    # Microsoft::XAudio2Redist but does not find it itself.
+    find_package(xaudio2redist CONFIG REQUIRED)
+    find_package(directxtk CONFIG REQUIRED)
+    target_link_libraries(LabradorEngine PRIVATE Microsoft::DirectXTK)
+endif()
