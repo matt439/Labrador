@@ -133,7 +133,11 @@ The presets put the build in `out/build/<preset>/`. The sample lands at
 anywhere — the build mirrors its content beside it. Under a `wasm-*` preset
 it is `out/build/wasm-debug/samples/minimal/MinimalSample.html`, with its
 content packed into the module beside it; serve that folder over HTTP and open
-the page.
+the page. LineSweeper also builds as an ES module for another site to host,
+and the build bundles it into `out/build/wasm-release/web-dist/linesweeper/`:
+the module, an example page that starts it on a click, the licence notices
+for what it links, and a `BUILD.json` naming the commit it came from. CI keeps
+that folder from every run ([web.md](docs/port/web.md), section 7).
 
 If `cmake` is not on your `PATH`, the copy inside Visual Studio is at
 `<VS install>\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\`, and

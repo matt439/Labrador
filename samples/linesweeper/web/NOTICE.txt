@@ -1,0 +1,34 @@
+LineSweeper in a browser - notices
+
+linesweeper.wasm and linesweeper.js are LineSweeper, a sample game for the
+Labrador engine (https://github.com/matt439/Labrador), compiled to WebAssembly
+with Emscripten. Labrador and LineSweeper are MIT licensed. The module also
+contains code and content that are not Labrador's, statically linked or
+embedded at build time, and each is listed here with its licence. BUILD.json
+beside this file names the Labrador commit and the Emscripten version the
+module was built from.
+
+Linked into linesweeper.wasm and linesweeper.js:
+
+- RapidJSON (MIT), Copyright (c) 2015 THL A29 Limited, a Tencent company,
+  and Milo Yip. It reads the game's content manifest.
+- Emscripten's runtime: the JavaScript loader and glue in linesweeper.js and
+  the system libraries in the module (MIT or University of Illinois/NCSA,
+  at the recipient's choice), Copyright (c) 2010-2014 Emscripten authors.
+  That includes its implementations of the browser APIs the engine calls
+  through, html5 and GL.
+- libc++ and libc++abi, the C++ standard library and its ABI support,
+  libunwind, which unwinds the stack for a C++ exception, and compiler-rt's
+  builtins, all from the LLVM Project (Apache License 2.0 with LLVM
+  Exceptions).
+- Emscripten's C library, derived from musl (MIT), Copyright (c) 2005-2020
+  Rich Felker, et al.
+- dlmalloc, the memory allocator, by Doug Lea, released to the public domain
+  (CC0); no licence text applies.
+
+Embedded in linesweeper.wasm as content:
+
+- A compiled glyph atlas built from the Courier New system font with
+  Microsoft's MakeSpriteFont. The font itself is not included.
+
+The full licence texts follow.

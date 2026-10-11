@@ -297,6 +297,7 @@ the tests share one dependency direction and one compiler-settings target
 | `MinimalSample` | application | `samples/minimal/` | LabradorEngine |
 | `LineSweeperRules` | static library | `samples/linesweeper/rules/` | nothing — the settings target carries no libraries |
 | `LineSweeperSample` | application | `samples/linesweeper/` | LineSweeperRules, LabradorEngine |
+| `LineSweeperModule` | ES module for another site to host; browser builds only | `samples/linesweeper/` | LineSweeperRules, LabradorEngine |
 | `CollisionExample` | static library | `samples/collision/` | LabradorEngine |
 | `CollisionSample` | application | `samples/collision/` | CollisionExample |
 | `AudioSample` | application | `samples/audio/` | LabradorEngine |
@@ -410,6 +411,29 @@ observable behaviour in this repository at all. What remains of that item is
 one backend against an existing seam, which is the shape the other two still
 have and audio did not. The container question that came with it is answered
 the way textures answered it: the engine reads the format itself.
+
+**The second platform is the browser**, through Emscripten and WebGL2
+(`docs/port/web.md`), and it is the first test of "an addition, not a
+rewrite" made by building one rather than by costing one. **It held where the
+seams were**: WebGL2 is the GL backend's own dialect with a second context
+translation unit beside WGL's rather than a sixth backend; the gamepad seam's
+pull shape is the browser's; the window became one neutral header over a
+`win32/` and a `web/` folder, though not by the move ARCHITECTURE had
+described, which the include check rejected; and LineSweeper's rules, asserted rather than
+played, came out the same game. **It did not hold in three places, and none
+of them was a seam.** A second compiler under the same zero-suppression rule
+found 61 warning sites and two real portability bugs, so "portable" had meant
+"MSVC accepts it" until clang said otherwise; that sweep was hours, and it
+improved the Windows build too. A second frame loop broke the one public
+signature the shell had: `Application::initialize` spelt `HINSTANCE`, so it
+lost its arguments, and every caller changed in one batch. And a loop the
+program does not own changed what a caller must do, not only what the engine
+does: in a browser `Application::run` hands the loop over and the stack below
+it is unwound, destructors included, before the first frame, so an
+`Application` there lives in a static. Those three are the honest size of a
+second platform here: the seams carried their half, and the half that was not
+behind a seam - the compiler's dialect and the shell's own signature - was
+paid once and is now paid for every platform after it.
 
 ### The boundary
 

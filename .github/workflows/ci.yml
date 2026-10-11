@@ -346,6 +346,20 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           ctest --preset wasm-release -R "PageTests" --no-tests=error --output-on-failure
 
+      # WHAT A HOST SERVES: the build writes LineSweeper's bundle to
+      # web-dist/linesweeper/ - the module, its example page, the notices for
+      # what it links, and BUILD.json naming this commit and every file's size
+      # raw and under Brotli - and this carries it out of the runner, after
+      # every step above has passed against the same build. Deploying it is
+      # the host's business, not this job's (docs/port/web.md, section 7).
+      # A missing bundle is an error, because the build is meant to write it.
+      - name: Keep LineSweeper's web bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: linesweeper-web
+          path: out/build/wasm-release/web-dist/linesweeper/
+          if-no-files-found: error
+
       - name: Keep the frames a golden check rejected
         if: failure()
         uses: actions/upload-artifact@v4

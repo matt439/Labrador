@@ -109,6 +109,25 @@ this repository.
 - **lodepng** — zlib, Lode Vandevenne. Linked only by `RenderPixelTests`, to
   read and write its golden PNGs.
 
+### Linked into a browser build by its toolchain
+
+A `wasm-*` build links Emscripten's runtime and system libraries statically
+into every module it makes, so they are distributed wherever a module is.
+None of them is in this tree; each comes with the Emscripten install and
+carries its licence there.
+
+- **Emscripten's runtime and system libraries**, including its JavaScript
+  loader and its html5 and GL implementations — MIT or University of
+  Illinois/NCSA, at the recipient's choice, Emscripten authors.
+- **libc++, libc++abi, libunwind and compiler-rt's builtins** — Apache License
+  2.0 with LLVM Exceptions, the LLVM Project.
+- **Emscripten's C library**, derived from musl — MIT, Rich Felker, et al.
+- **dlmalloc** — public domain (CC0), Doug Lea.
+
+LineSweeper's web bundle carries these notices with it: the build writes a
+`NOTICE.txt` beside the module, from `samples/linesweeper/web/NOTICE.txt` and
+the full licence texts in the Emscripten install that linked it.
+
 ### Toolchains, not code
 
 Nothing in this section is linked into a build product or carried in this tree;
