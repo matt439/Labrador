@@ -38,6 +38,10 @@
 //     begin_frame;
 //   - a texture the shell reloads in on_device_restored draws in the frame
 //     that heard it, with the same handle it had before the loss;
+//   - the host page's Module.onContextLost is called once, from a frame
+//     rather than from the browser's event, while the context is lost, and
+//     Module.onContextRestored once, after the shell has heard both halves,
+//     from the frame that heard them - and neither again after that;
 //   - and nothing raises a WebGL error on the restored context, which this
 //     page cannot see for itself: the error is drained by the next upload
 //     before anything here could ask for it, so ctest runs the page under
@@ -64,12 +68,41 @@ EM_JS(void, labrador_restore_context, (), {
 	Module["labradorLoseContext"].restoreContext();
 });
 
+// The host page's two hooks, as a page sets them, recording each call and
+// whether it came while a frame was running: 1 for lost and 2 for restored,
+// plus 10 when no frame was.
+EM_JS(void, labrador_install_page_hooks, (), {
+	Module["labradorPageHeard"] = [];
+	Module["labradorInFrame"] = false;
+	var record = function (kind) {
+		Module["labradorPageHeard"].push(kind + (Module["labradorInFrame"] ? 0 : 10));
+	};
+	Module.onContextLost = function () { record(1); };
+	Module.onContextRestored = function () { record(2); };
+});
+
+EM_JS(void, labrador_set_in_frame, (int in_frame), {
+	Module["labradorInFrame"] = in_frame !== 0;
+});
+
+EM_JS(int, labrador_page_heard_count, (), {
+	return Module["labradorPageHeard"].length;
+});
+
+EM_JS(int, labrador_page_heard, (int index), {
+	return Module["labradorPageHeard"][index];
+});
+
 namespace
 {
 	using namespace labrador;
 	using namespace mattmath;
 
 	constexpr int BUFFER_SIZE = 64;
+
+	// What labrador_page_heard answers.
+	constexpr int PAGE_HEARD_LOST = 1;
+	constexpr int PAGE_HEARD_RESTORED = 2;
 
 	// How many frames to draw into the lost context before asking for it
 	// back: more than one, so that a frame between the loss event and the
@@ -127,6 +160,7 @@ namespace
 		draw_before_loss,
 		draw_while_lost,
 		wait_for_restore,
+		draw_after_restore,
 	};
 
 	// Everything the frames share. Held in a static by main, because
@@ -173,6 +207,24 @@ namespace
 	{
 		std::printf("%d failure(s)\n", failures);
 		emscripten_force_exit(failures == 0 ? 0 : 1);
+	}
+
+	// Whether the page has heard exactly `expected`, in order, each from a
+	// frame.
+	bool page_heard(const std::vector<int>& expected)
+	{
+		if (labrador_page_heard_count() != static_cast<int>(expected.size()))
+		{
+			return false;
+		}
+		for (size_t index = 0; index < expected.size(); index++)
+		{
+			if (labrador_page_heard(static_cast<int>(index)) != expected[index])
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	const char* target(const Run& run)
@@ -234,9 +286,17 @@ namespace
 			check(refused, "read_back_buffer throws while the context is lost");
 			check(run.shell->heard.empty(),
 				"the shell hears nothing while the context is lost");
+			// The event may not have arrived before this frame's
+			// begin_frame, so the page has heard of the loss or nothing.
+			check(page_heard({}) || page_heard({ PAGE_HEARD_LOST }),
+				"the page hears at most the loss, once and from a frame, "
+				"while the context is lost");
 
 			run.lost_frames++;
-			if (run.lost_frames == LOST_FRAMES)
+			// Asked back only once the page has heard it went, so that the
+			// order checked below is the renderer's and not the browser's.
+			if (run.lost_frames >= LOST_FRAMES &&
+				page_heard({ PAGE_HEARD_LOST }))
 			{
 				labrador_restore_context();
 				run.step = Step::wait_for_restore;
@@ -261,7 +321,22 @@ namespace
 				"the shell hears lost then restored, together");
 			check(centre_is_red(run),
 				"the reloaded quad draws in the frame that heard the restore");
+			check(page_heard({ PAGE_HEARD_LOST, PAGE_HEARD_RESTORED }),
+				"the page hears lost then restored, each once and from a "
+				"frame, by the end of the frame that restored the shell");
 			run.renderer.end_frame();
+			run.step = Step::draw_after_restore;
+			break;
+		}
+
+		case Step::draw_after_restore:
+		{
+			draw_red(run);
+			check(centre_is_red(run), "the quad draws after the restore");
+			run.renderer.end_frame();
+			check(run.shell->heard.size() == 2 &&
+				page_heard({ PAGE_HEARD_LOST, PAGE_HEARD_RESTORED }),
+				"neither the shell nor the page hears anything more");
 			finish();
 			return;
 		}
@@ -271,6 +346,7 @@ namespace
 	void frame(void* argument)
 	{
 		Run& run = *static_cast<Run*>(argument);
+		labrador_set_in_frame(1);
 		try
 		{
 			step(run);
@@ -280,6 +356,7 @@ namespace
 			check(false, std::string("no step throws (") + error.what() + ")");
 			finish();
 		}
+		labrador_set_in_frame(0);
 	}
 }
 
@@ -294,6 +371,7 @@ int main()
 		run.shell = std::make_unique<RecordingShell>(run.renderer,
 			run.resources);
 		run.renderer.set_device_notify(run.shell.get());
+		labrador_install_page_hooks();
 
 		load_texture_asset(run.renderer, run.resources, "./content/", "quad");
 		run.quad = run.resources.resolve_texture("quad");

@@ -637,6 +637,8 @@ poster.
       locateFile: (path) => base + path,
       onQuit: () => { /* show "Play again" */ },
       onError: (message) => { /* fill .labrador-error */ },
+      onContextLost: () => { /* say the graphics went, and are awaited */ },
+      onContextRestored: () => { /* take that back */ },
     });
     canvas.focus();
   }, { once: true });
@@ -647,9 +649,15 @@ In Astro this is one `<LabradorDemo>` component that takes `base`, `poster`
 and an aspect ratio. Its CSS sets `aspect-ratio: 16 / 9; width: 100%` on the
 canvas, and the drawing buffer follows that box (§4). A visitor without
 WebGL2 gets the error paragraph naming what is missing, which is T6
-on a web page. `onQuit` and `onError` are the only two calls from the engine
-to the page. They are named here so that the web `Window` gets them from
-`Module`, not from globals.
+on a web page. `onQuit` and `onError` are the engine's two calls to the page
+about the game, and `onContextLost` and `onContextRestored` its two about the
+canvas: the browser took the WebGL2 context away, and gave it back with the
+game drawing again. Each is optional, read from `Module` when it is due
+rather than from globals, and the second pair is called once per loss, in
+that order, each from a frame rather than from the browser's event. Between
+them the canvas is blank, and a context that never comes back leaves it
+blank for good, so what the page says in `onContextLost` is the only word a
+visitor gets.
 
 ### 7.4 What a phone sees before M7
 
@@ -972,9 +980,9 @@ restore all of it drew again from the reloaded textures and font atlas, keys
 still played, and neither `onError` nor a WebGL warning appeared. It departs
 from §4's sketch in two places:
 
-- **No overlay, and no report at the moment of loss.** A browser puts frames
-  between the loss and the restore, sometimes many, and no backend before
-  this one ever did: d3d11, d3d12 and vulkan each lose, rebuild and restore
+- **No overlay, and no report to the shell at the moment of loss.** A
+  browser puts frames between the loss and the restore, sometimes many, and
+  no backend before this one ever did: d3d11, d3d12 and vulkan each lose, rebuild and restore
   inside the call that found the loss. A shell that released its textures
   on the loss event would throw from the next draw that named one. So
   `DeviceNotify` hears both halves together, `on_device_lost` then
@@ -1008,6 +1016,25 @@ its canvas. `RenderContextLossTests` fails on any warning the browser logs
 (`run_page.mjs --browser-warnings fail`), because the stale delete's error
 is drained by the next upload and the warning is the only place it is still
 visible. With the `glIsTexture` guard taken out, it fails on exactly that.
+
+**The host page hears both ends of a loss**, which the shell by design does
+not: `Module.onContextLost` from the first `begin_frame` after the lost
+event, and `Module.onContextRestored` once the rebuild holds and the shell has
+heard both of its halves (§7.3). A context that is never restored otherwise
+left a blank canvas and no word, and a page holds nothing a frame names, so
+telling it early costs the caller contract nothing. Both are called from a
+frame, because a page's hook is the page's code and the event is between
+frames; a loss and a restore that fall between the same two frames still
+reach the page as two calls. A tab in the background draws no frames, so it
+hears of the loss when it is shown. `RenderContextLossTests` installs both
+hooks and checks that each is called once, in order, inside a frame, with
+`onContextRestored` by the end of the frame that restored the shell and
+nothing after; calling the first from the lost callback instead fails it.
+LineSweeper's development page puts a message in its status line on the
+first and takes it back on the second. Played in headless Chrome at
+`wasm-debug` and `wasm-release` through a `WEBGL_lose_context` loss and
+restore, the message was up over the blank canvas, then gone with the board
+drawing again and keys moving the piece.
 
 **`local_multiplayer` is the second sample in a browser** (M6), and it
 needed no engine change. It has a `main_web.cpp` beside `main.cpp`, chosen
@@ -1092,7 +1119,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp` | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done); `local_multiplayer` on the web (done); `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 

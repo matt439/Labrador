@@ -6,12 +6,14 @@
 // the three things a 3.3 core context has that ES lacks are answered for both
 // contexts at once (gl_functions.h lists where). What is left is making the
 // context, saying which dialect to compile, asking for S3TC by the name a
-// browser gives it, and hearing when the browser takes the context away.
+// browser gives it, hearing when the browser takes the context away, and
+// telling the host page so.
 
 #include "engine/render/gl/backend.h"
 
 #include "engine/math/vector2i.h"
 
+#include <emscripten/em_js.h>
 #include <emscripten/html5.h>
 
 #include <cstdlib>
@@ -22,6 +24,22 @@
 #include <utility>
 
 using namespace mattmath;
+
+// The page's two optional hooks for a lost context, asked for by name on
+// Module exactly as the window's onQuit and onError are, and called only when
+// the page set them. Global rather than in labrador::, because EM_JS declares
+// a C function, and prefixed for the same reason.
+EM_JS(void, labrador_tell_page_context_lost, (), {
+	if (typeof Module.onContextLost === "function") {
+		Module.onContextLost();
+	}
+});
+
+EM_JS(void, labrador_tell_page_context_restored, (), {
+	if (typeof Module.onContextRestored === "function") {
+		Module.onContextRestored();
+	}
+});
 
 namespace labrador
 {
@@ -78,6 +96,11 @@ namespace labrador
 
 		// Set by the lost callback, cleared by take_restored_context.
 		bool lost = false;
+
+		// Set when the page is told of a loss, cleared when it is told of the
+		// restore. Apart from `lost` because a rebuild can fail on a context
+		// lost again, which sets `lost` a second time for one visible loss.
+		bool page_told_lost = false;
 	};
 
 	namespace
@@ -197,6 +220,32 @@ namespace labrador
 		this->context->lost = false;
 		enable_extensions(*this);
 		return true;
+	}
+
+	// FROM A FRAME, NOT FROM THE EVENT. The page's hook is the page's code,
+	// and what it does - show a message, or call back into the module - is
+	// not something the lost callback could run safely between frames. So
+	// the callback only notes the loss, and the first begin_frame after it
+	// says so: a frame later at most, which no visitor can tell apart.
+	void Renderer::Impl::tell_host_lost()
+	{
+		if (this->context == nullptr || !this->context->lost ||
+			this->context->page_told_lost)
+		{
+			return;
+		}
+		this->context->page_told_lost = true;
+		labrador_tell_page_context_lost();
+	}
+
+	void Renderer::Impl::tell_host_restored()
+	{
+		if (this->context == nullptr || !this->context->page_told_lost)
+		{
+			return;
+		}
+		this->context->page_told_lost = false;
+		labrador_tell_page_context_restored();
 	}
 
 	Vector2I Renderer::Impl::drawable_size() const

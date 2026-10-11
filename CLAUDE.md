@@ -77,7 +77,9 @@ restored**, and `DeviceNotify` hears both halves together, in the
 `begin_frame` after the browser hands it back - the shape the three
 Direct3D and Vulkan backends already have, because a browser puts frames
 between the two and a shell that had released its textures would throw from
-the next draw. `RenderContextLossTests` is a second browser page that pins
+the next draw. The host page hears both ends, `Module.onContextLost` and
+`Module.onContextRestored`, each from a frame and optional, and
+`RenderContextLossTests` is a second browser page that pins all of
 it. `local_multiplayer` is the second sample with a browser build, at
 `out/build/wasm-*/samples/local_multiplayer/LocalMultiplayerSample.html`:
 two views through WebGL2, fanned out on the serial pool. The other three

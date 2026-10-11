@@ -560,6 +560,9 @@ namespace labrador
 		{
 			this->notify->on_device_restored();
 		}
+
+		// And the host page last, once there is something to show it.
+		this->tell_host_restored();
 	}
 
 	void Renderer::Impl::replay(const DrawList::View& view, int drawable_height)
@@ -767,7 +770,10 @@ namespace labrador
 	{
 		// FIRST, SO THE FRAME THAT FOLLOWS A RESTORE DRAWS WITH IT. The shell
 		// hears both halves of the loss here and has reloaded what it holds
-		// before anything this frame names a texture.
+		// before anything this frame names a texture. The page hears of the
+		// loss first, so that a loss and a restore that both fell between two
+		// frames still reach it as two calls, in order.
+		this->impl_->tell_host_lost();
 		if (this->impl_->take_restored_context())
 		{
 			this->impl_->restore_device();

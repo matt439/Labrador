@@ -16,6 +16,10 @@
     so a canvas that cannot take focus cannot be played.
   - Module.onQuit and Module.onError are the module's two calls to the page:
     the pause menu's QUIT, and a failure the engine could not recover from.
+  - Module.onContextLost and Module.onContextRestored are two more:
+    the browser took the canvas's WebGL2 context away, and gave it
+    back with the game drawing again. Between them the canvas is blank, so
+    the page says why; a context that never comes back leaves the message up.
 
   The site's page is a different one (docs/port/web.md, section 7).
 -->
@@ -41,6 +45,7 @@
 <script>
   var canvas = document.getElementById("canvas");
   var statusLine = document.getElementById("status");
+  var shownBeforeLoss = "";
 
   // A right click is a button the game may read, not a request for the
   // browser's menu over it.
@@ -59,6 +64,16 @@
     onError: function (message) {
       statusLine.className = "error";
       statusLine.textContent = message;
+    },
+    onContextLost: function () {
+      shownBeforeLoss = statusLine.textContent;
+      statusLine.className = "error";
+      statusLine.textContent =
+        "The browser took the game's graphics context away. Waiting for it to come back...";
+    },
+    onContextRestored: function () {
+      statusLine.className = "";
+      statusLine.textContent = shownBeforeLoss;
     },
   };
 </script>
