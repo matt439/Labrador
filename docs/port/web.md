@@ -1007,9 +1007,10 @@ their frames in `golden-actual/` beside the page, as on Windows. What it took:
   is held to it.
 - **Absent rather than skipped without a browser.** The entry is registered
   only where configure finds a Chromium (`LABRADOR_TEST_BROWSER`), so the
-  `wasm-*` presets count 20 entries here, with the context-loss page and the
+  `wasm-*` presets count 25 entries here, with the context-loss page and the
   window page below, the no-S3TC run of this one (M7b), `AudioSampleTests`
-  (M6) and `CollisionSampleTests`, and 16 on a machine without one.
+  (M6), `CollisionSampleTests` and the five sample pages below, and 16 on a
+  machine without one.
 - **The device-info case has a browser branch**: `present_mode` is
   `browser_animation_frame` with no swap interval, where WGL reports one.
 - **CI's Chrome draws with SwiftShader**, which its log names: "ANGLE
@@ -1332,6 +1333,34 @@ around it into the trigger, which counted one entry and turned the player
 green. Escape reached `Module.onQuit`. The only console error was the scratch
 server's missing favicon. Firefox, Safari and a pad have not been tried on
 it.
+
+**Each sample's page is a ctest entry**, because until then nothing loaded
+what a browser build ships, and a content path the module could not find
+would first have shown on the live site. `LineSweeperPageTests`,
+`LocalMultiplayerPageTests`, `MinimalPageTests`, `CollisionPageTests` and
+`AudioPageTests` are registered in the root `CMakeLists.txt` wherever
+`RenderPixelTests` is, and
+CI's wasm job runs them as a step of their own. `run_page.mjs` gained a second
+kind of page for them: with `--quit-keys` it wraps the callbacks the page
+hands its `Module` before the loader reads them, waits for the runtime and
+60 animation frames, presses each key for 150 ms (Escape, Down, Down, Enter
+for LineSweeper; Escape, Enter for minimal; Escape for local_multiplayer and
+collision; S then Escape for the sound board, where S is the gesture that
+lets Web Audio start and Escape, which HTML does not count as one, is only
+the way out), and
+passes when `Module.onQuit` is called. A console error or warning, an
+uncaught exception, a warning or an error the browser logs, or a call to
+`Module.onError` fails it. The runner answers `/favicon.ico` itself, because
+the browser asks every origin for one. It also does not count ANGLE's
+"Performance" driver messages: over SwiftShader, Chrome logs "GPU stall due to
+ReadPixels" four times for a sample whose code reads nothing back. Checked at
+`wasm-debug` and `wasm-release` on the RTX 5080, and at `wasm-debug` again with
+`--disable-gpu`, which draws with SwiftShader; all of them pass. They fail when
+they should, too: LineSweeper at `wasm-debug` and minimal at `wasm-release`,
+each with its content embedded one folder too deep, failed on the startup
+error that reached `Module.onError`, and LineSweeper given Escape, Down,
+Enter, which is RESTART, timed out without a quit. With the null renderer,
+as CI's second wasm configure builds it, they pass too.
 
 ### Spikes — *days*, before any milestone is committed to
 

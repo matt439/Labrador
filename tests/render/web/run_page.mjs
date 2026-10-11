@@ -1,17 +1,35 @@
-// Runs one test page of a browser build in headless Chromium, and exits with
-// its exit code.
+// Runs one page of a browser build in headless Chromium, and exits with its
+// exit code.
 //
 //   node run_page.mjs --browser <chrome> --page <dir/Name.html>
 //                     [--collect <folder in the page's file system>]
 //                     [--timeout <seconds>] [--browser-warnings fail]
 //                     [--hide-extension <WebGL extension name>]
 //                     [--input <script.mjs>]
+//   node run_page.mjs --browser <chrome> --page <dir/Name.html>
+//                     --quit-keys <code,code,...> [--frames <n>]
+//                     [--timeout <seconds>]
 //
 // ctest's command for RenderPixelTests and RenderContextLossTests in the
-// wasm-* presets (tests/render/CMakeLists.txt), and for WebWindowTests
-// (tests/app/CMakeLists.txt). A browser build's other tests run under Node,
-// which has no WebGL and no DOM; this is how the ones that need either get a
+// wasm-* presets (tests/render/CMakeLists.txt), for WebWindowTests
+// (tests/app/CMakeLists.txt), and for each sample's development page (the
+// root CMakeLists.txt). A browser build's other tests run under Node, which
+// has no WebGL and no DOM; this is how the ones that need either get a
 // browser instead.
+//
+// TWO KINDS OF PAGE. A test page settles window.labradorExit with main's exit
+// code (tests/render/web/shell.html) and is waited on. A sample's page has no
+// exit code, because in a browser main never returns, so --quit-keys names
+// the way out instead: the run waits for the module's runtime and then
+// --frames animation frames (60 unless given), presses each key in turn - a
+// KeyboardEvent.code, held long enough for a tick to see it - and passes when
+// the page's Module.onQuit is called. Anything else on the way fails it: a
+// console error, warning or failed assertion, an uncaught exception, a
+// warning or an error the browser logs (a file the page could not fetch is
+// one), a call to Module.onError, or a page that gives no onQuit to call. The
+// page's own Module object is used, not a test double, so what passes is the
+// page as it is built; the run only wraps the three callbacks it hands the
+// module, to hear them, before the module's loader can read them.
 //
 // --input runs a script against the page while it runs, for a page whose
 // subject is what the browser delivers to it rather than what it computes.
@@ -26,7 +44,7 @@
 // failure naming its message. A page that aborts or exits with a failure
 // first ends the run as it would without one; one that exits cleanly first
 // is waited past, because a script may have closed it on purpose and still
-// have something to ask of it.
+// have something to ask of it. It is for a test page, not a sample's.
 //
 // --browser-warnings fail makes a warning or an error the browser itself logs
 // a failure of the run, whatever the page's exit code. It is for a page whose
@@ -100,6 +118,27 @@ function parse_arguments(argv) {
 		parsed['browser-warnings'] !== 'fail') {
 		fail_usage('--browser-warnings takes one value, "fail"');
 	}
+	if (parsed['quit-keys'] !== undefined) {
+		if (parsed.collect !== undefined || parsed['browser-warnings'] !== undefined) {
+			fail_usage('--quit-keys takes neither --collect nor --browser-warnings; ' +
+				'a sample\'s page fails on any warning already');
+		}
+		parsed.keys = parsed['quit-keys'].split(',').filter((code) => code.length > 0);
+		if (parsed.keys.length === 0) {
+			fail_usage('--quit-keys names at least one key');
+		}
+		for (const code of parsed.keys) {
+			if (key_event(code) === undefined) {
+				fail_usage(`--quit-keys: "${code}" is not a key this runner can press`);
+			}
+		}
+		parsed.frame_count = Number(parsed.frames ?? 60);
+		if (!Number.isInteger(parsed.frame_count) || parsed.frame_count < 1) {
+			fail_usage('--frames takes a whole number of frames, at least one');
+		}
+	} else if (parsed.frames !== undefined) {
+		fail_usage('--frames is for a sample\'s page, with --quit-keys');
+	}
 	return parsed;
 }
 
@@ -108,13 +147,47 @@ function fail_usage(why) {
 		'usage: node run_page.mjs --browser <chrome> --page <file.html> ' +
 		'[--collect <folder>] [--timeout <seconds>] ' +
 		'[--browser-warnings fail] [--hide-extension <name>] ' +
-		'[--input <script.mjs>]\n');
+		'[--input <script.mjs>]\n' +
+		'       node run_page.mjs --browser <chrome> --page <file.html> ' +
+		'--quit-keys <code,...> [--frames <n>] [--timeout <seconds>]\n');
 	process.exit(2);
+}
+
+// What Input.dispatchKeyEvent needs for a KeyboardEvent.code: the key it
+// types and the Windows virtual-key code, which is how Chromium tells the
+// keys apart. The keys a sample's way out uses, and the letters. The table is
+// inside the function because the arguments are parsed, and this asked,
+// before the module's own top-level constants exist.
+function key_event(code) {
+	const named = {
+		Escape: { key: 'Escape', vk: 27 },
+		Enter: { key: 'Enter', vk: 13 },
+		Space: { key: ' ', vk: 32 },
+		ArrowLeft: { key: 'ArrowLeft', vk: 37 },
+		ArrowUp: { key: 'ArrowUp', vk: 38 },
+		ArrowRight: { key: 'ArrowRight', vk: 39 },
+		ArrowDown: { key: 'ArrowDown', vk: 40 },
+	};
+	if (Object.hasOwn(named, code)) {
+		return { code, ...named[code] };
+	}
+	const letter = /^Key([A-Z])$/.exec(code);
+	if (letter) {
+		return { code, key: letter[1].toLowerCase(), vk: letter[1].charCodeAt(0) };
+	}
+	return undefined;
 }
 
 function serve(directory) {
 	const server = createServer((request, response) => {
 		const wanted = decodeURIComponent(new URL(request.url, 'http://x').pathname);
+		// A browser asks every origin for an icon the page never names. A
+		// development page has none and needs none, and the 404 would be a
+		// browser error that a sample's run counts as a failure of the page.
+		if (wanted === '/favicon.ico') {
+			response.writeHead(204).end();
+			return;
+		}
 		const file = normalize(join(directory, wanted));
 		if (!file.startsWith(directory + sep)) {
 			response.writeHead(403).end();
@@ -330,6 +403,134 @@ const RENDERER_EXPRESSION = `(() => {
 		: gl.getParameter(gl.RENDERER);
 })()`;
 
+// Evaluated in a sample's page before any of its own scripts. The page
+// declares `var Module = {...}` and the loader re-reads it, so an accessor on
+// window sees the object the moment it is assigned, with its callbacks
+// already in it, and wraps each before the loader can read it. What the
+// wrappers hear is in window.labradorRun.
+const SAMPLE_HOOK = `(() => {
+	const heard = { initialized: false, quit: false, errors: [], has_quit: false };
+	window.labradorRun = heard;
+	let module;
+	const hook = (value) => {
+		if (value === null || typeof value !== 'object' || value.labradorRunHooked) {
+			return;
+		}
+		Object.defineProperty(value, 'labradorRunHooked', { value: true });
+		const initialized = value.onRuntimeInitialized;
+		value.onRuntimeInitialized = function () {
+			heard.initialized = true;
+			if (typeof initialized === 'function') {
+				return initialized.apply(this, arguments);
+			}
+		};
+		const quit = value.onQuit;
+		heard.has_quit = typeof quit === 'function';
+		if (heard.has_quit) {
+			value.onQuit = function () {
+				heard.quit = true;
+				return quit.apply(this, arguments);
+			};
+		}
+		const error = value.onError;
+		value.onError = function (message) {
+			heard.errors.push(String(message));
+			if (typeof error === 'function') {
+				return error.apply(this, arguments);
+			}
+		};
+	};
+	Object.defineProperty(window, 'Module', {
+		configurable: true,
+		enumerable: true,
+		get() { return module; },
+		set(value) { module = value; hook(value); },
+	});
+})()`;
+
+function frames_expression(count) {
+	return `new Promise((done) => {
+		let left = ${count};
+		const step = () => { if (--left <= 0) { done(true); } else { requestAnimationFrame(step); } };
+		requestAnimationFrame(step);
+	})`;
+}
+
+// A sample's page, from the runtime to Module.onQuit. Returns an outcome in
+// the shape the test page's wait gives: a code, or an abort with the reason.
+async function run_sample(devtools, session, complaints) {
+	const heard = () => evaluate(devtools, session, 'window.labradorRun');
+	const failed = (state) => {
+		const reasons = [];
+		if (state && state.errors.length > 0) {
+			reasons.push(`Module.onError was called: ${state.errors.join(' | ')}`);
+		}
+		if (complaints.count > 0) {
+			reasons.push(`the page or the browser logged ${complaints.count} error(s) or warning(s)`);
+		}
+		return reasons.length > 0 ? reasons.join('; ') : undefined;
+	};
+
+	let state = await heard();
+	while (!(state && state.initialized)) {
+		const why = failed(state);
+		if (why) {
+			return { abort: `${why}, before the runtime was ready` };
+		}
+		await wait(50);
+		state = await heard();
+	}
+	if (!state.has_quit) {
+		return { abort: 'the page gives the module no Module.onQuit to call' };
+	}
+
+	await evaluate(devtools, session, frames_expression(options.frame_count), true);
+	process.stdout.write(`run_page: ${options.frame_count} animation frames\n`);
+	let why = failed(await heard());
+	if (why) {
+		return { abort: why };
+	}
+
+	for (const code of options.keys) {
+		const key = key_event(code);
+		const event = {
+			code: key.code,
+			key: key.key,
+			windowsVirtualKeyCode: key.vk,
+			nativeVirtualKeyCode: key.vk,
+		};
+		await devtools.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...event }, session);
+		await wait(150);
+		await devtools.send('Input.dispatchKeyEvent', { type: 'keyUp', ...event }, session);
+		await wait(150);
+		process.stdout.write(`run_page: pressed ${code}\n`);
+	}
+
+	state = await heard();
+	while (!state.quit) {
+		why = failed(state);
+		if (why) {
+			return { abort: why };
+		}
+		await wait(50);
+		state = await heard();
+	}
+	process.stdout.write('run_page: Module.onQuit was called\n');
+
+	// A few frames more, so that a failure on the way out is heard too.
+	await evaluate(devtools, session, frames_expression(10), true);
+	why = failed(await heard());
+	return why ? { abort: why } : { code: 0 };
+}
+
+// A note the WebGL implementation logs about its own cost, not about anything
+// the page did wrong. ANGLE over SwiftShader, which is what a machine with no
+// GPU draws with, logs "GPU stall due to ReadPixels" as a warning four times
+// for a sample whose code reads nothing back; the readback is the browser's
+// own. It is printed with the rest and counted against nobody, and a driver
+// message of any other type still counts.
+const PERFORMANCE_NOTE = /GL Driver Message \([^,]*, Performance,/;
+
 async function run() {
 	const server = await serve(root);
 	const url = `http://127.0.0.1:${server.address().port}/${page_name}`;
@@ -338,6 +539,9 @@ async function run() {
 
 	let exit_code = 1;
 	let browser_complaints = 0;
+	// What a sample's page is failed by: everything above, and the page's own
+	// console errors and warnings and uncaught exceptions as well.
+	const sample_complaints = { count: 0 };
 	let devtools;
 	try {
 		devtools = new DevTools(await Promise.race([
@@ -365,20 +569,25 @@ async function run() {
 				const type = message.params.type;
 				if (type === 'error' || type === 'warning' || type === 'assert') {
 					process.stderr.write(text);
+					sample_complaints.count++;
 				} else {
 					process.stdout.write(text);
 				}
 			} else if (message.method === 'Runtime.exceptionThrown') {
 				const details = message.params.exceptionDetails;
 				process.stderr.write(`run_page: uncaught: ${details.exception?.description ?? details.text}\n`);
+				sample_complaints.count++;
 			} else if (message.method === 'Inspector.targetCrashed') {
 				// Nothing waiting on the page will be answered now.
 				devtools.refuse_all('the page crashed');
 			} else if (message.method === 'Log.entryAdded') {
-				const level = message.params.entry.level;
-				process.stderr.write(`run_page: browser ${level}: ${message.params.entry.text}\n`);
-				if (level === 'warning' || level === 'error') {
+				const entry = message.params.entry;
+				const where = entry.url ? ` (${entry.url})` : '';
+				process.stderr.write(`run_page: browser ${entry.level}: ${entry.text}${where}\n`);
+				if ((entry.level === 'warning' || entry.level === 'error') &&
+					!PERFORMANCE_NOTE.test(entry.text)) {
 					browser_complaints++;
+					sample_complaints.count++;
 				}
 			}
 		});
@@ -392,6 +601,14 @@ async function run() {
 			}, session);
 			process.stdout.write(`run_page: hiding ${options['hide-extension']} from the page\n`);
 		}
+		if (options.keys) {
+			await devtools.send('Page.addScriptToEvaluateOnNewDocument',
+				{ source: SAMPLE_HOOK }, session);
+			// A headless page is never the focused window, and a key goes to
+			// the focused element of a focused window or nowhere.
+			await devtools.send('Emulation.setFocusEmulationEnabled',
+				{ enabled: true }, session);
+		}
 		await devtools.send('Page.navigate', { url }, session);
 
 		// The navigation commits before the page's first script runs, so the
@@ -399,13 +616,21 @@ async function run() {
 		// FOR THE WHOLE OF IT, because a page whose main thread never yields
 		// answers neither question, and an evaluate that is never answered
 		// would otherwise hold the run past any check made between them.
-		const finished = (async () => {
-			while (await evaluate(devtools, session,
-				`typeof window.labradorExit === 'object' && location.href === ${JSON.stringify(url)}`) !== true) {
-				await wait(50);
-			}
-			return evaluate(devtools, session, 'window.labradorExit', true);
-		})();
+		const finished = options.keys
+			? (async () => {
+				while (await evaluate(devtools, session,
+					`typeof window.labradorRun === 'object' && location.href === ${JSON.stringify(url)}`) !== true) {
+					await wait(50);
+				}
+				return run_sample(devtools, session, sample_complaints);
+			})()
+			: (async () => {
+				while (await evaluate(devtools, session,
+					`typeof window.labradorExit === 'object' && location.href === ${JSON.stringify(url)}`) !== true) {
+					await wait(50);
+				}
+				return evaluate(devtools, session, 'window.labradorExit', true);
+			})();
 		// Settled after a timeout has already won, it has nobody to tell.
 		finished.catch(() => {});
 

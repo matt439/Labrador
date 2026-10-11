@@ -56,8 +56,9 @@ browser: the `wasm-debug` and `wasm-release` presets build the engine with
 Emscripten, draw through a WebGL2 context that `gl/` makes in a second context
 translation unit, `web_context.cpp`, and run the headless tests under Node -
 and the pixel tests in headless Chrome, against the same checked-in images,
-with the browser window's input driven there too.
-All five samples run there, and
+with the browser window's input driven there too, and where each sample's
+built page is also loaded and played to its own way out. All five samples
+run there, and
 [docs/port/web.md](docs/port/web.md) is the plan. Each proves something a
 different one could not: OpenGL that a view need not record into a driver,
 Direct3D 12 that the engine can own the fence rather than the driver, Vulkan
@@ -97,7 +98,8 @@ with no GPU and no sound card runs end to end.
   the two `wasm-*` presets**: the compiler, the toolchain file vcpkg chains to,
   and the Node the tests run under. It does not come with Visual Studio either,
   and Visual Studio is still what puts CMake and Ninja on the path for it. The
-  pixel tests and the window's input test there also want Chrome, or another
+  pixel tests, the window's input test and the samples' pages there also
+  want Chrome, or another
   Chromium named by `LABRADOR_TEST_BROWSER`, and are left out of `ctest` where
   there is none.
 - **vcpkg**, with `VCPKG_ROOT` set. `CMakePresets.json` reads it for the
