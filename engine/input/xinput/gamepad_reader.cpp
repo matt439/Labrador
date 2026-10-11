@@ -1,4 +1,5 @@
 #include "engine/input/gamepad_reader.h"
+#include "engine/input/gamepads.h"
 #include "engine/math/vector2f.h"
 
 #include <GamePad.h>
@@ -11,6 +12,10 @@ namespace labrador
 	struct GamepadReader::Impl
 	{
 		DirectX::GamePad gamepad;
+
+		// What the last sample() read, by XInput user index, which is already
+		// a slot that holds while its pad stays connected.
+		GamepadState states[Gamepads::max_count];
 	};
 
 	namespace
@@ -49,6 +54,39 @@ namespace labrador
 
 			return buttons;
 		}
+
+		GamepadState read_pad(DirectX::GamePad& gamepad, int slot)
+		{
+			GamepadState result;
+
+			// DEAD_ZONE_NONE, deliberately. The deadzone is applied once, by
+			// whoever knows what the stick is being used for, with apply_deadzone.
+			// Asking for one here and letting a caller apply a second by hand is
+			// exactly the defect this module was written to remove - and the two
+			// copies it replaces asked for *different* ones, so the same physical
+			// stick position meant two things depending on which was reading.
+			const DirectX::GamePad::State pad = gamepad.GetState(
+				slot, DirectX::GamePad::DEAD_ZONE_NONE);
+			if (!pad.IsConnected())
+			{
+				return result;
+			}
+
+			result.connected = true;
+
+			// The one negation, in the one place. Pad APIs report +y up; this
+			// engine is +y down everywhere else.
+			result.left_stick =
+				Vector2F(pad.thumbSticks.leftX, -pad.thumbSticks.leftY);
+			result.right_stick =
+				Vector2F(pad.thumbSticks.rightX, -pad.thumbSticks.rightY);
+
+			result.left_trigger = pad.triggers.left;
+			result.right_trigger = pad.triggers.right;
+			result.buttons = buttons_of(pad);
+
+			return result;
+		}
 	}
 
 	GamepadReader::GamepadReader() :
@@ -60,37 +98,21 @@ namespace labrador
 	GamepadReader::GamepadReader(GamepadReader&&) noexcept = default;
 	GamepadReader& GamepadReader::operator=(GamepadReader&&) noexcept = default;
 
+	void GamepadReader::sample()
+	{
+		for (int slot = 0; slot < Gamepads::max_count; ++slot)
+		{
+			this->impl_->states[slot] = read_pad(this->impl_->gamepad, slot);
+		}
+	}
+
 	GamepadState GamepadReader::read(int slot) const
 	{
-		GamepadState result;
-
-		// DEAD_ZONE_NONE, deliberately. The deadzone is applied once, by
-		// whoever knows what the stick is being used for, with apply_deadzone.
-		// Asking for one here and letting a caller apply a second by hand is
-		// exactly the defect this module was written to remove - and the two
-		// copies it replaces asked for *different* ones, so the same physical
-		// stick position meant two things depending on which was reading.
-		const DirectX::GamePad::State pad = this->impl_->gamepad.GetState(
-			slot, DirectX::GamePad::DEAD_ZONE_NONE);
-		if (!pad.IsConnected())
+		if (slot < 0 || slot >= Gamepads::max_count)
 		{
-			return result;
+			return GamepadState();
 		}
-
-		result.connected = true;
-
-		// The one negation, in the one place. Pad APIs report +y up; this
-		// engine is +y down everywhere else.
-		result.left_stick =
-			Vector2F(pad.thumbSticks.leftX, -pad.thumbSticks.leftY);
-		result.right_stick =
-			Vector2F(pad.thumbSticks.rightX, -pad.thumbSticks.rightY);
-
-		result.left_trigger = pad.triggers.left;
-		result.right_trigger = pad.triggers.right;
-		result.buttons = buttons_of(pad);
-
-		return result;
+		return this->impl_->states[slot];
 	}
 
 	void GamepadReader::suspend()

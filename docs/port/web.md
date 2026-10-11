@@ -89,7 +89,7 @@ hardest item becoming its easiest:
   [android.md](android.md) §3.3 found that `GamepadReader`'s pull shape does
   not hold there. The browser Gamepad API is polled:
   `navigator.getGamepads()` returns a snapshot on demand. That is exactly what
-  `GamepadReader::read(slot)` asks for
+  `GamepadReader::sample()` asks for once a frame
   ([`input/gamepad_reader.h`](../../engine/input/gamepad_reader.h)).
 - **There is no surface loss.** A WebGL context can be lost, but a tab moving
   to the background does not lose it. The lifecycle is visible/hidden plus
@@ -267,11 +267,31 @@ does not decide that.
 `GamepadReader` is a concrete class with a pimpl, and
 `input/xinput/gamepad_reader.cpp` is its only implementation. A web
 implementation, `input/web/gamepad_reader.cpp`, samples
-`emscripten_get_gamepad_status` for each slot inside `read(slot)`. It maps the
-W3C "standard" layout onto `GamepadButton`, and answers disconnected for any
-pad without a standard mapping. *General knowledge:* browsers hide pads until
-the page sees a button press. That is the "slot occupied on both frames" rule
-`gamepad.h` already enforces, so a pad appears with no phantom press.
+`navigator.getGamepads()` once a frame, in `sample()`, which `Gamepads::poll`
+calls before it reads any slot. It maps the W3C "standard" layout onto
+`GamepadButton`. *General knowledge:* browsers hide pads until the page sees a
+button press. That is the "slot occupied on both frames" rule `gamepad.h`
+already enforces, so a pad appears with no phantom press. *(As built in M4:)*
+
+- **A pad without the standard mapping is reported absent.** It takes no slot
+  and a game sees no pad. Its buttons and axes are in whatever order its
+  driver chose, so reading them by index would guess, and the engine does not
+  guess. Nor does a standard pad short of the sixteen buttons and four axes
+  the engine reads; the guide button is not one of them.
+- **Slots are compacted.** The browser's index is its own count and can pass
+  four, so a reconnected pad may come back as 5. Each connected standard pad
+  takes the lowest free slot when it is first seen and keeps it while it stays
+  connected, which is the rule XInput's user index keeps. A fifth waits until
+  one of the four leaves.
+- **The pads follow the page, not the canvas.** A click beside the canvas
+  takes the keyboard, and a player on a pad has not left because of it. So
+  `blur` and `focus` on the canvas reach `Application` as
+  `on_keyboard_lost` and `on_keyboard_gained`, which release and restore the
+  keys and the mouse and nothing else. The pads, and the states' activation,
+  follow `visibilitychange`.
+- **Both translations are pure functions** in `input/web/standard_gamepad.h`,
+  pinned in `InputTests` under the `wasm-*` presets by filling the event
+  Emscripten would fill, as `dom_events.h` is in `AppTests`.
 
 The keyboard and mouse are fed, as on Win32. `app/web/window.cpp` registers
 `emscripten_set_key{down,up}_callback` on the canvas and translates
@@ -432,9 +452,12 @@ The consequences:
 
 **Lifecycle.** `visibilitychange` to hidden calls `on_suspending()`, and
 visible calls `on_resuming()`, which already resets elapsed time. Canvas
-`blur` and `focus` call `on_deactivated` and `on_activated`, so held keys are
-released when focus leaves, exactly as `set_input_focus` does for alt-tab
-([`application.cpp:309-324`](../../engine/app/application.cpp#L309-L324)). The
+`blur` and `focus` call `on_keyboard_lost` and `on_keyboard_gained`, so held
+keys are released when focus leaves, exactly as `set_input_focus` does for
+alt-tab, and the pads go on reading (§3.4). `fullscreenchange`, and a refused
+request's `fullscreenerror`, reach `on_fullscreen_changed`, so
+`Application::fullscreen()` says what the browser did rather than what was
+asked. The
 `webglcontextlost` event goes to the renderer's `DeviceNotify`. The asset
 reload path already exists for D3D and Vulkan and is settled in `renderer.h`.
 That makes GL a fourth backend that can lose a device, which changes one
@@ -776,8 +799,30 @@ a WGL context, until M3 gave it a second one and switched them to `gl/`. And
 `AppTests` was not in the browser build at all rather than split, because
 `application.h` included `<Windows.h>` until D2 landed in M2.
 `input/web/gamepad_reader.cpp` exists a milestone early, because the
-input-backend variable needed something to select. It compiles, and M4 is
-still the pad that proves it.
+input-backend variable needed something to select.
+
+**M4's code has landed, and a pad in a person's hands has not played it.**
+`sample()` asks the browser once a frame rather than once a slot, slots are
+compacted and stable, a non-standard pad is absent, and the canvas losing the
+keyboard no longer suspends the pads: on the web they follow the page's
+visibility (§3.4). That last one was a bug a pad-only player could not get out
+of, because the canvas blurring suspended the reader and nothing a pad does
+gives the canvas focus back. `Application` now keeps what the window has said
+as three facts - foreground, shown, has the keyboard - and derives the pads,
+the keys and the states' activation from them. On Windows the third never
+changes; the one difference there is that a window restored without being
+activated no longer takes the keyboard, which it never had. The fullscreen
+flag follows the browser too. Checked in headless Chrome against
+LineSweeper's page, with a script standing in for the Gamepad API: a standard
+pad at index 5, with the canvas blurred, moved the piece through slot 0 and
+opened the pause menu with Start, where `master` did nothing; with the page
+faked hidden it did nothing, and shown again it played; keys did nothing with
+the canvas blurred and played once it had focus. A request granted inside a
+click set the flag and the canvas full screen, `document.exitFullscreen()`
+cleared it, a `fullscreenerror` cleared it, and a page with
+`fullscreenEnabled` false refused on the spot. Headless Chrome does not leave
+full screen on a dispatched Escape, so Escape itself is a person's check, as
+are a physical pad on the standard mapping, Firefox, and Safari.
 
 Closing the render half moved some coverage. The test sources gated on the
 null backend - `RenderTests`' `null_tests.cpp`, `SceneTests`'
@@ -1063,8 +1108,8 @@ frames. Arrow keys did not scroll the page. A `WEBGL_lose_context` loss and
 restore came back drawing. A resize of the CSS box changed the drawing
 buffer, and unlike LineSweeper this sample also re-laid out both panes,
 because it rebuilds its views every tick. Escape reached `Module.onQuit`.
-Firefox and Safari have not been checked for this sample. Neither has a pad,
-for the same reason M4 is open.
+Firefox and Safari have not been checked for this sample. Neither has a
+physical pad, for the same reason M4 is open.
 
 **M7b's texture item is done: a context without S3TC decodes the blocks on
 the CPU instead of refusing them.** `engine/render/block_decode.h` turns BC1,
@@ -1211,7 +1256,7 @@ Each is cheap and could change the plan:
 | **M1** | Build and core: presets, `settings.cmake` clang branch, vcpkg qualifier, input-backend variable, serial pool, clock (D4), `widen`, `executable_directory` | days (+ S1's clean-up) | `ctest --preset wasm-debug` runs the §5 list green; every Windows preset unchanged and green |
 | **M2** | The shell: D2 and D3, `app/win32/` moved with no behaviour change, `app/web/window.cpp` (canvas, callbacks, main loop, lifecycle, resize) | week | LineSweeper reaches its first frame in a browser and takes keys; Windows samples behave as before (look at them, per the see-it-on-screen rule) |
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
-| **M4** | Gamepad: `input/web/gamepad_reader.cpp` | hours | A pad on the standard mapping plays LineSweeper |
+| **M4** | Gamepad: `input/web/gamepad_reader.cpp`, sampled once a frame, compacted slots, pads following page visibility rather than canvas focus, and the fullscreen flag following the browser (code landed; a physical pad is the open check) | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
 | **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |

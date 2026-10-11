@@ -114,7 +114,12 @@ checking every bank. Configure refuses `xaudio2` in a browser build and
 **And two input backends, on a third**: `LABRADOR_INPUT_BACKEND` is `xinput`
 or `web`, and only the pad is behind it, because the keyboard and mouse are fed
 by the window rather than read. `web` is the browser Gamepad API and is the
-default under Emscripten; it compiles, and no pad has driven it yet.
+default under Emscripten. A pad a page script fakes has played LineSweeper
+through it in headless Chrome; a physical one has not. On the web the pads
+follow the page's visibility, not the canvas's focus, which only takes the
+keys: `Application` keeps foreground, shown and has-the-keyboard apart, and
+`InputTests` pins the standard-mapping translation and slot assignment
+(`input/web/standard_gamepad.h`) under the `wasm-*` presets.
 
 | Preset | Backend | ctest |
 |---|---|---|

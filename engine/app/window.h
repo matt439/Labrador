@@ -33,6 +33,23 @@ namespace labrador
 		virtual void on_deactivated() = 0;
 		virtual void on_suspending() = 0;
 		virtual void on_resuming() = 0;
+
+		// THE KEYBOARD, WHERE IT IS NOT THE FOREGROUND. A Win32 window has the
+		// keyboard exactly while it is active, so it never calls these. A
+		// canvas is one element of a page, and a click beside it takes the
+		// keyboard while the player is still looking at the game, perhaps
+		// with a pad in their hands: the keys held are released, as a lost
+		// foreground releases them, and nothing else is meant - the pads stay
+		// live and no state is told.
+		virtual void on_keyboard_gained() {}
+		virtual void on_keyboard_lost() {}
+
+		// Whether the window is full screen now, said when the platform
+		// decided it rather than the caller: a player leaving with Escape, or a
+		// request refused. A Win32 window changes it only when asked, and so
+		// never calls this.
+		virtual void on_fullscreen_changed([[maybe_unused]] bool fullscreen) {}
+
 		virtual void on_window_moved() const = 0;
 		virtual void on_window_size_changed(int width, int height) = 0;
 
@@ -141,7 +158,10 @@ namespace labrador
 		// nothing here knows it. In a browser it is the canvas, measured here,
 		// because the page laid it out and nothing here chose its size. A
 		// notify set after construction would miss it, and the owner would
-		// never learn the size it got.
+		// never learn the size it got. A canvas that does not have the
+		// keyboard when it is taken says so here too, with on_keyboard_lost,
+		// and a full-screen request refused on the spot with
+		// on_fullscreen_changed.
 		Window(const WindowOptions& options, WindowNotify* notify);
 
 		// Takes down what the constructor made, on every path out - not only
@@ -220,7 +240,9 @@ namespace labrador
 		//
 		// In a browser, the Fullscreen API on the canvas. A browser grants it
 		// only inside an input event, so a request made from a frame waits
-		// for the next key or button event and is made there.
+		// for the next key or button event and is made there. The browser has
+		// the last word either way - it may refuse, and the player may leave
+		// with Escape - and on_fullscreen_changed reports what it decided.
 		void enter_fullscreen() const;
 		void leave_fullscreen(const mattmath::Vector2I& client_size) const;
 

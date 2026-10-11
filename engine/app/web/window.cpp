@@ -44,6 +44,30 @@ EM_JS(double, labrador_canvas_top, (), {
 	return specialHTMLTargets["!canvas"].getBoundingClientRect().top;
 });
 
+// A refused full-screen request has no event in the html5 API: the
+// browser rejects the request's promise and fires fullscreenerror at the
+// document. One listener notes it, and the frame takes the note.
+EM_JS(void, labrador_watch_fullscreen_errors, (int on), {
+	if (on) {
+		Module.labradorFullscreenRefused = false;
+		Module.labradorOnFullscreenError = () => {
+			Module.labradorFullscreenRefused = true;
+		};
+		document.addEventListener("fullscreenerror",
+			Module.labradorOnFullscreenError);
+	} else if (Module.labradorOnFullscreenError) {
+		document.removeEventListener("fullscreenerror",
+			Module.labradorOnFullscreenError);
+		Module.labradorOnFullscreenError = null;
+	}
+});
+
+EM_JS(int, labrador_take_fullscreen_refusal, (), {
+	const refused = Module.labradorFullscreenRefused ? 1 : 0;
+	Module.labradorFullscreenRefused = false;
+	return refused;
+});
+
 EM_JS(void, labrador_tell_page_quit, (), {
 	if (typeof Module.onQuit === "function") {
 		Module.onQuit();
@@ -102,6 +126,14 @@ namespace labrador
 			const EmscriptenMouseEvent& event) const;
 		bool inside(const mattmath::Vector2I& position) const;
 
+		// Asks for full screen, and reports a request the browser refused on
+		// the spot. One deferred to the next input event is reported by the
+		// browser's own events when it is decided.
+		void request_fullscreen();
+
+		// Tells the owner whether the browser has an element full screen now.
+		void report_fullscreen();
+
 		// Cancels the loop and stops listening. Idempotent.
 		void stop();
 
@@ -155,6 +187,8 @@ namespace labrador
 			const EmscriptenFocusEvent* event, void* user_data);
 		static bool on_visibility(int event_type,
 			const EmscriptenVisibilityChangeEvent* event, void* user_data);
+		static bool on_fullscreen_change(int event_type,
+			const EmscriptenFullscreenChangeEvent* event, void* user_data);
 
 		WindowNotify* notify = nullptr;
 		int min_width = 0;
@@ -206,7 +240,6 @@ namespace labrador
 		emscripten_set_canvas_element_size(canvas_target, this->buffer_width,
 			this->buffer_height);
 
-		this->focused = labrador_canvas_has_focus() != 0;
 		EmscriptenVisibilityChangeEvent visibility;
 		if (emscripten_get_visibility_status(&visibility) ==
 			EMSCRIPTEN_RESULT_SUCCESS)
@@ -214,19 +247,28 @@ namespace labrador
 			this->hidden = visibility.hidden;
 		}
 
-		// The report window.h says the caller depends on, made before any
-		// callback is registered: if the owner throws from it, there is
-		// nothing for a destructor that will not run to take away.
+		// The reports window.h says the caller depends on, made before any
+		// callback is registered: if the owner throws from one, there is
+		// nothing for a destructor that will not run to take away. A canvas
+		// is not given the keyboard by being handed over - the page has to
+		// focus it, or the player click it - so an owner that starts out
+		// assuming the keyboard, as a Win32 window has it, is told.
 		this->report_size();
+		this->focused = labrador_canvas_has_focus() != 0;
+		if (!this->focused)
+		{
+			this->notify->on_keyboard_lost();
+		}
 
 		this->listen(true);
 
 		// Deferred to the first key or button event, which is the only place a
 		// browser grants it. A page that may not go full screen at all - an
-		// iframe without permission - refuses, and the game plays in the page.
+		// iframe without permission - refuses, the owner is told, and the
+		// game plays in the page.
 		if (options.fullscreen)
 		{
-			std::ignore = emscripten_request_fullscreen(canvas_target, true);
+			this->request_fullscreen();
 		}
 	}
 
@@ -277,6 +319,14 @@ namespace labrador
 			emscripten_set_visibilitychange_callback(user_data, false,
 				on ? on_visibility : nullptr),
 		};
+
+		// Not one of the results above, because a page that may not go full
+		// screen - a frame without the permission - answers NOT_SUPPORTED,
+		// and a game plays there anyway: nothing will change for it to hear.
+		std::ignore = emscripten_set_fullscreenchange_callback(
+			EMSCRIPTEN_EVENT_TARGET_DOCUMENT, user_data, false,
+			on ? on_fullscreen_change : nullptr);
+		labrador_watch_fullscreen_errors(on ? 1 : 0);
 
 		if (!on)
 		{
@@ -356,6 +406,26 @@ namespace labrador
 			position.x < this->buffer_width && position.y < this->buffer_height;
 	}
 
+	void Window::Impl::request_fullscreen()
+	{
+		const EMSCRIPTEN_RESULT result =
+			emscripten_request_fullscreen(canvas_target, true);
+		if (result != EMSCRIPTEN_RESULT_SUCCESS &&
+			result != EMSCRIPTEN_RESULT_DEFERRED)
+		{
+			this->report_fullscreen();
+		}
+	}
+
+	void Window::Impl::report_fullscreen()
+	{
+		EmscriptenFullscreenChangeEvent status;
+		const bool fullscreen =
+			emscripten_get_fullscreen_status(&status) ==
+			EMSCRIPTEN_RESULT_SUCCESS && status.isFullscreen;
+		this->notify->on_fullscreen_changed(fullscreen);
+	}
+
 	void Window::Impl::stop()
 	{
 		if (this->closed)
@@ -383,6 +453,10 @@ namespace labrador
 		Impl* const self = static_cast<Impl*>(user_data);
 		self->guarded([self]()
 			{
+				if (labrador_take_fullscreen_refusal() != 0)
+				{
+					self->report_fullscreen();
+				}
 				if (self->measure())
 				{
 					self->notify->on_window_size_changed(self->buffer_width,
@@ -519,9 +593,11 @@ namespace labrador
 			});
 	}
 
-	// The canvas gaining and losing the keyboard, which is what the foreground
-	// is to a game in a page: on_deactivated releases every held key, exactly
-	// as alt-tab does.
+	// The canvas gaining and losing the keyboard, and only that. A click
+	// beside the canvas releases every held key, as alt-tab does on Windows,
+	// but the player has not left: they may be on a pad, which has no reason
+	// to stop, so this is not the foreground. The foreground of a page is
+	// whether it is shown, which on_visibility below says.
 	bool Window::Impl::on_focus(int event_type, const EmscriptenFocusEvent*,
 		void* user_data)
 	{
@@ -537,7 +613,7 @@ namespace labrador
 			{
 				if (focused)
 				{
-					self->notify->on_activated();
+					self->notify->on_keyboard_gained();
 					return;
 				}
 
@@ -549,14 +625,16 @@ namespace labrador
 					self->held_buttons = 0;
 					self->notify->on_mouse_capture_lost();
 				}
-				self->notify->on_deactivated();
+				self->notify->on_keyboard_lost();
 			});
 		return false;
 	}
 
 	// A tab in the background gets no animation frames, so it is suspended in
 	// the sense the Win32 window's minimise is: the clock is reset on the way
-	// back rather than paying off the time away.
+	// back rather than paying off the time away. It is also the whole of what
+	// a page has for a foreground, so the pads and the states follow it, and
+	// the keys follow it and the canvas's focus together.
 	bool Window::Impl::on_visibility(int,
 		const EmscriptenVisibilityChangeEvent* event, void* user_data)
 	{
@@ -578,6 +656,19 @@ namespace labrador
 				{
 					self->notify->on_resuming();
 				}
+			});
+		return false;
+	}
+
+	// Whatever changed it: the request this window made, Escape, the page's
+	// own exitFullscreen, or another element taking the screen.
+	bool Window::Impl::on_fullscreen_change(int,
+		const EmscriptenFullscreenChangeEvent* event, void* user_data)
+	{
+		Impl* const self = static_cast<Impl*>(user_data);
+		self->guarded([&]()
+			{
+				self->notify->on_fullscreen_changed(event->isFullscreen);
 			});
 		return false;
 	}
@@ -635,7 +726,11 @@ namespace labrador
 
 	void Window::enter_fullscreen() const
 	{
-		std::ignore = emscripten_request_fullscreen(canvas_target, true);
+		if (this->impl_->closed)
+		{
+			return;
+		}
+		this->impl_->request_fullscreen();
 	}
 
 	void Window::leave_fullscreen(const mattmath::Vector2I&) const

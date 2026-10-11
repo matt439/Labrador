@@ -335,7 +335,7 @@ endif()
 # it: the keyboard and the mouse are fed by the window rather than read from a
 # pad API, so they are engine code on every platform and need no backend
 # (ARCHITECTURE.md, the fed devices). xinput is DirectXTK's GamePad, and web is
-# the browser Gamepad API, which is polled exactly as read(slot) asks.
+# the browser Gamepad API, which is polled exactly as sample() asks.
 if(EMSCRIPTEN)
     set(labrador_default_input_backend "web")
 else()
@@ -352,6 +352,7 @@ if(LABRADOR_INPUT_BACKEND STREQUAL "xinput")
 elseif(LABRADOR_INPUT_BACKEND STREQUAL "web")
     target_sources(LabradorEngine PRIVATE
         input/web/gamepad_reader.cpp
+        input/web/standard_gamepad.cpp
     )
 else()
     message(FATAL_ERROR

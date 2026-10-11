@@ -152,8 +152,12 @@ namespace labrador
 		// press after launch lands on an unfocused device and is discarded,
 		// and the player's first input in the process is silently the one that
 		// does nothing.
-		this->keyboard_->set_focused(true);
-		this->mouse_->set_focused(true);
+		//
+		// What a canvas that does not have the keyboard said in the window's
+		// constructor is kept in has_keyboard_ and applied here, so the same
+		// line covers both.
+		this->set_input_focus(this->foreground_ && this->shown_ &&
+			this->has_keyboard_);
 
 		this->timer_.SetFixedTimeStep(true);
 		this->timer_.SetTargetElapsedSeconds(
@@ -263,6 +267,11 @@ namespace labrador
 		}
 	}
 
+	bool Application::fullscreen() const
+	{
+		return this->options_.fullscreen;
+	}
+
 	void Application::reset_elapsed_time()
 	{
 		this->timer_.ResetElapsedTime();
@@ -346,34 +355,40 @@ namespace labrador
 	// drain the stack first: a state gets to run against live services or it
 	// does not get to run.
 
-	void Application::on_activated()
+	void Application::settle_presence()
 	{
+		const bool present = this->foreground_ && this->shown_;
 		if (this->gamepad_reader_)
 		{
-			this->gamepad_reader_->resume();
+			if (present)
+			{
+				this->gamepad_reader_->resume();
+			}
+			else
+			{
+				this->gamepad_reader_->suspend();
+			}
 		}
-		this->set_input_focus(true);
-		this->notify_activation(true);
+		this->set_input_focus(present && this->has_keyboard_);
+		this->notify_activation(present);
+	}
+
+	void Application::on_activated()
+	{
+		this->foreground_ = true;
+		this->settle_presence();
 	}
 
 	void Application::on_deactivated()
 	{
-		if (this->gamepad_reader_)
-		{
-			this->gamepad_reader_->suspend();
-		}
-		this->set_input_focus(false);
-		this->notify_activation(false);
+		this->foreground_ = false;
+		this->settle_presence();
 	}
 
 	void Application::on_suspending()
 	{
-		if (this->gamepad_reader_)
-		{
-			this->gamepad_reader_->suspend();
-		}
-		this->set_input_focus(false);
-		this->notify_activation(false);
+		this->shown_ = false;
+		this->settle_presence();
 		if (this->audio_device_)
 		{
 			this->audio_device_->suspend();
@@ -383,16 +398,29 @@ namespace labrador
 	void Application::on_resuming()
 	{
 		this->timer_.ResetElapsedTime();
-		if (this->gamepad_reader_)
-		{
-			this->gamepad_reader_->resume();
-		}
-		this->set_input_focus(true);
+		this->shown_ = true;
 		if (this->audio_device_)
 		{
 			this->audio_device_->resume();
 		}
-		this->notify_activation(true);
+		this->settle_presence();
+	}
+
+	void Application::on_keyboard_gained()
+	{
+		this->has_keyboard_ = true;
+		this->set_input_focus(this->foreground_ && this->shown_);
+	}
+
+	void Application::on_keyboard_lost()
+	{
+		this->has_keyboard_ = false;
+		this->set_input_focus(false);
+	}
+
+	void Application::on_fullscreen_changed(bool fullscreen)
+	{
+		this->options_.fullscreen = fullscreen;
 	}
 
 	void Application::on_window_moved() const
