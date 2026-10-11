@@ -24,41 +24,108 @@
     back with the game drawing again. Between them the canvas is blank, so
     the page says why; a context that never comes back leaves the message up.
 
+  And what a phone needs of it, because this page lets a phone play. The rule
+  that a phone is shown a poster rather than the module is the host page's
+  (docs/port/web.md, section 7.4), and this is not that page:
+
+  - The box is 16:9 only while the viewport is landscape. Held upright, the
+    canvas takes the whole height and the game lays itself out for a tall
+    buffer, with its touch controls under the board; it decides that from the
+    buffer's aspect, so the page only has to stop forcing one.
+  - viewport-fit=cover, and the safe-area insets as padding, so the canvas
+    fills the screen of a phone with a notch or a home indicator and keeps
+    its controls out from under both.
+  - A full-screen button only where the element Fullscreen API exists, which
+    is not iPhone Safari. It is the page's button and asks from its own
+    click, because a browser grants full screen only inside a user gesture.
+
   The site's page is a different one (docs/port/web.md, section 7).
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LineSweeper</title>
 <style>
-  body { margin: 0; background: #111; color: #ddd; font: 15px/1.4 system-ui, sans-serif; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: #111; color: #ddd; font: 15px/1.4 system-ui, sans-serif;
+    overscroll-behavior: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+    box-sizing: border-box;
+  }
   main { max-width: 1280px; margin: 0 auto; padding: 16px; }
-  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; outline: none; touch-action: none; }
+  canvas {
+    display: block; width: 100%; aspect-ratio: 16 / 9; margin: 0 auto;
+    background: #000; outline: none; touch-action: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  }
   canvas:focus-visible { outline: 2px solid #5a9; }
-  #status { margin: 10px 0 0; min-height: 1.4em; }
+  #bar { display: flex; gap: 12px; align-items: baseline; margin: 10px 0 0; }
+  #status { flex: 1; margin: 0; min-height: 1.4em; }
   #status.error { color: #f77; }
+  #fullscreen { font: inherit; color: inherit; background: #222; border: 1px solid #444; padding: 2px 10px; }
+
+  /* A landscape viewport shorter than the 16:9 box at full width: a phone on
+     its side. The box is limited by the height instead, so it is all on
+     screen. */
+  @media (orientation: landscape) {
+    canvas { width: min(100%, calc((100dvh - 80px) * 16 / 9)); }
+  }
+
+  /* Upright: the canvas is whatever the screen leaves, and the game lays out
+     for that. */
+  @media (orientation: portrait) {
+    main { display: flex; flex-direction: column; height: 100%; max-width: none;
+           padding: 0; box-sizing: border-box; }
+    canvas { flex: 1; min-height: 0; width: 100%; aspect-ratio: auto; }
+    #bar { margin: 4px 8px; font-size: 13px; }
+  }
 </style>
 </head>
 <body>
 <main>
   <canvas id="canvas" tabindex="0"></canvas>
-  <p id="status">Loading...</p>
+  <div id="bar">
+    <p id="status">Loading...</p>
+    <button id="fullscreen" type="button" hidden>Full screen</button>
+  </div>
 </main>
 <script>
   var canvas = document.getElementById("canvas");
   var statusLine = document.getElementById("status");
   var shownBeforeLoss = "";
+  var fullscreenButton = document.getElementById("fullscreen");
 
   // A right click is a button the game may read, not a request for the
   // browser's menu over it.
   canvas.addEventListener("contextmenu", function (event) { event.preventDefault(); });
 
+  // Only where the element API exists. iPhone Safari has none - it can put a
+  // video full screen and nothing else - so there the button is not offered
+  // rather than offered and refused.
+  if (document.fullscreenEnabled && canvas.requestFullscreen) {
+    fullscreenButton.hidden = false;
+    fullscreenButton.addEventListener("click", function () {
+      canvas.requestFullscreen().then(function () { canvas.focus(); },
+        function () { });
+    });
+  }
+
+  // The prompt above is spent once a finger has shown the controls.
+  canvas.addEventListener("pointerdown", function (event) {
+    if (event.pointerType === "touch" && !statusLine.className) {
+      statusLine.textContent = "";
+    }
+  });
+
   var Module = {
     canvas: canvas,
     onRuntimeInitialized: function () {
-      statusLine.textContent =
-        "Arrows move, Up or X rotates, Space drops, C holds, Escape pauses.";
+      statusLine.textContent = matchMedia("(pointer: coarse)").matches
+        ? "Touch the screen to show the controls."
+        : "Arrows move, Up or X rotates, Space drops, C holds, Escape pauses.";
       canvas.focus();
     },
     onQuit: function () {

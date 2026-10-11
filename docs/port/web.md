@@ -1260,6 +1260,37 @@ owed. A full-screen request deferred to the next input event is not made from
 a touch, because Emscripten runs deferred requests only from its own
 listeners. That belongs to M7b, with the rest of the phone.
 
+**M7b's sample half has landed: LineSweeper lays itself out upright and
+draws its own buttons, and no phone has played it.** It is sample code and
+nothing in `engine/` changed. The board still draws in one 1280x720 space,
+and `presentation/arrangement.h` picks a camera each tick from the buffer's
+aspect. Landscape frames the whole screen, and at exactly 1280x720 the camera
+is the identity, so the capture tool's images did not move by a byte.
+Portrait frames the board block, which is nearly square, across the buffer's
+width, with a band under it for the controls. `presentation/touch_controls.h`
+draws eight buttons from the first touch onwards and hit-tests every point
+against them each frame. What a button means is a third `{Control, button}`
+table in `play_state.cpp` feeding the same byte as the keys (P2), so a held
+thumb gets the rules' own delay and repeat. Pause is a tap on PAUSE, and
+restart after a top-out is a tap anywhere off the buttons. The pause menu
+finds the row under a new finger and activates it, because `ui/` does not
+depend on `input`. The development page drops the forced 16:9 when the
+viewport is upright, sets `viewport-fit=cover` with the safe-area insets as
+padding, and offers a full-screen button only where `requestFullscreen`
+exists, so not on iPhone Safari. It lets a phone play: the poster rule in
+§7.4 is the host page's. `LineSweeperViewTests` pins the arrangement and the
+hit test headlessly. In headless Chrome at a 390x844 portrait viewport and an
+844x390 landscape one, both with touch emulated, at `wasm-debug` and
+`wasm-release`, the frames showed the portrait layout, the buttons appearing
+on the first touch, CW rotating the piece, DROP dropping it, a held LEFT
+repeating to the wall, HOLD holding, PAUSE opening the menu, a tapped RESUME
+resuming, a tapped QUIT reaching `Module.onQuit`, and a tap on the board
+after a top-out restarting. The Win32 sample was looked at in landscape,
+unchanged, and in a tall window, where it takes the portrait layout. Still
+owed: a real iPhone and a real Android phone, which the S3TC-less texture
+path (above) has not met either,
+and the top-out's frame time on a phone (R6).
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1292,7 +1323,7 @@ Each is cheap and could change the plan:
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
 | **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal`, and a Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
-| **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
+| **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone (controls, portrait layout and the page's viewport handling landed; headless Chrome's emulation drives them, and real phones and the measured frame are open) | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 
 The critical path to the desktop demo is M0 → M1 → M2 → M3 → M5, roughly
 **three to four weeks** of work on these definitions. The spread is mostly

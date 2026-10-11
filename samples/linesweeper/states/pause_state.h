@@ -7,7 +7,9 @@
 #include "engine/ui/focus.h"
 #include "engine/ui/navigation.h"
 #include "engine/ui/widget.h"
+#include "samples/linesweeper/presentation/arrangement.h"
 
+#include <array>
 #include <memory>
 
 // A box over a running match, and the first client `engine/ui/` has ever had.
@@ -89,14 +91,37 @@ namespace linesweeper
 		bool confirm_pressed() const;
 		bool cancel_pressed() const;
 
+		// The row a finger went down on this frame, or null.
+		//
+		// THE GAME'S HALF, NOT THE WIDGETS'. `engine/ui/` does not depend on
+		// `input`, so a touch reaches a menu the way the mouse would: the
+		// page asks the device where the finger is, finds the row, and tells
+		// the focus group. A row answers a band the width of the menu and the
+		// height of the gap between rows rather than its measured text, which
+		// is a target sixteen units tall.
+		labrador::UiText* tapped_row() const;
+
+		// The same arrangement PlayState draws the match through, worked out
+		// again every tick (arrangement.h).
+		void arrange_screen();
+
 		// Borrowed. The shell built every service before this existed and
 		// outlives it (PHILOSOPHY, Services and lifetimes).
 		labrador::Application* app_ = nullptr;
+
+		// Which way up the screen is, refreshed every tick. Declared before
+		// the scene because the scrim in it borrows the visible rectangle out
+		// of this, and a member is destroyed after every member below it.
+		Arrangement arrangement_;
 
 		// The scrim, the title and the three rows. The scene owns them; the
 		// focus group below holds loans into it, which is legal because the
 		// scene outlives the group - both die with this object, members last.
 		std::unique_ptr<labrador::Scene> scene_ = nullptr;
+
+		// The three rows, for the tap test. Loans into the scene, like the
+		// focus group's.
+		std::array<labrador::UiText*, 3> rows_ = {};
 
 		// One slot. Split-screen is why `FocusGroup` has them at all
 		// (focus.h), and a one-player falling-block game is the case that

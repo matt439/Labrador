@@ -3,6 +3,7 @@
 #include "engine/input/direction.h"
 #include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
+#include "engine/input/touch.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
@@ -12,6 +13,7 @@
 #include "samples/linesweeper/presentation/palette.h"
 
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -35,6 +37,12 @@ namespace linesweeper
 
 		constexpr Colour title_colour(200, 208, 222);
 
+		// How much of the screen a row answers a finger over: the full gap
+		// between rows, and this far either side of the middle. A row's own
+		// bounds are the text the font measured, sixteen units tall, which is
+		// a target a thumb misses on a phone.
+		constexpr float row_tap_half_width = 160.0f;
+
 		// How dark the match goes while the menu is up. Premultiplied black,
 		// so it leaves a quarter of the board showing through and reads as a
 		// pause rather than as a screen that replaced one (palette.h).
@@ -56,12 +64,16 @@ namespace linesweeper
 		// of its content, which is the sentence the in-tree-samples argument
 		// rests on (README). Fifteen lines here is cheaper than a sheet in the
 		// manifest.
+		//
+		// It covers what the screen shows, which the state works out every
+		// tick, so it borrows that rectangle rather than keeping a copy that a
+		// resize would leave behind.
 		class Scrim final : public GameObject
 		{
 		public:
-			Scrim(TextureHandle block, const Vector2F& resolution) :
+			Scrim(TextureHandle block, const RectangleF* area) :
 				block_(block),
-				area_(0.0f, 0.0f, resolution.x, resolution.y)
+				area_(area)
 			{
 
 			}
@@ -74,18 +86,18 @@ namespace linesweeper
 			void draw(DrawList& draw_list) const override
 			{
 				draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1),
-					this->area_, faded(Colour(0.0f, 0.0f, 0.0f), scrim_alpha),
+					*this->area_, faded(Colour(0.0f, 0.0f, 0.0f), scrim_alpha),
 					0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
 			}
 
 			RectangleF bounds() const override
 			{
-				return this->area_;
+				return *this->area_;
 			}
 
 		private:
 			TextureHandle block_;
-			RectangleF area_;
+			const RectangleF* area_ = nullptr;
 		};
 	}
 
@@ -96,16 +108,19 @@ namespace linesweeper
 
 	void PauseState::init()
 	{
-		const Vector2F resolution =
-			this->app_->resolution_manager()->resolution_vec();
-
 		RenderResources* resources = this->app_->render_resources();
 		const FontHandle font = resources->resolve_sprite_font(font_name);
 
 		this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 
+		// The match's arrangement, worked out the same way from the same
+		// buffer, so the menu sits over the board whichever way up the screen
+		// is (arrangement.h). Before the scrim, which borrows what it shows.
+		this->arrange_screen();
+
 		this->scene_->add(std::make_unique<Scrim>(
-			resources->resolve_texture(block_texture_name), resolution));
+			resources->resolve_texture(block_texture_name),
+			&this->arrangement_.visible));
 
 		// CENTRED BY MEASURING, NOT BY COUNTING CHARACTERS. The HUD in
 		// board_view.cpp columnises by hand and says it only works because the
@@ -114,14 +129,23 @@ namespace linesweeper
 		// and `measure_text` is on the seam for exactly this
 		// (render_resources.h). Measured once here, never in draw().
 		//
-		// AND PUT ON A WHOLE PIXEL. Half of an odd width is half a pixel, and
+		// Centred on the landscape screen, which in portrait is the middle of
+		// the well: both arrangements put that column in the middle of the
+		// buffer.
+		//
+		// AND PUT ON A WHOLE UNIT OF BOARD SPACE. Half of an odd width is half
+		// a unit, and at 1280x720, where the arrangement's camera is the
+		// identity (presentation/arrangement.h), a unit is a pixel:
 		// point-sampled text there is a tie each backend breaks its own way
-		// (renderer.h, draw_text). RESTART is one such row.
+		// (renderer.h, draw_text). RESTART is one such row. At any other
+		// buffer the camera scales the text, which is outside draw_text's
+		// contract at a scale of one, and no rounding of the position puts
+		// every glyph's texels on whole pixels.
 		const auto centred = [&](const std::wstring& text, float y)
 		{
 			const Vector2F size = resources->measure_text(font, text);
 
-			return Vector2F(std::floor((resolution.x - size.x) * 0.5f), y);
+			return Vector2F(std::floor((landscape_width - size.x) * 0.5f), y);
 		};
 
 		this->scene_->add(std::make_unique<UiText>("title", L"PAUSED",
@@ -165,14 +189,14 @@ namespace linesweeper
 				{
 					this->context()->pop(choice);
 				});
+
+			this->rows_[static_cast<std::size_t>(index)] = row;
 		}
 
 		// Adds are pending until a tick ends, and the frame drawn before the
 		// first update() is a real frame - so whoever fills a scene ends its
 		// first tick by hand (play_state.cpp says the same).
 		this->scene_->end_tick();
-
-		this->scene_->add_view(Viewport(RectangleF(Vector2F::ZERO, resolution)));
 
 		// The menu can open while a stick is already pushed - Start is on the
 		// pad, and a thumb does not leave the stick to press it - and what is
@@ -183,6 +207,46 @@ namespace linesweeper
 		// (docs/review/gpt6/README.md, G6-08). The push has to be let go
 		// before this menu reads it.
 		this->repeat_.start_held(this->held_direction());
+	}
+
+	void PauseState::arrange_screen()
+	{
+		this->arrangement_ =
+			arrange(this->app_->resolution_manager()->resolution_vec());
+
+		this->scene_->clear_views();
+		this->scene_->add_view(this->arrangement_.viewport,
+			this->arrangement_.camera);
+	}
+
+	UiText* PauseState::tapped_row() const
+	{
+		const Touch& touch = *this->app_->touch();
+
+		for (const TouchPoint& point : touch.points())
+		{
+			if (!touch.pressed(point.id))
+			{
+				continue;
+			}
+
+			const Vector2F tap = to_board(this->arrangement_, point.position);
+
+			for (UiText* row : this->rows_)
+			{
+				const Vector2F centre = row->bounds().center();
+
+				if (tap.x >= centre.x - row_tap_half_width &&
+					tap.x < centre.x + row_tap_half_width &&
+					tap.y >= centre.y - row_spacing * 0.5f &&
+					tap.y < centre.y + row_spacing * 0.5f)
+				{
+					return row;
+				}
+			}
+		}
+
+		return nullptr;
 	}
 
 	Direction PauseState::held_direction() const
@@ -226,6 +290,8 @@ namespace linesweeper
 
 	void PauseState::update(float dt)
 	{
+		this->arrange_screen();
+
 		// Cancel first, so that the key which opened the menu closes it
 		// whatever the cursor is on. A player who paused by accident should not
 		// have to read three rows to get back.
@@ -248,6 +314,14 @@ namespace linesweeper
 
 		if (this->confirm_pressed())
 		{
+			this->focus_.activate(0);
+		}
+		else if (UiText* row = this->tapped_row(); row != nullptr)
+		{
+			// A tap is a cursor move and a confirm at once: the row goes
+			// under the cursor first, so the menu shows what was chosen on
+			// the frame it closes, and the action that runs is that row's.
+			this->focus_.set_focused(0, row);
 			this->focus_.activate(0);
 		}
 

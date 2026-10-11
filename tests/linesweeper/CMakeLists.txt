@@ -39,24 +39,28 @@ add_test(NAME LineSweeperTests COMMAND LineSweeperTests)
 # discipline: PHILOSOPHY, Tests and toolchain, asks that everything below the
 # platform edge be testable headlessly, and a sample is below it too.
 #
-# It is one file, and presentation/particles.cpp is the only thing in it. The
-# board view needs the resource table to measure text and measuring walks an
-# atlas a device filled, so a BoardView cannot be constructed here and what it
-# draws is checked by looking at it. The particle field takes a resolved
-# texture handle instead - an integer nothing in update() reads - so the ten
-# thousand particles, the compaction and the event reconstruction all run.
+# Three presentation files are in it. The board view needs the resource table
+# to measure text and measuring walks an atlas a device filled, so a BoardView
+# cannot be constructed here and what it draws is checked by looking at it.
+# The particle field takes a resolved texture handle instead - an integer
+# nothing in update() reads - so the ten thousand particles, the compaction and
+# the event reconstruction all run. The screen's arrangement and the touch
+# controls' hit test are arithmetic on a buffer size, and run as well; the
+# TouchControls object beside them measures its labels and is not constructed.
 #
 # The sample's own sources are compiled into this target rather than linked,
 # because LineSweeperSample is a WIN32 executable and presentation/ is not a
-# library. One file is cheaper to list than a third library is to justify; if
-# a second presentation file ever becomes testable, that is the moment to
-# revisit it.
+# library. Three files are still cheaper to list than a third library is to
+# justify.
 add_executable(LineSweeperViewTests
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_statistics.cpp"
 	frame_statistics_tests.cpp
     test_main.cpp
+    touch_controls_tests.cpp
     view_tests.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/arrangement.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/particles.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/touch_controls.cpp"
 )
 target_link_libraries(LineSweeperViewTests PRIVATE
     LineSweeperRules

@@ -43,20 +43,31 @@ namespace linesweeper
 		const bool first = !this->built_;
 		this->built_ = true;
 
-		if (!first && this->world_->topped_out == this->shown_topped_out_)
+		if (!first && this->world_->topped_out == this->shown_topped_out_ &&
+			this->touch_ == this->shown_touch_)
 		{
 			return;
 		}
 
 		this->shown_topped_out_ = this->world_->topped_out;
+		this->shown_touch_ = this->touch_;
 
-		this->text_ = this->shown_topped_out_ != 0
-			? std::wstring(L"TOPPED OUT - PRESS R OR START")
-			: std::wstring();
+		// A tap anywhere off the controls restarts, which play_state.cpp
+		// decides; this only has to say so.
+		this->text_ = this->shown_topped_out_ == 0
+			? std::wstring()
+			: this->shown_touch_
+				? std::wstring(L"TOPPED OUT - TAP TO RESTART")
+				: std::wstring(L"TOPPED OUT - PRESS R OR START");
 
 		this->text_size_ = this->text_.empty()
 			? Vector2F::ZERO
 			: this->render_resources_->measure_text(this->font_, this->text_);
+	}
+
+	void TopOutBanner::set_touch(bool touch)
+	{
+		this->touch_ = touch;
 	}
 
 	void TopOutBanner::draw(DrawList& draw_list) const
@@ -87,8 +98,9 @@ namespace linesweeper
 			faded(Colour(0.0f, 0.0f, 0.0f), 0.88f), 0.0f, Vector2F::ZERO,
 			SpriteFlip::none, 0.0f);
 
-		// Centred on a whole pixel, for the reason the pause menu's rows are
-		// (states/pause_state.cpp): this string measures an odd width too.
+		// Centred on a whole unit of board space, for the reason the pause
+		// menu's rows are (states/pause_state.cpp): this string measures an odd
+		// width too.
 		draw_list.draw_text(this->font_, this->text_,
 			Vector2F(
 				std::floor(

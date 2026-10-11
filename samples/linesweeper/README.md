@@ -15,8 +15,10 @@ commitment, it says so and names the document it belongs in.
 seven-bag deal, the gravity curve, the wall kicks, lock delay, hold, hard drop,
 T-spins and scoring — and `tests/linesweeper/` plays it with no window, no
 device and no engine linked into the binary. `presentation/` draws it,
-`states/` turns a keyboard and a pad into it, and pressing R or Start after a
-top-out restarts the match with one assignment.
+`states/` turns a keyboard, a pad and a touchscreen into it, and pressing R
+or Start after a top-out - or tapping off the buttons, on the glass - restarts
+the match with one assignment. It lays itself out for a tall screen as well as
+a wide one; see *A phone held upright*, below.
 
 `presentation/particles.cpp` is the second half: ten thousand particles from
 one registered object, which is the data-layout claim the value-semantics half
@@ -473,6 +475,80 @@ of the one screen a player has to read; that was seen on screen, not reasoned
 about. The split is bought by an ordering constraint rather than by tidiness,
 which is the only thing that argument leaves room for.
 
+### A phone held upright
+
+The layout was a set of positions in 1280x720 back-buffer pixels, and a phone
+is held the other way up. Two things were possible: a second arrangement of the
+five panels for a tall screen, or the same positions seen through a different
+camera. **It is the camera**, and `presentation/arrangement.h` is the whole of
+it.
+
+Everything in `presentation/` still draws in that one 1280x720 space, which is
+now *board space* rather than buffer pixels. Every tick the state works out an
+`Arrangement` from the buffer the shell reports - taller than wide is portrait -
+and hands the scene's one view a camera:
+
+- **Landscape** frames all of 1280x720, fitted and centred. At exactly
+  1280x720 the camera is a scale of one and no translation, both exact, so the
+  window `main.cpp` opens draws byte for byte what it drew before; the capture
+  tool's four images were regenerated against the change and did not move. A
+  window or a canvas of any other size now scales the whole screen to fit, where
+  it used to draw at 1:1 in the top-left corner and leave the rest black.
+- **Portrait** frames only the board block - HOLD and the score, the well,
+  NEXT - plus a band underneath it for the touch controls, fitted to the
+  buffer's width. The block is 550 units wide and 590 tall, nearly square, so a
+  tall screen takes it whole with room below for two rows of thumb-sized
+  buttons. The cost of not having a second arrangement is a well a little
+  narrower than it could be - about 45% of a phone's width rather than the 60%
+  a dedicated layout might give it - and that is the T3 trade: one space and two
+  cameras, against two sets of positions to keep in step with each other and
+  with the particle field that throws sparks out of cells.
+
+The keyboard and pad hints are hidden in portrait, where the line is wider than
+the block. The pause menu works out the same arrangement from the same buffer,
+so it sits over the well either way up. A buffer that changes shape while the
+menu is open re-arranges the menu at once and the match under it when the menu
+closes, because a suspended state is not updated and `draw()` is const; the
+scrim covers the difference.
+
+**The buttons are the game's, drawn over the board.**
+`presentation/touch_controls.h` is eight rectangles, a hit test and one
+`GameObject` that draws them, registered last so a spark is never over a
+button. It appears the first frame a finger touches the screen and stays: a
+keyboard player never sees it, and the hints that name keys go when it comes.
+The engine has a touch device and no binding layer (`docs/port/web.md`, P2),
+so what a finger on a rectangle means is a third table in `play_state.cpp`,
+`{Control, button}`, beside the other two.
+
+**Held, not tapped**, for the reason *Input is read as held* gives: each frame
+asks which rectangle every finger is in and ORs those controls into the same
+byte the keys and the pad feed, so a thumb resting on LEFT is a held arrow key
+with the same delay and the same repeat, which `tick()` owns. A finger that
+slides from one button to the next lets go of the first. Pause and restart are
+edges, as Escape and R are, and are read from the points that went down this
+frame: pause from the PAUSE button, restart from a tap anywhere that is not a
+button - not a tap on one, or a player hammering DROP as the stack reached the
+top would restart a match they had not finished looking at. The banner says
+"TAP TO RESTART" once a finger has been seen.
+
+**The menu reaches touch through the game**, the way it would reach the mouse:
+`engine/ui/` does not depend on `input`, so `PauseState` asks the device where
+a new finger is, finds the row, puts the cursor on it and activates it. A row
+answers a band the width of the menu and the height of the gap between rows,
+because its measured text is sixteen units tall - on a phone, a target a thumb
+misses.
+
+**What is checked and what is not.** The arrangement's arithmetic and the hit
+test are pinned headlessly in `LineSweeperViewTests`
+(`touch_controls_tests.cpp`): the identity at 1280x720, both orientations on
+phone-shaped buffers, the controls on screen, apart and clear of the board,
+every control found under its own centre and nothing in the gaps. What the
+controls look like, and that a tap rotates, a tap drops, a held LEFT repeats,
+PAUSE opens the menu and a tap on a row chooses it, was checked by looking at
+frames from headless Chrome at a 390x844 portrait viewport and an 844x390
+landscape one with touch emulated. **No real phone has played it**, and the
+9,600-particle top-out has not been timed on one.
+
 ## Still open
 
 - **The reference machine — named now, and still unmeasured.** The
@@ -527,3 +603,11 @@ which is the only thing that argument leaves room for.
   a third device is a third table and a third loop, not an edit to every row of
   the first two. An `InputMap` would have to beat that, and "it would be
   tidier" is not beating it.
+
+  **The third device arrived, and the prediction held.** Touch cost
+  `play_state.cpp` a seven-row `{Control, button}` table, its five-line struct
+  and an eleven-line loop - the same shape and about the same size as the
+  pad's - and no row of the first two tables changed. What it cost beyond the
+  mechanism is the part no `InputMap` would have saved: the rectangles and the
+  hit test, which are layout rather than binding, and the two edges a finger
+  produces that a key does not have to be found for.

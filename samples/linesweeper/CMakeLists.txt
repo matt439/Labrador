@@ -32,9 +32,11 @@ target_include_directories(LineSweeperRules PUBLIC
 # Sources are enumerated, never globbed, matching engine/CMakeLists.txt: a new
 # .cpp that nobody lists is a file that silently is not compiled.
 set(linesweeper_game_sources
+    presentation/arrangement.cpp
     presentation/board_view.cpp
     presentation/particles.cpp
     presentation/top_out_banner.cpp
+    presentation/touch_controls.cpp
     states/pause_state.cpp
     states/play_state.cpp
 )

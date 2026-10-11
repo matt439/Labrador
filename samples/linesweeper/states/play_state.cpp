@@ -2,12 +2,14 @@
 
 #include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
+#include "engine/input/touch.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 #include "samples/linesweeper/rules/tick.h"
 #include "samples/linesweeper/states/pause_state.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 
 using namespace mattmath;
@@ -27,6 +29,13 @@ namespace linesweeper
 		// except the particle field, which takes a resolved one so that it can
 		// be stepped with no device at all (particles.h).
 		const std::string block_texture_name = "white";
+
+		// One line per device, under the board in landscape. The capture tool
+		// and the frame bench copy these two strings and have to follow them.
+		const wchar_t* const hint_text =
+			L"keyboard   arrows move   Z X rotate   space drops   C holds";
+		const wchar_t* const pad_hint_text =
+			L"pad        d-pad moves   A B rotate   Y drops       X holds";
 
 		// The bindings, and the whole of the input layer.
 		//
@@ -85,6 +94,28 @@ namespace linesweeper
 			{ GamepadButton::x, button_hold },
 			{ GamepadButton::left_shoulder, button_hold },
 		};
+
+		// The glass's half: the third table, and the third device the pad's
+		// pricing said would cost a table and a loop rather than an edit to
+		// the first two (README, Still open). The controls are named for what
+		// they are on the screen because presentation/ cannot see these bits
+		// (touch_controls.h), and pause has no row because it is not an input
+		// to tick() - update() reads it as an edge, as it reads Escape.
+		struct ControlBinding
+		{
+			Control control;
+			std::uint8_t button;
+		};
+
+		constexpr ControlBinding control_bindings[] = {
+			{ Control::left, button_left },
+			{ Control::right, button_right },
+			{ Control::soft_drop, button_soft_drop },
+			{ Control::hard_drop, button_hard_drop },
+			{ Control::rotate_clockwise, button_rotate_clockwise },
+			{ Control::rotate_anticlockwise, button_rotate_anticlockwise },
+			{ Control::hold, button_hold },
+		};
 	}
 
 	PlayState::PlayState(Application* app) : app_(app)
@@ -94,9 +125,6 @@ namespace linesweeper
 
 	void PlayState::init()
 	{
-		const Vector2F resolution =
-			this->app_->resolution_manager()->resolution_vec();
-
 		RenderResources* resources = this->app_->render_resources();
 
 		// One view, so no thread pool and no partitioner - the scene's fan-out
@@ -133,22 +161,58 @@ namespace linesweeper
 		// One line per device, left-aligned on the HUD column at x = 344 and
 		// columnised against each other by hand, which only works because the
 		// font is monospaced.
+		//
+		// At the bottom of the landscape screen, which is board space rather
+		// than the buffer: the camera puts it where the buffer's bottom is
+		// (arrangement.h).
 		this->hint_ = this->scene_->add(std::make_unique<Label>(
-			L"keyboard   arrows move   Z X rotate   space drops   C holds",
-			font_name, Vector2F(344.0f, resolution.y - 60.0f), resources,
+			hint_text, font_name, Vector2F(344.0f, landscape_height - 60.0f),
+			resources,
 			Colour::dark_gray));
 
 		this->pad_hint_ = this->scene_->add(std::make_unique<Label>(
-			L"pad        d-pad moves   A B rotate   Y drops       X holds",
-			font_name, Vector2F(344.0f, resolution.y - 36.0f), resources,
+			pad_hint_text, font_name,
+			Vector2F(344.0f, landscape_height - 36.0f), resources,
 			Colour::dark_gray));
+
+		// LAST, over everything, because a button under a spark is a button
+		// a thumb cannot find. Hidden until a finger touches the screen.
+		this->controls_ = this->scene_->add(
+			std::make_unique<TouchControls>(resources));
 
 		// Adds are pending until a tick ends, and the frame drawn before the
 		// first update() is a real frame - so whoever fills a scene ends its
 		// first tick by hand.
 		this->scene_->end_tick();
 
-		this->scene_->add_view(Viewport(RectangleF(Vector2F::ZERO, resolution)));
+		this->arrange_screen();
+		this->show_hints();
+	}
+
+	void PlayState::show_hints()
+	{
+		// The hints name keys, so they go when the screen has none - and in
+		// portrait, where the line is wider than the board block the camera
+		// frames and would run off the side.
+		const bool hints = !this->touch_seen_ &&
+			this->arrangement_.orientation == Orientation::landscape;
+
+		if (hints != this->hints_shown_)
+		{
+			this->hints_shown_ = hints;
+			this->hint_->set_text(hints ? hint_text : L"");
+			this->pad_hint_->set_text(hints ? pad_hint_text : L"");
+		}
+	}
+
+	void PlayState::arrange_screen()
+	{
+		this->arrangement_ =
+			arrange(this->app_->resolution_manager()->resolution_vec());
+
+		this->scene_->clear_views();
+		this->scene_->add_view(this->arrangement_.viewport,
+			this->arrangement_.camera);
 	}
 
 	// held(), NEVER pressed(), and the choice is not arbitrary.
@@ -198,6 +262,20 @@ namespace linesweeper
 			}
 		}
 
+		// Every finger, against the rectangles the controls were drawn at
+		// this tick. Held, like the other two, so a thumb resting on LEFT is
+		// the same delay and the same repeat as a held arrow key.
+		const ControlSet touched = controls_held(this->arrangement_,
+			this->app_->touch()->points());
+
+		for (const ControlBinding& binding : control_bindings)
+		{
+			if ((touched & control_bit(binding.control)) != 0)
+			{
+				input |= binding.button;
+			}
+		}
+
 		return input;
 	}
 
@@ -236,6 +314,10 @@ namespace linesweeper
 
 	void PlayState::on_resume()
 	{
+		// The buffer may have changed shape under the menu, and the gate
+		// below reads the touch controls where they are now.
+		this->arrange_screen();
+
 		// Before on_result runs, which is the order state_context.h fixes -
 		// so this covers RESTART's fresh World as well as RESUME's.
 		this->gate_.close_over(this->read_input());
@@ -243,6 +325,46 @@ namespace linesweeper
 
 	void PlayState::update(float dt)
 	{
+		this->arrange_screen();
+
+		const Touch& touch = *this->app_->touch();
+
+		// THE FIRST FINGER SHOWS THE CONTROLS, and nothing before it does: a
+		// player at a keyboard never sees eight buttons over the screen.
+		if (!this->touch_seen_ && !touch.points().empty())
+		{
+			this->touch_seen_ = true;
+			this->banner_->set_touch(true);
+		}
+
+		this->show_hints();
+
+		// The taps that started this frame: pause and restart are edges, as
+		// Escape and R are, so they are read from the points that went down
+		// now rather than from what is held.
+		bool pause_tapped = false;
+		bool tapped_off_controls = false;
+
+		for (const TouchPoint& point : touch.points())
+		{
+			if (!touch.pressed(point.id))
+			{
+				continue;
+			}
+
+			const std::optional<Control> control =
+				control_at(this->arrangement_, point.position);
+
+			if (!control.has_value())
+			{
+				tapped_off_controls = true;
+			}
+			else if (*control == Control::pause)
+			{
+				pause_tapped = true;
+			}
+		}
+
 		// Before the restart test and before tick(), so the frame a player
 		// pauses on is not also a frame the match steps.
 		//
@@ -252,7 +374,8 @@ namespace linesweeper
 		if (this->world_.topped_out == 0 &&
 			(this->app_->keyboard()->pressed(Key::escape) ||
 				this->app_->keyboard()->pressed(Key::p) ||
-				this->app_->gamepads()->pressed(0, GamepadButton::start)))
+				this->app_->gamepads()->pressed(0, GamepadButton::start) ||
+				pause_tapped))
 		{
 			this->open_pause_menu();
 			return;
@@ -268,9 +391,15 @@ namespace linesweeper
 		// Restarting is not an input to tick() - it replaces the value tick()
 		// runs on - so it is free to be an edge, and wants to be: a held R
 		// would restart sixty times a second.
+		//
+		// On the glass it is a tap anywhere that is not a button, which is
+		// what the banner says once a finger has been seen. Not a tap on one:
+		// a player hammering DROP as the stack reaches the top would restart
+		// the match they had not finished looking at.
 		if (this->world_.topped_out != 0 &&
 			(this->app_->keyboard()->pressed(Key::r) ||
-				this->app_->gamepads()->pressed(0, GamepadButton::start)))
+				this->app_->gamepads()->pressed(0, GamepadButton::start) ||
+				tapped_off_controls))
 		{
 			this->world_ = World{};
 		}
@@ -291,6 +420,10 @@ namespace linesweeper
 		// comes back is kept for the field, which reads it on this frame's
 		// update below.
 		this->last_tick_ = tick(this->world_, this->gate_.pass(this->read_input()));
+
+		this->controls_->set(this->arrangement_,
+			controls_held(this->arrangement_, touch.points()),
+			this->touch_seen_);
 
 		this->scene_->update(dt);
 		this->scene_->end_tick();
