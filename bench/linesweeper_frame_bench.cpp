@@ -410,6 +410,10 @@ namespace
 		void on_mouse_button_up(MouseButton /*button*/) const override {}
 		void on_mouse_wheel(float /*notches*/) const override {}
 		void on_mouse_wheel_horizontal(float /*notches*/) const override {}
+		void on_touch_down(uint32_t /*point*/, int /*x*/, int /*y*/) const override {}
+		void on_touch_move(uint32_t /*point*/, int /*x*/, int /*y*/) const override {}
+		void on_touch_up(uint32_t /*point*/, int /*x*/, int /*y*/) const override {}
+		void on_touch_cancel(uint32_t /*point*/) const override {}
 
 		void on_device_lost() override
 		{

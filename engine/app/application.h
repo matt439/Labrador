@@ -11,6 +11,7 @@
 #include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
 #include "engine/input/mouse.h"
+#include "engine/input/touch.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resolution_manager.h"
@@ -241,7 +242,7 @@ namespace labrador
 		const Partitioner* partitioner() const;
 		Gamepads* gamepads() const;
 
-		// The other two devices. Both are polled beside the pads, once per
+		// The other three devices. All are polled beside the pads, once per
 		// frame before any state updates, so every edge in the engine is
 		// measured across the same frame boundary whichever device it came
 		// from.
@@ -250,9 +251,15 @@ namespace labrador
 		// nothing a client can see: the pads are read from XInput on demand,
 		// while these are fed from the window's messages as they arrive
 		// (engine/input/keyboard.h says why that is forced rather than
-		// chosen). The question a game asks is the same shape for all three.
+		// chosen). The question a game asks is the same shape for all four.
+		//
+		// Touch is live while the player is here - the window in the
+		// foreground and shown - whether or not the canvas has the keyboard,
+		// because a finger reaches the canvas only by touching it, and a phone
+		// may never give a canvas the keyboard at all.
 		Keyboard* keyboard() const;
 		Mouse* mouse() const;
+		Touch* touch() const;
 
 		// The native window, as Renderer::create_device takes it
 		// (Window::handle): an HWND on Windows, the canvas in a browser.
@@ -305,6 +312,7 @@ namespace labrador
 		// alongside the pads and not beside a backend.
 		std::unique_ptr<Keyboard> keyboard_ = nullptr;
 		std::unique_ptr<Mouse> mouse_ = nullptr;
+		std::unique_ptr<Touch> touch_ = nullptr;
 
 		// Whether initialize() opened a COM apartment the destructor has to
 		// close. Only a Windows build has one to open.
@@ -353,13 +361,19 @@ namespace labrador
 		void on_mouse_capture_lost() const override;
 		void on_mouse_wheel(float notches) const override;
 		void on_mouse_wheel_horizontal(float notches) const override;
+		void on_touch_down(uint32_t point, int x, int y) const override;
+		void on_touch_move(uint32_t point, int x, int y) const override;
+		void on_touch_up(uint32_t point, int x, int y) const override;
+		void on_touch_cancel(uint32_t point) const override;
 
-		// Both fed devices at once, because every reason to tell one is a
-		// reason to tell the other: losing the foreground and being suspended
-		// both mean the key-ups and button-ups for whatever is held will be
-		// delivered somewhere else. settle_presence, the two keyboard handlers
-		// and initialize call this, and the alternative is the same pair of
-		// lines written four times.
+		// The keyboard and the mouse at once, because every reason to tell one
+		// is a reason to tell the other: losing the foreground and being
+		// suspended both mean the key-ups and button-ups for whatever is held
+		// will be delivered somewhere else. Touch is told beside it, by
+		// settle_presence, because losing the keyboard is not a reason to
+		// lose the fingers. settle_presence, the two keyboard handlers and
+		// initialize call this, and the alternative is the same pair of lines
+		// written four times.
 		void set_input_focus(bool focused) const;
 
 		// WHAT THE WINDOW HAS SAID, AS THREE FACTS, because the platforms
@@ -379,7 +393,8 @@ namespace labrador
 		bool has_keyboard_ = true;
 
 		// Brings the pads, the fed devices and the stack into line with the
-		// three facts above.
+		// three facts above. Touch follows the first two alone, as the pads
+		// do.
 		void settle_presence();
 
 		void create_window();

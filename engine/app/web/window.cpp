@@ -22,7 +22,8 @@
 //
 // Global rather than in labrador::, because EM_JS declares a C function, and
 // prefixed for the same reason.
-EM_JS_DEPS(labrador_window, "$specialHTMLTargets,$UTF8ToString");
+EM_JS_DEPS(labrador_window, "$specialHTMLTargets,$UTF8ToString,"
+	"$getWasmTableEntry,$stringToUTF8OnStack,$stackSave,$stackRestore");
 
 EM_JS(int, labrador_adopt_canvas, (), {
 	if (!Module.canvas) {
@@ -66,6 +67,61 @@ EM_JS(int, labrador_take_fullscreen_refusal, (), {
 	const refused = Module.labradorFullscreenRefused ? 1 : 0;
 	Module.labradorFullscreenRefused = false;
 	return refused;
+});
+
+// POINTER EVENTS, which are the one family the html5 API has no callback for.
+// They are used rather than its touch callbacks because a pointer event is one
+// contact with one id - the shape WM_POINTER and WindowNotify already have -
+// where a touch event carries every finger on the glass each time with the
+// changed ones flagged, and because a pointer event says which kind of
+// pointer it is, so the decision about a pen is made in one place rather than
+// by which family happened to be listened to. Each one goes to `deliver` with
+// its type and pointerType as they are, and what they mean is decided there,
+// by dom_events.h, which AppTests can reach.
+//
+// A non-zero answer is a touch the canvas took. Its default is prevented,
+// which is what stops the browser making mouse events of it, and a touch going
+// down focuses the canvas, as a click does.
+//
+// On the canvas, not the page: a touch is captured to the element it starts
+// on, so its moves and its up are delivered here wherever the finger goes.
+using TouchCallback = int (*)(void* user_data, const char* type,
+	const char* pointer_type, uint32_t point, double client_x,
+	double client_y);
+
+EM_JS(void, labrador_listen_pointers, (void* user_data, TouchCallback deliver), {
+	const types = ["pointerdown", "pointermove", "pointerup", "pointercancel",
+		"lostpointercapture"];
+	const listening = Module.labradorPointers;
+	if (listening) {
+		for (const type of types) {
+			listening.canvas.removeEventListener(type, listening.listener);
+		}
+		Module.labradorPointers = null;
+	}
+	if (!deliver) {
+		return;
+	}
+	const canvas = specialHTMLTargets["!canvas"];
+	const call = getWasmTableEntry(deliver);
+	const listener = (event) => {
+		const stack = stackSave();
+		const taken = call(user_data, stringToUTF8OnStack(event.type),
+			stringToUTF8OnStack(event.pointerType || ""), event.pointerId >>> 0,
+			event.clientX, event.clientY);
+		stackRestore(stack);
+		if (!taken) {
+			return;
+		}
+		event.preventDefault();
+		if (event.type === "pointerdown" && document.activeElement !== canvas) {
+			canvas.focus({ preventScroll: true });
+		}
+	};
+	for (const type of types) {
+		canvas.addEventListener(type, listener);
+	}
+	Module.labradorPointers = { canvas, listener };
 });
 
 EM_JS(void, labrador_tell_page_quit, (), {
@@ -121,9 +177,10 @@ namespace labrador
 		// Measures, and reports whatever size the canvas has now.
 		void report_size();
 
-		// A mouse event's position as client pixels of the drawing buffer.
-		mattmath::Vector2I client_position(
-			const EmscriptenMouseEvent& event) const;
+		// A position in the page's CSS pixels, as client pixels of the
+		// drawing buffer.
+		mattmath::Vector2I client_position(double client_x,
+			double client_y) const;
 		bool inside(const mattmath::Vector2I& position) const;
 
 		// Asks for full screen, and reports a request the browser refused on
@@ -189,6 +246,9 @@ namespace labrador
 			const EmscriptenVisibilityChangeEvent* event, void* user_data);
 		static bool on_fullscreen_change(int event_type,
 			const EmscriptenFullscreenChangeEvent* event, void* user_data);
+		static int on_pointer(void* user_data, const char* type,
+			const char* pointer_type, uint32_t point, double client_x,
+			double client_y);
 
 		WindowNotify* notify = nullptr;
 		int min_width = 0;
@@ -327,6 +387,7 @@ namespace labrador
 			EMSCRIPTEN_EVENT_TARGET_DOCUMENT, user_data, false,
 			on ? on_fullscreen_change : nullptr);
 		labrador_watch_fullscreen_errors(on ? 1 : 0);
+		labrador_listen_pointers(user_data, on ? on_pointer : nullptr);
 
 		if (!on)
 		{
@@ -381,8 +442,8 @@ namespace labrador
 			this->buffer_height);
 	}
 
-	mattmath::Vector2I Window::Impl::client_position(
-		const EmscriptenMouseEvent& event) const
+	mattmath::Vector2I Window::Impl::client_position(double client_x,
+		double client_y) const
 	{
 		// Measured from the canvas's corner whichever element the listener
 		// is on - two of them are on the page's window, which reports from
@@ -391,13 +452,8 @@ namespace labrador
 			this->buffer_width / this->css_width : 1.0;
 		const double scale_y = this->css_height > 0.0 ?
 			this->buffer_height / this->css_height : 1.0;
-		const double x = (event.clientX - labrador_canvas_left()) * scale_x;
-		const double y = (event.clientY - labrador_canvas_top()) * scale_y;
-
-		// Floored, so a position just left of or above the canvas is
-		// negative rather than rounded onto its first column.
-		return mattmath::Vector2I(static_cast<int>(std::floor(x)),
-			static_cast<int>(std::floor(y)));
+		return client_pixels(client_x - labrador_canvas_left(),
+			client_y - labrador_canvas_top(), scale_x, scale_y);
 	}
 
 	bool Window::Impl::inside(const mattmath::Vector2I& position) const
@@ -510,7 +566,8 @@ namespace labrador
 
 		self->guarded([&]()
 			{
-				const mattmath::Vector2I position = self->client_position(*event);
+				const mattmath::Vector2I position =
+					self->client_position(event->clientX, event->clientY);
 				self->notify->on_mouse_move(position.x, position.y);
 				++self->held_buttons;
 				self->notify->on_mouse_button_down(button);
@@ -527,7 +584,8 @@ namespace labrador
 		Impl* const self = static_cast<Impl*>(user_data);
 		self->guarded([&]()
 			{
-				const mattmath::Vector2I position = self->client_position(*event);
+				const mattmath::Vector2I position =
+					self->client_position(event->clientX, event->clientY);
 				if (self->held_buttons > 0 || self->inside(position))
 				{
 					self->notify->on_mouse_move(position.x, position.y);
@@ -552,7 +610,8 @@ namespace labrador
 				{
 					--self->held_buttons;
 				}
-				else if (!self->inside(self->client_position(*event)))
+				else if (!self->inside(self->client_position(event->clientX,
+					event->clientY)))
 				{
 					// A release over some other part of the page, of a press
 					// that never reached the canvas.
@@ -671,6 +730,43 @@ namespace labrador
 				self->notify->on_fullscreen_changed(event->isFullscreen);
 			});
 		return false;
+	}
+
+	int Window::Impl::on_pointer(void* user_data, const char* type,
+		const char* pointer_type, uint32_t point, double client_x,
+		double client_y)
+	{
+		Impl* const self = static_cast<Impl*>(user_data);
+		const DomTouch touch = touch_from_pointer_event(type, pointer_type);
+		if (touch == DomTouch::none)
+		{
+			return 0;
+		}
+
+		self->guarded([&]()
+			{
+				const mattmath::Vector2I position =
+					self->client_position(client_x, client_y);
+				switch (touch)
+				{
+				case DomTouch::down:
+					self->notify->on_touch_down(point, position.x, position.y);
+					break;
+				case DomTouch::move:
+					self->notify->on_touch_move(point, position.x, position.y);
+					break;
+				case DomTouch::up:
+					self->notify->on_touch_up(point, position.x, position.y);
+					break;
+				case DomTouch::cancel:
+					self->notify->on_touch_cancel(point);
+					break;
+				case DomTouch::none:
+					break;
+				}
+			});
+
+		return 1;
 	}
 
 	Window::Window(const WindowOptions& options, WindowNotify* notify) :

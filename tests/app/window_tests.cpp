@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "engine/app/window.h"
+#include "engine/app/win32/pointer_input.h"
 
 #include <Windows.h>
 #include <functional>
@@ -66,6 +67,27 @@ namespace
 		void on_mouse_capture_lost() const override { this->mouse.cancel_buttons(); }
 		void on_mouse_wheel(float) const override {}
 		void on_mouse_wheel_horizontal(float) const override {}
+
+		mutable std::vector<std::string> touches;
+		void on_touch_down(uint32_t point, int x, int y) const override
+		{
+			this->touches.push_back("down " + std::to_string(point) + " " +
+				std::to_string(x) + "," + std::to_string(y));
+		}
+		void on_touch_move(uint32_t point, int x, int y) const override
+		{
+			this->touches.push_back("move " + std::to_string(point) + " " +
+				std::to_string(x) + "," + std::to_string(y));
+		}
+		void on_touch_up(uint32_t point, int x, int y) const override
+		{
+			this->touches.push_back("up " + std::to_string(point) + " " +
+				std::to_string(x) + "," + std::to_string(y));
+		}
+		void on_touch_cancel(uint32_t point) const override
+		{
+			this->touches.push_back("cancel " + std::to_string(point));
+		}
 	};
 
 	// One class name for every test, deliberately. The constructor registers
@@ -377,4 +399,99 @@ TEST_CASE("modern power notifications are idempotent and independent of minimize
         SendMessageW(hwnd(window), WM_SIZE, SIZE_RESTORED, MAKELPARAM(64, 64));
         CHECK(notify.log == std::vector<std::string>{ "suspending", "size 64x64", "resuming" });
     }
+}
+
+TEST_CASE("a touch pointer's messages are the four touch calls")
+{
+	using labrador::TouchMessage;
+	using labrador::touch_message;
+
+	// The pointer's flags ride in the high word of WPARAM, its id in the low.
+	const auto w = [](unsigned int flags)
+	{
+		return static_cast<uint64_t>(MAKEWPARAM(42, flags));
+	};
+
+	CHECK(touch_message(WM_POINTERDOWN,
+		w(POINTER_MESSAGE_FLAG_INCONTACT)) == TouchMessage::down);
+	CHECK(touch_message(WM_POINTERUPDATE,
+		w(POINTER_MESSAGE_FLAG_INCONTACT)) == TouchMessage::move);
+	CHECK(touch_message(WM_POINTERUP, w(0)) == TouchMessage::up);
+
+	// A finger above a digitiser that reports hover is not a point.
+	CHECK(touch_message(WM_POINTERUPDATE, w(POINTER_MESSAGE_FLAG_INRANGE)) ==
+		TouchMessage::none);
+
+	// Taken away rather than lifted.
+	CHECK(touch_message(WM_POINTERUP, w(POINTER_MESSAGE_FLAG_CANCELED)) ==
+		TouchMessage::cancel);
+	CHECK(touch_message(WM_POINTERCAPTURECHANGED, w(0)) ==
+		TouchMessage::cancel);
+
+	CHECK(touch_message(WM_POINTERENTER, w(0)) == TouchMessage::none);
+	CHECK(touch_message(WM_MOUSEMOVE, w(0)) == TouchMessage::none);
+}
+
+TEST_CASE("the touch signature is told from the pen's and from none")
+{
+	using labrador::mouse_message_is_from_touch;
+
+	CHECK(mouse_message_is_from_touch(static_cast<intptr_t>(0xFF515780u)));
+	CHECK(mouse_message_is_from_touch(static_cast<intptr_t>(0xFF5157FFu)));
+
+	// A pen keeps its mouse messages: the signature without the touch bit.
+	CHECK_FALSE(mouse_message_is_from_touch(static_cast<intptr_t>(0xFF515700u)));
+	CHECK_FALSE(mouse_message_is_from_touch(static_cast<intptr_t>(0xFF51577Fu)));
+
+	// A real mouse, and anything else that happens to set the bit.
+	CHECK_FALSE(mouse_message_is_from_touch(0));
+	CHECK_FALSE(mouse_message_is_from_touch(static_cast<intptr_t>(0x12345680u)));
+}
+
+TEST_CASE("mouse messages Windows made from a touch are dropped, and a pen's are kept")
+{
+	// GetMessageExtraInfo is the thread's, and a sent message is handled on
+	// this thread, so setting it here is what the window reads.
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.mouse.set_focused(true);
+	notify.mouse.poll();
+
+	SetMessageExtraInfo(static_cast<LPARAM>(0xFF515780u));
+	SendMessageW(hwnd(window), WM_LBUTTONDOWN, MK_LBUTTON, 0);
+	notify.mouse.poll();
+	CHECK_FALSE(notify.mouse.held(MouseButton::left));
+	CHECK(GetCapture() == nullptr);
+	SendMessageW(hwnd(window), WM_LBUTTONUP, 0, 0);
+
+	SetMessageExtraInfo(static_cast<LPARAM>(0xFF515700u));
+	SendMessageW(hwnd(window), WM_LBUTTONDOWN, MK_LBUTTON, 0);
+	notify.mouse.poll();
+	CHECK(notify.mouse.held(MouseButton::left));
+	SendMessageW(hwnd(window), WM_LBUTTONUP, 0, 0);
+
+	SetMessageExtraInfo(0);
+	notify.mouse.poll();
+	CHECK_FALSE(notify.mouse.held(MouseButton::left));
+	CHECK(GetCapture() == nullptr);
+}
+
+TEST_CASE("a pointer Windows does not know as touch reaches nothing, and a lost capture cancels")
+{
+	// A made-up id is no kind of pointer to GetPointerType, which is the
+	// question the window asks before anything reaches the touch calls -
+	// and the reason the translation above is asserted on its own.
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+
+	SendMessageW(hwnd(window), WM_POINTERDOWN,
+		MAKEWPARAM(4321, POINTER_MESSAGE_FLAG_INCONTACT), MAKELPARAM(10, 10));
+	SendMessageW(hwnd(window), WM_POINTERUP, MAKEWPARAM(4321, 0),
+		MAKELPARAM(10, 10));
+	CHECK(notify.touches.empty());
+
+	// A lost capture is answered whatever the pointer was.
+	SendMessageW(hwnd(window), WM_POINTERCAPTURECHANGED, MAKEWPARAM(4321, 0),
+		0);
+	CHECK(notify.touches == std::vector<std::string>{ "cancel 4321" });
 }

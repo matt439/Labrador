@@ -1,5 +1,6 @@
 #include "engine/app/web/dom_events.h"
 
+#include <cmath>
 #include <cstddef>
 
 namespace labrador
@@ -214,5 +215,39 @@ namespace labrador
 		case 2: return static_cast<float>(delta);
 		default: return 0.0f;
 		}
+	}
+
+	DomTouch touch_from_pointer_event(std::string_view type,
+		std::string_view pointer_type)
+	{
+		if (pointer_type != "touch")
+		{
+			return DomTouch::none;
+		}
+		if (type == "pointerdown")
+		{
+			return DomTouch::down;
+		}
+		if (type == "pointermove")
+		{
+			return DomTouch::move;
+		}
+		if (type == "pointerup")
+		{
+			return DomTouch::up;
+		}
+		if (type == "pointercancel" || type == "lostpointercapture")
+		{
+			return DomTouch::cancel;
+		}
+		return DomTouch::none;
+	}
+
+	mattmath::Vector2I client_pixels(double css_x, double css_y,
+		double scale_x, double scale_y)
+	{
+		return mattmath::Vector2I(
+			static_cast<int>(std::floor(css_x * scale_x)),
+			static_cast<int>(std::floor(css_y * scale_y)));
 	}
 }

@@ -2,7 +2,9 @@
 
 #include "engine/input/keyboard.h"
 #include "engine/input/mouse.h"
+#include "engine/math/vector2i.h"
 
+#include <cstdint>
 #include <string_view>
 
 namespace labrador
@@ -59,4 +61,39 @@ namespace labrador
 	// sees a wheel that turns faster or slower, never one that turns
 	// backwards. A page is one notch.
 	float wheel_notches(double delta, unsigned int delta_mode);
+
+	// What a PointerEvent on the canvas is to the touch device.
+	enum class DomTouch : uint8_t
+	{
+		// Not touch, or nothing the device is told: a mouse or a pen, which
+		// stay the mouse and arrive as the mouse events the browser makes of
+		// them, or a pointer event type that says nothing about the contact.
+		none,
+		down,
+		move,
+		up,
+		// The browser took the contact away - pointercancel - or the canvas
+		// lost the capture that a touch takes on the element it starts on,
+		// which means the rest of the contact will be delivered somewhere
+		// else. Capture is also lost after every pointerup, when the point is
+		// already gone and a cancel for it does nothing.
+		cancel,
+	};
+
+	// From PointerEvent.type and PointerEvent.pointerType. Only "touch" is
+	// touch.
+	//
+	// A touch the canvas handles has its default prevented, and that is what
+	// keeps one tap one input: a browser makes compatibility mouse events from
+	// a touch whose pointerdown was not cancelled, and they would be a click
+	// in the same frame as the tap.
+	DomTouch touch_from_pointer_event(std::string_view type,
+		std::string_view pointer_type);
+
+	// A position measured from the canvas's top-left corner in CSS pixels, as
+	// client pixels of the drawing buffer: scaled by the buffer's size over
+	// the box's, and floored, so a position just left of or above the canvas
+	// is negative rather than rounded onto its first column.
+	mattmath::Vector2I client_pixels(double css_x, double css_y,
+		double scale_x, double scale_y);
 }

@@ -2,12 +2,15 @@
 
 #include "engine/core/state_context.h"
 #include "engine/input/keyboard.h"
+#include "engine/input/touch.h"
 #include "engine/math/matrix3x2f.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 #include "samples/minimal/states/confirm_state.h"
 
+#include <cstddef>
 #include <memory>
+#include <span>
 #include <string>
 
 using namespace mattmath;
@@ -33,6 +36,10 @@ namespace
 	// engine/input/gamepad.h asks for and what the pad API's own deadzone
 	// modes take away.
 	constexpr float stick_deadzone = 0.2f;
+
+	// Where a touch marker's text sits relative to the point, so the "+" that
+	// starts it is over the finger rather than below and right of it.
+	const Vector2F touch_marker_offset = Vector2F(-5.0f, -9.0f);
 
 	// The keyboard's answer to the question the stick answers, in the same
 	// units: a direction, at most one unit per axis, +y down like everything
@@ -91,9 +98,15 @@ void HelloState::init()
 		labrador::Colour::white));
 
 	this->hint_ = this->scene_->add(std::make_unique<Label>(
-		L"Left stick, arrows or WASD move it. B or Escape quits.", font_name,
+		L"Left stick, arrows or WASD move it. B or Escape quits. Touch shows a marker.", font_name,
 		Vector2F(24.0f, resolution.y - 40.0f), resources,
 		labrador::Colour::dark_gray));
+
+	for (Label*& marker : this->touch_markers_)
+	{
+		marker = this->scene_->add(std::make_unique<Label>(L"", font_name,
+			Vector2F::ZERO, resources, labrador::Colour::gold));
+	}
 
 	// Every add is pending until a tick ends, so that a weapon firing mid-tick
 	// cannot invalidate the loop walking the objects. Nothing has ticked yet
@@ -157,6 +170,28 @@ void HelloState::update(float dt)
 	this->position_ += move * (move_speed * dt);
 
 	this->spin_ += spin_speed * dt;
+
+	// A marker on every finger, at the point's client pixels - which are this
+	// view's pixels, because the one view is the whole window in screen
+	// space. A game with a camera turns them into world coordinates through
+	// it, as it would the mouse's.
+	const std::span<const TouchPoint> points = this->app_->touch()->points();
+	for (size_t i = 0; i < this->touch_markers_.size(); ++i)
+	{
+		Label* marker = this->touch_markers_[i];
+		if (i < points.size())
+		{
+			marker->set_text(L"+" + std::to_wstring(points[i].id));
+			marker->set_position(Vector2F(
+				static_cast<float>(points[i].position.x),
+				static_cast<float>(points[i].position.y)) +
+				touch_marker_offset);
+		}
+		else
+		{
+			marker->set_text(L"");
+		}
+	}
 
 	// Where the greeting goes, worked out here rather than by the engine -
 	// nothing in the engine has an opinion about where a game's things are.

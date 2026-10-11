@@ -1,12 +1,12 @@
 # Labrador — notes for Claude
 
 A 2D game engine in C++20 for Windows and, through Emscripten and WebGL2, the
-browser, built with CMake + vcpkg; three of its five samples run in a browser so
-far and the other two are Windows-only. This repository is the **engine half
+browser, built with CMake + vcpkg; four of its five samples run in a browser so
+far and the other one is Windows-only. This repository is the **engine half
 of a split**: the client that drives it, ColourWars, lives in its own
 repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
-and `samples/` holds five clients: `minimal` (~450 lines), the new-project
+and `samples/` holds five clients: `minimal` (~550 lines), the new-project
 template you copy; `collision`, `audio` and `local_multiplayer`, the focused
 guide examples; and `linesweeper`, a falling-block game you read
 — whose own [README](samples/linesweeper/README.md) records its design
@@ -86,8 +86,10 @@ two views through WebGL2, fanned out on the serial pool. `audio` is the
 third, at `out/build/wasm-*/samples/audio/AudioSample.html`: the sound
 board through `audio/webaudio/`, silent until the page's first key, click
 or touch, with no `--smoke-test` because a page has no command line -
-`AudioSampleTests` runs that lifecycle under Node instead. `minimal` and
-`collision` are still Windows-only. **In a browser
+`AudioSampleTests` runs that lifecycle under Node instead. `minimal` is the
+fourth, at `out/build/wasm-*/samples/minimal/MinimalSample.html`, and draws a
+marker at every touch point, which is how the touch device is looked at.
+`collision` is still Windows-only. **In a browser
 `Application::run` does not return and the stack below it is unwound,
 destructors included, before the first frame**, so a web entry point keeps
 its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,
@@ -112,14 +114,21 @@ checking every bank. Configure refuses `xaudio2` in a browser build and
 `webaudio` outside one.
 
 **And two input backends, on a third**: `LABRADOR_INPUT_BACKEND` is `xinput`
-or `web`, and only the pad is behind it, because the keyboard and mouse are fed
-by the window rather than read. `web` is the browser Gamepad API and is the
+or `web`, and only the pad is behind it, because the keyboard, the mouse and
+touch are fed by the window rather than read. `web` is the browser Gamepad API and is the
 default under Emscripten. A pad a page script fakes has played LineSweeper
 through it in headless Chrome; a physical one has not. On the web the pads
 follow the page's visibility, not the canvas's focus, which only takes the
 keys: `Application` keeps foreground, shown and has-the-keyboard apart, and
 `InputTests` pins the standard-mapping translation and slot assignment
 (`input/web/standard_gamepad.h`) under the `wasm-*` presets.
+**Touch is the third fed device** (`input/touch.h`): `WM_POINTER` on Windows
+and pointer events on the canvas, each window dropping the mouse input its
+platform makes from a touch, and a pen staying the mouse on both. `InputTests`
+pins its edges, ids, cancel and overflow and `AppTests` both translations.
+Chrome's touch emulation has driven the browser path into `minimal`, and
+Windows touch injection a visible engine window; a real touchscreen has
+driven neither.
 
 | Preset | Backend | ctest |
 |---|---|---|

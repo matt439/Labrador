@@ -4,6 +4,7 @@
 #include "engine/input/mouse.h"
 #include "engine/math/vector2i.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -53,13 +54,13 @@ namespace labrador
 		virtual void on_window_moved() const = 0;
 		virtual void on_window_size_changed(int width, int height) = 0;
 
-		// THE KEYBOARD AND THE MOUSE, and they are here rather than behind a
-		// reader in engine/input/ because there is nowhere else they could be.
-		// A pad is polled: input/xinput/ asks XInput for a snapshot and owes
-		// this file nothing. These two arrive as messages in this window's
-		// queue, or as events on its canvas, so the only way into the input
-		// module is out through here - which is the whole reason `input` is
-		// fed rather than read, and the reason nothing in it names a window
+		// THE KEYBOARD, THE MOUSE AND TOUCH, and they are here rather than
+		// behind a reader in engine/input/ because there is nowhere else they
+		// could be. A pad is polled: input/xinput/ asks XInput for a snapshot
+		// and owes this file nothing. These three arrive as messages in this
+		// window's queue, or as events on its canvas, so the only way into the
+		// input module is out through here - which is the whole reason `input`
+		// is fed rather than read, and the reason nothing in it names a window
 		// (keyboard.h says it at length).
 		//
 		// const, like on_window_moved and for the same reason: they change
@@ -89,6 +90,25 @@ namespace labrador
 		// points without looking it up (T4).
 		virtual void on_mouse_wheel(float notches) const = 0;
 		virtual void on_mouse_wheel_horizontal(float notches) const = 0;
+
+		// A FINGER ON THE GLASS, one call per thing it did. `point` is the
+		// platform's id for the contact - a Win32 pointer id or a DOM
+		// pointerId - and is stable from down to up or cancel, and
+		// engine/input/touch.h maps it onto ids of the engine's own. The
+		// position is client pixels, as on_mouse_move's is.
+		//
+		// A pen and a mouse are not touch and do not arrive here: both stay
+		// the mouse. And a touch does not arrive at the mouse as well, which
+		// both platforms would otherwise arrange by synthesising mouse input
+		// from it - the window drops that, so one tap is one input.
+		//
+		// Cancel is a point the platform took away rather than one the player
+		// lifted: a gesture the system claimed, or a capture lost. It carries
+		// no position because nothing about where it ended means anything.
+		virtual void on_touch_down(uint32_t point, int x, int y) const = 0;
+		virtual void on_touch_move(uint32_t point, int x, int y) const = 0;
+		virtual void on_touch_up(uint32_t point, int x, int y) const = 0;
+		virtual void on_touch_cancel(uint32_t point) const = 0;
 
 	protected:
 		~WindowNotify() = default;

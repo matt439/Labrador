@@ -180,12 +180,13 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 	},
 	{
 		name: 'input',
-		summary: 'Keyboard, mouse and four gamepads, with press edges, deadzones and menu directions.',
+		summary: 'Keyboard, mouse, touch and four gamepads, with press edges, deadzones and menu directions.',
 		headers: [
 			['keyboard.h', 'Keyboard'],
 			['gamepads.h', 'Gamepads'],
 			['gamepad.h', 'GamepadState'],
 			['mouse.h', 'Mouse'],
+			['touch.h', 'Touch'],
 			['direction.h', 'Direction'],
 			['gamepad_reader.h', 'GamepadReader'],
 		],

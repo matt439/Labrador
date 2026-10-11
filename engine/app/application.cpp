@@ -144,6 +144,7 @@ namespace labrador
 		// over a window that has only just been shown.
 		this->keyboard_ = std::make_unique<Keyboard>();
 		this->mouse_ = std::make_unique<Mouse>();
+		this->touch_ = std::make_unique<Touch>();
 
 		// The window is already up by the time services are built, and a
 		// window that was given the foreground on creation gets no
@@ -158,6 +159,7 @@ namespace labrador
 		// line covers both.
 		this->set_input_focus(this->foreground_ && this->shown_ &&
 			this->has_keyboard_);
+		this->touch_->set_focused(this->foreground_ && this->shown_);
 
 		this->timer_.SetFixedTimeStep(true);
 		this->timer_.SetTargetElapsedSeconds(
@@ -289,7 +291,7 @@ namespace labrador
 		// That is what makes "down now, up last frame" true - see gamepads.h
 		// for the two hand-primed edge detectors this replaced.
 		//
-		// All three together, and in one place, so that a frame boundary means
+		// Every device together, and in one place, so that a frame boundary means
 		// the same thing to every device. A keyboard polled somewhere else in
 		// the frame would put its edges half a frame away from the pads', and
 		// a game reading both would see a stick and a key pressed on the same
@@ -297,6 +299,7 @@ namespace labrador
 		this->gamepads_->poll();
 		this->keyboard_->poll();
 		this->mouse_->poll();
+		this->touch_->poll();
 
 		StateContext::update(
 			static_cast<float>(this->timer_.GetElapsedSeconds()));
@@ -370,6 +373,10 @@ namespace labrador
 			}
 		}
 		this->set_input_focus(present && this->has_keyboard_);
+		if (this->touch_)
+		{
+			this->touch_->set_focused(present);
+		}
 		this->notify_activation(present);
 	}
 
@@ -600,6 +607,38 @@ namespace labrador
 		}
 	}
 
+	void Application::on_touch_down(uint32_t point, int x, int y) const
+	{
+		if (this->touch_)
+		{
+			this->touch_->on_down(point, mattmath::Vector2I(x, y));
+		}
+	}
+
+	void Application::on_touch_move(uint32_t point, int x, int y) const
+	{
+		if (this->touch_)
+		{
+			this->touch_->on_move(point, mattmath::Vector2I(x, y));
+		}
+	}
+
+	void Application::on_touch_up(uint32_t point, int x, int y) const
+	{
+		if (this->touch_)
+		{
+			this->touch_->on_up(point, mattmath::Vector2I(x, y));
+		}
+	}
+
+	void Application::on_touch_cancel(uint32_t point) const
+	{
+		if (this->touch_)
+		{
+			this->touch_->on_cancel(point);
+		}
+	}
+
 	Keyboard* Application::keyboard() const
 	{
 		return this->keyboard_.get();
@@ -608,6 +647,11 @@ namespace labrador
 	Mouse* Application::mouse() const
 	{
 		return this->mouse_.get();
+	}
+
+	Touch* Application::touch() const
+	{
+		return this->touch_.get();
 	}
 
 	Gamepads* Application::gamepads() const

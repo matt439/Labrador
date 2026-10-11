@@ -35,6 +35,7 @@ add_library(LabradorEngine STATIC
     input/gamepads.cpp
     input/keyboard.cpp
     input/mouse.cpp
+    input/touch.cpp
     render/animation_object.cpp
     render/animation_strip.cpp
     render/block_decode.cpp
@@ -96,6 +97,7 @@ if(EMSCRIPTEN)
     )
 elseif(WIN32)
     target_sources(LabradorEngine PRIVATE
+        app/win32/pointer_input.cpp
         app/win32/window.cpp
     )
 else()
