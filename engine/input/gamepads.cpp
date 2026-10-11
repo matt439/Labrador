@@ -12,6 +12,7 @@ namespace labrador
 
 	void Gamepads::poll()
 	{
+		this->reader_->sample();
 		for (int slot = 0; slot < max_count; ++slot)
 		{
 			this->previous_[slot] = this->current_[slot];

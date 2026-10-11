@@ -16,9 +16,9 @@ namespace labrador
 	// any state updates, so every reader measures across the same two frames
 	// and nothing is primed.
 	//
-	// A slot is a slot. It is the index the pad API answers for, not the order
-	// pads were plugged in, and it is not stable across a replug - a controller
-	// that comes back in a different slot is a different slot. Binding a player
+	// A slot is a slot. The backend assigns it (GamepadReader::read) and a pad
+	// keeps it while it stays connected, but it is not stable across a replug
+	// - a controller that comes back in a different slot is a different slot. Binding a player
 	// to one for the length of a match is a decision a game makes; the engine
 	// reports connected(), just_connected() and just_disconnected() so that it
 	// can make it, and makes none itself.
@@ -30,8 +30,9 @@ namespace labrador
 		// `reader` is borrowed and must outlive this.
 		explicit Gamepads(GamepadReader* reader);
 
-		// Reads every slot. What was current becomes previous, so every edge
-		// below is measured across exactly one frame.
+		// Samples the reader once and reads every slot. What was current
+		// becomes previous, so every edge below is measured across exactly one
+		// frame.
 		void poll();
 
 		// Throw std::out_of_range naming the slot if it is not in

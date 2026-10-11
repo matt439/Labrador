@@ -189,6 +189,12 @@ namespace labrador
 		// resolution last requested, not the monitor size just vacated.
 		void set_fullscreen(bool fullscreen);
 
+		// Whether the window is full screen: what set_fullscreen last asked,
+		// until the platform says otherwise. A browser does - a player leaves
+		// with Escape, and a page in a frame may refuse - and this follows
+		// what it decided, so an options menu reading it shows the truth.
+		bool fullscreen() const;
+
 		// Tells the clock that the time just spent was not gameplay.
 		//
 		// The step is fixed, so a long blocking call - loading a level, reading
@@ -326,6 +332,12 @@ namespace labrador
 		void on_deactivated() override;
 		void on_suspending() override;
 		void on_resuming() override;
+
+		// Only the keyboard and the mouse, which is all a canvas losing the
+		// keyboard means: the pads and the stack are left alone.
+		void on_keyboard_gained() override;
+		void on_keyboard_lost() override;
+		void on_fullscreen_changed(bool fullscreen) override;
 		void on_window_moved() const override;
 		void on_window_size_changed(int width, int height) override;
 
@@ -345,9 +357,30 @@ namespace labrador
 		// Both fed devices at once, because every reason to tell one is a
 		// reason to tell the other: losing the foreground and being suspended
 		// both mean the key-ups and button-ups for whatever is held will be
-		// delivered somewhere else. Four handlers above call this and the
-		// alternative is the same pair of lines written four times.
+		// delivered somewhere else. settle_presence, the two keyboard handlers
+		// and initialize call this, and the alternative is the same pair of
+		// lines written four times.
 		void set_input_focus(bool focused) const;
+
+		// WHAT THE WINDOW HAS SAID, AS THREE FACTS, because the platforms
+		// do not agree on which of them arrive together. Foreground is
+		// on_activated, shown is on_resuming, and has_keyboard_ is
+		// on_keyboard_gained, which only a canvas separates from the first.
+		//
+		// The services follow from them rather than from whichever message
+		// came last. The player is here when the window is in the foreground
+		// and shown: the pads are read and the stack is told it is active.
+		// The keyboard and the mouse need that and the keyboard as well. So a
+		// tab shown again while the canvas does not have the keyboard gives
+		// the pads back and not the keys, and a click beside a canvas takes
+		// the keys and not the pads.
+		bool foreground_ = true;
+		bool shown_ = true;
+		bool has_keyboard_ = true;
+
+		// Brings the pads, the fed devices and the stack into line with the
+		// three facts above.
+		void settle_presence();
 
 		void create_window();
 		void create_services();

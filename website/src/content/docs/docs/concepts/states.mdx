@@ -105,6 +105,10 @@ change arrives once, however many separate Windows messages caused it, so a stat
 one and resume in the other without keeping a flag. A state created while the window is already
 in the background asks `context()->active()` in its `init()`, because it missed the change.
 
+In a browser the background is a hidden tab. A click elsewhere on the page takes the keyboard
+and the mouse from the canvas and releases whatever they held, but the player may be on a pad
+and has not left, so the pads go on reading and no state is told.
+
 ## Patterns
 
 - **A level is a state that owns a scene.** Both samples do exactly this: `init()` creates a

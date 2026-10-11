@@ -6,7 +6,7 @@
 
 namespace labrador
 {
-	// The input backend seam, and it is one function wide.
+	// The input backend seam: a snapshot, and the slots read out of it.
 	//
 	// A concrete class with one implementation chosen at build time, for the
 	// reasons engine/render/SEAM.md#2 gives for the renderer: asking for a
@@ -24,15 +24,32 @@ namespace labrador
 		GamepadReader(GamepadReader&&) noexcept;
 		GamepadReader& operator=(GamepadReader&&) noexcept;
 
-		// One slot, as it is right now. Slots are 0 .. Gamepads::max_count - 1;
-		// anything else answers a disconnected state rather than throwing,
-		// because "there is no pad there" is the same answer either way.
+		// Takes the snapshot every read() answers from until the next call.
+		// Gamepads::poll calls it once a frame, before reading any slot, so
+		// the four slots of one frame are one moment of the pad API rather
+		// than four, and a pad API that has to be asked for everything at once
+		// - the browser's - is asked once.
+		void sample();
+
+		// One slot, as the last sample() saw it, and disconnected before the
+		// first. Slots are 0 .. Gamepads::max_count - 1; anything else answers
+		// a disconnected state rather than throwing, because "there is no pad
+		// there" is the same answer either way.
+		//
+		// Which pad is in which slot is the backend's to decide, and every
+		// backend keeps one rule: a pad holds its slot for as long as it stays
+		// connected. XInput's user index already is that; a browser numbers
+		// pads by its own count, which can pass the four slots there are, so
+		// engine/input/web/ hands each new pad the lowest free slot instead.
 		GamepadState read(int slot) const;
 
-		// The window lost or regained the foreground. A suspended reader
-		// answers disconnected for every slot, so a button held down while the
-		// game is in the background is not waiting to be delivered as input the
-		// moment it comes back.
+		// The game went into the background or came back: on Windows the
+		// window lost the foreground or was minimised, and in a browser the
+		// page was hidden. Not the keyboard leaving a canvas, which a player
+		// on a pad never asked for (Application says how the two are told
+		// apart). A suspended reader answers disconnected for every slot, so a
+		// button held down while the game is in the background is not waiting
+		// to be delivered as input the moment it comes back.
 		//
 		// THAT LAST CLAUSE IS NOT THIS CLASS'S TO KEEP, and it should not be
 		// read as the thing that makes it true. Both calls forward straight to
