@@ -835,7 +835,8 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 ### Where it stands, 2026-10-11
 
 **Every milestone's code has landed, and what is left is hardware, browsers
-and a deploy.** M1 and M2 are done. M3 is met in Chrome and Firefox and owes
+and a deploy.** [web-to-be-tested.md](web-to-be-tested.md) is that list as
+boxes to tick. M1 and M2 are done. M3 is met in Chrome and Firefox and owes
 Safari and R5's pacing on real displays. M4's pad path has been driven by a
 page script's fake pad and owes a physical one. M5's half in this repository
 is built - the module, the bundle, its page and CI's upload - and the deploy
