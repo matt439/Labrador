@@ -4,6 +4,7 @@
 //   node run_page.mjs --browser <chrome> --page <dir/Name.html>
 //                     [--collect <folder in the page's file system>]
 //                     [--timeout <seconds>] [--browser-warnings fail]
+//                     [--hide-extension <WebGL extension name>]
 //
 // ctest's command for RenderPixelTests and RenderContextLossTests in the
 // wasm-* presets (tests/render/CMakeLists.txt). A browser build's other tests
@@ -16,6 +17,15 @@
 // a WebGL call on an object the context does not own raises an error into a
 // queue the engine drains before its next upload, and the browser's warning is
 // the only place it is still visible afterwards.
+//
+// --hide-extension makes every WebGL context the page creates answer as one
+// without that extension: getExtension returns null for it and
+// getSupportedExtensions leaves it out, from a script that runs before any of
+// the page's own. It is how a desktop browser is made to stand in for a device
+// that lacks one - RenderPixelTestsWithoutS3tc runs the pixel contract with
+// WEBGL_compressed_texture_s3tc hidden, which is what most phones' browsers
+// offer. The run fails if a context made after the page finished still sees
+// the extension, so a hide that did not take cannot pass for one that did.
 //
 // WHAT IT DOES, IN ORDER. Serves the page's folder over HTTP on a loopback
 // port, because a browser will not compile a module read from file://. Starts
@@ -79,7 +89,7 @@ function fail_usage(why) {
 	process.stderr.write(`run_page: ${why}\n` +
 		'usage: node run_page.mjs --browser <chrome> --page <file.html> ' +
 		'[--collect <folder>] [--timeout <seconds>] ' +
-		'[--browser-warnings fail]\n');
+		'[--browser-warnings fail] [--hide-extension <name>]\n');
 	process.exit(2);
 }
 
@@ -261,6 +271,34 @@ function collect_expression(folder) {
 	})()`;
 }
 
+// A script for Page.addScriptToEvaluateOnNewDocument that makes `name` absent
+// from every WebGL context the page makes, as a device without it would.
+function hide_extension_script(name) {
+	return `(() => {
+		const hidden = ${JSON.stringify(name)};
+		for (const type of [self.WebGLRenderingContext, self.WebGL2RenderingContext]) {
+			if (!type) { continue; }
+			const get = type.prototype.getExtension;
+			type.prototype.getExtension = function (wanted) {
+				return wanted === hidden ? null : get.call(this, wanted);
+			};
+			const list = type.prototype.getSupportedExtensions;
+			type.prototype.getSupportedExtensions = function () {
+				const names = list.call(this);
+				return names ? names.filter((each) => each !== hidden) : names;
+			};
+		}
+	})();`;
+}
+
+// Whether a context made now still offers `name`.
+function extension_present_expression(name) {
+	return `(() => {
+		const gl = document.createElement('canvas').getContext('webgl2');
+		return gl ? gl.getExtension(${JSON.stringify(name)}) !== null : false;
+	})()`;
+}
+
 // Which WebGL2 implementation this browser hands a page, asked of a canvas of
 // its own so that it answers whatever the test did to its own contexts.
 const RENDERER_EXPRESSION = `(() => {
@@ -327,6 +365,12 @@ async function run() {
 		await devtools.send('Runtime.enable', {}, session);
 		await devtools.send('Log.enable', {}, session);
 		await devtools.send('Page.enable', {}, session);
+		if (options['hide-extension']) {
+			await devtools.send('Page.addScriptToEvaluateOnNewDocument', {
+				source: hide_extension_script(options['hide-extension']),
+			}, session);
+			process.stdout.write(`run_page: hiding ${options['hide-extension']} from the page\n`);
+		}
 		await devtools.send('Page.navigate', { url }, session);
 
 		// The navigation commits before the page's first script runs, so the
@@ -380,6 +424,16 @@ async function run() {
 					writeFileSync(join(into, name), Buffer.from(files[name], 'base64'));
 				}
 				process.stderr.write(`run_page: ${names.length} file(s) from ${options.collect} written to ${into}\n`);
+			}
+		}
+
+		if (options['hide-extension'] && !outcome.timeout) {
+			const present = await asked(
+				extension_present_expression(options['hide-extension']), true);
+			if (present !== false) {
+				process.stderr.write(`run_page: ${options['hide-extension']} was ` +
+					'still offered to the page, so this run did not test its absence\n');
+				exit_code = exit_code === 0 ? 1 : exit_code;
 			}
 		}
 

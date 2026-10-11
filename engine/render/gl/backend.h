@@ -212,7 +212,8 @@ namespace labrador
 		// is the same text under both.
 		const char* shader_prelude = nullptr;
 		// Whether the BC1-BC3 formats can be uploaded. An extension on both
-		// contexts, under two names; texture_factory.cpp refuses without it.
+		// contexts, under two names; without it texture_factory.cpp uploads
+		// the pixels the engine decodes from the blocks (block_decode.h).
 		bool block_compression = false;
 		// Whether the context is known to rasterise on the CPU before its
 		// strings are read - WGL's generic pixel format. The strings are read

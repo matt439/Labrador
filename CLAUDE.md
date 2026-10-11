@@ -63,7 +63,11 @@ it and drives the browser over the DevTools protocol with Node's own
 WebSocket. It is registered only where configure finds a Chromium
 (`LABRADOR_TEST_BROWSER` names one), and absent rather than skipped where it
 does not. It is the browser build's check that the GLES dialect `gl/`
-compiles there meets the pixel contract; `RenderContextLossTests`, below,
+compiles there meets the pixel contract, and it runs a second time as
+`RenderPixelTestsWithoutS3tc`, with `WEBGL_compressed_texture_s3tc` hidden
+from the page, so the path a phone's browser takes - `gl/` uploading what
+[engine/render/block_decode.h](engine/render/block_decode.h) decodes from the
+blocks on the CPU - is held to the same images; `RenderContextLossTests`, below,
 also draws, but asserts on a loss and a restore rather than on the golden set. What the page draws was checked by loading it in headless Chrome and
 headless Firefox: board, pieces, text from the BC2 font atlas and the pause
 menu, keys changing the frame, no console errors. Safari has not been checked
@@ -107,7 +111,7 @@ default under Emscripten; it compiles, and no pad has driven it yet.
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
 | `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
-| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/null/`, `input/web/` — clang and libc++, tests run under Node | 16 entries: the seventeen less `CollisionSampleTests` and `AudioSampleTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderContextLossTests`, the browser-only page that loses and restores a WebGL2 context (14 where configure finds no Chromium, because neither page is then registered). `AudioTests` keeps its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
+| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/null/`, `input/web/` — clang and libc++, tests run under Node | 17 entries: the seventeen less `CollisionSampleTests` and `AudioSampleTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, and `RenderContextLossTests`, the browser-only page that loses and restores a WebGL2 context (14 where configure finds no Chromium, because no page is then registered). `AudioTests` keeps its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -151,8 +155,9 @@ frame submitted, in what order, from which texture, into which view. Seventeen c
 `InputTests`, `UiTests`, `AssetsTests`, `AudioTests`, `AppTests`,
 `CollisionSampleTests`, `AudioSampleTests`, `LocalMultiplayerTests`,
 `LineSweeperTests`, `LineSweeperViewTests` (doctest) and `Benchmarks`; the `wasm-*`
-presets add `RenderContextLossTests`, a browser-only page that creates a
-WebGL2 context to lose and restore it. Apart from that page, `RenderPixelTests` is the only one that creates a
+presets add `RenderPixelTestsWithoutS3tc`, the pixel page again with S3TC
+hidden, and `RenderContextLossTests`, a browser-only page that creates a
+WebGL2 context to lose and restore it. Apart from those two, `RenderPixelTests` is the only one that creates a
 device — a hidden window and a WARP fallback in debug under `x64-debug` and
 `x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
 `x64-debug-vulkan`, a WebGL2 context on a canvas of its own per case under the

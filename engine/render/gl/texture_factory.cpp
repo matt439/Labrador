@@ -1,5 +1,6 @@
 #include "engine/render/resource_factory.h"
 
+#include "engine/render/block_decode.h"
 #include "engine/render/gl/backend.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
@@ -18,31 +19,16 @@ namespace labrador
 	namespace
 	{
 		// The S3TC internal formats, which are an extension rather than core GL
-		// on both contexts, and are the one thing standing between this
-		// backend and a context without them: the content.
+		// on both contexts (Renderer::Impl::block_compression says which
+		// context asks under which name).
 		const GLenum COMPRESSED_RGBA_S3TC_DXT1 = 0x83F1;
 		const GLenum COMPRESSED_RGBA_S3TC_DXT3 = 0x83F2;
 		const GLenum COMPRESSED_RGBA_S3TC_DXT5 = 0x83F3;
 
-		// NAMED IN THE THROW, BECAUSE IT IS THE ANSWER. Forty-one of the
-		// forty-three .dds between this repository and its client are block
-		// compressed, so a context without S3TC has no art and no text - and
-		// the useful thing to say is which extension is missing, not that a
-		// texture failed. Which context answered, and under which name, is
-		// the context's (Renderer::Impl::block_compression).
-		GLenum compressed_format(bool available, TextureFormat format,
-			const std::string& name)
+		// Which S3TC format a block-compressed texture is uploaded as, on a
+		// context that has S3TC.
+		GLenum compressed_format(TextureFormat format)
 		{
-			if (!available)
-			{
-				throw std::runtime_error("Texture '" + name + "' is block "
-					"compressed and this OpenGL context has no S3TC - "
-					"GL_EXT_texture_compression_s3tc on a desktop driver, "
-					"WEBGL_compressed_texture_s3tc in a browser. Desktop "
-					"drivers and desktop browsers provide it; most phones do "
-					"not, and 41 of the 43 .dds this engine loads are in it.");
-			}
-
 			switch (format)
 			{
 			case TextureFormat::bc1_unorm: return COMPRESSED_RGBA_S3TC_DXT1;
@@ -95,6 +81,22 @@ namespace labrador
 			return rgba;
 		}
 
+		// The decoder's refusal, with the texture's name in front of it, which
+		// the decoder has no way to know and resource_factory.h promises.
+		TextureData decoded_for(const TextureData& texture,
+			const std::string& name)
+		{
+			try
+			{
+				return decode_block_compressed(texture);
+			}
+			catch (const std::runtime_error& error)
+			{
+				throw std::runtime_error("Texture '" + name + "': " +
+					error.what());
+			}
+		}
+
 		struct TextureOwner
 		{
 			GLuint name = 0;
@@ -126,26 +128,42 @@ namespace labrador
 
 		}
 
-		const bool compressed = is_block_compressed(texture.format);
+		// A CONTEXT WITHOUT S3TC IS HANDED THE PIXELS THE BLOCKS ENCODE, decoded
+		// by the engine (block_decode.h) rather than refused. Forty-one of the
+		// forty-three .dds between this repository and its client are block
+		// compressed and every font atlas is, so refusing would leave such a
+		// context with no art and no text - and it is the common case in a
+		// browser on a phone, GLES 3.0 itself having no S3TC. The decoded copy
+		// is uploaded exactly as an r8g8b8a8 texture from a file would be, so
+		// the path is the uncompressed one below and not a third. Decoding
+		// before anything is allocated keeps a refusal here leaving GL as it
+		// found it, like the format check.
+		const bool decode = is_block_compressed(texture.format) &&
+			!renderer.impl()->block_compression;
+		const TextureData decoded = decode
+			? decoded_for(texture, name)
+			: TextureData();
+		const TextureData& source = decode ? decoded : texture;
+
+		const bool compressed = is_block_compressed(source.format);
 		GLenum compressed_upload = 0;
 		if (compressed)
 		{
-			compressed_upload = compressed_format(
-				renderer.impl()->block_compression, texture.format, name);
+			compressed_upload = compressed_format(source.format);
 		}
 		else
 		{
-			check_uncompressed(texture.format, name);
+			check_uncompressed(source.format, name);
 		}
 
 		// Swapped before anything is allocated, so a refusal above and an
 		// allocation failure here both leave GL as they found it.
 		const std::vector<unsigned char> swapped =
-			texture.format == TextureFormat::b8g8r8a8_unorm
-			? rgba_from_bgra(texture.pixels)
+			source.format == TextureFormat::b8g8r8a8_unorm
+			? rgba_from_bgra(source.pixels)
 			: std::vector<unsigned char>();
 		const std::vector<unsigned char>& pixels =
-			swapped.empty() ? texture.pixels : swapped;
+			swapped.empty() ? source.pixels : swapped;
 
 		TextureOwner pending;
 		glGenTextures(1, &pending.name);
@@ -165,15 +183,15 @@ namespace labrador
 			GL_TEXTURE_BASE_LEVEL_), 0);
 		glTexParameteri(GL_TEXTURE_2D, static_cast<GLenum>(
 			GL_TEXTURE_MAX_LEVEL_),
-			static_cast<GLint>(texture.levels.size()) - 1);
+			static_cast<GLint>(source.levels.size()) - 1);
 
 		// Rows are packed, which is what both readers produce and is not GL's
 		// default of four-byte alignment.
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-		for (size_t i = 0; i < texture.levels.size(); i++)
+		for (size_t i = 0; i < source.levels.size(); i++)
 		{
-			const TextureLevel& level = texture.levels[i];
+			const TextureLevel& level = source.levels[i];
 			const void* bytes = pixels.data() + level.offset;
 
 			if (compressed)

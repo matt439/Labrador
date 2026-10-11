@@ -236,7 +236,9 @@ real on WebGL2:
    draws, and a phone would show the backend's own "no S3TC" throw.
    [content-probe.md](content-probe.md) is the long answer for phones. The
    short one for v1 is a desktop-only demo, with a CPU BC decode as a later
-   fallback (§9, M7).
+   fallback (§9, M7). *(Built in M7b: a context without the extension now
+   uploads what `engine/render/block_decode.h` decodes, and §9 says how it
+   was checked.)*
 
 Shader: `#version 330 core` becomes `#version 300 es` plus
 `precision highp float;` and `precision highp sampler2D;`. A GLES fragment
@@ -644,7 +646,7 @@ poster.
 In Astro this is one `<LabradorDemo>` component that takes `base`, `poster`
 and an aspect ratio. Its CSS sets `aspect-ratio: 16 / 9; width: 100%` on the
 canvas, and the drawing buffer follows that box (§4). A visitor without
-WebGL2 or S3TC gets the error paragraph naming what is missing, which is T6
+WebGL2 gets the error paragraph naming what is missing, which is T6
 on a web page. `onQuit` and `onError` are the only two calls from the engine
 to the page. They are named here so that the web `Window` gets them from
 `Module`, not from globals.
@@ -942,8 +944,8 @@ their frames in `golden-actual/` beside the page, as on Windows. What it took:
   is held to it.
 - **Absent rather than skipped without a browser.** The entry is registered
   only where configure finds a Chromium (`LABRADOR_TEST_BROWSER`), so the
-  `wasm-*` presets count 16 entries here, with the context-loss page below,
-  and 14 on a machine without one.
+  `wasm-*` presets count 17 entries here, with the context-loss page below
+  and the no-S3TC run of this one (M7b), and 14 on a machine without one.
 - **The device-info case has a browser branch**: `present_mode` is
   `browser_animation_frame` with no swap interval, where WGL reports one.
 - **CI's Chrome draws with SwiftShader**, which its log names: "ANGLE
@@ -1026,6 +1028,40 @@ because it rebuilds its views every tick. Escape reached `Module.onQuit`.
 Firefox and Safari have not been checked for this sample. Neither has a pad,
 for the same reason M4 is open.
 
+**M7b's texture item is done: a context without S3TC decodes the blocks on
+the CPU instead of refusing them.** `engine/render/block_decode.h` turns BC1,
+BC2 and BC3 into r8g8b8a8, every level, with each interpolated colour and
+alpha rounded to nearest, and `gl/texture_factory.cpp` calls it when the
+context reports no S3TC, on either context, and uploads the result as it
+would an uncompressed file. The other backends keep native BC. It is engine
+code because how a fringe texel rounds is the term the SwiftShader
+measurement above found devices disagreeing on, so every device that falls
+back draws the same pixels. The cost is memory: four times the bytes for BC2
+and BC3, eight for BC1, on the devices with the least. What was checked:
+
+- **Headlessly, in `RenderTests`**, against blocks built by hand with every
+  expected texel worked out beside it: BC1's four-colour mode and its
+  three-colour-and-transparent mode (equal endpoints included), BC2's
+  explicit alpha under a colour block that would be three-colour as BC1,
+  BC3's eight-alpha and six-alpha modes, a 5x3 level, a four-level mip chain,
+  the shipped font atlas, and the four refusals.
+- **The pixel tests' harness now draws its text from this decoder**, in place
+  of the test-only one the SwiftShader fix wrote. They round the same way:
+  `LABRADOR_GOLDEN_DUMP=1` under `x64-debug` moved none of the 58 images.
+- **`RenderPixelTestsWithoutS3tc`** is a second ctest entry in the `wasm-*`
+  presets: the same page and golden set, with `run_page.mjs
+  --hide-extension WEBGL_compressed_texture_s3tc` making every context the
+  page creates answer as a phone's browser does. All 45 cases pass against
+  the native upload's images. The run fails if a context made afterwards
+  still offers the extension. Swapping red and blue in the decoded upload
+  fails its BC2 case and leaves the native entry green, so the decoded path
+  is the one it draws. There is no desktop switch: WGL always has S3TC, and
+  the GL path below the context is the same one.
+- **LineSweeper, with the extension hidden**, in headless Chrome at
+  `wasm-debug`: the board, the pieces, every label from the BC2 atlas and the
+  pause menu drew legibly, keys moved the piece, and the only console error
+  was the development server's missing favicon. No phone has run it.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1058,7 +1094,7 @@ Each is cheap and could change the plan:
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
 | **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done); `local_multiplayer` on the web (done); `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
-| **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC, a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
+| **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 
 The critical path to the desktop demo is M0 → M1 → M2 → M3 → M5, roughly
 **three to four weeks** of work on these definitions. The spread is mostly
@@ -1102,12 +1138,13 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
     the web path on a desktop. A real Windows touchscreen and a real phone
     are the only checks of the two windows' translation code. Neither was
     on hand when this was written.
-- **Textures, which are cheap for this sample.** The atlas is 21,512 bytes of
-  BC2. Either ship it uncompressed (about four times the size, still under
-  100 KB) or decode BC2/BC3 to RGBA on the CPU at load when S3TC is missing.
-  The decoder is engine code, testable headlessly, and serves every
-  no-S3TC device. It is also the cheapest answer
-  [content-probe.md](content-probe.md) did not need to give. *Days.*
+- **Textures, which were cheap for this sample, and are done.** The atlas
+  is 21,512 bytes of BC2, and the choice was to ship it uncompressed or to
+  decode BC1-BC3 to RGBA on the CPU at load when S3TC is missing. The second
+  is built (`engine/render/block_decode.h`): engine code, tested headlessly,
+  serving every no-S3TC device and every file rather than one atlas, which
+  is the cheapest answer [content-probe.md](content-probe.md) did not need to
+  give. "Where it stands" has how it was checked.
 - **Layout.** Phones are held upright and LineSweeper is laid out for 16:9.
   Its board is tall, so portrait may suit it, but the sample's
   `presentation/layout.h` has to arrange it. This is sample work, not engine
@@ -1128,7 +1165,10 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
   `/fp:precise` on SSE2. `LineSweeperTests` under Node tests the claim in S2,
   not this paragraph.
 - **R4 — S3TC reach.** Desktop first is a decision (D5), and phones are M7, not a gap to
-  find on launch day.
+  find on launch day. *Retired for content:* a context without S3TC decodes
+  the blocks on the CPU (M7b), so a phone's browser draws the same art and
+  text at four to eight times the texture memory. What is left of it is that
+  memory, on a real phone, which nothing has measured.
 - **R5 — pacing.** rAF against a fixed 60 Hz step (§4). Measure on a 60 Hz and
   a high-refresh display before M3 is called done.
 - **R6 — the particle field on the low tier.** 9,600 particles a frame,

@@ -134,7 +134,13 @@ by hand, and a handler putting all three back on every path that can throw,
 because there is no `ComPtr`.
 
 Path-building and file-reading are in `engine/render/resource_factory.cpp`,
-written once for everybody.
+written once for everybody. **So is decoding a block-compressed texture to
+pixels**, in `engine/render/block_decode.cpp`, for a device that cannot sample
+BC1-BC3: `gl/` calls it on a context without S3TC, which is most phones'
+browsers, and uploads what it returns as it would an uncompressed file. What
+that backend adds is the choice, made per context; how each interpolated texel
+rounds is the engine's, so every device that falls back draws the same pixels.
+The other backends take the blocks or refuse them by name.
 
 **The second file is where they diverge least.** `render_resources.cpp` is a
 constructor, a destructor, two moves and two lookups. The rest is

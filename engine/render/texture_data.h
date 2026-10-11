@@ -41,8 +41,10 @@ namespace labrador
 	// NOT DECODED FURTHER THAN THIS, on purpose. A BC3 blob stays a BC3 blob:
 	// unpacking it here would throw away the whole reason the content is
 	// compressed, which is the memory it does not occupy on a machine chosen for
-	// being small. A backend that cannot upload the format says so (T6); it does
-	// not get handed a decompressed copy behind its back.
+	// being small. A backend whose device cannot sample the format either says
+	// so (T6) or asks for the pixels itself, through block_decode.h; it is
+	// never handed a decompressed copy behind its back, so a device that takes
+	// the blocks gets the blocks.
 	struct TextureData
 	{
 		int width = 0;

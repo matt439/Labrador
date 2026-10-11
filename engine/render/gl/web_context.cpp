@@ -130,7 +130,7 @@ namespace labrador
 		// the desktop's GL_EXT_texture_compression_s3tc and has to be enabled,
 		// not only present, before a compressed upload is accepted. Desktop
 		// browsers have it; most phones do not, and texture_factory.cpp is
-		// where a device without it is refused.
+		// where a device without it is handed decoded pixels instead.
 		//
 		// THE DEBUG RENDERER INFO ONLY WHERE THE PLAIN NAMES ARE MASKED. The
 		// context's own RENDERER is read first, and the extension is enabled
