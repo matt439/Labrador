@@ -56,9 +56,14 @@ and a web context translation unit), so LineSweeper runs and draws in a page -
 `out/build/wasm-*/samples/linesweeper/LineSweeperSample.html`, served over
 HTTP, from the development page
 [samples/linesweeper/web/shell.html](samples/linesweeper/web/shell.html). Its
-tests run under Node, which has no WebGL, so `RenderPixelTests` is not built
-there and nothing in a browser build's ctest draws; a headless browser run is
-M6. What the page draws was checked by loading it in headless Chrome and
+tests run under Node, which has no WebGL, except **`RenderPixelTests`, which is
+a page run in headless Chrome** against the same golden PNGs: ctest's command
+is [tests/render/web/run_page.mjs](tests/render/web/run_page.mjs), which serves
+it and drives the browser over the DevTools protocol with Node's own
+WebSocket. It is registered only where configure finds a Chromium
+(`LABRADOR_TEST_BROWSER` names one), and absent rather than skipped where it
+does not. It is the one browser-build entry that draws, and the check that the
+GLES dialect `gl/` compiles there meets the pixel contract. What the page draws was checked by loading it in headless Chrome and
 headless Firefox: board, pieces, text from the BC2 font atlas and the pause
 menu, keys changing the frame, no console errors. Safari has not been checked
 and R5's pacing has not been measured on real displays, and M3's done-when
@@ -93,7 +98,7 @@ default under Emscripten; it compiles, and no pad has driven it yet.
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
 | `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
-| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/null/`, `input/web/` — clang and libc++, tests run under Node | 14 entries: the seventeen less `RenderPixelTests` (Node has no WebGL; a headless browser run is web.md M6), `CollisionSampleTests` and `AudioSampleTests`. `AudioTests` keeps its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
+| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/null/`, `input/web/` — clang and libc++, tests run under Node | 15 entries: the seventeen less `CollisionSampleTests` and `AudioSampleTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node (14 where configure finds no Chromium, because it is then not registered). `AudioTests` keeps its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -139,7 +144,8 @@ frame submitted, in what order, from which texture, into which view. Seventeen c
 `LineSweeperTests`, `LineSweeperViewTests` (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
 device — a hidden window and a WARP fallback in debug under `x64-debug` and
 `x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
-`x64-debug-vulkan` — and asserts on the
+`x64-debug-vulkan`, a WebGL2 context on a canvas of its own per case under the
+`wasm-*` presets — and asserts on the
 pixels
 `Renderer::read_back_buffer` hands back. It is the only test that rasterises
 anything, and the executable statement of the pixel contract every backend with
@@ -147,7 +153,8 @@ a rasteriser has to reproduce. It runs against one backend at a time — but it 
 longer follows that they are never compared: every frame it reads back is also
 checked byte for byte against a PNG of it in
 [tests/render/golden/](tests/render/golden/), which is one set of images that
-all four rasterising backends are held to. CI checks two of them, because a
+all four rasterising backends are held to, and `gl/`'s browser context with
+them. It is read through lodepng on every platform, a test-only dependency. CI checks two of them, because a
 GPU-less runner still gives Direct3D an adapter where OpenGL falls back to GDI
 1.1 and Vulkan has no in-box fallback at all — its software implementations are
 installed rather than shipped. It is an adapter rather than the WARP fallback,

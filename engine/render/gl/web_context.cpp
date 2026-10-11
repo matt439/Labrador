@@ -109,9 +109,9 @@ namespace labrador
 		// canvas is composited when the animation frame callback that drew it
 		// returns, and the browser owns the pacing. preserveDrawingBuffer is
 		// false, so what was drawn is gone after that - which is why
-		// read_back_buffer has to run inside the animation frame callback
-		// that drew, which a headless-browser RenderPixelTests
-		// (docs/port/web.md, M6) has to arrange.
+		// read_back_buffer has to run in the same task that drew, before the
+		// page composites. RenderPixelTests in a browser does it by running
+		// every case inside one synchronous main().
 	}
 
 	void Renderer::Impl::create_context(void* native_window)

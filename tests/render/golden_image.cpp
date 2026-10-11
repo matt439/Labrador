@@ -1,12 +1,15 @@
 #include "tests/render/golden_image.h"
 
 #include <doctest/doctest.h>
+#include <lodepng.h>
 
+#if defined(_WIN32)
 #include <Windows.h>
-#include <wincodec.h>
-#include <wrl/client.h>
+#endif
 
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -14,8 +17,6 @@
 
 namespace
 {
-	using Microsoft::WRL::ComPtr;
-
 	// ---------------------------------------------------------------------
 	// What the frame being checked is called
 	// ---------------------------------------------------------------------
@@ -171,161 +172,84 @@ namespace
 	}
 
 	// ---------------------------------------------------------------------
-	// PNG, through the codec Windows already has
+	// PNG, through lodepng
 	// ---------------------------------------------------------------------
 
 	// A golden set is worth having only if a person can look at it, and a
 	// change to one is reviewable only if the review tool can draw it. PNG is
 	// what renders inline in a diff; the same 64x64 frame raw is sixteen
-	// kilobytes nobody can read and nobody will check. WIC is the in-box
-	// encoder and decoder, so this costs no dependency - the format edge is
-	// bought (T9) - and it is the same lossless path in both directions,
-	// 32bpp RGBA in and 32bpp RGBA out, with no colour management anywhere on
-	// it. A golden file therefore holds the bytes read_back_buffer handed over,
-	// and a comparison against one is a comparison against those bytes.
-	IWICImagingFactory* wic_factory()
+	// kilobytes nobody can read and nobody will check.
+	//
+	// BOUGHT, BECAUSE IT IS A FORMAT EDGE (T9), and one codec on every platform
+	// rather than each platform's own. A browser has no codec this file can
+	// call synchronously, and two codecs reading one set would be two claims
+	// about what the set holds. lodepng is a test
+	// dependency only (vcpkg.json), and nothing the engine ships links it.
+	//
+	// LOSSLESS BOTH WAYS, AND NOT ON TRUST. The encoder may store a frame in
+	// whatever PNG colour type holds it exactly - RGB when every alpha is 255,
+	// a palette when there are few enough colours - and read_png asks
+	// lodepng::decode for 8-bit RGBA whatever it chose, with no colour
+	// management anywhere on the path. The check-mode run that follows every regeneration compares each
+	// frame against the file just written from it, so a build where that
+	// stopped being true would fail once per image in the set.
+	bool read_file(const std::filesystem::path& path,
+		std::vector<unsigned char>& bytes)
 	{
-		static ComPtr<IWICImagingFactory> factory =
-			[]() -> ComPtr<IWICImagingFactory>
-			{
-				// RPC_E_CHANGED_MODE means something in this process got here
-				// first and chose the other apartment, which WIC does not mind.
-				const HRESULT initialised =
-					CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-				if (FAILED(initialised) && initialised != RPC_E_CHANGED_MODE)
-				{
-					return nullptr;
-				}
-
-				ComPtr<IWICImagingFactory> created;
-				if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr,
-					CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&created))))
-				{
-					return nullptr;
-				}
-				return created;
-			}();
-
-		return factory.Get();
+		std::ifstream file(path, std::ios::binary);
+		if (!file)
+		{
+			return false;
+		}
+		bytes.assign(std::istreambuf_iterator<char>(file),
+			std::istreambuf_iterator<char>());
+		return !file.bad();
 	}
 
 	bool write_png(const std::filesystem::path& path, int width, int height,
 		const std::vector<unsigned char>& rgba, std::string& error)
 	{
-		IWICImagingFactory* factory = wic_factory();
-		if (factory == nullptr)
+		std::vector<unsigned char> encoded;
+		const unsigned failed = lodepng::encode(encoded, rgba,
+			static_cast<unsigned>(width), static_cast<unsigned>(height));
+		if (failed != 0)
 		{
-			error = "WIC is unavailable";
+			error = lodepng_error_text(failed);
 			return false;
 		}
 
 		std::error_code ignored;
 		std::filesystem::create_directories(path.parent_path(), ignored);
 
-		ComPtr<IWICStream> stream;
-		if (FAILED(factory->CreateStream(&stream)) ||
-			FAILED(stream->InitializeFromFilename(path.c_str(), GENERIC_WRITE)))
+		std::ofstream file(path, std::ios::binary | std::ios::trunc);
+		file.write(reinterpret_cast<const char*>(encoded.data()),
+			static_cast<std::streamsize>(encoded.size()));
+		if (!file)
 		{
-			error = "could not open it for writing";
+			error = "could not write it";
 			return false;
 		}
-
-		ComPtr<IWICBitmapEncoder> encoder;
-		ComPtr<IWICBitmapFrameEncode> frame;
-		ComPtr<IPropertyBag2> properties;
-		if (FAILED(factory->CreateEncoder(GUID_ContainerFormatPng, nullptr,
-				&encoder)) ||
-			FAILED(encoder->Initialize(stream.Get(), WICBitmapEncoderNoCache)) ||
-			FAILED(encoder->CreateNewFrame(&frame, &properties)) ||
-			FAILED(frame->Initialize(properties.Get())) ||
-			FAILED(frame->SetSize(static_cast<UINT>(width),
-				static_cast<UINT>(height))))
-		{
-			error = "could not start a PNG frame";
-			return false;
-		}
-
-		// The PNG encoder chooses its own storage format and does not have to
-		// choose the one this buffer is in - on this Windows it answers BGRA to
-		// a request for RGBA - so the frame is handed a bitmap that knows what
-		// it holds rather than raw bytes, and WIC does whatever swizzle its
-		// choice implies.
-		//
-		// Lossless either way, and not on trust: every format the PNG encoder
-		// negotiates to from a 32bpp RGBA source carries eight bits per channel
-		// and an alpha channel, so read_png returns exactly these bytes - and
-		// the check-mode run that follows every regeneration is what says so,
-		// because it compares the frame against the file just written from it.
-		// A build where that stopped being true would fail fifty-seven times over,
-		// once per image in the set.
-		WICPixelFormatGUID format = GUID_WICPixelFormat32bppRGBA;
-		ComPtr<IWICBitmap> source;
-		if (FAILED(frame->SetPixelFormat(&format)) ||
-			FAILED(factory->CreateBitmapFromMemory(static_cast<UINT>(width),
-				static_cast<UINT>(height), GUID_WICPixelFormat32bppRGBA,
-				static_cast<UINT>(width) * 4,
-				static_cast<UINT>(rgba.size()),
-				const_cast<BYTE*>(rgba.data()), &source)))
-		{
-			error = "could not describe the frame to the PNG encoder";
-			return false;
-		}
-
-		if (FAILED(frame->WriteSource(source.Get(), nullptr)) ||
-			FAILED(frame->Commit()) ||
-			FAILED(encoder->Commit()))
-		{
-			error = "could not write the pixels";
-			return false;
-		}
-
 		return true;
 	}
 
 	bool read_png(const std::filesystem::path& path, int& width, int& height,
 		std::vector<unsigned char>& rgba, std::string& error)
 	{
-		IWICImagingFactory* factory = wic_factory();
-		if (factory == nullptr)
-		{
-			error = "WIC is unavailable";
-			return false;
-		}
-
-		ComPtr<IWICBitmapDecoder> decoder;
-		if (FAILED(factory->CreateDecoderFromFilename(path.c_str(), nullptr,
-			GENERIC_READ, WICDecodeMetadataCacheOnDemand, &decoder)))
+		std::vector<unsigned char> encoded;
+		if (!read_file(path, encoded))
 		{
 			error = "it is not there, or not readable";
 			return false;
 		}
 
-		ComPtr<IWICBitmapFrameDecode> frame;
-		ComPtr<IWICFormatConverter> converter;
-		if (FAILED(decoder->GetFrame(0, &frame)) ||
-			FAILED(factory->CreateFormatConverter(&converter)) ||
-			FAILED(converter->Initialize(frame.Get(),
-				GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, nullptr,
-				0.0, WICBitmapPaletteTypeCustom)))
+		unsigned decoded_width = 0;
+		unsigned decoded_height = 0;
+		const unsigned failed = lodepng::decode(rgba, decoded_width,
+			decoded_height, encoded, LCT_RGBA, 8);
+		if (failed != 0)
 		{
-			error = "it would not decode as 32bpp RGBA";
-			return false;
-		}
-
-		UINT decoded_width = 0;
-		UINT decoded_height = 0;
-		if (FAILED(converter->GetSize(&decoded_width, &decoded_height)))
-		{
-			error = "it would not say how big it is";
-			return false;
-		}
-
-		const UINT stride = decoded_width * 4;
-		rgba.resize(static_cast<size_t>(stride) * decoded_height);
-		if (FAILED(converter->CopyPixels(nullptr, stride,
-			static_cast<UINT>(rgba.size()), rgba.data())))
-		{
-			error = "its pixels would not copy out";
+			error = std::string("it would not decode: ") +
+				lodepng_error_text(failed);
 			return false;
 		}
 
@@ -346,6 +270,11 @@ namespace
 	// A baked path means a regeneration writes where the images have to be
 	// reviewed, and a deleted image is missing on the next run instead of
 	// lingering in a build directory nobody cleaned.
+	//
+	// IN A BROWSER IT IS "/golden", the same folder embedded in the module at
+	// link time, because a page has no file system but the one it carries. It
+	// is still the source folder's contents, read rather than copied from a
+	// build directory, and a change to an image relinks the page.
 	std::filesystem::path golden_path(const std::string& slug)
 	{
 		return std::filesystem::path(LABRADOR_GOLDEN_DIR) / (slug + ".png");
@@ -353,7 +282,10 @@ namespace
 
 	// Beside the executable, because ctest runs from the build directory and a
 	// failing run should leave its evidence where a CI job can collect it
-	// without knowing anything about the source tree.
+	// without knowing anything about the source tree. In a browser that is the
+	// page's memory, and tests/render/web/run_page.mjs copies the folder out
+	// beside the page when the run ends, so a rejected frame lands in the same
+	// place on both.
 	std::filesystem::path actual_path(const std::string& slug)
 	{
 		return std::filesystem::path("./golden-actual") /
@@ -368,9 +300,18 @@ namespace
 	// back to add one option would change the entry point of a second
 	// executable that has no golden set. The variable reads the same from
 	// ctest, from CMake and from a shell, which is all a regeneration needs.
+	//
+	// NEVER IN A BROWSER. A page cannot see the environment of the shell that
+	// started it, and what it writes stays in its memory, so a regeneration
+	// there would write a set nobody could review. The set is regenerated on
+	// the desktop, and the browser is held to it.
 	bool dumping()
 	{
+#if defined(_WIN32)
 		return GetEnvironmentVariableW(L"LABRADOR_GOLDEN_DUMP", nullptr, 0) != 0;
+#else
+		return false;
+#endif
 	}
 
 	// ---------------------------------------------------------------------
@@ -445,6 +386,23 @@ void golden::check_frame(int width, int height,
 
 	if (dumping())
 	{
+		// AN IMAGE WHOSE PIXELS DID NOT MOVE IS LEFT AS IT IS, byte for byte,
+		// so that what a regeneration changes in the tree is exactly the set
+		// of frames that changed. Re-encoding every file would show a reviewer
+		// fifty-seven modified images whenever the encoder differed from the
+		// one that wrote them, with no way to tell which ones to look at.
+		int existing_width = 0;
+		int existing_height = 0;
+		std::vector<unsigned char> existing;
+		std::string unread;
+		if (read_png(expected_file, existing_width, existing_height, existing,
+				unread) &&
+			existing_width == width && existing_height == height &&
+			existing == rgba)
+		{
+			return;
+		}
+
 		std::string error;
 		if (!write_png(expected_file, width, height, rgba, error))
 		{

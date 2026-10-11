@@ -97,10 +97,15 @@ add_test(NAME RenderTests COMMAND RenderTests)
 # because a skipped test is a line in a log nobody reads and a missing one is a
 # question somebody asks.
 #
-# AND NOT BUILT IN A BROWSER BUILD, where the backend is gl/ but the tests run
-# under Node, which has no WebGL. Running it in a headless browser against the
-# same golden set is docs/port/web.md's M6.
-if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null" AND NOT EMSCRIPTEN)
+# AND IN A BROWSER BUILD IT IS A PAGE, run in headless Chrome rather than under
+# Node, because Node has no WebGL. The cases, the harness and the golden set
+# are the same files; what differs is the window (test_window.h), where the
+# set is read from, and who runs it - see the browser half below.
+if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
+    # The golden set's codec, on every platform (golden_image.cpp says why it
+    # is one codec rather than each platform's own). A test dependency only.
+    find_package(lodepng CONFIG REQUIRED)
+
     add_executable(RenderPixelTests
         golden_image.cpp
         pixel_tests.cpp
@@ -110,26 +115,16 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null" AND NOT EMSCRIPTEN)
         LabradorEngine
         doctest::doctest
         labrador_settings
-        # The in-box PNG codec, for the golden set. A test executable that
-        # already opens a window is not made less portable by reading an image
-        # with the imaging component of the same operating system, and the
-        # alternative - a raw dump of every frame - is a golden set no reviewer
-        # can look at (tests/render/golden_image.h).
-        windowscodecs
+        lodepng
     )
 
-    # The golden set, addressed where it lives rather than copied beside the
-    # executable like content/ is, and golden_image.cpp says why: a
-    # regeneration has to write into the source tree, because that is the only
-    # place the new images can be reviewed before they are committed.
-    target_compile_definitions(RenderPixelTests PRIVATE
-        LABRADOR_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
-    )
-
-    # The same content, copied by the same single target rather than by a
-    # second POST_BUILD of its own - see render_test_content above for what
-    # the second copy cost.
-    add_dependencies(RenderPixelTests render_test_content)
+    # The window the device is made on, one file per platform as the engine's
+    # own platform folders are.
+    if(EMSCRIPTEN)
+        target_sources(RenderPixelTests PRIVATE web/test_window.cpp)
+    else()
+        target_sources(RenderPixelTests PRIVATE win32/test_window.cpp)
+    endif()
 
     if(LABRADOR_RENDER_BACKEND STREQUAL "gl")
         target_sources(RenderPixelTests PRIVATE gl_texture_tests.cpp)
@@ -139,5 +134,95 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null" AND NOT EMSCRIPTEN)
         target_link_libraries(RenderPixelTests PRIVATE Vulkan::Vulkan)
     endif()
 
-    add_test(NAME RenderPixelTests COMMAND RenderPixelTests)
+    if(NOT EMSCRIPTEN)
+        # The golden set, addressed where it lives rather than copied beside
+        # the executable like content/ is, and golden_image.cpp says why: a
+        # regeneration has to write into the source tree, because that is the
+        # only place the new images can be reviewed before they are committed.
+        target_compile_definitions(RenderPixelTests PRIVATE
+            LABRADOR_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
+        )
+
+        # The same content, copied by the same single target rather than by a
+        # second POST_BUILD of its own - see render_test_content above for
+        # what the second copy cost.
+        add_dependencies(RenderPixelTests render_test_content)
+
+        add_test(NAME RenderPixelTests COMMAND RenderPixelTests)
+    else()
+        # A PAGE, ITS LOADER AND THE MODULE: RenderPixelTests.html, .js and
+        # .wasm, from web/shell.html. The content and the golden set are
+        # embedded rather than read from the disk, because a page has no file
+        # system but the one it carries - content at /content, where the
+        # harness's "./content/" resolves, and the set at /golden, which is the
+        # source folder's contents and not a copy of a build directory's.
+        #
+        # THE DIRECTORY'S NODE OPTIONS ARE OVERRIDDEN, not inherited: the root
+        # CMakeLists links every test with NODERAWFS for Node, and NODERAWFS
+        # refuses an embedded file. A later -s setting wins in emcc, and these
+        # come after the directory's.
+        #
+        # EXIT_RUNTIME so that main's return value is the page's exit code, and
+        # FS so that the runner can copy rejected frames out of the page's
+        # memory when it ends.
+        set_target_properties(RenderPixelTests PROPERTIES SUFFIX ".html")
+        target_compile_definitions(RenderPixelTests PRIVATE
+            LABRADOR_GOLDEN_DIR="/golden"
+        )
+        target_link_options(RenderPixelTests PRIVATE
+            -sENVIRONMENT=web
+            -sNODERAWFS=0
+            -sEXIT_RUNTIME=1
+            -sEXPORTED_RUNTIME_METHODS=FS
+            "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content@/content"
+            "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/golden@/golden"
+            "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
+        )
+
+        # Nothing embedded is a source, so a change to it relinks only because
+        # it is named here. The set is globbed, which no source list in this
+        # tree is: an image is added by a test case rather than by a person
+        # editing a list, and a stale page is caught at the next configure.
+        file(GLOB render_golden_images CONFIGURE_DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/golden/*.png")
+        set_property(TARGET RenderPixelTests APPEND PROPERTY LINK_DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
+            "${CMAKE_CURRENT_SOURCE_DIR}/content/quad.dds"
+            "${CMAKE_CURRENT_SOURCE_DIR}/content/courier_new_bold_16.spritefont"
+            ${render_golden_images}
+        )
+
+        # WHO RUNS IT: web/run_page.mjs, under the Node the other entries run
+        # under, serving the page and driving a headless Chromium over the
+        # DevTools protocol. ctest prepends no emulator to a command that is
+        # not a target, so the emulator is named here.
+        #
+        # ABSENT RATHER THAN SKIPPED WHEN THERE IS NO BROWSER, for the reason
+        # the null backend's absence is given above. A machine without Chrome
+        # builds the page and registers no entry, and says so when it
+        # configures. LABRADOR_TEST_BROWSER names any Chromium that speaks the
+        # protocol, Edge included.
+        find_program(LABRADOR_TEST_BROWSER
+            NAMES chrome google-chrome google-chrome-stable chromium
+                chromium-browser
+            PATHS
+                "$ENV{ProgramFiles}/Google/Chrome/Application"
+                "$ENV{LOCALAPPDATA}/Google/Chrome/Application"
+            NO_CMAKE_FIND_ROOT_PATH
+            DOC "A Chromium browser to run RenderPixelTests in a browser build"
+        )
+        if(LABRADOR_TEST_BROWSER)
+            add_test(NAME RenderPixelTests
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/web/run_page.mjs"
+                    --browser "${LABRADOR_TEST_BROWSER}"
+                    --page "$<TARGET_FILE:RenderPixelTests>"
+                    --collect /golden-actual
+            )
+        else()
+            message(STATUS "RenderPixelTests: no Chromium found, so the page "
+                "is built and not registered with ctest. Set "
+                "LABRADOR_TEST_BROWSER to run it.")
+        endif()
+    endif()
 endif()

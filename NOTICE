@@ -106,6 +106,8 @@ this repository.
 - **DirectX Tool Kit for DX11** (`directxtk`, with `xaudio2redist`) —
   MIT, Microsoft Corporation.
 - **doctest** — MIT, Viktor Kirilov.
+- **lodepng** — zlib, Lode Vandevenne. Linked only by `RenderPixelTests`, to
+  read and write its golden PNGs.
 
 ### Toolchains, not code
 

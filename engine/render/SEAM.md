@@ -30,8 +30,9 @@ Neither purpose needs two backends live in one process. That is the whole
 justification for the next section.
 
 **Both purposes are filled, and neither is a claim any more.** `gl/` is OpenGL
-3.3 core on Windows, where it passes `RenderPixelTests`, and WebGL2 in a
-browser, where no test reads its pixels back (docs/port/web.md, M6); `null/` has no graphics API
+3.3 core on Windows and WebGL2 in a browser, and passes `RenderPixelTests`
+against the same golden set on both - in a browser as a page in headless
+Chrome; `null/` has no graphics API
 at all and records what it was asked to draw, which is what lets a test assert
 which sprites a frame submitted on a machine with no driver. Writing either
 changed nothing above the seam.

@@ -218,17 +218,19 @@ jobs:
       - name: Benchmark numbers
         run: out\build\${{ matrix.preset }}\bench\LabradorBench.exe
 
-  # The browser build, configured, built and tested - and nothing about it is
-  # drawn, which is the reason it needs no matrix. It compiles gl/ against
-  # WebGL2 (docs/port/web.md, M3), but its tests run under Node, which has no
-  # WebGL, so what this checks is the second compiler and the second standard
-  # library: clang under -Werror with zero suppressions, libc++, a 32-bit
-  # size_t, gl/'s GLES path compiling and linking, and LineSweeper's rules
-  # replayed tick for tick on a second floating-point code generator.
+  # The browser build, configured, built and tested. It compiles gl/ against
+  # WebGL2 (docs/port/web.md, M3), and most of its tests run under Node, which
+  # has no WebGL, so what those check is the second compiler and the second
+  # standard library: clang under -Werror with zero suppressions, libc++, a
+  # 32-bit size_t, gl/'s GLES path compiling and linking, and LineSweeper's
+  # rules replayed tick for tick on a second floating-point code generator.
   #
-  # Its tests run under Node, which ctest reaches through the emulator
-  # Emscripten's toolchain sets, so the step is the same ctest call the job
-  # above makes. There is no rasteriser here and none is needed.
+  # They run under Node, which ctest reaches through the emulator Emscripten's
+  # toolchain sets, so the step is the same ctest call the job above makes.
+  # RenderPixelTests is the exception: it is a page, run in the runner's
+  # Chrome by tests/render/web/run_page.mjs, and it has a step of its own
+  # below because what that Chrome draws WebGL2 with on a GPU-less runner is
+  # not something this file knows yet.
   #
   # EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the
   # reason vcvars64 is found through vswhere above: the tools to do it are
@@ -290,7 +292,32 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release
+          ctest --preset wasm-release -E RenderPixelTests
+
+      # THE PIXEL CONTRACT IN A BROWSER, as a step of its own so that a failure
+      # here names itself rather than reading as the second compiler's. What
+      # the runner's Chrome hands WebGL2 is not known until a job log says:
+      # ANGLE over the adapter the Direct3D jobs above find, or SwiftShader,
+      # which run_page.mjs permits as a fallback. Its last line names the
+      # renderer, and that line is the evidence, as the x64-release job's pass
+      # was for Direct3D; -V is what puts it in the log on a pass, and
+      # --no-tests=error is what stops a configure that found no Chrome from
+      # passing this step by running nothing. A frame it rejects is in
+      # golden-actual/ beside the page, where the job above looks for the
+      # desktop's.
+      - name: Test the pixel contract in headless Chrome
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          ctest --preset wasm-release -R RenderPixelTests --no-tests=error -V
+
+      - name: Keep the frames a golden check rejected
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-actual-wasm-release
+          path: out/build/wasm-release/tests/render/golden-actual/
+          if-no-files-found: ignore
 
       # THE SAME PRESET A SECOND TIME WITH THE NULL RENDERER, because the
       # sources that assert drawing are compiled only when the backend is null:

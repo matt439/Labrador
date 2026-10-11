@@ -1,0 +1,50 @@
+<!doctype html>
+<!--
+  The page a browser build's render tests run in. Emscripten writes the
+  module's script tag where SCRIPT is marked below; run_page.mjs beside this
+  file serves the result and drives headless Chrome over it.
+
+  It is not a game's page and owes the module less than one does
+  (samples/linesweeper/web/shell.html): there is no Module.canvas, because each
+  test window appends a canvas of its own (test_window.cpp), and nothing here
+  is ever shown to anybody. What it does owe is what a test run needs and a
+  game does not:
+
+  - window.labradorExit, a promise the run settles with main's exit code, or
+    with the reason the module aborted. EXIT_RUNTIME is on, so returning from
+    main calls Module.onExit; the runner waits on this rather than on a
+    console line.
+  - Module.print and Module.printErr left at Emscripten's defaults, which are
+    console.log and console.error, so doctest's report reaches the runner as
+    console messages and the runner writes them to its own stdout and stderr.
+    Without colours: the module's stdout is a terminal as far as doctest can
+    tell, and a log is not one.
+  - An empty icon, so that the only request the page makes that fails is one
+    the run is about.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Labrador render tests</title>
+<link rel="icon" href="data:,">
+</head>
+<body>
+<script>
+  var settle;
+  window.labradorExit = new Promise(function (resolve) { settle = resolve; });
+
+  var Module = {
+    arguments: ["--no-colors"],
+    onExit: function (code) { settle({ code: code }); },
+    onAbort: function (reason) { settle({ abort: String(reason) }); },
+  };
+
+  // An exception that escapes the module entirely - a JavaScript error rather
+  // than a C++ one - ends the run too, rather than leaving it to time out.
+  window.addEventListener("error", function (event) {
+    settle({ abort: String(event.message) });
+  });
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

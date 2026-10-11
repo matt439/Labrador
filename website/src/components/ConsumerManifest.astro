@@ -4,8 +4,9 @@
 //
 // vcpkg reads the manifest of the top-level project only, so a game has to
 // name the engine's dependencies itself, and should pin them to the same
-// baseline the engine is built and tested against. doctest is left out because
-// only the engine's own tests use it, and a consumer does not build those.
+// baseline the engine is built and tested against. doctest and lodepng are left
+// out because only the engine's own tests use them, and a consumer does not
+// build those.
 import { Code } from '@astrojs/starlight/components';
 import { readRepositoryFile } from '../lib/repository';
 
@@ -13,7 +14,7 @@ interface Props {
 	name: string;
 }
 
-const TEST_ONLY = new Set(['doctest']);
+const TEST_ONLY = new Set(['doctest', 'lodepng']);
 
 const engine = JSON.parse(readRepositoryFile('vcpkg.json'));
 const dependencies = (engine.dependencies as (string | { name: string })[]).filter(

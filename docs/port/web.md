@@ -515,6 +515,9 @@ file. Node 24 is already on this machine for the website.
   `ALLOWED_CHANNEL_DRIFT`. That is a measurement to make, not a premise. It is
   worth doing, because it is the only check that the ES dialect still meets
   the pixel contract. It is not on the critical path for a demo (M6).
+  *(Done in M6, without Playwright: a page driven over the DevTools protocol
+  by a Node script with no packages, and byte-identical to the set on this
+  machine; §9.)*
 - **`Benchmarks`** is complexity-class rather than wall-clock, so it can run.
   `LineSweeperFrameBench` and `LineSweeperCapture` stay Windows-only.
 
@@ -689,6 +692,12 @@ that the code forced, and each is one commit to reverse.
 | **D6** | How a caller asks for a hidden window once `initialize()` takes no arguments (D2). Three did, by passing `SW_HIDE`: the collision and local-multiplayer smoke tests and `LineSweeperCapture` | **`ApplicationOptions::visible`**, copied into `WindowOptions::visible`, default true. Hidden is still a whole shell with a device and messages; a browser does not read it | `application.h`, `window.h`, three callers |
 | **D7** | Who makes the WebGL2 context: the window (§4) or `gl/`'s web context TU (D1) | **`gl/`, built in M3.** `Window::handle()` is the canvas's html5 target, `"!canvas"`, as `create_device` takes an `HWND`, so the backend that draws makes its own context as WGL's TU does, and a build drawing with null makes none. `gl/web_context.cpp` makes it from that handle; the row still awaits the owner's yes | `window.h`'s `handle()`; §4 |
 
+### Made in M6, for the owner to confirm
+
+| | Decision | Answer as built | What it amends |
+|---|---|---|---|
+| **D8** | How the browser build reads the golden PNGs, since WIC is Windows' own and a page has no codec it can call synchronously | **lodepng from vcpkg, on every platform**, replacing WIC in `golden_image.cpp`: one codec reading one set, rather than two codecs making two claims about it. It is the format edge T9 buys, and a test dependency only. RenderPixelTests links it and nothing the engine ships does. A regeneration leaves unchanged images alone, so the swap rewrote none of them. One commit to reverse, by restoring WIC on Windows behind the same two functions | `vcpkg.json`, `NOTICE`, `README.md`, the website's consumer manifest (which leaves it out, as it does doctest) |
+
 ### Open
 
 Nothing. Anything else this plan meets that would change a design document, a public header or a rule in `CLAUDE.md` comes back here as a new row before it is built.
@@ -753,7 +762,9 @@ null backend - `RenderTests`' `null_tests.cpp`, `SceneTests`'
 `fanout_tests.cpp` and `cull_tests.cpp`, `LineSweeperViewTests`'
 `particle_draw_tests.cpp`, `LocalMultiplayerTests`' `draw_tests.cpp` and the
 null benchmark - drop out of executables that still exist, so the `wasm-*`
-presets still count 14 ctest entries and compile none of those files. MSVC
+presets still counted 14 ctest entries and compile none of those files
+*(15 since M6 registers `RenderPixelTests` where a Chromium is found;
+below)*. MSVC
 builds them under the two `-null` presets as before, and CI's wasm job
 configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`
 and runs that build's tests too, so the second compiler still sees them.
@@ -857,7 +868,8 @@ and the vendor and renderer names. What it met and where it departed:
   the renderer hear of a new buffer before anything is drawn into it.
 - **`RenderPixelTests` is not built for the browser**, because Node has no
   WebGL; running it in a headless browser is M6. The coverage this moved is
-  in the paragraph on M1's departures above.
+  in the paragraph on M1's departures above. *(M6 has since built it as a
+  page; below.)*
 - **Checked**: `x64-debug-gl` and `x64-release-gl`, 17 of 17 ctest entries,
   with `RenderPixelTests` byte-identical to the golden PNGs, so the swizzle and
   the re-pointed attributes draw the same pixels; `x64-debug`, 17 of 17;
@@ -881,6 +893,54 @@ and the vendor and renderer names. What it met and where it departed:
   (113,085 under Brotli) and its loader 107,466 (25,187), so WebGL adds about
   4 KB to the module and 5 KB to the loader under Brotli. The module is below
   §7.1's estimate and the loader inside it.
+
+**M6's first item is done: `RenderPixelTests` runs in headless Chrome
+against the same golden set, and on this machine it is byte-identical to
+it.** All 44 cases and 4,424 assertions pass in `wasm-debug` and
+`wasm-release`, drawn by ANGLE over Direct3D 11 on the RTX 5080, and run once
+more with `ALLOWED_CHANNEL_DRIFT` at zero, not one frame differed by a single
+level. So the ES dialect, the highp prelude and the browser's S3TC decode
+meet the pixel contract exactly, not just within the allowance the desktop's
+WARP measurement set. A deliberately wrong blend factor fails the blend and
+text cases and leaves their frames in `golden-actual/` beside the page, as
+on Windows. What it took:
+
+- **The page is the test.** `tests/render/web/shell.html` holds no canvas and
+  settles `window.labradorExit` with `main`'s exit code (`EXIT_RUNTIME`).
+  `tests/render/web/run_page.mjs` is ctest's command: it serves the folder on
+  a loopback port, starts Chrome headless with a profile of its own, drives it
+  over the DevTools protocol with Node's own `WebSocket` (no package to
+  install or pin), relays the console, waits on the exit, copies
+  `/golden-actual` out of the page's memory, and prints the WebGL2 renderer
+  it drew with. Every case runs inside one synchronous `main()`, which is why
+  `read_back_buffer` sees a frame that a canvas without
+  `preserveDrawingBuffer` discards when the page composites.
+- **One canvas per case, not one per run.** A canvas keeps one WebGL context
+  for its whole life, so a second device on it would inherit the first's
+  state where each desktop case starts on a context nobody has touched.
+  `tests/render/test_window.h` is the seam, with a Win32 and a web file
+  compiled as the engine's platform folders are. Destroying an Emscripten
+  context only forgets its handle, so the web window gives each one back
+  through `WEBGL_lose_context` before removing its canvas. Without that,
+  Chrome evicts the oldest live context past sixteen and warns once per case.
+- **The golden set is read through lodepng on every platform** (D8, below).
+  A regeneration now leaves an image whose pixels did not move untouched, so
+  the codec change rewrote nothing: `LABRADOR_GOLDEN_DUMP=1` under
+  `x64-debug-gl` left all 57 files byte-identical. A regeneration cannot run
+  in a browser, which cannot see the shell's environment and keeps what it
+  writes in memory, so the set is regenerated on the desktop and the browser
+  is held to it.
+- **Absent rather than skipped without a browser.** The entry is registered
+  only where configure finds a Chromium (`LABRADOR_TEST_BROWSER`), so the
+  `wasm-*` presets count 15 entries here and 14 on a machine without one.
+- **The device-info case has a browser branch**: `present_mode` is
+  `browser_animation_frame` with no swap interval, where WGL reports one.
+- **Not known: what CI's Chrome draws with.** The wasm job runs the entry as
+  a step of its own, and the renderer line in its log is the evidence, as
+  `x64-release`'s pass was for Direct3D. `run_page.mjs` passes
+  `--enable-unsafe-swiftshader`, so a runner without a GPU Chrome will use
+  falls back to SwiftShader rather than to no WebGL. Whether SwiftShader stays
+  inside the allowance is unmeasured.
 
 ### Spikes — *days*, before any milestone is committed to
 
@@ -912,7 +972,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp` | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium; WebGL context-loss restore; `local_multiplayer` on the web; `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore; `local_multiplayer` on the web; `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC, a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 

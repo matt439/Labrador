@@ -24,6 +24,10 @@ mono_crash.*
 x64/
 x86/
 [Ww][Ii][Nn]32/
+# Except this tree's own platform folders, which share a name with that
+# Visual Studio output folder and would otherwise be dropped without a word.
+!engine/**/win32/
+!tests/**/win32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/

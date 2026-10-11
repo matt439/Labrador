@@ -12,10 +12,9 @@
 #include "engine/math/vector2f.h"
 
 #include "tests/render/golden_image.h"
+#include "tests/render/test_window.h"
 
 #include <doctest/doctest.h>
-
-#include <Windows.h>
 
 #include <algorithm>
 #include <cmath>
@@ -104,6 +103,17 @@
 // window that is never shown. It adds nothing to the seam, and if an offscreen
 // path is ever wanted for its own sake it can replace this without touching a
 // single assertion below.
+//
+// AND IN A BROWSER, A CANVAS ON A PAGE NOBODY LOOKS AT. The browser build runs
+// this file in headless Chrome (tests/render/web/run_page.mjs), against the same
+// golden set, so the GLES dialect gl/ compiles there is held to the same pixels
+// as the desktop's. The window is behind test_window.h, and what a canvas
+// costs is said in tests/render/web/test_window.cpp. Two other terms differ
+// and say so where they are decided: the device-info case's present mode
+// below, and golden_image.cpp's dumping(), which never regenerates from a
+// browser. Every case below runs in one synchronous main(), which
+// is what lets read_back_buffer see a frame that a canvas without
+// preserveDrawingBuffer throws away the moment the page composites.
 
 namespace
 {
@@ -111,31 +121,6 @@ namespace
 	using namespace mattmath;
 
 	constexpr int BUFFER_SIZE = 64;
-
-	// Registered once per process, on first use. Never shown: there is no
-	// ShowWindow call anywhere in this file, so a test run puts nothing on
-	// screen and steals no focus.
-	HWND create_hidden_window()
-	{
-		static const wchar_t* CLASS_NAME = L"LabradorPixelTestWindow";
-
-		static const ATOM atom = []() -> ATOM
-			{
-				WNDCLASSEXW window_class = {};
-				window_class.cbSize = sizeof(WNDCLASSEXW);
-				window_class.lpfnWndProc = DefWindowProcW;
-				window_class.hInstance = GetModuleHandleW(nullptr);
-				window_class.lpszClassName = CLASS_NAME;
-				return RegisterClassExW(&window_class);
-			}();
-		REQUIRE(atom != 0);
-
-		HWND window = CreateWindowExW(0, CLASS_NAME, L"pixel tests", WS_POPUP,
-			0, 0, BUFFER_SIZE, BUFFER_SIZE, nullptr, nullptr,
-			GetModuleHandleW(nullptr), nullptr);
-		REQUIRE(window != nullptr);
-		return window;
-	}
 
 	struct Pixel
 	{
@@ -269,8 +254,6 @@ namespace
 	public:
 		Harness()
 		{
-			this->window_ = create_hidden_window();
-
 			// FOUR VIEWS OF CAPACITY, WHICH IS THE SAME NUMBER null_tests.cpp
 			// asks for, and it is not four because anything here draws four.
 			// A capacity is a property of the layout - four for split-screen,
@@ -280,7 +263,7 @@ namespace
 			// while it was 1 every multi-view path in both backends - D3D11's
 			// per-view deferred contexts, GL's per-view record-and-replay,
 			// view order against call order - reached no rasteriser anywhere.
-			this->renderer_.create_device(this->window_, BUFFER_SIZE,
+			this->renderer_.create_device(this->window_.handle(), BUFFER_SIZE,
 				BUFFER_SIZE, 4);
 			this->renderer_.set_resources(&this->resources_);
 
@@ -301,11 +284,6 @@ namespace
 				"courier_new_bold_16");
 			this->font = this->resources_.resolve_sprite_font(
 				"courier_new_bold_16");
-		}
-
-		~Harness()
-		{
-			DestroyWindow(this->window_);
 		}
 
 		Harness(const Harness&) = delete;
@@ -380,8 +358,7 @@ namespace
 		// user is dragging an edge.
 		void resize_window(int width, int height)
 		{
-			REQUIRE(SetWindowPos(this->window_, nullptr, 0, 0, width, height,
-				SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE) != 0);
+			REQUIRE(this->window_.resize(width, height));
 		}
 
 		// What the last end() read back, and how big the renderer said it was.
@@ -446,9 +423,6 @@ namespace
 					{
 						continue;
 					}
-					// Spelt out rather than through std::min and std::max,
-					// which are macros here: this file includes <Windows.h>
-					// for the window it never shows.
 					if (x < left) { left = x; }
 					if (y < top) { top = y; }
 					if (x > right) { right = x; }
@@ -505,7 +479,10 @@ namespace
 			this->buffer_ = this->renderer_.back_buffer_size();
 		}
 
-		HWND window_ = nullptr;
+		// FIRST, SO IT IS THE LAST TO GO. The device was made on it, and a
+		// context outliving the window or canvas it draws into is a state no
+		// backend is written for.
+		render_tests::TestWindow window_{ BUFFER_SIZE, BUFFER_SIZE };
 
 		// THE TABLE BEFORE THE RENDERER, so it dies after one - render_
 		// resources.h states it as a term of the seam. This harness was saved
@@ -532,11 +509,20 @@ TEST_CASE("the renderer reports the rasterising device it selected")
 	CHECK(info.kind != RenderDeviceKind::null_device);
 	if (info.backend == "gl")
 	{
+		// Two contexts, and the platform says which one this is. A browser
+		// paces frames itself and has no swap interval to ask for or report
+		// (gl/web_context.cpp).
+#if defined(__EMSCRIPTEN__)
+		CHECK(info.present_mode == "browser_animation_frame");
+		CHECK_FALSE(info.requested_swap_interval.has_value());
+		CHECK_FALSE(info.reported_swap_interval.has_value());
+#else
 		CHECK(info.present_mode == "wgl_swap_interval");
 		REQUIRE(info.requested_swap_interval.has_value());
 		CHECK(*info.requested_swap_interval == 1);
 		REQUIRE(info.reported_swap_interval.has_value());
 		CHECK(*info.reported_swap_interval == 1);
+#endif
 	}
 	else if (info.backend == "d3d11" || info.backend == "d3d12")
 	{

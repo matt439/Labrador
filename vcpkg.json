@@ -9,7 +9,8 @@
       ],
       "platform": "windows"
     },
-    "doctest"
+    "doctest",
+    "lodepng"
   ],
   "builtin-baseline": "d92484ed3c5020c6679d095ad3e5add907887b62"
 }

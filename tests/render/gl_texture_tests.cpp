@@ -3,7 +3,17 @@
 #include "engine/render/texture_data.h"
 
 #include <doctest/doctest.h>
+
+// The GL a test may call directly, which is the context's own header: GLES 3.0
+// in a browser and the Windows SDK's 1.1 on the desktop, where it needs
+// <Windows.h> first - the same choice gl/gl_functions.h makes for the
+// backend.
+#if defined(__EMSCRIPTEN__)
+#include <GLES3/gl3.h>
+#else
+#include <Windows.h>
 #include <gl/GL.h>
+#endif
 
 TEST_CASE("GL texture refusal leaves no allocated object and permits retry")
 {
