@@ -898,14 +898,13 @@ and the vendor and renderer names. What it met and where it departed:
 
 **M6's first item is done: `RenderPixelTests` runs in headless Chrome
 against the same golden set, and on this machine it is byte-identical to
-it.** All 44 cases and 4,424 assertions pass in `wasm-debug` and
+it.** All 45 cases and 4,532 assertions pass in `wasm-debug` and
 `wasm-release`, drawn by ANGLE over Direct3D 11 on the RTX 5080, and run once
 more with `ALLOWED_CHANNEL_DRIFT` at zero, not one frame differed by a single
 level. So the ES dialect, the highp prelude and the browser's S3TC decode
-meet the pixel contract exactly, not just within the allowance the desktop's
-WARP measurement set. A deliberately wrong blend factor fails the blend and
-text cases and leaves their frames in `golden-actual/` beside the page, as
-on Windows. What it took:
+meet the pixel contract exactly, not just within the allowance. A
+deliberately wrong blend factor fails the blend and text cases and leaves
+their frames in `golden-actual/` beside the page, as on Windows. What it took:
 
 - **The page is the test.** `tests/render/web/shell.html` holds no canvas and
   settles `window.labradorExit` with `main`'s exit code (`EXIT_RUNTIME`).
@@ -938,12 +937,21 @@ on Windows. What it took:
   and 14 on a machine without one.
 - **The device-info case has a browser branch**: `present_mode` is
   `browser_animation_frame` with no swap interval, where WGL reports one.
-- **Not known: what CI's Chrome draws with.** The wasm job runs the entry as
-  a step of its own, and the renderer line in its log is the evidence, as
-  `x64-release`'s pass was for Direct3D. `run_page.mjs` passes
-  `--enable-unsafe-swiftshader`, so a runner without a GPU Chrome will use
-  falls back to SwiftShader rather than to no WebGL. Whether SwiftShader stays
-  inside the allowance is unmeasured.
+- **CI's Chrome draws with SwiftShader**, which its log names: "ANGLE
+  (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)),
+  SwiftShader driver)". It did not stay inside the allowance at first: two
+  text frames missed by 9 against 8, in green alone, because SwiftShader
+  rounds the interpolated colours of the font's BC2 atlas differently from
+  the GPU the set was made on, and so did WARP, by 7. Measured with the
+  allowance at zero, that rounding was all SwiftShader needed one for, and
+  all of WARP's but one level on two blend frames. So `RenderPixelTests` decodes the atlas itself before a
+  device sees it, and a new case holds the device's own BC2 decode to a block
+  every decoder must agree on. Forced onto SwiftShader
+  (`--use-angle=swiftshader`), Chrome on this machine now writes all 58
+  frames byte for byte, as ANGLE over the RTX 5080 does; WARP
+  (`--use-angle=d3d11-warp`) differs on two blend frames by 1.
+  `golden_image.cpp` holds the measurement, and the null-renderer step after
+  this one in `ci.yml` now runs whatever the pixel step says.
 
 **M6's second item is done: a lost WebGL2 context is restored, and the shell
 hears it.** `RenderContextLossTests` pins it in headless Chrome, and

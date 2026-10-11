@@ -5,6 +5,7 @@
 #include "engine/render/colour.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/resource_factory.h"
+#include "engine/render/sprite_font_file.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
 #include "engine/math/rectanglef.h"
@@ -60,7 +61,7 @@
 // the time, which is how a list of gaps becomes a list of the wrong gaps.
 //
 // Most frames are also checked against the PNG set in tests/render/golden/,
-// holding every rasterising backend to the same fixed reference. Fifty-seven
+// holding every rasterising backend to the same fixed reference. Fifty-eight
 // frames have those references. Three resize cases opt out because their size
 // changes or differs by backend; the scene-composition case instead asserts
 // every pixel against its analytically known red/blue image. No reference is
@@ -248,6 +249,148 @@ namespace
 		return texture;
 	}
 
+	// One BC2 colour endpoint, 5:6:5, widened to eight bits a channel by
+	// repeating its high bits, which sends a channel's zero to 0 and its
+	// maximum to 255.
+	void expand_565(unsigned int colour, int out[3])
+	{
+		const unsigned int red = (colour >> 11) & 31u;
+		const unsigned int green = (colour >> 5) & 63u;
+		const unsigned int blue = colour & 31u;
+		out[0] = static_cast<int>((red << 3) | (red >> 2));
+		out[1] = static_cast<int>((green << 2) | (green >> 4));
+		out[2] = static_cast<int>((blue << 3) | (blue >> 2));
+	}
+
+	// A BC2 texture as the r8g8b8a8 bytes it encodes, decoded here rather than
+	// by the device.
+	//
+	// FOR THE FONT ATLAS THE TEXT CASES DRAW, AND FOR NOTHING ELSE. A BC2
+	// block's two interpolated colours are a third and two thirds of the way
+	// between its endpoints, no specification fixes how a decoder rounds them,
+	// and the decoders this file has run on do not agree. Decoding it
+	// themselves, this machine's GPU writes a fringe texel's green as 80 where
+	// SwiftShader writes 85, and WARP is as far from the GPU - one channel,
+	// every text frame, and nearly twice that where two glyphs' fringes
+	// overlap and the blend compounds it. That is a fact about a decoder, and
+	// a text case asserts where ink landed, not what a decoder rounds to - so
+	// the atlas is decoded once, here, with round-to-nearest, and every device
+	// samples the same bytes. Sampling a block-compressed texture is still
+	// held to pixels, by the BC2 case below, with blocks whose texels are
+	// endpoints and so decode exactly everywhere.
+	TextureData decoded_bc2(const TextureData& source)
+	{
+		REQUIRE(source.format == TextureFormat::bc2_unorm);
+		REQUIRE(source.levels.size() == 1);
+		const TextureLevel& level = source.levels[0];
+
+		TextureData decoded;
+		decoded.width = source.width;
+		decoded.height = source.height;
+		decoded.format = TextureFormat::r8g8b8a8_unorm;
+		decoded.levels.push_back(texture_level(decoded.format, source.width,
+			source.height, 0));
+		decoded.pixels.resize(decoded.levels[0].size);
+		const size_t out_stride = static_cast<size_t>(decoded.levels[0].stride);
+
+		for (int block_y = 0; block_y < level.rows; block_y++)
+		{
+			for (int block_x = 0; block_x * 4 < source.width; block_x++)
+			{
+				const unsigned char* block = source.pixels.data() +
+					level.offset +
+					static_cast<size_t>(block_y) *
+						static_cast<size_t>(level.stride) +
+					static_cast<size_t>(block_x) * 16;
+
+				const unsigned int c0 = block[8] |
+					(static_cast<unsigned int>(block[9]) << 8);
+				const unsigned int c1 = block[10] |
+					(static_cast<unsigned int>(block[11]) << 8);
+				const unsigned int indices = block[12] |
+					(static_cast<unsigned int>(block[13]) << 8) |
+					(static_cast<unsigned int>(block[14]) << 16) |
+					(static_cast<unsigned int>(block[15]) << 24);
+
+				// BC2's colour block is always the four-colour mode, whichever
+				// endpoint is larger; the three-colour mode is BC1's alone.
+				int palette[4][3];
+				expand_565(c0, palette[0]);
+				expand_565(c1, palette[1]);
+				for (int channel = 0; channel < 3; channel++)
+				{
+					const int low = palette[0][channel];
+					const int high = palette[1][channel];
+					palette[2][channel] = (2 * low + high + 1) / 3;
+					palette[3][channel] = (low + 2 * high + 1) / 3;
+				}
+
+				for (int texel = 0; texel < 16; texel++)
+				{
+					const int x = block_x * 4 + texel % 4;
+					const int y = block_y * 4 + texel / 4;
+					if (x >= source.width || y >= source.height)
+					{
+						continue;
+					}
+
+					const unsigned int nibble = (texel % 2 == 0)
+						? (block[texel / 2] & 15u)
+						: (static_cast<unsigned int>(block[texel / 2]) >> 4);
+					const unsigned int index =
+						(indices >> (2 * texel)) & 3u;
+
+					unsigned char* pixel = decoded.pixels.data() +
+						static_cast<size_t>(y) * out_stride +
+						static_cast<size_t>(x) * 4;
+					pixel[0] = static_cast<unsigned char>(palette[index][0]);
+					pixel[1] = static_cast<unsigned char>(palette[index][1]);
+					pixel[2] = static_cast<unsigned char>(palette[index][2]);
+					pixel[3] = static_cast<unsigned char>(nibble * 17u);
+				}
+			}
+		}
+
+		return decoded;
+	}
+
+	// One BC2 block, four by four, in quadrants: red top left and bottom
+	// right, opaque black top right, and transparent bottom left.
+	//
+	// EVERY TEXEL IS AN ENDPOINT AND EVERY ALPHA IS 0 OR 15, which is what
+	// makes it exact on every decoder: the rounding decoded_bc2 takes out of
+	// the font atlas lives in the two interpolated colours, and a block that
+	// never indexes them has none. Red is 0xF800 and black 0x0000, so the
+	// widening is exact too. And it is BC2 and no other format by its bytes:
+	// read as BC3 the alpha half is two endpoints of 255 and the transparent
+	// quadrant comes out opaque; read as BC1 the alpha half is taken for the
+	// colour block.
+	TextureData bc2_quadrant_texture()
+	{
+		TextureData texture;
+		texture.width = 4;
+		texture.height = 4;
+		texture.format = TextureFormat::bc2_unorm;
+		texture.levels.push_back(texture_level(texture.format, 4, 4, 0));
+
+		texture.pixels = {
+			// Explicit alpha, four bits a texel, two texels a byte, low nibble
+			// first: rows 0 and 1 opaque, rows 2 and 3 transparent on the left
+			// and opaque on the right.
+			0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0x00, 0xFF,
+			// Endpoints, little-endian: red, then black.
+			0x00, 0xF8, 0x00, 0x00,
+			// Two bits a texel, low bits first, each row a byte: index 0 is
+			// red and index 1 black. Rows 0 and 1 are red red black black,
+			// rows 2 and 3 black black red red - the bottom left is black
+			// under an alpha of zero, which premultiplied is transparent.
+			0x50, 0x50, 0x05, 0x05,
+		};
+		REQUIRE(texture.pixels.size() == texture.levels[0].size);
+
+		return texture;
+	}
+
 	// A device, a table with one texture in it, and a frame you can read back.
 	class Harness
 	{
@@ -284,6 +427,15 @@ namespace
 				"courier_new_bold_16");
 			this->font = this->resources_.resolve_sprite_font(
 				"courier_new_bold_16");
+
+			// AND ITS ATLAS IS THEN RE-LOADED DECODED, under the name
+			// resource_factory.h gives it, into the slot the font already
+			// holds. decoded_bc2 says why: the text cases are about where ink
+			// lands, and a device's BC2 rounding is not where.
+			add_texture_asset(this->renderer_, this->resources_,
+				"font:courier_new_bold_16",
+				decoded_bc2(read_sprite_font_file(
+					"./content/courier_new_bold_16.spritefont").atlas));
 		}
 
 		Harness(const Harness&) = delete;
@@ -2115,6 +2267,45 @@ TEST_CASE("CONTRACT: a frame may be read back and then presented")
 
 	CHECK(harness.at(20, 20) == WHITE);
 	CHECK(harness.at(4, 4) == BLACK);
+}
+
+TEST_CASE("CONTRACT: a BC2 texture draws the texels its blocks encode")
+{
+	Harness harness;
+
+	// EVERY FONT ATLAS IS BC2, so this is the format a backend that mapped one
+	// enum to the wrong compressed format would lose all its text through -
+	// and the text cases no longer show it, because they draw a decoded copy
+	// (decoded_bc2 says why). This is what holds the device's own decoder to
+	// pixels instead, on a block built so that every decoder must agree.
+	add_texture_asset(harness.renderer(), harness.resources(), "bc2",
+		bc2_quadrant_texture());
+	const TextureHandle bc2 = harness.resources().resolve_texture("bc2");
+
+	DrawList list = harness.begin();
+
+	// White underneath, so that the transparent quadrant is a colour of its
+	// own rather than the clear the opaque black one also looks like.
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 32.0f, 32.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	// Point, so that every pixel asserted below is one texel and no filter
+	// weight is consulted; each texel is four pixels wide.
+	list.set_filter(TextureFilter::point);
+	list.draw_sprite(bc2, RectangleI(0, 0, 4, 4),
+		RectangleF(8.0f, 8.0f, 16.0f, 16.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	CHECK(harness.at(10, 10) == RED);
+	CHECK(harness.at(21, 10) == BLACK);
+	CHECK(harness.at(10, 21) == WHITE);
+	CHECK(harness.at(21, 21) == RED);
+
+	// And the white around it, which the sprite did not reach.
+	CHECK(harness.at(4, 4) == WHITE);
+	CHECK(harness.at(27, 27) == WHITE);
 }
 
 TEST_CASE("CONTRACT: every format the seam names is uploaded, or refused by name")

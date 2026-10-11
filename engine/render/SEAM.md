@@ -247,10 +247,10 @@ relationship, and hand-copied implementations can get the same relationship
 wrong in the same direction without any run noticing. So every frame a case
 reads back is also compared byte for byte against a PNG of it in
 [`tests/render/golden/`](../../tests/render/golden/), and those images are what
-hold the backends to each other rather than each to a sentence. Fifty-seven
+hold the backends to each other rather than each to a sentence. Fifty-eight
 frames, four of which fill more than one view — the machinery the backends share
 least. On one machine's GPU, `d3d11`, `d3d12`, `gl` and `vulkan` reproduce all
-fifty-seven exactly.
+fifty-eight exactly.
 
 **The running of it is still separate processes.** `LABRADOR_RENDER_BACKEND`
 picks a backend at configure time (T5), so the checked-in set is what passes
@@ -262,7 +262,7 @@ in-box fallback at all.
 Two terms sit outside the images, both stated where they are decided:
 `Harness::end_not_comparable` holds the three frames that are not 64x64, and
 `ALLOWED_CHANNEL_DRIFT` in `golden_image.cpp` is the per-channel allowance that
-lets one set serve two adapters.
+lets one set serve more than one adapter.
 
 [`tests/render/renderer_seam_tests.cpp`](../../tests/render/renderer_seam_tests.cpp)
 is the part that runs in all five configurations, being everything the seam
