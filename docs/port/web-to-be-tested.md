@@ -9,16 +9,18 @@ and amend `web.md` §9 with the result.
 
 ## Needs a push (CI)
 
-- [ ] The wasm job is green on the GitHub runner: the pixel pages on its
+- [x] The wasm job is green on the GitHub runner: the pixel pages on its
       SwiftShader, `RenderPixelTestsWithoutS3tc`, `WebWindowTests` and the five
-      `*PageTests` (the runner's focus and full-screen behaviour in headless mode
-      may differ from this desktop's).
+      `*PageTests`. Run 38130728123, PR #1, every step passed.
 - [ ] The null-backends step runs even when a page step fails, and the job
-      still goes red.
-- [ ] The x64 jobs' `RenderPixelTests` pass against the 17 regenerated text
-      goldens and the three new frames on the runner's Direct3D adapter.
-- [ ] The wasm job uploads the `linesweeper-web` artifact and its `BUILD.json`
-      names the pushed commit.
+      still goes red. Not yet seen: nothing has failed since the change.
+- [x] The x64 jobs' `RenderPixelTests` pass against the 17 regenerated text
+      goldens and the three new frames on the runner's Direct3D adapter
+      (`x64-release` and `x64-debug-d3d12`, same run).
+- [x] The wasm job uploads the `linesweeper-web` artifact and its `BUILD.json`
+      names the commit CI built, clean. On a pull request that is GitHub's
+      merge commit for it rather than the branch head, since that is what the
+      job checks out.
 - [ ] Optional: one run with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the
       runner's adapter, so the allowance can come down from 8.
 
