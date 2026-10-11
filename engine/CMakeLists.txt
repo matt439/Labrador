@@ -36,6 +36,7 @@ add_library(LabradorEngine STATIC
     input/mouse.cpp
     render/animation_object.cpp
     render/animation_strip.cpp
+    render/block_decode.cpp
     render/camera.cpp
     render/camera_tools.cpp
     render/colour.cpp

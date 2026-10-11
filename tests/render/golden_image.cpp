@@ -353,9 +353,10 @@ namespace
 	// fringes overlap and the blend compounds it - because no specification
 	// fixes how a decoder rounds a colour a third of the way between two
 	// endpoints. That was the only term here that needed an allowance, it is
-	// not one this engine decides, and pixel_tests.cpp's decoded_bc2 is where
-	// it is taken out. The device's own BC2 decoder is still held to pixels,
-	// by a case whose blocks decode exactly on every decoder.
+	// not one devices agree on, and pixel_tests.cpp's harness takes it out by
+	// drawing the atlas the engine's own decoder (block_decode.h) writes. The
+	// device's BC2 decoder is still held to pixels, by a case whose blocks
+	// decode exactly on every decoder.
 	//
 	// AND IT COSTS ALMOST NOTHING IT WAS BUYING. The drift this file exists to
 	// catch is a hand-copied term going wrong in one backend and not the other

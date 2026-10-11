@@ -28,15 +28,18 @@ namespace labrador
 	//
 	// THE BLOCK-COMPRESSED ENTRIES ARE THE ONES TO WATCH ON A BACKEND, and they
 	// are not a corner of the content: compressed art is the common case and
-	// every font atlas is one, so a backend that cannot sample them has no text
-	// and, for most content, no art. The failure worth having is the one that
-	// says which feature is missing rather than the one that draws nothing.
-	// engine/render/gl/texture_factory.cpp names the extension in its throw -
+	// every font atlas is one, so a backend that can neither sample them nor
+	// decode them has no text and, for most content, no art. Each backend
+	// with a device answers one of two ways. engine/render/gl/ asks for S3TC -
 	// GL_EXT_texture_compression_s3tc on a desktop driver, where it is
 	// universal, and WEBGL_compressed_texture_s3tc in a browser, where
 	// desktops have it and most phones do not, GLES 3.0 itself having no
-	// S3TC - and engine/render/vulkan/texture_factory.cpp names
-	// textureCompressionBC, which the device is asked for when it is selected.
+	// S3TC - and on a context without it uploads the pixels block_decode.h
+	// decodes from the blocks. engine/render/vulkan/texture_factory.cpp
+	// refuses instead and names textureCompressionBC, which the device is
+	// asked for when it is selected, because the failure worth having is the
+	// one that says which feature is missing rather than the one that draws
+	// nothing.
 	enum class TextureFormat
 	{
 		r8g8b8a8_unorm,

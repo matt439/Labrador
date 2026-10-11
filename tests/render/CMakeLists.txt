@@ -2,6 +2,7 @@ find_package(doctest CONFIG REQUIRED)
 
 add_executable(RenderTests
     animation_object_tests.cpp
+    block_decode_tests.cpp
     camera_tests.cpp
     camera_tools_tests.cpp
     colour_tests.cpp
@@ -218,6 +219,24 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
                     --browser "${LABRADOR_TEST_BROWSER}"
                     --page "$<TARGET_FILE:RenderPixelTests>"
                     --collect /golden-actual
+            )
+
+            # AND ONCE MORE AS A DEVICE WITHOUT S3TC, which is most phones'
+            # browsers: the same page and the same golden set, with
+            # WEBGL_compressed_texture_s3tc hidden from every context it
+            # makes, so gl/ takes the path that decodes block-compressed
+            # textures on the CPU (engine/render/block_decode.h) and uploads
+            # pixels. Every frame is held to the images the native upload
+            # made; the BC2 case is where the two paths could differ, and its
+            # block decodes exactly on both. Its own entry rather than a second
+            # run inside the first, so a failure names which path it was.
+            add_test(NAME RenderPixelTestsWithoutS3tc
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/web/run_page.mjs"
+                    --browser "${LABRADOR_TEST_BROWSER}"
+                    --page "$<TARGET_FILE:RenderPixelTests>"
+                    --collect /golden-actual
+                    --hide-extension WEBGL_compressed_texture_s3tc
             )
         else()
             message(STATUS "RenderPixelTests and RenderContextLossTests: no "
