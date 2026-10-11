@@ -318,43 +318,44 @@ namespace
 	// How far a channel may move before it is a difference
 	// ---------------------------------------------------------------------
 
-	// ONE SET HAS TO SERVE TWO RASTERISERS, and that is the whole of why this
-	// number is not zero.
+	// ONE SET HAS TO SERVE SEVERAL RASTERISERS, and that is the whole of why
+	// this number is not zero.
 	//
 	// RenderPixelTests runs against a hardware adapter on a machine with a
-	// driver and against whatever adapter a build machine offers, which is not
-	// the same rasteriser and cannot be made to be one. There is no arrangement
+	// driver and against whatever a build machine offers, which is not the
+	// same rasteriser and cannot be made to be one. There is no arrangement
 	// that lets one checked-in set be exact for both: the OpenGL backend cannot
 	// run on a software rasteriser at all - Windows' fallback for GL is the 1.1
 	// GDI implementation - so a set generated on one would be inexact for every
 	// GL run in exchange for being exact in CI. Something has to give, and the
 	// honest place is here, stated with the measurement that set it.
 	//
-	// WHAT CI'S RASTERISER IS, THIS FILE DOES NOT KNOW AND SHOULD NOT CLAIM TO.
-	// It said WARP until a job log was read: the x64-release job passes
-	// RenderPixelTests with the WARP fallback compiled out, so the runner has a
-	// DXGI adapter that is not flagged software and nothing in a log names it
-	// (.github/workflows/ci.yml carries the evidence). The number below is
-	// therefore an allowance against a rasteriser this repository has measured
-	// ONE candidate for, and the candidate is the strictest one available here.
+	// WHAT CI'S RASTERISERS ARE. The Direct3D jobs draw on an adapter no log
+	// names: x64-release passes RenderPixelTests with the WARP fallback
+	// compiled out, so the runner has a DXGI adapter that is not flagged
+	// software, and nothing in ctest's output describes it
+	// (.github/workflows/ci.yml carries the evidence). The wasm job's is named,
+	// because tests/render/web/run_page.mjs prints it: Chrome's SwiftShader,
+	// behind ANGLE's Vulkan path.
 	//
-	// MEASURED, NOT GUESSED. Held against the same set, this machine's GPU and
-	// its WARP differ on 19 of the 47 frames. Eighteen of those 19 draw text, so
-	// their pixels came out of the block-compressed font atlas through a
-	// filter; the nineteenth is a blend case. The worst channel across all of
-	// them is 7 and most are 5, and the other twenty-eight frames - the ones
-	// carrying flat texels through no filter, the six multi-view ones among
-	// them - are identical to the byte. THE SET WAS 47 WHEN THAT WAS MEASURED
-	// AND IS 57 NOW, so 19 and 28 no longer sum to it: ten images joined
-	// afterwards and are in neither number. Nine of the ten carry flat texels
-	// through no filter, which is the half of the set the measurement found
-	// identical; the tenth is the filter case, and it is the only frame in the
-	// set that carries a filtered edge at all - all four rasterisers write it
-	// byte for byte, which is a stronger answer than this allowance needed. That is the shape of a decode-and-filter
-	// difference, and neither term is one this engine decides - pixel_tests.cpp
-	// has said from the beginning that "the coverage value at any one pixel is
-	// a fact about the compressor", which is why its text cases are written as
-	// relationships in the first place.
+	// MEASURED, NOT GUESSED, with this number set to zero, against the set of
+	// fifty-eight. This machine's GPU writes every frame byte for byte through
+	// all four desktop backends and through Chrome's ANGLE. SwiftShader writes
+	// every frame byte for byte too. WARP differs on two frames, both of them
+	// blend cases, by 1. So 8 is eight times what any rasteriser measured here
+	// needs, and the margin is for the one nobody has measured: CI's Direct3D
+	// adapter.
+	//
+	// THE TEXT FRAMES ARE AMONG THE EXACT ONES BECAUSE THEIR ATLAS IS DECODED
+	// BEFORE A DEVICE SEES IT. Decoded by each device, the font's BC2 atlas put
+	// the same three rasterisers apart on every text frame - in green, by 5
+	// where a glyph's fringe sampled an interpolated colour and by 9 where two
+	// fringes overlap and the blend compounds it - because no specification
+	// fixes how a decoder rounds a colour a third of the way between two
+	// endpoints. That was the only term here that needed an allowance, it is
+	// not one this engine decides, and pixel_tests.cpp's decoded_bc2 is where
+	// it is taken out. The device's own BC2 decoder is still held to pixels,
+	// by a case whose blocks decode exactly on every decoder.
 	//
 	// AND IT COSTS ALMOST NOTHING IT WAS BUYING. The drift this file exists to
 	// catch is a hand-copied term going wrong in one backend and not the other
@@ -362,11 +363,12 @@ namespace
 	// factor. Every one of those moves a glyph edge from 0 to 200-odd or blacks
 	// a destination out entirely. Nothing in that class hides under 8.
 	//
-	// IF A THIRD RASTERISER EVER NEEDS MORE THAN THIS, the answer is to look at
-	// the images and take the compression out of the test atlas, not to raise
-	// the number. A tolerance that grows to fit whatever failed is not a
-	// tolerance, and this one is already the only inexact statement in the
-	// pixel contract.
+	// IF A RASTERISER EVER NEEDS MORE THAN THIS, the answer is to look at the
+	// images and find the term that moved, not to raise the number. A
+	// tolerance that grows to fit whatever failed is not a tolerance, and this
+	// one is already the only inexact statement in the pixel contract. The
+	// direction it should move is down, once CI's Direct3D adapter has been
+	// measured against the set.
 	constexpr int ALLOWED_CHANNEL_DRIFT = 8;
 }
 
@@ -389,7 +391,7 @@ void golden::check_frame(int width, int height,
 		// AN IMAGE WHOSE PIXELS DID NOT MOVE IS LEFT AS IT IS, byte for byte,
 		// so that what a regeneration changes in the tree is exactly the set
 		// of frames that changed. Re-encoding every file would show a reviewer
-		// fifty-seven modified images whenever the encoder differed from the
+		// fifty-eight modified images whenever the encoder differed from the
 		// one that wrote them, with no way to tell which ones to look at.
 		int existing_width = 0;
 		int existing_height = 0;

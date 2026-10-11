@@ -365,7 +365,7 @@ namespace labrador
 		// answering with a black rectangle. Rasterising would mean a FIFTH
 		// implementation of the pixel contract plus a BC decoder plus a fill
 		// rule that agreed with four hardware ones exactly - and those four
-		// already agree with each other byte for byte across fifty-seven golden
+		// already agree with each other byte for byte across fifty-eight golden
 		// images, which is the standard a software one would have to meet. A
 		// large thing to build and a larger one to be quietly wrong about.
 		// recording.h says what to read instead.

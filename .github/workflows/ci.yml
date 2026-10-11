@@ -229,8 +229,7 @@ jobs:
   # toolchain sets, so the step is the same ctest call the job above makes.
   # RenderPixelTests and RenderContextLossTests are the exceptions: they are
   # pages, run in the runner's Chrome by tests/render/web/run_page.mjs, and
-  # they have a step of their own below because what that Chrome draws WebGL2
-  # with on a GPU-less runner is not something this file knows yet.
+  # they have a step of their own below so that a failure there names itself.
   #
   # EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the
   # reason vcvars64 is found through vswhere above: the tools to do it are
@@ -283,6 +282,7 @@ jobs:
           cmake --preset wasm-release
 
       - name: Build
+        id: build
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
@@ -295,17 +295,24 @@ jobs:
           ctest --preset wasm-release -E "RenderPixelTests|RenderContextLossTests"
 
       # THE PIXEL CONTRACT IN A BROWSER, as a step of its own so that a failure
-      # here names itself rather than reading as the second compiler's. What
-      # the runner's Chrome hands WebGL2 is not known until a job log says:
-      # ANGLE over the adapter the Direct3D jobs above find, or SwiftShader,
-      # which run_page.mjs permits as a fallback. Its last line names the
-      # renderer, and that line is the evidence, as the x64-release job's pass
-      # was for Direct3D; -V is what puts it in the log on a pass, and
-      # --no-tests=error is what stops a configure that found no Chrome from
-      # passing this step by running nothing. A frame it rejects is in
-      # golden-actual/ beside the page, where the job above looks for the
+      # here names itself rather than reading as the second compiler's.
+      # run_page.mjs's last line names the renderer, -V is what puts it in the
+      # log on a pass, and --no-tests=error is what stops a configure that found
+      # no Chrome from passing this step by running nothing. A frame it rejects
+      # is in golden-actual/ beside the page, where the job above looks for the
       # desktop's. The context-loss page runs here too, because it needs the
       # same browser.
+      #
+      # WHAT THE RUNNER'S CHROME DRAWS WITH IS SWIFTSHADER, and the log says so:
+      # "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)
+      # (0x0000C0DE)), SwiftShader driver)", in runs 38113425730, 38114109449
+      # and 38121167763. Those three failed two text frames by 9 against an
+      # allowance of 8, every channel of the miss in green: SwiftShader rounds
+      # the font atlas's BC2 colours differently from the GPU the set was made
+      # on. RenderPixelTests decodes that atlas itself now, and forced onto
+      # SwiftShader on the desktop (--use-angle=swiftshader) Chrome writes all
+      # fifty-eight frames byte for byte. tests/render/golden_image.cpp has the
+      # measurement, beside the allowance it is about.
       - name: Test the pixel contract in headless Chrome
         run: |
           call "%VCVARS%"
@@ -329,7 +336,14 @@ jobs:
       # still exist. A cache variable on the command line and a binary
       # directory of its own is the whole cost; a second pair of presets would
       # be two more names for one configure flag.
+      #
+      # IT RUNS WHATEVER THE TWO TEST STEPS ABOVE SAID, because it checks
+      # different sources: a red pixel step that skipped it is a push on which
+      # clang compiled none of them. The job still fails when any step does.
+      # What it does need is the preset to have built, since a compiler error
+      # there would only be reported twice.
       - name: Configure, build and test with the null renderer
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat

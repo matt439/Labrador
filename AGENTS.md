@@ -127,8 +127,14 @@ holds the three frames that are not 64x64 — one whose size the seam makes
 backend-specific, two that resize to 32x32 mid-frame — and
 `ALLOWED_CHANNEL_DRIFT` in
 [golden_image.cpp](tests/render/golden_image.cpp) is the per-channel allowance
-that lets one set serve both this machine's hardware adapter and whatever CI's
-is, with the measurement that set it. What runs in all five configurations is
+that lets one set serve this machine's hardware adapter and both of CI's — an
+adapter its Direct3D jobs get that no log names, and SwiftShader in the wasm
+job's Chrome — with the measurement that set it. **The text cases draw a font
+atlas the test decodes itself**: devices round BC2's interpolated colours
+differently, SwiftShader's rounding missed the allowance by one, and with the
+atlas decoded every frame is byte-identical here on all four desktop backends,
+ANGLE and SwiftShader, and within 1 on WARP. A case of its own holds the
+device's BC2 decode to a block every decoder must agree on. What runs in all five configurations is
 [tests/render/renderer_seam_tests.cpp](tests/render/renderer_seam_tests.cpp) —
 everything the seam answers without a device. The
 samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and
@@ -374,7 +380,7 @@ in the commit that creates it.
   Two things the sweep could not know are recorded there too: the CI premise it
   reasoned from is false — a GPU-less runner offers Direct3D an adapter rather
   than falling back to WARP, which one job log settles — and the golden set is
-  fifty-seven images now, five of them added by the tests those findings
+  fifty-eight images now, five of them added by the tests those findings
   asked for. The
   third folder reviews the fourth backend against the seam it was written to
   test. **Its three must-fix findings, all
