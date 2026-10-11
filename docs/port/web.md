@@ -962,8 +962,9 @@ their frames in `golden-actual/` beside the page, as on Windows. What it took:
   is held to it.
 - **Absent rather than skipped without a browser.** The entry is registered
   only where configure finds a Chromium (`LABRADOR_TEST_BROWSER`), so the
-  `wasm-*` presets count 17 entries here, with the context-loss page below
-  and the no-S3TC run of this one (M7b), and 14 on a machine without one.
+  `wasm-*` presets count 18 entries here, with the context-loss page below,
+  the no-S3TC run of this one (M7b) and `AudioSampleTests` (M6), and 15 on a
+  machine without one.
 - **The device-info case has a browser branch**: `present_mode` is
   `browser_animation_frame` with no swap interval, where WGL reports one.
 - **CI's Chrome draws with SwiftShader**, which its log names: "ANGLE
@@ -1158,6 +1159,30 @@ note it was paused in, at half rate; a one-shot audible after the gesture; and
 the context suspended and resumed with the device. Nobody has listened to it,
 and Firefox, Safari and a phone have not run it.
 
+**`samples/audio` is the third sample in a browser**, on `audio/webaudio/`,
+and it needed no engine change either. It has a `main_web.cpp` and a
+development page, chosen in its `CMakeLists.txt` as the other two are, and its
+manifest, its bank and the font are embedded at the paths the Windows build
+copies them to; at 70 KB the bank is far below the megabyte at which §5 would
+fetch content instead. The page says that nothing sounds until the first key,
+click or touch, and so does the sample's own screen, where the Windows build
+names XAudio2. `--smoke-test` stays a Windows switch, because a page has no
+command line. Its lifecycle, which is the packaged manifest's required bank
+loaded through the engine's loader, both one-shots, then the drone played,
+paused, resumed and stopped, is an `AudioSampleTests` case compiled for
+`webaudio`, and `AudioSampleTests` now runs under Node in both `wasm-*`
+presets, reading the content where it is checked in through NODERAWFS. That
+makes 18 entries there. In headless Chrome, at `wasm-debug` and
+`wasm-release`, keys 1, 2, 3, Space, S and Escape were sent to the page, with
+an `AnalyserNode` on the context's output. There was no context before the
+first key and a `running` one after it. The first key's ping was audible, so
+the gesture that allows sound is not spent on it. Both one-shots peaked, the
+drone sounded while playing and was silent while paused and after S, and the
+screen read playing, paused and stopped in turn. Escape reached
+`Module.onQuit`. The console logged nothing but the scratch server's missing
+favicon. Nobody has listened to it, and
+Firefox, Safari and a phone have not run it.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1188,7 +1213,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp` | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (done; its container is D9) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 

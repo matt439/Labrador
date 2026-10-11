@@ -14,6 +14,14 @@
 #include "engine/audio/null/recording.h"
 #endif
 
+#if defined(LABRADOR_AUDIO_SAMPLE_WEBAUDIO)
+#include "engine/app/content_root.h"
+#include "engine/assets/resource_loader.h"
+#include "engine/audio/audio_resources.h"
+
+#include <utility>
+#endif
+
 using namespace labrador;
 using namespace audio_sample;
 
@@ -122,5 +130,50 @@ TEST_CASE("sample levels affect the persistent voice and the next one-shot")
 	}
 	CHECK(recorded_sounds(device).back().call == SoundCall::stop_voice);
 	CHECK(recorded_sounds(device).back().immediate);
+}
+#endif
+
+#if defined(LABRADOR_AUDIO_SAMPLE_WEBAUDIO)
+// The browser build's stand-in for --smoke-test, which a page cannot be given.
+// The same steps smoke_test.cpp takes on Windows: the packaged manifest's
+// required bank, loaded through the engine's loader and the Web Audio backend,
+// both one-shots, and the drone through play, pause, resume and stop. Under
+// Node the backend has no AudioContext, so this proves the bank is read and the
+// sample is told what it would be told in a page, and nothing about a speaker.
+TEST_CASE("the sample's bank loads through Web Audio and its drone keeps its states")
+{
+	AudioDevice device;
+	AudioResources resources;
+	ResourceLoader loader(nullptr, nullptr, &resources, &device);
+	const AssetManifest manifest = anchored_to_source(read_asset_manifest(
+		LABRADOR_AUDIO_SAMPLE_CONTENT "/manifest.json"));
+	AssetManifest audio_manifest;
+	audio_manifest.source_path = manifest.source_path;
+	for (const AssetEntry& entry : manifest.entries)
+	{
+		if (entry.kind == "sound_bank") { audio_manifest.entries.push_back(entry); }
+	}
+	REQUIRE(audio_manifest.entries.size() == 1);
+	loader.load_manifest(std::move(audio_manifest));
+
+	SoundBank* bank = resources.sound_bank("tones");
+	REQUIRE(bank != nullptr);
+	CHECK(bank->audible());
+	SoundBoard board(bank);
+	CHECK_NOTHROW(board.play_ping());
+	CHECK_NOTHROW(board.play_chime());
+	board.start_loop();
+	CHECK(board.loop_state() == SoundState::playing);
+	CHECK(board.is_looping());
+	board.set_volume(0.25f);
+	board.set_pan(-0.5f);
+	board.set_pitch(0.25f);
+	device.update();
+	board.toggle_pause();
+	CHECK(board.loop_state() == SoundState::paused);
+	board.toggle_pause();
+	CHECK(board.loop_state() == SoundState::playing);
+	board.stop_loop();
+	CHECK(board.loop_state() == SoundState::stopped);
 }
 #endif

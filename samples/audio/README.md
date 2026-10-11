@@ -32,8 +32,9 @@ afterward. Losing focus pauses a playing loop and returning resumes it; a loop
 the player paused remains paused. Leaving the state stops the loop while its
 borrowed bank is still alive.
 
-The normal presets use XAudio2 and need an active Windows audio output to play.
-The `-null` presets record commands without sound; the sample labels that mode
+The normal Windows presets use XAudio2 and need an active Windows audio output
+to play, the browser build uses Web Audio (below), and the `-null` presets
+record commands without sound; the sample labels that mode
 on screen. `SoundBank::audible()` means loaded content, and is also true under
 null audio. It is not evidence that speakers produced sound.
 
@@ -51,6 +52,36 @@ playing, paused, resumed and stopped states. It exits in about a second. A
 missing bank or inactive audio endpoint fails the XAudio2 check rather than
 accepting silence. With null audio it checks the same lifecycle and explicitly
 reports no playback; it does not validate the XWB container.
+
+## In a browser
+
+The `wasm-debug` and `wasm-release` presets build the same sound board as a
+page, `AudioSample.html`, beside its `.js` and `.wasm`, playing through the
+engine's Web Audio backend. `main_web.cpp` is the browser's entry point and
+`web/shell.html` the development page; the manifest, the bank and the font are
+embedded in the module at the paths the Windows build copies them to. In a
+shell where vcvars and `emsdk_env.bat` have both run:
+
+```powershell
+cmake --preset wasm-debug
+cmake --build --preset wasm-debug --target AudioSample AudioSampleTests
+ctest --preset wasm-debug -R '^AudioSampleTests$' --output-on-failure
+python -m http.server --directory ./out/build/wasm-debug/samples/audio
+```
+
+Then open `AudioSample.html` from that server, because a browser will not
+compile a module read from `file://`. The controls are the table above.
+**Nothing sounds until the page's first key press, click or touch**, which is
+the browser's rule: the backend makes its audio context inside that event, and
+the key that does it is still read by the sample, so a first press of 1 plays
+the ping. Escape ends the module and says so under the canvas.
+
+There is no `--smoke-test` in a browser, because a page has no command line.
+Its lifecycle is an `AudioSampleTests` case in this build instead, run under
+Node: the packaged manifest's required bank loaded through the Web Audio
+backend, both one-shots, and the drone played, paused, resumed and stopped.
+Node has no Web Audio, so that case proves the bank is read and the states are
+right, and nothing about a speaker.
 
 `AudioSampleTests` reads the real manifest and definition and refuses a silent
 bank. Under null audio it also asserts which waves the sample plays, the loop
@@ -97,5 +128,7 @@ run the XAudio2 playback check after rebuilding. Python and XWBTool are not
 needed to build or run the checked-in example.
 
 The font is copied at build time from `samples/minimal/content/fonts`; its
-provenance is in the root [NOTICE](../../NOTICE). The sample uses the engine's
-existing XAudio2 bank reader and introduces no audio backend or engine format.
+provenance is in the root [NOTICE](../../NOTICE). On Windows the sample plays
+the bank through XAudio2 and DirectXTK's reader; in a browser, through the
+engine's own reader and Web Audio. It introduces no audio backend or engine
+format of its own.
