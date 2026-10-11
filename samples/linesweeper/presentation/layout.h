@@ -26,7 +26,8 @@
 // (CONVENTIONS, Constants).
 namespace linesweeper
 {
-	// The layout, in back-buffer pixels at the 1280x720 main.cpp asks for.
+	// The layout, in board space: the 1280x720 main.cpp asks for, which the
+	// camera fits to whatever buffer there is (arrangement.h).
 	inline constexpr float cell_size = 28.0f;
 	inline constexpr float cell_inset = 1.0f;
 

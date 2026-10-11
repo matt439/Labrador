@@ -28,7 +28,8 @@ namespace linesweeper
 		const std::string block_texture_name = "white";
 		const std::string font_name = "courier_new_bold_16";
 
-		// The layout, in back-buffer pixels at the 1280x720 main.cpp asks for.
+		// The layout, in board space: the 1280x720 main.cpp asks for, which the
+		// camera fits to whatever buffer there is (arrangement.h).
 		// Constants next to the one thing they configure, which is this file
 		// (CONVENTIONS, Constants) - except for the well itself, which moved
 		// to presentation/layout.h the day particles.cpp needed to know where

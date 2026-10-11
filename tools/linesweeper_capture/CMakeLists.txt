@@ -12,7 +12,7 @@
 # tests/render/CMakeLists.txt for the same call.
 if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     # The sample's presentation and its pause screen are compiled in rather
-    # than linked, as the frame benchmark does with the first three:
+    # than linked, as the frame benchmark does with three of them:
     # LineSweeperSample is a WIN32 executable and presentation/ is not a
     # library. The rules are a library, and are linked.
     add_executable(LineSweeperCapture
@@ -20,6 +20,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         main.cpp
         png_file.cpp
         scripted_match.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/arrangement.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/board_view.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/particles.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/top_out_banner.cpp"

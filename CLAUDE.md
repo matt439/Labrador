@@ -233,7 +233,10 @@ sample's particle field takes a resolved texture handle rather than the
 resource table and nothing in its `update()` reads one. Ten thousand particles,
 the compaction and the event reconstruction all run headlessly; the board view
 cannot, because measuring text walks an atlas a device filled, and what it
-draws is checked by looking at it.
+draws is checked by looking at it. The screen's two arrangements - landscape,
+and the portrait one a phone gets - and the touch controls' hit test are
+arithmetic on a buffer size and run there too; what the controls look like
+is, again, looked at.
 
 **`AudioTests` is headless in every configuration and can say what a sound did
 in only one of them, and that split is the finding.** This paragraph used to

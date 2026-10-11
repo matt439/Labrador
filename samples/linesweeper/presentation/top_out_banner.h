@@ -53,6 +53,11 @@ namespace linesweeper
 		// numbers beside this).
 		void update(float dt) override;
 
+		// Whether the player has a keyboard and pad or only the glass, which
+		// decides what the banner tells them to press. Read on the next
+		// update(), like the World is.
+		void set_touch(bool touch);
+
 		void draw(labrador::DrawList& draw_list) const override;
 
 		// The band the quad covers, which is a strip across the middle of the
@@ -74,6 +79,8 @@ namespace linesweeper
 		// What text_ was built from, and whether it has been built at all -
 		// which a flag that starts at zero cannot say on its own.
 		std::uint8_t shown_topped_out_ = 0;
+		bool touch_ = false;
+		bool shown_touch_ = false;
 		bool built_ = false;
 	};
 }

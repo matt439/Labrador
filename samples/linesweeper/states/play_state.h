@@ -4,9 +4,11 @@
 #include "engine/core/state.h"
 #include "engine/render/label.h"
 #include "engine/scene/scene.h"
+#include "samples/linesweeper/presentation/arrangement.h"
 #include "samples/linesweeper/presentation/board_view.h"
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
+#include "samples/linesweeper/presentation/touch_controls.h"
 #include "samples/linesweeper/states/pause_state.h"
 #include "samples/linesweeper/states/resume_gate.h"
 #include "samples/linesweeper/rules/world.h"
@@ -19,8 +21,9 @@
 // THIS IS ONE OF THE ONLY TWO PLACES ALLOWED TO INCLUDE BOTH engine/ AND
 // rules/, and the only one that includes rules/tick.h. The layering is that
 // rules/ knows nothing of the engine, presentation/ reads a World and draws
-// it, and states/ is where the two meet - which in practice means the two
-// tables and two loops below that turn a keyboard and a pad into one byte. It
+// it, and states/ is where the two meet - which in practice means the three
+// tables and three loops below that turn a keyboard, a pad and the touch
+// controls into one byte. It
 // is enforced by review today and by a build check once presentation/ has
 // enough files to make one worth writing (README, Still open).
 namespace linesweeper
@@ -40,8 +43,8 @@ namespace linesweeper
 		void on_resume() override;
 
 	private:
-		// Both devices as one of tick.h's button masks. A method on the state
-		// rather than a class, because it is two tables and two loops over
+		// Every device as one of tick.h's button masks. A method on the state
+		// rather than a class, because it is three tables and three loops over
 		// them, and the engine deliberately has no action-mapping layer to put
 		// it in (CLAUDE.md, Known-absent). What that costs is measured rather
 		// than asserted - README, Still open, has the number.
@@ -55,6 +58,16 @@ namespace linesweeper
 		// is nothing to reset when the menu is opened a second time
 		// (state_context.h).
 		void open_pause_menu();
+
+		// Works out the arrangement for the buffer as it is now and points
+		// the scene's one view through it (arrangement.h). Every tick, so a
+		// resize or a phone turned on its side is followed on the next frame;
+		// it is a handful of divisions.
+		void arrange_screen();
+
+		// Shows the two keyboard and pad hint lines in landscape until a
+		// finger has been seen, and hides them otherwise.
+		void show_hints();
 
 		// Borrowed. The shell built every service before this existed and
 		// outlives it (PHILOSOPHY, Services and lifetimes).
@@ -98,5 +111,26 @@ namespace linesweeper
 		TopOutBanner* banner_ = nullptr;
 		labrador::Label* hint_ = nullptr;
 		labrador::Label* pad_hint_ = nullptr;
+
+		// Last of all, over everything, and drawn only once touch_seen_ is
+		// set (touch_controls.h).
+		TouchControls* controls_ = nullptr;
+
+		// Which way up the screen is this tick, and the camera that follows.
+		// The touch controls are hit-tested against the same value they are
+		// drawn from, so a finger and the button under it cannot disagree.
+		Arrangement arrangement_;
+
+		// Whether a finger has ever touched the screen. From then on the
+		// controls are drawn, the keyboard hints are not, and the top-out
+		// banner asks for a tap. It does not go back: a player who touched
+		// once and reached for a keyboard loses nothing by the buttons
+		// staying, and one who put the phone down for a second should not
+		// find them gone.
+		bool touch_seen_ = false;
+
+		// Whether the two hint lines are showing, so they are rewritten only
+		// on the tick that changes it.
+		bool hints_shown_ = true;
 	};
 }
