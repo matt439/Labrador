@@ -199,19 +199,9 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         # not a target, so the emulator is named here.
         #
         # ABSENT RATHER THAN SKIPPED WHEN THERE IS NO BROWSER, for the reason
-        # the null backend's absence is given above. A machine without Chrome
-        # builds the page and registers no entry, and says so when it
-        # configures. LABRADOR_TEST_BROWSER names any Chromium that speaks the
-        # protocol, Edge included.
-        find_program(LABRADOR_TEST_BROWSER
-            NAMES chrome google-chrome google-chrome-stable chromium
-                chromium-browser
-            PATHS
-                "$ENV{ProgramFiles}/Google/Chrome/Application"
-                "$ENV{LOCALAPPDATA}/Google/Chrome/Application"
-            NO_CMAKE_FIND_ROOT_PATH
-            DOC "A Chromium browser to run the render tests' pages in a browser build"
-        )
+        # the null backend's absence is given above. The root CMakeLists looks
+        # for one, for every page in the build, and says so when it finds
+        # none; this page is then built and not registered.
         if(LABRADOR_TEST_BROWSER)
             add_test(NAME RenderPixelTests
                 COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
@@ -238,10 +228,6 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
                     --collect /golden-actual
                     --hide-extension WEBGL_compressed_texture_s3tc
             )
-        else()
-            message(STATUS "RenderPixelTests and RenderContextLossTests: no "
-                "Chromium found, so the pages are built and not registered "
-                "with ctest. Set LABRADOR_TEST_BROWSER to run them.")
         endif()
 
         # RenderContextLossTests - what a lost WebGL2 context does to the

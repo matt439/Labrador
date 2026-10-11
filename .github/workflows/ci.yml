@@ -227,9 +227,10 @@ jobs:
   #
   # They run under Node, which ctest reaches through the emulator Emscripten's
   # toolchain sets, so the step is the same ctest call the job above makes.
-  # RenderPixelTests and RenderContextLossTests are the exceptions: they are
-  # pages, run in the runner's Chrome by tests/render/web/run_page.mjs, and
-  # they have a step of their own below so that a failure there names itself.
+  # RenderPixelTests, RenderContextLossTests and WebWindowTests are the
+  # exceptions: they are pages, run in the runner's Chrome by
+  # tests/render/web/run_page.mjs, and they have steps of their own below so
+  # that a failure there names itself.
   #
   # EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the
   # reason vcvars64 is found through vswhere above: the tools to do it are
@@ -292,7 +293,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -E "RenderPixelTests|RenderContextLossTests"
+          ctest --preset wasm-release -E "RenderPixelTests|RenderContextLossTests|WebWindowTests"
 
       # THE PIXEL CONTRACT IN A BROWSER, as a step of its own so that a failure
       # here names itself rather than reading as the second compiler's.
@@ -321,6 +322,18 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           ctest --preset wasm-release -R "RenderPixelTests|RenderContextLossTests" --no-tests=error -V
 
+      # THE WEB WINDOW, DRIVEN: WebWindowTests is a page in the same Chrome,
+      # which tests/app/web/window_input.mjs clicks, types into, resizes and
+      # touches over the DevTools protocol, comparing what the window told its
+      # owner after each step. A step of its own because a failure here is the
+      # window's, not the pixel contract's. --no-tests=error for the reason the
+      # step above gives.
+      - name: Drive the web window in headless Chrome
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          ctest --preset wasm-release -R "WebWindowTests" --no-tests=error --output-on-failure
+
       - name: Keep the frames a golden check rejected
         if: failure()
         uses: actions/upload-artifact@v4
@@ -340,7 +353,7 @@ jobs:
       # is the whole cost; a second pair of presets would be two more names for
       # two configure flags.
       #
-      # IT RUNS WHATEVER THE TWO TEST STEPS ABOVE SAID, because it checks
+      # IT RUNS WHATEVER THE TEST STEPS ABOVE SAID, because it checks
       # different sources: a red pixel step that skipped it is a push on which
       # clang compiled none of them. The job still fails when any step does.
       # What it does need is the preset to have built, since a compiler error

@@ -5,11 +5,28 @@
 //                     [--collect <folder in the page's file system>]
 //                     [--timeout <seconds>] [--browser-warnings fail]
 //                     [--hide-extension <WebGL extension name>]
+//                     [--input <script.mjs>]
 //
 // ctest's command for RenderPixelTests and RenderContextLossTests in the
-// wasm-* presets (tests/render/CMakeLists.txt). A browser build's other tests
-// run under Node, which has no WebGL; this is how the ones that draw get a
+// wasm-* presets (tests/render/CMakeLists.txt), and for WebWindowTests
+// (tests/app/CMakeLists.txt). A browser build's other tests run under Node,
+// which has no WebGL and no DOM; this is how the ones that need either get a
 // browser instead.
+//
+// --input runs a script against the page while it runs, for a page whose
+// subject is what the browser delivers to it rather than what it computes.
+// The script is a module whose default export is an async function, handed
+// one object: evaluate(expression, { user_gesture }) runs an expression in
+// the page and answers its value, a promise's once it settles;
+// send(method, params) is any DevTools command on the page's session -
+// Input.dispatchKeyEvent, Emulation.setTouchEmulationEnabled - which is what
+// makes the input real rather than an event the page made of itself; and
+// wait(ms). The script asserts by throwing. When it returns the run has
+// passed and is over, whether or not the page has exited, and a throw is a
+// failure naming its message. A page that aborts or exits with a failure
+// first ends the run as it would without one; one that exits cleanly first
+// is waited past, because a script may have closed it on purpose and still
+// have something to ask of it.
 //
 // --browser-warnings fail makes a warning or an error the browser itself logs
 // a failure of the run, whatever the page's exit code. It is for a page whose
@@ -51,6 +68,7 @@ import { mkdtempSync, rmSync, readFileSync, statSync, mkdirSync, writeFileSync }
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const options = parse_arguments(process.argv.slice(2));
 const page_path = resolve(options.page);
@@ -89,7 +107,8 @@ function fail_usage(why) {
 	process.stderr.write(`run_page: ${why}\n` +
 		'usage: node run_page.mjs --browser <chrome> --page <file.html> ' +
 		'[--collect <folder>] [--timeout <seconds>] ' +
-		'[--browser-warnings fail] [--hide-extension <name>]\n');
+		'[--browser-warnings fail] [--hide-extension <name>] ' +
+		'[--input <script.mjs>]\n');
 	process.exit(2);
 }
 
@@ -227,11 +246,13 @@ function wait(ms) {
 	return new Promise((done) => setTimeout(done, ms));
 }
 
-async function evaluate(devtools, session, expression, await_promise = false) {
+async function evaluate(devtools, session, expression, await_promise = false,
+	user_gesture = false) {
 	const answer = await devtools.send('Runtime.evaluate', {
 		expression,
 		awaitPromise: await_promise,
 		returnByValue: true,
+		userGesture: user_gesture,
 	}, session);
 	if (answer.exceptionDetails) {
 		throw new Error(answer.exceptionDetails.exception?.description ??
@@ -387,13 +408,39 @@ async function run() {
 		})();
 		// Settled after a timeout has already won, it has nobody to tell.
 		finished.catch(() => {});
+
+		// The input script, started once the page's first script has run and
+		// raced against the page's own end: a page that never exits is
+		// finished by its script, and a script still waiting on a page that
+		// has failed is not waited for.
+		const driven = options.input === undefined ? new Promise(() => {}) :
+			(async () => {
+				const script = await import(pathToFileURL(resolve(options.input)).href);
+				while (await evaluate(devtools, session,
+					`typeof window.labradorExit === 'object' && location.href === ${JSON.stringify(url)}`) !== true) {
+					await wait(50);
+				}
+				await script.default({
+					evaluate: (expression, { user_gesture = false } = {}) =>
+						evaluate(devtools, session, expression, true, user_gesture),
+					send: (method, params = {}) => devtools.send(method, params, session),
+					wait,
+				});
+				return { code: 0 };
+			})().catch((error) => ({ failed: error.stack ?? String(error) }));
+
+		const page_end = options.input === undefined ? finished :
+			finished.then((ended) => (ended.code === 0 ? new Promise(() => {}) : ended));
 		const outcome = await Promise.race([
-			finished,
+			page_end,
+			driven,
 			wait(timeout_ms).then(() => ({ timeout: true })),
 		]);
 
 		if (outcome.timeout) {
 			process.stderr.write(`run_page: ${page_name} did not finish within ${timeout_ms / 1000} s\n`);
+		} else if (outcome.failed !== undefined) {
+			process.stderr.write(`run_page: ${page_name} failed its input script: ${outcome.failed}\n`);
 		} else if (outcome.abort !== undefined) {
 			process.stderr.write(`run_page: ${page_name} aborted: ${outcome.abort}\n`);
 		} else {

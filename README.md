@@ -55,7 +55,8 @@ Windows, through the same Win32 window. The OpenGL one also reaches the
 browser: the `wasm-debug` and `wasm-release` presets build the engine with
 Emscripten, draw through a WebGL2 context that `gl/` makes in a second context
 translation unit, `web_context.cpp`, and run the headless tests under Node -
-and the pixel tests in headless Chrome, against the same checked-in images.
+and the pixel tests in headless Chrome, against the same checked-in images,
+with the browser window's input driven there too.
 LineSweeper, the local multiplayer sample, the audio sample's sound board
 and the minimal sample run there so far, and
 [docs/port/web.md](docs/port/web.md) is the plan. Each proves something a
@@ -97,8 +98,9 @@ with no GPU and no sound card runs end to end.
   the two `wasm-*` presets**: the compiler, the toolchain file vcpkg chains to,
   and the Node the tests run under. It does not come with Visual Studio either,
   and Visual Studio is still what puts CMake and Ninja on the path for it. The
-  pixel tests there also want Chrome, or another Chromium named by
-  `LABRADOR_TEST_BROWSER`, and are left out of `ctest` where there is none.
+  pixel tests and the window's input test there also want Chrome, or another
+  Chromium named by `LABRADOR_TEST_BROWSER`, and are left out of `ctest` where
+  there is none.
 - **vcpkg**, with `VCPKG_ROOT` set. `CMakePresets.json` reads it for the
   toolchain file, and configuring fails without it. Visual Studio ships a copy
   at `<VS install>\VC\vcpkg` if you have no other.
