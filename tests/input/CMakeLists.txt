@@ -6,6 +6,7 @@ add_executable(InputTests
     gamepad_tests.cpp
     keyboard_tests.cpp
     mouse_tests.cpp
+    touch_tests.cpp
     test_main.cpp
 )
 

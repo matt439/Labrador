@@ -18,22 +18,23 @@ multiplayer. All build with the engine.
 
 ## The minimal sample: the one you copy
 
-`samples/minimal` is about 450 lines, comments included. It opens a 1280×720 window with a line
+`samples/minimal` is about 550 lines, comments included. It opens a 1280×720 window with a line
 of text that circles a point you move with a gamepad stick, the arrow keys or WASD. Press B or
 Escape and it asks, in a second screen on top of the first, whether you really want to quit.
 
 That is small, but it is a complete game on the engine. It has a first state, a second state
-pushed on top that returns a result, a scene that owns what is on screen, input from two kinds
+pushed on top that returns a result, a scene that owns what is on screen, input from three kinds
 of device, content named in a manifest, and the build file that copies that content beside the
-executable.
+executable or packs it into a browser build.
 
 | File | What it shows |
 | --- | --- |
 | <RepoLink path="samples/minimal/main.cpp">`main.cpp`</RepoLink> | Window options, loading the content manifest, and handing the engine its first state. |
-| <RepoLink path="samples/minimal/states/hello_state.cpp">`states/hello_state.cpp`</RepoLink> | A scene with two labels and one view, input from a pad and a keyboard at once, and a transform built each frame. |
+| <RepoLink path="samples/minimal/main_web.cpp">`main_web.cpp`</RepoLink> | The same, as a browser's entry point, with the `Application` kept in a static. |
+| <RepoLink path="samples/minimal/states/hello_state.cpp">`states/hello_state.cpp`</RepoLink> | A scene with two labels and one view, input from a pad and a keyboard at once, a marker on every touch point, and a transform built each frame. |
 | <RepoLink path="samples/minimal/states/confirm_state.cpp">`states/confirm_state.cpp`</RepoLink> | A state pushed above another that hands a `bool` back when it closes. |
 | <RepoLink path="samples/minimal/content/manifest.json">`content/manifest.json`</RepoLink> | The one font the sample uses, named once and resolved to a handle at load. |
-| <RepoLink path="samples/minimal/CMakeLists.txt">`CMakeLists.txt`</RepoLink> | The whole build file: sources, two libraries, and the content copied beside the executable. |
+| <RepoLink path="samples/minimal/CMakeLists.txt">`CMakeLists.txt`</RepoLink> | The whole build file: sources, two libraries, and the content copied beside the executable or packed into the page. |
 
 This is how the minimal sample asks before quitting. The question is a state of its own that
 knows nothing about the screen below it, and the answer comes back once, when it closes:

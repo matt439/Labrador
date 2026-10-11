@@ -1,4 +1,5 @@
 #include "engine/app/window.h"
+#include "engine/app/win32/pointer_input.h"
 
 #include <Windows.h>
 
@@ -163,6 +164,27 @@ namespace labrador
 		int high_word_signed(LPARAM l_param)
 		{
 			return static_cast<int>(static_cast<short>(HIWORD(l_param)));
+		}
+
+		// Every mouse message Windows may synthesise from a touch: the ones
+		// window_proc drops when mouse_message_is_from_touch says so.
+		bool is_mouse_input(UINT message)
+		{
+			switch (message)
+			{
+			case WM_MOUSEMOVE:
+			case WM_LBUTTONDOWN:
+			case WM_LBUTTONUP:
+			case WM_RBUTTONDOWN:
+			case WM_RBUTTONUP:
+			case WM_MBUTTONDOWN:
+			case WM_MBUTTONUP:
+			case WM_XBUTTONDOWN:
+			case WM_XBUTTONUP:
+				return true;
+			default:
+				return false;
+			}
 		}
 
 		// The outer window size that leaves `client_size` pixels to draw into
@@ -491,6 +513,18 @@ namespace labrador
 		auto* self = reinterpret_cast<Impl*>(
 			GetWindowLongPtr(window, GWLP_USERDATA));
 
+		// ONE TOUCH IS ONE INPUT. The touch itself arrives as WM_POINTER
+		// below, and is handled there without DefWindowProc, which is what
+		// stops Windows making mouse messages of it. This is the second half,
+		// for any copy that is made anyway: it would otherwise be a click in
+		// the same frame as the tap, and on a widget the two would press it
+		// twice.
+		if (is_mouse_input(message) &&
+			mouse_message_is_from_touch(GetMessageExtraInfo()))
+		{
+			return DefWindowProc(window, message, w_param, l_param);
+		}
+
 		switch (message)
 		{
 		case WM_CREATE:
@@ -798,6 +832,66 @@ namespace labrador
 			{
 				self->held_buttons = 0;
 				self->notify->on_mouse_capture_lost();
+			}
+			break;
+
+		// TOUCH, AND ONLY TOUCH. A pen and the mouse fall through to
+		// DefWindowProc, which turns them into the mouse messages above - a pen
+		// is the mouse in this engine (pointer_input.h says why). A touch
+		// contact is handled here and not passed on, so Windows makes no
+		// mouse messages of it, and none of its gestures either: a press and
+		// hold is a point held, not a right click.
+		//
+		// The position is in screen pixels and is turned into client pixels
+		// here, signed for the reason low_word_signed gives: a touch that
+		// started in the window is captured to it and followed off the edge.
+		//
+		// WM_POINTERCAPTURECHANGED is answered whatever the pointer is,
+		// because by then it may be no kind Windows will still name, and a
+		// cancel for a point the touch device does not hold does nothing.
+		case WM_POINTERDOWN:
+		case WM_POINTERUPDATE:
+		case WM_POINTERUP:
+		case WM_POINTERCAPTURECHANGED:
+			if (self)
+			{
+				const UINT32 pointer = GET_POINTERID_WPARAM(w_param);
+				if (message == WM_POINTERCAPTURECHANGED)
+				{
+					self->notify->on_touch_cancel(pointer);
+					break;
+				}
+
+				POINTER_INPUT_TYPE type = PT_POINTER;
+				if (GetPointerType(pointer, &type) == 0 || type != PT_TOUCH)
+				{
+					break;
+				}
+
+				POINT position = { low_word_signed(l_param),
+					high_word_signed(l_param) };
+				ScreenToClient(window, &position);
+
+				switch (touch_message(message, static_cast<uint64_t>(w_param)))
+				{
+				case TouchMessage::down:
+					self->notify->on_touch_down(pointer, position.x,
+						position.y);
+					break;
+				case TouchMessage::move:
+					self->notify->on_touch_move(pointer, position.x,
+						position.y);
+					break;
+				case TouchMessage::up:
+					self->notify->on_touch_up(pointer, position.x, position.y);
+					break;
+				case TouchMessage::cancel:
+					self->notify->on_touch_cancel(pointer);
+					break;
+				case TouchMessage::none:
+					break;
+				}
+				return 0;
 			}
 			break;
 

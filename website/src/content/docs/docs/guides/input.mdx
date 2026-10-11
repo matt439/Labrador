@@ -1,6 +1,6 @@
 ---
 title: Input
-description: Reading the keyboard, gamepads and mouse; held, pressed and released; deadzones; binding tables; menu directions; and typed text.
+description: Reading the keyboard, gamepads, mouse and touch; held, pressed and released; deadzones; binding tables; menu directions; and typed text.
 sidebar:
   order: 2
 ---
@@ -8,10 +8,10 @@ sidebar:
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
 
-The application owns three input devices and lends them to your states: `app->keyboard()`,
-`app->gamepads()` and `app->mouse()`. All three are read once at the start of every step, before
-any state updates ([The tick](/docs/concepts/tick/#input-is-read-first)), and you ask them
-questions from `update()`.
+The application owns four input devices and lends them to your states: `app->keyboard()`,
+`app->gamepads()`, `app->mouse()` and `app->touch()`. All four are read once at the start of
+every step, before any state updates ([The tick](/docs/concepts/tick/#input-is-read-first)),
+and you ask them questions from `update()`.
 
 ## Held, pressed and released
 
@@ -120,3 +120,30 @@ before the menu is on screen. The [Menus guide](/docs/guides/menus/) continues f
 and `x2`, and also reports `position()` in window pixels, `motion()` since the last step, and
 `wheel()` and `wheel_horizontal()` in notches. While a button is held the mouse keeps reporting
 movement outside the window, so a drag is one gesture.
+
+## Touch
+
+`Touch` holds every finger on the glass, up to ten, as points with an id and a `position` in
+window pixels. A point's id is handed out when it goes down and is never given to another, so
+`held(id)`, `pressed(id)`, `released(id)` and `motion(id)` ask about one finger, and a map from
+finger to whatever it is dragging can be keyed on it. `points()` is this step's points, in the
+order they went down. A point that has been lifted is no longer in it, so finding releases walks
+the step before:
+
+```cpp
+const Touch& touch = *app->touch();
+for (const TouchPoint& point : touch.previous_state().active())
+{
+    if (touch.released(point.id))
+    {
+        // a finger came up at point.position
+    }
+}
+```
+
+A tap shorter than a step is still pressed on one step and released on the next. A point the
+system takes away, or every point when the window loses the foreground, disappears without a
+release. A touch is never also a mouse click, on Windows or in a browser, and a pen is the mouse.
+The minimal sample draws a marker with the id at every point:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="const std::span<const TouchPoint> points" to="}" />

@@ -1228,6 +1228,38 @@ screen read playing, paused and stopped in turn. Escape reached
 favicon. Nobody has listened to it, and
 Firefox, Safari and a phone have not run it.
 
+**M7a's code has landed: touch is the third fed device, and no glass has
+touched it.** `input/touch.h` holds up to ten points, each with an engine id
+that is never reused, so a platform id handed to the next finger between two
+frames reads as a release and a press. A point down and up between two polls
+is still seen for one frame, because a tap is shorter than a frame often
+enough to matter. Edges need the device live on both frames. Cancel and focus
+loss remove points without a release, and an eleventh finger is not seen for
+its whole contact. Touch follows the foreground and the page's visibility, as
+the pads do, not the canvas's keyboard focus, because a finger reaches the
+canvas only by touching it. `app/win32/` handles `WM_POINTER` for `PT_TOUCH`
+without `DefWindowProc`, so Windows makes no mouse messages of it, and also
+drops any mouse message carrying the touch signature. A pen falls through and
+stays the mouse. `app/web/` listens to pointer events on the canvas through
+`EM_JS`, because the html5 API has none, rather than taking its touch
+callbacks: a pointer event is one contact with one id, the shape `WM_POINTER`
+already has. It prevents a touch's default, which
+stops the browser making mouse events of it, and focuses the canvas on a
+touch as a click does. The development pages of LineSweeper, `local_multiplayer`
+and `minimal` set `touch-action: none`.
+`minimal` gained a browser build for this, and draws each point's id where
+the point is. In headless Chrome with touch emulation, two fingers drew two
+markers with two ids, one followed its finger, a tap shorter than a frame
+drew its own id, and none produced a `mousedown`, `mouseup` or `mousemove`.
+The tap still fires `click`, which no engine listener hears. On Windows, touch
+injected into a visible engine window from its own process arrived as two
+points with client coordinates and no mouse message. Injection from another
+process did not reach the window, so `minimal`'s markers have not been seen
+on Windows. A real Windows touchscreen and a real phone are the checks still
+owed. A full-screen request deferred to the next input event is not made from
+a touch, because Emscripten runs deferred requests only from its own
+listeners. That belongs to M7b, with the rest of the phone.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1259,7 +1291,7 @@ Each is cheap and could change the plan:
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp`, sampled once a frame, compacted slots, pads following page visibility rather than canvas focus, and the fullscreen flag following the browser (code landed; a physical pad is the open check) | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
 | **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done) | days each; audio a week | Each its own commit, as usual |
-| **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
+| **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal`, and a Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 
 The critical path to the desktop demo is M0 → M1 → M2 → M3 → M5, roughly

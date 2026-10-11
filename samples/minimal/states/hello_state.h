@@ -2,9 +2,11 @@
 
 #include "engine/app/application.h"
 #include "engine/core/state.h"
+#include "engine/input/touch.h"
 #include "engine/render/label.h"
 #include "engine/scene/scene.h"
 #include "engine/math/vector2f.h"
+#include <array>
 #include <memory>
 
 // One screen: a line of text that circles a point the stick or the keyboard
@@ -58,6 +60,13 @@ private:
 	// things the game still has something to say to.
 	labrador::Label* greeting_ = nullptr;
 	labrador::Label* hint_ = nullptr;
+
+	// One marker per finger the touch device can hold, each showing the
+	// point's id where the point is, and blank while there is no point for
+	// it. Not a game mechanic: it is how a person checking a touchscreen sees
+	// that every finger arrives once, where it is, with an id of its own.
+	std::array<labrador::Label*, labrador::TouchState::capacity>
+		touch_markers_ = {};
 
 	// The two numbers the greeting's placement is worked out from every frame:
 	// the point it circles, which the stick moves, and how far round the

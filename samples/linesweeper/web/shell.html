@@ -14,6 +14,9 @@
     itself.
   - The canvas is focusable, and is focused. Keys go to the focused element,
     so a canvas that cannot take focus cannot be played.
+  - The canvas has touch-action: none. Without it a finger dragged on the
+    canvas scrolls or zooms the page, and the browser takes the touch away
+    from the game the moment it decides that is what the finger meant.
   - Module.onQuit and Module.onError are the module's two calls to the page:
     the pause menu's QUIT, and a failure the engine could not recover from.
   - Module.onContextLost and Module.onContextRestored are two more:
@@ -31,7 +34,7 @@
 <style>
   body { margin: 0; background: #111; color: #ddd; font: 15px/1.4 system-ui, sans-serif; }
   main { max-width: 1280px; margin: 0 auto; padding: 16px; }
-  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; outline: none; }
+  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; outline: none; touch-action: none; }
   canvas:focus-visible { outline: 2px solid #5a9; }
   #status { margin: 10px 0 0; min-height: 1.4em; }
   #status.error { color: #f77; }

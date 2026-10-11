@@ -16,7 +16,7 @@ to 404. Nothing here depends on it: this repository builds, tests and
 benchmarks standalone.)*
 
 Five samples come with it, and they answer different questions.
-`samples/minimal` is about 450 lines and is the answer to "how do I start a
+`samples/minimal` is about 550 lines and is the answer to "how do I start a
 project on this" — copy it. `samples/linesweeper` is a falling-block game and
 is the answer to "what does a finished game look like on this engine" — read
 it, and read [its README](samples/linesweeper/README.md) for the decisions
@@ -56,8 +56,8 @@ browser: the `wasm-debug` and `wasm-release` presets build the engine with
 Emscripten, draw through a WebGL2 context that `gl/` makes in a second context
 translation unit, `web_context.cpp`, and run the headless tests under Node -
 and the pixel tests in headless Chrome, against the same checked-in images.
-LineSweeper, the local multiplayer sample and the audio sample's sound board
-run there so far, and
+LineSweeper, the local multiplayer sample, the audio sample's sound board
+and the minimal sample run there so far, and
 [docs/port/web.md](docs/port/web.md) is the plan. Each proves something a
 different one could not: OpenGL that a view need not record into a driver,
 Direct3D 12 that the engine can own the fence rather than the driver, Vulkan
@@ -161,7 +161,7 @@ Three things worth knowing:
   directory above `yourgame/` on the include path. Labrador publishes its root,
   not yours.
 
-`samples/minimal` is a working example of all three, at about 450 lines.
+`samples/minimal` is a working example of all three, at about 550 lines.
 `samples/linesweeper` is the same three plus a fourth thing worth copying: a
 game's simulation as a static library that links nothing, so the whole game is
 playable from `ctest` with no window and no device.
