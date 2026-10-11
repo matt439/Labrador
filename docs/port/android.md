@@ -12,7 +12,8 @@ happen in**, because the intuitive order is wrong: the renderer is the part
 everyone thinks of and it is neither the largest item nor the riskiest.
 
 This file was flat rather than a folder for the same reason `app/window.{h,cpp}`
-is not in `app/win32/` yet ([ARCHITECTURE.md:203-204](../design/ARCHITECTURE.md#L203-L204)):
+was not in `app/win32/` at `f6e58be` (ARCHITECTURE, [*The tree*](../design/ARCHITECTURE.md#the-tree);
+the web port has since split it, [web.md](web.md) D3):
 one document, and inventing the folder before there is a second is the
 speculative structure T1 rules out. The condition it set — *"when the probe in
 §3.1 produces its own file, this becomes `docs/port/`"* — was met the same day,
@@ -90,8 +91,8 @@ item on the spine deliberately does not need one.
 Two documents make the same promise in the same words. **Platform-specific code
 lives at the edge behind engine-owned interfaces, so that a second platform is
 an addition, not a rewrite** —
-[PHILOSOPHY.md:303-305](../design/PHILOSOPHY.md#L303-L305),
-[ARCHITECTURE.md:194-197](../design/ARCHITECTURE.md#L194-L197).
+PHILOSOPHY, [*Targets and layout*](../design/PHILOSOPHY.md#targets-and-layout),
+and ARCHITECTURE, [*The tree*](../design/ARCHITECTURE.md#the-tree).
 
 That claim has never been cashed. Four render backends test one *half* of it —
 that the render seam holds against four APIs, most recently one where the engine
@@ -105,11 +106,11 @@ It is worth writing down now, before the work, what the answer looks like:
 - **Where the claim holds outright.** `render/` — the seam was cut four times
   and a fifth costs a folder ([§3.5](#35-the-vulkan-backend)). `input/xinput/`
   — the folder exists and the module table forbids XInput outside it
-  ([ARCHITECTURE.md:263](../design/ARCHITECTURE.md#L263)).
+  (ARCHITECTURE, [*Modules*](../design/ARCHITECTURE.md#modules)).
 - **Where it holds but has not been demonstrated.** The window. ARCHITECTURE
   already commits to the exact move and to its cost — `app/window.{h,cpp}`
   drops into `app/win32/` "without renaming the class or touching a call site"
-  ([:203-204](../design/ARCHITECTURE.md#L203-L204)). The port is what checks that
+  (ARCHITECTURE, *The tree*, at `f6e58be`). The port is what checks that
   sentence.
 - ~~**Where it is false today.** `audio/`. See §3.2. This is the finding of this
   document.~~ **Answered 2026-08-27, and by this repository rather than by a
@@ -187,7 +188,7 @@ the first place.
 > **The seam exists.** `engine/audio/audio_device.h` is a concrete class chosen
 > by `LABRADOR_AUDIO_BACKEND`, with `audio/xaudio2/` behind it and
 > `audio/null/` — which records what it was asked to play — as the headless
-> implementation `PHILOSOPHY.md:632-637` requires. All four public headers this
+> implementation PHILOSOPHY requires ([*Simulation and rendering*](../design/PHILOSOPHY.md#simulation-and-rendering)). All four public headers this
 > section names have lost `<Audio.h>`; `SoundBank` is built from a handle
 > rather than a `DirectX::WaveBank`; `EffectHandle` and `SoundState` are
 > engine types; and `cmake/check_engine_includes.cmake` captures the module as
@@ -237,8 +238,8 @@ game holds.
 
 There is no `audio/xaudio2/`. The module table promises one in effect — *"`audio`
 | core, math — the audio backend at its edge only"*
-([ARCHITECTURE.md:264](../design/ARCHITECTURE.md#L264)) — and the folder listing
-promises nothing more specific than "playback, mixing" (`:153`). Compare
+(ARCHITECTURE, [*Modules*](../design/ARCHITECTURE.md#modules), at `f6e58be`) — and
+the folder listing promised nothing more specific than "playback, mixing". Compare
 `render`, where the same table names the API *and the folder it is confined to*,
 four times. Audio got the sentence without the structure.
 
@@ -256,7 +257,7 @@ is the same shape, one module over.
 
 ### 3.3 Input — the asymmetry runs backwards — *week*
 
-[ARCHITECTURE.md:208-226](../design/ARCHITECTURE.md#L208-L226) documents an
+ARCHITECTURE's fed-devices paragraphs, in [*The tree*](../design/ARCHITECTURE.md#the-tree), document an
 asymmetry it is careful to say is not an inconsistency. A gamepad is **read**:
 `input/xinput/` asks for a complete snapshot whenever `Gamepads::poll` wants
 one, and owes the window nothing. A keyboard and a mouse are **fed**: they exist
@@ -276,7 +277,7 @@ Two more, both smaller than they look:
 
 - **Mouse has no analogue.** 392 lines across `mouse.{h,cpp}`. Touch is not a
   mouse — no hover, no persistent position, N simultaneous points — and the
-  wheel, which `ARCHITECTURE.md:217-218` already flags as a deltas-only device,
+  wheel, which those paragraphs already flag as a deltas-only device,
   has none at all. What saves this is that **`ui/` does not depend on `input`**:
   no file in `engine/ui/` includes anything from `engine/input/` (checked). The
   module table permits the dependency and the code declines it, so the widgets
@@ -650,9 +651,9 @@ it:
 
 | Document | What changes |
 |---|---|
-| `CLAUDE.md:1` | "Windows-only" |
+| ~~`CLAUDE.md:1`~~ | "Windows-only" — **done 2026-10-11**, by the web port's M3: Windows and, through Emscripten and WebGL2, the browser |
 | `CLAUDE.md`, Known-absent | The action-mapping layer acquires its client (§3.3) |
-| `ARCHITECTURE.md:194-204` | The window moves to `app/win32/`; the folder stops being speculative |
+| ~~ARCHITECTURE, *The tree*~~ | The window moves to `app/win32/`; the folder stops being speculative — **done** by the web port's M2, as a neutral `app/window.h` over `app/win32/` and `app/web/` rather than the move, which the include check refused ([web.md](web.md) D3) |
 | ~~`ARCHITECTURE.md:264`~~ | `audio`'s row gains the folder the sentence already implies (§3.2) — **done 2026-08-27**, and it gained two: `xaudio2/` and `null/`. The row now reads the way `render`'s does, naming the API and the folder it is confined to |
 | ~~`PHILOSOPHY.md:303-305`~~ | "a second platform is an addition, not a rewrite" — amend with where it held and where it did not — **done 2026-08-27**, with the row above. It held for three of the four kinds of platform code that paragraph lists and did not hold for audio, which is what §2 above said and what the amendment now says in that document |
 | ~~`PHILOSOPHY.md:454-462`~~ | "a second platform's" backend stops being hypothetical — **done 2026-08-21**, with §3.5. It is the one row the fifth backend earns on its own: the bullet said the seam owes a backend to "a headless one with no device, and a second platform's", and the second half was hypothetical until an API a second platform is actually reached through stood behind it. The rest of that document's backend arithmetic — four becoming five, three rasterisers becoming four — moved in the same commit, because those are counts rather than claims |

@@ -18,7 +18,7 @@ multiplayer. All build with the engine.
 
 ## The minimal sample: the one you copy
 
-`samples/minimal` is about 550 lines, comments included. It opens a 1280×720 window with a line
+`samples/minimal` is about 560 lines, comments included. It opens a 1280×720 window with a line
 of text that circles a point you move with a gamepad stick, the arrow keys or WASD. Press B or
 Escape and it asks, in a second screen on top of the first, whether you really want to quit.
 
@@ -122,4 +122,7 @@ out\build\x64-debug\samples\audio\AudioSample.exe
 out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe
 ```
 
-Each copies its content beside its executable, so you can start it from anywhere.
+Each copies its content beside its executable, so you can start it from anywhere. Under a
+`wasm-*` preset each is a page instead, such as
+`out\build\wasm-debug\samples\collision\CollisionSample.html`, with its content packed into
+the module; serve the folder over HTTP and open the page.

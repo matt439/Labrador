@@ -6,7 +6,7 @@ as well. This repository is the **engine half
 of a split**: the client that drives it, ColourWars, lives in its own
 repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
-and `samples/` holds five clients: `minimal` (~550 lines), the new-project
+and `samples/` holds five clients: `minimal` (~560 lines), the new-project
 template you copy; `collision`, `audio` and `local_multiplayer`, the focused
 guide examples; and `linesweeper`, a falling-block game you read
 — whose own [README](samples/linesweeper/README.md) records its design
@@ -50,9 +50,11 @@ which is the version CI pins; `emsdk_env.bat` sets `EMSDK`, and vcvars is still
 what puts cmake and ninja on the path. They are the first configurations built
 by a second compiler, so `cmake/settings.cmake` has a clang branch, argued
 rather than translated. [docs/port/web.md](docs/port/web.md) is the plan, and
-M1 to M3 of it are what exists: the engine and every headless test, the
-shell's browser half, and WebGL2 inside `render/gl/` (D1: one backend, a WGL
-and a web context translation unit), so LineSweeper runs and draws in a page -
+every milestone's code in it has landed - what each still owes is hardware, a
+browser or the deploy, and its §9 *Where it stands* says which. M1 to M3 are
+the engine and every headless test, the shell's browser half, and WebGL2
+inside `render/gl/` (D1: one backend, a WGL and a web context translation
+unit), so LineSweeper runs and draws in a page -
 `out/build/wasm-*/samples/linesweeper/LineSweeperSample.html`, served over
 HTTP, from the development page
 [samples/linesweeper/web/shell.html](samples/linesweeper/web/shell.html). Its

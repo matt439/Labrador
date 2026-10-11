@@ -6,7 +6,7 @@ as well. This repository is the **engine half
 of a split**: the client that drives it, ColourWars, lives in its own
 repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
-and `samples/` holds five clients: `minimal` (~550 lines), the new-project
+and `samples/` holds five clients: `minimal` (~560 lines), the new-project
 template you copy; `collision`, `audio` and `local_multiplayer`, the focused
 guide examples; and `linesweeper`, a falling-block game you read
 — whose own [README](samples/linesweeper/README.md) records its design
@@ -42,16 +42,120 @@ backend compiled in; `compile_shaders.cmake` says which, why it is looked for in
 `$VULKAN_SDK/Bin` and nowhere else, and what the error looks like when the wrong
 one is found. Ninja generator, out-of-source in `out/build/<preset>/`.
 
+**The two `wasm-*` presets are the browser build**, and the second thing here
+that has to be installed: [Emscripten](https://emscripten.org/), with `EMSDK`
+set, for the compiler, the toolchain file the preset chains vcpkg to, and the
+Node its tests run under. On this machine it is `C:\Tools\emsdk` at 6.0.12,
+which is the version CI pins; `emsdk_env.bat` sets `EMSDK`, and vcvars is still
+what puts cmake and ninja on the path. They are the first configurations built
+by a second compiler, so `cmake/settings.cmake` has a clang branch, argued
+rather than translated. [docs/port/web.md](docs/port/web.md) is the plan, and
+every milestone's code in it has landed - what each still owes is hardware, a
+browser or the deploy, and its §9 *Where it stands* says which. M1 to M3 are
+the engine and every headless test, the shell's browser half, and WebGL2
+inside `render/gl/` (D1: one backend, a WGL and a web context translation
+unit), so LineSweeper runs and draws in a page -
+`out/build/wasm-*/samples/linesweeper/LineSweeperSample.html`, served over
+HTTP, from the development page
+[samples/linesweeper/web/shell.html](samples/linesweeper/web/shell.html). Its
+tests run under Node, which has no WebGL, except **`RenderPixelTests`, which is
+a page run in headless Chrome** against the same golden PNGs: ctest's command
+is [tests/render/web/run_page.mjs](tests/render/web/run_page.mjs), which serves
+it and drives the browser over the DevTools protocol with Node's own
+WebSocket. It is registered only where configure finds a Chromium
+(`LABRADOR_TEST_BROWSER` names one), and absent rather than skipped where it
+does not. It is the browser build's check that the GLES dialect `gl/`
+compiles there meets the pixel contract, and it runs a second time as
+`RenderPixelTestsWithoutS3tc`, with `WEBGL_compressed_texture_s3tc` hidden
+from the page, so the path a phone's browser takes - `gl/` uploading what
+[engine/render/block_decode.h](engine/render/block_decode.h) decodes from the
+blocks on the CPU - is held to the same images; `RenderContextLossTests`, below,
+also draws, but asserts on a loss and a restore rather than on the golden set. What the page draws was checked by loading it in headless Chrome and
+headless Firefox: board, pieces, text from the BC2 font atlas and the pause
+menu, keys changing the frame, no console errors. Safari has not been checked
+and R5's pacing has not been measured on real displays, and M3's done-when
+needs both, so web.md does not call M3 done. **A lost WebGL2 context is
+restored**, and `DeviceNotify` hears both halves together, in the
+`begin_frame` after the browser hands it back - the shape the three
+Direct3D and Vulkan backends already have, because a browser puts frames
+between the two and a shell that had released its textures would throw from
+the next draw. The host page hears both ends, `Module.onContextLost` and
+`Module.onContextRestored`, each from a frame and optional, and
+`RenderContextLossTests` is a second browser page that pins all of
+it. **`WebWindowTests` is the third, and the web window's counterpart to
+`window_tests.cpp`**: a page that takes its canvas with a real `Window` and
+logs every `WindowNotify` call, while `run_page.mjs --input` runs
+[tests/app/web/window_input.mjs](tests/app/web/window_input.mjs), which
+dispatches real input over the DevTools protocol and says what each must have
+produced - focus, the capture analogue, which defaults the canvas keeps, the
+size measured before the tick, touch, full screen and close. Visibility is the
+one event it fakes, because a headless browser cannot hide a page. `local_multiplayer` is the second sample with a browser build, at
+`out/build/wasm-*/samples/local_multiplayer/LocalMultiplayerSample.html`:
+two views through WebGL2, fanned out on the serial pool. `audio` is the
+third, at `out/build/wasm-*/samples/audio/AudioSample.html`: the sound
+board through `audio/webaudio/`, silent until the page's first key, click
+or touch, with no `--smoke-test` because a page has no command line -
+`AudioSampleTests` runs that lifecycle under Node instead. `minimal` is the
+fourth, at `out/build/wasm-*/samples/minimal/MinimalSample.html`, and draws a
+marker at every touch point, which is how the touch device is looked at; its
+`main_web.cpp` and `CMakeLists.txt` are the browser build a new project
+copies. `collision` is the fifth, at
+`out/build/wasm-*/samples/collision/CollisionSample.html`. **Each of the five
+pages is a ctest entry too** - `LineSweeperPageTests`,
+`LocalMultiplayerPageTests`, `MinimalPageTests`, `CollisionPageTests` and
+`AudioPageTests`, registered in the root `CMakeLists.txt` on the same
+condition as `RenderPixelTests`: `run_page.mjs` serves the built development
+page, waits for its frames, presses the sample's own way out and passes when
+`Module.onQuit` is called, and a console error, a browser warning or
+`Module.onError` fails it, so a broken content path fails ctest rather than
+the live site. **LineSweeper is also built for
+another site to host**: `linesweeper.js`, an ES module exporting the factory
+`createLineSweeper`, and `linesweeper.wasm`, which the `linesweeper_web_dist`
+target bundles on every build into `out/build/wasm-*/web-dist/linesweeper/`
+with an example page (`samples/linesweeper/web/index.html`), the licence
+notices for what the module links, and `BUILD.json` naming the commit and
+each file's size raw and under Brotli; CI's wasm job uploads it. The host is
+mattharding.dev, where a project's demo is a page of its own, and deploying
+it is the owner's, so M5 is not done until it is live (web.md §7). **In a browser
+`Application::run` does not return and the stack below it is unwound,
+destructors included, before the first frame**, so a web entry point keeps
+its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,
+and `application.h` says why.
+
 **There are five render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
 configure time — so asking for one that was not built is a missing symbol at
 link (T5). A change to anything in `engine/render/` should be checked against
-all five; CI builds all five.
+all five, and a change in `gl/` under a `wasm-*` preset as well, the only
+build of `web_context.cpp` and the only clang build of `gl/`; CI builds all
+five and the browser build.
 
 **And three audio backends**, on a second and independent axis:
 `LABRADOR_AUDIO_BACKEND` is `xaudio2`, `webaudio` or `null`, and the two
 `-null` presets ask for the last. Those presets therefore take no platform API
 at all, which is what makes them the configurations a build machine runs end
-to end. `webaudio` is the browser build's.
+to end. `webaudio` is the browser's, the default under Emscripten and what the
+`wasm-*` presets build; it waits for the page's first key, click or touch to
+create its `AudioContext`, because a browser plays nothing before one, and
+under Node it finds no Web Audio and plays nothing while still reading and
+checking every bank. Configure refuses `xaudio2` in a browser build and
+`webaudio` outside one.
+
+**And two input backends, on a third**: `LABRADOR_INPUT_BACKEND` is `xinput`
+or `web`, and only the pad is behind it, because the keyboard, the mouse and
+touch are fed by the window rather than read. `web` is the browser Gamepad API and is the
+default under Emscripten. A pad a page script fakes has played LineSweeper
+through it in headless Chrome; a physical one has not. On the web the pads
+follow the page's visibility, not the canvas's focus, which only takes the
+keys: `Application` keeps foreground, shown and has-the-keyboard apart, and
+`InputTests` pins the standard-mapping translation and slot assignment
+(`input/web/standard_gamepad.h`) under the `wasm-*` presets.
+**Touch is the third fed device** (`input/touch.h`): `WM_POINTER` on Windows
+and pointer events on the canvas, each window dropping the mouse input its
+platform makes from a touch, and a pen staying the mouse on both. `InputTests`
+pins its edges, ids, cancel and overflow and `AppTests` both translations.
+Chrome's touch emulation has driven the browser path into `minimal`, and
+Windows touch injection a visible engine window; a real touchscreen has
+driven neither.
 
 | Preset | Backend | ctest |
 |---|---|---|
@@ -59,7 +163,8 @@ to end. `webaudio` is the browser build's.
 | `x64-debug-d3d12`, `x64-release-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 17 entries; WARP fallback in debug |
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
+| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
+| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 25 entries: the seventeen, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, two browser-only pages, `RenderContextLossTests`, which loses and restores a WebGL2 context, and `WebWindowTests`, which drives the web window with real input, and the five `*PageTests`, one per sample page (16 where configure finds no Chromium, because no page is then registered). `AudioSampleTests` runs under Node and loads the sample's bank through `audio/webaudio/`, the browser build's stand-in for `--smoke-test`. `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -102,18 +207,25 @@ frame submitted, in what order, from which texture, into which view. Seventeen c
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
 `InputTests`, `UiTests`, `AssetsTests`, `AudioTests`, `AppTests`,
 `CollisionSampleTests`, `AudioSampleTests`, `LocalMultiplayerTests`,
-`LineSweeperTests`, `LineSweeperViewTests` (doctest) and `Benchmarks`. `RenderPixelTests` is the only one that creates a
+`LineSweeperTests`, `LineSweeperViewTests` (doctest) and `Benchmarks`; the `wasm-*`
+presets add `RenderPixelTestsWithoutS3tc`, the pixel page again with S3TC
+hidden, `RenderContextLossTests`, a browser-only page that creates a
+WebGL2 context to lose and restore it, `WebWindowTests`, a browser-only
+page that draws nothing, and a `*PageTests` entry for each sample's page,
+which loads it and quits it. Apart from those pages and the second pixel run, `RenderPixelTests` is the only one that creates a
 device — a hidden window and a WARP fallback in debug under `x64-debug` and
 `x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
-`x64-debug-vulkan` — and asserts on the
+`x64-debug-vulkan`, a WebGL2 context on a canvas of its own per case under the
+`wasm-*` presets — and asserts on the
 pixels
-`Renderer::read_back_buffer` hands back. It is the only test that rasterises
-anything, and the executable statement of the pixel contract every backend with
+`Renderer::read_back_buffer` hands back. It is the only test that holds rasterised pixels to a
+contract, and the executable statement of the pixel contract every backend with
 a rasteriser has to reproduce. It runs against one backend at a time — but it no
 longer follows that they are never compared: every frame it reads back is also
 checked byte for byte against a PNG of it in
 [tests/render/golden/](tests/render/golden/), which is one set of images that
-all four rasterising backends are held to. CI checks two of them, because a
+all four rasterising backends are held to, and `gl/`'s browser context with
+them. It is read through lodepng on every platform, a test-only dependency. CI checks two of them, because a
 GPU-less runner still gives Direct3D an adapter where OpenGL falls back to GDI
 1.1 and Vulkan has no in-box fallback at all — its software implementations are
 installed rather than shipped. It is an adapter rather than the WARP fallback,
@@ -150,7 +262,10 @@ sample's particle field takes a resolved texture handle rather than the
 resource table and nothing in its `update()` reads one. Ten thousand particles,
 the compaction and the event reconstruction all run headlessly; the board view
 cannot, because measuring text walks an atlas a device filled, and what it
-draws is checked by looking at it.
+draws is checked by looking at it. The screen's two arrangements - landscape,
+and the portrait one a phone gets - and the touch controls' hit test are
+arithmetic on a buffer size and run there too; what the controls look like
+is, again, looked at.
 
 **`AudioTests` is headless in every configuration and can say what a sound did
 in only one of them, and that split is the finding.** This paragraph used to
@@ -173,21 +288,28 @@ question about content rather than about the seam — and its reader cases,
 [tests/audio/xwb_file_tests.cpp](tests/audio/xwb_file_tests.cpp), read real
 banks with no `SoundBank` and no device at all. **Under either `-null` preset it also compiles
 [tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and its recording cases assert which wave,
-out of which bank, at which clamped levels, in what order. A change under
+out of which bank, at which clamped levels, in what order. **Under the
+`wasm-*` presets it compiles
+[tests/audio/webaudio_tests.cpp](tests/audio/webaudio_tests.cpp) instead**,
+which runs `audio/webaudio/` under Node with no Web Audio behind it: the real
+bank read and checked, both throws, and the voice states. What that backend
+puts through a speaker has been measured only in headless Chrome, through an
+`AnalyserNode` on a page outside the tree, and heard by nobody. A change under
 `engine/audio/` checked only on the default preset has not been checked.
 
 `samples/audio/` supplies original synthesized WAVs and a named `.xwb` bank,
 with an authoring script and tool provenance in its README. Its playback smoke
 requires an audio endpoint on XAudio2; its null-backend checks assert recorded
-operations without one. `AudioTests` itself retains the split above.
+operations without one; and in a browser it plays through Web Audio, with
+its smoke test's lifecycle moved into `AudioSampleTests` under Node. `AudioTests` itself retains the split above.
 **The engine reads `.xwb` itself** in
 [engine/audio/xwb_file.h](engine/audio/xwb_file.h), beside `dds_file.h` and
 for the same reason (D9 in [docs/port/web.md](docs/port/web.md)): PCM and
 MS-ADPCM, decoded to 16-bit samples, with xWMA, XMA and compact entries refused
 by name. `AudioTests` holds it to the sample's bank, sample for sample against
 the WAVs it was packed from, in every configuration and under Node. It is for a
-backend whose API has no reader of its own; `audio/xaudio2/`, and so the
-playable example, keeps DirectXTK's.
+backend whose API has no reader of its own, which `audio/webaudio/` is;
+`audio/xaudio2/`, and so the playable example on Windows, keeps DirectXTK's.
 
 ## The website
 
@@ -225,7 +347,13 @@ in the commit that creates it.
   `INTERFACE` target, `labrador_settings` in [cmake/settings.cmake](cmake/settings.cmake),
   carries it; every real target links it. `/fp:precise` is load-bearing, not
   inherited — exact `operator==` against `Vector2F::ZERO`, tolerance
-  assumptions and NaN propagation all depend on it.
+  assumptions and NaN propagation all depend on it. **Under clang, the
+  `wasm-*` presets, it is `-Wall -Wextra -Wpedantic -Werror -ffp-contract=off`**,
+  also with zero suppressions, so a change that is clean under MSVC is not yet
+  known to be clean. Clang warns about what MSVC does not, and the two that
+  will come up are an implicitly declared copy assignment beside a defaulted
+  copy constructor (declare both) and a derived `draw` hiding a base class's
+  overloads (a `using` declaration says it is meant).
 - **An engine file including a game header.** Standalone that is now the
   compiler's own error, but [cmake/check_engine_includes.cmake](cmake/check_engine_includes.cmake)
   greps for it on every build anyway, because the compiler only enforces it
@@ -238,8 +366,9 @@ in the commit that creates it.
   the backend escaped last time — so naming `engine/render/gl/gl_functions.h`
   from `engine/app/` fails the build exactly as naming `backend.h` does. It
   captures the module as well as the backend, so `engine/audio/null/` and
-  `engine/input/xinput/` are covered by the same six lines and a fourth module
-  with backend folders would be too. **The module was a hard-coded
+  `engine/input/xinput/` are covered by the same six lines, and so were
+  `engine/app/win32/` and `engine/app/web/`, the fourth module to grow
+  platform folders, without an edit. **The module was a hard-coded
   `(render|audio)` until 2026-08-28**, which this line described as a capture
   for nine days while `engine/input/xinput/` — the third platform seam
   ARCHITECTURE names — sat outside the wall. Audio is the module where this had
@@ -286,8 +415,10 @@ in the commit that creates it.
   one thread. Both are compiled only under the two `-null` presets, and until they
   existed the early-out beside the fan-out was the only branch that had ever
   been taken.
-- **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`,
-  `input/xinput/`.
+- **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`, `audio/webaudio/`,
+  `input/xinput/`, `app/win32/`. The window is the one chosen by the platform
+  being built for rather than by a cache variable, and the one whose header,
+  `app/window.h`, stays neutral above both of its folders.
   `Renderer` is a concrete class with one implementation selected at build
   time, not an abstract base — T8 does not permit a virtual call per sprite.
   Every backend has the same three translation units — `renderer.cpp`,
