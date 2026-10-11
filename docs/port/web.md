@@ -120,7 +120,7 @@ signature.
 | 3.2 | `app/window.{h,cpp}` | The Win32 window, message translation and pump | **In the open**, by design |
 | 3.3 | `render/gl/` | WGL context, loader, three GLES gaps | Behind a seam, plus a dialect |
 | 3.4 | `input/xinput/` | Pad reads | **Behind a seam** |
-| 3.5 | `audio/xaudio2/` | Playback | **Behind a seam**, with an open container question |
+| 3.5 | `audio/xaudio2/` | Playback | **Behind a seam**; the container is read by the engine (D9) |
 | 3.6 | `core/thread_pool.cpp` | The Win32 thread pool | **Behind a pimpl** |
 | 3.7 | `core/step_timer.h` | `QueryPerformanceCounter` | **In the open**, with no include |
 | 3.8 | `app/content_root.cpp` | `GetModuleFileNameW` | Behind a neutral function |
@@ -299,13 +299,14 @@ says so in as many words. So v1 builds with `LABRADOR_AUDIO_BACKEND=null` and
 costs nothing.
 
 A Web Audio backend, `audio/webaudio/`, is the same shape of job as an
-Android one: one implementation of an existing seam. It inherits the
-container question that [android.md](android.md) §3.2 left open.
-`open_wave_bank` takes a bank name, and the only bank format in this tree is
-`.xwb`, read by DirectXTK. The web needs a reader that is not DirectXTK, so
-either an engine `xwb_file.h` or a decision that banks are WAV folders. That
-is the same unmade decision, and the web port should not make it as a side
-effect. Not v1.
+Android one: one implementation of an existing seam. `open_wave_bank` takes
+a bank name, and the only bank format in this tree is `.xwb`. The container
+question that [android.md](android.md) §3.2 left open is decided (D9): the
+engine reads the format itself, in
+[`audio/xwb_file.h`](../../engine/audio/xwb_file.h) beside `dds_file.h`, and
+hands a backend 16-bit PCM, which becomes an `AudioBuffer`'s floats in one
+pass.
+Content and manifests do not change. The backend itself is still not v1.
 
 ### 3.6 Threads — single-threaded, and LineSweeper uses none
 
@@ -710,6 +711,12 @@ that the code forced, and each is one commit to reverse.
 |---|---|---|---|
 | **D8** | How the browser build reads the golden PNGs, since WIC is Windows' own and a page has no codec it can call synchronously | **lodepng from vcpkg, on every platform**, replacing WIC in `golden_image.cpp`: one codec reading one set, rather than two codecs making two claims about it. It is the format edge T9 buys, and a test dependency only. RenderPixelTests links it and nothing the engine ships does. A regeneration leaves unchanged images alone, so the swap rewrote none of them. One commit to reverse, by restoring WIC on Windows behind the same two functions | `vcpkg.json`, `NOTICE`, `README.md`, the website's consumer manifest (which leaves it out, as it does doctest) |
 
+### Decided, 2026-10-11
+
+| | Decision | Answer | What it amends |
+|---|---|---|---|
+| **D9** | The audio container: what a backend with no `.xwb` reader of its own plays from (§3.5, [android.md](android.md) §3.2) | **Recommendation (a), an engine-owned reader**: `audio/xwb_file.h` beside `render/dds_file.h`, reading PCM at 8 and 16 bits and MS-ADPCM, decoding both to 16-bit samples; xWMA, XMA, compact entries and big-endian banks throw naming what they are. Content and manifests are unchanged, and `audio/xaudio2/` keeps DirectXTK's reader. The alternative, banks as folders of WAVs, would have changed every manifest and both clients' content for a format the engine can read in one file | `audio_device.h`'s container paragraph; android.md §3.2's amendment; `CLAUDE.md`'s audio paragraph; ARCHITECTURE's audio folder; PHILOSOPHY's porting paragraph |
+
 ### Open
 
 Nothing. Anything else this plan meets that would change a design document, a public header or a rule in `CLAUDE.md` comes back here as a new row before it is built.
@@ -1108,6 +1115,19 @@ through D3D11, D3D12, GL, Vulkan and Chrome's ANGLE, and on SwiftShader. WARP
 still differs only on the two blend frames, by 1. The same case at x + 0.5
 fails on both D3D11 and GL, which is why it pins neither.
 
+**The audio container is decided and read** (D9). `engine/audio/xwb_file.h` reads an XACT 3 wave bank into
+16-bit interleaved samples per wave, with names, rates and loop regions:
+PCM at 8 and 16 bits, and MS-ADPCM decoded by the engine. `AudioTests` reads
+`samples/audio`'s real bank and matches each wave to its source WAV sample
+for sample, in every configuration and under Node, where NODERAWFS reads the
+copies beside the test. An ADPCM fixture made from one of those WAVs by
+FFmpeg's encoder decodes within the codec's error of its source, and to the
+same samples Windows' own MS-ADPCM codec (msacm32) and FFmpeg's decoder
+produce: those two were compared in full outside the tree, mono, stereo and
+a clipping encode, and a hash of the first pins it in the test. Every refusal
+has a hand-built bank and a named throw. Nothing plays the result yet:
+`audio/webaudio/` is still the M6 item it was.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1138,7 +1158,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp` | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (its container is decided and read, D9; the backend is not written) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 

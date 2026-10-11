@@ -184,7 +184,8 @@ being load-bearing.
 │   │   │                   container, find a name in it, build a voice, and
 │   │   │                   start, stop, adjust or report one. Which wave a
 │   │   │                   name means, which handles are valid and where a
-│   │   │                   level is clamped are above it
+│   │   │                   level is clamped are above it, and so is the
+│   │   │                   .xwb reader, engine code as render/'s readers are
 │   │   ├── xaudio2/        the XAudio2 backend, through DirectXTK, and the
 │   │   │                   only file in the tree that includes <Audio.h>. It
 │   │   │                   owns the container: a wave bank is an .xwb here
@@ -478,7 +479,10 @@ to decide is the container**: `open_wave_bank` takes a directory and a bank
 name, never a file name, so the extension and the reader are the backend's —
 an `.xwb` on `xaudio2/`, and on `null/` the list of wave names the definition
 JSON gave it, because that JSON is content this engine parses and the container
-is not.
+is not. What the format *is* the engine still writes down once:
+`audio/xwb_file.h` reads an `.xwb` into 16-bit samples for any backend whose
+API has no reader of its own, as `render/dds_file.h` reads a texture for every
+backend, and a backend whose API has one may keep it.
 
 A backend may publish a second header beside `backend.h` **as long as it names
 no backend type** — `render/null/recording.h` is one, `audio/null/recording.h`

@@ -60,19 +60,16 @@ namespace labrador
 	// report one - and nothing else.
 	//
 	// WHAT THE SEAM DOES NOT DECIDE IS THE CONTAINER, AND THAT IS DELIBERATE.
-	// Whether the wave-bank format moves with a port is an open question, and
-	// the seam is cut above it so that the answer can wait. open_wave_bank
-	// takes a directory and a bank name, never a file name: the extension,
-	// the reader and the bytes are the backend's business, exactly as a
-	// swapchain is render/'s. What crosses instead is the list of wave NAMES
-	// the definition beside the container says it holds, because that list is
-	// content this engine parses out of its own JSON. A backend with no
-	// container answers from that list; a backend with one checks the list
-	// against it and throws naming the wave that is missing. Writing the
-	// container format down - an xwb_file.h beside dds_file.h, which is what
-	// dds_file.h's own precedent argues for - stays open, and is blocked on
-	// something this repository does not have: there is no .xwb in this tree
-	// to write a reader against.
+	// open_wave_bank takes a directory and a bank name, never a file name: the
+	// extension, the reader and the bytes are the backend's business, exactly
+	// as a swapchain is render/'s. What crosses instead is the list of wave
+	// NAMES the definition beside the container says it holds, because that
+	// list is content this engine parses out of its own JSON. A backend with
+	// no container answers from that list; a backend with one checks the list
+	// against it and throws naming the wave that is missing. The format itself
+	// is written down once, in engine/audio/xwb_file.h, for a backend whose
+	// audio API has no reader of its own. A backend whose API has one may keep
+	// it, and that is why the cut sits above the format rather than at it.
 	class AudioDevice
 	{
 	public:
