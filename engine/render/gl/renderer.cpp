@@ -28,16 +28,17 @@ namespace labrador
 		const int VERTICES_PER_SPRITE = 4;
 		const int INDICES_PER_SPRITE = 6;
 
-		std::string driver_string(GLenum name, const char* what)
+		std::string driver_string(const Renderer::Impl& impl, GLenum name,
+			const char* what)
 		{
-			const GLubyte* value = glGetString(name);
-			if (value == nullptr)
+			const std::string value = impl.device_string(name);
+			if (value.empty())
 			{
 				throw std::runtime_error(std::string(
 					"The selected OpenGL implementation did not report its ") +
 					what + ".");
 			}
-			return reinterpret_cast<const char*>(value);
+			return value;
 		}
 
 		bool names_software(const std::string& vendor,
@@ -67,10 +68,11 @@ namespace labrador
 		void describe_device(Renderer::Impl& impl)
 		{
 			const std::string vendor =
-				driver_string(impl.vendor_name, "vendor");
+				driver_string(impl, impl.vendor_name, "vendor");
 			const std::string renderer =
-				driver_string(impl.renderer_name, "renderer");
-			const std::string version = driver_string(GL_VERSION, "version");
+				driver_string(impl, impl.renderer_name, "renderer");
+			const std::string version =
+				driver_string(impl, GL_VERSION, "version");
 
 			RenderDeviceInfo& info = impl.device_info;
 			info.backend = "gl";
@@ -347,10 +349,10 @@ namespace labrador
 
 	// --- Renderer::Impl ------------------------------------------------------
 	//
-	// The members a context has nothing to do with. The six it does -
-	// the constructor and destructor, create_context, drawable_size,
-	// present, and the Context they share - are in wgl_context.cpp or
-	// web_context.cpp.
+	// The members a context has nothing to do with. The ones it does - the
+	// constructor and destructor, create_context, drawable_size, present, the
+	// two questions about a lost context, and the Context they share - are in
+	// wgl_context.cpp or web_context.cpp.
 
 	GLuint Renderer::Impl::sampler(TextureFilter filter) const
 	{
@@ -497,6 +499,67 @@ namespace labrador
 		// keeps errors queued, so the next thing to check glGetError blames
 		// itself for it. That is exactly how this backend first failed.
 		glActiveTexture(GL_TEXTURE0_);
+	}
+
+	void Renderer::Impl::restore_device()
+	{
+		// EVERY NAME THE OLD CONTEXT HELD IS FORGOTTEN, NOT DELETED. Its
+		// objects went with it, and a delete of one on the restored context is
+		// an error the browser reports - so the names are dropped, and
+		// create_gl_resources makes new ones. The views are reset because a
+		// run names a texture, and begin_frame, which is the only caller,
+		// resets them again after.
+		this->program = 0;
+		this->transform_uniform = -1;
+		this->vertex_array = 0;
+		this->vertex_buffer = 0;
+		this->index_buffer = 0;
+		this->point_sampler = 0;
+		this->linear_sampler = 0;
+		for (std::unique_ptr<DrawList::View>& view : this->views)
+		{
+			view->reset();
+		}
+
+		// THE RENDERER'S OWN HALF FIRST, AND THE SHELL TOLD ONLY ONCE IT
+		// HOLDS. A browser can take the context away again while it is being
+		// rebuilt, and then every call here quietly does nothing and the
+		// shader checks fail. A rebuild that failed that way is not an error:
+		// the lost callback has fired again, or is about to, and the next
+		// restore starts this over - so the shell is told nothing yet and
+		// keeps the textures it has, which draw nothing until then. One that
+		// failed on a context that is still there is a real failure, and is
+		// thrown.
+		try
+		{
+			this->create_gl_resources();
+			describe_device(*this);
+		}
+		catch (const std::exception&)
+		{
+			if (this->context_lost())
+			{
+				return;
+			}
+			throw;
+		}
+		if (this->context_lost())
+		{
+			return;
+		}
+
+		// Then the shell, both calls, in the order d3d11, d3d12 and vulkan
+		// make them - release what the device held, then load it again - so
+		// a client written against any of them hears the same two here.
+		if (this->notify != nullptr)
+		{
+			this->notify->on_device_lost();
+		}
+
+		if (this->notify != nullptr)
+		{
+			this->notify->on_device_restored();
+		}
 	}
 
 	void Renderer::Impl::replay(const DrawList::View& view, int drawable_height)
@@ -669,10 +732,13 @@ namespace labrador
 		// otherwise hold whatever was in it.
 		const Vector2I drawable = this->impl_->drawable_size();
 
-		glViewport(0, 0, static_cast<GLsizei>(drawable.x),
-			static_cast<GLsizei>(drawable.y));
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		if (!this->impl_->context_lost())
+		{
+			glViewport(0, 0, static_cast<GLsizei>(drawable.x),
+				static_cast<GLsizei>(drawable.y));
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
 
 		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
 		{
@@ -687,9 +753,8 @@ namespace labrador
 
 	void Renderer::set_device_notify(DeviceNotify* device_notify)
 	{
-		// Stored and never called. A WGL context is not lost the way a Direct3D
-		// device is, and a lost WebGL2 one is not reported through this - see
-		// the class comment on Renderer::Impl.
+		// Called from begin_frame when a lost WebGL2 context is back, and
+		// never on Windows - see the class comment on Renderer::Impl.
 		this->impl_->notify = device_notify;
 	}
 
@@ -700,14 +765,28 @@ namespace labrador
 
 	void Renderer::begin_frame()
 	{
+		// FIRST, SO THE FRAME THAT FOLLOWS A RESTORE DRAWS WITH IT. The shell
+		// hears both halves of the loss here and has reloaded what it holds
+		// before anything this frame names a texture.
+		if (this->impl_->take_restored_context())
+		{
+			this->impl_->restore_device();
+		}
+
 		this->impl_->frame_submitted = false;
 
 		const Vector2I drawable = this->impl_->drawable_size();
 
-		glViewport(0, 0, static_cast<GLsizei>(drawable.x),
-			static_cast<GLsizei>(drawable.y));
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		// A lost context is cleared by nobody: every call would do nothing,
+		// and a browser warns about each one. The views below are still reset,
+		// because the frame is recorded exactly as any other.
+		if (!this->impl_->context_lost())
+		{
+			glViewport(0, 0, static_cast<GLsizei>(drawable.x),
+				static_cast<GLsizei>(drawable.y));
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
 
 		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
 		{
@@ -781,6 +860,14 @@ namespace labrador
 		}
 		this->impl_->frame_submitted = true;
 
+		// INTO NOTHING, WHILE THE CONTEXT IS LOST: the frame was recorded and
+		// is dropped here, which is what the browser would do with it anyway,
+		// without a warning per call.
+		if (this->impl_->context_lost())
+		{
+			return;
+		}
+
 		glUseProgram(this->impl_->program);
 		glBindVertexArray(this->impl_->vertex_array);
 		glBindBuffer(GL_ARRAY_BUFFER_, this->impl_->vertex_buffer);
@@ -815,6 +902,18 @@ namespace labrador
 
 	void Renderer::read_back_buffer(std::vector<unsigned char>& pixels)
 	{
+		// A LOST CONTEXT HAS NO FRAME TO GIVE. Its drawing buffer reports 0x0
+		// while it is lost, so what came back without this would be an empty
+		// frame of an empty size - which matches back_buffer_size, and which a
+		// caller could not tell from a window really shrunk to nothing.
+		// Vulkan throws for the same reason (T6).
+		if (this->impl_->context_lost())
+		{
+			throw std::runtime_error("Renderer::read_back_buffer: the WebGL2 "
+				"context is lost, so there is no frame to read back. It can be "
+				"read again once the browser restores the context.");
+		}
+
 		// Same source as back_buffer_size, which is what makes the seam's
 		// "exactly width * height * 4 bytes" true. Sized from anything else,
 		// a window that had shrunk would have glReadPixels reading rows that

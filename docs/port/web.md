@@ -435,7 +435,9 @@ That makes GL a fourth backend that can lose a device, which changes one
 sentence in `gl/backend.h`. Wiring it is M6 work. In v1, a lost context
 shows the error overlay. *(As built in M3, nothing listens for
 `webglcontextlost`: `DeviceNotify` is not called, no overlay is shown, and the
-canvas stays blank until the page is reloaded. `gl/web_context.cpp` says so.)*
+canvas stays blank until the page is reloaded. M6 has since wired it, and not
+as written here: there is no overlay, and `DeviceNotify` hears the loss only
+once the context is back; §9.)*
 
 **Assets.** Recommend **`--embed-file`** for LineSweeper. Its content is
 21,512 bytes of font and 132 bytes of texture. Embedding it in the `.wasm`
@@ -763,8 +765,8 @@ null backend - `RenderTests`' `null_tests.cpp`, `SceneTests`'
 `particle_draw_tests.cpp`, `LocalMultiplayerTests`' `draw_tests.cpp` and the
 null benchmark - drop out of executables that still exist, so the `wasm-*`
 presets still counted 14 ctest entries and compile none of those files
-*(15 since M6 registers `RenderPixelTests` where a Chromium is found;
-below)*. MSVC
+*(16 since M6 registers `RenderPixelTests` and `RenderContextLossTests`
+where a Chromium is found; below)*. MSVC
 builds them under the two `-null` presets as before, and CI's wasm job
 configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`
 and runs that build's tests too, so the second compiler still sees them.
@@ -858,7 +860,7 @@ and the vendor and renderer names. What it met and where it departed:
   returns. `device_info.present_mode` is `"browser_animation_frame"`, with no
   swap interval to ask for. A lost WebGL2 context is not reported: nothing
   listens for `webglcontextlost`, `DeviceNotify` is not called, and restoring
-  it stays in M6.
+  it stays in M6. *(M6 has since restored it; below.)*
 - **It exposed an M2 defect, fixed in the same change.** M2's frame measured
   the canvas's buffer and told nobody, which null could not show. Once WebGL
   drew, the layout stayed at its old size after a page resize, a zoom or a
@@ -932,7 +934,8 @@ on Windows. What it took:
   is held to it.
 - **Absent rather than skipped without a browser.** The entry is registered
   only where configure finds a Chromium (`LABRADOR_TEST_BROWSER`), so the
-  `wasm-*` presets count 15 entries here and 14 on a machine without one.
+  `wasm-*` presets count 16 entries here, with the context-loss page below,
+  and 14 on a machine without one.
 - **The device-info case has a browser branch**: `present_mode` is
   `browser_animation_frame` with no swap interval, where WGL reports one.
 - **Not known: what CI's Chrome draws with.** The wasm job runs the entry as
@@ -941,6 +944,51 @@ on Windows. What it took:
   `--enable-unsafe-swiftshader`, so a runner without a GPU Chrome will use
   falls back to SwiftShader rather than to no WebGL. Whether SwiftShader stays
   inside the allowance is unmeasured.
+
+**M6's second item is done: a lost WebGL2 context is restored, and the shell
+hears it.** `RenderContextLossTests` pins it in headless Chrome, and
+LineSweeper was played through one: the board, the pieces and the text drew
+before the loss, the canvas was blank while it was lost, and after the
+restore all of it drew again from the reloaded textures and font atlas, keys
+still played, and neither `onError` nor a WebGL warning appeared. It departs
+from §4's sketch in two places:
+
+- **No overlay, and no report at the moment of loss.** A browser puts frames
+  between the loss and the restore, sometimes many, and no backend before
+  this one ever did: d3d11, d3d12 and vulkan each lose, rebuild and restore
+  inside the call that found the loss. A shell that released its textures
+  on the loss event would throw from the next draw that named one. So
+  `DeviceNotify` hears both halves together, `on_device_lost` then
+  `on_device_restored`, from the `begin_frame` after the browser hands the
+  context back, and the gap is `gl/`'s to carry: frames are recorded and
+  dropped, `read_back_buffer` throws rather than hand back an empty 0x0 frame, and no GL
+  call is made, because a browser warns about every one. The caller
+  contract is the one every other backend already gives, which is why
+  nothing above the seam changed.
+- **The lost callback asks for the context back, and nothing listens for
+  the restore.** Returning true from it is what makes Emscripten call
+  `preventDefault`, without which a browser never restores. Whether the
+  context is lost is something it can be asked at any moment, so
+  `begin_frame` asks. Calling into the shell from the event itself would
+  run engine code between frames, where an exception has no catch to reach.
+
+What a restore has to do was settled by asking Chrome, not by reading about
+it. While a context is lost, `create*` hands out objects rather than null,
+so nothing throws, and the drawing buffer reads 0x0. After the restore, an
+object from before it is not the new context's: `isTexture` answers false
+quietly and `deleteTexture` raises `INVALID_OPERATION` with a console
+warning. So the renderer forgets its own names rather than deleting them,
+`GlTexture` deletes only a name `glIsTexture` owns, and the extensions are
+enabled again on the same handle. The device strings are asked of the
+context itself rather than through `glGetString`, which Emscripten answers from
+a cache it keeps for the whole page. A context lost again while it is being
+rebuilt is waited out a second time, with the shell told nothing until a
+rebuild holds. Keeping the handle is also what keeps the
+window's input: destroying a context in Emscripten removes every handler on
+its canvas. `RenderContextLossTests` fails on any warning the browser logs
+(`run_page.mjs --browser-warnings fail`), because the stale delete's error
+is drained by the next upload and the warning is the only place it is still
+visible. With the `glIsTexture` guard taken out, it fails on exactly that.
 
 ### Spikes — *days*, before any milestone is committed to
 
@@ -972,7 +1020,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp` | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore; `local_multiplayer` on the web; `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done); `local_multiplayer` on the web; `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC, a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 

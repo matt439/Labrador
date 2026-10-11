@@ -227,10 +227,10 @@ jobs:
   #
   # They run under Node, which ctest reaches through the emulator Emscripten's
   # toolchain sets, so the step is the same ctest call the job above makes.
-  # RenderPixelTests is the exception: it is a page, run in the runner's
-  # Chrome by tests/render/web/run_page.mjs, and it has a step of its own
-  # below because what that Chrome draws WebGL2 with on a GPU-less runner is
-  # not something this file knows yet.
+  # RenderPixelTests and RenderContextLossTests are the exceptions: they are
+  # pages, run in the runner's Chrome by tests/render/web/run_page.mjs, and
+  # they have a step of their own below because what that Chrome draws WebGL2
+  # with on a GPU-less runner is not something this file knows yet.
   #
   # EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the
   # reason vcvars64 is found through vswhere above: the tools to do it are
@@ -292,7 +292,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -E RenderPixelTests
+          ctest --preset wasm-release -E "RenderPixelTests|RenderContextLossTests"
 
       # THE PIXEL CONTRACT IN A BROWSER, as a step of its own so that a failure
       # here names itself rather than reading as the second compiler's. What
@@ -304,12 +304,13 @@ jobs:
       # --no-tests=error is what stops a configure that found no Chrome from
       # passing this step by running nothing. A frame it rejects is in
       # golden-actual/ beside the page, where the job above looks for the
-      # desktop's.
+      # desktop's. The context-loss page runs here too, because it needs the
+      # same browser.
       - name: Test the pixel contract in headless Chrome
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -R RenderPixelTests --no-tests=error -V
+          ctest --preset wasm-release -R "RenderPixelTests|RenderContextLossTests" --no-tests=error -V
 
       - name: Keep the frames a golden check rejected
         if: failure()

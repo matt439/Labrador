@@ -272,9 +272,8 @@ answers without a device.
 
 It was the one open question at the foot of `renderer.h`. What was open: a
 public `std::function` on the asset loader that exists only because a device can
-be lost, which two of the five backends never call — the null one has nothing to
-lose, and gl's WGL context is not lost while its WebGL2 one can be and is not
-reported (docs/port/web.md, M6) — so a caller writes a rebuild path for a
+be lost, which two configurations never call — the null backend has nothing to
+lose, and gl's WGL context is not lost — so a caller writes a rebuild path for a
 hazard its configuration may not have.
 
 **Not on `DeviceNotify`, which already carries the half it can carry.** That
@@ -285,8 +284,10 @@ handle names a slot and a slot belongs to a name — and the only thing that kno
 the names is the manifest, which is what the loader keeps. Move the rebuild to
 `DeviceNotify` and a game keeps a second list beside the manifest.
 
-**Not nowhere.** A device can be lost on four of the five, and three of them
-report it, so the hazard is most of this seam's configurations and not a
+**Not nowhere.** A device can be lost on four of the five, and all four report
+it — gl only in a browser, where a WebGL2 context can be taken away and is
+reported once it is handed back (`gl/backend.h` says why both calls wait for
+that) — so the hazard is most of this seam's configurations and not a
 Direct3D 11 peculiarity.
 
 **And the premise that made it look misplaced is the part that was wrong.** "A

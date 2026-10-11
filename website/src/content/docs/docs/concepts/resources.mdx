@@ -82,7 +82,9 @@ every frame, for every sprite, is the kind of cost the engine refuses on the fra
 that happens, the engine releases every texture and font and loads them again from the same
 manifest into the same slots. A handle names a slot rather than a pointer, so every handle your
 game holds is still right afterwards, and your code is never told it happened. Reading a
-released resource in between throws, naming it.
+released resource in between throws, naming it. In a browser the device is a WebGL2 context the
+browser can take away. The canvas is blank until the browser hands it back, and the reload
+happens then, before the next frame draws.
 
 **Errors at the right time.** Names are checked when they are resolved, which is at load or in
 `init()`. By the time the game is running, every handle it holds was valid when it was made.

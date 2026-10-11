@@ -58,7 +58,8 @@
 // device creation rather than at build time (engine/CMakeLists.txt); a resize
 // rebuilds nothing, because a default framebuffer follows its window or its
 // canvas (Renderer::window_size_changed, and Impl::drawable_size is what that
-// costs); no device loss is reported (Renderer::Impl below); block
+// costs); a lost context is reported only once it is back, as the lost and
+// the restored call together (Renderer::Impl below); block
 // compression is an extension that has to be asked for and a format this
 // backend will not take is refused by name (texture_factory.cpp); the vertex
 // store grows without a cap where D3D11 wraps a fixed buffer; the depth range
@@ -166,14 +167,27 @@ namespace labrador
 	// The context, the window or canvas it draws into, and every GL object
 	// with a lifetime longer than one frame.
 	//
-	// NO DEVICE LOSS IS REPORTED, AND THEREFORE NO D3DDeviceNotify EQUIVALENT.
-	// A WGL context survives everything a Direct3D device does not. A WebGL2
-	// context does not: a browser can take it away, and web_context.cpp says
-	// what happens then. Under both contexts the seam's DeviceNotify is stored
-	// and never called here. Three of the five backends do call it - d3d11,
-	// d3d12 and vulkan, the last from a VK_ERROR_DEVICE_LOST rather than from
-	// DXGI - and a backend that does not is allowed to say so. Restoring a
-	// lost WebGL2 context through it is docs/port/web.md's M6.
+	// A LOST CONTEXT IS REPORTED WHEN IT COMES BACK, AND NOT BEFORE. A WGL
+	// context survives everything a Direct3D device does not, so on Windows
+	// DeviceNotify is stored and never called. A WebGL2 context does not: a
+	// browser can take it away - a GPU reset, too many contexts on one page -
+	// and hand it back later, and web_context.cpp says how that is heard.
+	//
+	// THE TWO CALLS ARRIVE TOGETHER, in one begin_frame, on_device_lost then
+	// on_device_restored, which is the shape every other backend that reports a
+	// loss already has: d3d11, d3d12 and vulkan each lose, rebuild and restore
+	// inside the one call that found the loss, so no caller of any of them has
+	// ever been asked to get through a frame between the two. A browser puts
+	// frames between them, sometimes many, and a shell that had released its
+	// textures on the first would throw from the next draw that named one. So
+	// the gap is this backend's to carry: every frame drawn into a lost context
+	// is recorded as usual and replayed into nothing (submit, and the canvas
+	// stays blank), read_back_buffer throws rather than hand back an empty
+	// frame, and when the browser restores the context begin_frame forgets
+	// every name the old one held, rebuilds the program, the buffers and the
+	// samplers, reads the device's strings from the restored context, and only
+	// then tells the shell both halves at once. restore_device is that
+	// sequence, and says what happens when the context goes again mid-way.
 	class Renderer::Impl
 	{
 	public:
@@ -209,6 +223,14 @@ namespace labrador
 		// the unmasked pair only under WEBGL_debug_renderer_info.
 		GLenum vendor_name = GL_VENDOR;
 		GLenum renderer_name = GL_RENDERER;
+
+		// One of those strings, or GL_VERSION, as the context answers it now;
+		// empty if it does not. Defined by the context: glGetString on WGL,
+		// and in a browser a question put to the context itself, because
+		// Emscripten's glGetString answers every name from a cache kept for
+		// the life of the page, and after a restore that is what the lost
+		// context said.
+		std::string device_string(GLenum name) const;
 
 		// Whether submit() has already run for this frame. renderer.h makes a
 		// second submit a no-op, and this backend is the one it was written
@@ -268,6 +290,20 @@ namespace labrador
 		// Windows, and nothing in a browser, which composites when the
 		// animation frame callback returns. Defined by the context.
 		void present();
+
+		// Whether the context is lost right now, so that every GL call would
+		// do nothing. Never, on WGL. Defined by the context.
+		bool context_lost() const;
+
+		// Whether the context was lost and is back, asked once a frame by
+		// begin_frame. True once per restore; the context has already
+		// enabled its extensions again by then, and everything else on it is
+		// gone. Never, on WGL. Defined by the context.
+		bool take_restored_context();
+
+		// Everything a restored context needs, and the shell told of it: the
+		// sequence the class comment describes.
+		void restore_device();
 
 		// The program, the buffers and the samplers.
 		void create_gl_resources();

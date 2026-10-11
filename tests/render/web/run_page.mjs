@@ -3,11 +3,19 @@
 //
 //   node run_page.mjs --browser <chrome> --page <dir/Name.html>
 //                     [--collect <folder in the page's file system>]
-//                     [--timeout <seconds>]
+//                     [--timeout <seconds>] [--browser-warnings fail]
 //
-// ctest's command for RenderPixelTests in the wasm-* presets
-// (tests/render/CMakeLists.txt). A browser build's other tests run under Node,
-// which has no WebGL; this is how the one that draws gets a browser instead.
+// ctest's command for RenderPixelTests and RenderContextLossTests in the
+// wasm-* presets (tests/render/CMakeLists.txt). A browser build's other tests
+// run under Node, which has no WebGL; this is how the ones that draw get a
+// browser instead.
+//
+// --browser-warnings fail makes a warning or an error the browser itself logs
+// a failure of the run, whatever the page's exit code. It is for a page whose
+// subject is something the browser complains about rather than the module -
+// a WebGL call on an object the context does not own raises an error into a
+// queue the engine drains before its next upload, and the browser's warning is
+// the only place it is still visible afterwards.
 //
 // WHAT IT DOES, IN ORDER. Serves the page's folder over HTTP on a loopback
 // port, because a browser will not compile a module read from file://. Starts
@@ -60,13 +68,18 @@ function parse_arguments(argv) {
 	if (!parsed.browser || !parsed.page) {
 		fail_usage('--browser and --page are required');
 	}
+	if (parsed['browser-warnings'] !== undefined &&
+		parsed['browser-warnings'] !== 'fail') {
+		fail_usage('--browser-warnings takes one value, "fail"');
+	}
 	return parsed;
 }
 
 function fail_usage(why) {
 	process.stderr.write(`run_page: ${why}\n` +
 		'usage: node run_page.mjs --browser <chrome> --page <file.html> ' +
-		'[--collect <folder>] [--timeout <seconds>]\n');
+		'[--collect <folder>] [--timeout <seconds>] ' +
+		'[--browser-warnings fail]\n');
 	process.exit(2);
 }
 
@@ -265,6 +278,7 @@ async function run() {
 	const { child, endpoint } = launch(options.browser, profile);
 
 	let exit_code = 1;
+	let browser_complaints = 0;
 	let devtools;
 	try {
 		devtools = new DevTools(await Promise.race([
@@ -302,7 +316,11 @@ async function run() {
 				// Nothing waiting on the page will be answered now.
 				devtools.refuse_all('the page crashed');
 			} else if (message.method === 'Log.entryAdded') {
-				process.stderr.write(`run_page: browser ${message.params.entry.level}: ${message.params.entry.text}\n`);
+				const level = message.params.entry.level;
+				process.stderr.write(`run_page: browser ${level}: ${message.params.entry.text}\n`);
+				if (level === 'warning' || level === 'error') {
+					browser_complaints++;
+				}
 			}
 		});
 		await devtools.send('Inspector.enable', {}, session);
@@ -336,6 +354,12 @@ async function run() {
 			process.stderr.write(`run_page: ${page_name} aborted: ${outcome.abort}\n`);
 		} else {
 			exit_code = outcome.code;
+		}
+
+		if (options['browser-warnings'] === 'fail' && browser_complaints > 0) {
+			process.stderr.write(`run_page: the browser logged ${browser_complaints} ` +
+				'warning(s) or error(s), and --browser-warnings fail counts each as a failure\n');
+			exit_code = exit_code === 0 ? 1 : exit_code;
 		}
 
 		// A page that timed out is one whose main thread may never answer

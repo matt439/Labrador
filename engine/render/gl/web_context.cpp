@@ -5,8 +5,8 @@
 // Emscripten links each entry point directly, so there is no loader here, and
 // the three things a 3.3 core context has that ES lacks are answered for both
 // contexts at once (gl_functions.h lists where). What is left is making the
-// context, saying which dialect to compile, and asking for S3TC by the name a
-// browser gives it.
+// context, saying which dialect to compile, asking for S3TC by the name a
+// browser gives it, and hearing when the browser takes the context away.
 
 #include "engine/render/gl/backend.h"
 
@@ -14,9 +14,11 @@
 
 #include <emscripten/html5.h>
 
+#include <cstdlib>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 
 using namespace mattmath;
@@ -33,12 +35,24 @@ namespace labrador
 	// every call below that needs the canvas takes the same string. The context
 	// is an integer handle into Emscripten's own table.
 	//
-	// A LOST CONTEXT IS NOT REPORTED. A browser can take a WebGL context
-	// away - a GPU reset, too many contexts on one page - and from then on
-	// every call is a no-op and the canvas stays blank until the page is
-	// reloaded. Nothing here listens for webglcontextlost, so DeviceNotify is
-	// not called; restoring the context through the path renderer.h settles
-	// for Direct3D and Vulkan is docs/port/web.md's M6.
+	// A LOST CONTEXT IS HEARD AND THEN WAITED OUT. A browser can take a WebGL
+	// context away, and from then on every call is a no-op and the canvas is
+	// blank. It gives the context back only if the page asked it to, which
+	// is what returning true from the lost callback does - Emscripten calls
+	// preventDefault on the event for it - and a page that does not ask keeps
+	// a blank canvas until it is reloaded. So the callback asks, and notes
+	// that a loss happened. Nothing listens for webglcontextrestored: whether
+	// the context is lost is a question the context answers at any moment
+	// (emscripten_is_webgl_context_lost), and take_restored_context asks it
+	// once a frame. The callback does nothing else, because it runs from a
+	// DOM event between frames, where nothing in the engine is expecting to
+	// be called and an exception would have no catch to reach; backend.h says
+	// why the shell is told only once the context is back.
+	//
+	// The same handle survives the loss. Emscripten keeps its own table of
+	// GL objects across it, and a name from before the loss still maps to an
+	// object the restored context does not own, which a delete would complain
+	// about (GlTexture's destructor says how that is avoided).
 	struct Renderer::Impl::Context
 	{
 		Context() = default;
@@ -46,6 +60,12 @@ namespace labrador
 		{
 			if (this->handle != 0)
 			{
+				// Unhooked first, because the callback is handed this object
+				// and must not outlive it. Emscripten's destroy removes every
+				// html5 handler on the canvas today, this one with them, but
+				// that is what its code does rather than what its API says.
+				emscripten_set_webglcontextlost_callback(this->target.c_str(),
+					nullptr, false, nullptr);
 				emscripten_webgl_destroy_context(this->handle);
 			}
 		}
@@ -55,6 +75,9 @@ namespace labrador
 
 		std::string target;
 		EMSCRIPTEN_WEBGL_CONTEXT_HANDLE handle = 0;
+
+		// Set by the lost callback, cleared by take_restored_context.
+		bool lost = false;
 	};
 
 	namespace
@@ -83,8 +106,85 @@ namespace labrador
 		const GLenum UNMASKED_RENDERER_WEBGL = 0x9246;
 	}
 
+	namespace
+	{
+		bool on_context_lost(int event_type, const void* reserved,
+			void* user_data)
+		{
+			std::ignore = event_type;
+			std::ignore = reserved;
+			static_cast<Renderer::Impl::Context*>(user_data)->lost = true;
+			// True asks the browser to restore the context later.
+			return true;
+		}
+
+		// The extensions this backend uses, asked for by name. At creation and
+		// again after a restore: an extension is enabled on a context, and a
+		// restored context is a new one behind the same handle.
+		//
+		// S3TC, BY THE BROWSER'S NAME FOR IT. It is the same three formats as
+		// the desktop's GL_EXT_texture_compression_s3tc and has to be enabled,
+		// not only present, before a compressed upload is accepted. Desktop
+		// browsers have it; most phones do not, and texture_factory.cpp is
+		// where a device without it is refused.
+		void enable_extensions(Renderer::Impl& impl)
+		{
+			const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE handle = impl.context->handle;
+
+			impl.block_compression = emscripten_webgl_enable_extension(handle,
+				"WEBGL_compressed_texture_s3tc");
+
+			if (emscripten_webgl_enable_extension(handle,
+				"WEBGL_debug_renderer_info"))
+			{
+				impl.vendor_name = UNMASKED_VENDOR_WEBGL;
+				impl.renderer_name = UNMASKED_RENDERER_WEBGL;
+			}
+			else
+			{
+				impl.vendor_name = GL_VENDOR;
+				impl.renderer_name = GL_RENDERER;
+			}
+		}
+	}
+
 	Renderer::Impl::Impl() = default;
 	Renderer::Impl::~Impl() = default;
+
+	bool Renderer::Impl::context_lost() const
+	{
+		return this->context != nullptr &&
+			emscripten_is_webgl_context_lost(this->context->handle);
+	}
+
+	std::string Renderer::Impl::device_string(GLenum name) const
+	{
+		// getParameter on the context, not glGetString: Emscripten keeps one
+		// cache of those for the whole page and never clears it, so after a
+		// restore it would describe the context that was lost. The answer is
+		// the browser's own wording - GL_VERSION reads "WebGL 2.0 (OpenGL ES
+		// 3.0 ...)", which describe_device already expects.
+		char* value = emscripten_webgl_get_parameter_utf8(name);
+		if (value == nullptr)
+		{
+			return std::string();
+		}
+		std::string copied(value);
+		std::free(value);
+		return copied;
+	}
+
+	bool Renderer::Impl::take_restored_context()
+	{
+		if (this->context == nullptr || !this->context->lost ||
+			emscripten_is_webgl_context_lost(this->context->handle))
+		{
+			return false;
+		}
+		this->context->lost = false;
+		enable_extensions(*this);
+		return true;
+	}
 
 	Vector2I Renderer::Impl::drawable_size() const
 	{
@@ -166,26 +266,15 @@ namespace labrador
 				"The canvas's WebGL2 context could not be made current.");
 		}
 
-		// S3TC, BY THE BROWSER'S NAME FOR IT. It is the same three formats as
-		// the desktop's GL_EXT_texture_compression_s3tc and has to be enabled,
-		// not only present, before a compressed upload is accepted. Desktop
-		// browsers have it; most phones do not, and texture_factory.cpp is
-		// where a device without it is refused.
-		this->block_compression = emscripten_webgl_enable_extension(
-			made->handle, "WEBGL_compressed_texture_s3tc");
+		emscripten_set_webglcontextlost_callback(made->target.c_str(),
+			made.get(), false, on_context_lost);
 
-		if (emscripten_webgl_enable_extension(made->handle,
-			"WEBGL_debug_renderer_info"))
-		{
-			this->vendor_name = UNMASKED_VENDOR_WEBGL;
-			this->renderer_name = UNMASKED_RENDERER_WEBGL;
-		}
+		this->context = std::move(made);
+		enable_extensions(*this);
 
 		// No interval to ask for or read back: the browser presents at the
 		// display's rate and offers no control over it.
 		this->device_info.present_mode = "browser_animation_frame";
 		this->shader_prelude = WEB_SHADER_PRELUDE;
-
-		this->context = std::move(made);
 	}
 }

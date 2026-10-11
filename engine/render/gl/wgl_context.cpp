@@ -209,6 +209,27 @@ namespace labrador
 		SwapBuffers(this->context->device_context);
 	}
 
+	// A WGL context is not taken away the way a WebGL2 one is, so neither
+	// question ever has a second answer here. Both are asked from the drawing
+	// path all the same, because that path is the browser's too.
+	bool Renderer::Impl::context_lost() const
+	{
+		return false;
+	}
+
+	bool Renderer::Impl::take_restored_context()
+	{
+		return false;
+	}
+
+	std::string Renderer::Impl::device_string(GLenum name) const
+	{
+		const GLubyte* value = glGetString(name);
+		return value == nullptr
+			? std::string()
+			: std::string(reinterpret_cast<const char*>(value));
+	}
+
 	void Renderer::Impl::create_context(void* native_window)
 	{
 		std::unique_ptr<Context> made = std::make_unique<Context>();

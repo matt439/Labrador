@@ -320,9 +320,10 @@ namespace labrador
 		// FinishCommandList fails here is a device this frame's exception was
 		// probably reporting in the first place, on a context OnDeviceLost is
 		// about to release. Turning that into a throw out of begin_frame would
-		// make an abandoned frame kill the process on one of the three backends
-		// that have device loss at all - this one, d3d12 and vulkan, the last
-		// reaching it from VK_ERROR_DEVICE_LOST rather than from DXGI.
+		// make an abandoned frame kill the process on one of the backends that
+		// have device loss at all - this one, d3d12, vulkan from
+		// VK_ERROR_DEVICE_LOST rather than from DXGI, and gl in a browser, whose
+		// WebGL2 context can be taken away.
 		ID3D11CommandList* stranded = nullptr;
 		if (SUCCEEDED(this->context->FinishCommandList(FALSE, &stranded)) &&
 			stranded != nullptr)

@@ -209,7 +209,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
                 "$ENV{ProgramFiles}/Google/Chrome/Application"
                 "$ENV{LOCALAPPDATA}/Google/Chrome/Application"
             NO_CMAKE_FIND_ROOT_PATH
-            DOC "A Chromium browser to run RenderPixelTests in a browser build"
+            DOC "A Chromium browser to run the render tests' pages in a browser build"
         )
         if(LABRADOR_TEST_BROWSER)
             add_test(NAME RenderPixelTests
@@ -220,9 +220,49 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
                     --collect /golden-actual
             )
         else()
-            message(STATUS "RenderPixelTests: no Chromium found, so the page "
-                "is built and not registered with ctest. Set "
-                "LABRADOR_TEST_BROWSER to run it.")
+            message(STATUS "RenderPixelTests and RenderContextLossTests: no "
+                "Chromium found, so the pages are built and not registered "
+                "with ctest. Set LABRADOR_TEST_BROWSER to run them.")
+        endif()
+
+        # RenderContextLossTests - what a lost WebGL2 context does to the
+        # renderer and its shell, which only a browser can take away. Its own
+        # page, because it needs frames to pass between the loss and the
+        # restore, which a synchronous doctest case never lets happen
+        # (web/context_loss_tests.cpp says what it pins). The same shell, the
+        # same window and the same runner as RenderPixelTests, and the same
+        # rule when there is no browser to run it in. A WebGL error the browser
+        # logs fails it, because a stale name deleted on a restored context is
+        # an error the engine drains before it could ever be asserted.
+        add_executable(RenderContextLossTests
+            web/context_loss_tests.cpp
+            web/test_window.cpp
+        )
+        target_link_libraries(RenderContextLossTests PRIVATE
+            LabradorEngine
+            labrador_settings
+        )
+        set_target_properties(RenderContextLossTests PROPERTIES SUFFIX ".html")
+        target_link_options(RenderContextLossTests PRIVATE
+            -sENVIRONMENT=web
+            -sNODERAWFS=0
+            -sEXIT_RUNTIME=1
+            "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content@/content"
+            "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
+        )
+        set_property(TARGET RenderContextLossTests APPEND PROPERTY LINK_DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
+            "${CMAKE_CURRENT_SOURCE_DIR}/content/quad.dds"
+        )
+        if(LABRADOR_TEST_BROWSER)
+            add_test(NAME RenderContextLossTests
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/web/run_page.mjs"
+                    --browser "${LABRADOR_TEST_BROWSER}"
+                    --page "$<TARGET_FILE:RenderContextLossTests>"
+                    --timeout 60
+                    --browser-warnings fail
+            )
         endif()
     endif()
 endif()

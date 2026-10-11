@@ -24,7 +24,18 @@ namespace labrador
 
 	GlTexture::~GlTexture()
 	{
-		if (this->name_ != 0)
+		// ONLY A NAME THE CURRENT CONTEXT OWNS IS DELETED. A texture made
+		// before a WebGL2 context was lost is released after the restore
+		// (Renderer::Impl::restore_device tells the shell to), and by then its
+		// object died with the old context: glIsTexture answers false for it
+		// without complaint, where a delete is an error the browser reports.
+		// On WGL a name is never stale. A texture released while the context
+		// is current is that context's own, and one released at shutdown,
+		// after ~Renderer has deleted the context (render_resources.h says why
+		// the table outlives the renderer), finds no context current, so the
+		// question answers false and nothing is deleted - which a delete would
+		// not have done either, the context having taken its names with it.
+		if (this->name_ != 0 && glIsTexture(this->name_) == GL_TRUE)
 		{
 			glDeleteTextures(1, &this->name_);
 		}
