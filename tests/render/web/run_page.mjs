@@ -18,7 +18,8 @@
 // browser instead.
 //
 // TWO KINDS OF PAGE. A test page settles window.labradorExit with main's exit
-// code (tests/render/web/shell.html) and is waited on. A sample's page has no
+// code (tests/render/web/shell.html) and is waited on; one that settles with
+// anything but an integer has not passed. A sample's page has no
 // exit code, because in a browser main never returns, so --quit-keys names
 // the way out instead: the run waits for the module's runtime and then
 // --frames animation frames (60 unless given), presses each key in turn - a
@@ -668,6 +669,12 @@ async function run() {
 			process.stderr.write(`run_page: ${page_name} failed its input script: ${outcome.failed}\n`);
 		} else if (outcome.abort !== undefined) {
 			process.stderr.write(`run_page: ${page_name} aborted: ${outcome.abort}\n`);
+		} else if (!Number.isInteger(outcome.code)) {
+			// process.exit(undefined) is a pass, so a page that settled with no
+			// code - a runtime exit that lost it, or a shell that resolved the
+			// promise some other way - would pass without having said so.
+			process.stderr.write(`run_page: ${page_name} ended with no exit code ` +
+				`(${JSON.stringify(outcome.code)}), which is a failure\n`);
 		} else {
 			exit_code = outcome.code;
 		}
