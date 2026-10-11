@@ -198,6 +198,7 @@ The dashboard build settings are:
 | Build variable | `NODE_VERSION=24` |
 | Build command | `npm ci && npm run check && npm test && npm run build` |
 | Deploy command | `npx wrangler deploy` |
+| Preview builds | Off. GitHub's website job already builds every branch and pull request; Cloudflare's per-branch builds ran from the repository root with no build command and failed on every one |
 
 Keep the complete checkout available and build on changes throughout the
 repository: the site reads engine headers, design documents, samples and tests
