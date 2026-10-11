@@ -16,7 +16,7 @@ to 404. Nothing here depends on it: this repository builds, tests and
 benchmarks standalone.)*
 
 Five samples come with it, and they answer different questions.
-`samples/minimal` is about 550 lines and is the answer to "how do I start a
+`samples/minimal` is about 560 lines and is the answer to "how do I start a
 project on this" — copy it. `samples/linesweeper` is a falling-block game and
 is the answer to "what does a finished game look like on this engine" — read
 it, and read [its README](samples/linesweeper/README.md) for the decisions
@@ -76,8 +76,8 @@ Linux and — through MoltenVK — the Apple ones, which
 that is the only item on its list that runs on hardware already here. The
 audio backend is XAudio2 — `audio/xaudio2/`, behind a seam of its own — in a
 browser it is Web Audio, `audio/webaudio/`, and there is a null one beside
-them that records what it was asked to play. Both
-backends and both seams are chosen at configure time, and the debug/release
+them that records what it was asked to play. The backends on both seams are
+chosen at configure time, and the debug/release
 `-null` pair takes neither platform API: those are the configurations a machine
 with no GPU and no sound card runs end to end.
 
@@ -171,7 +171,7 @@ Three things worth knowing:
   directory above `yourgame/` on the include path. Labrador publishes its root,
   not yours.
 
-`samples/minimal` is a working example of all three, at about 550 lines. It
+`samples/minimal` is a working example of all three, at about 560 lines. It
 is also the shape of a browser build: `main_web.cpp` beside `main.cpp`, chosen
 in its `CMakeLists.txt` under `EMSCRIPTEN`, and a page in `web/shell.html`.
 `samples/linesweeper` is the same three plus a fourth thing worth copying: a
@@ -190,7 +190,7 @@ Ten modules, each depending only on modules above it in the table
 | `collision` | Layers and masks, a broad phase, a narrow phase, analytic resolution. |
 | `render` | The renderer seam, cameras, viewports, sprites, text. Each graphics API lives in a folder of its own — `render/d3d11/` and the four beside it. |
 | `scene` | One object list, one collision sweep, one per-view render fan-out. |
-| `input` | Gamepads, deadzones, press edges, menu directions. XInput lives in `input/xinput/`. |
+| `input` | Keyboard, mouse, touch and gamepads; deadzones, press edges, menu directions. XInput lives in `input/xinput/` and the browser's Gamepad API in `input/web/`; the keyboard, the mouse and touch are fed by the window. |
 | `audio` | Sound banks and effect instances, behind `AudioDevice`. XAudio2 lives in `audio/xaudio2/` and Web Audio in `audio/webaudio/`; `audio/null/` records what it was asked to play. |
 | `ui` | Widgets, focus, directional navigation. |
 | `assets` | The manifest, and checked JSON. |

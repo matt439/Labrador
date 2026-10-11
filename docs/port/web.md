@@ -6,6 +6,12 @@
 > cited by file and line. Every claim about browsers or Emscripten is general
 > knowledge, and is marked where it carries weight. §1 says which is which, as
 > [android.md](android.md) §1 does.
+>
+> **Most of it has been built since**, and §9's *Where it stands* says what,
+> milestone by milestone, with what each still owes. A `file:line` citation in
+> the scoping text is to `862e08b`, the tree it was read against; the design
+> documents are cited by section, because they have moved since and are where
+> the port's amendments landed.
 
 The goal is a sample running in a browser tab, embedded as a playable demo
 on a static Astro site served by Cloudflare. This document answers three
@@ -63,13 +69,16 @@ demo (§10).
 
 ## 2. The claim this port tests, and how it differs from Android's
 
-[ARCHITECTURE.md:259-272](../design/ARCHITECTURE.md#L259-L272) promises that
-platform code sits behind engine-owned interfaces, *"so a second platform is an
-addition, not a rewrite"*. It also names the window as the third case, which
+[ARCHITECTURE](../design/ARCHITECTURE.md#the-tree), in the platform-code
+paragraph after the tree, promises that platform code sits behind
+engine-owned interfaces, *"so a second platform is an addition, not a
+rewrite"*. At `862e08b` it also named the window as the third case, which
 *"moves down a folder without renaming the class or touching a call site"*.
-[android.md](android.md) §2 recorded that this claim has never been tested, and
-it still has not. Every configuration in `CMakePresets.json` is Windows x64
-under MSVC.
+[android.md](android.md) §2 recorded that this claim had never been tested,
+and at `862e08b` it still had not: every configuration in `CMakePresets.json`
+was Windows x64 under MSVC. The browser is now that test, and PHILOSOPHY's
+porting paragraphs ([*Targets and layout*](../design/PHILOSOPHY.md#targets-and-layout))
+record where it held and where it did not.
 
 **The browser is a cheaper first test than Android, and it is not a smaller
 one.** It is cheaper on three counts, each of which is the Android port's
@@ -349,9 +358,10 @@ and `view_capacity = 1` ([`main.cpp:34`](../../samples/linesweeper/main.cpp#L34)
 Its pool is constructed and never used. Pthreads would buy this demo nothing.
 They would also make the host page cross-origin isolated (§7.3), which is a
 cost to the whole personal site, not to the demo. **Single-threaded is the
-recommendation, not a fallback.** `local_multiplayer` would fan out two views
-on the serial pool, which is the null-pointer path its README already
-describes as equivalent.
+recommendation, not a fallback.** `local_multiplayer` does fan out two views,
+on the serial pool, since M6 put it in a browser (§9), which is the
+null-pointer path its README already described as equivalent: each slice runs
+inside `add_task` in turn.
 
 ### 3.7 The clock
 
@@ -767,27 +777,25 @@ needs a yes before the milestone that depends on it.
 |---|---|---|---|
 | **D1** | WebGL2 inside `render/gl/` with a second context TU, or a sixth backend folder | **Inside `gl/`.** One backend, two context TUs (`wgl`/`web`), and the three GLES gaps closed for both. The cost is one more TU than the "at most one more" rule in `CLAUDE.md` allows, and that rule is amended rather than worked around | `CLAUDE.md` backend paragraph; `gl/backend.h` header comment; android.md §6 gets an amendment, not a reversal |
 | **D2** | How `Application` stops spelling `HINSTANCE`/`HWND` | **`initialize()` takes no arguments.** The Win32 `Impl` gets `GetModuleHandleW(nullptr)` and `SW_SHOWDEFAULT` itself, and `window()` returns `void*`, as `create_device` takes it. One source break for every sample and ColourWars, batched as PHILOSOPHY asks | `application.h`; every sample's `main.cpp`; ColourWars, whose pin is already stuck behind the math split |
-| **D3** | The window move | **A neutral `app/window.h` holding a `Window::Impl`**, with the code in `app/win32/window.cpp` and `app/web/window.cpp`, because the include check rejects the move ARCHITECTURE describes (§3.2) | `ARCHITECTURE.md:259-272` |
+| **D3** | The window move | **A neutral `app/window.h` holding a `Window::Impl`**, with the code in `app/win32/window.cpp` and `app/web/window.cpp`, because the include check rejects the move ARCHITECTURE describes (§3.2) | ARCHITECTURE, *The tree*: the platform-code paragraph |
 | **D4** | The clock | **`std::chrono::steady_clock` on every platform**, measured against QPC on Windows before the change lands, so it is a checked swap and not an assumed one | `step_timer.h`, `NOTICE` |
-| **D5** | v1's reach | **Desktop browsers first, and phones next, as a planned phase rather than a someday** (§9, M7). Most visitors open the host site on a phone, so v1 has to give a phone a good page, not only a refusal (§7.4) | `docs/website-plan.md:90` |
+| **D5** | v1's reach | **Desktop browsers first, and phones next, as a planned phase rather than a someday** (§9, M7). Most visitors open the host site on a phone, so v1 has to give a phone a good page, not only a refusal (§7.4) | `docs/website-plan.md`, *Web stack* |
 | **P1** | How a touchscreen plays a game | **An engine touch device**, fed from the window like the keyboard and mouse, on **every** touchscreen rather than only phones: Win32 touch through `WM_POINTER` as well as the browser. The owner had wanted touch support regardless of the web port | `input/` gains a device; `WindowNotify` gains touch calls; `ARCHITECTURE.md`'s fed-devices paragraph |
 | **P2** | Whether an action-mapping layer comes with touch | **Not yet.** Agreed by the owner. LineSweeper already maps keys onto its own buttons in a sample-level table ([`play_state.cpp:46-54`](../../samples/linesweeper/states/play_state.cpp#L46-L54)), and on-screen controls can feed the same buttons. The engine gains a device, and the binding layer stays in `CLAUDE.md`'s known-absent list until a second client needs one (T1). [android.md](android.md) §3.3 expected touch to force that layer; this plan argues that it does not | `CLAUDE.md` known-absent list, only if the answer is yes |
 
-### Made in M2, for the owner to confirm
+### Made in M2 and M6, confirmed 2026-10-11
 
-Both change a public header, so by the rule below they should have come back
-here before they were built. Each was the smallest reading of a decided row
-that the code forced, and each is one commit to reverse.
+All three change a public header or a dependency, so by the rule below they
+should have come back here before they were built. Each was the smallest
+reading of a decided row that the code forced, and each is one commit to
+reverse. The owner was asked on 2026-10-11, had no preference among the
+alternatives, and left the call where it had been made, so they stand as
+built; the reasoning in each row is why.
 
-| | Decision | Answer as built | What it amends |
+| | Decision | Answer as built, and confirmed | What it amends |
 |---|---|---|---|
 | **D6** | How a caller asks for a hidden window once `initialize()` takes no arguments (D2). Three did, by passing `SW_HIDE`: the collision and local-multiplayer smoke tests and `LineSweeperCapture` | **`ApplicationOptions::visible`**, copied into `WindowOptions::visible`, default true. Hidden is still a whole shell with a device and messages; a browser does not read it | `application.h`, `window.h`, three callers |
-| **D7** | Who makes the WebGL2 context: the window (§4) or `gl/`'s web context TU (D1) | **`gl/`, built in M3.** `Window::handle()` is the canvas's html5 target, `"!canvas"`, as `create_device` takes an `HWND`, so the backend that draws makes its own context as WGL's TU does, and a build drawing with null makes none. `gl/web_context.cpp` makes it from that handle; the row still awaits the owner's yes | `window.h`'s `handle()`; §4 |
-
-### Made in M6, for the owner to confirm
-
-| | Decision | Answer as built | What it amends |
-|---|---|---|---|
+| **D7** | Who makes the WebGL2 context: the window (§4) or `gl/`'s web context TU (D1) | **`gl/`, built in M3.** `Window::handle()` is the canvas's html5 target, `"!canvas"`, as `create_device` takes an `HWND`, so the backend that draws makes its own context as WGL's TU does, and a build drawing with null makes none. `gl/web_context.cpp` makes it from that handle | `window.h`'s `handle()`; §4 |
 | **D8** | How the browser build reads the golden PNGs, since WIC is Windows' own and a page has no codec it can call synchronously | **lodepng from vcpkg, on every platform**, replacing WIC in `golden_image.cpp`: one codec reading one set, rather than two codecs making two claims about it. It is the format edge T9 buys, and a test dependency only. RenderPixelTests links it and nothing the engine ships does. A regeneration leaves unchanged images alone, so the swap rewrote none of them. One commit to reverse, by restoring WIC on Windows behind the same two functions | `vcpkg.json`, `NOTICE`, `README.md`, the website's consumer manifest (which leaves it out, as it does doctest) |
 
 ### Decided, 2026-10-11
@@ -795,6 +803,26 @@ that the code forced, and each is one commit to reverse.
 | | Decision | Answer | What it amends |
 |---|---|---|---|
 | **D9** | The audio container: what a backend with no `.xwb` reader of its own plays from (§3.5, [android.md](android.md) §3.2) | **Recommendation (a), an engine-owned reader**: `audio/xwb_file.h` beside `render/dds_file.h`, reading PCM at 8 and 16 bits and MS-ADPCM, decoding both to 16-bit samples; xWMA, XMA, compact entries and big-endian banks throw naming what they are. Content and manifests are unchanged, and `audio/xaudio2/` keeps DirectXTK's reader. The alternative, banks as folders of WAVs, would have changed every manifest and both clients' content for a format the engine can read in one file | `audio_device.h`'s container paragraph; android.md §3.2's amendment; `CLAUDE.md`'s audio paragraph; ARCHITECTURE's audio folder; PHILOSOPHY's porting paragraph |
+
+### Made in M4 to M7, built, for the owner to see
+
+Each of these changed a public header without coming back here first, which
+the rule below asks for. None is a new direction: each is the smallest shape
+a decided row or a milestone's done-when forced once it met a browser, and
+each is one commit to reverse. They are recorded so that the owner sees them
+as decisions rather than finds them as diffs.
+
+| | Decision | Answer as built | What it amends |
+|---|---|---|---|
+| **D10** | What "the game is in the background" means on a page, where a canvas can lose the keyboard while the player is still looking at it with a pad in hand (M4) | **The pads, and touch, follow the page's visibility and the Win32 foreground, not the canvas's keyboard focus.** `WindowNotify` gains `on_keyboard_gained` and `on_keyboard_lost`, which release the keys held and suspend nothing; the Win32 window never calls them, because it has the keyboard exactly while it is active | `window.h`; `application.h`; `gamepad_reader.h`'s suspend comment |
+| **D11** | Whether `Application::fullscreen()` answers what was asked or what the platform did, once a browser can leave full screen on Escape or refuse it (M4) | **What the platform did.** `WindowNotify::on_fullscreen_changed` reports it, so an options menu reading the flag shows the truth; a Win32 window changes it only when asked and never calls it | `window.h`; `application.h` |
+| **D12** | How the pad seam meets an API that has to be asked for every pad at once (M4) | **`GamepadReader::sample()` takes one snapshot a frame, and `read()` answers each slot from it**, so the four slots of a frame are one moment; a pad keeps its slot while connected, and `input/web/` hands a new pad the lowest free one rather than the browser's own index | `gamepad_reader.h`; `gamepads.h`; both pad backends |
+| **D13** | What a caller of the audio seam sees before a browser allows sound (M6) | **A one-shot is dropped and a persistent voice answers playing and starts when sound is allowed**, stated in `audio_device.h` as the caller's contract; the backend listens for the gesture itself, so the seam grows no verb only a browser needs, and a key that does not grant activation, Escape, does not count | `audio_device.h` |
+| **D14** | Whether a device without S3TC refuses block-compressed textures or draws them (M7b) | **`gl/` decodes them on the CPU** through `engine/render/block_decode.h`, engine code so every device that falls back rounds the same way; Vulkan still refuses and names the feature. `texture_format.h` and `texture_data.h` say a backend may ask for the pixels, and is never handed them behind its back | `block_decode.h` (new); `texture_format.h`; `texture_data.h`; `SEAM.md` |
+| **D15** | Where point-sampled text may be placed (found by the capture tool's GL difference) | **Off a whole pixel is fine, and exactly half way is not**: `renderer.h`'s `draw_text` tells a caller to floor a centred position, and LineSweeper does | `renderer.h`; `sprite_geometry.h`'s comment |
+
+The touch device and its `WindowNotify` calls are P1, and the wave-bank reader
+is D9, so neither has a row of its own here.
 
 ### Open
 
@@ -805,6 +833,20 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 ## 9. Milestones, and what to spike first
 
 ### Where it stands, 2026-10-11
+
+**Every milestone's code has landed, and what is left is hardware, browsers
+and a deploy.** M1 and M2 are done. M3 is met in Chrome and Firefox and owes
+Safari and R5's pacing on real displays. M4's pad path has been driven by a
+page script's fake pad and owes a physical one. M5's half in this repository
+is built - the module, the bundle, its page and CI's upload - and the deploy
+to mattharding.dev is the owner's. M6's items are all done. M7a's touch device
+has been driven by Chrome's touch emulation and by touch injected into a
+Win32 window, and owes a real touchscreen. M7b's controls, portrait layout,
+page handling and texture path are built and emulated, and owe a real iPhone,
+a real Android phone and a measured frame on one. All five samples run in a
+browser, and every page the build makes is a ctest entry where configure
+finds a Chromium. The paragraphs below are in the order the work landed, each
+as it was written when it did.
 
 **S1, S2, M1 and M2 are done. S3 was not run as a throwaway; it was absorbed
 into M3, whose code has landed and which is met in two of the three browsers
@@ -1472,11 +1514,11 @@ Each is cheap and could change the plan:
 | **M1** | Build and core: presets, `settings.cmake` clang branch, vcpkg qualifier, input-backend variable, serial pool, clock (D4), `widen`, `executable_directory` | days (+ S1's clean-up) | `ctest --preset wasm-debug` runs the §5 list green; every Windows preset unchanged and green |
 | **M2** | The shell: D2 and D3, `app/win32/` moved with no behaviour change, `app/web/window.cpp` (canvas, callbacks, main loop, lifecycle, resize) | week | LineSweeper reaches its first frame in a browser and takes keys; Windows samples behave as before (look at them, per the see-it-on-screen rule) |
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
-| **M4** | Gamepad: `input/web/gamepad_reader.cpp`, sampled once a frame, compacted slots, pads following page visibility rather than canvas focus, and the fullscreen flag following the browser (code landed; a physical pad is the open check) | hours | A pad on the standard mapping plays LineSweeper |
+| **M4** | Gamepad: `input/web/gamepad_reader.cpp`, sampled once a frame, compacted slots, pads following page visibility rather than canvas focus, and the fullscreen flag following the browser (code landed and driven by a page script's pad; a physical pad is the open check) | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output and the bundle (done), `onQuit`/`onError` (done), the demo's own page and poster (done), CI job (done), deploy to mattharding.dev's `/demo/linesweeper/` with the §7.2 headers (the owner's) | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); the web window driven by real input in headless Chromium, `WebWindowTests` (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done); `collision` on the web (done) | days each; audio a week | Each its own commit, as usual |
-| **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal`, and a Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
-| **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone (controls, portrait layout and the page's viewport handling landed; headless Chrome's emulation drives them, and real phones and the measured frame are open) | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); the web window driven by real input in headless Chromium, `WebWindowTests` (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done); `collision` on the web (done); each sample's page a ctest entry (done). **All done** | days each; audio a week | Each its own commit, as usual |
+| **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal` and `WebWindowTests`, and a real Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
+| **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone (controls, portrait layout and the development page's viewport handling landed; headless Chrome's emulation drives them, and real phones and the measured frame are open; the bundle's host page still asks a phone for a keyboard, §7.4) | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 
 The critical path to the desktop demo is M0 → M1 → M2 → M3 → M5, roughly
 **three to four weeks** of work on these definitions. The spread is mostly
@@ -1493,7 +1535,8 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
   further decisions:
   - **Fed, not read.** Touch arrives as window messages on Windows and as
     events in a browser, so the flow is `app → input`, the same as the
-    keyboard and mouse ([ARCHITECTURE.md:274-291](../design/ARCHITECTURE.md#L274-L291)).
+    keyboard and mouse (ARCHITECTURE's fed-devices paragraphs, in
+    [*The tree*](../design/ARCHITECTURE.md#the-tree)).
     `WindowNotify` gains down, move, up and cancel calls carrying a point id
     and client-pixel coordinates. `input` still depends on `core` and `math`
     only.
@@ -1527,10 +1570,15 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
   serving every no-S3TC device and every file rather than one atlas, which
   is the cheapest answer [content-probe.md](content-probe.md) did not need to
   give. "Where it stands" has how it was checked.
-- **Layout.** Phones are held upright and LineSweeper is laid out for 16:9.
-  Its board is tall, so portrait may suit it, but the sample's
-  `presentation/layout.h` has to arrange it. This is sample work, not engine
-  work.
+- **Layout, which is done.** Phones are held upright and LineSweeper was laid
+  out for 16:9. Rather than moving any of `presentation/layout.h`'s
+  positions, `presentation/arrangement.h` picks a camera each tick from the
+  buffer's aspect: landscape frames the whole 1280x720 space, and portrait
+  frames the board block across the width with a band under it for
+  `presentation/touch_controls.h`. It is sample work, and nothing in
+  `engine/` changed. "Where it stands" has how it was checked, and the
+  sample's [README](../../samples/linesweeper/README.md), *A phone held
+  upright*, has why.
 - **Phone browser quirks and cost.** iPhone Safari has no element Fullscreen
   API. The canvas needs `touch-action: none` so a swipe does not scroll the
   page. The 9,600-particle top-out has to be measured on a phone (R6), not
@@ -1567,8 +1615,9 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
   controls change what a game's input is (D5).
 - **WebGPU.** A sixth API and a third shading language (WGSL) for a demo
   WebGL2 already serves.
-- **Pthreads.** Nothing in v1 fans out, and the cost lands on the host page
-  (§7.2).
+- **Pthreads.** LineSweeper never fans out, and `local_multiplayer`, which
+  does, runs its two views one after the other on the serial pool (§3.6). The
+  cost of threads would land on the host page (§7.2).
 - **Audio in v1.** LineSweeper has none (§3.5). M6 has since built
   `audio/webaudio/`, so a client with sound has it in a browser.
 - **A browser-hosted editor or tooling.** Permanently out of scope, as before.
@@ -1586,14 +1635,20 @@ it. **None is made in advance.**
 | `CLAUDE.md:3` | "Windows-only": amended in M3, to Windows and, through Emscripten and WebGL2, the browser | M3 |
 | `CLAUDE.md`, preset table and ctest counts | Two `wasm-*` presets and their test list; amended again in M3, whose row names `render/gl/` and the null-gated sources it does not compile | M1 |
 | `CLAUDE.md`, backend paragraph | D1's answer: amended in M3, naming `gl/`'s two context files as the one exception to "at most one more" | M3 |
-| `ARCHITECTURE.md:259-272` | The window's move, as D3 decides it | M2 |
-| `PHILOSOPHY.md:320-322` | Where it held for a second compiler and a second loop: amended in M5's engine half, a paragraph after the audio one, with the S1 sweep, D2 and `Application` in a static | M5 |
-| `docs/website-plan.md:90` | Browser demos stop being "a separate technical project": amended in M5's engine half, naming mattharding.dev as the host | M5 |
+| ARCHITECTURE, *The tree*: the platform-code paragraph | The window's move, as D3 decides it: amended in M2 | M2 |
+| PHILOSOPHY, *Targets and layout*: the porting paragraphs | Where it held for a second compiler and a second loop: amended in M5's engine half, a paragraph after the audio one, with the S1 sweep, D2 and `Application` in a static | M5 |
+| `docs/website-plan.md`, *Web stack* | Browser demos stop being "a separate technical project": amended in M5's engine half, naming mattharding.dev as the host | M5 |
 | `cmake/settings.cmake` | The clang branch, argued as `/fp:precise` is | M1 |
 | `gl/backend.h`, `gl/gl_functions.h` | The ES gaps stop being described as future: amended in M3, with D1's one backend and two contexts in `backend.h`'s header comment | M3 |
 | `README.md`, the lead and Building | "Windows only" becomes Windows and a browser: amended in M3 | M3 |
 | `engine/render/SEAM.md` §1, §3, §8 | `gl/`'s two contexts, and device loss on a WebGL2 context: amended in M3 | M3 |
 | `ARCHITECTURE.md`, the tree and the backend paragraph | `gl/` as one backend with a context file per platform: amended in M3 | M3 |
 | [android.md](android.md) §6 | An amendment, not a reversal, of *"a GLES backend as a hedge"* (D1): amended in M3 | M3 |
-| `ARCHITECTURE.md:274-291` | The fed devices become three: keyboard, mouse and touch | M7a |
+| ARCHITECTURE, *The tree*: the fed-devices paragraphs | The fed devices become three, keyboard, mouse and touch, and neither window lets a touch arrive again as the mouse: amended in M7a | M7a |
+| ARCHITECTURE, the tree and *Modules*: the audio paragraph | `audio/webaudio/` beside `xaudio2/` and `null/`, and `xwb_file.h`: amended by D9 and M6 | M6 |
+| PHILOSOPHY, the audio porting paragraph | The container answered as textures answered it, by the engine reading the format: amended by D9 | M6 |
+| [android.md](android.md) §3.2 | The container question it left open is decided (D9): amended | M6 |
+| `CLAUDE.md`, the audio paragraphs | Three audio backends, and what `AudioTests` checks under `wasm-*`: amended in M6 | M6 |
+| PHILOSOPHY, *Targets and layout*: the targets table; ARCHITECTURE, *The tree* (`tools/web_bundle/`); and `NOTICE` | `LineSweeperModule`, and what the module links statically: amended in M5's engine half | M5 |
+| `CLAUDE.md` and `README.md`, the samples | All five samples have a browser build and a page test: amended as each landed | M6, M7a |
 | `CLAUDE.md`, Known-absent | Unchanged: P2 kept the action-mapping layer absent | — |
