@@ -96,7 +96,11 @@ add_test(NAME RenderTests COMMAND RenderTests)
 # throws saying so - and a test that cannot pass is better absent than skipped,
 # because a skipped test is a line in a log nobody reads and a missing one is a
 # question somebody asks.
-if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
+#
+# AND NOT BUILT IN A BROWSER BUILD, where the backend is gl/ but the tests run
+# under Node, which has no WebGL. Running it in a headless browser against the
+# same golden set is docs/port/web.md's M6.
+if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null" AND NOT EMSCRIPTEN)
     add_executable(RenderPixelTests
         golden_image.cpp
         pixel_tests.cpp

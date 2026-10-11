@@ -1,9 +1,21 @@
 #pragma once
 
+#if defined(__EMSCRIPTEN__)
+#include <GLES3/gl3.h>
+#else
 #include <Windows.h>
 #include <GL/gl.h>
+#endif
 
 // The parts of OpenGL this engine uses, and no more.
+//
+// TWO CONTEXTS SHARE THIS FILE, and it is the one place they differ in
+// vocabulary rather than in how a context is made. On Windows the list below
+// is a loader; in a browser it is nothing, because Emscripten links every
+// GLES 3.0 entry point directly and <GLES3/gl3.h> declares them. The code that
+// calls them is the same code either way (this header's #if blocks,
+// wgl_context.cpp and web_context.cpp are the only places that know which one
+// they are in).
 //
 // WHY THERE IS A LOADER AT ALL. Windows ships opengl32.dll at version 1.1 and
 // nothing later: every entry point added after 1993 has to be fetched from the
@@ -12,40 +24,37 @@
 // three thousand entry points of every version and extension there has ever
 // been.
 //
-// THIS ONE DECLARES THIRTY-SIX, and that is the reason it is written out rather
-// than generated. The list below is a complete and readable answer to "how much
-// of OpenGL does this engine need", which is the question that decides whether
-// an ES variant is a `#version` line or a rewrite - and a generated loader
-// answers it with a five-megabyte file. Adding a function here is one line;
-// nobody has to wonder whether it was already there.
+// THIS ONE IS WRITTEN OUT RATHER THAN GENERATED. The list below is a complete
+// and readable answer to "how much of OpenGL does this engine need", which is
+// the question that decides whether an ES variant is a `#version` line or a
+// rewrite - and a generated loader answers it with a five-megabyte file. Adding
+// a function here is one line; nobody has to wonder whether it was already
+// there. gl_function_count() is how many there are; no sentence spells it.
 //
-// THAT SENTENCE SAID FORTY-ONE FOR LONGER THAN THE LIST HELD FORTY-ONE, and so
-// did the loader's error message and ARCHITECTURE's tree - three copies of a
-// number nothing checked. gl_function_count() below is the number now; this
-// sentence is a description of it and the message no longer spells one at all.
-//
-// THE VERSION IS 3.3 CORE, authored to the GLES 3.0 intersection. Three things
-// below are outside that intersection: glDrawElementsBaseVertex, which ES 3.0
-// has as glDrawElementsBaseVertexOES; GL_BGRA_ eighteen lines down, which is
-// not an accepted external format in ES at all and is the EXT_texture_format_
-// BGRA8888 token there; and the S3TC formats in texture_factory.cpp, which ES
-// has not got and which are named there as the one real obstacle to an ES
-// build. The first two are a token and a suffix; the third is the content.
+// THE VERSION IS 3.3 CORE, AUTHORED TO THE GLES 3.0 INTERSECTION, and nothing
+// below is outside it. Three things a 3.3 program would reach for are not
+// used, and each is answered once for both contexts: a base-vertex draw
+// (renderer.cpp points the attributes at a run's first vertex instead), a BGRA
+// upload format (texture_factory.cpp swaps BGRA to RGBA on the way in) and
+// core S3TC (an extension each context asks for by its own name and reports,
+// Renderer::Impl::block_compression).
 
 namespace labrador
 {
+#if !defined(__EMSCRIPTEN__)
 	// The types the post-1.1 signatures need. <GL/gl.h> has none of them,
-	// because none of them existed in 1.1.
+	// because none of them existed in 1.1. <GLES3/gl3.h> has all three.
 	using GLchar = char;
 	using GLsizeiptr = ptrdiff_t;
 	using GLintptr = intptr_t;
+#endif
 
 	// The constants likewise. Each is the value the registry assigns it; a
 	// second backend for a second API translates its own vocabulary into the
 	// engine's exactly as this one does, and these are that vocabulary's other
-	// end.
+	// end. <GLES3/gl3.h> defines every one of them unsuffixed; the suffix is
+	// what lets one spelling compile under both headers.
 	const GLenum GL_CLAMP_TO_EDGE_ = 0x812F;
-	const GLenum GL_BGRA_ = 0x80E1;
 	const GLenum GL_TEXTURE_BASE_LEVEL_ = 0x813C;
 	const GLenum GL_TEXTURE_MAX_LEVEL_ = 0x813D;
 	const GLenum GL_ARRAY_BUFFER_ = 0x8892;
@@ -64,6 +73,7 @@ namespace labrador
 	const GLenum GL_FUNC_ADD_ = 0x8006;
 	const GLenum GL_ONE_MINUS_SRC_ALPHA_ = 0x0303;
 
+#if !defined(__EMSCRIPTEN__)
 	// The context attributes wglCreateContextAttribsARB takes.
 	const int WGL_CONTEXT_MAJOR_VERSION_ARB_ = 0x2091;
 	const int WGL_CONTEXT_MINOR_VERSION_ARB_ = 0x2092;
@@ -71,8 +81,11 @@ namespace labrador
 	const int WGL_CONTEXT_CORE_PROFILE_BIT_ARB_ = 0x00000001;
 
 	// The list, in one place, expanded three ways: declared here, defined in
-	// gl_functions.cpp, and loaded there. Adding an entry point means adding
-	// one line and nothing else, which is the whole reason for the macro.
+	// wgl_context.cpp, and loaded there with wglGetProcAddress. A browser
+	// build does not expand it at all, because <GLES3/gl3.h> declares these
+	// entry points and Emscripten links them. Adding an entry point means
+	// adding one line and nothing else, which is the whole reason for the
+	// macro.
 #define LABRADOR_GL_FUNCTIONS(X)                                              \
 	X(void, glGenBuffers, (GLsizei n, GLuint* buffers))                        \
 	X(void, glDeleteBuffers, (GLsizei n, const GLuint* buffers))               \
@@ -118,8 +131,6 @@ namespace labrador
 	X(void, glBlendFuncSeparate, (GLenum source_rgb, GLenum destination_rgb,   \
 		GLenum source_alpha, GLenum destination_alpha))                        \
 	X(void, glBlendEquation, (GLenum mode))                                    \
-	X(void, glDrawElementsBaseVertex, (GLenum mode, GLsizei count,             \
-		GLenum type, const void* indices, GLint base_vertex))                  \
 	X(const GLubyte*, glGetStringi, (GLenum name, GLuint index))
 
 #define LABRADOR_GL_DECLARE(result, name, parameters)                         \
@@ -141,7 +152,7 @@ namespace labrador
 		return count;
 	}
 
-	// Fetches every entry point above from the current context.
+	// Fetches every entry point above from the current context. WGL only.
 	//
 	// A CONTEXT MUST BE CURRENT, and a 3.3 core one: wglGetProcAddress answers
 	// for whatever context is current when it is asked, so loading against the
@@ -161,11 +172,14 @@ namespace labrador
 	int configure_swap_interval(HDC device_context, int interval);
 
 	// Whether the current context advertises `extension`, by its registry name
-	// - "GL_EXT_texture_compression_s3tc" and so on.
+	// - "GL_EXT_texture_compression_s3tc" and so on. WGL only: a
+	// browser answers whether an extension is there by enabling it
+	// (web_context.cpp), which a desktop context has no call for.
 	//
 	// Through glGetStringi rather than by searching glGetString(GL_EXTENSIONS),
 	// which returns null in a core profile. The old spelling is the one every
 	// tutorial still shows and the reason a core-profile port fails at its
 	// first extension check.
 	bool has_gl_extension(const char* extension);
+#endif
 }

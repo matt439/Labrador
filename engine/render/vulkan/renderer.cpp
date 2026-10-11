@@ -1063,8 +1063,9 @@ namespace labrador
 
 		// A run in this frame's vertex buffer is addressed by a vertex offset
 		// on the draw call, which is what makes one buffer and one binding
-		// serve every view - the same trick glDrawElementsBaseVertex plays next
-		// door, spelt as a parameter rather than as a separate entry point.
+		// serve every view - the same origin gl/renderer.cpp moves by
+		// re-pointing its vertex attributes at a run's first vertex, spelt
+		// here as a parameter of the draw rather than as three calls per run.
 		unsigned char* vertex_bytes =
 			static_cast<unsigned char*>(frame.vertices.mapped);
 		unsigned char* transform_bytes =

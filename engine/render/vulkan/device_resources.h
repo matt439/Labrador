@@ -21,8 +21,9 @@
 //
 // THE PART OF AN API THAT IS NOT ABOUT DRAWING, which is what renderer.h says a
 // backend's fourth translation unit is for. Both Direct3D folders have one of
-// these and the GL folder has gl_functions.cpp; this is the same kind of file,
-// holding everything that exists before a frame does and outlives every frame
+// these, and the GL folder has one per context (wgl_context.cpp or
+// web_context.cpp, one per build); this is the same kind of file, holding
+// everything that exists before a frame does and outlives every frame
 // after it. It is written the way CONVENTIONS says - snake_case, trailing
 // underscore on privates, accessors named for the noun - for the reason
 // engine/render/d3d12/device_resources.h gives: nothing here is vendored, so
@@ -31,7 +32,7 @@
 // WHAT THIS BACKEND OWNS THAT NO OTHER ONE DOES, and it is one thing rather
 // than a list: THE IMAGE THE FRAME IS DRAWN INTO IS NOT A SWAPCHAIN IMAGE. On
 // the other three, "the back buffer" and "the thing the presentation engine
-// hands out" are the same object - a DXGI buffer, or a WGL context's default
+// hands out" are the same object - a DXGI buffer, or a GL context's default
 // framebuffer. Here they are two, and every awkward property of this API's
 // presentation model follows from insisting they are one:
 //

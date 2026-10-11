@@ -167,8 +167,8 @@ them. What Labrador adds is the structure above the drawing calls:
 - **resources** named in a manifest and resolved to handles once, at load;
 - **views and cameras** for split-screen, and a **widget set** with controller navigation.
 
-**The cost**, measured against them: more structure to learn and accept, Windows only where they
-run nearly everywhere, a far smaller community, and C++ only, with no bindings for other
+**The cost**, measured against them: more structure to learn and accept, Windows and, for one
+sample so far, the browser, where they run nearly everywhere, a far smaller community, and C++ only, with no bindings for other
 languages.
 
 ## The engineering behind it
@@ -190,7 +190,9 @@ was measured.
 
 ## Platform support
 
-Labrador builds and runs on **Windows**, with Visual Studio 2022 or newer. The Vulkan renderer
+Labrador builds and runs on **Windows**, with Visual Studio 2022 or newer. Its OpenGL renderer
+also reaches the **browser** as WebGL2, through Emscripten, and one sample, LineSweeper, runs
+there today. The Vulkan renderer
 exists because Vulkan is the graphics interface that reaches Android, Linux and, through
 MoltenVK, Apple's platforms, but none of those are supported or built today. Treat Vulkan as the
 route to them, not as support for them.

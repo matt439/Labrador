@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -57,31 +59,61 @@ namespace labrador
 				description.find("software rasterizer") != std::string::npos;
 		}
 
-		RenderDeviceInfo selected_device(bool generic_pixel_format,
-			HDC device_context)
+		// The strings, completing what the context began: create_context has
+		// already written how frames are presented, and which names to ask.
+		// GL_VERSION names its own family in a browser - "WebGL 2.0 (OpenGL ES
+		// 3.0 ...)" - and is a bare number on a desktop driver, so the family
+		// is prefixed only where the string does not already say it.
+		void describe_device(Renderer::Impl& impl)
 		{
-			const std::string vendor = driver_string(GL_VENDOR, "vendor");
-			const std::string renderer = driver_string(GL_RENDERER, "renderer");
+			const std::string vendor =
+				driver_string(impl.vendor_name, "vendor");
+			const std::string renderer =
+				driver_string(impl.renderer_name, "renderer");
 			const std::string version = driver_string(GL_VERSION, "version");
 
-			RenderDeviceInfo info;
+			RenderDeviceInfo& info = impl.device_info;
 			info.backend = "gl";
-			info.present_mode = "wgl_swap_interval";
-			info.requested_swap_interval = 1;
-			info.reported_swap_interval = configure_swap_interval(device_context,
-				*info.requested_swap_interval);
-			info.api = "OpenGL " + version;
+			info.api = version.rfind("OpenGL", 0) == 0 ||
+				version.rfind("WebGL", 0) == 0
+				? version : "OpenGL " + version;
 			info.device_name = vendor + " / " + renderer;
-			info.kind = generic_pixel_format || names_software(vendor, renderer)
+			info.kind = impl.software_context ||
+				names_software(vendor, renderer)
 				? RenderDeviceKind::software : RenderDeviceKind::hardware;
-			return info;
 		}
 
-		// wglCreateContextAttribsARB, which is itself an extension and so has
-		// to be fetched through a context that already exists. That is the
-		// bootstrap every WGL program does: a 1.1 context to ask the question,
-		// a 3.3 core context to answer it, and the first one deleted.
-		using CreateContextAttribs = HGLRC(WINAPI*)(HDC, HGLRC, const int*);
+		// Points the three attributes at the vertex `first_vertex` of the
+		// bound vertex buffer.
+		//
+		// THIS IS THE BASE VERTEX, SPELT AS AN OFFSET, and both contexts do it
+		// this way. One index buffer built for MAX_RUN_SPRITES serves every run
+		// because its indices count from the run's first vertex; 3.3 core
+		// would add that first vertex in the draw call itself
+		// (glDrawElementsBaseVertex), and GLES 3.0 - which is what WebGL2 is -
+		// has no such call. Re-pointing the attributes moves the same origin by
+		// the same amount, at three calls per run rather than one argument,
+		// and draws the same pixels. It is not a branch per context because a
+		// path only the browser took would be a path RenderPixelTests never
+		// saw.
+		//
+		// The three fields of SpriteVertex are located by offsetof rather than
+		// by position, which is why sprite_vertex.h is free to declare them in
+		// any order it likes. The attribute indexes are the shader's, bound by
+		// name before linking, and are what has to agree with it.
+		void point_attributes(std::size_t first_vertex)
+		{
+			const std::uintptr_t base = first_vertex * sizeof(SpriteVertex);
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
+				reinterpret_cast<const void*>(
+					base + offsetof(SpriteVertex, position)));
+			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
+				reinterpret_cast<const void*>(
+					base + offsetof(SpriteVertex, colour)));
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
+				reinterpret_cast<const void*>(
+					base + offsetof(SpriteVertex, texcoord)));
+		}
 
 		// Whether two viewports are the same pane. A run cannot span a viewport
 		// change - and this is not what closes one.
@@ -130,15 +162,20 @@ namespace labrador
 		// THE COMPILER'S OWN MESSAGE, NAMED (T6). A shader that will not compile
 		// is a build failure on the three backends that compile sprite.hlsl
 		// ahead of time - d3d11 and d3d12 through fxc, vulkan through the SDK's
-		// dxc (engine/CMakeLists.txt) - and cannot be one here, because GL
-		// 3.3 has no offline shader format. So the least this can do is say
-		// which stage failed and repeat what the driver said about it, rather
-		// than drawing nothing and leaving somebody to guess.
-		GLuint compile_shader(GLenum stage, const char* source,
-			const char* what)
+		// dxc (engine/CMakeLists.txt) - and cannot be one here, because neither
+		// GL 3.3 nor WebGL2 has an offline shader format. So the least this can
+		// do is say which stage failed and repeat what the driver said about
+		// it, rather than drawing nothing and leaving somebody to guess.
+		//
+		// Two strings, the context's prelude and the body, which GL joins
+		// before compiling: the #version has to be the first line, and is the
+		// one line the two contexts disagree about.
+		GLuint compile_shader(GLenum stage, const char* prelude,
+			const char* source, const char* what)
 		{
 			const GLuint shader = glCreateShader(stage);
-			glShaderSource(shader, 1, &source, nullptr);
+			const GLchar* const sources[] = { prelude, source };
+			glShaderSource(shader, 2, sources, nullptr);
 			glCompileShader(shader);
 
 			GLint compiled = GL_FALSE;
@@ -309,19 +346,11 @@ namespace labrador
 	}
 
 	// --- Renderer::Impl ------------------------------------------------------
-
-	Renderer::Impl::~Impl()
-	{
-		if (this->gl_context != nullptr)
-		{
-			wglMakeCurrent(this->device_context, nullptr);
-			wglDeleteContext(this->gl_context);
-		}
-		if (this->device_context != nullptr && this->window != nullptr)
-		{
-			ReleaseDC(this->window, this->device_context);
-		}
-	}
+	//
+	// The members a context has nothing to do with. The six it does -
+	// the constructor and destructor, create_context, drawable_size,
+	// present, and the Context they share - are in wgl_context.cpp or
+	// web_context.cpp.
 
 	GLuint Renderer::Impl::sampler(TextureFilter filter) const
 	{
@@ -330,162 +359,12 @@ namespace labrador
 			: this->point_sampler;
 	}
 
-	Vector2I Renderer::Impl::drawable_size() const
-	{
-		RECT client = {};
-		if (this->window == nullptr || !GetClientRect(this->window, &client))
-		{
-			return { 0, 0 };
-		}
-		return { static_cast<int>(client.right - client.left),
-			static_cast<int>(client.bottom - client.top) };
-	}
-
-	void Renderer::Impl::create_context(HWND native_window)
-	{
-		this->window = native_window;
-		this->device_context = GetDC(native_window);
-		if (this->device_context == nullptr)
-		{
-			throw std::runtime_error(
-				"The window has no device context to draw into.");
-		}
-
-		// SetPixelFormat may be called once per window and never undone, which
-		// is why the usual bootstrap uses a throwaway window: it wants
-		// wglChoosePixelFormatARB to ask for multisampling or sRGB before
-		// committing. This renderer wants neither - it draws 2D sprites into an
-		// 8-bit-per-channel back buffer - so ChoosePixelFormat on the real
-		// window is enough, and there is no second window to create and destroy.
-		PIXELFORMATDESCRIPTOR wanted = {};
-		wanted.nSize = sizeof(wanted);
-		wanted.nVersion = 1;
-		wanted.dwFlags =
-			PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-		wanted.iPixelType = PFD_TYPE_RGBA;
-		wanted.cColorBits = 32;
-		wanted.cAlphaBits = 8;
-
-		const int format = ChoosePixelFormat(this->device_context, &wanted);
-		if (format == 0)
-		{
-			throw std::runtime_error("This window cannot be given a 32-bit "
-				"double-buffered OpenGL pixel format.");
-		}
-
-		// WHAT WAS ASKED FOR IS NOT NECESSARILY WHAT WAS CHOSEN, and until this
-		// block nothing here ever found out. ChoosePixelFormat returns the
-		// CLOSEST format it has and is under no obligation to match the
-		// request: a driver with no 8-bit alpha answers with one that has none,
-		// successfully, and every term this seam promises about a pixel then
-		// changes underneath it - what the blend equation's destination alpha
-		// is, what read_back_buffer's fourth channel means, and how many
-		// distinct values a channel holds at all. The frame would look nearly
-		// right and the pixel contract would fail for a reason no assertion in
-		// it could name.
-		//
-		// The other backend cannot have this problem: it names
-		// DXGI_FORMAT_B8G8R8A8_UNORM and device creation fails if it cannot
-		// have it. This is the same refusal, written out, because GL's
-		// selection is a negotiation and D3D's is a demand (T6).
-		//
-		// PER CHANNEL RATHER THAN cColorBits, which is documented as excluding
-		// the alpha bitplanes and which drivers report inconsistently as 24 or
-		// 32 for the same format. The four channel counts are unambiguous and
-		// are what the contract actually needs.
-		//
-		// BEFORE SetPixelFormat, which may be called once per window and never
-		// undone - so a format worth refusing is refused while refusing is
-		// still possible.
-		PIXELFORMATDESCRIPTOR given = {};
-		if (DescribePixelFormat(this->device_context, format, sizeof(given),
-			&given) == 0)
-		{
-			throw std::runtime_error("The OpenGL pixel format this window was "
-				"offered cannot be described.");
-		}
-		if (given.iPixelType != PFD_TYPE_RGBA ||
-			(given.dwFlags & PFD_DOUBLEBUFFER) == 0 ||
-			given.cRedBits < 8 || given.cGreenBits < 8 ||
-			given.cBlueBits < 8 || given.cAlphaBits < 8)
-		{
-			throw std::runtime_error("This window's OpenGL pixel format is "
-				"r" + std::to_string(given.cRedBits) +
-				"g" + std::to_string(given.cGreenBits) +
-				"b" + std::to_string(given.cBlueBits) +
-				"a" + std::to_string(given.cAlphaBits) +
-				(((given.dwFlags & PFD_DOUBLEBUFFER) != 0)
-					? ", double buffered" : ", single buffered") +
-				". The renderer needs at least eight bits of each channel and "
-				"two buffers. ChoosePixelFormat answers with the nearest it "
-				"has rather than refusing, so this is where it is refused.");
-		}
-		this->generic_pixel_format =
-			(given.dwFlags & PFD_GENERIC_FORMAT) != 0;
-
-		if (!SetPixelFormat(this->device_context, format, &wanted))
-		{
-			throw std::runtime_error("This window cannot be given a 32-bit "
-				"double-buffered OpenGL pixel format.");
-		}
-
-		// The bootstrap. A 1.1 context exists only so that
-		// wglCreateContextAttribsARB can be asked for, because an extension
-		// entry point is fetched through a context and the context that can
-		// create a 3.3 core one is the thing being fetched.
-		HGLRC legacy = wglCreateContext(this->device_context);
-		if (legacy == nullptr ||
-			!wglMakeCurrent(this->device_context, legacy))
-		{
-			throw std::runtime_error(
-				"This machine has no OpenGL driver at all.");
-		}
-
-		CreateContextAttribs create_context_attribs =
-			reinterpret_cast<CreateContextAttribs>(
-				wglGetProcAddress("wglCreateContextAttribsARB"));
-		if (create_context_attribs == nullptr)
-		{
-			wglMakeCurrent(this->device_context, nullptr);
-			wglDeleteContext(legacy);
-			throw std::runtime_error("This driver has no "
-				"WGL_ARB_create_context, so it cannot make an OpenGL 3.3 core "
-				"context. It is an OpenGL 2.1 driver or a software fallback.");
-		}
-
-		const int attributes[] =
-		{
-			WGL_CONTEXT_MAJOR_VERSION_ARB_, 3,
-			WGL_CONTEXT_MINOR_VERSION_ARB_, 3,
-			WGL_CONTEXT_PROFILE_MASK_ARB_, WGL_CONTEXT_CORE_PROFILE_BIT_ARB_,
-			0
-		};
-		this->gl_context = create_context_attribs(this->device_context,
-			nullptr, attributes);
-
-		wglMakeCurrent(this->device_context, nullptr);
-		wglDeleteContext(legacy);
-
-		if (this->gl_context == nullptr ||
-			!wglMakeCurrent(this->device_context, this->gl_context))
-		{
-			throw std::runtime_error("This driver refused an OpenGL 3.3 core "
-				"context. 3.3 is 2010 hardware and is the floor this engine "
-				"builds against.");
-		}
-
-		// Loaded against the core context and not the bootstrap one:
-		// wglGetProcAddress answers for whatever is current, and the 1.1
-		// context has none of these.
-		load_gl_functions();
-	}
-
 	void Renderer::Impl::create_gl_resources()
 	{
 		const GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER_,
-			SPRITE_VERTEX_SHADER, "sprite vertex");
+			this->shader_prelude, SPRITE_VERTEX_SHADER, "sprite vertex");
 		const GLuint pixel_shader = compile_shader(GL_FRAGMENT_SHADER_,
-			SPRITE_PIXEL_SHADER, "sprite fragment");
+			this->shader_prelude, SPRITE_PIXEL_SHADER, "sprite fragment");
 
 		this->program = glCreateProgram();
 		glAttachShader(this->program, vertex_shader);
@@ -521,9 +400,11 @@ namespace labrador
 		glUniform1i(glGetUniformLocation(this->program, "sprite_texture"), 0);
 
 		// The index buffer, which is the same two triangles per sprite for
-		// every sprite there will ever be. A run is capped at this many when it
-		// is recorded (DrawList::View::draw) rather than grown here; replay()
-		// neither splits nor clamps, and would draw whatever it was handed.
+		// every sprite there will ever be, counted from a run's first vertex
+		// (point_attributes says how that origin moves). A run is capped at
+		// this many when it is recorded (DrawList::View::draw) rather than
+		// grown here; replay() neither splits nor clamps, and would draw
+		// whatever it was handed.
 		std::vector<unsigned short> index_data;
 		index_data.reserve(static_cast<size_t>(DrawList::View::MAX_RUN_SPRITES)
 			* INDICES_PER_SPRITE);
@@ -557,19 +438,10 @@ namespace labrador
 				sizeof(unsigned short)),
 			index_data.data(), GL_STATIC_DRAW_);
 
-		// The three fields of SpriteVertex, located by offsetof rather than by
-		// position, which is why sprite_vertex.h is free to declare them in any
-		// order it likes. The attribute indexes are the shader's, bound by name
-		// before linking, and are what has to agree with it.
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
-			reinterpret_cast<const void*>(offsetof(SpriteVertex, position)));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
-			reinterpret_cast<const void*>(offsetof(SpriteVertex, colour)));
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
-			reinterpret_cast<const void*>(offsetof(SpriteVertex, texcoord)));
+		point_attributes(0);
 
 		// Clamped, so a source rectangle at the edge of an atlas cannot bleed
 		// the far side of it into a sprite.
@@ -677,10 +549,11 @@ namespace labrador
 			glBindTexture(GL_TEXTURE_2D, run.texture);
 			glBindSampler(0, this->sampler(run.filter));
 
-			glDrawElementsBaseVertex(GL_TRIANGLES,
+			point_attributes(static_cast<std::size_t>(run.first_sprite) *
+				VERTICES_PER_SPRITE);
+			glDrawElements(GL_TRIANGLES,
 				static_cast<GLsizei>(run.sprites * INDICES_PER_SPRITE),
-				GL_UNSIGNED_SHORT, nullptr,
-				static_cast<GLint>(run.first_sprite * VERTICES_PER_SPRITE));
+				GL_UNSIGNED_SHORT, nullptr);
 		}
 	}
 
@@ -706,7 +579,7 @@ namespace labrador
 
 		this->impl_->reported_width = width;
 		this->impl_->reported_height = height;
-		this->impl_->create_context(static_cast<HWND>(native_window));
+		this->impl_->create_context(native_window);
 
 		this->impl_->views.clear();
 		this->impl_->views.reserve(static_cast<size_t>(view_capacity));
@@ -718,8 +591,7 @@ namespace labrador
 		}
 
 		this->impl_->create_gl_resources();
-		this->impl_->device_info = selected_device(
-			this->impl_->generic_pixel_format, this->impl_->device_context);
+		describe_device(*this->impl_);
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
@@ -739,7 +611,7 @@ namespace labrador
 		// WM_SIZE between creating its window and creating its device, which is
 		// an ordering Win32 allows and nothing here forbids -
 		// tests/render/renderer_seam_tests.cpp holds all five backends to it.
-		if (this->impl_->gl_context == nullptr)
+		if (this->impl_->context == nullptr)
 		{
 			return false;
 		}
@@ -751,8 +623,8 @@ namespace labrador
 		}
 
 		// NOTHING IS REBUILT, WHICH IS THE WHOLE DIFFERENCE. A swap chain has
-		// buffers of a fixed size and a resize destroys and remakes them; the
-		// default framebuffer of a WGL context follows its window on its own.
+		// buffers of a fixed size and a resize destroys and remakes them; a
+		// default framebuffer follows its window or its canvas on its own.
 		// The answer is still "yes, re-run the layout", because that is what
 		// the shell asked.
 		//
@@ -777,8 +649,8 @@ namespace labrador
 		// buffer that now exists. On the two Direct3D backends that is a
 		// correctness fix: their recordings name a render target the resize
 		// destroys, and executing one afterwards is a crash or a refusal. Here
-		// nothing is destroyed - a WGL context's default framebuffer follows
-		// its window - so this backend could keep every vertex it has recorded
+		// nothing is destroyed - a default framebuffer follows its window or
+		// its canvas - so this backend could keep every vertex it has recorded
 		// and replay it happily at the new size.
 		//
 		// It does not, because the difference would be observable. A caller
@@ -816,8 +688,8 @@ namespace labrador
 	void Renderer::set_device_notify(DeviceNotify* device_notify)
 	{
 		// Stored and never called. A WGL context is not lost the way a Direct3D
-		// device is, so there is no loss to report - see the class comment on
-		// Renderer::Impl.
+		// device is, and a lost WebGL2 one is not reported through this - see
+		// the class comment on Renderer::Impl.
 		this->impl_->notify = device_notify;
 	}
 
@@ -850,7 +722,7 @@ namespace labrador
 
 	void Renderer::end_frame()
 	{
-		SwapBuffers(this->impl_->device_context);
+		this->impl_->present();
 	}
 
 	void Renderer::set_view_count(int count)
@@ -932,9 +804,10 @@ namespace labrador
 
 	Vector2F Renderer::back_buffer_size() const
 	{
-		// The window's, not the shell's. The seam promises the size of the
+		// The context's, not the shell's. The seam promises the size of the
 		// buffer read_back_buffer copies out, and here that buffer is the
-		// window's client area whatever anyone last said about it.
+		// window's client area, or the canvas's drawing buffer, whatever anyone
+		// last said about it.
 		const Vector2I drawable = this->impl_->drawable_size();
 		return { static_cast<float>(drawable.x),
 			static_cast<float>(drawable.y) };

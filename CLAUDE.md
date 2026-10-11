@@ -1,8 +1,10 @@
 # Labrador — notes for Claude
 
-A 2D game engine in C++20, Windows-only, built with CMake + vcpkg. This
-repository is the **engine half of a split**: the client that drives it,
-ColourWars, lives in its own repository and consumes this one as a submodule.
+A 2D game engine in C++20 for Windows and, through Emscripten and WebGL2, the
+browser, built with CMake + vcpkg; one of its five samples runs in a browser so
+far and the other four are Windows-only. This repository is the **engine half
+of a split**: the client that drives it, ColourWars, lives in its own
+repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
 and `samples/` holds five clients: `minimal` (~450 lines), the new-project
 template you copy; `collision`, `audio` and `local_multiplayer`, the focused
@@ -48,22 +50,31 @@ which is the version CI pins; `emsdk_env.bat` sets `EMSDK`, and vcvars is still
 what puts cmake and ninja on the path. They are the first configurations built
 by a second compiler, so `cmake/settings.cmake` has a clang branch, argued
 rather than translated. [docs/port/web.md](docs/port/web.md) is the plan, and
-M1 and M2 of it are what exists: the engine and every headless test, and the
-shell's browser half, so LineSweeper runs in a page -
+M1 to M3 of it are what exists: the engine and every headless test, the
+shell's browser half, and WebGL2 inside `render/gl/` (D1: one backend, a WGL
+and a web context translation unit), so LineSweeper runs and draws in a page -
 `out/build/wasm-*/samples/linesweeper/LineSweeperSample.html`, served over
 HTTP, from the development page
-[samples/linesweeper/web/shell.html](samples/linesweeper/web/shell.html). It
-draws nothing yet, because the render backend there is null until M3, and the
-other four samples are still Windows-only. **In a browser `Application::run`
-does not return and the stack below it is unwound, destructors included,
-before the first frame**, so a web entry point keeps its `Application` in a
-static: `samples/linesweeper/main_web.cpp` is the shape, and `application.h`
-says why.
+[samples/linesweeper/web/shell.html](samples/linesweeper/web/shell.html). Its
+tests run under Node, which has no WebGL, so `RenderPixelTests` is not built
+there and nothing in a browser build's ctest draws; a headless browser run is
+M6. What the page draws was checked by loading it in headless Chrome and
+headless Firefox: board, pieces, text from the BC2 font atlas and the pause
+menu, keys changing the frame, no console errors. Safari has not been checked
+and R5's pacing has not been measured on real displays, and M3's done-when
+needs both, so web.md does not call M3 done. A lost WebGL2 context is not reported to `DeviceNotify`; restoring
+one is M6. The other four samples are still Windows-only. **In a browser
+`Application::run` does not return and the stack below it is unwound,
+destructors included, before the first frame**, so a web entry point keeps
+its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,
+and `application.h` says why.
 
 **There are five render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
 configure time — so asking for one that was not built is a missing symbol at
 link (T5). A change to anything in `engine/render/` should be checked against
-all five; CI builds all five.
+all five, and a change in `gl/` under a `wasm-*` preset as well, the only
+build of `web_context.cpp` and the only clang build of `gl/`; CI builds all
+five and the browser build.
 
 **And two audio backends**, on a second and independent axis:
 `LABRADOR_AUDIO_BACKEND` is `xaudio2` or `null`, and the two `-null` presets
@@ -82,7 +93,7 @@ default under Emscripten; it compiles, and no pad has driven it yet.
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
 | `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
-| `wasm-debug`, `wasm-release` | `render/null/`, `audio/null/`, `input/web/` — clang and libc++, run under Node. `gl/` replaces null when it has a WebGL2 context (web.md M3) | 14 entries: the null set without `CollisionSampleTests` and `AudioSampleTests`. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
+| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/null/`, `input/web/` — clang and libc++, tests run under Node | 14 entries: the seventeen less `RenderPixelTests` (Node has no WebGL; a headless browser run is web.md M6), `CollisionSampleTests` and `AudioSampleTests`. `AudioTests` keeps its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -311,8 +322,15 @@ in the commit that creates it.
   Every backend has the same three translation units — `renderer.cpp`,
   `render_resources.cpp`, `texture_factory.cpp` — and at most one more, being
   the part of an API that is not about drawing: `d3d11/`, `d3d12/` and
-  `vulkan/` each add `device_resources.cpp`, `gl/` adds `gl_functions.cpp` and
-  compiles its GLSL at device creation, `null/` adds nothing. The HLSL three of
+  `vulkan/` each add `device_resources.cpp`, and `null/` adds nothing. `gl/` is
+  the one sanctioned exception: it adds one context file per platform,
+  `wgl_context.cpp` (the WGL loader and context) or `web_context.cpp` (a
+  WebGL2 context on the page's canvas), and a build compiles exactly one,
+  because the drawing is one GL path on both and only the context differs —
+  [docs/port/web.md](docs/port/web.md), D1, is where that is argued. It
+  compiles its GLSL at device creation, behind a prelude the context supplies,
+  so desktop GL runs the browser's drawing path and `RenderPixelTests` under
+  `x64-debug-gl` covers it. The HLSL three of
   the five compile is **not** in any of their folders — it is
   `render/sprite.hlsl`, one file at three profiles through two compilers, and
   that file says why. Note the name collision, because it is

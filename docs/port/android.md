@@ -148,7 +148,8 @@ the list and the only one that can invalidate the rest.
 problem, in a paragraph written for a different reason: of the 45 `.dds` files
 across this repository and its client, **43 are BC3 and two are uncompressed**,
 every font atlas is **BC2**, and the file says of block compression that it is
-*"universally present on a desktop driver and absent from GLES 3.0 entirely."*
+universal on a desktop driver and present in desktop browsers but not on most
+phones, *"GLES 3.0 itself having no S3TC."*
 Android GPUs are the case that sentence was warning about. ETC2 is the
 guaranteed floor on GLES 3.0 and on Android Vulkan; ASTC is the modern one; BC
 is neither, on most of the market.
@@ -628,6 +629,12 @@ Named so the absence is deliberate, in `PHILOSOPHY.md`'s own style:
   temptation is to say GLES 3.0 is nearly that. It is not — profile, shading
   language version and, decisively, the texture formats in §3.1 — and a fifth
   and sixth backend to reach one platform is the cost Vulkan exists to avoid.
+  *Amended by the web port ([web.md](web.md), D1):* `render/gl/` reaches GLES
+  3.0, as WebGL2, through a second context translation unit rather than
+  another backend, and profile and shading-language version are one prelude
+  per context. The texture formats are not: S3TC on GLES is an extension a
+  context has to ask for and may not get (§3.1), and that is still why this
+  port goes through Vulkan rather than GLES.
 - **Touch-first UI, input latency, thermal budget, APK packaging, store
   compliance.** All real, none of them the port. This document ends at "the
   engine runs."

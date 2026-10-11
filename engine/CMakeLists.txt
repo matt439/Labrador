@@ -109,7 +109,8 @@ endif()
 # choice fails at link rather than at run time (T5). This is where that choice
 # is made, and it is the whole of what selecting a backend involves - three
 # translation units, at most one more for the part of the API that is not about
-# drawing, and whatever that backend needs to build its shader.
+# drawing (for gl/, one of its two context files, chosen by platform below;
+# docs/port/web.md, D1), and whatever that backend needs to build its shader.
 #
 # Nothing outside engine/render/<backend>/ names any of the five folders, which
 # is what makes this a list of files rather than a set of #ifdefs.
@@ -172,24 +173,40 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         "engine/render/d3d12/sprite_pixel_shader.h")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     target_sources(LabradorEngine PRIVATE
-        render/gl/gl_functions.cpp
         render/gl/render_resources.cpp
         render/gl/renderer.cpp
         render/gl/texture_factory.cpp
     )
-    if(EMSCRIPTEN)
-        message(FATAL_ERROR
-            "LABRADOR_RENDER_BACKEND is 'gl' in a browser build, and gl/ has "
-            "only a WGL context so far. docs/port/web.md (D1) puts WebGL2 in "
-            "this folder; until it is there, a browser build draws with null.")
-    endif()
-    target_link_libraries(LabradorEngine PUBLIC opengl32)
 
-    # No shader step. GL 3.3 has no offline shader format, so the GLSL ships
-    # as source in render/gl/sprite_shader.h and the driver compiles it at
-    # device creation - which that file explains at length, because it is the
-    # one place a backend genuinely differs in kind rather than in spelling
-    # from the two that compile HLSL above.
+    # ONE BACKEND, TWO CONTEXTS, AND A BUILD COMPILES ONE OF THEM
+    # (docs/port/web.md, D1): a 3.3 core context through WGL on Windows, and
+    # WebGL2 on the page's canvas in a browser. render/gl/backend.h says what
+    # each one answers. Chosen by the platform, like the window above, because
+    # neither can be built for the other's.
+    if(EMSCRIPTEN)
+        target_sources(LabradorEngine PRIVATE
+            render/gl/web_context.cpp
+        )
+        # WebGL2 and only WebGL2: GLES 3.0 is the dialect the backend is
+        # written to, and a WebGL1 fallback would be a second one. PUBLIC
+        # because these are link options, and the link is the executable's.
+        target_link_options(LabradorEngine PUBLIC
+            -sMIN_WEBGL_VERSION=2
+            -sMAX_WEBGL_VERSION=2
+        )
+    else()
+        target_sources(LabradorEngine PRIVATE
+            render/gl/wgl_context.cpp
+        )
+        target_link_libraries(LabradorEngine PUBLIC opengl32)
+    endif()
+
+    # No shader step. Neither GL 3.3 nor WebGL2 has an offline shader format,
+    # so the GLSL ships as source in render/gl/sprite_shader.h and is compiled
+    # at device creation - by the driver on Windows, by the browser in a page -
+    # which that file explains at length, because it is the one place a backend
+    # genuinely differs in kind rather than in spelling from the two that
+    # compile HLSL above.
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     target_sources(LabradorEngine PRIVATE
         render/vulkan/device_resources.cpp

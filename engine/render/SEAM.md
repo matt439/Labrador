@@ -30,10 +30,11 @@ Neither purpose needs two backends live in one process. That is the whole
 justification for the next section.
 
 **Both purposes are filled, and neither is a claim any more.** `gl/` is OpenGL
-3.3 core and passes `RenderPixelTests`; `null/` has no graphics API at all and
-records what it was asked to draw, which is what lets a test assert which
-sprites a frame submitted on a machine with no driver. Writing either changed
-nothing above the seam.
+3.3 core on Windows, where it passes `RenderPixelTests`, and WebGL2 in a
+browser, where no test reads its pixels back (docs/port/web.md, M6); `null/` has no graphics API
+at all and records what it was asked to draw, which is what lets a test assert
+which sprites a frame submitted on a machine with no driver. Writing either
+changed nothing above the seam.
 
 **And a third nobody had written down**, which `d3d12/` is the answer to. Every
 API behind this seam hid the CPU/GPU boundary until that one: D3D11 renames a
@@ -89,13 +90,16 @@ pointer to that adapter would undo this section's boundary to answer the same
 question.
 
 The same record names the configured presentation mode. Direct3D requests
-sync interval one, Vulkan selects FIFO, and OpenGL explicitly requests swap
-interval one through `WGL_EXT_swap_control`. That WGL extension is required:
-device creation throws if it is absent or the setter fails, rather than
-inheriting an unreported driver default. OpenGL records the setter's request
-and `wglGetSwapIntervalEXT`'s answer separately; Direct3D has no corresponding
-query and its reported interval is absent. The null backend reports `none`,
-with no intervals. These are API configuration records, not a claim that a
+sync interval one, Vulkan selects FIFO, and OpenGL on its WGL context
+explicitly requests swap interval one through `WGL_EXT_swap_control`. That WGL
+extension is required there: device creation throws if it is absent or the
+setter fails, rather than inheriting an unreported driver default. OpenGL
+records the setter's request and `wglGetSwapIntervalEXT`'s answer separately;
+Direct3D has no corresponding query and its reported interval is absent. The
+null backend reports `none`, with no intervals. The same GL backend on its
+browser context reports `browser_animation_frame`, with no intervals: WebGL
+offers no interval to request or read back, and the browser presents at a rate
+it chooses. These are API configuration records, not a claim that a
 compositor or virtual display obeyed them, and no value measures scan-out.
 
 DirectXTK is no longer on the render path at all. It remains bought for audio
@@ -105,10 +109,12 @@ and for the gamepad reader, which are seams of their own.
 
 Three translation units every backend has — `renderer.cpp`,
 `render_resources.cpp` and `texture_factory.cpp` — plus whatever it needs to
-build its shader, plus at most one more for the API itself. Only `null/` stops
-at three: `d3d11/`, `d3d12/` and `vulkan/` each add `device_resources.cpp` and
-`gl/` adds `gl_functions.cpp`, and all four are the same kind of file — the part
-of an API that is not about drawing.
+build its shader, plus the part of its API that is not about drawing. Only
+`null/` stops at three. `d3d11/`, `d3d12/` and `vulkan/` each add
+`device_resources.cpp`. `gl/` adds one context file per platform it reaches,
+`wgl_context.cpp` on Windows and `web_context.cpp` in a browser, and a build
+compiles exactly one of them (docs/port/web.md, D1). All of them are the same
+kind of file — the part of an API that is not about drawing.
 
 **The third file is where they diverge most**, and is the honest measure of what
 a port owes for content. It turns already-decoded bytes into a texture, and how
@@ -265,8 +271,9 @@ answers without a device.
 
 It was the one open question at the foot of `renderer.h`. What was open: a
 public `std::function` on the asset loader that exists only because a device can
-be lost, which two of the five backends never call — a WGL context is not lost,
-and the null one has nothing to lose — so a caller writes a rebuild path for a
+be lost, which two of the five backends never call — the null one has nothing to
+lose, and gl's WGL context is not lost while its WebGL2 one can be and is not
+reported (docs/port/web.md, M6) — so a caller writes a rebuild path for a
 hazard its configuration may not have.
 
 **Not on `DeviceNotify`, which already carries the half it can carry.** That
@@ -277,8 +284,9 @@ handle names a slot and a slot belongs to a name — and the only thing that kno
 the names is the manifest, which is what the loader keeps. Move the rebuild to
 `DeviceNotify` and a game keeps a second list beside the manifest.
 
-**Not nowhere.** A device is lost on three of the five, so the hazard is most of
-this seam's configurations and not a Direct3D 11 peculiarity.
+**Not nowhere.** A device can be lost on four of the five, and three of them
+report it, so the hazard is most of this seam's configurations and not a
+Direct3D 11 peculiarity.
 
 **And the premise that made it look misplaced is the part that was wrong.** "A
 hazard its configuration may not have" is a statement about a build, not about a

@@ -31,11 +31,12 @@ namespace labrador
 	// every font atlas is one, so a backend that cannot sample them has no text
 	// and, for most content, no art. The failure worth having is the one that
 	// says which feature is missing rather than the one that draws nothing.
-	// engine/render/gl/texture_factory.cpp names
-	// GL_EXT_texture_compression_s3tc in its throw - universally present on a
-	// desktop driver and absent from GLES 3.0 entirely - and
-	// engine/render/vulkan/texture_factory.cpp names textureCompressionBC,
-	// which the device is asked for when it is selected.
+	// engine/render/gl/texture_factory.cpp names the extension in its throw -
+	// GL_EXT_texture_compression_s3tc on a desktop driver, where it is
+	// universal, and WEBGL_compressed_texture_s3tc in a browser, where
+	// desktops have it and most phones do not, GLES 3.0 itself having no
+	// S3TC - and engine/render/vulkan/texture_factory.cpp names
+	// textureCompressionBC, which the device is asked for when it is selected.
 	enum class TextureFormat
 	{
 		r8g8b8a8_unorm,

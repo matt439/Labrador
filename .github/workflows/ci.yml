@@ -219,11 +219,12 @@ jobs:
         run: out\build\${{ matrix.preset }}\bench\LabradorBench.exe
 
   # The browser build, configured, built and tested - and nothing about it is
-  # drawn, which is the reason it needs no matrix. Its render backend is null
-  # until gl/ has a WebGL2 context (docs/port/web.md, M3), so what this checks
-  # is the second compiler and the second standard library: clang under
-  # -Werror with zero suppressions, libc++, a 32-bit size_t, and LineSweeper's
-  # rules replayed tick for tick on a second floating-point code generator.
+  # drawn, which is the reason it needs no matrix. It compiles gl/ against
+  # WebGL2 (docs/port/web.md, M3), but its tests run under Node, which has no
+  # WebGL, so what this checks is the second compiler and the second standard
+  # library: clang under -Werror with zero suppressions, libc++, a 32-bit
+  # size_t, gl/'s GLES path compiling and linking, and LineSweeper's rules
+  # replayed tick for tick on a second floating-point code generator.
   #
   # Its tests run under Node, which ctest reaches through the emulator
   # Emscripten's toolchain sets, so the step is the same ctest call the job
@@ -290,3 +291,20 @@ jobs:
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
           ctest --preset wasm-release
+
+      # THE SAME PRESET A SECOND TIME WITH THE NULL RENDERER, because the
+      # sources that assert drawing are compiled only when the backend is null:
+      # RenderTests' recording cases, SceneTests' fan-out and cull, the
+      # particle-draw and local-multiplayer draw cases, and the bench beside
+      # them. The preset builds gl/, so without this clang would never see
+      # them, and the test count would not say so - they leave executables that
+      # still exist. A cache variable on the command line and a binary
+      # directory of its own is the whole cost; a second pair of presets would
+      # be two more names for one configure flag.
+      - name: Configure, build and test with the null renderer
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          cmake --preset wasm-release -B out/build/wasm-release-null -DLABRADOR_RENDER_BACKEND=null || exit /b 1
+          cmake --build out/build/wasm-release-null || exit /b 1
+          ctest --test-dir out/build/wasm-release-null --output-on-failure

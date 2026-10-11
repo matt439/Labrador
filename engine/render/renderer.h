@@ -247,8 +247,11 @@ namespace labrador
 		// machine with no display.
 		//
 		// Throws std::invalid_argument for a view capacity below one, before it
-		// touches a window. The GL backend requires WGL_EXT_swap_control and
-		// throws std::runtime_error if requesting its swap interval fails.
+		// touches a window. The GL backend on Windows requires
+		// WGL_EXT_swap_control and throws std::runtime_error if requesting its
+		// swap interval fails; in a browser there is no interval to request,
+		// and it throws std::invalid_argument for a null canvas handle and
+		// std::runtime_error if the canvas gives it no WebGL2 context.
 		void create_device(void* native_window, int width, int height,
 			int view_capacity);
 
@@ -370,9 +373,9 @@ namespace labrador
 		// WM_SIZE and still asks for frames (engine/app/win32/window.cpp). What
 		// a backend answers then is whatever it is really drawing into: a swap
 		// chain does not follow its window, so both Direct3D backends answer
-		// the size they were told and let Present stretch; a WGL context's
-		// default framebuffer is the window's client area, so the GL backend
-		// answers the window. read_back_buffer below is sized from this and a
+		// the size they were told and let Present stretch; a GL context's
+		// default framebuffer is the window's client area, or in a browser the
+		// canvas's drawing buffer, so the GL backend answers that. read_back_buffer below is sized from this and a
 		// viewport is placed inside it, so a backend that answered from a cache
 		// would have both of those disagree with the pixels it just drew.
 		mattmath::Vector2F back_buffer_size() const;

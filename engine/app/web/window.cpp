@@ -87,7 +87,10 @@ namespace labrador
 		// layout is as big as its drawing buffer, so a buffer that follows
 		// it at any ratio but one grows without end.
 		//
-		// Returns whether the size changed, and tells nobody.
+		// Returns whether the size changed, and tells nobody: the caller
+		// reports it. The frame reports a change before the tick, so the
+		// layout and the renderer hear of a new buffer before anything is
+		// drawn into it; report_size() reports whether or not it changed.
 		bool measure();
 
 		// Measures, and reports whatever size the canvas has now.
@@ -379,7 +382,11 @@ namespace labrador
 		Impl* const self = static_cast<Impl*>(user_data);
 		self->guarded([self]()
 			{
-				self->measure();
+				if (self->measure())
+				{
+					self->notify->on_window_size_changed(self->buffer_width,
+						self->buffer_height);
+				}
 				self->notify->tick();
 			});
 	}

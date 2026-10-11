@@ -114,9 +114,9 @@ TEST_CASE("the atlas comes out as bytes and a format, not as a texture")
 	CHECK(font.atlas.height == 144);
 
 	// BC2, WHICH IS THE ONE TO KNOW ABOUT BEFORE A SECOND BACKEND. Desktop GL
-	// reads it through an extension and GLES 3.0 cannot read it at all, so a
-	// backend that skipped it would have every glyph in both clients and no
-	// way to upload one.
+	// reads it through an extension, and GLES 3.0 - WebGL2 included - only
+	// through an extension it does not guarantee, so a backend that skipped it
+	// would have every glyph in both clients and no way to upload one.
 	CHECK(font.atlas.format == TextureFormat::bc2_unorm);
 
 	// One level. The format has no way to carry a chain, which is why this is

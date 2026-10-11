@@ -13,16 +13,32 @@
 #include <vector>
 #include "engine/render/camera.h"
 
-// The OpenGL 3.3 core backend, for the files that have to name a context.
+// The OpenGL backend - 3.3 core on Windows, WebGL2 in a browser - for the files
+// that have to name a context.
 //
 // renderer.h promises that reaching for the device is "a deliberate include of
 // engine/render/<backend>/ and not something a game file can do by accident".
-// This is that include. Every client of it is in this folder - the three .cpp
-// beside it, and nothing else: sprite_shader.h was named here as a fourth and
-// includes nothing at all, being two raw-string GLSL constants under a
-// #pragma once. The arrow runs the other way, from renderer.cpp to both. And
+// This is that include. Every client of it is in this folder - every .cpp
+// beside it, the context files included, and nothing else. sprite_shader.h is
+// not one: it includes nothing, being two raw-string GLSL constants under a
+// #pragma once, and renderer.cpp includes both headers. And
 // cmake/check_engine_includes.cmake fails the build for anything outside the
 // folder that names any header in it.
+//
+// ONE BACKEND, TWO CONTEXTS (docs/port/web.md, D1). WebGL2 is GLES 3.0, and
+// this backend was authored to the intersection of that and 3.3 core, so the
+// browser is not a sixth backend but a second way of making a context.
+// wgl_context.cpp and web_context.cpp are the two, and engine/CMakeLists.txt
+// compiles exactly one of them. Each defines Renderer::Impl::Context and the
+// members below that touch it. Apart from gl_functions.h, which includes a
+// different GL header for each, nothing else in the folder knows which context
+// it is in. So the folder holds the three translation units every backend has
+// and both context files, and a build compiles four: the rule that a backend
+// adds at most one translation unit to the three is amended for this folder
+// by D1 rather than satisfied by counting per build. What the two contexts
+// disagree about is what they report - whether S3TC is there, which GLSL
+// dialect to compile, how a frame reaches the screen - and those are fields
+// the context fills in, not branches in the drawing code.
 //
 // WHAT THIS BACKEND DOES DIFFERENTLY FROM D3D11, AND IT IS NOT ONE THING.
 // The largest is the recording shape: D3D11 has deferred
@@ -40,14 +56,14 @@
 //
 // The rest, each written down where it happens: the shader is compiled at
 // device creation rather than at build time (engine/CMakeLists.txt); a resize
-// rebuilds nothing, because a WGL default framebuffer follows its window
-// (Renderer::window_size_changed, and Impl::drawable_size is what that costs);
-// there is no device loss to report (Renderer::Impl below); block compression
-// is an extension that has to be asked for and a format this backend will not
-// take is refused by name (texture_factory.cpp); the vertex store grows without
-// a cap where D3D11 wraps a fixed buffer; the depth range a Viewport carries is
-// dropped, there being no depth buffer to apply it to; and the seam's three
-// debug markers do nothing.
+// rebuilds nothing, because a default framebuffer follows its window or its
+// canvas (Renderer::window_size_changed, and Impl::drawable_size is what that
+// costs); no device loss is reported (Renderer::Impl below); block
+// compression is an extension that has to be asked for and a format this
+// backend will not take is refused by name (texture_factory.cpp); the vertex
+// store grows without a cap where D3D11 wraps a fixed buffer; the depth range
+// a Viewport carries is dropped, there being no depth buffer to apply it to;
+// and the seam's three debug markers do nothing.
 
 namespace labrador
 {
@@ -119,8 +135,9 @@ namespace labrador
 		};
 
 		// How many sprites one run may hold. The index buffer is built once for
-		// this many and reused with a base vertex, so a longer run is split
-		// rather than growing anything.
+		// this many and reused from each run's first vertex (renderer.cpp,
+		// point_attributes), so a longer run is split rather than growing
+		// anything.
 		static const int MAX_RUN_SPRITES = 2048;
 
 		Renderer::Impl* owner = nullptr;
@@ -146,26 +163,52 @@ namespace labrador
 		void reset();
 	};
 
-	// The context, the window it draws into, and every GL object with a
-	// lifetime longer than one frame.
+	// The context, the window or canvas it draws into, and every GL object
+	// with a lifetime longer than one frame.
 	//
-	// NO DEVICE LOSS, AND THEREFORE NO D3DDeviceNotify EQUIVALENT. A WGL
-	// context survives everything a Direct3D device does not, so the seam's
-	// DeviceNotify is stored and never called here. That is not a gap: three of
-	// the five backends need the interface - d3d11, d3d12 and vulkan, the last
-	// of which reaches it from a VK_ERROR_DEVICE_LOST rather than from DXGI -
-	// and a backend that does not is allowed to say so. This is now the
-	// minority answer rather than the odd one out.
+	// NO DEVICE LOSS IS REPORTED, AND THEREFORE NO D3DDeviceNotify EQUIVALENT.
+	// A WGL context survives everything a Direct3D device does not. A WebGL2
+	// context does not: a browser can take it away, and web_context.cpp says
+	// what happens then. Under both contexts the seam's DeviceNotify is stored
+	// and never called here. Three of the five backends do call it - d3d11,
+	// d3d12 and vulkan, the last from a VK_ERROR_DEVICE_LOST rather than from
+	// DXGI - and a backend that does not is allowed to say so. Restoring a
+	// lost WebGL2 context through it is docs/port/web.md's M6.
 	class Renderer::Impl
 	{
 	public:
+		// Both defined by the context translation unit, the only file where
+		// Context is complete.
+		Impl();
 		~Impl();
 
-		HWND window = nullptr;
-		HDC device_context = nullptr;
-		HGLRC gl_context = nullptr;
+		// The platform's half: the window or canvas, and the context made on
+		// it. Null until create_context, and whether it is null is the only
+		// question anything outside the two context files asks of it.
+		struct Context;
+		std::unique_ptr<Context> context;
+
 		RenderDeviceInfo device_info;
-		bool generic_pixel_format = false;
+
+		// WHAT THE CONTEXT ANSWERED, filled in by create_context and read by
+		// the files that do not know which context they are in.
+		//
+		// The start of both shaders: a #version, and on GLES the precision
+		// qualifiers it has no defaults for. sprite_shader.h is the rest, and
+		// is the same text under both.
+		const char* shader_prelude = nullptr;
+		// Whether the BC1-BC3 formats can be uploaded. An extension on both
+		// contexts, under two names; texture_factory.cpp refuses without it.
+		bool block_compression = false;
+		// Whether the context is known to rasterise on the CPU before its
+		// strings are read - WGL's generic pixel format. The strings are read
+		// either way (renderer.cpp).
+		bool software_context = false;
+		// Which glGetString names describe the device: GL_VENDOR and
+		// GL_RENDERER on a desktop, where a browser masks those and answers
+		// the unmasked pair only under WEBGL_debug_renderer_info.
+		GLenum vendor_name = GL_VENDOR;
+		GLenum renderer_name = GL_RENDERER;
 
 		// Whether submit() has already run for this frame. renderer.h makes a
 		// second submit a no-op, and this backend is the one it was written
@@ -195,15 +238,18 @@ namespace labrador
 
 		GLuint sampler(TextureFilter filter) const;
 
-		// How big the thing being drawn into is, right now, in pixels.
+		// How big the thing being drawn into is, right now, in pixels. Defined
+		// by the context.
 		//
 		// THE DEFAULT FRAMEBUFFER OF A WGL CONTEXT IS ITS WINDOW'S CLIENT AREA,
 		// so the window is the only authority on this and the backend must not
-		// keep a second copy of it. A cached size is wrong exactly when someone
-		// is looking: engine/app/win32/window.cpp renders a full frame from
-		// WM_PAINT for every step of a drag-resize and discards every WM_SIZE
-		// until the drag ends, so a stale copy slides the whole picture down
-		// the window under a black band for the duration. No other backend can
+		// keep a second copy of it. A WebGL2 context's is its canvas's drawing
+		// buffer, which the web window resizes before a frame, and the same
+		// rule holds for the same reason. A cached size is wrong exactly when
+		// someone is looking: engine/app/win32/window.cpp renders a full frame
+		// from WM_PAINT for every step of a drag-resize and discards every
+		// WM_SIZE until the drag ends, so a stale copy slides the whole picture
+		// down the window under a black band for the duration. No other backend can
 		// have that bug, and for two different reasons. The two that draw into
 		// a swap chain they created at a size they were told need no height at
 		// all to place a pane - that is both Direct3D ones, and it is why this
@@ -213,8 +259,15 @@ namespace labrador
 		// buffer's (vulkan/backend.h).
 		mattmath::Vector2I drawable_size() const;
 
-		// Makes a 3.3 core context on `window` and loads the entry points.
-		void create_context(HWND window);
+		// Makes a context on `native_window` - an HWND, or the canvas's html5
+		// target - makes it current, and fills in the answers above. Defined
+		// by the context.
+		void create_context(void* native_window);
+
+		// Hands the finished frame to whatever shows it: SwapBuffers on
+		// Windows, and nothing in a browser, which composites when the
+		// animation frame callback returns. Defined by the context.
+		void present();
 
 		// The program, the buffers and the samplers.
 		void create_gl_resources();

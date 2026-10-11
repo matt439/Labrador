@@ -50,7 +50,9 @@ checked byte by byte, because its formats decide what WebGL2 has to accept.
 Three things are therefore guesses. The first is how many warnings clang
 raises on a tree only MSVC has compiled, under `-Werror` with zero
 suppressions (§9, S1). The second is the output size. The third is the
-extension name that Emscripten's `glGetString` reports for S3TC. The browser
+extension name that Emscripten's `glGetString` reports for S3TC. *(Moot after
+M3: the web context enables `WEBGL_compressed_texture_s3tc` by name and never
+reads the extension string; §9.)* The browser
 facts below are general knowledge: S3TC coverage, timer resolution, Gamepad API
 gating, and what COOP/COEP does to a page. They were not tested in a browser.
 
@@ -75,12 +77,14 @@ hardest item becoming its easiest:
 
 - **No new graphics API.** WebGL2 is OpenGL ES 3.0. The GL backend's shader was
   written for exactly that intersection
-  ([`gl/sprite_shader.h:25-29`](../../engine/render/gl/sprite_shader.h#L25-L29)).
+  ([`gl/sprite_shader.h:26-34`](../../engine/render/gl/sprite_shader.h#L26-L34)).
   Its loader says the only things outside it are one call, one token and the
   content's texture format
-  ([`gl/gl_functions.h:26-32`](../../engine/render/gl/gl_functions.h#L26-L32)).
+  (`gl/gl_functions.h` at `862e08b`).
   Android needed a fifth backend. The web needs about thirty lines of GL, in
-  the right place (§3.3).
+  the right place (§3.3). *(Closed in M3: the three are answered once for both
+  contexts, and that comment now says nothing is outside the intersection;
+  §3.3 and §9.)*
 - **The gamepad seam survives.** On Android every device is pushed, and
   [android.md](android.md) §3.3 found that `GamepadReader`'s pull shape does
   not hold there. The browser Gamepad API is polled:
@@ -189,36 +193,43 @@ Windows-only.
 
 ### 3.3 The GL backend, against WebGL2
 
+> **Closed in M3, and the code named below is as it stood at `862e08b`.** The
+> WGL code is `gl/wgl_context.cpp` (the old `gl_functions.cpp`, with context
+> creation, `drawable_size` and the swap moved out of `renderer.cpp`), beside
+> `gl/web_context.cpp`. All three gaps are answered on both contexts rather
+> than only on the web: the base vertex by re-pointing the attribute offsets
+> (`point_attributes` in `renderer.cpp`), BGRA by a CPU swizzle
+> (`rgba_from_bgra` in `texture_factory.cpp`), and S3TC by asking the context,
+> whose web half enables `WEBGL_compressed_texture_s3tc`. §9 has what M3
+> measured. The text below is the analysis as written.
+
 The WGL-specific code is confined, and there is not much of it:
 
-- Context creation is `Impl::create_context(HWND)` with the 1.1 bootstrap
-  ([`gl/renderer.cpp:344-480`](../../engine/render/gl/renderer.cpp#L344-L480)),
-  the `HWND`/`HDC`/`HGLRC` members in [`gl/backend.h`](../../engine/render/gl/backend.h),
-  `SwapBuffers` ([`:853`](../../engine/render/gl/renderer.cpp#L853)) and
-  `GetClientRect` in `drawable_size`
-  ([`:336`](../../engine/render/gl/renderer.cpp#L336)).
+- Context creation is `Impl::create_context(HWND)` with the 1.1 bootstrap in
+  `gl/renderer.cpp`, the `HWND`/`HDC`/`HGLRC` members in `gl/backend.h`,
+  `SwapBuffers` in `Renderer::end_frame` and `GetClientRect` in
+  `Impl::drawable_size`.
 - The loader is all of `gl_functions.cpp`, using `wglGetProcAddress`. Under
   Emscripten, GLES 3.0 entry points are linked directly, so the loader has
   nothing to do.
 
-The GLES gaps are the three that `gl_functions.h:26-32` lists, and all three
-are real on WebGL2:
+The GLES gaps are the three that `gl_functions.h` lists, and all three are
+real on WebGL2:
 
 1. **`glDrawElementsBaseVertex` does not exist in WebGL2**
-   ([`renderer.cpp:680`](../../engine/render/gl/renderer.cpp#L680)). The base
-   vertex is how one index buffer, built for `MAX_RUN_SPRITES`, serves every
-   run. Without it, the replacement is to re-point the three
-   `glVertexAttribPointer` offsets at the run's first vertex before each draw
-   ([`:565-571`](../../engine/render/gl/renderer.cpp#L565-L571)). That is
-   three calls per run rather than one argument, and draws the same thing.
-2. **WebGL2 has no BGRA upload**
-   ([`texture_factory.cpp:69`](../../engine/render/gl/texture_factory.cpp#L69)).
-   This is not hypothetical. LineSweeper's only texture,
+   (`Impl::replay` in `renderer.cpp`). The base vertex is how one index
+   buffer, built for `MAX_RUN_SPRITES`, serves every run. Without it, the
+   replacement is to re-point the three `glVertexAttribPointer` offsets at the
+   run's first vertex before each draw, where `create_context` points them
+   once. That is three calls per run rather than one argument, and draws the
+   same thing.
+2. **WebGL2 has no BGRA upload** (`GL_BGRA` in `texture_factory.cpp`'s
+   `source_format`). This is not hypothetical. LineSweeper's only texture,
    `content/textures/white.dds`, is a 1×1 `b8g8r8a8` (its header's red mask is
    `0x00ff0000`). Either swizzle to RGBA on upload, or re-encode the content.
 3. **S3TC is an extension, and on the web it is a per-device lottery.**
-   [`texture_factory.cpp:17-53`](../../engine/render/gl/texture_factory.cpp#L17-L53)
-   asks for `GL_EXT_texture_compression_s3tc` and refuses by name without it.
+   `texture_factory.cpp` asks for `GL_EXT_texture_compression_s3tc` and
+   refuses by name without it.
    LineSweeper's font atlas is BC2. *General knowledge:*
    `WEBGL_compressed_texture_s3tc` is present in desktop Chrome, Edge,
    Firefox and Safari, and mostly absent on phones. So a desktop demo
@@ -228,7 +239,14 @@ are real on WebGL2:
    fallback (§9, M7).
 
 Shader: `#version 330 core` becomes `#version 300 es` plus
-`precision mediump float;`. Nothing else changes, as the header predicted.
+`precision highp float;` and `precision highp sampler2D;`. A GLES fragment
+shader has no default float precision and its sampler defaults to lowp, and at
+mediump, which may be half precision, an atlas coordinate cannot name every
+texel of a 2048-texel atlas. highp is required of GLES 3.0 fragment shaders,
+so it costs no reach ([`gl/web_context.cpp`](../../engine/render/gl/web_context.cpp),
+`WEB_SHADER_PRELUDE`). The shader body is otherwise the same text under both
+contexts, as the header predicted; the other two differences are the base
+vertex and the BGRA upload above, and both are answered on WGL as well.
 Presentation: the browser composites at the end of each animation-frame
 callback, so `SwapBuffers` becomes nothing, and the browser owns vsync.
 `read_back_buffer`'s `glReadPixels` works in WebGL2, as long as it runs before
@@ -365,7 +383,9 @@ selector is compiled in. It creates a WebGL2 context with
 `antialias = false` and `preserveDrawingBuffer = false`. It hands the context
 to the renderer as the same `void*` that `create_device` already takes for an
 `HWND`. *(M2 hands over the canvas instead, and leaves the context to `gl/`:
-D7.)* The drawing buffer follows the canvas's CSS box times
+D7. M3 built it that way: `gl/web_context.cpp` makes the context from the
+canvas's `"!canvas"` target with these attributes, stated rather than left at
+Emscripten's defaults, and the window never touches WebGL.)* The drawing buffer follows the canvas's CSS box times
 `devicePixelRatio`, observed with a `ResizeObserver`. Each change goes through
 `on_window_size_changed`, the door every Win32 resize already uses
 ([`application.cpp:395-419`](../../engine/app/application.cpp#L395-L419)).
@@ -413,7 +433,9 @@ released when focus leaves, exactly as `set_input_focus` does for alt-tab
 reload path already exists for D3D and Vulkan and is settled in `renderer.h`.
 That makes GL a fourth backend that can lose a device, which changes one
 sentence in `gl/backend.h`. Wiring it is M6 work. In v1, a lost context
-shows the error overlay.
+shows the error overlay. *(As built in M3, nothing listens for
+`webglcontextlost`: `DeviceNotify` is not called, no overlay is shown, and the
+canvas stays blank until the page is reloaded. `gl/web_context.cpp` says so.)*
 
 **Assets.** Recommend **`--embed-file`** for LineSweeper. Its content is
 21,512 bytes of font and 132 bytes of texture. Embedding it in the `.wasm`
@@ -543,7 +565,7 @@ Link with `-sMODULARIZE -sEXPORT_ES6 -sEXPORT_NAME=createLineSweeper
 -sENVIRONMENT=web -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2
 -sALLOW_MEMORY_GROWTH -fwasm-exceptions`, with content embedded:
 
-| File | What | Expected size (**estimate**, §9 S3 measures it) |
+| File | What | Expected size (**estimate**; M3 measured it, below) |
 |---|---|---|
 | `linesweeper.wasm` | engine + game + libc++ + 22 KB of content | 0.6–1.2 MB raw; ~200–400 KB Brotli |
 | `linesweeper.js` | ES module loader and glue | 60–150 KB raw; ~20–40 KB Brotli |
@@ -552,6 +574,9 @@ Link with `-sMODULARIZE -sEXPORT_ES6 -sEXPORT_NAME=createLineSweeper
 The baseline for the estimate is `x64-release-gl`'s `LineSweeperSample.exe`
 at 297 KB, which links the C runtime dynamically. The wasm build links libc++,
 `<filesystem>` and exception support statically, which is most of the gap.
+*(Measured in M3, with `gl/` drawing, at `wasm-release`: a 357 KB module
+and a 107 KB loader, 113 KB and 25 KB under Brotli, so the module is below
+the estimate and the loader inside it; §9.)*
 
 ### 7.2 Headers the host must send
 
@@ -662,7 +687,7 @@ that the code forced, and each is one commit to reverse.
 | | Decision | Answer as built | What it amends |
 |---|---|---|---|
 | **D6** | How a caller asks for a hidden window once `initialize()` takes no arguments (D2). Three did, by passing `SW_HIDE`: the collision and local-multiplayer smoke tests and `LineSweeperCapture` | **`ApplicationOptions::visible`**, copied into `WindowOptions::visible`, default true. Hidden is still a whole shell with a device and messages; a browser does not read it | `application.h`, `window.h`, three callers |
-| **D7** | Who makes the WebGL2 context: the window (§4) or `gl/`'s web context TU (D1) | **`gl/`, in M3.** `Window::handle()` is the canvas's html5 target, `"!canvas"`, as `create_device` takes an `HWND`, so the backend that draws makes its own context as WGL's TU does, and a build drawing with null makes none | `window.h`'s `handle()`; §4 |
+| **D7** | Who makes the WebGL2 context: the window (§4) or `gl/`'s web context TU (D1) | **`gl/`, built in M3.** `Window::handle()` is the canvas's html5 target, `"!canvas"`, as `create_device` takes an `HWND`, so the backend that draws makes its own context as WGL's TU does, and a build drawing with null makes none. `gl/web_context.cpp` makes it from that handle; the row still awaits the owner's yes | `window.h`'s `handle()`; §4 |
 
 ### Open
 
@@ -672,10 +697,13 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 
 ## 9. Milestones, and what to spike first
 
-### Where it stands, 2026-10-10
+### Where it stands, 2026-10-11
 
-**S1, S2, M1 and M2 are done; S3 is not started.** What they measured, against
-the guesses this plan made:
+**S1, S2, M1 and M2 are done. S3 was not run as a throwaway; it was absorbed
+into M3, whose code has landed and which is met in two of the three browsers
+its row names.** Safari has not been checked and R5 has not been measured, so
+M3 is not called done. What they measured, against the guesses this plan
+made:
 
 - **S1 was hours, not a milestone.** Emscripten 6.0.12, every portable `.cpp`
   in `engine/` and LineSweeper under `-Wall -Wextra -Wpedantic`: 61 distinct
@@ -711,13 +739,24 @@ the guesses this plan made:
   first draft did not: a continuation byte refused by the narrowed range after
   E0, ED, F0 or F4 goes with its lead.
 
-**M1 departs from its row below in two places.** The `wasm-*` presets build
-`render/null/` rather than `gl/`, because `gl/` has only a WGL context until
-M3, and `AppTests` is not in the browser build at all rather than split,
-because `application.h` includes `<Windows.h>` until D2 lands in M2. Both
-close in the milestone that owns them. `input/web/gamepad_reader.cpp` exists a
-milestone early, because the input-backend variable needed something to
-select. It compiles, and M4 is still the pad that proves it.
+**M1 departed from its row below in two places, and both have closed.** The
+`wasm-*` presets built `render/null/` rather than `gl/`, because `gl/` had only
+a WGL context, until M3 gave it a second one and switched them to `gl/`. And
+`AppTests` was not in the browser build at all rather than split, because
+`application.h` included `<Windows.h>` until D2 landed in M2.
+`input/web/gamepad_reader.cpp` exists a milestone early, because the
+input-backend variable needed something to select. It compiles, and M4 is
+still the pad that proves it.
+
+Closing the render half moved some coverage. The test sources gated on the
+null backend - `RenderTests`' `null_tests.cpp`, `SceneTests`'
+`fanout_tests.cpp` and `cull_tests.cpp`, `LineSweeperViewTests`'
+`particle_draw_tests.cpp`, `LocalMultiplayerTests`' `draw_tests.cpp` and the
+null benchmark - drop out of executables that still exist, so the `wasm-*`
+presets still count 14 ctest entries and compile none of those files. MSVC
+builds them under the two `-null` presets as before, and CI's wasm job
+configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`
+and runs that build's tests too, so the second compiler still sees them.
 
 **M2 met its row: LineSweeper reaches its frames in a browser and takes keys,
 and the Windows samples behave as they did.** D2 and D3 are as decided:
@@ -761,15 +800,87 @@ neutral and `app/win32/` and `app/web/` each define its `Impl`. What it found:
 - **Checked**: `x64-debug`, `-null`, `-gl`, `-d3d12`, `-vulkan`,
   `x64-release`, `wasm-debug` and `wasm-release`, every ctest entry green;
   headless Chrome loading the build's page, counting animation frames,
-  following a resize at ratio 1 and 2, and taking Escape, Down, Down, Enter
+  following a resize at ratio 1 and 2 (the buffer followed; the layout did not
+  hear of it, which M3 found and fixed, below), and taking Escape, Down, Down, Enter
   through the pause menu to the page's `onQuit`, after which the loop stops;
   and the Win32 LineSweeper and minimal samples on screen at 1280x720 client
   pixels, the pause menu opening on Escape and both exiting 0.
 
-What M2 could not show is a frame: the browser build draws with null until
-M3. The first size number is in, without a renderer: at `wasm-release` the
-module is 343 KB and its loader 85 KB, 109 KB and 20 KB under Brotli, below
-§7.1's estimate before `gl/` adds to it.
+What M2 could not show was a frame, because the browser build drew with null.
+Its size number was taken without a renderer: at `wasm-release` the module was
+343 KB and its loader 85 KB, 109 KB and 20 KB under Brotli.
+
+**M3 draws LineSweeper in Chrome and Firefox, and Safari is owed.** D1 is as
+decided: `gl/` holds the three translation units every backend has and two
+context files, `wgl_context.cpp` (the WGL loader and context, which was
+`gl_functions.cpp`) and `web_context.cpp`, and `engine/CMakeLists.txt`
+compiles exactly one of the two, so a build compiles four. `Renderer::Impl`
+holds the context, and the context supplies what the two disagree about: the
+shader prelude, whether S3TC is there, whether the context is a software one,
+and the vendor and renderer names. What it met and where it departed:
+
+- **The three GLES gaps are closed on both contexts with one path**, not per
+  context, so that the browser's drawing path is the one `RenderPixelTests`
+  checks on the desktop. Each run re-points the three `glVertexAttribPointer`
+  offsets at its first vertex and calls `glDrawElements`, so
+  `glDrawElementsBaseVertex` is gone from both and the loader's list is one
+  shorter. `b8g8r8a8` is swizzled to RGBA on the CPU at upload, so `GL_BGRA`
+  is gone. S3TC is asked of each context under its own name:
+  `GL_EXT_texture_compression_s3tc` on WGL, `WEBGL_compressed_texture_s3tc` in
+  a browser.
+- **highp, not the mediump §3.3 first proposed.** A GLES fragment shader has no
+  default float precision, and at mediump, which may be half precision, an
+  atlas coordinate cannot name every texel of a large atlas; a fragment
+  sampler defaults to lowp. So the ES prelude declares `precision highp float`
+  and `precision highp sampler2D`, which GLES 3.0 requires a fragment shader to
+  support.
+- **S3's two questions do not arise.** The context is made with
+  `enableExtensionsByDefault = false`, and the extensions the backend uses are
+  enabled by name through `emscripten_webgl_enable_extension`, so the list is
+  the code's rather than Emscripten's. `has_gl_extension` is not asked in a
+  browser, and what Emscripten's `glGetString` would call S3TC does not
+  matter. `WEBGL_compressed_texture_s3tc` was present in both desktop browsers
+  checked. The vendor and renderer names are unmasked through
+  `WEBGL_debug_renderer_info` where a browser offers it.
+- **Presentation is the browser's.** `present()` is `SwapBuffers` on WGL and
+  nothing in a browser, which composites when the animation-frame callback
+  returns. `device_info.present_mode` is `"browser_animation_frame"`, with no
+  swap interval to ask for. A lost WebGL2 context is not reported: nothing
+  listens for `webglcontextlost`, `DeviceNotify` is not called, and restoring
+  it stays in M6.
+- **It exposed an M2 defect, fixed in the same change.** M2's frame measured
+  the canvas's buffer and told nobody, which null could not show. Once WebGL
+  drew, the layout stayed at its old size after a page resize, a zoom or a
+  change of `devicePixelRatio`, and in Firefox a first buffer of 1361x766 left
+  the board laid out for 1280x720. The web window now reports a measured
+  change through `on_window_size_changed` before the tick, so the layout and
+  the renderer hear of a new buffer before anything is drawn into it.
+- **`RenderPixelTests` is not built for the browser**, because Node has no
+  WebGL; running it in a headless browser is M6. The coverage this moved is
+  in the paragraph on M1's departures above.
+- **Checked**: `x64-debug-gl` and `x64-release-gl`, 17 of 17 ctest entries,
+  with `RenderPixelTests` byte-identical to the golden PNGs, so the swizzle and
+  the re-pointed attributes draw the same pixels; `x64-debug`, 17 of 17;
+  `wasm-debug` and `wasm-release`, 14 of 14 under Node. Headless Chrome (ANGLE
+  over Direct3D 11 on the machine's RTX 5080, with no flags) and headless
+  Firefox 157 (driven over WebDriver BiDi; its renderer string is generic, so
+  its adapter was not read) both draw LineSweeper: the board, pieces, ghost, NEXT and HOLD,
+  legible text from the BC2 font atlas, and the pause menu. Gameplay keys
+  change the frame, Escape, Down, Down, Enter reaches `Module.onQuit`, and
+  neither console shows an error. Firefox warns that
+  `WEBGL_debug_renderer_info` is deprecated, and that legacy wasm exception
+  handling's `try` is deprecated in favour of `try_table`. The Win32 GL
+  LineSweeper and minimal samples were looked at on screen: no channel-swap
+  tint, legible text, the pause menu, and exit 0.
+- **Owed before M3 is done.** Safari, which no machine here runs; the owner's
+  2013 MacBook Air is the candidate. And R5: headless Chrome gave 181
+  animation-frame callbacks in 3 s, a median of 16.7 ms between them (14.7 to
+  16.9), which is a headless measurement and not the judder measurement on a
+  60 Hz and a high-refresh display that R5 asks for.
+- **Size, with `gl/` drawing**, at `wasm-release`: the module is 356,750 bytes
+  (113,085 under Brotli) and its loader 107,466 (25,187), so WebGL adds about
+  4 KB to the module and 5 KB to the loader under Brotli. The module is below
+  §7.1's estimate and the loader inside it.
 
 ### Spikes — *days*, before any milestone is committed to
 
@@ -788,6 +899,8 @@ Each is cheap and could change the plan:
   context, the ES dialect and the base-vertex replacement. One textured quad
   from a BC2 atlas in Chrome, Firefox and Safari. That settles the S3TC
   extension name Emscripten reports, and whether `has_gl_extension` sees it.
+  *(Not run as a throwaway: M3 absorbed it, and neither question arose, as
+  "Where it stands" records.)*
 
 ### Milestones
 
@@ -903,13 +1016,17 @@ it. **None is made in advance.**
 
 | Document | What changes | Earned by |
 |---|---|---|
-| `CLAUDE.md:3` | "Windows-only" | M3 |
-| `CLAUDE.md`, preset table and ctest counts | Two `wasm-*` presets and their test list | M1 |
-| `CLAUDE.md`, backend paragraph | D1's answer | M3 |
+| `CLAUDE.md:3` | "Windows-only": amended in M3, to Windows and, through Emscripten and WebGL2, the browser | M3 |
+| `CLAUDE.md`, preset table and ctest counts | Two `wasm-*` presets and their test list; amended again in M3, whose row names `render/gl/` and the null-gated sources it does not compile | M1 |
+| `CLAUDE.md`, backend paragraph | D1's answer: amended in M3, naming `gl/`'s two context files as the one exception to "at most one more" | M3 |
 | `ARCHITECTURE.md:259-272` | The window's move, as D3 decides it | M2 |
 | `PHILOSOPHY.md:320-322` | Where it held for a second compiler and a second loop | M5 |
 | `docs/website-plan.md:90` | Browser demos stop being "a separate technical project" | M5 |
 | `cmake/settings.cmake` | The clang branch, argued as `/fp:precise` is | M1 |
-| `gl/backend.h`, `gl/gl_functions.h` | The ES gaps stop being described as future | M3 |
+| `gl/backend.h`, `gl/gl_functions.h` | The ES gaps stop being described as future: amended in M3, with D1's one backend and two contexts in `backend.h`'s header comment | M3 |
+| `README.md`, the lead and Building | "Windows only" becomes Windows and a browser: amended in M3 | M3 |
+| `engine/render/SEAM.md` §1, §3, §8 | `gl/`'s two contexts, and device loss on a WebGL2 context: amended in M3 | M3 |
+| `ARCHITECTURE.md`, the tree and the backend paragraph | `gl/` as one backend with a context file per platform: amended in M3 | M3 |
+| [android.md](android.md) §6 | An amendment, not a reversal, of *"a GLES backend as a hedge"* (D1): amended in M3 | M3 |
 | `ARCHITECTURE.md:274-291` | The fed devices become three: keyboard, mouse and touch | M7a |
 | `CLAUDE.md`, Known-absent | Unchanged: P2 kept the action-mapping layer absent | — |

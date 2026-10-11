@@ -147,9 +147,11 @@ being load-bearing.
 │   │   ├── d3d12/          the D3D12 backend: a device, a queue, a fence and
 │   │   │                   frames in flight — the one API where the engine
 │   │   │                   owns synchronisation
-│   │   ├── gl/             the OpenGL 3.3 core backend: a WGL context, a
-│   │   │                   loader for the thirty-six entry points it uses,
-│   │   │                   and the same shader in GLSL
+│   │   ├── gl/             the OpenGL backend: 3.3 core through WGL on
+│   │   │                   Windows and WebGL2 in a browser, one context
+│   │   │                   file each, a loader for the entry points WGL
+│   │   │                   has to fetch, and the same shader in GLSL
+│   │   │                   under a #version line per context
 │   │   ├── vulkan/         the Vulkan backend: the one API that reaches
 │   │   │                   other platforms, and the one where the
 │   │   │                   presentation engine rather than the window says
@@ -397,9 +399,13 @@ like a missing key.
 
 **The backend is three translation units, and all of them are in its folder.**
 A backend supplies `renderer.cpp`, `render_resources.cpp` and
-`texture_factory.cpp`, plus at most one more for the part of its API that is
-not about drawing, plus whatever it needs to build its shader. The third of the
-three is there because exactly one step of loading content names a graphics
+`texture_factory.cpp`, plus the part of its API that is not about drawing: one
+file, or for `render/gl/` one per platform it reaches (`wgl_context.cpp` for a
+Win32 window, `web_context.cpp` for a WebGL2 canvas), of which a build compiles
+exactly one, plus whatever it needs to build its shader. `render/gl/` is one
+backend with two contexts rather than two backends because everything that
+draws is the same on both, which `docs/port/web.md` argues as D1.
+`texture_factory.cpp` is there because exactly one step of loading content names a graphics
 type — turning already-decoded bytes into a texture. Working out the path and
 reading the file are `render/resource_factory.cpp` and the readers beside it,
 written once for every backend.
@@ -444,7 +450,9 @@ Linux and — through MoltenVK — the Apple platforms, so an engine that has it
 has stopped needing a backend per platform; `docs/port/android.md` is where
 that is argued and where the rest of such a port is costed. What it tested on
 the way in was **who says the window changed**. Every other backend learns it
-from Win32, and `Renderer::window_size_changed` is written entirely in terms of
+from the shell's window — Win32's messages, or in a browser the web window
+measuring the canvas once a frame — and `Renderer::window_size_changed` is
+written entirely in terms of
 a caller that already knows; Vulkan's presentation engine answers
 `VK_ERROR_OUT_OF_DATE_KHR` from an acquire or a present with no window message
 anywhere near it. The contract held, because the frame is drawn into an image

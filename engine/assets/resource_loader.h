@@ -42,8 +42,9 @@ namespace labrador
 		//
 		// THE CRITERION IS WHAT THE GPU HOLDS, NEVER WHETHER THIS BUILD'S
 		// BACKEND CAN LOSE A DEVICE. Two of the five backends never call
-		// reload_device at all - a WGL context is not lost, and the null one
-		// has nothing to lose - so a game written and run against either of
+		// reload_device at all - the null one has nothing to lose, and gl's
+		// WGL context is not lost while a lost WebGL2 one is not reported
+		// (docs/port/web.md, M6) - so a game written and run against either of
 		// those presets can leave every one of these empty and watch nothing go
 		// wrong. It is the same source a Direct3D build compiles:
 		// LABRADOR_RENDER_BACKEND picks the backend at configure time (T5), so

@@ -1,8 +1,10 @@
 # Labrador — notes for Codex
 
-A 2D game engine in C++20, Windows-only, built with CMake + vcpkg. This
-repository is the **engine half of a split**: the client that drives it,
-ColourWars, lives in its own repository and consumes this one as a submodule.
+A 2D game engine in C++20 for Windows and, through Emscripten and WebGL2, the
+browser, built with CMake + vcpkg; one of its five samples runs in a browser so
+far and the other four are Windows-only. This repository is the **engine half
+of a split**: the client that drives it, ColourWars, lives in its own
+repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
 and `samples/` holds five clients: `minimal` (~450 lines), the new-project
 template you copy; `collision`, `audio` and `local_multiplayer`, the focused
@@ -276,8 +278,15 @@ in the commit that creates it.
   Every backend has the same three translation units — `renderer.cpp`,
   `render_resources.cpp`, `texture_factory.cpp` — and at most one more, being
   the part of an API that is not about drawing: `d3d11/`, `d3d12/` and
-  `vulkan/` each add `device_resources.cpp`, `gl/` adds `gl_functions.cpp` and
-  compiles its GLSL at device creation, `null/` adds nothing. The HLSL three of
+  `vulkan/` each add `device_resources.cpp`, and `null/` adds nothing. `gl/` is
+  the one sanctioned exception: it adds one context file per platform,
+  `wgl_context.cpp` (the WGL loader and context) or `web_context.cpp` (a
+  WebGL2 context on the page's canvas), and a build compiles exactly one,
+  because the drawing is one GL path on both and only the context differs —
+  [docs/port/web.md](docs/port/web.md), D1, is where that is argued. It
+  compiles its GLSL at device creation, behind a prelude the context supplies,
+  so desktop GL runs the browser's drawing path and `RenderPixelTests` under
+  `x64-debug-gl` covers it. The HLSL three of
   the five compile is **not** in any of their folders — it is
   `render/sprite.hlsl`, one file at three profiles through two compilers, and
   that file says why. Note the name collision, because it is

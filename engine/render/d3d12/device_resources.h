@@ -9,10 +9,11 @@
 //
 // THE PART OF AN API THAT IS NOT ABOUT DRAWING, which is what renderer.h says
 // a backend's fourth translation unit is for. The D3D11 and Vulkan folders
-// have one of these too and the GL folder has gl_functions.cpp; only null
-// stops at three files. This is the same kind of file as those three and holds
-// the same kind of thing - everything that exists before a frame does and
-// outlives every frame after it.
+// have one of these too, and the GL folder has one per context -
+// wgl_context.cpp and web_context.cpp, of which a build compiles one; only null
+// stops at three files. This is the same kind of file as those and holds the
+// same kind of thing - everything that exists before a frame does and outlives
+// every frame after it.
 //
 // IT IS NOT THE D3D11 FILE TRANSLITERATED, and the naming says so. That one is
 // an upstream sample carried in with its own conventions - PascalCase methods,

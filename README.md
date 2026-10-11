@@ -46,12 +46,17 @@ website/                the public site, built with npm from this same checkout
 
 ## Building
 
-**Windows only.** The renderer has five backends, selected by
+**Windows, and a browser.** The renderer has five backends, selected by
 `LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11, Direct3D 12, OpenGL
 3.3 core, Vulkan, and a null one with no graphics API that records what it was
 asked to draw. The first four are held to the same pixel tests and to the same
 checked-in images of every frame those tests draw, and all of them run on
-Windows, through the same Win32 window. Each proves something a
+Windows, through the same Win32 window. The OpenGL one also reaches the
+browser: the `wasm-debug` and `wasm-release` presets build the engine with
+Emscripten, draw through a WebGL2 context that `gl/` makes in a second context
+translation unit, `web_context.cpp`, and run the headless tests under Node.
+LineSweeper is the one sample that runs there so far, and
+[docs/port/web.md](docs/port/web.md) is the plan. Each proves something a
 different one could not: OpenGL that a view need not record into a driver,
 Direct3D 12 that the engine can own the fence rather than the driver, Vulkan
 that the seam's resize contract survives an API where the *presentation engine*
@@ -59,8 +64,10 @@ rather than the window says the size changed, and the
 null one that drawing is assertable on a machine with no driver at all.
 
 Four of the five exist to prove the seam carries a backend rather than to reach
-a new platform. **Vulkan is the one that is about a platform**, and it is not a
-platform this repository has yet: it is the single API that reaches Android,
+a new platform, and OpenGL reaches the browser as well because WebGL2 is GLES
+3.0 with a different context rather than another backend (web.md, D1).
+**Vulkan is the one that is about a platform**, and it is not a platform this
+repository has yet: it is the single API that reaches Android,
 Linux and — through MoltenVK — the Apple ones, which
 [docs/port/android.md](docs/port/android.md) argues at length and which is why
 that is the only item on its list that runs on hardware already here. The
@@ -78,11 +85,15 @@ with no GPU and no sound card runs end to end.
   two Direct3D backends compile their shader at build time and the build fails
   without it. The OpenGL one needs no tool.
 - **The [Vulkan SDK](https://vulkan.lunarg.com/)**, with `VULKAN_SDK` set, and
-  **only for the two Vulkan presets**. It is the one dependency here that does not
-  come with Visual Studio or with Windows. That backend compiles the same
+  **only for the two Vulkan presets**. It does not come with Visual Studio or
+  with Windows. That backend compiles the same
   `sprite.hlsl` to SPIR-V, and the `dxc` that can do it is the SDK's rather
   than the Windows SDK's — `cmake/compile_shaders.cmake` says how to tell them
   apart, because both are called `dxc.exe` and only one of them will work.
+- **[Emscripten](https://emscripten.org/)**, with `EMSDK` set, and **only for
+  the two `wasm-*` presets**: the compiler, the toolchain file vcpkg chains to,
+  and the Node the tests run under. It does not come with Visual Studio either,
+  and Visual Studio is still what puts CMake and Ninja on the path for it.
 - **vcpkg**, with `VCPKG_ROOT` set. `CMakePresets.json` reads it for the
   toolchain file, and configuring fails without it. Visual Studio ships a copy
   at `<VS install>\VC\vcpkg` if you have no other.

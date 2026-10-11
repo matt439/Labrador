@@ -19,19 +19,23 @@
 // profile per Direct3D backend - and that is not a preference. GL 3.3 has no
 // offline shader format: glShaderBinary needs a format the driver defines and
 // will not accept from another driver, and SPIR-V arrives in 4.6 - which is a
-// decade of hardware above the tier this port exists for. So the source ships,
-// and a syntax error is a throw at device creation naming the compiler's own
-// message rather than a build failure.
+// decade of hardware above the tier this port exists for. WebGL2 has none at
+// all. So the source ships, and a syntax error is a throw at device creation
+// naming the compiler's own message rather than a build failure.
 //
-// #version 330 core, AUTHORED TO THE GLES 3.0 INTERSECTION. `in`/`out` rather
-// than `attribute`/`varying`, an explicit `out` for the fragment colour rather
-// than gl_FragColor, and `texture()` rather than `texture2D()` - all of which
-// are what ES 3.0 wants too, so an ES variant is "#version 300 es" and a
-// precision qualifier rather than a second shader.
+// NO #version LINE, BECAUSE IT IS THE ONE LINE THE TWO CONTEXTS DISAGREE
+// ABOUT. Each context supplies the start of the source -
+// "#version 330 core" on Windows, "#version 300 es" and two precision
+// qualifiers in a browser (web_context.cpp says why highp) - and what is
+// below is the rest, the same text under both. It is written to the GLES
+// 3.0 intersection: `in`/`out` rather than `attribute`/`varying`, an explicit
+// `out` for the fragment colour rather than gl_FragColor, and `texture()`
+// rather than `texture2D()`. Each body starts with a newline so the prelude
+// may end without one.
 
 namespace labrador
 {
-	const char* const SPRITE_VERTEX_SHADER = R"(#version 330 core
+	const char* const SPRITE_VERTEX_SHADER = R"(
 
 // Pixels to clip space, as two multiply-adds rather than a 4x4 matrix.
 //
@@ -60,7 +64,7 @@ void main()
 }
 )";
 
-	const char* const SPRITE_PIXEL_SHADER = R"(#version 330 core
+	const char* const SPRITE_PIXEL_SHADER = R"(
 
 uniform sampler2D sprite_texture;
 
