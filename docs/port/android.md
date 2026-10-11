@@ -209,20 +209,19 @@ the first place.
 > methods, no engine change — which is now the same shape as §3.5 and can be
 > costed the same way. Nothing above the seam has to move.
 >
-> **What is NOT settled is the sentence below about the container**, and it
-> was deliberately left open rather than decided in passing. The seam is cut
-> *above* the format: `open_wave_bank` takes a directory and a bank name,
-> never a file name, so the extension and the reader belong to the backend —
-> an `.xwb` on `xaudio2/`, and on `null/` the wave-name list the definition
-> JSON supplies, because that JSON is content the engine parses and the
-> container is not. So an Android backend still needs a container it can read,
-> and the in-doctrine answer is still the one below: write the format down, an
-> `xwb_file.h` beside `dds_file.h`. **That is blocked on something this
-> repository does not have** — there is no `.xwb` in this tree to write a
-> reader against, for the same undistributable-source-audio reason the shipped
-> manifest marks the bank optional. `docs/survey/2026-08-26.md` §6's fourth
-> decision is therefore still unmade, and it is now the whole of the audio
-> question rather than half of it.
+> **The container is settled too, and it was decided rather than left to a
+> backend.** The seam is cut *above* the format: `open_wave_bank` takes a
+> directory and a bank name, never a file name, so the extension and the
+> reader may belong to the backend — an `.xwb` through DirectXTK on
+> `xaudio2/`, and on `null/` the wave-name list the definition JSON supplies.
+> An Android backend's API has no `.xwb` reader, so the in-doctrine answer
+> below is the one taken: the format is written down, in
+> [`audio/xwb_file.h`](../../engine/audio/xwb_file.h) beside `dds_file.h`,
+> reading PCM and MS-ADPCM into 16-bit samples and refusing xWMA by name. It
+> is [web.md](web.md) §8's D9, decided by the owner on 2026-10-11, and the
+> bank it is tested against is `samples/audio`'s, built from WAVs in the tree.
+> `docs/survey/2026-08-26.md` §6's fourth decision is made, so what is left of
+> this item is the backend alone.
 
 **This is the one place the second-platform claim is provably false today, and
 it is false in a way a folder move does not fix.**

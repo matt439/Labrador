@@ -24,8 +24,10 @@
 //
 //  - THE CONTAINER. A wave bank is an .xwb here, an XACT container DirectXTK
 //    reads, and the extension is spelt once, below, rather than in the loader
-//    that asks for a bank. docs/survey/2026-08-26.md 6 leaves the format
-//    question open and this is the side of the cut it left it on.
+//    that asks for a bank. The engine's own reader, engine/audio/xwb_file.h,
+//    is for backends whose API has none; this one keeps DirectXTK's, because
+//    XAudio2 plays ADPCM and xWMA as they are stored and the engine's reader
+//    would decode the first to four times its size and refuse the second.
 //  - THE LIFETIME RULE. DirectXTK requires the AudioEngine to outlive every
 //    WaveBank and SoundEffectInstance, because their destructors unregister
 //    themselves from it. It is Impl's declaration order, six lines from the

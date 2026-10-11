@@ -5,6 +5,7 @@ add_executable(AudioTests
     sound_bank_object_tests.cpp
     sound_bank_tests.cpp
     test_main.cpp
+    xwb_file_tests.cpp
 )
 # No find_package for DirectXTK here, and what that sentence means has
 # changed. It used to say: this target gets <Audio.h> whether it wants it or
@@ -23,6 +24,29 @@ target_link_libraries(AudioTests PRIVATE
     doctest::doctest
     labrador_settings
 )
+
+# The banks xwb_file_tests.cpp reads, beside the executable, and the WAVs it
+# holds their samples to. ctest runs from this directory and the cases load
+# "./content/" relative to it, which under Node is the same directory through
+# NODERAWFS. tones.xwb and its three sources are the audio sample's, copied
+# rather than referred to, so the test reads exactly what that sample ships;
+# ping_adpcm.xwb is this folder's own, and make_adpcm_bank.py beside it says
+# how it was made. One target, for the reason tests/render/CMakeLists.txt
+# gives for its own content.
+add_custom_target(audio_test_content ALL)
+add_custom_command(TARGET audio_test_content POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "$<TARGET_FILE_DIR:AudioTests>/content"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/ping_adpcm.xwb"
+        "${PROJECT_SOURCE_DIR}/samples/audio/content/sounds/tones.xwb"
+        "${PROJECT_SOURCE_DIR}/samples/audio/source/ping.wav"
+        "${PROJECT_SOURCE_DIR}/samples/audio/source/chime.wav"
+        "${PROJECT_SOURCE_DIR}/samples/audio/source/drone.wav"
+        "$<TARGET_FILE_DIR:AudioTests>/content"
+    VERBATIM
+)
+add_dependencies(AudioTests audio_test_content)
 
 # The null backend's own tests, in the one configuration that has it.
 #

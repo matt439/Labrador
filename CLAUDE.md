@@ -226,9 +226,11 @@ records what it was asked to play.
 
 So what to know before reading a green `AudioTests` is narrower than "audio is
 not covered". Under the presets that build `audio/xaudio2/` this target
-still constructs no device, and every case runs against `SoundBank::silent()` —
-the substitute a missing `.xwb` produces, which is a question about content
-rather than about the seam. **Under either `-null` preset it also compiles
+still constructs no device: its `SoundBank` cases run against
+`SoundBank::silent()` — the substitute a missing `.xwb` produces, which is a
+question about content rather than about the seam — and its reader cases,
+[tests/audio/xwb_file_tests.cpp](tests/audio/xwb_file_tests.cpp), read real
+banks with no `SoundBank` and no device at all. **Under either `-null` preset it also compiles
 [tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and its recording cases assert which wave,
 out of which bank, at which clamped levels, in what order. A change under
 `engine/audio/` checked only on the default preset has not been checked.
@@ -236,9 +238,15 @@ out of which bank, at which clamped levels, in what order. A change under
 `samples/audio/` supplies original synthesized WAVs and a named `.xwb` bank,
 with an authoring script and tool provenance in its README. Its playback smoke
 requires an audio endpoint on XAudio2; its null-backend checks assert recorded
-operations without one. `AudioTests` itself retains the split above. An
-engine-owned `.xwb` reader remains unimplemented; the playable example uses
-DirectXTK's reader behind the existing seam.
+operations without one. `AudioTests` itself retains the split above.
+**The engine reads `.xwb` itself** in
+[engine/audio/xwb_file.h](engine/audio/xwb_file.h), beside `dds_file.h` and
+for the same reason (D9 in [docs/port/web.md](docs/port/web.md)): PCM and
+MS-ADPCM, decoded to 16-bit samples, with xWMA, XMA and compact entries refused
+by name. `AudioTests` holds it to the sample's bank, sample for sample against
+the WAVs it was packed from, in every configuration and under Node. It is for a
+backend whose API has no reader of its own; `audio/xaudio2/`, and so the
+playable example, keeps DirectXTK's.
 
 ## The website
 

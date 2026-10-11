@@ -12,10 +12,9 @@ using namespace labrador;
 // The bank a missing container produces, and what it still answers.
 //
 // WHAT THIS FILE CAN AND CANNOT REACH. Under the presets that build
-// audio/xaudio2/, an audible SoundBank is UNCONSTRUCTIBLE here: that
-// constructor takes a std::unique_ptr<DirectX::WaveBank>, DirectXTK's WaveBank
-// has exactly one constructor taking a path to an .xwb, and there is no .xwb
-// in this tree. So every case below runs against SoundBank::silent(), and what
+// audio/xaudio2/, an audible SoundBank needs an AudioDevice, and an XAudio2
+// device needs an audio endpoint this target does not ask a machine to have.
+// So every case below runs against SoundBank::silent(), and what
 // they pin is the contract that survives missing content.
 //
 // tests/audio/null_tests.cpp is the other half and the only place in the tree

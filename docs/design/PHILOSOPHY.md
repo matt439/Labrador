@@ -407,8 +407,9 @@ happened, on its own account and for a reason that was not the port's: a seam
 with only the platform's own implementation behind it cannot be constructed
 without the platform, so eight of `SoundBank`'s thirteen methods had no
 observable behaviour in this repository at all. What remains of that item is
-one backend against an existing seam, plus the container question, which is
-the shape the other two still have and audio did not.
+one backend against an existing seam, which is the shape the other two still
+have and audio did not. The container question that came with it is answered
+the way textures answered it: the engine reads the format itself.
 
 ### The boundary
 

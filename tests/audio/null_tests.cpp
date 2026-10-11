@@ -21,8 +21,8 @@ using namespace labrador;
 // sites of level clamping - engine arithmetic, sitting below the check for
 // the platform - have never executed. Neither was a gap in the tests. An
 // audible SoundBank could not be CONSTRUCTED here, because the only
-// implementation behind the audio module was DirectXTK's and DirectXTK's
-// WaveBank needs an .xwb this repository cannot contain.
+// implementation behind the audio module was DirectXTK's, and DirectXTK's
+// WaveBank needs an .xwb and an audio device.
 // PHILOSOPHY.md:632-637 predicts exactly that failure and names the fix - "a
 // seam ships with its headless implementation, or it has not shipped" - and
 // engine/audio/null/ is that implementation.

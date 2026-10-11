@@ -87,7 +87,10 @@ python samples/audio/source/verify_content.py
 `-f` retains each filename stem in the bank's name table: Labrador resolves those
 names, so omitting it is a load error. `-nc` selects standard entries so the
 small authoring verifier can compare every named entry's PCM to the source WAV
-without implementing the rest of XWB. The tool embeds a build timestamp, so
+without implementing the rest of XWB, and so that the engine's own reader,
+[`engine/audio/xwb_file.h`](../../engine/audio/xwb_file.h), can read it: that
+reader refuses compact entries by name. `AudioTests` reads this bank with it and
+compares every wave with its source WAV. The tool embeds a build timestamp, so
 regenerations can differ there even when all source PCM is identical. The
 verifier checks format, durations, names, signal levels and every payload byte;
 run the XAudio2 playback check after rebuilding. Python and XWBTool are not
