@@ -57,8 +57,7 @@ Emscripten, draw through a WebGL2 context that `gl/` makes in a second context
 translation unit, `web_context.cpp`, and run the headless tests under Node -
 and the pixel tests in headless Chrome, against the same checked-in images,
 with the browser window's input driven there too.
-LineSweeper, the local multiplayer sample, the audio sample's sound board
-and the minimal sample run there so far, and
+All five samples run there, and
 [docs/port/web.md](docs/port/web.md) is the plan. Each proves something a
 different one could not: OpenGL that a view need not record into a driver,
 Direct3D 12 that the engine can own the fence rather than the driver, Vulkan
@@ -129,7 +128,10 @@ failure on the first frame.
 
 The presets put the build in `out/build/<preset>/`. The sample lands at
 `out/build/x64-debug/samples/minimal/MinimalSample.exe` and runs from
-anywhere — the build mirrors its content beside it.
+anywhere — the build mirrors its content beside it. Under a `wasm-*` preset
+it is `out/build/wasm-debug/samples/minimal/MinimalSample.html`, with its
+content packed into the module beside it; serve that folder over HTTP and open
+the page.
 
 If `cmake` is not on your `PATH`, the copy inside Visual Studio is at
 `<VS install>\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\`, and
@@ -163,7 +165,9 @@ Three things worth knowing:
   directory above `yourgame/` on the include path. Labrador publishes its root,
   not yours.
 
-`samples/minimal` is a working example of all three, at about 550 lines.
+`samples/minimal` is a working example of all three, at about 550 lines. It
+is also the shape of a browser build: `main_web.cpp` beside `main.cpp`, chosen
+in its `CMakeLists.txt` under `EMSCRIPTEN`, and a page in `web/shell.html`.
 `samples/linesweeper` is the same three plus a fourth thing worth copying: a
 game's simulation as a static library that links nothing, so the whole game is
 playable from `ctest` with no window and no device.

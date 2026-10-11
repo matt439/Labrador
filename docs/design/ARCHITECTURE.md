@@ -562,7 +562,9 @@ sample exists to hand over (see Structural types in PHILOSOPHY.md).
 Its anatomy is the sample's anatomy:
 
 - **`main.cpp`** — constructs the application shell, hands it the first
-  state.
+  state. A browser build has **`main_web.cpp`** beside it, which does the
+  same and keeps the shell in a static, because a browser's loop outlives
+  `main`.
 - **states** — the game's flow: menus, gameplay. The engine runs the
   state machine; the states are the game's.
 - **objects** — types implementing `GameObject` / `CollisionObject` at

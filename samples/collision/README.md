@@ -19,6 +19,15 @@ The build reuses the minimal sample's font and LineSweeper's white texel, copyin
 both beside this executable with its own manifest. It can start from any working
 directory. Resize the window and the camera fits the same arena into it.
 
+It also runs in a browser. Under the `wasm-debug` or `wasm-release` preset the
+same build produces `CollisionSample.html` beside its `.js` and `.wasm` in
+`out/build/<preset>/samples/collision/`, with the manifest, font and texel
+packed into the module. Serve that folder over HTTP and open the page.
+`main_web.cpp` is its entry point and `web/shell.html` its page; the state
+both entry points run is `collision_state.cpp`. The page has no smoke test or
+capture, which need a command line and WIC, and `CollisionSampleTests` runs
+under Node there instead.
+
 | Control | Action |
 | --- | --- |
 | WASD, arrows or player one's left stick | Move |

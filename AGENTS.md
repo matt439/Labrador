@@ -1,8 +1,8 @@
 # Labrador — notes for Codex
 
 A 2D game engine in C++20 for Windows and, through Emscripten and WebGL2, the
-browser, built with CMake + vcpkg; four of its five samples run in a browser so
-far and the other one is Windows-only. This repository is the **engine half
+browser, built with CMake + vcpkg; all five of its samples run in a browser
+as well. This repository is the **engine half
 of a split**: the client that drives it, ColourWars, lives in its own
 repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
