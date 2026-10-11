@@ -990,6 +990,25 @@ its canvas. `RenderContextLossTests` fails on any warning the browser logs
 is drained by the next upload and the warning is the only place it is still
 visible. With the `glIsTexture` guard taken out, it fails on exactly that.
 
+**`local_multiplayer` is the second sample in a browser** (M6), and it
+needed no engine change. It has a `main_web.cpp` beside `main.cpp`, chosen
+in its `CMakeLists.txt` as LineSweeper's is, and a development page. The
+three things the Windows build copies beside its executable are embedded at
+the same relative paths, so one manifest serves both builds. The page keeps
+`max_threads = min(2, default_thread_count())`. A browser reports
+`navigator.hardwareConcurrency` there, so on any machine with two cores the
+partitioner cuts the two views into two slices. Each slice runs inside
+`add_task` in turn, which is §3.6's serial pool doing the fan-out it was
+written for. A `wasm-release` module is 314 KB and its loader 105 KB. It was
+played in headless Chrome at `wasm-debug` and `wasm-release`. Both panes drew
+both players, and WASD and the arrows moved one camera each in the same
+frames. Arrow keys did not scroll the page. A `WEBGL_lose_context` loss and
+restore came back drawing. A resize of the CSS box changed the drawing
+buffer, and unlike LineSweeper this sample also re-laid out both panes,
+because it rebuilds its views every tick. Escape reached `Module.onQuit`.
+Firefox and Safari have not been checked for this sample. Neither has a pad,
+for the same reason M4 is open.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1020,7 +1039,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp` | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done); `local_multiplayer` on the web; `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done); `local_multiplayer` on the web (done); `audio/webaudio/` (blocked on the container decision) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC, a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 

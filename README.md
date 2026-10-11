@@ -56,7 +56,7 @@ browser: the `wasm-debug` and `wasm-release` presets build the engine with
 Emscripten, draw through a WebGL2 context that `gl/` makes in a second context
 translation unit, `web_context.cpp`, and run the headless tests under Node -
 and the pixel tests in headless Chrome, against the same checked-in images.
-LineSweeper is the one sample that runs there so far, and
+LineSweeper and the local multiplayer sample run there so far, and
 [docs/port/web.md](docs/port/web.md) is the plan. Each proves something a
 different one could not: OpenGL that a view need not record into a driver,
 Direct3D 12 that the engine can own the fence rather than the driver, Vulkan

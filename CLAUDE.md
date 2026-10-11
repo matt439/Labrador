@@ -1,8 +1,8 @@
 # Labrador — notes for Claude
 
 A 2D game engine in C++20 for Windows and, through Emscripten and WebGL2, the
-browser, built with CMake + vcpkg; one of its five samples runs in a browser so
-far and the other four are Windows-only. This repository is the **engine half
+browser, built with CMake + vcpkg; two of its five samples run in a browser so
+far and the other three are Windows-only. This repository is the **engine half
 of a split**: the client that drives it, ColourWars, lives in its own
 repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
@@ -74,7 +74,10 @@ restored**, and `DeviceNotify` hears both halves together, in the
 Direct3D and Vulkan backends already have, because a browser puts frames
 between the two and a shell that had released its textures would throw from
 the next draw. `RenderContextLossTests` is a second browser page that pins
-it. The other four samples are still Windows-only. **In a browser
+it. `local_multiplayer` is the second sample with a browser build, at
+`out/build/wasm-*/samples/local_multiplayer/LocalMultiplayerSample.html`:
+two views through WebGL2, fanned out on the serial pool. The other three
+samples are still Windows-only. **In a browser
 `Application::run` does not return and the stack below it is unwound,
 destructors included, before the first frame**, so a web entry point keeps
 its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,

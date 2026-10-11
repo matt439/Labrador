@@ -46,6 +46,28 @@ usual preset uses Direct3D 11; D3D12, GL and Vulkan use their corresponding
 presets and prerequisites. The null preset records the draws without displaying
 the arena.
 
+## In a browser
+
+The `wasm-debug` and `wasm-release` presets build the same arena from
+`main_web.cpp`, with the content embedded in the module and
+`web/shell.html` as the page. With Emscripten set up as the root README
+describes:
+
+```powershell
+cmake --preset wasm-release
+cmake --build --preset wasm-release --target LocalMultiplayerSample
+```
+
+Serve `out\build\wasm-release\samples\local_multiplayer\` over HTTP and open
+`LocalMultiplayerSample.html`. A browser will not compile a module read from
+`file://`. The keyboard controls are the same. The pads come from the
+browser's Gamepad API rather than XInput, and no pad has driven that path
+yet. Escape stops the loop and the page says
+so, because a page cannot close itself. The browser build has no threads, so
+the two views fan out on the serial pool, one slice after the other. There is
+no `--smoke-test` in this build. `LocalMultiplayerTests` runs under Node
+instead.
+
 ## Verification
 
 `LocalMultiplayerTests` covers separate keyboard/stick routing, simultaneous

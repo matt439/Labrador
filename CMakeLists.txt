@@ -69,16 +69,16 @@ if(PROJECT_IS_TOP_LEVEL)
     add_dependencies(labrador_settings check_doc_citations)
 
     add_subdirectory(samples/linesweeper)
+    add_subdirectory(samples/local_multiplayer)
     add_subdirectory(bench)
 
-    # Windows only, each until it has a reason not to be: four samples whose
+    # Windows only, each until it has a reason not to be: three samples whose
     # only entry point is wWinMain, and a capture tool that reads back a
-    # device (docs/port/web.md, section 6 says which sample goes next).
+    # device (docs/port/web.md, section 6 says why the two above came first).
     if(WIN32)
         add_subdirectory(samples/minimal)
         add_subdirectory(samples/collision)
         add_subdirectory(samples/audio)
-        add_subdirectory(samples/local_multiplayer)
         add_subdirectory(tools/linesweeper_capture)
     endif()
 
