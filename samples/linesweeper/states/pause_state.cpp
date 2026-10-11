@@ -11,6 +11,7 @@
 #include "engine/render/viewport.h"
 #include "samples/linesweeper/presentation/palette.h"
 
+#include <cmath>
 #include <memory>
 #include <string>
 
@@ -112,11 +113,15 @@ namespace linesweeper
 		// font. A menu whose rows are different lengths should not inherit it,
 		// and `measure_text` is on the seam for exactly this
 		// (render_resources.h). Measured once here, never in draw().
+		//
+		// AND PUT ON A WHOLE PIXEL. Half of an odd width is half a pixel, and
+		// point-sampled text there is a tie each backend breaks its own way
+		// (renderer.h, draw_text). RESTART is one such row.
 		const auto centred = [&](const std::wstring& text, float y)
 		{
 			const Vector2F size = resources->measure_text(font, text);
 
-			return Vector2F((resolution.x - size.x) * 0.5f, y);
+			return Vector2F(std::floor((resolution.x - size.x) * 0.5f), y);
 		};
 
 		this->scene_->add(std::make_unique<UiText>("title", L"PAUSED",

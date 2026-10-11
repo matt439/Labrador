@@ -4,6 +4,7 @@
 #include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/palette.h"
 
+#include <cmath>
 #include <string>
 
 using namespace mattmath;
@@ -86,9 +87,12 @@ namespace linesweeper
 			faded(Colour(0.0f, 0.0f, 0.0f), 0.88f), 0.0f, Vector2F::ZERO,
 			SpriteFlip::none, 0.0f);
 
+		// Centred on a whole pixel, for the reason the pause menu's rows are
+		// (states/pause_state.cpp): this string measures an odd width too.
 		draw_list.draw_text(this->font_, this->text_,
 			Vector2F(
-				well_origin_x + (well_width - this->text_size_.x) * 0.5f,
+				std::floor(
+					well_origin_x + (well_width - this->text_size_.x) * 0.5f),
 				middle),
 			banner_colour, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
 	}

@@ -62,7 +62,7 @@
 // the time, which is how a list of gaps becomes a list of the wrong gaps.
 //
 // Most frames are also checked against the PNG set in tests/render/golden/,
-// holding every rasterising backend to the same fixed reference. Fifty-eight
+// holding every rasterising backend to the same fixed reference. Sixty
 // frames have those references. Three resize cases opt out because their size
 // changes or differs by backend; the scene-composition case instead asserts
 // every pixel against its analytically known red/blue image. No reference is
@@ -1437,6 +1437,64 @@ TEST_CASE("CONTRACT: text scales about the origin, in unscaled text pixels")
 	CHECK(moved.left() == doubled.left() - 16);
 	CHECK(moved.top() == doubled.top() - 8);
 	CHECK(moved.width == doubled.width);
+}
+
+TEST_CASE("CONTRACT: point-sampled text off a whole pixel lands on the nearest one")
+{
+	Harness harness;
+
+	// A quarter of a pixel each side of a whole one, in both axes and in both
+	// directions. Under the point filter at a scale of one, a glyph at x + 0.25
+	// covers the same pixel centres as one at x and samples the same texels at
+	// them, a quarter of a texel in from the edge; at x + 0.75 it is the same
+	// statement about x + 1. So text centred by halving a measured width draws
+	// the frame it would draw on a whole pixel, and nothing about where it went
+	// is left to the backend - the y term included, which on gl/ is measured
+	// from the other end of the buffer.
+	//
+	// HALF A PIXEL IS NOT HERE, AND CANNOT BE. At x + 0.5 every pixel centre is
+	// exactly a texel edge, and which of the two texels the rasteriser's
+	// interpolated coordinate rounds into is no API's term. It differs between
+	// backends on one GPU, and between the two triangles of one quad, so a
+	// glyph there can come out torn along its diagonal. renderer.h tells a
+	// caller to put point-sampled text on a whole pixel instead.
+	const Vector2F quarter(4.25f, 6.75f);
+	const Vector2F three_quarters(30.75f, 34.25f);
+
+	DrawList fractional = harness.begin();
+	fractional.set_filter(TextureFilter::point);
+	fractional.draw_text(harness.font, L"Ag", quarter, Colour::white, 1.0f,
+		0.0f, Vector2F::ZERO, 0.0f);
+	fractional.draw_text(harness.font, L"Ag", three_quarters, Colour::white,
+		1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+	harness.end();
+	const std::vector<Pixel> off_whole = harness.snapshot();
+	const RectangleI off_whole_ink = harness.ink_bounds();
+
+	DrawList whole = harness.begin();
+	whole.set_filter(TextureFilter::point);
+	whole.draw_text(harness.font, L"Ag", Vector2F(4.0f, 7.0f), Colour::white,
+		1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+	whole.draw_text(harness.font, L"Ag", Vector2F(31.0f, 34.0f),
+		Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+	harness.end();
+	const std::vector<Pixel> on_whole = harness.snapshot();
+
+	// Two drawn frames, so that the comparison below is not two empty ones.
+	REQUIRE(off_whole_ink.width > 0);
+
+	// EVERY PIXEL, NOT A BOX. The failure this pins is a texel picked one
+	// column or row over inside a glyph, which leaves the ink's bounds where
+	// they were.
+	int differing = 0;
+	for (size_t i = 0; i < on_whole.size(); i++)
+	{
+		if (!(off_whole[i] == on_whole[i]))
+		{
+			differing++;
+		}
+	}
+	CHECK(differing == 0);
 }
 
 TEST_CASE("CONTRACT: the camera maps text position and text scale together")

@@ -58,6 +58,11 @@ size. LineSweeper's pause menu centres each row this way, once, when the menu is
 
 <SourceFile path="samples/linesweeper/states/pause_state.cpp" from="const auto centred = [&]" to="};" />
 
+The position is rounded down to a whole pixel. Half of an odd width is half a pixel, and text
+there sits with every pixel centre on the edge between two texels of its font. Each graphics
+backend picks between them its own way, and can tear a glyph doing it. Any other fraction draws
+as it would on the nearest whole pixel, under the point filter.
+
 The engine has no layout system: positions are numbers your game works out, as here.
 
 ## Sprites from a sheet
