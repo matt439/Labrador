@@ -189,6 +189,10 @@ being load-bearing.
 │   │   ├── xaudio2/        the XAudio2 backend, through DirectXTK, and the
 │   │   │                   only file in the tree that includes <Audio.h>. It
 │   │   │                   owns the container: a wave bank is an .xwb here
+│   │   ├── webaudio/       the browser's Web Audio, through the engine's
+│   │   │                   .xwb reader. Its AudioContext is made on the
+│   │   │                   page's first key, click or touch, which is when
+│   │   │                   a browser first allows a sound
 │   │   └── null/           no audio API at all: it records what it was asked
 │   │                       to play, so a test can assert playing on a machine
 │   │                       with no sound card
@@ -268,7 +272,7 @@ Every target directory owns its own `CMakeLists.txt`; the root file only
 lists them. Every file picks its home the day it is created.
 Platform-specific code
 lives only in the backend subfolders (`render/d3d11/`, `audio/xaudio2/`,
-`input/xinput/`, `app/win32/`), behind engine-owned interfaces, so a second
+`audio/webaudio/`, `input/xinput/`, `app/win32/`), behind engine-owned interfaces, so a second
 platform is an addition, not a rewrite. The last of those is the shell's
 window, and it is named here rather than left to be discovered. `app` is
 already the one module allowed to depend on everything, PHILOSOPHY lists
@@ -464,12 +468,13 @@ decision in the port. It is also the one backend whose toolchain is not already
 on the machine: SPIR-V at build time means the Vulkan SDK, which
 `cmake/compile_shaders.cmake` states as the tax it is.
 
-**`audio` is the second module with a seam and two backends, and it is the
+**`audio` is the second module with a seam and several backends, and it is the
 one that shows the rule is about modules rather than about `render`.**
 `engine/audio/audio_device.h` is a concrete class chosen at build time by
-`LABRADOR_AUDIO_BACKEND`, exactly as the renderer is, with `audio/xaudio2/`
-behind it and `audio/null/` — which records what it was asked to play — as the
-headless implementation PHILOSOPHY requires of every seam. What is *above* the
+`LABRADOR_AUDIO_BACKEND`, exactly as the renderer is, with `audio/xaudio2/` and
+the browser's `audio/webaudio/` behind it and `audio/null/` — which records
+what it was asked to play — as the headless implementation PHILOSOPHY requires
+of every seam. What is *above* the
 seam is the part worth stating, because it is where the cut was argued: which
 name means which wave, which handles are valid, and the clamp that folds a
 volume into [0,1] and a pitch and a pan into [-1,1] are all engine arithmetic
@@ -477,12 +482,13 @@ and sit above the test for whether there is anything to play. Below it is what
 an audio API actually does and nothing else. **The one thing the seam declines
 to decide is the container**: `open_wave_bank` takes a directory and a bank
 name, never a file name, so the extension and the reader are the backend's —
-an `.xwb` on `xaudio2/`, and on `null/` the list of wave names the definition
+an `.xwb` on `xaudio2/` and on `webaudio/`, and on `null/` the list of wave names the definition
 JSON gave it, because that JSON is content this engine parses and the container
 is not. What the format *is* the engine still writes down once:
 `audio/xwb_file.h` reads an `.xwb` into 16-bit samples for any backend whose
 API has no reader of its own, as `render/dds_file.h` reads a texture for every
-backend, and a backend whose API has one may keep it.
+backend — `webaudio/` is one, and makes each wave an `AudioBuffer` — and a
+backend whose API has one may keep it.
 
 A backend may publish a second header beside `backend.h` **as long as it names
 no backend type** — `render/null/recording.h` is one, `audio/null/recording.h`

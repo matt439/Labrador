@@ -329,26 +329,27 @@ jobs:
           path: out/build/wasm-release/tests/render/golden-actual/
           if-no-files-found: ignore
 
-      # THE SAME PRESET A SECOND TIME WITH THE NULL RENDERER, because the
-      # sources that assert drawing are compiled only when the backend is null:
-      # RenderTests' recording cases, SceneTests' fan-out and cull, the
-      # particle-draw and local-multiplayer draw cases, and the bench beside
-      # them. The preset builds gl/, so without this clang would never see
-      # them, and the test count would not say so - they leave executables that
-      # still exist. A cache variable on the command line and a binary
-      # directory of its own is the whole cost; a second pair of presets would
-      # be two more names for one configure flag.
+      # THE SAME PRESET A SECOND TIME WITH BOTH NULL BACKENDS, because the
+      # sources that assert drawing and playing are compiled only when the
+      # backend is null: RenderTests' recording cases, SceneTests' fan-out and
+      # cull, the particle-draw and local-multiplayer draw cases, the bench
+      # beside them, and AudioTests' recording cases. The preset builds gl/ and
+      # webaudio/, so without this clang would never see them, and the test
+      # count would not say so - they leave executables that still exist. Two
+      # cache variables on the command line and a binary directory of its own
+      # is the whole cost; a second pair of presets would be two more names for
+      # two configure flags.
       #
       # IT RUNS WHATEVER THE TWO TEST STEPS ABOVE SAID, because it checks
       # different sources: a red pixel step that skipped it is a push on which
       # clang compiled none of them. The job still fails when any step does.
       # What it does need is the preset to have built, since a compiler error
       # there would only be reported twice.
-      - name: Configure, build and test with the null renderer
+      - name: Configure, build and test with the null backends
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          cmake --preset wasm-release -B out/build/wasm-release-null -DLABRADOR_RENDER_BACKEND=null || exit /b 1
+          cmake --preset wasm-release -B out/build/wasm-release-null -DLABRADOR_RENDER_BACKEND=null -DLABRADOR_AUDIO_BACKEND=null || exit /b 1
           cmake --build out/build/wasm-release-null || exit /b 1
           ctest --test-dir out/build/wasm-release-null --output-on-failure

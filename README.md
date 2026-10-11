@@ -72,8 +72,9 @@ repository has yet: it is the single API that reaches Android,
 Linux and — through MoltenVK — the Apple ones, which
 [docs/port/android.md](docs/port/android.md) argues at length and which is why
 that is the only item on its list that runs on hardware already here. The
-audio backend is XAudio2 — `audio/xaudio2/`, behind a seam of its own — and
-it has a null one beside it that records what it was asked to play. Both
+audio backend is XAudio2 — `audio/xaudio2/`, behind a seam of its own — in a
+browser it is Web Audio, `audio/webaudio/`, and there is a null one beside
+them that records what it was asked to play. Both
 backends and both seams are chosen at configure time, and the debug/release
 `-null` pair takes neither platform API: those are the configurations a machine
 with no GPU and no sound card runs end to end.
@@ -177,7 +178,7 @@ Ten modules, each depending only on modules above it in the table
 | `render` | The renderer seam, cameras, viewports, sprites, text. Each graphics API lives in a folder of its own — `render/d3d11/` and the four beside it. |
 | `scene` | One object list, one collision sweep, one per-view render fan-out. |
 | `input` | Gamepads, deadzones, press edges, menu directions. XInput lives in `input/xinput/`. |
-| `audio` | Sound banks and effect instances, behind `AudioDevice`. XAudio2 lives in `audio/xaudio2/`; `audio/null/` records what it was asked to play. |
+| `audio` | Sound banks and effect instances, behind `AudioDevice`. XAudio2 lives in `audio/xaudio2/` and Web Audio in `audio/webaudio/`; `audio/null/` records what it was asked to play. |
 | `ui` | Widgets, focus, directional navigation. |
 | `assets` | The manifest, and checked JSON. |
 | `app` | The window, the frame loop, and the services a game is handed. |

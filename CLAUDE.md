@@ -96,10 +96,16 @@ all five, and a change in `gl/` under a `wasm-*` preset as well, the only
 build of `web_context.cpp` and the only clang build of `gl/`; CI builds all
 five and the browser build.
 
-**And two audio backends**, on a second and independent axis:
-`LABRADOR_AUDIO_BACKEND` is `xaudio2` or `null`, and the two `-null` presets
-ask for the second. Those presets therefore take no platform API at all, which
-is what makes them the configurations a build machine runs end to end.
+**And three audio backends**, on a second and independent axis:
+`LABRADOR_AUDIO_BACKEND` is `xaudio2`, `webaudio` or `null`, and the two
+`-null` presets ask for the last. Those presets therefore take no platform API
+at all, which is what makes them the configurations a build machine runs end
+to end. `webaudio` is the browser's, the default under Emscripten and what the
+`wasm-*` presets build; it waits for the page's first key, click or touch to
+create its `AudioContext`, because a browser plays nothing before one, and
+under Node it finds no Web Audio and plays nothing while still reading and
+checking every bank. Configure refuses `xaudio2` in a browser build and
+`webaudio` outside one.
 
 **And two input backends, on a third**: `LABRADOR_INPUT_BACKEND` is `xinput`
 or `web`, and only the pad is behind it, because the keyboard and mouse are fed
@@ -113,7 +119,7 @@ default under Emscripten; it compiles, and no pad has driven it yet.
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
 | `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
-| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/null/`, `input/web/` — clang and libc++, tests run under Node | 17 entries: the seventeen less `CollisionSampleTests` and `AudioSampleTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, and `RenderContextLossTests`, the browser-only page that loses and restores a WebGL2 context (14 where configure finds no Chromium, because no page is then registered). `AudioTests` keeps its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
+| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 17 entries: the seventeen less `CollisionSampleTests` and `AudioSampleTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, and `RenderContextLossTests`, the browser-only page that loses and restores a WebGL2 context (14 where configure finds no Chromium, because no page is then registered). `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -232,7 +238,13 @@ question about content rather than about the seam — and its reader cases,
 [tests/audio/xwb_file_tests.cpp](tests/audio/xwb_file_tests.cpp), read real
 banks with no `SoundBank` and no device at all. **Under either `-null` preset it also compiles
 [tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and its recording cases assert which wave,
-out of which bank, at which clamped levels, in what order. A change under
+out of which bank, at which clamped levels, in what order. **Under the
+`wasm-*` presets it compiles
+[tests/audio/webaudio_tests.cpp](tests/audio/webaudio_tests.cpp) instead**,
+which runs `audio/webaudio/` under Node with no Web Audio behind it: the real
+bank read and checked, both throws, and the voice states. What that backend
+puts through a speaker has been measured only in headless Chrome, through an
+`AnalyserNode` on a page outside the tree, and heard by nobody. A change under
 `engine/audio/` checked only on the default preset has not been checked.
 
 `samples/audio/` supplies original synthesized WAVs and a named `.xwb` bank,
@@ -245,8 +257,8 @@ for the same reason (D9 in [docs/port/web.md](docs/port/web.md)): PCM and
 MS-ADPCM, decoded to 16-bit samples, with xWMA, XMA and compact entries refused
 by name. `AudioTests` holds it to the sample's bank, sample for sample against
 the WAVs it was packed from, in every configuration and under Node. It is for a
-backend whose API has no reader of its own; `audio/xaudio2/`, and so the
-playable example, keeps DirectXTK's.
+backend whose API has no reader of its own, which `audio/webaudio/` is;
+`audio/xaudio2/`, and so the playable example on Windows, keeps DirectXTK's.
 
 ## The website
 
@@ -352,7 +364,7 @@ in the commit that creates it.
   one thread. Both are compiled only under the two `-null` presets, and until they
   existed the early-out beside the fan-out was the only branch that had ever
   been taken.
-- **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`,
+- **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`, `audio/webaudio/`,
   `input/xinput/`, `app/win32/`. The window is the one chosen by the platform
   being built for rather than by a cache variable, and the one whose header,
   `app/window.h`, stays neutral above both of its folders.

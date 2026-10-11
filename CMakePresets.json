@@ -108,7 +108,7 @@
         "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
         "VCPKG_TARGET_TRIPLET": "wasm32-emscripten",
         "LABRADOR_RENDER_BACKEND": "gl",
-        "LABRADOR_AUDIO_BACKEND": "null",
+        "LABRADOR_AUDIO_BACKEND": "webaudio",
         "LABRADOR_INPUT_BACKEND": "web"
       }
     },
