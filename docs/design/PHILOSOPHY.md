@@ -327,8 +327,8 @@ without the structure: DirectXTK's `<Audio.h>` sat in four public engine
 headers, a sound bank was constructed from a `DirectX::WaveBank`, and asking
 what a piece of music was doing meant naming XAudio2 to ask — so a second
 platform was a rewrite of the module and not an addition beside it. It is
-`engine/audio/audio_device.h` now, with `audio/xaudio2/` and `audio/null/`
-behind it, and the check that fails the build for a file reaching into a
+`engine/audio/audio_device.h` now, with `audio/xaudio2/`, the browser's
+`audio/webaudio/` and `audio/null/` behind it, and the check that fails the build for a file reaching into a
 backend folder covers both modules rather than only `render/`.
 
 This paragraph used to end "today there is one backend (D3D11, XInput), kept
@@ -525,15 +525,15 @@ engine API to depend on.
   that was hypothetical until it landed. Writing any of them changed nothing
   above the seam.
 
-  **The audio seam owes the same two and now has one of them**, which is the
-  reason it was cut at all rather than the reason it was cut *well*.
+  **The audio seam owes the same two and now has both of them.**
   `audio/null/` records what it was asked to play — which wave, out of which
   bank, at which levels, in what order — so a test can assert playing on a
   machine with no sound card, and `audio/xaudio2/` is the platform's. The
-  second-platform half is not built and is the whole of what
-  `docs/port/android.md` §3.2 has left. What the headless one bought was
-  measured before it was written: with only DirectXTK behind that module,
-  eight of `SoundBank`'s thirteen instance methods and five sites of level
+  second platform is the browser, `audio/webaudio/`, which plays the same
+  banks through the engine's own `.xwb` reader and changed no code above the
+  seam; Android's backend is the whole of what `docs/port/android.md` §3.2
+  has left. What the headless one bought was measured before it was written:
+  with only DirectXTK behind that module, eight of `SoundBank`'s thirteen instance methods and five sites of level
   clamping were code no test in this repository could reach, because the one
   bank it could construct was a null pointer inside the platform's own class.
   That is this bullet's opening sentence with a number on it.

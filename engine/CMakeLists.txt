@@ -286,13 +286,39 @@ endif()
 # engine/audio/audio_device.h is exactly as wide as what the thing does. The
 # null backend adds recording.h beside its own, exactly as engine/render/null/
 # does, so a test can read back what it was asked to play.
-set(LABRADOR_AUDIO_BACKEND "xaudio2" CACHE STRING
-    "The audio backend to build: xaudio2 or null")
-set_property(CACHE LABRADOR_AUDIO_BACKEND PROPERTY STRINGS xaudio2 null)
+#
+# webaudio IS THE DEFAULT IN A BROWSER BUILD, as web is for input: it is the
+# only one of the three that makes a sound there. Under Node, where a browser
+# build's tests run, it finds no Web Audio and plays nothing while still
+# reading and checking every bank, so the default costs the tests nothing. Each
+# platform API is refused where it does not exist, because asking for one is a
+# missing header there rather than an answer.
+if(EMSCRIPTEN)
+    set(labrador_default_audio_backend "webaudio")
+else()
+    set(labrador_default_audio_backend "xaudio2")
+endif()
+set(LABRADOR_AUDIO_BACKEND "${labrador_default_audio_backend}" CACHE STRING
+    "The audio backend to build: xaudio2, webaudio or null")
+set_property(CACHE LABRADOR_AUDIO_BACKEND PROPERTY STRINGS xaudio2 webaudio null)
+
+if(LABRADOR_AUDIO_BACKEND STREQUAL "xaudio2" AND EMSCRIPTEN)
+    message(FATAL_ERROR
+        "LABRADOR_AUDIO_BACKEND is xaudio2 in a browser build, which has no "
+        "XAudio2. It must be webaudio or null here.")
+elseif(LABRADOR_AUDIO_BACKEND STREQUAL "webaudio" AND NOT EMSCRIPTEN)
+    message(FATAL_ERROR
+        "LABRADOR_AUDIO_BACKEND is webaudio, which only a browser build "
+        "(Emscripten) has. It must be xaudio2 or null here.")
+endif()
 
 if(LABRADOR_AUDIO_BACKEND STREQUAL "xaudio2")
     target_sources(LabradorEngine PRIVATE
         audio/xaudio2/audio_device.cpp
+    )
+elseif(LABRADOR_AUDIO_BACKEND STREQUAL "webaudio")
+    target_sources(LabradorEngine PRIVATE
+        audio/webaudio/audio_device.cpp
     )
 elseif(LABRADOR_AUDIO_BACKEND STREQUAL "null")
     target_sources(LabradorEngine PRIVATE
@@ -301,8 +327,8 @@ elseif(LABRADOR_AUDIO_BACKEND STREQUAL "null")
 else()
     message(FATAL_ERROR
         "LABRADOR_AUDIO_BACKEND is '${LABRADOR_AUDIO_BACKEND}'. "
-        "It must be xaudio2 or null - a backend is a folder in engine/audio/ "
-        "holding audio_device.cpp.")
+        "It must be xaudio2, webaudio or null - a backend is a folder in "
+        "engine/audio/ holding audio_device.cpp.")
 endif()
 
 # The input backend, a third axis chosen the same way. Only the pad is behind

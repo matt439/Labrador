@@ -47,10 +47,11 @@ configure time — so asking for one that was not built is a missing symbol at
 link (T5). A change to anything in `engine/render/` should be checked against
 all five; CI builds all five.
 
-**And two audio backends**, on a second and independent axis:
-`LABRADOR_AUDIO_BACKEND` is `xaudio2` or `null`, and the two `-null` presets
-ask for the second. Those presets therefore take no platform API at all, which
-is what makes them the configurations a build machine runs end to end.
+**And three audio backends**, on a second and independent axis:
+`LABRADOR_AUDIO_BACKEND` is `xaudio2`, `webaudio` or `null`, and the two
+`-null` presets ask for the last. Those presets therefore take no platform API
+at all, which is what makes them the configurations a build machine runs end
+to end. `webaudio` is the browser build's.
 
 | Preset | Backend | ctest |
 |---|---|---|

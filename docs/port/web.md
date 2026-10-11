@@ -306,7 +306,10 @@ engine reads the format itself, in
 [`audio/xwb_file.h`](../../engine/audio/xwb_file.h) beside `dds_file.h`, and
 hands a backend 16-bit PCM, which becomes an `AudioBuffer`'s floats in one
 pass.
-Content and manifests do not change. The backend itself is still not v1.
+Content and manifests do not change. The backend itself was not v1, and M6
+has built it (§9): `audio/webaudio/` makes each wave an `AudioBuffer` and is
+the default audio backend under Emscripten, so the `wasm-*` presets build it
+in place of `null`.
 
 ### 3.6 Threads — single-threaded, and LineSweeper uses none
 
@@ -469,7 +472,7 @@ Under Emscripten, C++ exceptions **are not catchable by default.** Build with
   `$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake` and
   `VCPKG_TARGET_TRIPLET=wasm32-emscripten`. No `architecture` block.
 - Cache: `LABRADOR_RENDER_BACKEND=gl`, `LABRADOR_AUDIO_BACKEND=null`, and a new
-  `LABRADOR_INPUT_BACKEND=web`.
+  `LABRADOR_INPUT_BACKEND=web`. *(M6 made the audio backend `webaudio`.)*
 - `EMSDK` must be set, as `VCPKG_ROOT` and `VULKAN_SDK` are today. It is the
   second thing in the repository that has to be installed, after the Vulkan
   SDK.
@@ -1125,8 +1128,35 @@ FFmpeg's encoder decodes within the codec's error of its source, and to the
 same samples Windows' own MS-ADPCM codec (msacm32) and FFmpeg's decoder
 produce: those two were compared in full outside the tree, mono, stereo and
 a clipping encode, and a hash of the first pins it in the test. Every refusal
-has a hand-built bank and a named throw. Nothing plays the result yet:
-`audio/webaudio/` is still the M6 item it was.
+has a hand-built bank and a named throw.
+
+**M6's last item is done: `audio/webaudio/` plays it.** It is the seam's third
+backend, one translation unit like the other two, and the default under
+Emscripten, so both `wasm-*` presets build it; CI's second wasm
+configuration now asks for null audio as well as the null renderer, so
+`AudioTests`' recording cases still compile under clang. Each wave becomes an
+`AudioBuffer` at load. A voice is a source node through a gain and a stereo
+panner, with DirectXTK's pitch (two to the power of the pitch) and DirectXTK's
+state transitions kept on the C++ side; pause, which Web Audio does not have,
+is a recorded position and a new node. The `AudioContext` is made inside the
+first key, click or touch the page receives, by capture listeners on `window`
+that belong to the backend rather than to the engine's window, so the seam
+grows no verb that only a browser needs; a device that opens no bank never
+makes one, and LineSweeper, which has no sound, makes none. Before that
+gesture a one-shot is dropped and a voice that was asked to play starts when
+it comes, which `audio_device.h` states as the caller's contract. Under Node
+there is no Web Audio: banks are read and checked and voices change state,
+and nothing sounds, which is what `AudioTests` runs there as
+`webaudio_tests.cpp`. In headless Chrome, at `wasm-debug` and `wasm-release`,
+a scratch page tapped the context's output with an `AnalyserNode` and drove
+the backend: no context before a synthetic key press and a `running` one
+after it; the looping drone's 220 Hz present while playing and absent while
+paused; a pitch of +1 moving it to 440 Hz; a pan of -1 lowering the level by
+the square root of two; a non-immediate stop letting the pass finish about
+0.7 s later and the state then reading stopped; a paused chime resuming on the
+note it was paused in, at half rate; a one-shot audible after the gesture; and
+the context suspended and resumed with the device. Nobody has listened to it,
+and Firefox, Safari and a phone have not run it.
 
 ### Spikes — *days*, before any milestone is committed to
 
@@ -1158,7 +1188,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp` | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (its container is decided and read, D9; the backend is not written) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (done; its container is D9) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 
@@ -1253,7 +1283,8 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
   WebGL2 already serves.
 - **Pthreads.** Nothing in v1 fans out, and the cost lands on the host page
   (§7.2).
-- **Audio in v1.** LineSweeper has none (§3.5).
+- **Audio in v1.** LineSweeper has none (§3.5). M6 has since built
+  `audio/webaudio/`, so a client with sound has it in a browser.
 - **A browser-hosted editor or tooling.** Permanently out of scope, as before.
 
 ---

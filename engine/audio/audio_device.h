@@ -30,9 +30,10 @@ namespace labrador
 	// not built is a missing symbol rather than a run-time answer (T5), a
 	// vtable is a tax nothing has asked to pay (T8), and promoting a concrete
 	// class to an interface later is mechanical and changes no call site. The
-	// XAudio2/DirectXTK implementation is engine/audio/xaudio2/, the headless
-	// one is engine/audio/null/, and nothing outside those folders names an
-	// audio API.
+	// XAudio2/DirectXTK implementation is engine/audio/xaudio2/, the browser's
+	// Web Audio one is engine/audio/webaudio/, the headless one is
+	// engine/audio/null/, and nothing outside those folders names an audio
+	// API.
 	//
 	// IT IS WHAT MAKES THE MODULE TABLE TRUE. ARCHITECTURE has `audio`
 	// depending on core and math, with XAudio2 inside xaudio2/ only, so the
@@ -98,6 +99,11 @@ namespace labrador
 		// container is not there or cannot be read - which is the throw a
 		// caller catches to substitute SoundBank::silent() for an optional
 		// bank, and the reason it is a runtime_error and not a logic_error.
+		// A container this backend can read and not play is the same throw,
+		// naming the wave: an encoding the backend's reader refuses, or, in a
+		// browser, a sample rate that browser's Web Audio will not hold - the
+		// standard promises only 8000 to 96000 Hz, and each browser takes its
+		// own wider range.
 		//
 		// Throws std::out_of_range naming the wave if the container is there
 		// and does not hold a name `wave_names` lists. That is a content bug
@@ -150,6 +156,16 @@ namespace labrador
 		// the platform's affair.
 		void suspend();
 		void resume();
+
+		// SOME PLATFORMS WITHHOLD SOUND UNTIL THE PLAYER HAS DONE SOMETHING. A
+		// browser lets a page play nothing before its first key press, click
+		// or touch, and the Web Audio backend waits for that event itself, so
+		// nothing is asked of a caller. What a caller sees before then: a
+		// one-shot from play_wave is dropped, because a sound effect that plays
+		// late plays wrong; a voice asked to play answers playing and starts
+		// from where it was when sound is allowed, which is what music started
+		// at boot wants. Every other call behaves as it always does. A platform
+		// with no audio output at all answers the same way for ever.
 
 		// The backend's own state, for a backend header that has to reach it.
 		// Declared here and defined in engine/audio/<backend>/, so naming it is
