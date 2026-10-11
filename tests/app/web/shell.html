@@ -1,0 +1,78 @@
+<!doctype html>
+<!--
+  The page WebWindowTests runs in. Emscripten writes the module's script tag
+  where SCRIPT is marked below; tests/render/web/run_page.mjs serves the result,
+  and window_input.mjs beside this file drives it.
+
+  What a game's page gives the window and a test needs to be fixed:
+
+  - Module.canvas, focusable, at a known place with a CSS size of its own, so
+    that a position the runner clicks at is a position the input script can
+    work out, and the drawing buffer follows the box rather than the box the
+    buffer (engine/app/web/window.cpp, measure).
+  - Somewhere else to click and something else to focus: the empty page to
+    the right of and below the canvas, and a button.
+
+  What only a test wants:
+
+  - window.labradorExit, which the runner waits on as it does the render
+    tests' (tests/render/web/shell.html), settled here only by a failure: an
+    abort, which is how main ends if it could not take the canvas, or
+    Module.onError, which is where the window reports an exception that
+    reached it. A passing run is ended by the input script instead.
+  - Module.onQuit, which the window calls when it closes, written to the same
+    log as the window's own calls.
+  - Whether the page's default action survived each key and wheel event, read
+    at the page's window after the canvas has handled it: the window's half
+    of that is a return value to Emscripten, which nothing else can see.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Labrador window tests</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; }
+  body { width: 100vw; height: 100vh; }
+  #canvas {
+    position: absolute; left: 20px; top: 20px;
+    width: 400px; height: 250px;
+    display: block;
+  }
+  #elsewhere { position: absolute; left: 600px; top: 20px; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="0"></canvas>
+<button id="elsewhere">elsewhere</button>
+<script>
+  var settle;
+  window.labradorExit = new Promise(function (resolve) { settle = resolve; });
+
+  var Module = {
+    arguments: [],
+    canvas: document.getElementById("canvas"),
+    labradorWindowLog: [],
+    labradorDefaults: [],
+    onAbort: function (reason) { settle({ abort: String(reason) }); },
+    onError: function (message) { settle({ abort: String(message) }); },
+    onQuit: function () { Module.labradorWindowLog.push("page quit"); },
+  };
+
+  window.addEventListener("error", function (event) {
+    settle({ abort: String(event.message) });
+  });
+
+  // Bubbling, at the page's window: after the canvas's own listener.
+  window.addEventListener("keydown", function (event) {
+    Module.labradorDefaults.push("keydown " + event.code + " " +
+      (event.defaultPrevented ? "prevented" : "kept"));
+  });
+  window.addEventListener("wheel", function (event) {
+    Module.labradorDefaults.push("wheel " +
+      (event.defaultPrevented ? "prevented" : "kept"));
+  }, { passive: false });
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

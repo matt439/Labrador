@@ -89,6 +89,36 @@ if(PROJECT_IS_TOP_LEVEL)
     # same files it reads on Windows, from the same build directory.
     if(EMSCRIPTEN)
         add_link_options(-sNODERAWFS=1 -sENVIRONMENT=node)
+
+        # AND THE ONES NODE CANNOT RUN ARE PAGES, run in a headless Chromium
+        # by tests/render/web/run_page.mjs: the render tests' two, which need
+        # WebGL2 (the pixel page registered twice, once with S3TC hidden), and
+        # the window's, which needs a DOM to deliver input to. One lookup for
+        # all of them, here, because the window's page is in
+        # tests/app and the render pages are not built at all against the
+        # null backend.
+        #
+        # ABSENT RATHER THAN SKIPPED WHEN THERE IS NO BROWSER, for the reason
+        # tests/render/CMakeLists.txt gives for RenderPixelTests' absence
+        # under the null backend. A machine without Chrome builds the pages
+        # and registers no entry, and says so here.
+        # LABRADOR_TEST_BROWSER names any Chromium that speaks the protocol,
+        # Edge included.
+        find_program(LABRADOR_TEST_BROWSER
+            NAMES chrome google-chrome google-chrome-stable chromium
+                chromium-browser
+            PATHS
+                "$ENV{ProgramFiles}/Google/Chrome/Application"
+                "$ENV{LOCALAPPDATA}/Google/Chrome/Application"
+            NO_CMAKE_FIND_ROOT_PATH
+            DOC "A Chromium browser to run a browser build's test pages in"
+        )
+        if(NOT LABRADOR_TEST_BROWSER)
+            message(STATUS "No Chromium found, so RenderPixelTests, "
+                "RenderPixelTestsWithoutS3tc, RenderContextLossTests and "
+                "WebWindowTests are built and not registered with ctest. Set "
+                "LABRADOR_TEST_BROWSER to run them.")
+        endif()
     endif()
 
     add_subdirectory(tests/app)

@@ -830,8 +830,8 @@ null backend - `RenderTests`' `null_tests.cpp`, `SceneTests`'
 `particle_draw_tests.cpp`, `LocalMultiplayerTests`' `draw_tests.cpp` and the
 null benchmark - drop out of executables that still exist, so the `wasm-*`
 presets still counted 14 ctest entries and compile none of those files
-*(16 since M6 registers `RenderPixelTests` and `RenderContextLossTests`
-where a Chromium is found; below)*. MSVC
+*(17 since M6 registers `RenderPixelTests`, `RenderContextLossTests` and
+`WebWindowTests` where a Chromium is found; below)*. MSVC
 builds them under the two `-null` presets as before, and CI's wasm job
 configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`
 and runs that build's tests too, so the second compiler still sees them.
@@ -1007,9 +1007,9 @@ their frames in `golden-actual/` beside the page, as on Windows. What it took:
   is held to it.
 - **Absent rather than skipped without a browser.** The entry is registered
   only where configure finds a Chromium (`LABRADOR_TEST_BROWSER`), so the
-  `wasm-*` presets count 18 entries here, with the context-loss page below,
-  the no-S3TC run of this one (M7b) and `AudioSampleTests` (M6), and 15 on a
-  machine without one.
+  `wasm-*` presets count 19 entries here, with the context-loss page and the
+  window page below, the no-S3TC run of this one (M7b) and `AudioSampleTests`
+  (M6), and 15 on a machine without one.
 - **The device-info case has a browser branch**: `present_mode` is
   `browser_animation_frame` with no swap interval, where WGL reports one.
 - **CI's Chrome draws with SwiftShader**, which its log names: "ANGLE
@@ -1291,6 +1291,30 @@ owed: a real iPhone and a real Android phone, which the S3TC-less texture
 path (above) has not met either,
 and the top-out's frame time on a phone (R6).
 
+**The web window's state has a test of its own: `WebWindowTests`, a page
+driven by real input.** `AppTests` reaches `dom_events.h` under Node and
+nothing that needs a DOM, so focus, the capture analogue, the size measured
+before each tick, touch and full screen had been checked only by loading a
+sample and looking. `tests/app/web/window_page.cpp` takes its canvas with a
+real `Window` and logs every `WindowNotify` call, and a frame that runs with a
+buffer nobody was told about is logged as a failure. `run_page.mjs` gained
+`--input`, a script it runs against the page with the page's DevTools session
+in hand, so the input is the browser's own dispatch rather than an event the
+page made: `window_input.mjs` clicks, drags off the canvas, presses keys and
+chords, turns the wheel, moves focus, resizes the canvas in CSS, sets a
+device pixel ratio of two, puts two emulated fingers down, goes full screen
+with and without a gesture and closes the window, comparing the whole log
+after each step. Visibility is the exception, and the script says so: no CDP
+call tried - another tab activated, the lifecycle states, a minimised window
+- changes `visibilityState` in a headless browser, so the document is told it
+is hidden and the event is dispatched. The browser lookup moved to the root
+`CMakeLists.txt`, because this page is built in `tests/app` and under the null
+render backend too, where the render pages are not. Breaking the wheel's
+focus rule, reporting a size after the tick and dropping a touch's
+`preventDefault` each failed it, at the step that names the rule. It runs in
+Chrome only; Firefox, which speaks WebDriver BiDi rather than CDP, has not
+run it.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1321,7 +1345,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp`, sampled once a frame, compacted slots, pads following page visibility rather than canvas focus, and the fullscreen flag following the browser (code landed; a physical pad is the open check) | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); the web window driven by real input in headless Chromium, `WebWindowTests` (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal`, and a Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone (controls, portrait layout and the page's viewport handling landed; headless Chrome's emulation drives them, and real phones and the measured frame are open) | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 
