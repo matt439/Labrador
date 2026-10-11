@@ -222,6 +222,15 @@ namespace labrador
 		return false;
 	}
 
+	// There is no host page to tell.
+	void Renderer::Impl::tell_host_lost()
+	{
+	}
+
+	void Renderer::Impl::tell_host_restored()
+	{
+	}
+
 	std::string Renderer::Impl::device_string(GLenum name) const
 	{
 		const GLubyte* value = glGetString(name);

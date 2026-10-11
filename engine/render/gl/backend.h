@@ -188,6 +188,14 @@ namespace labrador
 	// samplers, reads the device's strings from the restored context, and only
 	// then tells the shell both halves at once. restore_device is that
 	// sequence, and says what happens when the context goes again mid-way.
+	//
+	// THE HOST PAGE IS TOLD AT BOTH ENDS, because what it owes a visitor is
+	// different. A blank canvas with no word is all a visitor sees of a
+	// context that never comes back, and the page holds nothing a frame names,
+	// so it can be told of the loss as soon as a frame sees it and of the
+	// restore once the shell has its textures again: Module.onContextLost and
+	// Module.onContextRestored, each optional, each once per loss, in that
+	// order. tell_host_lost and tell_host_restored are where.
 	class Renderer::Impl
 	{
 	public:
@@ -302,6 +310,15 @@ namespace labrador
 		// enabled its extensions again by then, and everything else on it is
 		// gone. Never, on WGL. Defined by the context.
 		bool take_restored_context();
+
+		// The host page's half of a loss, which is not the shell's: the page
+		// is told the context went in the first begin_frame that can see it
+		// went, and told it is back once restore_device's rebuild holds and
+		// the shell has heard both halves. Each is said once per loss, and
+		// never from the browser's event. Nothing, on WGL. Defined by the
+		// context.
+		void tell_host_lost();
+		void tell_host_restored();
 
 		// Everything a restored context needs, and the shell told of it: the
 		// sequence the class comment describes.

@@ -12,7 +12,8 @@
 #include <stdexcept>
 #include <tuple>
 
-// THE PAGE'S HALF, which is the only JavaScript in the engine. Each function
+// THE PAGE'S HALF, which is all the engine's JavaScript but the renderer's
+// two calls to the page about its context (gl/web_context.cpp). Each function
 // is one question about the canvas or one call to the page, and everything
 // else goes through Emscripten's html5 API, which names an element by a
 // string. "!canvas" is that string for the canvas the page handed over as
