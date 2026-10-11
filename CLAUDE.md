@@ -98,7 +98,15 @@ fourth, at `out/build/wasm-*/samples/minimal/MinimalSample.html`, and draws a
 marker at every touch point, which is how the touch device is looked at; its
 `main_web.cpp` and `CMakeLists.txt` are the browser build a new project
 copies. `collision` is the fifth, at
-`out/build/wasm-*/samples/collision/CollisionSample.html`. **In a browser
+`out/build/wasm-*/samples/collision/CollisionSample.html`. **Each of the five
+pages is a ctest entry too** - `LineSweeperPageTests`,
+`LocalMultiplayerPageTests`, `MinimalPageTests`, `CollisionPageTests` and
+`AudioPageTests`, registered in the root `CMakeLists.txt` on the same
+condition as `RenderPixelTests`: `run_page.mjs` serves the built development
+page, waits for its frames, presses the sample's own way out and passes when
+`Module.onQuit` is called, and a console error, a browser warning or
+`Module.onError` fails it, so a broken content path fails ctest rather than
+the live site. **In a browser
 `Application::run` does not return and the stack below it is unwound,
 destructors included, before the first frame**, so a web entry point keeps
 its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,
@@ -146,7 +154,7 @@ driven neither.
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
 | `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
-| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 20 entries: the seventeen, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, and two browser-only pages, `RenderContextLossTests`, which loses and restores a WebGL2 context, and `WebWindowTests`, which drives the web window with real input (16 where configure finds no Chromium, because no page is then registered). `AudioSampleTests` runs under Node and loads the sample's bank through `audio/webaudio/`, the browser build's stand-in for `--smoke-test`. `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
+| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 25 entries: the seventeen, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, two browser-only pages, `RenderContextLossTests`, which loses and restores a WebGL2 context, and `WebWindowTests`, which drives the web window with real input, and the five `*PageTests`, one per sample page (16 where configure finds no Chromium, because no page is then registered). `AudioSampleTests` runs under Node and loads the sample's bank through `audio/webaudio/`, the browser build's stand-in for `--smoke-test`. `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -192,8 +200,9 @@ frame submitted, in what order, from which texture, into which view. Seventeen c
 `LineSweeperTests`, `LineSweeperViewTests` (doctest) and `Benchmarks`; the `wasm-*`
 presets add `RenderPixelTestsWithoutS3tc`, the pixel page again with S3TC
 hidden, `RenderContextLossTests`, a browser-only page that creates a
-WebGL2 context to lose and restore it, and `WebWindowTests`, a browser-only
-page that draws nothing. Apart from the context-loss page and the second pixel run, `RenderPixelTests` is the only one that creates a
+WebGL2 context to lose and restore it, `WebWindowTests`, a browser-only
+page that draws nothing, and a `*PageTests` entry for each sample's page,
+which loads it and quits it. Apart from those pages and the second pixel run, `RenderPixelTests` is the only one that creates a
 device — a hidden window and a WARP fallback in debug under `x64-debug` and
 `x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
 `x64-debug-vulkan`, a WebGL2 context on a canvas of its own per case under the

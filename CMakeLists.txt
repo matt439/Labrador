@@ -95,10 +95,11 @@ if(PROJECT_IS_TOP_LEVEL)
         # AND THE ONES NODE CANNOT RUN ARE PAGES, run in a headless Chromium
         # by tests/render/web/run_page.mjs: the render tests' two, which need
         # WebGL2 (the pixel page registered twice, once with S3TC hidden), and
-        # the window's, which needs a DOM to deliver input to. One lookup for
-        # all of them, here, because the window's page is in
-        # tests/app and the render pages are not built at all against the
-        # null backend.
+        # the window's, which needs a DOM to deliver input to - and each
+        # sample's development page, registered at the end of this file. One
+        # lookup for all of them, here, because the window's page is in
+        # tests/app, the samples' are in samples/, and the render pages are
+        # not built at all against the null backend.
         #
         # ABSENT RATHER THAN SKIPPED WHEN THERE IS NO BROWSER, for the reason
         # tests/render/CMakeLists.txt gives for RenderPixelTests' absence
@@ -113,13 +114,13 @@ if(PROJECT_IS_TOP_LEVEL)
                 "$ENV{ProgramFiles}/Google/Chrome/Application"
                 "$ENV{LOCALAPPDATA}/Google/Chrome/Application"
             NO_CMAKE_FIND_ROOT_PATH
-            DOC "A Chromium browser to run a browser build's test pages in"
+            DOC "A Chromium browser to run a browser build's pages in"
         )
         if(NOT LABRADOR_TEST_BROWSER)
             message(STATUS "No Chromium found, so RenderPixelTests, "
-                "RenderPixelTestsWithoutS3tc, RenderContextLossTests and "
-                "WebWindowTests are built and not registered with ctest. Set "
-                "LABRADOR_TEST_BROWSER to run them.")
+                "RenderPixelTestsWithoutS3tc, RenderContextLossTests, "
+                "WebWindowTests and the samples' pages are built and not "
+                "registered with ctest. Set LABRADOR_TEST_BROWSER to run them.")
         endif()
     endif()
 
@@ -135,4 +136,41 @@ if(PROJECT_IS_TOP_LEVEL)
     add_subdirectory(tests/render)
     add_subdirectory(tests/scene)
     add_subdirectory(tests/ui)
+
+    # EACH SAMPLE'S PAGE, LOADED AND QUIT, because the page is what a browser
+    # build ships and nothing else here loads one: a content path the module
+    # cannot find, a page that hands it no canvas or a callback it never
+    # gives would otherwise first show on a live site. Each entry serves the
+    # built development page, waits for its frames, presses the keys that
+    # are the sample's own way out, and passes when Module.onQuit is called;
+    # a console error, a browser warning or Module.onError fails it
+    # (run_page.mjs says exactly what). Registered here rather than in each
+    # sample's folder because minimal's is the template a new project
+    # copies, and the runner is this repository's, not the project's.
+    if(EMSCRIPTEN AND LABRADOR_TEST_BROWSER)
+        function(labrador_sample_page_test name target quit_keys)
+            add_test(NAME ${name}
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
+                    --browser "${LABRADOR_TEST_BROWSER}"
+                    --page "$<TARGET_FILE:${target}>"
+                    --quit-keys "${quit_keys}"
+                    --timeout 60
+            )
+        endfunction()
+        # The pause menu: RESUME, RESTART, QUIT.
+        labrador_sample_page_test(LineSweeperPageTests LineSweeperSample
+            "Escape,ArrowDown,ArrowDown,Enter")
+        labrador_sample_page_test(LocalMultiplayerPageTests
+            LocalMultiplayerSample "Escape")
+        # Escape asks, and Enter answers yes.
+        labrador_sample_page_test(MinimalPageTests MinimalSample
+            "Escape,Enter")
+        labrador_sample_page_test(CollisionPageTests CollisionSample "Escape")
+        # S stops a loop that is not playing, so it changes nothing on the
+        # board, and it is a key that grants activation: the gesture that
+        # lets Web Audio make its context. Escape grants none (the gesture note
+        # in engine/audio/webaudio/audio_device.cpp) and is only the way out.
+        labrador_sample_page_test(AudioPageTests AudioSample "KeyS,Escape")
+    endif()
 endif()
