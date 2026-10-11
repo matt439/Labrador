@@ -313,7 +313,7 @@ jobs:
       # the font atlas's BC2 colours differently from the GPU the set was made
       # on. RenderPixelTests decodes that atlas itself now, and forced onto
       # SwiftShader on the desktop (--use-angle=swiftshader) Chrome writes all
-      # fifty-eight frames byte for byte. tests/render/golden_image.cpp has the
+      # sixty frames byte for byte. tests/render/golden_image.cpp has the
       # measurement, beside the allowance it is about.
       - name: Test the pixel contract in headless Chrome
         run: |

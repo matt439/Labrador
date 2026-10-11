@@ -151,12 +151,18 @@ the x64-release D3D11 build wrote four files with identical SHA-256 hashes, and
 the x64-debug build wrote the same four files. The checked-in images are from
 x64-release on D3D11.
 
-The other backends were run on the same machine once each. D3D12 and Vulkan
-wrote the same bytes as D3D11 for all four images. GL wrote the same bytes for
-the play and clear images. It differed on two text rows, the pause menu's
-RESTART and the top-out banner: 149 and 388 pixels, by up to 125 and 240 in a
-channel. Both strings are centred by measuring them, and the likely cause is a
-half-pixel position that GL samples differently. That was not investigated.
+The other backends were run on the same machine, and D3D12, GL and Vulkan
+write the same bytes as D3D11 for all four images. Two text rows are why that
+needed a change to the sample rather than to a backend: the pause menu's
+RESTART and the top-out banner are centred by halving a measured width that is
+odd, which put them exactly half a pixel off a whole one. At half a pixel every
+pixel centre is a texel edge, and which texel the point filter picks there is
+the rasteriser's rounding, not anything the engine decides
+(`engine/render/renderer.h`, `draw_text`). GL drew those rows differently from
+the other three, by up to 240 in a channel, and none of the four drew them
+cleanly: each tore some glyphs along the diagonal between a quad's two
+triangles. Both positions are now rounded down to a whole pixel, and
+`RenderPixelTests` pins what fractional text that is not half way does draw.
 
 It is not a claim across machines. A regeneration on other hardware may change
 some bytes. Look at every image a regeneration changes before committing it.

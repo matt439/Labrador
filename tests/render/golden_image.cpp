@@ -339,7 +339,7 @@ namespace
 	// behind ANGLE's Vulkan path.
 	//
 	// MEASURED, NOT GUESSED, with this number set to zero, against the set of
-	// fifty-eight. This machine's GPU writes every frame byte for byte through
+	// sixty. This machine's GPU writes every frame byte for byte through
 	// all four desktop backends and through Chrome's ANGLE. SwiftShader writes
 	// every frame byte for byte too. WARP differs on two frames, both of them
 	// blend cases, by 1. So 8 is eight times what any rasteriser measured here
@@ -392,7 +392,7 @@ void golden::check_frame(int width, int height,
 		// AN IMAGE WHOSE PIXELS DID NOT MOVE IS LEFT AS IT IS, byte for byte,
 		// so that what a regeneration changes in the tree is exactly the set
 		// of frames that changed. Re-encoding every file would show a reviewer
-		// fifty-eight modified images whenever the encoder differed from the
+		// sixty modified images whenever the encoder differed from the
 		// one that wrote them, with no way to tell which ones to look at.
 		int existing_width = 0;
 		int existing_height = 0;

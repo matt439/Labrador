@@ -145,9 +145,9 @@ through LineSweeper's rules, draws it with the sample's own presentation and
 writes the website's images from `read_back_buffer`, byte for byte repeatable
 on one machine and backend. A change to the sample's presentation changes
 them: regenerate on `x64-release` and look at every image that moved before
-committing it. Its README records one thing it found and did not chase: GL
-draws two measured-and-centred text rows differently from the other three
-rasterising backends.
+committing it. All four rasterising backends write the same bytes for
+it now; its README says why two centred text rows once did not, and why
+point-sampled text belongs on a whole pixel rather than half way.
 
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
@@ -449,7 +449,7 @@ in the commit that creates it.
   Two things the sweep could not know are recorded there too: the CI premise it
   reasoned from is false — a GPU-less runner offers Direct3D an adapter rather
   than falling back to WARP, which one job log settles — and the golden set is
-  fifty-eight images now, five of them added by the tests those findings
+  sixty images now, five of them added by the tests those findings
   asked for. The
   third folder reviews the fourth backend against the seam it was written to
   test. **Its three must-fix findings, all

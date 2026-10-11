@@ -76,6 +76,13 @@ namespace labrador
 	// each glyph to a whole pixel would make a line of text drift against its
 	// own measurement. There is no flip because no caller flips text, and
 	// flipped text is named in RenderPixelTests as something nothing pins.
+	//
+	// SO THIS IS WHERE THE CONTRACT STOPS DECIDING A PIXEL. A position half a
+	// pixel off a whole one puts every pixel centre on a texel edge, and the
+	// texel the point filter picks there is the rasteriser's rounding of an
+	// interpolated coordinate rather than anything written here. The caller
+	// avoids it, as renderer.h's draw_text says; a nudge applied here would
+	// move every fractional position to fix one of them.
 	void build_scaled_quad(const mattmath::Vector2F& position,
 		float scale,
 		const mattmath::RectangleI& source,

@@ -1089,6 +1089,25 @@ and BC3, eight for BC1, on the devices with the least. What was checked:
   pause menu drew legibly, keys moved the piece, and the only console error
   was the development server's missing favicon. No phone has run it.
 
+**The one drawing difference `gl/` had from the other backends was not
+`gl/`'s.** `tools/linesweeper_capture/README.md` recorded GL drawing two
+centred text rows differently, the pause menu's RESTART and the top-out
+banner, by up to 240 in a channel. Both were centred by halving an odd
+measured width, so both sat exactly half a pixel off a whole one, where every
+pixel centre is a texel edge and the point filter's choice is the
+rasteriser's rounding. None of the four backends drew them cleanly. Moving
+them a quarter pixel made GL and D3D11 agree byte for byte, which settled the
+cause. The sample now rounds both positions down. All four backends write the
+same four capture images, and the two website images that moved were looked
+at. `renderer.h` tells a caller to do the same. A new pixel case,
+"point-sampled text off a whole pixel lands on the nearest one", pins
+quarter and three-quarter positions in both axes against a draw on the
+nearest whole pixel. That makes sixty golden frames.
+Measured at zero allowance, all sixty are byte for byte on this machine's GPU
+through D3D11, D3D12, GL, Vulkan and Chrome's ANGLE, and on SwiftShader. WARP
+still differs only on the two blend frames, by 1. The same case at x + 0.5
+fails on both D3D11 and GL, which is why it pins neither.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:

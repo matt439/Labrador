@@ -177,6 +177,15 @@ namespace labrador
 		// per string per view per frame or a buffer shared between workers. Wide
 		// in, wide all the way down; there is no narrow overload to fall back to
 		// and there should not be one.
+		//
+		// The position need not be a whole pixel, and under the point filter at
+		// a scale of one, text off a whole pixel draws as it would on the
+		// nearest one. EXACTLY HALF WAY IS THE EXCEPTION: every pixel centre is
+		// then a texel edge, and which texel it samples is decided by rounding
+		// inside the rasteriser, differently on different backends and even
+		// between the two triangles of one glyph. Centring by halving a
+		// measured width lands there whenever the width is odd, so take
+		// std::floor of a centred point-sampled position.
 		void draw_text(FontHandle font,
 			const std::wstring& text,
 			const mattmath::Vector2F& position,
