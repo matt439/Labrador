@@ -106,7 +106,15 @@ condition as `RenderPixelTests`: `run_page.mjs` serves the built development
 page, waits for its frames, presses the sample's own way out and passes when
 `Module.onQuit` is called, and a console error, a browser warning or
 `Module.onError` fails it, so a broken content path fails ctest rather than
-the live site. **In a browser
+the live site. **LineSweeper is also built for
+another site to host**: `linesweeper.js`, an ES module exporting the factory
+`createLineSweeper`, and `linesweeper.wasm`, which the `linesweeper_web_dist`
+target bundles on every build into `out/build/wasm-*/web-dist/linesweeper/`
+with an example page (`samples/linesweeper/web/index.html`), the licence
+notices for what the module links, and `BUILD.json` naming the commit and
+each file's size raw and under Brotli; CI's wasm job uploads it. The host is
+mattharding.dev, where a project's demo is a page of its own, and deploying
+it is the owner's, so M5 is not done until it is live (web.md §7). **In a browser
 `Application::run` does not return and the stack below it is unwound,
 destructors included, before the first frame**, so a web entry point keeps
 its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,

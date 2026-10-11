@@ -593,111 +593,164 @@ cheapest way to exercise two views and the serial pool fan-out in a browser.
 
 ## 7. What the host page gets
 
+The host is **mattharding.dev**, the owner's personal site: Astro, served as
+static assets by one Cloudflare Worker, from a repository of its own. Its
+convention for a project's in-browser build is a page of its own, at
+`public/demo/<id>/index.html`, which the project's page links to once the file
+exists - for this demo `/demo/linesweeper/`, named for the sample it plays. So the host page is a plain
+HTML page of the demo's own, not a component inside the site's pages: the
+site needs no build step for it, and anything the demo ever needs from the
+server can be scoped to `/demo/*`. This repository builds and publishes the
+bundle, whose `index.html` is a working example of that page; the site keeps
+a page of its own in its own styles, built on the same mount (7.3), and its
+`npm run sync-demo` copies the rest of the bundle in beside it. **Putting it
+on the site and deploying is the owner's**, in that repository, and it is
+not deployed yet.
+
 ### 7.1 Files
 
-Link with `-sMODULARIZE -sEXPORT_ES6 -sEXPORT_NAME=createLineSweeper
--sENVIRONMENT=web -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2
--sALLOW_MEMORY_GROWTH -fwasm-exceptions`, with content embedded:
+The build writes the bundle on every `wasm-*` build, as the
+`linesweeper_web_dist` target, into `out/build/<preset>/web-dist/linesweeper/`,
+and CI's wasm job uploads `wasm-release`'s as the artifact `linesweeper-web`.
+`tools/web_bundle/bundle.mjs` assembles it, with the Node Emscripten's
+toolchain already runs. Everything in it but `index.html` goes to
+`public/demo/linesweeper/`, the module and its loader in a folder of their
+own (7.2):
 
-| File | What | Expected size (**estimate**; M3 measured it, below) |
-|---|---|---|
-| `linesweeper.wasm` | engine + game + libc++ + 22 KB of content | 0.6–1.2 MB raw; ~200–400 KB Brotli |
-| `linesweeper.js` | ES module loader and glue | 60–150 KB raw; ~20–40 KB Brotli |
-| `linesweeper.data` | only with `--preload-file` | absent in v1 |
+| File | What | `wasm-release`, measured | Brotli, quality 11 |
+|---|---|---|---|
+| `index.html` | An example of the demo's page: poster, button, the mount (7.3) | 7.8 KB | 2.5 KB |
+| `linesweeper.js` | ES module loader and glue; default export `createLineSweeper` | 119 KB | 27 KB |
+| `linesweeper.wasm` | engine + game + libc++ + 22 KB of content, embedded | 394 KB | 123 KB |
+| `poster.png` | A frame of the game, from `LineSweeperCapture`'s website set | 15.5 KB | 11.2 KB |
+| `NOTICE.txt` | What the module links that is not Labrador's, with each licence in full | 88 KB | 8.3 KB |
+| `BUILD.json` | The commit, whether the checkout had uncommitted changes, the build type, the Emscripten version, and every file's size raw and under Brotli with its SHA-256 | | |
 
-The baseline for the estimate is `x64-release-gl`'s `LineSweeperSample.exe`
-at 297 KB, which links the C runtime dynamically. The wasm build links libc++,
-`<filesystem>` and exception support statically, which is most of the gap.
-*(Measured in M3, with `gl/` drawing, at `wasm-release`: a 357 KB module
-and a 107 KB loader, 113 KB and 25 KB under Brotli, so the module is below
-the estimate and the loader inside it; §9.)*
+The module is linked with `-sMODULARIZE -sEXPORT_ES6
+-sEXPORT_NAME=createLineSweeper -sENVIRONMENT=web` on top of what every
+browser build takes (`-fwasm-exceptions`, a 1 MiB stack, a growing heap,
+WebGL2 only). It is a second link of the same objects as the development
+page's `LineSweeperSample.html`, which stays as it is, so the sample's page
+test still loads what the module runs. **A visitor fetches 151 KB under
+Brotli to play**: the loader and the module, after the click. The estimate
+this section used to carry, from `x64-release-gl`'s 297 KB executable, was
+0.6-1.2 MB for the module, and it came in under that.
+
+`BUILD.json` is how a host tells which engine commit it serves, so a copy into
+the site should carry it with the rest. `"dirty": true` means the build had
+changes that commit does not hold, and such a bundle should not be deployed.
+
+**`NOTICE.txt` is not optional.** The module statically links libc++,
+libc++abi, libunwind, compiler-rt's builtins, Emscripten's musl-derived C
+library and its JavaScript runtime, besides RapidJSON, and the page links to
+the file. The licence texts are read from the Emscripten install that linked
+the module, so they are the versions in it. The repository's `NOTICE` lists
+the same set.
 
 ### 7.2 Headers the host must send
 
-**Single-threaded, as recommended:**
+**Single-threaded, as built, so the list is short:**
 
-- `.wasm` served as `Content-Type: application/wasm`. `instantiateStreaming`
-  refuses anything else. *General knowledge:* Cloudflare already maps the
-  extension. Confirm with `curl -I` after the first deploy.
-- `Cache-Control: public, max-age=31536000, immutable`, on files under a
-  versioned path such as `/demos/linesweeper/<build-hash>/`. The page refers
-  to the path, so a new build is a new path and never a stale cache.
-- **If the site sends a Content-Security-Policy**, its `script-src` needs
-  `'wasm-unsafe-eval'`, or the browser refuses to compile the module.
+- `.wasm` served as `Content-Type: application/wasm`, which
+  `instantiateStreaming` requires. *General knowledge:* Workers Static Assets
+  types files by extension and maps this one. Confirm with `curl -I` after the
+  first deploy, since it is the one header the demo cannot start without.
 - **No COOP/COEP.** That is the point of §3.6.
+- **If the site ever sends a Content-Security-Policy**, its `script-src`
+  needs `'wasm-unsafe-eval'`, or the browser refuses to compile the module.
+  It sends none today; the Worker passes asset responses through untouched.
+- **Caching, by a versioned folder rather than a header.** The bundle's files
+  have fixed names, so the site's `sync-demo` puts `linesweeper.js` and
+  `linesweeper.wasm` in `/demo/linesweeper/m/<hash>/`, the hash taken from
+  their contents, and points the page at that folder. The Worker serves
+  anything under `m/<hash>/` as `Cache-Control: public, max-age=31536000,
+  immutable` and everything else under `/demo/` - the page, the poster, the
+  notices - as `no-cache`, revalidated against its ETag, so a new build is a
+  new path and the page that names it is never stale. `sync-demo` also
+  refuses a bundle whose `BUILD.json` says `"dirty": true` and checks every
+  file against the SHA-256 recorded there.
 
-**Only if pthreads are ever added:** the *page* (the HTML, not the wasm)
-needs `Cross-Origin-Opener-Policy: same-origin` and
-`Cross-Origin-Embedder-Policy: require-corp`. That breaks any cross-origin
-embed on the same page (video players, analytics iframes) unless each one
-opts in. On Cloudflare this is a `_headers` rule scoped to the demo page's
-path, so the rest of the site is untouched.
+Any header the demo comes to need is set by the site's Worker,
+`worker/index.js`, scoped to `/demo/*`, so the rest of the site is untouched.
+**Only if pthreads are ever added** does that matter: the *page* then needs
+`Cross-Origin-Opener-Policy: same-origin` and
+`Cross-Origin-Embedder-Policy: require-corp`, which breaks any cross-origin
+embed on the same page unless each one opts in.
 
 ### 7.3 Mounting it, start-on-click
 
-The page shows a poster image and a button. Nothing is downloaded until the
-click. That keeps the personal site's own load cost at one image. It gives
-`AudioContext` the user gesture it needs when audio arrives. And it is when
-the canvas takes keyboard focus. `LineSweeperCapture` already produces
-repeatable frames of this game for the Labrador site, and one of them is the
-poster.
+The page shows a poster and a button, and **nothing is downloaded until the
+click**: the page's own load is the HTML and one 15 KB image. The click gives
+`AudioContext` the user gesture it needs when audio arrives, and it is when
+the canvas takes keyboard focus. The shape, from
+`samples/linesweeper/web/index.html`, which says the rest:
 
-```html
-<div class="labrador-demo">
-  <canvas id="linesweeper" tabindex="0" hidden></canvas>
-  <button id="play" style="background-image:url(/demos/linesweeper/poster.png)">
-    Play LineSweeper
-  </button>
-  <p class="labrador-error" hidden></p>
-</div>
-<script type="module">
-  const base = "/demos/linesweeper/BUILD_HASH/";
-  const canvas = document.getElementById("linesweeper");
-  const play = document.getElementById("play");
-  play.addEventListener("click", async () => {
-    play.disabled = true;
-    const { default: createLineSweeper } = await import(base + "linesweeper.js");
-    canvas.hidden = false;
-    play.hidden = true;
-    await createLineSweeper({
-      canvas,
-      locateFile: (path) => base + path,
-      onQuit: () => { /* show "Play again" */ },
-      onError: (message) => { /* fill .labrador-error */ },
-      onContextLost: () => { /* say the graphics went, and are awaited */ },
-      onContextRestored: () => { /* take that back */ },
-    });
-    canvas.focus();
-  }, { once: true });
-</script>
+```js
+const factory = (await import("./linesweeper.js")).default;  // once
+canvas = document.createElement("canvas");                     // every game
+canvas.tabIndex = 0;
+stage.append(canvas);
+await factory({
+  canvas,
+  onQuit: () => { /* show "Play again" */ },
+  onError: (message) => { /* show the reason */ },
+  onContextLost: () => { /* say the graphics went, and are awaited */ },
+  onContextRestored: () => { /* take that back */ },
+});
+canvas.focus();
 ```
 
-In Astro this is one `<LabradorDemo>` component that takes `base`, `poster`
-and an aspect ratio. Its CSS sets `aspect-ratio: 16 / 9; width: 100%` on the
-canvas, and the drawing buffer follows that box (§4). A visitor without
-WebGL2 gets the error paragraph naming what is missing, which is T6
-on a web page. `onQuit` and `onError` are the engine's two calls to the page
-about the game, and `onContextLost` and `onContextRestored` its two about the
-canvas: the browser took the WebGL2 context away, and gave it back with the
-game drawing again. Each is optional, read from `Module` when it is due
-rather than from globals, and the second pair is called once per loss, in
-that order, each from a frame rather than from the browser's event. Between
-them the canvas is blank, and a context that never comes back leaves it
-blank for good, so what the page says in `onContextLost` is the only word a
-visitor gets.
+**Each game is a new canvas and a new factory call.** A call is a whole
+instance - its own memory, its own Module object and its own `Application`,
+which lives in a static whose destructor never runs (§9). The engine's
+JavaScript reads `Module.canvas` and the page's four callbacks from `Module`, and
+the html5 target `"!canvas"` lives in the instance's own table, so all of it
+resolves inside the instance the factory made. QUIT stops that instance's
+loop and takes its listeners off its canvas, but the instance keeps the
+WebGL2 context it made there, so "Play again" makes a fresh canvas, calls the
+factory again and drops the old canvas from the page. The module is fetched
+once more for the second instance, which the browser's cache answers.
 
-### 7.4 What a phone sees before M7
+The page sizes the canvas in CSS, at 16:9 and the column's width, and the
+drawing buffer follows that box (§4). A visitor without WebGL2 gets the
+engine's reason in the status line, through `onError`, which is T6 on a web
+page; a loader or a module that cannot be fetched is caught by the page
+itself, since the engine never runs. `onQuit` and `onError` are the engine's
+two calls to the page about the game, and `onContextLost` and
+`onContextRestored` its two about the canvas: the browser took the WebGL2
+context away, and gave it back with the game drawing again. Each is optional,
+read from `Module` when it is due, and the second pair is called once per
+loss, in that order, each from a frame rather than from the browser's event.
+Between them the canvas is blank, and a context that never comes back leaves
+it blank for good, so what the page says in `onContextLost` is the only word
+a visitor gets.
 
-Most visitors open the host site on a phone, so the v1 page cannot just put
-an error where the game should be. The component decides **before
-downloading anything**: if `matchMedia("(pointer: coarse)")` matches and no
-physical keyboard has been used, it shows the poster and a short muted loop
-of the game, with a line saying the playable version needs a keyboard or a
-controller for now. `LineSweeperCapture` already produces this game's
-frames byte for byte, and the Labrador site already hosts a silent MP4, so
-the footage costs nothing new. The `.wasm` is never fetched on a phone, so a
-phone visitor pays for one image and one short video, and gets something to
-watch rather than a refusal.
+### 7.4 What a phone sees on the host page
+
+Most visitors open the host site on a phone, so the page cannot just put an
+error where the game should be. It decides **before downloading anything**:
+if `matchMedia("(pointer: coarse)")` matches, it shows the poster with a line
+saying the game asks for a keyboard or a controller for now, and no button,
+and a key pressed on that device - a tablet with a keyboard - brings the
+button back. The `.wasm` is never fetched on a phone, so a phone visitor pays
+for the page and one image.
+
+**The gate stays although the module plays by touch.** The module the bundle
+ships links the touch controls and the portrait arrangement (M7b's sample
+half, §9), and the development page lets a phone play; the bundle's page
+holds them back until a real iPhone and a real Android phone have played it,
+and its line says so rather than that the controls are coming. Its stage is
+a fixed 16:9, so it always takes the landscape arrangement: lifting the gate
+means taking `web/shell.html`'s phone handling with it - no coarse-pointer
+gate, `viewport-fit=cover` with the safe-area insets as padding, and the
+portrait rule that drops the 16:9.
+
+**On mattharding.dev a phone gets the poster and a recording**: the site's
+page shows a muted, looped recording of the game, `linesweeper.mp4` beside
+the page, 4.3 MB of `LineSweeperCapture`'s footage that the site copies in
+with `sync-demo --video` rather than the bundle carrying it, and the Worker
+answers byte ranges on it, which Safari needs to play a video. It still
+fetches no module.
 
 ---
 
@@ -855,7 +908,7 @@ neutral and `app/win32/` and `app/web/` each define its `Impl`. What it found:
   catch is no longer on the stack. The web window catches at its edge - the
   frame and every html5 callback - stops the loop and reports to stderr and
   `Module.onError`. That brought `onQuit` and `onError` forward from M5, which
-  keeps the module packaging, the component and the deploy.
+  keeps the module packaging, the host page and the deploy.
 - **D2 met three callers that hid their window**, and D6 is how they still
   do. D7 is the other choice it made.
 - **The drawing buffer is measured, not observed**: CSS box times
@@ -1362,6 +1415,35 @@ error that reached `Module.onError`, and LineSweeper given Escape, Down,
 Enter, which is RESTART, timed out without a quit. With the null renderer,
 as CI's second wasm configure builds it, they pass too.
 
+**M5's half in this repository is built, and M5 is not done**, because its
+done-when is a live URL and the deploy is the owner's, in the site's own
+repository. The host is mattharding.dev, whose convention is a demo page of
+its own at `/demo/<id>/`, so §7 was rewritten for it: the demo is a plain
+page of its own rather than an Astro component, and the bundle's `index.html`
+is a working example of it, which the site's own page follows. The build links LineSweeper a second time as an ES module,
+`linesweeper.js` with the factory `createLineSweeper` and `linesweeper.wasm`,
+from the same objects as the development page, and `linesweeper_web_dist`
+bundles it with the page, a poster, `NOTICE.txt` and `BUILD.json` into
+`web-dist/linesweeper/` on every build; CI's wasm job uploads `wasm-release`'s
+after the page tests pass. Nothing in the engine changed for it: every piece
+of the engine's JavaScript reads `Module` and `specialHTMLTargets`, and under
+`-sMODULARIZE` both are the instance's own. The second mount is where that was
+proved rather than read. The bundle's page was driven in headless Chrome at
+`wasm-debug` and `wasm-release`: before the click the page fetched itself and
+the poster and nothing else; a click mounted the game on a new canvas, keys
+moved, rotated, dropped and held pieces, Escape, Down, Down and Enter reached
+`onQuit`, and "Play again" mounted a second instance on a fresh canvas, which
+started from an empty board, played the same keys and quit the same way. The
+console was clean throughout, and the frames were looked at. The first run
+of that check found the one defect: the overlay holding "Play again" sat
+under the old canvas, so the second click reached the dead game rather than
+the button. With touch emulated, the page showed the keyboard line and
+fetched no module. At `wasm-release` the module is 394,486 bytes and the
+loader 118,913, 123,387 and 27,288 under Brotli at quality 11 - 151 KB for a
+visitor to play. The module links the Web Audio backend, the touch device and
+the CPU block decoder whether or not LineSweeper calls them. Not checked: the live site's headers (`curl -I`), Firefox
+and Safari on this page, and a real phone seeing the keyboard line.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1391,7 +1473,7 @@ Each is cheap and could change the plan:
 | **M2** | The shell: D2 and D3, `app/win32/` moved with no behaviour change, `app/web/window.cpp` (canvas, callbacks, main loop, lifecycle, resize) | week | LineSweeper reaches its first frame in a browser and takes keys; Windows samples behave as before (look at them, per the see-it-on-screen rule) |
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp`, sampled once a frame, compacted slots, pads following page visibility rather than canvas focus, and the fullscreen flag following the browser (code landed; a physical pad is the open check) | hours | A pad on the standard mapping plays LineSweeper |
-| **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
+| **M5** | Ship it: ES-module output and the bundle (done), `onQuit`/`onError` (done), the demo's own page and poster (done), CI job (done), deploy to mattharding.dev's `/demo/linesweeper/` with the §7.2 headers (the owner's) | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
 | **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); the web window driven by real input in headless Chromium, `WebWindowTests` (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done); `collision` on the web (done) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal`, and a Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone (controls, portrait layout and the page's viewport handling landed; headless Chrome's emulation drives them, and real phones and the measured frame are open) | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
@@ -1505,8 +1587,8 @@ it. **None is made in advance.**
 | `CLAUDE.md`, preset table and ctest counts | Two `wasm-*` presets and their test list; amended again in M3, whose row names `render/gl/` and the null-gated sources it does not compile | M1 |
 | `CLAUDE.md`, backend paragraph | D1's answer: amended in M3, naming `gl/`'s two context files as the one exception to "at most one more" | M3 |
 | `ARCHITECTURE.md:259-272` | The window's move, as D3 decides it | M2 |
-| `PHILOSOPHY.md:320-322` | Where it held for a second compiler and a second loop | M5 |
-| `docs/website-plan.md:90` | Browser demos stop being "a separate technical project" | M5 |
+| `PHILOSOPHY.md:320-322` | Where it held for a second compiler and a second loop: amended in M5's engine half, a paragraph after the audio one, with the S1 sweep, D2 and `Application` in a static | M5 |
+| `docs/website-plan.md:90` | Browser demos stop being "a separate technical project": amended in M5's engine half, naming mattharding.dev as the host | M5 |
 | `cmake/settings.cmake` | The clang branch, argued as `/fp:precise` is | M1 |
 | `gl/backend.h`, `gl/gl_functions.h` | The ES gaps stop being described as future: amended in M3, with D1's one backend and two contexts in `backend.h`'s header comment | M3 |
 | `README.md`, the lead and Building | "Windows only" becomes Windows and a browser: amended in M3 | M3 |

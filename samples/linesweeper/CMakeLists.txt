@@ -42,25 +42,39 @@ set(linesweeper_game_sources
 )
 
 if(EMSCRIPTEN)
-    add_executable(LineSweeperSample
+    # Compiled once and linked twice, below: the development page and the
+    # module a host page imports are the same objects with a different loader
+    # around them.
+    add_library(LineSweeperWeb OBJECT
         main_web.cpp
         ${linesweeper_game_sources}
     )
-    target_link_libraries(LineSweeperSample PRIVATE
+    target_link_libraries(LineSweeperWeb PRIVATE
         LineSweeperRules
         LabradorEngine
         labrador_settings
     )
 
-    # A page, its loader and the module: LineSweeperSample.html, .js and
-    # .wasm. The page is web/shell.html, a development page that hands the
-    # module its canvas; web/shell.html says what any page owes it.
-    #
     # The content is embedded in the module rather than fetched beside it,
     # mounted at the root of its file system, which is where a relative
     # manifest path resolves in a browser. At 21.6 KB a second request would
     # cost more than the bytes; docs/port/web.md puts the point at which that
     # turns round at about a megabyte.
+    set(linesweeper_content_files
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/courier_new_bold_16.spritefont"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/white.dds"
+    )
+
+    # A page, its loader and the module: LineSweeperSample.html, .js and
+    # .wasm. The page is web/shell.html, a development page that hands the
+    # module its canvas; web/shell.html says what any page owes it.
+    add_executable(LineSweeperSample $<TARGET_OBJECTS:LineSweeperWeb>)
+    target_link_libraries(LineSweeperSample PRIVATE
+        LineSweeperRules
+        LabradorEngine
+        labrador_settings
+    )
     set_target_properties(LineSweeperSample PROPERTIES SUFFIX ".html")
     target_link_options(LineSweeperSample PRIVATE
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content@/"
@@ -71,9 +85,69 @@ if(EMSCRIPTEN)
     # relinks only because it is named here.
     set_property(TARGET LineSweeperSample APPEND PROPERTY LINK_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
-        "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
-        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/courier_new_bold_16.spritefont"
-        "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/white.dds"
+        ${linesweeper_content_files}
+    )
+
+    # THE MODULE A HOST PAGE IMPORTS: linesweeper.js, an ES module whose
+    # default export is the factory createLineSweeper, and linesweeper.wasm
+    # beside it. Each call of the factory is an instance of its own - its own
+    # memory, its own static Application, its own Module object, which is
+    # where the window finds the canvas and the page's callbacks - so a page that
+    # wants a second game after QUIT calls it again with a fresh canvas
+    # (web/index.html does).
+    add_executable(LineSweeperModule $<TARGET_OBJECTS:LineSweeperWeb>)
+    target_link_libraries(LineSweeperModule PRIVATE
+        LineSweeperRules
+        LabradorEngine
+        labrador_settings
+    )
+    set_target_properties(LineSweeperModule PROPERTIES
+        OUTPUT_NAME linesweeper
+        SUFFIX ".js"
+    )
+    target_link_options(LineSweeperModule PRIVATE
+        "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content@/"
+        -sENVIRONMENT=web
+        -sMODULARIZE=1
+        -sEXPORT_ES6=1
+        -sEXPORT_NAME=createLineSweeper
+    )
+    set_property(TARGET LineSweeperModule APPEND PROPERTY LINK_DEPENDS
+        ${linesweeper_content_files}
+    )
+
+    # THE BUNDLE A HOST SERVES, in web-dist/linesweeper/ under the build
+    # directory: the module, an example page that mounts it on a click, a
+    # poster, the third-party notices for what the module links, and
+    # BUILD.json naming the commit it was built from and the size of each file
+    # raw and under Brotli. Rewritten on every build, because the commit can
+    # change when no file does. tools/web_bundle/bundle.mjs says what each
+    # argument is; Node is the one Emscripten's toolchain already runs.
+    set(linesweeper_dist "${CMAKE_BINARY_DIR}/web-dist/linesweeper")
+    set(emscripten_libraries "${EMSCRIPTEN_ROOT_PATH}/system/lib")
+    add_custom_target(linesweeper_web_dist ALL
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+            "${PROJECT_SOURCE_DIR}/tools/web_bundle/bundle.mjs"
+            --out "${linesweeper_dist}"
+            --repository "${PROJECT_SOURCE_DIR}"
+            --emscripten "${EMSCRIPTEN_ROOT_PATH}"
+            --build-type "${CMAKE_BUILD_TYPE}"
+            --file "index.html=${CMAKE_CURRENT_SOURCE_DIR}/web/index.html"
+            --file "linesweeper.js=$<TARGET_FILE:LineSweeperModule>"
+            --file "linesweeper.wasm=$<TARGET_FILE_DIR:LineSweeperModule>/linesweeper.wasm"
+            --file "poster.png=${PROJECT_SOURCE_DIR}/website/src/assets/captures/linesweeper-play.png"
+            --notice "${CMAKE_CURRENT_SOURCE_DIR}/web/NOTICE.txt"
+            --licence "Labrador=${PROJECT_SOURCE_DIR}/LICENSE"
+            --licence "RapidJSON=${PROJECT_SOURCE_DIR}/external/rapidjson/license.txt"
+            --licence "Emscripten=${EMSCRIPTEN_ROOT_PATH}/LICENSE"
+            --licence "libc++=${emscripten_libraries}/libcxx/LICENSE.TXT"
+            --licence "libc++abi=${emscripten_libraries}/libcxxabi/LICENSE.TXT"
+            --licence "libunwind=${emscripten_libraries}/libunwind/LICENSE.TXT"
+            --licence "compiler-rt=${emscripten_libraries}/compiler-rt/LICENSE.TXT"
+            --licence "musl=${emscripten_libraries}/libc/musl/COPYRIGHT"
+        DEPENDS LineSweeperModule
+        COMMENT "Bundling LineSweeper for a host page"
+        VERBATIM
     )
 elseif(WIN32)
     add_executable(LineSweeperSample WIN32

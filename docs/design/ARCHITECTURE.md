@@ -241,9 +241,10 @@ being load-bearing.
 │                           hardware frame-cadence executable outside it
 ├── tools/                  development operations outside the product targets
 │   ├── cloud_performance/  one frozen, one-shot EC2 reference measurement
-│   └── linesweeper_capture/  exact, repeatable images of the sample, for
-│                           the website: a scripted match through the rules,
-│                           drawn on a device and read back
+│   ├── linesweeper_capture/  exact, repeatable images of the sample, for
+│   │                       the website: a scripted match through the rules,
+│   │                       drawn on a device and read back
+│   └── web_bundle/         a browser sample's bundle, for a host site
 ├── external/               third-party source: rapidjson. DirectXTK is not
 │                           here — it is a vcpkg package (vcpkg.json)
 ├── website/                the public website, built with npm and never by
