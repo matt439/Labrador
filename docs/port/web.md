@@ -1007,9 +1007,9 @@ their frames in `golden-actual/` beside the page, as on Windows. What it took:
   is held to it.
 - **Absent rather than skipped without a browser.** The entry is registered
   only where configure finds a Chromium (`LABRADOR_TEST_BROWSER`), so the
-  `wasm-*` presets count 19 entries here, with the context-loss page and the
-  window page below, the no-S3TC run of this one (M7b) and `AudioSampleTests`
-  (M6), and 15 on a machine without one.
+  `wasm-*` presets count 20 entries here, with the context-loss page and the
+  window page below, the no-S3TC run of this one (M7b), `AudioSampleTests`
+  (M6) and `CollisionSampleTests`, and 16 on a machine without one.
 - **The device-info case has a browser branch**: `present_mode` is
   `browser_animation_frame` with no swap interval, where WGL reports one.
 - **CI's Chrome draws with SwiftShader**, which its log names: "ANGLE
@@ -1315,6 +1315,24 @@ focus rule, reporting a size after the tick and dropping a touch's
 Chrome only; Firefox, which speaks WebDriver BiDi rather than CDP, has not
 run it.
 
+**`collision` runs in a browser too**, so every sample now has a browser
+build. It has a `main_web.cpp` and a development page in the shape of the
+others, and needed no engine change. Its state moved out of `main.cpp` into
+`collision_state.cpp` so that both entry points run it. The smoke test and
+the WIC capture stay in `main.cpp`, Windows-only, because a page has no
+command line and WIC is Windows'. `CollisionSampleTests` reads no files and
+now runs under Node, which is the twentieth entry. `minimal`'s browser build,
+which M7a gave it, is the new-project template's: its `CMakeLists.txt` builds
+the page under `EMSCRIPTEN` and returns before the Windows half, so a project
+copied from it gets both. At `wasm-release` the collision module is 338 KB,
+with a 105 KB loader. The page was driven in headless Chrome at `wasm-debug`
+and `wasm-release`, and the frames were looked at. The collision player
+walked through the zero-mask rectangle, stopped at the solid wall, and went
+around it into the trigger, which counted one entry and turned the player
+green. Escape reached `Module.onQuit`. The only console error was the scratch
+server's missing favicon. Firefox, Safari and a pad have not been tried on
+it.
+
 ### Spikes — *days*, before any milestone is committed to
 
 Each is cheap and could change the plan:
@@ -1345,7 +1363,7 @@ Each is cheap and could change the plan:
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp`, sampled once a frame, compacted slots, pads following page visibility rather than canvas focus, and the fullscreen flag following the browser (code landed; a physical pad is the open check) | hours | A pad on the standard mapping plays LineSweeper |
 | **M5** | Ship it: ES-module output, `onQuit`/`onError`, the Astro component, poster, CI job, deploy to the personal site with the §7.2 headers | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
-| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); the web window driven by real input in headless Chromium, `WebWindowTests` (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done) | days each; audio a week | Each its own commit, as usual |
+| **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); the web window driven by real input in headless Chromium, `WebWindowTests` (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done); `collision` on the web (done) | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal`, and a Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone (controls, portrait layout and the page's viewport handling landed; headless Chrome's emulation drives them, and real phones and the measured frame are open) | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
 

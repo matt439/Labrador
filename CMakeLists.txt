@@ -68,18 +68,20 @@ if(PROJECT_IS_TOP_LEVEL)
     # a targeted build here runs it and a consumer's never sees it.
     add_dependencies(labrador_settings check_doc_citations)
 
+    # Every sample, each with a browser entry point beside its wWinMain
+    # (docs/port/web.md, section 9 says where each stands). These come before
+    # the Node link options below, because each builds a page for a browser
+    # rather than a test for Node.
+    add_subdirectory(samples/minimal)
+    add_subdirectory(samples/collision)
     add_subdirectory(samples/linesweeper)
     add_subdirectory(samples/local_multiplayer)
     add_subdirectory(samples/audio)
-    add_subdirectory(samples/minimal)
     add_subdirectory(bench)
 
-    # Windows only, each until it has a reason not to be: a sample whose
-    # only entry point is wWinMain, and a capture tool that reads back a
-    # device (docs/port/web.md: section 6 says why LineSweeper came first, and
-    # section 9 where every sample stands).
+    # Windows only until it has a reason not to be: a capture tool that reads
+    # back a device.
     if(WIN32)
-        add_subdirectory(samples/collision)
         add_subdirectory(tools/linesweeper_capture)
     endif()
 
