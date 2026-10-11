@@ -853,8 +853,11 @@ and the vendor and renderer names. What it met and where it departed:
   the code's rather than Emscripten's. `has_gl_extension` is not asked in a
   browser, and what Emscripten's `glGetString` would call S3TC does not
   matter. `WEBGL_compressed_texture_s3tc` was present in both desktop browsers
-  checked. The vendor and renderer names are unmasked through
-  `WEBGL_debug_renderer_info` where a browser offers it.
+  checked. The vendor and renderer names are the context's own where they
+  name an adapter, and are unmasked through `WEBGL_debug_renderer_info` only
+  where the plain `RENDERER` is the generic `WebKit WebGL` (Chrome and
+  Safari); Firefox names a sanitised adapter there and deprecates the
+  extension, so it is never asked for it.
 - **Presentation is the browser's.** `present()` is `SwapBuffers` on WGL and
   nothing in a browser, which composites when the animation-frame callback
   returns. `device_info.present_mode` is `"browser_animation_frame"`, with no
@@ -881,9 +884,15 @@ and the vendor and renderer names. What it met and where it departed:
   its adapter was not read) both draw LineSweeper: the board, pieces, ghost, NEXT and HOLD,
   legible text from the BC2 font atlas, and the pause menu. Gameplay keys
   change the frame, Escape, Down, Down, Enter reaches `Module.onQuit`, and
-  neither console shows an error. Firefox warns that
-  `WEBGL_debug_renderer_info` is deprecated, and that legacy wasm exception
-  handling's `try` is deprecated in favour of `try_table`. The Win32 GL
+  neither console shows an error. Firefox warns that legacy wasm exception
+  handling's `try` is deprecated in favour of `try_table`. It warned that
+  `WEBGL_debug_renderer_info` is deprecated too, until the extension was
+  enabled only where `RENDERER` is masked: with Firefox's console sent to
+  stdout, that warning appears at creation and again after a rehearsed
+  loss and restore when the extension is forced, and not at all without it,
+  while the device's renderer still reads as a named adapter in both
+  browsers - ANGLE on the RTX 5080 in Chrome, and in Firefox its sanitised
+  bucket, `ANGLE (NVIDIA, NVIDIA GeForce GTX 980 ...), or similar`. The Win32 GL
   LineSweeper and minimal samples were looked at on screen: no channel-swap
   tint, legible text, the pause menu, and exit 0.
 - **Owed before M3 is done.** Safari, which no machine here runs; the owner's

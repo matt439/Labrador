@@ -99,11 +99,15 @@ namespace labrador
 			"precision highp float;\n"
 			"precision highp sampler2D;\n";
 
-		// The two strings a browser masks by default, and the unmasked names
-		// WEBGL_debug_renderer_info answers instead - "WebKit WebGL" says
-		// nothing about whether a frame is drawn by a GPU.
+		// The unmasked names WEBGL_debug_renderer_info answers, and the
+		// renderer string a browser gives in their place when it masks the
+		// plain pair. Chrome and Safari answer RENDERER with this, which says
+		// nothing about whether a frame is drawn by a GPU; Firefox answers it
+		// with a sanitised adapter name and deprecates the extension, warning
+		// on the console when it is enabled.
 		const GLenum UNMASKED_VENDOR_WEBGL = 0x9245;
 		const GLenum UNMASKED_RENDERER_WEBGL = 0x9246;
+		const char* const MASKED_RENDERER = "WebKit WebGL";
 	}
 
 	namespace
@@ -127,6 +131,13 @@ namespace labrador
 		// not only present, before a compressed upload is accepted. Desktop
 		// browsers have it; most phones do not, and texture_factory.cpp is
 		// where a device without it is refused.
+		//
+		// THE DEBUG RENDERER INFO ONLY WHERE THE PLAIN NAMES ARE MASKED. The
+		// context's own RENDERER is read first, and the extension is enabled
+		// only when that is the generic string or nothing, so a browser that
+		// already names its adapter there is never asked for an extension it
+		// has deprecated. Both halves are decided again after a restore, for
+		// the same reason S3TC is: the answer belongs to the new context.
 		void enable_extensions(Renderer::Impl& impl)
 		{
 			const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE handle = impl.context->handle;
@@ -134,7 +145,9 @@ namespace labrador
 			impl.block_compression = emscripten_webgl_enable_extension(handle,
 				"WEBGL_compressed_texture_s3tc");
 
-			if (emscripten_webgl_enable_extension(handle,
+			const std::string plain = impl.device_string(GL_RENDERER);
+			const bool masked = plain.empty() || plain == MASKED_RENDERER;
+			if (masked && emscripten_webgl_enable_extension(handle,
 				"WEBGL_debug_renderer_info"))
 			{
 				impl.vendor_name = UNMASKED_VENDOR_WEBGL;

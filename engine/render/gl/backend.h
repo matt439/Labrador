@@ -2,6 +2,7 @@
 
 #include "engine/core/registry.h"
 #include "engine/math/vector2i.h"
+#include "engine/render/camera.h"
 #include "engine/render/font.h"
 #include "engine/render/gl/gl_functions.h"
 #include "engine/render/renderer.h"
@@ -11,7 +12,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "engine/render/camera.h"
 
 // The OpenGL backend - 3.3 core on Windows, WebGL2 in a browser - for the files
 // that have to name a context.
@@ -219,8 +219,9 @@ namespace labrador
 		// either way (renderer.cpp).
 		bool software_context = false;
 		// Which glGetString names describe the device: GL_VENDOR and
-		// GL_RENDERER on a desktop, where a browser masks those and answers
-		// the unmasked pair only under WEBGL_debug_renderer_info.
+		// GL_RENDERER on a desktop and in a browser that names its adapter
+		// there; the unmasked pair under WEBGL_debug_renderer_info in a
+		// browser that masks them.
 		GLenum vendor_name = GL_VENDOR;
 		GLenum renderer_name = GL_RENDERER;
 
