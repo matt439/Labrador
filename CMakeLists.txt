@@ -70,15 +70,16 @@ if(PROJECT_IS_TOP_LEVEL)
 
     add_subdirectory(samples/linesweeper)
     add_subdirectory(samples/local_multiplayer)
+    add_subdirectory(samples/audio)
     add_subdirectory(bench)
 
-    # Windows only, each until it has a reason not to be: three samples whose
+    # Windows only, each until it has a reason not to be: two samples whose
     # only entry point is wWinMain, and a capture tool that reads back a
-    # device (docs/port/web.md, section 6 says why the two above came first).
+    # device (docs/port/web.md: section 6 says why LineSweeper came first, and
+    # section 9 where every sample stands).
     if(WIN32)
         add_subdirectory(samples/minimal)
         add_subdirectory(samples/collision)
-        add_subdirectory(samples/audio)
         add_subdirectory(tools/linesweeper_capture)
     endif()
 

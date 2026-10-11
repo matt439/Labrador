@@ -35,6 +35,9 @@ namespace audio_sample
 #if defined(LABRADOR_AUDIO_SAMPLE_NULL)
 		const std::wstring backend =
 			L"Null audio: calls are recorded. Use x64-debug to hear these tones.";
+#elif defined(LABRADOR_AUDIO_SAMPLE_WEBAUDIO)
+		const std::wstring backend =
+			L"Web Audio: silent until the page's first key, click or touch.";
 #else
 		const std::wstring backend =
 			L"XAudio2: original PCM tones. Headphones reveal left / right pan.";

@@ -26,6 +26,13 @@ shows the current values and loop state. An active Windows audio output is
 required to hear the normal XAudio2 build; `-null` presets record calls without
 sound and label that mode on screen.
 
+The same sample builds for a browser with the `wasm-debug` and `wasm-release`
+presets, as `AudioSample.html`, and plays through Web Audio. A browser plays
+nothing until the page's first key press, click or touch; the engine waits for
+that event itself, and the key that allows sound is still read by the sample.
+The <RepoLink path="samples/audio/README.md">sample's README</RepoLink> has the
+commands to build and serve it.
+
 ## Declare a required bank
 
 A bank has two files: a JSON definition and the XAudio2 backend's `.xwb` wave
@@ -50,7 +57,7 @@ each wave's own name.
 
 The sample's <RepoLink path="samples/audio/CMakeLists.txt">content target</RepoLink>
 copies the bank beside the executable on every build, including asset-only
-edits. `Application::load_manifest("./manifest.json")` resolves the manifest
+edits; a browser build embeds the same files in the module at the same paths. `Application::load_manifest("./manifest.json")` resolves the manifest
 relative to the executable, and its directories relative to that manifest.
 
 ## Resolve names once

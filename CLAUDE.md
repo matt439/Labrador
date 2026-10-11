@@ -1,8 +1,8 @@
 # Labrador — notes for Claude
 
 A 2D game engine in C++20 for Windows and, through Emscripten and WebGL2, the
-browser, built with CMake + vcpkg; two of its five samples run in a browser so
-far and the other three are Windows-only. This repository is the **engine half
+browser, built with CMake + vcpkg; three of its five samples run in a browser so
+far and the other two are Windows-only. This repository is the **engine half
 of a split**: the client that drives it, ColourWars, lives in its own
 repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
@@ -82,8 +82,12 @@ the next draw. The host page hears both ends, `Module.onContextLost` and
 `RenderContextLossTests` is a second browser page that pins all of
 it. `local_multiplayer` is the second sample with a browser build, at
 `out/build/wasm-*/samples/local_multiplayer/LocalMultiplayerSample.html`:
-two views through WebGL2, fanned out on the serial pool. The other three
-samples are still Windows-only. **In a browser
+two views through WebGL2, fanned out on the serial pool. `audio` is the
+third, at `out/build/wasm-*/samples/audio/AudioSample.html`: the sound
+board through `audio/webaudio/`, silent until the page's first key, click
+or touch, with no `--smoke-test` because a page has no command line -
+`AudioSampleTests` runs that lifecycle under Node instead. `minimal` and
+`collision` are still Windows-only. **In a browser
 `Application::run` does not return and the stack below it is unwound,
 destructors included, before the first frame**, so a web entry point keeps
 its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,
@@ -119,7 +123,7 @@ default under Emscripten; it compiles, and no pad has driven it yet.
 | `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 17 entries; needs a real driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 17 entries; needs a driver and the Vulkan SDK |
 | `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 16 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases |
-| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 17 entries: the seventeen less `CollisionSampleTests` and `AudioSampleTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, and `RenderContextLossTests`, the browser-only page that loses and restores a WebGL2 context (14 where configure finds no Chromium, because no page is then registered). `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
+| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 18 entries: the seventeen less `CollisionSampleTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, and `RenderContextLossTests`, the browser-only page that loses and restores a WebGL2 context (15 where configure finds no Chromium, because no page is then registered). `AudioSampleTests` runs under Node and loads the sample's bank through `audio/webaudio/`, the browser build's stand-in for `--smoke-test`. `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -250,7 +254,8 @@ puts through a speaker has been measured only in headless Chrome, through an
 `samples/audio/` supplies original synthesized WAVs and a named `.xwb` bank,
 with an authoring script and tool provenance in its README. Its playback smoke
 requires an audio endpoint on XAudio2; its null-backend checks assert recorded
-operations without one. `AudioTests` itself retains the split above.
+operations without one; and in a browser it plays through Web Audio, with
+its smoke test's lifecycle moved into `AudioSampleTests` under Node. `AudioTests` itself retains the split above.
 **The engine reads `.xwb` itself** in
 [engine/audio/xwb_file.h](engine/audio/xwb_file.h), beside `dds_file.h` and
 for the same reason (D9 in [docs/port/web.md](docs/port/web.md)): PCM and

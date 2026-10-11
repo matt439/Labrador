@@ -1,0 +1,83 @@
+<!doctype html>
+<!--
+  The development page for the audio sample's browser build: Emscripten writes
+  the module's script tag where SCRIPT is marked below, and the result is
+  AudioSample.html beside the .js and the .wasm. Serve that folder over HTTP,
+  because a browser will not compile a module read from file://, and open it.
+
+  What the page owes the module is what LineSweeper's page owes it, and
+  samples/linesweeper/web/shell.html gives the reason for each: Module.canvas
+  is the canvas, sized by CSS and focusable, and Module.onQuit and
+  Module.onError are the module's two calls to the page.
+
+  One thing is particular to this page, and it is the browser's rule rather
+  than the sample's: nothing sounds until the person has pressed a key,
+  clicked or touched the page. The engine's Web Audio backend listens for that
+  first event itself, so the page asks nothing of the module for it and says
+  so to the person instead. The key that allows sound is not spent on it: the
+  backend makes its context while the key is still being delivered, before the
+  sample's next update reads it, so a first press of 1 is heard.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Labrador - audio sample</title>
+<style>
+  body { margin: 0; background: #111; color: #ddd; font: 15px/1.4 system-ui, sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 16px; }
+  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; outline: none; }
+  canvas:focus-visible { outline: 2px solid #5a9; }
+  #status { margin: 10px 0 0; min-height: 1.4em; }
+  #status.error { color: #f77; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="canvas" tabindex="0"></canvas>
+  <p id="status">Loading...</p>
+</main>
+<script>
+  var canvas = document.getElementById("canvas");
+  var statusLine = document.getElementById("status");
+
+  canvas.addEventListener("contextmenu", function (event) { event.preventDefault(); });
+
+  // The browser allows sound from the first gesture on; the line under the
+  // canvas says so until then and drops the request once it has happened.
+  var waitingForGesture = true;
+  var ready = "1 and 2 play one-shots, 3 starts the drone, Space pauses it, " +
+    "S stops it. Escape quits.";
+  function gestureSeen() {
+    if (!waitingForGesture) { return; }
+    waitingForGesture = false;
+    if (statusLine.className !== "error" && Module.runtimeReady) {
+      statusLine.textContent = ready;
+    }
+  }
+  ["keydown", "pointerdown", "touchstart"].forEach(function (name) {
+    window.addEventListener(name, gestureSeen, true);
+  });
+
+  var Module = {
+    canvas: canvas,
+    runtimeReady: false,
+    onRuntimeInitialized: function () {
+      Module.runtimeReady = true;
+      statusLine.textContent = waitingForGesture ?
+        "Press a key or click the picture to allow sound. " + ready : ready;
+      canvas.focus();
+    },
+    onQuit: function () {
+      statusLine.className = "";
+      statusLine.textContent = "Quit. Reload the page to play again.";
+    },
+    onError: function (message) {
+      statusLine.className = "error";
+      statusLine.textContent = message;
+    },
+  };
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>
