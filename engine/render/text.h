@@ -22,6 +22,14 @@ namespace labrador
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			float layer_depth = 0.0f);
 
+		// What the string says and what colour it is drawn in, readable by
+		// anyone who can set them. A widget built from text - a settings row
+		// whose value changes, a focus group's paint - has to be checkable
+		// from outside, and without these its tests could only infer the
+		// words from the box they measure to.
+		using TextObject::text;
+		using DrawObject::colour;
+
 		void set_text(const std::wstring& text) override;
 		void set_colour(const Colour& colour) override;
 		void set_scale(float scale) override;

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "samples/components/caption.h"
-
 #include "engine/input/direction.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
@@ -101,10 +99,10 @@ namespace components
 		// The parts, for a page that lines other things up against them. The
 		// fill is the lit part of the track: its full height, and as much of
 		// its width as the value is of the range.
-		const Caption& label() const;
+		const labrador::UiText& label() const;
 		const Bar& track() const;
 		const Bar& fill() const;
-		const Caption& number() const;
+		const labrador::UiText& number() const;
 
 		void set_colour(const labrador::Colour& colour) override;
 
@@ -120,10 +118,10 @@ namespace components
 
 		// Added in this order, so the fill draws over the track and both
 		// under nothing.
-		Caption label_;
+		labrador::UiText label_;
 		Bar track_;
 		Bar fill_;
-		Caption number_;
+		labrador::UiText number_;
 		Changed on_change_;
 	};
 }

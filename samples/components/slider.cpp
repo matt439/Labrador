@@ -180,7 +180,7 @@ namespace components
 		this->show_value();
 	}
 
-	const Caption& Slider::label() const
+	const UiText& Slider::label() const
 	{
 		return this->label_;
 	}
@@ -195,7 +195,7 @@ namespace components
 		return this->fill_;
 	}
 
-	const Caption& Slider::number() const
+	const UiText& Slider::number() const
 	{
 		return this->number_;
 	}

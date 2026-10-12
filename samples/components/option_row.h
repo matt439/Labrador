@@ -1,7 +1,5 @@
 #pragma once
 
-#include "samples/components/caption.h"
-
 #include "engine/input/direction.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/colour.h"
@@ -74,16 +72,16 @@ namespace components
 		void set_index(size_t index);
 
 		// The two parts, for a page that lines other things up against them.
-		const Caption& label() const;
-		const Caption& value() const;
+		const labrador::UiText& label() const;
+		const labrador::UiText& value() const;
 
 		void set_colour(const labrador::Colour& colour) override;
 
 	private:
 		// In this order on purpose: value_ is built from the constructor's
 		// `choices` before choices_ moves out of it.
-		Caption label_;
-		Caption value_;
+		labrador::UiText label_;
+		labrador::UiText value_;
 		std::vector<std::wstring> choices_;
 		size_t index_ = 0;
 		Changed on_change_;
