@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: Runnable Labrador samples for starting a project, a whole game, collision, audio and local multiplayer.
+description: Runnable Labrador samples for starting a project, a whole game, collision, audio, local multiplayer and components to copy.
 template: splash
 ---
 
@@ -11,10 +11,10 @@ import Capture from '~/components/Capture.astro';
 import LineSweeperFootage from '~/components/LineSweeperFootage.astro';
 import topOut from '~/assets/captures/linesweeper-top-out.png';
 
-The repository has five samples. They answer different questions, so they are kept separate:
+The repository has six samples. They answer different questions, so they are kept separate:
 the minimal sample is what you **copy** to start a game, and LineSweeper is what you **read** to
 see what a finished one looks like. Three focused examples teach collision, audio and local
-multiplayer. All build with the engine.
+multiplayer, and the components are pieces you copy one at a time. All build with the engine.
 
 ## The minimal sample: the one you copy
 
@@ -109,6 +109,34 @@ checks of the behavior it teaches.
 | <RepoLink path="samples/audio">Audio</RepoLink> | Play original tones from a named sound bank and control a looping instance. | [Audio](/docs/guides/audio/) |
 | <RepoLink path="samples/local_multiplayer">Local multiplayer</RepoLink> | Move two players in a shared world through two following cameras, with WASD and arrows or two gamepads. | [Local multiplayer](/docs/guides/local-multiplayer/) |
 
+## Components: the pieces you copy
+
+`samples/components` holds settings-menu pieces that most games need and each one styles
+differently. Each is a header and a source file with its own tests, which you copy into your game
+and change as you like. They are not a library, so nothing promises to keep your copy compatible,
+and the engine does not know they exist. A gallery shows them all on one screen.
+
+| Component | What it is |
+| --- | --- |
+| <RepoLink path="samples/components/option_row.h">Option row</RepoLink> | A label and a value picked from a fixed list with left and right, such as a difficulty or a window mode. It wraps or stops at the ends. |
+| <RepoLink path="samples/components/slider.h">Slider</RepoLink> | A label, a bar and a number for an integer in a range, such as a volume. It clamps at the ends and never wraps. |
+
+A component reads no input, because which keys mean left is your game's decision. Your page moves
+the cursor with a `FocusGroup` and passes left and right to whichever component is focused. The
+gallery finds that component by comparing pointers, since the page already holds every row it
+built:
+
+<SourceFile
+	path="samples/components/gallery_state.cpp"
+	from="bool GalleryState::adjust_focused(Direction direction)"
+	to="}"
+/>
+
+A compound that every game ends up copying unchanged is a candidate for the engine's widget set.
+One that every game edits stays a component. The
+<RepoLink path="samples/components/README.md">components README</RepoLink> explains the rule, and
+the <RepoLink path="docs/design/PHILOSOPHY.md">design philosophy</RepoLink> states it.
+
 ## Running them
 
 All samples build with the engine. After [building Labrador](/docs/get-started/build-labrador/),
@@ -120,6 +148,7 @@ out\build\x64-debug\samples\linesweeper\LineSweeperSample.exe
 out\build\x64-debug\samples\collision\CollisionSample.exe
 out\build\x64-debug\samples\audio\AudioSample.exe
 out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe
+out\build\x64-debug\samples\components\ComponentsGallery.exe
 ```
 
 Each copies its content beside its executable, so you can start it from anywhere. Under a

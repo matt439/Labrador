@@ -15,7 +15,7 @@ accident of it — see [The wall](#the-wall).
 to 404. Nothing here depends on it: this repository builds, tests and
 benchmarks standalone.)*
 
-Five samples come with it, and they answer different questions.
+Six samples come with it, and they answer different questions.
 `samples/minimal` is about 560 lines and is the answer to "how do I start a
 project on this" — copy it. `samples/linesweeper` is a falling-block game and
 is the answer to "what does a finished game look like on this engine" — read
@@ -27,10 +27,16 @@ focused examples for the website's guides: a collision arena, a playable
 sound bank and two players sharing a world through separate views. Each has
 its own README with controls and build commands.
 
+`samples/components` is the answer to "do I have to write a settings menu
+from scratch": an option row and a slider, each a header, a source file and
+its tests, which a game copies into its own tree rather than links, and a
+gallery that shows them running. [Its README](samples/components/README.md)
+says why they are copied, and when one would move into the engine.
+
 ```
 engine/    ~34k lines   the engine: ten modules with a fixed dependency direction
-samples/                the starter template, LineSweeper, and three focused guide examples
-tests/     ~16k lines   doctest, sixteen targets, run by ctest
+samples/                the starter template, LineSweeper, three focused guide examples and components to copy
+tests/     ~16k lines   doctest, seventeen targets, run by ctest
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 website/                the public site, built with npm from this same checkout
@@ -57,7 +63,7 @@ Emscripten, draw through a WebGL2 context that `gl/` makes in a second context
 translation unit, `web_context.cpp`, and run the headless tests under Node -
 and the pixel tests in headless Chrome, against the same checked-in images,
 with the browser window's input driven there too, and where each sample's
-built page is also loaded and played to its own way out. All five samples
+built page is also loaded and played to its own way out. All six samples
 run there, and
 [docs/port/web.md](docs/port/web.md) is the plan. Each proves something a
 different one could not: OpenGL that a view need not record into a driver,
@@ -217,7 +223,7 @@ the line.
 ctest --preset x64-debug
 ```
 
-Sixteen doctest targets plus the benchmark (one fewer with the null renderer). How many cases and how many
+Seventeen doctest targets plus the benchmark (one fewer with the null renderer). How many cases and how many
 assertions ran is what `ctest` prints on the day - a pair of numbers this line
 used to carry and got wrong, which is why it no longer does.
 

@@ -205,7 +205,8 @@ being load-bearing.
 │       │                   translated into WindowNotify
 │       └── web/            the page's canvas: its DOM events translated the
 │                           same way, and a frame loop the browser owns
-├── samples/               a starter, a whole game and focused guide examples
+├── samples/               a starter, a whole game, focused guide examples
+│                           and components to copy
 │   ├── minimal/            the new-project template: the smallest thing
 │                           that runs, and the one you copy. The
 │                           paint-shooter that used to sit beside it under
@@ -214,6 +215,9 @@ being load-bearing.
 │   ├── collision/          layers, wall resolution and a trigger
 │   ├── audio/              original playable tones and a sound bank
 │   ├── local_multiplayer/  two players and two views of one world
+│   ├── components/         pieces a game copies rather than links - an
+│                           option row, a slider - each with its tests,
+│                           and a gallery that shows them running
 │   └── linesweeper/        a whole game, and the one you read. Three
 │       ├── rules/          layers: rules/ links nothing, so the game is
 │       ├── presentation/   playable from tests/ with no device;
