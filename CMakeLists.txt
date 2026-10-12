@@ -77,6 +77,7 @@ if(PROJECT_IS_TOP_LEVEL)
     add_subdirectory(samples/linesweeper)
     add_subdirectory(samples/local_multiplayer)
     add_subdirectory(samples/audio)
+    add_subdirectory(samples/components)
     add_subdirectory(bench)
 
     # Windows only until it has a reason not to be: a capture tool that reads
@@ -172,5 +173,9 @@ if(PROJECT_IS_TOP_LEVEL)
         # lets Web Audio make its context. Escape grants none (the gesture note
         # in engine/audio/webaudio/audio_device.cpp) and is only the way out.
         labrador_sample_page_test(AudioPageTests AudioSample "KeyS,Escape")
+        # A slider moved, an option row moved, and out. The changes go
+        # through the components' callbacks to the status line.
+        labrador_sample_page_test(ComponentsPageTests ComponentsGallery
+            "ArrowDown,ArrowDown,ArrowLeft,ArrowUp,ArrowRight,Escape")
     endif()
 endif()

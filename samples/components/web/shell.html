@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+  The development page for the components gallery's browser build: Emscripten
+  writes the module's script tag where SCRIPT is marked below, and the result
+  is ComponentsGallery.html beside the .js and the .wasm. Serve that folder over
+  HTTP, because a browser will not compile a module read from file://, and
+  open it.
+
+  What the page owes the module is what LineSweeper's page owes it, and
+  samples/linesweeper/web/shell.html gives the reason for each: Module.canvas
+  is the canvas, sized by CSS and focusable, and Module.onQuit and
+  Module.onError are the module's two calls to the page. Escape quits here, as it
+  does in the collision sample, where LineSweeper pauses.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Labrador - components</title>
+<style>
+  body { margin: 0; background: #111; color: #ddd; font: 15px/1.4 system-ui, sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 16px; }
+  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; outline: none; }
+  canvas:focus-visible { outline: 2px solid #5a9; }
+  #status { margin: 10px 0 0; min-height: 1.4em; }
+  #status.error { color: #f77; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="canvas" tabindex="0"></canvas>
+  <p id="status">Loading...</p>
+</main>
+<script>
+  var canvas = document.getElementById("canvas");
+  var statusLine = document.getElementById("status");
+
+  canvas.addEventListener("contextmenu", function (event) { event.preventDefault(); });
+
+  var Module = {
+    canvas: canvas,
+    onRuntimeInitialized: function () {
+      statusLine.textContent =
+        "Up and down choose a row, left and right change it. Escape quits.";
+      canvas.focus();
+    },
+    onQuit: function () {
+      statusLine.textContent = "Quit. Reload the page to start again.";
+    },
+    onError: function (message) {
+      statusLine.className = "error";
+      statusLine.textContent = message;
+    },
+  };
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

@@ -302,6 +302,8 @@ the tests share one dependency direction and one compiler-settings target
 | `CollisionSample` | application | `samples/collision/` | CollisionExample |
 | `AudioSample` | application | `samples/audio/` | LabradorEngine |
 | `LocalMultiplayerSample` | application | `samples/local_multiplayer/` | LabradorEngine |
+| `ComponentsExample` | static library, so the gallery and the tests compile the components once; games copy the sources instead | `samples/components/` | LabradorEngine |
+| `ComponentsGallery` | application | `samples/components/` | ComponentsExample |
 | `LabradorBench` | benchmark application | `bench/` | LabradorEngine |
 | `LineSweeperFrameBench` | hardware-measurement application | `bench/` | LineSweeperRules, LabradorEngine |
 | tests | applications | `tests/` | the libraries they test |
@@ -598,6 +600,15 @@ engine API to depend on.
   menus are headlessly testable. Styling and content belong to the game.
 - Menus are C++ against the widget API (T10), with their text, assets and
   tuning in data where it is data (T7).
+- Compounds more than one game wants — an option row, a slider — are
+  **components**: small, tested pieces in the samples that a game copies
+  into its own tree and edits, rather than links. They are where a compound
+  is tried before anybody argues it into the engine. One that every client
+  ends up copying unchanged has shown it is mechanism, and moves into the
+  widget set by amendment here; one that each game edits was policy, and
+  stays a component (T1). Gameplay pieces — a character controller, a camera
+  that follows — are components or nothing: their rules are a genre's, and
+  the engine supplies the collision, input and views they are built from.
 
 ### Collision
 
@@ -714,6 +725,12 @@ engine API to depend on.
   answer to the first, and the instruction to copy it stops being true the
   moment its file count goes up. Both live in this repository and are compiled
   by the same build, because a sample nothing compiles is a sample that rots.
+- A third kind of sample is copied a piece at a time. **Components** (UI, above)
+  are each a header, a source file and their tests, small enough to read in
+  one sitting and with no dependence on one another, and a gallery shows them
+  running. They are not a library and carry no compatibility promise: the
+  copy a game takes is the game's. That is what keeps them from being the
+  plugin layer this engine does not have.
 - An "Introduction to C++" video series accompanies the engine (T10): the
   answer to "C++ is too hard" is teaching it, not wrapping it. The
   game-facing API is the series' subject matter — and its acceptance test:

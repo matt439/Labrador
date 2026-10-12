@@ -844,7 +844,7 @@ to mattharding.dev is the owner's. M6's items are all done. M7a's touch device
 has been driven by Chrome's touch emulation and by touch injected into a
 Win32 window, and owes a real touchscreen. M7b's controls, portrait layout,
 page handling and texture path are built and emulated, and owe a real iPhone,
-a real Android phone and a measured frame on one. All five samples run in a
+a real Android phone and a measured frame on one. All six samples run in a
 browser, and every page the build makes is a ctest entry where configure
 finds a Chromium. The paragraphs below are in the order the work landed, each
 as it was written when it did.
