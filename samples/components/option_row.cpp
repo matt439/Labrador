@@ -126,12 +126,12 @@ namespace components
 		this->value_.set_text(this->choices_[index]);
 	}
 
-	const Caption& OptionRow::label() const
+	const UiText& OptionRow::label() const
 	{
 		return this->label_;
 	}
 
-	const Caption& OptionRow::value() const
+	const UiText& OptionRow::value() const
 	{
 		return this->value_;
 	}

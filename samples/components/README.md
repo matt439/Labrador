@@ -9,12 +9,9 @@ beside it. The gallery shows all of them on one settings screen.
 | Option row | `option_row.h`, `option_row.cpp` | A label and a value picked from a fixed list with left and right: a difficulty, a window mode. Wraps or stops at the ends. |
 | Slider | `slider.h`, `slider.cpp` | A label, a bar and a number for an integer in a range: a volume, a sensitivity. Clamps, never wraps. |
 
-Both use `caption.h`, a `UiText` whose text and colour can be read back. Copy
-it along with whichever component you take; it is the one file they share.
-
 ## Taking one
 
-1. Copy the component's `.h` and `.cpp`, and `caption.h`, into your game.
+1. Copy the component's `.h` and `.cpp` into your game.
 2. Change the namespace and the include paths to your game's, and list the
    `.cpp` in your `CMakeLists.txt`.
 3. Change anything you like. The copy is yours: nothing here promises to stay
