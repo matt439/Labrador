@@ -103,10 +103,11 @@ focus shows up in three places.
 - **Interface.** A small widget set with focus and directional navigation, so menus work with a
   controller without a mouse.
 
-Neither sample in the repository draws a second view yet. Split-screen is exercised by the
-engine's tests, whose reference images include split-screen frames, and by the engine's first
-client, a four-player split-screen game that is not public. A public multiplayer example is
-planned.
+`samples/local_multiplayer` is the split-screen sample: two players in one world, each with a
+fixed controller slot and keys of their own, and a view each with a camera that follows them.
+Joining, choosing a slot and more than two players are left to the game. The
+[local multiplayer guide](/docs/guides/local-multiplayer/) walks through it, and the engine's
+tests hold split-screen frames to reference images.
 
 **The cost.** Online play is out of scope permanently: no netcode, replication or rollback will
 ever shape the engine's design. 3D is permanently out of scope too. The math library is 2D by
