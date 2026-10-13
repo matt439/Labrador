@@ -121,7 +121,8 @@ with an example page (`samples/linesweeper/web/index.html`), the licence
 notices for what the module links, and `BUILD.json` naming the commit and
 each file's size raw and under Brotli; CI's wasm job uploads it. The host is
 mattharding.dev, where a project's demo is a page of its own, and deploying
-it is the owner's, so M5 is not done until it is live (web.md §7). **In a browser
+it is the owner's; it is live at <https://mattharding.dev/demo/linesweeper/>,
+and web.md §7 and §9 say what has been checked against it. **In a browser
 `Application::run` does not return and the stack below it is unwound,
 destructors included, before the first frame**, so a web entry point keeps
 its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,

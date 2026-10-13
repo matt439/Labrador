@@ -83,21 +83,83 @@ and amend `web.md` §9 with the result.
 - [ ] An ADPCM bank written by Microsoft's own tools is read, and XAudio2 plays
       the test fixture `ping_adpcm.xwb`.
 
-## Needs the deploy (M5, the owner's)
+## The live demo (M5), checked 2026-10-13
 
-- [ ] Deploy the PersonalWebsite branch `linesweeper-demo` with
-      `npm run deploy`, then `curl -I` the live `.wasm`: `application/wasm`,
-      immutable `Cache-Control` under `m/<hash>/`, `no-cache` on the page, and
-      whether `Content-Encoding: br` is served.
+The demo is live at <https://mattharding.dev/demo/linesweeper/>. The owner
+deploys it from the PersonalWebsite repository's `main` branch with
+`npm run deploy`, after `npm run sync-demo` has copied a bundle in; its
+`BUILD.json` names the Labrador commit it was built from, `e7888bd`, clean, at
+`wasm-release`. The module folder is `m/4544f56a476f/`. Each box below was
+checked against that URL on 2026-10-13 from this desktop, and a later deploy
+needs them run again.
+
+- [x] `curl -I` with `Accept-Encoding: br` against the page and the live
+      `.wasm`: `application/wasm`, immutable `Cache-Control` under
+      `m/<hash>/`, `no-cache` on the page, and `Content-Encoding: br` served
+      for both. Headless Chrome, which also offers zstd, was answered with
+      `Content-Encoding: zstd` on the same three files.
+
+      ```
+      $ curl -sI -H "Accept-Encoding: br" https://mattharding.dev/demo/linesweeper/
+      HTTP/1.1 200 OK
+      Content-Type: text/html
+      CF-Cache-Status: HIT
+      Cache-Control: no-cache
+      Content-Encoding: br
+      Server: cloudflare
+
+      $ curl -sI -H "Accept-Encoding: br" https://mattharding.dev/demo/linesweeper/m/4544f56a476f/linesweeper.wasm
+      HTTP/1.1 200 OK
+      Content-Type: application/wasm
+      CF-Cache-Status: HIT
+      Cache-Control: public, max-age=31536000, immutable
+      ETag: W/"ff680cab2f7adde2c53dc7d8ea8b38f3"
+      Content-Encoding: br
+      Server: cloudflare
+      ```
+
+      The loader, `m/4544f56a476f/linesweeper.js`, answers the same way with
+      `Content-Type: text/javascript`. The lines left out above are the date,
+      `Connection`, Cloudflare's reporting headers, `CF-RAY` and `alt-svc`.
 - [ ] Play the live page in desktop Chrome, Firefox and Safari: click to start,
-      play, quit, play again.
+      play, quit, play again. **Chrome done, headless**: driven over the
+      DevTools protocol, nothing but the page, its poster, its fonts, the
+      site's favicon and Cloudflare's analytics beacon and its report was
+      fetched before the click; the click fetched the loader and the module,
+      the game
+      drew and took arrow keys, rotate and Space (the frame was looked at),
+      Escape, Down, Down and Enter reached `onQuit` and the page's "Thanks for
+      playing.", and "Play again" mounted a fresh canvas that played and quit
+      the same way, with no console message and no browser warning
+      throughout. **Firefox waits on BDP-06** (the page runner speaks only
+      CDP) and **Safari on SM-09**.
 - [ ] A real phone gets the recording and fetches no wasm; a tablet with a
-      keyboard gets the Play button back after a key.
-- [ ] A machine without WebGL2 shows the `onError` message.
+      keyboard gets the Play button back after a key. **Emulated half done**:
+      under Chrome's touch emulation (5 touch points, a 390x844 mobile
+      viewport), the page matched `(pointer: coarse)` and not
+      `(any-pointer: fine)`, showed the recording with its status line, and
+      the network log held no request for `linesweeper.js` or
+      `linesweeper.wasm`; a key press then removed the video and brought back
+      "Play LineSweeper", still without fetching either. This is emulation, not
+      a phone: the real-phone half waits on **SM-13** (an iPhone; the Android
+      half is SM-44).
+- [x] A machine without WebGL2 shows the `onError` message. Headless Chrome
+      started with `--disable-webgl2`, Play clicked: the page fetched the loader
+      and the module, and its status line read "LineSweeper stopped: This
+      browser would not give the canvas a WebGL2 context. WebGL2 is in every
+      current desktop browser; it can be turned off, and a GPU the browser has
+      blocked takes it away." with the button relabelled "Try again". The
+      engine's own `console.error` of the same startup failure was the only
+      console message.
 - [ ] A real context loss (GPU reset, or a tab hidden while it is lost) shows
-      and clears the page's message.
+      and clears the page's message. **Blocked on BDP-06**, which takes a real
+      tab switch and a real loss; `RenderContextLossTests` covers the engine
+      half with a forced loss.
 - [ ] Decide whether 4.3 MB of video is acceptable on phones, or swap in a
       smaller encode with `npm run sync-demo -- <bundle> --video <mp4>`.
+      **The owner's decision, open as BDP-20.** What the emulated phone run
+      saw: the recording autoplays, and the browser began fetching it at once
+      (`linesweeper.mp4`, answered 206 with a byte range).
 
 ## Firefox, which the page runner cannot drive
 

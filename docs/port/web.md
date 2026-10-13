@@ -614,8 +614,10 @@ server can be scoped to `/demo/*`. This repository builds and publishes the
 bundle, whose `index.html` is a working example of that page; the site keeps
 a page of its own in its own styles, built on the same mount (7.3), and its
 `npm run sync-demo` copies the rest of the bundle in beside it. **Putting it
-on the site and deploying is the owner's**, in that repository, and it is
-not deployed yet.
+on the site and deploying is the owner's**, in that repository: `npm run
+deploy` from its `main` branch. The demo is live, at
+<https://mattharding.dev/demo/linesweeper/>, checked on 2026-10-13
+([web-to-be-tested.md](web-to-be-tested.md) has the headers it serves).
 
 ### 7.1 Files
 
@@ -663,8 +665,9 @@ the same set.
 
 - `.wasm` served as `Content-Type: application/wasm`, which
   `instantiateStreaming` requires. *General knowledge:* Workers Static Assets
-  types files by extension and maps this one. Confirm with `curl -I` after the
-  first deploy, since it is the one header the demo cannot start without.
+  types files by extension and maps this one, and `curl -I` against the live
+  module confirmed it on 2026-10-13 ([web-to-be-tested.md](web-to-be-tested.md)),
+  since it is the one header the demo cannot start without.
 - **No COOP/COEP.** That is the point of §3.6.
 - **If the site ever sends a Content-Security-Policy**, its `script-src`
   needs `'wasm-unsafe-eval'`, or the browser refuses to compile the module.
@@ -832,15 +835,17 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 
 ## 9. Milestones, and what to spike first
 
-### Where it stands, 2026-10-11
+### Where it stands, 2026-10-13
 
-**Every milestone's code has landed, and what is left is hardware, browsers
-and a deploy.** [web-to-be-tested.md](web-to-be-tested.md) is that list as
+**Every milestone's code has landed, the demo is live, and what is left is
+hardware and browsers.** [web-to-be-tested.md](web-to-be-tested.md) is that list as
 boxes to tick. M1 and M2 are done. M3 is met in Chrome and Firefox and owes
 Safari and R5's pacing on real displays. M4's pad path has been driven by a
-page script's fake pad and owes a physical one. M5's half in this repository
-is built - the module, the bundle, its page and CI's upload - and the deploy
-to mattharding.dev is the owner's. M6's items are all done. M7a's touch device
+page script's fake pad and owes a physical one. M5 is done: the module, the
+bundle, its page and CI's upload are built here, and the owner has deployed
+the demo to <https://mattharding.dev/demo/linesweeper/>, where on 2026-10-13
+it played in headless Chrome and `curl -I` showed the §7.2 headers; Firefox
+and Safari on the live page are still to be checked. M6's items are all done. M7a's touch device
 has been driven by Chrome's touch emulation and by touch injected into a
 Win32 window, and owes a real touchscreen. M7b's controls, portrait layout,
 page handling and texture path are built and emulated, and owe a real iPhone,
@@ -1458,9 +1463,10 @@ error that reached `Module.onError`, and LineSweeper given Escape, Down,
 Enter, which is RESTART, timed out without a quit. With the null renderer,
 as CI's second wasm configure builds it, they pass too.
 
-**M5's half in this repository is built, and M5 is not done**, because its
-done-when is a live URL and the deploy is the owner's, in the site's own
-repository. The host is mattharding.dev, whose convention is a demo page of
+**M5's half in this repository is built, and the demo is live**: its
+done-when is a live URL, the deploy is the owner's, in the site's own
+repository, and it is at <https://mattharding.dev/demo/linesweeper/>,
+checked on 2026-10-13 (below). The host is mattharding.dev, whose convention is a demo page of
 its own at `/demo/<id>/`, so §7 was rewritten for it: the demo is a plain
 page of its own rather than an Astro component, and the bundle's `index.html`
 is a working example of it, which the site's own page follows. The build links LineSweeper a second time as an ES module,
@@ -1484,8 +1490,19 @@ the button. With touch emulated, the page showed the keyboard line and
 fetched no module. At `wasm-release` the module is 394,486 bytes and the
 loader 118,913, 123,387 and 27,288 under Brotli at quality 11 - 151 KB for a
 visitor to play. The module links the Web Audio backend, the touch device and
-the CPU block decoder whether or not LineSweeper calls them. Not checked: the live site's headers (`curl -I`), Firefox
-and Safari on this page, and a real phone seeing the keyboard line.
+the CPU block decoder whether or not LineSweeper calls them.
+
+**The live page was checked on 2026-10-13**, deployed from the site's `main`
+with `npm run deploy` from a bundle built at `e7888bd`. `curl -I` with
+`Accept-Encoding: br` showed `application/wasm` and `public,
+max-age=31536000, immutable` on the module under `m/4544f56a476f/`,
+`no-cache` on the page, and `Content-Encoding: br` on both. In headless Chrome
+it played, quit and played again with a clean console; with `--disable-webgl2`
+a click on Play reached `onError` and the page showed the engine's message;
+and under touch emulation it showed the recording and fetched no module.
+[web-to-be-tested.md](web-to-be-tested.md) has the runs. Not checked: Firefox
+and Safari on this page, a real context loss, and a real phone seeing the
+recording.
 
 ### Spikes — *days*, before any milestone is committed to
 
@@ -1516,7 +1533,7 @@ Each is cheap and could change the plan:
 | **M2** | The shell: D2 and D3, `app/win32/` moved with no behaviour change, `app/web/window.cpp` (canvas, callbacks, main loop, lifecycle, resize) | week | LineSweeper reaches its first frame in a browser and takes keys; Windows samples behave as before (look at them, per the see-it-on-screen rule) |
 | **M3** | WebGL2 in `gl/` (D1): context TU, ES shader, base vertex, BGRA swizzle, S3TC via WebGL | days | LineSweeper plays end to end in Chrome, Firefox and Safari on desktop; `RenderPixelTests` still green on `x64-debug-gl` |
 | **M4** | Gamepad: `input/web/gamepad_reader.cpp`, sampled once a frame, compacted slots, pads following page visibility rather than canvas focus, and the fullscreen flag following the browser (code landed and driven by a page script's pad; a physical pad is the open check) | hours | A pad on the standard mapping plays LineSweeper |
-| **M5** | Ship it: ES-module output and the bundle (done), `onQuit`/`onError` (done), the demo's own page and poster (done), CI job (done), deploy to mattharding.dev's `/demo/linesweeper/` with the §7.2 headers (the owner's) | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
+| **M5** | Ship it: ES-module output and the bundle (done), `onQuit`/`onError` (done), the demo's own page and poster (done), CI job (done), deploy to mattharding.dev's `/demo/linesweeper/` with the §7.2 headers (done, the owner's; live and checked 2026-10-13) | days | The demo plays from the live URL, `curl -I` shows the headers, and CI uploads the bundle |
 | **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); the web window driven by real input in headless Chromium, `WebWindowTests` (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done); `collision` on the web (done); each sample's page a ctest entry (done). **All done** | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal` and `WebWindowTests`, and a real Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone (controls, portrait layout and the development page's viewport handling landed; headless Chrome's emulation drives them, and real phones and the measured frame are open; the bundle's host page still asks a phone for a keyboard, §7.4) | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
