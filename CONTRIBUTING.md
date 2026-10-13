@@ -43,7 +43,8 @@ this project, and no answer time is promised for any issue.
    commit that closes it.
 3. **Say what a consumer will see.** A commit that touches `engine/**/*.h`,
    `engine/CMakeLists.txt`, `cmake/settings.cmake` or `vcpkg.json` adds an
-   entry to [CHANGES.md](CHANGES.md) in the same commit, or says
+   entry to [CHANGES.md](CHANGES.md), under its `## Unreleased` heading, in the
+   same commit, or says
    `not consumer-visible` in its message. CHANGES.md's opening paragraph
    defines the term and its rule says what an entry holds: for a source break,
    the old spelling, the new one and the sample diff that migrates it. Review
@@ -99,6 +100,78 @@ one rewording a line a website page quotes and another adding a page that
 quotes it, or one renaming a header another starts including - and only a run
 on the combined tree sees that. The cost is a rebase and a fresh CI run when
 `master` moves first, which a repository with one maintainer pays rarely.
+
+## Cutting a release
+
+A release is an annotated tag on `master`, cut by the owner, and a GitHub
+release beside it. What a release promises is in
+[PHILOSOPHY](docs/design/PHILOSOPHY.md), *The public face*; this is how one is
+made.
+
+**The name** is `v` followed by `vcpkg.json`'s `version-string`: `"0.1.0"` is
+tagged `v0.1.0`. At a tagged commit the two always agree.
+
+**The number.** Before 1.0, the second number moves for a batch that has any
+CHANGES.md entry, and the third only for a batch with none. That is T6: a
+`settings.cmake` flag or a silent behaviour change breaks a game as hard as a
+source break does, so every entry counts the same. From 1.0, the first number
+moves for a source break, a removed or retyped name, a moved header, or a
+change to what `labrador_settings` gives the game. 1.0 itself is the first tag
+cut once PHILOSOPHY's settle criterion has run.
+
+1. **Audit the batch.** Run `git fetch origin --tags`, then list what it
+   holds with
+   `git log --format='%h %s' vPREV..origin/master -- 'engine/*.h' 'engine/*.cpp' engine/CMakeLists.txt cmake/settings.cmake vcpkg.json`,
+   where `vPREV` is the newest tag. Every commit it prints that touches a path
+   the rule names has an entry in CHANGES.md or says `not consumer-visible` in
+   its message, and a change to a source file is read for a behaviour change a
+   game would see, which the rule's paths do not catch. A commit the audit
+   finds unclassified is given an entry, or a line under the release's heading
+   saying why it has none, in the next step.
+2. **Prepare the release commit**, by the procedure above. It sets
+   `version-string` to the new number, and renames CHANGES.md's
+   `## Unreleased` to `## vX.Y.Z (date)`, dated the day the commit is
+   authored, which is the author date a rebase-merge keeps; a batch with no
+   entry gets the heading with nothing under it. Its message says
+   `not consumer-visible` for the `vcpkg.json` change, which CHANGES.md's
+   *Entries* explains.
+3. **Merge it, then wait for its push runs.** The commit's hash on `master`
+   differs from the pull request's head, so find it there, and run
+   `gh run list --branch master --commit <sha> --json workflowName,conclusion`
+   until both workflows, `build and test` and `website`, have succeeded. Merge nothing else meanwhile:
+   both workflows cancel a run in progress when `master` moves. A run cancelled
+   anyway is re-run with `gh run rerun <id>`, never re-merged. Only a `master`
+   commit whose push runs are green is tagged. `git show <sha>:vcpkg.json`
+   names the version about to be tagged.
+4. **Tag that commit:** `git fetch origin`, so the clone has the commit the
+   merge made, then `git tag -a vX.Y.Z <sha> -m "Labrador X.Y.Z"`, signed with
+   `-s` if a key is to hand, then `git push origin vX.Y.Z`. A pushed tag is
+   never moved or deleted
+   ([docs/website-versioning.md](docs/website-versioning.md)), and a tag
+   ruleset on `refs/tags/v*` that restricts updates and deletions is what
+   refuses both. Before `v0.1.0` there was none, so before pushing a tag run
+   `gh api repos/matt439/Labrador/rulesets`, and if it lists no tag ruleset
+   the owner creates one in the repository's *Rules* settings first.
+5. **Create the release:**
+   `gh release create vX.Y.Z --verify-tag --title "Labrador X.Y.Z" --notes-file <notes>`.
+   The notes hold:
+   - two sentences from *The public face*, word for word: the bold lead,
+     "Releases are versioned, and before 1.0 a release promises a record, not
+     compatibility.", and the one after it that begins "A 0.x tag promises one
+     thing about the tag before it". `v0.1.0` has no tag before it, so its
+     notes add that it records every consumer-visible change since
+     ColourWars' pin, `4cefb68`, which CHANGES.md's backfill covers;
+   - a link to CHANGES.md at the tag,
+     `https://github.com/matt439/Labrador/blob/vX.Y.Z/CHANGES.md`, at the
+     release's own heading or, for `v0.1.0`, at
+     `#moving-a-pin-from-4cefb68-in-short`;
+   - the settle criterion, and what of it is unmet: the date of CHANGES.md's
+     newest entry, and the 0.x tags cut since it;
+   - the supported revisions, as [SECURITY.md](SECURITY.md) states them;
+   - a link to PHILOSOPHY at the tag.
+6. **Afterwards**, the next consumer-visible change opens `## Unreleased`
+   above the release's heading, and `version-string` stays as it is until the
+   next release commit changes it.
 
 ## Commit messages
 

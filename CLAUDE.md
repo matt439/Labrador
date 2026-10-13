@@ -426,12 +426,16 @@ owner asks.
 touches `engine/**/*.h`, `engine/CMakeLists.txt`, `cmake/settings.cmake` or
 `vcpkg.json` adds an entry there, newest first, in the same commit, or says
 `not consumer-visible` in its message. CHANGES.md's opening paragraph defines
-consumer-visible - a source break, a removed or retyped public name, a
-`vcpkg.json` change, a moved header, a compile-option change in
-`settings.cmake`, or a silent behaviour change - and a source-break entry names
-the old spelling, the new one and the sample diff that migrates it. The entry's
-text stays in CHANGES.md: a header comment says what the code is, never what it
-was. Its backfill covers every engine commit since ColourWars' pin, `4cefb68`.
+consumer-visible - a source break, a removed or retyped public name, a change
+to `vcpkg.json`'s dependencies, features, overrides or baseline, a moved
+header, a compile-option change in `settings.cmake`, or a silent behaviour
+change - and a source-break entry names the old spelling, the new one and the
+sample diff that migrates it. The entry's text stays in CHANGES.md: a header
+comment says what the code is, never what it was. Entries sit under the
+release tag that carries them, a new one under `## Unreleased`; `v0.1.0`, the
+first, carries the backfill of every engine commit since ColourWars' pin,
+`4cefb68`. A release is a tag the owner cuts, by CONTRIBUTING.md's *Cutting a
+release*.
 A change a copy of the template would want - to what `samples/minimal/` does
 or how it builds, or to an engine behaviour it depends on - adds a line to the
 change list in [samples/minimal/README.md](samples/minimal/README.md) in the

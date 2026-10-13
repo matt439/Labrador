@@ -738,10 +738,27 @@ engine API to depend on.
   game-facing API is the series' subject matter — and its acceptance test:
   a feature that can't be explained in an introductory series has an API
   that is too hard.
-- Once the engine/game split lands and the API settles, releases are
-  versioned and breaking changes are deliberate, batched and documented —
-  not incidental.
-- **A public name is deleted on a caller count that says which
+- **Releases are versioned, and before 1.0 a release promises a record, not
+  compatibility.** A release is a tag on `master`, and its notes link
+  CHANGES.md. A 0.x tag promises one thing about the tag before it: every
+  consumer-visible change between the two is an entry in CHANGES.md, with its
+  migration where it has one. Breaking changes are deliberate, batched and
+  documented — not incidental — and a tag is the batch. A tag and its notes
+  are the whole of what a release promises: no release branches and no
+  backports (T1), so a fix reaches a game as the next tag, with whatever else
+  that tag carries.
+- **The API settles after twelve weeks and two 0.x tags in which CHANGES.md
+  gains no entry.** The weeks are counted on CHANGES.md's own dates from its
+  newest entry, so any consumer-visible change restarts them — a silent
+  behaviour change and a change to what `labrador_settings` gives the game as
+  much as a source break. 1.0 is the first tag cut once both have run, unless
+  a break already decided is still to be made, which is a reason to wait that
+  a clock cannot see. From 1.0, a tag that does not move the first number
+  carries no source break, no removed or retyped name, no moved header and no
+  change to what `labrador_settings` gives the game. Until a `v1` tag exists
+  the criterion is unmet, and what is unmet is read from the date of
+  CHANGES.md's newest entry.
+- **A public name is deleted with a caller count that says which
   repositories were counted.** The clients live in their own repositories;
   that is what the split is for. So `git grep` here answers "does anything
   in the engine call this", which is a narrower question than the one a
@@ -751,6 +768,27 @@ engine API to depend on.
   it, and should not learn how. It is therefore a discipline, which is why
   it is written down. A count that cannot be taken is a reason to keep,
   not a reason to guess.
+- **A count says who must move when a name goes, never that it may.** The
+  count covers this repository, the paint-shooter's `master`, and the public
+  repositories a code search finds pinning this one; the commit that removes
+  or retypes a public name — one declared in a header the API reference
+  publishes — names all three and what each held. Callers here move in that
+  commit, and the paint-shooter's at its next pin. A stranger's private game
+  is the half nobody can count, and a count that cannot be taken is a reason
+  to keep, so having no caller is never the reason a name goes. What keeping
+  it costs is: a contract it cannot keep (T2), a reading it gets wrong (T4), a
+  check it leaves until run time (T5), a policy welded into mechanism (T1).
+  Review weighs that argument, not the count; a name with no caller and no
+  cost stays. A name in a header the reference leaves out — a backend's, or
+  `engine/core/step_timer.h` — is not public, and a game that includes one
+  has no promise.
+
+  The name leaves by the route a pin already takes: an entry in CHANGES.md
+  naming it, the reason and what replaces it, carried by the next tag and
+  linked from its notes. Before 1.0 there is no alias and no `[[deprecated]]`
+  (T1), and the attribute would not be gentler: the template a game copies
+  links `labrador_settings`, whose `/sdl` and `/WX` make it an error. From 1.0
+  a name leaves only at a tag that moves the first number.
 - **The same count does not settle a decision about what the library is
   for.** A name with no caller today is evidence about today; a client can
   adopt it tomorrow and did. Where a whole family of primitives is in

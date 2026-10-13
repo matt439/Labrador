@@ -178,7 +178,7 @@ Every page is labelled development documentation and shows its source commit.
 A preview with local changes says so, including changes to the website itself.
 [The versioning policy](../docs/website-versioning.md) defines complete,
 commit-bound snapshots and the implementation checks required at the first
-published engine release. There are no release snapshots or version selector yet.
+engine release to get one. There are no release snapshots or version selector yet.
 
 ## Hosting and deployment
 

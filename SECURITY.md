@@ -1,10 +1,10 @@
 # Security policy
 
-## Supported revision
+## Supported revisions
 
-`master`. The repository has no release tags yet, so the latest commit on
-`master` is the only revision that receives fixes. Once the first tag is cut,
-the latest tag and `master` are supported, and nothing older is.
+The latest tag and `master` are supported; a fix ships as a new tag from
+`master`, never as a patch to an old tag. Nothing older than the latest tag
+receives fixes.
 
 Before reporting, check that the problem is still present on current `master`
 rather than only on a revision your project pins.
