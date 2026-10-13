@@ -326,10 +326,14 @@ is the whole procedure.
 
 ## Changes
 
-[CHANGES.md](CHANGES.md) lists, newest first, every change a game built on the
-engine can see - source breaks, `vcpkg.json` and compile-option changes, and
-silent behaviour changes - with the commit and the migration. Read it before
-moving a pin.
+Releases are tags, `v0.1.0` the first, and [CHANGES.md](CHANGES.md) lists,
+newest first and under the tag that carries each, every change a game built on
+the engine can see - source breaks, `vcpkg.json` and compile-option changes,
+and silent behaviour changes - with the commit and the migration. Read it
+before moving a pin from one tag to the next. Before 1.0 a tag promises that
+record rather than compatibility; [PHILOSOPHY](docs/design/PHILOSOPHY.md),
+*The public face*, says what 1.0 waits for, and
+[CONTRIBUTING.md](CONTRIBUTING.md) how a release is cut.
 
 ## Licence
 

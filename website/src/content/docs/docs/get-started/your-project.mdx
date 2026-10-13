@@ -47,15 +47,22 @@ When you have finished, the project looks like this:
    git init
    ```
 
-2. **Add Labrador as a submodule:**
+2. **Add Labrador as a submodule, and check out a release:**
 
    ```bat
    git submodule add https://github.com/matt439/Labrador.git external/labrador
+   git -C external/labrador checkout v0.1.0
    ```
 
-   Your repository now records exactly which commit of Labrador it builds against, and moving
-   to a newer one is a change you make deliberately and commit. Anyone cloning your project
-   needs `git clone --recurse-submodules` to get the engine too.
+   `v0.1.0` is the first release. Check out the latest tag, which
+   `git -C external/labrador tag --list "v*" --sort=-v:refname` lists newest first, if there is a newer one. Your repository
+   now records exactly which commit of Labrador it builds against, and moving to a newer tag
+   is a change you make deliberately and commit, after reading what
+   [CHANGES.md](https://github.com/matt439/Labrador/blob/master/CHANGES.md) says changed
+   between the two. This site documents `master`, which can be ahead of the newest tag, and
+   CHANGES.md's *Unreleased* heading, when it has one, lists what `master` has that the tag
+   does not.
+   Anyone cloning your project needs `git clone --recurse-submodules` to get the engine too.
 
 3. **Copy the minimal sample** into a folder called `game`:
 

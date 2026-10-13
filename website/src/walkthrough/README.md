@@ -33,6 +33,8 @@ records, the whole page was followed in the x64 Native Tools Command Prompt:
 Labrador added as a submodule from the public repository, the minimal sample
 copied, its includes edited (four then; `main_web.cpp` came later), these
 files put in place, and the project built, and rebuilt after the first change.
+Step 2's checkout of a release tag came later than that run and was not part
+of it, and the `consumer` job does not run it either.
 
 Change one, and the `consumer` job builds it on the pull request; follow the
 page by hand again when a change touches a step the job does not do.

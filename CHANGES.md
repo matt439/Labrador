@@ -4,7 +4,8 @@ What changed in the engine that a game built on it can see, newest first, with
 the commit and the migration. A change is **consumer-visible** when it is any
 of these: a source break, where code that compiled against the engine before
 the change does not compile after it; a removed or retyped public name; a new
-required package or any change to `vcpkg.json`; a moved header; a change to
+required package, or any change to the dependencies, features, overrides or
+`builtin-baseline` in `vcpkg.json`; a moved header; a change to
 the compile options or definitions `cmake/settings.cmake` gives
 `labrador_settings`, and so gives the game; or a silent behaviour change, where
 the game compiles as it did and does something different, such as
@@ -42,9 +43,58 @@ caller in this repository is changed with it, and the entry here is the notice
 
 ## Entries
 
-None yet beyond the backfill.
+Entries are grouped under the release that carries them, newest first. A
+release is a tag, `v` and the `version-string` in `vcpkg.json`, and its heading
+is `## v0.y.z (date)`, dated with the author date of the commit the tag is
+cut on, which a rebase-merge keeps (`git log -1 --format=%as v0.y.z` reads it
+back). An entry added after the newest tag goes under `## Unreleased` above it,
+and the commit that prepares the next tag renames that heading to the tag's
+([CONTRIBUTING.md](CONTRIBUTING.md), *Cutting a release*). A release heading
+with no entry under it carried no consumer-visible change. Moving a pin across
+several tags means reading every release after the one pinned, up to and
+including the one moved to.
 
-## Backfill: from 4cefb68 to 65116c3
+An entry is a heading under a release that names the one commit it describes,
+with that commit's subject and date in its first line, and the settle criterion
+in PHILOSOPHY counts those dates. Prose under a release heading that is not
+under an entry, such as the classification of a commit that needs none, is a
+note: it is not an entry and restarts nothing.
+
+From `v0.1.0` on, a change confined to a browser build is an entry like any
+other. The backfill leaves such changes out because a game on `4cefb68` has no
+browser build to break, and a game on a tag can have one.
+
+`vcpkg.json`'s `version-string` changes at every release, and that change is
+not consumer-visible: a game reads nothing from it, and a release is told by
+its heading here.
+
+## v0.1.0 (2026-10-13)
+
+The first release. It carries every consumer-visible change from ColourWars'
+pin, `4cefb68`, to the tag, which is the backfill below and nothing after it.
+Of the commits since the backfill's end that touch its paths,
+
+```
+git log --format=%h 65116c3..v0.1.0 -- engine cmake CMakeLists.txt vcpkg.json
+```
+
+`01f9e1a`, `6a713e9` and `97be55f` change comments in public headers and no
+declaration, which each message says, and `f8584da` changes
+`cmake/check_doc_citations.cmake`, which runs only in a top-level build.
+
+`6a713e9` also changes what `read_sprite_font_file` throws for a `.spritefont`
+whose glyph count needs more bytes than the file has left, and that is not
+consumer-visible either. A well-formed file reads as it did. On Windows the
+reader threw `std::runtime_error` naming the path before, and throws it now
+with the count in the message as well. Only in a browser build did the type
+change: a count of 2^27 or more wrapped the 32-bit product, passed the check,
+and let `std::length_error` escape from the reserve after it, without the path;
+it is now the same `std::runtime_error`. Only a malformed file reaches either
+throw, and a change confined to a browser build is not consumer-visible to a
+game moving from `4cefb68`, for the reason the
+[list at the end](#not-consumer-visible) gives.
+
+### Backfill: from 4cefb68 to 65116c3
 
 ColourWars, the engine's first client, is pinned at `4cefb68` (2026-09-26).
 This section covers every commit in
@@ -58,7 +108,7 @@ twenty-three are in the [list at the end](#not-consumer-visible), each with the
 reason. `65116c3` itself, and every commit in the range that the command does
 not print, touches none of those paths.
 
-### Moving a pin from 4cefb68, in short
+#### Moving a pin from 4cefb68, in short
 
 For a Windows game that uses `Application`, which is the shape of every sample:
 
@@ -83,7 +133,7 @@ compile error to announce them: touch on a Windows touchscreen
 ([ea90387](#ea90387)).
 
 <a id="eaa9b3f"></a>
-### eaa9b3f: touch is a device of its own
+#### eaa9b3f: touch is a device of its own
 
 *Feed touch to the engine as the third fed device, from WM_POINTER and pointer
 events* (2026-10-11). Source break and silent behaviour change.
@@ -110,7 +160,7 @@ events* (2026-10-11). Source break and silent behaviour change.
   `touch()` as well. A pen is still the mouse.
 
 <a id="ea90387"></a>
-### ea90387: the pads follow the player, and the reader is sampled
+#### ea90387: the pads follow the player, and the reader is sampled
 
 *Let the web pads follow the page rather than the canvas, and the fullscreen
 flag follow the browser* (2026-10-11). Two silent behaviour changes.
@@ -133,7 +183,7 @@ flag follow the browser* (2026-10-11). Two silent behaviour changes.
   restore.
 
 <a id="e6b6019"></a>
-### e6b6019: gl/ decodes block-compressed textures it cannot sample
+#### e6b6019: gl/ decodes block-compressed textures it cannot sample
 
 *Decode block-compressed textures on the CPU where a WebGL2 context has no
 S3TC* (2026-10-11). Silent behaviour change, `gl` backend only.
@@ -147,7 +197,7 @@ S3TC* (2026-10-11). Silent behaviour change, `gl` backend only.
   that takes the new path. `vulkan/` still refuses and names the feature.
 
 <a id="e77e9b6"></a>
-### e77e9b6: vcpkg.json gains lodepng
+#### e77e9b6: vcpkg.json gains lodepng
 
 *Run RenderPixelTests in headless Chrome, against the same golden set*
 (2026-10-11). `vcpkg.json` change.
@@ -163,7 +213,7 @@ S3TC* (2026-10-11). Silent behaviour change, `gl` backend only.
   directxtk, a consumer needs neither.
 
 <a id="4175640"></a>
-### 4175640: initialize() takes no arguments, and the window is split by platform
+#### 4175640: initialize() takes no arguments, and the window is split by platform
 
 *Split the shell's window by platform, and run LineSweeper in a browser*
 (2026-10-10). Source break, removed and retyped public names, a moved source
@@ -226,7 +276,7 @@ git show 4175640 -- bench/linesweeper_frame_bench.cpp   # item 6, Window directl
    engine sources, a patch, a debugger breakpoint by file - has to follow it.
 
 <a id="1b16287"></a>
-### 1b16287: settings.cmake branches by compiler, and directxtk is Windows-only
+#### 1b16287: settings.cmake branches by compiler, and directxtk is Windows-only
 
 *Build the engine for the browser, and run its tests under Node* (2026-10-10).
 `vcpkg.json` change and a `cmake/settings.cmake` restructure that leaves an
@@ -251,7 +301,7 @@ MSVC build as it was.
   there. A Windows game configures as before.
 
 <a id="92966b0"></a>
-### Before the pin: 92966b0, content resolves beside the executable
+#### Before the pin: 92966b0, content resolves beside the executable
 
 *Resolve a game's content beside its executable, not beside its working
 directory* (2026-09-17). Silent behaviour change. It is older than `4cefb68`,
@@ -276,7 +326,7 @@ it and a game pinned before it meets it on the next move.
   game, and the samples' diffs in `92966b0` are comments saying so.
 
 <a id="not-consumer-visible"></a>
-### Not consumer-visible
+#### Not consumer-visible
 
 Each of these touches a path the backfill command lists, and none changes what
 a game on Windows compiles against, links or sees. A change confined to a
