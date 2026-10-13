@@ -4,6 +4,34 @@ How a change reaches `master`. This is the procedure the owner and every agent
 working in this tree follow; it is written here because a rule that lives only
 in someone's memory cannot be followed by anyone else.
 
+## Asking a question or requesting a change
+
+Everything goes through the
+[issue tracker](https://github.com/matt439/Labrador/issues/new/choose), which
+offers three forms:
+
+- **Question**, for whether the engine fits what you want to build or how
+  something in it is meant to be used.
+- **Bug or build problem**, for anything in the engine, a sample, the build,
+  the documentation or the website that does not do what it says.
+- **Engine request**, for an API change or a new mechanism.
+
+A security vulnerability is not an issue: report it privately as
+[SECURITY.md](SECURITY.md) describes.
+
+**An engine request leads with its exhibit**: the code your game wrote to work
+around the gap, which the change would let it delete. That is PHILOSOPHY's T1
+applied to intake - mechanisms are extracted from a client game in hand - so a
+request with no workaround behind it is answered as a question about whether a
+client needs the change. Check the gap against current `master` rather than
+the revision your project pins, because a gap master has already closed is
+answered by moving the pin. Name the trade-off you think applies.
+
+A request is weighed on the trade-offs in
+[docs/design/PHILOSOPHY.md](docs/design/PHILOSOPHY.md), T1 to T12. It may be
+declined, and a decline gives its reason in those terms. One person maintains
+this project, and no answer time is promised for any issue.
+
 ## The procedure
 
 1. **Branch from `master`.** One short-lived branch per change.

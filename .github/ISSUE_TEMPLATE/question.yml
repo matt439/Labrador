@@ -1,0 +1,19 @@
+name: Question
+description: Ask whether the engine fits what you want to build, or how something in it is meant to be used.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Questions are answered here, in the open, so the answer is there for the next person. Answers argue from the trade-offs in [PHILOSOPHY.md](https://github.com/matt439/Labrador/blob/master/docs/design/PHILOSOPHY.md) where a design choice is the question. One person maintains this project and no answer time is promised.
+  - type: textarea
+    id: question
+    attributes:
+      label: The question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: What you have read or tried
+      description: The pages, headers or samples you looked at first, so the answer can start from there.

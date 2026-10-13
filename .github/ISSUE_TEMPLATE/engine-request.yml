@@ -1,0 +1,53 @@
+name: Engine request
+description: Ask for an API change or a new mechanism, with the workaround your game uses today.
+title: "Request: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **A request leads with its exhibit.** The engine grows only from a real client game in hand (PHILOSOPHY T1), so the strongest request shows the code your game wrote to get around the gap, which the change would let you delete. A request with no exhibit can still be filed, and is answered as a question about whether a client needs the change.
+
+        Requests are weighed on the trade-offs in [PHILOSOPHY.md](https://github.com/matt439/Labrador/blob/master/docs/design/PHILOSOPHY.md), T1 to T12. One may be declined, and a decline says which trade-off it rests on. One person maintains this project and no answer time is promised.
+  - type: textarea
+    id: need
+    attributes:
+      label: The need
+      description: What your game has to do that the engine does not let it do, in your game's terms.
+    validations:
+      required: true
+  - type: textarea
+    id: exhibit
+    attributes:
+      label: The exhibit - your current workaround
+      description: The code in your game that works around the gap, or a link to it, and what the change would let you delete. If you have no workaround yet, say why; a request with no exhibit is answered as a question.
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Engine revision checked against
+      description: The commit hash of current master you checked this against. A gap already closed on master is answered by moving your pin.
+      placeholder: "e.g. 65116c3"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checked-master
+    attributes:
+      label: Checked against master
+      options:
+        - label: I checked that the gap is still present on current master, not only on the revision my project pins.
+          required: true
+  - type: input
+    id: trade-off
+    attributes:
+      label: The trade-off you think applies
+      description: The T-number from PHILOSOPHY.md that you think argues for the change, and in a few words why.
+      placeholder: "e.g. T1 - the mechanism is general and my game supplies the rule"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would propose (optional)
+      description: The shape of an API that would meet the need, if you have one in mind.

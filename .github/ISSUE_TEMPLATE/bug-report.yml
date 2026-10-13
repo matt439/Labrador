@@ -1,0 +1,35 @@
+name: Bug or build problem
+description: Something in the engine, a sample, the build, the documentation or the website does not do what it says.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a security vulnerability, do not open an issue: report it privately as [SECURITY.md](https://github.com/matt439/Labrador/blob/master/SECURITY.md) describes. One person maintains this project and no answer time is promised.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Paste the exact error message, which names the file when the engine throws.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+      description: The commands you ran or the smallest code that shows it. For a documentation or website problem, the page and the passage.
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Engine revision
+      description: The commit hash you saw it on. If that is not current master, say whether master still does it.
+      placeholder: "e.g. 65116c3"
+    validations:
+      required: true
+  - type: input
+    id: configuration
+    attributes:
+      label: Preset and platform
+      description: The CMake preset (x64-debug, wasm-release, ...), and the Windows version, browser or GPU where it matters.
