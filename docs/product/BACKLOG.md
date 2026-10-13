@@ -12,7 +12,6 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 
 | Decision | Blocks |
 |---|---|
-| Cut `v0.1.0` on amendment B's `master` commit once its push runs are green, and create its release | OCA-67, PI-05, PI-14 |
 | Set the GitHub About description, homepage and topics, and decide whether to turn on Discussions | OCA-06 |
 | Record the accessibility position: what the engine provides, whether the hosted demo has an aim, and who owns the colour-blind palette | OCA-08, BDP-24, BDP-21 |
 | Set ColourWars' pin cadence and make or approve its gameplay check after the ordinary bump | SM-36, PI-14 |
@@ -101,7 +100,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[SM-10](STORIES.md#sm-10)** Should · XS · The Sole Owner-Maintainer: Make web.md's Firefox claim match what was actually checked
 - [x] **[SM-31](STORIES.md#sm-31)** Could · XS · The Sole Owner-Maintainer · **Owner**: One canonical host for the engine site
 - [x] **[OCA-69](STORIES.md#oca-69)** Must · S · The Outside C++ Adopter · **Owner**: Know how a public name leaves the engine
-- [ ] **[OCA-67](STORIES.md#oca-67)** Must · S · The Outside C++ Adopter · **Owner**: Pin a named version and know what it promises — after OCA-68, OCA-69
+- [x] **[OCA-67](STORIES.md#oca-67)** Must · S · The Outside C++ Adopter · **Owner**: Pin a named version and know what it promises — after OCA-68, OCA-69
 - [x] **[OCA-75](STORIES.md#oca-75)** Could · M · The Outside C++ Adopter · **Owner**: A template font I may ship without checking its terms — after OCA-37, OCA-34
 
 <details><summary>Why each is placed here</summary>
@@ -541,7 +540,7 @@ Not in any horizon: each waits on something outside the backlog.
 ## Risks to the plan
 
 - Now holds 35 stories in 20 batches. It fits a few weeks only if each batch is one PR; split further and the branch, PR, green-CI, rebase-merge overhead crowds out the compounding items (OCA-68, OCA-11, OCA-73, SM-21). OCA-68's backfill (L) and OCA-11's consumer job (M) are the schedule risks inside Now.
-- Owner review is the binding constraint, not agent time: Now still asks the owner for the first tag and one repository setting (the About fields). Amendment B's wording is given; until the tag is cut, nothing in Next may promise a tag that does not exist.
+- Owner review is the binding constraint, not agent time: Now still asks the owner for one repository setting (the About fields). Amendment B has landed and `v0.1.0` is cut on it.
 - PHILOSOPHY.md is touched by six PRs across three horizons. They are serialised A to F and each rebases on the last; a parallel branch that edits PHILOSOPHY outside that order will conflict and should be refused at review.
 - The primary persona is unevidenced: no issues, analytics or independent adopter. Next spends real capacity on a stranger's ship path. Mitigation: most of Now is truth fixes that also serve the agents who read the same documents, and PI-09/PI-10 are the only stories backed by recorded demand.
 - Doc edits can fail the website build by design: quoted lines and public header comments are read at build time. Header-contract stories (OCA-55, OCA-59, OCA-56) and the brief trim (SM-43) must fix any quoting page in the same commit.

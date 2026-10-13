@@ -148,10 +148,8 @@ cut once PHILOSOPHY's settle criterion has run.
    `-s` if a key is to hand, then `git push origin vX.Y.Z`. A pushed tag is
    never moved or deleted
    ([docs/website-versioning.md](docs/website-versioning.md)), and a tag
-   ruleset on `refs/tags/v*` that restricts updates and deletions is what
-   refuses both. Before `v0.1.0` there was none, so before pushing a tag run
-   `gh api repos/matt439/Labrador/rulesets`, and if it lists no tag ruleset
-   the owner creates one in the repository's *Rules* settings first.
+   ruleset on `refs/tags/v*` (*Release tags are never moved or deleted*,
+   in the repository's *Rules* settings) refuses both.
 5. **Create the release:**
    `gh release create vX.Y.Z --verify-tag --title "Labrador X.Y.Z" --notes-file <notes>`.
    The notes hold:

@@ -9,13 +9,12 @@ An index of open work, one row per item; each row points to the document that ow
 **Aim:** the backlog's Now horizon, *Trust and clocks*: "the public face and the tree's records stop misleading readers and agents, the live demo is checked and one click away, Get Started and the template work as written, and every item whose delay compounds has landed". [BACKLOG.md, Now](docs/product/BACKLOG.md#now) owns its *Done when* list and its batches, N1 to N21; this block names the ones still open.
 
 1. **`OCA-03` (N4): link the live demo**, after the owner has redeployed it with the calm top-out (`WEB#9`) and its live checks have been run again (`WEB#7`).
-2. **`OCA-67` (N20): the first 0.x tag.** Amendment B has its wording; what remains is the owner cutting `v0.1.0` on its `master` commit once that commit's push runs are green, and the release beside it ([CONTRIBUTING.md, Cutting a release](CONTRIBUTING.md#cutting-a-release)).
 
 **Dated, whatever the order above:**
 - The calm top-out has merged: the owner redeploys the hosted demo (`WEB#9`), then `WEB#7` runs its live checks again.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Now: `OCA-06` (GitHub About fields, Discussions) · `OCA-67` (cut the first tag and its release) · `WEB#9` (redeploy the demo).
+- Now: `OCA-06` (GitHub About fields, Discussions) · `WEB#9` (redeploy the demo).
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
 
@@ -27,7 +26,6 @@ An index of open work, one row per item; each row points to the document that ow
 |---|---|---|---|---|
 | `OCA-03` | OPEN | must | S | Link the live demo from the site's home and examples pages, the README's LineSweeper section and the top of `samples/linesweeper/README.md`, without promising touch play. After `WEB#9` and `WEB#7`. |
 | `OCA-06` | DECISION | should | XS | The owner sets the GitHub About description (not citing the private game), homepage `https://labradorengine.com/` and topics, and decides whether to enable Discussions; the README half has landed. |
-| `OCA-67` | DECISION | must | S | Only the tag remains: the owner cuts `v0.1.0` on amendment B's `master` commit once its push runs are green, and creates the release with notes linking CHANGES.md ([CONTRIBUTING.md](CONTRIBUTING.md#cutting-a-release)). |
 | `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once. `SM-36` waits on it. |
 
 ## Website and the hosted demo
