@@ -75,8 +75,8 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[SM-12](STORIES.md#sm-12)** Must · S · The Sole Owner-Maintainer: Make the records say the demo is live, and tick its server-side deploy checks against it
 - [x] **[BDP-23](STORIES.md#bdp-23)** Must · S · The Browser and Phone Demo Player: Check the top-out burst against flash limits
 - [ ] **[OCA-03](STORIES.md#oca-03)** Must · S · The Outside C++ Adopter: Try LineSweeper in my browser from the site and the README — after SM-12, BDP-23
-- [ ] **[OCA-01](STORIES.md#oca-01)** Must · S · The Outside C++ Adopter: One answer to 'where does it run?' on every public page
-- [ ] **[OCA-54](STORIES.md#oca-54)** Should · S · The Outside C++ Adopter: Know which browser pad and touch paths have met real hardware — after OCA-01
+- [x] **[OCA-01](STORIES.md#oca-01)** Must · S · The Outside C++ Adopter: One answer to 'where does it run?' on every public page
+- [x] **[OCA-54](STORIES.md#oca-54)** Should · S · The Outside C++ Adopter: Know which browser pad and touch paths have met real hardware — after OCA-01
 - [x] **[OCA-05](STORIES.md#oca-05)** Must · S · The Outside C++ Adopter: Design documents say nothing that is false even as target
 - [x] **[FES-03](STORIES.md#fes-03)** Should · S · The Full-Environment Seeker (anti-persona) · **Owner**: State the exclusions' permanence, the editor included, to match the recorded decision
 - [x] **[NMS-02](STORIES.md#nms-02)** Should · XS · The Native Multi-Platform Shipper (anti-persona, for now): Published design pages do not read Vulkan's reach as support

@@ -33,7 +33,7 @@ The homepage should communicate explicit ownership, freedom over game data, and 
 
 Compare workflows fairly. For readers considering Godot or Unreal, explain Labrador’s code, ownership, and tooling choices. For readers considering raylib or similar libraries, explain the value of its scene orchestration, state stack, collision handling, resource management, and view system. A coding-only workflow is already part of [raylib’s positioning](https://www.raylib.com/), so “no editor” is insufficient on its own.
 
-Multiple rendering backends and shared pixel tests support the engineering story. Any numerical performance comparison must identify the workload, hardware, configuration, and measurement. Current platform support must be stated as Windows; Vulkan does not establish support for other operating systems.
+Multiple rendering backends and shared pixel tests support the engineering story. Any numerical performance comparison must identify the workload, hardware, configuration, and measurement. Current platform support must be stated as Windows and a desktop browser; Vulkan does not establish support for other operating systems.
 
 Evidence: [design philosophy](design/PHILOSOPHY.md), [Scene interface](../engine/scene/scene.h), and [LineSweeper design and examples](../samples/linesweeper/README.md). The design document describes a target, so public feature claims must also be checked against current code and examples.
 

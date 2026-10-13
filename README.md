@@ -52,7 +52,7 @@ website/                the public site, built with npm from this same checkout
 
 ## Building
 
-**Windows, and a browser.** The renderer has five backends, selected by
+**Windows, and a desktop browser.** The renderer has five backends, selected by
 `LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11, Direct3D 12, OpenGL
 3.3 core, Vulkan, and a null one with no graphics API that records what it was
 asked to draw. The first four are held to the same pixel tests and to the same
@@ -64,8 +64,13 @@ translation unit, `web_context.cpp`, and run the headless tests under Node -
 and the pixel tests in headless Chrome, against the same checked-in images,
 with the browser window's input driven there too, and where each sample's
 built page is also loaded and played to its own way out. All six samples
-run there, and
-[docs/port/web.md](docs/port/web.md) is the plan. Each proves something a
+run there, LineSweeper has also been checked in Firefox, Safari has not yet
+been checked, and [docs/port/web.md](docs/port/web.md) is the plan. Phones
+are a planned phase rather than a platform: the touch controls and the layout
+for a phone held upright have been played only under Chrome's touch emulation, and the
+browser's gamepad path only with a pad a page script fakes, so the hosted demo
+shows a phone a poster until a real iPhone and a real Android phone have
+played it. Each proves something a
 different one could not: OpenGL that a view need not record into a driver,
 Direct3D 12 that the engine can own the fence rather than the driver, Vulkan
 that the seam's resize contract survives an API where the *presentation engine*
