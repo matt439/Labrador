@@ -95,6 +95,17 @@ device. Use a fresh output directory for each run so that an interrupted or
 shorter sequence cannot leave stale frames at its end. The source PNGs are
 scratch output; only the encoded video belongs in the website.
 
+### The flash check
+
+[flash.txt](flash.txt) is the website's match with nothing waiting between
+pieces, so its bursts come as close together as a script can put them, and
+five seconds after the top-out so that burst is read to the end. Its
+`--sequence` frames are what
+[`tools/flash_check/flash_check.mjs`](../flash_check/flash_check.mjs) reads,
+and `samples/linesweeper/README.md`, *The bursts against WCAG 2.3.1*, records
+the method and the result. The script ends with one `capture`, because the
+tool refuses a script that captures nothing.
+
 ## The script
 
 One command a line. `#` starts a comment.
