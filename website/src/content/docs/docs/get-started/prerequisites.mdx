@@ -37,10 +37,19 @@ with two installs.
    ```
 
    If `echo %VCPKG_ROOT%` prints `%VCPKG_ROOT%` back, your version of Visual Studio did not set
-   it. Set it to the `VC\vcpkg` folder inside your Visual Studio installation, for example:
+   it. Set it to the `VC\vcpkg` folder inside your Visual Studio installation. The installation
+   is usually `C:\Program Files\Microsoft Visual Studio\<version>\<edition>`, where the version is
+   `2022` for Visual Studio 2022 and `18` for Visual Studio 2026, and the edition is `Community`,
+   `Professional` or `Enterprise`. This prints the installation folder, so you need not guess it:
 
    ```bat
-   set VCPKG_ROOT=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\vcpkg
+   "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+   ```
+
+   Then add `\VC\vcpkg` to what it printed. For the Community edition of Visual Studio 2026:
+
+   ```bat
+   set VCPKG_ROOT=C:\Program Files\Microsoft Visual Studio\18\Community\VC\vcpkg
    ```
 
 </Steps>
@@ -50,14 +59,31 @@ with two installs.
 Make a folder for your projects close to the root of a drive, such as `C:\dev`, and use it in
 the steps that follow.
 
-The longest path inside the Labrador repository is 148 characters, and Windows limits a whole
-path to 260 unless long paths are enabled. A clone into a deeply nested folder fails with
-`Filename too long`. If you would rather keep your usual folder, tell Git to use long paths
-first:
+Keep the path of the `Labrador` folder under 100 characters; `C:\dev\Labrador` is 15. The build
+writes files up to about 150 characters below that folder, and the compiler cannot open a path
+longer than 260 characters, even when long paths are enabled in Windows. A build in a deeper
+folder warns about `CMAKE_OBJECT_PATH_MAX` when it configures, then stops with
+`fatal error C1083: Cannot open compiler generated file: '': Invalid argument`.
+
+`git config --global core.longpaths true` does not get round this. It lets Git clone into a
+deep folder, where a clone would otherwise fail with `Filename too long`, but the build in that
+folder still fails.
+
+### Keeping a deep folder
+
+If your projects have to live in a deep folder, give that folder a drive letter of its own with
+`subst` and work from the drive. The compiler then sees the short path. Git still sees the real
+one, so it needs `core.longpaths` as well:
 
 ```bat
 git config --global core.longpaths true
+subst P: C:\Users\you\source\repos\clients\studio\projects
+P:
 ```
+
+Use `P:\` wherever the following pages use `C:\dev`. The drive letter lasts until you sign out,
+so run the `subst` line again after signing in, and always open the project through the drive
+letter: a build folder belongs to the path it was configured from.
 
 <Aside title="Only for the Vulkan renderer">
 Labrador builds its Direct3D 11 renderer by default, and nothing else on this page is needed for

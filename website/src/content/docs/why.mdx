@@ -34,6 +34,13 @@ the minimal sample, comments included:
 
 <SourceFile path="samples/minimal/CMakeLists.txt" />
 
+It covers building the game and running it while you work on it: the Windows half names the
+sources, links two targets and copies the content beside the program, and the `EMSCRIPTEN` branch
+builds the same game as a page with the content packed into it. A release a player installs needs
+more than this, because the program's folder must also hold the DLLs the engine uses on Windows,
+DirectXTK and the XAudio2 redistributable, and nothing from the build tree, and that takes install
+rules this file does not have.
+
 There is no project format and no code generator. The engine has no reflection macros, no second
 standard library beside `std::` and no scripting language. Its headers contain classes,
 templates and the standard library, so reading the source is enough to know what it does
