@@ -30,6 +30,9 @@ jobs:
     # waiting on a context that never reports (CONTRIBUTING.md).
     name: windows (${{ matrix.preset }})
     runs-on: windows-latest
+    # Bounded well above a cold vcpkg cache, so a stalled step fails the check
+    # rather than holding every pull request for GitHub's six-hour default.
+    timeout-minutes: 90
 
     # Every backend, because "they all pass the same tests" is a claim that
     # rots the moment nothing checks it - and a backend rots by failing to
@@ -164,6 +167,9 @@ jobs:
       # with VULKAN_SDK.
       - name: Install the Vulkan SDK
         if: matrix.vulkan_sdk
+        # A download and an install that take a minute or two; the installer
+        # can stall without exiting, and this is what turns that into a failure.
+        timeout-minutes: 15
         shell: pwsh
         run: |
           $installer = Join-Path $env:RUNNER_TEMP "vulkan-sdk.exe"
@@ -247,6 +253,7 @@ jobs:
   wasm:
     name: wasm
     runs-on: windows-latest
+    timeout-minutes: 90
 
     defaults:
       run:
