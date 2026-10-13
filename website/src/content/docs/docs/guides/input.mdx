@@ -64,6 +64,10 @@ and pad side by side works with either. The minimal sample's quit check:
 `connected(slot)`, `just_connected(slot)` and `just_disconnected(slot)` are there for when the
 answer matters to the game, such as showing "Player 2, press Start".
 
+On Windows the pads are read through XInput. In a browser they come from the Gamepad API, and
+that path has been driven only by a fake pad a page script supplies in headless Chrome: no
+physical pad has played through it yet.
+
 **Sticks are raw**, from −1 to 1 on each axis, with **+y pointing down** like every other
 coordinate in the engine. Choosing a deadzone is the game's decision, made once with
 `apply_deadzone(stick, deadzone)`. It is circular, and rescales what is left so a small push
@@ -144,6 +148,8 @@ for (const TouchPoint& point : touch.previous_state().active())
 A tap shorter than a step is still pressed on one step and released on the next. A point the
 system takes away, or every point when the window loses the foreground, disappears without a
 release. A touch is never also a mouse click, on Windows or in a browser, and a pen is the mouse.
+Both paths have been driven only by simulated touch, Chrome's touch emulation in a browser and
+touch injected into a window on Windows; no real touchscreen has driven either yet.
 The minimal sample draws a marker with the id at every point:
 
 <SourceFile path="samples/minimal/states/hello_state.cpp" from="const std::span<const TouchPoint> points" to="}" />
@@ -152,4 +158,7 @@ On-screen controls are the game's, too. LineSweeper draws eight buttons once a f
 the screen, asks each step which button every point is on, and feeds those into the same byte its
 keys do, so a thumb resting on a button is a held key. Its
 <RepoLink path="samples/linesweeper/README.md" hash="a-phone-held-upright">design notes</RepoLink>
-say how, and how it lays itself out for a phone held upright.
+say how, and how it lays itself out for a phone held upright. That layout has run only under
+Chrome's device emulation and in a tall window on Windows, never on a real phone, and the
+hosted demo shows a phone a poster rather than the game until a real iPhone and a real Android
+phone have played it.

@@ -23,8 +23,8 @@ It suits you if:
 
 It does not suit you if you want a visual editor, a scripting language, 3D or online play. Those
 four are permanent decisions, explained below. It does not suit you yet if you need a platform
-other than Windows and a desktop browser: that one is provisional. And it is a small project, with
-no asset store and no years of answered questions.
+beyond Windows and a desktop browser (phones among them): that one is provisional. And it is a
+small project, with no asset store and no years of answered questions.
 
 ## Ordinary C++ and standard tools
 
@@ -168,9 +168,9 @@ them. What Labrador adds is the structure above the drawing calls:
 - **resources** named in a manifest and resolved to handles once, at load;
 - **views and cameras** for split-screen, and a **widget set** with controller navigation.
 
-**The cost**, measured against them: more structure to learn and accept, Windows and, for all six
-of its samples, the browser, where they run nearly everywhere, a far smaller community, and C++ only, with no bindings for other
-languages.
+**The cost**, measured against them: more structure to learn and accept, two platforms where
+they reach many (Windows, and a desktop browser through WebGL2), a far smaller community, and
+C++ only, with no bindings for other languages.
 
 ## The engineering behind it
 
@@ -191,9 +191,17 @@ was measured.
 
 ## Platform support
 
-Labrador builds and runs on **Windows**, with Visual Studio 2022 or newer. Its OpenGL renderer
-also reaches the **browser** as WebGL2, through Emscripten, and all six samples run
-there today. The Vulkan renderer
-exists because Vulkan is the graphics interface that reaches Android, Linux and, through
-MoltenVK, Apple's platforms, but none of those are supported or built today. Treat Vulkan as the
-route to them, not as support for them.
+Labrador runs on **Windows** and in a **desktop browser**. It builds on Windows, with Visual
+Studio 2022 or newer, and its OpenGL renderer reaches the browser as WebGL2, through Emscripten.
+All six samples run there today. Every change loads each sample's page in headless Chrome and
+quits it the sample's own way, and LineSweeper has also been checked in Firefox. Safari has not
+yet been checked.
+
+Phones are a planned phase, not a supported platform. The browser build has touch controls and
+a layout for a phone held upright, but they have been played only under Chrome's touch
+emulation, never on a real phone, so the hosted demo shows a phone a poster rather than the game until a real
+iPhone and a real Android phone have played it.
+
+The Vulkan renderer exists because Vulkan is the graphics interface that reaches Android, Linux
+and, through MoltenVK, Apple's platforms, but none of those are supported or built today. Treat
+Vulkan as the route to them, not as support for them.
