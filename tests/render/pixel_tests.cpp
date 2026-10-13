@@ -320,9 +320,9 @@ namespace
 			// pixels, so the advance cases below can be exact rather than
 			// approximate.
 			load_font_asset(this->renderer_, this->resources_, "./content/",
-				"courier_new_bold_16");
+				"jetbrains_mono_bold_16");
 			this->font = this->resources_.resolve_sprite_font(
-				"courier_new_bold_16");
+				"jetbrains_mono_bold_16");
 
 			// AND ITS ATLAS IS THEN RE-LOADED DECODED, by the engine's own
 			// decoder (block_decode.h), under the name resource_factory.h gives
@@ -342,9 +342,9 @@ namespace
 			// case below, with blocks whose texels are endpoints and so decode
 			// exactly everywhere.
 			add_texture_asset(this->renderer_, this->resources_,
-				"font:courier_new_bold_16",
+				"font:jetbrains_mono_bold_16",
 				decode_block_compressed(read_sprite_font_file(
-					"./content/courier_new_bold_16.spritefont").atlas));
+					"./content/jetbrains_mono_bold_16.spritefont").atlas));
 		}
 
 		Harness(const Harness&) = delete;
@@ -1191,8 +1191,11 @@ TEST_CASE("CONTRACT: the position is the top left of the text, and y runs down")
 
 		// And it is not merely inside it: the left edge of the first glyph is
 		// the left edge of the box plus that glyph's own bearing, which is
-		// small. A backend that centred the text in the box, or measured from
-		// the baseline, would still pass the containment above.
+		// small: its ink starts 4 pixels across and 5 down in this atlas,
+		// so the second check passes by a single row, and a font with a taller
+		// top bearing needs that bound looked at again. A backend that
+		// centred the text in the box, or measured from the baseline, would
+		// still pass the containment above.
 		CHECK(ink.left() < 12 + 6);
 		CHECK(ink.top() < 8 + 6);
 	}
@@ -1328,7 +1331,7 @@ TEST_CASE("CONTRACT: a newline returns to the left margin and drops a line")
 	CHECK(two_lines.right() == one_line.right());
 	CHECK(two_lines.top() == one_line.top());
 
-	// THE LINE SPACING IS THE FONT'S, NOT THE GLYPH'S. Courier at this size
+	// THE LINE SPACING IS THE FONT'S, NOT THE GLYPH'S. The font at this size
 	// leaves eleven blank rows between two capitals, so a backend that stepped
 	// by the glyph height would set the two lines touching and nothing would
 	// throw - it would just look wrong in a way that reads as a font choice.
@@ -1396,7 +1399,10 @@ TEST_CASE("CONTRACT: text scales about the origin, in unscaled text pixels")
 {
 	Harness harness;
 
-	const Vector2F position(24.0f, 20.0f);
+	// High enough that the doubled glyph ends clear of the bottom of the
+	// frame. A box that reached the last row could not tell a glyph that is
+	// twice the height from one that is taller still and clipped to it.
+	const Vector2F position(24.0f, 12.0f);
 
 	DrawList plain_list = harness.begin();
 	plain_list.draw_text(harness.font, L"A", position, Colour::white, 1.0f,

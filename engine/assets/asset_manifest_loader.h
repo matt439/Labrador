@@ -14,7 +14,7 @@ namespace labrador
 	//             {
 	//                 "kind": "font",
 	//                 "directory": "./fonts/",
-	//                 "names": [ "courier_new_bold_16" ]
+	//                 "names": [ "jetbrains_mono_bold_16" ]
 	//             }
 	//         ]
 	//     }

@@ -21,7 +21,7 @@ namespace linesweeper
 	{
 		// Spelt once, resolved to a handle once, never looked up per frame
 		// (PHILOSOPHY T7, T8).
-		const std::string font_name = "courier_new_bold_16";
+		const std::string font_name = "jetbrains_mono_bold_16";
 
 		// The one white texel every block, panel and spark on this screen is
 		// drawn from. Spelt here as well as in board_view.cpp for the reason

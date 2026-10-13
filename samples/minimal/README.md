@@ -28,6 +28,15 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-13.** The font is `content/fonts/jetbrains_mono_bold_16.spritefont`,
+  JetBrains Mono Bold under the SIL Open Font License 1.1 with that licence as
+  `OFL.txt` beside it, in place of `courier_new_bold_16.spritefont`, whose
+  redistribution terms are Monotype's and were never settled here. A copy
+  still carrying the Courier atlas swaps it as *Using another font* below
+  says, with `jetbrains_mono_bold_16` as the new name: `content/manifest.json`,
+  the `font_name` constant in both states, the browser build's path in
+  `CMakeLists.txt`, and `OFL.txt` copied with the atlas. The new glyphs are
+  taller, so text placed near the edge of the frame is worth looking at again.
 - **2026-10-11, `eaa9b3f`.** A browser build: `main_web.cpp`, `web/shell.html`
   and the `EMSCRIPTEN` branch at the top of `CMakeLists.txt`. `HelloState`
   draws a marker at every touch point. CHANGES.md's `eaa9b3f` entry is the
@@ -58,32 +67,59 @@ Labrador adds a line here in the commit that makes such a change.
 
 ## The font, and its licence
 
-`content/fonts/courier_new_bold_16.spritefont` is the template's only font. It
-is a glyph atlas rendered with Microsoft's `MakeSpriteFont` from Courier New, a
-Windows system font whose copyright is Monotype's. Its redistribution terms are
-not Labrador's to grant
-([NOTICE](https://github.com/matt439/Labrador/blob/master/NOTICE)), and this
-repository does not settle them: the licence description inside the font file permits using it "to
-create, display, and print content" as the terms of the Microsoft product it
-came with allow, and prohibits any other use, and nothing
-here records whether an atlas shipped inside a game is such content. **Whether
-your game may ship it is yours to check.** The collision, components,
-local_multiplayer and audio samples embed the same atlas, and so does the hosted
-LineSweeper demo. Replacing it with an openly licensed font is an open story,
-[OCA-75](https://github.com/matt439/Labrador/blob/master/docs/product/STORIES.md#oca-75).
+`content/fonts/jetbrains_mono_bold_16.spritefont` is the template's only font:
+an atlas of the 95 printable ASCII characters, rendered at 16 points from
+JetBrains Mono Bold. JetBrains Mono is licensed under the SIL Open Font
+License 1.1, and `content/fonts/OFL.txt`, beside the atlas, is that licence
+with the font's copyright line at its top. Your game may ship the atlas, sold
+or not, provided `OFL.txt` goes with every copy of it and the font is not sold
+by itself. The atlas stays under the OFL rather than your game's licence, and
+[NOTICE](https://github.com/matt439/Labrador/blob/master/NOTICE) records it with the repository's other third-party
+terms. `CMakeLists.txt` copies the whole `content/fonts` folder beside the
+executable, and the browser build embeds it, so the licence travels with the
+atlas with nothing more to do. The collision, components, local_multiplayer
+and audio samples load the atlas from here, and LineSweeper carries a copy.
 
-To replace it before you ship, install a font you may redistribute in this form,
-such as one under the SIL Open Font License, and build an atlas from it with
-[MakeSpriteFont](https://github.com/microsoft/DirectXTK/wiki/MakeSpriteFont),
+### How the atlas was built
+
+| | |
+|---|---|
+| Font | JetBrains Mono 2.304, `fonts/ttf/JetBrainsMono-Bold.ttf` from `JetBrainsMono-2.304.zip` in [its release](https://github.com/JetBrains/JetBrainsMono/releases/tag/v2.304) |
+| `JetBrainsMono-2.304.zip` | sha256 `6f6376c6ed2960ea8a963cd7387ec9d76e3f629125bc33d1fdcd7eb7012f7bbf` |
+| `JetBrainsMono-Bold.ttf` | 277,828 bytes, sha256 `5590990c82e097397517f275f430af4546e1c45cff408bde4255dad142479dcb` |
+| `OFL.txt`, from the same zip | 4,399 bytes, sha256 `30f0c136e3c88e422d0791acd97238870f9054a9729bc34cf2ff0d4ed8cac4ad` |
+| Settings | `MakeSpriteFont`'s, from the DirectX Tool Kit `may2026` release, below |
+| The atlas | 24,584 bytes, sha256 `4eed8bab40cd7c21856e9da166a42a956a63910c57051145571f13d25e7b95b1`: 95 glyphs, a line spacing of 28.16 pixels, a 128x168 BC2 texture, and every glyph steps the pen 13 pixels |
+
+With `JetBrainsMono-Bold.ttf` installed, from this folder:
+
+```powershell
+MakeSpriteFont "JetBrains Mono" content\fonts\jetbrains_mono_bold_16.spritefont /FontSize:16 /FontStyle:Bold
+```
+
+The bytes in this folder were written by `MakeSpriteFont` built from its
+`may2026` source with one line changed: the font is loaded from
+`JetBrainsMono-Bold.ttf` through a GDI+ private font collection rather than
+found by name among the installed fonts, so nothing was installed to build it.
+The same build, given Courier New Bold both ways, by name and from its file,
+writes the Courier atlas this template carried before byte for byte, so the
+command above, with the font installed, writes the checksum in the table.
+
+### Using another font
+
+Install a font you may redistribute in this form and build an atlas from it
+with [MakeSpriteFont](https://github.com/microsoft/DirectXTK/wiki/MakeSpriteFont),
 from this folder:
 
 ```powershell
 MakeSpriteFont "Your Font" content\fonts\your_font_16.spritefont /FontSize:16
 ```
 
-Then change `courier_new_bold_16` to the new name in `content/manifest.json`,
+Then change `jetbrains_mono_bold_16` to the new name in `content/manifest.json`,
 in the `font_name` constant in `states/hello_state.cpp` and
 `states/confirm_state.cpp`, and in the `.spritefont`
-path the browser build lists in `CMakeLists.txt`, and delete the old atlas. The
+path the browser build lists in `CMakeLists.txt`. Delete the old atlas and its
+`OFL.txt`, and put the new font's licence beside its atlas if the licence asks
+to travel with it. The
 [sprites and text guide](https://labradorengine.com/docs/guides/sprites-and-text/#making-textures-and-fonts)
 says where to get the tool and what its output holds.

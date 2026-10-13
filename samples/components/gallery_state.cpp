@@ -20,7 +20,7 @@ namespace components
 {
 	namespace
 	{
-		const std::string font_name = "courier_new_bold_16";
+		const std::string font_name = "jetbrains_mono_bold_16";
 
 		// Manual layout, as PHILOSOPHY (UI) asks: a column of labels at one
 		// x, the values at another, one row every fifty units.

@@ -479,7 +479,8 @@ as written here: there is no overlay, and `DeviceNotify` hears the loss only
 once the context is back; §9.)*
 
 **Assets.** Recommend **`--embed-file`** for LineSweeper. Its content is
-21,512 bytes of font and 132 bytes of texture. Embedding it in the `.wasm`
+24,584 bytes of font, the 4,399 bytes of its licence and 132 bytes of
+texture. Embedding it in the `.wasm`
 removes one request and one file. Switch to **`--preload-file`**, which adds a
 separate `.data` file, once a sample's content passes about 1 MB. Both
 mount the content at `/`, so `load_manifest("./manifest.json")` resolves
@@ -577,7 +578,7 @@ artifact. It adds no rasteriser and needs no GPU.
 | Players | 1 | 2, one per pane | 1 | 2+ |
 | Audio | none | none | — | yes |
 | Fans out | no | 2 views | — | yes |
-| Content | 21.6 KB, BC2 + BGRA | small | small | large, private |
+| Content | 29.1 KB, BC2 + BGRA + the font's licence | small | small | large, private |
 | Is a game | yes | a camera demo | a template | yes |
 
 What LineSweeper needs beyond the platform layer is small:
@@ -1585,7 +1586,7 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
     are the only checks of the two windows' translation code. Neither was
     on hand when this was written.
 - **Textures, which were cheap for this sample, and are done.** The atlas
-  is 21,512 bytes of BC2, and the choice was to ship it uncompressed or to
+  is 24,584 bytes of BC2, and the choice was to ship it uncompressed or to
   decode BC1-BC3 to RGBA on the CPU at load when S3TC is missing. The second
   is built (`engine/render/block_decode.h`): engine code, tested headlessly,
   serving every no-S3TC device and every file rather than one atlas, which

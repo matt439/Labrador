@@ -57,12 +57,12 @@ if(EMSCRIPTEN)
 
     # The content is embedded in the module rather than fetched beside it,
     # mounted at the root of its file system, which is where a relative
-    # manifest path resolves in a browser. At 21.6 KB a second request would
+    # manifest path resolves in a browser. At 29 KB a second request would
     # cost more than the bytes; docs/port/web.md puts the point at which that
     # turns round at about a megabyte.
     set(linesweeper_content_files
         "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
-        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/courier_new_bold_16.spritefont"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/jetbrains_mono_bold_16.spritefont"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/white.dds"
     )
 
@@ -139,6 +139,7 @@ if(EMSCRIPTEN)
             --notice "${CMAKE_CURRENT_SOURCE_DIR}/web/NOTICE.txt"
             --licence "Labrador=${PROJECT_SOURCE_DIR}/LICENSE"
             --licence "RapidJSON=${PROJECT_SOURCE_DIR}/external/rapidjson/license.txt"
+            --licence "JetBrains Mono=${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/OFL.txt"
             --licence "Emscripten=${EMSCRIPTEN_ROOT_PATH}/LICENSE"
             --licence "libc++=${emscripten_libraries}/libcxx/LICENSE.TXT"
             --licence "libc++abi=${emscripten_libraries}/libcxxabi/LICENSE.TXT"

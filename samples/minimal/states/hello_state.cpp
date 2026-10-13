@@ -21,7 +21,7 @@ namespace
 	// Asset names, matching content/manifest.json. They are spelt once and
 	// resolved to handles once (PHILOSOPHY T7, T8) - nothing below looks a
 	// resource up by name per frame.
-	const std::string font_name = "courier_new_bold_16";
+	const std::string font_name = "jetbrains_mono_bold_16";
 
 	constexpr float move_speed = 400.0f;
 

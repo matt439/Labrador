@@ -21,7 +21,7 @@ namespace audio_sample
 		SoundBank* bank = this->app_->audio_resources()->sound_bank("tones");
 		this->board_ = std::make_unique<SoundBoard>(bank);
 		RenderResources* resources = this->app_->render_resources();
-		const std::string font = "courier_new_bold_16";
+		const std::string font = "jetbrains_mono_bold_16";
 		this->scene_.add(std::make_unique<Label>(L"AUDIO / SOUND BANK",
 			font, Vector2F(48.0f, 56.0f), resources, Colour::white, 2.0f));
 		this->scene_.add(std::make_unique<Label>(

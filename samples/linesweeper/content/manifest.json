@@ -4,7 +4,7 @@
             "kind": "font",
             "directory": "./fonts/",
             "names": [
-                "courier_new_bold_16"
+                "jetbrains_mono_bold_16"
             ]
         },
         {

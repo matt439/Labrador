@@ -209,7 +209,7 @@ def verify_benchmark_payload(manifest: dict[str, Any], backends: list[dict[str, 
         directory = executable.parent
         required.update({
             executable.as_posix(),
-            (directory / "fonts" / "courier_new_bold_16.spritefont").as_posix(),
+            (directory / "fonts" / "jetbrains_mono_bold_16.spritefont").as_posix(),
             (directory / "textures" / "white.dds").as_posix(),
         })
     missing = sorted(required - set(files))

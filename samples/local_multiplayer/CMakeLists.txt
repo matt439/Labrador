@@ -31,7 +31,7 @@ if(EMSCRIPTEN)
     set_property(TARGET LocalMultiplayerSample APPEND PROPERTY LINK_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/courier_new_bold_16.spritefont"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
         "${CMAKE_CURRENT_SOURCE_DIR}/../linesweeper/content/textures/white.dds"
     )
 elseif(WIN32)

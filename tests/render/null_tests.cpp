@@ -81,9 +81,9 @@ namespace
 			this->quad = this->resources_.resolve_texture("quad");
 
 			load_font_asset(this->renderer_, this->resources_, "./content/",
-				"courier_new_bold_16");
+				"jetbrains_mono_bold_16");
 			this->font = this->resources_.resolve_sprite_font(
-				"courier_new_bold_16");
+				"jetbrains_mono_bold_16");
 		}
 
 		DrawList begin(int views = 1)
@@ -221,9 +221,20 @@ TEST_CASE("one glyph is one sprite, and the atlas is the texture")
 		1.0f, 0.0f, Vector2F::ZERO, 0.0f);
 	const std::vector<RecordedSprite> with_space = harness.end();
 
+	// One cell further than the B of "AB", and a cell is what measure_text
+	// says a second character adds - not the distance between the two quads
+	// above, which is a cell plus the difference between A's bearing and B's,
+	// and is a cell only in a font where those agree.
+	const float cell =
+		harness.resources().measure_text(harness.font, L"AA").x -
+		harness.resources().measure_text(harness.font, L"A").x;
+	// And the cell is the atlas's, not only measure_text's: every glyph in
+	// this one steps the pen 13 pixels, so a measure and a pen walk that
+	// drifted together would still be caught here.
+	CHECK(cell == doctest::Approx(13.0f));
 	REQUIRE(with_space.size() == 2);
 	CHECK(with_space[1].corners[0].position.x ==
-		doctest::Approx(drawn[1].corners[0].position.x + advance));
+		doctest::Approx(drawn[1].corners[0].position.x + cell));
 }
 
 TEST_CASE("the recording is in view order, then in call order")

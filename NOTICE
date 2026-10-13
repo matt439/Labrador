@@ -6,7 +6,8 @@ what this file records as not Labrador's to license.
 The sections on content that is deliberately not distributed — the audio and
 the compiled fonts — went with `game/` to the paint-shooter's own repository,
 because that is where the content they describe lives. This repository ships
-no content beyond `samples/`.
+no content beyond `samples/` and `tests/render/content/`, which holds a copy of
+the samples' font atlas for the render tests to draw.
 
 ## Code carried in this repository
 
@@ -153,8 +154,25 @@ licence; the audio sample's README records the authoring tool and commands.
 
 ### Fonts
 
-`samples/minimal/content/fonts/courier_new_bold_16.spritefont` is a compiled
-glyph atlas built from a system font (Courier New) with Microsoft's
-`MakeSpriteFont`. The atlas is redistributed here on the same footing as any
-other asset built from a licensed system font; the font itself is not included
-and is not Labrador's to license. The other samples reuse this atlas.
+#### JetBrains Mono (SIL Open Font License 1.1)
+
+`jetbrains_mono_bold_16.spritefont` is a glyph atlas rendered from JetBrains
+Mono Bold, version 2.304. There are three copies of it, byte for byte the same,
+each with the font's licence beside it as `OFL.txt`:
+
+- `samples/minimal/content/fonts/`, which the collision, components,
+  local_multiplayer and audio samples also load, and which a game copying the
+  template takes with it
+- `samples/linesweeper/content/fonts/`
+- `tests/render/content/`
+
+Copyright 2020 The JetBrains Mono Project Authors
+(https://github.com/JetBrains/JetBrainsMono). Licensed under the SIL Open Font
+License, Version 1.1, whose full text is each `OFL.txt`. The atlas is a
+Modified Version of the font in that licence's terms, so the OFL covers it
+rather than Labrador's MIT licence. The licence lets it be used, embedded and
+redistributed, inside a game that is sold as much as in one that is not, on
+two conditions that matter here: every copy carries the copyright notice and
+the licence, and the font is not sold by itself. It names no Reserved Font
+Name. The font file itself is not in this repository; `samples/minimal/README.md`
+says where it came from and how the atlas was built.

@@ -31,7 +31,7 @@
 //
 //   - x_advance is an ADJUSTMENT to the advance, not the advance. The pen
 //     moves by the glyph's width plus x_advance, so a negative value - which
-//     most glyphs in a Courier atlas have - is normal and not corruption.
+//     most glyphs in the template's atlas have - is normal and not corruption.
 //   - x_offset is a left bearing, and it DOES accumulate: for_each_glyph adds
 //     it to the running pen and then advances from there, so glyph N's bearing
 //     is inside glyph N+1's position. The walk and measure() agree because

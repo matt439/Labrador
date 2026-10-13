@@ -26,7 +26,7 @@ namespace linesweeper
 		// content is a font and a JSON file" nearly true and well clear of the
 		// megabytes that would be the signal to move the samples out.
 		const std::string block_texture_name = "white";
-		const std::string font_name = "courier_new_bold_16";
+		const std::string font_name = "jetbrains_mono_bold_16";
 
 		// The layout, in board space: the 1280x720 main.cpp asks for, which the
 		// camera fits to whatever buffer there is (arrangement.h).

@@ -335,4 +335,7 @@ moving a pin.
 
 MIT — see [LICENSE](LICENSE). [NOTICE](NOTICE) records the third-party code
 carried here: Microsoft's `DeviceResources` and `StepTimer`, Christer Ericson's
-collision routines, and rapidjson.
+collision routines, and rapidjson. It also records the one piece of content
+that MIT does not cover: the samples' font atlas, rendered from JetBrains Mono
+and licensed under the SIL Open Font License 1.1, whose text travels beside
+every copy of it as `OFL.txt`.

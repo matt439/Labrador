@@ -28,7 +28,10 @@ Linked into linesweeper.wasm and linesweeper.js:
 
 Embedded in linesweeper.wasm as content:
 
-- A compiled glyph atlas built from the Courier New system font with
-  Microsoft's MakeSpriteFont. The font itself is not included.
+- A glyph atlas rendered from JetBrains Mono Bold, Copyright 2020 The
+  JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono),
+  licensed under the SIL Open Font License 1.1. The atlas is a Modified
+  Version of the font under that licence, and the licence covers it rather
+  than Labrador's MIT licence.
 
 The full licence texts follow.

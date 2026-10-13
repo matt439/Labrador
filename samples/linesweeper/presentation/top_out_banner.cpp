@@ -18,7 +18,7 @@ namespace linesweeper
 		// name is spelt where the object that resolves it lives, which is the
 		// pattern board_view.cpp and play_state.cpp already follow.
 		const std::string block_texture_name = "white";
-		const std::string font_name = "courier_new_bold_16";
+		const std::string font_name = "jetbrains_mono_bold_16";
 
 		constexpr Colour banner_colour(240, 96, 96);
 

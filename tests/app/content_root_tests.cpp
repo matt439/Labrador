@@ -158,7 +158,7 @@ TEST_CASE("a real manifest read from elsewhere names the folders beside itself")
 	{
 		std::ofstream out(file);
 		out << R"({"assets":[{"kind":"font","directory":"./fonts/",)"
-			R"("names":["courier"]}]})";
+			R"("names":["font"]}]})";
 	}
 
 	// An absolute path, so resolving it under the executable leaves it
