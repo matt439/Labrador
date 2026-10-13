@@ -405,3 +405,99 @@ jobs:
           cmake --preset wasm-release -B out/build/wasm-release-null -DLABRADOR_RENDER_BACKEND=null -DLABRADOR_AUDIO_BACKEND=null || exit /b 1
           cmake --build out/build/wasm-release-null || exit /b 1
           ctest --test-dir out/build/wasm-release-null --output-on-failure
+
+  # THE PROJECT GET STARTED TEACHES, BUILT AGAINST THIS CHANGE'S ENGINE. Every
+  # job above builds Labrador as the top-level project, where CMAKE_SOURCE_DIR
+  # is the engine's root, the tests' packages are in the manifest, and the
+  # samples include from the engine's root. A consumer has none of that, so a
+  # path spelt from CMAKE_SOURCE_DIR inside engine/ that resolves somewhere
+  # else in a consumer, or a package the engine starts to need that the
+  # derived vcpkg.json lacks, passes every job above and fails here. A swap
+  # another include root happens to cover is not caught: LabradorEngine's own
+  # include root and MattMath's are the same directory, so spelling the first
+  # from CMAKE_SOURCE_DIR still builds as a consumer.
+  #
+  # tools/consumer_check/assemble.py does the page's steps 3 to 6 into the
+  # page's own C:\dev\mygame, with step 2's engine copied from this checkout
+  # rather than added as a submodule - a pull request's own tree, not a clone
+  # of master - and its README is how a person runs the same thing. The
+  # folder is short on purpose: the compiler stops at 260 characters, and the
+  # object files of a build sit far below the project's root, which is why
+  # Get Started's prerequisites page asks for a short folder. The steps after
+  # it are the page's step 7 without running the game, which the minimal
+  # sample has no way to quit by itself yet, and then the PROJECT_IS_TOP_LEVEL
+  # guard in the root CMakeLists.txt: the engine's tests are not in a
+  # consumer's ctest.
+  #
+  # IT FETCHES NOTHING FROM A CLIENT. The engine cannot reach a repository
+  # that consumes it and should not learn how (docs/design/PHILOSOPHY.md,
+  # The public face), so the consumer here is the public walkthrough, from
+  # this tree, and what it downloads besides this repository is vcpkg's.
+  consumer:
+    name: consumer
+    runs-on: windows-latest
+    # The windows jobs' bound, for their reason: this job restores their vcpkg
+    # cache and never saves one, so after a vcpkg.json change or an evicted
+    # cache it builds the packages from source as they do.
+    timeout-minutes: 90
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Point at the runner's vcpkg
+        shell: pwsh
+        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+
+      # THE WINDOWS JOBS' CACHE, RESTORED AND NEVER SAVED. The consumer's
+      # packages are the engine's less the two only its tests use, built for
+      # the same triplet at the same baseline, so their binaries are already
+      # in that cache. Saving under the same key from here could win the race
+      # with those jobs and leave the key holding a set without doctest and
+      # lodepng; on a miss this job builds from source and leaves the saving
+      # to them.
+      - name: Restore the windows jobs' vcpkg binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Find vcvars64
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
+
+      - name: Assemble the Get Started project
+        run: python tools\consumer_check\assemble.py C:\dev\mygame
+
+      - name: Configure
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          cmake --preset x64-debug
+
+      - name: Build
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          cmake --build --preset x64-debug
+
+      # The consumer's root never calls enable_testing(), so ctest at the top
+      # of its build tree lists no tests whatever the engine does, and the
+      # count alone cannot fail. What the guard keeps out are the engine's own
+      # enable_testing() and add_test() calls, which would write a
+      # CTestTestfile.cmake below external\labrador in that tree, so the step
+      # also fails on a CTestTestfile.cmake anywhere in it. The guard's other
+      # half, the engine's samples and tests left out, shows as the configure
+      # step failing, because they ask for doctest and the consumer's manifest
+      # does not name it.
+      - name: Check the engine's tests are not the project's
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          ctest -N --test-dir out\build\x64-debug | findstr /B /C:"Total Tests: 0" || exit /b 1
+          dir /s /b out\build\x64-debug\CTestTestfile.cmake 2>nul && (echo A CTestTestfile.cmake is in the build tree: the engine registered tests. & exit /b 1)
+          exit /b 0

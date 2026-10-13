@@ -9,8 +9,7 @@ An index of open work, one row per item; each row points to the document that ow
 **Aim:** the backlog's Now horizon, *Trust and clocks*: "the public face and the tree's records stop misleading readers and agents, the live demo is checked and one click away, Get Started and the template work as written, and every item whose delay compounds has landed". [BACKLOG.md, Now](docs/product/BACKLOG.md#now) owns its *Done when* list and its batches, N1 to N21; this block names the ones still open.
 
 1. **`OCA-03` (N4): link the live demo**, after the owner has redeployed it with the calm top-out (`WEB#9`) and its live checks have been run again (`WEB#7`).
-2. **`OCA-11` (N14): the consumer CI job**, then the owner adds its context to branch protection.
-3. **`OCA-69` + `OCA-67` (N20): PHILOSOPHY amendment B and the first 0.x tag.** The last Now batch and the last PHILOSOPHY PR in Now; it needs the owner's wording.
+2. **`OCA-69` + `OCA-67` (N20): PHILOSOPHY amendment B and the first 0.x tag.** The last Now batch and the last PHILOSOPHY PR in Now; it needs the owner's wording.
 
 **Dated, whatever the order above:**
 - The calm top-out has merged: the owner redeploys the hosted demo (`WEB#9`), then `WEB#7` runs its live checks again.
@@ -28,7 +27,6 @@ An index of open work, one row per item; each row points to the document that ow
 |---|---|---|---|---|
 | `OCA-03` | OPEN | must | S | Link the live demo from the site's home and examples pages, the README's LineSweeper section and the top of `samples/linesweeper/README.md`, without promising touch play. After `WEB#9` and `WEB#7`. |
 | `OCA-06` | DECISION | should | XS | The owner sets the GitHub About description (not citing the private game), homepage `https://labradorengine.com/` and topics, and decides whether to enable Discussions; the README half has landed. |
-| `OCA-11` | OPEN | must | M | A CI job building the Get Started project against the PR's own engine tree from a short path, shown failing once on a throwaway break; then the owner adds its context to branch protection and CONTRIBUTING.md. |
 | `OCA-69` | DECISION | must | S | PHILOSOPHY amendment B, in the owner's words: a deletion rule for callers nobody can count (`OCA-69`) and a checkable settle criterion (`OCA-67`); then the first 0.x tag on a green commit, `vcpkg.json` matching, notes linking CHANGES.md. |
 | `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once. `SM-36` waits on it. |
 

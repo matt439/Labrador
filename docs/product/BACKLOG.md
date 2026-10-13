@@ -15,7 +15,6 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Word the settle criterion for 'the API settles' (PHILOSOPHY.md:739-741) and approve cutting the first 0.x tag | OCA-67, PI-05, PI-14 |
 | Word the deletion rule for uncountable outside callers (PHILOSOPHY.md:742-758) | OCA-69, OCA-67 |
 | Set the GitHub About description, homepage and topics, and decide whether to turn on Discussions | OCA-06 |
-| Add the consumer job's context to branch protection and to CONTRIBUTING.md's list when OCA-11 lands | OCA-11 |
 | Record the accessibility position: what the engine provides, whether the hosted demo has an aim, and who owns the colour-blind palette | OCA-08, BDP-24, BDP-21 |
 | Set ColourWars' pin cadence and make or approve its gameplay check after the ordinary bump | SM-36, PI-14 |
 | Decide which p99 column the pipeline-depth claims are judged by, and whether it lands in PHILOSOPHY or the ratchet document | SM-03, SM-01, SM-07, SM-02 |
@@ -88,7 +87,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[OCA-72](STORIES.md#oca-72)** Should · S · The Outside C++ Adopter: Ask a question or request an API change through a stated route
 - [x] **[OCA-68](STORIES.md#oca-68)** Must · L · The Outside C++ Adopter: Read what changed that affects my game, from the pin I am on — after SM-20
 - [x] **[SM-21](STORIES.md#sm-21)** Must · S · The Sole Owner-Maintainer · **Owner**: Required checks that survive a workflow edit
-- [ ] **[OCA-11](STORIES.md#oca-11)** Must · M · The Outside C++ Adopter · **Owner**: The project shape Get Started teaches is built against every engine change — after SM-21
+- [x] **[OCA-11](STORIES.md#oca-11)** Must · M · The Outside C++ Adopter · **Owner**: The project shape Get Started teaches is built against every engine change — after SM-21
 - [x] **[OCA-09](STORIES.md#oca-09)** Must · S · The Outside C++ Adopter: Get Started tells me the truth about long paths
 - [x] **[OCA-17](STORIES.md#oca-17)** Should · XS · The Outside C++ Adopter: Prerequisite and naming instructions that work as written
 - [x] **[OCA-14](STORIES.md#oca-14)** Should · XS · The Outside C++ Adopter: The 'dozen lines of CMake' claim matches the file and says what shipping adds
@@ -543,7 +542,7 @@ Not in any horizon: each waits on something outside the backlog.
 ## Risks to the plan
 
 - Now holds 35 stories in 20 batches. It fits a few weeks only if each batch is one PR; split further and the branch, PR, green-CI, rebase-merge overhead crowds out the compounding items (OCA-68, OCA-11, OCA-73, SM-21). OCA-68's backfill (L) and OCA-11's consumer job (M) are the schedule risks inside Now.
-- Owner review is the binding constraint, not agent time: Now still asks the owner for amendment B's wording and two repository settings (the About fields, and the consumer job's required context). If amendment B stalls, the first tag stalls with it, and nothing in Next may promise a tag that does not exist.
+- Owner review is the binding constraint, not agent time: Now still asks the owner for amendment B's wording and one repository setting (the About fields). If amendment B stalls, the first tag stalls with it, and nothing in Next may promise a tag that does not exist.
 - PHILOSOPHY.md is touched by six PRs across three horizons. They are serialised A to F and each rebases on the last; a parallel branch that edits PHILOSOPHY outside that order will conflict and should be refused at review.
 - The primary persona is unevidenced: no issues, analytics or independent adopter. Next spends real capacity on a stranger's ship path. Mitigation: most of Now is truth fixes that also serve the agents who read the same documents, and PI-09/PI-10 are the only stories backed by recorded demand.
 - Doc edits can fail the website build by design: quoted lines and public header comments are read at build time. Header-contract stories (OCA-55, OCA-59, OCA-56) and the brief trim (SM-43) must fix any quoting page in the same commit.
