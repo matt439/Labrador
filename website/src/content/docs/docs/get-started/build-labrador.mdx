@@ -72,9 +72,17 @@ was not built is a link error, not a crash on the first frame.
 ## If something fails
 
 <Aside type="caution" title="Filename too long">
-The clone was made in a folder whose path is too long. Move to a shorter folder, or run
-`git config --global core.longpaths true`, delete the partial clone and clone again. See
+The clone was made in a folder whose path is too long. Delete the partial clone and clone again
+into a shorter folder. `git config --global core.longpaths true` would let the clone finish, but
+the build would then fail in the same folder. See
 [Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder).
+</Aside>
+
+<Aside type="caution" title={"fatal error C1083: Cannot open compiler generated file: '': Invalid argument"}>
+The `Labrador` folder's path is too long for the compiler, and configure will have warned about
+`CMAKE_OBJECT_PATH_MAX` first. Long paths enabled in Windows and in Git do not help the compiler.
+Clone into a folder whose path is under 100 characters, or give your folder a drive letter as in
+[Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder), and build there.
 </Aside>
 
 <Aside type="caution" title="cmake, cl or fxc is not recognised">

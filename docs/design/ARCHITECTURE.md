@@ -565,7 +565,10 @@ For readers arriving from Unreal, the translation:
 
 A project is an ordinary C++ application that links two static
 libraries. There is no project file format, no code generation, no
-module manifest — the `CMakeLists.txt` is a dozen honest lines. Starting
+module manifest — the `CMakeLists.txt` names the sources, links the
+engine and the shared settings, and puts the content beside the program,
+which is all that building and running the game needs. A release package
+for players adds install rules on top. Starting
 a game is copying `samples/minimal/`, renaming the target, and owning
 everything inside — including the starter code the
 sample exists to hand over (see Structural types in PHILOSOPHY.md).

@@ -1,8 +1,10 @@
 # --- MinimalSample — the minimal sample, and the new-project template ---
 #
-# The whole build file for a game on this engine. A dozen honest lines: name
-# the sources, link the engine and the shared settings, mirror the content -
-# and a dozen more for the same game in a browser.
+# The whole build file for a game on this engine, for building it and running
+# it during development: name the sources, link the engine and the shared
+# settings, mirror the content - and a branch for the same game in a browser.
+# A release a player installs needs install rules as well, which this file
+# does not have.
 # There is no project file format and no code generation (ARCHITECTURE.md,
 # A game project).
 #

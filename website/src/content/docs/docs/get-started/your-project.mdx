@@ -15,7 +15,9 @@ Starting a game on Labrador means copying the minimal sample and owning everythi
 Your project is its own repository. Labrador sits inside it as a Git submodule, pinned to the
 commit you chose, and is built as part of your build.
 
-This page calls the project `mygame`. Use your own name wherever that appears.
+This page calls the project `mygame`. Use your own name wherever that appears. The `name` in
+`vcpkg.json` takes only lowercase letters, digits and hyphens, so a project called `MyGame` is
+`mygame` there; vcpkg stops configure with `"MyGame" is not a valid package name` otherwise.
 
 When you have finished, the project looks like this:
 

@@ -19,8 +19,10 @@ says how a request is weighed. A security vulnerability is reported privately, a
 ### `Filename too long` while cloning
 
 Windows limits a path to 260 characters unless long paths are enabled, and a few files in the
-repository have long paths. Clone into a short folder such as `C:\dev`, or enable long paths with
-`git config --global core.longpaths true`, then delete the partial clone and clone again
+repository have long paths. Delete the partial clone and clone again into a short folder such as
+`C:\dev`. Enabling long paths with `git config --global core.longpaths true` lets the clone
+finish, but not the build that follows it, because the compiler keeps the 260-character limit
+even when long paths are enabled in Windows
 ([Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder)).
 
 ### `cmake`, `cl` or `fxc` is not recognised
@@ -38,6 +40,20 @@ Ninja and the compiler that follow are consequences of this one. Set `VCPKG_ROOT
 [Install the tools](/docs/get-started/prerequisites/), delete the half-configured build folder
 under `out\build\`, and configure again.
 
+### A warning that an object file path exceeds `CMAKE_OBJECT_PATH_MAX`
+
+Configure prints `CMake Warning ... The object file directory ... has N characters. The maximum
+full path to an object file is 250 characters (see CMAKE_OBJECT_PATH_MAX).` The checkout's folder
+is too deep, and the build that follows will stop with
+[C1083](#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument). Do not raise
+`CMAKE_OBJECT_PATH_MAX`: the limit that matters is the compiler's, which is 260 characters for
+the whole path. Move the checkout to a folder whose path is under 100 characters, or reach it
+through a drive letter as in
+[Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder), delete
+`out\build\`, and configure again. In a folder deeper still, configure can fail before this, with
+`vcpkg was unable to detect the active compiler's information`, for the same reason and with the
+same fix.
+
 ### A preset fails on `dxc` or the Vulkan SDK
 
 Only the Vulkan presets need the [Vulkan SDK](https://vulkan.lunarg.com/), with `VULKAN_SDK` set,
@@ -52,6 +68,16 @@ use the default `x64-debug` preset (Direct3D 11).
 Labrador builds with warnings as errors (`/W4 /WX`), and a game that links `labrador_settings`
 does too. That is deliberate: fix the warning rather than turning the setting off. If the warning
 is in engine code you have not changed, please report it with your compiler version.
+
+### `fatal error C1083: Cannot open compiler generated file: '': Invalid argument`
+
+The full path of an object file is longer than the compiler accepts, which is 260 characters
+whether or not long paths are enabled in Windows or in Git. The checkout's folder is too deep,
+and configure will have warned about
+[`CMAKE_OBJECT_PATH_MAX`](#a-warning-that-an-object-file-path-exceeds-cmake_object_path_max).
+Move the checkout to a folder whose path is under 100 characters, or reach it through a drive
+letter as in [Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder),
+then configure and build again from there.
 
 ### `labrador_settings` is defined twice
 
