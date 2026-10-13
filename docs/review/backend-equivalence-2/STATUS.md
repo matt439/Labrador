@@ -527,12 +527,24 @@ long enough that the sweep found it twice.
       of that 2026-08-19 either/or was ever done. See [LEDGER.md](LEDGER.md) M1–M8.
 - [ ] **What is the low tier's CPU half, and what is its p99?** `c8176ef` named
       the machine and said which half is measured. The GPU half is named; the CPU
-      half is neither named nor measured, and **no p99 exists anywhere in the
-      tree**. One of the five sites the survey counted was never amended and is now
-      in direct tension with PHILOSOPHY. `samples/linesweeper/README.md`
-      contradicts itself about the reference machine, 18 lines apart. This is a
-      measurement rather than a sweep and it is the one item here that needs
-      hardware. See [LEDGER.md](LEDGER.md) R1–R11.
+      half is neither named nor measured, and **no p99 has been taken on the
+      named configuration**. Nothing in the tree contradicts itself about it any
+      more: the one site of the survey's five that was never amended,
+      `engine/render/d3d12/device_resources.cpp`, now says what its floor
+      excludes against the named configuration, and the two passages
+      in `samples/linesweeper/README.md` agree that the machine is named and the
+      measurement is not. What is open is the measurement alone, and it is the
+      one item here that needs hardware. Taking it waits on five instruments,
+      each a story in [STORIES.md](../../product/STORIES.md):
+      [SM-01](../../product/STORIES.md#sm-01) puts the bench on the integrated
+      Radeon rather than the discrete GPU,
+      [SM-02](../../product/STORIES.md#sm-02) reproduces the four-core hold,
+      [SM-03](../../product/STORIES.md#sm-03) decides which p99 column the
+      pipeline-depth claims are judged by,
+      [SM-04](../../product/STORIES.md#sm-04) writes the local run procedure,
+      and [SM-05](../../product/STORIES.md#sm-05) applies the ratchet's lock
+      verdict to a local run. [SM-07](../../product/STORIES.md#sm-07) is the
+      measurement, and ticks this box. See [LEDGER.md](LEDGER.md) R1–R11.
 - [x] **B13 — does a minified draw sample level 0 or the chain?** TEST-GAP called
       it blocked on a decision in 2026-08-19 and proposed declaring level 0. The
       ledger records what the five backends answer now. Decide it, then the test.

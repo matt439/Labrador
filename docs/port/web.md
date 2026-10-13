@@ -839,8 +839,11 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 
 **Every milestone's code has landed, the demo is live, and what is left is
 hardware and browsers.** [web-to-be-tested.md](web-to-be-tested.md) is that list as
-boxes to tick. M1 and M2 are done. M3 is met in Chrome and Firefox and owes
-Safari and R5's pacing on real displays. M4's pad path has been driven by a
+boxes to tick. M1 and M2 are done. M3 is met in Chrome. In Firefox only
+LineSweeper's development page has been checked, in headless Firefox 157 -
+its drawing, its keys and its way out (M3, below) - and the other five
+samples' pages and `WebWindowTests` have not, which is that list's Firefox section. M3 owes Safari and R5's pacing on
+real displays. M4's pad path has been driven by a
 page script's fake pad and owes a physical one. M5 is done: the module, the
 bundle, its page and CI's upload are built here, and the owner has deployed
 the demo to <https://mattharding.dev/demo/linesweeper/>, where on 2026-10-13

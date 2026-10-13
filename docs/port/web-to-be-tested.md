@@ -10,8 +10,10 @@ and amend `web.md` §9 with the result.
 ## Needs a push (CI)
 
 - [x] The wasm job is green on the GitHub runner: the pixel pages on its
-      SwiftShader, `RenderPixelTestsWithoutS3tc`, `WebWindowTests` and the five
-      `*PageTests`. Run 38130728123, PR #1, every step passed.
+      SwiftShader, `RenderPixelTestsWithoutS3tc`, `WebWindowTests` and the six
+      `*PageTests`. Run 38130728123, PR #1, every step passed, with the five
+      there were then; run 38339603954, on master at `fbb753d`, passed all six,
+      `ComponentsPageTests` among them.
 - [ ] The null-backends step runs even when a page step fails, and the job
       still goes red. Not yet seen: nothing has failed since the change.
 - [x] The x64 jobs' `RenderPixelTests` pass against the 17 regenerated text
@@ -164,5 +166,6 @@ needs them run again.
 ## Firefox, which the page runner cannot drive
 
 - [ ] `WebWindowTests` and the sample page tests in Firefox (the runner speaks
-      CDP, Firefox only WebDriver BiDi): the minimal, collision, audio and
-      local_multiplayer pages by hand, and the shell CSS.
+      CDP, Firefox only WebDriver BiDi): the minimal, collision, audio,
+      local_multiplayer and components gallery pages by hand, and the shell
+      CSS. LineSweeper's page is the one Firefox has run (`web.md` §9, M3).
