@@ -48,6 +48,10 @@ this project, and no answer time is promised for any issue.
    defines the term and its rule says what an entry holds: for a source break,
    the old spelling, the new one and the sample diff that migrates it. Review
    checks this before merging, because nothing else does.
+   A commit that changes what `samples/minimal/` does or how it builds, or an
+   engine behaviour that folder depends on, in a way a copy of it would want,
+   adds a line to the change list in
+   [samples/minimal/README.md](samples/minimal/README.md) in the same commit.
 4. **Open a pull request** against `master`.
 5. **Wait for CI to go green.** Every configuration CI builds is a required
    check, and a change is not known to be clean until all of them pass: a
