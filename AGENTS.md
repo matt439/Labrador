@@ -491,6 +491,11 @@ in the commit that creates it.
   fights it** — a change that contradicts a philosophy means either the change
   is wrong or the philosophy is, and if the philosophy is, say so there with
   the reason. Several commits in the history do nothing else.
+- `docs/product/` is the product design record of 2026-10-13: personas,
+  journeys, a gap register and user stories, all dated and read as of that
+  date, and **`BACKLOG.md`, the one file there kept current** - tick its box in
+  the commit that closes a story. Its primary persona, the outside adopter, is
+  the owner's decision rather than evidence; its README says what that costs.
 - `docs/review/` is **historical**. It is the review as written and is not
   updated as findings are fixed. Both full rounds were written while the
   paint-shooter was still in this tree, so any finding citing `game/...` refers
