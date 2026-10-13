@@ -81,7 +81,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [ ] **[FES-03](STORIES.md#fes-03)** Should · S · The Full-Environment Seeker (anti-persona) · **Owner**: State the exclusions' permanence, the editor included, to match the recorded decision
 - [ ] **[NMS-02](STORIES.md#nms-02)** Should · XS · The Native Multi-Platform Shipper (anti-persona, for now): Published design pages do not read Vulkan's reach as support
 - [ ] **[OCA-02](STORIES.md#oca-02)** Must · S · The Outside C++ Adopter: The Why page points me at the split-screen sample that ships — after OCA-05
-- [ ] **[OCA-07](STORIES.md#oca-07)** Must · XS · The Outside C++ Adopter: My licence scanner sees MIT
+- [x] **[OCA-07](STORIES.md#oca-07)** Must · XS · The Outside C++ Adopter: My licence scanner sees MIT
 - [ ] **[OCA-06](STORIES.md#oca-06)** Should · XS · The Outside C++ Adopter · **Owner**: The GitHub front door leads me to the site, not a private game
 - [ ] **[OCA-10](STORIES.md#oca-10)** Must · XS · The Outside C++ Adopter: The README's consumer section is complete and points at a real consumer
 - [ ] **[SRL-03](STORIES.md#srl-03)** Must · S · The Sample-Reading Learner: Concept pages say true things about the samples they cite

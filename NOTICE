@@ -1,7 +1,7 @@
 # Third-party code
 
-Labrador is MIT licensed (see LICENSE). This file records what in the working
-tree is not Labrador's to license.
+LICENSE is the MIT licence, and covers everything in this repository except
+what this file records as not Labrador's to license.
 
 The sections on content that is deliberately not distributed — the audio and
 the compiled fonts — went with `game/` to the paint-shooter's own repository,
