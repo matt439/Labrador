@@ -69,7 +69,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[SM-22](STORIES.md#sm-22)** Should · XS · The Sole Owner-Maintainer: One agent brief, not two copies — after SM-20
 - [x] **[SM-12](STORIES.md#sm-12)** Must · S · The Sole Owner-Maintainer: Make the records say the demo is live, and tick its server-side deploy checks against it
 - [x] **[BDP-23](STORIES.md#bdp-23)** Must · S · The Browser and Phone Demo Player: Check the top-out burst against flash limits
-- [ ] **[OCA-03](STORIES.md#oca-03)** Must · S · The Outside C++ Adopter: Try LineSweeper in my browser from the site and the README — after SM-12, BDP-23
+- [x] **[OCA-03](STORIES.md#oca-03)** Must · S · The Outside C++ Adopter: Try LineSweeper in my browser from the site and the README — after SM-12, BDP-23
 - [x] **[OCA-01](STORIES.md#oca-01)** Must · S · The Outside C++ Adopter: One answer to 'where does it run?' on every public page
 - [x] **[OCA-54](STORIES.md#oca-54)** Should · S · The Outside C++ Adopter: Know which browser pad and touch paths have met real hardware — after OCA-01
 - [x] **[OCA-05](STORIES.md#oca-05)** Must · S · The Outside C++ Adopter: Design documents say nothing that is false even as target
@@ -539,7 +539,7 @@ Not in any horizon: each waits on something outside the backlog.
 ## Risks to the plan
 
 - Now holds 35 stories in 20 batches. It fits a few weeks only if each batch is one PR; split further and the branch, PR, green-CI, rebase-merge overhead crowds out the compounding items (OCA-68, OCA-11, OCA-73, SM-21). OCA-68's backfill (L) and OCA-11's consumer job (M) are the schedule risks inside Now.
-- Owner review is the binding constraint, not agent time: every owner sign-off and repository setting in Now is made, amendment B has landed and `v0.1.0` is cut on it; what Now still waits on is the owner redeploying the hosted demo before OCA-03 links it.
+- Owner review is the binding constraint, not agent time: every owner sign-off and repository setting in Now is made, amendment B has landed and `v0.1.0` is cut on it, and the hosted demo is redeployed and linked: Now is finished. Next's owner-gated batches (X3, X5, X6, X21, X25, X27) are where it binds now.
 - PHILOSOPHY.md is touched by six PRs across three horizons. They are serialised A to F and each rebases on the last; a parallel branch that edits PHILOSOPHY outside that order will conflict and should be refused at review.
 - The primary persona is unevidenced: no issues, analytics or independent adopter. Next spends real capacity on a stranger's ship path. Mitigation: most of Now is truth fixes that also serve the agents who read the same documents, and PI-09/PI-10 are the only stories backed by recorded demand.
 - Doc edits can fail the website build by design: quoted lines and public header comments are read at build time. Header-contract stories (OCA-55, OCA-59, OCA-56) and the brief trim (SM-43) must fix any quoting page in the same commit.

@@ -90,16 +90,22 @@ and amend `web.md` §9 with the result.
 The demo is live at <https://mattharding.dev/demo/linesweeper/>. The owner
 deploys it from the PersonalWebsite repository's `main` branch with
 `npm run deploy`, after `npm run sync-demo` has copied a bundle in; its
-`BUILD.json` names the Labrador commit it was built from, `e7888bd`, clean, at
-`wasm-release`. The module folder is `m/4544f56a476f/`. Each box below was
-checked against that URL on 2026-10-13 from this desktop, and a later deploy
-needs them run again.
+`BUILD.json` names the Labrador commit it was built from, `c369e8b` (tagged
+`v0.1.0`), clean, `Release` under Emscripten 6.0.12. The module folder is
+`m/cd7d8cfd9043/`, the first twelve hex digits of the SHA-256 of
+`linesweeper.js` followed by `linesweeper.wasm`, which recomputing it from the
+served files reproduces; the previous deploy's folder, `m/4544f56a476f/`, now
+answers 404. Each box below was checked against that deploy on 2026-10-13
+from this desktop, in headless Chrome 155, and a later deploy needs them run
+again.
 
 - [x] `curl -I` with `Accept-Encoding: br` against the page and the live
       `.wasm`: `application/wasm`, immutable `Cache-Control` under
       `m/<hash>/`, `no-cache` on the page, and `Content-Encoding: br` served
       for both. Headless Chrome, which also offers zstd, was answered with
-      `Content-Encoding: zstd` on the same three files.
+      `Content-Encoding: zstd` on the same three files, and so was `curl`
+      offering `gzip, deflate, br, zstd`. Neither response carries a
+      `Cross-Origin-*` header or a `Content-Security-Policy`.
 
       ```
       $ curl -sI -H "Accept-Encoding: br" https://mattharding.dev/demo/linesweeper/
@@ -110,41 +116,73 @@ needs them run again.
       Content-Encoding: br
       Server: cloudflare
 
-      $ curl -sI -H "Accept-Encoding: br" https://mattharding.dev/demo/linesweeper/m/4544f56a476f/linesweeper.wasm
+      $ curl -sI -H "Accept-Encoding: br" https://mattharding.dev/demo/linesweeper/m/cd7d8cfd9043/linesweeper.wasm
       HTTP/1.1 200 OK
       Content-Type: application/wasm
       CF-Cache-Status: HIT
       Cache-Control: public, max-age=31536000, immutable
-      ETag: W/"ff680cab2f7adde2c53dc7d8ea8b38f3"
+      ETag: W/"b3392f4638e74bf2397a4316206924be"
       Content-Encoding: br
       Server: cloudflare
       ```
 
-      The loader, `m/4544f56a476f/linesweeper.js`, answers the same way with
+      The loader, `m/cd7d8cfd9043/linesweeper.js`, answers the same way with
       `Content-Type: text/javascript`. The lines left out above are the date,
       `Connection`, Cloudflare's reporting headers, `CF-RAY` and `alt-svc`.
+      The rest of `/demo/linesweeper/` - `poster.png`, `NOTICE.txt`,
+      `BUILD.json` and `linesweeper.mp4` - is served `Cache-Control: public,
+      max-age=0, must-revalidate` with an ETag, which revalidates on every use
+      as `no-cache` does; the two text files under Brotli, the image and the
+      video as they are. The video answers a byte range with `206 Partial
+      Content` and `Accept-Ranges: bytes`.
+- [x] What is served is what `BUILD.json` records. Fetched with
+      `Accept-Encoding: identity`, the loader, the module, the poster and the
+      notices are 118,982, 403,759, 15,060 and 92,118 bytes, and each one's
+      SHA-256 is the one `BUILD.json` gives it (`c14723d3...`, `16567dcc...`,
+      `c4e0c99b...`, `4c8c80d6...`). The Brotli responses decode to the same
+      bytes. Cloudflare compresses them itself, and not to the same bytes every
+      time: across fetches on 2026-10-13 the loader crossed the wire at
+      32,180-32,250 bytes and the module at 150,445-150,670, about 32 KB and
+      150 KB, against the 27,283 and 125,384 `BUILD.json` records at quality
+      11. Its `index.html` is the
+      bundle's example page, which the site does not serve: the site's own
+      page stands at `/demo/linesweeper/`, and `index.html` there redirects.
 - [ ] Play the live page in desktop Chrome, Firefox and Safari: click to start,
       play, quit, play again. **Chrome done, headless**: driven over the
       DevTools protocol, nothing but the page, its poster, its fonts, the
       site's favicon and Cloudflare's analytics beacon and its report was
       fetched before the click; the click fetched the loader and the module,
       the game
-      drew and took arrow keys, rotate and Space (the frame was looked at),
-      Escape, Down, Down and Enter reached `onQuit` and the page's "Thanks for
-      playing.", and "Play again" mounted a fresh canvas that played and quit
-      the same way, with no console message and no browser warning
-      throughout. **Firefox waits on BDP-06** (the page runner speaks only
-      CDP) and **Safari on SM-09**.
+      drew and took arrow keys, Space and C (the frames were looked at) and
+      Up and X, whose two quarter turns left its S piece looking as it was;
+      Escape, Down, Down and Enter reached `onQuit` and the
+      page's "Thanks for playing.", and "Play again" mounted a fresh canvas,
+      fetched the module again from the browser's cache, started from an
+      empty board, and played and quit the same way, with no console message
+      and no browser warning throughout. **Firefox waits on BDP-06** (the
+      page runner speaks only CDP) and **Safari on SM-09**.
+- [x] The live demo plays the calm top-out (BDP-23). `c369e8b` contains
+      `8c69272`, the commit that calmed it, and in headless Chrome a third
+      game, Space pressed until the well filled, showed the stack on every
+      frame before the top-out and none from the frame the banner appeared:
+      the well behind the banner held only dim sparks, and screenshots taken
+      over the next second showed them fading to a well that looked empty. This is the
+      drawing looked at, not the flash count, which was measured on the
+      desktop build (`samples/linesweeper/README.md`, *The bursts against WCAG
+      2.3.1*) and not on this page. A topped-out match takes no Escape, as
+      `play_state.cpp` says; R restarted it, and Escape, Down, Down and Enter
+      then reached `onQuit`.
 - [ ] A real phone gets the recording and fetches no wasm; a tablet with a
       keyboard gets the Play button back after a key. **Emulated half done**:
       under Chrome's touch emulation (5 touch points, a 390x844 mobile
       viewport), the page matched `(pointer: coarse)` and not
-      `(any-pointer: fine)`, showed the recording with its status line, and
-      the network log held no request for `linesweeper.js` or
-      `linesweeper.wasm`; a key press then removed the video and brought back
-      "Play LineSweeper", still without fetching either. This is emulation, not
-      a phone: the real-phone half waits on **SM-13** (an iPhone; the Android
-      half is SM-44).
+      `(any-pointer: fine)`, showed the recording, paused at its poster with
+      the browser's controls, and its status line, and the network log held
+      no request for `linesweeper.js`, `linesweeper.wasm` or
+      `linesweeper.mp4`; a key press then removed the video and brought back
+      "Play LineSweeper", still without fetching any of them. This is
+      emulation, not a phone: the real-phone half waits on **SM-13** (an
+      iPhone; the Android half is SM-44).
 - [x] A machine without WebGL2 shows the `onError` message. Headless Chrome
       started with `--disable-webgl2`, Play clicked: the page fetched the loader
       and the module, and its status line read "LineSweeper stopped: This
@@ -156,12 +194,15 @@ needs them run again.
 - [ ] A real context loss (GPU reset, or a tab hidden while it is lost) shows
       and clears the page's message. **Blocked on BDP-06**, which takes a real
       tab switch and a real loss; `RenderContextLossTests` covers the engine
-      half with a forced loss.
+      half with a forced loss. Not run against this deploy.
 - [ ] Decide whether 4.3 MB of video is acceptable on phones, or swap in a
       smaller encode with `npm run sync-demo -- <bundle> --video <mp4>`.
       **The owner's decision, open as BDP-20.** What the emulated phone run
-      saw: the recording autoplays, and the browser began fetching it at once
-      (`linesweeper.mp4`, answered 206 with a byte range).
+      saw: the site's page now sets the recording to `preload="none"` with
+      controls, so it neither plays nor downloads until it is asked to, and
+      the run fetched none of it (the file is 4,305,947 bytes). A tap on the
+      video under emulation did not start it in headless Chrome, so what a
+      real tap fetches has not been seen.
 
 ## Firefox, which the page runner cannot drive
 

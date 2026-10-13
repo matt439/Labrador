@@ -6,15 +6,16 @@ An index of open work, one row per item; each row points to the document that ow
 
 **The only ordering in this file.** Keep every `DECISION` row here. Keep this block to the current aim and the next few actions; results go in their owners, and a closed story is a ticked box in BACKLOG.md.
 
-**Aim:** the backlog's Now horizon, *Trust and clocks*: "the public face and the tree's records stop misleading readers and agents, the live demo is checked and one click away, Get Started and the template work as written, and every item whose delay compounds has landed". [BACKLOG.md, Now](docs/product/BACKLOG.md#now) owns its *Done when* list and its batches, N1 to N21; this block names the ones still open.
+**Now is finished**: every batch of [BACKLOG.md, Now](docs/product/BACKLOG.md#now), N1 to N21, has landed, and `v0.1.0` is cut.
 
-1. **`OCA-03` (N4): link the live demo**, after the owner has redeployed it with the calm top-out (`WEB#9`) and its live checks have been run again (`WEB#7`).
+**Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
-**Dated, whatever the order above:**
-- The calm top-out has merged: the owner redeploys the hosted demo (`WEB#9`), then `WEB#7` runs its live checks again.
+1. **`SM-43` (X1): trim the agent brief to current state.**
+2. **`OCA-70`, `OCA-71` (X2): the pin-move procedure page**, and running the engine's suite at a pin.
+3. **`FES-04`, `FES-02`, `SRL-02`, `SRL-04`, `SRL-05` (X4): small truths** for the exclusion seeker and the learner.
+4. **`OCA-29`, `OCA-30`, `OCA-12`, `OCA-33` (X7): the template's test target and smoke check**, the cold-cache record and the CI recipe.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Now: `WEB#9` (redeploy the demo).
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
 
@@ -24,8 +25,12 @@ An index of open work, one row per item; each row points to the document that ow
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-03` | OPEN | must | S | Link the live demo from the site's home and examples pages, the README's LineSweeper section and the top of `samples/linesweeper/README.md`, without promising touch play. After `WEB#9` and `WEB#7`. |
-| `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once. `SM-36` waits on it. |
+| `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once, and `OCA-71`'s engine suite at a pin. `SM-36` waits on it. |
+| `FES-04` | OPEN | should | XS | Home's "What Labrador is not" covers scripting, hot reload, reflection-driven editing and the small community, and links Why's comparison; then `FES-02`: Get Started's index says what kind of toolchain this is. |
+| `SRL-04` | OPEN | could | XS | The Examples page gives LineSweeper's real size; with `SRL-02` (the Concepts index needs no Windows build) and `SRL-05` (LineSweeper README's layer-rule item describes `presentation/` as it is). |
+| `OCA-29` | OPEN | must | M | A test target in the template, with a guide to a rules library tested like LineSweeper's, built by the consumer CI job. `OCA-30` (S), a `--smoke-test` registered as a test, follows it. |
+| `OCA-12` | OPEN | should | S | Get Started's first-configure time and public-clone claim from a run with an empty vcpkg binary cache and a public clone. |
+| `OCA-33` | OPEN | should | M | A GitHub Actions workflow an adopter can copy: submodules, vcvars, `VCPKG_ROOT`, fxc, a vcpkg cache and the game's ctest. After `OCA-29`, `OCA-30`. |
 
 ## Website and the hosted demo
 
@@ -33,8 +38,6 @@ An index of open work, one row per item; each row points to the document that ow
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `WEB#9` | DECISION | should | XS | The owner redeploys the hosted demo now that the calm top-out has merged (sync the bundle in the PersonalWebsite repository, `npm run deploy` from its main branch), so `mattharding.dev/demo/linesweeper/` plays the calm top-out. |
-| `WEB#7` | WAITING | should | XS | After `WEB#9`: run web-to-be-tested.md's live-demo checks again (headers and encodings, headless Chrome play, quit and play again) and update the commit and module folder it records. |
 | `SM-32` | OPEN | could | S | Re-encode `linesweeper.mp4` (still Courier; the stills are JetBrains Mono) with LineSweeperCapture on `x64-release` and FFmpeg, review it, and state the same-commit rule in website/README.md. |
 | `SITE#3` | DECISION | could | XS | The owner decides whether the site starts versioned snapshots at the first 0.x tag ([docs/website-versioning.md](docs/website-versioning.md)). |
 | `BDP-20` | DECISION | could | XS | The owner decides whether the 4.3 MB phone fallback video stays, or swaps in a smaller encode with `npm run sync-demo -- <bundle> --video <mp4>`. |
@@ -125,6 +128,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `SRL-14` | DECISION | could | S | The owner says whether the "Introduction to C++" series is not started, planned with an outline, or withdrawn. |
 | `SRL-07` | DECISION | could | S | The owner chooses between amending CONVENTIONS to accept the 26 SCREAMING constants and renaming them in both repositories. |
 | `OCA-66` | DECISION | could | S | The owner decides whether the default DPI awareness stays unaware or becomes per-monitor aware. |
+| `SM-43` | OPEN | should | M | Make CLAUDE.md and AGENTS.md a current-state brief: move the narrative of how each line came to be into dated documents, keeping the two in sync. |
 | `DOC#2` | OPEN | could | XS | `docs/survey/2026-08-26-status.md`'s section-6 item 4 still opens "Still unmade" above its own "Decided and built, 2026-10-11" (D9). Its decision 2, whether markers stay on the seam, is still unmade and has no other owner. |
 | `DOC#3` | OPEN | could | XS | The file-length audit's tripwire has fired: `tests/core/state_context_tests.cpp` is 865 lines against about 650. Re-ask whether `StateContext` has a second job and record the answer in `docs/file-length-audit.md`. |
 
@@ -143,7 +147,7 @@ A new row for one of these gets its section back.
 
 | area | owner | a row returns with |
 |---|---|---|
-| The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front once Now has finished; the rows above are the Next stories that the owner or an outside event gates, or that a row here pairs with |
+| The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front; the rows above are the batches NOW names, and the Next stories that the owner or an outside event gates, or that a row here pairs with |
 | Later (L1 to L33) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | Next finishing |
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |
 | web.md's milestones M1, M2, M5, M6 and its decisions | [docs/port/web.md](docs/port/web.md) sections 8 and 9 | a regression, or a change the port meets that a decision must settle |

@@ -10,6 +10,12 @@ are three of them, and this is not a fourth: everything here is a choice about
 one sample, made under those three. Where a decision below is really an engine
 commitment, it says so and names the document it belongs in.
 
+[Play LineSweeper in a desktop browser](https://mattharding.dev/demo/linesweeper/):
+the hosted demo runs the module the `linesweeper_web_dist` target bundles,
+starts on a click and plays with a keyboard. Phones are a planned phase, so it shows a phone a
+poster rather than the game until a real iPhone and a real Android phone have
+played it.
+
 **Status: playable, and both halves are here.** All three layers exist.
 `rules/` is the whole game — the
 seven-bag deal, the gravity curve, the wall kicks, lock delay, hold, hard drop,
