@@ -54,9 +54,18 @@ namespace labrador
 		// hit the player standing behind it.
 		virtual bool for_deletion() const = 0;
 
-		// Requests removal at the end of the frame. Objects that are part of
-		// a level's fixed geometry (walls, platforms) cannot be removed and
-		// ignore this by default.
+		// Requests removal at the end of the tick, and is the only way the
+		// scene's bounds sweep (Scene::set_bounds) retires an object that has
+		// left the world.
+		//
+		// THE DEFAULT DOES NOTHING, AND THE SCENE RETIRES ONLY WHAT
+		// for_deletion() ANSWERS TRUE FOR. A collidable that keeps this default
+		// is never retired by the sweep or by any other caller: it goes on
+		// updating, drawing and colliding outside the bounds, the sweep asks
+		// again every tick, and nothing reports it. That is the right answer
+		// for a level's fixed geometry (walls, platforms), which must not be
+		// lost that way. Anything that can leave the world - a projectile -
+		// overrides this to keep the flag and returns it from for_deletion().
 		virtual void set_for_deletion(bool /*for_deletion*/) {}
 	};
 }

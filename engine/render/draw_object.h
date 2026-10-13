@@ -25,6 +25,12 @@ namespace labrador
 		virtual float draw_rotation() const;
 		virtual const mattmath::Vector2F& origin() const;
 		virtual SpriteFlip flip() const;
+
+		// TextureObject, AnimationObject and TextObject pass this to every draw
+		// they make, and no backend reads it: what is on top is decided by the order of the draw calls into a list
+		// (DrawList::draw_sprite in engine/render/renderer.h), never by depth.
+		// A Scene draws its plain objects in the order they were added and its
+		// collision objects after them, in no order it promises.
 		virtual float layer_depth() const;
 
 		virtual void set_colour(const Colour& colour);
