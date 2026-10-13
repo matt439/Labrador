@@ -394,6 +394,21 @@ in the commit that creates it.
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
   silently is not compiled.
+- **`CLAUDE.md` and `AGENTS.md` differing below their title line.**
+  [cmake/check_agent_brief.cmake](cmake/check_agent_brief.cmake), top-level
+  builds only. They are one brief under two names, so an amendment is made in
+  one and copied to the other, each keeping its own first line.
+
+## How a change lands
+
+[CONTRIBUTING.md](CONTRIBUTING.md) is the procedure, and it is the same for an
+agent as for the owner: branch from `master`, one self-contained commit (the
+source, its tests and every document it makes false), a pull request, and a
+rebase-merge once CI is green. `master` is protected and merge commits are
+disabled. The required checks are names held in GitHub's settings and built
+from the CI matrix's values, so a change to the matrix needs the branch
+protection updated with it. Commit, push or open a pull request only when the
+owner asks.
 
 ## Rules that are not checked, and matter anyway
 
