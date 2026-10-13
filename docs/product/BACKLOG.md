@@ -100,8 +100,8 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [ ] **[OCA-37](STORIES.md#oca-37)** Must · XS · The Outside C++ Adopter: Know whether I may ship the template font, before I copy it — after OCA-34
 - [ ] **[OCA-55](STORIES.md#oca-55)** Should · XS · The Outside C++ Adopter: Know that layer_depth orders nothing
 - [ ] **[OCA-59](STORIES.md#oca-59)** Should · XS · The Outside C++ Adopter: Know that a collidable must say how it is retired
-- [ ] **[SM-06](STORIES.md#sm-06)** Should · XS · The Sole Owner-Maintainer: Stop the low-tier STATUS box sending me after a fixed contradiction
-- [ ] **[SM-10](STORIES.md#sm-10)** Should · XS · The Sole Owner-Maintainer: Make web.md's Firefox claim match what was actually checked
+- [x] **[SM-06](STORIES.md#sm-06)** Should · XS · The Sole Owner-Maintainer: Stop the low-tier STATUS box sending me after a fixed contradiction
+- [x] **[SM-10](STORIES.md#sm-10)** Should · XS · The Sole Owner-Maintainer: Make web.md's Firefox claim match what was actually checked
 - [x] **[SM-31](STORIES.md#sm-31)** Could · XS · The Sole Owner-Maintainer · **Owner**: One canonical host for the engine site
 - [ ] **[OCA-69](STORIES.md#oca-69)** Must · S · The Outside C++ Adopter · **Owner**: Know how a public name leaves the engine
 - [ ] **[OCA-67](STORIES.md#oca-67)** Must · S · The Outside C++ Adopter · **Owner**: Pin a named version and know what it promises — after OCA-68, OCA-69
