@@ -96,8 +96,8 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[OCA-16](STORIES.md#oca-16)** Could · XS · The Outside C++ Adopter: First-change sends me on to the guides
 - [ ] **[OCA-13](STORIES.md#oca-13)** Should · XS · The Outside C++ Adopter: The template's comments describe public code and the current content rule
 - [ ] **[OCA-15](STORIES.md#oca-15)** Should · S · The Outside C++ Adopter: The template folder tells me how to copy it and what changed — after OCA-13, OCA-68
-- [ ] **[OCA-34](STORIES.md#oca-34)** Must · S · The Outside C++ Adopter: Get the content tools and the commands to make sprites and fonts
-- [ ] **[OCA-37](STORIES.md#oca-37)** Must · XS · The Outside C++ Adopter: Know whether I may ship the template font, before I copy it — after OCA-34
+- [x] **[OCA-34](STORIES.md#oca-34)** Must · S · The Outside C++ Adopter: Get the content tools and the commands to make sprites and fonts
+- [x] **[OCA-37](STORIES.md#oca-37)** Must · XS · The Outside C++ Adopter: Know whether I may ship the template font, before I copy it — after OCA-34
 - [x] **[OCA-55](STORIES.md#oca-55)** Should · XS · The Outside C++ Adopter: Know that layer_depth orders nothing
 - [x] **[OCA-59](STORIES.md#oca-59)** Should · XS · The Outside C++ Adopter: Know that a collidable must say how it is retired
 - [x] **[SM-06](STORIES.md#sm-06)** Should · XS · The Sole Owner-Maintainer: Stop the low-tier STATUS box sending me after a fixed contradiction
