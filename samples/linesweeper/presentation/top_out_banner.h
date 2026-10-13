@@ -31,8 +31,8 @@
 // which is the only thing board_view.h's argument leaves room for. It costs
 // one more bounds() nobody culls against and one more borrowed World pointer -
 // the two prices that header names - and it buys the property README, Additive
-// blending, claims: red words over whatever colour the stack happens to be,
-// legible.
+// blending, claims: red words over whatever the sparks beneath them happen to
+// be, legible.
 namespace linesweeper
 {
 	class TopOutBanner final : public labrador::GameObject

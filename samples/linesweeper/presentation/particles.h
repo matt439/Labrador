@@ -58,6 +58,31 @@ namespace linesweeper
 	// between 10,000 sparks and 9,600 is nothing anybody can see.
 	inline constexpr int particle_capacity = 10000;
 
+	// How hot each burst's sparks are born, between zero and one. A spark
+	// adds its colour times the square of what is left of its heat
+	// (particles.cpp, draw), so these are the field's brightness ceilings,
+	// and they are where the field meets WCAG 2.3.1.
+	//
+	// THEY ARE LIMITS, NOT TUNING, which is why they are here rather than
+	// beside the speeds. Sparks crossing a pixel brighten and then darken it,
+	// and counted pixel by pixel - the strict reading of "concurrently",
+	// which is the one this sample is held to - a burst too bright flickers
+	// more than three times a second over a quarter of the field. A top-out
+	// at full heat over a stack left standing does, at eight (board_view.cpp,
+	// draw_stack, is the other half). README, The bursts against WCAG 2.3.1,
+	// records the measurement these were set by, and tests/linesweeper/
+	// fails if a burst is born hotter than it was measured at: raise one only
+	// with a new run of tools/flash_check/.
+	//
+	// A piece landing throws a few sparks into the empty well above it and
+	// keeps full heat. A clear's sparks cross the stack, where a block's
+	// luminance climbs much faster than black's under the same addition, so
+	// they are cooler. A top-out is the coolest: it throws every cell of a
+	// full well at once.
+	inline constexpr float lock_heat = 1.0f;
+	inline constexpr float clear_heat = 0.75f;
+	inline constexpr float shatter_heat = 0.55f;
+
 	// One particle. Thirty-two bytes, and every one of them is read by both
 	// halves of the frame.
 	//
@@ -96,17 +121,22 @@ namespace linesweeper
 		mattmath::Vector2F position;
 		mattmath::Vector2F velocity;
 
-		// One at birth, zero at death, and it is the alpha as well as the
-		// clock. Counting down from one rather than up to a lifetime means
-		// draw() needs no division to find the fade, which is the only
-		// arithmetic ten thousand of anything should be asked to avoid.
+		// The spark's heat at birth, zero at death, and it is the brightness
+		// as well as the clock. Counting down rather than up to a lifetime
+		// means draw() needs no division to find the fade, which is the only
+		// arithmetic ten thousand of anything should be asked to avoid. Each
+		// burst names its heat (lock_heat and the two beside it, above), and
+		// that is the whole of how bursts differ in brightness.
 		float life = 0.0f;
 
 		// Life lost per second, so a lifetime is spelt once at emission and
 		// never stored.
 		float decay = 0.0f;
 
-		// The side of the quad, in pixels, at full life.
+		// The side of the quad, in pixels, at a heat of one. The side shrinks
+		// with life (particles.cpp, draw), so a spark born cooler is born
+		// smaller as well as dimmer: a top-out spark starts at about seven
+		// tenths of this.
 		float size = 0.0f;
 
 		// The rules' own cell byte: 0 empty, 1..7 the piece that filled it.
@@ -223,6 +253,12 @@ namespace linesweeper
 			return this->dropped_;
 		}
 
+		// The largest heat among the live particles, or zero when there are
+		// none. A walk of the live prefix, so that tests/linesweeper/ can hold
+		// each burst to the ceiling it was measured at; nothing in a frame
+		// calls it.
+		float hottest() const;
+
 	private:
 		// The difference between last frame's match and this one, as bursts.
 		void observe();
@@ -231,14 +267,15 @@ namespace linesweeper
 		void shatter();
 
 		// One cell's worth of sparks, aimed by `direction` and spread around
-		// it.
+		// it, each born at `heat`.
 		void burst(int x, int y, std::uint8_t kind, int count, float speed,
-			const mattmath::Vector2F& direction, float lifetime, float size);
+			const mattmath::Vector2F& direction, float lifetime, float size,
+			float heat);
 
 		// Appends one particle, or counts a drop. The only place count_ grows.
 		void emit(const mattmath::Vector2F& position,
 			const mattmath::Vector2F& velocity, std::uint8_t kind,
-			float lifetime, float size);
+			float lifetime, float size, float heat);
 
 		// SplitMix32, the same mixer rules/tick.cpp deals pieces with, and
 		// deliberately a SECOND stream rather than a share of that one. The

@@ -154,8 +154,8 @@ place o 0 1
 place l 0 3          # tops out
 
 # --- The top-out, on the twenty-fourth frame of its burst: the banner over the
-# stack, and the stack coming apart around it. A finished match no longer
-# ticks, so the readout stops at the lock while the sparks keep moving.
+# well, and the stack, gone from it, settling as sparks. A finished match no
+# longer ticks, so the readout stops at the lock while the sparks keep moving.
 
 wait 22
 capture linesweeper-top-out.png
