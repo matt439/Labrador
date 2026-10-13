@@ -48,7 +48,10 @@ file(GLOB_RECURSE sources
 file(GLOB_RECURSE all_docs "${REPO_DIR}/*.md")
 set(docs "")
 foreach(doc IN LISTS all_docs)
-    if(NOT doc MATCHES "/(out|external|website|\\.claude)/")
+    # Matched below REPO_DIR, so that a checkout which is itself one of those
+    # worktrees still sees its own documents.
+    file(RELATIVE_PATH doc_in_repo "${REPO_DIR}" "${doc}")
+    if(NOT doc_in_repo MATCHES "^(out|external|website|\\.claude)/")
         list(APPEND docs "${doc}")
     endif()
 endforeach()
