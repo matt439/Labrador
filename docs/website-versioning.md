@@ -62,6 +62,6 @@ first release's documentation:
    label, links, search and assets after publication.
 
 The current [website workflow](../.github/workflows/website.yml) validates and
-retains build artifacts; it does not deploy. Hosting and domain selection remain
-the separate decisions in [the website plan](website-plan.md). Versioning does
+retains build artifacts; it does not deploy. Hosting and the domain are recorded
+in [the website plan](website-plan.md). Versioning does
 not choose a host, publish the site or establish an engine release schedule.

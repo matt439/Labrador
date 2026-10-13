@@ -20,6 +20,8 @@ on intent: [PHILOSOPHY.md](docs/design/PHILOSOPHY.md) (the trade-offs T1–T12,
 and the review vocabulary — "T3: take the simpler model" is a complete comment),
 [ARCHITECTURE.md](docs/design/ARCHITECTURE.md) (targets, tree, module table),
 [CONVENTIONS.md](docs/design/CONVENTIONS.md) (naming).
+Open work is indexed in [TODO.md](TODO.md): a fresh thread starts at its NOW
+block, and [BACKLOG.md](docs/product/BACKLOG.md) owns the order of the stories.
 
 ## Build, test, run
 

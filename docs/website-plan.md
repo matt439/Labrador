@@ -119,7 +119,7 @@ Cloudflare Workers Builds deploys from `master`, using `website` as the root dir
 
 The live HTTPS homepage and hosted MP4 were checked on 8 October. The MP4 has a video stream and no audio track, matching the documented silent capture. This was a launch check, not a repeat of all the local browser and accessibility validation recorded below.
 
-One post-launch configuration task remains: `site` is still unset in `website/astro.config.ts`. Set it to the production URL and verify canonical URLs and sitemap output in the resulting build and deployment.
+`site` in `website/astro.config.ts` is `https://labradorengine.com`, the one canonical host, so canonical URLs and the sitemap name it; the `workers.dev` address is turned off in the Wrangler configuration.
 
 ## Delivery and maintenance
 
