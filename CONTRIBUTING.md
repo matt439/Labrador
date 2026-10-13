@@ -41,12 +41,19 @@ this project, and no answer time is promised for any issue.
    in the same commit as the change that fights them). A story in
    [docs/product/BACKLOG.md](docs/product/BACKLOG.md) has its box ticked in the
    commit that closes it.
-3. **Open a pull request** against `master`.
-4. **Wait for CI to go green.** Every configuration CI builds is a required
+3. **Say what a consumer will see.** A commit that touches `engine/**/*.h`,
+   `engine/CMakeLists.txt`, `cmake/settings.cmake` or `vcpkg.json` adds an
+   entry to [CHANGES.md](CHANGES.md) in the same commit, or says
+   `not consumer-visible` in its message. CHANGES.md's opening paragraph
+   defines the term and its rule says what an entry holds: for a source break,
+   the old spelling, the new one and the sample diff that migrates it. Review
+   checks this before merging, because nothing else does.
+4. **Open a pull request** against `master`.
+5. **Wait for CI to go green.** Every configuration CI builds is a required
    check, and a change is not known to be clean until all of them pass: a
    change clean under MSVC is not yet known to be clean under clang, and an
    edit outside `website/` can fail the website build.
-5. **Rebase-merge.** `gh pr merge --rebase`, or `--squash` if the branch grew
+6. **Rebase-merge.** `gh pr merge --rebase`, or `--squash` if the branch grew
    fixup commits, so that `master` stays a linear history in which each commit
    stands alone. Merge commits are disabled in the repository's settings.
 
