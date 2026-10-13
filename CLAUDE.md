@@ -411,6 +411,17 @@ CONTRIBUTING.md and strict, so a change that adds, removes or renames a CI job
 or matrix entry needs the branch protection updated with it. Commit, push or open a pull request only when the
 owner asks.
 
+**A change a game can see goes in [CHANGES.md](CHANGES.md).** A commit that
+touches `engine/**/*.h`, `engine/CMakeLists.txt`, `cmake/settings.cmake` or
+`vcpkg.json` adds an entry there, newest first, in the same commit, or says
+`not consumer-visible` in its message. CHANGES.md's opening paragraph defines
+consumer-visible - a source break, a removed or retyped public name, a
+`vcpkg.json` change, a moved header, a compile-option change in
+`settings.cmake`, or a silent behaviour change - and a source-break entry names
+the old spelling, the new one and the sample diff that migrates it. The entry's
+text stays in CHANGES.md: a header comment says what the code is, never what it
+was. Its backfill covers every engine commit since ColourWars' pin, `4cefb68`.
+
 ## Rules that are not checked, and matter anyway
 
 - **Dependencies point one way, toward `math`.** The module table is

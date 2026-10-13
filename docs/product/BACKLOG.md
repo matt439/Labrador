@@ -87,7 +87,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [ ] **[SRL-03](STORIES.md#srl-03)** Must · S · The Sample-Reading Learner: Concept pages say true things about the samples they cite
 - [x] **[OCA-73](STORIES.md#oca-73)** Must · S · The Outside C++ Adopter · **Owner**: Report a vulnerability privately and know what input is trusted
 - [x] **[OCA-72](STORIES.md#oca-72)** Should · S · The Outside C++ Adopter: Ask a question or request an API change through a stated route
-- [ ] **[OCA-68](STORIES.md#oca-68)** Must · L · The Outside C++ Adopter: Read what changed that affects my game, from the pin I am on — after SM-20
+- [x] **[OCA-68](STORIES.md#oca-68)** Must · L · The Outside C++ Adopter: Read what changed that affects my game, from the pin I am on — after SM-20
 - [x] **[SM-21](STORIES.md#sm-21)** Must · S · The Sole Owner-Maintainer · **Owner**: Required checks that survive a workflow edit
 - [ ] **[OCA-11](STORIES.md#oca-11)** Must · M · The Outside C++ Adopter · **Owner**: The project shape Get Started teaches is built against every engine change — after SM-21
 - [ ] **[OCA-09](STORIES.md#oca-09)** Must · S · The Outside C++ Adopter: Get Started tells me the truth about long paths
