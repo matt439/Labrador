@@ -1,6 +1,12 @@
 # Labrador
 
-A 2D game engine in C++.
+A 2D game engine in C++20, for Windows and a desktop browser through WebGL2.
+It is a library your game links, built from source with CMake and vcpkg: the
+game is ordinary C++ and its content is JSON and standard file formats.
+
+No editor, no scripting language, no hot reload, 2D only and local play
+only: [why](https://labradorengine.com/why/), and
+[what Labrador is not](https://labradorengine.com/#what-labrador-is-not).
 
 **Website and documentation: [labradorengine.com](https://labradorengine.com/).**
 
@@ -182,12 +188,37 @@ Three things worth knowing:
   directory above `yourgame/` on the include path. Labrador publishes its root,
   not yours.
 
-`samples/minimal` is a working example of all three, at about 560 lines. It
+`add_subdirectory` alone does not configure. A consuming project also
+needs:
+
+- **A top-level `vcpkg.json` naming the engine's dependencies.** vcpkg reads
+  the manifest of the top-level project only, so Labrador's own
+  [vcpkg.json](vcpkg.json) is not read when Labrador is a subdirectory, and
+  the engine's `find_package(xaudio2redist)`, under the default audio
+  backend, fails without one. Copy its dependencies and its
+  `builtin-baseline`, leaving out `doctest` and `lodepng`, which only the
+  engine's own tests use.
+- **A configure preset that chains the vcpkg toolchain**: `toolchainFile` set
+  to `$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake`, as every configure
+  preset in this repository's [CMakePresets.json](CMakePresets.json) has.
+- **`fxc` on `PATH`.** The default backend, Direct3D 11, and Direct3D 12
+  compile the engine's shader at build time, so your configure looks for `fxc`
+  too. The x64 Native Tools Command Prompt puts it there, as it does `cl`. The
+  Vulkan backend needs the Vulkan SDK instead, as [Building](#building) says.
+
+The website's walkthrough,
+[Start your own project](https://labradorengine.com/docs/get-started/your-project/),
+builds a project of this shape from an empty folder: Labrador as a submodule,
+`samples/minimal` copied in as the game, and every file the project needs.
+Those files are in [website/src/walkthrough/](website/src/walkthrough/), whose
+README says how they were checked. `samples/minimal` is the starting point it
+copies, not a consumer: it is built inside this repository, so it uses this
+repository's `vcpkg.json` and presets and has no include root of its own. It
 is also the shape of a browser build: `main_web.cpp` beside `main.cpp`, chosen
 in its `CMakeLists.txt` under `EMSCRIPTEN`, and a page in `web/shell.html`.
-`samples/linesweeper` is the same three plus a fourth thing worth copying: a
-game's simulation as a static library that links nothing, so the whole game is
-playable from `ctest` with no window and no device.
+`samples/linesweeper` has that shape too, and adds one more thing worth
+copying: a game's simulation as a static library that links nothing, so the
+whole game is playable from `ctest` with no window and no device.
 
 ## The engine
 
