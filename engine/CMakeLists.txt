@@ -373,7 +373,7 @@ endif()
 # client that parses files of its own asks for rapidjson on its own account -
 # which the game does, for the save file it writes.
 target_include_directories(LabradorEngine SYSTEM PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
+    "${CMAKE_SOURCE_DIR}/external/rapidjson/include"
 )
 # DirectXTK IS PRIVATE, AND IT USED TO BE THE ONE DEPENDENCY EVERY CLIENT PAID
 # FOR. Linking it PUBLIC put <Audio.h> and <GamePad.h> on the command line of
