@@ -50,6 +50,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 1. N1 Agent brief: merge procedure, then one brief with a sync check: SM-20, SM-22
 2. N2 Demo records say live; server-side deploy checks ticked: SM-12
 3. N3 Flash check of the top-out burst (before the link): BDP-23
+   - N3b Calm the top-out by default, on the owner's strict reading of WCAG 2.3.1 (2026-10-13): BDP-23
 4. N4 Link the live demo from README, site and LineSweeper README: OCA-03
 5. N5 One platform statement, with the browser verification caveats: OCA-01, OCA-54
 6. N6 PHILOSOPHY amendment A (first): facts and permanence: OCA-05, FES-03, NMS-02
@@ -446,7 +447,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | BDP-13 | G80: phones see phone instructions. |
 | BDP-14 | G81: a controller lifts the phone gate as the page says; moot if BDP-10 lands soon. |
 | BDP-21 | G117: a landing shadow every player can see. Follows OCA-08's position (Next). |
-| BDP-22 | G118: fewer sparks under reduced motion. Follows BDP-23 (Now). |
+| BDP-22 | G118: fewer sparks under reduced motion. Follows BDP-23 (Now). The default is already calm: N3b passes the top-out on the strict, pixel-by-pixel reading of WCAG 2.3.1 for every player, so reduced motion goes further for those who ask rather than being what makes the demo safe. |
 | BDP-20 | G86: the phone fallback plays footage without asking. In the owner's PersonalWebsite repository. |
 | BDP-18 | G114: repeated plays; measure before fixing. |
 | BDP-09 | G34: the host page fits a phone held upright; needed before BDP-10. |

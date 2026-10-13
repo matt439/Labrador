@@ -40,16 +40,23 @@ namespace linesweeper
 
 		// The top-out, and the number the field is sized around: a full well
 		// is two hundred cells and this is what each of them costs.
+		//
+		// Slow and long, as well as cool (shatter_heat, particles.h): the
+		// stack crumbles and settles rather than bursting. Brightness is the
+		// term the flash check moves with; the speed and lifetime are what
+		// keep a spark that dim on screen long enough to be seen.
 		constexpr int shatter_particles_per_cell = 48;
-		constexpr float shatter_speed = 420.0f;
-		constexpr float shatter_lifetime = 1.6f;
+		constexpr float shatter_speed = 160.0f;
+		constexpr float shatter_lifetime = 2.2f;
 		constexpr float shatter_size = 6.0f;
 
-		// How bright a spark is at full life. Under premultiplied alpha a
+		// How bright a spark is at a heat of one. Under premultiplied alpha a
 		// tint with a = 0 adds without attenuating, so this is a multiplier on
 		// what the background already has rather than a blend against it, and
 		// overlapping sparks saturate towards white. That is what a burst
-		// looks like and it is why it is not 1.0.
+		// looks like and it is why it is not 1.0 - and it is also why each
+		// burst's heat is a limit (particles.h): saturating towards white is
+		// a flash when it happens over enough of the screen.
 		constexpr float glow_intensity = 0.85f;
 
 		// The board as it stood between the lock and the clear, which is the
@@ -259,7 +266,7 @@ namespace linesweeper
 						locked[static_cast<std::size_t>(cell_index(x, y))],
 						clear_particles_per_cell, clear_speed,
 						Vector2F(sideways, -0.35f), clear_lifetime,
-						clear_size);
+						clear_size, clear_heat);
 				}
 			}
 
@@ -283,7 +290,7 @@ namespace linesweeper
 
 				this->burst(x, y, now.cells[index], lock_particles_per_cell,
 					lock_speed, Vector2F(0.0f, -1.0f), lock_lifetime,
-					lock_size);
+					lock_size, lock_heat);
 			}
 		}
 	}
@@ -312,13 +319,14 @@ namespace linesweeper
 
 				this->burst(x, y, kind, shatter_particles_per_cell,
 					shatter_speed, Vector2F(sideways * 0.22f, -0.8f),
-					shatter_lifetime, shatter_size);
+					shatter_lifetime, shatter_size, shatter_heat);
 			}
 		}
 	}
 
 	void ParticleField::burst(int x, int y, std::uint8_t kind, int count,
-		float speed, const Vector2F& direction, float lifetime, float size)
+		float speed, const Vector2F& direction, float lifetime, float size,
+		float heat)
 	{
 		const Vector2F centre = cell_centre(x, y);
 
@@ -341,12 +349,12 @@ namespace linesweeper
 					(speed * 0.5f);
 
 			this->emit(position, velocity, kind,
-				lifetime * (0.55f + 0.45f * this->random_unit()), size);
+				lifetime * (0.55f + 0.45f * this->random_unit()), size, heat);
 		}
 	}
 
 	void ParticleField::emit(const Vector2F& position, const Vector2F& velocity,
-		std::uint8_t kind, float lifetime, float size)
+		std::uint8_t kind, float lifetime, float size, float heat)
 	{
 		if (this->count_ >= particle_capacity)
 		{
@@ -359,11 +367,12 @@ namespace linesweeper
 
 		particle.position = position;
 		particle.velocity = velocity;
-		particle.life = 1.0f;
+		particle.life = heat;
 		// Every caller multiplies a positive constant by a factor of at least
 		// 0.55, so this never divides by zero and the field never inherits a
-		// particle that cannot die.
-		particle.decay = 1.0f / lifetime;
+		// particle that cannot die. Heat over lifetime, so a spark born cooler
+		// still lives as long as it was asked to.
+		particle.decay = heat / lifetime;
 		particle.size = size;
 		particle.kind = kind;
 
@@ -395,6 +404,19 @@ namespace linesweeper
 					particle.life * particle.life * glow_intensity),
 				0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
 		}
+	}
+
+	float ParticleField::hottest() const
+	{
+		float hottest = 0.0f;
+
+		for (int index = 0; index < this->count_; ++index)
+		{
+			hottest = std::max(hottest,
+				this->particles_[static_cast<std::size_t>(index)].life);
+		}
+
+		return hottest;
 	}
 
 	RectangleF ParticleField::bounds() const

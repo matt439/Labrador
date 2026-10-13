@@ -178,6 +178,19 @@ namespace linesweeper
 
 	void BoardView::draw_stack(DrawList& draw_list) const
 	{
+		// A TOPPED-OUT MATCH DRAWS NO STACK, because the particle field has
+		// just thrown every cell of it as sparks (particles.cpp, shatter):
+		// the stack is the sparks now. A stack left standing under them makes
+		// the top-out flash - sparks crossing a bright block change its
+		// luminance far more than the same sparks crossing the dark well -
+		// and README, The bursts against WCAG 2.3.1, is the measurement.
+		// The cells are still in the World; a restart assigns an empty one,
+		// whose topped_out is zero, and the well draws as before.
+		if (this->world_->topped_out != 0)
+		{
+			return;
+		}
+
 		for (int y = well_buffer_rows; y < well_rows; ++y)
 		{
 			for (int x = 0; x < well_columns; ++x)

@@ -429,6 +429,126 @@ namespace
 		}
 	}
 
+	// What one burst left in a field, read on the frame it was thrown.
+	struct Burst
+	{
+		int live = 0;
+		float hottest = 0.0f;
+	};
+
+	// Each of these builds its field in a frame of its own, because a field
+	// is 320 KB and a debug build gives every local in one test case a slot
+	// of its own: four of them in one function overflow the default stack.
+	Burst piece_landing()
+	{
+		World world;
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
+
+		fill(world, 0, well_rows - 1);
+		++world.tick;
+		field.update(0.0f);
+
+		return Burst{ field.live(), field.hottest() };
+	}
+
+	Burst row_leaving()
+	{
+		World world = about_to_clear();
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
+
+		lock_and_clear(world, result);
+		field.update(0.0f);
+
+		return Burst{ field.live(), field.hottest() };
+	}
+
+	Burst full_well_topping_out()
+	{
+		World world;
+
+		for (int y = 0; y < well_rows; ++y)
+		{
+			fill_row(world, y);
+		}
+
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
+
+		world.topped_out = 1;
+		++world.tick;
+		field.update(0.0f);
+
+		return Burst{ field.live(), field.hottest() };
+	}
+
+	Burst nothing_yet()
+	{
+		World world;
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
+
+		return Burst{ field.live(), field.hottest() };
+	}
+
+	// THE ONE PLACE THIS FILE PINS NUMBERS RATHER THAN RATIOS, because these
+	// are limits and not tuning. Each burst's heat is its brightness ceiling,
+	// and README, The bursts against WCAG 2.3.1, measured the bursts at the
+	// heats below against the strict reading of the flash threshold. A heat
+	// raised in particles.h fails here until tools/flash_check/ has been run
+	// again and these move with it.
+	TEST_CASE("each burst is born no hotter than the flash check measured it")
+	{
+		constexpr float measured_lock = 1.0f;
+		constexpr float measured_clear = 0.75f;
+		constexpr float measured_shatter = 0.55f;
+
+		// The order is the policy: the more of the screen a burst covers,
+		// the cooler its sparks are born.
+		static_assert(linesweeper::shatter_heat < linesweeper::clear_heat);
+		static_assert(linesweeper::clear_heat <= linesweeper::lock_heat);
+
+		SUBCASE("a piece landing")
+		{
+			const Burst burst = piece_landing();
+
+			REQUIRE(burst.live > 0);
+			CHECK(burst.hottest == doctest::Approx(linesweeper::lock_heat));
+			CHECK(burst.hottest <= measured_lock);
+		}
+
+		SUBCASE("a row leaving")
+		{
+			const Burst burst = row_leaving();
+
+			REQUIRE(burst.live > 0);
+			CHECK(burst.hottest == doctest::Approx(linesweeper::clear_heat));
+			CHECK(burst.hottest <= measured_clear);
+		}
+
+		SUBCASE("a full well topping out")
+		{
+			const Burst burst = full_well_topping_out();
+
+			// Calmer by heat and not by count: this is still the 9,600
+			// sparks bench/linesweeper_frame_bench.cpp freezes as its
+			// workload, and the sample's ten-thousand-particle claim.
+			CHECK(burst.live == 9600);
+			CHECK(burst.hottest ==
+				doctest::Approx(linesweeper::shatter_heat));
+			CHECK(burst.hottest <= measured_shatter);
+		}
+
+		SUBCASE("and an empty field is no heat at all")
+		{
+			const Burst burst = nothing_yet();
+
+			CHECK(burst.live == 0);
+			CHECK(burst.hottest == 0.0f);
+		}
+	}
+
 	TEST_CASE("particles die, and the field empties itself")
 	{
 		World world;

@@ -346,9 +346,10 @@ and is named as one.
 
 `board_view.cpp` already has the quad, and it earned its place for the second
 reason before the first: the top-out banner is red words over whatever colour
-the stack happens to be under them, and no blend mode makes that legible. The
-quad is premultiplied black at 88%, so an eighth of the stack shows through and
-it reads as a banner over the well rather than a hole in it. `faded()` in
+the sparks the stack became happen to be under them, and no blend mode makes
+that legible. The quad is premultiplied black at 88%, so an eighth of what is
+under it shows through and it reads as a banner over the well rather than a
+hole in it. `faded()` in
 `palette.h` is the two multiplications a premultiplied tint costs a caller, and
 is the only place in the sample that knows the blend equation.
 
@@ -479,21 +480,79 @@ which is the only thing that argument leaves room for.
 
 A burst is thousands of additive sparks thrown on one frame, and the hosted
 page puts it in front of anybody who follows a link. So the line clears and
-the top-out were checked against WCAG 2.3.1, *Three Flashes or Below
-Threshold*, before the page is linked from the front door. **They pass by the
-definition, with one reading of it named below that a reviewer may reject.**
+the top-out are checked against WCAG 2.3.1, *Three Flashes or Below
+Threshold*, and **they are held to its strict reading: any pixels in the field
+flickering at any time in the second count together.** That is the owner's
+decision of 2026-10-13. On that reading the top-out as first written failed,
+so the calmer one below is the default for every player, on the desktop and in
+the browser, rather than an option for those who ask (BDP-22 is that option,
+and now goes further than a default that is already safe). Of the three
+top-out brightnesses measured, the owner looked at the calmest and chose the
+middle one the same day: a top-out heat of 0.55.
+
+**The reading.** WCAG counts the area of flashes "occurring concurrently" and
+does not define the word. Read loosely, a field where sparks brighten some
+pixels and darken others within the same few frames has made neither change,
+because it has not brightened or darkened as a whole. Read strictly, every
+pixel's own flashes count, whenever in the second they happen, and more than
+a quarter of a field at more than three is a failure: that is the *pixel
+bound* below. The strict reading is the one taken. WCAG's own definition
+points the same way: it exempts balanced flashing only as "a fine, balanced,
+pattern such as white noise or an alternating checkerboard pattern" with
+elements under 0.1 degree, about four pixels at the assumed field, and a spark
+is born larger than that.
+
+**What failed.** With the stack left standing and every spark born at full
+brightness, the top-out was 8 flashes a second by the pixel bound, in frames
+675-734 of [`flash.txt`](../../tools/linesweeper_capture/flash.txt)'s run and
+1961-2020 of `footage.txt`'s. For half a second after the shatter about a
+fifth of the field brightened and a fifth darkened on every frame, as sparks
+crossed it. The line clears passed at 2. Most of the top-out's flicker was
+sparks crossing the stack: under additive blending a block near the top of the
+sRGB range climbs steeply in linear light, so the same spark that barely
+changes the dark well flashes a bright block. Dimming the sparks alone left
+the top-out at 4.
+
+**What changed: one branch and three numbers.**
+
+- **A topped-out match draws no stack** (`board_view.cpp`, `draw_stack`). The
+  field throws every cell of it as sparks on that frame, so the stack becomes
+  the sparks and the well behind them is dark. The cells are still in the
+  `World`; nothing in `rules/` changed, and a restart draws the empty well as
+  before.
+- **Each burst names the heat its sparks are born at** (`particles.h`,
+  `lock_heat`, `clear_heat` and `shatter_heat`). A spark adds its colour times
+  the square of what is left of its heat, so a heat is a brightness ceiling. A
+  landing keeps 1, a clear is born at 0.75 and a top-out at 0.55, about three
+  tenths of the light its sparks had. A spark's side shrinks with its heat as
+  well, so a top-out spark is also born at about seven tenths of its old size.
+  The
+  top-out's sparks are also slower (160 pixels a second, from 420) and live
+  longer (up to 2.2 seconds, from 1.6), so a spark that dim stays on screen
+  long enough to read as the stack settling. The count did not change: a full
+  well is still 9,600 sparks, the workload
+  `LineSweeperFrameBench` freezes.
+
+Heat is the term the result moves with. With the stack hidden, the top-out
+counted 1, 1.5 and 2 flashes by the pixel bound over frames 640-988 at heats
+of 0.5, 0.55 and 0.6, and halving the speed moved it by half a flash. 0.5
+is the calmest of those and 0.6 the brightest inside the target of two; 0.55,
+between them, is the one the owner chose, and the results below are for it.
+The clears counted 2 at a heat of 1 and 1 at 0.75, which is also what the same
+frames count with no particle drawn at all. `LineSweeperViewTests` pins each
+heat to the value measured here, so a brighter burst fails there until this
+check is run again.
 
 **Method.** `LineSweeperCapture --sequence` wrote every 60 Hz presentation
 update of two checked-in matches as a PNG, and
 [`tools/flash_check/flash_check.mjs`](../../tools/flash_check/flash_check.mjs)
-read them. [`flash.txt`](../../tools/linesweeper_capture/flash.txt) is the
-website's match as fast as a script can play it - four tetrises, the second
-and third back to back, one single and the top-out, then five seconds of the
-burst decaying: 989 frames. [`footage.txt`](../../tools/linesweeper_capture/footage.txt)
-is the same match at the website video's pace: 2,095 frames. Both were drawn
-by the x64-release D3D11 build on an NVIDIA GeForce RTX 5080; the x64-debug
-build wrote byte-identical frames for `flash.txt`. The tool and both scripts
-are as committed beside this section, on the tree of `fbb753d`.
+read them. `flash.txt` is the website's match as fast as a script can play it
+- four tetrises, the second and third back to back, one single and the
+top-out, then five seconds of the burst decaying: 989 frames, the shatter on
+frame 687. [`footage.txt`](../../tools/linesweeper_capture/footage.txt) is the
+same match at the website video's pace: 2,095 frames, the shatter on frame
+1973. Both were drawn by the x64-release D3D11 build on an NVIDIA GeForce RTX
+5080, from the tree of the commit that added this paragraph.
 
 ```powershell
 out\build\x64-release\tools\linesweeper_capture\LineSweeperCapture.exe out\flash tools\linesweeper_capture\flash.txt --sequence
@@ -507,62 +566,48 @@ once; a red transition is a change of more than 20 in `(R - G - B) x 320` at a
 saturated red, `R / (R + G + B) >= 0.8`, both on linear channels. That red
 measure is the Understanding document's working definition. WCAG 2.2's own
 note on saturated red uses a different measure, a difference of more than 0.2
-in CIE 1976 UCS chromaticity, and that measure has not been run here. The area is
-more than 25% of a 10 degree field, taken as a third of the frame each way
+in CIE 1976 UCS chromaticity, and that measure has not been run here. The area
+is more than 25% of a 10 degree field, taken as a third of the frame each way
 (427x240), as WCAG's 341x256 is of 1024x768 - which assumes the game fills a
-screen seen from the distance that equivalence assumes. Every one-second window
-is counted, at every position of the field. The file's header has the full
-definitions and `node --test tools/flash_check/flash_check.test.mjs` holds
-them to synthetic frames.
+screen seen from the distance that equivalence assumes. Every one-second
+window is counted, at every position of the field. The tool reports the
+concurrent count beside the pixel bound; the pixel bound is the verdict. The
+file's header has the full definitions and
+`node --test tools/flash_check/flash_check.test.mjs` holds them to synthetic
+frames.
 
-**Result**, the worst one-second window in each run:
+**Result**, the worst one-second window in each run, in flashes:
 
 | | `flash.txt` | `footage.txt` |
 |---|---|---|
-| General flashes, concurrent | 1, the top-out (window ending at frame 690) | 1, the top-out (ending at 1976) |
-| Red flashes, concurrent | 0 | 0 |
-| General flashes, pixel bound | 8, the top-out (frames 675-734) | 8, the top-out (frames 1961-2020) |
-| Line clears alone (`--frames 0-685`, `0-1972`): concurrent, pixel bound | 0.5, 2 | 0.5, 2 |
-| Widest change in one field | 53% rising at frame 689, 54% falling at 700 | 53% rising at 1975, 54% falling at 1986 |
+| General, pixel bound | 1.5, the top-out (window ending at frame 699) | 1, a clear (ending at 363) |
+| Red, pixel bound | 0 | 0 |
+| General, concurrent | 0.5 | 0.5 |
+| Top-out alone (`--frames 686-988`, `1960-2094`), pixel bound | 1.5 (ending at 701) | 1.5 (ending at 1987) |
+| Line clears alone (`--frames 0-685`, `0-1972`), pixel bound | 1 | 1 |
+| Widest change in one field | 29% falling at frame 689 | 29% falling at 1975 |
+| Before this change, general, pixel bound | 8, the top-out (frames 675-734) | 8, the top-out (frames 1961-2020) |
 
-A flash is two transitions, so 0.5 is a single change. The line clears pass
-under every reading here, including the pixel bound, which can only
-overstate: the most a field does in a second is darken once, as the fourth
-tetris takes 29% of one dark, and no field brightens over the threshold. The
-top-out is one flash: more than half the field brightens as the stack
-shatters, and darkens as the sparks die.
+A flash is two transitions, so 0.5 is a single change. Concurrently the
+top-out is one darkening, as the stack goes and its sparks start no brighter
+than it was; pixel by pixel its sparks then brighten and darken a quarter of a
+field three times in the next second as they settle, which is the 1.5. The
+clears are 1. Both runs pass, `flash.txt` with a margin of a flash and a half
+against the threshold and `footage.txt` with two, and both are inside the
+target of two this change was held to.
 
-**What the pass rests on.** For half a second after the shatter, about a
-fifth of the field's pixels brighten and about a fifth darken on every frame,
-as sparks move across it. WCAG counts flashes "occurring concurrently", and the
-analysis reads that as a field changing as a whole: a field where more than
-25% brightened and more than 25% darkened within the same three frames has
-made neither change. Read the other way - any pixels in the field, flickering
-at any time in the second - is the pixel bound, and that is 8 flashes a
-second, over the threshold. WCAG does not define "concurrently", but its
-definition of the thresholds says one thing that bears on it, and it counts
-against this reading: it exempts flashing that is "a fine, balanced,
-pattern such as white noise or an alternating checkerboard pattern" only
-when its squares are smaller than 0.1 degree on a side. An exemption that
-narrow suggests that balanced brightening and darkening by coarser elements
-is meant to count. At the assumed field 0.1 degree is about four pixels;
-a shatter spark is six pixels across when it is thrown and shrinks to two
-(`presentation/particles.cpp`, `shatter_size`), so the sparks start above
-that size and end below it, and at the half-size field below they are
-above it throughout. The first count is how "concurrently" is applied here,
-and it is the one a reviewer should argue with.
-
-The margin is a property of the assumed screen. `--edge 6` lets a concurrent
-change span six frames, and the worst window is then 1.5 flashes, on the
-fourth tetris. `--field 213x120`, the game seen at twice that size - a large
-monitor up close, a phone at reading distance - counts 2.5 general flashes on the second and third tetrises and 1.5
-red flashes in the top-out: still a pass, by half a flash.
-
-**So BDP-22's reduced path does not need to be the default on this result**,
-and the front-door link need not wait for it. If the owner rejects the reading
-of "concurrently" above, the top-out fails at 8 flashes a second in frames
-675-734 of `flash.txt`, a calmer top-out becomes the default for every player
-rather than an option for those who ask, and the link waits for it.
+**The assumed screen, priced.** `--edge 6`, which lets a concurrent change span
+six frames, changes nothing: the pixel bound is 1.5 in `flash.txt` and 1 in
+`footage.txt`, and the concurrent count 0.5 in both. `--field 213x120`, the game seen at twice the size - a
+large monitor up close, a phone at reading distance - counts 2 by the pixel
+bound in `footage.txt` (window ending at frame 366) and 3 in `flash.txt`
+(ending at 373), with no red flash over 1. The top-out alone counts 2.5 there
+in both runs (ending at 721 and 2007). The 3 is not the particles: the
+same frames drawn with the field's `draw()` returning at once count 3 in the
+same window. It is pieces spawning and stepping across the top of the well
+with no wait between them, which `flash.txt` does and a player cannot; at the
+video's pace the same match counts 2. The concurrent count at that field is
+1.5 in `flash.txt`, where it was 2.5 before, and 1 in `footage.txt`.
 
 ### A phone held upright
 
@@ -654,15 +699,11 @@ landscape one with touch emulated. **No real phone has played it**, and the
   claimed as display scan-out. The EC2 runner beside it is a reproducible
   reference profile, not the missing Radeon result; neither tool is itself a
   measurement.
-- **The owner's sign-off on the flash check's reading of "concurrently".**
-  *The bursts against WCAG 2.3.1* passes the top-out at one flash a second
-  only because a field where sparks brighten and darken different pixels in
-  the same three frames is counted as neither; counted pixel by pixel it is
-  eight. That reading is stated, priced and tested, and it is still a reading.
-  WCAG's fine-pattern exemption counts against it. If it is rejected, the
-  top-out fails and the record there says what follows. The red count also
-  uses the Understanding document's measure rather than WCAG 2.2's
-  chromaticity note, which has not been run.
+- **WCAG 2.2's saturated-red measure.** *The bursts against WCAG 2.3.1* counts
+  red flashes by the Understanding document's working definition, and both
+  runs count none by the pixel bound. WCAG 2.2's own note measures a red
+  change as more than 0.2 in CIE 1976 UCS chromaticity, and that has not been
+  run.
 - **Whether the layer rule gets a build check.** It is now checkable and
   unchecked, which is the worst of the three states, and `presentation/`
   has five files in it rather than three.

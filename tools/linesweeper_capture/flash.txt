@@ -131,7 +131,7 @@ place o 0 1
 place l 0 3          # tops out
 
 # --- The top-out burst. The match stops ticking at the lock; five seconds of
-# presentation follow, three times as long as its sparks live
+# presentation follow, more than twice as long as its longest-lived spark
 # (presentation/particles.cpp, shatter_lifetime). The tool refuses a script
 # that captures nothing, and the still at the end is the settled frame.
 
