@@ -5,6 +5,7 @@ sidebar:
   order: 1
 ---
 
+import RepoLink from '~/components/RepoLink.astro';
 import SourceFile from '~/components/SourceFile.astro';
 
 Everything Labrador draws is a textured rectangle: a sprite. Text is sprites cut from a font's
@@ -15,14 +16,72 @@ the files, the classes that draw them, and the colours.
 
 | Kind | File | Made with |
 | --- | --- | --- |
-| Texture | `.dds` | Any tool that writes DDS, such as `texconv` from Microsoft's DirectXTex. |
-| Font | `.spritefont` | `MakeSpriteFont` from Microsoft's DirectX Tool Kit, which renders a system font into an atlas. |
+| Texture | `.dds` | Any tool that writes DDS, such as `texconv` from Microsoft's DirectXTex (below). |
+| Font | `.spritefont` | `MakeSpriteFont` from Microsoft's DirectX Tool Kit, which renders an installed font into an atlas (below). |
 | Sprite sheet | `.dds` and `.json` with the same name | A texture, plus a JSON file naming rectangles in it (below). |
 
 A texture can be uncompressed 32-bit colour (`R8G8B8A8` or `B8G8R8A8`), 16-bit `B4G4R4A4`, or
 block-compressed BC1, BC2 or BC3. Anything else is refused at load, with the file named. Each
 file is listed in the [manifest](/docs/concepts/resources/#the-manifest) by name, without its
 extension.
+
+## Making textures and fonts
+
+Both tools are free Windows programs from Microsoft, each a single executable attached to its
+project's releases. Neither is needed to build or run the samples, and neither is a dependency of
+the engine. The commands below were checked with the `may2026` release of each.
+
+- [`texconv`](https://github.com/microsoft/DirectXTex/wiki/Texconv): `texconv.exe` from the
+  [DirectXTex releases](https://github.com/microsoft/DirectXTex/releases).
+- [`MakeSpriteFont`](https://github.com/microsoft/DirectXTK/wiki/MakeSpriteFont):
+  `MakeSpriteFont.exe` from the [DirectX Tool Kit releases](https://github.com/microsoft/DirectXTK/releases).
+
+**A texture from a PNG**, run from your game's folder:
+
+```powershell
+texconv -f R8G8B8A8_UNORM -m 1 -pmalpha -y -o content\textures hero.png
+```
+
+This writes `content\textures\hero.dds`, and the folder must already exist. The `-f` is required:
+without it texconv keeps the PNG's sRGB format, which only the DX10 extended header can describe,
+and the engine refuses that header at load. `-m 1` writes one level rather than a mip chain.
+`-pmalpha` multiplies each colour by its alpha, which is what the engine's blending expects
+([Colours and blending](#colours-and-blending), below). `-y` overwrites an existing file.
+
+**A font from an installed font:**
+
+```powershell
+MakeSpriteFont "Courier New" content\fonts\courier_new_bold_16.spritefont /FontSize:16 /FontStyle:Bold
+```
+
+The first argument is the family name of a font installed on the machine; a path to a font file
+is not accepted. With no `/CharacterRegion` the atlas holds the 95 printable ASCII characters,
+U+0020 to U+007E. The tool premultiplies the alpha itself and writes a BC2 atlas, which the engine
+reads as it is. With Courier New as Windows 11 installs it, this command reproduces the
+template's own atlas, every glyph and texel of it.
+
+Then list the new file in `content\manifest.json`. On Windows a folder of content is copied beside
+the executable by a line in your `CMakeLists.txt`, and a new folder such as `textures` needs a line
+of its own ([Assets](/docs/guides/assets/)).
+
+### The template's font and its licence
+
+The template's only font, `content/fonts/courier_new_bold_16.spritefont`, is an atlas rendered
+from Courier New, a Windows system font whose copyright is Monotype's. Its redistribution terms
+are not Labrador's to grant, as <RepoLink path="NOTICE">NOTICE</RepoLink> says, and this
+repository does not settle them. The licence description inside the font file lets you use it "to
+create, display, and print content" as the terms of the Microsoft product it came with allow,
+and prohibits any other use; nothing here records whether a
+glyph atlas shipped inside a game counts as such content. **Checking that is yours to do before
+you ship.** The collision, components, local_multiplayer and audio samples embed the same atlas,
+and so does the hosted LineSweeper demo. Replacing it with an openly licensed font is
+<RepoLink path="docs/product/STORIES.md" hash="oca-75">an open story</RepoLink> rather than done.
+
+To replace it before you ship, install a font you may redistribute in this form, such as one
+under the SIL Open Font License, and run the `MakeSpriteFont` command above with its name. Then
+change the atlas's name in `content/manifest.json`, in the `font_name` constant at the top of
+`states/hello_state.cpp` and `states/confirm_state.cpp`, and in the `.spritefont` path the browser build lists in
+`CMakeLists.txt`, and delete the Courier New atlas.
 
 ## Text
 
