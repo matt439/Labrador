@@ -211,8 +211,10 @@ These build settings live in Cloudflare's dashboard. The separate
 `.github/workflows/website.yml` continues to check, build and retain an artifact;
 Cloudflare performs production deployment.
 
-## Remaining launch follow-up
+## One host
 
-`astro.config.ts` still has no `site` URL. Set it to
-`https://labradorengine.com` and verify canonical URLs and sitemap generation
-in a subsequent change.
+`labradorengine.com` is the site's only host. `astro.config.ts` names it as
+`site`, so every page carries a canonical link to it and the build writes
+`sitemap-index.xml`; `wrangler.jsonc` sets `workers_dev` and `preview_urls`
+to `false`, so the Worker serves no copy at a `workers.dev` address to compete
+with it.

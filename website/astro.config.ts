@@ -15,6 +15,9 @@ import { GITHUB_REPOSITORY, EDIT_BRANCH } from './src/lib/repository';
 import { REFERENCE_MODULES, moduleSlug } from './src/lib/published';
 
 export default defineConfig({
+	// The one host the site is served from. Canonical links and the sitemap
+	// are built from it, and wrangler.jsonc serves no workers.dev copy.
+	site: 'https://labradorengine.com',
 	markdown: {
 		processor: satteri({ mdastPlugins: [checkoutLinks, mermaidBlocks, referenceLinks] }),
 	},
