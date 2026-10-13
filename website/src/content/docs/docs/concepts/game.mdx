@@ -61,7 +61,8 @@ dial you turn for performance.
 LineSweeper turns it both ways in the same scene. Its board, its particle field and its game-over
 banner are one object each, and the particle field is ten thousand particles in one flat array,
 which costs three virtual calls a frame however many are alive. Beside them are two ordinary
-labels. All five are added to one scene in the play state's `init()`:
+labels and the touch controls. All six are added to one scene in the play state's `init()`, the
+first three like this:
 
 <SourceFile
 	path="samples/linesweeper/states/play_state.cpp"

@@ -49,14 +49,19 @@ position in the pane = (position in the world - camera.translation) × camera.sc
 
 so `translation` is the world point shown at the pane's top-left corner, and `scale` is the zoom.
 The default camera, `Camera::DEFAULT_CAMERA`, is the identity: world coordinates are pane pixels.
-Both samples use it, with one view covering the window, which makes their world coordinates the
-same as window pixels:
+A view added without a camera gets it. The minimal sample and the audio sample keep it, with one
+view covering the window, which makes their world coordinates the same as window pixels:
 
 <SourceFile path="samples/minimal/states/hello_state.cpp" from="this->scene_->add_view(" to="this->scene_->add_view(" />
 
 `Camera::frame(world_rectangle, viewport)` builds the camera that fits a region of the world into
-a pane without stretching it, and `CameraTools` computes a camera that follows a player, with a
-dead zone the player can move in before the camera moves.
+a pane without stretching it. LineSweeper, the collision sample and the components gallery lay
+their screens out in world units and frame that rectangle into the window this way, so resizing
+the window scales the screen rather than moving what is on it; LineSweeper also frames a second,
+portrait rectangle when the window is taller than it is wide. `CameraTools` computes a camera
+that follows a player, with a dead zone the player can move in before the camera moves. The
+local-multiplayer sample builds its own instead: one camera per player, centred on that player
+at a scale of 1.
 
 ## Split-screen
 
