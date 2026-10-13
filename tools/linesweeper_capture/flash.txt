@@ -1,0 +1,139 @@
+# The flash check's match (samples/linesweeper/README.md, The bursts against
+# WCAG 2.3.1): website.txt's placements with its captures and the waits before
+# them taken out, run with --sequence, so every presentation update of four
+# tetrises, one single and the top-out is written as a 60 fps frame.
+#
+# It is website.txt as fast as a script can play it - every press is one tick
+# down and one tick up, and nothing waits between pieces - because flashes per
+# second are what is being measured, and a faster player puts the bursts closer
+# together. footage.txt is the same match at a viewer's pace.
+
+# --- Three tetrises, the second and third back to back.
+
+hold s
+place i 0 0
+place o 0 0
+place t 0 4
+place z 0 6
+place l 0 2
+place j 2 6
+hold j
+place s 0 2
+hold i
+place j 0 0
+hold s
+place i 0 1
+place l 2 5
+place t 3 7
+hold z
+place s 0 5
+place o 0 0
+place l 0 2
+hold j
+place z 0 1
+place i 1 9          # the first tetris
+place z 1 5
+place o 0 7
+hold s
+place j 0 3
+place t 1 0
+hold j
+place s 1 1
+place l 0 4
+place o 0 7
+place t 0 3
+place i 1 9          # the second
+place s 0 2
+hold z
+place j 0 5
+place j 2 6
+place o 0 7
+place s 0 1
+place z 0 3
+place l 2 2
+place i 1 0
+place t 3 5
+place i 1 9          # the third
+
+# --- Building the stack up nine rows, holding an I back for the well.
+
+place j 2 3
+place z 0 6
+place o 0 3
+place l 3 0
+place s 1 7
+place t 0 0
+place j 1 2
+hold l
+place z 1 0
+place o 0 5
+hold i
+place l 2 0
+place z 0 3
+place t 3 7
+place s 1 5
+place o 0 0
+
+# --- The fourth tetris.
+
+place s 1 6
+place i 1 9
+
+# --- Filling the well to the top, with one single near the end.
+
+place j 0 2
+place z 0 2
+place l 1 0
+place t 2 4
+place i 0 1
+hold o
+place i 0 1
+place s 1 7
+hold t
+place o 0 5
+hold j
+place t 3 7
+place z 1 7
+place l 0 4
+place o 0 0
+place j 3 2
+hold t
+place j 2 0
+hold i
+place t 2 6
+hold s
+place i 0 0
+hold z
+place s 1 4
+place l 0 5
+place o 0 0
+place z 1 6
+hold s
+place z 1 6
+place i 0 2
+place l 0 3
+place j 2 0
+hold t
+place s 0 3
+place l 0 1
+hold z
+place t 0 4
+place s 0 1
+place t 2 3
+place o 0 6
+place j 0 0
+hold i
+place z 0 7
+hold o
+place i 0 3
+hold s
+place o 0 1
+place l 0 3          # tops out
+
+# --- The top-out burst. The match stops ticking at the lock; five seconds of
+# presentation follow, three times as long as its sparks live
+# (presentation/particles.cpp, shatter_lifetime). The tool refuses a script
+# that captures nothing, and the still at the end is the settled frame.
+
+wait 300
+capture flash-end.png
