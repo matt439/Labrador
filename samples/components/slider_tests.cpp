@@ -10,6 +10,7 @@
 #include "engine/render/renderer.h"
 #include "engine/ui/focus.h"
 
+#include <climits>
 #include <stdexcept>
 #include <vector>
 
@@ -101,6 +102,49 @@ TEST_CASE("a step that overshoots the end stops on the end")
 	CHECK(slider.value() == 6);
 }
 
+TEST_CASE("a range that does not start at zero fills from its minimum")
+{
+	TestContent content;
+	Slider slider("speed", L"Speed", 10, 20, 4, 15,
+		Vector2F(100.0f, 50.0f), track, "font", TextureHandle(),
+		&content.resources);
+
+	// Five of ten is half the track.
+	CHECK(slider.fill().bounds().width == doctest::Approx(100.0f));
+
+	// And a step that overshoots the minimum stops on it, with no fill.
+	CHECK(slider.adjust(Direction::left));
+	CHECK(slider.value() == 11);
+	CHECK(slider.adjust(Direction::left));
+	CHECK(slider.value() == 10);
+	CHECK(slider.number().text() == L"10");
+	CHECK(slider.fill().bounds().width == doctest::Approx(0.0f));
+
+	CHECK(slider.adjust(Direction::right));
+	CHECK(slider.value() == 14);
+	CHECK(slider.fill().bounds().width == doctest::Approx(80.0f));
+}
+
+TEST_CASE("a range as wide as an int steps and fills without overflowing")
+{
+	TestContent content;
+	Slider slider("wide", L"Wide", INT_MIN, INT_MAX, 1000, INT_MAX - 5,
+		Vector2F(100.0f, 50.0f), track, "font", TextureHandle(),
+		&content.resources);
+
+	CHECK(slider.adjust(Direction::right));
+	CHECK(slider.value() == INT_MAX);
+	CHECK(slider.fill().bounds().width == doctest::Approx(200.0f));
+
+	slider.set_value(INT_MIN + 5);
+	CHECK(slider.adjust(Direction::left));
+	CHECK(slider.value() == INT_MIN);
+	CHECK(slider.fill().bounds().width == doctest::Approx(0.0f));
+
+	slider.set_value(0);
+	CHECK(slider.fill().bounds().width == doctest::Approx(100.0f));
+}
+
 TEST_CASE("up, down and none are not the slider's")
 {
 	TestContent content;
@@ -129,7 +173,9 @@ TEST_CASE("a range that is not one, or a value outside it, throws")
 
 	Slider slider = volume(content, 50);
 	CHECK_THROWS_AS(slider.set_value(101), std::invalid_argument);
+	CHECK_THROWS_AS(slider.set_value(-1), std::invalid_argument);
 	CHECK(slider.value() == 50);
+	CHECK(slider.number().text() == L"50");
 }
 
 TEST_CASE("the slider's box runs from the label past the number")

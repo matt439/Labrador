@@ -230,7 +230,7 @@ jobs:
   # RenderPixelTests, RenderContextLossTests and WebWindowTests are the
   # exceptions: they are pages, run in the runner's Chrome by
   # tests/render/web/run_page.mjs, and they have steps of their own below so
-  # that a failure there names itself. So are the five sample pages, each
+  # that a failure there names itself. So are the six sample pages, each
   # loaded and quit in the same Chrome, in a step of their own after them.
   #
   # EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the

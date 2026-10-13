@@ -173,8 +173,9 @@ if(PROJECT_IS_TOP_LEVEL)
         # lets Web Audio make its context. Escape grants none (the gesture note
         # in engine/audio/webaudio/audio_device.cpp) and is only the way out.
         labrador_sample_page_test(AudioPageTests AudioSample "KeyS,Escape")
-        # A slider moved, an option row moved, and out. The changes go
-        # through the components' callbacks to the status line.
+        # A slider moved, an option row moved, and out. Escape quits from any
+        # state and nothing here reads the status line, so this proves the
+        # page loads, draws and quits; ComponentsTests holds what a key does.
         labrador_sample_page_test(ComponentsPageTests ComponentsGallery
             "ArrowDown,ArrowDown,ArrowLeft,ArrowUp,ArrowRight,Escape")
     endif()

@@ -44,14 +44,16 @@ namespace components
 	// One settings row for a number in a range - a volume, a sensitivity - shown
 	// as a label, a bar and the number itself.
 	//
-	// COPY IT, DO NOT LINK IT, for the reason option_row.h gives; the README
-	// beside them says more.
+	// COPY IT, DO NOT LINK IT. This file and slider.cpp are meant to be
+	// dropped into a game and edited there; the README beside them says why
+	// components are copied rather than shipped as engine code.
 	//
-	// It is option_row.h's shape with an integer in place of a list: a
-	// container the cursor lands on, a value the page changes by calling
-	// adjust() with left or right, and a callback when it does. Unlike an
-	// option row it never wraps - a volume that goes from 100 to 0 on one more
-	// press is a trap.
+	// A container the cursor lands on, a value the page changes by calling
+	// adjust() with left or right, and a callback when it does - the shape of
+	// an option row, with an integer in place of a list. Unlike an option row
+	// it never wraps - a volume that goes from 100 to 0 on one more press is a
+	// trap. The slider does not read input: which keys mean left is the
+	// page's binding.
 	//
 	// Focus paints the label and the fill together, so the bar lights up with
 	// the row it belongs to; the track and the number keep their colours.

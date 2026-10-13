@@ -36,7 +36,7 @@ says why they are copied, and when one would move into the engine.
 ```
 engine/    ~34k lines   the engine: ten modules with a fixed dependency direction
 samples/                the starter template, LineSweeper, three focused guide examples and components to copy
-tests/     ~16k lines   doctest, seventeen targets, run by ctest
+tests/     ~16k lines   doctest, run by ctest with three more that sit beside their samples
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 website/                the public site, built with npm from this same checkout

@@ -14,9 +14,9 @@ namespace components
 {
 	namespace
 	{
-		// The track is dim, and the number is option_row.cpp's value colour,
-		// so it never reads as the thing the cursor is on. Focus paints
-		// neither. Change both to your game's.
+		// The track is dim, and the number is the colour an option row's
+		// value is drawn in, so it never reads as the thing the cursor is
+		// on. Focus paints neither. Change both to your game's.
 		constexpr Colour track_colour(60, 66, 80);
 		constexpr Colour number_colour(235, 190, 90);
 
@@ -126,15 +126,17 @@ namespace components
 
 	bool Slider::adjust(Direction direction)
 	{
-		int next = this->value_;
+		// The step is taken in 64 bits and clamped there, because the range
+		// may run to either end of an int and a step past it would overflow.
+		long long next = this->value_;
 
 		if (direction == Direction::right)
 		{
-			next = std::min(this->value_ + this->step_, this->maximum_);
+			next = std::min<long long>(next + this->step_, this->maximum_);
 		}
 		else if (direction == Direction::left)
 		{
-			next = std::max(this->value_ - this->step_, this->minimum_);
+			next = std::max<long long>(next - this->step_, this->minimum_);
 		}
 
 		if (next == this->value_)
@@ -142,12 +144,12 @@ namespace components
 			return false;
 		}
 
-		this->value_ = next;
+		this->value_ = static_cast<int>(next);
 		this->show_value();
 
 		if (this->on_change_)
 		{
-			this->on_change_(next);
+			this->on_change_(this->value_);
 		}
 
 		return true;
@@ -208,11 +210,13 @@ namespace components
 
 	RectangleF Slider::fill_rectangle() const
 	{
-		const float fraction = static_cast<float>(this->value_ - this->minimum_) /
-			static_cast<float>(this->maximum_ - this->minimum_);
+		// In double, so that a range wider than an int can hold is still one.
+		const double fraction =
+			(static_cast<double>(this->value_) - this->minimum_) /
+			(static_cast<double>(this->maximum_) - this->minimum_);
 
 		return RectangleF(this->track_rectangle_.x, this->track_rectangle_.y,
-			this->track_rectangle_.width * fraction,
+			this->track_rectangle_.width * static_cast<float>(fraction),
 			this->track_rectangle_.height);
 	}
 

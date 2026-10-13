@@ -48,6 +48,7 @@ flowchart TD
         sample["MinimalSample<br/>new-project template"]
         linesweeper["LineSweeperSample<br/>whole sample game"]
         collision_sample["CollisionSample"]
+        gallery["ComponentsGallery"]
         guides["AudioSample<br/>LocalMultiplayerSample"]
         throughput["LabradorBench<br/>complexity gates"]
         frame["LineSweeperFrameBench<br/>declared hardware measurement"]
@@ -59,6 +60,7 @@ flowchart TD
         math["MattMath"]
         rules["LineSweeperRules"]
         collision_example["CollisionExample"]
+        components["ComponentsExample"]
     end
     subgraph edge["the bought edge (T9)"]
         sdks["platform SDKs<br/>graphics · DirectXTK · XInput"]
@@ -70,6 +72,8 @@ flowchart TD
     linesweeper --> rules
     collision_sample --> collision_example
     collision_example --> engine
+    gallery --> components
+    components --> engine
     guides --> engine
     throughput --> engine
     frame --> engine

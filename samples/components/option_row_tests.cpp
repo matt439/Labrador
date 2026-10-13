@@ -38,6 +38,7 @@ TEST_CASE("an option row starts on the choice it was given")
 
 	CHECK(row.index() == 1);
 	CHECK(row.choice() == L"Normal");
+	CHECK(row.value().text() == L"Normal");
 	CHECK(row.choice_count() == 3);
 }
 
@@ -55,6 +56,7 @@ TEST_CASE("right and left step through the choices, and report each change")
 	CHECK(row.choice() == L"Hard");
 	CHECK(row.adjust(Direction::left));
 	CHECK(row.choice() == L"Normal");
+	CHECK(row.value().text() == L"Normal");
 
 	CHECK(heard == std::vector<size_t>{ 1, 2, 1 });
 }
@@ -67,8 +69,10 @@ TEST_CASE("a wrapping row goes round at both ends")
 
 	CHECK(row.adjust(Direction::right));
 	CHECK(row.index() == 0);
+	CHECK(row.value().text() == L"Windowed");
 	CHECK(row.adjust(Direction::left));
 	CHECK(row.index() == 1);
+	CHECK(row.value().text() == L"Full screen");
 }
 
 TEST_CASE("a row that does not wrap stops at its ends, says so and stays quiet")
@@ -81,8 +85,10 @@ TEST_CASE("a row that does not wrap stops at its ends, says so and stays quiet")
 
 	CHECK_FALSE(row.adjust(Direction::right));
 	CHECK(row.choice() == L"Hard");
+	CHECK(row.value().text() == L"Hard");
 
 	row.set_index(0);
+	CHECK(row.value().text() == L"Easy");
 	CHECK_FALSE(row.adjust(Direction::left));
 	CHECK(row.choice() == L"Easy");
 
