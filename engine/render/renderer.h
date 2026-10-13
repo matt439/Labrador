@@ -152,13 +152,21 @@ namespace labrador
 		// them. SEAM.md#6 says why the other answer is not the engine's to give.
 		void set_filter(TextureFilter filter);
 
-		// CONSTRAINT: sort depth is per draw, not per object.
+		// CONSTRAINT: call order decides what is on top, and layer_depth orders
+		// nothing.
 		//
-		// layer_depth is a parameter here for the same reason the tint and the
-		// flip are: the same sprite drawn into two views at two depths must be
-		// expressible. Under the view fan-out, a depth read off the shared object
-		// is the one member every worker reads while another view wants a
-		// different value, and it is inexpressible rather than merely racy.
+		// Within one list a later draw covers an earlier one whatever depths the
+		// two were given, and submit() draws the lists in view order. No backend
+		// reads layer_depth: there is no depth buffer and no sort, which
+		// RenderPixelTests pins - "layer_depth does not order draws, call order
+		// does". A background is put behind a player by drawing it first.
+		//
+		// It is still a parameter, and per draw rather than per object, because
+		// the seam is what a client writes against and a backend that sorts
+		// would need it in that shape, for the reason the tint and the flip
+		// are per draw: the same sprite drawn into two views at two depths must
+		// be expressible, and under the view fan-out a depth read off the
+		// shared object is inexpressible rather than merely racy.
 		//
 		// destination is in world space; the list's current camera maps it.
 		void draw_sprite(TextureHandle texture,
@@ -186,6 +194,10 @@ namespace labrador
 		// between the two triangles of one glyph. Centring by halving a
 		// measured width lands there whenever the width is odd, so take
 		// std::floor of a centred point-sampled position.
+		//
+		// layer_depth orders nothing here either: text covers what was drawn
+		// before it in the list and is covered by what is drawn after it, as
+		// draw_sprite states.
 		void draw_text(FontHandle font,
 			const std::wstring& text,
 			const mattmath::Vector2F& position,

@@ -32,10 +32,11 @@ In practice this means:
   shows, which way a character faces, where the camera is.
 - **Anything that varies per draw is a local variable**, passed down as a parameter: a tint, a
   flip, a shadow offset. It is never stored in a member first.
-- **Draw order within a view is the order of the calls.** Each draw also takes a layer depth, but
-  if every draw uses the same depth, as LineSweeper's do, the order objects were added to the
-  scene is the order they are drawn in. A scene draws its plain objects, then its collision
-  objects.
+- **Draw order within a view is the order of the calls, and nothing else.** Each draw also takes
+  a layer depth, but no backend reads it: a lower depth does not put a sprite behind a higher
+  one, and a later draw always covers an earlier one. A background goes behind a player by being
+  drawn first. A scene draws its plain objects in the order they were added, then its collision
+  objects, in no order it promises.
 
 ## A view is a viewport and a camera
 

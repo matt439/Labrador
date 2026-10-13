@@ -93,6 +93,29 @@ triggers would need the game's own per-trigger membership tracking.
 borrowed, and the list expires when the next resolve or end-tick begins. The
 HUD copies just a count; it never keeps a contact pointer for the next frame.
 
+## Say how an object is retired
+
+`Scene::set_bounds` gives the world an extent, and `end_tick` retires a collision
+object whose shape has left it. It does that in two steps: it calls
+`set_for_deletion(true)` on the object, then removes every object whose
+`for_deletion()` answers `true`. **`set_for_deletion` does nothing by default**,
+so a collidable that keeps the default is never retired, by the sweep or by
+anything else that calls it. It goes on updating, drawing and colliding outside
+the world, and nothing reports it.
+
+That default is right for fixed geometry, which must not be lost that way, and
+for the sample's bodies, whose scene sets no bounds: `Body::for_deletion()`
+answers `false` and `Body` does not override `set_for_deletion`. Anything that
+can leave the world, such as a projectile, keeps the flag:
+
+```cpp
+bool Projectile::for_deletion() const { return this->for_deletion_; }
+void Projectile::set_for_deletion(bool for_deletion) { this->for_deletion_ = for_deletion; }
+```
+
+An object flagged during a tick produces no further contacts in it, and the
+pointer `Scene::add` returned for it stops being valid when that tick ends.
+
 ## Verify and adapt it
 
 ```powershell
