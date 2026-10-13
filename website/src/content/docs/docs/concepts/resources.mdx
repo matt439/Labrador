@@ -38,8 +38,10 @@ The game loads its manifest once, after `initialize()` and before `run()`:
 <SourceFile path="samples/minimal/main.cpp" from="app.load_manifest(" to="app.load_manifest(" />
 
 A relative path is relative to the executable, not to the folder the game was started from, and
-directories inside the manifest are relative to the manifest. Both samples' builds copy their
-content beside the executable, so each runs from anywhere. A game with content of its own kinds
+directories inside the manifest are relative to the manifest. On Windows, each sample's build
+copies its content beside the executable, so it runs from anywhere. A browser build has no
+folder beside it: the samples' browser builds embed the same content in the module, at the same
+relative paths, so one manifest serves both. A game with content of its own kinds
 (levels, dialogue) registers a loader for each kind with `app.resource_loader()->register_kind`
 before loading the manifest.
 
@@ -55,8 +57,9 @@ SpriteSheetHandle resolve_sprite_sheet(const std::string& sprite_sheet_name) con
 ```
 
 Resolving a name nothing loaded throws, naming it, so a misspelt asset name fails on the line
-that misspells it rather than drawing nothing. LineSweeper spells its two asset names once, at
-the top of its play state, and resolves the texture when it builds the particle field:
+that misspells it rather than drawing nothing. LineSweeper spells its two asset names at the top
+of each file that resolves them, and its play state resolves the texture when it builds the
+particle field:
 
 <SourceFile
 	path="samples/linesweeper/states/play_state.cpp"
@@ -104,5 +107,6 @@ Fonts are glyph atlases, so text can only use characters the font contains.
 `measure_text` how big it will be. The [Sprites and text guide](/docs/guides/sprites-and-text/)
 covers making and using fonts and textures.
 
-Sound banks are loaded by the same manifest and live in `app.audio_resources()`. Neither sample
-plays sound yet.
+Sound banks are loaded by the same manifest and live in `app.audio_resources()`. The audio
+sample is the one that plays them: it names a bank in its manifest, looks it up by name once in
+`init()`, and plays from it every time a key asks.

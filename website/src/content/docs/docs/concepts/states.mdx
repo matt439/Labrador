@@ -111,8 +111,11 @@ and has not left, so the pads go on reading and no state is told.
 
 ## Patterns
 
-- **A level is a state that owns a scene.** Both samples do exactly this: `init()` creates a
-  `Scene` and fills it, `update()` steps it, `draw()` draws it.
+- **A level is a state that owns a scene.** The minimal sample, LineSweeper's play state, the
+  audio sample, the components gallery and the local-multiplayer sample do exactly this: the
+  state owns a `Scene`, `init()` fills it, `update()` steps it, `draw()` draws it. The collision
+  sample's state owns an `Arena` that owns the scene, so its tests step the arena with no state
+  at all.
 - **Menus are states.** A main menu at the bottom of the stack, a match pushed above it, and a
   pause menu pushed above that. Leaving the match pops back to the menu, which was never
   destroyed.
