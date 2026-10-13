@@ -414,7 +414,7 @@ class ReleaseTests(unittest.TestCase):
             release.verify_benchmark_payload(manifest, backend)
 
         manifest["files"].update({
-            "payload/d3d11/fonts/courier_new_bold_16.spritefont": {},
+            "payload/d3d11/fonts/jetbrains_mono_bold_16.spritefont": {},
             "payload/d3d11/textures/white.dds": {},
         })
         release.verify_benchmark_payload(manifest, backend)

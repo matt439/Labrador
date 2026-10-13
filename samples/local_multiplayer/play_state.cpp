@@ -17,7 +17,7 @@ namespace multiplayer
 	void PlayState::init()
 	{
 		this->white_ = this->app_->render_resources()->resolve_texture("white");
-		this->font_ = this->app_->render_resources()->resolve_sprite_font("courier_new_bold_16");
+		this->font_ = this->app_->render_resources()->resolve_sprite_font("jetbrains_mono_bold_16");
 		this->scene_ = std::make_unique<Scene>(this->app_->thread_pool(), this->app_->partitioner());
 		this->arena_ = this->scene_->add(std::make_unique<Arena>(this->white_));
 		this->scene_->end_tick();

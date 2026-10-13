@@ -74,7 +74,7 @@ namespace
 	// rather than a measurement is what makes the sparks repeatable.
 	constexpr float tick_seconds = 1.0f / 60.0f;
 
-	const std::string font_name = "courier_new_bold_16";
+	const std::string font_name = "jetbrains_mono_bold_16";
 	const std::string block_texture_name = "white";
 
 	class CaptureSession

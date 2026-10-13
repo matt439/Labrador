@@ -28,7 +28,7 @@ if(EMSCRIPTEN)
     set_property(TARGET MinimalSample APPEND PROPERTY LINK_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
-        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/courier_new_bold_16.spritefont"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/jetbrains_mono_bold_16.spritefont"
     )
     target_link_options(MinimalSample PRIVATE
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content@/"

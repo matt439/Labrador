@@ -50,7 +50,7 @@ namespace
 	using linesweeper_frame_bench::Options;
 	using linesweeper_frame_bench::Result;
 
-	const char* const font_name = "courier_new_bold_16";
+	const char* const font_name = "jetbrains_mono_bold_16";
 	const char* const block_texture_name = "white";
 
 	std::int64_t nanoseconds(Clock::duration duration)

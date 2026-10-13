@@ -12,7 +12,7 @@ using namespace labrador;
 
 namespace
 {
-	const std::string font_name = "courier_new_bold_16";
+	const std::string font_name = "jetbrains_mono_bold_16";
 }
 
 ConfirmState::ConfirmState(Application* app, std::wstring question) :

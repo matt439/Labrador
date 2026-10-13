@@ -190,7 +190,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         set_property(TARGET RenderPixelTests APPEND PROPERTY LINK_DEPENDS
             "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
             "${CMAKE_CURRENT_SOURCE_DIR}/content/quad.dds"
-            "${CMAKE_CURRENT_SOURCE_DIR}/content/courier_new_bold_16.spritefont"
+            "${CMAKE_CURRENT_SOURCE_DIR}/content/jetbrains_mono_bold_16.spritefont"
             ${render_golden_images}
         )
 

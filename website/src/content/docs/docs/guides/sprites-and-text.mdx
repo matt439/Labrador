@@ -51,14 +51,16 @@ and the engine refuses that header at load. `-m 1` writes one level rather than 
 **A font from an installed font:**
 
 ```powershell
-MakeSpriteFont "Courier New" content\fonts\courier_new_bold_16.spritefont /FontSize:16 /FontStyle:Bold
+MakeSpriteFont "JetBrains Mono" content\fonts\jetbrains_mono_bold_16.spritefont /FontSize:16 /FontStyle:Bold
 ```
 
 The first argument is the family name of a font installed on the machine; a path to a font file
 is not accepted. With no `/CharacterRegion` the atlas holds the 95 printable ASCII characters,
 U+0020 to U+007E. The tool premultiplies the alpha itself and writes a BC2 atlas, which the engine
-reads as it is. With Courier New as Windows 11 installs it, this command reproduces the
-template's own atlas, every glyph and texel of it.
+reads as it is. The template's own atlas was built at these settings from the Bold face of
+JetBrains Mono 2.304, and the
+<RepoLink path="samples/minimal/README.md">minimal sample's README</RepoLink> records the font's
+and the atlas's checksums, so a rebuild can be compared byte for byte.
 
 Then list the new file in `content\manifest.json`. On Windows a folder of content is copied beside
 the executable by a line in your `CMakeLists.txt`, and a new folder such as `textures` needs a line
@@ -66,22 +68,19 @@ of its own ([Assets](/docs/guides/assets/)).
 
 ### The template's font and its licence
 
-The template's only font, `content/fonts/courier_new_bold_16.spritefont`, is an atlas rendered
-from Courier New, a Windows system font whose copyright is Monotype's. Its redistribution terms
-are not Labrador's to grant, as <RepoLink path="NOTICE">NOTICE</RepoLink> says, and this
-repository does not settle them. The licence description inside the font file lets you use it "to
-create, display, and print content" as the terms of the Microsoft product it came with allow,
-and prohibits any other use; nothing here records whether a
-glyph atlas shipped inside a game counts as such content. **Checking that is yours to do before
-you ship.** The collision, components, local_multiplayer and audio samples embed the same atlas,
-and so does the hosted LineSweeper demo. Replacing it with an openly licensed font is
-<RepoLink path="docs/product/STORIES.md" hash="oca-75">an open story</RepoLink> rather than done.
+The template's only font, `content/fonts/jetbrains_mono_bold_16.spritefont`, is an atlas rendered
+from JetBrains Mono Bold, which is licensed under the SIL Open Font License 1.1. The licence is
+`content/fonts/OFL.txt`, beside the atlas, and starts with the font's copyright line. You may ship
+the atlas in your game, whether you sell the game or not, provided `OFL.txt` goes with every copy
+of the atlas and the font is not sold on its own. The atlas stays under the OFL rather than your
+game's licence. <RepoLink path="NOTICE">NOTICE</RepoLink> records it with the repository's other
+third-party terms. Every sample draws its text from the same atlas.
 
-To replace it before you ship, install a font you may redistribute in this form, such as one
-under the SIL Open Font License, and run the `MakeSpriteFont` command above with its name. Then
-change the atlas's name in `content/manifest.json`, in the `font_name` constant at the top of
-`states/hello_state.cpp` and `states/confirm_state.cpp`, and in the `.spritefont` path the browser build lists in
-`CMakeLists.txt`, and delete the Courier New atlas.
+To use a different font, install it and run the `MakeSpriteFont` command above with its name.
+Then change the atlas's name in `content/manifest.json`, in the `font_name` constant at the top of
+`states/hello_state.cpp` and `states/confirm_state.cpp`, and in the `.spritefont` path the browser
+build lists in `CMakeLists.txt`. Delete the JetBrains Mono atlas and its `OFL.txt`, and put the
+new font's licence beside its atlas if the licence asks to travel with it.
 
 ## Text
 

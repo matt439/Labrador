@@ -32,7 +32,7 @@ namespace collisiondemo
 	void CollisionState::init()
 	{
 		RenderResources* resources = this->app_->render_resources();
-		this->font_ = resources->resolve_sprite_font("courier_new_bold_16");
+		this->font_ = resources->resolve_sprite_font("jetbrains_mono_bold_16");
 		this->arena_ = std::make_unique<Arena>(resources->resolve_texture("white"));
 		this->refresh_view();
 	}

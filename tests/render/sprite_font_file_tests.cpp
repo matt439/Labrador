@@ -31,7 +31,7 @@ namespace
 	using labrador::TextureFormat;
 	using labrador::read_sprite_font_file;
 
-	const char* FONT_PATH = "./content/courier_new_bold_16.spritefont";
+	const char* FONT_PATH = "./content/jetbrains_mono_bold_16.spritefont";
 
 	// A file in the working directory, removed when the test leaves.
 	class ScratchFile
@@ -90,9 +90,9 @@ TEST_CASE("the sample font reads back as the table MakeSpriteFont wrote")
 	// than swallowed.
 	CHECK(font.stand_in == 0);
 
-	CHECK(font.line_spacing == doctest::Approx(24.1667f));
+	CHECK(font.line_spacing == doctest::Approx(28.16f));
 
-	// A RECT in the file, a position and a size out here. Courier is
+	// A RECT in the file, a position and a size out here. The font is
 	// monospaced, so every character steps the pen by the same amount - and
 	// that amount is bearing plus width plus adjustment, which is the sum that
 	// would not come out round if any of the three were read into the wrong
@@ -111,7 +111,7 @@ TEST_CASE("the atlas comes out as bytes and a format, not as a texture")
 	const SpriteFontFile font = read_sprite_font_file(FONT_PATH);
 
 	CHECK(font.atlas.width == 128);
-	CHECK(font.atlas.height == 144);
+	CHECK(font.atlas.height == 168);
 
 	// BC2, WHICH IS THE ONE TO KNOW ABOUT BEFORE A SECOND BACKEND. Desktop GL
 	// reads it through an extension, and GLES 3.0 - WebGL2 included - only
@@ -124,13 +124,13 @@ TEST_CASE("the atlas comes out as bytes and a format, not as a texture")
 	REQUIRE(font.atlas.levels.size() == 1);
 
 	// Four-by-four blocks of sixteen bytes: 128 pixels is 32 blocks is 512
-	// bytes a row, and 144 pixels is 36 rows OF BLOCKS. Getting this wrong the
-	// obvious way gives 144 rows of 512 and asks the device for four times the
+	// bytes a row, and 168 pixels is 42 rows OF BLOCKS. Getting this wrong the
+	// obvious way gives 168 rows of 512 and asks the device for four times the
 	// data there is.
 	CHECK(font.atlas.levels[0].stride == 512);
-	CHECK(font.atlas.levels[0].rows == 36);
+	CHECK(font.atlas.levels[0].rows == 42);
 	CHECK(font.atlas.levels[0].offset == 0);
-	CHECK(font.atlas.pixels.size() == 512u * 36u);
+	CHECK(font.atlas.pixels.size() == 512u * 42u);
 }
 
 TEST_CASE("a file that is not a font says which way it is not one")

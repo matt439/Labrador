@@ -8,14 +8,12 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** the backlog's Now horizon, *Trust and clocks*: "the public face and the tree's records stop misleading readers and agents, the live demo is checked and one click away, Get Started and the template work as written, and every item whose delay compounds has landed". [BACKLOG.md, Now](docs/product/BACKLOG.md#now) owns its *Done when* list and its batches, N1 to N21; this block names the ones still open.
 
-1. **`OCA-75`: replace the template font with JetBrains Mono Bold.** It moves every golden and capture that draws text. The owner has ordered it ahead of its place in Next (X9), and BACKLOG.md lists it in Now as N21.
-2. **`OCA-03` (N4): link the live demo**, after the owner has redeployed it with the calm top-out (`WEB#9`) and its live checks have been run again (`WEB#7`).
-3. **`OCA-11` (N14): the consumer CI job**, then the owner adds its context to branch protection.
-4. **`OCA-69` + `OCA-67` (N20): PHILOSOPHY amendment B and the first 0.x tag.** The last Now batch and the last PHILOSOPHY PR in Now; it needs the owner's wording.
+1. **`OCA-03` (N4): link the live demo**, after the owner has redeployed it with the calm top-out (`WEB#9`) and its live checks have been run again (`WEB#7`).
+2. **`OCA-11` (N14): the consumer CI job**, then the owner adds its context to branch protection.
+3. **`OCA-69` + `OCA-67` (N20): PHILOSOPHY amendment B and the first 0.x tag.** The last Now batch and the last PHILOSOPHY PR in Now; it needs the owner's wording.
 
 **Dated, whatever the order above:**
 - The calm top-out has merged: the owner redeploys the hosted demo (`WEB#9`), then `WEB#7` runs its live checks again.
-- After `OCA-75`: `SM-32` regenerates the site's stills and video once, not twice.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Now: `OCA-06` (GitHub About fields, Discussions) · `OCA-69` + `OCA-67` (amendment B's wording, the tag) · `WEB#9` (redeploy the demo).
@@ -32,7 +30,6 @@ An index of open work, one row per item; each row points to the document that ow
 | `OCA-06` | DECISION | should | XS | The owner sets the GitHub About description (not citing the private game), homepage `https://labradorengine.com/` and topics, and decides whether to enable Discussions; the README half has landed. |
 | `OCA-11` | OPEN | must | M | A CI job building the Get Started project against the PR's own engine tree from a short path, shown failing once on a throwaway break; then the owner adds its context to branch protection and CONTRIBUTING.md. |
 | `OCA-69` | DECISION | must | S | PHILOSOPHY amendment B, in the owner's words: a deletion rule for callers nobody can count (`OCA-69`) and a checkable settle criterion (`OCA-67`); then the first 0.x tag on a green commit, `vcpkg.json` matching, notes linking CHANGES.md. |
-| `OCA-75` | OPEN | could | M | Replace the template's Courier New atlas with JetBrains Mono Bold (SIL OFL), the owner's choice, in every sample and test that embeds it; licence beside it and in NOTICE; regenerate and review every golden and capture with text. |
 | `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once. `SM-36` waits on it. |
 
 ## Website and the hosted demo
@@ -43,7 +40,7 @@ An index of open work, one row per item; each row points to the document that ow
 |---|---|---|---|---|
 | `WEB#9` | DECISION | should | XS | The owner redeploys the hosted demo now that the calm top-out has merged (sync the bundle in the PersonalWebsite repository, `npm run deploy` from its main branch), so `mattharding.dev/demo/linesweeper/` plays the calm top-out. |
 | `WEB#7` | WAITING | should | XS | After `WEB#9`: run web-to-be-tested.md's live-demo checks again (headers and encodings, headless Chrome play, quit and play again) and update the commit and module folder it records. |
-| `SM-32` | WAITING | could | S | Regenerate the site's LineSweeper stills and `linesweeper.mp4` with LineSweeperCapture on `x64-release`, review each, and state the same-commit rule in website/README.md. After `OCA-75`. |
+| `SM-32` | OPEN | could | S | Re-encode `linesweeper.mp4` (still Courier; the stills are JetBrains Mono) with LineSweeperCapture on `x64-release` and FFmpeg, review it, and state the same-commit rule in website/README.md. |
 | `SITE#3` | DECISION | could | XS | The owner decides whether the site starts versioned snapshots at the first 0.x tag ([docs/website-versioning.md](docs/website-versioning.md)). |
 | `BDP-20` | DECISION | could | XS | The owner decides whether the 4.3 MB phone fallback video stays, or swaps in a smaller encode with `npm run sync-demo -- <bundle> --video <mp4>`. |
 

@@ -24,7 +24,7 @@ namespace linesweeper
 {
 	namespace
 	{
-		const std::string font_name = "courier_new_bold_16";
+		const std::string font_name = "jetbrains_mono_bold_16";
 		const std::string block_texture_name = "white";
 
 		// The rows, in the order they are read rather than the order they are

@@ -377,7 +377,7 @@ TEST_CASE("the shipped font atlas decodes to one pixel per texel, every alpha a 
 	// The real file the pixel tests draw text from, so the decoder is held
 	// to what the content is and not only to blocks built for it.
 	const TextureData atlas = labrador::read_sprite_font_file(
-		"./content/courier_new_bold_16.spritefont").atlas;
+		"./content/jetbrains_mono_bold_16.spritefont").atlas;
 	REQUIRE(atlas.format == TextureFormat::bc2_unorm);
 
 	const TextureData decoded = decode_block_compressed(atlas);
