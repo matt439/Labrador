@@ -14,12 +14,9 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 |---|---|
 | Word the settle criterion for 'the API settles' (PHILOSOPHY.md:739-741) and approve cutting the first 0.x tag | OCA-67, PI-05, PI-14 |
 | Word the deletion rule for uncountable outside callers (PHILOSOPHY.md:742-758) | OCA-69, OCA-67 |
-| Sign off amendment A's wording that the exclusions (editor included) are permanent, matching CLAUDE.md's existing decision (a sign-off, not an open decision) | FES-03, FES-04, FES-02 |
-| Enable private vulnerability reporting, set the GitHub About description, homepage and topics, and decide whether to turn on Discussions | OCA-73, OCA-06, OCA-72 |
+| Set the GitHub About description, homepage and topics, and decide whether to turn on Discussions | OCA-06 |
 | Add the consumer job's context to branch protection and to CONTRIBUTING.md's list when OCA-11 lands | OCA-11 |
-| Choose the canonical host for the engine site and change the Cloudflare and dashboard settings | SM-31, SM-29, SM-30 |
 | Record the accessibility position: what the engine provides, whether the hosted demo has an aim, and who owns the colour-blind palette | OCA-08, BDP-24, BDP-21 |
-| Whether to replace the template font, and with which openly licensed font | OCA-75 |
 | Set ColourWars' pin cadence and make or approve its gameplay check after the ordinary bump | SM-36, PI-14 |
 | Decide which p99 column the pipeline-depth claims are judged by, and whether it lands in PHILOSOPHY or the ratchet document | SM-03, SM-01, SM-07, SM-02 |
 | What private ColourWars detail may be published when the seven drafts and the packaging gap are filed, then accept, decline or split each report | PI-09, PI-10, PI-11 |
@@ -68,6 +65,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 18. N18 Header contracts: layer_depth and collidable retirement: OCA-55, OCA-59
 19. N19 Ledger fixes: STATUS box, Firefox claim, canonical host: SM-06, SM-10, SM-31
 20. N20 PHILOSOPHY amendment B (owner-reviewed, last): deletion rule, settle criterion and first 0.x tag: OCA-69, OCA-67
+21. N21 Replace the template font with JetBrains Mono Bold (the owner's choice, moved from Next's X9; after N17): OCA-75
 
 **Stories**
 
@@ -106,6 +104,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[SM-31](STORIES.md#sm-31)** Could · XS · The Sole Owner-Maintainer · **Owner**: One canonical host for the engine site
 - [ ] **[OCA-69](STORIES.md#oca-69)** Must · S · The Outside C++ Adopter · **Owner**: Know how a public name leaves the engine
 - [ ] **[OCA-67](STORIES.md#oca-67)** Must · S · The Outside C++ Adopter · **Owner**: Pin a named version and know what it promises — after OCA-68, OCA-69
+- [ ] **[OCA-75](STORIES.md#oca-75)** Could · M · The Outside C++ Adopter · **Owner**: A template font I may ship without checking its terms — after OCA-37, OCA-34
 
 <details><summary>Why each is placed here</summary>
 
@@ -138,7 +137,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 | OCA-13 | G40, G42: the template's comments point into private ColourWars code and describe the pre-92966b0 content rule. |
 | OCA-15 | G43: the template folder has no copy instructions; its change list points at CHANGES.md rather than duplicating it (T4). |
 | OCA-34 | G12 (major): no content tools or commands for sprites and fonts. Moved into Now by the critique, docs-only and XS-S. |
-| OCA-37 | G107 (major): every adopter who copies the template copies a font whose terms NOTICE does not settle. The disclosure moves to Now (critique split); replacing the font is OCA-75 in Next. |
+| OCA-37 | G107 (major): every adopter who copies the template copies a font whose terms NOTICE does not settle. The disclosure moves to Now (critique split); replacing the font is OCA-75, N21. |
 | OCA-55 | G138: layer_depth orders nothing and the header does not say so where a caller reads it. |
 | OCA-59 | G49: a collidable's retirement hook is a silent no-op by default. Same header-contract PR as OCA-55. |
 | SM-06 | G64: the low-tier STATUS box sends readers after a contradiction already fixed. |
@@ -146,6 +145,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 | SM-31 | G57, G136: two hosts for the engine site; its delay compounds as links accumulate (critique kept it). The host setting is owner-only. |
 | OCA-69 | G19 (merged with SM-35): the deletion rule cannot be followed in a public repository. Owner-worded; PHILOSOPHY amendment B with OCA-67. Must because the Must tag depends on it. |
 | OCA-67 | G17 (merged with PI-04, SM-33): no named version to pin. The settle criterion and the first 0.x tag land together, last in Now, once the change list and deletion rule exist so the tag promises only what the process keeps. |
+| OCA-75 | G107: replacing the template atlas with an openly licensed font (critique split from OCA-37). The owner chose JetBrains Mono Bold (SIL OFL) on 2026-10-13 and moved it into Now; the cost is reviewing every regenerated golden and capture that draws text. |
 
 </details>
 
@@ -175,7 +175,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 6. X6 Physical pad session, desktop and browser: OCA-48, BDP-06
 7. X7 Template test target, smoke check, cold-cache record and CI recipe: OCA-29, OCA-30, OCA-12, OCA-33
 8. X8 Content and audio guides: OCA-35, OCA-38, OCA-39, OCA-36
-9. X9 Replace the template font (owner decision): OCA-75
+9. X9 Replace the template font: moved to Now as N21
 10. X10 Windows notices and the template install rules: OCA-62, OCA-60
 11. X11 Clean-machine run, OS and hardware floor, backend choice: OCA-61, OCA-64, OCA-65
 12. X12 ColourWars release on a clean machine (ColourWars repository): PI-14
@@ -218,7 +218,6 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[OCA-38](STORIES.md#oca-38)** Should · XS · The Outside C++ Adopter: The guide's XWBTool command makes a bank that loads in the browser too
 - [ ] **[OCA-39](STORIES.md#oca-39)** Should · S · The Outside C++ Adopter: Export my sounds in a format the engine accepts on both platforms — after OCA-38
 - [ ] **[OCA-36](STORIES.md#oca-36)** Should · S · The Outside C++ Adopter: Copy a guide sample without broken paths
-- [ ] **[OCA-75](STORIES.md#oca-75)** Could · M · The Outside C++ Adopter · **Owner**: A template font I may ship without checking its terms — after OCA-37, OCA-34
 - [ ] **[OCA-62](STORIES.md#oca-62)** Must · S · The Outside C++ Adopter: Know the notices my Windows game must ship
 - [ ] **[OCA-60](STORIES.md#oca-60)** Must · M · The Outside C++ Adopter: Know what files my Windows release needs and build a package — after OCA-62
 - [ ] **[OCA-61](STORIES.md#oca-61)** Must · S · The Outside C++ Adopter · **Owner**: My release runs on a clean Windows machine — after OCA-60
@@ -276,7 +275,6 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-38 | G129: the guide's XWBTool command makes a bank the browser refuses. |
 | OCA-39 | G130: which sound formats load on both platforms. |
 | OCA-36 | G13: guide samples borrow paths that break when copied. |
-| OCA-75 | G107: replacing the template atlas with an openly licensed font (critique split from OCA-37). Owner decision; the cost is reviewing every regenerated golden and capture that draws text. |
 | OCA-62 | G16 (major, merged with PI-12): no notice list for what a Windows game ships. |
 | OCA-60 | G14 (major): no release-package guidance or install rules. The unexplained dependency on OCA-29 is removed (critique). |
 | OCA-61 | G15 (major): nobody has run a release on a clean Windows install. Windows Sandbox is interactive and owner-run. |
@@ -545,7 +543,7 @@ Not in any horizon: each waits on something outside the backlog.
 ## Risks to the plan
 
 - Now holds 35 stories in 20 batches. It fits a few weeks only if each batch is one PR; split further and the branch, PR, green-CI, rebase-merge overhead crowds out the compounding items (OCA-68, OCA-11, OCA-73, SM-21). OCA-68's backfill (L) and OCA-11's consumer job (M) are the schedule risks inside Now.
-- Owner review is the binding constraint, not agent time: Now asks the owner for two PHILOSOPHY sign-offs (amendments A and B), three repository settings (private reporting, About fields, required contexts) and the canonical-host change. If amendment B stalls, the first tag stalls with it, and nothing in Next may promise a tag that does not exist.
+- Owner review is the binding constraint, not agent time: Now still asks the owner for amendment B's wording and two repository settings (the About fields, and the consumer job's required context). If amendment B stalls, the first tag stalls with it, and nothing in Next may promise a tag that does not exist.
 - PHILOSOPHY.md is touched by six PRs across three horizons. They are serialised A to F and each rebases on the last; a parallel branch that edits PHILOSOPHY outside that order will conflict and should be refused at review.
 - The primary persona is unevidenced: no issues, analytics or independent adopter. Next spends real capacity on a stranger's ship path. Mitigation: most of Now is truth fixes that also serve the agents who read the same documents, and PI-09/PI-10 are the only stories backed by recorded demand.
 - Doc edits can fail the website build by design: quoted lines and public header comments are read at build time. Header-contract stories (OCA-55, OCA-59, OCA-56) and the brief trim (SM-43) must fix any quoting page in the same commit.
@@ -553,7 +551,6 @@ Not in any horizon: each waits on something outside the backlog.
 - Hardware-bound claims may stay open: the iGPU p99 needs AMD's driver first and may still need a code option if the per-app preference fails; the Big Sur MacBook Air's Safari may sit below the wasm-exceptions floor; the Android phone is not owned, so BDP-10 waits on a borrowed device or an owner exception.
 - Windows Sandbox (OCA-61, PI-14) proves the loader and runtime requirements on a clean OS, but its GPU is virtual and Release has no WARP fallback, so the gameplay half may show only a loud refusal; G77's target-GPU half stays open until a real machine runs it.
 - Linking the live demo widens its exposure before Safari, real phones and the player-facing failure messages are settled. BDP-23's flash check now precedes the link, and the platform statement names the phone gate plainly.
-- The MEMORY.md index still says ColourWars' pin is stuck behind the math split, which is stale (77a7a7f). An agent planning from the index rather than the memory file will re-introduce the wrong blocker until the index line is corrected by whoever maintains memory.
 
 ## What the adversarial review changed
 
