@@ -393,6 +393,15 @@ in the commit that creates it.
   PHILOSOPHY defines. **It proves name closure and nothing else**: the file
   says so at length, and says why, from a repository that ran the same trade at
   200x the scale and measured what its own green linter was not catching.
+- **Breaking the project Get Started teaches.** CI's `consumer` job assembles
+  it with [tools/consumer_check/assemble.py](tools/consumer_check/assemble.py)
+  from the change's own tree - the engine at `external/labrador`, the minimal
+  sample as `game/`, the derived `vcpkg.json` - and builds it. A path spelt
+  from `CMAKE_SOURCE_DIR` inside `engine/` that resolves somewhere else in a
+  consumer, or a package the engine starts to need, passes every standalone
+  job and fails that one; a swap another include root happens to cover is not
+  caught, and the job's comment names the one there is. Its README says how to
+  run the same thing locally.
 - **Adding a source file without listing it.** Sources are enumerated
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists

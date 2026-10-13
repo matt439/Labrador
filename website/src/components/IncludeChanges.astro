@@ -6,6 +6,8 @@
 // "samples/minimal/...". In a project of your own the same files live under
 // game/, so each of those lines changes to "game/...". Reading them from the
 // checkout means the list cannot fall behind the sample.
+// tools/consumer_check/assemble.py makes the same edits for the project CI
+// builds, so a change to this rule is made there too.
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { absolutePath, readRepositoryFile } from '../lib/repository';

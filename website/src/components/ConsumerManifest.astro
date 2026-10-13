@@ -6,7 +6,8 @@
 // name the engine's dependencies itself, and should pin them to the same
 // baseline the engine is built and tested against. doctest and lodepng are left
 // out because only the engine's own tests use them, and a consumer does not
-// build those.
+// build those. tools/consumer_check/assemble.py derives the same manifest for
+// the project CI builds, so a change to this rule is made there too.
 import { Code } from '@astrojs/starlight/components';
 import { readRepositoryFile } from '../lib/repository';
 
