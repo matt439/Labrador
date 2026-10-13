@@ -282,6 +282,12 @@ in-box fallback at all.
 Not done, and known: an action-mapping layer over the input devices. That is
 the whole list — every render backend that was planned has landed.
 
+## Contributing
+
+A change lands as one self-contained commit on a branch, through a pull
+request that is rebase-merged once CI is green; [CONTRIBUTING.md](CONTRIBUTING.md)
+is the whole procedure.
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE). [NOTICE](NOTICE) records the third-party code

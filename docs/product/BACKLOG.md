@@ -70,8 +70,8 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 
 **Stories**
 
-- [ ] **[SM-20](STORIES.md#sm-20)** Must · XS · The Sole Owner-Maintainer: Write the merge procedure into the tree
-- [ ] **[SM-22](STORIES.md#sm-22)** Should · XS · The Sole Owner-Maintainer: One agent brief, not two copies — after SM-20
+- [x] **[SM-20](STORIES.md#sm-20)** Must · XS · The Sole Owner-Maintainer: Write the merge procedure into the tree
+- [x] **[SM-22](STORIES.md#sm-22)** Should · XS · The Sole Owner-Maintainer: One agent brief, not two copies — after SM-20
 - [ ] **[SM-12](STORIES.md#sm-12)** Must · S · The Sole Owner-Maintainer: Make the records say the demo is live, and tick its server-side deploy checks against it
 - [ ] **[BDP-23](STORIES.md#bdp-23)** Must · S · The Browser and Phone Demo Player: Check the top-out burst against flash limits
 - [ ] **[OCA-03](STORIES.md#oca-03)** Must · S · The Outside C++ Adopter: Try LineSweeper in my browser from the site and the README — after SM-12, BDP-23

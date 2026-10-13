@@ -68,6 +68,17 @@ if(PROJECT_IS_TOP_LEVEL)
     # a targeted build here runs it and a consumer's never sees it.
     add_dependencies(labrador_settings check_doc_citations)
 
+    # The agent brief, one file under two names. Top-level only for the same
+    # reason: it guards this repository's own records, not a consumer's build.
+    add_custom_target(check_agent_brief ALL
+        COMMAND "${CMAKE_COMMAND}"
+            "-DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_agent_brief.cmake"
+        COMMENT "Checking that CLAUDE.md and AGENTS.md are one brief"
+        VERBATIM
+    )
+    add_dependencies(labrador_settings check_agent_brief)
+
     # Every sample, each with a browser entry point beside its wWinMain
     # (docs/port/web.md, section 9 says where each stands). These come before
     # the Node link options below, because each builds a page for a browser
