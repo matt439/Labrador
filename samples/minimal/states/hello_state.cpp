@@ -211,7 +211,7 @@ void HelloState::update(float dt)
 	// Steps every object in the scene, and admits or retires whatever this tick
 	// asked for. Nothing here has anything to step, and that is the point: the
 	// shape is the same whether the scene holds two labels or five thousand
-	// paint tiles.
+	// objects.
 	this->scene_->update(dt);
 	this->scene_->end_tick();
 }
@@ -240,6 +240,7 @@ void HelloState::draw(Renderer& renderer) const
 	//
 	// A game with something over the world - a HUD, a divider, a countdown -
 	// passes a second argument, and it runs per view, on that view's worker.
-	// game/objects/level.cpp has one.
+	// samples/local_multiplayer/play_state.cpp has one, a title bar over each
+	// player's view.
 	this->scene_->draw(renderer);
 }

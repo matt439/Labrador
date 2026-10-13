@@ -421,6 +421,10 @@ consumer-visible - a source break, a removed or retyped public name, a
 the old spelling, the new one and the sample diff that migrates it. The entry's
 text stays in CHANGES.md: a header comment says what the code is, never what it
 was. Its backfill covers every engine commit since ColourWars' pin, `4cefb68`.
+A change a copy of the template would want - to what `samples/minimal/` does
+or how it builds, or to an engine behaviour it depends on - adds a line to the
+change list in [samples/minimal/README.md](samples/minimal/README.md) in the
+same commit.
 
 ## Rules that are not checked, and matter anyway
 

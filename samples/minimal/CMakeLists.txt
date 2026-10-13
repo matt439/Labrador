@@ -10,8 +10,8 @@
 #
 # It is a permanent target rather than a documentation snippet because a
 # second client is the only thing that keeps the engine/game boundary honest
-# (PHILOSOPHY T1). It links LabradorEngine and nothing from game/, so if a
-# mechanism ever drifts back into the paint-shooter, this stops building.
+# (PHILOSOPHY T1). It links LabradorEngine and no game's code, so if anything
+# it uses ever moves out of the engine and into a game, this stops building.
 set(minimal_sources
     states/confirm_state.cpp
     states/hello_state.cpp
@@ -46,10 +46,11 @@ target_link_libraries(MinimalSample PRIVATE
     labrador_settings
 )
 
-# Content is resolved relative to the working directory, so mirror it beside
-# the exe. Its own target for the same reason the game's is: a POST_BUILD on
-# the exe only runs when the exe relinks, so an edited asset would never
-# arrive.
+# A relative manifest path resolves against the executable's directory, not
+# the working directory, and the folders it names against the manifest
+# (engine/app/content_root.h), so mirror the content beside the exe. It is a
+# target of its own because a POST_BUILD on the exe only runs when the exe
+# relinks, so an edited asset would never arrive.
 add_custom_target(sample_content ALL)
 add_custom_command(TARGET sample_content POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
