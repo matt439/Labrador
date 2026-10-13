@@ -122,8 +122,12 @@ namespace labrador
 			}
 		}
 
-		// Retirement, by swap-and-pop: order in this list is not observable, so
-		// paying to preserve it would be paying for nothing.
+		// Retirement, by swap-and-pop, which reorders the survivors. The order
+		// is observable - collision_objects() hands it out, and draw_views()
+		// walks it, so it decides which of two overlapping collision objects
+		// paints over the other - but it is not promised: collision_objects()
+		// says "no particular order", so nothing may rely on it and a stable
+		// erase would be paying for a guarantee nobody is given.
 		for (size_t i = 0; i < this->collision_objects_.size();)
 		{
 			if (this->collision_objects_[i]->for_deletion())

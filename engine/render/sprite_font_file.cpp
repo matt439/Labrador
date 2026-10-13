@@ -70,7 +70,19 @@ namespace labrador
 		const uint32_t glyph_count = reader.read_u32();
 		// Checked before reserving rather than after: the count is the first
 		// number in the file that a corrupt file can use to ask for gigabytes.
-		reader.require(static_cast<size_t>(glyph_count) * GLYPH_BYTES);
+		// In 64 bits, because the byte count does not fit a 32-bit size_t: in
+		// a wasm build a count of 2^27 or more would wrap the product, pass
+		// the check and leave the reserve below to throw without the path.
+		const uint64_t glyph_bytes =
+			static_cast<uint64_t>(glyph_count) * GLYPH_BYTES;
+		if (glyph_bytes > static_cast<uint64_t>(reader.remaining()))
+		{
+			throw std::runtime_error(path + " says it holds " +
+				std::to_string(glyph_count) + " glyphs, which is " +
+				std::to_string(glyph_bytes) + " bytes, and has only " +
+				std::to_string(reader.remaining()) + " left at " +
+				std::to_string(reader.position()) + ".");
+		}
 		font.glyphs.reserve(glyph_count);
 
 		for (uint32_t i = 0; i < glyph_count; i++)

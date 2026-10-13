@@ -95,12 +95,14 @@ The same rule explains a line the minimal sample and LineSweeper have after fill
 
 ### What is removed, and when
 
-A collision object leaves the scene at the end of the tick in which something called
-`set_for_deletion(true)` on it, or in which it left the scene's bounds, provided the object keeps
-that flag: `set_for_deletion` does nothing by default, and the
+A collision object leaves the scene at the end of the first tick, after the one it was added in,
+in which its `for_deletion()` answers true, and the pointer `add` returned stops being valid then.
+`set_for_deletion(true)`, which a game calls and which the scene itself calls on an object that
+has left its bounds, gets an object there only if the object records the request. The default
+ignores it, as a wall's should, so a collision object that keeps that default is never removed,
+even outside the bounds; the
 [collision guide](/docs/guides/collision/#say-how-an-object-is-retired) says what that means.
-The pointer `add` returned
-stops being valid then. A plain `GameObject` is never removed on its own: it stays until the scene
+A plain `GameObject` is never removed on its own: it stays until the scene
 is destroyed, so a game keeps short-lived visual effects either as collision objects or, as
 LineSweeper does with its particles, inside one long-lived object.
 
