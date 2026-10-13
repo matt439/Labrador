@@ -200,3 +200,39 @@ TEST_CASE("spritefont rejects overflowed atlas layouts with the source name")
 		}
 	}
 }
+
+TEST_CASE("spritefont rejects a glyph count larger than the file, naming it")
+{
+	// 2^27 glyphs of 32 bytes is exactly 2^32 bytes, which a 32-bit size_t -
+	// the wasm build's - wraps to zero. The others are the next count past it
+	// and the largest the field can hold. Each must be refused by the count
+	// check, which names the file and the count, rather than by whatever
+	// tries to allocate for it afterwards.
+	for (unsigned int glyph_count : { 0x08000000u, 0x08000001u, 0xffffffffu })
+	{
+		std::vector<unsigned char> bytes{ 'D', 'X', 'T', 'K', 'f', 'o', 'n', 't' };
+		const auto append = [&bytes](unsigned int value)
+		{
+			for (int shift = 0; shift < 32; shift += 8)
+				bytes.push_back(static_cast<unsigned char>(value >> shift));
+		};
+		append(glyph_count);
+		for (int i = 0; i < 8; i++)
+		{
+			append(0); // one glyph's worth of bytes, and no more
+		}
+		const ScratchFile file("huge_glyph_count.spritefont", bytes);
+		try
+		{
+			(void)read_sprite_font_file(file.path());
+			FAIL("a glyph count larger than the file was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message = error.what();
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find(std::to_string(glyph_count) + " glyphs") !=
+				std::string::npos);
+		}
+	}
+}

@@ -107,8 +107,13 @@ namespace labrador
 		// The returned pointer is valid immediately, and is the object's own
 		// type rather than the list's - it is what a caller that needs to keep
 		// speaking to the object holds. It stops being valid when the scene
-		// retires the object, which is the end of the tick in which something
-		// called set_for_deletion(true) on it.
+		// retires the object, and only a collision object is ever retired: it
+		// is destroyed by the first end_tick() after its insertion that finds
+		// for_deletion() answering true. set_for_deletion(true) is a request
+		// that leads there only if the object records it - the default
+		// ignores it, as fixed geometry should - so an object that keeps the
+		// default, and every object that is not a collision object, lives as
+		// long as the scene.
 		//
 		// One name and not two, because a collision object is both: it derives
 		// from CollisionObject, which derives from GameObject, so an overload
