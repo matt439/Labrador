@@ -12,7 +12,6 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 
 | Decision | Blocks |
 |---|---|
-| Set the GitHub About description, homepage and topics, and decide whether to turn on Discussions | OCA-06 |
 | Record the accessibility position: what the engine provides, whether the hosted demo has an aim, and who owns the colour-blind palette | OCA-08, BDP-24, BDP-21 |
 | Set ColourWars' pin cadence and make or approve its gameplay check after the ordinary bump | SM-36, PI-14 |
 | Decide which p99 column the pipeline-depth claims are judged by, and whether it lands in PHILOSOPHY or the ratchet document | SM-03, SM-01, SM-07, SM-02 |
@@ -78,7 +77,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[NMS-02](STORIES.md#nms-02)** Should · XS · The Native Multi-Platform Shipper (anti-persona, for now): Published design pages do not read Vulkan's reach as support
 - [x] **[OCA-02](STORIES.md#oca-02)** Must · S · The Outside C++ Adopter: The Why page points me at the split-screen sample that ships — after OCA-05
 - [x] **[OCA-07](STORIES.md#oca-07)** Must · XS · The Outside C++ Adopter: My licence scanner sees MIT
-- [ ] **[OCA-06](STORIES.md#oca-06)** Should · XS · The Outside C++ Adopter · **Owner**: The GitHub front door leads me to the site, not a private game
+- [x] **[OCA-06](STORIES.md#oca-06)** Should · XS · The Outside C++ Adopter · **Owner**: The GitHub front door leads me to the site, not a private game
 - [x] **[OCA-10](STORIES.md#oca-10)** Must · XS · The Outside C++ Adopter: The README's consumer section is complete and points at a real consumer
 - [x] **[SRL-03](STORIES.md#srl-03)** Must · S · The Sample-Reading Learner: Concept pages say true things about the samples they cite
 - [x] **[OCA-73](STORIES.md#oca-73)** Must · S · The Outside C++ Adopter · **Owner**: Report a vulnerability privately and know what input is trusted
@@ -540,7 +539,7 @@ Not in any horizon: each waits on something outside the backlog.
 ## Risks to the plan
 
 - Now holds 35 stories in 20 batches. It fits a few weeks only if each batch is one PR; split further and the branch, PR, green-CI, rebase-merge overhead crowds out the compounding items (OCA-68, OCA-11, OCA-73, SM-21). OCA-68's backfill (L) and OCA-11's consumer job (M) are the schedule risks inside Now.
-- Owner review is the binding constraint, not agent time: Now still asks the owner for one repository setting (the About fields). Amendment B has landed and `v0.1.0` is cut on it.
+- Owner review is the binding constraint, not agent time: every owner sign-off and repository setting in Now is made, amendment B has landed and `v0.1.0` is cut on it; what Now still waits on is the owner redeploying the hosted demo before OCA-03 links it.
 - PHILOSOPHY.md is touched by six PRs across three horizons. They are serialised A to F and each rebases on the last; a parallel branch that edits PHILOSOPHY outside that order will conflict and should be refused at review.
 - The primary persona is unevidenced: no issues, analytics or independent adopter. Next spends real capacity on a stranger's ship path. Mitigation: most of Now is truth fixes that also serve the agents who read the same documents, and PI-09/PI-10 are the only stories backed by recorded demand.
 - Doc edits can fail the website build by design: quoted lines and public header comments are read at build time. Header-contract stories (OCA-55, OCA-59, OCA-56) and the brief trim (SM-43) must fix any quoting page in the same commit.

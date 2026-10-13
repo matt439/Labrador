@@ -14,7 +14,7 @@ An index of open work, one row per item; each row points to the document that ow
 - The calm top-out has merged: the owner redeploys the hosted demo (`WEB#9`), then `WEB#7` runs its live checks again.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Now: `OCA-06` (GitHub About fields, Discussions) · `WEB#9` (redeploy the demo).
+- Now: `WEB#9` (redeploy the demo).
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
 
@@ -25,7 +25,6 @@ An index of open work, one row per item; each row points to the document that ow
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-03` | OPEN | must | S | Link the live demo from the site's home and examples pages, the README's LineSweeper section and the top of `samples/linesweeper/README.md`, without promising touch play. After `WEB#9` and `WEB#7`. |
-| `OCA-06` | DECISION | should | XS | The owner sets the GitHub About description (not citing the private game), homepage `https://labradorengine.com/` and topics, and decides whether to enable Discussions; the README half has landed. |
 | `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once. `SM-36` waits on it. |
 
 ## Website and the hosted demo
@@ -112,6 +111,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `PI-09` | DECISION | should | S | The owner decides what private ColourWars detail may be published; then the seven live drafts and the packaging gap are rechecked against master and filed through the stated route, or withdrawn with a reason. `PI-10` answers them. |
+| `DOC#4` | WAITING | should | S | When ColourWars' repository goes public (the owner expects it within weeks of 2026-10-13): sweep the tree's "private" and "not public" mentions of it outside dated records, link the repository from the README and the site, and recheck `PI-09`, which then narrows to what its drafts say. |
 | `SM-36` | BLOCKED | should | S | The owner sets ColourWars' pin cadence in a ColourWars document, then makes the first ordinary bump from `4cefb68` and records what was played. After `OCA-70`. |
 | `PI-14` | BLOCKED | should | M | A ColourWars Release ZIP at a current pin, run (or refused loudly) on a clean Windows install without Visual Studio, with edition, GPU, driver and commits named. After `OCA-61` and `SM-36`. |
 
