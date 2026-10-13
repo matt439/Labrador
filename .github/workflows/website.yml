@@ -33,7 +33,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  # The id and the name are both the workflow's own, so the required check is
+  # named for this job and no other workflow's 'build' can stand in for it.
+  website:
+    name: website
     runs-on: ubuntu-latest
     defaults:
       run:

@@ -26,13 +26,39 @@ in someone's memory cannot be followed by anyone else.
 nothing reaches it except through a pull request. The owner can bypass the
 protection for a trivial fix; nobody else does.
 
-**The required checks are names held in GitHub's settings**, not in this tree:
-the six `windows (...)` matrix jobs and `wasm` from
-[.github/workflows/ci.yml](.github/workflows/ci.yml), and the website's
-`build` from [.github/workflows/website.yml](.github/workflows/website.yml). A
-matrix entry's check name is built from its values, so a pull request that
-adds, removes or changes one must have the branch protection updated to match,
-or every later pull request waits on a check that never reports.
+**The required checks are names held in GitHub's settings**, not in this tree,
+so this list is the record of what those settings must hold. Each name is the
+job's `name:` in its workflow, and the windows jobs are named for their preset
+alone, so changing a matrix entry's `skip_tests` or `vulkan_sdk` does not
+rename its check. The required contexts are exactly these eight:
+
+- `windows (x64-debug)`
+- `windows (x64-release)`
+- `windows (x64-debug-d3d12)`
+- `windows (x64-debug-gl)`
+- `windows (x64-debug-vulkan)`
+- `windows (x64-debug-null)`
+- `wasm`
+- `website`
+
+The first seven are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml)
+and the last is the job in
+[.github/workflows/website.yml](.github/workflows/website.yml).
+`gh api repos/matt439/Labrador/branches/master/protection` shows what the
+settings hold, and its contexts should be this list.
+
+**A pull request that adds, removes or renames a job or a matrix entry updates
+the branch protection in the same change**, and this list with it. A removed or
+renamed context leaves every later pull request waiting on a check that never
+reports; an added one that is not required can fail and still merge.
+
+**Required checks are strict**: a branch must be up to date with `master`
+before it merges, so its checks have run against the tree it will produce. Two
+pull requests that each pass against an older `master` can together break it -
+one rewording a line a website page quotes and another adding a page that
+quotes it, or one renaming a header another starts including - and only a run
+on the combined tree sees that. The cost is a rebase and a fresh CI run when
+`master` moves first, which a repository with one maintainer pays rarely.
 
 ## Commit messages
 

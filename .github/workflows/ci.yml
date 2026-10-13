@@ -24,6 +24,11 @@ concurrency:
 
 jobs:
   windows:
+    # The check's name is the preset alone. Without it GitHub names each
+    # matrix job after every value in its entry, so changing skip_tests or
+    # vulkan_sdk would rename a required check and leave every pull request
+    # waiting on a context that never reports (CONTRIBUTING.md).
+    name: windows (${{ matrix.preset }})
     runs-on: windows-latest
 
     # Every backend, because "they all pass the same tests" is a claim that
@@ -240,6 +245,7 @@ jobs:
   # this build was proven on, and a compiler that moves under a -Werror build
   # moves it from green to red with no commit to blame.
   wasm:
+    name: wasm
     runs-on: windows-latest
 
     defaults:

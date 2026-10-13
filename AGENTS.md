@@ -406,9 +406,9 @@ in the commit that creates it.
 agent as for the owner: branch from `master`, one self-contained commit (the
 source, its tests and every document it makes false), a pull request, and a
 rebase-merge once CI is green. `master` is protected and merge commits are
-disabled. The required checks are names held in GitHub's settings and built
-from the CI matrix's values, so a change to the matrix needs the branch
-protection updated with it. Commit, push or open a pull request only when the
+disabled. The required checks are names held in GitHub's settings, listed in
+CONTRIBUTING.md and strict, so a change that adds, removes or renames a CI job
+or matrix entry needs the branch protection updated with it. Commit, push or open a pull request only when the
 owner asks.
 
 ## Rules that are not checked, and matter anyway

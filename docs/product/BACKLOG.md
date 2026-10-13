@@ -16,7 +16,7 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Word the deletion rule for uncountable outside callers (PHILOSOPHY.md:742-758) | OCA-69, OCA-67 |
 | Sign off amendment A's wording that the exclusions (editor included) are permanent, matching CLAUDE.md's existing decision (a sign-off, not an open decision) | FES-03, FES-04, FES-02 |
 | Enable private vulnerability reporting, set the GitHub About description, homepage and topics, and decide whether to turn on Discussions | OCA-73, OCA-06, OCA-72 |
-| Decide whether required checks are strict (up to date with master), and add the new required contexts in branch protection | SM-21, OCA-11 |
+| Add the consumer job's context to branch protection and to CONTRIBUTING.md's list when OCA-11 lands | OCA-11 |
 | Choose the canonical host for the engine site and change the Cloudflare and dashboard settings | SM-31, SM-29, SM-30 |
 | Record the accessibility position: what the engine provides, whether the hosted demo has an aim, and who owns the colour-blind palette | OCA-08, BDP-24, BDP-21 |
 | Whether to replace the template font, and with which openly licensed font | OCA-75 |
@@ -88,7 +88,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [ ] **[OCA-73](STORIES.md#oca-73)** Must · S · The Outside C++ Adopter · **Owner**: Report a vulnerability privately and know what input is trusted
 - [ ] **[OCA-72](STORIES.md#oca-72)** Should · S · The Outside C++ Adopter: Ask a question or request an API change through a stated route
 - [ ] **[OCA-68](STORIES.md#oca-68)** Must · L · The Outside C++ Adopter: Read what changed that affects my game, from the pin I am on — after SM-20
-- [ ] **[SM-21](STORIES.md#sm-21)** Must · S · The Sole Owner-Maintainer · **Owner**: Required checks that survive a workflow edit
+- [x] **[SM-21](STORIES.md#sm-21)** Must · S · The Sole Owner-Maintainer · **Owner**: Required checks that survive a workflow edit
 - [ ] **[OCA-11](STORIES.md#oca-11)** Must · M · The Outside C++ Adopter · **Owner**: The project shape Get Started teaches is built against every engine change — after SM-21
 - [ ] **[OCA-09](STORIES.md#oca-09)** Must · S · The Outside C++ Adopter: Get Started tells me the truth about long paths
 - [ ] **[OCA-17](STORIES.md#oca-17)** Should · XS · The Outside C++ Adopter: Prerequisite and naming instructions that work as written
