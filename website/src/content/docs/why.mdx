@@ -21,9 +21,10 @@ It suits you if:
 - your game is played on one machine: alone, or with friends on a shared or split screen, with gamepads;
 - you would like to test your game's rules the way you test any other code.
 
-It does not suit you yet if you want a visual editor or a scripting language, 3D, online play,
-a platform other than Windows, or a large community with an asset store and years of answered
-questions. Several of those are permanent decisions, explained below; the platform is not.
+It does not suit you if you want a visual editor, a scripting language, 3D or online play. Those
+four are permanent decisions, explained below. It does not suit you yet if you need a platform
+other than Windows and a desktop browser: that one is provisional. And it is a small project, with
+no asset store and no years of answered questions.
 
 ## Ordinary C++ and standard tools
 
@@ -100,10 +101,10 @@ engine's tests, whose reference images include split-screen frames, and by the e
 client, a four-player split-screen game that is not public. A public multiplayer example is
 planned.
 
-**The cost.** Online play is out of scope permanently, not for now: no netcode, replication or
-rollback will ever shape the engine's design. 3D is out of scope too. The math library is 2D by
+**The cost.** Online play is out of scope permanently: no netcode, replication or rollback will
+ever shape the engine's design. 3D is permanently out of scope too. The math library is 2D by
 design, not by omission
-([Non-goals](/docs/design/philosophy/#non-goals-today)).
+([Non-goals](/docs/design/philosophy/#non-goals)).
 
 ## Rules you can test without a window
 

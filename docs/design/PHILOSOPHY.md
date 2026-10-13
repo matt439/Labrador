@@ -396,8 +396,8 @@ untested claims is empty now is not a thing this document should assert twice.
 three all run on Windows through the same Win32 window, and the paragraph here
 used to close by saying so and calling cross-platform an eventual goal rather
 than a current work item. Vulkan runs on Windows too, and it is the single API
-that reaches Android, Linux and — through MoltenVK — the Apple platforms, so
-what it changes is the *cost* of the goal rather than its status:
+meant to carry the engine to Android, Linux and — through MoltenVK — the Apple
+platforms, so what it changes is the *cost* of the goal rather than its status:
 `docs/port/android.md` costs the rest of such a port, and the renderer is not
 the expensive part of it. Audio, input and the shell are, and that document
 names which.
@@ -446,7 +446,7 @@ The engine provides mechanism; the game provides policy (T1):
 | Scene container, game loop, fixed-step timing | The match: rounds, win conditions, scoring |
 | Collision detection and response | What collides with what, and what a hit means |
 | Renderer interface, cameras, viewports, split-screen | What is drawn: sprites, HUD, menus content |
-| Input devices and action mapping | Which actions exist and their bindings |
+| Input devices: pads, keyboard, mouse and touch | Which actions exist, their bindings, and any rebinding |
 | Audio playback and mixing | Which sounds play, and when |
 | Asset loading, registries, JSON parsing | The content: definitions, levels, tuning data |
 | State machinery | The states: menu flow, gameplay flow |
@@ -660,12 +660,14 @@ engine API to depend on.
   graphics adapter, and cutting a view list up is CPU work. 250 stays a
   crossing.
 - **None of that makes the axis the speculative framework T1 rules out.**
-  Neither sample in this repository has a second view, so nothing here reaches
-  the branch at all — and the axis was extracted from a client that draws four
+  `samples/local_multiplayer` draws two views through a `Scene` built on the
+  shell's pool and partitioner, so a sample in this repository reaches the
+  branch — and the axis was extracted from a client that draws four
   panes, which lives in its own repository now. "No caller in this tree" is the
   count The public face already refuses as an argument, and it is refused again
-  here. The mechanism stays. What changed is that it has been run, and that the
-  document no longer implies taking it is free.
+  here. The mechanism stays, and a caller here is one more reason it does.
+  What changed is that it has been run, and that the document no longer
+  implies taking it is free.
 - Per-frame code performs no heap allocation and no string-keyed lookups;
   fixed-size geometry returns fixed-size containers; data the frame iterates
   is laid out for iteration.
@@ -714,9 +716,9 @@ engine API to depend on.
 - Every public engine header is documented: the contract, the intent, and
   where it isn't obvious, a usage example. A stranger starts from the
   headers, not from reading the implementation.
-- A minimal sample game lives beside the paint-shooter. It is the standing
-  answer to "how do I start a project on this engine" — and the permanent
-  second client that keeps the boundary honest (T1).
+- A minimal sample game lives in this repository, beside the engine. It is
+  the standing answer to "how do I start a project on this engine" — and
+  the permanent second client that keeps the boundary honest (T1).
 - A second sample answers the other question, and the two are not merged
   because they are not the same artefact. "How do I start" wants the smallest
   thing that runs and is meant to be **copied**; "what does a finished game
@@ -778,18 +780,22 @@ engine API to depend on.
 
 ---
 
-## Non-goals, today
+## Non-goals
 
-Named so their absence is deliberate, and revisited only explicitly:
+Named so their absence is deliberate. Four of them are permanent: online play,
+3D, an editor and a scripting layer. The others are revisited only explicitly.
 
 - **Online play. Permanent, not provisional.** Labrador is a
   local-multiplayer engine — split-screen, shared screen, one machine.
   Being excellent at couch multiplayer is the niche; no design tax is paid
   for netcode, replication, or rollback determinism, ever.
-- **3D.** MattMath is a 2D library; the dimension is a design constant, not
-  a parameter.
-- **An editor or general tooling.** Content is data (T7); data files plus a
-  text editor are the toolchain for now.
+- **3D. Permanent.** MattMath is a 2D library; the dimension is a design
+  constant, not a parameter.
+- **An editor. Permanent.** Content is data (T7); data files plus a text
+  editor are the toolchain, and what tooling there is runs from the command
+  line.
+- **A scripting layer. Permanent.** Behaviour is C++ (T10); there is no second
+  language, visual or textual, for a game's logic to live in.
 - **Framework maximalism.** Composition where it pays, not an ECS for its
   own sake (T4).
 - **Every genre.** The engine serves 2D sprite-based games and generalises

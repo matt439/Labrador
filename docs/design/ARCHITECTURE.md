@@ -133,7 +133,8 @@ being load-bearing.
 /
 ├── CMakeLists.txt          the root build file: lists the targets, nothing else
 ├── CMakePresets.json       the configurations: debug and release for each
-│                           of the five render backends — ten in all
+│                           of the five render backends, and for the
+│                           browser build — twelve in all
 ├── vcpkg.json              the bought edge, declared (T9)
 ├── cmake/                  the shared settings target, helper modules
 ├── engine/                 the product
@@ -462,11 +463,12 @@ tier.
 
 **The fifth is the first one that is about a platform rather than about the
 seam, and it still found a term the seam had never been asked.**
-`render/vulkan/` is here because Vulkan is the single API that reaches Android,
-Linux and — through MoltenVK — the Apple platforms, so an engine that has it
-has stopped needing a backend per platform; `docs/port/android.md` is where
-that is argued and where the rest of such a port is costed. What it tested on
-the way in was **who says the window changed**. Every other backend learns it
+`render/vulkan/` is here because Vulkan is the single API meant to carry the
+engine to Android, Linux and — through MoltenVK — the Apple platforms, so an
+engine that has it needs no further backend per platform to get there;
+`docs/port/android.md` is where that is argued and where the rest of such a
+port is costed. What it tested on the way in was **who says the window
+changed**. Every other backend learns it
 from the shell's window — Win32's messages, or in a browser the web window
 measuring the canvas once a frame — and `Renderer::window_size_changed` is
 written entirely in terms of
