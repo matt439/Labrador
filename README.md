@@ -26,7 +26,10 @@ Six samples come with it, and they answer different questions.
 project on this" — copy it. `samples/linesweeper` is a falling-block game and
 is the answer to "what does a finished game look like on this engine" — read
 it, and read [its README](samples/linesweeper/README.md) for the decisions
-behind it.
+behind it. [Play LineSweeper in a desktop browser](https://mattharding.dev/demo/linesweeper/)
+before building anything: the hosted demo starts on a click and plays with a
+keyboard. Phones are a planned phase, so it shows a phone a poster rather than
+the game until a real iPhone and a real Android phone have played it.
 
 `samples/collision`, `samples/audio` and `samples/local_multiplayer` are
 focused examples for the website's guides: a collision arena, a playable

@@ -617,8 +617,10 @@ a page of its own in its own styles, built on the same mount (7.3), and its
 `npm run sync-demo` copies the rest of the bundle in beside it. **Putting it
 on the site and deploying is the owner's**, in that repository: `npm run
 deploy` from its `main` branch. The demo is live, at
-<https://mattharding.dev/demo/linesweeper/>, checked on 2026-10-13
-([web-to-be-tested.md](web-to-be-tested.md) has the headers it serves).
+<https://mattharding.dev/demo/linesweeper/>, serving a bundle built at
+`c369e8b` (`v0.1.0`) from the module folder `m/cd7d8cfd9043/`, checked on
+2026-10-13 ([web-to-be-tested.md](web-to-be-tested.md) has the headers it
+serves).
 
 ### 7.1 Files
 
@@ -630,13 +632,13 @@ toolchain already runs. Everything in it but `index.html` goes to
 `public/demo/linesweeper/`, the module and its loader in a folder of their
 own (7.2):
 
-| File | What | `wasm-release`, measured | Brotli, quality 11 |
+| File | What | `wasm-release` at `c369e8b`, measured | Brotli, quality 11 |
 |---|---|---|---|
 | `index.html` | An example of the demo's page: poster, button, the mount (7.3) | 7.8 KB | 2.5 KB |
 | `linesweeper.js` | ES module loader and glue; default export `createLineSweeper` | 119 KB | 27 KB |
-| `linesweeper.wasm` | engine + game + libc++ + 22 KB of content, embedded | 394 KB | 123 KB |
-| `poster.png` | A frame of the game, from `LineSweeperCapture`'s website set | 15.5 KB | 11.2 KB |
-| `NOTICE.txt` | What the module links that is not Labrador's, with each licence in full | 88 KB | 8.3 KB |
+| `linesweeper.wasm` | engine + game + libc++ + 22 KB of content, embedded | 404 KB | 125 KB |
+| `poster.png` | A frame of the game, from `LineSweeperCapture`'s website set | 15.1 KB | 10.9 KB |
+| `NOTICE.txt` | What the module links that is not Labrador's, with each licence in full | 92 KB | 9.3 KB |
 | `BUILD.json` | The commit, whether the checkout had uncommitted changes, the build type, the Emscripten version, and every file's size raw and under Brotli with its SHA-256 | | |
 
 The module is linked with `-sMODULARIZE -sEXPORT_ES6
@@ -644,7 +646,7 @@ The module is linked with `-sMODULARIZE -sEXPORT_ES6
 browser build takes (`-fwasm-exceptions`, a 1 MiB stack, a growing heap,
 WebGL2 only). It is a second link of the same objects as the development
 page's `LineSweeperSample.html`, which stays as it is, so the sample's page
-test still loads what the module runs. **A visitor fetches 151 KB under
+test still loads what the module runs. **A visitor fetches 153 KB under
 Brotli to play**: the loader and the module, after the click. The estimate
 this section used to carry, from `x64-release-gl`'s 297 KB executable, was
 0.6-1.2 MB for the module, and it came in under that.
@@ -676,10 +678,11 @@ the same set.
 - **Caching, by a versioned folder rather than a header.** The bundle's files
   have fixed names, so the site's `sync-demo` puts `linesweeper.js` and
   `linesweeper.wasm` in `/demo/linesweeper/m/<hash>/`, the hash taken from
-  their contents, and points the page at that folder. The Worker serves
-  anything under `m/<hash>/` as `Cache-Control: public, max-age=31536000,
-  immutable` and everything else under `/demo/` - the page, the poster, the
-  notices - as `no-cache`, revalidated against its ETag, so a new build is a
+  their contents, and points the page at that folder. The Worker sets
+  anything under `m/<hash>/` to `Cache-Control: public, max-age=31536000,
+  immutable` and the page to `no-cache`, and leaves the rest - the poster,
+  the notices, `BUILD.json`, the recording - with the asset store's own
+  `public, max-age=0, must-revalidate`, each revalidated against its ETag, so a new build is a
   new path and the page that names it is never stale. `sync-demo` also
   refuses a bundle whose `BUILD.json` says `"dirty": true` and checks every
   file against the SHA-256 recorded there.
@@ -847,9 +850,10 @@ samples' pages and `WebWindowTests` have not, which is that list's Firefox secti
 real displays. M4's pad path has been driven by a
 page script's fake pad and owes a physical one. M5 is done: the module, the
 bundle, its page and CI's upload are built here, and the owner has deployed
-the demo to <https://mattharding.dev/demo/linesweeper/>, where on 2026-10-13
-it played in headless Chrome and `curl -I` showed the §7.2 headers; Firefox
-and Safari on the live page are still to be checked. M6's items are all done. M7a's touch device
+the demo to <https://mattharding.dev/demo/linesweeper/>, from a bundle built
+at `c369e8b` (`v0.1.0`), where on 2026-10-13 it played in headless Chrome,
+calm top-out included, its files matched `BUILD.json` and `curl -I` showed the
+§7.2 headers; Firefox and Safari on the live page are still to be checked. M6's items are all done. M7a's touch device
 has been driven by Chrome's touch emulation and by touch injected into a
 Win32 window, and owes a real touchscreen. M7b's controls, portrait layout,
 page handling and texture path are built and emulated, and owe a real iPhone,
@@ -1491,22 +1495,29 @@ console was clean throughout, and the frames were looked at. The first run
 of that check found the one defect: the overlay holding "Play again" sat
 under the old canvas, so the second click reached the dead game rather than
 the button. With touch emulated, the page showed the keyboard line and
-fetched no module. At `wasm-release` the module is 394,486 bytes and the
-loader 118,913, 123,387 and 27,288 under Brotli at quality 11 - 151 KB for a
-visitor to play. The module links the Web Audio backend, the touch device and
+fetched no module. At `wasm-release` at `c369e8b` the module is 403,759 bytes
+and the loader 118,982, 125,384 and 27,283 under Brotli at quality 11 - 153 KB
+for a visitor to play. The module links the Web Audio backend, the touch device and
 the CPU block decoder whether or not LineSweeper calls them.
 
 **The live page was checked on 2026-10-13**, deployed from the site's `main`
-with `npm run deploy` from a bundle built at `e7888bd`. `curl -I` with
-`Accept-Encoding: br` showed `application/wasm` and `public,
-max-age=31536000, immutable` on the module under `m/4544f56a476f/`,
-`no-cache` on the page, and `Content-Encoding: br` on both. In headless Chrome
-it played, quit and played again with a clean console; with `--disable-webgl2`
-a click on Play reached `onError` and the page showed the engine's message;
-and under touch emulation it showed the recording and fetched no module.
+with `npm run deploy` from a bundle built at `c369e8b`, tagged `v0.1.0`, which
+holds the calm top-out. `curl -I` with `Accept-Encoding: br` showed
+`application/wasm` and `public, max-age=31536000, immutable` on the module
+under `m/cd7d8cfd9043/`, `no-cache` on the page, and `Content-Encoding: br` on
+both, and the four bundle files the site serves - all but the example
+`index.html` - had the size and SHA-256 its `BUILD.json` records: a 403,759-byte module and a 118,982-byte loader,
+which Cloudflare's own Brotli sends as about 150 KB and 32 KB, varying by a
+few hundred bytes from one response to the next. In headless
+Chrome it played, quit and played again with a clean console, and a match
+played to a top-out drew no stack behind the banner, only dim sparks; with
+`--disable-webgl2` a click on Play reached `onError` and the page showed the
+engine's message; and under touch emulation it showed the recording, paused
+and unfetched, and fetched no module.
 [web-to-be-tested.md](web-to-be-tested.md) has the runs. Not checked: Firefox
-and Safari on this page, a real context loss, and a real phone seeing the
-recording.
+and Safari on this page, a real context loss, a real phone seeing the
+recording, and the top-out's flash count on this page rather than the
+desktop build.
 
 ### Spikes — *days*, before any milestone is committed to
 
