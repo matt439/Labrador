@@ -1,0 +1,24 @@
+---
+interface Props { dog: 'vader' | 'ani'; }
+const { dog } = Astro.props;
+const name = dog === 'vader' ? 'Vader' : 'Ani';
+const coat = dog === 'vader' ? 'black' : 'yellow';
+---
+
+<figure class:list={['portrait', dog]}>
+	<div class="portrait-art">
+		<svg viewBox="0 0 120 112" aria-hidden="true" width="120" height="112">
+			<path class="dog-body" d="M24 112c2-23 15-35 36-35s34 12 36 35Z" />
+			<path class="dog-ear" d="M34 21C20 21 13 28 17 49c2 15 11 23 18 14l9-26Zm52 0c14 0 21 7 17 28-2 15-11 23-18 14l-9-26Z" />
+			<path class="dog-face" d="M60 15c-24 0-33 14-31 36l4 19c3 18 14 26 27 26s24-8 27-26l4-19c2-22-7-36-31-36Z" />
+			<path class="dog-muzzle" d="M60 57c-13 0-23 8-23 18s11 16 23 16 23-6 23-16-10-18-23-18Z" />
+			<ellipse class="dog-eye" cx="44" cy="49" rx="3" ry="3.5" />
+			<ellipse class="dog-eye" cx="76" cy="49" rx="3" ry="3.5" />
+			<path class="dog-nose" d="M50 64q10-6 20 0c0 7-6 11-10 11s-10-4-10-11Z" />
+			<path class="dog-mouth" d="M60 75v6m-9 0q9 7 18 0" />
+			<path class="dog-collar" d="M36 90q24 12 48 0l-3 10q-21 11-42 0Z" />
+		</svg>
+		<span class="placeholder-tag">Placeholder</span>
+	</div>
+	<figcaption><strong>{name}</strong><span>{coat} Labrador</span></figcaption>
+</figure>

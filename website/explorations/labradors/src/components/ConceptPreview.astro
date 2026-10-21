@@ -1,0 +1,108 @@
+---
+import type { Direction } from '../data';
+import { directions } from '../data';
+import DogAside from './DogAside.astro';
+import DogPortrait from './DogPortrait.astro';
+import mark from '../../../../src/assets/mark.svg';
+import play from '../../../../src/assets/captures/linesweeper-play.png';
+import '../styles/concepts.css';
+
+interface Props { direction: Direction; }
+const { direction } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>{direction.name} · Vader & Ani · Labrador design study</title>
+		<meta name="description" content="Local design exploration of three possible voices for Vader and Ani on the Labrador engine website. All dog portraits are labelled placeholders." />
+	</head>
+	<body>
+		<a class="skip-link" href="#main">Skip to the concepts</a>
+		<header class="study-header">
+			<a class="brand" href="https://labradorengine.com/"><img src={mark.src} alt="" width="28" height="28" />Labrador</a>
+			<p>Design study <span> / </span> local only</p>
+			<label class="theme-control">Theme <select id="theme"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+		</header>
+		<main id="main">
+			<section class="intro" aria-labelledby="study-title">
+				<div>
+					<p class="eyebrow">An engine. Two Labradors. A possible supporting cast.</p>
+					<h1 id="study-title">Meet Vader & Ani.</h1>
+					<p class="intro-copy">A little character around the C++. Three ways Matthew’s dogs could join the site, while the engine keeps centre stage.</p>
+				</div>
+				<div class="proposal-note"><strong>Real relationship. Imagined lines.</strong><p>Matthew’s descriptions guide the characters. Every portrait is a placeholder; the dialogue and scenes are fictional proposals. Vader’s replies are not reports of his real reaction. Technical reference pages are excluded.</p></div>
+			</section>
+			<nav class="directions" aria-label="Compare voice directions">
+				{directions.map((item) => (
+					<a href={item.id === 'dry' ? '/' : `/${item.id}/`} aria-current={item.id === direction.id ? 'page' : undefined}>
+						<span class="direction-number">{item.number}</span><span><strong>{item.name}</strong><small>{item.short}</small></span>
+					</a>
+				))}
+			</nav>
+			<section class="direction-summary" aria-labelledby="direction-title">
+				<div><p class="eyebrow">Direction {direction.number}</p><h2 id="direction-title">{direction.name}</h2><p>{direction.description}</p></div>
+				<div class="where"><h3>Where it earns its place</h3><p>{direction.placement}</p><p class="voice-note">{direction.role}</p></div>
+			</section>
+			<section class="preview" aria-labelledby="preview-title">
+				<div class="preview-toolbar">
+					<h2 id="preview-title">Try it in context</h2>
+					<fieldset class="context-control"><legend class="visually-hidden">Preview page context</legend><label><input type="radio" name="context" value="home" checked />Home</label><label><input type="radio" name="context" value="examples" />Examples</label></fieldset>
+					<label class="presence-control">Dogs <select id="presence"><option value="asides">Contextual asides</option><option value="footer">Footer only</option><option value="off">Off</option></select></label>
+				</div>
+				<div class="site-preview" id="site-preview">
+					<div class="mock-header"><span class="brand"><img src={mark.src} alt="" width="24" height="24" />Labrador</span><span class="mock-header-note">Page excerpt · candidate placement</span></div>
+					<div data-context="home">
+						<div class="mock-hero"><p class="eyebrow">C++20 · Windows & a desktop browser</p><h2>A 2D engine.<br />Ordinary C++.</h2><p>Write games in ordinary C++, and understand the machinery beneath them.</p><a class="primary-link" href="https://labradorengine.com/docs/get-started/">Get started <span aria-hidden="true">→</span></a><a class="secondary-link" href="https://labradorengine.com/why/">Why Labrador?</a></div>
+						<div class="mock-content">
+							{direction.id === 'duo' ? (
+								<div class="sample-copy"><p class="eyebrow">From Examples</p><h3>One scene, two views</h3><p>The local-multiplayer sample gives two players separate cameras and viewports in one shared world.</p><a href="https://labradorengine.com/docs/guides/local-multiplayer/">Read the local-multiplayer guide <span aria-hidden="true">→</span></a><DogAside tone={direction.id} lines={direction.home} /></div>
+							) : (
+								<>
+									<div class="sample-grid"><div><p class="eyebrow">A real game, built on Labrador</p><h3>LineSweeper</h3><p>A falling-block game you can play, then read. Copy the minimal sample to start; read LineSweeper to see a finished game’s structure.</p><a href="https://labradorengine.com/examples/">Explore the samples <span aria-hidden="true">→</span></a></div><figure class="sample-capture"><img src={play.src} width="1280" height="720" alt="Actual LineSweeper capture: coloured falling blocks, next pieces and score." /><figcaption>Actual engine output · existing site capture</figcaption></figure></div>
+									<DogAside tone={direction.id} lines={direction.home} />
+								</>
+							)}
+						</div>
+					</div>
+					<div data-context="examples" hidden>
+						<div class="guide-heading"><p class="eyebrow">Examples · candidate placement</p><h2>Pick a sample</h2><p>Copy the minimal sample to start a project. Read LineSweeper to see how a complete game is structured in ordinary C++.</p></div>
+						<div class="mock-content guide-content"><div class="guide-step"><span class="step-number">1</span><div><h3>Start with minimal</h3><p>A small entry point, content and a first state: the template for a game of your own.</p><a href="https://labradorengine.com/docs/get-started/run-minimal/">Run the minimal sample <span aria-hidden="true">→</span></a></div></div><div class="guide-step"><span class="step-number">2</span><div><h3>Read LineSweeper</h3><p>A complete falling-block game, with rules separated from presentation and tests that play matches headlessly.</p><a href="https://labradorengine.com/examples/">Explore the samples <span aria-hidden="true">→</span></a></div></div><DogAside tone={direction.id} lines={direction.examples} /><p class="next-step"><strong>Next:</strong> <a href="https://labradorengine.com/examples/">Choose a sample to explore</a>. The links remain available with the dogs switched off.</p></div>
+					</div>
+					<footer class="mock-footer"><span>Development documentation · design study excerpt</span><details class="meet-dogs" data-dog-footer><summary>Meet Vader & Ani</summary><div class="footer-dogs"><DogPortrait dog="vader" /><DogPortrait dog="ani" /><p>Matthew’s two Labradors. Real photos can go here later, with no dialogue required.</p></div></details></footer>
+				</div>
+				<p class="preview-caption">This is an isolated excerpt, not a proposed replacement homepage. Documentation links open the existing public site. Preferences apply only to this preview.</p>
+			</section>
+			<section class="decision-notes" aria-labelledby="decision-title"><div><p class="eyebrow">Affection underneath the interruption</p><h2 id="decision-title">He wants the attention. And Vader nearby.</h2><p>Try the dry entrance joke for a brief interruption, the Mum exchange for Vader’s own enthusiasm, or the warm version for the bond between them. Home and Examples are candidates; no tone or production placement is selected. Technical reference pages stay free of both characters and dialogue.</p></div><div><h3>The quiet alternative</h3><p>Try <strong>Footer only</strong> above: an optional introduction, opened by the reader. <strong>Off</strong> removes both portraits and dialogue. No floating assistants, timed messages or animation.</p><h3>When the photos arrive</h3><p>One clear head-and-shoulders photo of each dog, at similar height and lighting, with room around the ears and muzzle. A relaxed photo together would suit the footer. The final lines still need to feel like the dogs Matthew knows.</p></div></section>
+		</main>
+		<footer class="study-footer"><p>Vader & Ani / voice study / October 2026</p><p>Existing Labrador mark, system type and sample capture. Placeholder portraits only. No assumed Star Wars theme.</p></footer>
+		<script>
+			const preview = document.querySelector<HTMLElement>('#site-preview');
+			const presence = document.querySelector<HTMLSelectElement>('#presence');
+			const theme = document.querySelector<HTMLSelectElement>('#theme');
+			function updatePresence() {
+				preview?.querySelectorAll<HTMLElement>('[data-dog-aside]').forEach((aside) => {
+					aside.hidden = presence?.value !== 'asides';
+				});
+				const footer = preview?.querySelector<HTMLDetailsElement>('[data-dog-footer]');
+				if (footer) {
+					footer.hidden = presence?.value === 'off';
+					if (footer.hidden) footer.open = false;
+				}
+			}
+			presence?.addEventListener('change', updatePresence);
+			theme?.addEventListener('change', () => { document.documentElement.dataset.theme = theme.value; });
+			document.querySelectorAll<HTMLInputElement>('input[name="context"]').forEach((radio) => {
+				radio.addEventListener('change', () => {
+					preview?.querySelectorAll<HTMLElement>('[data-context]').forEach((context) => {
+						context.hidden = context.dataset.context !== radio.value;
+					});
+				});
+			});
+			updatePresence();
+		</script>
+	</body>
+</html>

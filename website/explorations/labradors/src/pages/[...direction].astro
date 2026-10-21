@@ -1,0 +1,14 @@
+---
+import { directions } from '../data';
+import ConceptPreview from '../components/ConceptPreview.astro';
+
+export function getStaticPaths() {
+	return directions.map((direction) => ({
+		params: { direction: direction.id === 'dry' ? undefined : direction.id },
+		props: { direction },
+	}));
+}
+const { direction } = Astro.props;
+---
+
+<ConceptPreview direction={direction} />

@@ -1,0 +1,23 @@
+---
+import DogPortrait from './DogPortrait.astro';
+interface Props {
+	tone: string;
+	lines: ReadonlyArray<{ dog: 'vader' | 'ani'; text: string }>;
+}
+const { tone, lines } = Astro.props;
+---
+
+<aside class:list={['dog-aside', tone]} aria-label="Proposed fictional dialogue from Vader and Ani" data-dog-aside>
+	<div class="aside-label">Vader & Ani <span>· fictional scene</span></div>
+	<div class:list={['conversation', { 'long-form': lines.length > 2 }]}>
+		{lines.map((line, index) => (
+			<div class:list={['speaker', { reply: lines.slice(0, index).some((earlier) => earlier.dog === line.dog) }]}>
+				{lines.slice(0, index).some((earlier) => earlier.dog === line.dog)
+					? <span class="reply-name" aria-hidden="true">{line.dog === 'vader' ? 'Vader' : 'Ani'}</span>
+					: <DogPortrait dog={line.dog} />}
+				<p class="bubble"><strong class="visually-hidden">{line.dog === 'vader' ? 'Vader' : 'Ani'} says: </strong>{line.text}</p>
+			</div>
+		))}
+	</div>
+	<p class="aside-footnote">Personality-inspired proposal. These are imagined lines, including Vader’s replies.</p>
+</aside>
