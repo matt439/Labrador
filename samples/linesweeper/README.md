@@ -723,7 +723,7 @@ landscape one with touch emulated. **No real phone has played it**, and the
 - **Whether the input map belongs in the sample or the engine — now priced,
   and still open.** `states/` has two tables, `{Key, button}` and
   `{GamepadButton, button}`, nine entries each, and that is the whole input
-  layer. The engine deliberately has no action-mapping layer (CLAUDE.md,
+  layer. The engine deliberately has no action-mapping layer (AGENTS.md,
   Known-absent), and one sample with no rebinding screen is not the second
   client that would justify one.
 

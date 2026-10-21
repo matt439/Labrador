@@ -2458,17 +2458,17 @@ S · docs · E05 Input, menus, settings and couch play my players can use · gap
 <a id="sm-43"></a>
 ### SM-43. A current-state agent brief, with its narrative history moved out
 
-**As** a sole owner-maintainer who works through agents that read CLAUDE.md/AGENTS.md cold at the start of every task, **I want** the agent brief to say what is true of the tree now, with the narrative of how each line came to be moved to dated documents, **so that** every agent spends its context on current rules and facts, and the brief stops contradicting CONVENTIONS' rule that comments are contract or rationale, never history.
+**As** a sole owner-maintainer who works through agents that read AGENTS.md (which CLAUDE.md imports) cold at the start of every task, **I want** the agent brief to say what is true of the tree now, with the narrative of how each line came to be moved to dated documents, **so that** every agent spends its context on current rules and facts, and the brief stops contradicting CONVENTIONS' rule that comments are contract or rationale, never history.
 
 M · docs · E12 A maintainer's process, CI and deploy that one person and their agents can trust · gaps G66 · **Next**
 
 **Acceptance**
 
-- Given CLAUDE.md (and AGENTS.md, one brief after SM-22), When grepped for narrative markers ('used to read', 'used to call', 'until 20', 'This line used to', 'That sentence was'), Then no hit narrates a past state of the tree
+- Given AGENTS.md (the one brief, which CLAUDE.md imports), When grepped for narrative markers ('used to read', 'used to call', 'until 20', 'This line used to', 'That sentence was'), Then no hit narrates a past state of the tree
 - Given each paragraph removed or shortened, When the PR is read, Then its description maps it to its new home (an existing dated document such as docs/survey/, a review folder's STATUS.md or README, or a new dated note under docs/) or says it was already recorded there, so no reason is lost: moved, not deleted
 - Given the current facts the brief carries (the build commands, the preset table and ctest counts, the five render, three audio and two input backends, 'What will fail the build', the rules that are not checked, the website's coupling and the review-folder reading rules), When the trimmed brief is compared with the original, Then each is still present and true at the merge commit
 - Given the brief's length before and after, When the PR is opened, Then both line counts are recorded, with a target of at most about 350 lines against today's 602 (negotiable)
-- Given the top-level build, website.yml and `python -m unittest discover tools/tests` (release.py:19 lists both files), When they run on the PR, Then they pass, including SM-22's sync check and check_doc_citations
+- Given the top-level build, website.yml and `python -m unittest discover tools/tests` (release.py:19 lists both files), When they run on the PR, Then they pass, including check_agent_brief and check_doc_citations
 
 **Trade-offs**
 

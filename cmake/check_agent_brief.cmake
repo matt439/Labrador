@@ -1,9 +1,10 @@
-# CLAUDE.md and AGENTS.md are one brief under two names, one for each agent
-# that reads them, and they differ only in their title line. Two copies of a
-# six-hundred-line file drift the first time an amendment is made to one and
-# not the other, and nothing would notice: each agent would go on reading its
-# own copy as the truth (T4). So the build compares them, below line 1, and
-# names both files when they differ (T5, T6).
+# AGENTS.md is the agent brief, and CLAUDE.md is not a second copy of it: its
+# first line is "@AGENTS.md", which Claude Code reads as an import of the whole
+# brief. Anything below that line is for Claude Code alone. A brief kept as two
+# copies drifts the first time an amendment is made to one and not the other,
+# and nothing would notice: each agent would go on reading its own copy as the
+# truth (T4). So the build checks that CLAUDE.md still imports AGENTS.md
+# rather than carrying a copy, and names the file when it does not (T5, T6).
 #
 # Top-level builds only, like the citation check: a consumer of the engine
 # does not carry this repository's agent brief.
@@ -17,35 +18,29 @@ endif()
 set(claude_brief "${REPO_DIR}/CLAUDE.md")
 set(agents_brief "${REPO_DIR}/AGENTS.md")
 
-# The body of a brief: everything after its first line, with line endings
-# normalised so that a checkout's autocrlf setting cannot make two equal
-# files differ.
-function(brief_body path out_var)
+foreach(path IN ITEMS "${agents_brief}" "${claude_brief}")
     if(NOT EXISTS "${path}")
         message(FATAL_ERROR "The agent brief ${path} is missing.\n"
             "  See CONTRIBUTING.md, The agent brief.")
     endif()
-    file(READ "${path}" text)
-    string(REPLACE "\r\n" "\n" text "${text}")
-    string(FIND "${text}" "\n" first_newline)
-    if(first_newline EQUAL -1)
-        set(text "")
-    else()
-        math(EXPR body_start "${first_newline} + 1")
-        string(SUBSTRING "${text}" ${body_start} -1 text)
-    endif()
-    set(${out_var} "${text}" PARENT_SCOPE)
-endfunction()
+endforeach()
 
-brief_body("${claude_brief}" claude_body)
-brief_body("${agents_brief}" agents_body)
+# The first line of CLAUDE.md, with a trailing carriage return dropped so that
+# a checkout's autocrlf setting cannot make a correct file fail.
+file(READ "${claude_brief}" text)
+string(FIND "${text}" "\n" first_newline)
+if(first_newline EQUAL -1)
+    set(first_line "${text}")
+else()
+    string(SUBSTRING "${text}" 0 ${first_newline} first_line)
+endif()
+string(REGEX REPLACE "\r$" "" first_line "${first_line}")
 
-if(NOT claude_body STREQUAL agents_body)
+if(NOT first_line STREQUAL "@AGENTS.md")
     message(FATAL_ERROR
-        "The agent brief has drifted. These two files must be identical below "
-        "their title line:\n"
+        "The agent brief has drifted. The first line of this file must be "
+        "\"@AGENTS.md\":\n"
         "    ${claude_brief}\n"
-        "    ${agents_brief}\n"
-        "  Make the amendment in one, copy it to the other, and keep each "
-        "file's own first line. See CONTRIBUTING.md, The agent brief.")
+        "  Make the amendment in AGENTS.md only; CLAUDE.md imports it. "
+        "See CONTRIBUTING.md, The agent brief.")
 endif()

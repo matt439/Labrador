@@ -68,13 +68,14 @@ if(PROJECT_IS_TOP_LEVEL)
     # a targeted build here runs it and a consumer's never sees it.
     add_dependencies(labrador_settings check_doc_citations)
 
-    # The agent brief, one file under two names. Top-level only for the same
-    # reason: it guards this repository's own records, not a consumer's build.
+    # The agent brief: AGENTS.md, which CLAUDE.md imports rather than copies.
+    # Top-level only for the same reason: it guards this repository's own
+    # records, not a consumer's build.
     add_custom_target(check_agent_brief ALL
         COMMAND "${CMAKE_COMMAND}"
             "-DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_agent_brief.cmake"
-        COMMENT "Checking that CLAUDE.md and AGENTS.md are one brief"
+        COMMENT "Checking that CLAUDE.md imports AGENTS.md"
         VERBATIM
     )
     add_dependencies(labrador_settings check_agent_brief)

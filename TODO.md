@@ -128,7 +128,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `SRL-14` | DECISION | could | S | The owner says whether the "Introduction to C++" series is not started, planned with an outline, or withdrawn. |
 | `SRL-07` | DECISION | could | S | The owner chooses between amending CONVENTIONS to accept the 26 SCREAMING constants and renaming them in both repositories. |
 | `OCA-66` | DECISION | could | S | The owner decides whether the default DPI awareness stays unaware or becomes per-monitor aware. |
-| `SM-43` | OPEN | should | M | Make CLAUDE.md and AGENTS.md a current-state brief: move the narrative of how each line came to be into dated documents, keeping the two in sync. |
+| `SM-43` | OPEN | should | M | Make AGENTS.md (which CLAUDE.md imports) a current-state brief: move the narrative of how each line came to be into dated documents. |
 | `DOC#2` | OPEN | could | XS | `docs/survey/2026-08-26-status.md`'s section-6 item 4 still opens "Still unmade" above its own "Decided and built, 2026-10-11" (D9). Its decision 2, whether markers stay on the seam, is still unmade and has no other owner. |
 | `DOC#3` | OPEN | could | XS | The file-length audit's tripwire has fired: `tests/core/state_context_tests.cpp` is 865 lines against about 650. Re-ask whether `StateContext` has a second job and record the answer in `docs/file-length-audit.md`. |
 

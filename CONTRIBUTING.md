@@ -193,8 +193,9 @@ read as the record of why the tree is the shape it is.
 
 ## The agent brief
 
-[CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) are one brief under two
-names, one for each agent that reads them. They are identical below their
-title line, and the build fails if they are not
-([cmake/check_agent_brief.cmake](cmake/check_agent_brief.cmake)): amend one,
-copy it to the other, and keep each file's own title.
+[AGENTS.md](AGENTS.md) is the agent brief, and the only copy of it: amend
+AGENTS.md alone. [CLAUDE.md](CLAUDE.md) is not a second copy; its first line is
+`@AGENTS.md`, which Claude Code reads as an import of the whole brief, and
+anything below that line is for Claude Code alone. The build fails if that
+first line is anything else
+([cmake/check_agent_brief.cmake](cmake/check_agent_brief.cmake)).

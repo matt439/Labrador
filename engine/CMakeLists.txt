@@ -5,7 +5,7 @@ add_subdirectory(math)
 # that used to end this paragraph - "files migrate in from the game as they
 # become dependency-clean" - described a tree with a game in it, and the split
 # ended that migration: the client is its own repository and consumes this one
-# as a submodule (CLAUDE.md, ARCHITECTURE.md).
+# as a submodule (AGENTS.md, ARCHITECTURE.md).
 
 add_library(LabradorEngine STATIC
     app/application.cpp

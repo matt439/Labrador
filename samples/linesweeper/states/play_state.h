@@ -46,7 +46,7 @@ namespace linesweeper
 		// Every device as one of tick.h's button masks. A method on the state
 		// rather than a class, because it is three tables and three loops over
 		// them, and the engine deliberately has no action-mapping layer to put
-		// it in (CLAUDE.md, Known-absent). What that costs is measured rather
+		// it in (AGENTS.md, Known-absent). What that costs is measured rather
 		// than asserted - README, Still open, has the number.
 		std::uint8_t read_input() const;
 

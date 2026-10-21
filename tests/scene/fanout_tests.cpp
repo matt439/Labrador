@@ -27,7 +27,7 @@
 // What the per-view render fan-out owes, asserted for the first time.
 //
 // PHILOSOPHY commits to one axis of parallelism "and that one alone" and
-// CLAUDE.md calls the const draw() discipline guarding it "load-bearing, not
+// AGENTS.md calls the const draw() discipline guarding it "load-bearing, not
 // a convenience" - and until this file the fan-out had never run. scene.cpp
 // returns before it when the view count is one, or the pool is null, or the
 // partitioner is null; both samples construct Scene(nullptr, nullptr); and

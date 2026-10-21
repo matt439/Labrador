@@ -1,4 +1,4 @@
-# Labrador — notes for Codex
+# Labrador — notes for AI coding agents
 
 A 2D game engine in C++20 for Windows and, through Emscripten and WebGL2, the
 browser, built with CMake + vcpkg; all six of its samples run in a browser
@@ -406,10 +406,10 @@ in the commit that creates it.
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
   silently is not compiled.
-- **`CLAUDE.md` and `AGENTS.md` differing below their title line.**
+- **`CLAUDE.md` not starting with `@AGENTS.md`.**
   [cmake/check_agent_brief.cmake](cmake/check_agent_brief.cmake), top-level
-  builds only. They are one brief under two names, so an amendment is made in
-  one and copied to the other, each keeping its own first line.
+  builds only. This file is the one brief and CLAUDE.md imports it, so an
+  amendment is made here only, never as a copy in CLAUDE.md.
 
 ## How a change lands
 
