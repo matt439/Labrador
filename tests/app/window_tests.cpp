@@ -4,6 +4,7 @@
 #include "engine/app/win32/pointer_input.h"
 
 #include <Windows.h>
+#include <algorithm>
 #include <functional>
 #include <stdexcept>
 #include <string>
@@ -494,4 +495,148 @@ TEST_CASE("a pointer Windows does not know as touch reaches nothing, and a lost 
 	SendMessageW(hwnd(window), WM_POINTERCAPTURECHANGED, MAKEWPARAM(4321, 0),
 		0);
 	CHECK(notify.touches == std::vector<std::string>{ "cancel 4321" });
+}
+
+// FULL SCREEN, HIDDEN. A shown window's full-screen paths go through
+// ShowWindow, which shows and activates, so they stay untested here: putting
+// nothing on screen is what this file is for. These pin the hidden half.
+namespace
+{
+	// No minimum track size, so WM_GETMINMAXINFO does not clamp the small
+	// sizes these cases ask for.
+	WindowOptions unclamped_hidden_options()
+	{
+		WindowOptions options = hidden_options();
+		options.min_window_width = 0;
+		options.min_window_height = 0;
+		return options;
+	}
+
+	std::string last_size_report(const std::vector<std::string>& log)
+	{
+		for (std::vector<std::string>::const_reverse_iterator entry = log.rbegin();
+			entry != log.rend(); ++entry)
+		{
+			if (entry->rfind("size ", 0) == 0)
+			{
+				return *entry;
+			}
+		}
+		return "";
+	}
+
+	std::string size_entry(LONG width, LONG height)
+	{
+		return "size " + std::to_string(width) + "x" + std::to_string(height);
+	}
+
+	RECT monitor_of(HWND handle)
+	{
+		MONITORINFO info = {};
+		info.cbSize = sizeof(MONITORINFO);
+		REQUIRE(GetMonitorInfoW(MonitorFromWindow(handle,
+			MONITOR_DEFAULTTONEAREST), &info) != 0);
+		return info.rcMonitor;
+	}
+
+	RECT client_of(HWND handle)
+	{
+		RECT client = {};
+		GetClientRect(handle, &client);
+		return client;
+	}
+}
+
+TEST_CASE("what a hidden window reports before the constructor returns")
+{
+	// Window's constructor promises the first size report before it returns,
+	// and on Windows that report is the WM_SIZE of the first show. A window
+	// created hidden is never shown, so this pins what it reports instead.
+	RecordingNotify notify;
+
+	SUBCASE("a windowed one reports nothing, and has the client size it asked for")
+	{
+		// Windows sends an overlapped window its first WM_SIZE when it is
+		// first shown, and SW_HIDE on a window that is already hidden is not
+		// a show. Nothing corrects the caller, and nothing needs to while the
+		// request is above the smallest window the system allows.
+		WindowOptions options = unclamped_hidden_options();
+		options.client_size = mattmath::Vector2I(320, 240);
+		Window window(options, &notify);
+		CHECK(notify.log.empty());
+		const RECT client = client_of(hwnd(window));
+		CHECK(client.right - client.left == 320);
+		CHECK(client.bottom - client.top == 240);
+	}
+
+	SUBCASE("a full-screen one reports the size it asked for, not the monitor's")
+	{
+		// A popup's first WM_SIZE comes from its creation, so the report is
+		// made; with no show to maximise it, it is the requested size.
+		WindowOptions options = unclamped_hidden_options();
+		options.client_size = mattmath::Vector2I(320, 240);
+		options.fullscreen = true;
+		Window window(options, &notify);
+		CHECK(notify.log == std::vector<std::string>{ "size 320x240" });
+		CHECK_FALSE(IsWindowVisible(hwnd(window)));
+	}
+}
+
+TEST_CASE("a hidden window stays hidden and inactive through enter_fullscreen")
+{
+	RecordingNotify notify;
+	Window window(unclamped_hidden_options(), &notify);
+	const HWND handle = hwnd(window);
+	notify.log.clear();
+
+	window.enter_fullscreen();
+
+	CHECK_FALSE(IsWindowVisible(handle));
+	CHECK(GetForegroundWindow() != handle);
+	CHECK(notify.log.end() == std::find(notify.log.begin(), notify.log.end(),
+		"activated"));
+	CHECK((GetWindowLongPtrW(handle, GWL_STYLE) & WS_POPUP) != 0);
+	CHECK((GetWindowLongPtrW(handle, GWL_STYLE) & WS_CAPTION) == 0);
+
+	const RECT monitor = monitor_of(handle);
+	const LONG width = monitor.right - monitor.left;
+	const LONG height = monitor.bottom - monitor.top;
+	CHECK(last_size_report(notify.log) == size_entry(width, height));
+	const RECT client = client_of(handle);
+	CHECK(client.right - client.left == width);
+	CHECK(client.bottom - client.top == height);
+
+	SUBCASE("leave_fullscreen restores the frame and the client size without showing")
+	{
+		notify.log.clear();
+		window.leave_fullscreen(mattmath::Vector2I(320, 240));
+
+		CHECK_FALSE(IsWindowVisible(handle));
+		CHECK(GetForegroundWindow() != handle);
+		const LONG_PTR style = GetWindowLongPtrW(handle, GWL_STYLE);
+		CHECK((style & WS_OVERLAPPEDWINDOW) == WS_OVERLAPPEDWINDOW);
+		CHECK((style & WS_POPUP) == 0);
+
+		const RECT restored = client_of(handle);
+		CHECK(restored.right - restored.left == 320);
+		CHECK(restored.bottom - restored.top == 240);
+		CHECK(last_size_report(notify.log) == "size 320x240");
+	}
+}
+
+TEST_CASE("an already-windowed leave_fullscreen is a resize and nothing else")
+{
+	RecordingNotify notify;
+	Window window(unclamped_hidden_options(), &notify);
+	const HWND handle = hwnd(window);
+	notify.log.clear();
+
+	window.leave_fullscreen(mattmath::Vector2I(320, 240));
+
+	CHECK_FALSE(IsWindowVisible(handle));
+	CHECK(GetForegroundWindow() != handle);
+	const RECT client = client_of(handle);
+	CHECK(client.right - client.left == 320);
+	CHECK(client.bottom - client.top == 240);
+	CHECK(notify.log == std::vector<std::string>{ "size 320x240" });
 }

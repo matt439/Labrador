@@ -134,8 +134,10 @@ namespace labrador
 		// Whether the window is shown at all. A hidden window still has a
 		// client area, a device still draws into it and its messages still
 		// arrive, which is what a smoke test or a capture tool wants: a whole
-		// shell that puts nothing on screen and takes no focus. A browser
-		// shows whatever the page shows, so it is not read there.
+		// shell that puts nothing on screen and takes no focus. The engine
+		// never shows a window created hidden; a window shown by other means is
+		// outside this contract. A browser shows whatever the page shows, so it
+		// is not read there.
 		bool visible = true;
 
 		int min_window_width = 320;
@@ -182,6 +184,12 @@ namespace labrador
 		// keyboard when it is taken says so here too, with on_keyboard_lost,
 		// and a full-screen request refused on the spot with
 		// on_fullscreen_changed.
+		//
+		// A WINDOW CREATED HIDDEN IS THE EXCEPTION ON WINDOWS, because it is
+		// never shown. A full-screen one reports the size it asked for, not
+		// the monitor's, and a windowed one makes no report at all. Either has
+		// the client size it asked for, unless that is below the smallest
+		// window the system allows.
 		Window(const WindowOptions& options, WindowNotify* notify);
 
 		// Takes down what the constructor made, on every path out - not only
@@ -257,6 +265,10 @@ namespace labrador
 		void resize_client(const mattmath::Vector2I& client_size) const;
 
 		// Borderless and monitor-sized, and back again at `client_size`.
+		//
+		// On Windows a hidden window stays hidden and inactive through both,
+		// and is given the size a shown one would be, or std::runtime_error is
+		// thrown if the size of its monitor cannot be read.
 		//
 		// In a browser, the Fullscreen API on the canvas. A browser grants it
 		// only inside an input event, so a request made from a frame waits

@@ -51,8 +51,10 @@ namespace labrador
 
 		// Whether the window is shown. A smoke test or a capture tool says
 		// false and gets the whole shell - window, device, services - with
-		// nothing on screen and no focus taken. A browser shows whatever the
-		// page shows, so it is not read there.
+		// nothing on screen and no focus taken, set_fullscreen included. The
+		// engine never shows a window created hidden; a window shown by other
+		// means is outside this contract. A browser shows whatever the page
+		// shows, so it is not read there.
 		bool visible = true;
 
 		// The fixed step the simulation advances at. Rendering is not capped by it.
