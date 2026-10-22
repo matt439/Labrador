@@ -109,11 +109,11 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 ## ColourWars and the pin
 
-**Owner:** [docs/product/STORIES.md](docs/product/STORIES.md); the drafts in ColourWars' `docs/review/engine-reports.md`, which is private.
+**Owner:** [docs/product/STORIES.md](docs/product/STORIES.md); the drafts in ColourWars' `docs/review/engine-reports.md`, which is private. The engine's decision on each of the fifteen live drafts, made ahead of filing so `PI-10` can be implemented from it, is [docs/review/colourwars-reports/](docs/review/colourwars-reports/README.md), whose table is kept current.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `PI-09` | DECISION | should | S | The owner decides what private ColourWars detail may be published; then the seven live drafts and the packaging gap are rechecked against master and filed through the stated route, or withdrawn with a reason. `PI-10` answers them. |
+| `PI-09` | DECISION | should | S | The owner decides what private ColourWars detail may be published; then the live drafts (fifteen on 2026-10-22, the packaging gap among them) are rechecked against master and filed through the stated route, or withdrawn with a reason. `PI-10` answers them. |
 | `DOC#4` | WAITING | should | S | When ColourWars' repository goes public (the owner expects it within weeks of 2026-10-13): sweep the tree's "private" and "not public" mentions of it outside dated records, link the repository from the README and the site, and recheck `PI-09`, which then narrows to what its drafts say. |
 | `SM-36` | BLOCKED | should | S | The owner sets ColourWars' pin cadence in a ColourWars document, then makes the first ordinary bump from `4cefb68` and records what was played. After `OCA-70`. |
 | `PI-14` | BLOCKED | should | M | A ColourWars Release ZIP at a current pin, run (or refused loudly) on a clean Windows install without Visual Studio, with edition, GPU, driver and commits named. After `OCA-61` and `SM-36`. |
