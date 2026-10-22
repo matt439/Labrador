@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/app/frame_timer.h"
 #include "engine/app/window.h"
 #include "engine/assets/resource_loader.h"
 #include "engine/audio/audio_device.h"
@@ -18,6 +19,8 @@
 #include "engine/render/screen_resolution.h"
 #include "engine/render/viewport_manager.h"
 #include "engine/math/vector2i.h"
+#include <chrono>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -103,6 +106,44 @@ namespace labrador
 		// view_capacity is the same shape: create_device throws below 1, and
 		// throwing here instead names the field rather than the parameter.
 		void validate() const;
+	};
+
+	// What the last completed frame cost on the CPU, as steady_clock saw it
+	// (Application::frame_timings).
+	//
+	// DRAW AND SUBMIT TOGETHER ARE THE WORK, and how it splits between them is
+	// the backend's. begin_frame_time and end_frame_time may contain waits for
+	// the GPU or the display, so neither is the cost of a frame. None of this
+	// is GPU time or CPU busy time, and the fields need not sum to interval.
+	struct FrameTimings
+	{
+		// Frames completed since run() began; 0 until the first.
+		std::uint64_t frame = 0;
+
+		// The fixed steps the frame's tick ran: 0, 1, or several when the
+		// clock was catching up.
+		int updates = 0;
+
+		// This tick's start minus the previous frame's. Zero on the first
+		// frame and on the frame after a discontinuity - reset_elapsed_time,
+		// or coming back from being hidden - because the time across one was
+		// not the game's. One that arrives during a tick, as a reset after a
+		// load in an update() does, zeroes that tick's frame as well, so two
+		// frames in a row read zero.
+		std::chrono::nanoseconds interval{};
+
+		// The whole catch-up: the input polls, every stack update, and audio.
+		std::chrono::nanoseconds update_time{};
+
+		std::chrono::nanoseconds begin_frame_time{};
+
+		// StateContext::draw, and any fan-out it joins.
+		std::chrono::nanoseconds draw_time{};
+
+		// submit, and the debug marker that closes the frame.
+		std::chrono::nanoseconds submit_time{};
+
+		std::chrono::nanoseconds end_frame_time{};
 	};
 
 	// The machinery every game needs and no game should write: a window, a device,
@@ -208,6 +249,27 @@ namespace labrador
 		// nothing beyond it.
 		void reset_elapsed_time();
 
+		// The CPU times of the last frame this loop completed (FrameTimings),
+		// which a game cannot take itself: begin_frame, submit, end_frame and
+		// the catch-up count all run inside the loop.
+		//
+		// WRITTEN BETWEEN FRAMES, after a frame's end_frame returns, so an
+		// update or a draw reads the last frame completed before it. A copy,
+		// safe to read from a draw worker.
+		//
+		// ONLY THE LOOP'S OWN FRAMES. A tick that renders nothing - before the
+		// first update - publishes nothing, and neither does a frame that
+		// throws. A frame a game draws itself, such as a capture
+		// (Renderer::read_back_buffer), is not one of them, and the time it
+		// takes inside an update is part of update_time.
+		//
+		// THE CLOCK'S RESOLUTION IS THE PLATFORM'S. In a browser steady_clock
+		// is performance.now(), which a page without cross-origin isolation
+		// may coarsen to about 100 microseconds, so a short phase there can
+		// read as zero. Which phase holds the waits is the backend's
+		// (SEAM.md#6).
+		FrameTimings frame_timings() const;
+
 		// The services. Every one of these is null until initialize() has run -
 		// which is what ApplicationOptions is for: anything the game needs to say
 		// before there is a window to say it to belongs in the options, not in a
@@ -298,6 +360,8 @@ namespace labrador
 		std::unique_ptr<RenderResources> render_resources_ = nullptr;
 		std::unique_ptr<Renderer> renderer_ = nullptr;
 		StepTimer timer_ = StepTimer();
+		FrameTimer frame_timer_ = FrameTimer();
+		FrameTimings frame_timings_ = FrameTimings();
 
 		std::unique_ptr<AudioResources> audio_resources_ = nullptr;
 		std::unique_ptr<ResourceLoader> resource_loader_ = nullptr;
@@ -322,7 +386,10 @@ namespace labrador
 		bool content_loaded_ = false;
 
 		void update();
-		void render();
+
+		// Fills in the marks after the update, and publishes them once the
+		// frame has ended.
+		void render(FrameMarks& marks);
 
 		// WindowNotify. The window forwards these; nothing else calls them,
 		// and they are private because a private override is still reachable

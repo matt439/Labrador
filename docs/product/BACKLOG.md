@@ -1,6 +1,6 @@
 # Backlog
 
-The order of work: 160 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
+The order of work: 161 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
 
 Each line reads: id, MoSCoW, size, the persona it serves, title, and what it waits on. The reasoning for every placement is in the *why* under each horizon; stories are in [STORIES.md](STORIES.md).
 
@@ -344,7 +344,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 21. L21 Text beyond ASCII: OCA-41, OCA-43, OCA-42
 22. L22 Background music cost: OCA-40
 23. L23 Debugging, recording renderer and DPI: OCA-18, OCA-32, OCA-66
-24. L24 Answer the filed reports, then staging: PI-10, PI-11
+24. L24 Answer the filed reports, then staging: PI-10, PI-19, PI-11
 25. L25 Request status labels: PI-08
 26. L26 Integrator edge contracts: PI-15, PI-16, PI-17, PI-18
 27. L27 Backend rationale out of game-facing pages: SRL-09
@@ -381,7 +381,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[SM-02](STORIES.md#sm-02)** Should · S · The Sole Owner-Maintainer: Reproduce the four-core hold, and say what the bench's fan-out measures — after SM-03
 - [ ] **[SM-07](STORIES.md#sm-07)** Should · M · The Sole Owner-Maintainer · **Owner**: Take and publish the low-tier p99 — after SM-04, SM-05, SM-02, SM-01, SM-03
 - [ ] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
-- [ ] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6)
+- [ ] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
 - [ ] **[SM-14](STORIES.md#sm-14)** Should · S · The Sole Owner-Maintainer · **Owner**: Serve a development page to a phone on my network
 - [ ] **[SM-13](STORIES.md#sm-13)** Should · M · The Sole Owner-Maintainer · **Owner**: Record a real iPhone run of the development page and the live demo — after SM-14, SM-08
 - [ ] **[BDP-07](STORIES.md#bdp-07)** Could · M · The Browser and Phone Demo Player · **Owner**: Smooth play on the displays visitors actually use — after SM-08
@@ -396,6 +396,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[OCA-32](STORIES.md#oca-32)** Could · S · The Outside C++ Adopter: Use the recording renderer in my own tests — after OCA-29
 - [ ] **[OCA-66](STORIES.md#oca-66)** Could · S · The Outside C++ Adopter: Know whether my game is crisp on a scaled display
 - [ ] **[PI-10](STORIES.md#pi-10)** Could · M · The Pinned Submodule Integrator · **Owner**: An upstream answer for each filed report — after PI-09
+- [x] **[PI-19](STORIES.md#pi-19)** Should · M · The Pinned Submodule Integrator: Read what the engine's last frame cost, phase by phase
 - [ ] **[PI-11](STORIES.md#pi-11)** Could · M · The Pinned Submodule Integrator: Stage the runtime files the engine makes my game need, without hand-keeping that list — after PI-10, OCA-60
 - [ ] **[PI-08](STORIES.md#pi-08)** Could · S · The Pinned Submodule Integrator: See what happened to each request and which commit answered it — after OCA-72
 - [ ] **[PI-15](STORIES.md#pi-15)** Could · S · The Pinned Submodule Integrator: Launching my game hidden through STARTUPINFO is tested upstream
@@ -465,6 +466,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | OCA-32 | G48: the recording renderer in an adopter's tests. Follows OCA-29 (Next). |
 | OCA-66 | G151: crispness on a scaled display; the default is undecided. |
 | PI-10 | G74: an upstream answer for each filed report. Follows PI-09 (Next); the decisions are the owner's. |
+| PI-19 | G74, G27: report 14, accepted narrowed and split out of PI-10 on 2026-10-22. Should, because SM-08 depends on it. |
 | PI-11 | G14: the engine staging helper, only if PI-10 accepts the packaging request. Follows OCA-60 (Next). |
 | PI-08 | G54: request status on the tracker. Follows OCA-72 (Now). |
 | PI-15 | G78: hidden launch through STARTUPINFO tested upstream. |
