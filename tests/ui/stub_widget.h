@@ -11,14 +11,13 @@
 // and navigation never touch a font, a texture or a batch. They read bounds()
 // and write set_colour(). This is that surface and no more.
 //
-// THE NULL BACKEND WOULD NOW LET THE REAL ONES IN. It supplies a Renderer and
-// a RenderResources with no device at all (engine/render/null/), so a UiText
-// could be built here and its drawing asserted rather than assumed. That is
-// worth doing and is not done: it would make these tests build only in the
-// null configuration, and what they cover - focus and navigation - is
-// arithmetic that has no business depending on which backend was selected. The
-// right shape is a second file beside this one, added to UiTests under that
-// preset alone, the way tests/render/null_tests.cpp is.
+// THE NULL BACKEND LETS THE REAL ONES IN, AND ONLY THERE. It supplies a
+// Renderer and a RenderResources with no device at all (engine/render/null/),
+// so a UiText can be built and its drawing asserted rather than assumed - which
+// text_widget_tests.cpp beside this one does, added to UiTests under that
+// preset alone, the way tests/render/null_tests.cpp is. These tests stay on the
+// stub because what they cover - focus and navigation - is arithmetic that has
+// no business depending on which backend was selected.
 class StubWidget final : public labrador::UiWidget
 {
 public:

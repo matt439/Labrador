@@ -74,6 +74,12 @@ namespace labrador
 		void invert();
 
 		void make_opaque();
+
+		// Zeroes alpha and leaves the colour channels alone - which, as a
+		// tint, is not invisible. Under the engine's premultiplied blend
+		// (engine/render/SEAM.md#5) a tint's colour channels are added over
+		// what is beneath whatever its alpha, so the tint that contributes
+		// nothing is Colour(0, 0, 0, 0).
 		void make_transparent();
 
 		void clamp_colours();

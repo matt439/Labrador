@@ -24,10 +24,10 @@
 // exactly because device_resources.h was the way around that, and it now fails
 // the build for any file outside engine/render/<backend>/ that names any header
 // in it. What keeps this legal is narrower than it looks: the check scans
-// engine/, and every includer outside the folder is a test or a benchmark -
-// tests/render/null_tests.cpp, tests/scene/fanout_tests.cpp and
-// bench/fanout_bench_null.cpp, each of them compiled in this configuration
-// alone. Anything in engine/ that reached for this would fail the build, and
+// engine/, and every includer outside the folder is a test or a benchmark
+// compiled in this configuration alone - tests/render/null_tests.cpp, the
+// scene, UI and sample draw cases beside it, and bench/fanout_bench_null.cpp.
+// Anything in engine/ that reached for this would fail the build, and
 // correctly - a recording is for a test to read.
 //
 // Nothing here names a backend type. A RecordedSprite is a handle, a viewport,
@@ -42,12 +42,13 @@
 // real UiText cannot be constructed without one; and .github/workflows/ci.yml,
 // where a runner with no GPU cannot check the OpenGL backend's pixels. It
 // UNBLOCKS the first two and answers the third not at all. Neither of the first
-// two has actually been converted: scene_bench.cpp:144-154 still duplicates the
-// cull and says why, and stub_widget.h:14-21 still stubs and says "that is
-// worth doing and is not done". Both call sites were amended to record that
-// they were not converted; this paragraph claimed they had been, which is the
-// drift that matters - a header saying a job is finished is the one place
-// nobody looks to find out that it is not.
+// two call sites was converted in place: scene_bench.cpp:144-154 still
+// duplicates the cull and says why, and stub_widget.h still stubs focus and
+// navigation and says why. A header saying a job is finished is the one place
+// nobody looks to find out that it is not, so this paragraph says only what
+// was done, and where. The second is answered beside the stub rather than by
+// replacing it: tests/ui/text_widget_tests.cpp builds a real UiText in this
+// configuration and asserts what it draws.
 //
 // THE FIRST OF THE THREE IS NOW HALF ANSWERED, AND THE HALF MATTERS. Scene::draw
 // is driven for real in bench/fanout_bench_null.cpp and pinned in
