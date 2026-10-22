@@ -28,6 +28,12 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-22.** No build step changed, but `CMakeLists.txt` now says what its
+  content mirror does not do: `copy_directory_if_different` never removes, so a
+  file deleted from `content/` goes on loading from the build folder until it
+  is cleaned. A copy with content it may delete, or an optional sound bank,
+  wants the list-and-remove recipe in the assets guide's *Optional content and
+  stale copies*.
 - **2026-10-22.** No code here changed, but what the window does did: on
   Windows, F10 and Alt pressed alone are keys and no longer stop the loop in
   the system menu. Alt+Space still opens it. CHANGES.md's *Let F10 and Alt

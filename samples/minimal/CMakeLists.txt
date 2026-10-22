@@ -51,6 +51,12 @@ target_link_libraries(MinimalSample PRIVATE
 # (engine/app/content_root.h), so mirror the content beside the exe. It is a
 # target of its own because a POST_BUILD on the exe only runs when the exe
 # relinks, so an edited asset would never arrive.
+# copy_directory_if_different adds and updates but never removes: a file
+# deleted from content/ stays in the build folder until it is cleaned, so a
+# required file goes on loading here and is missing only from a clean build,
+# and an optional bank is never replaced by the silent one. A game with
+# content it may delete lists its files instead (the assets guide, "Optional
+# content and stale copies").
 add_custom_target(sample_content ALL)
 add_custom_command(TARGET sample_content POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different

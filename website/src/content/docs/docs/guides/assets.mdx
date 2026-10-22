@@ -39,6 +39,45 @@ on every build, so an edited file arrives even when no code changed:
 When you add a folder of content, add a `copy_directory_if_different` line for it beside the
 `fonts` one. LineSweeper copies `fonts` and `textures` this way.
 
+## Optional content and stale copies
+
+`copy_directory_if_different` adds and updates files, and never removes one. A file you delete
+from `content/` stays in the build folder until that folder is cleaned, so the game goes on
+loading it. A required file the manifest still names keeps working on your machine and is
+missing only from a clean build or a release, and a sound bank the manifest marks optional is
+never replaced by the silent one, because its stale copy is still there.
+
+A game with content it may delete names its files instead, as two lists: the ones that must be
+there and the ones that may be absent. The check has to run on every build rather than once at
+configure time, so the always-run target calls a script with `cmake -P`; an `if(EXISTS)` in the
+`CMakeLists.txt` itself would be evaluated only when the project is configured:
+
+```cmake
+# stage_content.cmake, run as:
+#   cmake -DSOURCE=... -DDEST=... "-DREQUIRED=a;b" "-DOPTIONAL=c" -P stage_content.cmake
+cmake_minimum_required(VERSION 3.26)  # a script sets no policies; IN_LIST needs CMP0057
+foreach(file IN LISTS REQUIRED OPTIONAL)
+    if(EXISTS "${SOURCE}/${file}")
+        get_filename_component(parent "${DEST}/${file}" DIRECTORY)
+        file(MAKE_DIRECTORY "${parent}")
+        file(COPY_FILE "${SOURCE}/${file}" "${DEST}/${file}" ONLY_IF_DIFFERENT)
+    elseif(file IN_LIST REQUIRED)
+        message(FATAL_ERROR "required content '${file}' is missing from ${SOURCE}")
+    else()
+        file(REMOVE "${DEST}/${file}")
+    endif()
+endforeach()
+```
+
+A missing required file then fails the build, naming it, and a missing optional one is removed
+from the build folder so the game sees it absent. Removal is limited to the files the lists
+name: anything else left in the build folder stays. `file(COPY_FILE ... ONLY_IF_DIFFERENT)`
+needs CMake 3.21, and the engine already requires 3.26.
+
+The browser build has no copy to go stale. Its `--embed-file` is the web equivalent of the copy:
+it packs the content directory into the module each time the module links, from the directory as
+it stands, so a deleted file is gone from the next link.
+
 ## Reading JSON
 
 Content is the one input a person types by hand, so the engine reads JSON through a checked

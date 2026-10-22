@@ -22,8 +22,8 @@ cannot reject a misspelt key. The suggested order is 12's `parse_json` first
 (smallest, no open measurement), then 15's documentation, then 6, which has
 the most to settle. Line numbers are as of `0c15f34`. This is a decision
 record written ahead of PI-09 filing the reports and PI-10 closing them
-(docs/product/STORIES.md:1594, :1614). It is not an implementation, and
-nothing it describes has been built.
+(docs/product/STORIES.md:1594, :1614). It is not an implementation; the
+README's table says what has been built since.
 
 PI-10's third acceptance line asks that an implemented answer land with "an
 entry in the changes list" (docs/product/STORIES.md:1624). CHANGES.md's
@@ -592,6 +592,7 @@ evaluated only once:
 ```cmake
 # stage_content.cmake, run as:
 #   cmake -DSOURCE=... -DDEST=... "-DREQUIRED=a;b" "-DOPTIONAL=c" -P stage_content.cmake
+cmake_minimum_required(VERSION 3.26)  # a script sets no policies; IN_LIST needs CMP0057
 foreach(file IN LISTS REQUIRED OPTIONAL)
     if(EXISTS "${SOURCE}/${file}")
         get_filename_component(parent "${DEST}/${file}" DIRECTORY)

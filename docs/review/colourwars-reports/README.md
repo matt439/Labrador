@@ -51,7 +51,7 @@ or files its answer, and say there which commit or issue answered it.
 | [x] | [22](draw.md) | Accept, narrowed | M | Add paired `RenderResources::SheetFrame` and `SheetStrip`, which cannot be mismatched. Raw two-handle overloads, the `UiTexture` forms and `std::less<>` are declined. Done: "Re-point sprites and animations by a resolved sheet pair". |
 | [ ] | [6](content.md) | Accept, narrowed | M | Named sound groups whose volume `SoundBank` multiplies in above the seam. No master bus, fades, ducking, listener or voice cap. No design document settles "an audio bus against T1", so a T1 decline has no passage to cite. |
 | [ ] | [12](content.md) | Split | S | Accept `parse_json(text, source_name)` on the same parse path as `read_json_file`. Key enumeration becomes its own story. Raw source spans are declined. |
-| [ ] | [15](content.md) | Document only | XS | No CMake staging helper. The template comment and the assets guide say `copy_directory_if_different` never deletes, and give a list-and-remove recipe. `PI-11` stays separate. |
+| [x] | [15](content.md) | Document only | XS | No CMake staging helper. The template comment and the assets guide say `copy_directory_if_different` never deletes, and give a list-and-remove recipe. `PI-11` stays separate. Done: "Say the template's content mirror never removes a file". |
 
 Two corrections for whoever writes `PI-10`'s answers. First, the story frames
 report 6 as a settled position against T1, but no design document settles it.
