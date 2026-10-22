@@ -141,6 +141,72 @@ namespace labrador
 		SpriteSheetHandle resolve_sprite_sheet(
 			const std::string& sprite_sheet_name) const;
 
+		// A frame and the sheet it was resolved against, which only
+		// resolve_sheet_frame can make - so the pair cannot be mismatched: a
+		// frame handle means nothing against any sheet but its own, and this
+		// type has no way to say otherwise. It is two handles and costs
+		// nothing to copy, which is what lets per-frame code re-point a
+		// drawable without touching a string.
+		//
+		// It is meaningful only against the RenderResources that resolved it.
+		// Default-constructed is unresolved, and a drawable given one throws.
+		// Like any handle it survives release_device_resources, because both
+		// halves name slots; a sheet replaced by add_sprite_sheet with its
+		// frames in another order is not the sheet the pair was resolved
+		// against.
+		class SheetFrame
+		{
+		public:
+			SheetFrame() = default;
+
+			SpriteSheetHandle sheet() const { return this->sheet_; }
+			SpriteSheet::frame_handle frame() const { return this->frame_; }
+
+			bool operator==(const SheetFrame& other) const = default;
+
+		private:
+			friend class RenderResources;
+
+			SheetFrame(SpriteSheetHandle sheet,
+				SpriteSheet::frame_handle frame) :
+				sheet_(sheet), frame_(frame) {}
+
+			SpriteSheetHandle sheet_;
+			SpriteSheet::frame_handle frame_;
+		};
+
+		// The same, for an animation strip: strip() in place of frame(), made
+		// only by resolve_sheet_strip.
+		class SheetStrip
+		{
+		public:
+			SheetStrip() = default;
+
+			SpriteSheetHandle sheet() const { return this->sheet_; }
+			SpriteSheet::strip_handle strip() const { return this->strip_; }
+
+			bool operator==(const SheetStrip& other) const = default;
+
+		private:
+			friend class RenderResources;
+
+			SheetStrip(SpriteSheetHandle sheet,
+				SpriteSheet::strip_handle strip) :
+				sheet_(sheet), strip_(strip) {}
+
+			SpriteSheetHandle sheet_;
+			SpriteSheet::strip_handle strip_;
+		};
+
+		// Load-time, like the resolves above: each resolves the sheet and then
+		// the element in it, and throws std::out_of_range naming whichever of
+		// the two names is missing - for a missing element, naming the sheet
+		// it was looked for in as well.
+		SheetFrame resolve_sheet_frame(const std::string& sheet_name,
+			const std::string& frame_name) const;
+		SheetStrip resolve_sheet_strip(const std::string& sheet_name,
+			const std::string& strip_name) const;
+
 		// Per-draw, and const because they are called from render workers. Throws
 		// std::out_of_range if the handle is unresolved.
 		//

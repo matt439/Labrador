@@ -21,6 +21,12 @@ namespace labrador
 	// DrawList::set_camera), so a caller wanting screen space sets nothing and a
 	// caller wanting a player's view sets it once for the range rather than
 	// passing it down through every signature.
+	//
+	// A FRAME CAN ALSO ARRIVE RESOLVED, as a RenderResources::SheetFrame: the
+	// sheet and the frame as one value, resolved at load so that per-frame code
+	// re-points the object without a string-keyed lookup (PHILOSOPHY T7, T8). A
+	// pair is meaningful only against the RenderResources this object was
+	// built on.
 	class TextureObject : public SpriteSheetObject
 	{
 	public:
@@ -34,19 +40,29 @@ namespace labrador
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
+		// The same, from a pair resolved at load. Throws std::out_of_range if
+		// the pair is unresolved.
+		TextureObject(RenderResources::SheetFrame frame,
+			RenderResources* render_resources,
+			const Colour& color = Colour::white,
+			float rotation = 0.0f,
+			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			SpriteFlip flip = SpriteFlip::none,
+			float layer_depth = 0.0f);
+
 	protected:
 		SpriteSheet::frame_handle frame() const;
 
-		// Both setters resolve, and the two-argument one moves sheet and frame
-		// together because a frame handle taken from one sheet indexes nothing
-		// meaningful in another. There is deliberately no way to change the sheet
-		// on its own.
+		// Every setter moves sheet and frame together, because a frame handle
+		// taken from one sheet indexes nothing meaningful in another. There is
+		// deliberately no way to change the sheet on its own.
 		//
-		// It is not atomic: a bad frame name throws with the sheet already moved.
-		// That is tolerable only because an unresolvable name is fatal - the
-		// worker's exception is rethrown on the joining thread
-		// (ThreadPool::wait_for_tasks_to_complete)
-		// and the process goes down, so nothing ever draws the mismatched pair.
+		// The pair form resolves nothing and is the one for per-frame code. It
+		// throws std::out_of_range, at the call rather than at the next draw,
+		// if the pair is unresolved or names a slot this object's table does
+		// not have. The name forms resolve first and assign after, so a name
+		// that does not resolve throws and leaves the object as it was.
+		void set_frame(RenderResources::SheetFrame frame);
 		void set_frame(const std::string& sheet_name,
 			const std::string& frame_name);
 		void set_frame(const std::string& frame_name);

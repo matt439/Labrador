@@ -21,6 +21,21 @@ namespace labrador
 
 	}
 
+	SpriteSheetObject::SpriteSheetObject(
+		RenderResources::SpriteSheetHandle sheet,
+		RenderResources* render_resources,
+		const Colour& color,
+		float rotation,
+		const Vector2F& origin,
+		SpriteFlip flip,
+		float layer_depth) :
+		DrawObject(render_resources, color, rotation, origin,
+			flip, layer_depth),
+		sheet_(sheet)
+	{
+
+	}
+
 	const SpriteSheet* SpriteSheetObject::sprite_sheet() const
 	{
 		return this->render_resources()->sprite_sheet(this->sheet_);
@@ -30,5 +45,11 @@ namespace labrador
 	{
 		this->sheet_ = this->render_resources()->resolve_sprite_sheet(
 			sheet_name);
+	}
+
+	void SpriteSheetObject::set_sprite_sheet(
+		RenderResources::SpriteSheetHandle sheet)
+	{
+		this->sheet_ = sheet;
 	}
 }

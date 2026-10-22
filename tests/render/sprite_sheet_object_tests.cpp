@@ -9,6 +9,7 @@
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
 #include "engine/render/sprite_sheet_object.h"
+#include "engine/render/texture_object.h"
 
 #include <memory>
 #include <stdexcept>
@@ -163,4 +164,125 @@ TEST_CASE("a sheet replaced under its own name is seen through a held handle")
 	content.resources.add_sprite_sheet("first", sheet_marked(3));
 
 	CHECK(object.sprite_sheet()->texture() == TextureHandle(3));
+}
+
+// THE PAIRED FORMS, on TextureObject. A RenderResources::SheetFrame is the
+// sheet and the frame resolved together, so per-frame code can re-point a
+// drawable without a string - and cannot hand it a frame from another sheet.
+// What is stated below is that the pair forms land where the name forms do,
+// that an unresolved pair is refused at the call, and that the name setter
+// now resolves both halves before it assigns either.
+
+namespace
+{
+	using labrador::TextureObject;
+
+	class FrameProbe : public TextureObject
+	{
+	public:
+		using TextureObject::TextureObject;
+
+		using SpriteSheetObject::sprite_sheet;
+		using TextureObject::frame;
+		using TextureObject::set_frame;
+
+		// What the object would draw: its frame's rectangle, read through the
+		// sheet it holds - the two halves together, as a draw reads them.
+		RectangleI source() const
+		{
+			return this->sprite_sheet()->sprite_frame(this->frame())
+				.source_rectangle();
+		}
+	};
+
+	// Two sheets with the same frame names in different slots, so a frame
+	// handle read against the wrong sheet names a real but wrong frame.
+	class FrameContent
+	{
+	public:
+		FrameContent() : resources()
+		{
+			NameTable<SpriteFrame> first("sprite frame");
+			first.add("a", SpriteFrame(RectangleI(0, 0, 4, 4)));
+			first.add("b", SpriteFrame(RectangleI(4, 0, 4, 4)));
+			this->resources.add_sprite_sheet("first",
+				std::make_unique<SpriteSheet>(TextureHandle(1),
+					std::move(first),
+					NameTable<AnimationStrip>("animation strip")));
+
+			NameTable<SpriteFrame> second("sprite frame");
+			second.add("b", SpriteFrame(RectangleI(8, 0, 2, 2)));
+			second.add("a", SpriteFrame(RectangleI(12, 0, 2, 2)));
+			this->resources.add_sprite_sheet("second",
+				std::make_unique<SpriteSheet>(TextureHandle(2),
+					std::move(second),
+					NameTable<AnimationStrip>("animation strip")));
+		}
+
+		RenderResources resources;
+	};
+}
+
+TEST_CASE("a texture object built from a pair equals one built from names")
+{
+	FrameContent content;
+	const FrameProbe by_name("second", "a", &content.resources);
+	const FrameProbe by_pair(
+		content.resources.resolve_sheet_frame("second", "a"),
+		&content.resources);
+
+	CHECK(by_pair.sprite_sheet() == by_name.sprite_sheet());
+	CHECK(by_pair.frame() == by_name.frame());
+	CHECK(by_pair.source() == RectangleI(12, 0, 2, 2));
+}
+
+TEST_CASE("set_frame from a pair re-points as the name form does")
+{
+	FrameContent content;
+	FrameProbe by_name("first", "a", &content.resources);
+	FrameProbe by_pair("first", "a", &content.resources);
+
+	by_name.set_frame("second", "b");
+	by_pair.set_frame(content.resources.resolve_sheet_frame("second", "b"));
+
+	CHECK(by_pair.sprite_sheet() == by_name.sprite_sheet());
+	CHECK(by_pair.frame() == by_name.frame());
+	CHECK(by_pair.source() == RectangleI(8, 0, 2, 2));
+}
+
+TEST_CASE("an unresolved pair is refused at the call, not at the next draw")
+{
+	FrameContent content;
+	FrameProbe object("first", "b", &content.resources);
+
+	CHECK_THROWS_AS(object.set_frame(RenderResources::SheetFrame()),
+		std::out_of_range);
+	CHECK_THROWS_AS(FrameProbe(RenderResources::SheetFrame(),
+		&content.resources), std::out_of_range);
+
+	// And the refused call changed nothing.
+	CHECK(object.sprite_sheet() == content.resources.sprite_sheet("first"));
+	CHECK(object.source() == RectangleI(4, 0, 4, 4));
+}
+
+TEST_CASE("CONTRACT: a frame name that does not resolve leaves the sheet where it was")
+{
+	// The name setter resolves the sheet and the frame before it assigns
+	// either, so a bad frame name throws with the object still drawing what
+	// it drew - not the old frame's slot read against the new sheet, which
+	// here would be a real frame of the wrong size.
+	FrameContent content;
+	FrameProbe object("first", "b", &content.resources);
+
+	CHECK_THROWS_AS(object.set_frame("second", "no_such_frame"),
+		std::out_of_range);
+
+	CHECK(object.sprite_sheet() == content.resources.sprite_sheet("first"));
+	CHECK(object.frame() ==
+		content.resources.sprite_sheet("first")->resolve_sprite_frame("b"));
+	CHECK(object.source() == RectangleI(4, 0, 4, 4));
+
+	// A bad sheet name is refused the same way.
+	CHECK_THROWS_AS(object.set_frame("no_such_sheet", "a"), std::out_of_range);
+	CHECK(object.source() == RectangleI(4, 0, 4, 4));
 }
