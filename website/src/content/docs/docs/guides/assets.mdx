@@ -86,6 +86,7 @@ type, and if not, throws an error that names the file, where in it, and the key:
 
 ```cpp
 JsonDocument read_json_file(const char* path);   // throws naming the path if it cannot be read or parsed
+JsonDocument parse_json(std::string_view text, std::string source_name);  // the same parse, from memory; errors name source_name
 
 // On a JsonValue:
 JsonValue object(const char* key) const;

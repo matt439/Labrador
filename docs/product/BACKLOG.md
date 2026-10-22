@@ -1,6 +1,6 @@
 # Backlog
 
-The order of work: 161 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
+The order of work: 162 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
 
 Each line reads: id, MoSCoW, size, the persona it serves, title, and what it waits on. The reasoning for every placement is in the *why* under each horizon; stories are in [STORIES.md](STORIES.md).
 
@@ -346,7 +346,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 23. L23 Debugging, recording renderer and DPI: OCA-18, OCA-32, OCA-66
 24. L24 Answer the filed reports, then staging: PI-10, PI-19, PI-11
 25. L25 Request status labels: PI-08
-26. L26 Integrator edge contracts: PI-15, PI-16, PI-17, PI-18
+26. L26 Integrator edge contracts: PI-15, PI-16, PI-17, PI-18, PI-20
 27. L27 Backend rationale out of game-facing pages: SRL-09
 28. L28 Golden review trace: SM-23
 29. L29 Pin procedures and configuration sweeps: SM-24, SM-17, SM-18, SM-15
@@ -404,6 +404,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[PI-16](STORIES.md#pi-16)** Could · S · The Pinned Submodule Integrator: Drive my game past its title screen with injected input in a smoke run — after OCA-30
 - [ ] **[PI-17](STORIES.md#pi-17)** Could · XS · The Pinned Submodule Integrator: Know what JSON the engine reads for me and when my game must bring its own parser
 - [ ] **[PI-18](STORIES.md#pi-18)** Could · XS · The Pinned Submodule Integrator: The include wall says exactly what it protects in my build
+- [ ] **[PI-20](../review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans)** Could · S · The Pinned Submodule Integrator: A misspelt key in a manifest or sprite sheet is refused, not read as its default
 - [ ] **[SRL-09](STORIES.md#srl-09)** Could · S · The Sample-Reading Learner: Game-facing reference pages keep backend rationale out of my way — after SRL-08
 - [ ] **[SM-23](STORIES.md#sm-23)** Should · S · The Sole Owner-Maintainer: Leave a trace that regenerated goldens were looked at
 - [ ] **[SM-24](STORIES.md#sm-24)** Could · S · The Sole Owner-Maintainer: A written procedure for moving dependency and toolchain pins — after SM-25
@@ -474,6 +475,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | PI-16 | G79: drive a game past its title screen in a smoke run. Follows OCA-30 (Next). |
 | PI-17 | G75: what JSON the engine reads for a game. |
 | PI-18 | G76: the include wall says exactly what it protects. |
+| PI-20 | Split out of report 12 on 2026-10-22 and argued in its decision record, which stands in for a STORIES.md entry: a `JsonValue` accessor for an object's member names, and unknown-key rejection in `asset_manifest_loader.cpp` and `sprite_sheet_loader.cpp`, whose optional keys (`optional`, `origin`, `rotated`) take their default when misspelt (T6). Decide first whether rejection is per loader or one shared helper, because that decides the accessor's shape. A silent behaviour change, so it needs a CHANGES.md entry. |
 | SRL-09 | G94: backend rationale out of a game reader's way. Follows SRL-08 (Next). |
 | SM-23 | G67: regenerated goldens leave a review trace. |
 | SM-24 | G115: a written procedure for moving dependency and toolchain pins. Follows SM-25 (Next). |

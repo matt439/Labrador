@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace labrador
 {
@@ -15,11 +16,21 @@ namespace labrador
 	// always valid - callers never have to test for a parse error.
 	JsonDocument read_json_file(const char* path);
 
+	// Parses `text` as JSON. `source_name` is what every diagnostic from the
+	// document names in place of a path - a content filename, say. The
+	// document copies what it needs; neither argument is borrowed. The parse
+	// is the one read_json_file makes, so the same bytes give the same
+	// document either way.
+	//
+	// Throws std::invalid_argument for an empty source_name, and
+	// std::runtime_error naming source_name if the text does not parse.
+	JsonDocument parse_json(std::string_view text, std::string source_name);
+
 	// A borrowed view of one node inside a JsonDocument.
 	//
-	// Every accessor checks two things and throws naming the file, the position
-	// in it and the key when either fails: that this node is the kind the
-	// accessor needs, and that what it asks for is present and of the right
+	// Every accessor checks two things and throws naming the source, the
+	// position in it and the key when either fails: that this node is the kind
+	// the accessor needs, and that what it asks for is present and of the right
 	// type. rapidjson's own accessors assert instead, and NDEBUG disarms the
 	// assert - so a hand-edited content file that a debug build catches with a
 	// dialog box is a null dereference in a Release build. Content files are
@@ -79,7 +90,7 @@ namespace labrador
 
 		const void* value_;
 
-		// Owned by the document, and only ever read to name the file.
+		// Owned by the document, and only ever read to name the source.
 		const std::string* source_path_;
 
 		// Where this node sits, written the way a person would point at it:
@@ -87,9 +98,9 @@ namespace labrador
 		std::string context_;
 	};
 
-	// A parsed JSON file, and the owner of every JsonValue taken out of it.
+	// A parsed JSON document, and the owner of every JsonValue taken out of it.
 	//
-	// Move-only: a document is a parse of a file, and copying one would copy
+	// Move-only: a document is a parse of its text, and copying one would copy
 	// the arena it parsed into.
 	class JsonDocument
 	{
@@ -98,16 +109,18 @@ namespace labrador
 		JsonDocument(JsonDocument&&) noexcept;
 		JsonDocument& operator=(JsonDocument&&) noexcept;
 
-		// The top of the file. Its own type is not checked here - the first
+		// The top of the document. Its own type is not checked here - the first
 		// accessor used on it is what says which type it needed and did not
 		// get.
 		JsonValue root() const;
 
-		// The path this was read from, as it was given to read_json_file.
+		// The path given to read_json_file, or the name given to parse_json.
 		const std::string& source_path() const;
 
 	private:
 		friend JsonDocument read_json_file(const char* path);
+		friend JsonDocument parse_json(std::string_view text,
+			std::string source_name);
 
 		struct Impl;
 		explicit JsonDocument(std::unique_ptr<Impl> impl);

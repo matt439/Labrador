@@ -5,14 +5,17 @@
 #include <functional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 using namespace labrador;
 
 namespace
 {
 	// A JSON file on disk, deleted when the test leaves. read_json_file takes a
-	// path, so testing it means writing files - there is no in-memory door in,
-	// and adding one for the tests would be a second parse path to keep honest.
+	// path, so testing it means writing files. parse_json is the in-memory door
+	// and makes read_json_file's own parse, so the cases that pin what a file
+	// does - a missing one, a null path - stay on files, and the parse_json
+	// cases check that both doors make the same document from the same bytes.
 	class TempJson
 	{
 	public:
@@ -75,6 +78,30 @@ namespace
 		}
 		FAIL("expected a throw");
 		return {};
+	}
+
+	// What a document made by `make` says its root's "a" is - a whole number,
+	// a string, or that the parse failed - so two doors can be compared on
+	// bytes whose outcome the test does not want to pin.
+	std::string outcome_of(const std::function<JsonDocument()>& make)
+	{
+		try
+		{
+			const JsonDocument document = make();
+			const JsonValue root = document.root();
+			try
+			{
+				return "integer " + std::to_string(root.integer("a"));
+			}
+			catch (const std::runtime_error&)
+			{
+				return "string " + root.string("a");
+			}
+		}
+		catch (const std::runtime_error&)
+		{
+			return "no document";
+		}
 	}
 }
 
@@ -305,6 +332,158 @@ namespace JsonTests
 
 			CHECK(root.string("name") == "kept");
 			CHECK(moved.root().string("name") == "kept");
+		}
+	}
+
+	TEST_SUITE("ParseJsonTests")
+	{
+		TEST_CASE("parse_json reads what read_json_file reads from the same bytes")
+		{
+			const std::string text = R"({
+				"name": "turbulence",
+				"count": 7,
+				"time": 0.05,
+				"looping": true,
+				"names": [ "a", "b" ]
+			})";
+			const TempJson file(text);
+
+			const JsonDocument from_file = read_json_file(file.path().c_str());
+			const JsonDocument from_text = parse_json(text, "levels/forest.json");
+			const JsonValue a = from_file.root();
+			const JsonValue b = from_text.root();
+
+			CHECK(a.string("name") == b.string("name"));
+			CHECK(a.integer("count") == b.integer("count"));
+			CHECK(a.number("time") == b.number("time"));
+			CHECK(a.boolean("looping") == b.boolean("looping"));
+			REQUIRE(b.array("names").size() == a.array("names").size());
+			CHECK(b.array("names").at(1).as_string() == "b");
+			CHECK(from_text.source_path() == "levels/forest.json");
+		}
+
+		TEST_CASE("the document outlives the caller's text and name")
+		{
+			std::string text = R"({ "name": "kept" })";
+			std::string name = "levels/forest.json";
+
+			const JsonDocument document = parse_json(text, name);
+			text.assign(text.size(), 'x');
+			name.assign(name.size(), 'x');
+			text.clear();
+			text.shrink_to_fit();
+			name.clear();
+			name.shrink_to_fit();
+
+			CHECK(document.root().string("name") == "kept");
+			CHECK(document.source_path() == "levels/forest.json");
+			CHECK(document.root().where() ==
+				"'levels/forest.json': the document");
+		}
+
+		TEST_CASE("a parse_json failure names the source, the position and the key")
+		{
+			const JsonDocument document = parse_json(
+				R"({ "assets": [ { "kind": "font" } ] })", "manifest.json");
+			const JsonValue asset = document.root().array("assets").at(0);
+
+			CHECK(asset.where() == "'manifest.json': assets[0]");
+			CHECK_THROWS_WITH_AS(asset.string("directory"),
+				"'manifest.json': assets[0] has no 'directory'",
+				std::runtime_error);
+			CHECK_THROWS_WITH_AS(asset.integer("kind"),
+				"'manifest.json': assets[0].kind is not a whole number",
+				std::runtime_error);
+		}
+
+		TEST_CASE("text that does not parse names the source and the offset")
+		{
+			try
+			{
+				parse_json(R"({ "a": 1, )", "broken.json");
+				FAIL("expected a throw");
+			}
+			catch (const std::runtime_error& error)
+			{
+				const std::string message = error.what();
+				CHECK(message.rfind(
+					"parse_json - 'broken.json' is not valid JSON: ", 0) == 0);
+				CHECK(message.find("(offset ") != std::string::npos);
+			}
+
+			// Empty text is not an empty document, through this door either.
+			CHECK_THROWS_AS(parse_json("", "empty.json"), std::runtime_error);
+		}
+
+		TEST_CASE("an empty source name is a programming error")
+		{
+			CHECK_THROWS_AS(parse_json("{}", ""), std::invalid_argument);
+			CHECK_THROWS_AS(parse_json("not json", std::string()),
+				std::invalid_argument);
+		}
+
+		TEST_CASE("read_json_file keeps its own name in its messages")
+		{
+			const TempJson file(R"({ "a": 1, )");
+			try
+			{
+				read_json_file(file.path().c_str());
+				FAIL("expected a throw");
+			}
+			catch (const std::runtime_error& error)
+			{
+				const std::string message = error.what();
+				CHECK(message.rfind("read_json_file - '" + file.path() +
+					"' is not valid JSON: ", 0) == 0);
+			}
+		}
+
+		TEST_CASE("moved parse_json documents keep their source for their values")
+		{
+			JsonDocument document = parse_json(R"({ "a": { "b": 1 } })",
+				"moved.json");
+			const JsonValue inner = document.root().object("a");
+			const JsonDocument moved = std::move(document);
+
+			CHECK(moved.source_path() == "moved.json");
+			CHECK(inner.where() == "'moved.json': a");
+			CHECK_THROWS_WITH_AS(inner.string("b"),
+				"'moved.json': a.b is not a string", std::runtime_error);
+
+			JsonDocument source = parse_json(R"({ "c": [ 2 ] })",
+				"assigned.json");
+			const JsonValue c = source.root().array("c");
+			JsonDocument target = parse_json("[]", "target.json");
+			target = std::move(source);
+
+			CHECK(target.source_path() == "assigned.json");
+			CHECK(c.where() == "'assigned.json': c");
+			CHECK_THROWS_WITH_AS(c.at(0).as_string(),
+				"'assigned.json': c[0] is not a string", std::runtime_error);
+		}
+
+		TEST_CASE("both doors agree on a BOM and on NULs")
+		{
+			// Not a pin on what rapidjson makes of these bytes - only that
+			// read_json_file and parse_json make the same of them, because
+			// they share one parse.
+			const std::string cases[] = {
+				std::string("\xEF\xBB\xBF{ \"a\": 1 }"),
+				std::string("{ \"a\": 1 }\0junk", 15),
+				std::string("{ \"a\": \"x\0y\" }", 14),
+			};
+
+			for (const std::string& text : cases)
+			{
+				CAPTURE(text);
+				const TempJson file(text);
+				const std::string from_file = outcome_of(
+					[&file] { return read_json_file(file.path().c_str()); });
+				const std::string from_text = outcome_of(
+					[&text] { return parse_json(text, "edge.json"); });
+
+				CHECK(from_file == from_text);
+			}
 		}
 	}
 }
