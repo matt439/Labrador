@@ -179,3 +179,22 @@ TEST_CASE("a bank with no content still runs the arithmetic it owns")
 	CHECK_NOTHROW(bank->set_effect_pitch(effect, -1000.0f));
 	CHECK_NOTHROW(bank->set_effect_pan(effect, 1000.0f));
 }
+
+TEST_CASE("a bank no AudioResources holds has no groups to put a sound in")
+{
+	const std::unique_ptr<SoundBank> bank = SoundBank::silent();
+	const SoundBank::WaveHandle wave = bank->resolve_wave("shot");
+	const SoundBank::EffectHandle effect = bank->resolve_effect("engine_loop");
+
+	// Groups belong to an AudioResources, so a bank built by hand and never
+	// added to one cannot take a group - and says so rather than storing a
+	// handle into a table it does not have. Its ungrouped plays still run.
+	const SoundGroupHandle group(0);
+	// out_of_range is a logic_error too, so the message is what tells this
+	// throw from a refused handle.
+	CHECK_THROWS_WITH_AS(bank->set_wave_group(wave, group),
+		doctest::Contains("belongs to no AudioResources"), std::logic_error);
+	CHECK_THROWS_WITH_AS(bank->set_effect_group(effect, group),
+		doctest::Contains("belongs to no AudioResources"), std::logic_error);
+	CHECK_NOTHROW(bank->play_wave(wave, 0.5f));
+}

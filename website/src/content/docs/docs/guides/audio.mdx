@@ -113,6 +113,19 @@ levels when launched, so new settings affect the next one-shot. The sample
 pauses a playing loop on deactivation and resumes only that loop when focus
 returns; a loop paused by the player stays paused.
 
+A settings screen's music and effects sliders are sound groups.
+`AudioResources::add_sound_group("music")` makes one at load, and
+`set_wave_group` and `set_effect_group` on a bank put a wave or an effect in
+it. From then on the bank sends every level for that sound multiplied by the
+group's volume, so the level each call asks for stays the authored one and the
+player's setting is one `set_group_volume(music, 0.5f)`. The same rule holds
+for a group as for a level: a one-shot already playing keeps the level it was
+launched with, and the next one takes the new volume, while a playing or paused
+effect in the group takes it at once. A sound in no group is at full group
+volume. Which sounds are music, fades and ducking stay the game's; a fade or a
+duck is the game's own factor multiplied into `set_effect_volume`, which
+combines with the group's.
+
 `Application` updates the audio device every tick and owns its lifetime. A
 client that uses `AudioDevice` directly must update it and keep it alive longer
 than all the banks that borrow it; the sample's

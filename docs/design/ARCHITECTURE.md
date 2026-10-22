@@ -492,8 +492,9 @@ the browser's `audio/webaudio/` behind it and `audio/null/` — which records
 what it was asked to play — as the headless implementation PHILOSOPHY requires
 of every seam. What is *above* the
 seam is the part worth stating, because it is where the cut was argued: which
-name means which wave, which handles are valid, and the clamp that folds a
-volume into [0,1] and a pitch and a pan into [-1,1] are all engine arithmetic
+name means which wave, which handles are valid, the clamp that folds a
+volume into [0,1] and a pitch and a pan into [-1,1], and the sound group's
+volume multiplied into every level a bank sends, are all engine arithmetic
 and sit above the test for whether there is anything to play. Below it is what
 an audio API actually does and nothing else. **The one thing the seam declines
 to decide is the container**: `open_wave_bank` takes a directory and a bank

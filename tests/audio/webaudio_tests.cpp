@@ -2,6 +2,7 @@
 
 #include "engine/assets/sound_bank_loader.h"
 #include "engine/audio/audio_device.h"
+#include "engine/audio/audio_resources.h"
 #include "engine/audio/sound_bank.h"
 
 #include <memory>
@@ -184,6 +185,44 @@ TEST_CASE("a playing voice keeps the loop it was started with")
 	// backend gives, for the same reason.
 	fixture.bank->stop_effect(ping);
 	CHECK(fixture.bank->effect_state(ping) == SoundState::playing);
+}
+
+TEST_CASE("a group's volume reaches this device as plain level calls")
+{
+	// The group arithmetic is SoundBank's, above the seam, so all this
+	// backend sees is the product through the verbs it already has - and
+	// a paused voice taking a new level is one of them.
+	AudioDevice device;
+	SoundBankDefinition definition;
+	definition.source_path = "tones.json";
+	definition.waves = tone_names;
+	definition.effects = {
+		SoundBankDefinition::Effect{ "drone_loop", "drone" }
+	};
+	const AudioDevice::WaveBankHandle wave_bank = device.open_wave_bank(
+		"./content/", "tones", definition.waves);
+
+	AudioResources resources;
+	resources.add_sound_bank("tones",
+		build_sound_bank(&device, wave_bank, definition));
+	SoundBank* bank = resources.sound_bank("tones");
+	const AudioResources::SoundGroupHandle music =
+		resources.add_sound_group("music");
+
+	const SoundBank::WaveHandle ping = bank->resolve_wave("ping");
+	const SoundBank::EffectHandle drone = bank->resolve_effect("drone_loop");
+	CHECK_NOTHROW(bank->set_wave_group(ping, music));
+	CHECK_NOTHROW(bank->set_effect_group(drone, music));
+
+	CHECK_NOTHROW(resources.set_group_volume(music, 0.5f));
+	CHECK_NOTHROW(bank->play_wave(ping, 0.5f));
+	CHECK_NOTHROW(bank->play_effect(drone, true, 0.5f));
+	CHECK_NOTHROW(resources.set_group_volume(music, 0.25f));
+	bank->pause_effect(drone);
+	CHECK_NOTHROW(resources.set_group_volume(music, 1.0f));
+	CHECK(bank->effect_state(drone) == SoundState::paused);
+	bank->resume_effect(drone);
+	CHECK(bank->effect_state(drone) == SoundState::playing);
 }
 
 TEST_CASE("devices are independent, and survive a move")
