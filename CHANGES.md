@@ -11,7 +11,9 @@ the compile options or definitions `cmake/settings.cmake` gives
 the game compiles as it did and does something different, such as
 [92966b0](#92966b0)'s move of the content root. Everything else, a new public
 name included, is not, and is not listed here; the commit history says what
-was added.
+was added. A new free function taking an engine type can still be a source
+break: argument-dependent lookup finds it beside a game's own function of the
+same name and signature, and the game's unqualified call becomes ambiguous.
 
 ## The rule
 
@@ -69,6 +71,37 @@ not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
 ## Unreleased
+
+#### Name every key, so a game can save a binding and read it back
+
+*Name every key, so a game can save a binding and read it back*
+(2026-10-22). Source break, through argument-dependent lookup, and a new file
+format.
+
+`engine/input/keyboard.h` gains `std::string_view key_name(Key)` and
+`std::optional<Key> key_from_name(std::string_view)`. Each key's token is its
+enumerator's spelling, `Key::del` included (`"del"`).
+
+- **Source break, for a game with its own `key_name(labrador::Key)`** called
+  unqualified. Argument-dependent lookup on the `labrador::Key` argument now
+  finds `labrador::key_name` beside the game's own function, both take `Key`
+  by value, and the call is ambiguous, so it no longer compiles. A game whose
+  function has another name, or takes another type, is not affected.
+  - Old: `key_name(key)`, calling the game's own function.
+  - New: qualify the call (`::my_game::key_name(key)`), or delete the game's
+    function and call `labrador::key_name(key)`, whose tokens are the
+    enumerators' spellings.
+  - Template: the same change to the browser window test page, which had its
+    own `key_name` and called it unqualified; no sample had one:
+
+    ```
+    git show $(git log --format=%h \
+        --grep="^Name every key, so a game can save a binding and read it back$" \
+        | tail -1) -- tests/app/web/window_page.cpp
+    ```
+- **The tokens are a file format from this commit on.** A game that saves a
+  token reads it back with `key_from_name`. Renaming an enumerator later is a
+  source break and a format break in one change, and its entry here says both.
 
 #### Windows 10 version 1607 is the floor
 

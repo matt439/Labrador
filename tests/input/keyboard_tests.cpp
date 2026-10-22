@@ -9,8 +9,12 @@
 #include <doctest/doctest.h>
 #include "engine/input/keyboard.h"
 
+#include <cstddef>
 #include <initializer_list>
+#include <optional>
+#include <set>
 #include <string>
+#include <string_view>
 
 using namespace labrador;
 
@@ -398,6 +402,81 @@ namespace KeyboardTests
 			const KeyboardState& state = keyboard.state();
 			CHECK(state.keys[0] == 0);
 			CHECK(state.keys[1] == 0);
+		}
+
+		TEST_CASE("every key has a name of its own, made of [a-z0-9_]")
+		{
+			// The round trip below is what holds the set complete on MSVC,
+			// where a switch missing a case is not an error: a key added to
+			// the enum without a name fails here.
+			std::set<std::string_view> seen;
+			for (unsigned int index = static_cast<unsigned int>(Key::a);
+				index < static_cast<unsigned int>(Key::count); ++index)
+			{
+				const Key key = static_cast<Key>(index);
+				const std::string_view name = key_name(key);
+				CAPTURE(index);
+				REQUIRE_FALSE(name.empty());
+				for (const char character : name)
+				{
+					const bool allowed = (character >= 'a' && character <= 'z') ||
+						(character >= '0' && character <= '9') ||
+						character == '_';
+					CHECK(allowed);
+				}
+				CHECK(seen.insert(name).second);
+			}
+			CHECK(seen.size() ==
+				static_cast<std::size_t>(Key::count) -
+				static_cast<std::size_t>(Key::a));
+		}
+
+		TEST_CASE("a name reads back as the key it names, and only that")
+		{
+			for (unsigned int index = static_cast<unsigned int>(Key::a);
+				index < static_cast<unsigned int>(Key::count); ++index)
+			{
+				const Key key = static_cast<Key>(index);
+				const std::string_view name = key_name(key);
+				CAPTURE(index);
+				const std::optional<Key> read = key_from_name(name);
+				REQUIRE(read.has_value());
+				CHECK(*read == key);
+				CHECK(key_name(*read) == name);
+			}
+		}
+
+		TEST_CASE("the bounds and anything outside the set have no name")
+		{
+			CHECK(key_name(Key::none).empty());
+			CHECK(key_name(Key::count).empty());
+			CHECK(key_name(static_cast<Key>(255)).empty());
+		}
+
+		TEST_CASE("a name is exact: no case folding, trimming, aliases or chords")
+		{
+			const std::string_view refused[] = {
+				"", "none", "count", "J", "Space", " j", "j ", "ctrl+j",
+				"KeyJ", "delete", std::string_view("j\0", 2),
+			};
+			for (const std::string_view name : refused)
+			{
+				CAPTURE(std::string(name));
+				CHECK_FALSE(key_from_name(name).has_value());
+			}
+		}
+
+		TEST_CASE("the spellings a reader would guess wrong are the enumerators'")
+		{
+			CHECK(key_name(Key::digit_1) == "digit_1");
+			CHECK(key_name(Key::numpad_1) == "numpad_1");
+			CHECK(key_name(Key::del) == "del");
+			CHECK(key_name(Key::page_up) == "page_up");
+			CHECK(key_name(Key::left_bracket) == "left_bracket");
+			CHECK(key_name(Key::grave) == "grave");
+			CHECK(key_from_name("del") == Key::del);
+			CHECK(key_from_name("digit_1") == Key::digit_1);
+			CHECK(key_from_name("numpad_1") == Key::numpad_1);
 		}
 	}
 }

@@ -235,4 +235,132 @@ namespace labrador
 	{
 		return this->typed_;
 	}
+
+	// One case per enumerator and no default, so that clang's -Wswitch, an
+	// error under the browser build's -Werror, refuses a key added without a
+	// name. MSVC's equivalent is off by default, and InputTests' round trip
+	// is what holds the set complete there.
+	std::string_view key_name(Key key)
+	{
+		switch (key)
+		{
+		case Key::none:
+		case Key::count:
+			return {};
+		case Key::a: return "a";
+		case Key::b: return "b";
+		case Key::c: return "c";
+		case Key::d: return "d";
+		case Key::e: return "e";
+		case Key::f: return "f";
+		case Key::g: return "g";
+		case Key::h: return "h";
+		case Key::i: return "i";
+		case Key::j: return "j";
+		case Key::k: return "k";
+		case Key::l: return "l";
+		case Key::m: return "m";
+		case Key::n: return "n";
+		case Key::o: return "o";
+		case Key::p: return "p";
+		case Key::q: return "q";
+		case Key::r: return "r";
+		case Key::s: return "s";
+		case Key::t: return "t";
+		case Key::u: return "u";
+		case Key::v: return "v";
+		case Key::w: return "w";
+		case Key::x: return "x";
+		case Key::y: return "y";
+		case Key::z: return "z";
+		case Key::digit_0: return "digit_0";
+		case Key::digit_1: return "digit_1";
+		case Key::digit_2: return "digit_2";
+		case Key::digit_3: return "digit_3";
+		case Key::digit_4: return "digit_4";
+		case Key::digit_5: return "digit_5";
+		case Key::digit_6: return "digit_6";
+		case Key::digit_7: return "digit_7";
+		case Key::digit_8: return "digit_8";
+		case Key::digit_9: return "digit_9";
+		case Key::f1: return "f1";
+		case Key::f2: return "f2";
+		case Key::f3: return "f3";
+		case Key::f4: return "f4";
+		case Key::f5: return "f5";
+		case Key::f6: return "f6";
+		case Key::f7: return "f7";
+		case Key::f8: return "f8";
+		case Key::f9: return "f9";
+		case Key::f10: return "f10";
+		case Key::f11: return "f11";
+		case Key::f12: return "f12";
+		case Key::escape: return "escape";
+		case Key::tab: return "tab";
+		case Key::caps_lock: return "caps_lock";
+		case Key::shift: return "shift";
+		case Key::control: return "control";
+		case Key::alt: return "alt";
+		case Key::space: return "space";
+		case Key::enter: return "enter";
+		case Key::backspace: return "backspace";
+		case Key::insert: return "insert";
+		case Key::del: return "del";
+		case Key::home: return "home";
+		case Key::end: return "end";
+		case Key::page_up: return "page_up";
+		case Key::page_down: return "page_down";
+		case Key::left: return "left";
+		case Key::right: return "right";
+		case Key::up: return "up";
+		case Key::down: return "down";
+		case Key::print_screen: return "print_screen";
+		case Key::scroll_lock: return "scroll_lock";
+		case Key::pause: return "pause";
+		case Key::num_lock: return "num_lock";
+		case Key::minus: return "minus";
+		case Key::equals: return "equals";
+		case Key::left_bracket: return "left_bracket";
+		case Key::right_bracket: return "right_bracket";
+		case Key::backslash: return "backslash";
+		case Key::semicolon: return "semicolon";
+		case Key::apostrophe: return "apostrophe";
+		case Key::grave: return "grave";
+		case Key::comma: return "comma";
+		case Key::period: return "period";
+		case Key::slash: return "slash";
+		case Key::numpad_0: return "numpad_0";
+		case Key::numpad_1: return "numpad_1";
+		case Key::numpad_2: return "numpad_2";
+		case Key::numpad_3: return "numpad_3";
+		case Key::numpad_4: return "numpad_4";
+		case Key::numpad_5: return "numpad_5";
+		case Key::numpad_6: return "numpad_6";
+		case Key::numpad_7: return "numpad_7";
+		case Key::numpad_8: return "numpad_8";
+		case Key::numpad_9: return "numpad_9";
+		case Key::numpad_add: return "numpad_add";
+		case Key::numpad_subtract: return "numpad_subtract";
+		case Key::numpad_multiply: return "numpad_multiply";
+		case Key::numpad_divide: return "numpad_divide";
+		case Key::numpad_decimal: return "numpad_decimal";
+		}
+		return {};
+	}
+
+	// Derived from key_name rather than a second table, so the two cannot
+	// disagree. About a hundred comparisons, off the frame path.
+	std::optional<Key> key_from_name(std::string_view name)
+	{
+		for (unsigned int index = static_cast<unsigned int>(Key::a);
+			index < static_cast<unsigned int>(Key::count); ++index)
+		{
+			const Key key = static_cast<Key>(index);
+			if (key_name(key) == name)
+			{
+				return key;
+			}
+		}
+		return std::nullopt;
+	}
 }
