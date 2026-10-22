@@ -254,9 +254,9 @@ namespace labrador
 		this->batch.clear();
 	}
 
-	void DrawList::View::set_transform(const D3D11_VIEWPORT& viewport)
+	void DrawList::View::set_transform(const D3D11_VIEWPORT& pane)
 	{
-		const ViewportTransform values = to_transform(viewport);
+		const ViewportTransform values = to_transform(pane);
 
 		D3D11_MAPPED_SUBRESOURCE mapped = {};
 		ThrowIfFailed(this->context->Map(this->transform.Get(), 0,
@@ -266,7 +266,7 @@ namespace labrador
 	}
 
 	void DrawList::View::bind(ID3D11RenderTargetView* render_target,
-		const D3D11_VIEWPORT& viewport)
+		const D3D11_VIEWPORT& pane)
 	{
 		if (this->bound)
 		{
@@ -274,8 +274,10 @@ namespace labrador
 		}
 
 		this->context->OMSetRenderTargets(1, &render_target, nullptr);
-		this->context->RSSetViewports(1, &viewport);
-		this->set_transform(viewport);
+		this->context->RSSetViewports(1, &pane);
+		this->set_transform(pane);
+		this->viewport = Viewport(pane.TopLeftX, pane.TopLeftY, pane.Width,
+			pane.Height, pane.MinDepth, pane.MaxDepth);
 		this->bound = true;
 	}
 
@@ -347,6 +349,7 @@ namespace labrador
 		const D3D11_VIEWPORT d3d_viewport = to_d3d_viewport(viewport);
 		this->view_->context->RSSetViewports(1, &d3d_viewport);
 		this->view_->set_transform(d3d_viewport);
+		this->view_->viewport = viewport;
 	}
 
 	void DrawList::set_camera(const Camera& camera)
@@ -354,6 +357,16 @@ namespace labrador
 		// No flush: the camera is applied to the geometry as each draw is
 		// recorded, not by any state the batch holds.
 		this->view_->camera = camera;
+	}
+
+	const Camera& DrawList::camera() const
+	{
+		return this->view_->camera;
+	}
+
+	const Viewport& DrawList::viewport() const
+	{
+		return this->view_->viewport;
 	}
 
 	void DrawList::set_filter(TextureFilter filter)

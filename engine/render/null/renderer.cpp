@@ -60,6 +60,16 @@ namespace labrador
 		this->view_->camera = camera;
 	}
 
+	const Camera& DrawList::camera() const
+	{
+		return this->view_->camera;
+	}
+
+	const Viewport& DrawList::viewport() const
+	{
+		return this->view_->viewport;
+	}
+
 	void DrawList::set_filter(TextureFilter filter)
 	{
 		this->view_->filter = filter;

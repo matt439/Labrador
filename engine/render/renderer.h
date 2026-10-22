@@ -129,6 +129,12 @@ namespace labrador
 		// Restricts subsequent draws to this viewport, in back-buffer pixels.
 		void set_viewport(const Viewport& viewport);
 
+		// The pane the next draw lands in, in back-buffer pixels: the Viewport
+		// last given to set_viewport, as given rather than snapped to whole
+		// pixels, else the whole back buffer the list starts with,
+		// Viewport(0, 0, width, height). Valid only on a valid() list.
+		const Viewport& viewport() const;
+
 		// World to view, for every draw recorded after it.
 		//
 		// It is per range and not per view because one view genuinely has two: a
@@ -140,6 +146,20 @@ namespace labrador
 		// with, so a caller that only ever wanted screen space never mentions a
 		// camera at all.
 		void set_camera(const Camera& camera);
+
+		// The camera the next draw on this list is mapped through: the last
+		// set_camera on it this frame, else Camera::DEFAULT_CAMERA. Valid only
+		// on a valid() list. A draw() may read it to choose what it draws for
+		// this view, and must not store it: the list is gone at the next
+		// Renderer::submit(). SEAM.md#6 says why it is read here rather than
+		// passed to draw().
+		//
+		// A DRAW THAT GROWS AS THE CAMERA ZOOMS OUT MUST SAY SO TO THE CULL. A
+		// minimum stroke, or detail chosen by zoom, can draw outside bounds();
+		// such a drawable reports that growth through
+		// GameObject::cull_bounds(units_per_pixel), or the scene's cull may
+		// reject it at a pane edge.
+		const Camera& camera() const;
 
 		// Applies to every draw recorded after it. Changing it mid-list is legal
 		// and costs a flush, so group by filter if it matters.

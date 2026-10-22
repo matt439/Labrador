@@ -223,6 +223,12 @@ namespace labrador
 		Camera camera = Camera::DEFAULT_CAMERA;
 		TextureFilter filter = TextureFilter::point;
 
+		// The pane DrawList::viewport() answers with: the Viewport last given
+		// to set_viewport, as given, else the screen viewport the view was
+		// bound with. Only read back - what the rasteriser uses is the D3D
+		// viewport recorded into the list beside it.
+		Viewport viewport;
+
 		// Whether anything has been recorded into this view this frame. It is
 		// what makes a dropped view detectable: a caller that declares four
 		// views, fills them, and then declares two has stranded two recordings.
@@ -249,10 +255,10 @@ namespace labrador
 		// Resets this frame's allocator, opens the list, and records the state
 		// that does not change within a frame. Idempotent within a frame.
 		void begin(D3D12_CPU_DESCRIPTOR_HANDLE render_target,
-			const D3D12_VIEWPORT& viewport);
+			const D3D12_VIEWPORT& pane);
 
 		// Pixels to clip space for this viewport, into `transform`.
-		void set_transform(const D3D12_VIEWPORT& viewport);
+		void set_transform(const D3D12_VIEWPORT& pane);
 
 		// Flushes what is batched and closes the list, which is what makes it
 		// executable. Does nothing on a view that is not recording.

@@ -46,11 +46,12 @@ namespace labrador
 		// One draw, into one view's recording.
 		//
 		// The camera is on the DrawList and not a parameter here
-		// (engine/render/renderer.h, DrawList::set_camera). An implementation of
-		// this either hands a camera straight down or calls
-		// Camera::calculate_view_rectangle with it, and the caller that knows
-		// which view this is is the caller that should say so - once for a
-		// range of draws, not once per object per draw.
+		// (engine/render/renderer.h, DrawList::set_camera), and the caller that
+		// knows which view this is is the caller that should say so - once for
+		// a range of draws, not once per object per draw. An implementation
+		// whose output depends on the view reads draw_list.camera() and
+		// draw_list.viewport(), and does not store either: the list is gone at
+		// the next Renderer::submit().
 		//
 		// This is the line that would make engine/core include a graphics API if
 		// the parameter were anything but a reference to a declared type.
