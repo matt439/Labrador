@@ -70,6 +70,25 @@ its heading here.
 
 ## Unreleased
 
+#### Let F10 and Alt alone be keys, not the system menu
+
+*Let F10 and Alt alone be keys, not the system menu* (2026-10-22). Silent
+behaviour change, on Windows only.
+
+- Old: pressing and releasing F10, or Alt on its own, sent the window into the
+  system-menu loop. The game stopped ticking until Escape or another Alt, the
+  keys pressed meanwhile went to a menu the player could not see, and nothing
+  told the game.
+- New: both are ordinary keys, read from `Keyboard` as `Key::f10` and
+  `Key::alt`, and the game keeps running. Alt+Space still opens the system
+  menu and Alt+F4 still closes the window.
+- A keyboard-only player who reached Move and Size with bare Alt and the
+  arrows now reaches them with Alt+Space. There is no option to restore the
+  old behaviour. This is narrower than GLFW 3.4's Win32 window, which by
+  default drops every keyboard menu activation, Alt+Space included.
+- A game that eats bare F10 itself, with a message hook over the engine's
+  pump, can delete it. A browser build is unaffected.
+
 #### Keep a hidden window hidden when it changes full screen
 
 *Keep a hidden window hidden when it changes full screen* (2026-10-22).

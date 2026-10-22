@@ -28,6 +28,10 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-22.** No code here changed, but what the window does did: on
+  Windows, F10 and Alt pressed alone are keys and no longer stop the loop in
+  the system menu. Alt+Space still opens it. CHANGES.md's *Let F10 and Alt
+  alone be keys, not the system menu* entry is the engine side.
 - **2026-10-13.** The font is `content/fonts/jetbrains_mono_bold_16.spritefont`,
   JetBrains Mono Bold under the SIL Open Font License 1.1 with that licence as
   `OFL.txt` beside it, in place of `courier_new_bold_16.spritefont`, whose

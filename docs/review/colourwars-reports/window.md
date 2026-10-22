@@ -229,6 +229,15 @@ window are still the attended check, on the owner's desktop. (d) Check the GLFW
 precedent against its source before the CHANGES entry or a PR description
 quotes it.
 
+Answered by 11's commit: (a) is moot, because the live cases cannot fail.
+Passed to `DefWindowProc`, `SC_KEYMENU` returned at once without a
+`WM_ENTERMENULOOP` for a hidden window and for a shown, never-activated one,
+so the commit ships the pure case and the F10 and Alt key edges, and the test
+says why there is no live case. (d) GLFW 3.4's `win32_window.c` returns 0 for
+every `SC_KEYMENU` unless the window's `keymenu` hint is set, which matches
+the recollection above, and the CHANGES entry says this is narrower. (c)
+stays the attended check.
+
 ## 16. A hidden window comes up when it changes full screen
 
 **Decision.** Accept. A window created with `visible = false` stays hidden and

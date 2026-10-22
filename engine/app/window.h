@@ -74,6 +74,11 @@ namespace labrador
 		// KeyboardEvent.code string or a UTF-16 unit - message translation
 		// lives in the window, and that is the whole of the job this class
 		// exists to hand over.
+		//
+		// On Windows, F10 and Alt pressed alone are keys and nothing else;
+		// Alt+F4 and Alt+Space reach the game and still close the window and
+		// open its system menu. In a browser the function keys and the Alt
+		// chords reach the game and keep their browser defaults.
 		virtual void on_key_down(Key key) const = 0;
 		virtual void on_key_up(Key key) const = 0;
 		virtual void on_text(char32_t codepoint) const = 0;
