@@ -174,9 +174,11 @@ being load-bearing.
 │   │                       in — the pads are read from a backend, the
 │   │                       keyboard, mouse and touch are fed from the
 │   │                       window (see below). The action map is deliberately not built
-│   │                       - neither client has a rebinding screen, so a
-│   │                       binding table would be a speculative framework
-│   │                       (T1). A Direction is not one: it names what a
+│   │                       - bindings and any rebinding are the game's
+│   │                       (PHILOSOPHY, The boundary), so a client that
+│   │                       rebinds keeps its own table (T1), and how it
+│   │                       combines sources is its own rule. A Direction
+│   │                       is not an action map: it names what a
 │   │                       device did, not what the game calls it
 │   │   ├── xinput/         the XInput backend. There is no win32/ beside
 │   │   │                   it: the fed devices have no backend to

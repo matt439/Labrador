@@ -1626,7 +1626,7 @@ M · process · E10 Releases, versions, upgrades and an answered report · gaps 
 **Trade-offs**
 
 - T1: deciding is the close; implementing is not presumed; a decline weighs mechanism against game policy
-- PHILOSOPHY.md:752-757 (The public face): a decline may not rest on 'only one client asks', because the count does not settle what the library is for; the question is whether a client would have to write it itself
+- PHILOSOPHY.md:792-798 (The public face): a decline may not rest on 'only one client asks', because the count does not settle what the library is for; the question is whether a client would have to write it itself
 - T8: a capture hook for report 10 must stay out of the frame path (renderer.h:415 marks read_back_buffer NOT A FRAME-PATH CALL, citing T8)
 
 **Notes.** Size M covers the decisions only. An accepted report bigger than XS becomes its own story; packaging (F8), if accepted, is PI-11.
@@ -3027,7 +3027,7 @@ S · docs · E06 Concepts and reference that tell the truth a caller needs · ga
 
 - Given samples/linesweeper/README.md, when I grep it for 'CLAUDE.md', then there are no matches
 - Given each place the README currently cites docs/survey/ or docs/review/gpt6 (today :257, :362, :431, :453, :585), when I read that paragraph, then it states in its own words, in a sentence or two, the finding or reason the citation supports; the citation may stay as a source
-- Given the action-mapping sentence (currently :581), then it cites docs/design/ARCHITECTURE.md (the known-absent reasoning at around :176) instead of an assistant notes file, and keeps the reason (neither client has a rebinding screen)
+- Given the action-mapping sentence (currently :581), then it cites docs/design/ARCHITECTURE.md (the known-absent reasoning at around :176) instead of an assistant notes file, and keeps the reason as re-taken when report 21 was declined (bindings and any rebinding are the game's by PHILOSOPHY's boundary table, and the clients combine sources by different rules), not the earlier one that no client has a rebinding screen
 - Given the change, when the top-level build runs check_doc_citations.cmake, then it passes
 
 **Trade-offs**

@@ -7,13 +7,19 @@
 namespace labrador
 {
 	// WHAT IS DELIBERATELY ABSENT: an action map. PHILOSOPHY's boundary table
-	// gives this module "input devices and action mapping", and this half is
-	// the devices. A table from a named action to a button, filled from data,
-	// is the other half - and no client has asked for one: the samples spell
-	// their bindings in code, and none has a rebinding screen to fill such a
-	// table from. Building it now would be a speculative framework (T1). What
-	// is here is what the clients actually use, and an action map is a layer
-	// above it rather than a change to it.
+	// gives the engine the input devices and the game which actions exist,
+	// their bindings and any rebinding, and a table from a named action to a
+	// button is the game's half however it is spelt (T1). The engine's half is
+	// the edge functions here and in keyboard.h and mouse.h: each compares two
+	// snapshots of one source, so an edge depends only on what was down, never
+	// on which binding asked, and changing a binding never invents a press or
+	// loses one.
+	//
+	// COMBINING SOURCES IS THE GAME'S CHOICE, and the two obvious rules give
+	// different answers. OR-ing each source's pressed() fires once per source
+	// that goes down, so a key and then a button pressed for one action are two
+	// presses. Rebuilding the edge from the combined held level fires once,
+	// until every source is up again.
 
 	// Every button a pad has, one bit each in GamepadState::buttons.
 	enum class GamepadButton : uint16_t
