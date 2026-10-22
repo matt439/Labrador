@@ -1964,6 +1964,8 @@ Each backend has a hard floor in code. d3d11 requests feature levels down to 10_
 
 **Scope check.** No conflict. It documents floors the code already enforces, and T6 favours stating them. It adds no API and no backend.
 
+**Answer, Windows half (2026-10-22).** The owner set the engine's Windows floor at Windows 10 version 1607, and the Win32 window imports what it needs from that release statically: `AdjustWindowRectExForDpi`, `GetDpiForWindow` and `GetDpiForSystem`, which make its client size hold in a per-monitor-aware process (ColourWars report 17, decided in docs/review/colourwars-reports/window.md). Below 1607 a game built on the engine fails at load, naming a missing user32 entry point. Nothing defines `_WIN32_WINNT`; the SDK's default declares the functions. Before this the de facto floor was Windows 8, from the static import of `GetPointerType`. CHANGES.md carries the floor as its own entry. The hardware floors, and the page OCA-64 asks for, are still owed.
+
 <a id="g106"></a>
 ### G106. README says samples/minimal is a working example of the consumer setup, but minimal is not a consumer
 

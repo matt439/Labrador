@@ -131,7 +131,9 @@ namespace labrador
 		std::wstring window_title = L"Labrador";
 
 		// CLIENT pixels - the area the game draws into, not the outer rect.
-		// Turning one into the other is this class's job and nobody else's.
+		// Turning one into the other is this class's job and nobody else's,
+		// at the DPI its frame is drawn at, which under per-monitor awareness
+		// v2 is the window's own, and a DPI change keeps it.
 		mattmath::Vector2I client_size;
 
 		bool fullscreen = false;

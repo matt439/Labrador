@@ -599,6 +599,15 @@ arithmetic queries; the attended runs are the real acceptance. (f) This makes
 OCA-66's "aware" answer cheaper, because the engine then holds its contract
 either way.
 
+Answered by 17's commit: (a) the owner set the floor at Windows 10 1607 with
+static imports, recorded as G105's answer and given its own CHANGES entry.
+(b) Per-monitor v1 keeps its client pixels and behaves as it did before: its
+frame is measured at the system DPI, the DPI it is drawn at, and
+`WM_DPICHANGED` goes to `DefWindowProc` rather than applying a rect that keeps
+logical size. A test on a v1 thread context pins it.
+(c) `WM_GETDPISCALEDSIZE` returns `FALSE` under `IsIconic`; the restore path
+is unchecked, with (d) and (e).
+
 ## 19. Showing a window later
 
 **Decision.** Needs more evidence. No public `Window::show()` or
