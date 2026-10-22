@@ -160,4 +160,23 @@ The renderer behind all this is one of five, chosen when the engine is configure
 Direct3D 12, OpenGL, Vulkan, or a null renderer that records draws for tests. Game code is the same
 for all of them. Nothing above the renderer names a graphics API.
 
+## Capturing a frame
+
+There is no hook between the engine's `submit` and its present, and a screenshot does not need
+one. Because `draw()` only reads, drawing the stack a second time between two updates draws
+exactly the frame the engine would draw. So a capture is a frame of your own, taken from an
+`update()` after the world it should show has finished updating: begin a frame, draw the stack
+(an `Application` is a state stack, so `app.draw(*app.renderer())`), submit, and read the back
+buffer with [`read_back_buffer`](/docs/reference/render/renderer/#read_back_buffer). Then stop.
+A frame that is submitted and never presented is legal, and the next frame starts over.
+
+The collision sample's smoke test captures this way, in a loop it owns rather than inside
+`Application::run`, so it presents each frame afterwards as well:
+
+<SourceFile path="samples/collision/main.cpp" from="app.renderer()->begin_frame();" to="app.renderer()->end_frame();" />
+
+Never capture from a `draw()`. A state's `draw()` does not begin, submit or present a frame;
+those belong to whoever owns the frame. The read waits for the graphics device, so a capture is
+a debug command, not something to do every frame.
+
 Next: [Names, handles and resources](/docs/concepts/resources/).

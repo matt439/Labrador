@@ -577,7 +577,7 @@ same commit.
   Two things the sweep could not know are recorded there too: the CI premise it
   reasoned from is false — a GPU-less runner offers Direct3D an adapter rather
   than falling back to WARP, which one job log settles — and the golden set is
-  sixty images now, five of them added by the tests those findings
+  sixty-three images now, five of them added by the tests those findings
   asked for. The
   third folder reviews the fourth backend against the seam it was written to
   test. **Its three must-fix findings, all

@@ -253,10 +253,10 @@ relationship, and hand-copied implementations can get the same relationship
 wrong in the same direction without any run noticing. So every frame a case
 reads back is also compared byte for byte against a PNG of it in
 [`tests/render/golden/`](../../tests/render/golden/), and those images are what
-hold the backends to each other rather than each to a sentence. Sixty
+hold the backends to each other rather than each to a sentence. Sixty-three
 frames, four of which fill more than one view — the machinery the backends share
 least. On one machine's GPU, `d3d11`, `d3d12`, `gl` and `vulkan` reproduce all
-sixty exactly.
+sixty-three exactly.
 
 **The running of it is still separate processes.** `LABRADOR_RENDER_BACKEND`
 picks a backend at configure time (T5), so the checked-in set is what passes
