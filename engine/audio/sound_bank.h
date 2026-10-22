@@ -1,10 +1,12 @@
 #pragma once
 
 #include "engine/audio/audio_device.h"
+#include "engine/audio/sound_group.h"
 #include "engine/core/registry.h"
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace labrador
 {
@@ -36,6 +38,11 @@ namespace labrador
 	// there is a sound at the end of it - so a silent bank exercises it as
 	// fully as an audible one, and a build that cannot open a wave bank can
 	// still test it.
+	//
+	// AUDIO CALLS ARE update()-SIDE. Several of the methods below are const
+	// and still write the bank's own record of an effect's level, and draw()
+	// is entered concurrently on the same object under the view fan-out - so
+	// nothing here is called from a draw().
 	class SoundBank
 	{
 	public:
@@ -47,7 +54,9 @@ namespace labrador
 		using WaveHandle = Handle<Wave>;
 
 		// The engine's record of one named effect instance: which voice the
-		// device built for it, and nothing else.
+		// device built for it, which sound group it is in, and the last level
+		// a caller asked for, after clamping and before the group's volume is
+		// multiplied in - kept so a group volume change can push the product.
 		//
 		// It is a struct rather than the voice handle on its own so that the
 		// effect table can be a Registry like every other table in this engine
@@ -56,6 +65,8 @@ namespace labrador
 		struct SoundEffect
 		{
 			AudioDevice::VoiceHandle voice;
+			SoundGroupHandle group{};
+			float volume = 1.0f;
 		};
 		using EffectHandle = Registry<SoundEffect>::handle;
 
@@ -120,14 +131,36 @@ namespace labrador
 		WaveHandle resolve_wave(const std::string& wave_name) const;
 		EffectHandle resolve_effect(const std::string& effect_name) const;
 
+		// Load-time. Puts a wave or an effect in a sound group of the
+		// AudioResources this bank was added to, and from then on every level
+		// sent to the device for it is multiplied by that group's volume
+		// (audio_resources.h). Assigning again moves it; nothing takes one out.
+		// An effect takes its group's volume at its next play_effect,
+		// set_effect_volume or group volume change.
+		//
+		// Each throws std::out_of_range through an unresolved wave, effect or
+		// group handle, std::logic_error if this bank was never added to an
+		// AudioResources - it has no groups to put anything in - and checks
+		// all of that above the check for content. A bank with no content
+		// validates and discards: it has no record to keep an assignment on.
+		void set_wave_group(WaveHandle wave, SoundGroupHandle group);
+		void set_effect_group(EffectHandle effect, SoundGroupHandle group);
+
 		// Fire-and-forget: a new voice each time, with no handle on it
-		// afterwards. This is the one for a jump, a hit, a menu click.
+		// afterwards. This is the one for a jump, a hit, a menu click. It
+		// launches at `volume` times its group's volume, and keeps that level
+		// while it plays: a group volume change reaches the next one.
 		void play_wave(WaveHandle wave, float volume = 1.0f,
 			float pitch = 0.0f, float pan = 0.0f) const;
 
 		// An effect instance is a voice that persists, so it can be looped,
 		// stopped, and adjusted while it plays - music, a weapon's firing loop.
 		// Each throws std::out_of_range through an unresolved handle.
+		//
+		// play_effect and set_effect_volume send `volume` times the effect's
+		// group volume, and keep `volume` in the effect's record through the
+		// registry's non-const pointer, which is why they are const and still
+		// write.
 		void play_effect(EffectHandle effect, bool loop = false,
 			float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f) const;
 		void stop_effect(EffectHandle effect, bool immediate = false) const;
@@ -140,11 +173,37 @@ namespace labrador
 		bool is_effect_looping(EffectHandle effect) const;
 
 	private:
+		friend class AudioResources;
+
 		// Borrowed, and null for a silent bank - which is what audible() reads.
 		const AudioDevice* device_ = nullptr;
 
 		AudioDevice::WaveBankHandle wave_bank_;
 		Registry<SoundEffect> effects_{ "SoundEffect" };
+
+		// Each group's volume by handle index, lent by the AudioResources this
+		// bank was added to, which owns both and destroys its banks before
+		// the volumes. Null for a bank no AudioResources holds.
+		const std::vector<float>* group_volumes_ = nullptr;
+
+		// A wave's group by wave index, grown by set_wave_group as far as the
+		// highest wave assigned. A wave past its end is in no group.
+		std::vector<SoundGroupHandle> wave_groups_;
+
+		// The effects given a group, in handle order: what a group volume
+		// change walks, because the effect registry cannot be iterated.
+		std::vector<EffectHandle> grouped_effects_;
+
+		// Throws std::logic_error with no group table, std::out_of_range for
+		// a handle it has no entry for.
+		void check_group(SoundGroupHandle group) const;
+
+		// The volume of a group an assignment stored, and 1 for no group.
+		float group_volume(SoundGroupHandle group) const;
+
+		// AudioResources' half of set_group_volume: pushes the new product to
+		// every playing or paused effect in `group`.
+		void apply_group_volume(SoundGroupHandle group) const;
 
 		// The voice behind a named effect, and the engine half of every call
 		// that takes one.

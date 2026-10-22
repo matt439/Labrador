@@ -2,6 +2,7 @@
 
 #include "engine/assets/sound_bank_loader.h"
 #include "engine/audio/audio_device.h"
+#include "engine/audio/audio_resources.h"
 #include "engine/audio/null/recording.h"
 #include "engine/audio/sound_bank.h"
 
@@ -280,4 +281,199 @@ TEST_CASE("a definition may name a wave the wave list did not")
 		device.open_wave_bank("content/", "effects", definition.waves);
 	CHECK_THROWS_AS(std::ignore = build_sound_bank(&device, wave_bank,
 		definition), std::out_of_range);
+}
+
+namespace
+{
+	// Two banks over one device, both added to one AudioResources, with a
+	// music group and an effects group. Each bank has a wave and two effects;
+	// nothing is assigned to a group until a case does it.
+	struct GroupFixture
+	{
+		AudioDevice device;
+		AudioResources resources;
+		SoundBank* first = nullptr;
+		SoundBank* second = nullptr;
+		AudioResources::SoundGroupHandle music;
+		AudioResources::SoundGroupHandle effects;
+
+		GroupFixture()
+		{
+			SoundBankDefinition definition;
+			definition.source_path = "fixture.json";
+			definition.waves = { "shot", "theme" };
+			definition.effects = {
+				SoundBankDefinition::Effect{ "theme_loop", "theme" },
+				SoundBankDefinition::Effect{ "shot_loop", "shot" }
+			};
+
+			const AudioDevice::WaveBankHandle first_waves =
+				this->device.open_wave_bank("content/", "first",
+					definition.waves);
+			const AudioDevice::WaveBankHandle second_waves =
+				this->device.open_wave_bank("content/", "second",
+					definition.waves);
+			this->resources.add_sound_bank("first", build_sound_bank(
+				&this->device, first_waves, definition));
+			this->resources.add_sound_bank("second", build_sound_bank(
+				&this->device, second_waves, definition));
+			this->first = this->resources.sound_bank("first");
+			this->second = this->resources.sound_bank("second");
+
+			this->music = this->resources.add_sound_group("music");
+			this->effects = this->resources.add_sound_group("effects");
+		}
+
+		const std::vector<RecordedSound>& played() const
+		{
+			return recorded_sounds(this->device);
+		}
+	};
+}
+
+TEST_CASE("a grouped one-shot launches at its level times its group's")
+{
+	GroupFixture fixture;
+	const SoundBank::WaveHandle shot = fixture.first->resolve_wave("shot");
+	const SoundBank::WaveHandle theme = fixture.first->resolve_wave("theme");
+	fixture.first->set_wave_group(shot, fixture.effects);
+	fixture.resources.set_group_volume(fixture.effects, 0.5f);
+
+	fixture.first->play_wave(shot, 0.5f);
+	fixture.first->play_wave(theme, 0.5f);
+
+	// Clamped before the multiply, so a level above 1 is 1 times the group.
+	fixture.first->play_wave(shot, 3.0f);
+
+	const std::vector<RecordedSound>& played = fixture.played();
+	REQUIRE(played.size() == 3);
+	CHECK(played[0].volume == doctest::Approx(0.25f));
+	CHECK(played[1].volume == doctest::Approx(0.5f));
+	CHECK(played[2].volume == doctest::Approx(0.5f));
+}
+
+TEST_CASE("a group change reaches the next one-shot and not one in flight")
+{
+	GroupFixture fixture;
+	const SoundBank::WaveHandle shot = fixture.first->resolve_wave("shot");
+	fixture.first->set_wave_group(shot, fixture.effects);
+
+	fixture.first->play_wave(shot, 0.8f);
+	fixture.resources.set_group_volume(fixture.effects, 0.5f);
+	fixture.first->play_wave(shot, 0.8f);
+
+	// A one-shot has no voice to push a level to, so the group change records
+	// nothing between the two plays.
+	const std::vector<RecordedSound>& played = fixture.played();
+	REQUIRE(played.size() == 2);
+	CHECK(played[0].call == SoundCall::play_wave);
+	CHECK(played[0].volume == doctest::Approx(0.8f));
+	CHECK(played[1].call == SoundCall::play_wave);
+	CHECK(played[1].volume == doctest::Approx(0.4f));
+}
+
+TEST_CASE("a group change pushes to its playing and paused effects in every bank")
+{
+	GroupFixture fixture;
+	const SoundBank::EffectHandle theme =
+		fixture.first->resolve_effect("theme_loop");
+	const SoundBank::EffectHandle shot =
+		fixture.first->resolve_effect("shot_loop");
+	const SoundBank::EffectHandle second_theme =
+		fixture.second->resolve_effect("theme_loop");
+	const SoundBank::EffectHandle second_shot =
+		fixture.second->resolve_effect("shot_loop");
+
+	// Assigned out of handle order, to show the walk is in handle order.
+	fixture.first->set_effect_group(shot, fixture.music);
+	fixture.first->set_effect_group(theme, fixture.music);
+	fixture.second->set_effect_group(second_theme, fixture.music);
+	fixture.second->set_effect_group(second_shot, fixture.effects);
+
+	fixture.first->play_effect(theme, true, 0.8f);
+	fixture.first->play_effect(shot, true, 0.6f);
+	fixture.second->play_effect(second_theme, true, 0.4f);
+	fixture.second->play_effect(second_shot, true, 1.0f);
+	fixture.second->pause_effect(second_theme);
+
+	const size_t before = fixture.played().size();
+	fixture.resources.set_group_volume(fixture.music, 0.5f);
+
+	// Bank then effect: the first bank's two, then the second bank's paused
+	// one, and nothing for the effects group.
+	const std::vector<RecordedSound>& played = fixture.played();
+	REQUIRE(played.size() == before + 3);
+	CHECK(played[before].call == SoundCall::set_voice_volume);
+	CHECK(played[before].voice == played[0].voice);
+	CHECK(played[before].volume == doctest::Approx(0.4f));
+	CHECK(played[before + 1].call == SoundCall::set_voice_volume);
+	CHECK(played[before + 1].voice == played[1].voice);
+	CHECK(played[before + 1].volume == doctest::Approx(0.3f));
+	CHECK(played[before + 2].call == SoundCall::set_voice_volume);
+	CHECK(played[before + 2].voice == played[2].voice);
+	CHECK(played[before + 2].volume == doctest::Approx(0.2f));
+
+	// The paused effect took the level now, and resumes at it.
+	CHECK(fixture.second->effect_state(second_theme) == SoundState::paused);
+}
+
+TEST_CASE("a stopped effect takes its group's volume at its next play")
+{
+	GroupFixture fixture;
+	const SoundBank::EffectHandle theme =
+		fixture.first->resolve_effect("theme_loop");
+	fixture.first->set_effect_group(theme, fixture.music);
+
+	fixture.resources.set_group_volume(fixture.music, 0.5f);
+	CHECK(fixture.played().empty());
+
+	fixture.first->play_effect(theme, true, 0.6f);
+	fixture.first->set_effect_volume(theme, 0.2f);
+	fixture.resources.set_group_volume(fixture.music, 0.25f);
+
+	// Both of the caller's levels went out multiplied, and the group change
+	// pushed the last one the caller asked for, not the product.
+	const std::vector<RecordedSound>& played = fixture.played();
+	REQUIRE(played.size() == 3);
+	CHECK(played[0].call == SoundCall::play_voice);
+	CHECK(played[0].volume == doctest::Approx(0.3f));
+	CHECK(played[1].call == SoundCall::set_voice_volume);
+	CHECK(played[1].volume == doctest::Approx(0.1f));
+	CHECK(played[2].call == SoundCall::set_voice_volume);
+	CHECK(played[2].volume == doctest::Approx(0.05f));
+}
+
+TEST_CASE("a sound in no group is at the level it asked for")
+{
+	GroupFixture fixture;
+	const SoundBank::WaveHandle shot = fixture.first->resolve_wave("shot");
+	const SoundBank::EffectHandle theme =
+		fixture.first->resolve_effect("theme_loop");
+
+	fixture.resources.set_group_volume(fixture.music, 0.0f);
+	fixture.resources.set_group_volume(fixture.effects, 0.0f);
+	fixture.first->play_wave(shot, 0.7f);
+	fixture.first->play_effect(theme, true, 0.6f);
+
+	const std::vector<RecordedSound>& played = fixture.played();
+	REQUIRE(played.size() == 2);
+	CHECK(played[0].volume == doctest::Approx(0.7f));
+	CHECK(played[1].volume == doctest::Approx(0.6f));
+}
+
+TEST_CASE("an audible bank refuses a group handle above everything else")
+{
+	GroupFixture fixture;
+	const SoundBank::WaveHandle shot = fixture.first->resolve_wave("shot");
+	const SoundBank::EffectHandle theme =
+		fixture.first->resolve_effect("theme_loop");
+	const AudioResources::SoundGroupHandle never_resolved;
+
+	CHECK_THROWS_AS(fixture.first->set_wave_group(shot, never_resolved),
+		std::out_of_range);
+	CHECK_THROWS_AS(fixture.first->set_effect_group(theme, never_resolved),
+		std::out_of_range);
+	CHECK_THROWS_AS(fixture.first->set_effect_group(
+		SoundBank::EffectHandle(9), fixture.music), std::out_of_range);
+	CHECK(fixture.played().empty());
 }

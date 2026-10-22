@@ -197,6 +197,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 		headers: [
 			['sound_bank.h', 'SoundBank'],
 			['audio_resources.h', 'AudioResources'],
+			['sound_group.h', 'SoundGroup'],
 			['sound_bank_object.h', 'SoundBankObject'],
 			['audio_device.h', 'AudioDevice'],
 			['xwb_file.h', 'XWB files'],
