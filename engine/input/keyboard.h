@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -44,7 +45,9 @@ namespace labrador
 	// them apart is a second lookup that no client has asked for; `shift`,
 	// `control` and `alt` each mean "either one". Numpad Enter reports as
 	// `enter` for the same reason. Both are documented limits of a simple
-	// model rather than oversights, and both are additive to fix.
+	// model rather than oversights, and both are additive to fix: a split adds
+	// keys (`left_shift` and so on) and `shift` keeps meaning either one,
+	// because its name is a token a game may have saved (key_name, below).
 	enum class Key : uint8_t
 	{
 		// Not a key. What an unmapped platform code translates to, so a
@@ -116,6 +119,22 @@ namespace labrador
 		// the number the storage below is sized against.
 		count,
 	};
+
+	// The token for a key in a file or a console: the enumerator's own spelling
+	// ("a", "digit_1", "numpad_1", "page_up", "left_bracket", "del"). Lower-case
+	// ASCII, unique per key, independent of layout and platform. Empty for
+	// Key::none, Key::count and any value outside the set. A name, not a label:
+	// what a player is shown is the game's. Read at load, not per frame (T7).
+	//
+	// The spelling is a file format. A key renamed here changes what every saved
+	// file means, and a key added keeps every existing token's meaning.
+	std::string_view key_name(Key key);
+
+	// The key a token names. Exact and case-sensitive: no trimming, no aliases,
+	// no chords. Nothing for anything else, "none" and "count" included; the
+	// caller decides whether that is a default or an error, as colour_from_name
+	// does.
+	std::optional<Key> key_from_name(std::string_view name);
 
 	// The keyboard, one frame. A value, because an edge detector needs two of
 	// them and a test needs to be able to write one by hand.

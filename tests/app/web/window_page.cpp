@@ -47,23 +47,6 @@ EM_JS(void, web_window_test_ready, (), {
 
 namespace
 {
-	const char* key_name(labrador::Key key)
-	{
-		switch (key)
-		{
-		case labrador::Key::a: return "a";
-		case labrador::Key::left: return "left";
-		case labrador::Key::right: return "right";
-		case labrador::Key::up: return "up";
-		case labrador::Key::down: return "down";
-		case labrador::Key::space: return "space";
-		case labrador::Key::tab: return "tab";
-		case labrador::Key::control: return "control";
-		case labrador::Key::none: return "none";
-		default: return "other";
-		}
-	}
-
 	const char* button_name(labrador::MouseButton button)
 	{
 		switch (button)
@@ -131,12 +114,12 @@ namespace
 
 		void on_key_down(labrador::Key key) const override
 		{
-			this->note(std::string("key_down ") + key_name(key));
+			this->note("key_down " + std::string(labrador::key_name(key)));
 		}
 
 		void on_key_up(labrador::Key key) const override
 		{
-			this->note(std::string("key_up ") + key_name(key));
+			this->note("key_up " + std::string(labrador::key_name(key)));
 		}
 
 		void on_text(char32_t codepoint) const override

@@ -20,8 +20,8 @@ own small story under PI-10. It waits on two owner decisions (the token for
 `Key::del`, and whether to keep the name `key_name` given the source break
 described below), and neither report depends on the other. Line numbers are as
 of `0c15f34`. This is a decision record written ahead of PI-09 filing the
-reports and PI-10 answering them. It is not an implementation, and nothing
-here has been built.
+reports and PI-10 answering them. It is not an implementation; the README's
+table says what has been built since.
 
 ## 13. Names for keys
 
