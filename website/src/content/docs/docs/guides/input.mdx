@@ -84,6 +84,10 @@ and `trigger_released`, each taking the threshold that counts as pulled.
 ## Binding tables
 
 Labrador has no action-mapping layer: what each key does is your game's, written in your game.
+Nor is there input capture. Reading a key never consumes it, so every reader in a frame sees the
+same presses and the same text, and a developer console that wants the keyboard to itself gates
+its own readers. Routing input through one place, as the table below does, is what makes that
+gate one line.
 For more than a handful of bindings, a table keeps it in one place. LineSweeper has nine for the
 keyboard, nine for the pad and seven for the buttons it draws for a touchscreen:
 

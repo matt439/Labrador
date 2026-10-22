@@ -121,5 +121,18 @@ and has not left, so the pads go on reading and no state is told.
   destroyed.
 - **One answer per question.** If two screens need to report the same choice, give it a type
   (an `enum class`) and let each push name it.
+- **Something that sees every frame is a root state that owns a stack.** Only the top state is
+  updated, so a developer console or a frame-time overlay that must run whatever is on top is
+  not pushed. It is the one state on the application's stack, and it owns a `StateContext` that
+  holds the game's: its `update()` runs its own code and then the game's, its `draw()` draws the
+  game and then draws over it, and it forwards activation. The engine's own tests hold this
+  shape, below.
+
+<SourceFile path="tests/core/state_context_tests.cpp" from="class RootState : public State" to="};" />
+
+The game's states push and pop on the root's stack through their own `context()`. That is what
+adopting the pattern late costs: every `push` and `transition_to` the game made on the
+application moves to the owned context, and so does anything that asked the application for its
+`depth()`, which stays 1 while the root runs.
 
 Next: [The tick](/docs/concepts/tick/).
