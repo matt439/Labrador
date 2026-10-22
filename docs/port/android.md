@@ -282,13 +282,25 @@ Two more, both smaller than they look:
   no file in `engine/ui/` includes anything from `engine/input/` (checked). The
   module table permits the dependency and the code declines it, so the widgets
   survive whatever replaces the pointer.
-- **The known-absent item stops being speculative.** `CLAUDE.md` lists exactly
+- **The known-absent item stops being speculative.** `AGENTS.md` lists exactly
   one deliberate absence: an action-mapping layer, refused because "neither
   client has a rebinding screen, so a binding table would be the speculative
   framework T1 rules out." Touch and gamepad are two genuinely different device
   shapes for the same actions, on the same build. That is the real client T1
   asks for. **The port promotes the one known-absent item into a required one**,
   and that should be stated in the commit that lands it rather than discovered.
+
+> **Amended 2026-10-22, and the bullet above is left as written.** The reason
+> it quotes is no longer the one given. When ColourWars, which now has a
+> rebinding screen, asked the engine to evaluate its bindings (report 21 in
+> [colourwars-reports/input.md](../review/colourwars-reports/input.md)), the
+> absence was re-taken on PHILOSOPHY's boundary table rather than on the lack of
+> a client: bindings and any rebinding are the game's, and the clients combine
+> their input sources by rules that disagree, so an engine layer would pick one
+> game's rule (T1). This port re-argues the question against that reason when
+> it is taken up, rather than inheriting either version; two device shapes for
+> the same actions is an argument to make there, not a promotion already
+> decided.
 
 ### 3.4 The shell — *week*
 
@@ -652,7 +664,7 @@ it:
 | Document | What changes |
 |---|---|
 | ~~`CLAUDE.md:1`~~ | "Windows-only" — **done 2026-10-11**, by the web port's M3: Windows and, through Emscripten and WebGL2, the browser |
-| `CLAUDE.md`, Known-absent | The action-mapping layer acquires its client (§3.3) |
+| `AGENTS.md`, Known-absent | The action-mapping layer acquires its client (§3.3) — **re-taken 2026-10-22** on the boundary table when report 21 was declined, so the port re-argues it against that reason rather than presuming the promotion |
 | ~~ARCHITECTURE, *The tree*~~ | The window moves to `app/win32/`; the folder stops being speculative — **done** by the web port's M2, as a neutral `app/window.h` over `app/win32/` and `app/web/` rather than the move, which the include check refused ([web.md](web.md) D3) |
 | ~~`ARCHITECTURE.md:264`~~ | `audio`'s row gains the folder the sentence already implies (§3.2) — **done 2026-08-27**, and it gained two: `xaudio2/` and `null/`. The row now reads the way `render`'s does, naming the API and the folder it is confined to |
 | ~~`PHILOSOPHY.md:303-305`~~ | "a second platform is an addition, not a rewrite" — amend with where it held and where it did not — **done 2026-08-27**, with the row above. It held for three of the four kinds of platform code that paragraph lists and did not hold for audio, which is what §2 above said and what the amendment now says in that document |

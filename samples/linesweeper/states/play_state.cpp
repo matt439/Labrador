@@ -40,9 +40,9 @@ namespace linesweeper
 		// The bindings, and the whole of the input layer.
 		//
 		// A table of pairs rather than a chain of ifs, because it is data and
-		// reads as data - but it is a table in this file and not a rebinding
-		// system, which is the speculative framework T1 rules out until a
-		// second client wants one. Key positions, not characters: Key::z is
+		// reads as data - and it is in this file because bindings and any
+		// rebinding are the game's (PHILOSOPHY, The boundary; T1), not the
+		// engine's. Key positions, not characters: Key::z is
 		// the key a US layout calls Z whatever a French one prints on it,
 		// which is what a movement binding wants (keyboard.h).
 		struct Binding

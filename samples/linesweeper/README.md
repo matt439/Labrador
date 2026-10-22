@@ -723,9 +723,13 @@ landscape one with touch emulated. **No real phone has played it**, and the
 - **Whether the input map belongs in the sample or the engine — now priced,
   and still open.** `states/` has two tables, `{Key, button}` and
   `{GamepadButton, button}`, nine entries each, and that is the whole input
-  layer. The engine deliberately has no action-mapping layer (AGENTS.md,
-  Known-absent), and one sample with no rebinding screen is not the second
-  client that would justify one.
+  layer. The engine deliberately has no action-mapping layer: PHILOSOPHY's
+  boundary table gives bindings and any rebinding to the game, and
+  ARCHITECTURE's `input/` entry keeps the table on the game's side (T1). This
+  sample reads only `held()` and rebuilds its edges from the combined level,
+  which is one of the two rules for combining sources that a shared layer
+  would have to choose between; its pause menu ORs each source's `pressed()`,
+  which is the other.
 
   `docs/survey/2026-08-26.md` §5 asked for the second device to be priced
   before the question was argued, and for the threshold to be named **first**,

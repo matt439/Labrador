@@ -45,7 +45,7 @@ or files its answer, and say there which commit or issue answered it.
 | [x] | [10](loop.md) | Document only | S | No capture hook. Document the out-of-band frame (`begin_frame`, draw, `submit`, `read_back_buffer`, no `end_frame`), and state that a frame submitted and never presented is legal. Done: State that a frame submitted and never presented is legal |
 | [x] | [14](loop.md) | Accept, narrowed | M | `Application::frame_timings()` returns the last completed frame's CPU phase times. GPU time, history and an overlay are declined; `REV#10` stays deferred. Done: Publish the last frame's CPU phase times from Application (story PI-19) |
 | [ ] | [13](input.md) | Accept | S | Add `key_name(Key)` and `key_from_name(string_view)`, where each token is the enumerator's spelling. A **source break** through ADL for a same-named unqualified call, which the engine's own `tests/app/web/window_page.cpp` has too. The owner chooses `Key::del`'s token and the name. |
-| [ ] | [21](input.md) | Decline | XS | Evaluating bindings is the game's action map, and the clients combine input sources by different rules. Replace the now-false "no client has a rebinding screen" reason wherever it is written. |
+| [x] | [21](input.md) | Decline | XS | Evaluating bindings is the game's action map, and the clients combine input sources by different rules. Replace the now-false "no client has a rebinding screen" reason wherever it is written. Done: Decline report 21 and re-take the reason the engine has no action map |
 | [ ] | [18](draw.md) | Document only | XS | No `Label::set_visible`. Point `label.h` at `UiText::set_hidden`, and warn that a zero-alpha tint still adds its RGB under the premultiplied blend. |
 | [ ] | [20](draw.md) | Accept, narrowed | M | Add read-only `DrawList::camera()` and `viewport()`. |
 | [ ] | [22](draw.md) | Accept, narrowed | M | Add paired `RenderResources::SheetFrame` and `SheetStrip`, which cannot be mismatched. Raw two-handle overloads, the `UiTexture` forms and `std::less<>` are declined. |
@@ -58,4 +58,6 @@ report 6 as a settled position against T1, but no design document settles it.
 Second, its trade-offs forbid resting a decline on "only one client asks", so
 report 15's decline rests on the template already being the recipe, not on
 the caller count. window.md and content.md also note that STORIES.md cites the public-face
-passage at PHILOSOPHY.md:752-757, which has since moved to :792-798.
+passage at PHILOSOPHY.md:752-757, which has since moved to :792-798; *Decline
+report 21 and re-take the reason the engine has no action map* corrected
+STORIES.md.

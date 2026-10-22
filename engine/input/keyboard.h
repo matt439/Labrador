@@ -176,6 +176,12 @@ namespace labrador
 	// focus change instead:
 	//
 	//     just_unfocused(now, before) && before.is_down(Key::space)
+	//
+	// AN EDGE IS ONE KEY'S. pressed(now, before, a) || pressed(now, before, b)
+	// combines two independent edges and fires once for each key that goes
+	// down; a game that wants one edge of the combined level computes held()
+	// for both frames first. Which of the two an action wants is the game's
+	// choice, and gamepad.h's note on combining sources says why.
 	bool pressed(const KeyboardState& now, const KeyboardState& before,
 		Key key);
 	bool released(const KeyboardState& now, const KeyboardState& before,

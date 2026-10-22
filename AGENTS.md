@@ -637,8 +637,12 @@ same commit.
 
 ## Known-absent, on purpose
 
-An action-mapping layer over the input devices — neither client has a rebinding
-screen, so a binding table would be the speculative framework T1 rules out.
+An action-mapping layer over the input devices — PHILOSOPHY's boundary table
+gives bindings and any rebinding to the game, and the clients combine their
+input sources by rules that disagree, so a binding table in the engine would
+pick one game's policy (T1). A client now rebinds a key and still owns its
+table; ColourWars' report 21 asked for an evaluator and was declined on these
+grounds ([input.md](docs/review/colourwars-reports/input.md)).
 That is the whole list now; every render backend that was planned has landed.
 
 This section used to end "a fifth is not planned and is not refused either —
