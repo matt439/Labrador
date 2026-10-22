@@ -457,7 +457,7 @@ a command allocator that may not be reused until a fence says so, a vertex
 page that is still being read next frame, an upload the load path has to wait
 for: all four are below the seam in `render/d3d12/`, and none of them reached
 a line of `render/renderer.h`. It reaches *less* hardware than the backend
-beside it — feature level 11_0 and Windows 10, against 10.0 — so it is a seam
+beside it — feature level 11_0, against 10.0 — so it is a seam
 test and a second rasteriser CI can run, and never a way down onto the low
 tier.
 

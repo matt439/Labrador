@@ -683,3 +683,193 @@ TEST_CASE("an already-windowed leave_fullscreen is a resize and nothing else")
 	CHECK(client.bottom - client.top == 240);
 	CHECK(notify.log == std::vector<std::string>{ "size 320x240" });
 }
+
+// PER-MONITOR AWARENESS. Each case makes its thread per-monitor aware (v2,
+// or v1 where it says so) before it creates a window and puts the thread back
+// after, so the rest of
+// the suite runs as the samples do. A sent message does not change a window's
+// real DPI, which is why these assert on outer geometry rather than on client
+// pixels at a new scale; that half is an attended run on a scaled display.
+namespace
+{
+	class PerMonitorAware
+	{
+	public:
+		explicit PerMonitorAware(DPI_AWARENESS_CONTEXT context =
+			DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) :
+			previous_(SetThreadDpiAwarenessContext(context))
+		{
+		}
+
+		~PerMonitorAware()
+		{
+			SetThreadDpiAwarenessContext(this->previous_);
+		}
+
+		PerMonitorAware(const PerMonitorAware&) = delete;
+		PerMonitorAware& operator=(const PerMonitorAware&) = delete;
+
+	private:
+		DPI_AWARENESS_CONTEXT previous_;
+	};
+
+	SIZE window_extent(HWND handle)
+	{
+		RECT rect = {};
+		GetWindowRect(handle, &rect);
+		return SIZE{ rect.right - rect.left, rect.bottom - rect.top };
+	}
+
+	// What the system's own arithmetic says the window would measure at
+	// `dpi`, keeping the client it has now.
+	SIZE expected_extent(HWND handle, UINT dpi)
+	{
+		RECT rect = client_of(handle);
+		REQUIRE(AdjustWindowRectExForDpi(&rect,
+			static_cast<DWORD>(GetWindowLongPtrW(handle, GWL_STYLE)), FALSE,
+			static_cast<DWORD>(GetWindowLongPtrW(handle, GWL_EXSTYLE)),
+			dpi) != 0);
+		return SIZE{ rect.right - rect.left, rect.bottom - rect.top };
+	}
+
+	SIZE scaled_size(HWND handle, UINT dpi, LRESULT& answered)
+	{
+		SIZE size = { 0, 0 };
+		answered = SendMessageW(handle, WM_GETDPISCALEDSIZE, dpi,
+			reinterpret_cast<LPARAM>(&size));
+		return size;
+	}
+
+	WindowOptions aware_options()
+	{
+		WindowOptions options = unclamped_hidden_options();
+		options.client_size = mattmath::Vector2I(320, 240);
+		return options;
+	}
+}
+
+TEST_CASE("a per-monitor-aware window gets the client size it asked for")
+{
+	PerMonitorAware aware;
+	RecordingNotify notify;
+	Window window(aware_options(), &notify);
+	const HWND handle = hwnd(window);
+	REQUIRE(AreDpiAwarenessContextsEqual(GetWindowDpiAwarenessContext(handle),
+		DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2));
+
+	const RECT client = client_of(handle);
+	CHECK(client.right - client.left == 320);
+	CHECK(client.bottom - client.top == 240);
+
+	window.resize_client(mattmath::Vector2I(400, 300));
+	const RECT resized = client_of(handle);
+	CHECK(resized.right - resized.left == 400);
+	CHECK(resized.bottom - resized.top == 300);
+}
+
+TEST_CASE("WM_GETDPISCALEDSIZE answers the outer size that keeps the client")
+{
+	PerMonitorAware aware;
+	RecordingNotify notify;
+	Window window(aware_options(), &notify);
+	const HWND handle = hwnd(window);
+
+	for (const UINT dpi : { 120u, 144u, 192u })
+	{
+		CAPTURE(dpi);
+		LRESULT answered = FALSE;
+		const SIZE size = scaled_size(handle, dpi, answered);
+		const SIZE expected = expected_extent(handle, dpi);
+		CHECK(answered == TRUE);
+		CHECK(size.cx == expected.cx);
+		CHECK(size.cy == expected.cy);
+	}
+
+	// The frame grows with the DPI, so the answers are not the current size.
+	LRESULT answered = FALSE;
+	CHECK(scaled_size(handle, 192, answered).cy > window_extent(handle).cy);
+}
+
+TEST_CASE("WM_DPICHANGED applies the suggested rect")
+{
+	PerMonitorAware aware;
+	RecordingNotify notify;
+	Window window(aware_options(), &notify);
+	const HWND handle = hwnd(window);
+	notify.log.clear();
+
+	const RECT suggested = { 40, 50, 40 + 500, 50 + 400 };
+	SendMessageW(handle, WM_DPICHANGED, MAKEWPARAM(144, 144),
+		reinterpret_cast<LPARAM>(&suggested));
+
+	RECT now = {};
+	GetWindowRect(handle, &now);
+	CHECK(now.left == suggested.left);
+	CHECK(now.top == suggested.top);
+	CHECK(now.right == suggested.right);
+	CHECK(now.bottom == suggested.bottom);
+
+	const RECT client = client_of(handle);
+	CHECK(notify.log == std::vector<std::string>{
+		size_entry(client.right - client.left, client.bottom - client.top) });
+	CHECK_FALSE(IsWindowVisible(handle));
+}
+
+TEST_CASE("a full-screen window answers its current size to a DPI change")
+{
+	// WS_POPUP has no frame, so keeping the client is keeping the window: a
+	// monitor-sized window stays monitor-sized rather than being scaled.
+	PerMonitorAware aware;
+	RecordingNotify notify;
+	Window window(aware_options(), &notify);
+	const HWND handle = hwnd(window);
+	window.enter_fullscreen();
+
+	const SIZE current = window_extent(handle);
+	for (const UINT dpi : { 120u, 144u, 192u })
+	{
+		CAPTURE(dpi);
+		LRESULT answered = FALSE;
+		const SIZE size = scaled_size(handle, dpi, answered);
+		CHECK(answered == TRUE);
+		CHECK(size.cx == current.cx);
+		CHECK(size.cy == current.cy);
+	}
+}
+
+TEST_CASE("a per-monitor v1 window keeps its client pixels through a DPI change")
+{
+	// v1 is never asked first and its frame is not scaled, so the rect it is
+	// sent keeps its logical size; applying it would rescale the client.
+	PerMonitorAware aware(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
+	RecordingNotify notify;
+	Window window(aware_options(), &notify);
+	const HWND handle = hwnd(window);
+	REQUIRE(AreDpiAwarenessContextsEqual(GetWindowDpiAwarenessContext(handle),
+		DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE));
+
+	const RECT client = client_of(handle);
+	CHECK(client.right - client.left == 320);
+	CHECK(client.bottom - client.top == 240);
+
+	RECT before = {};
+	GetWindowRect(handle, &before);
+	notify.log.clear();
+
+	const RECT suggested = { 40, 50, 40 + 500, 50 + 400 };
+	SendMessageW(handle, WM_DPICHANGED, MAKEWPARAM(144, 144),
+		reinterpret_cast<LPARAM>(&suggested));
+
+	RECT now = {};
+	GetWindowRect(handle, &now);
+	CHECK(now.left == before.left);
+	CHECK(now.top == before.top);
+	CHECK(now.right == before.right);
+	CHECK(now.bottom == before.bottom);
+	CHECK(notify.log.empty());
+
+	window.resize_client(mattmath::Vector2I(400, 300));
+	const RECT resized = client_of(handle);
+	CHECK(resized.right - resized.left == 400);
+	CHECK(resized.bottom - resized.top == 300);
+}

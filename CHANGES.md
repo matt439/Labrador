@@ -70,6 +70,48 @@ its heading here.
 
 ## Unreleased
 
+#### Windows 10 version 1607 is the floor
+
+*Keep the client size in a per-monitor-aware process* (2026-10-22). A new
+platform requirement, on Windows only.
+
+- Old: no floor was stated. The window's static import of `GetPointerType`
+  made it Windows 8 in fact.
+- New: Windows 10 version 1607. The Win32 window imports
+  `AdjustWindowRectExForDpi`, `GetDpiForWindow` and `GetDpiForSystem`
+  statically, so a game built on the engine does not start on an earlier
+  Windows: the loader refuses it, naming a missing `user32` entry point.
+  Nothing is defined to enforce it at build time, and a game's own code may
+  still name anything its SDK declares.
+- A game that ships to Windows 8 or 8.1, or to Windows 10 before 1607, has to
+  stay on an earlier engine. A game's store page or readme now has a minimum
+  to state. A browser build is unaffected.
+
+#### Keep the client size in a per-monitor-aware process
+
+*Keep the client size in a per-monitor-aware process* (2026-10-22). Silent
+behaviour change, on Windows only, and only for a process that declares
+per-monitor DPI awareness, by manifest or by API.
+
+- Old: the frame around the client area was measured at the system DPI. On a
+  monitor whose DPI was not the system's the client came out off the size
+  asked for, and a DPI change - the window moved to another monitor, or the
+  scale setting changed - left the outer rect alone, so under v2, where the
+  system scales the frame, the client shrank or grew by the difference.
+  `WM_SIZE` adopted either quietly.
+- New: the frame is measured at the window's own DPI, at creation, in
+  `set_resolution` and coming back from full screen, so the client is the
+  size asked for on any monitor. Under per-monitor awareness v2 a DPI change
+  keeps the client size and changes only the frame; a full-screen window
+  keeps its size.
+- A per-monitor v1 process sees no change: its frame, which the system does
+  not scale, is still measured at the system DPI, and a DPI change still
+  leaves the window alone, which keeps its client pixels. The rect the system
+  suggests to v1 keeps logical size instead, so it is not applied.
+- An unaware or system-aware process, which is every sample and the template
+  as they stand, sees no change either. No name is added: a game that wants the DPI
+  asks the window handle itself.
+
 #### Let F10 and Alt alone be keys, not the system menu
 
 *Let F10 and Alt alone be keys, not the system menu* (2026-10-22). Silent

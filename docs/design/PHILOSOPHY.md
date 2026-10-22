@@ -376,9 +376,9 @@ driver, owns synchronisation — frames in flight, a command allocator that
 cannot be reused until a fence says so, a vertex page still being read next
 frame, an upload that has to be waited for. `render/d3d12/` owns all four and
 `render/renderer.h` did not change. Note what that backend is *not*: it reaches
-less hardware than the one beside it (feature level 11_0 and Windows 10,
-against 10.0), so it is a test of the seam and a second rasteriser CI can run,
-never a way down onto smaller hardware.
+less hardware than the one beside it (feature level 11_0, against 10.0), so
+it is a test of the seam and a second rasteriser CI can run, never a way down
+onto smaller hardware.
 
 That paragraph used to open "and it is the last one this seam had left", and
 **the fifth backend is the amendment.** There was one more, and it was not

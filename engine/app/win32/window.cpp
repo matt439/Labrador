@@ -189,20 +189,23 @@ namespace labrador
 		}
 
 		// The outer window size that leaves `client_size` pixels to draw into
-		// under `style`/`ex_style`. Every Win32 call that sizes a window takes
-		// the outer rect and every resolution this engine is asked for is
-		// client area, so this conversion sits between the two - without it a
-		// windowed 1280x720 would deliver about 1264x681, silently, at every
-		// preset.
+		// under `style`/`ex_style` at `dpi`. Every Win32 call that sizes a
+		// window takes the outer rect and every resolution this engine is
+		// asked for is client area, so this conversion sits between the two -
+		// without it a windowed 1280x720 would deliver about 1264x681,
+		// silently, at every preset.
+		//
+		// The DPI is frame_dpi's, below.
 		mattmath::Vector2I outer_size_for_client(
-			const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style)
+			const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style,
+			UINT dpi)
 		{
 			RECT rect = { 0, 0, static_cast<LONG>(client_size.x),
 				static_cast<LONG>(client_size.y) };
 
 			// FALSE: no menu bar. This engine's window never has one, and a menu
 			// would change the answer by its height.
-			if (AdjustWindowRectEx(&rect, style, FALSE, ex_style) == 0)
+			if (AdjustWindowRectExForDpi(&rect, style, FALSE, ex_style, dpi) == 0)
 			{
 				// Nothing to fall back to but the request. A style this call cannot
 				// account for costs the game its frame's worth of pixels, which is
@@ -212,6 +215,29 @@ namespace labrador
 
 			return mattmath::Vector2I(static_cast<int>(rect.right - rect.left),
 				static_cast<int>(rect.bottom - rect.top));
+		}
+
+		// Whether the window is per-monitor aware v2, the one awareness under
+		// which the system draws its frame at the monitor's scale and asks
+		// before resizing it for a DPI change.
+		bool is_per_monitor_v2(HWND window)
+		{
+			return AreDpiAwarenessContextsEqual(
+				GetWindowDpiAwarenessContext(window),
+				DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != FALSE;
+		}
+
+		// THE DPI THE FRAME IS DRAWN AT. Under per-monitor awareness v2 that is
+		// the window's own, the scale of the monitor it is on, so a frame
+		// measured at any other scale leaves the client off the size asked
+		// for. Under every other awareness, per-monitor v1 included, the
+		// system does not scale the frame and it is drawn at the system DPI,
+		// which is also what an unaware or system-aware window reports as its
+		// own.
+		UINT frame_dpi(HWND window)
+		{
+			return is_per_monitor_v2(window)
+				? GetDpiForWindow(window) : GetDpiForSystem();
 		}
 
 		// The rect of the monitor the window is on, or nearest to, in screen
@@ -339,11 +365,13 @@ namespace labrador
 		// rect, so handing it the requested resolution straight spends the
 		// caption and the borders out of the game's own pixels: a windowed
 		// 1280x720 came out as roughly 1264x681 to draw into, at every preset,
-		// and nothing said so. AdjustWindowRectEx is the only way to ask what
-		// frame this style costs, and it answers zero for the WS_POPUP branch,
-		// which is why one call covers both.
-		const mattmath::Vector2I outer =
-			outer_size_for_client(options.client_size, style, ex_style);
+		// and nothing said so. AdjustWindowRectExForDpi is the only way to ask
+		// what frame this style costs, and it answers zero for the WS_POPUP branch,
+		// which is why one call covers both. There is no window to ask for a
+		// DPI yet, so this is the system's, and the window is corrected below
+		// if the monitor it lands on has another.
+		const mattmath::Vector2I outer = outer_size_for_client(
+			options.client_size, style, ex_style, GetDpiForSystem());
 
 		// This Impl rides in as the create parameter and is stashed in the
 		// window's user data by WM_CREATE, so window_proc can find it without
@@ -388,6 +416,18 @@ namespace labrador
 		// SW_SHOWDEFAULT is what wWinMain's own show command would have said:
 		// it asks for whatever the process that started this one put in its
 		// STARTUPINFO, which is where that argument comes from.
+		//
+		// Before it, a per-monitor-v2 window created on a monitor whose DPI
+		// is not the system's has its frame measured again, at its own DPI,
+		// so the size report the show fires is already the size asked for.
+		if (frame_dpi(this->handle) != GetDpiForSystem())
+		{
+			const mattmath::Vector2I corrected = this->outer_size(
+				options.client_size);
+			SetWindowPos(this->handle, nullptr, 0, 0, corrected.x, corrected.y,
+				SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+		}
+
 		ShowWindow(this->handle,
 			!options.visible ? SW_HIDE :
 			options.fullscreen ? SW_SHOWMAXIMIZED : SW_SHOWDEFAULT);
@@ -543,7 +583,8 @@ namespace labrador
 	{
 		return outer_size_for_client(client_size,
 			static_cast<DWORD>(GetWindowLongPtrW(this->handle, GWL_STYLE)),
-			static_cast<DWORD>(GetWindowLongPtrW(this->handle, GWL_EXSTYLE)));
+			static_cast<DWORD>(GetWindowLongPtrW(this->handle, GWL_EXSTYLE)),
+			frame_dpi(this->handle));
 	}
 
 	void Window::Impl::update_suspension()
@@ -685,6 +726,54 @@ namespace labrador
 					client.right - client.left, client.bottom - client.top);
 			}
 			break;
+
+		// A DPI CHANGE KEEPS THE CLIENT PIXELS. The resolution is the game's,
+		// in physical pixels (Application::set_resolution), so a window moved
+		// to a monitor of another density, or on one whose scale is changed,
+		// keeps its client size and only its frame changes. Under per-monitor
+		// awareness v2 the system asks first, here, for the outer size at the
+		// new DPI; answering the size that keeps the client makes the rect
+		// WM_DPICHANGED then suggests agree, which is also what keeps a drag
+		// across a monitor edge from oscillating. A full-screen WS_POPUP has
+		// no frame, so its answer is its current size and it stays as it is.
+		// A minimised window has no client to keep, and is left to the system.
+		// Neither message is sent to a window that is not per-monitor aware.
+		case WM_GETDPISCALEDSIZE:
+			if (self && l_param && !IsIconic(window))
+			{
+				RECT client;
+				GetClientRect(window, &client);
+				const mattmath::Vector2I outer = outer_size_for_client(
+					mattmath::Vector2I(client.right - client.left,
+						client.bottom - client.top),
+					static_cast<DWORD>(GetWindowLongPtrW(window, GWL_STYLE)),
+					static_cast<DWORD>(GetWindowLongPtrW(window, GWL_EXSTYLE)),
+					LOWORD(w_param));
+				SIZE* const size = reinterpret_cast<SIZE*>(l_param);
+				size->cx = outer.x;
+				size->cy = outer.y;
+				return TRUE;
+			}
+			return FALSE;
+
+		// Under v2 the rect is applied as the system suggests it. The WM_SIZE
+		// that produces reports the client as every other resize does; during
+		// a drag in_sizemove holds it until WM_EXITSIZEMOVE. Under per-monitor
+		// v1 the system neither asks first nor scales the frame, so its
+		// suggested rect keeps the window's logical size and would rescale
+		// the client; the message is left to DefWindowProc, which does not
+		// resize a top-level window, and the client keeps its pixels.
+		case WM_DPICHANGED:
+			if (!is_per_monitor_v2(window)) { break; }
+			if (l_param)
+			{
+				const RECT* const suggested = reinterpret_cast<const RECT*>(l_param);
+				SetWindowPos(window, nullptr, suggested->left, suggested->top,
+					suggested->right - suggested->left,
+					suggested->bottom - suggested->top,
+					SWP_NOZORDER | SWP_NOACTIVATE);
+			}
+			return 0;
 
 		case WM_GETMINMAXINFO:
 			if (l_param && self)
