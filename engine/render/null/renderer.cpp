@@ -365,8 +365,8 @@ namespace labrador
 		// answering with a black rectangle. Rasterising would mean a FIFTH
 		// implementation of the pixel contract plus a BC decoder plus a fill
 		// rule that agreed with four hardware ones exactly - and those four
-		// already agree with each other byte for byte across sixty golden
-		// images, which is the standard a software one would have to meet. A
+		// already agree with each other byte for byte across the golden set
+		// of images, which is the standard a software one would have to meet. A
 		// large thing to build and a larger one to be quietly wrong about.
 		// recording.h says what to read instead.
 		throw std::logic_error("The null backend records what it was asked to "

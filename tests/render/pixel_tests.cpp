@@ -62,7 +62,7 @@
 // the time, which is how a list of gaps becomes a list of the wrong gaps.
 //
 // Most frames are also checked against the PNG set in tests/render/golden/,
-// holding every rasterising backend to the same fixed reference. Sixty
+// holding every rasterising backend to the same fixed reference. Sixty-three
 // frames have those references. Three resize cases opt out because their size
 // changes or differs by backend; the scene-composition case instead asserts
 // every pixel against its analytically known red/blue image. No reference is
@@ -2240,6 +2240,60 @@ TEST_CASE("CONTRACT: a frame may be read back and then presented")
 
 	CHECK(harness.at(20, 20) == WHITE);
 	CHECK(harness.at(4, 4) == BLACK);
+}
+
+TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing to the next")
+{
+	// THIS NAMES A TERM RATHER THAN ADDING COVERAGE. Every case in this file
+	// begins after a frame that was submitted and never presented, because
+	// Harness::end stops at the read; what that relies on is the sentence at
+	// renderer.h's begin_frame, and this is the case that says it.
+	//
+	// BUILT TO FAIL, which a full-frame colour over another full-frame colour
+	// would not be: the second hides the first whatever leaked. Every frame
+	// here draws the same TRANSLUCENT sprite in the same place, so a recording
+	// that survived into the next frame - a submit flag left set, a deferred
+	// list not drained, a command pool not reset - would composite a second
+	// time and the bytes would move: half grey over itself is three-quarter
+	// grey.
+	//
+	// AND IN THE ORDER A CAPTURE FROM INSIDE A RUNNING Application PRODUCES
+	// (renderer.h, read_back_buffer): the out-of-band frame, read and never
+	// presented; the Application's own frame, presented; then the next one.
+	Harness harness;
+
+	const RectangleF place(8.0f, 8.0f, 16.0f, 16.0f);
+	const Colour half(0.5f, 0.5f, 0.5f, 0.5f);
+
+	DrawList captured = harness.begin();
+	captured.draw_sprite(harness.quad, Harness::white_texel(), place, half,
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// Half of white over black: 127 or 128 by the device's rounding, and
+	// nowhere near the 191 a doubled composite would make.
+	const Pixel once = harness.at(16, 16);
+	CHECK(once.r >= 126);
+	CHECK(once.r <= 129);
+	CHECK(once.g == once.r);
+	CHECK(once.b == once.r);
+	CHECK(harness.at(40, 40) == BLACK);
+	const std::vector<Pixel> expected = harness.snapshot();
+
+	// The Application's frame, which a present ends.
+	DrawList shown = harness.begin();
+	shown.draw_sprite(harness.quad, Harness::white_texel(), place, half,
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+	CHECK(harness.snapshot() == expected);
+	harness.renderer().end_frame();
+
+	// And the frame after it.
+	DrawList next = harness.begin();
+	next.draw_sprite(harness.quad, Harness::white_texel(), place, half,
+		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	harness.end();
+	CHECK(harness.snapshot() == expected);
 }
 
 TEST_CASE("CONTRACT: a BC2 texture draws the texels its blocks encode")

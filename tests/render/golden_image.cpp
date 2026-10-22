@@ -392,7 +392,7 @@ void golden::check_frame(int width, int height,
 		// AN IMAGE WHOSE PIXELS DID NOT MOVE IS LEFT AS IT IS, byte for byte,
 		// so that what a regeneration changes in the tree is exactly the set
 		// of frames that changed. Re-encoding every file would show a reviewer
-		// sixty modified images whenever the encoder differed from the
+		// every image modified whenever the encoder differed from the
 		// one that wrote them, with no way to tell which ones to look at.
 		int existing_width = 0;
 		int existing_height = 0;

@@ -28,7 +28,10 @@ namespace labrador
 		//
 		// The state declares how many views this frame has and fills them; it
 		// does not submit. begin_frame / submit / end_frame belong to whoever
-		// owns the frame, which is the shell.
+		// owns the frame, which is the shell, and a state that calls any of
+		// them from draw() is outside this contract. A state that needs a
+		// frame of its own - a capture - takes it in update()
+		// (Renderer::read_back_buffer says how).
 		virtual void draw(Renderer& renderer) const = 0;
 
 		virtual void init() = 0;

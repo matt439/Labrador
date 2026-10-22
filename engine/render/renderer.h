@@ -354,6 +354,11 @@ namespace labrador
 		// by catching an exception out of its own draw walk and carrying on - and
 		// so does a device event, which surfaces as a throw from a worker
 		// mid-frame. What each backend resets to keep it is in SEAM.md#6.
+		//
+		// A FRAME SUBMITTED AND NEVER PRESENTED IS LEGAL, and contributes
+		// nothing to the next one either: the next begin_frame starts over. It
+		// is the frame read_back_buffer below is for - drawn to be read rather
+		// than shown - and SEAM.md#6 is again where each backend's reset is.
 		void begin_frame();
 		void end_frame();
 
@@ -426,6 +431,25 @@ namespace labrador
 		//
 		// NOT A FRAME-PATH CALL and not meant to become one (T8). It stalls on
 		// the GPU by construction.
+		//
+		// CAPTURING A FRAME FROM INSIDE A RUNNING Application IS DRAWING IT
+		// AGAIN. Application owns its frame and offers no point between its
+		// submit and its end_frame, so a game that wants the picture calls
+		// begin_frame, then the stack's draw - Application is a StateContext,
+		// so app.draw(*app.renderer()) - then submit and read_back_buffer, and
+		// does not call end_frame. That frame is submitted and never
+		// presented, which begin_frame above makes legal, and because every
+		// draw() is a pure read the second walk draws exactly the frame the
+		// stack would draw.
+		//
+		// FROM AN update(), AFTER THE UPDATE WHOSE WORLD IT SHOULD SHOW HAS
+		// FINISHED, and never from a draw(). A capture issued halfway through
+		// the capturing state's own update draws a half-updated world, and one
+		// issued during one step of a catch-up tick shows that step's world
+		// rather than the one the tick ends on. What it promises is the frame
+		// the stack would draw, not what was displayed. A draw that reads a
+		// clock or a counter is outside the pure-read premise, and the capture
+		// is then only as exact as that draw.
 		void read_back_buffer(std::vector<unsigned char>& pixels);
 
 		// Debug markers, AND THEY ARE ADVISORY: a backend may forward them to a

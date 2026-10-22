@@ -496,6 +496,37 @@ TEST_CASE("a frame that is never submitted contributes nothing to the next")
 	CHECK(drawn.empty());
 }
 
+TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing to the next")
+{
+	// THIS NAMES A TERM RATHER THAN ADDING COVERAGE: the sentence at
+	// renderer.h's begin_frame, which every capture leans on - begin, draw,
+	// submit, read, and no end_frame. Here a recording that survived into
+	// the next frame is directly visible, with no rasteriser to hide it under
+	// a colour that happens to come out the same.
+	Harness harness;
+
+	DrawList captured = harness.begin();
+	captured.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	captured.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(8.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	REQUIRE(harness.end().size() == 2);
+
+	// And no end_frame, which is the case.
+
+	DrawList next = harness.begin();
+	next.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(32.0f, 32.0f, 4.0f, 4.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 1);
+	CHECK(drawn[0].corners[0].position.x == doctest::Approx(32.0f));
+	CHECK(drawn[0].corners[0].position.y == doctest::Approx(32.0f));
+}
+
 TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 {
 	// renderer.h makes it a term of the seam that window_size_changed may
