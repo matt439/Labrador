@@ -79,7 +79,11 @@ namespace labrador
 		// It runs on the worker that owns that view, so it is held to the same
 		// contract draw() is: a pure read of the game's own state. `view_index`
 		// is an index into this scene's view list, and the game filled that
-		// list, so it is the game's own ordering coming back.
+		// list, so it is the game's own ordering coming back. The list arrives
+		// as the world objects left it - the view's own camera and viewport,
+		// unless a draw() set others - and an overlay that sets the identity
+		// camera for a HUD reads the identity back from DrawList::camera()
+		// after that.
 		using ViewOverlay = std::function<void(int view_index, DrawList& list)>;
 
 		// Borrowed, both of them: the shell owns the pool and outlives every

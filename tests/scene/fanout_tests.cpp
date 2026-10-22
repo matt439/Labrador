@@ -296,6 +296,78 @@ TEST_CASE("the fan-out draws every view when the slices do not divide evenly")
 	CHECK(views_drawn.count(2) == 1u);
 }
 
+TEST_CASE("a drawable reads its own view's camera and viewport, serial or fanned out")
+{
+	// What DrawList::camera() and viewport() are for: a drawable whose output
+	// depends on the view reads them from inside draw(), with no copy of the
+	// scene's per-view walk. Under the fan-out several workers enter this
+	// draw() on the same object at once, each with its own view's list, so
+	// what each reads has to be its own - and the frame has to be the one the
+	// serial path records.
+	class ViewProbe final : public GameObject
+	{
+	public:
+		explicit ViewProbe(TextureHandle texture) : texture_(texture) {}
+
+		void update(float /*dt*/) override {}
+
+		// The camera's scale and the pane, written into the one draw this
+		// makes - as its tint, where nothing maps them on the way to the
+		// recording.
+		void draw(DrawList& list) const override
+		{
+			const Viewport& pane = list.viewport();
+			const Colour reading(list.camera().scale, pane.x / 1000.0f,
+				pane.width / 1000.0f, 1.0f);
+			list.draw_sprite(this->texture_, RectangleI(0, 0, 2, 2),
+				RectangleF(0.0f, 0.0f, 8.0f, 8.0f), reading, 0.0f,
+				Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		}
+
+		RectangleF bounds() const override
+		{
+			return RectangleF(0.0f, 0.0f, 1000.0f, 1000.0f);
+		}
+
+	private:
+		TextureHandle texture_;
+	};
+
+	Harness harness(4);
+	ThreadPool pool(1, 4);
+	const Partitioner partitioner;
+
+	std::unique_ptr<Scene> scenes[2] = {
+		std::make_unique<Scene>(nullptr, nullptr),
+		std::make_unique<Scene>(&pool, &partitioner) };
+	for (const std::unique_ptr<Scene>& scene : scenes)
+	{
+		scene->add(std::make_unique<ViewProbe>(harness.quad));
+		scene->end_tick();
+		scene->add_view(Viewport(0.0f, 0.0f, 320.0f, 240.0f),
+			Camera(0.0f, 0.0f, 0.5f));
+		scene->add_view(Viewport(320.0f, 0.0f, 320.0f, 240.0f),
+			Camera(0.0f, 0.0f, 0.25f));
+	}
+
+	const std::vector<RecordedSprite> expected = harness.draw(*scenes[0]);
+	const std::vector<RecordedSprite> actual = harness.draw(*scenes[1]);
+
+	REQUIRE(expected.size() == 2u);
+	REQUIRE(actual.size() == expected.size());
+	CHECK(first_difference(expected, actual) == expected.size());
+
+	CHECK(actual[0].view == 0);
+	CHECK(actual[0].corners[0].colour.r == doctest::Approx(0.5f));
+	CHECK(actual[0].corners[0].colour.g == doctest::Approx(0.0f));
+	CHECK(actual[0].corners[0].colour.b == doctest::Approx(0.32f));
+
+	CHECK(actual[1].view == 1);
+	CHECK(actual[1].corners[0].colour.r == doctest::Approx(0.25f));
+	CHECK(actual[1].corners[0].colour.g == doctest::Approx(0.32f));
+	CHECK(actual[1].corners[0].colour.b == doctest::Approx(0.32f));
+}
+
 TEST_CASE("CONTRACT: a throw inside a worker reaches the thread that drew")
 {
 	// The one behaviour of the parallel path the serial path cannot have,

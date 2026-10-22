@@ -314,13 +314,13 @@ namespace labrador
 		this->batch.clear();
 	}
 
-	void DrawList::View::set_transform(const D3D12_VIEWPORT& viewport)
+	void DrawList::View::set_transform(const D3D12_VIEWPORT& pane)
 	{
-		fill_transform(this->transform, viewport);
+		fill_transform(this->transform, pane);
 	}
 
 	void DrawList::View::begin(D3D12_CPU_DESCRIPTOR_HANDLE render_target,
-		const D3D12_VIEWPORT& viewport)
+		const D3D12_VIEWPORT& pane)
 	{
 		if (this->recording)
 		{
@@ -366,10 +366,12 @@ namespace labrador
 		// FALSE: the descriptors are not contiguous, there being one of them.
 		this->list->OMSetRenderTargets(1, &render_target, FALSE, nullptr);
 
-		const D3D12_RECT scissor = to_scissor(viewport);
-		this->list->RSSetViewports(1, &viewport);
+		const D3D12_RECT scissor = to_scissor(pane);
+		this->list->RSSetViewports(1, &pane);
 		this->list->RSSetScissorRects(1, &scissor);
-		this->set_transform(viewport);
+		this->set_transform(pane);
+		this->viewport = Viewport(pane.TopLeftX, pane.TopLeftY, pane.Width,
+			pane.Height, pane.MinDepth, pane.MaxDepth);
 
 		this->page = 0;
 		this->page_position = 0;
@@ -413,6 +415,7 @@ namespace labrador
 		this->view_->list->RSSetViewports(1, &d3d_viewport);
 		this->view_->list->RSSetScissorRects(1, &scissor);
 		this->view_->set_transform(d3d_viewport);
+		this->view_->viewport = viewport;
 	}
 
 	void DrawList::set_camera(const Camera& camera)
@@ -420,6 +423,16 @@ namespace labrador
 		// No flush: the camera is applied to the geometry as each draw is
 		// recorded, not by any state the batch holds.
 		this->view_->camera = camera;
+	}
+
+	const Camera& DrawList::camera() const
+	{
+		return this->view_->camera;
+	}
+
+	const Viewport& DrawList::viewport() const
+	{
+		return this->view_->viewport;
 	}
 
 	void DrawList::set_filter(TextureFilter filter)

@@ -189,6 +189,17 @@ that conversion was nine lines across three files — every other `draw()` in th
 engine carried a `Camera` parameter only to hand it down. Twenty override sites
 lost a parameter.
 
+The list's camera and viewport are readable as well as settable —
+`DrawList::camera()` and `DrawList::viewport()` — because a drawable whose
+output depends on the view, such as a minimum stroke or detail chosen by zoom,
+needs at draw time the number the scene's cull already gets, and without a
+reader it can only get it by copying the per-view walk `Scene` says must not be
+copied. A reader rather than a parameter to `draw()`: a parameter would break
+every override and pass a context per object per draw, which T8 refuses, while
+a reader costs one out-of-line call, paid only by a drawable that asks. It is
+sound under the view fan-out because one worker owns a list's view, so a
+`const` read of it from inside `draw()` shares nothing.
+
 ### Why level zero and never between levels
 
 A mip level is chosen per pixel from screen-space derivatives, and both APIs let
@@ -213,6 +224,14 @@ never submitted contributes nothing to the next one" is worth stating:
   — the command pool and the descriptor pools are reset too, and the tracked
   image layout goes back to what the last submit left, since the barriers that
   moved it were in what was thrown away.
+
+What a caller can observe of that reset is the same on all five. After
+`begin_frame`, and after a resize that restarts the frame mid-way, a list's
+`camera()` is `Camera::DEFAULT_CAMERA` and its `viewport()` is the whole back
+buffer, `Viewport(0, 0, width, height)`. `gl/`, `null/` and `vulkan/` reset the
+stored `Viewport` beside the camera; `d3d11/` and `d3d12/` write it when a view
+is bound, from the screen viewport they bind it with, which has the same
+extent and depth range.
 
 ### What `submit` costs
 

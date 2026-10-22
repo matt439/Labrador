@@ -10,6 +10,7 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
+#include "engine/render/viewport.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
@@ -463,6 +464,123 @@ TEST_CASE("state set on one view does not leak into its neighbour")
 	CHECK(drawn[1].view == 1);
 	CHECK(drawn[1].filter == TextureFilter::point);
 	CHECK(drawn[1].viewport.width == doctest::Approx(640.0f));
+}
+
+TEST_CASE("a fresh list reads the default camera and the whole back buffer")
+{
+	Harness harness;
+
+	const DrawList list = harness.begin();
+
+	// What a list starts with, which renderer.h states and every backend has
+	// to answer the same: the identity camera, and a pane that is the whole
+	// buffer the harness asked create_device for.
+	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.viewport() == Viewport(0.0f, 0.0f, 640.0f, 480.0f));
+
+	std::ignore = harness.end();
+}
+
+TEST_CASE("the readers return what was last set, mid-list too, and the draws agree")
+{
+	Harness harness;
+
+	DrawList list = harness.begin();
+
+	const Camera zoomed(4.0f, 4.0f, 2.0f);
+	const Viewport pane(0.0f, 240.5f, 640.0f, 239.5f);
+	list.set_camera(zoomed);
+	list.set_viewport(pane);
+
+	// As given: the fraction is kept, because the reader answers in the space
+	// set_viewport takes and not in the whole pixels a backend snaps it to.
+	CHECK(list.camera() == zoomed);
+	CHECK(list.viewport() == pane);
+
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(4.0f, 4.0f, 4.0f, 4.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	// And changed mid-list, which is ordinary: the world, then the HUD.
+	const Viewport second_pane(0.0f, 0.0f, 320.0f, 240.0f);
+	list.set_camera(Camera::DEFAULT_CAMERA);
+	list.set_viewport(second_pane);
+	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.viewport() == second_pane);
+
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(4.0f, 4.0f, 4.0f, 4.0f), Colour::white, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	// What the readers said is what each draw was made under: the stamped
+	// viewport, and the camera through where the corners landed - world (4,4)
+	// at the zoomed camera's origin and twice the size, then at (4,4) and
+	// its own size under the identity.
+	REQUIRE(drawn.size() == 2);
+	CHECK(drawn[0].viewport == pane);
+	CHECK(drawn[0].corners[0].position.x == doctest::Approx(0.0f));
+	CHECK(drawn[0].corners[3].position.x == doctest::Approx(8.0f));
+	CHECK(drawn[1].viewport == second_pane);
+	CHECK(drawn[1].corners[0].position.x == doctest::Approx(4.0f));
+	CHECK(drawn[1].corners[3].position.x == doctest::Approx(8.0f));
+}
+
+TEST_CASE("what one view's readers return does not depend on its neighbour")
+{
+	Harness harness;
+
+	DrawList first = harness.begin(2);
+	const DrawList second = harness.view(1);
+
+	first.set_camera(Camera(10.0f, 20.0f, 3.0f));
+	first.set_viewport(Viewport(0.0f, 0.0f, 320.0f, 480.0f));
+
+	// The parallelism axis is views, so a drawable reading its view's camera
+	// from one worker must not see what another worker set on another view.
+	CHECK(first.camera() == Camera(10.0f, 20.0f, 3.0f));
+	CHECK(first.viewport() == Viewport(0.0f, 0.0f, 320.0f, 480.0f));
+	CHECK(second.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(second.viewport() == Viewport(0.0f, 0.0f, 640.0f, 480.0f));
+
+	std::ignore = harness.end();
+}
+
+TEST_CASE("begin_frame resets what the readers return")
+{
+	Harness harness;
+
+	DrawList list = harness.begin();
+	list.set_camera(Camera(10.0f, 20.0f, 3.0f));
+	list.set_viewport(Viewport(0.0f, 0.0f, 320.0f, 240.0f));
+	std::ignore = harness.end();
+
+	// Reset at the top of every frame, not carried across one.
+	const DrawList next = harness.begin();
+	CHECK(next.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(next.viewport() == Viewport(0.0f, 0.0f, 640.0f, 480.0f));
+	std::ignore = harness.end();
+}
+
+TEST_CASE("a resize mid-frame resets what a held list's readers return")
+{
+	// The shape of "CONTRACT: a resize arriving mid-frame restarts the frame",
+	// asked through the readers: the list the caller still holds is a list,
+	// and what it reads is the restarted frame's state at the new size.
+	Harness harness;
+
+	DrawList list = harness.begin();
+	list.set_camera(Camera(10.0f, 20.0f, 3.0f));
+	list.set_viewport(Viewport(0.0f, 0.0f, 100.0f, 100.0f));
+
+	CHECK(harness.renderer().window_size_changed(320, 240));
+
+	REQUIRE(list.valid());
+	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.viewport() == Viewport(0.0f, 0.0f, 320.0f, 240.0f));
+
+	std::ignore = harness.end();
 }
 
 TEST_CASE("a frame that is never submitted contributes nothing to the next")

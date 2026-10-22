@@ -2070,7 +2070,7 @@ TEST_CASE("CONTRACT: a tint with more colour than alpha saturates, it is not cla
 
 TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 {
-	// THE ONE CASE HERE THAT IS NOT ABOUT A PIXEL, and it is in this file
+	// ONE OF TWO CASES HERE THAT ARE NOT ABOUT A PIXEL, and it is in this file
 	// because it is the only one with a device. renderer.h makes it a term of
 	// the seam that window_size_changed may arrive between begin_frame and
 	// submit - a window message can be SENT rather than posted, and
@@ -2128,6 +2128,47 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// which frame the buffer is holding.
 	CHECK(harness.at(4, 4) == WHITE);
 	CHECK(harness.at(20, 20) == BLACK);
+}
+
+TEST_CASE("CONTRACT: a list reads back its camera and viewport, on a device")
+{
+	// NOT ABOUT A PIXEL EITHER, and so no golden image: nothing is drawn and
+	// nothing is read back. It is here because it is the one file with a
+	// device on all four rasterising backends, and the answer is not reached
+	// the same way on all of them - gl and vulkan reset a Viewport kept beside
+	// the camera, while the two Direct3D backends write theirs when a view is
+	// bound, from the screen viewport they bind it with. This holds the four
+	// to one answer: the whole back buffer to start with, what was given after
+	// a set_viewport, and the whole of the new buffer after a resize restarts
+	// the frame. null_tests.cpp asks the same of the backend without a device.
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+	const float size = static_cast<float>(BUFFER_SIZE);
+
+	DrawList list = harness.begin();
+	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.viewport() == Viewport(0.0f, 0.0f, size, size));
+
+	// A fractional pane, which the Direct3D backends snap before the
+	// rasteriser sees it: the reader answers as given, not as snapped.
+	const Viewport pane(8.0f, 16.5f, 24.0f, 31.5f);
+	const Camera zoomed(2.0f, 4.0f, 3.0f);
+	list.set_viewport(pane);
+	list.set_camera(zoomed);
+	CHECK(list.viewport() == pane);
+	CHECK(list.camera() == zoomed);
+
+	// The window first, then the shell says so, for the reason "a resize
+	// arriving mid-frame restarts the frame" gives.
+	harness.resize_window(BUFFER_SIZE / 2, BUFFER_SIZE / 2);
+	CHECK(renderer.window_size_changed(BUFFER_SIZE / 2, BUFFER_SIZE / 2));
+
+	REQUIRE(list.valid());
+	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.viewport() ==
+		Viewport(0.0f, 0.0f, size / 2.0f, size / 2.0f));
+
+	renderer.submit();
 }
 
 TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame")
