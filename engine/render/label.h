@@ -23,6 +23,15 @@ namespace labrador
 	// drawable (UiText is UiWidget plus Text), so a GameObject base on Text
 	// would give UiText two of them. This is the same pairing Visual already
 	// is for sprites - GameObject plus TextureObject - and for the same reason.
+	//
+	// IT HAS NO HIDDEN FLAG, AND SCENE TEXT THAT HIDES IS A UiText. A string a
+	// scene holds that must stop drawing while keeping its words, its box and
+	// its colour is a UiText (engine/ui/widget.h), whose set_hidden skips the
+	// draw and leaves bounds() alone. For a label whose box may go empty,
+	// set_text(L"") is the supported way to hide it; it re-measures on every
+	// call, so a caller that would do it every frame gates it on a change, as
+	// LineSweeper's play state does. Naming UiText here is a pointer and not a
+	// dependency: engine/render does not include engine/ui.
 	class Label final : public GameObject, public Text
 	{
 	public:

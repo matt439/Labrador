@@ -169,6 +169,11 @@ namespace labrador
 		// shared object is inexpressible rather than merely racy.
 		//
 		// destination is in world space; the list's current camera maps it.
+		//
+		// tint multiplies the sampled texel as given. Nothing premultiplies it
+		// for the caller, and the blend is premultiplied (SEAM.md#5), so a tint
+		// with zero alpha still adds its colour channels: the tint that draws
+		// nothing is Colour(0, 0, 0, 0).
 		void draw_sprite(TextureHandle texture,
 			const mattmath::RectangleI& source,
 			const mattmath::RectangleF& destination,
@@ -197,7 +202,8 @@ namespace labrador
 		//
 		// layer_depth orders nothing here either: text covers what was drawn
 		// before it in the list and is covered by what is drawn after it, as
-		// draw_sprite states.
+		// draw_sprite states. tint is taken as given, under the same
+		// premultiplied blend draw_sprite states.
 		void draw_text(FontHandle font,
 			const std::wstring& text,
 			const mattmath::Vector2F& position,
