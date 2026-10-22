@@ -628,6 +628,12 @@ same commit.
   `engine/render/vulkan/`**: section 2 carries the `vk_layer_settings.txt` that
   makes the layer's output visible to a shell, which the backend's own messenger
   (it writes to `OutputDebugStringA`) does not.
+- **`docs/review/colourwars-reports/` is not a review of this tree** but the
+  engine's decision on each of ColourWars' live reports, written ahead of
+  their filing for `PI-10`, and its README's table is kept current: tick a box
+  in the commit that answers that report. It describes the client's
+  workarounds generically because the ledger it answers is private; keep it
+  that way.
 
 ## Known-absent, on purpose
 
