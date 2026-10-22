@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace labrador
@@ -30,6 +31,26 @@ namespace labrador
 		const rapidjson::Value& value_of(const void* value)
 		{
 			return *static_cast<const rapidjson::Value*>(value);
+		}
+
+		// The one parse both doors into a JsonDocument share, so the same bytes
+		// make the same document whichever door they came through. `caller`
+		// begins the message, so each door's errors still say which call made
+		// them. Parse copies out of `text` rather than parsing in place, so the
+		// document does not borrow the caller's buffer.
+		void parse_into(rapidjson::Document& document, const char* text,
+			size_t length, const std::string& source, const char* caller)
+		{
+			document.Parse(text, length);
+			if (document.HasParseError())
+			{
+				throw std::runtime_error(
+					std::string(caller) + " - '" + source +
+					"' is not valid JSON: " +
+					rapidjson::GetParseError_En(document.GetParseError()) +
+					" (offset " + std::to_string(document.GetErrorOffset()) +
+					")");
+			}
 		}
 	}
 
@@ -61,18 +82,25 @@ namespace labrador
 				std::string("read_json_file - read error in '") + path + "'");
 		}
 
-		auto impl = std::make_unique<JsonDocument::Impl>();
+		std::unique_ptr<JsonDocument::Impl> impl =
+			std::make_unique<JsonDocument::Impl>();
 		impl->source_path = path;
-		impl->document.Parse(text.c_str(), text.size());
-		if (impl->document.HasParseError())
+		parse_into(impl->document, text.data(), text.size(), impl->source_path,
+			"read_json_file");
+		return JsonDocument(std::move(impl));
+	}
+
+	JsonDocument parse_json(std::string_view text, std::string source_name)
+	{
+		if (source_name.empty())
 		{
-			throw std::runtime_error(
-				std::string("read_json_file - '") + path +
-				"' is not valid JSON: " +
-				rapidjson::GetParseError_En(impl->document.GetParseError()) +
-				" (offset " + std::to_string(impl->document.GetErrorOffset()) +
-				")");
+			throw std::invalid_argument("parse_json - empty source name");
 		}
+		std::unique_ptr<JsonDocument::Impl> impl =
+			std::make_unique<JsonDocument::Impl>();
+		impl->source_path = std::move(source_name);
+		parse_into(impl->document, text.data(), text.size(), impl->source_path,
+			"parse_json");
 		return JsonDocument(std::move(impl));
 	}
 
