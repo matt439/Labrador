@@ -212,6 +212,23 @@ namespace labrador
 			return mattmath::Vector2I(static_cast<int>(rect.right - rect.left),
 				static_cast<int>(rect.bottom - rect.top));
 		}
+
+		// The rect of the monitor the window is on, or nearest to, in screen
+		// pixels: what a borderless full-screen window covers. A window that is
+		// shown is maximised to it by ShowWindow; one that is hidden is sized to
+		// it here, because ShowWindow cannot size without showing.
+		RECT monitor_rect(HWND handle)
+		{
+			MONITORINFO info = {};
+			info.cbSize = sizeof(MONITORINFO);
+			if (GetMonitorInfoW(MonitorFromWindow(handle,
+				MONITOR_DEFAULTTONEAREST), &info) == 0)
+			{
+				throw std::runtime_error(
+					"Could not read the size of the window's monitor.");
+			}
+			return info.rcMonitor;
+		}
 	}
 
 	// The Win32 window. Everything a message needs to find is here, and the
@@ -360,6 +377,13 @@ namespace labrador
 		// monitor (DXGI_SCALING_STRETCH), which is the form of this a shipped
 		// sample hits.
 		//
+		// A window created hidden is the exception. Windowed, it gets no such
+		// report, because the system sends an overlapped window its first
+		// WM_SIZE at its first show; full screen, the report is the requested
+		// size, because it is never maximised onto the monitor. Either way the
+		// caller's resolution stays the requested size, which is the client
+		// it got unless that is below the smallest window the system allows.
+		//
 		// SW_SHOWDEFAULT is what wWinMain's own show command would have said:
 		// it asks for whatever the process that started this one put in its
 		// STARTUPINFO, which is where that argument comes from.
@@ -460,14 +484,33 @@ namespace labrador
 			SWP_NOMOVE | SWP_NOZORDER);
 	}
 
+	// A HIDDEN WINDOW STAYS HIDDEN, here and in leave_fullscreen. ShowWindow
+	// is what sizes a shown window, and it shows and activates as it does, so
+	// a hidden one is sized with SetWindowPos instead and nothing makes it
+	// visible. Whether the window is shown is read from the window at call
+	// time rather than kept: a window shown by other means then goes full
+	// screen as a shown one does, and no flag can disagree with the screen.
 	void Window::enter_fullscreen() const
 	{
 		const HWND handle = this->impl_->handle;
+		const bool shown = IsWindowVisible(handle) != FALSE;
 		SetWindowLongPtr(handle, GWL_STYLE, WS_POPUP);
 		SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_TOPMOST);
-		SetWindowPos(handle, HWND_TOP, 0, 0, 0, 0,
-			SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-		ShowWindow(handle, SW_SHOWMAXIMIZED);
+		if (shown)
+		{
+			SetWindowPos(handle, HWND_TOP, 0, 0, 0, 0,
+				SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+			ShowWindow(handle, SW_SHOWMAXIMIZED);
+			return;
+		}
+
+		// Sized as a shown window would be, and not shown. The window state
+		// differs - this one is restored rather than maximised - and WM_SIZE
+		// reports the two alike, so the size is the whole of what is promised.
+		const RECT monitor = monitor_rect(handle);
+		SetWindowPos(handle, HWND_TOP, monitor.left, monitor.top,
+			monitor.right - monitor.left, monitor.bottom - monitor.top,
+			SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	}
 
 	void Window::leave_fullscreen(const mattmath::Vector2I& client_size) const
@@ -482,9 +525,16 @@ namespace labrador
 
 		const mattmath::Vector2I outer = this->impl_->outer_size(client_size);
 
-		ShowWindow(handle, SW_SHOWNORMAL);
+		if (IsWindowVisible(handle) != FALSE)
+		{
+			ShowWindow(handle, SW_SHOWNORMAL);
+			SetWindowPos(handle, HWND_TOP, 0, 0, outer.x, outer.y,
+				SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+			return;
+		}
+
 		SetWindowPos(handle, HWND_TOP, 0, 0, outer.x, outer.y,
-			SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+			SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	}
 
 	mattmath::Vector2I Window::Impl::outer_size(

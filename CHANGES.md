@@ -68,6 +68,26 @@ browser build to break, and a game on a tag can have one.
 not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
+## Unreleased
+
+#### Keep a hidden window hidden when it changes full screen
+
+*Keep a hidden window hidden when it changes full screen* (2026-10-22).
+Silent behaviour change, on Windows only.
+
+- Old: `Application::set_fullscreen(true)` or `set_fullscreen(false)` on an
+  `Application` initialised with `visible = false` showed its window and
+  activated it, and so did `Window::enter_fullscreen` and `leave_fullscreen`
+  on a `Window` created hidden.
+- New: the window stays hidden and inactive, and is resized as a shown one
+  would be: to the monitor going full screen, and to the requested client size
+  coming back. A hidden window going full screen is restored rather than
+  maximised, which nothing in the engine reads.
+- A game that relied on `set_fullscreen` to reveal a hidden window has to be
+  visible from construction; the engine never shows a window created hidden.
+  A shown window, including one a game showed itself, goes full screen as it
+  did. A browser build is unaffected.
+
 ## v0.1.0 (2026-10-13)
 
 The first release. It carries every consumer-visible change from ColourWars'

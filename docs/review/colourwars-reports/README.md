@@ -7,7 +7,8 @@ engine side's answer to each, decided ahead of their filing (`PI-09`) so that
 `PI-10` ([STORIES.md](../../product/STORIES.md#pi-10)) has its thinking done
 and an implementer can work from it without the ledger.
 
-**Nothing here is implemented.** It records a decision, its argument in
+**Each file was written before anything in it was implemented**, and the
+table below says what has been since. A file records a decision, its argument in
 PHILOSOPHY's vocabulary, the shape of the change, the tests that ship with it,
 the CHANGES.md entry it needs and what it lets the client delete. Each report
 was assessed against the source at `0c15f34` and then argued against by a
@@ -36,7 +37,7 @@ or files its answer, and say there which commit or issue answered it.
 
 | | # | Decision | Size | Answer |
 |---|---|---|---|---|
-| [ ] | [16](window.md) | Accept | S | A hidden window stays hidden and inactive through `set_fullscreen(true/false)`: it is sized with `SetWindowPos` instead of `ShowWindow`. **Implement first**, because it is a contract break (`window.h`'s `visible`). |
+| [x] | [16](window.md) | Accept | S | A hidden window stays hidden and inactive through `set_fullscreen(true/false)`: it is sized with `SetWindowPos` instead of `ShowWindow`. **Implement first**, because it is a contract break (`window.h`'s `visible`). Done: *Keep a hidden window hidden when it changes full screen*. Its first-size-report case found that a hidden windowed window makes no report before the constructor returns, and a hidden full-screen one reports its requested size; `window.h` now says so. |
 | [ ] | [11](window.md) | Accept, narrowed | S | The Win32 window always swallows a bare `SC_KEYMENU` (F10, or Alt alone), with no option. Alt+Space and Alt+F4 are unchanged. A silent behaviour change. |
 | [ ] | [17](window.md) | Accept, narrowed | M | A per-monitor-aware process gets the window's own DPI in the frame arithmetic, and a DPI change keeps the client pixel size. No portable DPI API. Needs the owner to set a Windows floor first. |
 | [ ] | [19](window.md) | Needs more evidence | — | No `show()` yet. First capture what a visible launch shows before the first present. In the meantime, 16's commit states that a window created hidden is never shown by the engine. |

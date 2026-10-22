@@ -181,7 +181,11 @@ namespace labrador
 		// `this` is handed over in the constructor, not after it: the window's
 		// first size report arrives before this call returns, and it is what
 		// corrects resolution_manager_ to the client size the window really
-		// got before create_device reads it back.
+		// got before create_device reads it back. A window created hidden on
+		// Windows makes no report when windowed and reports the requested
+		// size when full screen; either way resolution_manager_ keeps the
+		// requested size, which is the client size it got unless that is
+		// below the smallest window the system allows.
 		this->window_ = std::make_unique<Window>(window_options, this);
 	}
 

@@ -21,7 +21,7 @@ none adds a public name, and the web window already answers each question its
 own way. Line numbers are as of `0c15f34`. This is a decision record written
 ahead of PI-09's filing and PI-10's answers
 ([docs/product/STORIES.md:1614-1632](../../product/STORIES.md)), not an
-implementation, and nothing in it has been built.
+implementation; the README's table says what has been built since.
 
 PI-10's acceptance (docs/product/STORIES.md:1622-1624) asks that each report
 close as answered with a commit, declined with a cited trade-off, or accepted
@@ -690,7 +690,11 @@ write.
 **Open questions.** (a) Whether `ShowWindow(SW_HIDE)` on a never-shown window
 delivers the first `WM_SIZE` engine/app/window.h:172-181 relies on. The client's
 control saw 1280x720, which equals the preset and so cannot tell; 16's
-first-size-report case answers it. (b) A show after the first present on d3d12
+first-size-report case answers it. Answered by 16's commit: it does not. A
+hidden windowed window makes no size report before the constructor returns,
+and a hidden full-screen one reports its requested size from creation, not
+the monitor's; both have the client size asked for above the system's
+smallest window, and engine/app/window.h now states the exception. (b) A show after the first present on d3d12
 and Vulkan happens after a present to a window that has never been visible, and
 each backend's behaviour presenting to a hidden window, flip-model swap chains
 especially, has to be checked before the engine-side shape is chosen. (c) The
