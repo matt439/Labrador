@@ -8,6 +8,8 @@
 #include <objbase.h>
 #endif
 
+#include <chrono>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -281,12 +283,30 @@ namespace labrador
 	void Application::reset_elapsed_time()
 	{
 		this->timer_.ResetElapsedTime();
+		this->frame_timer_.discontinuity();
 	}
 
+	FrameTimings Application::frame_timings() const
+	{
+		return this->frame_timings_;
+	}
+
+	// SIX CLOCK READS A RENDERED TICK, AND TWO OTHERWISE, whatever the frame
+	// holds: one at each phase boundary and none per view or per object
+	// (T8). In a browser each is a call out to performance.now(), so the
+	// number is fixed here rather than grown by whoever adds a phase.
 	void Application::tick()
 	{
+		this->frame_timer_.begin(std::chrono::steady_clock::now());
+
+		const std::uint32_t steps_before = this->timer_.GetFrameCount();
 		this->timer_.Tick([&]() { this->update(); });
-		this->render();
+
+		FrameMarks marks;
+		marks.updates =
+			static_cast<int>(this->timer_.GetFrameCount() - steps_before);
+		marks.updated = std::chrono::steady_clock::now();
+		this->render(marks);
 	}
 
 	void Application::update()
@@ -310,7 +330,7 @@ namespace labrador
 		this->audio_device_->update();
 	}
 
-	void Application::render()
+	void Application::render(FrameMarks& marks)
 	{
 		// Nothing to draw before the first update has run.
 		if (this->timer_.GetFrameCount() == 0)
@@ -323,13 +343,20 @@ namespace labrador
 		// the per-view command lists is submit()'s business, in one copy,
 		// behind the seam.
 		this->renderer_->begin_frame();
+		marks.frame_begun = std::chrono::steady_clock::now();
 
 		this->renderer_->begin_marker(L"Render");
 		StateContext::draw(*this->renderer_);
+		marks.drawn = std::chrono::steady_clock::now();
 		this->renderer_->submit();
 		this->renderer_->end_marker();
+		marks.submitted = std::chrono::steady_clock::now();
 
 		this->renderer_->end_frame();
+		marks.frame_ended = std::chrono::steady_clock::now();
+
+		// Last, so a frame that threw anywhere above publishes nothing.
+		this->frame_timer_.publish(marks, this->frame_timings_);
 	}
 
 	void Application::set_input_focus(bool focused) const
@@ -409,6 +436,7 @@ namespace labrador
 	void Application::on_resuming()
 	{
 		this->timer_.ResetElapsedTime();
+		this->frame_timer_.discontinuity();
 		this->shown_ = true;
 		if (this->audio_device_)
 		{

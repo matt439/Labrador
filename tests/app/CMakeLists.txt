@@ -1,18 +1,27 @@
 find_package(doctest CONFIG REQUIRED)
 
-# The shell's tests. Two files run on every platform. The third is the
+# The shell's tests. Three files run on every platform. The fourth is the
 # platform's own window: on Windows a real one, hidden and driven through its
 # message procedure, and in a browser build the translation of DOM events,
 # which is the part of the web window Node can reach with no DOM.
 add_executable(AppTests
     application_options_tests.cpp
     content_root_tests.cpp
+    frame_timer_tests.cpp
     test_main.cpp
 )
 if(EMSCRIPTEN)
     target_sources(AppTests PRIVATE dom_events_tests.cpp)
 else()
     target_sources(AppTests PRIVATE window_tests.cpp)
+endif()
+
+# Application's own loop, run with a hidden window: only where the renderer
+# and the audio are both null, so it needs no device and no audio endpoint,
+# and never in a browser, where run() does not return.
+if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null"
+    AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
+    target_sources(AppTests PRIVATE application_loop_tests.cpp)
 endif()
 target_link_libraries(AppTests PRIVATE
     LabradorEngine

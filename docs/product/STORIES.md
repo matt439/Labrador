@@ -1,6 +1,6 @@
 # User stories
 
-160 stories, each written for one persona, checked by a second agent for INVEST and for fit with PHILOSOPHY, and then reconciled: stories that two personas wanted from the same change were merged into one, which lists the others under *also serves*. Taken on 2026-10-13 against `master` at `0977112`. Their order of work is [BACKLOG.md](BACKLOG.md); the gaps they close are in [GAP-REGISTER.md](GAP-REGISTER.md).
+160 stories, each written for one persona, checked by a second agent for INVEST and for fit with PHILOSOPHY, and then reconciled: stories that two personas wanted from the same change were merged into one, which lists the others under *also serves*. Taken on 2026-10-13 against `master` at `0977112`. Their order of work is [BACKLOG.md](BACKLOG.md); the gaps they close are in [GAP-REGISTER.md](GAP-REGISTER.md). One was added after: PI-19, on 2026-10-22, split out of PI-10 when report 14 was accepted.
 
 Sizes are for one person working with agents: XS under an hour, S half a day, M one to two days, L a week. **Owner** marks a story an agent cannot finish alone: a decision, a repository setting, hardware in hand, or a deploy from a private repository.
 
@@ -9,7 +9,7 @@ Sizes are for one person working with agents: XS under an hour, S half a day, M 
 | Persona | Stories |
 |---|---|
 | [The Outside C++ Adopter](#stories-outside-cpp-adopter) | 74 |
-| [The Pinned Submodule Integrator](#stories-pinned-integrator) | 10 |
+| [The Pinned Submodule Integrator](#stories-pinned-integrator) | 11 |
 | [The Sole Owner-Maintainer](#stories-sole-maintainer) | 37 |
 | [The Browser and Phone Demo Player](#stories-browser-demo-player) | 20 |
 | [The Sample-Reading Learner](#stories-sample-reading-learner) | 13 |
@@ -1751,6 +1751,28 @@ XS · docs · E12 A maintainer's process, CI and deploy that one person and thei
 - T4: the comment says what the code does: it catches only a client folder literally named game/
 
 **Notes.** Verified: cmake/check_engine_includes.cmake:15-21 says the wall 'does not depend on who is building', and the regex at :33-34 matches only game/. README's 'yourgame/' and the website's 'mygame' are missed. ColourWars uses game/, so it is covered today; low risk.
+
+<a id="pi-19"></a>
+### PI-19. Read what the engine's last frame cost, phase by phase
+
+**As** a pinned submodule integrator whose performance overlay times the frame it can see, **I want** `Application` to publish the CPU times of the last frame it completed - its fixed-step count, the interval since the frame before, and the update, begin_frame, draw, submit and end_frame phases - **so that** I can delete the stopwatches I keep around my own draw and see the submit and end_frame split, which no client can measure because the loop is private.
+
+M · code · E10 Releases, versions, upgrades and an answered report · gaps G74, G27 · **Later**
+
+**Acceptance**
+
+- Given a running Application, when a state's update calls `frame_timings()`, then it returns by value the last completed frame's sequence number, fixed-step count, interval and five phase durations as `std::chrono::nanoseconds`, with `frame == 0` until the first frame
+- Given a frame that throws, a tick that renders nothing, or a frame a game draws itself inside an update, when it ends, then no frame is published, and time spent in the last is part of `update_time`
+- Given `reset_elapsed_time()` or the window coming back from hidden, when the next frame is published, then its interval is zero
+- Given AppTests under every preset, wasm-* under Node included, then the arithmetic is held with injected time points; and under the two -null presets an Application loop with a hidden window holds that `frame` rises by exactly one per rendered frame and that a capture inside an update does not advance it
+
+**Trade-offs**
+
+- T1: mechanism, the measurement of the engine's own phases; the ring, overlay, eligibility and export stay the client's, so REV#10's overlay stays deferred
+- T8: a fixed handful of steady_clock reads and one struct write per tick, nothing per sprite, and nothing called out
+- T3: the last frame only, no valid flag (frame 0 means none yet), no GPU time
+
+**Notes.** Report 14, accepted narrowed and split out of PI-10 as its acceptance requires (docs/review/colourwars-reports/loop.md). SM-08 depends on it: a development page that reads `frame_timings()` behind a query flag and logs it is the browser instrument SM-08 asks for. GPU timestamps would be a seam change across five backends and a separate request.
 
 <a id="stories-sole-maintainer"></a>
 ## The Sole Owner-Maintainer

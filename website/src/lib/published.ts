@@ -241,6 +241,10 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 		'engine/core/step_timer.h',
 		"Microsoft's timer from the DirectX templates, carried as written (NOTICE) and private to Application.",
 	],
+	[
+		'engine/app/frame_timer.h',
+		'The arithmetic behind Application::frame_timings(), private to Application; the reference documents what it publishes, in application.h.',
+	],
 ];
 
 export const REFERENCE_HEADERS: ReferenceHeader[] = REFERENCE_MODULES.flatMap((module) =>

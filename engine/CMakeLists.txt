@@ -10,6 +10,7 @@ add_subdirectory(math)
 add_library(LabradorEngine STATIC
     app/application.cpp
     app/content_root.cpp
+    app/frame_timer.cpp
     assets/asset_manifest_loader.cpp
     assets/json.cpp
     assets/resource_loader.cpp
