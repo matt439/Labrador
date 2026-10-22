@@ -313,3 +313,68 @@ TEST_CASE("a sheet or a strip that is not there is refused at construction")
 	CHECK_THROWS_AS(Probe("sheet", "no_such_strip", &content.resources),
 		std::out_of_range);
 }
+
+TEST_CASE("an animation built from a pair runs the clock one built from names runs")
+{
+	Content content;
+	Probe by_name("other", "two_slow", &content.resources);
+	Probe by_pair(content.resources.resolve_sheet_strip("other", "two_slow"),
+		&content.resources);
+
+	// Two frames at 1.0, so both latch on the third update of 1.0 - which is
+	// the frame time and the frame count arriving through the pair.
+	CHECK(updates_until_paused(by_name, 1.0f) == 3);
+	CHECK(updates_until_paused(by_pair, 1.0f) == 3);
+}
+
+TEST_CASE("re-pointing from a pair takes the strip's frame time and resets")
+{
+	Content content;
+	Probe animation("sheet", "three", &content.resources);
+
+	// Run it to its end, so a missing reset would show as an object that is
+	// still on its last frame.
+	CHECK(updates_until_paused(animation, 0.25f) == 4);
+
+	animation.set_animation_strip_and_reset(
+		content.resources.resolve_sheet_strip("other", "two_slow"));
+	animation.play();
+
+	// From the first frame of a two-frame strip at 1.0: three updates of 1.0,
+	// exactly as a freshly built "two_slow" takes.
+	CHECK(updates_until_paused(animation, 1.0f) == 3);
+}
+
+TEST_CASE("an unresolved strip pair is refused at the call")
+{
+	Content content;
+	Probe animation("sheet", "three", &content.resources);
+
+	CHECK_THROWS_AS(animation.set_animation_strip_and_reset(
+		RenderResources::SheetStrip()), std::out_of_range);
+	CHECK_THROWS_AS(Probe(RenderResources::SheetStrip(), &content.resources),
+		std::out_of_range);
+
+	// Nothing moved: still three frames at 0.25.
+	CHECK(updates_until_paused(animation, 0.25f) == 4);
+}
+
+TEST_CASE("CONTRACT: a strip name that does not resolve leaves the animation as it was")
+{
+	// The name setter resolves the sheet and the strip before it assigns
+	// either. Before the throw this animation has advanced one frame; after
+	// it, it is on the same strip, the same frame and the same frame time - a
+	// moved sheet would read the old strip's slot as "two_slow", and a reset
+	// would put it back on its first frame.
+	Content content;
+	Probe animation("sheet", "three", &content.resources);
+	animation.update(0.5f);
+
+	CHECK_THROWS_AS(animation.set_animation_strip_and_reset("other",
+		"no_such_strip"), std::out_of_range);
+	CHECK_THROWS_AS(animation.set_animation_strip_and_reset("no_such_sheet",
+		"three"), std::out_of_range);
+
+	// Frame one of three at 0.25: one update to frame two, one more to latch.
+	CHECK(updates_until_paused(animation, 0.25f) == 2);
+}

@@ -5,11 +5,27 @@
 
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 using namespace mattmath;
 
 namespace labrador
 {
+	namespace
+	{
+		const RenderResources::SheetStrip& resolved(
+			const RenderResources::SheetStrip& strip)
+		{
+			if (!strip.sheet().valid() || !strip.strip().valid())
+			{
+				throw std::out_of_range("AnimationObject was given an "
+					"unresolved SheetStrip; RenderResources::"
+					"resolve_sheet_strip makes a resolved one.");
+			}
+			return strip;
+		}
+	}
+
 	AnimationObject::AnimationObject(const std::string& sheet_name,
 		const std::string& animation_strip_name,
 		RenderResources* render_resources,
@@ -24,6 +40,21 @@ namespace labrador
 		strip_(SpriteSheetObject::sprite_sheet()->
 			resolve_animation_strip(animation_strip_name))
 	{
+		this->frame_time_ = this->animation_strip().frame_time();
+	}
+
+	AnimationObject::AnimationObject(RenderResources::SheetStrip strip,
+		RenderResources* render_resources,
+		const Colour& color,
+		float rotation,
+		const Vector2F& origin,
+		SpriteFlip flip,
+		float layer_depth) :
+		SpriteSheetObject(resolved(strip).sheet(), render_resources, color,
+			rotation, origin, flip, layer_depth),
+		strip_(strip.strip())
+	{
+		// Reading the strip is what checks both halves against the table.
 		this->frame_time_ = this->animation_strip().frame_time();
 	}
 
@@ -137,14 +168,26 @@ namespace labrador
 	{
 		return this->animation_strip().frame_rect(this->frame_index_);
 	}
+	void AnimationObject::set_animation_strip_and_reset(
+		RenderResources::SheetStrip strip)
+	{
+		// Checked against the table before anything is assigned, so a throw
+		// leaves the object playing what it played.
+		std::ignore = this->render_resources()->sprite_sheet(
+			resolved(strip).sheet())->animation_strip(strip.strip());
+
+		this->set_sprite_sheet(strip.sheet());
+		this->strip_ = strip.strip();
+		this->set_frame_time_to_default();
+		this->reset();
+	}
+
 	void AnimationObject::set_animation_strip_and_reset(const std::string& sprite_sheet,
 		const std::string& animation_strip)
 	{
-		this->set_sprite_sheet(sprite_sheet);
-		this->strip_ = this->sprite_sheet()->resolve_animation_strip(
-			animation_strip);
-		this->set_frame_time_to_default();
-		this->reset();
+		this->set_animation_strip_and_reset(
+			this->render_resources()->resolve_sheet_strip(sprite_sheet,
+				animation_strip));
 	}
 	void AnimationObject::set_frame_time(float frame_time)
 	{

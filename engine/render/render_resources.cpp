@@ -3,6 +3,7 @@
 #include "engine/math/vector2f.h"
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -49,6 +50,38 @@ namespace labrador
 		const std::string& sprite_sheet_name) const
 	{
 		return this->sprite_sheets_.resolve(sprite_sheet_name);
+	}
+
+	RenderResources::SheetFrame RenderResources::resolve_sheet_frame(
+		const std::string& sheet_name, const std::string& frame_name) const
+	{
+		const SpriteSheetHandle sheet = this->resolve_sprite_sheet(sheet_name);
+		try
+		{
+			return SheetFrame(sheet,
+				this->sprite_sheet(sheet)->resolve_sprite_frame(frame_name));
+		}
+		catch (const std::out_of_range& missing)
+		{
+			throw std::out_of_range(std::string(missing.what()) +
+				" in sprite sheet '" + sheet_name + "'");
+		}
+	}
+
+	RenderResources::SheetStrip RenderResources::resolve_sheet_strip(
+		const std::string& sheet_name, const std::string& strip_name) const
+	{
+		const SpriteSheetHandle sheet = this->resolve_sprite_sheet(sheet_name);
+		try
+		{
+			return SheetStrip(sheet,
+				this->sprite_sheet(sheet)->resolve_animation_strip(strip_name));
+		}
+		catch (const std::out_of_range& missing)
+		{
+			throw std::out_of_range(std::string(missing.what()) +
+				" in sprite sheet '" + sheet_name + "'");
+		}
 	}
 
 	const SpriteSheet* RenderResources::sprite_sheet(

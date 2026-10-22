@@ -72,6 +72,27 @@ its heading here.
 
 ## Unreleased
 
+#### Re-point sprites and animations by a resolved sheet pair
+
+*Re-point sprites and animations by a resolved sheet pair* (2026-10-22).
+Silent behaviour change.
+
+- **A name setter that throws leaves the object as it was.**
+  `TextureObject::set_frame(sheet_name, frame_name)`,
+  `AnimationObject::set_animation_strip_and_reset(sheet, strip)` and, through
+  the first, `UiTexture::set_texture` now resolve both names before they assign
+  either.
+  - Old: the sheet moved first, so a frame or strip name the new sheet did not
+    have threw with the object holding the new sheet and the old element's
+    slot, which reads as some other frame of that sheet or throws again at the
+    next draw.
+  - New: the throw leaves the sheet, the element, and an animation's frame
+    index and frame time as they were. A game that caught that throw and drew
+    on sees the old frame rather than a mismatched one.
+  - The paired forms the same commit adds, `RenderResources::SheetFrame` and
+    `SheetStrip` from `resolve_sheet_frame` and `resolve_sheet_strip`, are the
+    handle path for re-pointing from per-frame code; the name forms stay.
+
 #### Name every key, so a game can save a binding and read it back
 
 *Name every key, so a game can save a binding and read it back*

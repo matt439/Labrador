@@ -10,11 +10,13 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
+#include "engine/render/texture_object.h"
 #include "engine/render/viewport.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
+#include <memory>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -911,6 +913,51 @@ TEST_CASE("a handle resolved before release_device_resources draws after the rel
 
 	REQUIRE(drawn.size() == 1);
 	CHECK(drawn[0].texture.index() == before.index());
+	CHECK(drawn[0].corners[3].position.x - drawn[0].corners[0].position.x ==
+		doctest::Approx(8.0f));
+}
+
+TEST_CASE("a sheet pair resolved before release_device_resources draws after the reload")
+{
+	// The case above, for the paired handle a TextureObject can be re-pointed
+	// by (RenderResources::SheetFrame). Both halves name slots - the sheet's
+	// in the sheet table, the frame's in the sheet - and a device loss empties
+	// neither table, so a pair resolved at load draws the reloaded texture.
+	class Sprite final : public TextureObject
+	{
+	public:
+		using TextureObject::TextureObject;
+
+		void draw_into(DrawList& list) const
+		{
+			this->TextureObject::draw(list,
+				RectangleF(0.0f, 0.0f, 8.0f, 8.0f));
+		}
+	};
+
+	Harness harness;
+
+	NameTable<SpriteFrame> frames("sprite frame");
+	frames.add("whole", SpriteFrame(Harness::whole()));
+	harness.resources().add_sprite_sheet("sheet",
+		std::make_unique<SpriteSheet>(harness.quad, std::move(frames),
+			NameTable<AnimationStrip>("animation strip")));
+
+	const RenderResources::SheetFrame pair =
+		harness.resources().resolve_sheet_frame("sheet", "whole");
+
+	harness.resources().release_device_resources();
+	load_texture_asset(harness.renderer(), harness.resources(), "./content/",
+		"quad");
+
+	const Sprite sprite(pair, &harness.resources());
+
+	DrawList list = harness.begin();
+	sprite.draw_into(list);
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 1);
+	CHECK(drawn[0].texture.index() == harness.quad.index());
 	CHECK(drawn[0].corners[3].position.x - drawn[0].corners[0].position.x ==
 		doctest::Approx(8.0f));
 }
