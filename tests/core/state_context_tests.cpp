@@ -141,6 +141,48 @@ namespace
 		const auto b = std::find(log.begin(), log.end(), second);
 		return a != log.end() && b != log.end() && a < b;
 	}
+
+	// A state that sees every frame, whatever the game has on top: it owns
+	// the game's stack rather than sitting on it. state_context.h describes
+	// the pattern, and this is it written the way an adopter writes it.
+	class RootState : public State
+	{
+	public:
+		explicit RootState(std::vector<std::string>* log) : log_(log) {}
+
+		// Where the game's states go: push, pop and transition_to here, never
+		// on the Application.
+		StateContext& game() { return this->game_; }
+
+		void init() override
+		{
+			// Built while the application is in the background, the owned
+			// stack has to start out knowing it.
+			this->game_.notify_activation(this->context()->active());
+		}
+
+		void update(float dt) override
+		{
+			this->log_->push_back("root:before");
+			this->game_.update(dt);
+			// The game's update has finished, so this is where a capture goes.
+			this->log_->push_back("root:after");
+		}
+
+		void draw(Renderer& renderer) const override
+		{
+			this->game_.draw(renderer);
+			// And the overlay, over whatever the game drew.
+			this->log_->push_back("root:draw");
+		}
+
+		void on_activated() override { this->game_.notify_activation(true); }
+		void on_deactivated() override { this->game_.notify_activation(false); }
+
+	private:
+		std::vector<std::string>* log_ = nullptr;
+		StateContext game_;
+	};
 }
 
 TEST_CASE("transition_to outside update takes effect immediately")
@@ -862,4 +904,92 @@ TEST_CASE("throwing callbacks restore deferral without draining during unwinding
 	context.transition_to(std::make_unique<RecordingState>("replacement", &log));
 	CHECK(ran_before(log, "a:dtor", "replacement:init"));
 	CHECK(std::find(log.begin(), log.end(), "queued:init") == log.end());
+}
+
+TEST_CASE("a state that owns a StateContext is updated every frame whatever its own stack holds")
+{
+	std::vector<std::string> log;
+	// Standing in for the Application, which is a StateContext.
+	StateContext application;
+	Renderer renderer;
+
+	std::unique_ptr<RootState> owned = std::make_unique<RootState>(&log);
+	RootState* root = owned.get();
+	application.transition_to(std::move(owned));
+
+	root->game().transition_to(
+		std::make_unique<RecordingState>("level", &log));
+	std::unique_ptr<RecordingState> pause =
+		std::make_unique<RecordingState>("pause", &log);
+	RecordingState* pause_raw = pause.get();
+	pause->set_covers_screen(false);
+	root->game().push(std::move(pause));
+
+	// The game's stack is two deep, with the level suspended under the pause
+	// menu; the Application's is the root alone.
+	CHECK(ran_before(log, "level:suspend", "pause:init"));
+	CHECK(application.depth() == 1);
+	CHECK(root->game().depth() == 2);
+
+	SUBCASE("the root's own update runs around the game's top state")
+	{
+		log.clear();
+		application.update(1.0f / 60.0f);
+		CHECK(log == std::vector<std::string>{"root:before",
+			"pause:update-enter", "pause:update-exit", "root:after"});
+	}
+
+	SUBCASE("a pop inside the game's update waits for that update, not the root's")
+	{
+		pause_raw->on_update([&]() { root->game().pop(); });
+
+		log.clear();
+		application.update(1.0f / 60.0f);
+
+		// Deferred past the pause menu's own update, and applied before the
+		// root's frame resumes: the owned stack drains on its own.
+		CHECK(ran_before(log, "pause:update-exit", "pause:dtor"));
+		CHECK(ran_before(log, "pause:dtor", "root:after"));
+		CHECK(ran_before(log, "level:resume", "root:after"));
+		CHECK(root->game().depth() == 1);
+		CHECK(application.depth() == 1);
+	}
+
+	SUBCASE("activation forwarded by the root reaches every frame, top first")
+	{
+		log.clear();
+		application.notify_activation(false);
+		CHECK(log == std::vector<std::string>{
+			"pause:deactivated", "level:deactivated"});
+		CHECK_FALSE(root->game().active());
+
+		log.clear();
+		application.notify_activation(true);
+		CHECK(log == std::vector<std::string>{
+			"pause:activated", "level:activated"});
+		CHECK(root->game().active());
+	}
+
+	SUBCASE("the game's stack draws first, and the root draws over it")
+	{
+		log.clear();
+		application.draw(renderer);
+		CHECK(log == std::vector<std::string>{
+			"level:draw", "pause:draw", "root:draw"});
+	}
+}
+
+TEST_CASE("a root built while the application is inactive leaves its stack inactive")
+{
+	std::vector<std::string> log;
+	StateContext application;
+	application.notify_activation(false);
+
+	std::unique_ptr<RootState> owned = std::make_unique<RootState>(&log);
+	RootState* root = owned.get();
+	application.transition_to(std::move(owned));
+
+	// The root missed the edge by being younger than it, and its init()
+	// asked for the level instead, so the stack it owns starts out knowing.
+	CHECK_FALSE(root->game().active());
 }

@@ -38,6 +38,29 @@ namespace labrador
 	// is written. They queue, and the queue drains once the stack's own call
 	// returns. Nested callbacks retain the outer call's protection, and a
 	// drain never reenters itself. See transition_to.
+	//
+	// A CONTEXT CAN BE A MEMBER OF A STATE, and that is how something sees
+	// every update and every draw whatever is on top - a developer console, a
+	// frame-time overlay. It is a root state that owns a StateContext holding
+	// the game's stack, and is the only frame on Application's:
+	//
+	//  - its update() runs its own code, then calls the owned update(dt);
+	//  - its draw() calls the owned draw(renderer), then draws over it;
+	//  - its on_activated() and on_deactivated() forward to the owned
+	//    notify_activation(true) and notify_activation(false);
+	//  - its init() calls the owned notify_activation(context()->active()),
+	//    so a root built while the application is in the background does not
+	//    report active.
+	//
+	// States inside it push and pop on the owned stack through their own
+	// context(), and the owned stack defers on its own, as every context
+	// does. The root's update() runs once per fixed step, after the input
+	// devices are polled, and being the only frame on Application's stack its
+	// own covers_screen(), on_suspend() and on_resume() never matter. Two
+	// things follow. Application::depth() is 1 for as long as the root runs,
+	// so whatever wants the game's depth asks the owned context. And a frame
+	// capture goes in the root's update(), after the owned update has
+	// returned, never in a draw() (Renderer::read_back_buffer says how).
 	class StateContext
 	{
 	public:
