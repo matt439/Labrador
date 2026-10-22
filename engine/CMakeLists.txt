@@ -98,6 +98,7 @@ if(EMSCRIPTEN)
 elseif(WIN32)
     target_sources(LabradorEngine PRIVATE
         app/win32/pointer_input.cpp
+        app/win32/system_command.cpp
         app/win32/window.cpp
     )
 else()

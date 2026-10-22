@@ -2,6 +2,7 @@
 
 #include "engine/app/window.h"
 #include "engine/app/win32/pointer_input.h"
+#include "engine/app/win32/system_command.h"
 
 #include <Windows.h>
 #include <algorithm>
@@ -323,8 +324,50 @@ TEST_CASE("keyboard messages map physical positions independently of their chara
     }
     SendMessageW(hwnd(window), WM_SYSKEYDOWN, VK_MENU, (0x38LL << 16) | 1);
     CHECK(notify.last_down == Key::alt);
+
+    // F10 and Alt alone arrive as the SYS pair, and are keys like any other,
+    // down then up.
+    for (const Mapping& mapping : { Mapping{ VK_F10, 0x44, false, Key::f10 },
+        Mapping{ VK_MENU, 0x38, false, Key::alt } })
+    {
+        notify.last_down = Key::none;
+        notify.last_up = Key::none;
+        const LPARAM position = static_cast<LPARAM>(mapping.scan << 16) | 1;
+        SendMessageW(hwnd(window), WM_SYSKEYDOWN, mapping.key, position);
+        CHECK(notify.last_down == mapping.expected);
+        CHECK(notify.last_up == Key::none);
+        SendMessageW(hwnd(window), WM_SYSKEYUP, mapping.key,
+            position | (1LL << 30) | (1LL << 31));
+        CHECK(notify.last_up == mapping.expected);
+    }
+
     SendMessageW(hwnd(window), WM_CHAR, L'z', 1);
     CHECK(notify.last_text == U'z');
+}
+
+TEST_CASE("only a bare keyboard menu activation is the window's to swallow")
+{
+	using labrador::is_bare_menu_activation;
+
+	// What F10, or Alt alone, sends. The low four bits are the system's.
+	CHECK(is_bare_menu_activation(SC_KEYMENU, 0));
+	CHECK(is_bare_menu_activation(SC_KEYMENU | 0x5, 0));
+	CHECK(is_bare_menu_activation(SC_KEYMENU | 0xF, 0));
+
+	// Alt+Space names its key and opens the system menu, and Alt plus a
+	// letter names that letter.
+	CHECK_FALSE(is_bare_menu_activation(SC_KEYMENU, ' '));
+	CHECK_FALSE(is_bare_menu_activation(SC_KEYMENU, 'f'));
+
+	// Every other system command is the system's.
+	CHECK_FALSE(is_bare_menu_activation(SC_CLOSE, 0));
+	CHECK_FALSE(is_bare_menu_activation(SC_MAXIMIZE, 0));
+	CHECK_FALSE(is_bare_menu_activation(SC_MOUSEMENU, 0));
+
+	// No live case. Passed to DefWindowProc, SC_KEYMENU returned at once
+	// without entering the menu loop for a hidden window, and for a shown
+	// one that was never activated, so a message sent to any window here
+	// passes whether the window swallows it or not.
 }
 
 TEST_CASE("capture cancellation and transfer clear buttons without a normal release")

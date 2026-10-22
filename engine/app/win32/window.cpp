@@ -1,5 +1,6 @@
 #include "engine/app/window.h"
 #include "engine/app/win32/pointer_input.h"
+#include "engine/app/win32/system_command.h"
 
 #include <Windows.h>
 
@@ -730,9 +731,12 @@ namespace labrador
 
 		// THE SYS VARIANTS ARE HERE TOO, and then fall through to
 		// DefWindowProc rather than being swallowed. Alt is a key like any
-		// other and a game may bind it, but Alt+F4 and F10 are the system's
-		// and stay the system's - handling the message is not the same as
-		// consuming it.
+		// other and a game may bind it, but Alt+F4, Alt+Space and Alt+Tab are
+		// the system's and stay the system's - handling the message is not the
+		// same as consuming it. F10 and Alt pressed alone are keys and nothing
+		// else: what they would otherwise open is the menu bar, this window has
+		// none, and the menu loop would only stall the pump. WM_SYSCOMMAND
+		// below is where that is decided.
 		//
 		// Key repeat needs no filtering. Windows resends WM_KEYDOWN while a
 		// key is held; Keyboard::on_key_down sets a bit that is already set,
@@ -985,6 +989,20 @@ namespace labrador
 			{
 				self->handle = nullptr;
 				SetWindowLongPtr(window, GWLP_USERDATA, 0);
+			}
+			break;
+
+		// F10, or Alt pressed and released alone. Passed on, DefWindowProc
+		// enters a modal loop on the system menu: PeekMessage stops returning
+		// to pump_until_quit, tick() stops, the next keys go to a menu nobody
+		// can see, and nothing tells the game. Swallowed, the keys have already
+		// reached the keyboard as keys. Alt+Space names its key and still
+		// opens the system menu, which is how a keyboard reaches Move and Size.
+		case WM_SYSCOMMAND:
+			if (is_bare_menu_activation(static_cast<uint64_t>(w_param),
+				static_cast<intptr_t>(l_param)))
+			{
+				return 0;
 			}
 			break;
 
