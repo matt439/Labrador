@@ -7,6 +7,7 @@
 #include "engine/audio/audio_resources.h"
 #include "engine/collision/partitioner.h"
 #include "engine/core/state_context.h"
+#include "engine/core/step_position.h"
 #include "engine/core/step_timer.h"
 #include "engine/core/thread_pool.h"
 #include "engine/input/gamepads.h"
@@ -270,6 +271,29 @@ namespace labrador
 		// (SEAM.md#6).
 		FrameTimings frame_timings() const;
 
+		// How far between two fixed steps the frame being drawn falls
+		// (StepPosition), for a draw that wants motion smoother than the step.
+		//
+		// WRITTEN TWICE A TICK. Before each update() it is that update's own
+		// step with a fraction of 0, so an update - and a frame drawn inside
+		// one, such as a capture - sees the step being run. After the tick's
+		// last update and before its draw it is the last step run and how far
+		// past it the frame falls. A reference to one member that stays put,
+		// so a drawable may hold a pointer to it for the Application's life,
+		// and safe to read from a draw worker.
+		//
+		// A STATE THAT WAS NOT UPDATED MUST NOT USE THE FRACTION. Only the top
+		// of the stack is updated, and a match drawn under a pause menu has
+		// stopped while the fraction goes on cycling: extrapolated, it shimmers
+		// back and forth by up to a step's motion. That is what `step` is for -
+		// a drawable that records it in update() and finds it unchanged in
+		// draw() was updated on the latest step, and one that finds it moved
+		// on was not, and draws where it is.
+		//
+		// On a display at the step's own rate the fraction barely moves from
+		// frame to frame, and nothing drawn with it looks different.
+		const StepPosition& step_position() const;
+
 		// The services. Every one of these is null until initialize() has run -
 		// which is what ApplicationOptions is for: anything the game needs to say
 		// before there is a window to say it to belongs in the options, not in a
@@ -362,6 +386,7 @@ namespace labrador
 		StepTimer timer_ = StepTimer();
 		FrameTimer frame_timer_ = FrameTimer();
 		FrameTimings frame_timings_ = FrameTimings();
+		StepPosition step_position_ = StepPosition();
 
 		std::unique_ptr<AudioResources> audio_resources_ = nullptr;
 		std::unique_ptr<ResourceLoader> resource_loader_ = nullptr;

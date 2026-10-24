@@ -127,9 +127,11 @@ namespace linesweeper
 	}
 
 	ParticleField::ParticleField(const World* world,
-		const TickResult* last_tick, TextureHandle block) :
+		const TickResult* last_tick, TextureHandle block,
+		const StepPosition* step) :
 		world_(world),
 		last_tick_(last_tick),
+		step_(step),
 		previous_(*world),
 		block_(block)
 	{
@@ -142,6 +144,12 @@ namespace linesweeper
 	{
 		this->observe();
 		this->previous_ = *this->world_;
+
+		if (this->step_ != nullptr)
+		{
+			this->stepped_at_ = this->step_->step;
+		}
+		this->step_seconds_ = dt;
 
 		// THE TIGHT LOOP, and the only thing in this sample that runs ten
 		// thousand times a frame.
@@ -180,11 +188,15 @@ namespace linesweeper
 				continue;
 			}
 
+			// Both where the spark is and where draw() could carry it before
+			// the next step, which is less than a whole step along its
+			// velocity (lead).
 			const float half = particle.size * (0.35f + 0.65f * particle.life) * 0.5f;
-			const float left = particle.position.x - half;
-			const float top = particle.position.y - half;
-			const float right = particle.position.x + half;
-			const float bottom = particle.position.y + half;
+			const Vector2F ahead = particle.position + particle.velocity * dt;
+			const float left = std::min(particle.position.x, ahead.x) - half;
+			const float top = std::min(particle.position.y, ahead.y) - half;
+			const float right = std::max(particle.position.x, ahead.x) + half;
+			const float bottom = std::max(particle.position.y, ahead.y) + half;
 			if (!any)
 			{
 				min_x = left;
@@ -379,12 +391,28 @@ namespace linesweeper
 		++this->count_;
 	}
 
+	float ParticleField::lead() const
+	{
+		if (this->step_ == nullptr || this->step_->step != this->stepped_at_)
+		{
+			return 0.0f;
+		}
+
+		return this->step_->fraction * this->step_seconds_;
+	}
+
 	void ParticleField::draw(DrawList& draw_list) const
 	{
+		// Along the velocity and not the curve: gravity's share of less than
+		// one step is under a pixel at any speed this field throws, and the
+		// next update draws the curve's true point.
+		const float lead = this->lead();
+
 		for (int index = 0; index < this->count_; ++index)
 		{
 			const Particle& particle =
 				this->particles_[static_cast<std::size_t>(index)];
+			const Vector2F position = particle.position + particle.velocity * lead;
 
 			// Shrinking as it fades is what makes a flat quad read as a spark
 			// instead of a square, and it costs one multiply where a soft
@@ -398,8 +426,7 @@ namespace linesweeper
 			// what a hot thing cooling looks like. Linear fades read as a
 			// dimmer switch.
 			draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1),
-				RectangleF(particle.position.x - half,
-					particle.position.y - half, side, side),
+				RectangleF(position.x - half, position.y - half, side, side),
 				glowing(kind_colour(static_cast<Kind>(particle.kind)),
 					particle.life * particle.life * glow_intensity),
 				0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);

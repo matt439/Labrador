@@ -53,6 +53,10 @@ namespace labrador
         // Get total number of updates since start of the program.
         uint32_t GetFrameCount() const noexcept { return m_frameCount; }
 
+        // Get the ticks held toward the next fixed step, and the step itself.
+        uint64_t GetLeftOverTicks() const noexcept { return m_leftOverTicks; }
+        uint64_t GetTargetElapsedTicks() const noexcept { return m_targetElapsedTicks; }
+
         // Get the current framerate.
         uint32_t GetFramesPerSecond() const noexcept { return m_framesPerSecond; }
 

@@ -5,6 +5,7 @@ add_executable(CoreTests
     name_table_tests.cpp
     registry_tests.cpp
     state_context_tests.cpp
+    step_position_tests.cpp
     thread_pool_tests.cpp
     test_main.cpp
 )

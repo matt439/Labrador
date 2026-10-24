@@ -8,8 +8,11 @@
 #include "samples/linesweeper/presentation/particles.h"
 
 #include <algorithm>
+#include <functional>
+#include <iterator>
 #include <limits>
 #include <memory>
+#include <vector>
 
 TEST_CASE("particle bounds contain visible edges and survive an edge-view cull")
 {
@@ -62,4 +65,66 @@ TEST_CASE("particle bounds contain visible edges and survive an edge-view cull")
 	field->update(10.0f);
 	CHECK(field->live() == 0);
 	CHECK(field->cull_bounds(100).width == 0);
+}
+
+TEST_CASE("sparks carried on between steps stay inside the cull bounds")
+{
+	using namespace labrador;
+	using namespace linesweeper;
+	using namespace mattmath;
+	RenderResources resources;
+	Renderer renderer;
+	renderer.create_device(nullptr, 1280, 720, 1);
+	renderer.set_resources(&resources);
+	TextureData texture;
+	texture.width = texture.height = 1;
+	texture.levels.push_back(texture_level(texture.format, 1, 1, 0));
+	texture.pixels.assign(4, 255);
+	add_texture_asset(renderer, resources, "white", texture);
+	World world;
+	TickResult tick;
+	for (int x = 0; x < well_columns; ++x)
+	{
+		world.cells[static_cast<size_t>(cell_index(x, well_rows - 1))] = 1;
+	}
+	StepPosition step;
+	step.step = 1;
+	ParticleField field(&world, &tick, resources.resolve_texture("white"), &step);
+	world.topped_out = 1;
+	++world.tick;
+	field.update(1.0f / 60.0f);
+	REQUIRE(field.live() > 0);
+
+	// Where update() left them, then as far on as a frame can carry them.
+	const std::function<std::vector<RecordedSprite>(float)> draw_at =
+		[&](float fraction)
+	{
+		step.fraction = fraction;
+		renderer.begin_frame();
+		renderer.set_view_count(1);
+		DrawList list = renderer.view(0);
+		field.draw(list);
+		renderer.submit();
+		return recorded_sprites(renderer);
+	};
+	const std::vector<RecordedSprite> still = draw_at(0.0f);
+	const std::vector<RecordedSprite> carried = draw_at(0.999f);
+	REQUIRE(still.size() == carried.size());
+
+	bool any_moved = false;
+	const RectangleF cull = field.cull_bounds(1);
+	for (size_t index = 0; index < carried.size(); ++index)
+	{
+		for (size_t corner = 0; corner < std::size(carried[index].corners); ++corner)
+		{
+			const Vector2F& position = carried[index].corners[corner].position;
+			CHECK(position.x >= cull.left());
+			CHECK(position.x <= cull.right());
+			CHECK(position.y >= cull.top());
+			CHECK(position.y <= cull.bottom());
+			any_moved = any_moved ||
+				position != still[index].corners[corner].position;
+		}
+	}
+	CHECK(any_moved);
 }

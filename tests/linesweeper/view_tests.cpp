@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 
+using labrador::StepPosition;
 using labrador::TextureHandle;
 using linesweeper::Coord;
 using linesweeper::Kind;
@@ -634,6 +635,51 @@ namespace
 
 		CHECK(field.live() == particle_capacity);
 		CHECK(field.dropped() > 0);
+	}
+
+	// What draw() carries the sparks on by between steps. The motion itself
+	// is drawn, so particle_draw_tests.cpp holds where the quads land.
+	TEST_CASE("the sparks are carried on only on a step the field was updated on")
+	{
+		World world;
+		fill_row(world, well_rows - 1);
+
+		TickResult result;
+
+		SUBCASE("without a step, never")
+		{
+			ParticleField field(&world, &result, TextureHandle{});
+			world.topped_out = 1;
+			++world.tick;
+			field.update(frame);
+
+			CHECK(field.lead() == 0.0f);
+		}
+
+		SUBCASE("with one, by the frame's share of the step it was updated on")
+		{
+			StepPosition step;
+			ParticleField field(&world, &result, TextureHandle{}, &step);
+
+			// As the shell writes it: the update's own step with no fraction,
+			// then the same step and how far past it the frame falls.
+			step.step = 5;
+			field.update(frame);
+			CHECK(field.lead() == 0.0f);
+
+			step.fraction = 0.5f;
+			CHECK(field.lead() == doctest::Approx(0.5f * frame));
+
+			// A step the field was not updated on - the pause menu's - and
+			// it is drawn where it was left, whatever the fraction says.
+			step.step = 6;
+			step.fraction = 0.75f;
+			CHECK(field.lead() == 0.0f);
+
+			// Updated again, and carried on again.
+			field.update(frame);
+			CHECK(field.lead() == doctest::Approx(0.75f * frame));
+		}
 	}
 
 	TEST_CASE("bounds is the burst, measured, and not the whole screen")

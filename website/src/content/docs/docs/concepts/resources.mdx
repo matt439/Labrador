@@ -64,7 +64,7 @@ particle field:
 <SourceFile
 	path="samples/linesweeper/states/play_state.cpp"
 	from="this->particles_ = this->scene_->add(std::make_unique<ParticleField>("
-	to="resources->resolve_texture(block_texture_name)));"
+	to="&this->app_->step_position()));"
 />
 
 Handles are typed. A [`Handle<Texture>`](/docs/reference/core/handle/) cannot be passed where a
