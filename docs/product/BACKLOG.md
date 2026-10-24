@@ -213,7 +213,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[OCA-35](STORIES.md#oca-35)** Must · XS · The Outside C++ Adopter: Know that translucent textures must be premultiplied — after OCA-34
 - [ ] **[OCA-38](STORIES.md#oca-38)** Should · XS · The Outside C++ Adopter: The guide's XWBTool command makes a bank that loads in the browser too
 - [ ] **[OCA-39](STORIES.md#oca-39)** Should · S · The Outside C++ Adopter: Export my sounds in a format the engine accepts on both platforms — after OCA-38
-- [ ] **[OCA-36](STORIES.md#oca-36)** Should · S · The Outside C++ Adopter: Copy a guide sample without broken paths
+- [x] **[OCA-36](STORIES.md#oca-36)** Should · S · The Outside C++ Adopter: Copy a guide sample without broken paths
 - [ ] **[OCA-62](STORIES.md#oca-62)** Must · S · The Outside C++ Adopter: Know the notices my Windows game must ship
 - [ ] **[OCA-60](STORIES.md#oca-60)** Must · M · The Outside C++ Adopter: Know what files my Windows release needs and build a package — after OCA-62
 - [ ] **[OCA-61](STORIES.md#oca-61)** Must · S · The Outside C++ Adopter · **Owner**: My release runs on a clean Windows machine — after OCA-60
@@ -270,7 +270,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-35 | G12: translucent textures must be premultiplied, and nothing says so. Follows OCA-34 (Now). |
 | OCA-38 | G129: the guide's XWBTool command makes a bank the browser refuses. |
 | OCA-39 | G130: which sound formats load on both platforms. |
-| OCA-36 | G13: guide samples borrow paths that break when copied. |
+| OCA-36 | G13: guide samples borrow paths that break when copied. Closed 2026-10-24: the solid-rectangle recipe uses the engine's own white texture (`white_texture_name`), so no sample borrows LineSweeper's, and the collision, components and local_multiplayer READMEs each list the paths outside their folder they still use and what a copy does about them. |
 | OCA-62 | G16 (major, merged with PI-12): no notice list for what a Windows game ships. |
 | OCA-60 | G14 (major): no release-package guidance or install rules. The unexplained dependency on OCA-29 is removed (critique). |
 | OCA-61 | G15 (major): nobody has run a release on a clean Windows install. Windows Sandbox is interactive and owner-run. |

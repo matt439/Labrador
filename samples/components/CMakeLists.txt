@@ -12,7 +12,7 @@ if(EMSCRIPTEN)
     target_link_libraries(ComponentsGallery PRIVATE ComponentsExample labrador_settings)
 
     # A page, its loader and the module, as the collision sample's are, with
-    # the same three files of content packed at the same relative paths.
+    # the same two things packed at the same relative paths.
     set_target_properties(ComponentsGallery PROPERTIES SUFFIX ".html")
     target_link_options(ComponentsGallery PRIVATE
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json@/manifest.json"

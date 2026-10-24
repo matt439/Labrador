@@ -15,15 +15,15 @@ cmake --build --preset x64-debug --target CollisionSample CollisionSampleTests
 ctest --preset x64-debug -R '^CollisionSampleTests$'
 ```
 
-The build reuses the minimal sample's font, copying it beside this executable
-with its own manifest; every shape is drawn from the engine's own white texture,
-`white_texture_name`, so there is no texture to copy. It can start from any working
-directory. Resize the window and the camera fits the same arena into it.
+The build copies its manifest and the minimal sample's font beside this
+executable; every shape is drawn from the engine's own white texture,
+`white_texture_name`, so there is no texture to copy. It can start from any
+working directory. Resize the window and the camera fits the same arena into it.
 
 It also runs in a browser. Under the `wasm-debug` or `wasm-release` preset the
 same build produces `CollisionSample.html` beside its `.js` and `.wasm` in
-`out/build/<preset>/samples/collision/`, with the manifest, font and texel
-packed into the module. Serve that folder over HTTP and open the page.
+`out/build/<preset>/samples/collision/`, with the manifest and font packed
+into the module. Serve that folder over HTTP and open the page.
 `main_web.cpp` is its entry point and `web/shell.html` its page; the state
 both entry points run is `collision_state.cpp`. The page has no smoke test or
 capture, which need a command line and WIC, and `CollisionSampleTests` runs
@@ -68,3 +68,20 @@ to the trigger, checks the result and exits with code zero on success. This is
 a device test, separate from CTest; use a rasterising preset to inspect pixels.
 Add `--capture path.png` after `--smoke-test` to write its final frame through
 the existing PNG writer. Capture is available on rasterising presets only.
+
+## What it borrows from outside this folder
+
+Everything else is in this folder or in the engine. A copy that leaves the
+repository has these to deal with:
+
+- `../minimal/content/fonts/`, the font atlas: copied beside the executable on
+  Windows and embedded at `/fonts` in a browser. A copy puts the
+  `.spritefont` in its own `content/fonts/` and points the three lines of
+  `CMakeLists.txt` that reach into it there, or brings its own font and
+  renames it in `content/manifest.json` and the state that resolves it.
+- `../../tools/linesweeper_capture/png_file.h` and `png_file.cpp`, the PNG
+  writer behind `--capture`, compiled into the Windows build on every backend
+  but `null`; `main.cpp` includes the header from the repository root. A copy
+  takes both files with it, or drops the capture by deleting the
+  `if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")` block in `CMakeLists.txt`:
+  `main.cpp` keeps everything the capture needs behind `COLLISION_SAMPLE_CAPTURE`.
