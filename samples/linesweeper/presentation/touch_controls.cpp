@@ -107,7 +107,8 @@ namespace linesweeper
 	std::optional<Control> control_at(const Arrangement& arrangement,
 		const Vector2I& buffer_point)
 	{
-		const Vector2F point = to_board(arrangement, buffer_point);
+		const Vector2F point = arrangement.camera.world_position(buffer_point,
+			arrangement.viewport);
 		const std::array<RectangleF, control_count> rectangles =
 			control_rectangles(arrangement);
 

@@ -4,6 +4,7 @@
 #include "engine/render/viewport.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 
 #include <stdexcept>
 
@@ -11,6 +12,7 @@ using labrador::Camera;
 using labrador::Viewport;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
+using mattmath::Vector2I;
 
 namespace
 {
@@ -194,6 +196,79 @@ TEST_SUITE("Camera::frame")
 			const Camera blind(Vector2F::ZERO, 0.0f);
 
 			CHECK_THROWS_AS(blind.visible_rectangle(screen),
+				std::invalid_argument);
+		}
+	}
+}
+
+TEST_SUITE("Camera::world_position")
+{
+	TEST_CASE("world_position is the inverse of calculate_view_position")
+	{
+		SUBCASE("the identity camera over the whole buffer answers the pixel")
+		{
+			const Viewport buffer(0.0f, 0.0f, 1280.0f, 720.0f);
+			const Vector2F world =
+				Camera::DEFAULT_CAMERA.world_position(Vector2I(37, 501), buffer);
+
+			CHECK(world.x == 37.0f);
+			CHECK(world.y == 501.0f);
+		}
+
+		SUBCASE("a world point drawn at a pixel comes back from that pixel")
+		{
+			// The right-hand pane of a split screen, panned and zoomed. The
+			// view position is relative to the pane, so the buffer pixel is
+			// the pane's origin plus it.
+			const Viewport pane(640.0f, 0.0f, 640.0f, 720.0f);
+			const Camera camera(Vector2F(1000.0f, -200.0f), 2.0f);
+			const Vector2F world(1100.0f, -150.0f);
+			const Vector2F view = camera.calculate_view_position(world);
+			REQUIRE(view.x == 200.0f);
+			REQUIRE(view.y == 100.0f);
+
+			const Vector2F back =
+				camera.world_position(Vector2I(840, 100), pane);
+			CHECK(back.x == world.x);
+			CHECK(back.y == world.y);
+		}
+
+		SUBCASE("zoomed out, a pixel covers more than one world unit")
+		{
+			const Viewport buffer(0.0f, 0.0f, 1920.0f, 1080.0f);
+			const Camera camera(Vector2F::ZERO, 0.25f);
+
+			CHECK(camera.world_position(Vector2I(10, 20), buffer).x == 40.0f);
+			CHECK(camera.world_position(Vector2I(10, 20), buffer).y == 80.0f);
+		}
+
+		SUBCASE("a pane off a whole pixel starts where the backends draw it")
+		{
+			// pixel_rect truncates the edge, so this pane's first pixel is
+			// 100, not 100.75, and a draw at its view origin lands there.
+			const Viewport pane(100.75f, 50.5f, 300.0f, 200.0f);
+			const Vector2F world =
+				Camera::DEFAULT_CAMERA.world_position(Vector2I(100, 50), pane);
+
+			CHECK(world.x == 0.0f);
+			CHECK(world.y == 0.0f);
+		}
+
+		SUBCASE("a pixel outside the pane is not clipped to it")
+		{
+			const Viewport pane(640.0f, 0.0f, 640.0f, 720.0f);
+			const Vector2F world =
+				Camera::DEFAULT_CAMERA.world_position(Vector2I(0, 0), pane);
+
+			CHECK(world.x == -640.0f);
+			CHECK(world.y == 0.0f);
+		}
+
+		SUBCASE("a zero scale throws rather than divide by it")
+		{
+			const Camera blind(Vector2F::ZERO, 0.0f);
+			CHECK_THROWS_AS(
+				blind.world_position(Vector2I(1, 1), Viewport(0, 0, 10, 10)),
 				std::invalid_argument);
 		}
 	}

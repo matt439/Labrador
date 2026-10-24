@@ -107,6 +107,23 @@ namespace labrador
 			Vector2F(viewport.width / this->scale,
 				viewport.height / this->scale));
 	}
+	Vector2F Camera::world_position(const Vector2I& buffer_point,
+		const Viewport& viewport) const
+	{
+		if (this->scale == 0.0f)
+		{
+			throw std::invalid_argument(
+				"Camera::world_position: the camera's scale is zero, so no "
+				"world point is under any pixel");
+		}
+
+		const RectangleI pane = viewport.pixel_rect();
+		return Vector2F(
+			static_cast<float>(buffer_point.x - pane.x) / this->scale +
+				this->translation.x,
+			static_cast<float>(buffer_point.y - pane.y) / this->scale +
+				this->translation.y);
+	}
 	Vector2F Camera::calculate_view_position(
 		const Vector2F& world_position) const
 	{
