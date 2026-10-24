@@ -1,6 +1,6 @@
 # User stories
 
-160 stories, each written for one persona, checked by a second agent for INVEST and for fit with PHILOSOPHY, and then reconciled: stories that two personas wanted from the same change were merged into one, which lists the others under *also serves*. Taken on 2026-10-13 against `master` at `0977112`. Their order of work is [BACKLOG.md](BACKLOG.md); the gaps they close are in [GAP-REGISTER.md](GAP-REGISTER.md). One was added after: PI-19, on 2026-10-22, split out of PI-10 when report 14 was accepted.
+160 stories, each written for one persona, checked by a second agent for INVEST and for fit with PHILOSOPHY, and then reconciled: stories that two personas wanted from the same change were merged into one, which lists the others under *also serves*. Taken on 2026-10-13 against `master` at `0977112`. Their order of work is [BACKLOG.md](BACKLOG.md); the gaps they close are in [GAP-REGISTER.md](GAP-REGISTER.md). Two were added after: PI-19, on 2026-10-22, split out of PI-10 when report 14 was accepted; and OCA-76, on 2026-10-24, split out of OCA-53 when its engine half was weighed.
 
 Sizes are for one person working with agents: XS under an hour, S half a day, M one to two days, L a week. **Owner** marks a story an agent cannot finish alone: a decision, a repository setting, hardware in hand, or a deploy from a private repository.
 
@@ -8,7 +8,7 @@ Sizes are for one person working with agents: XS under an hour, S half a day, M 
 
 | Persona | Stories |
 |---|---|
-| [The Outside C++ Adopter](#stories-outside-cpp-adopter) | 74 |
+| [The Outside C++ Adopter](#stories-outside-cpp-adopter) | 75 |
 | [The Pinned Submodule Integrator](#stories-pinned-integrator) | 11 |
 | [The Sole Owner-Maintainer](#stories-sole-maintainer) | 37 |
 | [The Browser and Phone Demo Player](#stories-browser-demo-player) | 20 |
@@ -1544,6 +1544,27 @@ M · content · E04 Content, audio and text that work on both platforms · gaps 
 - CLAUDE.md (RenderPixelTests, LineSweeperCapture): every golden and capture that draws text is regenerated and each changed image reviewed; a regeneration that is not looked at turns the contract into a recording
 
 **Notes.** Split from OCA-37 per the critique: the disclosure is OCA-37 (Now); this replacement is Next. Owner decision: whether to replace the font at all, and with which. Cost is mostly review: regenerating and looking at every golden image and capture that draws text, including the text cases that decode their atlas in the test.
+
+<a id="oca-76"></a>
+### OCA-76. Ask the engine where my game may write, on Windows and in the browser
+
+**As** an adopter whose game keeps settings or saves on both platforms, **I want** the engine to say where per-user data goes - a known folder on Windows, a persistent mount in a browser - beside where it already says the content is, **so that** my save code has no platform branch of its own.
+
+S · code · E05 Input, menus, settings and couch play my players can use · gaps G108 · **Later**
+
+**Acceptance**
+
+- Given engine/app/content_root.h, When I read it, Then a function names a per-user directory for a game's name: a folder under the user's local application data on Windows, and a directory on a persistent mount in a browser
+- Given a browser build, When the game writes a file there and calls the engine's flush, Then a reload of the page reads the same bytes back, checked by a headless-Chrome page test
+- Given the guide OCA-53 writes, When this lands, Then its platform branches are replaced by the call
+
+**Trade-offs**
+
+- T1: the location is a platform fact like the content root; what is written there, and its format, stay the game's
+- T12 (price): serialisation is still written by hand; this is only where the file goes
+- ARCHITECTURE module table: assets only reads, so the call lives in app beside content_root.h, not in assets
+
+**Notes.** Split from OCA-53 on 2026-10-24. Present caller: ColourWars' `game/directory_consts.cpp`, which reads `%LOCALAPPDATA%` itself and falls back to beside the executable; it is Windows-only, so the browser half has no caller yet. Built when a second client asks, or when a browser game does. A review of the same date said the browser mount is shell code no game can write; that does not hold, because a game owns its `main_web.cpp`.
 
 <a id="stories-pinned-integrator"></a>
 ## The Pinned Submodule Integrator
