@@ -12,7 +12,7 @@ amended in `PHILOSOPHY.md`, not here.
 | [PERSONAS.md](PERSONAS.md) | Seven personas: one primary (the outside adopter, by the owner's decision), two secondary (the maintainer and the integrator, the only users the evidence shows), two tertiary and two anti, each with its evidence and the assumptions still to validate; the guardrails the anti-personas impose | No: record of 2026-10-13 |
 | [JOURNEYS.md](JOURNEYS.md) | Twenty-one journeys, step by step, with what happens today; and a literal run of Get Started | No |
 | [GAP-REGISTER.md](GAP-REGISTER.md) | 149 gaps (34 major, 115 minor) in twelve epics, each with evidence, a scope check and the stories that close it | No |
-| [STORIES.md](STORIES.md) | 162 user stories with Given/When/Then acceptance criteria, sizes and the trade-offs that bear on them | No |
+| [STORIES.md](STORIES.md) | 163 user stories with Given/When/Then acceptance criteria, sizes and the trade-offs that bear on them | No |
 | [BACKLOG.md](BACKLOG.md) | The stories in four horizons (Now, Next, Later, Won't this time) with exit criteria, commit batches, owner decisions and risks | **Yes**: tick a box in the commit that closes the story |
 
 Everything except `BACKLOG.md` is a dated record, like `docs/review/`: it was

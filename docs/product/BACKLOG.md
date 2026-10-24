@@ -1,6 +1,6 @@
 # Backlog
 
-The order of work: 163 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
+The order of work: 164 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
 
 Each line reads: id, MoSCoW, size, the persona it serves, title, and what it waits on. The reasoning for every placement is in the *why* under each horizon; stories are in [STORIES.md](STORIES.md).
 
@@ -341,7 +341,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 18. L18 Pacing on visitors displays: BDP-07
 19. L19 Couch play: join screen: OCA-46
 20. L20 Settings screen and pointer menus: OCA-51, OCA-50
-21. L21 Text beyond ASCII: OCA-41, OCA-43, OCA-42
+21. L21 Text beyond ASCII: OCA-41, OCA-43, OCA-42, OCA-77
 22. L22 Background music cost: OCA-40
 23. L23 Debugging, recording renderer and DPI: OCA-18, OCA-32, OCA-66
 24. L24 Answer the filed reports, then staging: PI-10, PI-19, PI-11
@@ -393,6 +393,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[OCA-41](STORIES.md#oca-41)** Could · S · The Outside C++ Adopter: My non-English literals draw the same on Windows and in the browser
 - [ ] **[OCA-43](STORIES.md#oca-43)** Could · S · The Outside C++ Adopter: Know which languages the text path can draw
 - [ ] **[OCA-42](STORIES.md#oca-42)** Could · M · The Outside C++ Adopter: Get my game's language from a string table to the screen — after OCA-41, OCA-43, OCA-34
+- [ ] **[OCA-77](STORIES.md#oca-77)** Could · S · The Outside C++ Adopter: Wrap a translated string to a width — after OCA-43, OCA-42
 - [ ] **[OCA-40](STORIES.md#oca-40)** Could · S · The Outside C++ Adopter: Know what background music costs and how to keep it out of the page download — after OCA-38
 - [ ] **[OCA-18](STORIES.md#oca-18)** Could · S · The Outside C++ Adopter: Debug my game in Visual Studio from the presets
 - [ ] **[OCA-32](STORIES.md#oca-32)** Could · S · The Outside C++ Adopter: Use the recording renderer in my own tests — after OCA-29
@@ -466,6 +467,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | OCA-41 | G145: non-English literals differ between Windows and the browser without /utf-8. |
 | OCA-43 | G147: which languages the text path can draw. |
 | OCA-42 | G146: a string table to the screen. |
+| OCA-77 | G146, G147: word wrap to a measured width, weighed on 2026-10-24 after a review asked for wrap and alignment helpers. Wrap is cheap - `Font::measure` already lays out line feeds, so a wrap only chooses where to insert them - but where a line may break depends on the script, which OCA-43 settles, and no caller in either client wraps by width yet: the one wrap there is a debug console cutting at a column count on purpose. It follows OCA-43 and lands with or after OCA-42, whose translated strings are the first caller. An alignment helper was declined in the same weighing: centring is one line at each of the half-dozen sites that do it, and `renderer.h` already says to `std::floor` a centred point-sampled position. |
 | OCA-40 | G131: what background music costs in the page download. Follows OCA-38 (Next). |
 | OCA-18 | G109: debugging in Visual Studio from the presets. |
 | OCA-32 | G48: the recording renderer in an adopter's tests. Follows OCA-29 (Next). |

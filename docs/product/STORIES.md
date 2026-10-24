@@ -1,6 +1,6 @@
 # User stories
 
-160 stories, each written for one persona, checked by a second agent for INVEST and for fit with PHILOSOPHY, and then reconciled: stories that two personas wanted from the same change were merged into one, which lists the others under *also serves*. Taken on 2026-10-13 against `master` at `0977112`. Their order of work is [BACKLOG.md](BACKLOG.md); the gaps they close are in [GAP-REGISTER.md](GAP-REGISTER.md). Two were added after: PI-19, on 2026-10-22, split out of PI-10 when report 14 was accepted; and OCA-76, on 2026-10-24, split out of OCA-53 when its engine half was weighed.
+160 stories, each written for one persona, checked by a second agent for INVEST and for fit with PHILOSOPHY, and then reconciled: stories that two personas wanted from the same change were merged into one, which lists the others under *also serves*. Taken on 2026-10-13 against `master` at `0977112`. Their order of work is [BACKLOG.md](BACKLOG.md); the gaps they close are in [GAP-REGISTER.md](GAP-REGISTER.md). Three were added after: PI-19, on 2026-10-22, split out of PI-10 when report 14 was accepted; OCA-76, on 2026-10-24, split out of OCA-53 when its engine half was weighed; and OCA-77, the same day, when text wrap was weighed against the localisation stories.
 
 Sizes are for one person working with agents: XS under an hour, S half a day, M one to two days, L a week. **Owner** marks a story an agent cannot finish alone: a decision, a repository setting, hardware in hand, or a deploy from a private repository.
 
@@ -8,7 +8,7 @@ Sizes are for one person working with agents: XS under an hour, S half a day, M 
 
 | Persona | Stories |
 |---|---|
-| [The Outside C++ Adopter](#stories-outside-cpp-adopter) | 75 |
+| [The Outside C++ Adopter](#stories-outside-cpp-adopter) | 76 |
 | [The Pinned Submodule Integrator](#stories-pinned-integrator) | 11 |
 | [The Sole Owner-Maintainer](#stories-sole-maintainer) | 37 |
 | [The Browser and Phone Demo Player](#stories-browser-demo-player) | 20 |
@@ -1565,6 +1565,27 @@ S · code · E05 Input, menus, settings and couch play my players can use · gap
 - ARCHITECTURE module table: assets only reads, so the call lives in app beside content_root.h, not in assets
 
 **Notes.** Split from OCA-53 on 2026-10-24. Present caller: ColourWars' `game/directory_consts.cpp`, which reads `%LOCALAPPDATA%` itself and falls back to beside the executable; it is Windows-only, so the browser half has no caller yet. Built when a second client asks, or when a browser game does. A review of the same date said the browser mount is shell code no game can write; that does not hold, because a game owns its `main_web.cpp`.
+
+<a id="oca-77"></a>
+### OCA-77. Wrap a translated string to a width
+
+**As** an adopter whose strings change length when they are translated, **I want** the engine to break a string into lines that fit a width, measured by the font that draws it, **so that** a translation that runs longer than English stays inside its panel without my counting characters.
+
+S · code · E04 Content, audio and text that work on both platforms · gaps G146, G147 · **Later**
+
+**Acceptance**
+
+- Given engine/render/font.h or render_resources.h beside measure_text, When I read it, Then a call takes a font, a string and a width and returns the string with line feeds inserted, every line of which measures no wider than the width unless one word alone is wider
+- Given a string in a script OCA-43 lists without spaces between words, When it is wrapped, Then the call breaks it where that story says such a script may break, or the header says it does not and why
+- Given the call, When it is tested, Then the cases run headlessly against a Font built in the test, as font_tests.cpp's do, in every configuration
+
+**Trade-offs**
+
+- T1: where a line may break is mechanism over the glyph walk; what the panel is, and whether to wrap or shrink, is the game's
+- T3: line feeds in a returned string, measured by the existing walk, rather than a layout object
+- T8: the wrap runs when the text changes, never per frame
+
+**Notes.** Added 2026-10-24, when a review asked for wrap and alignment helpers. `Font::measure` already lays out line feeds, so a wrap is the choice of where to insert them. No caller in either client wraps by width: ColourWars' debug console cuts at a column count derived from a monospaced advance, deliberately. Follows OCA-43, because the break rule is a property of the script, and lands with or after OCA-42, whose translated strings are the first caller. Alignment was declined in the same weighing: centring is one line at each site, and renderer.h already says to floor a centred point-sampled position.
 
 <a id="stories-pinned-integrator"></a>
 ## The Pinned Submodule Integrator
