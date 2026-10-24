@@ -407,6 +407,20 @@ across, overlapping ones saturate towards white, and the content is still one
 white texel. The prediction was that soft radial dots were needed; at this size
 they are not.
 
+**Between two steps the sparks are carried on, and nothing else is.** The
+match steps at 60 Hz and a 144 Hz display draws each step two or three times,
+so anything drawn straight from the last update repeats a position and then
+jumps. The field borrows the shell's `Application::step_position` and draws
+each spark that share of a step further along its velocity; gravity's part of
+less than one step is a quarter of a pixel. The board does not do this and must
+not: a piece is in one cell or the next, and a piece drawn between cells is a
+position the rules never held. The field carries on only when it was updated on
+the latest step, because under the pause menu the match has stopped while the
+step count goes on, and a field extrapolated there shimmers.
+`LineSweeperViewTests` holds that rule; the null configuration's draw test holds
+that a carried spark stays inside the bounds the cull reads. The capture tool
+and the frame bench pass no step and draw what they drew before.
+
 **It learns what happened by keeping last frame's match and looking.** There is
 no event queue, no callback and not one line in `rules/` that knows the field
 exists. The field holds a `World` by value, compares it with the live one every

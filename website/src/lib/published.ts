@@ -115,6 +115,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['byte_reader.h', 'ByteReader'],
 			['file_path.h', 'UTF-8 paths'],
 			['moving_object.h', 'MovingObject'],
+			['step_position.h', 'StepPosition'],
 		],
 	},
 	{

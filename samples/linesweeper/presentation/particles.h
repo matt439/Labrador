@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/game_object.h"
+#include "engine/core/step_position.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/renderer.h"
@@ -211,8 +212,17 @@ namespace linesweeper
 		// `last_tick` is what tick() returned for the World as it stands now,
 		// kept by the same owner that keeps the World, and read only on a
 		// frame the tick count advanced.
+		//
+		// `step` is the shell's Application::step_position, borrowed for the
+		// same life as the World. With one, a frame drawn between two steps
+		// carries each spark on along its velocity by the share of a step
+		// the frame falls past the last, which is what keeps ten thousand
+		// sparks from repeating positions on a display faster than the step.
+		// Without one - a test, a capture - every spark is drawn where the
+		// last update left it.
 		ParticleField(const World* world, const TickResult* last_tick,
-			labrador::TextureHandle block);
+			labrador::TextureHandle block,
+			const labrador::StepPosition* step = nullptr);
 
 		// Reads the difference against last frame's match, emits whatever it
 		// finds, then integrates and compacts. One pass, one thread.
@@ -221,9 +231,20 @@ namespace linesweeper
 		// Ten thousand quads through the one verb the seam has, and not one
 		// member written - draw() is const all the way down because several
 		// view workers enter it on this same object at once (game_object.h).
+		//
+		// Carried forward only when this field was updated on the latest
+		// step. A match under the pause menu is not updated while the step
+		// count goes on, and carried forward it would shimmer by up to a
+		// step's motion every frame.
 		void draw(labrador::DrawList& draw_list) const override;
 
-		// The live particles' own extent, computed in update() and stored.
+		// How far past where update() left them draw() puts the sparks this
+		// frame, in seconds of their own motion: zero without a borrowed
+		// step, or when the field was not updated on the latest one.
+		float lead() const;
+
+		// The live particles' own extent, computed in update() and stored,
+		// and reaching as far as draw() can carry them before the next step.
 		//
 		// Measured rather than declared as the whole screen, because that is
 		// the one thing this object can report cheaply that a cull would
@@ -290,6 +311,12 @@ namespace linesweeper
 
 		const World* world_ = nullptr;
 		const TickResult* last_tick_ = nullptr;
+
+		// The shell's step, the step this field was last updated on, and how
+		// long that step was. draw() reads all three and writes none.
+		const labrador::StepPosition* step_ = nullptr;
+		std::uint64_t stepped_at_ = 0;
+		float step_seconds_ = 0.0f;
 
 		// Last frame's match, by value. The whole event system, bar the one
 		// value above.

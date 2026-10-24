@@ -291,6 +291,11 @@ namespace labrador
 		return this->frame_timings_;
 	}
 
+	const StepPosition& Application::step_position() const
+	{
+		return this->step_position_;
+	}
+
 	// SIX CLOCK READS A RENDERED TICK, AND TWO OTHERWISE, whatever the frame
 	// holds: one at each phase boundary and none per view or per object
 	// (T8). In a browser each is a call out to performance.now(), so the
@@ -301,6 +306,9 @@ namespace labrador
 
 		const std::uint32_t steps_before = this->timer_.GetFrameCount();
 		this->timer_.Tick([&]() { this->update(); });
+		this->step_position_ = labrador::step_position(
+			this->timer_.GetFrameCount(), this->timer_.GetLeftOverTicks(),
+			this->timer_.GetTargetElapsedTicks());
 
 		FrameMarks marks;
 		marks.updates =
@@ -311,6 +319,12 @@ namespace labrador
 
 	void Application::update()
 	{
+		// The step this update runs, already counted by the timer, so that a
+		// drawable recording it here can tell in draw() whether it was stepped
+		// on the latest one (step_position, application.h).
+		this->step_position_ = labrador::step_position(
+			this->timer_.GetFrameCount(), 0, this->timer_.GetTargetElapsedTicks());
+
 		// Before anything reads it, and on every frame whatever is running.
 		// That is what makes "down now, up last frame" true - see gamepads.h
 		// for the two hand-primed edge detectors this replaced.

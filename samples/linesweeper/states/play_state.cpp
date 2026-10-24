@@ -147,10 +147,12 @@ namespace linesweeper
 		// comparing, which is a thing only a 276-byte trivially copyable
 		// value makes cheap enough to do every frame - and the second pointer
 		// is the one fact that comparison cannot recover, the piece as it
-		// locked (particles.h).
+		// locked (particles.h). The third is the shell's step, which carries
+		// the sparks on between steps on a display faster than one.
 		this->particles_ = this->scene_->add(std::make_unique<ParticleField>(
 			&this->world_, &this->last_tick_,
-			resources->resolve_texture(block_texture_name)));
+			resources->resolve_texture(block_texture_name),
+			&this->app_->step_position()));
 
 		// LAST, AND OVER THE SPARKS. The top-out banner appears on the exact
 		// frame the field throws its largest burst, so the one screen a player

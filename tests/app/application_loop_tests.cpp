@@ -30,8 +30,9 @@ namespace
 	{
 	public:
 		TimingState(Application* app, std::vector<FrameTimings>* seen,
-			std::vector<std::uint64_t>* drawn) :
-			app_(app), seen_(seen), drawn_(drawn)
+			std::vector<std::uint64_t>* drawn,
+			std::vector<StepPosition>* positions) :
+			app_(app), seen_(seen), drawn_(drawn), positions_(positions)
 		{
 		}
 
@@ -41,6 +42,7 @@ namespace
 		{
 			this->seen_->push_back(this->app_->frame_timings());
 			this->updates_++;
+			this->steps_.push_back(this->app_->step_position());
 
 			if (this->updates_ == CAPTURE_AT)
 			{
@@ -67,6 +69,7 @@ namespace
 			if (!this->capturing_)
 			{
 				this->drawn_->push_back(this->app_->frame_timings().frame);
+				this->positions_->push_back(this->app_->step_position());
 			}
 		}
 
@@ -76,10 +79,14 @@ namespace
 		std::uint64_t capture_before_ = 0;
 		std::uint64_t capture_after_ = 0;
 
+		// What step_position() said inside each update.
+		std::vector<StepPosition> steps_;
+
 	private:
 		Application* app_ = nullptr;
 		std::vector<FrameTimings>* seen_ = nullptr;
 		std::vector<std::uint64_t>* drawn_ = nullptr;
+		std::vector<StepPosition>* positions_ = nullptr;
 		int updates_ = 0;
 		bool capturing_ = false;
 	};
@@ -100,8 +107,9 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 
 	std::vector<FrameTimings> seen;
 	std::vector<std::uint64_t> drawn;
+	std::vector<StepPosition> positions;
 	std::unique_ptr<TimingState> owned =
-		std::make_unique<TimingState>(&app, &seen, &drawn);
+		std::make_unique<TimingState>(&app, &seen, &drawn, &positions);
 	TimingState* state = owned.get();
 
 	CHECK(app.frame_timings().frame == 0);
@@ -145,4 +153,67 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 	// What the last update saw is a frame the loop rendered after updating.
 	CHECK(seen.back().frame > 0);
 	CHECK(app.frame_timings().frame >= seen.back().frame);
+}
+
+TEST_CASE("step_position is published before each of the loop's draws")
+{
+	ApplicationOptions options;
+	options.window_class_name = L"StepPositionTestWindow";
+	options.visible = false;
+	options.view_capacity = 1;
+	options.max_threads = 1;
+	options.target_fps = 240;
+
+	Application app(std::move(options));
+	app.initialize();
+
+	std::vector<FrameTimings> seen;
+	std::vector<std::uint64_t> drawn;
+	std::vector<StepPosition> positions;
+	std::unique_ptr<TimingState> owned =
+		std::make_unique<TimingState>(&app, &seen, &drawn, &positions);
+	TimingState* state = owned.get();
+
+	CHECK(app.step_position().step == 0);
+	CHECK(app.step_position().fraction == 0.0f);
+	CHECK(app.run(std::move(owned)) == 0);
+
+	REQUIRE_FALSE(positions.empty());
+
+	// Inside an update it is that update's own step, counted from one, and
+	// no fraction.
+	REQUIRE(state->steps_.size() == static_cast<size_t>(TimingState::UPDATES));
+	for (size_t index = 0; index < state->steps_.size(); index++)
+	{
+		CHECK(state->steps_[index].step == index + 1);
+		CHECK(state->steps_[index].fraction == 0.0f);
+	}
+
+	// A draw sees the step count of the updates that ran before it - at
+	// least one, since nothing is drawn before the first - never going
+	// backwards and never past the last, and a fraction inside [0, 1).
+	std::uint64_t previous = 0;
+	size_t out_of_contract = positions.size();
+	for (size_t index = 0; index < positions.size(); index++)
+	{
+		const StepPosition& position = positions[index];
+		if (position.step < 1 || position.step < previous ||
+			position.step > state->steps_.back().step ||
+			!(position.fraction >= 0.0f) || !(position.fraction < 1.0f))
+		{
+			out_of_contract = index;
+			break;
+		}
+		previous = position.step;
+	}
+	CHECK(out_of_contract == positions.size());
+
+	// An unpaced loop draws many frames to one 240 Hz step, so the fraction
+	// must have moved off zero on some of them.
+	bool moved = false;
+	for (const StepPosition& position : positions)
+	{
+		moved = moved || position.fraction > 0.0f;
+	}
+	CHECK(moved);
 }

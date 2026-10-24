@@ -56,12 +56,16 @@ departures from upstream are written down:
   change was measured against direct calls before it was made: 600 frames
   of 16.7 ms, every delta within 2 of StepTimer's 100 ns ticks, which is the
   gap between the two reads.
+- `step_timer.h` adds two one-line readers in upstream's style,
+  `GetLeftOverTicks` and `GetTargetElapsedTicks`, over members upstream
+  already had. They are what `Application::step_position` is computed from;
+  the arithmetic is the engine's, in `engine/core/step_position.h`.
 - The pool of deferred contexts was engine code, not Microsoft's, and has
   been removed: each of the renderer's views owns the context it records
   into, which is where that lifetime always belonged.
 
-They remain recognisably Microsoft's, with the last engine-authored code out
-of them.
+They remain recognisably Microsoft's, with no engine-authored code in them
+beyond those two readers.
 
 **`engine/render/d3d12/device_resources.{h,cpp}` is not one of them**, and the
 shared filename is the reason to say so here rather than only in the file. It
