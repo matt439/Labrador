@@ -6,6 +6,7 @@
 #include "engine/render/renderer.h"
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -16,6 +17,36 @@ using namespace mattmath;
 
 namespace labrador
 {
+	namespace
+	{
+		// Whether one of the scene's lists owns `object`, compared as the
+		// GameObject remove() was handed.
+		template <typename T>
+		bool owns(const std::vector<std::unique_ptr<T>>& list,
+			const GameObject* object)
+		{
+			return std::any_of(list.begin(), list.end(),
+				[object](const std::unique_ptr<T>& held)
+				{
+					return static_cast<const GameObject*>(held.get()) == object;
+				});
+		}
+
+		// Erases from `list` what `sorted` names, keeping the order of the
+		// rest.
+		template <typename T>
+		void erase_named(std::vector<std::unique_ptr<T>>& list,
+			const std::vector<const GameObject*>& sorted)
+		{
+			std::erase_if(list, [&sorted](const std::unique_ptr<T>& held)
+				{
+					return std::binary_search(sorted.begin(), sorted.end(),
+						static_cast<const GameObject*>(held.get()),
+						std::less<const GameObject*>());
+				});
+		}
+	}
+
 	Scene::Scene(ThreadPool* thread_pool, const Partitioner* partitioner) :
 		thread_pool_(thread_pool),
 		partitioner_(partitioner)
@@ -23,6 +54,22 @@ namespace labrador
 	}
 
 	Scene::~Scene() = default;
+
+	void Scene::remove(const GameObject* object)
+	{
+		if (object == nullptr ||
+			(!owns(this->objects_, object) &&
+			!owns(this->collision_objects_, object) &&
+			!owns(this->pending_objects_, object) &&
+			!owns(this->pending_collision_objects_, object)))
+		{
+			throw std::invalid_argument("Scene::remove: the object is not in "
+				"this scene - it was never added, or an earlier end_tick() "
+				"already removed or retired it.");
+		}
+
+		this->removals_.push_back(object);
+	}
 
 	std::span<CollisionObject* const> Scene::collision_objects() const
 	{
@@ -140,6 +187,23 @@ namespace labrador
 			{
 				i++;
 			}
+		}
+
+		// The removals. Sorted once so each list is one pass of binary
+		// searches, and std::erase_if so the plain objects keep the order they
+		// draw in. A pending object removed in its own tick goes here too,
+		// before the adds below could admit it.
+		if (!this->removals_.empty())
+		{
+			// std::less, because operator< between unrelated pointers is
+			// not an order the standard promises and std::less is.
+			std::sort(this->removals_.begin(), this->removals_.end(),
+				std::less<const GameObject*>());
+			erase_named(this->objects_, this->removals_);
+			erase_named(this->collision_objects_, this->removals_);
+			erase_named(this->pending_objects_, this->removals_);
+			erase_named(this->pending_collision_objects_, this->removals_);
+			this->removals_.clear();
 		}
 
 		// The pending adds, last.

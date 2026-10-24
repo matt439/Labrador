@@ -102,9 +102,13 @@ has left its bounds, gets an object there only if the object records the request
 ignores it, as a wall's should, so a collision object that keeps that default is never removed,
 even outside the bounds; the
 [collision guide](/docs/guides/collision/#say-how-an-object-is-retired) says what that means.
-A plain `GameObject` is never removed on its own: it stays until the scene
-is destroyed, so a game keeps short-lived visual effects either as collision objects or, as
-LineSweeper does with its particles, inside one long-lived object.
+Any object, plain or collision, leaves when the game asks: `scene.remove(object)` takes it out
+at the next `end_tick`, after the retirements and before the adds, so an object may remove itself
+from its own `update` and one added and removed in the same tick is never admitted. The other
+objects keep their order. Nothing else removes a plain `GameObject`; it stays until the scene is
+destroyed. Removal is for the objects a game drops now and then, such as a score that has floated
+away. Thousands of short-lived things are values inside one object, as LineSweeper's particles
+are.
 
 ## Then a frame is drawn
 

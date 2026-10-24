@@ -60,9 +60,10 @@ namespace labrador
 		//
 		// THE DEFAULT DOES NOTHING, AND THE SCENE RETIRES ONLY WHAT
 		// for_deletion() ANSWERS TRUE FOR. A collidable that keeps this default
-		// is never retired by the sweep or by any other caller: it goes on
-		// updating, drawing and colliding outside the bounds, the sweep asks
-		// again every tick, and nothing reports it. That is the right answer
+		// is never retired by the sweep or by any other caller of this - only
+		// Scene::remove, the game naming the object itself, takes it out. It
+		// goes on updating, drawing and colliding outside the bounds, the
+		// sweep asks again every tick, and nothing reports it. That is the right answer
 		// for a level's fixed geometry (walls, platforms), which must not be
 		// lost that way. Anything that can leave the world - a projectile -
 		// overrides this to keep the flag and returns it from for_deletion().
