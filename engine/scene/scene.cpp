@@ -169,25 +169,16 @@ namespace labrador
 			}
 		}
 
-		// Retirement, by swap-and-pop, which reorders the survivors. The order
-		// is observable - collision_objects() hands it out, and draw_views()
-		// walks it, so it decides which of two overlapping collision objects
-		// paints over the other - but it is not promised: collision_objects()
-		// says "no particular order", so nothing may rely on it and a stable
-		// erase would be paying for a guarantee nobody is given.
-		for (size_t i = 0; i < this->collision_objects_.size();)
-		{
-			if (this->collision_objects_[i]->for_deletion())
+		// Retirement, keeping the survivors in the order they were added. That
+		// order is what draws over what among the collision objects (scene.h,
+		// draw()), and a swap-and-pop here would let one retirement move a
+		// player under the structures it was added after. The pass walks every
+		// collision object either way, so stability costs moves, not a class.
+		std::erase_if(this->collision_objects_,
+			[](const std::unique_ptr<CollisionObject>& object)
 			{
-				this->collision_objects_[i] =
-					std::move(this->collision_objects_.back());
-				this->collision_objects_.pop_back();
-			}
-			else
-			{
-				i++;
-			}
-		}
+				return object->for_deletion();
+			});
 
 		// The removals. Sorted once so each list is one pass of binary
 		// searches, and std::erase_if so the plain objects keep the order they

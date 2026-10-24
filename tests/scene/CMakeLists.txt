@@ -20,7 +20,7 @@ target_link_libraries(SceneTests PRIVATE
 # file that names one only compiles when that one is built. Everything else in
 # SceneTests is configuration-independent and stays so.
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
-    target_sources(SceneTests PRIVATE fanout_tests.cpp cull_tests.cpp)
+    target_sources(SceneTests PRIVATE fanout_tests.cpp cull_tests.cpp order_tests.cpp)
 endif()
 
 add_test(NAME SceneTests COMMAND SceneTests)

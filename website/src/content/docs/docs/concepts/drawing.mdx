@@ -36,7 +36,9 @@ In practice this means:
   a layer depth, but no backend reads it: a lower depth does not put a sprite behind a higher
   one, and a later draw always covers an earlier one. A background goes behind a player by being
   drawn first. A scene draws its plain objects in the order they were added, then its collision
-  objects, in no order it promises.
+  objects in the order they were added, then the overlay, and removing or retiring an object
+  does not reorder the rest. There is no per-object layer: something that must cover the
+  collision objects goes in the overlay or in a second scene drawn after the first.
 
 ## A view is a viewport and a camera
 

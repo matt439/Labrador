@@ -579,6 +579,20 @@ engine API to depend on.
   stream or into memory.
 - Objects expose bounds; the scene culls. Visibility is not each object's
   job.
+- **Order is the depth.** A list draws in call order and no backend reads
+  `layer_depth`; a scene draws its plain objects in the order they were
+  added, then its collision objects in the order they were added, then the
+  overlay, and a later scene covers an earlier one; nothing that leaves a
+  scene reorders what stays. There is no per-object layer and no sort. Both
+  clients build their layers from that order - LineSweeper adds its top-out
+  banner after its sparks, and the other client adds its scenery, then its
+  structures, then its players - and a foreground that must cover the
+  collision objects is a second scene, which costs nothing per frame. A layer
+  would be a number every object carries and a sort the game cannot see, to
+  buy what an `add` in the right place already buys (T3). The shape held in
+  reserve is a layer given to `add` and sorted once at `end_tick`, never per
+  frame (T8); it is spent when a client has an ordering that insertion, the
+  overlay and a second scene cannot express.
 
 ### UI
 
