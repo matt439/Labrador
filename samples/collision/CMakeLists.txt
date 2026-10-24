@@ -10,7 +10,7 @@ if(EMSCRIPTEN)
     target_link_libraries(CollisionSample PRIVATE CollisionExample labrador_settings)
 
     # A page, its loader and the module, as LineSweeper's are. The content is
-    # the three things the Windows build copies beside its executable,
+    # the two things the Windows build copies beside its executable,
     # embedded at the same relative paths, so the one manifest serves both.
     set_target_properties(CollisionSample PROPERTIES SUFFIX ".html")
     target_link_options(CollisionSample PRIVATE

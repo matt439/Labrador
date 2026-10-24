@@ -89,3 +89,20 @@ out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe --smoke
 
 The capture uses the existing PNG writer from `tools/linesweeper_capture/` and
 reads between `submit` and `end_frame`. Its parent directory must exist.
+
+## What it borrows from outside this folder
+
+Everything else is in this folder or in the engine. A copy that leaves the
+repository has these to deal with:
+
+- `../minimal/content/fonts/`, the font atlas: copied beside the executable on
+  Windows and embedded at `/fonts` in a browser. A copy puts the
+  `.spritefont` in its own `content/fonts/` and points the three lines of
+  `CMakeLists.txt` that reach into it there, or brings its own font and
+  renames it in `content/manifest.json` and the state that resolves it.
+- `../../tools/linesweeper_capture/png_file.h` and `png_file.cpp`, the PNG
+  writer behind `--capture`, compiled into the Windows build on every backend
+  but `null`; `main.cpp` includes the header from the repository root. A copy
+  takes both files with it, or drops the capture by deleting the
+  `if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")` block in `CMakeLists.txt`:
+  `main.cpp` keeps everything the capture needs behind `LOCAL_MULTIPLAYER_CAPTURE`.

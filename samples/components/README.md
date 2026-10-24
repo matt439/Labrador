@@ -68,9 +68,14 @@ ctest --preset x64-debug -R '^ComponentsTests$'
 | Enter, Space or gamepad A on Quit | Quit |
 | Escape or gamepad B | Quit |
 
-It reuses the minimal sample's font, which the build copies beside it, and draws
-its bars from the engine's own white texture, `white_texture_name`. Under a `wasm-*` preset it is a page,
-`ComponentsGallery.html`, with the same content packed into the module.
+It draws its bars from the engine's own white texture, `white_texture_name`,
+and its text from the minimal sample's font, which the build copies beside it
+from `../minimal/content/fonts/`. That folder is the one path outside this one
+the gallery uses, and the components themselves use none: a copy of the
+gallery puts the `.spritefont` in its own `content/fonts/` and points the
+three lines of `CMakeLists.txt` that reach into it there. Under a `wasm-*`
+preset it is a page, `ComponentsGallery.html`, with the same content packed
+into the module.
 `ComponentsPageTests` loads it in headless Chrome, moves a slider and an
 option row, and quits.
 
