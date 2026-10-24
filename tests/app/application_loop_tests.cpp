@@ -42,6 +42,15 @@ namespace
 
 		void update(float /*dt*/) override
 		{
+			// quit() closes the window, and the tick that called it still
+			// runs every step the clock owes. On a loaded machine that is
+			// several more, so after quitting nothing is recorded: the cases
+			// below count exactly UPDATES.
+			if (this->quit_)
+			{
+				return;
+			}
+
 			this->seen_->push_back(this->app_->frame_timings());
 			this->updates_++;
 			this->steps_.push_back(this->app_->step_position());
@@ -61,6 +70,7 @@ namespace
 			if (this->updates_ == UPDATES)
 			{
 				this->app_->quit();
+				this->quit_ = true;
 			}
 		}
 
@@ -68,7 +78,7 @@ namespace
 		// the last that was published.
 		void draw(Renderer& /*renderer*/) const override
 		{
-			if (!this->capturing_)
+			if (!this->capturing_ && !this->quit_)
 			{
 				this->drawn_->push_back(this->app_->frame_timings().frame);
 				this->positions_->push_back(this->app_->step_position());
@@ -91,6 +101,7 @@ namespace
 		std::vector<StepPosition>* positions_ = nullptr;
 		int updates_ = 0;
 		bool capturing_ = false;
+		bool quit_ = false;
 	};
 }
 
