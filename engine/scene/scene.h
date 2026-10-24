@@ -167,8 +167,8 @@ namespace labrador
 		// values inside one object, as LineSweeper's particles are.
 		void remove(const GameObject* object);
 
-		// Every collision object currently in the world, in no particular
-		// order.
+		// Every collision object currently in the world, in the order they
+		// were added, which is the order they draw in.
 		//
 		// This is what the sweep is handed, so it exists either way; exposing
 		// it costs nothing and saves the game keeping a parallel list of its
@@ -264,6 +264,16 @@ namespace labrador
 		//
 		// Fills each one: the world through that view's camera, culled to what
 		// that view can see, then the game's overlay over it.
+		//
+		// WHAT DRAWS OVER WHAT IS THIS ORDER, because the seam reads no depth
+		// and a later draw covers an earlier one (DrawList::draw_sprite). In
+		// each view: the plain objects in the order they were added, then the
+		// collision objects in the order they were added, then the overlay;
+		// and a scene drawn later covers this one. Neither a retirement nor a
+		// remove() reorders what is left. So a background is added first, and
+		// a decoration that must cover the collision objects is the overlay or
+		// a later scene, which is a foreground layer and costs nothing per
+		// frame.
 		//
 		// The fan-out is here and nowhere else, because hand-written copies of
 		// it diverge. It is a scene function rather than a general parallel-for

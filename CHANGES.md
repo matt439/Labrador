@@ -72,6 +72,27 @@ its heading here.
 
 ## Unreleased
 
+#### Keep a scene's collision objects in the order they were added
+
+*Keep a scene's collision objects in the order they were added* (2026-10-24).
+Silent behaviour change.
+
+- **A retirement no longer reorders the collision objects that remain.**
+  `Scene::end_tick` removes retired collision objects with a stable erase, so
+  `Scene::collision_objects()` and the order a scene draws them in are the
+  order they were added.
+  - Old: a retired object's slot took the last collision object, so after a
+    retirement one object drew earlier than before - under objects it had
+    been added after - and `collision_objects()` was documented as "no
+    particular order".
+  - New: the survivors keep their order, and `scene.h` states the whole draw
+    order: plain objects as added, then collision objects as added, then the
+    overlay, with a later scene over an earlier one.
+  - A game that never retires a collision object sees no change. One that
+    retires some sees the order it added them in, which is the order it most
+    likely meant; a game that relied on the old reshuffle has nothing to
+    migrate to, because that order was never promised.
+
 #### Re-point sprites and animations by a resolved sheet pair
 
 *Re-point sprites and animations by a resolved sheet pair* (2026-10-22).
