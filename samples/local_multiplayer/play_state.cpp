@@ -2,6 +2,8 @@
 
 #include "samples/local_multiplayer/controls.h"
 
+#include "engine/render/resource_factory.h"
+
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -16,7 +18,7 @@ namespace multiplayer
 
 	void PlayState::init()
 	{
-		this->white_ = this->app_->render_resources()->resolve_texture("white");
+		this->white_ = this->app_->render_resources()->resolve_texture(white_texture_name);
 		this->font_ = this->app_->render_resources()->resolve_sprite_font("jetbrains_mono_bold_16");
 		this->scene_ = std::make_unique<Scene>(this->app_->thread_pool(), this->app_->partitioner());
 		this->arena_ = this->scene_->add(std::make_unique<Arena>(this->white_));

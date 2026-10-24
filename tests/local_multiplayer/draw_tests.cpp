@@ -5,7 +5,6 @@
 #include "engine/render/null/recording.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/resource_factory.h"
-#include "engine/render/texture_data.h"
 #include "engine/scene/scene.h"
 #include "samples/local_multiplayer/arena.h"
 
@@ -21,11 +20,7 @@ TEST_CASE("both views draw the same shared players and parallel draw preserves t
 	Renderer renderer;
 	renderer.create_device(nullptr, 1280, 720, 2);
 	renderer.set_resources(&resources);
-	TextureData texture;
-	texture.width = texture.height = 1;
-	texture.levels.push_back(texture_level(texture.format, 1, 1, 0));
-	texture.pixels.assign(4, 255);
-	add_texture_asset(renderer, resources, "white", texture);
+	add_white_texture(renderer, resources);
 
 	ThreadPool pool(1, 2);
 	const Partitioner partitioner;
@@ -33,7 +28,7 @@ TEST_CASE("both views draw the same shared players and parallel draw preserves t
 	Scene parallel(&pool, &partitioner);
 	const auto populate = [&resources](Scene& scene)
 	{
-		Arena* arena = scene.add(std::make_unique<Arena>(resources.resolve_texture("white")));
+		Arena* arena = scene.add(std::make_unique<Arena>(resources.resolve_texture(white_texture_name)));
 		scene.end_tick();
 		arena->set_directions({ Vector2F(1, 0), Vector2F(0, -1) });
 		scene.update(0.5f);

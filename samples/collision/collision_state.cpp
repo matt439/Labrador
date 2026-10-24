@@ -1,6 +1,7 @@
 #include "samples/collision/collision_state.h"
 
 #include "engine/input/keyboard.h"
+#include "engine/render/resource_factory.h"
 
 #include <cmath>
 #include <stdexcept>
@@ -33,7 +34,7 @@ namespace collisiondemo
 	{
 		RenderResources* resources = this->app_->render_resources();
 		this->font_ = resources->resolve_sprite_font("jetbrains_mono_bold_16");
-		this->arena_ = std::make_unique<Arena>(resources->resolve_texture("white"));
+		this->arena_ = std::make_unique<Arena>(resources->resolve_texture(white_texture_name));
 		this->refresh_view();
 	}
 

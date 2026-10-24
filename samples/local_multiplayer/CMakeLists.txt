@@ -22,7 +22,6 @@ if(EMSCRIPTEN)
     target_link_options(LocalMultiplayerSample PRIVATE
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json@/manifest.json"
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts@/fonts"
-        "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/../linesweeper/content/textures@/textures"
         "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         -sENVIRONMENT=web
     )
@@ -32,7 +31,6 @@ if(EMSCRIPTEN)
         "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../linesweeper/content/textures/white.dds"
     )
 elseif(WIN32)
     add_executable(LocalMultiplayerSample WIN32
@@ -47,7 +45,8 @@ elseif(WIN32)
         target_link_libraries(LocalMultiplayerSample PRIVATE windowscodecs)
     endif()
 
-    # Reuse the repository's existing font and white texel; the output is self-contained.
+    # Reuse the minimal sample's font; the output is self-contained. The white
+    # texel the arena is drawn from is the engine's own (white_texture_name).
     add_custom_target(local_multiplayer_content ALL)
     add_custom_command(TARGET local_multiplayer_content POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
@@ -56,9 +55,6 @@ elseif(WIN32)
         COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts"
             "$<TARGET_FILE_DIR:LocalMultiplayerSample>/fonts"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/../linesweeper/content/textures"
-            "$<TARGET_FILE_DIR:LocalMultiplayerSample>/textures"
         VERBATIM
     )
     add_dependencies(LocalMultiplayerSample local_multiplayer_content)

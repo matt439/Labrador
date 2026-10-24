@@ -15,7 +15,8 @@ namespace components
 	// slider's track and its fill.
 	//
 	// UiTexture would draw the same thing, but it takes a sprite sheet and a
-	// frame name, and a white texel in the manifest is all a bar needs. A leaf
+	// frame name, and the engine's white texture (white_texture_name) is all a
+	// bar needs. A leaf
 	// of your own is the shape PHILOSOPHY (UI) expects a game to write when the
 	// engine's set does not fit, and this one is twenty lines.
 	class Bar final : public labrador::UiWidget

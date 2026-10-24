@@ -7,6 +7,7 @@
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
 #include "engine/render/renderer.h"
+#include "engine/render/resource_factory.h"
 #include "engine/render/viewport.h"
 
 #include <cstddef>
@@ -58,7 +59,7 @@ namespace components
 	void GalleryState::init()
 	{
 		RenderResources* resources = this->app_->render_resources();
-		const TextureHandle block = resources->resolve_texture("white");
+		const TextureHandle block = resources->resolve_texture(white_texture_name);
 
 		this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 		this->refresh_view();

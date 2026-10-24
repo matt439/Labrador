@@ -78,6 +78,16 @@ namespace labrador
 			read_dds_file(directory + name + ".dds"));
 	}
 
+	void add_white_texture(const Renderer& renderer, RenderResources& resources)
+	{
+		TextureData texture;
+		texture.width = 1;
+		texture.height = 1;
+		texture.levels.push_back(texture_level(texture.format, 1, 1, 0));
+		texture.pixels.assign(4, 255);
+		add_texture_asset(renderer, resources, white_texture_name, texture);
+	}
+
 	void load_font_asset(const Renderer& renderer,
 		RenderResources& resources,
 		const std::string& directory,
