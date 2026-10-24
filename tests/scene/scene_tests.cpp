@@ -110,6 +110,52 @@ namespace
 		const CollisionObject* last_other_ = nullptr;
 	};
 
+	// Logs its id every update and counts its own destruction, so a test can
+	// see both what the scene still steps, in what order, and what it freed.
+	class LoggingObject : public GameObject
+	{
+	public:
+		LoggingObject(int id, std::vector<int>* log, int* destroyed) :
+			id_(id), log_(log), destroyed_(destroyed)
+		{
+		}
+		~LoggingObject() override { ++*this->destroyed_; }
+
+		LoggingObject(const LoggingObject&) = delete;
+		LoggingObject& operator=(const LoggingObject&) = delete;
+
+		void update(float /*dt*/) override { this->log_->push_back(this->id_); }
+		void draw(labrador::DrawList& /*draw_list*/) const override {}
+		RectangleF bounds() const override { return RectangleF(); }
+
+	private:
+		int id_ = 0;
+		std::vector<int>* log_ = nullptr;
+		int* destroyed_ = nullptr;
+	};
+
+	// Asks to be removed from inside its own update(), the call remove() is
+	// deferred for.
+	class SelfRemovingObject : public GameObject
+	{
+	public:
+		explicit SelfRemovingObject(Scene* scene) : scene_(scene) {}
+
+		void update(float /*dt*/) override
+		{
+			this->updates_++;
+			this->scene_->remove(this);
+		}
+		void draw(labrador::DrawList& /*draw_list*/) const override {}
+		RectangleF bounds() const override { return RectangleF(); }
+
+		int updates() const { return this->updates_; }
+
+	private:
+		Scene* scene_ = nullptr;
+		int updates_ = 0;
+	};
+
 	// No thread pool and no partitioner. Everything below the draw is
 	// single-threaded anyway, and draw() itself needs a Renderer - see the
 	// closing comment in this file.
@@ -352,4 +398,116 @@ TEST_CASE("end_tick expires contacts whether or not their participants retire")
 		scene.resolve();
 		CHECK(scene.contacts().empty());
 	}
+}
+
+TEST_CASE("remove() takes a plain object out at end_tick, and the rest keep their order")
+{
+	// Before the scene, so they outlive the objects that write to them.
+	std::vector<int> log;
+	int destroyed = 0;
+	Scene scene = make_scene();
+
+	scene.add(std::make_unique<LoggingObject>(1, &log, &destroyed));
+	LoggingObject* middle =
+		scene.add(std::make_unique<LoggingObject>(2, &log, &destroyed));
+	scene.add(std::make_unique<LoggingObject>(3, &log, &destroyed));
+	scene.end_tick();
+
+	// Until the tick ends it is still in the world.
+	scene.remove(middle);
+	scene.update(0.0f);
+	CHECK(log == std::vector<int>{ 1, 2, 3 });
+	CHECK(destroyed == 0);
+
+	scene.end_tick();
+	CHECK(destroyed == 1);
+
+	log.clear();
+	scene.update(0.0f);
+	CHECK(log == std::vector<int>{ 1, 3 });
+}
+
+TEST_CASE("remove() takes a collision object out whatever it says about deletion")
+{
+	Scene scene = make_scene();
+
+	// Fixed geometry ignores set_for_deletion, so neither the sweep nor a
+	// flag retires it. remove() is the game saying so itself.
+	TestCollider* wall = scene.add(std::make_unique<TestCollider>(
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), WALL, PLAYER));
+	wall->make_fixed();
+	TestCollider* other = scene.add(std::make_unique<TestCollider>(
+		RectangleF(50.0f, 0.0f, 10.0f, 10.0f), WALL, PLAYER));
+	scene.end_tick();
+	REQUIRE(scene.collision_objects().size() == 2);
+
+	scene.remove(wall);
+	CHECK(scene.collision_objects().size() == 2);
+
+	scene.end_tick();
+	REQUIRE(scene.collision_objects().size() == 1);
+	CHECK(holds(scene, other));
+}
+
+TEST_CASE("an object added and removed in the same tick is never admitted")
+{
+	// Before the scene, so they outlive the objects that write to them.
+	std::vector<int> log;
+	int destroyed = 0;
+	Scene scene = make_scene();
+
+	LoggingObject* brief =
+		scene.add(std::make_unique<LoggingObject>(1, &log, &destroyed));
+	TestCollider* brief_collider = scene.add(std::make_unique<TestCollider>(
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL));
+	scene.remove(brief);
+	scene.remove(brief_collider);
+	scene.end_tick();
+
+	CHECK(destroyed == 1);
+	CHECK(scene.collision_objects().empty());
+	scene.update(0.0f);
+	CHECK(log.empty());
+}
+
+TEST_CASE("an object may remove itself from inside its own update")
+{
+	Scene scene = make_scene();
+	SelfRemovingObject* object =
+		scene.add(std::make_unique<SelfRemovingObject>(&scene));
+	scene.end_tick();
+
+	scene.update(0.0f);
+	CHECK(object->updates() == 1);
+	scene.end_tick();
+
+	// Gone: a second update steps nothing, and the pointer is no longer the
+	// scene's to be asked about.
+	scene.update(0.0f);
+	CHECK_THROWS_AS(scene.remove(object), std::invalid_argument);
+}
+
+TEST_CASE("asking twice is asking once, and a pointer the scene does not hold throws")
+{
+	// Before the scene, so they outlive the objects that write to them.
+	std::vector<int> log;
+	int destroyed = 0;
+	Scene scene = make_scene();
+
+	LoggingObject* object =
+		scene.add(std::make_unique<LoggingObject>(1, &log, &destroyed));
+	scene.end_tick();
+
+	scene.remove(object);
+	scene.remove(object);
+	scene.end_tick();
+	CHECK(destroyed == 1);
+
+	CHECK_THROWS_AS(scene.remove(nullptr), std::invalid_argument);
+	CHECK_THROWS_AS(scene.remove(object), std::invalid_argument);
+
+	Scene elsewhere = make_scene();
+	LoggingObject* foreign =
+		elsewhere.add(std::make_unique<LoggingObject>(2, &log, &destroyed));
+	CHECK_THROWS_AS(scene.remove(foreign), std::invalid_argument);
 }

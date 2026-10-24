@@ -110,14 +110,15 @@ namespace labrador
 		//
 		// The returned pointer is valid immediately, and is the object's own
 		// type rather than the list's - it is what a caller that needs to keep
-		// speaking to the object holds. It stops being valid when the scene
-		// retires the object, and only a collision object is ever retired: it
-		// is destroyed by the first end_tick() after its insertion that finds
-		// for_deletion() answering true. set_for_deletion(true) is a request
+		// speaking to the object holds. It stops being valid when the object
+		// leaves the scene, which happens two ways. remove() takes out any
+		// object at the end_tick() after it is asked. And a collision object
+		// is retired by the first end_tick() after its insertion that finds
+		// for_deletion() answering true; set_for_deletion(true) is a request
 		// that leads there only if the object records it - the default
-		// ignores it, as fixed geometry should - so an object that keeps the
-		// default, and every object that is not a collision object, lives as
-		// long as the scene.
+		// ignores it, as fixed geometry should. An object nobody removes, and
+		// a collision object that keeps that default, lives as long as the
+		// scene.
 		//
 		// One name and not two, because a collision object is both: it derives
 		// from CollisionObject, which derives from GameObject, so an overload
@@ -143,6 +144,28 @@ namespace labrador
 
 			return result;
 		}
+
+		// Takes `object` out of the scene at the next end_tick(), and destroys
+		// it there - a score that has floated away, a decoration whose time is
+		// up. Any object add() returned, collision objects included, and one
+		// still pending: an object added and removed in the same tick is never
+		// admitted.
+		//
+		// Deferred for the reason add() is: the call comes from inside an
+		// update() the scene is walking, often the object's own. Until that
+		// end_tick() the object updates, draws and collides as before.
+		//
+		// The survivors keep their order, so what draws over what among the
+		// plain objects - insertion order - is unchanged by a removal. Asking
+		// twice before the tick ends is asking once.
+		//
+		// Throws std::invalid_argument for nullptr or an object this scene
+		// does not hold, which includes one a previous end_tick() already
+		// removed or retired: a pointer the game should no longer have. The
+		// check is a walk of the scene's objects, so this is for the objects
+		// a game removes now and then, not for thousands a tick - those are
+		// values inside one object, as LineSweeper's particles are.
+		void remove(const GameObject* object);
 
 		// Every collision object currently in the world, in no particular
 		// order.
@@ -217,7 +240,8 @@ namespace labrador
 		// where a hook's would not be.
 
 		// PHASE 4. Applies everything that was waiting for the tick to be over:
-		// the bounds sweep, then the retirements, then the pending adds.
+		// the bounds sweep, then the retirements and the removals, then the
+		// pending adds.
 		//
 		// That order is the whole of it. Retiring before inserting means an
 		// object cannot be born already flagged by a sweep that ran before it
@@ -258,6 +282,10 @@ namespace labrador
 
 		std::vector<std::unique_ptr<GameObject>> pending_objects_;
 		std::vector<std::unique_ptr<CollisionObject>> pending_collision_objects_;
+
+		// What remove() was asked for this tick. Empty on almost every tick,
+		// and end_tick() does nothing with it then.
+		std::vector<const GameObject*> removals_;
 
 		// The collision objects as bare pointers, which is what the sweep takes
 		// and what collision_objects() hands out. Rebuilt in end_tick(), the
