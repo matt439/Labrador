@@ -1,6 +1,6 @@
 # Backlog
 
-The order of work: 162 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
+The order of work: 163 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
 
 Each line reads: id, MoSCoW, size, the persona it serves, title, and what it waits on. The reasoning for every placement is in the *why* under each horizon; stories are in [STORIES.md](STORIES.md).
 
@@ -281,7 +281,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-45 | G122: a one-player game that accepts the pad in whatever slot it is in. |
 | OCA-49 | G116: the default disabled row is indistinguishable. |
 | OCA-52 | G111: the menus guide does not route to the components. |
-| OCA-53 | G108 (major): settings and saves on desktop and in the browser. |
+| OCA-53 | G108 (major): settings and saves on desktop and in the browser. On 2026-10-24 its engine half, where a game may write, was split out as OCA-76 (Later), and this story stays the guide. The browser half stays here whole: a review of that date said the persistent mount is shell code no game can write, but a game owns its `main_web.cpp`, which can mount and sync before it builds its `Application`. |
 | OCA-56 | G139 (merged with SRL-10): reference pages do not say how a game gets each type. |
 | OCA-58 | G141 (merged with SRL-12): mislabelled members and an unreadable Colour page. |
 | SRL-08 | G93: which headers are for game code. |
@@ -354,6 +354,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 31. L31 Platform support links and the non-Windows configure refusal: NMS-03, NMS-04
 32. L32 C++ series status (PHILOSOPHY amendment F only if withdrawn) and the learner path: SRL-14, SRL-15, SRL-17, SRL-16
 33. L33 LineSweeper design notes and the constants rule: SRL-18, SRL-06, SRL-07
+34. L34 A per-user data directory from the engine, once a second caller asks: OCA-76
 
 **Stories**
 
@@ -388,6 +389,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[OCA-46](STORIES.md#oca-46)** Could · M · The Outside C++ Adopter: See a join screen for couch play I can copy
 - [ ] **[OCA-51](STORIES.md#oca-51)** Could · M · The Outside C++ Adopter: Wire a settings screen to what the engine can actually set — after OCA-53
 - [ ] **[OCA-50](STORIES.md#oca-50)** Could · S · The Outside C++ Adopter: Make a menu work with a click or a tap
+- [ ] **[OCA-76](STORIES.md#oca-76)** Could · S · The Outside C++ Adopter: Ask the engine where my game may write, on Windows and in the browser — after OCA-53
 - [ ] **[OCA-41](STORIES.md#oca-41)** Could · S · The Outside C++ Adopter: My non-English literals draw the same on Windows and in the browser
 - [ ] **[OCA-43](STORIES.md#oca-43)** Could · S · The Outside C++ Adopter: Know which languages the text path can draw
 - [ ] **[OCA-42](STORIES.md#oca-42)** Could · M · The Outside C++ Adopter: Get my game's language from a string table to the screen — after OCA-41, OCA-43, OCA-34
@@ -459,7 +461,8 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | BDP-07 | G23: pacing on the displays visitors use; may need a borrowed high-refresh display. |
 | OCA-46 | G123: a join screen for couch play, as a sample piece first. |
 | OCA-51 | G128: a settings screen wired to what the engine can set. Follows OCA-53 (Next). |
-| OCA-50 | G127: a menu that works with a click or a tap, in game code. |
+| OCA-50 | G127: a menu that works with a click or a tap, in game code. An engine hit test over `bounds()` was weighed on 2026-10-24 and declined: the one caller, LineSweeper's pause menu (`tapped_row`), sizes each tap target from the row's centre and the row spacing rather than its bounds, because a finger needs more than the text's extent. The target is policy, so the hit test stays the game's (T1; PHILOSOPHY, UI). |
+| OCA-76 | G108: the engine half of OCA-53, split out on 2026-10-24. ColourWars is the recorded caller (`game/directory_consts.cpp` reads `%LOCALAPPDATA%` and falls back beside the executable), Windows-only; it waits for a second caller, or a browser one, before it is built. |
 | OCA-41 | G145: non-English literals differ between Windows and the browser without /utf-8. |
 | OCA-43 | G147: which languages the text path can draw. |
 | OCA-42 | G146: a string table to the screen. |
