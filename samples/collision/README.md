@@ -15,8 +15,9 @@ cmake --build --preset x64-debug --target CollisionSample CollisionSampleTests
 ctest --preset x64-debug -R '^CollisionSampleTests$'
 ```
 
-The build reuses the minimal sample's font and LineSweeper's white texel, copying
-both beside this executable with its own manifest. It can start from any working
+The build reuses the minimal sample's font, copying it beside this executable
+with its own manifest; every shape is drawn from the engine's own white texture,
+`white_texture_name`, so there is no texture to copy. It can start from any working
 directory. Resize the window and the camera fits the same arena into it.
 
 It also runs in a browser. Under the `wasm-debug` or `wasm-release` preset the

@@ -1,6 +1,5 @@
 {
     "assets": [
-        { "kind": "font", "directory": "./fonts/", "names": ["jetbrains_mono_bold_16"] },
-        { "kind": "texture", "directory": "./textures/", "names": ["white"] }
+        { "kind": "font", "directory": "./fonts/", "names": ["jetbrains_mono_bold_16"] }
     ]
 }

@@ -163,9 +163,22 @@ yet; the engine's tests do.
 
 ## Solid rectangles
 
-There is no rectangle-drawing call, because a solid rectangle is a sprite. LineSweeper's content
-includes a texture one white pixel across, and every block, panel and line on its screen is that
-pixel stretched and tinted. This is the darkening layer its pause menu draws over the game:
+There is no rectangle-drawing call, because a solid rectangle is a sprite from a texture one
+white pixel across, stretched and tinted. The engine puts that texture in every game's table, so
+no content file is needed: resolve it by `white_texture_name`, from
+`engine/render/resource_factory.h`, as the collision sample does:
+
+<SourceFile
+	path="samples/collision/collision_state.cpp"
+	from="void CollisionState::init()"
+	to="this->refresh_view();"
+/>
+
+The application shell adds it when it sets up the table and again after a device restore. Code
+that builds its own `Renderer` and `RenderResources`, such as a test, calls
+`add_white_texture(renderer, resources)` itself. LineSweeper ships its own white texel instead,
+and every block, panel and line on its screen is that pixel stretched and tinted. This is the
+darkening layer its pause menu draws over the game:
 
 <SourceFile path="samples/linesweeper/states/pause_state.cpp" from="void draw(DrawList& draw_list) const override" to="}" />
 

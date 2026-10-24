@@ -3,10 +3,12 @@
 #include "engine/app/application.h"
 #include "engine/core/state.h"
 #include "engine/render/renderer.h"
+#include "engine/render/resource_factory.h"
 
 #include <chrono>
 #include <cstdint>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -216,4 +218,19 @@ TEST_CASE("step_position is published before each of the loop's draws")
 		moved = moved || position.fraction > 0.0f;
 	}
 	CHECK(moved);
+}
+
+TEST_CASE("the shell puts the white texture in the table, with no manifest loaded")
+{
+	ApplicationOptions options;
+	options.window_class_name = L"WhiteTextureTestWindow";
+	options.visible = false;
+	options.view_capacity = 1;
+	options.max_threads = 1;
+
+	Application app(std::move(options));
+	app.initialize();
+
+	CHECK_NOTHROW(std::ignore =
+		app.render_resources()->resolve_texture(white_texture_name));
 }

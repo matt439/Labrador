@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -915,6 +916,38 @@ TEST_CASE("a handle resolved before release_device_resources draws after the rel
 	CHECK(drawn[0].texture.index() == before.index());
 	CHECK(drawn[0].corners[3].position.x - drawn[0].corners[0].position.x ==
 		doctest::Approx(8.0f));
+}
+
+TEST_CASE("the engine's white texture is one texel, and survives a reload in its slot")
+{
+	Harness harness;
+	add_white_texture(harness.renderer(), harness.resources());
+	const TextureHandle white =
+		harness.resources().resolve_texture(white_texture_name);
+
+	// The solid-rectangle recipe: the one texel, stretched. A texcoord of 1 at
+	// the far corner of a one-texel source is what a 1x1 texture gives.
+	DrawList list = harness.begin();
+	list.draw_sprite(white, mattmath::RectangleI(0, 0, 1, 1),
+		RectangleF(10.0f, 20.0f, 30.0f, 4.0f), Colour::red, 0.0f,
+		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+	const std::vector<RecordedSprite> drawn = harness.end();
+
+	REQUIRE(drawn.size() == 1);
+	CHECK(drawn[0].texture.index() == white.index());
+	CHECK(drawn[0].corners[3].texcoord.x == doctest::Approx(1.0f));
+	CHECK(drawn[0].corners[3].texcoord.y == doctest::Approx(1.0f));
+	CHECK(drawn[0].corners[3].position.x - drawn[0].corners[0].position.x ==
+		doctest::Approx(30.0f));
+
+	// What the shell does around a device loss: release, then add it again.
+	harness.resources().release_device_resources();
+	add_white_texture(harness.renderer(), harness.resources());
+	CHECK(harness.resources().resolve_texture(white_texture_name).index() ==
+		white.index());
+
+	// And the name is one no manifest can produce.
+	CHECK(std::string(white_texture_name).find(':') != std::string::npos);
 }
 
 TEST_CASE("a sheet pair resolved before release_device_resources draws after the reload")

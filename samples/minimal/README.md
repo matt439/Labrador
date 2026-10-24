@@ -28,6 +28,11 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-24.** No code here changed, but the engine's table now holds a
+  one-texel white texture under `white_texture_name`
+  (`engine/render/resource_factory.h`), so a copy can draw a solid rectangle -
+  a bar, a divider, a backdrop - with `draw_sprite` over source
+  `RectangleI(0, 0, 1, 1)` and a tint, and no texture in `content/`.
 - **2026-10-22.** No build step changed, but `CMakeLists.txt` now says what its
   content mirror does not do: `copy_directory_if_different` never removes, so a
   file deleted from `content/` goes on loading from the build folder until it

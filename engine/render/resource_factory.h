@@ -57,6 +57,25 @@ namespace labrador
 		const std::string& directory,
 		const std::string& name);
 
+	// The name the engine's own white texture is in the table under: one
+	// opaque white texel, which is what a solid rectangle is drawn from -
+	// draw_sprite over source RectangleI(0, 0, 1, 1), tinted. The seam has no
+	// rectangle call because a rectangle is a sprite; this is the sprite, so
+	// a game draws a bar with no content file of its own.
+	//
+	// The colon is the font atlas's argument again: no manifest can name it,
+	// so it never collides with a game's texture.
+	inline constexpr const char* white_texture_name = "engine:white";
+
+	// Adds the white texture to `resources` under white_texture_name, on the
+	// renderer's device, by the same rules as add_texture_asset.
+	//
+	// Application calls it once the table is set and again after a device
+	// restore, so a game run by the shell only resolves the name. A caller
+	// that builds its own Renderer and table - a test, a tool - calls it
+	// itself, after create_device.
+	void add_white_texture(const Renderer& renderer, RenderResources& resources);
+
 	// THE ONE LINE OF ALL THIS THAT A BACKEND WRITES. Makes a texture on the
 	// renderer's device from bytes the engine has already decoded
 	// (engine/render/texture_data.h), and puts it in the table under `name`.

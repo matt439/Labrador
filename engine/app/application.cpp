@@ -1,6 +1,7 @@
 #include "engine/app/application.h"
 #include "engine/app/content_root.h"
 #include "engine/assets/asset_manifest_loader.h"
+#include "engine/render/resource_factory.h"
 #include "engine/math/vector2f.h"
 
 #if defined(_WIN32)
@@ -203,6 +204,7 @@ namespace labrador
 		// to be told where it is. It could not be told at create_device time:
 		// the loader needs a device before it can put anything in a table.
 		this->renderer_->set_resources(this->render_resources_.get());
+		add_white_texture(*this->renderer_, *this->render_resources_);
 
 		this->resource_loader_ = std::make_unique<ResourceLoader>(
 			this->render_resources_.get(), this->renderer_.get(),
@@ -532,6 +534,11 @@ namespace labrador
 		// one, and telling the loader so would be an ordering only this line
 		// knew about. The factory reads the device off the renderer as it
 		// builds, so the new device is simply what is there.
+		//
+		// The white texture first and whether or not a manifest was loaded,
+		// because the shell put it there and no manifest names it.
+		add_white_texture(*this->renderer_, *this->render_resources_);
+
 		if (this->content_loaded_)
 		{
 			this->resource_loader_->reload_device_resources();

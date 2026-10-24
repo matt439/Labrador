@@ -17,7 +17,6 @@ if(EMSCRIPTEN)
     target_link_options(ComponentsGallery PRIVATE
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json@/manifest.json"
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts@/fonts"
-        "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/../linesweeper/content/textures@/textures"
         "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         -sENVIRONMENT=web
     )
@@ -25,13 +24,13 @@ if(EMSCRIPTEN)
         "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../linesweeper/content/textures/white.dds"
     )
 elseif(WIN32)
     add_executable(ComponentsGallery WIN32 main.cpp gallery_state.cpp)
     target_link_libraries(ComponentsGallery PRIVATE ComponentsExample labrador_settings)
 
-    # Reuse the minimal sample's font and LineSweeper's white texel.
+    # Reuse the minimal sample's font. The white texel the bars are drawn from
+    # is the engine's own (white_texture_name).
     add_custom_target(components_content ALL
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
@@ -39,9 +38,6 @@ elseif(WIN32)
         COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts"
             "$<TARGET_FILE_DIR:ComponentsGallery>/fonts"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/../linesweeper/content/textures"
-            "$<TARGET_FILE_DIR:ComponentsGallery>/textures"
         VERBATIM
     )
     add_dependencies(ComponentsGallery components_content)

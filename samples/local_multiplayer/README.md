@@ -39,8 +39,9 @@ per-view fan-out. `Arena::draw` and the HUD callback read shared state and write
 only their own `DrawList`. This tiny scene does not need parallelism for speed;
 passing two null pointers to the scene constructor runs the same views serially.
 
-The build copies a manifest, the existing minimal sample's font, and
-LineSweeper's white texture beside the executable. There are no downloads or
+The build copies a manifest and the existing minimal sample's font beside the
+executable; the arena is drawn from the engine's own white texture,
+`white_texture_name`. There are no downloads or
 external game files to find, and startup works from any working directory. The
 usual preset uses Direct3D 11; D3D12, GL and Vulkan use their corresponding
 presets and prerequisites. The null preset records the draws without displaying
