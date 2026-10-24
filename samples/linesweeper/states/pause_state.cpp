@@ -230,7 +230,8 @@ namespace linesweeper
 				continue;
 			}
 
-			const Vector2F tap = to_board(this->arrangement_, point.position);
+			const Vector2F tap = this->arrangement_.camera.world_position(
+				point.position, this->arrangement_.viewport);
 
 			for (UiText* row : this->rows_)
 			{

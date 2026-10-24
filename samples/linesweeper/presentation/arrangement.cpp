@@ -30,18 +30,4 @@ namespace linesweeper
 
 		return arrangement;
 	}
-
-	Vector2F to_board(const Arrangement& arrangement,
-		const Vector2I& buffer_point)
-	{
-		// The inverse of view = (world - translation) * scale, with the one
-		// view's viewport at the buffer's origin.
-		const Camera& camera = arrangement.camera;
-
-		return Vector2F(
-			static_cast<float>(buffer_point.x) / camera.scale +
-				camera.translation.x,
-			static_cast<float>(buffer_point.y) / camera.scale +
-				camera.translation.y);
-	}
 }

@@ -2,6 +2,7 @@
 
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/viewport.h"
 
 namespace labrador
@@ -48,8 +49,7 @@ namespace labrador
 			const Camera& first, const Camera& last, float amount);
 
 		// What `viewport` actually shows of the world under this camera - the
-		// inverse of calculate_view_rectangle, and the only inverse this type
-		// offers.
+		// inverse of calculate_view_rectangle for the whole pane.
 		//
 		// The forward transform is view = (world - translation) * scale, so
 		// the world extent behind `viewport.width` pixels is
@@ -66,6 +66,24 @@ namespace labrador
 		// viewpoint but a division by nothing. Camera::frame cannot produce
 		// one; a hand-built camera can.
 		mattmath::RectangleF visible_rectangle(const Viewport& viewport) const;
+
+		// The world point under a back-buffer pixel seen through `viewport`
+		// with this camera - the inverse of calculate_view_position. A mouse
+		// position or a touch point is one: the input devices report client
+		// pixels, which are the pixels a viewport is given in.
+		//
+		// The pane starts where every backend puts it, at the top-left of
+		// viewport.pixel_rect(), so a viewport off a whole pixel answers for
+		// the pixels it is drawn into. The point is the pixel's top-left
+		// corner; a caller that wants its centre adds half a pixel divided by
+		// the scale. Nothing is clipped to the pane: a pixel outside it
+		// answers the world point the camera would put there, and which pane
+		// a pointer is in is the caller's question.
+		//
+		// Throws std::invalid_argument for a zero scale, as visible_rectangle
+		// does.
+		mattmath::Vector2F world_position(const mattmath::Vector2I& buffer_point,
+			const Viewport& viewport) const;
 
 		// The camera that shows all of `world_rectangle` in `viewport`.
 		//

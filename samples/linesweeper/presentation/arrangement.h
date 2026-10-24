@@ -2,7 +2,6 @@
 
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
-#include "engine/math/vector2i.h"
 #include "engine/render/camera.h"
 #include "engine/render/viewport.h"
 
@@ -83,8 +82,4 @@ namespace linesweeper
 	// The arrangement for a buffer of this size, in pixels. Throws
 	// std::invalid_argument for a non-positive extent, as Camera::frame does.
 	Arrangement arrange(const mattmath::Vector2F& buffer);
-
-	// A buffer pixel - a touch point, a mouse position - in board space.
-	mattmath::Vector2F to_board(const Arrangement& arrangement,
-		const mattmath::Vector2I& buffer_point);
 }

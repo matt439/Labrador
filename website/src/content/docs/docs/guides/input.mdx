@@ -166,3 +166,19 @@ say how, and how it lays itself out for a phone held upright. That layout has ru
 Chrome's device emulation and in a tall window on Windows, never on a real phone, and the
 hosted demo shows a phone a poster rather than the game until a real iPhone and a real Android
 phone have played it.
+
+## From a pointer to the world
+
+A mouse position and a touch point are pixels, and what they land on is drawn in world
+coordinates through a camera. `camera.world_position(point, viewport)` is the way back: the world
+point under that pixel, seen through that view. LineSweeper's buttons ask it which board point a
+finger is on:
+
+<SourceFile
+	path="samples/linesweeper/presentation/touch_controls.cpp"
+	from="const Vector2F point = arrangement.camera.world_position(buffer_point,"
+	to="arrangement.viewport);"
+/>
+
+With several views, which pane a pointer is in is the game's question: the call answers for any
+pixel, inside the viewport or not, so a split-screen game picks the view first.

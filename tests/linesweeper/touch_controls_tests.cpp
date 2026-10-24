@@ -25,7 +25,6 @@ using linesweeper::control_bit;
 using linesweeper::control_count;
 using linesweeper::control_rectangles;
 using linesweeper::controls_held;
-using linesweeper::to_board;
 using mattmath::RectangleF;
 using mattmath::Vector2F;
 using mattmath::Vector2I;
@@ -209,8 +208,9 @@ TEST_SUITE("linesweeper arrangement")
 			const Vector2F board(640.0f, 400.0f);
 			const Vector2F view =
 				arrangement.camera.calculate_view_position(board);
-			const Vector2F back = to_board(arrangement,
-				Vector2I(static_cast<int>(view.x), static_cast<int>(view.y)));
+			const Vector2F back = arrangement.camera.world_position(
+				Vector2I(static_cast<int>(view.x), static_cast<int>(view.y)),
+				arrangement.viewport);
 
 			// Within a pixel, because the buffer point is whole.
 			CHECK(std::fabs(back.x - board.x) <= 1.0f / arrangement.camera.scale);
