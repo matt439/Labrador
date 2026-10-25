@@ -24,8 +24,12 @@ runs on, with the engine taken from that run's own checkout. It then does the
 configure and build of the page's step 7, without running the game, which the
 minimal sample cannot yet quit by itself (OCA-30), and checks that the
 engine's tests stay out of the project: `ctest` lists none, and no
-`CTestTestfile.cmake` is anywhere in the build tree, because the consumer's
-own root never enables testing and the count alone could not fail.
+`CTestTestfile.cmake` is anywhere in the build tree outside
+`vcpkg_installed`, because the consumer's own root never enables testing and
+the count alone could not fail. `vcpkg_installed` is left out because it is
+vcpkg's: a package vcpkg builds from source rather than restores from its
+binary cache leaves its own build tree under `vcpkg_installed\vcpkg\blds`, and
+DirectXMath's and DirectXTK's hold `CTestTestfile.cmake` files of their own.
 
 To run it as CI does, from an x64 Native Tools Command Prompt with `VCPKG_ROOT`
 set, into a folder whose path is short (CI uses `C:\dev\mygame`, the page's
@@ -37,10 +41,10 @@ cd /d C:\dev\mygame
 cmake --preset x64-debug
 cmake --build --preset x64-debug
 ctest -N --test-dir out\build\x64-debug | findstr /B /C:"Total Tests: 0"
-dir /s /b out\build\x64-debug\CTestTestfile.cmake
+dir /s /b out\build\x64-debug\CTestTestfile.cmake 2>nul | findstr /V /I /C:"vcpkg_installed"
 ```
 
-The last command must print nothing but `File Not Found`.
+The last command must print nothing.
 
 `--engine <path>` consumes another engine tree than the checkout the script is
 in. The folder must be new or empty; delete it to assemble again.
