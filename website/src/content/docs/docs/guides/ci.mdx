@@ -62,8 +62,14 @@ Labrador's own CI has a job that builds this project from the Get Started files 
 engine, and it runs most of these steps: the runner's vcpkg, vcvars found through `vswhere`,
 configure, build and the game's ctest. That job takes the engine from the change being checked
 rather than from a submodule, and it restores the vcpkg binary cache the engine's own Windows jobs
-save without ever saving one, so this file's save step and its `restore-keys` have not run.
-That job's test step and its check that the project's ctest holds only the game's two tests are
-newer than its last run on Actions, and have run locally the way the job runs them. The file
-has also been parsed, and its configure, build and test run by hand in the order it gives. It
-has not yet been run as a workflow in a repository of its own.
+save without ever saving one, so it does not run this file's save step.
+The file itself has run, unchanged, as the workflow of a repository of its own:
+[matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), which holds the project
+Start your own project builds, with Labrador at `v0.2.0`. On 26 October 2026 its
+[first run](https://github.com/matt439/labrador-mygame/actions/runs/40242503246) found no cache,
+configured in 95 seconds, passed both tests and saved the cache, and the
+[second](https://github.com/matt439/labrador-mygame/actions/runs/40242709388) restored it, so
+vcpkg restored its six packages instead of building them and configure took 42 seconds. That was a hit on the exact key; the `restore-keys` fallback, for a run after `vcpkg.json` changes, has not been exercised. Each
+run took about two and a half minutes on `windows-latest`, with MSVC 19.51. Both runs warn that
+`actions/checkout@v4` and `actions/cache@v4` target Node.js 20, which GitHub now runs on
+Node.js 24; nothing fails because of it.

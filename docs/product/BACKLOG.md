@@ -209,7 +209,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[OCA-29](STORIES.md#oca-29)** Must · M · The Outside C++ Adopter: A test target for my game's rules from the start — after OCA-11
 - [x] **[OCA-30](STORIES.md#oca-30)** Must · S · The Outside C++ Adopter: A start-up smoke check for my Windows game — after OCA-29
 - [x] **[OCA-12](STORIES.md#oca-12)** Should · S · The Outside C++ Adopter: The first-build time and public-clone path are observed from a cold cache — after OCA-11
-- [ ] **[OCA-33](STORIES.md#oca-33)** Should · M · The Outside C++ Adopter: A CI workflow I can copy for my game's repository — after OCA-29, OCA-30, OCA-11
+- [x] **[OCA-33](STORIES.md#oca-33)** Should · M · The Outside C++ Adopter: A CI workflow I can copy for my game's repository — after OCA-29, OCA-30, OCA-11
 - [x] **[OCA-35](STORIES.md#oca-35)** Must · XS · The Outside C++ Adopter: Know that translucent textures must be premultiplied — after OCA-34
 - [x] **[OCA-38](STORIES.md#oca-38)** Should · XS · The Outside C++ Adopter: The guide's XWBTool command makes a bank that loads in the browser too
 - [x] **[OCA-39](STORIES.md#oca-39)** Should · S · The Outside C++ Adopter: Export my sounds in a format the engine accepts on both platforms — after OCA-38
@@ -266,7 +266,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-29 | G10 (major): no test target for a game's rules. The consumer job (OCA-11, Now) builds it. |
 | OCA-30 | G11 (major): no start-up smoke check for a Windows game. |
 | OCA-12 | G61: first-build time and the public-clone path are unobserved from a cold cache; OCA-11's cold-cache log can supply it. |
-| OCA-33 | G110: no CI workflow an adopter can copy; shares steps with OCA-11. |
+| OCA-33 | G110: no CI workflow an adopter can copy; shares steps with OCA-11. Closed 2026-10-26: the walkthrough's `ci.yml` ran unchanged in matt439/labrador-mygame, the walkthrough project at v0.2.0, green twice on windows-latest (runs 40242503246, cold cache, and 40242709388, cache restored); *Check your game in CI* links both. |
 | OCA-35 | G12: translucent textures must be premultiplied, and nothing says so. Follows OCA-34 (Now). Closed 2026-10-25: the sprites guide says the engine does no premultiplication at load and that texconv's `-pmalpha` does it, and Troubleshooting has a fringe-or-halo entry that points there. |
 | OCA-38 | G129: the guide's XWBTool command makes a bank the browser refuses. Closed 2026-10-25: the command has `-nc` and says why. XWBTool `may2026` was run on the sample's three WAVs; the engine's reader loads its bank, and refuses the same command without `-nc` as compact entries. |
 | OCA-39 | G130: which sound formats load on both platforms. Closed 2026-10-25: the audio guide lists what the reader accepts and refuses, mono or stereo, the browser's rate range, the sample's format as the default, how to export PCM and MS-ADPCM, and the browser's memory cost. A 2,000 Hz bank was loaded in headless Chrome and failed as the guide says. MS-ADPCM was found to need `adpcmencode3`: XAudio2 refuses every block size FFmpeg's encoder can write. |
