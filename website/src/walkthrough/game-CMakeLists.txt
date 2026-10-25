@@ -1,16 +1,45 @@
+# The game's rules, in a library that links the engine's maths and nothing else
+# of it, so the tests below run them with no window and no device.
+add_library(MyGameRules STATIC
+    rules/motion.cpp
+)
+target_link_libraries(MyGameRules PUBLIC
+    MattMath
+    labrador_settings
+)
+
+# Includes are written from the project root - "game/states/hello_state.h" -
+# so the directory above game/ is the include root, for the rules and for
+# everything that links them.
+target_include_directories(MyGameRules PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+# The rules' tests, with doctest from vcpkg. A new test file is listed here.
+find_package(doctest CONFIG REQUIRED)
+add_executable(MyGameTests
+    tests/motion_tests.cpp
+)
+target_link_libraries(MyGameTests PRIVATE
+    MyGameRules
+    doctest::doctest
+    labrador_settings
+)
+add_test(NAME MyGameTests COMMAND MyGameTests)
+
 add_executable(MyGame WIN32
     main.cpp
     states/confirm_state.cpp
     states/hello_state.cpp
 )
 target_link_libraries(MyGame PRIVATE
+    MyGameRules
     LabradorEngine
     labrador_settings
 )
 
-# Includes are written from the project root - "game/states/hello_state.h" -
-# so the directory above game/ is this target's include root.
-target_include_directories(MyGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+# The start-up check: the game hidden, a few frames drawn, and out. It needs a
+# graphics device, and a missing content file fails it naming the file.
+add_test(NAME MyGameSmokeTests COMMAND MyGame --smoke-test)
+set_tests_properties(MyGameSmokeTests PROPERTIES TIMEOUT 60)
 
 # Content is found beside the executable, so copy it there on every build.
 add_custom_target(game_content ALL)

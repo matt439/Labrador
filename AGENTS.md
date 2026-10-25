@@ -6,9 +6,10 @@ as well. This repository is the **engine half
 of a split**: the client that drives it, ColourWars, lives in its own
 repository and consumes this one as a submodule.
 Nothing here depends on it — this tree builds, tests and benchmarks standalone,
-and `samples/` holds six clients: `minimal` (~560 lines), the new-project
-template you copy; `collision`, `audio` and `local_multiplayer`, the focused
-guide examples; `components`, an option row and a slider a game copies a
+and `samples/` holds six clients: `minimal` (~760 lines), the new-project
+template you copy, with a rules library, its test and a `--smoke-test`;
+`collision`, `audio` and `local_multiplayer`, the focused guide examples;
+`components`, an option row and a slider a game copies a
 piece at a time rather than links, with a gallery that shows them -
 PHILOSOPHY's UI section is the rule for what belongs there; and
 `linesweeper`, a falling-block game you read
@@ -167,12 +168,12 @@ driven neither.
 
 | Preset | Backend | ctest |
 |---|---|---|
-| `x64-debug`, `x64-release` | `render/d3d11/` | 18 entries; WARP fallback in debug |
-| `x64-debug-d3d12`, `x64-release-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 18 entries; WARP fallback in debug |
-| `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 18 entries; needs a real driver |
-| `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 18 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 17 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases and `AppTests` its Application-loop case |
-| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 27 entries: the eighteen, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, two browser-only pages, `RenderContextLossTests`, which loses and restores a WebGL2 context, and `WebWindowTests`, which drives the web window with real input, and the six `*PageTests`, one per sample page (17 where configure finds no Chromium, because no page is then registered). `AudioSampleTests` runs under Node and loads the sample's bank through `audio/webaudio/`, the browser build's stand-in for `--smoke-test`. `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, `UiTests`' real-`UiText` cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests`' Application-loop case, `application_loop_tests.cpp`, is the exception: it is left out of every browser build, that reconfigure included, because `run()` does not return in a browser, so only MSVC compiles it. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
+| `x64-debug`, `x64-release` | `render/d3d11/` | 20 entries; WARP fallback in debug |
+| `x64-debug-d3d12`, `x64-release-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 20 entries; WARP fallback in debug |
+| `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 20 entries; needs a real driver |
+| `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 20 entries; needs a driver and the Vulkan SDK |
+| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 19 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases and `AppTests` its Application-loop case |
+| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 28 entries: the twenty less `MinimalSmokeTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, two browser-only pages, `RenderContextLossTests`, which loses and restores a WebGL2 context, and `WebWindowTests`, which drives the web window with real input, and the six `*PageTests`, one per sample page (18 where configure finds no Chromium, because no page is then registered). `AudioSampleTests` runs under Node and loads the sample's bank through `audio/webaudio/`, the browser build's stand-in for `--smoke-test`. `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, `UiTests`' real-`UiText` cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's wasm job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests`' Application-loop case, `application_loop_tests.cpp`, is the exception: it is left out of every browser build, that reconfigure included, because `run()` does not return in a browser, so only MSVC compiles it. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
 
 `LineSweeperFrameBench` is the absolute hardware measurement and is
 deliberately **not** a ctest entry. Run its Release binary: it holds the real
@@ -211,18 +212,24 @@ point-sampled text belongs on a whole pixel rather than half way.
 `RenderPixelTests` is the pixel contract and needs a device. The null backend's
 `read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
 — compiled only in that configuration — asserts the other half: which sprites a
-frame submitted, in what order, from which texture, into which view. Eighteen ctest entries: `MattMathTests`, `CoreTests`,
+frame submitted, in what order, from which texture, into which view. Twenty ctest entries: `MattMathTests`, `CoreTests`,
 `CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
 `InputTests`, `UiTests`, `AssetsTests`, `AudioTests`, `AppTests`,
 `CollisionSampleTests`, `AudioSampleTests`, `LocalMultiplayerTests`,
-`ComponentsTests`, `LineSweeperTests`, `LineSweeperViewTests` (doctest) and
+`ComponentsTests`, `MinimalTests`, `LineSweeperTests`, `LineSweeperViewTests`
+(doctest), `MinimalSmokeTests`, which runs `MinimalSample --smoke-test`, and
 `Benchmarks`; the `wasm-*`
-presets add `RenderPixelTestsWithoutS3tc`, the pixel page again with S3TC
+presets leave out `MinimalSmokeTests`, because a page has no command line,
+and add `RenderPixelTestsWithoutS3tc`, the pixel page again with S3TC
 hidden, `RenderContextLossTests`, a browser-only page that creates a
 WebGL2 context to lose and restore it, `WebWindowTests`, a browser-only
 page that draws nothing, and a `*PageTests` entry for each sample's page,
-which loads it and quits it. Apart from those pages and the second pixel run, `RenderPixelTests` is the only one that creates a
-device — a hidden window and a WARP fallback in debug under `x64-debug` and
+which loads it and quits it. Apart from those pages, the second pixel run and
+`MinimalSmokeTests`, which starts the minimal sample hidden, draws 30 frames
+through the configured backend and quits - so it needs a device too and CI's GL
+and Vulkan jobs skip it beside the pixel tests - `RenderPixelTests` is the
+only one that creates a device — a hidden window and a WARP fallback in debug
+under `x64-debug` and
 `x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
 `x64-debug-vulkan`, a WebGL2 context on a canvas of its own per case under the
 `wasm-*` presets — and asserts on the
@@ -396,7 +403,9 @@ in the commit that creates it.
 - **Breaking the project Get Started teaches.** CI's `consumer` job assembles
   it with [tools/consumer_check/assemble.py](tools/consumer_check/assemble.py)
   from the change's own tree - the engine at `external/labrador`, the minimal
-  sample as `game/`, the derived `vcpkg.json` - and builds it. A path spelt
+  sample as `game/`, the derived `vcpkg.json` - builds it, checks that its
+  ctest lists the game's two tests and none of the engine's, and runs them,
+  the start-up check included. A path spelt
   from `CMAKE_SOURCE_DIR` inside `engine/` that resolves somewhere else in a
   consumer, or a package the engine starts to need, passes every standalone
   job and fails that one; a swap another include root happens to cover is not

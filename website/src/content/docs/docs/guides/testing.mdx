@@ -1,0 +1,112 @@
+---
+title: Test your game
+description: A rules library tested with no window and no device, a start-up check registered with ctest, and how to add tests of your own.
+sidebar:
+  order: 8
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+A project started from [Start your own project](/docs/get-started/your-project/) is tested from
+its first commit. It has two tests, and ctest runs them:
+
+```bat
+ctest --preset x64-debug
+```
+
+`MyGameTests` runs the game's rules with no window, no graphics device and no input device.
+`MyGameSmokeTests` starts the game itself, hidden, lets it draw a few frames and quits. The first
+says the game's arithmetic is right; the second says the game still starts, which is what an
+engine upgrade or a moved content file breaks first. Neither is a test framework of Labrador's:
+the first is doctest, the second is a switch in your `main.cpp`, and both are yours to change.
+
+## Rules in a library of their own
+
+A rule that asks the platform a question cannot be tested without one. The template's way round
+that is to keep everything the game decides in `game\rules`, taking what the devices said as plain
+values, and to let the states do the talking to the engine. `HelloState` reads the stick and the
+keys, hands them to the rules as directions, and places its label where the rules say:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="this->motion_ = step_motion(this->motion_," to="keyboard_direction(keyboard), dt);" />
+
+The rules are ordinary functions on ordinary values:
+
+<SourceFile path="samples/minimal/rules/motion.h" from="struct Motion" to="mattmath::Vector2F greeting_position(const Motion& motion);" />
+
+**The wall is the build file, not a convention.** The rules are a static library that links
+`MattMath`, the engine's maths on its own, and the compiler settings, and nothing else of the
+engine. A call from `game\rules` into the engine's compiled code, a window or a renderer, fails
+to link, so the rules cannot start depending on a device without the build saying so. The wall
+catches calls rather than includes: an engine header still compiles there, and what is inline or
+constant in it links. The test
+target links the rules and doctest:
+
+<SourceFile path="website/src/walkthrough/game-CMakeLists.txt" from="add_library(MyGameRules STATIC" to="add_test(NAME MyGameTests COMMAND MyGameTests)" />
+
+and a test is a doctest case that calls the rules and checks what came back:
+
+<SourceFile path="samples/minimal/tests/motion_tests.cpp" from={'TEST_CASE("a step moves the centre and turns the greeting")'} to="}" />
+
+The cases read `move_speed` and `orbit_radius` rather than repeating their values, so retuning the
+game does not break them; changing what a step *does* does.
+
+### Adding tests
+
+- **A new rule** goes in `game\rules`, and its `.cpp` is listed in `MyGameRules`. A rule that
+  needs the time, a random number or the input is handed them as arguments, the way
+  `step_motion` is handed `dt` and two directions.
+- **A new test file** goes in `game\tests` and is listed in `MyGameTests`. One target holds all
+  of them and is one ctest entry; doctest prints how many cases ran.
+- **doctest comes from vcpkg.** Your `vcpkg.json` names it beside the engine's dependencies, and
+  `find_package(doctest CONFIG REQUIRED)` finds it. A project made from an older version of the
+  page, whose manifest has no `doctest`, adds `"doctest"` to its `dependencies` and configures
+  again.
+
+### A whole game tested this way
+
+LineSweeper, the falling-block sample, is the same wall around a complete game. Its rules are
+<RepoLink path="samples/linesweeper/rules">a library</RepoLink> that links nothing but the compiler
+settings, and
+<RepoLink path="tests/linesweeper/CMakeLists.txt">its tests</RepoLink> play scripted games of four
+thousand ticks and compare the result byte for byte, with no window and no device. Its input
+reaches the rules as one byte per step, read from a binding table by the play state, which is
+the same split as the template's: the state reads the devices, the rules see values. Its
+[README](https://github.com/matt439/Labrador/blob/master/samples/linesweeper/README.md) records
+why it is arranged that way.
+
+## The start-up check
+
+`MyGame.exe --smoke-test` runs your first state in a hidden window, with the real window, device,
+content and frame loop, and quits once 30 frames have been drawn, about half a second. It exits
+0 when it got that far and 1 when anything threw, with the reason written to the standard error
+stream instead of a message box, because nobody is there to close one. The build registers it:
+
+<SourceFile path="website/src/walkthrough/game-CMakeLists.txt" from="add_test(NAME MyGameSmokeTests" to="set_tests_properties(MyGameSmokeTests" />
+
+The timeout is for a loop that never draws. A missing content file fails it with the file
+named, as the game would on your next launch:
+
+```text
+startup failure: No file at C:\dev\mygame\out\build\x64-debug\game\.\./fonts/jetbrains_mono_bold_16.spritefont.
+```
+
+`main.cpp` does it by wrapping the first state rather than by adding a flag to it, so
+`HelloState` has no test code in it, and when your first state is a title screen of your own,
+it is wrapped the same way:
+
+<SourceFile path="samples/minimal/main.cpp" from="std::unique_ptr<State> first_state" to="return app.run(std::move(first_state));" />
+
+**It needs a graphics device.** The Direct3D presets get one wherever Windows runs, a
+GitHub-hosted runner included, and a debug build falls back to Windows' software rasteriser when
+there is no adapter. A preset of your own for the OpenGL or Vulkan renderer needs a real driver,
+and on a machine without one `ctest --preset <name> -E SmokeTests` runs the rest.
+
+It presses no keys, so it checks that the game starts, not that it plays. A test of what a state
+draws, against the engine's recording renderer, is not yet something this site shows a
+project how to set up.
+
+## In CI
+
+The same `ctest` runs on every push with the workflow in
+[Check your game in CI](/docs/guides/ci/).

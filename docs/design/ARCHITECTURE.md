@@ -570,7 +570,8 @@ A project is an ordinary C++ application that links two static
 libraries. There is no project file format, no code generation, no
 module manifest — the `CMakeLists.txt` names the sources, links the
 engine and the shared settings, and puts the content beside the program,
-which is all that building and running the game needs. A release package
+which is all that building and running the game needs, and it registers
+the game's own tests with CTest. A release package
 for players adds install rules on top. Starting
 a game is copying `samples/minimal/`, renaming the target, and owning
 everything inside — including the starter code the
@@ -588,6 +589,10 @@ Its anatomy is the sample's anatomy:
   whatever granularity the game chooses.
 - **`content/`** — definitions, levels, tuning, assets. Data says *which*
   and *how much*; the code says *how* (T7).
+- **rules and tests** — the game's rules in a library that links the
+  maths and not the engine, a doctest target that runs them with no
+  window and no device, and a `--smoke-test` switch that starts the game
+  hidden, draws a few frames and quits, registered as a test beside it.
 - **the shared settings target** — linked like everyone else's, so a
   game is compiled exactly as strictly as the engine that hosts it (T5).
 
