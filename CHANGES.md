@@ -72,6 +72,23 @@ its heading here.
 
 ## Unreleased
 
+#### Keep a debug build running where there is no audio endpoint
+
+*Keep a debug build running where there is no audio endpoint* (2026-10-25).
+Silent behaviour change.
+
+- **A debug build no longer stops at start-up on a machine with no audio
+  device.** On the XAudio2 backend the engine asks for XAudio2's debug layer
+  only when a debugger is attached.
+  - Old: every debug build turned the layer on, and DirectXTK sets it to break
+    on any error, so with no default audio endpoint - a CI runner, a headless
+    session - the game ended at a break instruction (exit code `0x80000003`)
+    before its first frame. A release build carried on silent.
+  - New: without a debugger a debug build carries on silent too, as a release
+    build does; under a debugger the layer and its breaks are as before.
+  - Nothing to migrate. A game that wants XAudio2's trace output runs under a
+    debugger, which is where a break was ever useful.
+
 #### Keep a scene's collision objects in the order they were added
 
 *Keep a scene's collision objects in the order they were added* (2026-10-24).

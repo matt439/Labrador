@@ -90,7 +90,16 @@ namespace labrador
 	{
 		AUDIO_ENGINE_FLAGS flags = AudioEngine_Default;
 #ifdef _DEBUG
-		flags |= AudioEngine_Debug;
+		// XAudio2's debug layer, only under a debugger. DirectXTK sets it to
+		// break on every error, and a break instruction with nobody attached
+		// ends the process: a debug build on a machine with no audio endpoint
+		// - a build runner, a headless session, a desk with nothing plugged
+		// in - stopped at this line instead of carrying on silent, as a
+		// release build does. Under a debugger the break is the point.
+		if (IsDebuggerPresent())
+		{
+			flags |= AudioEngine_Debug;
+		}
 #endif
 		this->impl_->engine = std::make_unique<AudioEngine>(flags);
 	}
