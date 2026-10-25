@@ -6,16 +6,15 @@ An index of open work, one row per item; each row points to the document that ow
 
 **The only ordering in this file.** Keep every `DECISION` row here. Keep this block to the current aim and the next few actions; results go in their owners, and a closed story is a ticked box in BACKLOG.md.
 
-**Now is finished**: every batch of [BACKLOG.md, Now](docs/product/BACKLOG.md#now), N1 to N21, has landed, and `v0.1.0` is cut.
+**Now is finished**: every batch of [BACKLOG.md, Now](docs/product/BACKLOG.md#now), N1 to N21, has landed, and `v0.1.0` and `v0.2.0` are cut.
 
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
 1. **`SM-43` (X1): trim the agent brief to current state.**
-2. **`OCA-70`, `OCA-71` (X2): the pin-move procedure page**, and running the engine's suite at a pin.
-3. **`OCA-33` (X7): run the copyable CI workflow once** in a repository of its own and record the run; the rest of X7 has landed.
+2. **`OCA-33` (X7): run the copyable CI workflow once** in a repository of its own and record the run; the rest of X7 has landed.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `OCA-61` (the release folder on a clean Windows) · `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
+- Next: `SM-36` (ColourWars' pin cadence and first bump, by *Move your engine pin*) · `OCA-61` (the release folder on a clean Windows) · `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
 
 ## The public face and the adopter path
@@ -24,7 +23,6 @@ An index of open work, one row per item; each row points to the document that ow
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once, and `OCA-71`'s engine suite at a pin. `SM-36` waits on it. |
 | `OCA-33` | OPEN | should | M | The workflow is published (`website/src/walkthrough/ci.yml`, guides/ci.mdx) and its steps run locally; left is one green run on `windows-latest` in a repository holding the walkthrough project, its URL recorded on that page. |
 | `OCA-61` | DECISION | must | S | Run the template's release folder on a clean Windows with the `.wsb` `tools/consumer_check/sandbox.py` writes (Windows Sandbox needs an administrator to enable it), and record date, commit and result on *Ship a Windows release*. The rest of X10 and X11 has landed. |
 
@@ -111,7 +109,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 |---|---|---|---|---|
 | `PI-09` | DECISION | should | S | The owner decides what private ColourWars detail may be published; then the live drafts (fifteen on 2026-10-22, the packaging gap among them) are rechecked against master and filed through the stated route, or withdrawn with a reason. `PI-10` answers them. |
 | `DOC#4` | WAITING | should | S | When ColourWars' repository goes public (the owner expects it within weeks of 2026-10-13): sweep the tree's "private" and "not public" mentions of it outside dated records, link the repository from the README and the site, and recheck `PI-09`, which then narrows to what its drafts say. |
-| `SM-36` | BLOCKED | should | S | The owner sets ColourWars' pin cadence in a ColourWars document, then makes the first ordinary bump from `4cefb68` and records what was played. After `OCA-70`. |
+| `SM-36` | DECISION | should | S | The owner sets ColourWars' pin cadence in a ColourWars document, then makes the first ordinary bump from `4cefb68` by the guide *Move your engine pin*, and records what was played. |
 | `PI-14` | BLOCKED | should | M | A ColourWars Release ZIP at a current pin, run (or refused loudly) on a clean Windows install without Visual Studio, with edition, GPU, driver and commits named. After `OCA-61` and `SM-36`. |
 
 ## Records and design decisions
