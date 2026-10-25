@@ -210,9 +210,9 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[OCA-30](STORIES.md#oca-30)** Must · S · The Outside C++ Adopter: A start-up smoke check for my Windows game — after OCA-29
 - [ ] **[OCA-12](STORIES.md#oca-12)** Should · S · The Outside C++ Adopter: The first-build time and public-clone path are observed from a cold cache — after OCA-11
 - [ ] **[OCA-33](STORIES.md#oca-33)** Should · M · The Outside C++ Adopter: A CI workflow I can copy for my game's repository — after OCA-29, OCA-30, OCA-11
-- [ ] **[OCA-35](STORIES.md#oca-35)** Must · XS · The Outside C++ Adopter: Know that translucent textures must be premultiplied — after OCA-34
-- [ ] **[OCA-38](STORIES.md#oca-38)** Should · XS · The Outside C++ Adopter: The guide's XWBTool command makes a bank that loads in the browser too
-- [ ] **[OCA-39](STORIES.md#oca-39)** Should · S · The Outside C++ Adopter: Export my sounds in a format the engine accepts on both platforms — after OCA-38
+- [x] **[OCA-35](STORIES.md#oca-35)** Must · XS · The Outside C++ Adopter: Know that translucent textures must be premultiplied — after OCA-34
+- [x] **[OCA-38](STORIES.md#oca-38)** Should · XS · The Outside C++ Adopter: The guide's XWBTool command makes a bank that loads in the browser too
+- [x] **[OCA-39](STORIES.md#oca-39)** Should · S · The Outside C++ Adopter: Export my sounds in a format the engine accepts on both platforms — after OCA-38
 - [x] **[OCA-36](STORIES.md#oca-36)** Should · S · The Outside C++ Adopter: Copy a guide sample without broken paths
 - [ ] **[OCA-62](STORIES.md#oca-62)** Must · S · The Outside C++ Adopter: Know the notices my Windows game must ship
 - [ ] **[OCA-60](STORIES.md#oca-60)** Must · M · The Outside C++ Adopter: Know what files my Windows release needs and build a package — after OCA-62
@@ -267,9 +267,9 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-30 | G11 (major): no start-up smoke check for a Windows game. |
 | OCA-12 | G61: first-build time and the public-clone path are unobserved from a cold cache; OCA-11's cold-cache log can supply it. |
 | OCA-33 | G110: no CI workflow an adopter can copy; shares steps with OCA-11. |
-| OCA-35 | G12: translucent textures must be premultiplied, and nothing says so. Follows OCA-34 (Now). |
-| OCA-38 | G129: the guide's XWBTool command makes a bank the browser refuses. |
-| OCA-39 | G130: which sound formats load on both platforms. |
+| OCA-35 | G12: translucent textures must be premultiplied, and nothing says so. Follows OCA-34 (Now). Closed 2026-10-25: the sprites guide says the engine does no premultiplication at load and that texconv's `-pmalpha` does it, and Troubleshooting has a fringe-or-halo entry that points there. |
+| OCA-38 | G129: the guide's XWBTool command makes a bank the browser refuses. Closed 2026-10-25: the command has `-nc` and says why. XWBTool `may2026` was run on the sample's three WAVs; the engine's reader loads its bank, and refuses the same command without `-nc` as compact entries. |
+| OCA-39 | G130: which sound formats load on both platforms. Closed 2026-10-25: the audio guide lists what the reader accepts and refuses, mono or stereo, the browser's rate range, the sample's format as the default, how to export PCM and MS-ADPCM, and the browser's memory cost. A 2,000 Hz bank was loaded in headless Chrome and failed as the guide says. MS-ADPCM was found to need `adpcmencode3`: XAudio2 refuses every block size FFmpeg's encoder can write. |
 | OCA-36 | G13: guide samples borrow paths that break when copied. Closed 2026-10-24: the solid-rectangle recipe uses the engine's own white texture (`white_texture_name`), so no sample borrows LineSweeper's, and the collision, components and local_multiplayer READMEs each list the paths outside their folder they still use and what a copy does about them. |
 | OCA-62 | G16 (major, merged with PI-12): no notice list for what a Windows game ships. |
 | OCA-60 | G14 (major): no release-package guidance or install rules. The unexplained dependency on OCA-29 is removed (critique). |

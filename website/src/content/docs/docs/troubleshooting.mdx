@@ -127,3 +127,25 @@ is ignored, check it is in slot 0 if the game reads slot 0.
 
 The release build does not fall back to Microsoft's software renderer, WARP; the debug build does.
 Update the graphics driver, or use a debug build on a machine without a usable graphics adapter.
+
+## Content
+
+### A sprite has a fringe or halo round its soft edges
+
+The texture was not premultiplied when it was converted. The engine blends premultiplied and does
+not premultiply a texture at load, so convert it again with texconv's `-pmalpha`
+([Colours and blending](/docs/guides/sprites-and-text/#colours-and-blending)). The same cause
+shows a fully transparent area as a coloured box. Edges that come out darker than they should
+are the opposite mistake: a source that was already premultiplied, premultiplied again.
+
+### `... uses compact entries, which this engine does not read`
+
+The wave bank was packed without `-nc`. Windows plays a compact bank and the browser build does
+not, because it reads banks with the engine's own reader. Pack it again with
+`xwbtool -f -nc` ([Make sound content and verify it](/docs/guides/audio/#make-sound-content-and-verify-it)).
+
+### `... Hz, which this browser's Web Audio cannot hold`
+
+A wave in the bank is at a sample rate the browser will not make a buffer for. Export it at a
+rate between 8,000 and 96,000 Hz, which every browser accepts, and pack the bank again
+([Exporting sounds both platforms play](/docs/guides/audio/#exporting-sounds-both-platforms-play)).
