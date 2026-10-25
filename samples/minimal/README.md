@@ -16,6 +16,10 @@ the game's rules in a library of their own, `tests/` runs them with no
 window, and `--smoke-test` starts the game hidden and quits, both
 registered with ctest
 ([Test your game](https://labradorengine.com/docs/guides/testing/)).
+`main_web.cpp` and `web/shell.html` are the browser build, which the
+walkthrough's Windows build does not compile;
+[Build for the browser](https://labradorengine.com/docs/guides/browser/)
+adds the presets that do.
 
 ## A copy is yours
 
@@ -32,6 +36,15 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-25.** No code here changed, but a copy's browser build needs less:
+  under Emscripten the engine now chooses the `gl` renderer by itself and
+  refuses `d3d11`, `d3d12` and `vulkan` at configure, so a project's `wasm`
+  preset sets only the vcpkg toolchain, Emscripten's toolchain file chained
+  after it and the `wasm32-emscripten` triplet. The walkthrough's
+  `CMakePresets.json` has those presets and its `game/CMakeLists.txt` the
+  `if(EMSCRIPTEN)` block that builds `main_web.cpp` and `web/shell.html`;
+  *Build for the browser* on the website is the guide. CHANGES.md's *Add a
+  browser build to the Get Started project* entry is the engine side.
 - **2026-10-25.** Tests, from the start. The motion arithmetic that was in
   `HelloState::update()` - the stick and the keys summed and clamped, the
   centre moved, the spin advanced and the greeting placed - is in

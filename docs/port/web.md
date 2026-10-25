@@ -671,12 +671,25 @@ the same set.
 - `.wasm` served as `Content-Type: application/wasm`, which
   `instantiateStreaming` requires. *General knowledge:* Workers Static Assets
   types files by extension and maps this one, and `curl -I` against the live
-  module confirmed it on 2026-10-13 ([web-to-be-tested.md](web-to-be-tested.md)),
-  since it is the one header the demo cannot start without.
+  module confirmed it on 2026-10-13 ([web-to-be-tested.md](web-to-be-tested.md)).
+  It is not a header a page cannot start without, which this line used to
+  say: Emscripten's loader falls back to fetching the module whole and
+  compiling it from an `ArrayBuffer`, and logs the failed streaming compile
+  and the fallback as two console errors. Served with `.wasm` as
+  `application/octet-stream` on 2026-10-25, the Get Started project's page did
+  exactly that in Chrome, then drew and played. A wrong type costs the
+  streaming compile and a clean console, not the page. LineSweeper's ES module
+  bundle loads through the same Emscripten fallback, but was not served wrong.
+  The website's *Put your game on a web host* guide is the public statement of
+  this list for an adopter's own page.
 - **No COOP/COEP.** That is the point of §3.6.
 - **If the site ever sends a Content-Security-Policy**, its `script-src`
   needs `'wasm-unsafe-eval'`, or the browser refuses to compile the module.
-  It sends none today; the Worker passes asset responses through untouched.
+  That one does stop the page: on 2026-10-25 the Get Started project's page,
+  served with `script-src 'self' 'unsafe-inline'`, aborted with a
+  `CompileError` before its runtime was ready, and with `'wasm-unsafe-eval'`
+  added it played and quit. The site sends none today; the Worker passes
+  asset responses through untouched.
 - **Caching, by a versioned folder rather than a header.** The bundle's files
   have fixed names, so the site's `sync-demo` puts `linesweeper.js` and
   `linesweeper.wasm` in `/demo/linesweeper/m/<hash>/`, the hash taken from

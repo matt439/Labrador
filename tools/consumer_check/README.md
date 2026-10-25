@@ -47,5 +47,25 @@ ctest --preset x64-debug
 The listing must end `Total Tests: 2` and name `MyGameTests` and
 `MyGameSmokeTests`, and the last command must pass both.
 
+CI's `wasm` job assembles the same project and builds the page's browser
+preset, from *Build for the browser*
+(`website/src/content/docs/docs/guides/browser.mdx`). To run that as it does,
+from a prompt where Emscripten's `emsdk_env.bat` has also been run, so that
+`EMSDK` and `EMSDK_NODE` are set, and with the engine's own `wasm-release`
+build present for the Chrome its configure found (or name any Chromium
+yourself):
+
+```bat
+python tools\consumer_check\assemble.py C:\dev\mygame
+cd /d C:\dev\mygame
+cmake --preset wasm-release
+cmake --build --preset wasm-release
+ctest --preset wasm-release
+"%EMSDK_NODE%" <engine>\tests\render\web\run_page.mjs --browser <chrome.exe> --page out\build\wasm-release\game\MyGame.html --quit-keys Escape,Enter --timeout 60
+```
+
+ctest runs `MyGameTests` alone, under Node, and the last command must end
+`Module.onQuit was called` and exit 0.
+
 `--engine <path>` consumes another engine tree than the checkout the script is
 in. The folder must be new or empty; delete it to assemble again.

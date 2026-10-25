@@ -66,10 +66,12 @@ website/                the public site, built with npm from this same checkout
 ## Building
 
 **Windows, and a desktop browser.** The renderer has five backends, chosen by
-`LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11 (the default),
-Direct3D 12, OpenGL 3.3 core, Vulkan, and a null one with no graphics API that
-records what it was asked to draw. The first four are held to the same pixel
-tests and the same checked-in images of every frame they draw. Audio is a seam
+`LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11 (the default on
+Windows), Direct3D 12, OpenGL 3.3 core (WebGL2 in a browser, and the default
+there, where Direct3D 11, Direct3D 12 and Vulkan are refused at configure),
+Vulkan, and a null one with no graphics API that records what it was asked to
+draw. The first four are held to the same pixel tests and the same checked-in
+images of every frame they draw. Audio is a seam
 of its own: XAudio2, Web Audio in a browser, or a null one that records what it
 was asked to play. The `wasm-debug` and `wasm-release` presets build the engine
 and the samples for a browser with Emscripten, drawing through WebGL2 with the
@@ -183,7 +185,7 @@ needs:
 - **A configure preset that chains the vcpkg toolchain**: `toolchainFile` set
   to `$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake`, as every configure
   preset in this repository's [CMakePresets.json](CMakePresets.json) has.
-- **`fxc` on `PATH`.** The default backend, Direct3D 11, and Direct3D 12
+- **`fxc` on `PATH`.** The default backend on Windows, Direct3D 11, and Direct3D 12
   compile the engine's shader at build time, so your configure looks for `fxc`
   too. The x64 Native Tools Command Prompt puts it there, as it does `cl`. The
   Vulkan backend needs the Vulkan SDK instead, as [Building](#building) says.
@@ -198,6 +200,9 @@ copies, not a consumer: it is built inside this repository, so it uses this
 repository's `vcpkg.json` and presets and has no include root of its own. It
 is also the shape of a browser build: `main_web.cpp` beside `main.cpp`, chosen
 in its `CMakeLists.txt` under `EMSCRIPTEN`, and a page in `web/shell.html`.
+[Build for the browser](https://labradorengine.com/docs/guides/browser/)
+adds that build to the walkthrough's project, with a `wasm` preset that names
+no backend because `gl` is the default under Emscripten.
 `samples/linesweeper` has that shape too, and adds one more thing worth
 copying: a game's simulation as a static library that links nothing, so the
 whole game is playable from `ctest` with no window and no device.

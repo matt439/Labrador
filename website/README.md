@@ -77,6 +77,7 @@ src/lib/
                           list the same headers as the sidebar
   code-links.ts           C++ tokens linked without changing highlighted or copied code
   excerpt.ts              a passage of a file, found by its text
+  emscripten.ts           the pinned Emscripten version, read from CI's wasm job
 src/components/           SourceFile, RepoLink, Capture and friends;
                           overrides/ holds the Starlight components the site
                           replaces
@@ -160,7 +161,8 @@ existing still as its poster, native controls, a download link and a text
 description. It neither autoplays nor preloads the video.
 
 **Change the Get Started project files.** Edit them in `src/walkthrough/`. CI's
-`consumer` job builds the project they make on the pull request;
+`consumer` job builds the project they make on the pull request, and its
+`wasm` job builds the same project's browser preset and loads its page;
 `src/walkthrough/README.md` says what that job does not do, and a change to
 one of those steps is followed by hand again before publishing.
 
