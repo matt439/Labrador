@@ -10,12 +10,14 @@ import SourceFile from '~/components/SourceFile.astro';
 To Labrador, a game is **a set of states plus content**. There is no `Game` class to derive from
 and no `IGame` to implement. Your program constructs the engine's `Application`, says what it
 needs before a window exists, loads the content its manifest names, and hands the engine a first
-state. This is the whole of the minimal sample's `main.cpp` once the comments are taken out:
+state. This is the minimal sample's `main.cpp`, from its options to its first state:
 
 <SourceFile path="samples/minimal/main.cpp" from="ApplicationOptions options;" to="return app.run(" />
 
 `run` returns when the window closes. Everything between those lines (the window, the graphics
-device, the input devices, the frame loop) is the engine's.
+device, the input devices, the frame loop) is the engine's. The `smoke_test` lines are the
+game's start-up check, which [Test your game](/docs/guides/testing/#the-start-up-check)
+explains.
 
 ## Three kinds of type
 

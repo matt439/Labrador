@@ -11,7 +11,11 @@ The walkthrough covers adding the engine as a submodule, rewriting the includes,
 which name `samples/minimal/...` here because they are written from the root of
 the repository they sit in, the `CMakeLists.txt` that replaces this one, and
 the project's own root build files: its `CMakeLists.txt`, `vcpkg.json`,
-`CMakePresets.json` and `.gitignore`.
+`CMakePresets.json` and `.gitignore`. Its tests come with it: `rules/` is
+the game's rules in a library of their own, `tests/` runs them with no
+window, and `--smoke-test` starts the game hidden and quits, both
+registered with ctest
+([Test your game](https://labradorengine.com/docs/guides/testing/)).
 
 ## A copy is yours
 
@@ -28,6 +32,26 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-25.** Tests, from the start. The motion arithmetic that was in
+  `HelloState::update()` - the stick and the keys summed and clamped, the
+  centre moved, the spin advanced and the greeting placed - is in
+  `rules/motion.h` and `rules/motion.cpp` as `step_motion` and
+  `greeting_position`, with the tuning constants beside them, and
+  `HelloState` holds a `Motion` where it held `position_` and `spin_`.
+  `CMakeLists.txt` builds the rules as `MinimalRules`, which links `MattMath`
+  and not the engine, tests them in `MinimalTests` from
+  `tests/motion_tests.cpp` with doctest, and registers
+  `MinimalSample --smoke-test`, which `main.cpp` answers by running the first
+  state hidden, quitting after 30 frames and writing a startup failure to the
+  standard error stream rather than a message box. A copy that wants the same
+  takes the three new files, the `CMakeLists.txt` lines, and from `main.cpp`
+  the `asks_for_smoke_test` parse of `wWinMain`'s `command_line`,
+  `options.visible = !smoke_test`, the `SmokeTest` class that wraps
+  `first_state`, and the `catch` block that writes to the standard error
+  stream and skips the message box under a smoke test, and `doctest` in its
+  `vcpkg.json`; the walkthrough's `game/CMakeLists.txt`, root
+  `CMakeLists.txt` (`enable_testing()`) and `CMakePresets.json` (test
+  presets) show the project's side.
 - **2026-10-25.** The hint in `states/hello_state.cpp` says "B or Escape asks
   to quit" rather than "quits", and `web/shell.html`'s status line says Escape
   asks and Enter says yes, because quitting pushes `ConfirmState` first. A

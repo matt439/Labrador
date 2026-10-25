@@ -33,7 +33,9 @@ When you have finished, the project looks like this:
     - CMakeLists.txt
     - main.cpp
     - content/
+    - rules/ the game's rules, which its tests run without a window
     - states/
+    - tests/
 </FileTree>
 
 <Steps>
@@ -80,39 +82,51 @@ When you have finished, the project looks like this:
 
    <Code code={gameCMake} lang="cmake" title="game/CMakeLists.txt" />
 
-   It is the sample's build file with three changes. The program is called `MyGame`. The
-   content target is `game_content`. And `target_include_directories` makes the folder above
-   `game` the place your includes start from, which the sample did not need because Labrador's
-   root already was.
+   It is the Windows half of the sample's build file, with its names changed: the program is
+   `MyGame`, the rules library `MyGameRules`, the tests `MyGameTests` and `MyGameSmokeTests`, and
+   the content target `game_content`. One line is new. `target_include_directories` makes the
+   folder above `game` the place your includes start from, for the rules and for everything that
+   links them, which the sample did not need because Labrador's root already was.
+
+   Two tests come with it. `MyGameTests` runs the rules in `game\rules` with no window and no
+   graphics device. `MyGameSmokeTests` starts the game hidden with `--smoke-test`, lets it draw
+   a few frames and quits, so a change that stops the game starting fails a test rather than
+   your next launch. [Test your game](/docs/guides/testing/) says how both work and how to add
+   your own.
 
 6. **Add the project's own build files** to the `mygame` folder.
 
    <Code code={rootCMake} lang="cmake" title="CMakeLists.txt" />
 
-   `add_subdirectory(external/labrador)` builds the engine library and defines two targets:
-   `LabradorEngine`, and `labrador_settings`, which applies the engine's compiler settings to
-   your code too, warnings as errors included. Do not define your own `labrador_settings`; CMake
-   stops at a second target with the same name.
+   `enable_testing()` makes your tests ctest's. `add_subdirectory(external/labrador)` builds the
+   engine library and defines the targets your build links: `LabradorEngine`; `MattMath`, the
+   engine's maths on its own, which the rules library links instead of the whole engine; and
+   `labrador_settings`, which applies the engine's compiler settings to your code too, warnings
+   as errors included. Do not define your own `labrador_settings`; CMake stops at a second target
+   with the same name.
 
    <ConsumerManifest name="mygame" />
 
    vcpkg reads only the top-level project's manifest, so your project names the engine's
-   dependencies itself. The `builtin-baseline` is Labrador's own, which pins them to the
-   versions the engine is built and tested with.
+   dependencies itself, and `doctest`, the test framework your tests use. The
+   `builtin-baseline` is Labrador's own, which pins them to the versions the engine is built and
+   tested with.
 
    <Code code={presets} lang="json" title="CMakePresets.json" />
 
    <Code code={gitignore} lang="text" title=".gitignore" />
 
-7. **Build and run it:**
+7. **Build, test and run it:**
 
    ```bat
    cmake --preset x64-debug
    cmake --build --preset x64-debug
+   ctest --preset x64-debug
    out\build\x64-debug\game\MyGame.exe
    ```
 
-   The window is the minimal sample's, because so far the game is the minimal sample. The
+   ctest runs your two tests and reports `100% tests passed, 0 tests failed out of 2`. The
+   window is the minimal sample's, because so far the game is the minimal sample. The
    configure step installs the dependencies for this project; vcpkg reuses what it built for
    Labrador, so it is quicker than the first time.
 
@@ -127,5 +141,7 @@ When you have finished, the project looks like this:
 
 <Aside title="Only the library is built">
 Because Labrador is not the top-level project here, its tests, benchmarks and samples are left
-out of your build. You get the engine and nothing else.
+out of your build. You get the engine and nothing else, and your ctest runs your game's tests
+and none of Labrador's. To check every push in GitHub Actions, copy the workflow in
+[Check your game in CI](/docs/guides/ci/).
 </Aside>

@@ -3,7 +3,6 @@
 #include "engine/core/state_context.h"
 #include "engine/input/keyboard.h"
 #include "engine/input/touch.h"
-#include "engine/math/matrix3x2f.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 #include "samples/minimal/states/confirm_state.h"
@@ -22,14 +21,6 @@ namespace
 	// resolved to handles once (PHILOSOPHY T7, T8) - nothing below looks a
 	// resource up by name per frame.
 	const std::string font_name = "jetbrains_mono_bold_16";
-
-	constexpr float move_speed = 400.0f;
-
-	// How the greeting circles: radians a second, and how far out. Tuning, in
-	// the game's file, next to the one thing it configures (CONVENTIONS,
-	// Constants).
-	constexpr float spin_speed = 1.2f;
-	constexpr float orbit_radius = 24.0f;
 
 	// How far the stick has to move before it counts. One number, applied
 	// once, by the thing that knows what the stick is for - which is what
@@ -84,7 +75,7 @@ void HelloState::init()
 {
 	const Vector2F resolution =
 		this->app_->resolution_manager()->resolution_vec();
-	this->position_ = Vector2F(resolution.x * 0.5f - 120.0f,
+	this->motion_.centre = Vector2F(resolution.x * 0.5f - 120.0f,
 		resolution.y * 0.5f);
 
 	RenderResources* resources = this->app_->render_resources();
@@ -94,7 +85,7 @@ void HelloState::init()
 	this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 
 	this->greeting_ = this->scene_->add(std::make_unique<Label>(
-		L"Hello from the engine.", font_name, this->position_, resources,
+		L"Hello from the engine.", font_name, this->motion_.centre, resources,
 		labrador::Colour::white));
 
 	this->hint_ = this->scene_->add(std::make_unique<Label>(
@@ -152,24 +143,14 @@ void HelloState::update(float dt)
 	}
 
 	// The stick is already in this engine's convention - +y is down, the
-	// same as every rectangle and viewport - and already has a deadzone
-	// applied, once, with the magnitude rescaled so a small push moves
-	// slowly instead of jumping to the threshold.
-	//
-	// SUMMED WITH THE KEYS RATHER THAN CHOSEN BETWEEN, so a desk with both
-	// can use both and neither device has to be declared the real one. The
-	// clamp is what makes the sum safe, and it is not only about the sum: the
-	// keyboard gives a whole unit per axis, so up-and-left is 1.41 units long
-	// on its own and would otherwise outrun any push of the stick by half.
-	Vector2F move = apply_deadzone(pads.state(0).left_stick, stick_deadzone) +
-		keyboard_direction(keyboard);
-	if (move.length_squared() > 1.0f)
-	{
-		move.normalize();
-	}
-	this->position_ += move * (move_speed * dt);
-
-	this->spin_ += spin_speed * dt;
+	// same as every rectangle and viewport - and the deadzone is applied
+	// here, once, with the magnitude rescaled so a small push moves slowly
+	// instead of jumping to the threshold. The rules take both devices'
+	// answers as directions and never see a device, which is what lets
+	// tests/motion_tests.cpp run them with none.
+	this->motion_ = step_motion(this->motion_,
+		apply_deadzone(pads.state(0).left_stick, stick_deadzone),
+		keyboard_direction(keyboard), dt);
 
 	// A marker on every finger, at the point's client pixels - which are this
 	// view's pixels, because the one view is the whole window in screen
@@ -193,20 +174,10 @@ void HelloState::update(float dt)
 		}
 	}
 
-	// Where the greeting goes, worked out here rather than by the engine -
-	// nothing in the engine has an opinion about where a game's things are.
-	//
-	// The two factories compose left to right, in the order the two things
-	// happen to the text: turn it about the origin, then move it out to the
-	// point the stick has left at position_. One transform_point then takes
-	// the offset through both, which is what the type is for - build the
-	// transform once, push points through it. Writing it as a pair of sines
-	// instead works today and stops working the moment a third step joins
-	// them.
-	const Matrix3x2F to_screen = Matrix3x2F::rotation(this->spin_) *
-		Matrix3x2F::translation(this->position_);
-	this->greeting_->set_position(
-		to_screen.transform_point(Point2F(0.0f, -orbit_radius)));
+	// Where the greeting goes, worked out by the game's rules rather than by
+	// the engine - nothing in the engine has an opinion about where a game's
+	// things are.
+	this->greeting_->set_position(greeting_position(this->motion_));
 
 	// Steps every object in the scene, and admits or retires whatever this tick
 	// asked for. Nothing here has anything to step, and that is the point: the

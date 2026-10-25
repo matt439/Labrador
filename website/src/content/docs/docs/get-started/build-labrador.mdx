@@ -32,8 +32,9 @@ anything, and it builds the samples you will look at next.
    framework and the lodepng image library. It may also download a CMake and a PowerShell of its
    own if it finds Visual Studio's unsuitable. With nothing cached, the first configure downloads
    about 330 MB in all.
-   On a fast desktop with an empty cache that configure took a little over two minutes, and vcpkg
-   keeps the results, so later configures are quick.
+   On a fast desktop with an empty cache that configure took 2 minutes 17 seconds, 1.2 minutes of
+   it vcpkg building seven packages, and vcpkg keeps the results, so later configures are quick.
+   The whole build folder, `out`, comes to about 1.3 GB once the next two steps have run.
 
 3. **Build it:**
 
@@ -41,8 +42,9 @@ anything, and it builds the samples you will look at next.
    cmake --build --preset x64-debug
    ```
 
-   This builds the engine, all six samples, the tests and the benchmarks. Warnings are errors in
-   every Labrador build, so a successful build has none.
+   This builds the engine, all six samples, the tests and the benchmarks, which took 21 seconds
+   on the same desktop. Warnings are errors in every Labrador build, so a successful build has
+   none.
 
 4. **Run the tests:**
 
@@ -50,10 +52,10 @@ anything, and it builds the samples you will look at next.
    ctest --preset x64-debug
    ```
 
-   Seventeen test programs and the benchmarks run, and ctest should report
-   `100% tests passed, 0 tests failed out of 18`. One of them, `RenderPixelTests`, draws real
-   frames through Direct3D and compares them with reference images, so a pass also tells you the
-   renderer works on your machine.
+   Eighteen test programs, the minimal sample's start-up check and the benchmarks run, and ctest
+   should report `100% tests passed, 0 tests failed out of 20`. One of them, `RenderPixelTests`,
+   draws real frames through Direct3D and compares them with reference images, so a pass also
+   tells you the renderer works on your machine.
 
 </Steps>
 

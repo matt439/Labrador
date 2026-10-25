@@ -1,0 +1,69 @@
+---
+title: Check your game in CI
+description: A GitHub Actions workflow to copy into your game's repository, which builds it with Labrador as a submodule and runs its tests on every push.
+sidebar:
+  order: 9
+---
+
+import { Code, Aside } from '@astrojs/starlight/components';
+import workflow from '~/walkthrough/ci.yml?raw';
+
+Your project's `ctest` is worth most when it runs on every push. This workflow builds the
+project from [Start your own project](/docs/get-started/your-project/) on a GitHub-hosted Windows
+runner and runs its tests, the rules test and the start-up check from
+[Test your game](/docs/guides/testing/). Save it in your repository as
+`.github/workflows/ci.yml`:
+
+<Code code={workflow} lang="yaml" title=".github/workflows/ci.yml" />
+
+<Aside title="An example, not an action">
+Labrador does not maintain a reusable GitHub action, and this file is not one. It is an example
+you copy and own, like the minimal sample: nothing updates your copy, and when your project grows
+a preset, a dependency or a second platform, the file grows with it.
+</Aside>
+
+## What each step is for
+
+**The checkout takes the submodule.** Without `submodules`, `external/labrador` is an empty
+folder and configure stops at `add_subdirectory`. When the engine's repository is private, or is
+a private fork, the checkout needs a token that can read it as well.
+
+**`VCPKG_ROOT` points at the runner's vcpkg.** Your `CMakePresets.json` reads it for the toolchain
+file, as it does on your machine, and the runner image comes with a vcpkg of its own in
+`VCPKG_INSTALLATION_ROOT`.
+
+**vcpkg's binary cache is kept between runs.** Configure builds the packages your `vcpkg.json`
+names, and keeps what it built in `%LOCALAPPDATA%\vcpkg\archives`, which the cache step saves
+and restores. The key is your `vcpkg.json`, so a run that changes no dependency restores the
+last one's binaries and configures in seconds, and the first run, or one after a dependency
+changed, builds them, which took a little over a minute on a fast desktop and takes longer on a
+runner.
+
+**The MSVC environment comes from `vcvars64.bat`**, the batch file the x64 Native Tools Command
+Prompt runs. It puts the compiler, CMake, Ninja and the Windows SDK's `fxc`, the shader compiler
+the engine's build calls, on the path. `vswhere` finds it in whichever Visual Studio edition the
+runner image has, and each step that runs CMake calls it first, because a step's environment
+does not carry over to the next one.
+
+**Configure, build and test are the commands you type.** The test step runs your project's
+ctest, which holds your game's tests and none of Labrador's. The start-up check gets a Direct3D
+device on the runner, which has no GPU but still offers Direct3D an adapter.
+
+## Keep the path short
+
+The runner checks your repository out at `D:\a\<repository>\<repository>`, and the build's object
+files sit far below that. A short repository name keeps the whole path inside the 260 characters
+the compiler allows, for the reason
+[Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder) gives.
+
+## What has been checked
+
+Labrador's own CI has a job that builds this project from the Get Started files against the
+engine, and it runs most of these steps: the runner's vcpkg, vcvars found through `vswhere`,
+configure, build and the game's ctest. That job takes the engine from the change being checked
+rather than from a submodule, and it restores the vcpkg binary cache the engine's own Windows jobs
+save without ever saving one, so this file's save step and its `restore-keys` have not run.
+That job's test step and its check that the project's ctest holds only the game's two tests are
+newer than its last run on Actions, and have run locally the way the job runs them. The file
+has also been parsed, and its configure, build and test run by hand in the order it gives. It
+has not yet been run as a workflow in a repository of its own.

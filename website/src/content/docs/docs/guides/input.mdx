@@ -73,10 +73,15 @@ coordinate in the engine. Choosing a deadzone is the game's decision, made once 
 `apply_deadzone(stick, deadzone)`. It is circular, and rescales what is left so a small push
 outside the deadzone moves slowly rather than jumping to the threshold:
 
-<SourceFile path="samples/minimal/states/hello_state.cpp" from="Vector2F move = apply_deadzone(" to="this->position_ += move" />
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="this->motion_ = step_motion(this->motion_," to="keyboard_direction(keyboard), dt);" />
 
-The minimal sample adds the keyboard's direction to the stick's and clamps the sum, so both work
-at once and neither is the "real" device.
+The minimal sample's rules add the keyboard's direction to the stick's and clamp the sum, so both
+work at once and neither is the "real" device:
+
+<SourceFile path="samples/minimal/rules/motion.cpp" from="Vector2F combined_direction(" to="}" />
+
+They take both answers as plain directions and never see a device, which is what lets a test run
+them with none ([Test your game](/docs/guides/testing/)).
 
 Triggers are read as numbers from 0 to 1, or as buttons with `trigger_held`, `trigger_pressed`
 and `trigger_released`, each taking the threshold that counts as pulled.

@@ -25,8 +25,8 @@ to 404. Nothing here depends on it: this repository builds, tests and
 benchmarks standalone.)*
 
 Six samples come with it, and they answer different questions.
-`samples/minimal` is about 560 lines and is the answer to "how do I start a
-project on this" — copy it. `samples/linesweeper` is a falling-block game and
+`samples/minimal` is about 760 lines, its test and start-up check included,
+and is the answer to "how do I start a project on this" — copy it. `samples/linesweeper` is a falling-block game and
 is the answer to "what does a finished game look like on this engine" — read
 it, and read [its README](samples/linesweeper/README.md) for the decisions
 behind it. [Play LineSweeper in a desktop browser](https://mattharding.dev/demo/linesweeper/)
@@ -49,7 +49,7 @@ says why they are copied, and when one would move into the engine.
 ```
 engine/    ~43k lines   the engine: ten modules with a fixed dependency direction
 samples/                the starter template, LineSweeper, three focused guide examples and components to copy
-tests/     ~28k lines   doctest, run by ctest with three more that sit beside their samples
+tests/     ~28k lines   doctest, run by ctest with five more that sit beside their samples
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 website/                the public site, built with npm from this same checkout
@@ -147,7 +147,7 @@ Add it as a submodule and `add_subdirectory` it before the target that links
 it:
 
 ```cmake
-add_subdirectory(external/labrador)   # defines LabradorEngine and labrador_settings
+add_subdirectory(external/labrador)   # defines LabradorEngine, MattMath and labrador_settings
 
 target_link_libraries(YourGame PRIVATE LabradorEngine labrador_settings)
 target_include_directories(YourGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
@@ -177,8 +177,9 @@ needs:
   [vcpkg.json](vcpkg.json) is not read when Labrador is a subdirectory, and
   the engine's `find_package(xaudio2redist)`, under the default audio
   backend, fails without one. Copy its dependencies and its
-  `builtin-baseline`, leaving out `doctest` and `lodepng`, which only the
-  engine's own tests use.
+  `builtin-baseline`, leaving out `lodepng`, which only the engine's own tests
+  use. `doctest` stays if your game's tests use it, as the minimal sample's
+  do.
 - **A configure preset that chains the vcpkg toolchain**: `toolchainFile` set
   to `$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake`, as every configure
   preset in this repository's [CMakePresets.json](CMakePresets.json) has.
@@ -240,10 +241,12 @@ the line.
 ctest --preset x64-debug
 ```
 
-Eighteen entries on the Windows presets: seventeen doctest targets and the
-benchmark. The `-null` presets have seventeen, because the pixel tests need a
-device, and a `wasm-*` build has twenty-seven where Chrome is found, the extra
-ones being pages run in headless Chrome, one for each sample among them. How
+Twenty entries on the Windows presets: eighteen doctest targets, the minimal
+sample's start-up check and the benchmark. The `-null` presets have nineteen,
+because the pixel tests need a device, and a `wasm-*` build has twenty-eight
+where Chrome is found, the extra ones being pages run in headless Chrome, one
+for each sample among them, and no start-up check, because a page has no
+command line. How
 many cases ran is what `ctest` prints.
 
 The benchmark (`bench/`) asserts on **complexity class** rather than on

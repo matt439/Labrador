@@ -34,8 +34,9 @@ the minimal sample, comments included:
 
 <SourceFile path="samples/minimal/CMakeLists.txt" />
 
-It covers building the game and running it while you work on it: the Windows half names the
-sources, links two targets and copies the content beside the program, and the `EMSCRIPTEN` branch
+It covers building the game, testing it and running it while you work on it: the Windows half
+names the sources, puts the rules in a library with a test, links the engine and its settings,
+registers a start-up check and copies the content beside the program, and the `EMSCRIPTEN` branch
 builds the same game as a page with the content packed into it. A release a player installs needs
 more than this, because the program's folder must also hold the DLLs the engine uses on Windows,
 DirectXTK and the XAudio2 redistributable, and nothing from the build tree, and that takes install
@@ -128,6 +129,10 @@ bytes, replays it, and requires the two results to be identical byte for byte:
 	from={'SUBCASE("the recording is a vector of bytes and nothing else")'}
 	to="}"
 />
+
+A project started from the minimal sample begins with the same split in miniature: its rules in
+a library that links only the engine's maths, a test of them, and a start-up check, all in its
+`ctest` from the first build. [Test your game](/docs/guides/testing/) shows how they work.
 
 The engine is held to the same standard. Each platform interface ships with an implementation
 that needs no hardware: a renderer that records what it was asked to draw, and an audio device

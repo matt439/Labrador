@@ -206,9 +206,9 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[SM-09](STORIES.md#sm-09)** Should · S · The Sole Owner-Maintainer · **Owner**: Record the MacBook Air's Safari ceiling, and play the demo in it if it can
 - [ ] **[OCA-48](STORIES.md#oca-48)** Should · S · The Outside C++ Adopter · **Owner**: One physical-pad session: trust the desktop pad mapping and know what a backgrounded game receives
 - [ ] **[BDP-06](STORIES.md#bdp-06)** Should · S · The Browser and Phone Demo Player · **Owner**: Play the bundle page in Firefox, with a physical pad, through a real tab switch and a real context loss
-- [ ] **[OCA-29](STORIES.md#oca-29)** Must · M · The Outside C++ Adopter: A test target for my game's rules from the start — after OCA-11
-- [ ] **[OCA-30](STORIES.md#oca-30)** Must · S · The Outside C++ Adopter: A start-up smoke check for my Windows game — after OCA-29
-- [ ] **[OCA-12](STORIES.md#oca-12)** Should · S · The Outside C++ Adopter: The first-build time and public-clone path are observed from a cold cache — after OCA-11
+- [x] **[OCA-29](STORIES.md#oca-29)** Must · M · The Outside C++ Adopter: A test target for my game's rules from the start — after OCA-11
+- [x] **[OCA-30](STORIES.md#oca-30)** Must · S · The Outside C++ Adopter: A start-up smoke check for my Windows game — after OCA-29
+- [x] **[OCA-12](STORIES.md#oca-12)** Should · S · The Outside C++ Adopter: The first-build time and public-clone path are observed from a cold cache — after OCA-11
 - [ ] **[OCA-33](STORIES.md#oca-33)** Should · M · The Outside C++ Adopter: A CI workflow I can copy for my game's repository — after OCA-29, OCA-30, OCA-11
 - [x] **[OCA-35](STORIES.md#oca-35)** Must · XS · The Outside C++ Adopter: Know that translucent textures must be premultiplied — after OCA-34
 - [x] **[OCA-38](STORIES.md#oca-38)** Should · XS · The Outside C++ Adopter: The guide's XWBTool command makes a bank that loads in the browser too
