@@ -73,7 +73,9 @@ three commands to use one:
 | `x64-debug-null`, `x64-release-null` | None: records what it was asked to draw, for testing on machines without a graphics card |
 
 The renderer is chosen when you configure rather than when the game starts. Asking for one that
-was not built is a link error, not a crash on the first frame.
+was not built is a link error, not a crash on the first frame. A game you ship is built with
+one renderer too: [Which renderer to ship](/docs/guides/windows-release/#which-renderer-to-ship)
+recommends Direct3D 11 and says what a machine that refuses it shows.
 
 ## If something fails
 

@@ -571,8 +571,9 @@ libraries. There is no project file format, no code generation, no
 module manifest — the `CMakeLists.txt` names the sources, links the
 engine and the shared settings, and puts the content beside the program,
 which is all that building and running the game needs, and it registers
-the game's own tests with CTest. A release package
-for players adds install rules on top. Starting
+the game's own tests with CTest. Its install rules stage the release
+folder a player gets: the program, the DLLs and runtime it loads, the
+content and the notices of what it carries. Starting
 a game is copying `samples/minimal/`, renaming the target, and owning
 everything inside — including the starter code the
 sample exists to hand over (see Structural types in PHILOSOPHY.md).

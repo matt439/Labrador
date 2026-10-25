@@ -15,7 +15,7 @@ An index of open work, one row per item; each row points to the document that ow
 3. **`OCA-33` (X7): run the copyable CI workflow once** in a repository of its own and record the run; the rest of X7 has landed.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
+- Next: `OCA-61` (the release folder on a clean Windows) · `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
 
 ## The public face and the adopter path
@@ -26,6 +26,7 @@ An index of open work, one row per item; each row points to the document that ow
 |---|---|---|---|---|
 | `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once, and `OCA-71`'s engine suite at a pin. `SM-36` waits on it. |
 | `OCA-33` | OPEN | should | M | The workflow is published (`website/src/walkthrough/ci.yml`, guides/ci.mdx) and its steps run locally; left is one green run on `windows-latest` in a repository holding the walkthrough project, its URL recorded on that page. |
+| `OCA-61` | DECISION | must | S | Run the template's release folder on a clean Windows with the `.wsb` `tools/consumer_check/sandbox.py` writes (Windows Sandbox needs an administrator to enable it), and record date, commit and result on *Ship a Windows release*. The rest of X10 and X11 has landed. |
 
 ## Website and the hosted demo
 

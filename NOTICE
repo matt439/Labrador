@@ -108,11 +108,20 @@ beside it. Copyright (c) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
 `vcpkg.json` names these; they are fetched at configure time and are not in
 this repository.
 
-- **DirectX Tool Kit for DX11** (`directxtk`, with `xaudio2redist`) —
-  MIT, Microsoft Corporation.
+- **DirectX Tool Kit for DX11** (`directxtk`) — MIT, Microsoft Corporation.
+- **DirectXMath**, which `directxtk` brings — MIT, Microsoft Corporation.
+- **The XAudio2 redistributable** (`xaudio2redist`, `directxtk`'s feature) —
+  the Microsoft Software License Terms for it, which vcpkg installs as
+  `share/xaudio2redist/copyright`.
 - **doctest** — MIT, Viktor Kirilov.
 - **lodepng** — zlib, Lode Vandevenne. Linked only by `RenderPixelTests`, to
   read and write its golden PNGs.
+
+What a game built on Labrador carries to its players, and the file that
+carries each notice, is the website's *Ship a Windows release* guide
+(`website/src/content/docs/docs/guides/windows-release.mdx`), whose list is
+`website/src/components/ReleaseNotices.astro`; the Get Started project's
+install rules put those files in its release folder.
 
 ### Linked into a browser build by its toolchain
 

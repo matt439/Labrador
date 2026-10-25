@@ -15,6 +15,11 @@ block in `game-CMakeLists.txt`.
 | `gitignore.txt` | `.gitignore` |
 | `ci.yml` | `.github/workflows/ci.yml`, from *Check your game in CI* (`src/content/docs/docs/guides/ci.mdx`) |
 
+`release-files.txt` goes nowhere: it is every file `cmake --install` puts in the
+project's release folder, which *Ship a Windows release*
+(`src/content/docs/docs/guides/windows-release.mdx`) shows as a table and
+`tools/consumer_check/check_release.py` holds an installed folder to.
+
 The `vcpkg.json` is not here because the page derives it from Labrador's own
 (`src/components/ConsumerManifest.astro`), and the include edits are not
 listed here because the page reads them from the sample
@@ -29,7 +34,10 @@ run's own checkout, `samples/minimal` copied to `game/`, every include the
 page lists edited, these files put in place and the derived `vcpkg.json`
 written. It then builds the `x64-debug` preset, checks that the project's
 ctest lists exactly the game's two tests, `MyGameTests` and
-`MyGameSmokeTests`, and so none of the engine's, and runs them. It does not
+`MyGameSmokeTests`, and so none of the engine's, and runs them. Then it builds
+the `x64-release` preset, installs it into an empty folder, checks that the
+folder holds exactly what `release-files.txt` lists, and starts the
+installed game with `--smoke-test` from there. It does not
 use Git or clone the public repository, and nothing runs `ci.yml`: its steps
 are the job's own, which is what the guide says. CI's `wasm` job assembles the
 same project and builds its `wasm-release` preset with Emscripten, runs
@@ -83,6 +91,22 @@ message. The page's server command was checked to send `.wasm` as
 page quotes, and with `LABRADOR_RENDER_BACKEND=d3d11` or `vulkan` it stopped
 with the engine's refusal. The page's first step, installing Python on a
 machine or account without it, was not followed.
+
+**The release folder, by hand.** On 25 October 2026 *Ship a Windows release*
+was followed against the project assembled from the tree at `846ccb8` with
+that page's change, on the desktop above: `x64-release` configured, built
+and installed into an empty `C:\fte\mg8-release`, which held the 20 files
+`release-files.txt` lists and no others; `MyGame.exe --smoke-test` exited 0
+from there, and the running game had loaded `DirectXTK.dll`,
+`XAudio2_9Redist.dll`, `MSVCP140.dll`, `VCRUNTIME140.dll` and
+`VCRUNTIME140_1.dll` from that folder rather than from Windows, which also
+has the runtime installed. The same project configured with
+`LABRADOR_RENDER_BACKEND=gl` installed the same files, only the program
+differing, and that program, copied beside the first as `MyGame-gl.exe`,
+also passed its smoke test. No clean Windows install has run the folder:
+Windows Sandbox is not enabled on that desktop, and enabling it needs an
+administrator and a restart. `tools/consumer_check/sandbox.py` writes the
+sandbox configuration that will.
 
 Change one, and the `consumer` job builds it on the pull request; follow the
 page by hand again when a change touches a step the job does not do.

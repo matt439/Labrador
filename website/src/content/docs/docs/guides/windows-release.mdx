@@ -1,0 +1,254 @@
+---
+title: Ship a Windows release
+description: The release package a player gets - the program, its DLLs, the MSVC runtime, the content and the notices - built with cmake --install; which renderer to ship, what a machine that refuses it shows, and the Windows version and graphics hardware players need.
+sidebar:
+  order: 10
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+import ReleaseFiles from '~/components/ReleaseFiles.astro';
+import ReleaseNotices from '~/components/ReleaseNotices.astro';
+
+A release of a Windows game is a folder: the program, the DLLs it loads, its content and the
+notices of what it carries. A player unzips it anywhere and runs the program. The folder the build
+makes while you work is not that folder, because it also holds debug symbols, test programs and
+CMake's own files, and a debug build's runtime may not be given away. The project from
+[Start your own project](/docs/get-started/your-project/) has install rules that make the release
+folder for you, so you do not pick the files out of the build tree by hand.
+
+## What the release package holds
+
+This is every file the install puts in the release folder of the Get Started project, and nothing
+else:
+
+<ReleaseFiles />
+
+CI's `consumer` job installs the project on every pull request to Labrador and checks the folder
+against this list, so the list is what the install rules actually make. Your game's list grows as its content does.
+
+## Build the release folder
+
+In the x64 Native Tools Command Prompt, from your project's folder:
+
+```bat
+cmake --preset x64-release
+cmake --build --preset x64-release
+cmake --install out\build\x64-release --prefix C:\dev\mygame-release
+```
+
+`--prefix` is the folder to fill. Install into an empty folder: the install adds and replaces
+files, but it never deletes one, so a file left from an earlier release would stay. Then check
+that the folder starts on its own, from anywhere:
+
+```bat
+start /wait /b "" C:\dev\mygame-release\MyGame.exe --smoke-test 2> startup.txt
+echo %errorlevel%
+```
+
+`start /wait` makes the prompt wait for the game to quit, which it does not do for a windowed
+program otherwise. `0` means the game opened its window hidden, drew its first frames and quit;
+`1` means it stopped at start-up. The game writes why to standard error, and shows no message box
+under `--smoke-test`, and a windowed program has no console of its own, so `2> startup.txt` puts
+the reason in a file you can read. `/b` is what hands the game that redirect: without it, `start`
+gives the game no standard error and `startup.txt` stays empty. Zip the folder and
+that is the release. These are the rules in `game/CMakeLists.txt` that make it:
+
+<SourceFile
+	path="website/src/walkthrough/game-CMakeLists.txt"
+	from="# The release folder a player gets"
+	to="DESTINATION notices RENAME XAudio2Redist.txt)"
+	title="game/CMakeLists.txt"
+/>
+
+- `install(TARGETS ...)` copies the program.
+- `$<TARGET_RUNTIME_DLLS:MyGame>` is every DLL that a library the game links was built as:
+  DirectXTK and the XAudio2 redistributable, which vcpkg built for the engine. CMake works the
+  list out from the targets, so it does not depend on what happens to be in the build folder.
+- `InstallRequiredSystemLibraries` finds the MSVC runtime in Visual Studio's redist folder;
+  the next section says why it is copied.
+- The content lines copy what the build copies beside the program while you work. When you add
+  a folder to `content`, add an `install(DIRECTORY ...)` line for it, or the release will start
+  and then stop on the missing file, naming it.
+- The notice lines copy the licence of each thing the program carries, as
+  [Notices](#notices) lists.
+
+Installing a debug build stops with `Install the x64-release build.`, because a debug build loads
+the debug MSVC runtime, which Microsoft does not let you redistribute.
+
+## The MSVC runtime
+
+The game and `DirectXTK.dll` are built with Visual Studio, and they load its runtime:
+`MSVCP140.dll`, `VCRUNTIME140.dll` and `VCRUNTIME140_1.dll`. Windows does not include these. A
+player who has never installed the Visual C++ Redistributable sees Windows refuse to start the
+game, with a message that `VCRUNTIME140.dll` was not found, before any of your code or the
+engine's runs. There are three ways to get the runtime to them:
+
+- **Copy it into the release folder**, which is what the install rules do. The loader looks in the
+  program's own folder first, so the copies there are used whether or not the player has the
+  runtime installed.
+- **Have the player install the Visual C++ Redistributable** (`vc_redist.x64.exe`). This suits a
+  game that already has an installer or a store that installs dependencies.
+- **Link the runtime statically.** Every library the game links would then have to be built the
+  same way, vcpkg's packages included, and the XAudio2 redistributable would still be a DLL.
+
+The template copies it, so that the folder runs as it is unzipped and the player has nothing else
+to install. Of the three it is the simplest for both of you: no installer step for the player, and
+no second way of building every library for you
+([T3](/docs/design/philosophy/#t3-simplicity-over-accuracy)). The runtime is part of the platform
+edge the engine buys rather than builds, and shipping what it buys is part of buying it
+([T9](/docs/design/philosophy/#t9-built-over-bought)). The cost is
+that Windows Update does not update copies in your folder: a newer runtime reaches players when
+you build a release with a newer Visual Studio. Microsoft describes all three ways in
+[Redistributing Visual C++ files](https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files).
+
+`InstallRequiredSystemLibraries` copies CMake's own list of the runtime's DLLs from Visual
+Studio's redist folder for x64: the three the template loads, and `msvcp140_1.dll`,
+`msvcp140_2.dll`, `msvcp140_atomic_wait.dll`, `msvcp140_codecvt_ids.dll` and `concrt140.dll`, which
+it does not yet. A game that starts to use a part of the standard library that lives in one of
+those finds it already there. The folder holds two more that the list leaves out:
+`vcruntime140_threads.dll`, which C11's `<threads.h>` loads, and `vccorlib140.dll`, the C++/CX
+runtime. A game that uses either adds an `install(FILES ...)` line copying it from the same redist
+folder, or Windows refuses to start it on a machine without the runtime, naming the DLL.
+
+The template's release folder, run on a desktop with Visual Studio installed, loaded all three
+from the release folder rather than from Windows. That shows the copies are the ones used, but not
+that nothing else is missing, because the desktop has the runtime installed as well. Nobody has yet
+run a release on a clean Windows install, one that has never had Visual Studio or the
+redistributable. Windows Sandbox is one, on Windows Pro or Enterprise:
+<RepoLink path="tools/consumer_check/README.md">tools/consumer_check/README.md</RepoLink> describes a
+script that writes a sandbox configuration to run a release folder's smoke test there and record
+the result.
+
+## Notices
+
+What a game built this way carries, the licence of each, and the file in the release folder that
+carries its notice. Every one is in the release folder the install rules make.
+
+<ReleaseNotices />
+
+What the files ask of you, in short, and not as legal advice:
+
+- **MIT** (Labrador, Microsoft's sample code in the engine, rapidjson, DirectX Tool Kit,
+  DirectXMath): the copyright notice and the licence go with every copy of the program, which the
+  `notices` folder does. Labrador's `LICENSE` covers the engine except what its `NOTICE` records
+  as not Labrador's to license, so both go: `Labrador.txt` and `Labrador-NOTICE.txt`.
+- ***Real-Time Collision Detection*** (Christer Ericson): the engine's closest-point and
+  intersection routines are adapted from the book's code, which its author provides for use in
+  readers' own software. `Labrador-NOTICE.txt` attributes it; before selling a game, read the
+  book's own terms, as that file says.
+- **SIL Open Font License** (JetBrains Mono): the licence goes with the font, and the font may not
+  be sold on its own. A game with a font of its own replaces both the atlas and `OFL.txt`.
+- **Microsoft's terms for the XAudio2 redistributable**: you may distribute the DLL with a program
+  that adds significant primary functionality to it, the terms you give players must protect it
+  and Microsoft at least as much as Microsoft's own terms do, and you indemnify Microsoft. The
+  terms are in `notices/XAudio2Redist.txt`.
+- **The MSVC runtime** is redistributed under the *Distributable Code* terms of your Visual Studio
+  edition's licence, which ask much the same as XAudio2's. They need no notice file in the
+  folder.
+
+**Other configurations.** The other render backends change nothing in the list. Direct3D 12 and
+OpenGL come with Windows and the graphics driver, and Vulkan's `vulkan-1.dll` comes with the
+player's graphics driver and is not shipped. The audio backend does not change it either:
+`DirectXTK.dll` also runs the gamepad, so a Windows build has it, and the XAudio2
+redistributable it loads, whichever audio backend it uses. A browser build carries Labrador with
+its `NOTICE`, the collision routines, `step_timer.h` of Microsoft's sample code, rapidjson and the
+font, none of the Windows rows, and the Emscripten runtime and system libraries
+that [NOTICE](https://github.com/matt439/Labrador/blob/master/NOTICE) lists under *Linked into a
+browser build by its toolchain*; the template's browser build does not yet gather those into a
+file for you.
+
+**Kept current.** This list is changed in the same commit as any change to the dependencies in
+Labrador's `vcpkg.json`. The site does not build if `vcpkg.json` names a package that the list
+neither covers nor says no release carries.
+
+## Which renderer to ship
+
+Ship the Direct3D 11 renderer. It is the default, so a preset that sets nothing builds it, it asks
+the least of the player's hardware (feature level 10_0, below), it needs nothing beyond Windows
+and its display driver, and it is the renderer CI installs and starts the Get Started project
+with. The renderer is `LABRADOR_RENDER_BACKEND`, set in a configure preset's `cacheVariables`:
+`d3d11`, `d3d12`, `gl` or `vulkan`. This preset, added to your `CMakePresets.json` with a build
+preset to match, builds the same game with OpenGL:
+
+```json
+{
+  "name": "x64-release-gl",
+  "inherits": "x64-release",
+  "cacheVariables": { "LABRADOR_RENDER_BACKEND": "gl" }
+}
+```
+
+The renderer is chosen when you configure, and the program has exactly one. There is no switching
+at run time ([T5](/docs/design/philosophy/#t5-compile-time-over-run-time)), because choosing
+per frame would cost a virtual call per sprite
+([T8](/docs/design/philosophy/#t8-performance-over-customisability)). So a machine that refuses the
+renderer stops the game at start-up, and the engine says why
+([T6](/docs/design/philosophy/#t6-loud-failure-over-graceful-degradation)): the template's `main.cpp` catches the failure and
+shows it in a message box titled `Sample - startup failure`, which you should change to your
+game's name. What the message says:
+
+| Renderer | When | The message |
+| --- | --- | --- |
+| Direct3D 11 | No graphics adapter except Windows' software one | `No Direct3D hardware device found` |
+| Direct3D 11 | An adapter that cannot do feature level 10_0 | `Failure with HRESULT of` and Direct3D's error code |
+| Direct3D 12 | No adapter that can do Direct3D 12 at feature level 11_0 | `No Direct3D 12 hardware device found` |
+| OpenGL | No OpenGL driver at all | `This machine has no OpenGL driver at all.` |
+| OpenGL | Only an OpenGL 2.1 driver, or Windows' own software OpenGL, which is all a machine with no vendor graphics driver has | `This driver has no WGL_ARB_create_context, so it cannot make an OpenGL 3.3 core context. It is an OpenGL 2.1 driver or a software fallback.` |
+| OpenGL | A driver that can make contexts, but not OpenGL 3.3 core | `This driver refused an OpenGL 3.3 core context. 3.3 is 2010 hardware and is the floor this engine builds against.` |
+| OpenGL | A 3.3 core context, but no WGL_EXT_swap_control | `The OpenGL renderer requires WGL_EXT_swap_control to configure its presentation interval.` |
+| OpenGL | WGL_EXT_swap_control advertised without its entry points | `The OpenGL driver advertises WGL_EXT_swap_control but lacks its setter or getter.` |
+| Vulkan | No Vulkan driver at all | Windows refuses to start the program, naming `vulkan-1.dll`, because the program is linked against it |
+| Vulkan | `vulkan-1.dll` present, but no installed driver supports Vulkan, so no instance can be made | `There is no usable Vulkan loader on this machine` and Vulkan's error code |
+| Vulkan | An instance, but no Vulkan device at all | `This machine has a Vulkan loader but no Vulkan device.` |
+| Vulkan | Devices, but none at Vulkan 1.2 with timeline semaphores | `No Vulkan device on this machine can run this backend:` and a line for each device saying why |
+
+The OpenGL renderer has a few rarer refusals the table leaves out: a window that cannot be given a 32-bit pixel format, a 3.3 core context missing one of the functions the engine loads (each names the function), and `wglSwapIntervalEXT` failing with a Windows error. Each says what it is in the same message box.
+
+A release build has no software fallback. A debug build's Direct3D renderers fall back to WARP,
+Windows' software rasteriser, when there is no hardware adapter, which is why a debug build can
+start where a release refuses.
+
+**For machines that refuse it, ship a second program.** Build the `x64-release-gl` preset above
+and install it into a second folder: everything in it is the same file as in the first, except the
+program. Copy that program into the first folder as `MyGame-gl.exe`, and tell players who see the
+Direct3D message to run it instead. It does not help a machine with no vendor graphics driver, which refuses both: Windows' own OpenGL is 1.1, and that program gets the `WGL_ARB_create_context` message above. Each program still has one renderer, chosen when it was built,
+so this is the choice T5 allows, made by which program the player starts. Both programs were
+checked to start from one folder this way. Which machines refuse Direct3D 11 and accept OpenGL 3.3
+has not been measured.
+
+## What players need
+
+**Windows.** 64-bit Windows 10, version 1607 or later, or Windows 11. The engine's window calls
+`GetDpiForWindow`, `GetDpiForSystem`, `AdjustWindowRectExForDpi`, `AreDpiAwarenessContextsEqual`
+and `GetWindowDpiAwarenessContext` (<RepoLink path="engine/app/win32/window.cpp">engine/app/win32/window.cpp</RepoLink>),
+which Windows 10 added in version 1607, and the program links them directly, so an earlier
+Windows refuses to start it, naming the missing function. The game is built for x64 only. The engine is
+tested on Windows 11 and on GitHub's Windows Server runner; Windows 10 and Windows on Arm have not
+been tried.
+
+**Processor.** Any x64 processor. At start-up the engine asks DirectXMath whether the processor has
+the instructions it was compiled for, and stops with
+`This CPU does not support the instruction set the renderer needs.` if not
+(<RepoLink path="engine/app/application.cpp">engine/app/application.cpp</RepoLink>).
+
+**Graphics.** The floor is the renderer's, and each is enforced where the device is made:
+
+| Renderer | The floor | Where it is enforced |
+| --- | --- | --- |
+| Direct3D 11 | Direct3D feature level 10_0 | The device is made at the highest of 11_1 down to the floor, 10_0, which is `DeviceResources`' default (<RepoLink path="engine/render/d3d11/device_resources.h">d3d11/device_resources.h</RepoLink>, <RepoLink path="engine/render/d3d11/device_resources.cpp">device_resources.cpp</RepoLink>). The shaders are compiled for `4_0_level_9_1`, below it (<RepoLink path="engine/CMakeLists.txt">engine/CMakeLists.txt</RepoLink>). |
+| Direct3D 12 | Feature level 11_0, shader model 5.1 | `MIN_FEATURE_LEVEL` (<RepoLink path="engine/render/d3d12/device_resources.cpp">d3d12/device_resources.cpp</RepoLink>); shaders compiled for `vs_5_1` and `ps_5_1` (<RepoLink path="engine/CMakeLists.txt">engine/CMakeLists.txt</RepoLink>) |
+| OpenGL | GL 3.3 core, with `WGL_EXT_swap_control` | The context asked of WGL (<RepoLink path="engine/render/gl/wgl_context.cpp">gl/wgl_context.cpp</RepoLink>) |
+| Vulkan | Vulkan 1.2, with timeline semaphores | `MIN_API_VERSION` and the `timelineSemaphore` check (<RepoLink path="engine/render/vulkan/device_resources.cpp">vulkan/device_resources.cpp</RepoLink>) |
+
+These are the floors the code refuses below. How fast a game runs on hardware near them has not
+been measured: the engine is meant for low-end machines, and its timings so far are from a fast
+desktop and a cloud GPU.
+
+<Aside title="On a store page">
+A minimum-requirements line that follows from the above, for the Direct3D 11 release: 64-bit
+Windows 10 version 1607 or Windows 11, any x64 processor, and a graphics card with Direct3D 11
+at feature level 10_0. Add what your game itself needs, memory and disk space included, which
+nobody but you can measure.
+</Aside>

@@ -161,7 +161,8 @@ existing still as its poster, native controls, a download link and a text
 description. It neither autoplays nor preloads the video.
 
 **Change the Get Started project files.** Edit them in `src/walkthrough/`. CI's
-`consumer` job builds the project they make on the pull request, and its
+`consumer` job builds the project they make on the pull request, installs its
+release folder and holds it to `src/walkthrough/release-files.txt`, and its
 `wasm` job builds the same project's browser preset and loads its page;
 `src/walkthrough/README.md` says what that job does not do, and a change to
 one of those steps is followed by hand again before publishing.

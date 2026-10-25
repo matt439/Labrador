@@ -1,0 +1,24 @@
+# Every file `cmake --install` puts in the release folder of the Get Started
+# project, built with its x64-release preset, and nothing else. A path, then
+# what it is. The guide Ship a Windows release shows this list, and
+# tools/consumer_check/check_release.py holds an installed folder to it.
+MyGame.exe  The game, with the engine, rapidjson and DirectXMath compiled into it.
+DirectXTK.dll  DirectX Tool Kit, which the engine's audio and gamepad code call.
+xaudio2_9redist.dll  The XAudio2 redistributable, which DirectXTK.dll loads.
+vcruntime140.dll  The MSVC runtime, which the game and DirectXTK.dll load.
+vcruntime140_1.dll  The MSVC runtime's exception handling, which the game and DirectXTK.dll load.
+msvcp140.dll  The C++ standard library's DLL, which the game and DirectXTK.dll load.
+msvcp140_1.dll  More of the C++ standard library, on CMake's list of the MSVC runtime; a game can start to load it as it grows.
+msvcp140_2.dll  More of the C++ standard library, on CMake's list of the MSVC runtime.
+msvcp140_atomic_wait.dll  More of the C++ standard library, on CMake's list of the MSVC runtime.
+msvcp140_codecvt_ids.dll  More of the C++ standard library, on CMake's list of the MSVC runtime.
+concrt140.dll  The Concurrency Runtime, on CMake's list of the MSVC runtime.
+manifest.json  The content manifest, which names everything the game loads.
+fonts/jetbrains_mono_bold_16.spritefont  The template's font atlas.
+fonts/OFL.txt  The font's licence, the SIL Open Font License, which must travel with it.
+notices/Labrador.txt  Labrador's licence, MIT.
+notices/Labrador-NOTICE.txt  Labrador's NOTICE: the code in the engine that is not Labrador's to license, Microsoft's sample code and Ericson's collision routines.
+notices/rapidjson.txt  rapidjson's licence, MIT.
+notices/DirectXTK.txt  DirectX Tool Kit's licence, MIT.
+notices/DirectXMath.txt  DirectXMath's licence, MIT.
+notices/XAudio2Redist.txt  The XAudio2 redistributable's licence terms, Microsoft's.

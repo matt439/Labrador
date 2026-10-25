@@ -37,7 +37,7 @@ into a browser build.
 | <RepoLink path="samples/minimal/tests/motion_tests.cpp">`tests/motion_tests.cpp`</RepoLink> | doctest cases that run the rules with no window and no device. |
 | <RepoLink path="samples/minimal/states/confirm_state.cpp">`states/confirm_state.cpp`</RepoLink> | A state pushed above another that hands a `bool` back when it closes. |
 | <RepoLink path="samples/minimal/content/manifest.json">`content/manifest.json`</RepoLink> | The one font the sample uses, named once and resolved to a handle at load. |
-| <RepoLink path="samples/minimal/CMakeLists.txt">`CMakeLists.txt`</RepoLink> | The whole build file: sources, the rules library and its test, the start-up check, the engine's two libraries, and the content copied beside the executable or packed into the page. |
+| <RepoLink path="samples/minimal/CMakeLists.txt">`CMakeLists.txt`</RepoLink> | The whole build file: sources, the rules library and its test, the start-up check, the engine's two libraries, the content copied beside the executable or packed into the page, and the install rules that stage the [release folder](/docs/guides/windows-release/). |
 
 This is how the minimal sample asks before quitting. The question is a state of its own that
 knows nothing about the screen below it, and the answer comes back once, when it closes:
