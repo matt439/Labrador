@@ -5,8 +5,10 @@ description: Visual Studio with the C++ workload, Git, and the command prompt ev
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-Labrador builds on **Windows**, with the Microsoft C++ compiler. Everything it needs comes
-with two installs.
+Labrador builds on **Windows**, with the Microsoft C++ compiler. Everything the Windows build
+needs comes with two installs. The browser build needs a third, Emscripten, and Python 3 to
+install it with, both of which [Build for the browser](/docs/guides/browser/#install-emscripten)
+covers when you get there; nothing in Get Started needs them.
 
 <Steps>
 
@@ -86,7 +88,7 @@ so run the `subst` line again after signing in, and always open the project thro
 letter: a build folder belongs to the path it was configured from.
 
 <Aside title="Only for the Vulkan renderer">
-Labrador builds its Direct3D 11 renderer by default, and nothing else on this page is needed for
+On Windows Labrador builds its Direct3D 11 renderer by default, and nothing else on this page is needed for
 it. To build the Vulkan renderer as well, install the
 [Vulkan SDK](https://vulkan.lunarg.com/) and make sure `VULKAN_SDK` is set. It is the one
 dependency that does not come with Visual Studio or Windows.

@@ -19,11 +19,34 @@
       "name": "x64-release",
       "inherits": "base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "wasm-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "VCPKG_TARGET_TRIPLET": "wasm32-emscripten"
+      }
+    },
+    {
+      "name": "wasm-debug",
+      "inherits": "wasm-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "wasm-release",
+      "inherits": "wasm-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
     }
   ],
   "buildPresets": [
     { "name": "x64-debug", "configurePreset": "x64-debug" },
-    { "name": "x64-release", "configurePreset": "x64-release" }
+    { "name": "x64-release", "configurePreset": "x64-release" },
+    { "name": "wasm-debug", "configurePreset": "wasm-debug" },
+    { "name": "wasm-release", "configurePreset": "wasm-release" }
   ],
   "testPresets": [
     {
@@ -34,6 +57,16 @@
     {
       "name": "x64-release",
       "configurePreset": "x64-release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "wasm-debug",
+      "configurePreset": "wasm-debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "wasm-release",
+      "configurePreset": "wasm-release",
       "output": { "outputOnFailure": true }
     }
   ]

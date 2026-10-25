@@ -120,10 +120,28 @@ endif()
 #
 # Nothing outside engine/render/<backend>/ names any of the five folders, which
 # is what makes this a list of files rather than a set of #ifdefs.
-set(LABRADOR_RENDER_BACKEND "d3d11" CACHE STRING
+#
+# gl IS THE DEFAULT IN A BROWSER BUILD, as webaudio is for audio below: WebGL2
+# is the only graphics API a page has, so a browser preset that names no
+# backend gets the one that draws there. The three whose API a browser does
+# not have are refused there by name, because asking for one would otherwise
+# surface as a missing header or library long after configure (T5, T6).
+if(EMSCRIPTEN)
+    set(labrador_default_render_backend "gl")
+else()
+    set(labrador_default_render_backend "d3d11")
+endif()
+set(LABRADOR_RENDER_BACKEND "${labrador_default_render_backend}" CACHE STRING
     "The render backend to build: d3d11, d3d12, gl, vulkan or null")
 set_property(CACHE LABRADOR_RENDER_BACKEND PROPERTY STRINGS
     d3d11 d3d12 gl vulkan null)
+
+if(EMSCRIPTEN AND LABRADOR_RENDER_BACKEND MATCHES "^(d3d11|d3d12|vulkan)$")
+    message(FATAL_ERROR
+        "LABRADOR_RENDER_BACKEND is ${LABRADOR_RENDER_BACKEND} in a browser "
+        "build (Emscripten), which has neither Direct3D nor Vulkan. It must "
+        "be gl, which draws through WebGL2 there and is the default, or null.")
+endif()
 
 if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
     target_sources(LabradorEngine PRIVATE

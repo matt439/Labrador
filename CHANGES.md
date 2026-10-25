@@ -72,6 +72,21 @@ its heading here.
 
 ## Unreleased
 
+#### Add a browser build to the Get Started project
+
+*Add a browser build to the Get Started project* (2026-10-25). Behaviour
+change at configure, in a browser build only.
+
+- **Under Emscripten, `LABRADOR_RENDER_BACKEND` defaults to `gl`.** It
+  defaulted to `d3d11` on every platform, so a browser preset that did not set
+  it compiled the Direct3D 11 backend and failed far from the cause. A game's
+  browser preset no longer needs to name the backend; one that names `gl`, as
+  this repository's own `wasm-*` presets do, is unaffected. Windows builds
+  still default to `d3d11`.
+- **`d3d11`, `d3d12` and `vulkan` are refused at configure in a browser
+  build**, with a message saying it must be `gl` or `null`, as `xaudio2`
+  already was for audio. Each of them failed later before, so no build that
+  worked stops working.
 #### Keep a debug build running where there is no audio endpoint
 
 *Keep a debug build running where there is no audio endpoint* (2026-10-25).

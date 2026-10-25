@@ -361,12 +361,35 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           ctest --preset wasm-release -R "PageTests" --no-tests=error --output-on-failure
 
+      # THE PROJECT GET STARTED TEACHES, AS A PAGE: the consumer job's project,
+      # assembled by the same script, built under the browser preset the
+      # website's Build for the browser guide adds to it, its rules test run
+      # under Node, and its page loaded and quit in the same Chrome as the
+      # samples' pages. Here rather than in the consumer job because this job
+      # already has Emscripten and the wasm32-emscripten packages. It catches
+      # what the steps above cannot: a browser build that needs more from a
+      # consumer's preset than the guide gives it, such as a backend the
+      # engine stops choosing by itself under Emscripten. The Chrome is the one
+      # this job's configure found, and the Node is Emscripten's, because
+      # run_page.mjs needs Node's own WebSocket.
+      - name: Build and load the Get Started project's page
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          for /f "tokens=2 delims==" %%i in ('findstr /B /C:"LABRADOR_TEST_BROWSER:" out\build\wasm-release\CMakeCache.txt') do set "CHROME=%%i"
+          python tools\consumer_check\assemble.py C:\dev\mygame || exit /b 1
+          cd /d C:\dev\mygame
+          cmake --preset wasm-release || exit /b 1
+          cmake --build --preset wasm-release || exit /b 1
+          ctest --preset wasm-release || exit /b 1
+          "%EMSDK_NODE%" "%GITHUB_WORKSPACE%\tests\render\web\run_page.mjs" --browser "%CHROME%" --page out\build\wasm-release\game\MyGame.html --quit-keys Escape,Enter --timeout 60
+
       # WHAT A HOST SERVES: the build writes LineSweeper's bundle to
       # web-dist/linesweeper/ - the module, its example page, the notices for
       # what it links, and BUILD.json naming this commit and every file's size
       # raw and under Brotli - and this carries it out of the runner, after
-      # every step above has passed against the same build. Deploying it is
-      # the host's business, not this job's (docs/port/web.md, section 7).
+      # every step above has passed. Deploying it is the host's business, not
+      # this job's (docs/port/web.md, section 7).
       # A missing bundle is an error, because the build is meant to write it.
       - name: Keep LineSweeper's web bundle
         uses: actions/upload-artifact@v4

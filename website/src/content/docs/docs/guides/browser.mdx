@@ -1,0 +1,193 @@
+---
+title: Build for the browser
+description: Install the Emscripten Labrador is built with, add a wasm preset to your own project, and build, test and serve your game as a web page.
+sidebar:
+  order: 10
+---
+
+import { Code, Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+import { EMSDK_VERSION } from '~/lib/emscripten';
+
+The game you started in [Start your own project](/docs/get-started/your-project/) builds for a
+browser as well as for Windows. The same states, rules and content are compiled to WebAssembly by
+Emscripten, the renderer draws through WebGL2, and the result is a web page. Nothing in your game's
+code changes: the browser build uses a second entry point, `main_web.cpp`, and a page,
+`web/shell.html`, both of which came with your copy of the minimal sample.
+
+This page adds the browser build to that project. You need the project as Get Started leaves it,
+and one more install.
+
+## Install Emscripten
+
+Labrador's browser build is built and tested with **Emscripten {EMSDK_VERSION}**, the version its
+CI pins. Install that version rather than the latest: the engine compiles with warnings as errors,
+and a newer compiler can warn about something the pinned one does not. Emscripten is installed
+with its own installer, `emsdk`, which needs Git and, the first time it runs, Python 3 on your
+`PATH`. Neither Visual Studio nor Git brings Python, and on a new Windows 11 machine `python` is a
+stub that offers the Microsoft Store rather than running anything, so check it first:
+
+```bat
+python --version
+```
+
+If that does not print `Python 3` and a version, install Python from
+[python.org](https://www.python.org/downloads/windows/) or with
+`winget install Python.Python.3.13`, open a new prompt and check again. Then, in the x64 Native
+Tools Command Prompt:
+
+<Code
+	lang="bat"
+	code={`cd C:\\dev
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+emsdk install ${EMSDK_VERSION}
+emsdk activate ${EMSDK_VERSION}`}
+/>
+
+`emsdk install` downloads the compiler, and the Node and Python it runs on, into `C:\dev\emsdk`.
+From then on `emsdk` runs on its own Python rather than yours. Nothing is installed anywhere else,
+and deleting the folder uninstalls it.
+
+### Set EMSDK in your build prompt
+
+The browser build needs two environments at once. The x64 Native Tools Command Prompt puts CMake
+and Ninja on your `PATH` and sets `VCPKG_ROOT`, which the browser build still uses, and
+Emscripten's `emsdk_env.bat` sets `EMSDK` and puts `emcc` on your `PATH`. Open the Native Tools
+prompt as before, then run Emscripten's script in it:
+
+```bat
+C:\dev\emsdk\emsdk_env.bat
+```
+
+Do this every time you open a prompt for a browser build. The settings last until you close the
+prompt, and the Windows build is not affected by them. Check that it worked:
+
+```bat
+echo %EMSDK%
+emcc --version
+```
+
+The first should print `C:/dev/emsdk`, and the second should name {EMSDK_VERSION}.
+
+If you configure without `EMSDK` set, the preset cannot find Emscripten's toolchain file, and
+configure stops with:
+
+```text
+include could not find requested file:
+  /upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+```
+
+The path starts at `/upstream` because `EMSDK`, which should come before it, is empty. Run
+`emsdk_env.bat` in that prompt, delete the build folder, and configure again.
+
+## Add a browser preset
+
+Add three configure presets to your `CMakePresets.json`: a hidden `wasm-base` and the two you
+use, `wasm-debug` and `wasm-release`. Add a build preset and a test preset for each of the two,
+as for the x64 ones. The project's
+[CMakePresets.json](/docs/get-started/your-project/) on the Get Started page already has them;
+these are its three wasm entries in the `configurePresets` array, as a fragment of it:
+
+<SourceFile
+	path="website/src/walkthrough/CMakePresets.json"
+	from={'"name": "wasm-base",'}
+	to={'"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }'}
+/>
+
+The toolchain is still vcpkg's, so vcpkg still installs the engine's dependencies.
+`VCPKG_CHAINLOAD_TOOLCHAIN_FILE` tells vcpkg to hand over to Emscripten's toolchain after it, and
+`VCPKG_TARGET_TRIPLET` builds those dependencies for WebAssembly instead of x64. The Windows-only
+packages in your `vcpkg.json`, DirectXTK and XAudio2, are skipped for this triplet.
+
+The preset does not name a renderer, an audio backend or an input backend. In a browser build
+Labrador chooses the only ones that work there: the OpenGL renderer, which draws through WebGL2,
+Web Audio, and the browser's Gamepad API. If a preset asks for a Direct3D or Vulkan renderer in a
+browser build, configure stops and says that it must be `gl` or `null`.
+
+## Build the game as a page
+
+The `game/CMakeLists.txt` from Get Started already has the browser half of the build. It is the
+`if(EMSCRIPTEN)` block, which a browser build reads in place of everything below it:
+
+<SourceFile path="website/src/walkthrough/game-CMakeLists.txt" from="if(EMSCRIPTEN)" to="endif()" />
+
+- **`main_web.cpp` replaces `main.cpp`.** It starts the same first state. In a browser
+  `Application::run` does not return, and everything on the stack below it is destroyed before
+  the first frame, so the `Application` is a `static` rather than a local variable. A failure is
+  written to the browser's console and passed to the page, because a page has no message box.
+- **`SUFFIX ".html"`** makes the build write `MyGame.html`, with `MyGame.js` and `MyGame.wasm`
+  beside it.
+- **`--embed-file`** packs everything in `game/content` into the module, at the paths the
+  Windows build copies it to, so `load_manifest("./manifest.json")` finds the same files.
+- **`--shell-file`** makes the page from `web/shell.html`. Emscripten puts the module's script
+  where the page says `{{{ SCRIPT }}}`.
+- **The rules' tests run under Node**, which Emscripten's toolchain gives ctest. The start-up
+  check is not in this branch, because it needs a command line and a page has none.
+
+Then configure, build and test it, in the prompt where you ran `emsdk_env.bat`:
+
+```bat
+cmake --preset wasm-debug
+cmake --build --preset wasm-debug
+ctest --preset wasm-debug
+```
+
+The first configure installs doctest again, built for WebAssembly; it is the only package the
+browser build needs, so this is quick. ctest runs `MyGameTests` and reports `100% tests passed, 0 tests failed out of 1`. The page is
+`out\build\wasm-debug\game\MyGame.html`.
+
+## The page, and what it owes the module
+
+`web/shell.html` is yours to change. Its title, its status line and its styles are the minimal
+sample's, and you replace them with your own. Keep the parts the module depends on:
+
+<SourceFile path="samples/minimal/web/shell.html" from="var Module = {" to="};" lang="js" />
+
+- **`Module.canvas`** is the canvas the game draws on and reads input from. The page sets its
+  size with CSS, and the engine follows it. Keep `tabindex="0"` on the canvas, so that it can
+  take the keyboard, and `touch-action: none`, so that a finger on it does not scroll the page.
+- **`Module.onQuit`** is called when the game quits, because closing a page is not the game's to
+  do. The page says the game has ended.
+- **`Module.onError`** is called with the message when the game fails to start, such as when a
+  content file is missing. The same message goes to the browser's console.
+
+## Serve it and open it
+
+A browser will not run a WebAssembly module opened from `file://`, so serve the folder over HTTP.
+Emscripten came with a Python, which can do it:
+
+```bat
+"%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory out\build\wasm-debug\game
+```
+
+Then open `http://127.0.0.1:8000/MyGame.html` in Chrome, Edge or Firefox. You should see the same
+greeting as the Windows build, and the same keys work. Press Ctrl+C in the prompt to stop the
+server.
+
+For a page to put on a site, build `wasm-release` the same way. Its page is
+`out\build\wasm-release\game\MyGame.html`, and the three files beside each other are all you
+upload. [Put your game on a web host](/docs/guides/web-host/) says what the host must send with
+them.
+
+## What has and has not been checked
+
+On 25 October 2026 this page was followed on Windows 11: Emscripten {EMSDK_VERSION} installed into
+an empty folder by the commands above, on a machine that already had Python 3 on its `PATH`, and
+the project from Get Started configured with it, built under both presets, its test run under Node, and its page served and loaded in headless Chrome,
+which drew the greeting, took Escape and Enter, and quit with nothing in the console. Installing
+Python first, on a machine or account without it, has not been followed. CI's wasm job builds that
+project's `wasm-release` page and loads it the same way on every pull request to Labrador; that
+step has not yet run on GitHub.
+
+The browser build has been checked in desktop Chrome and, for LineSweeper's page, Firefox. It has
+not been checked in Safari, on a phone, with a real touchscreen or with a physical gamepad.
+[Platform support](/why/#platform-support) says where each of those stands; say the same on your
+own page until you have checked them yourself.
+
+<Aside title="The Windows build is unchanged">
+The browser presets build into their own folders under `out\build`, so the Windows build and its
+two tests are exactly as before. [Check your game in CI](/docs/guides/ci/) builds only the Windows
+preset.
+</Aside>

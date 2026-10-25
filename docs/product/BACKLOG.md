@@ -229,11 +229,11 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[OCA-58](STORIES.md#oca-58)** Should · S · The Outside C++ Adopter: The Application and Colour reference pages are navigable and correctly named
 - [ ] **[SRL-08](STORIES.md#srl-08)** Could · S · The Sample-Reading Learner: The reference tells me which headers are for game code — after OCA-58
 - [ ] **[OCA-57](STORIES.md#oca-57)** Could · M · The Outside C++ Adopter: From a reference page, reach the guide that teaches the type — after OCA-56, SRL-08
-- [ ] **[OCA-22](STORIES.md#oca-22)** Should · S · The Outside C++ Adopter: A browser preset that omits the render backend gets GL or a named refusal at configure
-- [ ] **[OCA-21](STORIES.md#oca-21)** Should · S · The Outside C++ Adopter: Install the Emscripten version the engine is built with
-- [ ] **[OCA-20](STORIES.md#oca-20)** Should · M · The Outside C++ Adopter: Add a browser build to my own project — after OCA-22, OCA-21, OCA-11
-- [ ] **[OCA-19](STORIES.md#oca-19)** Could · XS · The Outside C++ Adopter: Know what to do with the browser files the template copy brings — after OCA-20
-- [ ] **[OCA-23](STORIES.md#oca-23)** Should · S · The Outside C++ Adopter: Know what my web host must send — after OCA-20
+- [x] **[OCA-22](STORIES.md#oca-22)** Should · S · The Outside C++ Adopter: A browser preset that omits the render backend gets GL or a named refusal at configure
+- [x] **[OCA-21](STORIES.md#oca-21)** Should · S · The Outside C++ Adopter: Install the Emscripten version the engine is built with
+- [x] **[OCA-20](STORIES.md#oca-20)** Should · M · The Outside C++ Adopter: Add a browser build to my own project — after OCA-22, OCA-21, OCA-11
+- [x] **[OCA-19](STORIES.md#oca-19)** Could · XS · The Outside C++ Adopter: Know what to do with the browser files the template copy brings — after OCA-20
+- [x] **[OCA-23](STORIES.md#oca-23)** Should · S · The Outside C++ Adopter: Know what my web host must send — after OCA-20
 - [ ] **[OCA-28](STORIES.md#oca-28)** Should · S · The Outside C++ Adopter: Know which browsers my players can be promised — after SM-09, SM-10
 - [ ] **[OCA-08](STORIES.md#oca-08)** Should · S · The Outside C++ Adopter · **Owner**: Know what accessibility the engine gives my game and what is mine to do — after OCA-05
 - [ ] **[BDP-24](STORIES.md#bdp-24)** Could · XS · The Browser and Phone Demo Player: The demo says what it offers players with access needs — after OCA-08
@@ -291,7 +291,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-20 | G09 (major): no page for adding a browser build to an adopter's project. |
 | OCA-19 | G39: what to do with the browser files a template copy brings. |
 | OCA-23 | G51, G52: hosting requirements only in an internal plan, and a wrong claim about the MIME type. |
-| OCA-28 | G23: which browsers can be promised. After SM-09 so Safari reads 'checked on X' or 'out of reach', and after SM-10 (Now). |
+| OCA-28 | G23: which browsers can be promised. After SM-09 so Safari reads 'checked on X' or 'out of reach', and after SM-10 (Now). Two pages wait on it: the website's guides/browser.mdx and guides/web-host.mdx link Platform support in place of this statement, and are repointed to it in the commit that closes this story. |
 | OCA-08 | G119 (merged with SM-38): the accessibility position. PHILOSOPHY amendment C, owner-worded, after A and B. |
 | BDP-24 | G119: the demo states what it offers players with access needs, following the recorded position. |
 | BDP-03 | G33 (major): the page hosts serve has no automated test. |

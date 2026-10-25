@@ -1,0 +1,98 @@
+---
+title: Put your game on a web host
+description: The files a browser build uploads, and what the server must send with them - the WebAssembly MIME type, no cross-origin isolation, a CSP that allows WebAssembly, compression and caching.
+sidebar:
+  order: 11
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A `wasm-release` build from [Build for the browser](/docs/guides/browser/) is three files, and
+any web server that serves static files can host them. This page says what the server has to
+send with them, and what goes wrong if it does not. Labrador's own demo,
+[LineSweeper on mattharding.dev](https://mattharding.dev/demo/linesweeper/), is on such a host.
+
+## The files
+
+| File | What it is | Size for the template, `wasm-release` | Under Brotli |
+| --- | --- | --- | --- |
+| `MyGame.html` | The page, made from your `web/shell.html` | 1.2 KB | 0.5 KB |
+| `MyGame.js` | The script that loads and starts the module | 119 KB | 27 KB |
+| `MyGame.wasm` | The engine and your game, with your content packed into it | 376 KB | 117 KB |
+
+Upload all three to one folder. The page names the other two by relative path, so the folder can
+be anywhere on the site. There is no separate content file to upload, because
+`--embed-file` packs the content into `MyGame.wasm`; a game with more content has a larger
+module rather than more files. The sizes were measured on 25 October 2026 from the project Get
+Started builds, with Emscripten's release settings and Brotli at its highest quality; your game's
+will be larger as it grows.
+
+## What the server must send
+
+The game is single-threaded, so the list is short.
+
+- **`.wasm` files as `Content-Type: application/wasm`.** Most servers and hosting services
+  already do. With another type the page still starts, but more slowly: the browser cannot
+  compile the module while it downloads, and falls back to downloading it whole and compiling
+  it afterwards. The console shows the failure and the fallback as two messages:
+
+  ```text
+  wasm streaming compile failed: TypeError: Failed to execute 'compile' on 'WebAssembly':
+  Incorrect response MIME type. Expected 'application/wasm'.
+  falling back to ArrayBuffer instantiation
+  ```
+
+  That is what Chrome did when the template's page was served with `.wasm` as
+  `application/octet-stream`, on 25 October 2026. The page drew and played as usual. Fix the
+  type anyway: a page that logs errors on every load hides the next real one.
+
+- **No cross-origin isolation headers.** `Cross-Origin-Opener-Policy` and
+  `Cross-Origin-Embedder-Policy` are needed only by a module built with threads, and Labrador's
+  browser build has none. Leave them unset: `require-corp` makes every cross-origin image,
+  script and frame on the page fail unless that resource opts in.
+
+- **If the site sends a `Content-Security-Policy`**, its `script-src` must include
+  `'wasm-unsafe-eval'`, or the browser refuses to compile the module and the game never starts.
+  The page stays at its loading line, and the console says that compiling or
+  instantiating WebAssembly violates the policy. The template's page also runs an inline script,
+  so a policy for it needs `'unsafe-inline'` as well, or a hash of that script:
+
+  ```text
+  Content-Security-Policy: script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'
+  ```
+
+  With that header the template's page started and quit as usual in Chrome on 25 October 2026,
+  and without `'wasm-unsafe-eval'` it stopped before its first frame. A site that sends no policy
+  needs none of this.
+
+- **HTTP or HTTPS, but not `file://`.** A page opened from disk cannot load its module. Serve it
+  over HTTPS on a public site: browsers give the Gamepad API only to secure pages, of which
+  `localhost` and `127.0.0.1` are two while you develop. That is the browsers' documented rule rather than
+  something checked here.
+
+## Compression
+
+The module and its script compress well, as the table shows. Most hosting services compress them
+on the fly with Brotli or gzip when the browser asks, which is all a game needs. A server you run
+yourself should compress `.wasm` and `.js` responses, or serve copies compressed in advance with
+the matching `Content-Encoding`. Either way the `Content-Type` stays `application/wasm`.
+
+## Caching
+
+Emscripten writes the same three file names on every build. If the server tells browsers to keep
+`MyGame.wasm` for a long time, a player can be served a new page with an old module. Either:
+
+- let every file be revalidated, which is what `Cache-Control: no-cache` asks for and what many
+  static hosts do by default, so a returning player downloads only what changed; or
+- put the `.js` and the `.wasm` in a folder named for their contents, such as a short hash, point
+  the page at that folder, and send those two with
+  `Cache-Control: public, max-age=31536000, immutable` and the page with `no-cache`. A new build
+  is then a new folder, and the page that names it is never stale. LineSweeper's demo does this.
+
+The page names `MyGame.js` in a script tag. To load it from another folder, change that
+`src` after the build or have your upload step do it.
+
+<Aside title="What is not checked">
+The facts on this page were checked in Chrome only. Which browsers the build has been played in
+is in [Platform support](/why/#platform-support).
+</Aside>
