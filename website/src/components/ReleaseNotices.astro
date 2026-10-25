@@ -1,0 +1,139 @@
+---
+// The licences a game built on Labrador carries to its players, and the file
+// in the release folder that carries each one.
+//
+// Every package the root vcpkg.json names, and every feature it asks of one,
+// is either a row here or named as one a release does not carry, or the site
+// does not build: a dependency change to vcpkg.json comes with its notice in
+// the same commit.
+import { readRepositoryFile } from '../lib/repository';
+
+interface Notice {
+	component: string;
+	licence: string;
+	carried: string;
+	file: string;
+	builds: string;
+	// The vcpkg.json packages, or package[feature]s, this row answers for.
+	ports?: string[];
+}
+
+const NOTICES: Notice[] = [
+	{
+		component: 'Labrador',
+		licence: 'MIT',
+		carried: 'compiled into the game',
+		file: 'notices/Labrador.txt, from the engine\'s LICENSE, and notices/Labrador-NOTICE.txt, from its NOTICE, which records what in the engine is not Labrador\'s to license',
+		builds: 'every build',
+	},
+	{
+		component: 'Microsoft\'s DirectX sample code in the engine',
+		licence: 'MIT',
+		carried: 'compiled into the game: step_timer.h, throw_if_failed.h and the Direct3D 11 renderer\'s device_resources',
+		file: 'notices/Labrador-NOTICE.txt names the files; the MIT text and Microsoft\'s copyright are those of notices/DirectXTK.txt',
+		builds: 'every build has step_timer.h, both Direct3D builds throw_if_failed.h, and the Direct3D 11 build device_resources too',
+	},
+	{
+		component: 'Real-Time Collision Detection, Christer Ericson',
+		licence: 'the book\'s own terms: its code is for use in readers\' own software',
+		carried: 'compiled into the game: the engine\'s closest-point and intersection routines, engine/math/ericson_math',
+		file: 'notices/Labrador-NOTICE.txt, which attributes it and asks a commercial release to read the book\'s terms',
+		builds: 'every build',
+	},
+	{
+		component: 'rapidjson',
+		licence: 'MIT',
+		carried: 'compiled into the game; the engine reads the manifest with it',
+		file: 'notices/rapidjson.txt, from external/rapidjson/license.txt in the engine',
+		builds: 'every build',
+	},
+	{
+		component: 'DirectX Tool Kit',
+		licence: 'MIT',
+		carried: 'DirectXTK.dll',
+		file: 'notices/DirectXTK.txt, from vcpkg\'s share/directxtk/copyright',
+		builds: 'every Windows build',
+		ports: ['directxtk'],
+	},
+	{
+		component: 'DirectXMath',
+		licence: 'MIT',
+		carried: 'compiled into the game and DirectXTK.dll',
+		file: 'notices/DirectXMath.txt, from vcpkg\'s share/directxmath/copyright',
+		builds: 'every Windows build',
+	},
+	{
+		component: 'XAudio2 redistributable',
+		licence: 'Microsoft Software License Terms',
+		carried: 'xaudio2_9redist.dll',
+		file: 'notices/XAudio2Redist.txt, from vcpkg\'s share/xaudio2redist/copyright',
+		builds: 'every Windows build, null audio included: DirectXTK.dll loads it',
+		ports: ['directxtk[xaudio2redist]'],
+	},
+	{
+		component: 'The MSVC runtime',
+		licence: 'Visual Studio\'s licence terms, Distributable Code',
+		carried: 'vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll and the five more on CMake\'s list of it',
+		file: 'none required',
+		builds: 'every Windows build',
+	},
+	{
+		component: 'JetBrains Mono',
+		licence: 'SIL Open Font License 1.1',
+		carried: 'fonts/jetbrains_mono_bold_16.spritefont, the template\'s font',
+		file: 'fonts/OFL.txt, beside the atlas',
+		builds: 'while the game uses the template\'s font',
+	},
+];
+
+// Packages vcpkg.json names that no release carries, and why.
+const NOT_SHIPPED: Record<string, string> = {
+	doctest: 'the test framework, linked only by test programs',
+	lodepng: 'linked only by the engine\'s own render tests',
+};
+
+const manifest = JSON.parse(readRepositoryFile('vcpkg.json'));
+const answered = new Set(NOTICES.flatMap((notice) => notice.ports ?? []));
+for (const dependency of manifest.dependencies as (string | { name: string; features?: string[] })[]) {
+	const name = typeof dependency === 'string' ? dependency : dependency.name;
+	const features = typeof dependency === 'string' ? [] : dependency.features ?? [];
+	for (const port of [name, ...features.map((feature) => `${name}[${feature}]`)]) {
+		if (!answered.has(port) && !(port in NOT_SHIPPED)) {
+			throw new Error(
+				`vcpkg.json names ${port}, which the notices list in src/components/ReleaseNotices.astro ` +
+					'does not answer for. Add its licence and the file a release carries, or say why no ' +
+					'release carries it.'
+			);
+		}
+	}
+}
+---
+
+<table>
+	<thead>
+		<tr><th>Component</th><th>Licence</th><th>In the release as</th><th>Notice file</th><th>Which builds</th></tr>
+	</thead>
+	<tbody>
+		{
+			NOTICES.map((notice) => (
+				<tr>
+					<td>{notice.component}</td>
+					<td>{notice.licence}</td>
+					<td>{notice.carried}</td>
+					<td>{notice.file}</td>
+					<td>{notice.builds}</td>
+				</tr>
+			))
+		}
+	</tbody>
+</table>
+
+<p>
+	Not in any release:{' '}
+	{Object.entries(NOT_SHIPPED).map(([name, why], index) => (
+		<>
+			{index > 0 && '; '}
+			<code>{name}</code>, {why}
+		</>
+	))}.
+</p>

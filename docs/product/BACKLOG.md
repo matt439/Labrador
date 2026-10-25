@@ -214,11 +214,11 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[OCA-38](STORIES.md#oca-38)** Should · XS · The Outside C++ Adopter: The guide's XWBTool command makes a bank that loads in the browser too
 - [x] **[OCA-39](STORIES.md#oca-39)** Should · S · The Outside C++ Adopter: Export my sounds in a format the engine accepts on both platforms — after OCA-38
 - [x] **[OCA-36](STORIES.md#oca-36)** Should · S · The Outside C++ Adopter: Copy a guide sample without broken paths
-- [ ] **[OCA-62](STORIES.md#oca-62)** Must · S · The Outside C++ Adopter: Know the notices my Windows game must ship
-- [ ] **[OCA-60](STORIES.md#oca-60)** Must · M · The Outside C++ Adopter: Know what files my Windows release needs and build a package — after OCA-62
+- [x] **[OCA-62](STORIES.md#oca-62)** Must · S · The Outside C++ Adopter: Know the notices my Windows game must ship
+- [x] **[OCA-60](STORIES.md#oca-60)** Must · M · The Outside C++ Adopter: Know what files my Windows release needs and build a package — after OCA-62
 - [ ] **[OCA-61](STORIES.md#oca-61)** Must · S · The Outside C++ Adopter · **Owner**: My release runs on a clean Windows machine — after OCA-60
-- [ ] **[OCA-64](STORIES.md#oca-64)** Should · S · The Outside C++ Adopter: Know the minimum hardware and Windows my players need — after OCA-61
-- [ ] **[OCA-65](STORIES.md#oca-65)** Should · S · The Outside C++ Adopter: Know which render backend to ship and what to do when a machine refuses it
+- [x] **[OCA-64](STORIES.md#oca-64)** Should · S · The Outside C++ Adopter: Know the minimum hardware and Windows my players need — after OCA-61
+- [x] **[OCA-65](STORIES.md#oca-65)** Should · S · The Outside C++ Adopter: Know which render backend to ship and what to do when a machine refuses it
 - [ ] **[PI-14](STORIES.md#pi-14)** Should · M · The Pinned Submodule Integrator · **Owner**: My release ZIP is known to run on a player's clean Windows machine at a current pin — after OCA-61, SM-36
 - [ ] **[OCA-44](STORIES.md#oca-44)** Should · XS · The Outside C++ Adopter: Know which controllers work on Windows and how slots are assigned
 - [ ] **[OCA-45](STORIES.md#oca-45)** Should · S · The Outside C++ Adopter: A one-player game that accepts the pad in whatever slot it is in — after OCA-44

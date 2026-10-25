@@ -34,13 +34,14 @@ the minimal sample, comments included:
 
 <SourceFile path="samples/minimal/CMakeLists.txt" />
 
-It covers building the game, testing it and running it while you work on it: the Windows half
+It covers building the game, testing it, running it while you work on it and shipping it: the Windows half
 names the sources, puts the rules in a library with a test, links the engine and its settings,
 registers a start-up check and copies the content beside the program, and the `EMSCRIPTEN` branch
-builds the same game as a page with the content packed into it. A release a player installs needs
-more than this, because the program's folder must also hold the DLLs the engine uses on Windows,
-DirectXTK and the XAudio2 redistributable, and nothing from the build tree, and that takes install
-rules this file does not have.
+builds the same game as a page with the content packed into it. The install rules at the end of the
+Windows half stage the folder a player gets: the program, the DLLs the engine uses on Windows,
+DirectXTK and the XAudio2 redistributable, the MSVC runtime, the content and the licence notices,
+and nothing from the build tree. [Ship a Windows release](/docs/guides/windows-release/) explains
+them.
 
 There is no project format and no code generator. The engine has no reflection macros, no second
 standard library beside `std::` and no scripting language. Its headers contain classes,

@@ -3,9 +3,8 @@
 # The whole build file for a game on this engine, for building it and running
 # it during development: name the sources, link the engine and the shared
 # settings, mirror the content, put the rules in a library and register their
-# tests and a start-up check - and a branch for the same game in a browser.
-# A release a player installs needs install rules as well, which this file
-# does not have.
+# tests and a start-up check, stage the release folder a player gets - and a
+# branch for the same game in a browser.
 # There is no project file format and no code generation (ARCHITECTURE.md,
 # A game project).
 #
@@ -112,3 +111,39 @@ add_custom_command(TARGET sample_content POST_BUILD
     VERBATIM
 )
 add_dependencies(MinimalSample sample_content)
+
+# The release folder a player gets, from the x64-release build:
+#   cmake --install out/build/x64-release --prefix <folder>
+# The program, the DLLs it loads, its content and the notices of what it
+# carries. A debug build loads the debug runtime, which may not be given away.
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    install(CODE [[message(FATAL_ERROR "Install the x64-release build.")]])
+endif()
+install(TARGETS MinimalSample RUNTIME DESTINATION .)
+# DirectXTK and the XAudio2 redistributable, which vcpkg built as DLLs.
+install(FILES $<TARGET_RUNTIME_DLLS:MinimalSample> DESTINATION .)
+# The MSVC runtime, copied beside the program from Visual Studio's redist
+# folder, so a player needs no installer: CMake's list of its DLLs, which
+# leaves out vcruntime140_threads.dll and vccorlib140.dll.
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+include(InstallRequiredSystemLibraries)
+install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION .)
+install(FILES content/manifest.json DESTINATION .)
+install(DIRECTORY content/fonts DESTINATION .)
+# The licences of what the program carries: the engine, the libraries
+# compiled into it and the DLLs beside it. The font's is fonts/OFL.txt.
+get_target_property(labrador_engine_dir LabradorEngine SOURCE_DIR)
+set(vcpkg_share "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share")
+install(FILES "${labrador_engine_dir}/../LICENSE"
+    DESTINATION notices RENAME Labrador.txt)
+# NOTICE: the code in the engine that is not Labrador's to license.
+install(FILES "${labrador_engine_dir}/../NOTICE"
+    DESTINATION notices RENAME Labrador-NOTICE.txt)
+install(FILES "${labrador_engine_dir}/../external/rapidjson/license.txt"
+    DESTINATION notices RENAME rapidjson.txt)
+install(FILES "${vcpkg_share}/directxtk/copyright"
+    DESTINATION notices RENAME DirectXTK.txt)
+install(FILES "${vcpkg_share}/directxmath/copyright"
+    DESTINATION notices RENAME DirectXMath.txt)
+install(FILES "${vcpkg_share}/xaudio2redist/copyright"
+    DESTINATION notices RENAME XAudio2Redist.txt)

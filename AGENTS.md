@@ -405,7 +405,9 @@ in the commit that creates it.
   from the change's own tree - the engine at `external/labrador`, the minimal
   sample as `game/`, the derived `vcpkg.json` - builds it, checks that its
   ctest lists the game's two tests and none of the engine's, and runs them,
-  the start-up check included. A path spelt
+  the start-up check included; then it installs the `x64-release` build,
+  checks the folder against `website/src/walkthrough/release-files.txt` - the
+  list *Ship a Windows release* shows - and starts the game from there. A path spelt
   from `CMAKE_SOURCE_DIR` inside `engine/` that resolves somewhere else in a
   consumer, or a package the engine starts to need, passes every standalone
   job and fails that one; a swap another include root happens to cover is not
@@ -447,6 +449,10 @@ release tag that carries them, a new one under `## Unreleased`; `v0.1.0`, the
 first, carries the backfill of every engine commit since ColourWars' pin,
 `4cefb68`. A release is a tag the owner cuts, by CONTRIBUTING.md's *Cutting a
 release*.
+**A change to a dependency in `vcpkg.json` changes the notices list** in
+[website/src/components/ReleaseNotices.astro](website/src/components/ReleaseNotices.astro)
+in the same commit, which the website build enforces: every package and
+feature there is a row, or is named as one no release carries.
 A change a copy of the template would want - to what `samples/minimal/` does
 or how it builds, or to an engine behaviour it depends on - adds a line to the
 change list in [samples/minimal/README.md](samples/minimal/README.md) in the

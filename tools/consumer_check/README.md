@@ -27,7 +27,7 @@ the page's step 7 and checks that the project's tests are the game's and not
 the engine's: the project's root enables testing, so every `add_test` in the
 tree is in the list `ctest -N` prints, and that list must be exactly
 `MyGameTests` and `MyGameSmokeTests`. An engine test, or an engine sample's,
-makes the count wrong. Last, it runs them: the rules test, and the start-up
+makes the count wrong. Then it runs them: the rules test, and the start-up
 check, which opens the game hidden, draws a few frames and quits, and needs a
 graphics device.
 
@@ -46,6 +46,52 @@ ctest --preset x64-debug
 
 The listing must end `Total Tests: 2` and name `MyGameTests` and
 `MyGameSmokeTests`, and the last command must pass both.
+
+The job then makes the release folder of *Ship a Windows release*
+(`website/src/content/docs/docs/guides/windows-release.mdx`), from the same
+project, and checks it: every file
+`website/src/walkthrough/release-files.txt` lists and no other, and the game
+started from there with `--smoke-test`. To run that as it does, in the same
+prompt:
+
+```bat
+cmake --preset x64-release
+cmake --build --preset x64-release
+cmake --install out\build\x64-release --prefix C:\dev\mygame-release
+python <engine>\tools\consumer_check\check_release.py C:\dev\mygame-release
+start /wait /b "" C:\dev\mygame-release\MyGame.exe --smoke-test 2> startup.txt
+echo %errorlevel%
+```
+
+`check_release.py` names each file that is missing or not in the list, and
+the smoke test must exit 0; if it does not, `startup.txt` holds the reason
+the game wrote to standard error, which reaches the file only through
+`start`'s `/b`. Install into a folder that does not exist yet, or
+an empty one: the install never deletes a file.
+
+**On a clean machine.** `sandbox.py` writes a Windows Sandbox configuration
+for a release folder, for the check the runner cannot do, because it has
+Visual Studio and the Visual C++ redistributable installed:
+
+```bat
+python <engine>\tools\consumer_check\sandbox.py C:\dev\mygame-release C:\dev\mygame-sandbox
+C:\dev\mygame-sandbox\clean-machine.wsb
+```
+
+Opening the `.wsb` starts a sandbox with the release folder mapped read-only
+and the results folder writable. At logon it runs `run.cmd`, which starts the
+game with `--smoke-test` and writes `exit-code.txt`, `stderr.txt` and
+`machine.txt` (the Windows version, whether the three runtime DLLs are
+installed in the sandbox's `System32`, and its display adapters) to the
+results folder, then shuts the sandbox down. If it stays open, the screen
+shows why: a loader message about a missing DLL stops the script there. The
+sandbox's graphics are a virtual GPU, or with `--vgpu Disable` only Windows'
+software adapter, which a release build refuses with
+`No Direct3D hardware device found`. So a run proves that the folder loads
+and its runtime is complete on a clean Windows; whether it draws on a player's
+GPU needs a real machine. `run.cmd` takes a release folder as its argument
+to try it on the host first. Windows Sandbox needs Windows Pro or Enterprise,
+and an administrator to enable the *Windows Sandbox* optional feature.
 
 CI's `wasm` job assembles the same project and builds the page's browser
 preset, from *Build for the browser*
