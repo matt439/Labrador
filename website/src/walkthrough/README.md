@@ -25,8 +25,8 @@ run's own checkout, `samples/minimal` copied to `game/`, every include the
 page lists edited, these files put in place and the derived `vcpkg.json`
 written. It then builds the `x64-debug` preset and checks that the engine's
 tests stay out of it: `ctest` lists none and the build tree holds no
-`CTestTestfile.cmake`. It does not run the game, use Git, or clone the public
-repository.
+`CTestTestfile.cmake` outside vcpkg's own `vcpkg_installed` folder. It does
+not run the game, use Git, or clone the public repository.
 
 **What was checked by hand.** On 4 October 2026, in the run commit `68b392d`
 records, the whole page was followed in the x64 Native Tools Command Prompt:

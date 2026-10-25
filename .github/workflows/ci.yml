@@ -490,14 +490,18 @@ jobs:
       # count alone cannot fail. What the guard keeps out are the engine's own
       # enable_testing() and add_test() calls, which would write a
       # CTestTestfile.cmake below external\labrador in that tree, so the step
-      # also fails on a CTestTestfile.cmake anywhere in it. The guard's other
-      # half, the engine's samples and tests left out, shows as the configure
-      # step failing, because they ask for doctest and the consumer's manifest
-      # does not name it.
+      # also fails on a CTestTestfile.cmake anywhere in it outside
+      # vcpkg_installed. That folder is vcpkg's: when it builds a package from
+      # source rather than restoring it from the binary cache, it leaves the
+      # package's own build trees under vcpkg_installed\vcpkg\blds, and
+      # DirectXMath's and DirectXTK's hold CTestTestfile.cmake files that say
+      # nothing about the engine. The guard's other half, the engine's samples
+      # and tests left out, shows as the configure step failing, because they
+      # ask for doctest and the consumer's manifest does not name it.
       - name: Check the engine's tests are not the project's
         working-directory: C:\dev\mygame
         run: |
           call "%VCVARS%"
           ctest -N --test-dir out\build\x64-debug | findstr /B /C:"Total Tests: 0" || exit /b 1
-          dir /s /b out\build\x64-debug\CTestTestfile.cmake 2>nul && (echo A CTestTestfile.cmake is in the build tree: the engine registered tests. & exit /b 1)
+          dir /s /b out\build\x64-debug\CTestTestfile.cmake 2>nul | findstr /V /I /C:"vcpkg_installed" && (echo A CTestTestfile.cmake is in the build tree outside vcpkg_installed: the engine registered tests. & exit /b 1)
           exit /b 0
