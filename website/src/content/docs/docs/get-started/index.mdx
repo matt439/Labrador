@@ -13,6 +13,11 @@ Labrador builds on Windows, and the game it builds runs on Windows and in a desk
 through WebGL2. This path builds for Windows; [Running them](/examples/#running-them) on the
 Examples page says how a sample becomes a page instead.
 
+There is no editor to install. A game is C++ you write in your own IDE, its content is JSON in a
+text editor, and the tools that convert images and fonts run from the command line; if you were
+looking for an editor, read [what Labrador is not](/#what-labrador-is-not) before installing
+anything.
+
 <LinkCard title="1. Install the tools" description="Visual Studio with the C++ workload, and Git." href="/docs/get-started/prerequisites/" />
 <LinkCard title="2. Build Labrador" description="Clone the engine, build it, and run its tests." href="/docs/get-started/build-labrador/" />
 <LinkCard title="3. Run the minimal sample" description="See the smallest game on the engine, and know what you are looking at." href="/docs/get-started/run-minimal/" />
@@ -32,7 +37,12 @@ and the project in step 4 was built from the public repository as its page then 
 four include edits where it now lists five. Some steps have changed since, and the folder advice
 in step 1, its `subst` drive included, and the build in step 2 were checked by hand again on
 13 October. The revision at the bottom of each page is the one the page
-was built from, which can be later than either.
+was built from, which can be later than any of these.
+
+On 25 October 2026 steps 2 to 5 were followed again on a fast desktop that already had Visual
+Studio 2026 and Git, from a fresh public clone and with vcpkg's caches empty, with steps 2 and 3 built at commit
+`6be26c9` and step 4 at the `v0.1.0` tag: every command worked as written. From the clone to the project's own window
+took about six minutes.
 
 One part is checked on every change to Labrador. Its CI assembles the project in step 4 from the
 files and edits that page gives, with the engine taken from the change itself rather than from

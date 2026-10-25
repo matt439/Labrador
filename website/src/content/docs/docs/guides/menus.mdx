@@ -38,7 +38,10 @@ Widgets are game objects, so they go in a scene like anything else. The engine's
 
 Each takes a name first, which is how a container finds a child. The set is small because it is
 open: a widget is a class you can derive from, and a game's own widgets (a slider, a row with a
-label and a value) are classes the game writes.
+label and a value) are classes the game writes. It need not write those two from scratch:
+<RepoLink path="samples/components">`samples/components`</RepoLink> has an option row and a
+slider, each a header, a source file and its tests, to copy into your game and edit, and the
+Examples page's [Components](/examples/#components-the-pieces-you-copy) section shows them.
 
 **There is no layout engine.** You position widgets yourself. The pause menu measures each row's
 text and centres it, as the [Sprites and text guide](/docs/guides/sprites-and-text/#text) shows.

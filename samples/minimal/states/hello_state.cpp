@@ -98,7 +98,7 @@ void HelloState::init()
 		labrador::Colour::white));
 
 	this->hint_ = this->scene_->add(std::make_unique<Label>(
-		L"Left stick, arrows or WASD move it. B or Escape quits. Touch shows a marker.", font_name,
+		L"Left stick, arrows or WASD move it. B or Escape asks to quit. Touch shows a marker.", font_name,
 		Vector2F(24.0f, resolution.y - 40.0f), resources,
 		labrador::Colour::dark_gray));
 

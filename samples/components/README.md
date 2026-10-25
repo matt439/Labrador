@@ -54,11 +54,11 @@ the cursor is on.
 
 ## The gallery
 
-```powershell
+```bat
 cmake --preset x64-debug
 cmake --build --preset x64-debug --target ComponentsGallery ComponentsTests
 .\out\build\x64-debug\samples\components\ComponentsGallery.exe
-ctest --preset x64-debug -R '^ComponentsTests$'
+ctest --preset x64-debug -R "^ComponentsTests$"
 ```
 
 | Control | Action |

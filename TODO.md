@@ -12,8 +12,7 @@ An index of open work, one row per item; each row points to the document that ow
 
 1. **`SM-43` (X1): trim the agent brief to current state.**
 2. **`OCA-70`, `OCA-71` (X2): the pin-move procedure page**, and running the engine's suite at a pin.
-3. **`FES-04`, `FES-02`, `SRL-02`, `SRL-04`, `SRL-05` (X4): small truths** for the exclusion seeker and the learner.
-4. **`OCA-29`, `OCA-30`, `OCA-12`, `OCA-33` (X7): the template's test target and smoke check**, the cold-cache record and the CI recipe.
+3. **`OCA-29`, `OCA-30`, `OCA-12`, `OCA-33` (X7): the template's test target and smoke check**, the cold-cache record and the CI recipe.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
@@ -26,10 +25,8 @@ An index of open work, one row per item; each row points to the document that ow
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-70` | OPEN | must | S | The pin-move procedure page (fetch, read CHANGES.md, diff `vcpkg.json`, build under `/W4 /WX`, run the game's tests, commit), with the last MSVC known to build, walked once, and `OCA-71`'s engine suite at a pin. `SM-36` waits on it. |
-| `FES-04` | OPEN | should | XS | Home's "What Labrador is not" covers scripting, hot reload, reflection-driven editing and the small community, and links Why's comparison; then `FES-02`: Get Started's index says what kind of toolchain this is. |
-| `SRL-04` | OPEN | could | XS | The Examples page gives LineSweeper's real size; with `SRL-02` (the Concepts index needs no Windows build) and `SRL-05` (LineSweeper README's layer-rule item describes `presentation/` as it is). |
 | `OCA-29` | OPEN | must | M | A test target in the template, with a guide to a rules library tested like LineSweeper's, built by the consumer CI job. `OCA-30` (S), a `--smoke-test` registered as a test, follows it. |
-| `OCA-12` | OPEN | should | S | Get Started's first-configure time and public-clone claim from a run with an empty vcpkg binary cache and a public clone. |
+| `OCA-12` | OPEN | should | S | Get Started's first-configure time and public-clone claim from a run with an empty vcpkg binary cache and a public clone. Build Labrador's "a little over two minutes" was published ahead of this record, from a cold run on 2026-10-25 at `6be26c9` (configure 2 min 17 s); the dated record in website/README.md or the walkthrough README is what is left. |
 | `OCA-33` | OPEN | should | M | A GitHub Actions workflow an adopter can copy: submodules, vcvars, `VCPKG_ROOT`, fxc, a vcpkg cache and the game's ctest. After `OCA-29`, `OCA-30`. |
 
 ## Website and the hosted demo

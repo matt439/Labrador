@@ -61,8 +61,8 @@ The <a href="/examples/">Examples</a> page says how the game is built.
 <p class="lead">
 <a href="https://mattharding.dev/demo/linesweeper/">Play LineSweeper in a desktop browser</a>.
 The hosted demo downloads the game only when you click, and plays with a keyboard. Phones are a
-planned phase, so it shows a phone a poster rather than the game until a real iPhone and a real
-Android phone have played it.
+planned phase, so a phone gets a poster and a recording of the game to tap and watch, not the
+game itself, until a real iPhone and a real Android phone have played it.
 </p>
 
 </section>
@@ -142,16 +142,17 @@ belongs to the engine.
 Knowing these before you start will save you time.
 </p>
 
-- **Not cross-platform yet.** It builds and runs on Windows, and all six of its samples
-  also run in a desktop browser through WebGL2. The Vulkan renderer is the route to other native
-  platforms, and none of them builds today.
-- **Never an editor.** Content is JSON and standard file formats, edited in a text editor.
-  Behaviour is C++, edited in yours.
-- **Never 3D, and never online.** Labrador is for 2D games played on one machine: alone,
-  side by side, or split-screen.
-- **Not finished yet.** Releases are 0.x tags, each recording what it changed rather than
-  promising compatibility, and the public API can still change.
-  The [design documents](/docs/design/) say where it is going.
+- **Never an editor.** Content is JSON in a text editor; behaviour is C++ in your IDE.
+- **Never a scripting language.** All behaviour is C++, and every change to it is a compile.
+- **Never hot reload or reflection-driven property editing.** The loop is edit, build, run.
+- **Never 3D.** Labrador is for 2D games.
+- **Never online.** Play is local: alone, side by side or split-screen on one machine.
+- **Not cross-platform yet.** Windows and a desktop browser only.
+- **Not big yet.** A small community, no asset store, and a 0.x API.
+
+If you need any of these, [Godot or Unreal](/why/#with-godot-and-unreal) is the better choice,
+and the Why page compares them. The [design documents](/docs/design/) say where
+Labrador is going.
 
 </section>
 

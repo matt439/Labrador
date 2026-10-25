@@ -5,10 +5,10 @@ is cyan in the top pane; player 2 is orange in the bottom pane. Both players
 appear in both panes whenever the camera can see them. Move toward the purple
 cross to meet, or apart to watch each camera follow its own player.
 
-From a Visual Studio developer shell with the prerequisites in the root
-README:
+From the repository root, in the x64 Native Tools Command Prompt, with the
+prerequisites in the root README:
 
-```powershell
+```bat
 cmake --preset x64-debug
 cmake --build --preset x64-debug --target LocalMultiplayerSample LocalMultiplayerTests
 ctest --preset x64-debug -R LocalMultiplayerTests --output-on-failure
@@ -54,7 +54,7 @@ The `wasm-debug` and `wasm-release` presets build the same arena from
 `web/shell.html` as the page. With Emscripten set up as the root README
 describes:
 
-```powershell
+```bat
 cmake --preset wasm-release
 cmake --build --preset wasm-release --target LocalMultiplayerSample
 ```
@@ -82,7 +82,7 @@ scripted movement and checks final positions and the view count before exiting.
 It needs the selected renderer's device. It does not exercise physical input.
 On rasterising presets it can capture the fifteenth frame for visual review:
 
-```powershell
+```bat
 out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe --smoke-test
 out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe --smoke-test --capture out\multiplayer.png
 ```

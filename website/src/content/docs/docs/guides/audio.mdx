@@ -11,12 +11,12 @@ import RepoLink from '~/components/RepoLink.astro';
 The <RepoLink path="samples/audio">audio sample</RepoLink> is a playable sound board:
 two short tones and a looping drone, with volume, pitch and stereo pan controls.
 Its original PCM sounds and the built wave bank are in the repository. Build it
-in the [developer shell](/docs/get-started/build-labrador/):
+from the repository root in the [x64 Native Tools Command Prompt](/docs/get-started/prerequisites/):
 
-```powershell
+```bat
 cmake --preset x64-debug
 cmake --build --preset x64-debug --target AudioSample
-& ./out/build/x64-debug/samples/audio/AudioSample.exe
+out\build\x64-debug\samples\audio\AudioSample.exe
 ```
 
 Press **1** for a ping, **2** for an ascending chime and **3** to start the drone.
@@ -144,7 +144,7 @@ Python nor an authoring tool is needed to run the existing example.
 For your own bank, Microsoft's
 [XWBTool](https://github.com/microsoft/DirectXTK/wiki/XWBTool) combines WAV files:
 
-```powershell
+```bat
 xwbtool -f -o tones.xwb ping.wav chime.wav drone.wav
 ```
 

@@ -198,11 +198,11 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[OCA-70](STORIES.md#oca-70)** Must · S · The Outside C++ Adopter: Move my engine pin by a written procedure
 - [ ] **[OCA-71](STORIES.md#oca-71)** Could · XS · The Outside C++ Adopter: Run the engine's own tests at my pin — after OCA-70
 - [ ] **[SM-36](STORIES.md#sm-36)** Should · S · The Sole Owner-Maintainer · **Owner**: A cadence for moving ColourWars' engine pin — after OCA-70, OCA-68
-- [ ] **[FES-04](STORIES.md#fes-04)** Should · XS · The Full-Environment Seeker (anti-persona): 'What Labrador is not' covers every want the seeker arrives with and names the alternatives — after FES-03
-- [ ] **[FES-02](STORIES.md#fes-02)** Could · XS · The Full-Environment Seeker (anti-persona): Get Started points at the exclusions before it asks for Visual Studio — after FES-04
-- [ ] **[SRL-02](STORIES.md#srl-02)** Could · XS · The Sample-Reading Learner: Read Concepts without first building the minimal sample
-- [ ] **[SRL-04](STORIES.md#srl-04)** Could · XS · The Sample-Reading Learner: Examples page states LineSweeper's real reading size
-- [ ] **[SRL-05](STORIES.md#srl-05)** Could · XS · The Sample-Reading Learner: LineSweeper README's open question states how much the unchecked layer rule covers
+- [x] **[FES-04](STORIES.md#fes-04)** Should · XS · The Full-Environment Seeker (anti-persona): 'What Labrador is not' covers every want the seeker arrives with and names the alternatives — after FES-03
+- [x] **[FES-02](STORIES.md#fes-02)** Could · XS · The Full-Environment Seeker (anti-persona): Get Started points at the exclusions before it asks for Visual Studio — after FES-04
+- [x] **[SRL-02](STORIES.md#srl-02)** Could · XS · The Sample-Reading Learner: Read Concepts without first building the minimal sample
+- [x] **[SRL-04](STORIES.md#srl-04)** Could · XS · The Sample-Reading Learner: Examples page states LineSweeper's real reading size
+- [x] **[SRL-05](STORIES.md#srl-05)** Could · XS · The Sample-Reading Learner: LineSweeper README's open question states how much the unchecked layer rule covers
 - [ ] **[SM-09](STORIES.md#sm-09)** Should · S · The Sole Owner-Maintainer · **Owner**: Record the MacBook Air's Safari ceiling, and play the demo in it if it can
 - [ ] **[OCA-48](STORIES.md#oca-48)** Should · S · The Outside C++ Adopter · **Owner**: One physical-pad session: trust the desktop pad mapping and know what a backgrounded game receives
 - [ ] **[BDP-06](STORIES.md#bdp-06)** Should · S · The Browser and Phone Demo Player · **Owner**: Play the bundle page in Firefox, with a physical pad, through a real tab switch and a real context loss
@@ -223,7 +223,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[OCA-44](STORIES.md#oca-44)** Should · XS · The Outside C++ Adopter: Know which controllers work on Windows and how slots are assigned
 - [ ] **[OCA-45](STORIES.md#oca-45)** Should · S · The Outside C++ Adopter: A one-player game that accepts the pad in whatever slot it is in — after OCA-44
 - [ ] **[OCA-49](STORIES.md#oca-49)** Could · XS · The Outside C++ Adopter: The default disabled menu row looks unavailable
-- [ ] **[OCA-52](STORIES.md#oca-52)** Could · XS · The Outside C++ Adopter: The menus guide routes me to the components I can copy
+- [x] **[OCA-52](STORIES.md#oca-52)** Could · XS · The Outside C++ Adopter: The menus guide routes me to the components I can copy
 - [ ] **[OCA-53](STORIES.md#oca-53)** Should · M · The Outside C++ Adopter: Keep my players' settings and saves on desktop and in the browser
 - [ ] **[OCA-56](STORIES.md#oca-56)** Must · M · The Outside C++ Adopter: Reference pages say how I get each type and what its parameters mean
 - [ ] **[OCA-58](STORIES.md#oca-58)** Should · S · The Outside C++ Adopter: The Application and Colour reference pages are navigable and correctly named
