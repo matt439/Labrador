@@ -5,7 +5,7 @@
 #include "engine/input/touch.h"
 #include "engine/render/label.h"
 #include "engine/scene/scene.h"
-#include "engine/math/vector2f.h"
+#include "samples/minimal/rules/motion.h"
 #include <array>
 #include <memory>
 
@@ -68,11 +68,10 @@ private:
 	std::array<labrador::Label*, labrador::TouchState::capacity>
 		touch_markers_ = {};
 
-	// The two numbers the greeting's placement is worked out from every frame:
-	// the point it circles, which the stick moves, and how far round the
-	// circle it currently is. update() turns the pair into a transform - the
-	// engine has no opinion about where anything is, and this is what doing it
-	// by hand looks like.
-	mattmath::Vector2F position_ = { 0.0f, 0.0f };
-	float spin_ = 0.0f;
+	// Where the greeting is, as the template's rules keep it: the point it
+	// circles and how far round it is. update() hands them what the devices
+	// said and places the label where they answer - the engine has no opinion
+	// about where anything is, and rules/motion.h is what doing it by hand
+	// looks like.
+	Motion motion_;
 };

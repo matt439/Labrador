@@ -35,12 +35,14 @@ PLACED = {
     "game-CMakeLists.txt": "game/CMakeLists.txt",
     "CMakePresets.json": "CMakePresets.json",
     "gitignore.txt": ".gitignore",
+    "ci.yml": ".github/workflows/ci.yml",
 }
 
-# The page's <ConsumerManifest name="mygame" />, and the packages only the
-# engine's own tests use, which a consumer does not build.
+# The page's <ConsumerManifest name="mygame" />, and the package only the
+# engine's own tests use, which a consumer does not build. doctest stays: the
+# game's own tests use it.
 PROJECT_NAME = "mygame"
-TEST_ONLY = {"doctest", "lodepng"}
+TEST_ONLY = {"lodepng"}
 
 
 def tree_files(engine: Path) -> list[Path]:
@@ -108,6 +110,7 @@ def assemble(engine: Path, project: Path) -> None:
     edit_includes(project / "game")
 
     for name, placed in PLACED.items():
+        (project / placed).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(labrador / WALKTHROUGH / name, project / placed)
         print(f"walkthrough: {name} -> {placed}")
 

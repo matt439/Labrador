@@ -2,7 +2,8 @@
 #
 # The whole build file for a game on this engine, for building it and running
 # it during development: name the sources, link the engine and the shared
-# settings, mirror the content - and a branch for the same game in a browser.
+# settings, mirror the content, put the rules in a library and register their
+# tests and a start-up check - and a branch for the same game in a browser.
 # A release a player installs needs install rules as well, which this file
 # does not have.
 # There is no project file format and no code generation (ARCHITECTURE.md,
@@ -17,11 +18,43 @@ set(minimal_sources
     states/hello_state.cpp
 )
 
+# The game's rules, in a library that links the engine's maths and nothing else
+# of it: MattMath and the settings carry no window, no device and no input, so
+# MinimalTests below runs them with none of those (rules/motion.h says what
+# moved there to make that true). samples/linesweeper's LineSweeperRules is
+# the same wall around a whole game.
+add_library(MinimalRules STATIC
+    rules/motion.cpp
+)
+target_link_libraries(MinimalRules PUBLIC
+    MattMath
+    labrador_settings
+)
+
+# The rules' tests, with doctest from vcpkg. One ctest entry however many cases
+# it holds; a new test file is listed here beside the first.
+find_package(doctest CONFIG REQUIRED)
+add_executable(MinimalTests
+    tests/motion_tests.cpp
+)
+target_link_libraries(MinimalTests PRIVATE
+    MinimalRules
+    doctest::doctest
+    labrador_settings
+)
+add_test(NAME MinimalTests COMMAND MinimalTests)
+
 # A browser build is a second entry point and a page, with the content packed
 # into the module at the paths the Windows build copies it to.
 if(EMSCRIPTEN)
+    # The tests run under Node, which reads no files here. The root's options
+    # for that come after this folder is added, because the page must not
+    # take them, so the test names the one it needs.
+    target_link_options(MinimalTests PRIVATE -sENVIRONMENT=node)
+
     add_executable(MinimalSample main_web.cpp ${minimal_sources})
-    target_link_libraries(MinimalSample PRIVATE LabradorEngine labrador_settings)
+    target_link_libraries(MinimalSample PRIVATE
+        MinimalRules LabradorEngine labrador_settings)
     set_target_properties(MinimalSample PROPERTIES SUFFIX ".html")
     # Neither the page nor the content is a source, so a change to either
     # relinks only because it is named here.
@@ -42,9 +75,17 @@ add_executable(MinimalSample WIN32
     ${minimal_sources}
 )
 target_link_libraries(MinimalSample PRIVATE
+    MinimalRules
     LabradorEngine
     labrador_settings
 )
+
+# The start-up check: the game hidden, a few frames drawn, and out (main.cpp,
+# SmokeTest). It needs a graphics device, so a machine without one fails it,
+# and its content is what the build copies below, so a missing file fails it
+# naming the file. The timeout is for a loop that never draws.
+add_test(NAME MinimalSmokeTests COMMAND MinimalSample --smoke-test)
+set_tests_properties(MinimalSmokeTests PROPERTIES TIMEOUT 60)
 
 # A relative manifest path resolves against the executable's directory, not
 # the working directory, and the folders it names against the manifest

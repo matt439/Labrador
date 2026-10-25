@@ -44,6 +44,8 @@ jobs:
     # which is version 1.1 and has no WGL_ARB_create_context, so create_device
     # throws saying so. The pixel contract is checked on a machine with a
     # driver; everything else about that backend is checked here.
+    # MinimalSmokeTests is skipped beside it for the same reason: it starts
+    # the minimal sample, which creates a device too.
     #
     # AND IT IS NOT THE WARP FALLBACK THAT MAKES THE DIRECT3D JOBS WORK, WHICH
     # THIS FILE SAID UNTIL ONE JOB LOG WAS READ. x64-release runs
@@ -82,10 +84,10 @@ jobs:
     # Studio, opengl32 with Windows - where this one needs the Vulkan SDK twice
     # over: for a dxc that can emit SPIR-V at build time
     # (cmake/compile_shaders.cmake says which dxc and why), and for the Vulkan
-    # loader the same installer puts in System32, without which nine of the
-    # eleven other test executables in this preset would not start at all -
-    # every one that links the engine. MattMathTests and LineSweeperTests are
-    # the two that do not.
+    # loader the same installer puts in System32, without which every test
+    # executable in this preset that links the engine would not start at all.
+    # MattMathTests, LineSweeperTests and MinimalTests are the ones that do
+    # not.
     #
     # THE NULL PRESET IS THE ONE THIS MACHINE CAN RUN COMPLETELY, and it is here
     # for that rather than for coverage. It has no platform API at all - no
@@ -111,10 +113,10 @@ jobs:
             skip_tests: ''
             vulkan_sdk: false
           - preset: x64-debug-gl
-            skip_tests: '-E RenderPixelTests'
+            skip_tests: '-E "RenderPixelTests|MinimalSmokeTests"'
             vulkan_sdk: false
           - preset: x64-debug-vulkan
-            skip_tests: '-E RenderPixelTests'
+            skip_tests: '-E "RenderPixelTests|MinimalSmokeTests"'
             vulkan_sdk: true
           - preset: x64-debug-null
             skip_tests: ''
@@ -408,7 +410,7 @@ jobs:
 
   # THE PROJECT GET STARTED TEACHES, BUILT AGAINST THIS CHANGE'S ENGINE. Every
   # job above builds Labrador as the top-level project, where CMAKE_SOURCE_DIR
-  # is the engine's root, the tests' packages are in the manifest, and the
+  # is the engine's root, all the tests' packages are in the manifest, and the
   # samples include from the engine's root. A consumer has none of that, so a
   # path spelt from CMAKE_SOURCE_DIR inside engine/ that resolves somewhere
   # else in a consumer, or a package the engine starts to need that the
@@ -424,10 +426,10 @@ jobs:
   # folder is short on purpose: the compiler stops at 260 characters, and the
   # object files of a build sit far below the project's root, which is why
   # Get Started's prerequisites page asks for a short folder. The steps after
-  # it are the page's step 7 without running the game, which the minimal
-  # sample has no way to quit by itself yet, and then the PROJECT_IS_TOP_LEVEL
-  # guard in the root CMakeLists.txt: the engine's tests are not in a
-  # consumer's ctest.
+  # it are the page's step 7, then the PROJECT_IS_TOP_LEVEL guard in the root
+  # CMakeLists.txt - the engine's tests are not in a consumer's ctest, and the
+  # game's are - and then the game's tests run: the rules test, and the
+  # start-up check, which opens the game hidden, draws a few frames and quits.
   #
   # IT FETCHES NOTHING FROM A CLIENT. The engine cannot reach a repository
   # that consumes it and should not learn how (docs/design/PHILOSOPHY.md,
@@ -453,10 +455,10 @@ jobs:
         run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
       # THE WINDOWS JOBS' CACHE, RESTORED AND NEVER SAVED. The consumer's
-      # packages are the engine's less the two only its tests use, built for
-      # the same triplet at the same baseline, so their binaries are already
-      # in that cache. Saving under the same key from here could win the race
-      # with those jobs and leave the key holding a set without doctest and
+      # packages are the engine's less lodepng, which only its tests use,
+      # built for the same triplet at the same baseline, so their binaries are
+      # already in that cache. Saving under the same key from here could win
+      # the race with those jobs and leave the key holding a set without
       # lodepng; on a miss this job builds from source and leaves the saving
       # to them.
       - name: Restore the windows jobs' vcpkg binaries
@@ -485,23 +487,30 @@ jobs:
           call "%VCVARS%"
           cmake --build --preset x64-debug
 
-      # The consumer's root never calls enable_testing(), so ctest at the top
-      # of its build tree lists no tests whatever the engine does, and the
-      # count alone cannot fail. What the guard keeps out are the engine's own
-      # enable_testing() and add_test() calls, which would write a
-      # CTestTestfile.cmake below external\labrador in that tree, so the step
-      # also fails on a CTestTestfile.cmake anywhere in it outside
-      # vcpkg_installed. That folder is vcpkg's: when it builds a package from
-      # source rather than restoring it from the binary cache, it leaves the
-      # package's own build trees under vcpkg_installed\vcpkg\blds, and
-      # DirectXMath's and DirectXTK's hold CTestTestfile.cmake files that say
-      # nothing about the engine. The guard's other half, the engine's samples
-      # and tests left out, shows as the configure step failing, because they
-      # ask for doctest and the consumer's manifest does not name it.
-      - name: Check the engine's tests are not the project's
+      # The consumer's root calls enable_testing() and its game registers two
+      # tests, so every add_test() anywhere in its tree - the engine's
+      # included, below external\labrador - is in the list ctest prints at the
+      # top of the build tree. Exactly two, and both of them the game's, is the
+      # guard: an engine test, or a sample of the engine's that registers one,
+      # makes the count wrong, and a game test that went missing fails its
+      # name. ctest -N lists without running, so this fails on the guard alone
+      # before the step below runs anything.
+      - name: Check the game's tests are the project's, and the engine's are not
         working-directory: C:\dev\mygame
         run: |
           call "%VCVARS%"
-          ctest -N --test-dir out\build\x64-debug | findstr /B /C:"Total Tests: 0" || exit /b 1
-          dir /s /b out\build\x64-debug\CTestTestfile.cmake 2>nul | findstr /V /I /C:"vcpkg_installed" && (echo A CTestTestfile.cmake is in the build tree outside vcpkg_installed: the engine registered tests. & exit /b 1)
+          ctest -N --test-dir out\build\x64-debug > out\ctest-list.txt || exit /b 1
+          type out\ctest-list.txt
+          findstr /B /C:"Total Tests: 2" out\ctest-list.txt >nul || (echo The project's ctest should list the game's two tests and nothing else. & exit /b 1)
+          findstr /C:": MyGameTests" out\ctest-list.txt >nul || (echo MyGameTests is not registered. & exit /b 1)
+          findstr /C:": MyGameSmokeTests" out\ctest-list.txt >nul || (echo MyGameSmokeTests is not registered. & exit /b 1)
           exit /b 0
+
+      # The game's tests, as the page's ctest runs them: the rules test needs
+      # nothing, and the start-up check gets a Direct3D device on this runner,
+      # as the windows jobs' RenderPixelTests do.
+      - name: Run the game's tests
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          ctest --preset x64-debug

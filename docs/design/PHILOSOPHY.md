@@ -294,7 +294,8 @@ the tests share one dependency direction and one compiler-settings target
 |---|---|---|---|
 | `MattMath` | static library | `engine/math/` | nothing |
 | `LabradorEngine` | static library | `engine/` | MattMath, platform SDKs |
-| `MinimalSample` | application | `samples/minimal/` | LabradorEngine |
+| `MinimalRules` | static library | `samples/minimal/rules/` | MattMath |
+| `MinimalSample` | application | `samples/minimal/` | MinimalRules, LabradorEngine |
 | `LineSweeperRules` | static library | `samples/linesweeper/rules/` | nothing — the settings target carries no libraries |
 | `LineSweeperSample` | application | `samples/linesweeper/` | LineSweeperRules, LabradorEngine |
 | `LineSweeperModule` | ES module for another site to host; browser builds only | `samples/linesweeper/` | LineSweeperRules, LabradorEngine |
@@ -309,7 +310,9 @@ the tests share one dependency direction and one compiler-settings target
 | tests | applications | `tests/` | the libraries they test |
 
 A client's own application target lives in the client's repository, linking
-`LabradorEngine` and `labrador_settings` across the submodule boundary.
+`LabradorEngine` and `labrador_settings` across the submodule boundary, and a
+library of its rules that its tests run without the engine links `MattMath`
+alone, as `MinimalRules` does.
 
 The disk layout mirrors the targets — `engine/math/`, `engine/core/`,
 `engine/render/`, `engine/collision/`, `engine/input/`, `engine/audio/` —
@@ -733,6 +736,14 @@ engine API to depend on.
 - A minimal sample game lives in this repository, beside the engine. It is
   the standing answer to "how do I start a project on this engine" — and
   the permanent second client that keeps the boundary honest (T1).
+  **It starts with its tests**: a library of its rules, a test target for it
+  and a start-up check, all registered with CTest. A project copied from it
+  is a project that is tested from its first commit, and the cost is about
+  two hundred lines, nearly half of them comments, and doctest in its
+  manifest — which is the price of the
+  smallest thing that runs *and is checked*, weighed against T3 and paid,
+  because a test target added later is reverse-engineered from a sample that
+  was never meant to be copied.
 - A second sample answers the other question, and the two are not merged
   because they are not the same artefact. "How do I start" wants the smallest
   thing that runs and is meant to be **copied**; "what does a finished game
