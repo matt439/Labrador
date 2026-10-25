@@ -145,12 +145,18 @@ For your own bank, Microsoft's
 [XWBTool](https://github.com/microsoft/DirectXTK/wiki/XWBTool) combines WAV files:
 
 ```bat
-xwbtool -f -o tones.xwb ping.wav chime.wav drone.wav
+xwbtool -f -nc -o tones.xwb ping.wav chime.wav drone.wav
 ```
 
 The **`-f` is required**: it retains each file's stem as a friendly name in the
-bank, which is how Labrador checks and resolves waves. Use an in-memory bank
-for this API; streaming banks are outside this example.
+bank, which is how Labrador checks and resolves waves. **So is `-nc`**: without
+it XWBTool writes compact entries whenever the waves fit them. Windows plays a
+compact bank, but the browser build reads banks with the engine's own reader,
+which refuses one by name (`uses compact entries, which this engine
+does not read`). Use an in-memory bank for this API; streaming banks are
+outside this example. The command was checked with XWBTool from the `may2026`
+DirectX Tool Kit release, packing the sample's three WAVs into a bank the
+engine's reader loads.
 
 `AudioSample.exe --smoke-test` loads the packaged required bank, plays both
 one-shots, and verifies loop play, pause, resume and immediate stop before
@@ -160,3 +166,57 @@ Under a null preset the same check records the calls and reports no playback;
 it cannot validate the container or sound quality. `AudioSampleTests` also
 checks the real definition, and under null audio asserts exactly which waves
 the sound board requests and the levels it sends.
+
+### Exporting sounds both platforms play
+
+A wave bank holds WAVs as they were exported. Windows plays it through XAudio2,
+and a browser build reads it with
+<RepoLink path="engine/audio/xwb_file.h">the engine's reader</RepoLink>, so a
+sound has to suit both:
+
+- **Accepted:** PCM at 8 or 16 bits, and MS-ADPCM.
+- **Refused by the engine's reader, each by name at load, so they fail in the
+  browser build:** xWMA, XMA, and compact entries (`-nc` above).
+- **Channels:** mono or stereo. The reader refuses MS-ADPCM with more than two
+  channels, and pan is a stereo control.
+- **Sample rate:** one a browser's `AudioBuffer` accepts. The Web Audio
+  standard promises 8,000 to 96,000 Hz, and browsers differ outside that. The
+  engine's reader does not judge the rate; the browser does, when the bank
+  loads, and the load fails naming the wave. Headless Chrome, given a bank at
+  2,000 Hz, fails with `wave 'ping' is 2000 Hz, which this browser's Web Audio
+  cannot hold`.
+
+The default to pick is the sample's: **mono, 16-bit PCM at 22,050 Hz**. It is
+exact, it is the format XWBTool packs as it is, and it is half the size of the
+same sound at 44,100 Hz, which short effects rarely need. An audio editor's
+"WAV, signed 16-bit PCM" export gives it, or FFmpeg from any source file:
+
+```bat
+ffmpeg -i source.wav -ac 1 -ar 22050 -c:a pcm_s16le ping.wav
+```
+
+MS-ADPCM is the choice when the download matters more than the memory. It is
+about a quarter the size of 16-bit PCM in the bank and slightly lossy. XWBTool
+does not encode it. `adpcmencode3` does, from the Windows SDK that Visual
+Studio installs, on the Native Tools prompt's path beside `fxc`; it reads a PCM
+WAV and writes an ADPCM one, so give the output the name the bank should use:
+
+```bat
+adpcmencode3 pcm\ping.wav ping.wav
+```
+
+It writes 128 samples a block, and XAudio2 makes a voice only when that count
+is a multiple of 32. FFmpeg's `adpcm_ms` encoder cannot write such a block, so
+a bank of its output passes the engine's reader and fails on Windows when it
+plays. `adpcmencode3` fits a
+wave to a whole number of blocks by changing its sample rate, so export each
+sound a multiple of 128 samples long, or XWBTool's `reading` line will show a
+rate a little off the one exported and the sound will play that much sharp or
+flat.
+
+What a sound costs in memory differs by platform. On Windows, XAudio2 plays the
+bank as it is stored. In a browser the reader decodes every wave to 16-bit
+samples at load, and the browser then holds each wave as a buffer of 32-bit
+floats: twice the size of 16-bit PCM in the bank, four times 8-bit PCM, and
+about eight times MS-ADPCM, which decodes to about four times its size before
+the floats double it.
