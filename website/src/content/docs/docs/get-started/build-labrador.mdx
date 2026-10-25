@@ -28,8 +28,12 @@ anything, and it builds the samples you will look at next.
    64-bit debug build using the Direct3D 11 renderer, with its output in `out\build\x64-debug`.
 
    The first time you run this, vcpkg downloads and builds Labrador's dependencies: DirectX Tool
-   Kit, the XAudio2 redistributable and the doctest test framework. That takes several minutes,
-   and vcpkg keeps the results, so later configures are quick.
+   Kit and the DirectXMath library it uses, the XAudio2 redistributable, the doctest test
+   framework and the lodepng image library. It may also download a CMake and a PowerShell of its
+   own if it finds Visual Studio's unsuitable. With nothing cached, the first configure downloads
+   about 330 MB in all.
+   On a fast desktop with an empty cache that configure took a little over two minutes, and vcpkg
+   keeps the results, so later configures are quick.
 
 3. **Build it:**
 

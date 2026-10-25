@@ -9,6 +9,9 @@ only: [why](https://labradorengine.com/why/), and
 [what Labrador is not](https://labradorengine.com/#what-labrador-is-not).
 
 **Website and documentation: [labradorengine.com](https://labradorengine.com/).**
+New here? [Get Started](https://labradorengine.com/docs/get-started/) takes an
+empty Windows machine to a game of your own that builds against Labrador, in
+five steps.
 
 The engine is the point, but an engine with no client is a library of guesses.
 Labrador has one: ColourWars, a split-screen paint-shooter that consumes this
@@ -28,8 +31,9 @@ is the answer to "what does a finished game look like on this engine" — read
 it, and read [its README](samples/linesweeper/README.md) for the decisions
 behind it. [Play LineSweeper in a desktop browser](https://mattharding.dev/demo/linesweeper/)
 before building anything: the hosted demo starts on a click and plays with a
-keyboard. Phones are a planned phase, so it shows a phone a poster rather than
-the game until a real iPhone and a real Android phone have played it.
+keyboard. Phones are a planned phase, so a phone gets a poster and a recording
+of the game to tap and watch, not the game itself, until a real iPhone and a
+real Android phone have played it.
 
 `samples/collision`, `samples/audio` and `samples/local_multiplayer` are
 focused examples for the website's guides: a collision arena, a playable
@@ -43,9 +47,9 @@ gallery that shows them running. [Its README](samples/components/README.md)
 says why they are copied, and when one would move into the engine.
 
 ```
-engine/    ~34k lines   the engine: ten modules with a fixed dependency direction
+engine/    ~43k lines   the engine: ten modules with a fixed dependency direction
 samples/                the starter template, LineSweeper, three focused guide examples and components to copy
-tests/     ~16k lines   doctest, run by ctest with three more that sit beside their samples
+tests/     ~28k lines   doctest, run by ctest with three more that sit beside their samples
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 website/                the public site, built with npm from this same checkout
@@ -61,45 +65,22 @@ website/                the public site, built with npm from this same checkout
 
 ## Building
 
-**Windows, and a desktop browser.** The renderer has five backends, selected by
-`LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11, Direct3D 12, OpenGL
-3.3 core, Vulkan, and a null one with no graphics API that records what it was
-asked to draw. The first four are held to the same pixel tests and to the same
-checked-in images of every frame those tests draw, and all of them run on
-Windows, through the same Win32 window. The OpenGL one also reaches the
-browser: the `wasm-debug` and `wasm-release` presets build the engine with
-Emscripten, draw through a WebGL2 context that `gl/` makes in a second context
-translation unit, `web_context.cpp`, and run the headless tests under Node -
-and the pixel tests in headless Chrome, against the same checked-in images,
-with the browser window's input driven there too, and where each sample's
-built page is also loaded and played to its own way out. All six samples
-run there, LineSweeper has also been checked in Firefox, Safari has not yet
-been checked, and [docs/port/web.md](docs/port/web.md) is the plan. Phones
-are a planned phase rather than a platform: the touch controls and the layout
-for a phone held upright have been played only under Chrome's touch emulation, and the
-browser's gamepad path only with a pad a page script fakes, so the hosted demo
-shows a phone a poster until a real iPhone and a real Android phone have
-played it. Each proves something a
-different one could not: OpenGL that a view need not record into a driver,
-Direct3D 12 that the engine can own the fence rather than the driver, Vulkan
-that the seam's resize contract survives an API where the *presentation engine*
-rather than the window says the size changed, and the
-null one that drawing is assertable on a machine with no driver at all.
+**Windows, and a desktop browser.** The renderer has five backends, chosen by
+`LABRADOR_RENDER_BACKEND` at configure time: Direct3D 11 (the default),
+Direct3D 12, OpenGL 3.3 core, Vulkan, and a null one with no graphics API that
+records what it was asked to draw. The first four are held to the same pixel
+tests and the same checked-in images of every frame they draw. Audio is a seam
+of its own: XAudio2, Web Audio in a browser, or a null one that records what it
+was asked to play. The `wasm-debug` and `wasm-release` presets build the engine
+and the samples for a browser with Emscripten, drawing through WebGL2 with the
+OpenGL backend. All six samples run there, LineSweeper has also been checked in
+Firefox, and Safari has not been checked yet. Phones are a planned phase, not a
+platform.
 
-Four of the five exist to prove the seam carries a backend rather than to reach
-a new platform, and OpenGL reaches the browser as well because WebGL2 is GLES
-3.0 with a different context rather than another backend (web.md, D1).
-**Vulkan is the one that is about a platform**, and it is not a platform this
-repository has yet: it is the single API that reaches Android,
-Linux and — through MoltenVK — the Apple ones, which
-[docs/port/android.md](docs/port/android.md) argues at length and which is why
-that is the only item on its list that runs on hardware already here. The
-audio backend is XAudio2 — `audio/xaudio2/`, behind a seam of its own — in a
-browser it is Web Audio, `audio/webaudio/`, and there is a null one beside
-them that records what it was asked to play. The backends on both seams are
-chosen at configure time, and the debug/release
-`-null` pair takes neither platform API: those are the configurations a machine
-with no GPU and no sound card runs end to end.
+Why each backend exists is in [ARCHITECTURE](docs/design/ARCHITECTURE.md),
+*Modules*; where the browser build stands is in
+[docs/port/web.md](docs/port/web.md), and Vulkan's route to other platforms in
+[docs/port/android.md](docs/port/android.md).
 
 ### Prerequisites
 
@@ -141,12 +122,9 @@ ctest --preset x64-debug
 
 Each backend has a Debug and a Release preset: the unqualified pair selects
 Direct3D 11, and `-d3d12`, `-gl`, `-vulkan` and `-null` select the other four.
-The null pair takes no platform API at all — no graphics API and no audio API —
-which is what makes it the configuration a build machine runs end to end. They
-are separate configurations rather than a runtime switch because a backend is
-chosen at compile time (`LABRADOR_RENDER_BACKEND`, `LABRADOR_AUDIO_BACKEND`),
-so asking for one that was not built is a missing symbol at link rather than a
-failure on the first frame.
+The `-null` pair takes no graphics API and no audio API, so it runs end to end
+on a machine with neither. A backend is chosen at compile time, so asking for
+one that was not built is a missing symbol at link.
 
 The presets put the build in `out/build/<preset>/`. The sample lands at
 `out/build/x64-debug/samples/minimal/MinimalSample.exe` and runs from
@@ -262,64 +240,47 @@ the line.
 ctest --preset x64-debug
 ```
 
-Seventeen doctest targets plus the benchmark (one fewer with the null renderer). How many cases and how many
-assertions ran is what `ctest` prints on the day - a pair of numbers this line
-used to carry and got wrong, which is why it no longer does.
+Eighteen entries on the Windows presets: seventeen doctest targets and the
+benchmark. The `-null` presets have seventeen, because the pixel tests need a
+device, and a `wasm-*` build has twenty-seven where Chrome is found, the extra
+ones being pages run in headless Chrome, one for each sample among them. How
+many cases ran is what `ctest` prints.
 
-The benchmark (`bench/`) reports throughput and asserts on **complexity class**
-rather than on wall-clock — a phase that is linear in the object count must
-stay linear when the count quadruples, whatever the machine. An absolute
-threshold would either fail on a slow box or pass on a fast one after a real
-regression. Run `LabradorBench` directly to see the table.
+The benchmark (`bench/`) asserts on **complexity class** rather than on
+wall-clock: a phase that is linear in the object count must stay linear when
+the count quadruples, whatever the machine. Run `LabradorBench` directly to see
+the table.
 
-`LineSweeperFrameBench` is deliberately different and is not a CTest entry. It
-runs a fixed 9,600-particle LineSweeper top-out through the selected renderer at
-1280x720, retains every software-paced frame-start interval and every measured
-frame phase, and writes a JSON result for a declared machine. It does not call
-that interval display scan-out. The one-shot EC2 reference lane under
-[`tools/cloud_performance/`](tools/cloud_performance/) freezes those binaries,
-and the current source bytes into a reviewed bundle, then binds that bundle to
-a separately reviewed run declaration by hash. Its numbers describe that
-declared host; they do not turn a shared build runner into the low tier or
-replace the Radeon configuration in PHILOSOPHY. The first complete run is
-[`docs/performance/2026-09-19-g6f-reference.md`](docs/performance/2026-09-19-g6f-reference.md),
-its per-repetition table is the one to read rather than its aggregate, and
-[`2026-09-19-g6f-ratchet.md`](docs/performance/2026-09-19-g6f-ratchet.md) is
-what its long tails were: the benchmark's own 60 Hz pacer locked behind a
-synchronised present at the same rate, not the GPU — read that one first.
+`LineSweeperFrameBench` measures frame times on real hardware and is not a
+`ctest` entry. Its runs, and how to read them, are in
+[docs/performance/](docs/performance/); read
+[`2026-09-19-g6f-ratchet.md`](docs/performance/2026-09-19-g6f-ratchet.md)
+before any of their tables.
 
 ## Status
 
-The engine is usable and its client runs. Two rounds of full source review have
-been carried out and worked through; `docs/review/` has both, including what
-each was wrong about. Those reviews were written while the paint-shooter was
-still in this tree, so findings filed against `game/` refer to code that now
-lives in ColourWars.
+The engine is usable, and ColourWars, its client, runs on it. Releases are 0.x
+tags, and [Changes](#changes) says what one promises. Open work is indexed in
+[TODO.md](TODO.md), and [docs/product/BACKLOG.md](docs/product/BACKLOG.md) holds
+its order.
 
-Since the split, three targeted reviews rather than a full round.
-`docs/review/backend-equivalence/` holds the render backends against the one
-contract in `engine/render/renderer.h`
-and asks what `RenderPixelTests` structurally cannot, since it only ever runs
-against the backend the preset configured. It was written when there were three
-of them, and the invariant it checked still holds — they agree on every term the
-pixel contract names — with one live exception on the GL preset and a list of
-comments the code has outgrown. `docs/review/d3d12/` and `docs/review/vulkan/`
-then held the fourth and fifth backends to that same contract one at a time, and
-both have been worked through — everything either ranked, down to its minors,
-with only the findings each review left explicitly unverified still open.
+`docs/review/` keeps every review of the engine as it was written: two full
+rounds from before the split, and targeted reviews since, of the render
+backends against one contract and of the whole project. Their findings are
+not updated as they are fixed. Beside them are `rtcd/`, a candidate list
+rather than a review, and `colourwars-reports/`, the engine's decisions on
+the client's reports. Three files are kept current, and say where they
+stand:
+[backend-equivalence-2/STATUS.md](docs/review/backend-equivalence-2/STATUS.md),
+[2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and the table in
+[colourwars-reports/README.md](docs/review/colourwars-reports/README.md).
+Each other folder's README says what it covers and when.
 
-That audit's headline recommendation has since landed: `tests/render/golden/`
-holds an image of every frame the pixel tests draw, and each run compares its
-frame against one, which is the only mechanism that can catch two hand-copied
-backends drifting the same way. It turned the audit's argument from source into
-a measurement — on one machine's GPU the D3D11, D3D12, OpenGL and Vulkan
-backends reproduce all sixty-three frames exactly, split-screen included. Two
-of the four do it on the runner as well: CI has no GPU and Direct3D gets a
-device there anyway, where OpenGL falls back to GDI 1.1 and Vulkan has no
-in-box fallback at all.
-
-Not done, and known: an action-mapping layer over the input devices. That is
-the whole list — every render backend that was planned has landed.
+Out of scope on purpose: online play, 3D, an editor and a scripting layer, for
+good ([PHILOSOPHY](docs/design/PHILOSOPHY.md), *Non-goals*), and an
+action-mapping layer over the input devices, because which actions exist and
+how they are bound is the game's policy rather than the engine's mechanism
+(PHILOSOPHY, *The boundary*, and T1).
 
 ## Contributing
 

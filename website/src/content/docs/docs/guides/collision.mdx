@@ -17,12 +17,12 @@ All the code below comes from the runnable
 ## Run it
 
 Complete the [build prerequisites](/docs/get-started/prerequisites/) first.
-From the repository root in a Visual Studio developer shell:
+From the repository root in the [x64 Native Tools Command Prompt](/docs/get-started/prerequisites/):
 
-```powershell
+```bat
 cmake --preset x64-debug
 cmake --build --preset x64-debug --target CollisionSample CollisionSampleTests
-.\out\build\x64-debug\samples\collision\CollisionSample.exe
+out\build\x64-debug\samples\collision\CollisionSample.exe
 ```
 
 Use **WASD, arrows or the left stick** to move, **R or gamepad Y** to reset,
@@ -118,9 +118,9 @@ pointer `Scene::add` returned for it stops being valid when that tick ends.
 
 ## Verify and adapt it
 
-```powershell
-ctest --preset x64-debug -R '^CollisionSampleTests$'
-.\out\build\x64-debug\samples\collision\CollisionSample.exe --smoke-test
+```bat
+ctest --preset x64-debug -R "^CollisionSampleTests$"
+out\build\x64-debug\samples\collision\CollisionSample.exe --smoke-test
 ```
 
 The tests run the sample's own arena without creating a window or device. They

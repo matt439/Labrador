@@ -16,9 +16,9 @@ apart to see each camera follow its own player.
 ## Run it
 
 With the [build prerequisites](/docs/get-started/prerequisites/) installed, run these commands
-from the repository root in a Visual Studio developer shell:
+from the repository root in the [x64 Native Tools Command Prompt](/docs/get-started/prerequisites/):
 
-```powershell
+```bat
 cmake --preset x64-debug
 cmake --build --preset x64-debug --target LocalMultiplayerSample LocalMultiplayerTests
 ctest --preset x64-debug -R LocalMultiplayerTests --output-on-failure
@@ -119,7 +119,7 @@ backend and compares serial and parallel output, including both players in both 
 
 For a finite check of the selected renderer and the sample's actual state:
 
-```powershell
+```bat
 out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe --smoke-test
 ```
 

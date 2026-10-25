@@ -28,6 +28,10 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-25.** The hint in `states/hello_state.cpp` says "B or Escape asks
+  to quit" rather than "quits", and `web/shell.html`'s status line says Escape
+  asks and Enter says yes, because quitting pushes `ConfirmState` first. A
+  copy that kept the confirmation wants the same words.
 - **2026-10-24.** No code here changed, but the engine's table now holds a
   one-texel white texture under `white_texture_name`
   (`engine/render/resource_factory.h`), so a copy can draw a solid rectangle -
@@ -108,7 +112,7 @@ and audio samples load the atlas from here, and LineSweeper carries a copy.
 
 With `JetBrainsMono-Bold.ttf` installed, from this folder:
 
-```powershell
+```bat
 MakeSpriteFont "JetBrains Mono" content\fonts\jetbrains_mono_bold_16.spritefont /FontSize:16 /FontStyle:Bold
 ```
 
@@ -126,7 +130,7 @@ Install a font you may redistribute in this form and build an atlas from it
 with [MakeSpriteFont](https://github.com/microsoft/DirectXTK/wiki/MakeSpriteFont),
 from this folder:
 
-```powershell
+```bat
 MakeSpriteFont "Your Font" content\fonts\your_font_16.spritefont /FontSize:16
 ```
 

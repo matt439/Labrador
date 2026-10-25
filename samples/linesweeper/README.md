@@ -12,9 +12,9 @@ commitment, it says so and names the document it belongs in.
 
 [Play LineSweeper in a desktop browser](https://mattharding.dev/demo/linesweeper/):
 the hosted demo runs the module the `linesweeper_web_dist` target bundles,
-starts on a click and plays with a keyboard. Phones are a planned phase, so it shows a phone a
-poster rather than the game until a real iPhone and a real Android phone have
-played it.
+starts on a click and plays with a keyboard. Phones are a planned phase, so a
+phone gets a poster and a recording of the game to tap and watch, not the game
+itself, until a real iPhone and a real Android phone have played it.
 
 **Status: playable, and both halves are here.** All three layers exist.
 `rules/` is the whole game — the
@@ -574,9 +574,9 @@ same match at the website video's pace: 2,095 frames, the shatter on frame
 1973. Both were drawn by the x64-release D3D11 build on an NVIDIA GeForce RTX
 5080, from the tree of the commit that added this paragraph.
 
-```powershell
+```bat
 out\build\x64-release\tools\linesweeper_capture\LineSweeperCapture.exe out\flash tools\linesweeper_capture\flash.txt --sequence
-node tools/flash_check/flash_check.mjs out/flash/frames
+node tools\flash_check\flash_check.mjs out\flash\frames
 ```
 
 The analysis applies WCAG's relative-luminance formula to every pixel of
@@ -726,7 +726,9 @@ landscape one with touch emulated. **No real phone has played it**, and the
   run.
 - **Whether the layer rule gets a build check.** It is now checkable and
   unchecked, which is the worst of the three states, and `presentation/`
-  has five files in it rather than three.
+  has grown well past the three files it held when the rule was written: every
+  view, layout and control the sample has added since is in it, so each new
+  file there widens what review alone is holding.
   `cmake/check_engine_includes.cmake` is the model and the rule is two greps:
   nothing in `rules/` may include `engine/`, and nothing in `presentation/` may
   include `rules/tick.h`. Both hold today by review. The argument against

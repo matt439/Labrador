@@ -38,7 +38,7 @@ the engine. The commands below were checked with the `may2026` release of each.
 
 **A texture from a PNG**, run from your game's folder:
 
-```powershell
+```bat
 texconv -f R8G8B8A8_UNORM -m 1 -pmalpha -y -o content\textures hero.png
 ```
 
@@ -50,7 +50,7 @@ and the engine refuses that header at load. `-m 1` writes one level rather than 
 
 **A font from an installed font:**
 
-```powershell
+```bat
 MakeSpriteFont "JetBrains Mono" content\fonts\jetbrains_mono_bold_16.spritefont /FontSize:16 /FontStyle:Bold
 ```
 

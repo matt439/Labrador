@@ -5,14 +5,14 @@ rectangle. It exercises the engine's `Scene` collision sweep and the game's
 response in `Body::on_contact`, with no game-specific collision code in the
 engine.
 
-From the repository root, in a Visual Studio developer shell with `VCPKG_ROOT`
-and the Windows SDK shader compiler available:
+From the repository root, in the x64 Native Tools Command Prompt, which has
+`VCPKG_ROOT` and the Windows SDK shader compiler available:
 
-```powershell
+```bat
 cmake --preset x64-debug
 cmake --build --preset x64-debug --target CollisionSample CollisionSampleTests
 .\out\build\x64-debug\samples\collision\CollisionSample.exe
-ctest --preset x64-debug -R '^CollisionSampleTests$'
+ctest --preset x64-debug -R "^CollisionSampleTests$"
 ```
 
 The build copies its manifest and the minimal sample's font beside this

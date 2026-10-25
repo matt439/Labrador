@@ -647,7 +647,9 @@ browser build takes (`-fwasm-exceptions`, a 1 MiB stack, a growing heap,
 WebGL2 only). It is a second link of the same objects as the development
 page's `LineSweeperSample.html`, which stays as it is, so the sample's page
 test still loads what the module runs. **A visitor fetches 153 KB under
-Brotli to play**: the loader and the module, after the click. The estimate
+Brotli to play**: the loader and the module, after the click. That is the
+bundle's own Brotli, at quality 11; mattharding.dev's Cloudflare compresses the
+files itself and sends about 183 KB of them, as §9 records. The estimate
 this section used to carry, from `x64-release-gl`'s 297 KB executable, was
 0.6-1.2 MB for the module, and it came in under that.
 
@@ -1497,7 +1499,8 @@ under the old canvas, so the second click reached the dead game rather than
 the button. With touch emulated, the page showed the keyboard line and
 fetched no module. At `wasm-release` at `c369e8b` the module is 403,759 bytes
 and the loader 118,982, 125,384 and 27,283 under Brotli at quality 11 - 153 KB
-for a visitor to play. The module links the Web Audio backend, the touch device and
+for a visitor to play at that quality, which the live host does not use, as
+below. The module links the Web Audio backend, the touch device and
 the CPU block decoder whether or not LineSweeper calls them.
 
 **The live page was checked on 2026-10-13**, deployed from the site's `main`
@@ -1508,7 +1511,8 @@ under `m/cd7d8cfd9043/`, `no-cache` on the page, and `Content-Encoding: br` on
 both, and the four bundle files the site serves - all but the example
 `index.html` - had the size and SHA-256 its `BUILD.json` records: a 403,759-byte module and a 118,982-byte loader,
 which Cloudflare's own Brotli sends as about 150 KB and 32 KB, varying by a
-few hundred bytes from one response to the next. In headless
+few hundred bytes from one response to the next: about 183 KB for a visitor to
+play, rather than the bundle's 153 KB, and the same again on 2026-10-25. In headless
 Chrome it played, quit and played again with a clean console, and a match
 played to a top-out drew no stack behind the banner, only dim sparks; with
 `--disable-webgl2` a click on Play reached `onError` and the page showed the

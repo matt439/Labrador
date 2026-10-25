@@ -6,13 +6,13 @@ pause, resume, immediate stop, volume, pitch and stereo pan. The original PCM
 content and its ready-to-play XWB container are checked in; a fresh clone needs
 no audio authoring tools.
 
-Build and run from the repository root in the normal developer shell:
+Build and run from the repository root in the x64 Native Tools Command Prompt:
 
-```powershell
+```bat
 cmake --preset x64-debug
 cmake --build --preset x64-debug --target AudioSample AudioSampleTests
-ctest --preset x64-debug -R '^AudioSampleTests$' --output-on-failure
-& ./out/build/x64-debug/samples/audio/AudioSample.exe
+ctest --preset x64-debug -R "^AudioSampleTests$" --output-on-failure
+out\build\x64-debug\samples\audio\AudioSample.exe
 ```
 
 | Control | Action |
@@ -40,10 +40,9 @@ null audio. It is not evidence that speakers produced sound.
 
 ## Finite playback check
 
-```powershell
-$audio = Start-Process ./out/build/x64-debug/samples/audio/AudioSample.exe `
-    -ArgumentList '--smoke-test' -WindowStyle Hidden -Wait -PassThru
-if ($audio.ExitCode -ne 0) { throw 'Audio sample smoke failed' }
+```bat
+start "" /wait out\build\x64-debug\samples\audio\AudioSample.exe --smoke-test
+if %errorlevel% neq 0 echo Audio sample smoke failed
 ```
 
 This check needs no graphics device or window. It loads the packaged manifest's
@@ -62,11 +61,11 @@ engine's Web Audio backend. `main_web.cpp` is the browser's entry point and
 embedded in the module at the paths the Windows build copies them to. In a
 shell where vcvars and `emsdk_env.bat` have both run:
 
-```powershell
+```bat
 cmake --preset wasm-debug
 cmake --build --preset wasm-debug --target AudioSample AudioSampleTests
-ctest --preset wasm-debug -R '^AudioSampleTests$' --output-on-failure
-python -m http.server --directory ./out/build/wasm-debug/samples/audio
+ctest --preset wasm-debug -R "^AudioSampleTests$" --output-on-failure
+python -m http.server --directory out\build\wasm-debug\samples\audio
 ```
 
 Then open `AudioSample.html` from that server, because a browser will not
@@ -107,12 +106,12 @@ tool version `2026.5.8.1`, whose x64 `XWBTool.exe` SHA-256 is
 
 To regenerate with that tool on `PATH`, from the repository root:
 
-```powershell
-python samples/audio/source/generate_waves.py
-xwbtool -f -nc -y -o samples/audio/content/sounds/tones.xwb `
-    samples/audio/source/ping.wav samples/audio/source/chime.wav `
-    samples/audio/source/drone.wav
-python samples/audio/source/verify_content.py
+```bat
+python samples\audio\source\generate_waves.py
+xwbtool -f -nc -y -o samples\audio\content\sounds\tones.xwb ^
+    samples\audio\source\ping.wav samples\audio\source\chime.wav ^
+    samples\audio\source\drone.wav
+python samples\audio\source\verify_content.py
 ```
 
 `-f` retains each filename stem in the bank's name table: Labrador resolves those
