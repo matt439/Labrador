@@ -203,6 +203,16 @@ the colour is simply added, so overlapping draws brighten towards white. That is
 
 <SourceFile path="samples/linesweeper/presentation/palette.h" from="constexpr labrador::Colour glowing(" to="}" />
 
+**A texture must arrive premultiplied, because the engine does no premultiplication at load.**
+A `.dds` file's texels are drawn as they are stored, so a soft-edged sprite is premultiplied when
+it is converted, which is what texconv's `-pmalpha` does
+([Making textures and fonts](#making-textures-and-fonts), above). A texture converted without it
+keeps the full colour in its half-transparent edge texels and adds that colour to whatever is
+behind, which shows as a light fringe or halo round the sprite, and a fully transparent area whose
+colour is not black shows as a coloured box. Premultiplying a texture twice, by passing `-pmalpha`
+to a source that was already premultiplied, darkens its edges instead. MakeSpriteFont's atlases
+are premultiplied by the tool.
+
 ## Filtering
 
 `DrawList::set_filter` chooses between smooth (linear) and blocky (point) sampling when a texture
