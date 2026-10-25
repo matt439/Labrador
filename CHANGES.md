@@ -70,7 +70,17 @@ browser build to break, and a game on a tag can have one.
 not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
-## Unreleased
+## v0.2.0 (2026-10-25)
+
+Of the commits in
+
+```
+git log --format=%h v0.1.0..v0.2.0 -- 'engine/*.h' 'engine/*.cpp' engine/CMakeLists.txt cmake/settings.cmake vcpkg.json
+```
+
+every one that has no entry below says `not consumer-visible` in its message
+except `0c15f34`, which changes a comment in `engine/CMakeLists.txt` and
+nothing it builds.
 
 #### Add a browser build to the Get Started project
 
