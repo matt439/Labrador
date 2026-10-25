@@ -1,6 +1,6 @@
 ---
 title: Guides
-description: Task-by-task guides to drawing, input, menus, content, collision, audio, local multiplayer, testing and CI, each backed by runnable code.
+description: Task-by-task guides to drawing, input, menus, content, collision, audio, local multiplayer, testing, CI and the browser build, each backed by runnable code.
 sidebar:
   order: 0
   label: Introduction
@@ -57,5 +57,15 @@ the guide says so. They assume the model described in [Concepts](/docs/concepts/
 		title="Check your game in CI"
 		description="A GitHub Actions workflow to copy, which builds your project and runs its tests on every push."
 		href="/docs/guides/ci/"
+	/>
+	<LinkCard
+		title="Build for the browser"
+		description="Install the pinned Emscripten, add a wasm preset to your project, and serve your game as a page."
+		href="/docs/guides/browser/"
+	/>
+	<LinkCard
+		title="Put your game on a web host"
+		description="The files to upload and what the server must send: the wasm MIME type, a CSP, compression and caching."
+		href="/docs/guides/web-host/"
 	/>
 </CardGrid>

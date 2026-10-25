@@ -31,12 +31,22 @@ When you have finished, the project looks like this:
     - labrador/ the engine, as a submodule
   - game/
     - CMakeLists.txt
-    - main.cpp
+    - README.md the minimal sample's, yours to rewrite or delete
+    - main.cpp the Windows entry point
+    - main_web.cpp the browser entry point, built only by a browser preset
     - content/
     - rules/ the game's rules, which its tests run without a window
     - states/
     - tests/
+    - web/
+      - shell.html the browser build's page
 </FileTree>
+
+`main_web.cpp` and `web/shell.html` are the browser build. The Windows build this page sets up
+does not compile them, and the `wasm` presets in step 6 do. Keep them if you might want your game
+in a browser, which [Build for the browser](/docs/guides/browser/) adds to this project; if you
+never will, delete both, the `if(EMSCRIPTEN)` block in `game/CMakeLists.txt` and every `wasm`
+preset in `CMakePresets.json` with them.
 
 <Steps>
 
@@ -78,13 +88,17 @@ When you have finished, the project looks like this:
 
    <IncludeChanges />
 
+   `main_web.cpp` is only compiled by a browser build, so a mistake in its line shows only
+   there. Change it with the rest unless you have deleted the file.
+
 5. **Replace `game\CMakeLists.txt`** with this:
 
    <Code code={gameCMake} lang="cmake" title="game/CMakeLists.txt" />
 
-   It is the Windows half of the sample's build file, with its names changed: the program is
-   `MyGame`, the rules library `MyGameRules`, the tests `MyGameTests` and `MyGameSmokeTests`, and
-   the content target `game_content`. One line is new. `target_include_directories` makes the
+   It is the sample's build file with its names changed: the program is `MyGame`, the rules
+   library `MyGameRules`, the tests `MyGameTests` and `MyGameSmokeTests`, and the content target
+   `game_content`. Its `if(EMSCRIPTEN)` block is the browser build, which a Windows build skips;
+   [Build for the browser](/docs/guides/browser/) explains it. One line is new. `target_include_directories` makes the
    folder above `game` the place your includes start from, for the rules and for everything that
    links them, which the sample did not need because Labrador's root already was.
 
@@ -113,6 +127,10 @@ When you have finished, the project looks like this:
    tested with.
 
    <Code code={presets} lang="json" title="CMakePresets.json" />
+
+   The `x64` presets are the Windows build this page uses. The `wasm` presets are the browser
+   build, which needs Emscripten installed and `EMSDK` set, as
+   [Build for the browser](/docs/guides/browser/) describes; until then, leave them unused.
 
    <Code code={gitignore} lang="text" title=".gitignore" />
 

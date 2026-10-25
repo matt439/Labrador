@@ -409,8 +409,10 @@ in the commit that creates it.
   from `CMAKE_SOURCE_DIR` inside `engine/` that resolves somewhere else in a
   consumer, or a package the engine starts to need, passes every standalone
   job and fails that one; a swap another include root happens to cover is not
-  caught, and the job's comment names the one there is. Its README says how to
-  run the same thing locally.
+  caught, and the job's comment names the one there is. CI's `wasm` job
+  assembles the same project, builds the `wasm-release` preset the website's
+  *Build for the browser* guide adds to it and loads its page in headless
+  Chrome. Its README says how to run both locally.
 - **Adding a source file without listing it.** Sources are enumerated
   explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
   folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
