@@ -72,6 +72,26 @@ its heading here.
 
 ## Unreleased
 
+#### Stop a Debug audio device breaking where there is no audio endpoint
+
+*Stop a Debug audio device breaking where there is no audio endpoint*
+(2026-10-25). Silent behaviour change, Debug builds of the `xaudio2` backend
+only.
+
+- **XAudio2 errors are traced in Debug and no longer break into the debugger.**
+  - Old: a Debug `AudioDevice` passed DirectXTK's `AudioEngine_Debug`, which
+    sets XAudio2's break mask to errors. On a machine with no audio endpoint,
+    such as a CI runner or a PC with nothing plugged in, constructing the
+    device hit `int 3` twice, and with no debugger attached the process exited
+    with `STATUS_BREAKPOINT` before the engine could fall back to silence.
+    Release, which never passed the flag, went silent and carried on.
+  - New: Debug starts silent there, as Release does. Once an endpoint is
+    found, XAudio2 errors and warnings still go to the debugger output, with
+    the function name. A debugger no longer stops on them.
+  - A game that wanted that stop can set a break mask itself; nothing in the
+    engine relied on it. A game that stepped over the break to run headless,
+    as ColourWars' acceptance probe did, can delete that handler.
+
 #### Keep a scene's collision objects in the order they were added
 
 *Keep a scene's collision objects in the order they were added* (2026-10-24).

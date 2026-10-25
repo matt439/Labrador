@@ -88,11 +88,24 @@ namespace labrador
 
 	AudioDevice::AudioDevice() : impl_(std::make_unique<Impl>())
 	{
-		AUDIO_ENGINE_FLAGS flags = AudioEngine_Default;
+		// Debug builds trace XAudio2's errors and warnings and never break on
+		// them. DirectXTK's AudioEngine_Debug would also set an error break
+		// mask before the mastering voice exists, and a machine with no audio
+		// endpoint - a CI runner, a PC with nothing plugged in - then hits
+		// int 3 in the constructor, which with no debugger attached ends the
+		// process before the engine can fall back to silence. So the trace is
+		// configured here, after the engine has found an endpoint or gone
+		// silent; a silent engine has no XAudio2 interface to configure.
+		this->impl_->engine = std::make_unique<AudioEngine>(AudioEngine_Default);
 #ifdef _DEBUG
-		flags |= AudioEngine_Debug;
+		if (IXAudio2* const xaudio2 = this->impl_->engine->GetInterface())
+		{
+			XAUDIO2_DEBUG_CONFIGURATION debug = {};
+			debug.TraceMask = XAUDIO2_LOG_ERRORS | XAUDIO2_LOG_WARNINGS;
+			debug.LogFunctionName = TRUE;
+			xaudio2->SetDebugConfiguration(&debug, nullptr);
+		}
 #endif
-		this->impl_->engine = std::make_unique<AudioEngine>(flags);
 	}
 
 	AudioDevice::~AudioDevice() = default;
