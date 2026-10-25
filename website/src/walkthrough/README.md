@@ -38,8 +38,12 @@ ctest lists exactly the game's two tests, `MyGameTests` and
 the `x64-release` preset, installs it into an empty folder, checks that the
 folder holds exactly what `release-files.txt` lists, and starts the
 installed game with `--smoke-test` from there. It does not
-use Git or clone the public repository, and nothing runs `ci.yml`: its steps
-are the job's own, which is what the guide says. CI's `wasm` job assembles the
+use Git or clone the public repository, and does not run `ci.yml`: its steps
+are the job's own, which is what the guide says. `ci.yml` itself ran
+unchanged on 26 October 2026 in
+[matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), the
+walkthrough project at `v0.2.0`, twice and green, the second run restoring the
+first's vcpkg cache; *Check your game in CI* links both runs. CI's `wasm` job assembles the
 same project and builds its `wasm-release` preset with Emscripten, runs
 `MyGameTests` under Node, and loads `MyGame.html` in headless Chrome with
 `tests/render/web/run_page.mjs`, which presses Escape and Enter and passes when
