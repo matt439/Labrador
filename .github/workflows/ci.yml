@@ -537,3 +537,33 @@ jobs:
         run: |
           call "%VCVARS%"
           ctest --preset x64-debug
+
+      # THE RELEASE FOLDER, as Ship a Windows release makes it: the x64-release
+      # build installed into an empty folder, which must hold exactly what
+      # website/src/walkthrough/release-files.txt lists - the page shows the
+      # same file - and the game started from there. The runner has the Visual
+      # C++ redistributable installed, so a start here does not show the copied
+      # runtime is complete; the loader takes the folder's own copies first,
+      # and the clean-machine check is tools/consumer_check/sandbox.py's.
+      - name: Configure the release
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          cmake --preset x64-release
+
+      - name: Build the release
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          cmake --build --preset x64-release
+
+      - name: Install the release folder and check what is in it
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          cmake --install out\build\x64-release --prefix C:\dev\mygame-release || exit /b 1
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\check_release.py" C:\dev\mygame-release
+
+      - name: Start the game from the release folder
+        working-directory: C:\
+        run: C:\dev\mygame-release\MyGame.exe --smoke-test

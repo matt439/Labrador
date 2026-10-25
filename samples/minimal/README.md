@@ -36,6 +36,17 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-25.** A release folder. `CMakeLists.txt` now has install rules,
+  so `cmake --install out/build/x64-release --prefix <folder>` stages what a
+  player gets: the program, `DirectXTK.dll` and `xaudio2_9redist.dll`, the
+  MSVC runtime copied from Visual Studio's redist folder, `manifest.json` and
+  `fonts/`, and a `notices/` folder with the licences of what the program
+  carries and the engine's `NOTICE`. Only CMake's list of the runtime's DLLs
+  is copied; a copy that uses `<threads.h>` or C++/CX adds
+  `vcruntime140_threads.dll` or `vccorlib140.dll` itself. Installing a debug build stops, because its runtime may not be
+  redistributed. A copy wants the block below `add_dependencies`, with its
+  own target name, and an `install(DIRECTORY ...)` line for each content
+  folder it adds; *Ship a Windows release* on the website is the guide.
 - **2026-10-25.** No code here changed, but a copy's browser build needs less:
   under Emscripten the engine now chooses the `gl` renderer by itself and
   refuses `d3d11`, `d3d12` and `vulkan` at configure, so a project's `wasm`

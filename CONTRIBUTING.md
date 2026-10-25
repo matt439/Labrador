@@ -53,6 +53,10 @@ this project, and no answer time is promised for any issue.
    engine behaviour that folder depends on, in a way a copy of it would want,
    adds a line to the change list in
    [samples/minimal/README.md](samples/minimal/README.md) in the same commit.
+   A commit that changes a dependency in `vcpkg.json` changes the notices list
+   a game's release carries,
+   [website/src/components/ReleaseNotices.astro](website/src/components/ReleaseNotices.astro),
+   in the same commit; the website build fails on a package it does not cover.
 4. **Open a pull request** against `master`.
 5. **Wait for CI to go green.** Every configuration CI builds is a required
    check, and a change is not known to be clean until all of them pass: a

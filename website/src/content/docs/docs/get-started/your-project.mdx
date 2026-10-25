@@ -98,7 +98,9 @@ preset in `CMakePresets.json` with them.
    It is the sample's build file with its names changed: the program is `MyGame`, the rules
    library `MyGameRules`, the tests `MyGameTests` and `MyGameSmokeTests`, and the content target
    `game_content`. Its `if(EMSCRIPTEN)` block is the browser build, which a Windows build skips;
-   [Build for the browser](/docs/guides/browser/) explains it. One line is new. `target_include_directories` makes the
+   [Build for the browser](/docs/guides/browser/) explains it. The install rules at the end of the
+   Windows half make the folder you give players, as [Ship a Windows release](/docs/guides/windows-release/)
+   explains. One line is new. `target_include_directories` makes the
    folder above `game` the place your includes start from, for the rules and for everything that
    links them, which the sample did not need because Labrador's root already was.
 
@@ -128,7 +130,10 @@ preset in `CMakePresets.json` with them.
 
    <Code code={presets} lang="json" title="CMakePresets.json" />
 
-   The `x64` presets are the Windows build this page uses. The `wasm` presets are the browser
+   The `x64` presets are the Windows build this page uses. Neither sets `LABRADOR_RENDER_BACKEND`,
+   so both build the engine's default renderer, Direct3D 11, which is the one to ship;
+   [Which renderer to ship](/docs/guides/windows-release/#which-renderer-to-ship) says why, and how a
+   preset of yours chooses another. The `wasm` presets are the browser
    build, which needs Emscripten installed and `EMSDK` set, as
    [Build for the browser](/docs/guides/browser/) describes; until then, leave them unused.
 

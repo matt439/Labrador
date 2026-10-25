@@ -1,0 +1,37 @@
+---
+// The files a release folder of the Get Started project holds, read from
+// website/src/walkthrough/release-files.txt: a path, then what it is.
+// tools/consumer_check/check_release.py holds an installed folder to the same
+// file, so the page and the check cannot list different folders.
+import { readRepositoryFile } from '../lib/repository';
+
+const LIST = 'website/src/walkthrough/release-files.txt';
+
+const files = readRepositoryFile(LIST)
+	.split('\n')
+	.map((line) => line.trim())
+	.filter((line) => line !== '' && !line.startsWith('#'))
+	.map((line) => {
+		const match = /^(\S+)\s+(.+)$/.exec(line);
+		if (!match) throw new Error(`${LIST}: '${line}' is a path with nothing saying what it is.`);
+		return { path: match[1], what: match[2] };
+	});
+
+if (files.length === 0) throw new Error(`${LIST} lists no files.`);
+---
+
+<table>
+	<thead>
+		<tr><th>File</th><th>What it is</th></tr>
+	</thead>
+	<tbody>
+		{
+			files.map((file) => (
+				<tr>
+					<td><code>{file.path}</code></td>
+					<td>{file.what}</td>
+				</tr>
+			))
+		}
+	</tbody>
+</table>
