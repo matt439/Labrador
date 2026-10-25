@@ -1,0 +1,163 @@
+---
+title: Move your engine pin
+description: The commands and the order of checks for moving the Labrador commit your project builds against, the compiler it needs, and how to run the engine's own tests at your pin.
+sidebar:
+  order: 13
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Your project pins Labrador: `external/labrador` is a submodule, and your repository records the
+one commit of it you build against. Nothing moves that pin for you. To move the pin to a newer
+release, follow the steps below in order. Each one checks something before the next relies on it.
+
+The commands are for the x64 Native Tools Command Prompt in your project's folder. The examples
+move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
+
+<Steps>
+
+1. **Fetch the engine's tags and choose one.**
+
+   ```bat
+   git -C external/labrador fetch --tags
+   git -C external/labrador describe --tags
+   git -C external/labrador tag --list "v*" --sort=-v:refname
+   ```
+
+   `describe` names your current pin, and `tag --list` lists the releases newest first. Move to
+   a release tag rather than to `master`: a tag's notes and its CHANGES.md heading say what it
+   holds, and `master` can change under you.
+
+2. **Read CHANGES.md between the two.** Every change a game can see between two releases is an
+   entry there, under the newer release's heading, with what to do about it where there is
+   something to do. Read every heading above your current tag's:
+
+   ```bat
+   git -C external/labrador show v0.2.0:CHANGES.md
+   ```
+
+   or the same file on GitHub at the new tag, for example
+   [CHANGES.md at v0.2.0](https://github.com/matt439/Labrador/blob/v0.2.0/CHANGES.md). Before
+   1.0 a release can break your code, and when it does, the entry says how: the old spelling,
+   the new one, and the change to the samples that made the same move.
+
+3. **Compare the engine's manifest with yours.**
+
+   ```bat
+   git -C external/labrador diff v0.1.0 v0.2.0 -- vcpkg.json
+   ```
+
+   vcpkg reads only your `vcpkg.json`, so a dependency the engine adds, or a `builtin-baseline`
+   it moves, reaches your build only when you copy it across. Compare your `dependencies` and
+   your `builtin-baseline` with `external/labrador/vcpkg.json` at the new tag: the dependencies
+   are the engine's, without `lodepng`, which only the engine's own tests use, and with
+   `doctest` if your tests use it, and the baseline is the engine's, exactly. Until step 5 the
+   file in `external/labrador` is still your old pin's, so read the new one with
+   `git -C external/labrador show v0.2.0:vcpkg.json`. The `vcpkg.json`
+   [Start your own project](/docs/get-started/your-project/) shows is derived from `master`,
+   not from your pin, so compare with the engine's file at the tag, not with that page.
+   A diff that shows only `version-string` changing has nothing for you to copy.
+
+4. **See what changed in the template.** Your `game` folder began as a copy of
+   `samples/minimal`, and a copy is yours: nothing updates it. The sample's README keeps a list,
+   newest first, of the changes to it that a copy taken before them would want, and the files
+   Start your own project gives you are in the engine's `website/src/walkthrough/`:
+
+   ```bat
+   git -C external/labrador diff v0.1.0 v0.2.0 -- samples/minimal/README.md
+   git -C external/labrador diff --stat v0.1.0 v0.2.0 -- samples/minimal website/src/walkthrough
+   ```
+
+   The first shows the entries the list gained between your tag and the new one, which are the
+   ones your copy has not seen. Each names the files it changes; to see one file's change, give
+   its path, for example
+   `git -C external/labrador diff v0.1.0 v0.2.0 -- website/src/walkthrough/CMakePresets.json`.
+   Take the entries you want and leave the rest. None of them is needed to build against the
+   new tag unless CHANGES.md says so.
+
+5. **Check out the new tag.**
+
+   ```bat
+   git -C external/labrador checkout v0.2.0
+   ```
+
+6. **Configure, build and run your tests.**
+
+   ```bat
+   cmake --preset x64-debug
+   cmake --build --preset x64-debug
+   ctest --preset x64-debug
+   ```
+
+   A project started before v0.2.0 has no test presets and no tests, so `ctest --preset` stops
+   with `No such test preset`; run `ctest --test-dir outuildd-debug` instead, or take the
+   template list's *Tests, from the start* entry, which adds both.
+
+   Configure installs whatever a changed baseline or a new dependency needs. The build applies
+   the engine's compiler settings to your code as well, `/W4 /WX` among them, so a
+   warning a newer engine header causes in your code stops it, as any other warning would; fix
+   the code, and keep the settings, which come from `labrador_settings` and are the same walls
+   the engine's own code builds behind. Build `x64-release` too if you ship it.
+
+7. **Commit the pin**, with whatever you changed to match it:
+
+   ```bat
+   git add external/labrador
+   git commit -m "Move Labrador to v0.2.0"
+   ```
+
+   Add `vcpkg.json` and any other file you changed in steps 3, 4 and 6. Someone who already has your project
+   takes the new pin with `git pull` then `git submodule update`.
+
+</Steps>
+
+## The reference at your pin
+
+This site documents Labrador's `master`, and its [API reference](/docs/reference/) is generated
+from the headers at the revision named at the foot of each page. When your pin is older, the
+headers under `external/labrador/engine` are the reference for the engine you build. Their
+comments are the same text the reference publishes.
+
+## The compiler
+
+The newest compiler known to build Labrador is MSVC 19.51 (Visual Studio 2026, toolset 14.51):
+19.51.36260 on GitHub's `windows-latest` runner and 19.51.36256 on the owner's machine, on
+2026-10-25. Labrador's CI does not pin a compiler. It builds on whatever `windows-latest` has,
+so a new MSVC reaches the engine's checks when the runner image takes it. A newer compiler can
+warn about something an older one did not, and under warnings as errors that stops the build.
+If it is the engine's own code that stops, report it in
+[Labrador's issues](https://github.com/matt439/Labrador/issues), and stay on your current compiler until a
+release fixes it.
+
+## Run the engine's own tests at your pin
+
+Your build does not build Labrador's tests: they are left out when the engine is not the
+top-level project. To check that the engine at your pin passes its own tests on your machine,
+configure the submodule as a project of its own:
+
+```bat
+cd external\labrador
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+ctest --preset x64-debug
+cd ..\..
+```
+
+It builds into `external\labrador\out\build\x64-debug`, apart from your project's `out` folder,
+and reads the engine's own `vcpkg.json` there, so it does not touch your build. The engine
+ignores its `out` folder, so the submodule stays clean in `git status`. It builds every test,
+benchmark and sample, which takes several minutes and needs the same prompt and `fxc` your
+build does. Every entry should pass.
+
+<Aside title="Keep the folder short">
+The engine's tests build far below `external\labrador\out`, so a long project path can pass the
+260 characters the compiler allows there before it does in your own build.
+[Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder) says why.
+</Aside>
+
+## What has been checked
+
+The procedure was followed once, as written, on 2026-10-26: a project made by Start your own
+project at `v0.1.0` was moved to `v0.2.0`. Its build had no warnings, and the engine's own tests
+at the pin passed all twenty entries with the project's `git status` and the submodule's both
+clean afterwards. That walk found the missing test presets step 6 now mentions.
