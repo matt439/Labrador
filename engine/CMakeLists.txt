@@ -182,9 +182,10 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
     )
     target_link_libraries(LabradorEngine PUBLIC d3d12 dxgi dxguid)
 
-    # The same source as the backend above, at the lowest profile this API has.
-    # Shader model 5 is where D3D12 starts - there is no 4_0_level_9_1 to ask
-    # for - and 5_1 is the one fxc emits for it. The generated headers land
+    # The same source as the backend above, with 5_1 selected for D3D12.
+    # This is a selected shader profile, not an API minimum; the creation-only
+    # probe in docs/review/d3d12/STATUS.md records what was measured.
+    # The generated headers land
     # under engine/render/d3d12/, so the two backends never share a byte array
     # even though they share every line that produced it.
     compile_hlsl(LabradorEngine

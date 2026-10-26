@@ -531,9 +531,9 @@ namespace labrador
     // display change invalidates it - and telling a swap chain that supports
     // being told.
     //
-    // Still called on three paths, and the first one does the work: swap chain
-    // creation, a resize that turns out not to be one, and a Present that finds
-    // the factory stale.
+    // Called after swap-chain creation or resize, and by Present when the
+    // factory is stale. WindowSizeChanged also has a same-size refresh, but Renderer's
+    // size guard returns before that path reaches this method.
     void DeviceResources::UpdateColorSpace()
     {
         if (!m_dxgiFactory)
