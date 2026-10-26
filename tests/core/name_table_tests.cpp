@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "engine/core/name_table.h"
+#include <stdexcept>
 #include <string>
 using namespace labrador;
 
@@ -11,12 +12,55 @@ namespace
 		explicit Element(int id) : id(id) {}
 		int id = 0;
 	};
+
+	struct ThrowingElement
+	{
+		explicit ThrowingElement(int id, bool throw_on_move = false) :
+			id(id), throw_on_move(throw_on_move) {}
+		ThrowingElement(const ThrowingElement&) = default;
+		ThrowingElement& operator=(const ThrowingElement&) = default;
+		ThrowingElement(ThrowingElement&& other) :
+			id(other.id), throw_on_move(other.throw_on_move)
+		{
+			if (this->throw_on_move)
+			{
+				throw std::runtime_error("element move refused");
+			}
+		}
+		ThrowingElement& operator=(ThrowingElement&&) = default;
+
+		int id;
+		bool throw_on_move;
+	};
 }
 
 namespace NameTableTests
 {
 	TEST_SUITE("NameTableTests")
 	{
+		TEST_CASE("a failed new element leaves its name absent and retryable")
+		{
+			NameTable<ThrowingElement> table("element");
+			table.add("kept", ThrowingElement(1));
+			const Handle<ThrowingElement> kept = table.resolve("kept");
+
+			CHECK_THROWS_AS(table.add("retry", ThrowingElement(2, true)),
+				std::runtime_error);
+			CHECK_FALSE(table.contains("retry"));
+			CHECK_THROWS_AS(table.resolve("retry"), std::out_of_range);
+			CHECK(table.get(kept).id == 1);
+
+			table.add("other", ThrowingElement(3));
+			const Handle<ThrowingElement> other = table.resolve("other");
+			CHECK_THROWS_AS(table.resolve("retry"), std::out_of_range);
+			table.add("retry", ThrowingElement(4));
+
+			CHECK(table.resolve("retry") != other);
+			CHECK(table.get(table.resolve("retry")).id == 4);
+			CHECK(table.get(other).id == 3);
+			CHECK(table.get(kept).id == 1);
+		}
+
 		TEST_CASE("resolved handle reads back the element that was added")
 		{
 			NameTable<Element> table("element");

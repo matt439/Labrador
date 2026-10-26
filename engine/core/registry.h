@@ -60,6 +60,7 @@ namespace labrador
 		// Fills the name's slot, claiming one if the name is new. Re-adding a name
 		// reuses its slot rather than appending, which is what keeps handles valid
 		// across a reload.
+		// If storing a new entry throws, its name is not retained.
 		void add(const std::string& name, Storage resource)
 		{
 			const auto it = this->indices_.find(name);
@@ -71,8 +72,17 @@ namespace labrador
 			}
 
 			const int index = static_cast<int>(this->entries_.size());
-			this->indices_.emplace(name, index);
-			this->entries_.push_back(entry{ std::move(resource), name });
+			const std::map<std::string, int>::iterator inserted =
+				this->indices_.emplace(name, index).first;
+			try
+			{
+				this->entries_.push_back(entry{ std::move(resource), name });
+			}
+			catch (...)
+			{
+				this->indices_.erase(inserted);
+				throw;
+			}
 		}
 
 		// The load-time half. Throws std::out_of_range if nothing ever added the

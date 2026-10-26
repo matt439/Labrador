@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 - Keep failed table insertions absent and retryable
+
+**Behaviour change.** When storing a new entry throws, `NameTable::add` and
+`Registry::add` remove that entry's name before propagating the exception.
+Resolving the failed name therefore throws instead of naming a missing slot
+or an unrelated entry added later. A loader can retry the name after handling
+the failure. The underlying vector's exception guarantees still apply to the
+element or storage type supplied by the caller.
+
 ### 2026-10-26 - Expose the engine source revision to consumer builds
 
 **Behaviour change (browser bundles).** A source archive nested in another Git

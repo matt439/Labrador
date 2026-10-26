@@ -1,7 +1,9 @@
 #include <doctest/doctest.h>
 #include "engine/core/registry.h"
 #include <memory>
+#include <stdexcept>
 #include <string>
+#include <utility>
 using namespace labrador;
 
 namespace
@@ -18,12 +20,60 @@ namespace
 	{
 		return std::make_unique<Resource>(id);
 	}
+
+	class ThrowingStorage
+	{
+	public:
+		ThrowingStorage() = default;
+		explicit ThrowingStorage(int id, bool throw_on_move = false) :
+			resource_(make(id)), throw_on_move_(throw_on_move) {}
+		ThrowingStorage(const ThrowingStorage&) = delete;
+		ThrowingStorage& operator=(const ThrowingStorage&) = delete;
+		ThrowingStorage(ThrowingStorage&& other)
+		{
+			if (other.throw_on_move_)
+			{
+				throw std::runtime_error("storage move refused");
+			}
+			this->resource_ = std::move(other.resource_);
+		}
+		ThrowingStorage& operator=(ThrowingStorage&&) = default;
+
+		Resource* get() const { return this->resource_.get(); }
+
+	private:
+		std::unique_ptr<Resource> resource_;
+		bool throw_on_move_ = false;
+	};
 }
 
 namespace RegistryTests
 {
 	TEST_SUITE("RegistryTests")
 	{
+		TEST_CASE("a failed new resource leaves its name absent and retryable")
+		{
+			Registry<Resource, ThrowingStorage> registry("Resource");
+			registry.add("kept", ThrowingStorage(1));
+			const Handle<Resource> kept = registry.resolve("kept");
+
+			CHECK_THROWS_AS(registry.add("retry", ThrowingStorage(2, true)),
+				std::runtime_error);
+			CHECK_THROWS_AS(registry.resolve("retry"), std::out_of_range);
+			CHECK(registry.get(kept)->id == 1);
+
+			registry.add("other", ThrowingStorage(3));
+			const Handle<Resource> other = registry.resolve("other");
+			CHECK_FALSE(registry.contains("retry"));
+			CHECK_THROWS_AS(registry.resolve("retry"), std::out_of_range);
+			registry.add("retry", ThrowingStorage(4));
+
+			CHECK(registry.resolve("retry") != other);
+			CHECK(registry.get("retry")->id == 4);
+			CHECK(registry.get(other)->id == 3);
+			CHECK(registry.get(kept)->id == 1);
+		}
+
 		TEST_CASE("resolved handle reads back the resource that was added")
 		{
 			Registry<Resource> registry("Resource");
