@@ -1101,6 +1101,9 @@ transport/control cases passing alongside Chromium's six in the existing
 [current method and remaining checks](web-to-be-tested.md#firefox-sample-checks-web4)
 keep actual current-page runs and WebWindow's input/CSS parity open. This is
 runner verification, not a new Firefox rendering, listening or device result.
+Fresh minimal-page linking subsequently hit a denied JS replacement, leaving
+mixed-date outputs; the same owner records that access gate and the absence
+of a Firefox launch.
 
 **M6's first item is done: `RenderPixelTests` runs in headless Chrome
 against the same golden set, and on this machine it is byte-identical to
