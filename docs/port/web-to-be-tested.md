@@ -79,9 +79,10 @@ and amend `web.md` §9 with the result.
       [R6 fixture requirements and results template](pacing-method.md#3-r6-prerequisites-for-an-exact-9600-particle-browser-frame)
       name the instrument: completed-frame CPU phases from
       `Application::frame_timings()`, paired with rAF intervals and the same
-      observed-judder record as R5. The exact browser fixture/export is still
-      missing; ordinary played top-out and native bench timings cannot supply
-      this result. No phone measurement is added.
+      observed-judder record as R5. The opt-in exact fixture/export is written;
+      browser runtime acceptance is blocked by Chrome GPU access denial.
+      Headless ParticleField counts, ordinary played top-out and native bench
+      timings cannot supply this phone result. No phone measurement is added.
 - [ ] Rotating with the pause menu open re-arranges the match underneath only
       on resume (known and documented; check it reads acceptably).
 

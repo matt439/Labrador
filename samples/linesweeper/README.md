@@ -33,7 +33,7 @@ seven-bag deal, the gravity curve, the wall kicks, lock delay, hold, hard drop,
 T-spins and scoring — and `tests/linesweeper/` plays it with no window, no
 device and no engine linked into the binary. `presentation/` draws it,
 `states/` turns a keyboard, a pad and a touchscreen into it, and pressing R
-or Start after a top-out - or tapping off the buttons, on the glass - restarts
+  or Start after a top-out - or tapping off the buttons, on the glass - restarts
 the match with one assignment. It lays itself out for a tall screen as well as
 a wide one; see *A phone held upright*, below.
 
@@ -714,6 +714,37 @@ PAUSE opens the menu and a tap on a row chooses it, was checked by looking at
 frames from headless Chrome at a 390x844 portrait viewport and an 844x390
 landscape one with touch emulated. **No real phone has played it**, and the
 9,600-particle top-out has not been timed on one.
+
+## Development-page pacing instrument
+
+The Release development page accepts `?pacing=play` for completed-frame CPU
+timings during ordinary play, `?pacing=topout` for an exact 200-cell first
+burst followed by decay, and `?pacing=topout-frozen` for the held birth frame.
+The flags are opt-in pre-js on this page; the packaged module and phone gate
+do not load that script. Without a flag the first state remains PlayState.
+
+The fixture uses the current BoardView, ParticleField and TopOutBanner and
+the benchmark's well/HUD values. Its named profile keeps the fixed landscape
+hint labels and omits touch controls even in portrait, so it is not a complete
+ordinary played-phone UI measurement. Its actual field must contain exactly
+9,600 live particles and zero dropped emissions before its marked frame.
+The first birth is held at zero elapsed time through that frame; evolving
+decay and frozen captures have separate workload identities.
+
+`Application::frame_timings()` is read by a separate rAF observer outside
+fixed updates and draws. Completed frame ids are deduplicated, zero-update
+frames remain visible and missed marked frames are reported as incomplete.
+The raw console export records CPU phase times, engine intervals, observer
+timestamps, source/build and geometry; physical display/refresh identity
+requires an operator. [The method](../../docs/port/pacing-method.md) and
+[tool instructions](../../tools/web_pacing/README.md) own capture/export and
+results templates.
+
+Browser runtime acceptance is still open under the recorded Chrome GPU
+access denial. Headless ParticleField counts and Node protocol tests prove
+neither rendered browser counts nor real display/phone performance. The
+ordinary `LineSweeperPageTests` and the instrumented Release driver still
+need their actual browser run before SM-08 can close.
 
 ## Still open
 

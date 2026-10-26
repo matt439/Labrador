@@ -1,8 +1,9 @@
 # Browser pacing and phone top-out measurement method
 
-This is SM-08's method preparation for R5/R6. It contains no new display or
-phone result. R5 has a console procedure and an offline reducer; R6 still
-needs the exact browser fixture and engine-frame export described below.
+This is SM-08's method and source preparation for R5/R6. It contains no new
+display or phone result. R5 has a console procedure and an offline reducer;
+the opt-in development-page engine-frame exporter and exact R6 fixture are
+implemented in source, with browser runtime acceptance still open.
 SM-08's code-instrument acceptance also requires the `wasm-release` flag run
 and `LineSweeperPageTests`. Those browser checks have not run for this method:
 Chrome's GPU process was denied access (`0xC0000022`) in this work session.
@@ -155,36 +156,108 @@ display session; report both modes even if one finds a defect.
 
 ## 3. R6: prerequisites for an exact 9,600-particle browser frame
 
-**This instrument and fixture are not implemented yet.** Playing a match to
-top-out does not fill every visible cell, and cannot establish 9,600 live
-particles. Neither the preceding rAF observer nor the Windows-only
-`LineSweeperFrameBench` times that browser CPU frame. Keep R6 and SM-08's
-remaining instrument acceptance open until the following are concrete and
-checked. The existing bench's `build_workload()` in
-[linesweeper_frame_bench.cpp](../../bench/linesweeper_frame_bench.cpp)
-is the construction reference, not a transferable timing result.
+Playing a match to top-out does not fill every visible cell and cannot
+establish 9,600 live particles. The preceding console observer measures only
+rAF delivery. For completed-frame CPU phases use the **Release development
+page**, with one of these query flags:
 
-The browser fixture must use the current sample's BoardView, ParticleField
-and TopOutBanner, their ordering, texture, camera and the built presentation
-constants. Fill all 200 visible cells with the bench's pattern. Let the field
-observe that pre-top-out world, then mark it topped out and advance its tick.
-At the first rendered burst, assert exactly 9,600 live particles and zero
-dropped; save those counts and the constructed world/source identity. A
-different count is a refused fixture, not an approximate pass. Record actual
-buffer dimensions and touch-control visibility. A frozen zero-time bench
-frame and an evolving first burst are separate workloads and must have
-separate identifiers; the fixture must say which one it draws.
+| Flag | Workload |
+|---|---|
+| `?pacing=play` | Ordinary PlayState, observed for five seconds of warmup and then two minutes |
+| `?pacing=topout` | Exact first burst after 300 fixed warmup steps, followed by three seconds of evolving decay |
+| `?pacing=topout-frozen` | The same first burst, held at zero elapsed time for the following capture |
 
-Use the existing public `Application::frame_timings()` to export the actual
-completed frame's id, update count, interval and five CPU phase durations.
-Read it outside the fixed-step update path so a frame with zero updates on a
-high-refresh display is not silently lost. Deduplicate by frame id and
-report any skipped ids. Associate the top-out marker and live/dropped counts
-with the frame that was drawn, accounting for the snapshot being the last
-completed frame. Preserve first/reset intervals of zero as discontinuities.
-Buffer output and log per-frame rows together after capture, rather than
-printing in the measured loop. The flag must be opt-in on the development
-page; ordinary play and the bundle's phone gate remain ordinary play.
+Append `&pacing_id=<unique-id>` to name the run. The optional
+`&pacing_duration_ms=<100..600000>` changes the retained duration after
+warmup/the first burst; short values are for protocol checks, not two-minute
+R5 evidence. Reload for each fresh trigger. The flag is consumed by
+[page.js](../../tools/web_pacing/page.js), which is pre-js on the development
+page alone, with its observer/fixture C++ compiled only into that target.
+The packaged module excludes both the script and profiler C++, so adding the
+query string to the bundle page does not enable a fixture or lift its phone
+gate. There is no new normal-player UI.
+
+During warmup fill the physical identity from the console, for example:
+
+```js
+Module.labradorPacingSetIdentity({
+  id: "operator-assigned-run-id", device: "actual phone/host and OS",
+  display: "actual display/mode/VRR", refresh_hz: 60,
+  refresh_source: "where the selected mode was read; nominal or measured",
+  emscripten: "actual build version", zoom: "actual zoom",
+  power: "actual power mode", thermal: "initial thermal state",
+  artifact_hash: "hash of the measured wasm/artifact", notes: "other active workloads"
+});
+```
+
+Those example values are instructions to replace, not a run record. The
+instrument supplies the configure-time source revision/dirty stamp and build
+type; unknown stamps remain unknown. Match the stamp to the built artifact,
+and retain its hash. At startup `app.renderer()->device_info()` stamps the
+raw `render_backend`, `render_api` and `render_device_name` once; operator
+fields cannot replace these. Null, unknown or masked strings remain raw
+descriptions, with no physical-hardware or display inference. The draft
+browser driver requires `gl` rather than accepting any Release preset.
+Physical device/display/refresh fields remain explicitly
+unrecorded until an operator supplies them. Geometry is sampled after the
+first completed frame and on changes, with initial/final geometry and
+discontinuity events retained; the pre-initialization 300x150 canvas is not
+used as the measured drawing-buffer size.
+
+The [shared fixture](../../samples/linesweeper/web/pacing_fixture.cpp)
+reproduces `build_workload()` in
+[linesweeper_frame_bench.cpp](../../bench/linesweeper_frame_bench.cpp): all
+200 visible cells, the same colour pattern, queue and HUD values. The
+[fixture state](../../samples/linesweeper/web/pacing_state.cpp) registers
+BoardView, ParticleField, TopOutBanner and the two hint labels in the same
+order, using the current texture/presentation constants and responsive
+camera. Its explicit `benchmark_board_fixed_hints_no_touch_v1` profile keeps
+the fixed landscape hint labels and omits touch controls, even with a portrait
+buffer. This differs from ordinary portrait touch play; it does not measure
+touch-button drawing or prove the cost of that complete played-phone UI.
+Viewport/CSS/buffer geometry, buffer orientation and control visibility are
+recorded separately. It marks top-out on update, advances the world
+tick and calls the scene with zero elapsed time. The actual ParticleField
+must report 9,600 live particles and zero dropped, or the fixture throws.
+
+The state holds those birth positions through any catch-up updates until the
+first completed burst frame. This is a zero-time birth held for that frame,
+not a measured peak taken from an ordinary evolving played match. Later
+updates evolve normally in `topout`;
+`topout-frozen` continues with zero elapsed time. Their workload ids are
+`web_full_well_top_out_first_burst_v1` and
+`web_full_well_top_out_frozen_v1`. This construction matches the native
+benchmark's workload; its timing does not transfer from Windows, and an
+evolving burst is not the same workload as a frozen capture.
+
+[The observer](../../samples/linesweeper/web/pacing_observer.cpp) runs in a
+separate Emscripten rAF callback outside fixed-step update/draw. It reads
+`Application::frame_timings()` by value, including frames with zero updates.
+The page deduplicates completed ids, retains all observer callbacks and logs
+gaps rather than inventing missed frames. The fixture marks the next
+completed frame id before its first burst; an export that did not observe
+that exact marked frame is `incomplete_fixture`, even if a later frame has
+9,600 particles. First/reset intervals of zero remain raw data.
+
+At completion one `labrador-pacing <JSON>` console line is emitted and the
+same object is in `Module.labradorPacingResult`. Save that full object before
+reload. `Module.labradorPacingStop()` exports an interrupted capture with
+status `truncated`; it does not turn a short run into a pass. Per-frame
+buffers are allocated before measurement: 8,192 entries for a fixture and
+65,536 for ordinary play. `buffer_capacity_bytes` records their storage
+(exported objects/JSON need additional memory after collection). Filling a
+buffer truncates rather than overwriting rows. Compare an uninstrumented
+visual run and record inspector/instrument overhead; the final JSON export
+can itself stall the page after the retained measurement window.
+
+The export's `samples` contain completed engine ids, update counts,
+`interval_ns` and the five CPU durations as raw nanoseconds. Observer
+timestamps are labelled separately from engine start intervals. `top_out`
+names the exact marked snapshot, live/dropped counts, geometry, CPU total,
+draw + submit and the next frame's interval. `raf_capture` is the separate
+delivery-timestamp capture accepted by the offline reducer: save that nested
+object to its own JSON file and complete the physical refresh identity before
+reducing it. The reducer does not currently summarize engine phase rows.
 
 Report the burst frame's update, begin, draw, submit and end times separately,
 plus draw + submit, their sum, its start interval and the following start
@@ -198,10 +271,11 @@ from one frozen frame. Retain warmup and every interrupted run with reasons.
 
 Before taking phone results, the opt-in `wasm-release` development page must
 log those per-frame intervals and the marked top-out CPU time in headless
-Chrome, and `LineSweeperPageTests` must still pass (SM-08 acceptance). Add
-headless assertions for the exact live/dropped counts and correct frame
-association; source compilation or a synthetic reducer test cannot establish
-that. Browser execution currently remains blocked by the recorded GPU
+Chrome, and `LineSweeperPageTests` must still pass (SM-08 acceptance). The
+draft [page driver](../../tools/web_pacing/page_input.mjs) checks both fixture
+flags, WebGL frames, exact counts, CPU phase rows and correct completed-frame
+association. It has not run; source compilation and synthetic protocol tests
+cannot establish its browser assertions. Browser execution remains blocked by the recorded GPU
 access denial. Real iPhone Safari data, remote-inspector access and a real
 Android run are further independent gates; none is implied by a later
 headless pass.
@@ -216,14 +290,38 @@ limits required by SM-13/SM-44.
 
 | Run/trigger id and raw files | Source/fixture id and evolving/frozen mode | Phone/OS/browser/orientation/power | Buffer/CSS/DPR | Frame id / updates / live / dropped | Update / begin / draw / submit / end / draw+submit / sum ms | This / next interval ms | Observed judder / trace | Outcome/limits |
 |---|---|---|---|---|---|---|---|---|
-| Pending fixture and real run | | | | | | | | |
+| Pending browser acceptance and real run | | | | | | | | |
 
 ## 4. Verification boundary
 
-`node --test tools/web_pacing/analyse.test.mjs` covers the reducer's
+`node --test tools/web_pacing/*.test.mjs` covers the reducer's
 nearest-rank arithmetic, classification thresholds, raw-row conservation,
 warmup/discontinuity/gap exclusions, continuous-span check and CLI errors on
-synthetic data. These are offline analysis tests. The console snippet has
-not been executed in a browser, the query-flag engine instrument and exact
-browser fixture remain unimplemented, and no real display/phone result is
+synthetic data. Protocol tests also hold completed-id deduplication,
+zero-update snapshots, exact marker association, missing/wrong-count refusal,
+geometry changes, hidden callbacks, callback preservation and output receipts
+without a browser. The draft driver's initialization hook is also tested
+under Node without generated JS or a WebGL context.
+`LineSweeperViewTests` exercises the actual ParticleField
+against the shared 200-cell fixture with no device; a headless count is not
+evidence that the browser rendered it. The console snippet and query-flag
+instrument have not run in a browser, and no real display/phone result is
 recorded here. This preparation does not close SM-08, BDP-07, R5 or R6.
+
+Source verification on 2026-10-26: native-null `LineSweeperViewTests` passes,
+including the three real-field fixture cases; all 23 offline Node cases pass.
+The Release wasm objects compile for both entry variants, the fixture,
+observer, state and fixture tests. The module entry has zero undefined pacing
+references, while the development entry has three; the profiler sources and
+pre-js are listed only on the development target. These are object/source
+checks, not linked-page acceptance. A supporting read of the existing
+`out/build/wasm-release/samples/linesweeper/LineSweeperSample.js` was access
+denied and stopped. No generated-output link or browser run is claimed.
+
+Release rasterizing browser builds now register `LineSweeperPacingPageTests`
+for the driver above when Chromium is found. Registration was checked with
+`ctest --preset wasm-release -N` (31 entries); the new test has not run here.
+Run it and the ordinary `LineSweeperPageTests` once the recorded access gates
+are resolved. Debug retains 30 entries with Chromium, and configurations with
+no Chromium retain 19; the null-render browser configuration omits this
+WebGL acceptance entry.

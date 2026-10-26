@@ -215,6 +215,18 @@ if(PROJECT_IS_TOP_LEVEL)
                     --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_input.mjs"
                     --timeout 120
             )
+            # Release-only instrument acceptance: completed CPU-frame rows
+            # and exact fixture counts, without a physical pacing verdict.
+            if(CMAKE_BUILD_TYPE STREQUAL "Release")
+                add_test(NAME LineSweeperPacingPageTests
+                    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                        "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
+                        --browser "${LABRADOR_TEST_BROWSER}"
+                        --page "$<TARGET_FILE:LineSweeperSample>"
+                        --input "${CMAKE_CURRENT_SOURCE_DIR}/tools/web_pacing/page_input.mjs"
+                        --timeout 60
+                )
+            endif()
         endif()
     endif()
 endif()

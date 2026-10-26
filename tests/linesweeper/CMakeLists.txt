@@ -50,17 +50,20 @@ add_test(NAME LineSweeperTests COMMAND LineSweeperTests)
 #
 # The sample's own sources are compiled into this target rather than linked,
 # because LineSweeperSample is a WIN32 executable and presentation/ is not a
-# library. Three files are still cheaper to list than a third library is to
-# justify.
+# library. Listing these sources is cheaper than another library to justify.
+# The browser pacing fixture also runs here against the real particle field,
+# without constructing its device-bound BoardView or application state.
 add_executable(LineSweeperViewTests
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_statistics.cpp"
 	frame_statistics_tests.cpp
+    pacing_fixture_tests.cpp
     test_main.cpp
     touch_controls_tests.cpp
     view_tests.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/arrangement.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/particles.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/touch_controls.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/web/pacing_fixture.cpp"
 )
 target_link_libraries(LineSweeperViewTests PRIVATE
     LineSweeperRules

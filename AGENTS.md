@@ -54,7 +54,7 @@ web input; configure refuses browser Direct3D/Vulkan/XAudio2 and native Web Audi
 | `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 20; real GL driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 20; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 19; no graphics/audio API; no RenderPixelTests |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 30 with Chromium, 19 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 30 Debug / 31 Release with Chromium, 19 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderContextLossTests`,
@@ -66,6 +66,9 @@ S3TC to test CPU block decoding. The page runner
 [run_page.mjs](tests/render/web/run_page.mjs) serves the page and uses Node's
 WebSocket and DevTools; sample pages must draw and call `Module.onQuit`, with
 console errors, browser warnings and `Module.onError` failing the test.
+Release also registers `LineSweeperPacingPageTests` for the development-page
+instrument's frame protocol and exact fixture counts; it makes no physical
+pacing claim and does not run in the null-render browser configuration.
 `BrowserProtocolTests` holds command replies and crash teardown to a fake
 WebSocket under Node, with no browser or device.
 
