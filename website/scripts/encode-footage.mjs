@@ -6,9 +6,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const website = fileURLToPath(new URL('..', import.meta.url));
-const [framesArgument] = process.argv.slice(2);
-if (!framesArgument || process.argv.length !== 3) {
-	console.error('Usage: node website/scripts/encode-footage.mjs <frames-directory>');
+const [framesArgument, outputArgument] = process.argv.slice(2);
+if (!framesArgument || process.argv.length < 3 || process.argv.length > 4) {
+	console.error('Usage: node website/scripts/encode-footage.mjs <frames-directory> [output.mp4]');
 	process.exit(2);
 }
 
@@ -18,14 +18,19 @@ if (names.length === 0 || names.some((name, index) => name !== `${String(index).
 	throw new Error('Expected a continuous sequence of PNGs starting at 000000.png, with no other files.');
 }
 
-const output = path.join(website, 'src/assets/footage/linesweeper.mp4');
-const temporary = path.join(path.dirname(output), 'linesweeper.encoding.mp4');
+const output = outputArgument ? path.resolve(outputArgument) :
+	path.join(website, 'src/assets/footage/linesweeper.mp4');
+if (path.extname(output).toLowerCase() !== '.mp4') {
+	throw new Error('The output filename must end in .mp4.');
+}
+const temporary = path.join(path.dirname(output), `${path.basename(output, path.extname(output))}.encoding.mp4`);
 mkdirSync(path.dirname(output), { recursive: true });
 try {
 	execFileSync('ffmpeg', [
 		'-hide_banner', '-loglevel', 'warning', '-nostdin', '-y',
-		'-framerate', '60', '-start_number', '0', '-i', path.join(frames, '%06d.png'),
-		'-an', '-c:v', 'libx264', '-preset', 'slow', '-crf', '20',
+		'-filter_threads', '1',
+		'-threads', '1', '-framerate', '60', '-start_number', '0', '-i', path.join(frames, '%06d.png'),
+		'-an', '-c:v', 'libx264', '-threads:v', '2', '-preset', 'slow', '-crf', '20',
 		'-pix_fmt', 'yuv420p', '-movflags', '+faststart', temporary,
 	], { stdio: 'inherit' });
 	const probe = JSON.parse(execFileSync('ffprobe', [

@@ -36,7 +36,7 @@ An index of open work, one row per item; each row points to the document that ow
 |---|---|---|---|---|
 | `BDP-03` | BLOCKED | should | M | Packaged-page driver and registration implemented; run Play/quit/replay/touch checks when Chrome GPU startup is permitted (currently 0xC0000022). |
 | `BDP-04` | BLOCKED | should | M | Packaged-page context/startup/onError checks implemented; browser runtime acceptance is blocked by the same Chrome GPU access denial. |
-| `SM-32` | OPEN | could | S | Re-encode `linesweeper.mp4` (still Courier; the stills are JetBrains Mono) with LineSweeperCapture on `x64-release` and FFmpeg, review it, and state the same-commit rule in website/README.md. |
+| `SM-32` | BLOCKED | could | S | Review the encoded JetBrains Mono candidate in whole-clip playback, then replace the MP4. Canonical stills regenerate byte-identically; rule and review-output mode implemented. [Evidence](docs/website-plan.md#2026-10-26-footage-refresh-evidence). |
 | `SITE#3` | DECISION | could | XS | The owner decides whether the site starts versioned snapshots at the first 0.x tag ([docs/website-versioning.md](docs/website-versioning.md)). |
 | `BDP-20` | DECISION | could | XS | The owner decides whether the 4.3 MB phone fallback video stays, or swaps in a smaller encode with `npm run sync-demo -- <bundle> --video <mp4>`. |
 

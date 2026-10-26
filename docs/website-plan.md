@@ -233,3 +233,17 @@ The requirements and implementation choices are established. The remaining launc
 | Production URL metadata | **Done:** `site` in `website/astro.config.ts` is `https://labradorengine.com`; pages carry canonical links and the build writes a sitemap. `wrangler.jsonc` turns off the `workers.dev` address, so `labradorengine.com` is the only host. |
 
 The site is published. The collision, audio and local-multiplayer guides and their worked examples are included; ongoing changes follow the maintenance stage above.
+
+## 2026-10-26 footage refresh evidence
+
+SM-32's fresh D3D11 Release capture completed all 2,095 frames on the desktop
+RTX 5080. The encoder verified a silent 1280x720 H.264, YUV 4:2:0 candidate
+at 60 fps: 34.917 seconds, 2,435,921 bytes, SHA-256
+`33CD03BEA37B9AC035C2E71379B613785ED8ECD15393F5149FB6ED36EFE02255`.
+The separate canonical still script regenerated `linesweeper-play.png`,
+`linesweeper-pause.png`, `linesweeper-clear.png` and `linesweeper-top-out.png`
+byte for byte against the checked-in assets. Selected footage frames were
+inspected, but whole-clip playback review remains outstanding. The candidate
+is retained locally and the checked-in MP4 has not been replaced; SM-32 stays
+open. [The media procedure](../website/README.md) now states the same-commit
+regeneration rule and supports encoding to a review path before replacement.
