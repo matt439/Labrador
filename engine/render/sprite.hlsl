@@ -10,8 +10,7 @@
 // its source and have nothing notice, which is the failure
 // cmake/compile_shaders.cmake refuses to check bytecode in to avoid.
 //
-// THE THIRD READER IS THE TEST OF THE SECOND, AND IT IS NOT A THIRD PROFILE -
-// IT IS A DIFFERENT COMPILER AND A DIFFERENT INTERMEDIATE. The Vulkan backend
+// THE THIRD READER USES A DIFFERENT COMPILER AND INTERMEDIATE. The Vulkan backend
 // compiles this file with the Vulkan SDK's dxc into SPIR-V, where the two
 // Direct3D ones use fxc and get DXBC, and the source still did not move. What
 // it needed instead was three register shifts on the command line, because HLSL
@@ -47,14 +46,13 @@
 // backend's shader is a transliteration of this file rather than a
 // reimplementation of anything.
 //
-// COMPILED AT BUILD TIME, at the lowest profile each backend accepts:
-// 4_0_level_9_1 for D3D11, which are the lowest profiles that exist, 5_1
-// for D3D12, which has no shader model below 5, and 6_0 for Vulkan, which is
-// where dxc starts. None costs anything to ask for:
-// there are no loops, no branches and no integer arithmetic here, so a later
-// profile would buy the shader nothing and all three produce the same
-// arithmetic - which tests/render/golden/ is what actually checks, and now
-// checks across two compilers as well as three profiles.
+// COMPILED AT BUILD TIME: 4_0_level_9_1 for D3D11, 5_1 for D3D12 and 6_0
+// for Vulkan's dxc. These are selected compiler targets, not API minimums;
+// docs/review/d3d12/STATUS.md records the measured profile-acceptance scope.
+// There are no loops, branches or integer arithmetic in this source, so the
+// equations need no change between profiles. The shared golden images check
+// rendered output, with the per-channel allowance in tests/render/golden_image.cpp.
+// They do not prove identical compiler arithmetic or lower-profile rendering.
 //
 // IT IS NOT WHAT LETS THE ENGINE RUN ON A 9.1 MACHINE, AND THIS LINE USED TO
 // SAY IT WAS. The D3D11 backend's DeviceResources defaults minFeatureLevel to

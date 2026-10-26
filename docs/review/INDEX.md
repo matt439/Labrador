@@ -23,7 +23,7 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 | [rtcd/](rtcd/README.md) | *Real-Time Collision Detection* candidate sweep | Frozen candidate list, not an implementation plan. Decisions belong to [round-2/PLAN.md](round-2/PLAN.md), whose engine work is complete. Reopen a technique only against a current need. |
 | [backend-equivalence/](backend-equivalence/README.md) | Three-backend audit at `57b65b3`; INVENTORY, TEST-GAP, DRIFT and GAPS are frozen too | Superseded by the five-backend sweep. Use [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md) and its [LEDGER.md](backend-equivalence-2/LEDGER.md) adjudication; the original DRIFT.md is not live. |
 | [backend-equivalence-2/](backend-equivalence-2/README.md) | Five-backend sweep at `ca5b2e3` | [STATUS.md](backend-equivalence-2/STATUS.md) is live: G6a now has its native-null live Application/viewport regression; the named low-tier p99 remains. See [remaining verification](#remaining-verification-and-hardware). |
-| [d3d12/](d3d12/README.md) | Fourth-backend review | No separate STATUS.md. [D3D12 tracking below](#d3d12-tracking) owns the seven unverified behavior questions from section 6; the confirmed findings and two count-only candidates were answered by the follow-up series. |
+| [d3d12/](d3d12/README.md) | Fourth-backend review | [STATUS.md](d3d12/STATUS.md) adjudicates section 6's seven behavior questions and records the shader-profile experiment. Remaining work is measured cost, a real display-change session and deeper mip read-back. |
 | [vulkan/](vulkan/README.md) | Fifth-backend review at `4d91b91` | No separate STATUS.md. [Vulkan tracking below](#vulkan-tracking) owns section 7's candidate group and the two open section-6 questions, including the platform re-entry condition. |
 | [gpt6/](gpt6/README.md) | Review at `9dea4516` on 2026-09-17 | The eleven numbered findings are closed in [the resolution map below](#gpt-6-resolution-map). Opportunities remain in TODO.md as REV#7 to REV#10 and the low-tier record; they are separate from those findings. |
 | [2026-09-26/](2026-09-26/README.md) | September 26 review, supplement and reproduction evidence | [STATUS.md](2026-09-26/STATUS.md) is live and [FIXES.md](2026-09-26/FIXES.md) records all 23 numbered resolutions. The four hardening candidates, manual limits and tooling CI follow-up remain separately tracked; see below. |
@@ -35,24 +35,28 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 The confirmed findings were addressed by the nine-commit series from
 `6ae4a15` through `06f0b5f`. Commit `e92a982` explicitly resolves section 6's
 items 7 and 8, the shared-header/backend counts and design-document counts.
-That closure does not verify the seven behavior questions. Their original
-numbers are retained here so a later resolution can name the exact candidate.
+The [live status](d3d12/STATUS.md) now adjudicates the seven behavior questions,
+retaining their original numbers. Source duplication alone established no
+defect for items 1 and 4. A creation-only experiment refutes item 6's claimed
+5_1 minimum for the named D3D12 configuration; the selected build profiles
+remain unchanged and the ledger records the experiment's limits.
 
 Source: [D3D12 review, section 6](d3d12/README.md#6-not-verified).
 Work index: **REV#3** in TODO.md.
 
-- [ ] **6.1** Check the duplicated view-opening loops in `open_frame()` and
-  `set_view_count()` and whether a shared operation improves their agreement.
+- [x] **6.1** Both view-opening loops and the existing restart cases were
+  checked; no behavior mismatch was found. No count-only refactor is owed.
 - [ ] **6.2** Check per-flush descriptor-heap-start calls and the analogous
   back-buffer-view calls before changing their caching.
 - [ ] **6.3** Check the per-submit command-list vector allocation and whether
   retained capacity is appropriate on the actual submission path.
-- [ ] **6.4** Check the two buffer-construction helpers before sharing them
-  inside the backend folder.
+- [x] **6.4** The descriptions are field-equivalent. Their duplication stays
+  inside the backend, without a demonstrated behavior defect.
 - [ ] **6.5** Check the D3D11 factory-refresh branch against current resize
   callers, including monitor moves and no-size-change arrivals.
-- [ ] **6.6** Check `sprite.hlsl`'s profile and arithmetic-equivalence claims
-  against the current shader profiles and the measured golden allowance.
+- [x] **6.6** The current shader/pipeline accepted full 4_0, 5_0 and 5_1 on the
+  recorded RTX 5080 configuration. Comments now state selected targets and
+  rendered-output tolerance instead of a minimum or identical arithmetic.
 - [ ] **6.9** Check full texture-load/read-back footprints for multi-mip DDS
   content, beyond the lines the original review verified.
 
