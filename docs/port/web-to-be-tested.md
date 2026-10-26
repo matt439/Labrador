@@ -235,6 +235,16 @@ No browser run is claimed by the 18 offline transport/control fixtures; with
 Chromium's six existing fixtures, `BrowserProtocolTests` passes 24 cases under
 Node without a browser or device.
 
+**Current runtime gate, 2026-10-26.** Fresh `wasm-release` linking failed while
+replacing `out/build/wasm-release/samples/minimal/MinimalSample.js` with
+`PermissionError: [Errno 13] Permission denied`. That write is stopped. The
+failed link left a 379,758-byte wasm dated October 26 beside the older
+118,834-byte JS and 1,177-byte HTML dated October 24. That mismatched output
+set was not run. Firefox has not launched for this increment, and all five
+current-page runs remain unverified. Only the minimal output's denial is
+established by this result. The temporary console-link diagnostic setting
+was removed after the failure. No SDK source or configuration was edited.
+
 After building the five current pages, run each sample name through the same
 command (`minimal`, `collision`, `audio`, `local_multiplayer`, `components`):
 
