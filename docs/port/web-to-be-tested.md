@@ -48,6 +48,16 @@ and amend `web.md` §9 with the result.
       zoom: the HUD text is readable when the game is drawn smaller than
       1280x720.
 
+**WEB#6 local access gate, 2026-10-26.** A read-only HTTPS HEAD to
+`https://mattharding.dev/demo/linesweeper/` was denied at
+`2026-10-26T22:44:55.3087718Z` with `System.Net.Http.HttpRequestException`:
+"An attempt was made to access a socket in a way forbidden by its access
+permissions. (mattharding.dev:443)". The endpoint check is stopped. No hosted
+page was inspected or opened in a browser, and no scaling, zoom or HUD
+legibility result was obtained. The exact operation, target, reason and time
+are retained in `out/overnight-2026-10-26/web6-live-head.json`. Local HTTPS
+access is needed before this hosted-page acceptance can proceed.
+
 ## Needs a gamepad (M4)
 
 - [ ] A standard-mapping pad plays LineSweeper in Chrome, Firefox and Safari.
