@@ -1082,13 +1082,10 @@ namespace labrador
 			static_cast<unsigned char*>(frame.transforms.mapped);
 
 		size_t vertex_base = 0;
-		std::vector<size_t> view_vertex_base(
-			static_cast<size_t>(impl.view_count), 0);
 
 		for (int i = 0; i < impl.view_count; i++)
 		{
 			const DrawList::View& view = *impl.views[static_cast<size_t>(i)];
-			view_vertex_base[static_cast<size_t>(i)] = vertex_base;
 
 			if (!view.vertices.empty())
 			{
@@ -1133,6 +1130,7 @@ namespace labrador
 				VK_INDEX_TYPE_UINT16);
 
 			size_t transform_slot = 0;
+			vertex_base = 0;
 
 			// In view order, which is the only ordering guarantee the seam makes -
 			// and here it is the only ordering there is, because a view's recording
@@ -1140,6 +1138,8 @@ namespace labrador
 			for (int i = 0; i < impl.view_count; i++)
 			{
 				const DrawList::View& view = *impl.views[static_cast<size_t>(i)];
+				const size_t view_vertex_base = vertex_base;
+				vertex_base += view.vertices.size();
 
 				for (const DrawList::View::Run& run : view.runs)
 				{
@@ -1259,7 +1259,7 @@ namespace labrador
 						1, &set, 0, nullptr);
 
 					const int32_t base_vertex = static_cast<int32_t>(
-						view_vertex_base[static_cast<size_t>(i)] +
+						view_vertex_base +
 						static_cast<size_t>(run.first_sprite) *
 							VERTICES_PER_SPRITE);
 
