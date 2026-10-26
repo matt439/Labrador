@@ -7,7 +7,7 @@ sidebar:
 ---
 
 import RepoLink from '~/components/RepoLink.astro';
-import { REFERENCE_MODULES, moduleSlug } from '~/lib/published';
+import { REFERENCE_HEADERS, REFERENCE_MODULES, moduleSlug } from '~/lib/published';
 
 The API reference gives the exact contract of every public type and function in the engine,
 generated from its headers at the revision named at the foot of each page. That revision is
@@ -53,6 +53,37 @@ because they are public, and because the engine decides where every pixel goes i
 the graphics backend. The backends themselves, in `render/d3d11/` and the folders beside it, are
 not API and are not published.
 
+## Game code
+
+Each header page shows its audience near the top. These headers describe the engine a game
+calls, including the utilities a game can use for its own assets and devices:
+
+<ul>
+	{REFERENCE_MODULES.map((module) => {
+		const headers = REFERENCE_HEADERS.filter((header) => header.module === module.name && header.audience === 'game code');
+		return headers.length > 0 && (
+			<li>
+				<a href={`/${moduleSlug(module)}/`}>{module.name}</a>:{' '}
+				{headers.map((header, index) => (
+					<>{index > 0 && ', '}<a href={`/${header.slug}/`}>{header.title}</a></>
+				))}
+			</li>
+		);
+	})}
+</ul>
+
+## Renderer writers
+
+These headers describe the rendering factories, content readers and geometry behind the
+public drawing API. `resource_factory.h` also declares `white_texture_name`, which game code
+uses for solid-colour sprites.
+
+<ul>
+	{REFERENCE_HEADERS.filter((header) => header.audience === 'renderer writer').map((header) => (
+		<li><a href={`/${header.slug}/`}>{header.title}</a> — <code>{header.source}</code></li>
+	))}
+</ul>
+
 ## What the text on each page is
 
 Each page is the header's own comment, word for word, under the declaration it describes. A
@@ -91,6 +122,10 @@ overloads in the same header share a destination. Header paths and trade-off num
 also link to their definitions. The rest of the site links
 here the same way: a name written as code in a guide, a concept page or a design document links to
 its section, the first time each section of that page names it.
+
+Each reference page's **Explained in** section links back to the guides and concepts that
+link its API, including C++ examples and quoted source. The build reads those pages to generate
+the list, so removing a mention also removes its return link.
 
 C++ code blocks, including quoted sample source, link the first occurrence of each API target
 in that block. Underlined names are keyboard-accessible links; syntax highlighting and copied

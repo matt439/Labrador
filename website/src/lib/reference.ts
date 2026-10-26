@@ -15,8 +15,10 @@ import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import GithubSlugger from 'github-slugger';
 import { parseHeader, type CommentBlock, type Declaration, type Item, type TypeItem } from './cpp-header.ts';
-import { REFERENCE_HEADERS, UNPUBLISHED_HEADERS, publishedPages, type ReferenceHeader, type ReferenceModule } from './published.ts';
+import { REFERENCE_AUDIENCES, REFERENCE_HEADERS, UNPUBLISHED_HEADERS, publishedPages, validateReferenceAudiences, type ReferenceHeader, type ReferenceModule } from './published.ts';
 import { REPOSITORY_ROOT, REVISION, absolutePath, commitUrl, readRepositoryFile, sourceUrl } from './repository.ts';
+import { excerpt } from './excerpt.ts';
+import { referenceMentions } from './reference-mentions.ts';
 
 // ------------------------------------------------------------------ the index
 
@@ -136,6 +138,91 @@ export function symbols(): Map<string, SymbolTarget> {
 // The folders whose files show the API in use: the two samples, and the tests
 // that state its behaviour.
 const EXAMPLE_FOLDERS = ['samples', 'tests'];
+
+export const EXPLANATION_FOLDERS = [
+	'website/src/content/docs/docs/guides', 'website/src/content/docs/docs/concepts',
+];
+
+export interface ExplanationSource {
+	source: string;
+	title: string;
+	url: string;
+	markdown: string;
+}
+
+export interface Explanation {
+	title: string;
+	url: string;
+}
+
+// Read authored source before generating references, so the result cannot depend
+// on which page Astro happens to render first.
+export function explanationSources(): string[] {
+	const files: string[] = [];
+	const walk = (directory: string) => {
+		for (const entry of readdirSync(absolutePath(directory), { withFileTypes: true })) {
+			const child = `${directory}/${entry.name}`;
+			if (entry.isDirectory()) walk(child);
+			else if (/\.mdx?$/.test(entry.name)) files.push(child);
+		}
+	};
+	EXPLANATION_FOLDERS.forEach(walk);
+	return files.sort();
+}
+
+export function indexExplanations(
+	pages: readonly ExplanationSource[], dependencies?: Set<string>
+): Map<string, Explanation[]> {
+	const index = new Map<string, Map<string, Explanation>>();
+	for (const page of pages) {
+		const targets = referenceMentions(page.markdown, page.source, {
+			codeLink,
+			hasType: (name) => symbols().has(name),
+			hasFunction: (name) => freeFunctions().has(name),
+		}, (source, from, to) => {
+			dependencies?.add(source);
+			return excerpt(source, from, to).code;
+		});
+		for (const target of targets) {
+			const links = index.get(target) ?? new Map<string, Explanation>();
+			links.set(page.url, { title: page.title, url: page.url });
+			index.set(target, links);
+		}
+	}
+	return new Map([...index].map(([target, pages]) => [
+		target, [...pages.values()].sort((a, b) => a.url < b.url ? -1 : a.url > b.url ? 1 : 0),
+	] as const));
+}
+
+let explanationIndex: Map<string, Explanation[]> | undefined;
+let excerptDependencies: string[] = [];
+
+export function explanationDependencies(): readonly string[] {
+	return excerptDependencies;
+}
+
+function explainedIn(header: ReferenceHeader): string {
+	if (!explanationIndex) {
+		const prefix = 'website/src/content/docs/';
+		const pages = explanationSources().map((source): ExplanationSource => {
+			const markdown = readRepositoryFile(source);
+			const frontmatter = markdown.match(/^---\r?\n([^]*?)\r?\n---/);
+			const title = frontmatter?.[1].match(/^title:\s*(.+)\s*$/m)?.[1].trim();
+			if (!title) throw new Error(`Explanation page '${source}' has no title in its frontmatter.`);
+			return {
+				source, markdown, title: title.replace(/^(['"])(.*)\1$/, '$2'),
+				url: `/${source.slice(prefix.length).replace(/\.mdx?$/, '').replace(/\/index$/, '')}/`,
+			};
+		});
+		const dependencies = new Set<string>();
+		explanationIndex = indexExplanations(pages, dependencies);
+		excerptDependencies = [...dependencies].sort();
+	}
+	const pages = explanationIndex.get(`/${header.slug}/`) ?? [];
+	return pages.length > 0
+		? `<ul>${pages.map((page) => `<li>${link(page.url, escapeHtml(page.title))}</li>`).join('')}</ul>`
+		: '<p>No guide or concept page links to this header yet.</p>';
+}
 
 let includerIndex: Map<string, string[]> | undefined;
 
@@ -544,6 +631,7 @@ interface Layout {
 }
 
 function layout(header: ReferenceHeader): Layout {
+	validateReferenceAudiences([header]);
 	const document = parseHeader(header.source, readRepositoryFile(header.source));
 	const types = document.items.filter((item): item is TypeItem => item.kind === 'type');
 	const own = new Set(types.map((type) => type.name));
@@ -560,6 +648,10 @@ function layout(header: ReferenceHeader): Layout {
 	blocks.push(
 		() => `<p><a href="/docs/reference/${header.module}/">Browse the ${header.module} module</a></p>`
 	);
+	blocks.push(() => `<p class="ref-audience"><strong>Audience: ${header.audience}.</strong>` +
+		(header.source === 'engine/render/resource_factory.h'
+			? ' Game code can use <code>white_texture_name</code>; the factories are renderer implementation helpers.'
+			: '') + '</p>');
 	blocks.push(
 		() =>
 			`<p class="ref-include"><code>#include "${escapeHtml(header.source)}"</code>` +
@@ -614,6 +706,8 @@ function layout(header: ReferenceHeader): Layout {
 
 	blocks.push({ depth: 2, text: 'In the samples and tests' });
 	blocks.push(() => includedBy(header.source));
+	blocks.push({ depth: 2, text: 'Explained in' });
+	blocks.push(() => explainedIn(header));
 
 	const primary = types[0];
 	const description = primary
@@ -752,6 +846,8 @@ export function forgetIndexes(): void {
 	functionIndex = undefined;
 	includerIndex = undefined;
 	tradeOffs = undefined;
+	explanationIndex = undefined;
+	excerptDependencies = [];
 }
 
 export interface ReferencePage {
@@ -776,17 +872,23 @@ export function referencePages(): ReferencePage[] {
 // Module lists use the same inventory as the sidebar and the header pages, so
 // adding a published header also makes it discoverable from its module.
 export function moduleReferencePage(module: ReferenceModule): string {
+	validateReferenceAudiences();
 	const headers = REFERENCE_HEADERS.filter((header) => header.module === module.name);
-	const rows = headers.map((header) => {
-		const file = header.source.slice(header.source.lastIndexOf('/') + 1);
-		return `| [${header.title}](/${header.slug}/) | \`${file}\` |`;
+	const groups = REFERENCE_AUDIENCES.flatMap((audience) => {
+		const rows = headers.filter((header) => header.audience === audience).map((header) => {
+			const file = header.source.slice(header.source.lastIndexOf('/') + 1);
+			return `| [${header.title}](/${header.slug}/) | \`${file}\` |`;
+		});
+		return rows.length === 0 ? [] : [
+			`## ${audience === 'game code' ? 'Game code' : 'Renderer writers'}`,
+			['| Reference page | Header |', '| --- | --- |', ...rows].join('\n'),
+		];
 	});
 	return [
 		module.summary,
 		`The public headers in \`engine/${module.name}/\`. Choose a page for its declarations, ` +
 			`contracts, related types, and links to the samples and tests that include it.`,
-		'## Headers',
-		['| Reference page | Header |', '| --- | --- |', ...rows].join('\n'),
+		...groups,
 		'## Keep reading',
 		'[Concepts](/docs/concepts/) explains how the engine fits together. ' +
 			'[Guides](/docs/guides/) walks through tasks using code from the samples. ' +

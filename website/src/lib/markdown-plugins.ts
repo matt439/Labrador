@@ -7,9 +7,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { defineMdastPlugin, type MdastPluginEntry, type MdastVisitorContext } from 'satteri';
-import { DESIGN_DOCUMENTS, publishedPages } from './published';
-import { codeLink } from './reference';
-import { REPOSITORY_ROOT, absolutePath, sourceUrl, toRepositoryPath } from './repository';
+import { DESIGN_DOCUMENTS, publishedPages } from './published.ts';
+import { codeLink } from './reference.ts';
+import { REPOSITORY_ROOT, absolutePath, sourceUrl, toRepositoryPath } from './repository.ts';
 
 // Where the site's own pages live, from the repository root. A document read
 // from elsewhere in the checkout is rendered *as if* it were here - at the path
@@ -122,24 +122,24 @@ export const referenceLinks: MdastPluginEntry = ({ fileURL }) => {
 	let linked = new Set<string>();
 	return defineMdastPlugin({
 		name: 'labrador-reference-links',
+		link(node) {
+			if (node.url.startsWith('/docs/reference/')) linked.add(node.url);
+		},
 		heading(node) {
 			if (node.depth <= 2) {
 				linked = new Set();
 			}
 		},
 		inlineCode(node, ctx) {
+			if (enclosing(node, ctx)) {
+				return;
+			}
 			const url = codeLink(node.value, page);
 			if (!url || linked.has(url)) {
 				return;
 			}
-			const inside = enclosing(node, ctx);
-			if (inside === 'heading') {
-				return;
-			}
 			linked.add(url);
-			if (inside !== 'link') {
-				ctx.wrapNode(node, { type: 'link', url, children: [] });
-			}
+			ctx.wrapNode(node, { type: 'link', url, children: [] });
 		},
 	});
 };
