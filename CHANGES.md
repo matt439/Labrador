@@ -72,6 +72,14 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 - Remove Vulkan's temporary view-prefix allocation
+
+**Allocation behavior.** Vulkan drawing no longer constructs a temporary
+per-view vertex-prefix vector on each nonempty submission. Draw order,
+skipped/empty view handling and submit exception cleanup remain unchanged.
+A warmed Debug CRT regression verifies removal of the observed allocation
+attempts; this does not establish driver/system heap behavior or a timing gain.
+
 ### 2026-10-26 - Close Vulkan render passes when submission throws
 
 **Behaviour change on failure.** If Vulkan submission throws while recording
