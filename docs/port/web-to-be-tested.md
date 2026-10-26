@@ -241,9 +241,21 @@ replacing `out/build/wasm-release/samples/minimal/MinimalSample.js` with
 failed link left a 379,758-byte wasm dated October 26 beside the older
 118,834-byte JS and 1,177-byte HTML dated October 24. That mismatched output
 set was not run. Firefox has not launched for this increment, and all five
-current-page runs remain unverified. Only the minimal output's denial is
-established by this result. The temporary console-link diagnostic setting
+current-page runs remain unverified. The minimal output's denial is
+established by that sample build. The temporary console-link diagnostic setting
 was removed after the failure. No SDK source or configuration was edited.
+
+A separate, original `WebWindowTests` target build then exited 1 while
+replacing `out/build/wasm-release/tests/app/WebWindowTests.js`, also with
+`PermissionError: [Errno 13] Permission denied`. Its task-owned process 17320
+completed at `2026-10-26T21:49:57.9424754Z`; stdout, stderr and the process
+receipt are retained under `out/overnight-2026-10-26/firefox-webwindow-build*`.
+The failed link left a 48,038-byte wasm dated October 26 beside the older
+36,559-byte JS and 1,193-byte HTML dated October 24. This mismatched set was
+not run, and this output action is stopped. No Firefox launch, alternate
+output, file deletion, permission change or SDK change followed the denial.
+The separate input/CSS port and its trusted cancellation question remain
+unverified; source planning alone does not complete those browser checks.
 
 After building the five current pages, run each sample name through the same
 command (`minimal`, `collision`, `audio`, `local_multiplayer`, `components`):
