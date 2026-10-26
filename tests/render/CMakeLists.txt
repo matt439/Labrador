@@ -158,6 +158,17 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         )
         add_test(NAME D3D12SynchronizationTests COMMAND D3D12SynchronizationTests)
         set_tests_properties(D3D12SynchronizationTests PROPERTIES TIMEOUT 60)
+
+        # Opt-in runtime capability probe; InfoQueue1 is newer than the normal
+        # Debug diagnostic interface. It neither builds by default nor joins CTest.
+        add_executable(D3D12DestructionProbe EXCLUDE_FROM_ALL
+            d3d12_destruction_probe.cpp
+            win32/test_window.cpp
+        )
+        target_link_libraries(D3D12DestructionProbe PRIVATE
+            LabradorEngine
+            labrador_settings
+        )
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         find_package(Vulkan REQUIRED)
         target_sources(RenderPixelTests PRIVATE
