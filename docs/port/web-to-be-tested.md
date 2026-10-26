@@ -39,6 +39,11 @@ and amend `web.md` §9 with the result.
 
 - [ ] Frame pacing of the fixed 60 Hz step under `requestAnimationFrame` on a
       60 Hz display and on a high-refresh one: judder or none.
+      [R5 method and results template](pacing-method.md#2-r5-raf-delivery-and-observed-judder):
+      console rAF timestamps, raw JSON and nearest-rank p50/p99; separately
+      record visible irregular holds/jumps during comparable motion. Callback
+      bins alone are not visible-judder or scan-out evidence. The console
+      procedure still needs its first browser run; no display result is added.
 - [ ] The mattharding.dev stage at 1x, 1.25x, 1.5x and 2x and with browser
       zoom: the HUD text is readable when the game is drawn smaller than
       1280x720.
@@ -71,6 +76,12 @@ and amend `web.md` §9 with the result.
 - [ ] Without S3TC the CPU-decoded atlas draws legibly and its load time and
       memory are acceptable.
 - [ ] R6: time the 9,600-particle top-out frame on a phone.
+      [R6 fixture requirements and results template](pacing-method.md#3-r6-prerequisites-for-an-exact-9600-particle-browser-frame)
+      name the instrument: completed-frame CPU phases from
+      `Application::frame_timings()`, paired with rAF intervals and the same
+      observed-judder record as R5. The exact browser fixture/export is still
+      missing; ordinary played top-out and native bench timings cannot supply
+      this result. No phone measurement is added.
 - [ ] Rotating with the pause menu open re-arranges the match underneath only
       on resume (known and documented; check it reads acceptably).
 

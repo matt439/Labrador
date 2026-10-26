@@ -456,7 +456,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | SM-02 | G25: what the bench's fan-out measures; PHILOSOPHY amendment E at :691-693, after SM-03's amendment D (Next). Promoted to Should (critique). |
 | SM-07 | G24 (major): the low-tier p99 the performance identity rests on. Also follows SM-01 and SM-03 (Next); owner-run on the iGPU. |
 | SM-40 | G125: a headless test of the XInput translation, a regression guard needing no hardware. |
-| SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. |
+| SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. R5 procedure and offline reducer implemented; exact browser fixture/export and runtime acceptance remain in [the method](../port/pacing-method.md). |
 | SM-14 | G71: serve a development page to a phone. Out of deferred: the owner has an iPhone; written and tried in SM-13's session. |
 | SM-13 | G34, G05 (merged with BDP-08): a real iPhone run. Split from the Android half (SM-44, deferred) per the owner facts. |
 | BDP-07 | G23: pacing on the displays visitors use; may need a borrowed high-refresh display. |

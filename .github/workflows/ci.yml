@@ -115,6 +115,9 @@ jobs:
       - name: Check the flash definitions against synthetic frames
         run: node --test tools/flash_check/flash_check.test.mjs
 
+      - name: Check browser pacing reduction against synthetic runs
+        run: node --test tools/web_pacing/analyse.test.mjs
+
       - name: Run the offline tooling tests
         run: python -m unittest discover tools/tests
 
