@@ -379,11 +379,9 @@ namespace
 		// being read here. begin_frame clears and rebinds on the next pass, so
 		// never presenting costs a test nothing.
 		//
-		// ONE CASE CALLS IT ITSELF, AND IT IS THE CASE ABOUT THAT. "a frame may
-		// be read back and then presented" walks the far end of the interval
-		// renderer.h gives read_back_buffer, which no other case here reaches -
-		// and which was a live defect on one backend precisely because of
-		// that.
+		// The read-then-present case below walks the far end of the interval
+		// renderer.h gives read_back_buffer. The native sequences in
+		// presentation_lifecycle_tests.cpp present without per-frame reads.
 		void end()
 		{
 			this->read_frame();
@@ -545,12 +543,10 @@ namespace
 		// backend is written for.
 		render_tests::TestWindow window_{ BUFFER_SIZE, BUFFER_SIZE };
 
-		// THE TABLE BEFORE THE RENDERER, so it dies after one - render_
-		// resources.h states it as a term of the seam. This harness was saved
-		// from needing it only by accident: every end() routes through
-		// read_back_buffer, which drains the GPU, so no frame here has ever
-		// been in flight at the point the members go. The first case that
-		// submits a frame it does not read back would have found it.
+		// THE TABLE BEFORE THE RENDERER, so it dies after one:
+		// render_resources.h states it as a term of the seam. A sequence that
+		// presents without a final read relies on the renderer's destructor
+		// to finish using these textures before their table is released.
 		RenderResources resources_;
 		Renderer renderer_;
 		std::vector<unsigned char> pixels_;
