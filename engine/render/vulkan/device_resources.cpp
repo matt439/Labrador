@@ -552,9 +552,9 @@ namespace labrador
 			devices.data()),
 			"The Vulkan devices on this machine could not be listed");
 
-		// The best device that can do everything this backend needs, where
-		// "best" is discrete over anything else - the same preference the D3D12
-		// backend's adapter walk has, expressed in this API's vocabulary.
+		// Prefer a discrete GPU among candidates passing the checks below.
+		// Other device types, including CPU implementations, share a priority;
+		// the first candidate at each priority wins ties.
 		int best_score = -1;
 		std::string refusals;
 
@@ -1694,12 +1694,10 @@ namespace labrador
 			return;
 		}
 
-		Frame& frame = this->frame();
-
 		uint32_t image = 0;
 		VkResult acquired = vkAcquireNextImageKHR(this->owner_->device,
-			this->swapchain_, UINT64_MAX, frame.acquired, VK_NULL_HANDLE,
-			&image);
+			this->swapchain_, UINT64_MAX, this->frame().acquired,
+			VK_NULL_HANDLE, &image);
 
 		if (acquired == VK_ERROR_OUT_OF_DATE_KHR)
 		{

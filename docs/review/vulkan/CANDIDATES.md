@@ -298,14 +298,17 @@ Original, copied verbatim:
 
 - **[minor]** `engine/render/vulkan/device_resources.cpp:544` — Device scoring ties a software CPU device with an integrated GPU, so the claimed parity with D3D12's adapter walk - which excludes software adapters outright - does not hold
 
-**Confirmed source discrepancy; selection impact unmeasured.**
+**Corrected the policy comment; selection impact remains unmeasured.**
 `select_physical_device` in
 [device_resources.cpp](../../../engine/render/vulkan/device_resources.cpp)
 gives discrete GPUs score 2 and everything else 1, retaining the first tie.
-Its D3D12-parity comment overstates agreement: the adapter walk in
+Its comment now states that ordering, including CPU implementations, without
+claiming parity with the adapter walk in
 [d3d12/device_resources.cpp](../../../engine/render/d3d12/device_resources.cpp)
-explicitly excludes software adapters. No mixed CPU/iGPU system was exercised
-and this adjudication makes no selection-policy change.
+which explicitly excludes software adapters. No requirement establishes the
+same hardware-only policy for Vulkan, so its scoring and tie behavior remain
+unchanged. No mixed CPU/iGPU system was exercised; source reading establishes
+the current policy, not the outcome on an untested adapter combination.
 
 ### Candidate 19
 
