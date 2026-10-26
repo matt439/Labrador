@@ -103,6 +103,10 @@ The website build still runs, because it reads the design documents. `changes`
 is required for that reason: if it failed, the jobs that need it would report
 as skipped, and a skipped check passes.
 
+Manual dispatches of the CI workflow and its weekly Monday 03:17 UTC schedule
+always run the full build matrix, so runner/browser drift gets a run without
+a source edit.
+
 A pull request's run is meant to finish in about five minutes, and it does
 so on caches: the windows jobs' vcpkg binaries, and ccache for the three
 browser builds. A run after a `vcpkg.json` change, or after a cache has been

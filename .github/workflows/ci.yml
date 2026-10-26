@@ -15,6 +15,9 @@ on:
     branches: [master, 'review-*']
   pull_request:
   workflow_dispatch:
+  schedule:
+    # A quiet part of the hour, once a week, for runner/browser drift.
+    - cron: '17 3 * * 1'
 
 # A second push to a pull request's branch cancels the first. A queue of stale
 # runs on a repository with one maintainer is a queue nobody reads. A push to
@@ -32,6 +35,9 @@ concurrency:
 # It is downloaded and checked against its release's digest rather than taken
 # from an action, for the reason the jobs below find vcvars64 themselves.
 env:
+  # Windows SDK installer and SHA-256 published at vulkan.lunarg.com/sdk/home.
+  VULKAN_SDK_VERSION: 1.4.357.0
+  VULKAN_SDK_SHA256: 81f474711e9042f4cd22b31b2f7a8870db2e428b21586fb43dd80150be97310d
   EMSDK_VERSION: 6.0.12
   CCACHE_VERSION: 4.14.1
   CCACHE_SHA256: 6219f3865ca59aec41ee4b678df171d5d35855ecb2b6dbbbd20690b3a68af7b4
@@ -40,9 +46,9 @@ env:
 
 jobs:
   # WHETHER THIS CHANGE IS DOCUMENTATION ONLY: every path it touches is a .md
-  # file or under docs/. Nothing that builds reads either, except the three
-  # checks the lint job below runs, so a change like that gets those and
-  # nothing else. Anything else - a header, a workflow, website/'s walkthrough
+  # file or under docs/. A change like that gets the lint job's repository
+  # checks and offline regressions without a compiler build. Anything else
+  # - a header, a workflow, website/'s walkthrough
   # the consumer jobs assemble, LICENSE, which the web bundle carries - is
   # code, and so is a run with nothing to diff against.
   #
@@ -69,8 +75,8 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: |
-          if [ "$EVENT" = workflow_dispatch ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-            echo "Nothing to diff against; treating this as code."
+          if [ "$EVENT" = workflow_dispatch ] || [ "$EVENT" = schedule ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "Manual/scheduled run or no comparison base; running the full build matrix."
             echo "code=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -268,9 +274,15 @@ jobs:
         timeout-minutes: 15
         shell: pwsh
         run: |
-          $installer = Join-Path $env:RUNNER_TEMP "vulkan-sdk.exe"
-          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe" -OutFile $installer
-          $process = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList `
+          $name = "vulkansdk-windows-X64-$env:VULKAN_SDK_VERSION.exe"
+          $installer = Join-Path $env:RUNNER_TEMP $name
+          $uri = "https://sdk.lunarg.com/sdk/download/$env:VULKAN_SDK_VERSION/windows/$name"
+          Write-Output "Installing Vulkan SDK $env:VULKAN_SDK_VERSION from $uri"
+          Invoke-WebRequest -Uri $uri -OutFile $installer
+          if ((Get-FileHash $installer -Algorithm SHA256).Hash -ne $env:VULKAN_SDK_SHA256) {
+            throw "$name does not match VULKAN_SDK_SHA256."
+          }
+          $process = Start-Process -FilePath $installer -WindowStyle Hidden -Wait -PassThru -ArgumentList `
             "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install"
           if ($process.ExitCode -ne 0) {
             throw "The Vulkan SDK installer exited with $($process.ExitCode). Nothing after this step can work, and every message it would produce would name the wrong cause."

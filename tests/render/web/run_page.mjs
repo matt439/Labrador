@@ -95,7 +95,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { DevTools } from './devtools.mjs';
+import { DevTools, browser_version } from './devtools.mjs';
 
 const options = parse_arguments(process.argv.slice(2));
 const page_path = resolve(options.page);
@@ -499,6 +499,7 @@ async function run() {
 	// console errors and warnings and uncaught exceptions as well.
 	const sample_complaints = { count: 0 };
 	let devtools;
+	let browser = 'unknown (DevTools did not answer)';
 	try {
 		devtools = new DevTools(await Promise.race([
 			endpoint,
@@ -507,6 +508,10 @@ async function run() {
 			}),
 		]));
 		await devtools.opened();
+		browser = await Promise.race([
+			browser_version(devtools),
+			wait(10000).then(() => { throw new Error('Browser.getVersion did not answer within 10 s'); }),
+		]);
 
 		const { targetInfos } = await devtools.send('Target.getTargets');
 		const page = targetInfos.find((target) => target.type === 'page');
@@ -691,9 +696,13 @@ async function run() {
 		if (!outcome.timeout) {
 			const renderer = await asked(RENDERER_EXPRESSION,
 				'unknown (the page did not answer)');
+			process.stdout.write(`run_page: browser: ${browser}\n`);
 			process.stdout.write(`run_page: WebGL2 renderer: ${renderer}\n`);
+		} else {
+			process.stdout.write(`run_page: browser: ${browser}\n`);
 		}
 	} catch (error) {
+		process.stderr.write(`run_page: browser: ${browser}\n`);
 		process.stderr.write(`run_page: ${error.message}\n`);
 		process.stderr.write(`run_page: browser receipt: ${diagnostics()}`);
 		exit_code = 1;
