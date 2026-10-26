@@ -53,7 +53,7 @@ export function parse_options(arguments_) {
 }
 
 export function firefox_arguments(profile) {
-	return ['--headless', '--no-remote', '--profile', profile, '--remote-debugging-port=0', 'about:blank'];
+	return ['--headless', '--profile', profile, '--remote-debugging-port=0', 'about:blank'];
 }
 
 export function bidi_endpoint(text) {

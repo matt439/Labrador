@@ -218,7 +218,7 @@ test('Firefox CLI is restricted to five samples and uses a fresh-profile launch 
 	}
 	assert.throws(() => parse_options(['--browser', 'firefox.exe', '--page', 'other.html']));
 	assert.deepEqual(firefox_arguments('synthetic-owned-profile'), [
-		'--headless', '--no-remote', '--profile', 'synthetic-owned-profile', '--remote-debugging-port=0', 'about:blank',
+		'--headless', '--profile', 'synthetic-owned-profile', '--remote-debugging-port=0', 'about:blank',
 	]);
 	assert.equal(bidi_endpoint('noise\nWebDriver BiDi listening on ws://127.0.0.1:46249\n'),
 		'ws://127.0.0.1:46249/session');
@@ -343,7 +343,7 @@ test('owned process exit refuses active protocol work immediately and preserves 
 	child.pid = 123; child.exitCode = null; child.signalCode = null;
 	const launched = launch_firefox('synthetic-firefox', 'synthetic-profile', (browser, args, options) => {
 		assert.equal(browser, 'synthetic-firefox');
-		assert.equal(args.includes('--no-remote'), true);
+		assert.equal(args.includes('--no-remote'), false);
 		assert.equal(options.windowsHide, true);
 		return child;
 	});
