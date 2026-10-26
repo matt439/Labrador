@@ -20,7 +20,10 @@ class BenchmarkContentTests(unittest.TestCase):
         source = (repository / "bench/CMakeLists.txt").read_text(encoding="utf-8")
         # Use the production command/dependency block; only replace the file
         # directory expression so an uncompiled fixture target can own it.
-        commands = source[source.index("# The benchmark resolves the same real font"):]
+        start = source.index("# The benchmark resolves the same real font")
+        dependency = "add_dependencies(LineSweeperFrameBench linesweeper_frame_bench_content)"
+        end = source.index(dependency, start) + len(dependency)
+        commands = source[start:end] + "\n"
         commands = commands.replace("$<TARGET_FILE_DIR:LineSweeperFrameBench>",
                                     "${CMAKE_CURRENT_BINARY_DIR}")
         with tempfile.TemporaryDirectory(prefix="labrador-content-") as temporary:

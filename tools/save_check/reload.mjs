@@ -1,6 +1,11 @@
 // run_page.mjs --input: prove that C++ reads an IDBFS save after a page reload.
 import assert from 'node:assert/strict';
 
+// This driver owns completion across a reload. The original page's exit
+// promise disappears with its execution context and must not end the run.
+export const ready = 'typeof Module === "object" && Module.settingsReady === true';
+export const strict_complaints = true;
+
 export default async function check({ evaluate, send, wait }) {
     const until = async (expression) => {
         for (let attempt = 0; attempt < 250; ++attempt) {

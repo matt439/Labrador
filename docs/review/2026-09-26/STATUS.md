@@ -60,9 +60,10 @@ The gate is added on 2026-10-26 in the commit introducing this row. The same
 job runs `node --test tools/flash_check/flash_check.test.mjs` (`CI#2`) beside
 the Python suite, without a new job name or required-check change.
 
-Local validation does not stand in for that first CI run: the 47 Python tests
-outside the 10 Windows PowerShell integration cases passed, with 1 skipped.
-The full run was blocked when Windows script execution policy refused the
-worker/trace fixture scripts. No execution policy was changed and the denied
-operations were not retried. The existing numbered-finding results above
+Local follow-up on 2026-10-27: `python -m unittest discover tools/tests` passed
+all 81 tests with no skips in the Visual Studio developer environment,
+including the worker/trace PowerShell integration cases. This supersedes the
+2026-10-26 local execution-policy blocker; no execution policy was changed.
+This local pass does not replace the deliberately failing throwaway-branch CI
+observation, which remains open. The existing numbered-finding results above
 remain the historical verification of their own fixes.
