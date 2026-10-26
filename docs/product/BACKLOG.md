@@ -13,7 +13,7 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decision | Blocks |
 |---|---|
 | Record the accessibility position: what the engine provides, whether the hosted demo has an aim, and who owns the colour-blind palette | OCA-08, BDP-24, BDP-21 |
-| Set ColourWars' pin cadence and make or approve its gameplay check after the ordinary bump | SM-36, PI-14 |
+| Decided 2026-10-26: ColourWars' pin reaches each Labrador minor tag within a week of it being cut; its gameplay check is ColourWars' own, outside this repository | SM-36, PI-14 |
 | Decide which p99 column the pipeline-depth claims are judged by, and whether it lands in PHILOSOPHY or the ratchet document | SM-03, SM-01, SM-07, SM-02 |
 | What private ColourWars detail may be published when the seven drafts and the packaging gap are filed, then accept, decline or split each report | PI-09, PI-10, PI-11 |
 | Whether one phone platform's evidence (the iPhone) is enough to lift the phone gate, or the Android run is required | BDP-10 |
@@ -197,7 +197,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[SM-43](STORIES.md#sm-43)** Should · M · The Sole Owner-Maintainer: A current-state agent brief, with its narrative history moved out — after SM-22, OCA-68
 - [x] **[OCA-70](STORIES.md#oca-70)** Must · S · The Outside C++ Adopter: Move my engine pin by a written procedure
 - [x] **[OCA-71](STORIES.md#oca-71)** Could · XS · The Outside C++ Adopter: Run the engine's own tests at my pin — after OCA-70
-- [ ] **[SM-36](STORIES.md#sm-36)** Should · S · The Sole Owner-Maintainer · **Owner**: A cadence for moving ColourWars' engine pin — after OCA-70, OCA-68
+- [x] **[SM-36](STORIES.md#sm-36)** Should · S · The Sole Owner-Maintainer · **Owner**: A cadence for moving ColourWars' engine pin — after OCA-70, OCA-68
 - [x] **[FES-04](STORIES.md#fes-04)** Should · XS · The Full-Environment Seeker (anti-persona): 'What Labrador is not' covers every want the seeker arrives with and names the alternatives — after FES-03
 - [x] **[FES-02](STORIES.md#fes-02)** Could · XS · The Full-Environment Seeker (anti-persona): Get Started points at the exclusions before it asks for Visual Studio — after FES-04
 - [x] **[SRL-02](STORIES.md#srl-02)** Could · XS · The Sample-Reading Learner: Read Concepts without first building the minimal sample
@@ -254,7 +254,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | SM-43 | No registered gap (closest G66): the 600-line brief's narrative history fights CONVENTIONS' no-history rule and costs every agent context. Opens Next once SM-22 and OCA-68 have changed the brief. |
 | OCA-70 | G20, G37 (merged with PI-03): no written pin-move procedure. Tested once on the walkthrough and once by SM-36's bump. Closed 2026-10-26: the guide *Move your engine pin*, linked from Start your own project's step 2, the guides index and the reference index. An agent followed it once, moving a v0.1.0 walkthrough project to v0.2.0; that walk found that a project started before the template's tests has no test presets, which the page now says. SM-36's bump is the second run. |
 | OCA-71 | G38: the engine's suite at a pin. Rides OCA-70's page. Closed 2026-10-26: the page's last section. Run once in that walk at v0.2.0: 20 of 20 entries passed, and the consumer's and the submodule's `git status` were both clean afterwards. |
-| SM-36 | G73: ColourWars' pin is 45 commits behind. The math-split migration is done (77a7a7f), so the first move is an ordinary bump; first in Next rather than Now because OCA-11 already supplies a consumer check and the bump is cheapest with OCA-68's backfill and OCA-70's procedure (critique considered Now). |
+| SM-36 | G73: ColourWars' pin is 45 commits behind. The math-split migration is done (77a7a7f), so the first move is an ordinary bump; first in Next rather than Now because OCA-11 already supplies a consumer check and the bump is cheapest with OCA-68's backfill and OCA-70's procedure (critique considered Now). Closed 2026-10-26 on this side: the owner set the cadence, each new minor tag within a week of its cut, and ColourWars moved its pin to `v0.2.0` the day that tag was cut, with its CI green. Writing the rule down and any gameplay record are ColourWars' own and are not tracked here. |
 | FES-04 | G99, G100: the exclusions list omits scripting, hot reload and community. Moved from Now to the top of Next (critique: anti-persona minors were crowding primary majors). |
 | FES-02 | G100: Get Started asks for Visual Studio before pointing at the exclusions. |
 | SRL-02 | G95: Concepts reads without building minimal. Moved to Next by the critique. |
