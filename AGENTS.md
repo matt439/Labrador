@@ -65,8 +65,8 @@ WebSocket and DevTools; sample pages must draw and call `Module.onQuit`, with
 console errors, browser warnings and `Module.onError` failing the test.
 
 The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
-Changes confined to `.md` files or `docs/` run the three standalone CMake lint
-scripts below; build jobs report without building. The website still runs its
+Changes confined to `.md` files or `docs/` run the four standalone CMake lint
+checks below; build jobs report without building. The website still runs its
 type check, tests and build. Code changes use the affected configurations;
 CI's full matrix remains required. Match focused local checks to the change.
 
@@ -184,6 +184,7 @@ Standalone lint commands (no configure required):
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_doc_citations.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_agent_brief.cmake
 cmake -DENGINE_DIR=C:/Projects/Labrador/engine -P cmake/check_engine_includes.cmake
+cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_source_revision.cmake
 ```
 
 ## Changes and landing

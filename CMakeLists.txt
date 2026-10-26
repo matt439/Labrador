@@ -5,6 +5,9 @@ cmake_minimum_required(VERSION 3.26)
 # the top-level build.
 project(Labrador LANGUAGES CXX)
 
+include(cmake/source_revision.cmake)
+labrador_set_source_revision("${CMAKE_CURRENT_SOURCE_DIR}")
+
 include(cmake/settings.cmake)
 include(cmake/compile_shaders.cmake)
 

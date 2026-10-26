@@ -105,6 +105,9 @@ jobs:
       - name: Check that no engine file includes a game header
         run: cmake "-DENGINE_DIR=${{ github.workspace }}/engine" -P cmake/check_engine_includes.cmake
 
+      - name: Check source revision and archive metadata without a compiler
+        run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_source_revision.cmake
+
   windows:
     # The check's name is the preset alone. Without it GitHub names each
     # matrix job after every value in its entry, so changing skip_tests or

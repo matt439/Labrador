@@ -28,12 +28,18 @@
 // only for a bundle copied out of a build directory nobody has built since the
 // checkout moved, and "dirty" is the guard against the other way round.
 //
+// CMake exports LABRADOR_SOURCE_REVISION to consumers at configure time. This
+// build-time record reads Git again because a commit or a source edit need
+// not cause CMake to reconfigure. Both count tracked modifications as dirty
+// and require the source tree's own .git marker: an archive inside another
+// checkout must not acquire that checkout's identity.
+//
 // Node's own modules only, so there is nothing to install: Emscripten's
 // toolchain already runs its tests under this Node.
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { brotliCompressSync, constants } from 'node:zlib';
 
@@ -77,7 +83,7 @@ function fail(why) {
 }
 
 function git(...args) {
-	return execFileSync('git', ['-C', options.repository, ...args], {
+	return execFileSync('git', ['--no-optional-locks', '-C', options.repository, ...args], {
 		encoding: 'utf8',
 		stdio: ['ignore', 'pipe', 'pipe'],
 	}).trim();
@@ -123,8 +129,19 @@ writeFileSync(join(options.out, 'NOTICE.txt'), notice_text());
 let commit = 'unknown';
 let dirty = null;
 try {
-	commit = git('rev-parse', 'HEAD');
-	dirty = git('status', '--porcelain', '--untracked-files=no').length > 0;
+	const repository = realpathSync(options.repository);
+	if (existsSync(join(repository, '.git'))) {
+		const gitRoot = realpathSync(git('rev-parse', '--show-toplevel'));
+		const sameRoot = process.platform === 'win32'
+			? repository.toLowerCase() === gitRoot.toLowerCase()
+			: repository === gitRoot;
+		if (sameRoot) {
+			const sourceCommit = git('rev-parse', '--verify', 'HEAD');
+			const sourceDirty = git('status', '--porcelain', '--untracked-files=no').length > 0;
+			commit = sourceCommit;
+			dirty = sourceDirty;
+		}
+	}
 } catch {
 	// A source tree that is not a checkout still bundles; BUILD.json says it
 	// could not tell rather than inventing an answer.
