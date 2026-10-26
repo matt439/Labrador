@@ -258,7 +258,7 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     # API, and would not have caught it. Nothing outside the backend names a
     # Vulkan type: the shell hands its window handle to create_device as a
     # void*.
-    find_package(Vulkan REQUIRED)
+    find_package(Vulkan 1.2 REQUIRED)
     target_link_libraries(LabradorEngine PRIVATE Vulkan::Vulkan)
 
     # The same source as the two backends above that compile it, through a

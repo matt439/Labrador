@@ -91,11 +91,16 @@ into verified findings.
   reuse, instance diagnostics, exact CI filters, unused internal accessors
   and contract/prose corrections. The historical count is not a defect count.
 - [ ] **REV#6: remaining bounded follow-ups.** The ledgers distinguish the
-  configure-time SDK minimum (46), transfer resilience (47), device-selection
+  transfer resilience (47), device-selection
   policy evidence (18), instance-callback coverage (20), duplicate reset work
   (60) and redundant aliases (62). Platform questions (19/21) remain REV#5;
   actual overlapping-work proof (51) remains REV#7; real device-removal
   recovery (1) remains REV#12. None is closed by source inspection alone.
+- [x] **Candidate 46: configure-time SDK minimum.** The real CMake finder
+  now rejects synthetic 1.1 headers and accepts 1.2/newer metadata; an
+  unversioned control demonstrates the original gap. All four offline cases
+  and configure against the installed 1.4.357 SDK pass. This proves header
+  admission, not loader, driver or SPIR-V compiler availability.
 - [x] **Candidate 34: visible oversized-viewport behavior, 2026-10-26.**
   Analytic pixel tests cover right/bottom overflow, negative origins, panes
   wholly outside each edge and zero/quantized-zero extents followed by a valid
