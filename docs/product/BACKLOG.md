@@ -301,7 +301,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | SM-01 | G01 (major): the bench cannot reach the iGPU. The XS first step (AMD driver, per-app preference, no code) moves it to Next beside SM-03 (critique, owner facts); a code option is argued only if that fails. |
 | PI-09 | G74: seven live drafts and the packaging gap in ColourWars' private ledger, filed into the route OCA-72 opens. What private detail is published is the owner's. |
 | SM-16 | G29: one index of reviews and which ledger is live. Follows SM-06 (Now). |
-| SM-19 | G32: the offline tooling tests are not gated in CI. Follows SM-21 (Now). |
+| SM-19 | G32: the offline tooling tests are not gated in CI. Follows SM-21 (Now). Implementation 2026-10-26: the existing Windows lint job runs the tools unittest suite as a non-tolerated step, alongside the flash suite (13 local tests pass); priority 3 is tracked in STATUS.md. Full local Python fixtures are execution-policy blocked; 47 unaffected cases pass with 1 skip. Still open for the required deliberately failing throwaway-branch CI observation, which needs a permitted remote run. |
 | SM-25 | G133: the Vulkan SDK floats and drift is undetected. Follows SM-21 (Now). |
 
 </details>

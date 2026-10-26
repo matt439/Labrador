@@ -49,3 +49,20 @@ All numbered findings are resolved; the verification scope and remaining
 hardware/manual coverage limits are recorded in [FIXES.md](FIXES.md). The
 README's hardening candidates and coverage limits are not automatically an
 implementation backlog.
+
+## Continuing regression gates
+
+| Recommendation | Implementation | Verification boundary |
+|---|---|---|
+| README priority 3 (`SM-19`) | [x] The existing Windows `lint` job runs `python -m unittest discover tools/tests` on every push CI handles and every pull request, including documentation-only changes. | The command is an ordinary failing CI step, with no `continue-on-error`. A deliberately failing throwaway-branch CI run remains to be observed. |
+
+The gate is added on 2026-10-26 in the commit introducing this row. The same
+job runs `node --test tools/flash_check/flash_check.test.mjs` (`CI#2`) beside
+the Python suite, without a new job name or required-check change.
+
+Local validation does not stand in for that first CI run: the 47 Python tests
+outside the 10 Windows PowerShell integration cases passed, with 1 skipped.
+The full run was blocked when Windows script execution policy refused the
+worker/trace fixture scripts. No execution policy was changed and the denied
+operations were not retried. The existing numbered-finding results above
+remain the historical verification of their own fixes.
