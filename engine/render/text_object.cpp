@@ -2,6 +2,7 @@
 
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/font.h"
 #include "engine/render/sprite_geometry.h"
 
 #include <string>
@@ -84,14 +85,22 @@ namespace labrador
 	}
 	void TextObject::remeasure()
 	{
-		// The font table measures, because the font table is the only thing
-		// that has the font. NO BACKEND ANSWERS IT: RenderResources::measure_
-		// text is compiled once, engine-side, and forwards to Font::measure -
-		// so what makes a TextObject constructible without a device is that
-		// this call never reaches a backend at all - which is stronger than any
-		// claim about what a backend would answer.
-		this->measured_size_ =
-			this->render_resources()->measure_text(this->font_, this->text_);
+		// Layout keeps the line spacing; culling also needs cells whose
+		// bearings or whitespace metrics put ink outside that rectangle.
+		// Both walks are eager and shared with drawing, with no backend call
+		// and no font pointer retained across device loss.
+		const Font* loaded_font = this->render_resources()->font(this->font_);
+		const Vector2F layout_size = loaded_font->measure(this->text_);
+		RectangleF measured_bounds(Vector2F::ZERO, layout_size);
+		loaded_font->for_each_glyph(this->text_,
+			[&measured_bounds](const Glyph& glyph, const Vector2F& pen)
+			{
+				const RectangleF cell(pen.x, pen.y + glyph.y_offset,
+					static_cast<float>(glyph.subrect.width),
+					static_cast<float>(glyph.subrect.height));
+				measured_bounds = RectangleF::union_of(measured_bounds, cell);
+			});
+		this->measured_bounds_ = measured_bounds;
 	}
 	RectangleF TextObject::text_bounds() const
 	{
@@ -100,8 +109,9 @@ namespace labrador
 	RectangleF TextObject::text_bounds_at(const Vector2F& position,
 		float scale) const
 	{
-		return text_quad_bounds(position, scale, this->measured_size_,
-			this->draw_rotation(), this->origin());
+		return text_quad_bounds(position, scale, this->measured_bounds_.size(),
+			this->draw_rotation(), this->origin() -
+			this->measured_bounds_.position());
 	}
 	void TextObject::set_position(const Vector2F& position)
 	{

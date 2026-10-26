@@ -154,11 +154,12 @@ namespace labrador
 		const mattmath::Vector2F& origin, float units_per_pixel = 0.0f);
 
 	// The same, for a string laid out by build_glyph_quad: `measured_size`
-	// is what the font's walk reported for the whole string, unscaled, and
+	// is the unscaled size of its enclosing local rectangle, and
 	// the box is that size, scaled, sitting `origin` scaled texels up and
-	// left of `position`, turned about `position`. Every glyph's quad falls
-	// inside it because every glyph's pen falls inside the measurement,
-	// which is font.h's contract rather than this file's.
+	// left of `position`, turned about `position`. Font::measure reports a
+	// layout extent; callers enclosing drawn glyph cells as well must include
+	// overhanging bearings and subtract the local rectangle's position from
+	// the text's original origin. The transform then keeps that origin fixed.
 	mattmath::RectangleF text_quad_bounds(const mattmath::Vector2F& position,
 		float scale,
 		const mattmath::Vector2F& measured_size,

@@ -49,6 +49,8 @@ namespace labrador
 			float scale) const;
 
 		// The box this string occupies, for whoever has to cull or index it.
+		// Includes both the layout rectangle and every drawn glyph cell, so
+		// bearings can extend it above the layout without moving the origin.
 		//
 		// The measurement is taken in the constructor and in the two setters
 		// that can change it, never here. Measuring walks the string, and this
@@ -94,8 +96,9 @@ namespace labrador
 		mattmath::Vector2F position_ = mattmath::Vector2F::ZERO;
 		float scale_ = 1.0f;
 
-		// Unscaled size of text_ in font_. See text_bounds().
-		mattmath::Vector2F measured_size_ = mattmath::Vector2F::ZERO;
+		// Unscaled layout and glyph-cell envelope of text_ in font_. Its
+		// position can differ from the layout's (0, 0). See text_bounds().
+		mattmath::RectangleF measured_bounds_ = mattmath::RectangleF::ZERO;
 		void remeasure();
 	};
 }

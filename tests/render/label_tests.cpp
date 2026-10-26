@@ -7,6 +7,8 @@
 #include "engine/render/font.h"
 #include "engine/render/label.h"
 #include "engine/render/render_resources.h"
+#include "engine/render/sprite_geometry.h"
+#include "engine/render/text.h"
 
 #include <memory>
 #include <string>
@@ -50,10 +52,12 @@ namespace
 	class Content
 	{
 	public:
-		Content() : resources()
+		explicit Content(float a_y_offset = 0.0f) : resources()
 		{
 			std::vector<Glyph> glyphs;
-			glyphs.push_back(cell(U'A', 10, 10));
+			Glyph a = cell(U'A', 10, 10);
+			a.y_offset = a_y_offset;
+			glyphs.push_back(a);
 			glyphs.push_back(cell(U'B', 10, 10));
 			this->resources.add_font("font",
 				std::make_unique<Font>(TextureHandle(), std::move(glyphs),
@@ -61,6 +65,13 @@ namespace
 		}
 
 		RenderResources resources;
+	};
+
+	class FontSelectableText : public labrador::Text
+	{
+	public:
+		using labrador::Text::Text;
+		using labrador::TextObject::set_font;
 	};
 }
 
@@ -85,6 +96,108 @@ TEST_CASE("a label's box is the measured string, at the position")
 	// is pinned there; what this says is that bounds() hands it back unaltered
 	// and puts it at the position.
 	CHECK(label.bounds() == RectangleF(100.0f, 50.0f, 20.0f, 20.0f));
+}
+
+TEST_CASE("negative glyph bearings expand cull bounds without changing layout")
+{
+	Content content(-4.0f);
+	Label label(L"A", "font", Vector2F(10.0f, 92.0f), &content.resources);
+	const labrador::FontHandle font = content.resources.resolve_sprite_font("font");
+
+	CHECK(content.resources.measure_text(font, L"A") == Vector2F(10.0f, 20.0f));
+	CHECK(label.bounds() == RectangleF(10.0f, 88.0f, 10.0f, 24.0f));
+
+	// A string change must remove the previous string's overhang too.
+	label.set_text(L"B");
+	CHECK(label.bounds() == RectangleF(10.0f, 92.0f, 10.0f, 20.0f));
+	label.set_text(L"");
+	CHECK(label.bounds() == RectangleF(10.0f, 92.0f, 0.0f, 0.0f));
+}
+
+TEST_CASE("changing a font remeasures its glyph envelope")
+{
+	Content content(-4.0f);
+	Glyph raised = cell(U'A', 10, 10);
+	raised.y_offset = -12.0f;
+	std::vector<Glyph> glyphs;
+	glyphs.push_back(raised);
+	content.resources.add_font("raised",
+		std::make_unique<Font>(TextureHandle(), std::move(glyphs), 20.0f));
+	FontSelectableText text(L"A", "font", Vector2F(10.0f, 92.0f),
+		&content.resources);
+
+	text.set_font("raised");
+	CHECK(text.text_bounds() == RectangleF(10.0f, 80.0f, 10.0f, 32.0f));
+	text.set_text(L"\nA");
+	CHECK(text.text_bounds() == RectangleF(10.0f, 92.0f, 10.0f, 40.0f));
+	text.set_text(L"A");
+	text.set_font("font");
+	CHECK(text.text_bounds() == RectangleF(10.0f, 88.0f, 10.0f, 24.0f));
+}
+
+TEST_CASE("glyph envelopes keep the layout origin through scaling and rotation")
+{
+	Content content(-4.0f);
+	const Font* font = content.resources.font(
+		content.resources.resolve_sprite_font("font"));
+	const Vector2F position(100.0f, 200.0f);
+	const Vector2F other_position(-20.0f, 15.0f);
+	for (float rotation : { 0.0f, 1.57079633f, -0.7f })
+	for (float scale : { 1.0f, 2.0f })
+	for (const Vector2F& origin : { Vector2F::ZERO, Vector2F(3.0f, 5.0f) })
+	{
+		const Label label(L"A\nB", "font", position, &content.resources,
+			labrador::Colour::white, scale, rotation, origin);
+		for (bool hypothetical : { false, true })
+		{
+			const Vector2F draw_position = hypothetical ? other_position : position;
+			const float draw_scale = hypothetical ? 0.5f : scale;
+			const RectangleF bounds = hypothetical
+				? label.text_bounds_at(draw_position, draw_scale) : label.bounds();
+			font->for_each_glyph(L"A\nB",
+				[&bounds, &draw_position, draw_scale, rotation, &origin]
+				(const Glyph& glyph, const Vector2F& pen)
+				{
+					labrador::SpriteVertex corners[4];
+					labrador::build_glyph_quad(draw_position, draw_scale, glyph,
+						pen, Vector2F(32.0f, 32.0f), labrador::Colour::white,
+						rotation, origin, corners);
+					for (const labrador::SpriteVertex& corner : corners)
+					{
+						CHECK(corner.position.x >= bounds.left() - 0.001f);
+						CHECK(corner.position.x <= bounds.right() + 0.001f);
+						CHECK(corner.position.y >= bounds.top() - 0.001f);
+						CHECK(corner.position.y <= bounds.bottom() + 0.001f);
+					}
+				});
+		}
+	}
+}
+
+TEST_CASE("drawable whitespace can extend below layout while skipped whitespace does not")
+{
+	for (bool drawable : { false, true })
+	{
+		RenderResources resources;
+		Glyph space = cell(U' ', drawable ? 4 : 1, drawable ? 8 : 1);
+		space.y_offset = drawable ? 3.0f : -50.0f;
+		std::vector<Glyph> glyphs;
+		glyphs.push_back(space);
+		resources.add_font("spaces",
+			std::make_unique<Font>(TextureHandle(), std::move(glyphs), 4.0f));
+		const labrador::FontHandle font = resources.resolve_sprite_font("spaces");
+		const Label label(L" ", "spaces", Vector2F(10.0f, -6.0f), &resources);
+		if (drawable)
+		{
+			CHECK(resources.measure_text(font, L" ") == Vector2F(4.0f, 4.0f));
+			CHECK(label.bounds() == RectangleF(10.0f, -6.0f, 4.0f, 11.0f));
+		}
+		else
+		{
+			CHECK(resources.measure_text(font, L" ") == Vector2F::ZERO);
+			CHECK(label.bounds() == RectangleF(10.0f, -6.0f, 0.0f, 0.0f));
+		}
+	}
 }
 
 TEST_CASE("changing the string remeasures the box")
@@ -119,8 +232,8 @@ TEST_CASE("scaling a label scales the box it reports")
 
 	// THE MEASUREMENT IS NOT RETAKEN AND THE BOX IS STILL SCALED, which are
 	// two different statements and only the first is what set_scale does.
-	// measured_size_ is the unscaled walk and stays as it was; text_bounds_at
-	// multiplies it by the scale on the way out. So a scale change costs no
+	// The unscaled envelope stays as it was; text_bounds_at multiplies it by
+	// the scale on the way out. So a scale change costs no
 	// string walk and still moves the extent a scene culls against.
 	//
 	// Worth being exact about, because label.h's own comment on bounds() says

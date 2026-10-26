@@ -146,7 +146,12 @@ findings. This is the current disposition of **REV#11**:
 - [ ] **Exceptional cleanup.** Check scene task-submission failure and Vulkan
   buffer construction after allocation. GL texture upload/table insertion
   already uses a scoped owner; that source finding is not still an open leak.
-- [ ] **Glyph ink outside layout measurement.** Verify negative y bearings
-  and culling while preserving `Font::measure()`'s layout semantics. Checked-in
-  sample fonts have no negative y bearings; a custom-font counterexample is
-  distinct from evidence about those samples.
+- [x] **Glyph ink outside layout measurement, 2026-10-26.** Text caches the
+  union of the layout rectangle and the cells drawing actually visits, while
+  retaining the layout origin. Synthetic-font regressions cover negative y
+  bearings, drawable whitespace, setter invalidation, transforms and real
+  scene culling with the null renderer. `Font::measure()` stays unchanged.
+  Focused tests pass on all five native backends and the changed code/tests
+  compile under clang; all four native rasterizers pass the existing golden
+  set. This establishes the custom-font counterexample and its fix, not a
+  defect in the checked-in sample fonts.
