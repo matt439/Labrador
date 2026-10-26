@@ -19,12 +19,16 @@ if(NOT EMSCRIPTEN)
     )
 endif()
 
-# Application's own loop, run with a hidden window: only where the renderer
-# and the audio are both null, so it needs no device and no audio endpoint,
-# and never in a browser, where run() does not return.
+# Live Application tests, with a hidden window: only where the renderer and
+# audio are both null, so they need no device and no audio endpoint. The loop
+# case cannot run in a browser, where run() does not return; the resize case
+# drives a native HWND and its real size notification.
 if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null"
     AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
-    target_sources(AppTests PRIVATE application_loop_tests.cpp)
+    target_sources(AppTests PRIVATE
+        application_loop_tests.cpp
+        application_resize_tests.cpp
+    )
 endif()
 target_link_libraries(AppTests PRIVATE
     LabradorEngine
