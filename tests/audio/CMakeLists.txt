@@ -63,6 +63,11 @@ if(LABRADOR_AUDIO_BACKEND STREQUAL "null")
     target_sources(AudioTests PRIVATE null_tests.cpp)
 endif()
 
+# Deterministic retry policy; no endpoint or DirectXTK graph is created.
+if(LABRADOR_AUDIO_BACKEND STREQUAL "xaudio2")
+    target_sources(AudioTests PRIVATE xaudio2_recovery_tests.cpp)
+endif()
+
 # The Web Audio backend's, by the same rule. It is a browser build's, whose
 # tests run under Node with no Web Audio, so these are what that backend answers
 # without making a sound; webaudio_tests.cpp says what is left for a page.

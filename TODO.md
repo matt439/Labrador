@@ -91,7 +91,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 |---|---|---|---|---|
 | `REV#7` | OPEN | should | M | Native no-read-back presentation/resize/teardown tests pass. Establish deterministic outstanding GPU work at those boundaries and capture D3D12 diagnostics; [evidence](docs/review/INDEX.md#presentation-lifecycle-evidence). |
 | `REV#1` | OPEN | could | S | An AppTests case where a live `Application` with a real window resizes and `fullscreen_viewport()` still matches `back_buffer_size()`; backend-equivalence-2's G6a, its last open section-3 box. |
-| `REV#8` | OPEN | could | S | Recover XAudio2 when its output device goes away: `AudioDevice::update()` ignores `Update()`'s false and never calls `IsCriticalError()`/`Reset()`. Then check it by hand on a real endpoint. gpt6 opportunity 4. |
+| `REV#8` | OPEN | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
 | `REV#4` | OPEN | could | XS | Minimise a sample on `x64-debug-vulkan` under the validation layers and record whether acquire or present returns `OUT_OF_DATE`, and how severe the minimise throw is (Vulkan review 6.1). |
 | `REV#3` | OPEN | could | M | Check the D3D12 review's seven unverified behaviour questions in its section 6 (the view-open loop, per-flush heap-start calls, the per-submit list vector, the buffer helper, the factory-refresh branch, `sprite.hlsl`'s profile claims, multi-mip footprints). |
 | `REV#6` | OPEN | could | L | Check the Vulkan review's 65 never-verified findings (section 7); about a third are counts or comment claims settled by reading. The index-buffer barrier has since been applied. |

@@ -143,11 +143,12 @@ namespace labrador
 
 		// The shell's three, and the whole of what app/ knows about audio.
 		//
-		// update() is called once a frame, after the states have updated, and
-		// answers nothing: a device that has been lost is a case this engine
-		// does not handle and this seam does not pretend to. The backend says
-		// so where it ignores the answer, which is one place rather than the
-		// caller's.
+		// update() processes audio once a frame, after the states have updated.
+		// XAudio2 retries an unavailable default output once a second while
+		// active, with an immediate attempt on the next update after resume().
+		// Recovery drops one-shots and stops persistent voices; their handles
+		// remain valid, and the game may play them again. Other reset failures
+		// propagate as exceptions. No output is recreated while suspended.
 		void update();
 
 		// The window lost or regained the foreground. Same contract as

@@ -36,6 +36,9 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-26.** XAudio2 retries unavailable default output while active.
+  A copy adding sound keeps its bank and voice handles after recovery but
+  explicitly plays persistent sounds again; lost one-shots are dropped.
 - **2026-10-26.** A single-player pad can occupy any slot. `HelloState::update()`
   reads every slot's B edge and deadzoned left stick, and `ConfirmState` reads
   every slot's A/B edges, alongside the keyboard. Several pads share control:

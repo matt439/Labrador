@@ -1,4 +1,5 @@
 #include "engine/audio/audio_device.h"
+#include "engine/audio/xaudio2/device_recovery.h"
 #include "engine/core/file_path.h"
 
 #include <Audio.h>
@@ -6,7 +7,6 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <tuple>
 #include <vector>
 
 // The XAudio2 backend, through DirectXTK, and the only file in this repository
@@ -33,11 +33,10 @@
 //    themselves from it. It is Impl's declaration order, six lines from the
 //    library that requires it, rather than a paragraph in the shell's member
 //    list - which is where a DirectXTK ordering constraint must not sit.
-//  - THE DEVICE-LOSS ANSWER, WHICH IS STILL TO IGNORE IT. AudioEngine::Update
-//    answers false when the audio device has gone, and DirectXTK's documented
-//    reply is to check IsCriticalError() and Reset(). Nothing in this tree
-//    does that, and the ignore is deliberate: it sits below, where the
-//    platform is, rather than in the frame loop.
+//  - DEVICE LOSS. Silent output is retried once a second while active. Reset
+//    preserves banks and instance objects but drops playback, so games decide
+//    which persistent sounds to start again. A suspended engine is not reset:
+//    DirectXTK's new graph would not remember the old graph's StopEngine().
 
 using namespace DirectX;
 
@@ -59,6 +58,7 @@ namespace labrador
 		// declaration order, so the engine is declared first and dies last -
 		// after every bank and every voice that unregisters itself from it.
 		std::unique_ptr<AudioEngine> engine;
+		detail::DeviceRecovery recovery;
 
 		std::vector<std::unique_ptr<WaveBank>> banks;
 		std::vector<std::unique_ptr<SoundEffectInstance>> voices;
@@ -246,21 +246,19 @@ namespace labrador
 
 	void AudioDevice::update()
 	{
-		// The answer is false when the audio device has gone, and the reply
-		// DirectXTK documents is IsCriticalError() then Reset(). Nothing here
-		// makes that reply, and the ignore is deliberate rather than forgotten -
-		// which is why it sits here, beside the platform, and not in the frame
-		// loop where a reader could not tell which of the two it was.
-		std::ignore = this->impl_->engine->Update();
+		this->impl_->recovery.update(*this->impl_->engine,
+			detail::DeviceRecovery::Clock::now());
 	}
 
 	void AudioDevice::suspend()
 	{
+		this->impl_->recovery.suspend();
 		this->impl_->engine->Suspend();
 	}
 
 	void AudioDevice::resume()
 	{
 		this->impl_->engine->Resume();
+		this->impl_->recovery.resume();
 	}
 }
