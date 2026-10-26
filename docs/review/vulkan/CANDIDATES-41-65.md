@@ -121,16 +121,24 @@ Original, copied verbatim:
 
 - **[minor]** `engine/CMakeLists.txt:183` — find_package(Vulkan REQUIRED) asks for no version, so the backend's deliberate Vulkan 1.2 floor is not enforced at configure time
 
-**Confirmed configure-time gap; the runtime API floor is enforced.**
-[engine/CMakeLists.txt](../../../engine/CMakeLists.txt) still calls
-`find_package(Vulkan REQUIRED)` without a minimum. In
+**Configure-time floor enforced and tested with the real finder.**
+[engine/CMakeLists.txt](../../../engine/CMakeLists.txt) now calls
+`find_package(Vulkan 1.2 REQUIRED)`. In
 [device_resources.cpp](../../../engine/render/vulkan/device_resources.cpp),
 `MIN_API_VERSION` is `VK_API_VERSION_1_2`; `create_instance` requests it and
-`select_physical_device` rejects older API versions. This does not admit an
-older physical device past that check. Asking CMake for `Vulkan 1.2` is a
-bounded earlier diagnostic for insufficient headers; it does not replace
-runtime device admission or the separate SDK `dxc` check. No older-SDK
-configure fixture or device-selection experiment was performed here.
+`select_physical_device` rejects older API versions. The configure requirement
+provides an earlier diagnostic for insufficient headers; it does not replace
+runtime device admission or the separate SDK `dxc` check.
+
+[test_vulkan_sdk_version.py](../../../tools/tests/test_vulkan_sdk_version.py)
+extracts the production request and invokes CMake's real `FindVulkan` with
+`LANGUAGES NONE`, synthetic header version metadata and an empty import
+library. Before the fix, the 1.1.130 rejection assertion failed because
+configure accepted it. All four cases now pass: 1.1.130 rejects with a minimum
+diagnostic, 1.2.0 and 1.4.357 accept with correct imported paths, and an
+unversioned control still accepts the same old metadata. The installed real
+1.4.357 SDK also configures successfully. No compiler, loader, device or SDK
+installer acceptance follows from these metadata fixtures.
 
 ### Candidate 47
 

@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Require Vulkan 1.2 headers at configure time
+
+**Build requirement clarified.** Configuring the Vulkan backend now requires
+headers at least version 1.2, matching the API types and runtime device floor
+it already uses. An older SDK fails during configure with a version diagnostic
+instead of reaching compilation. The separate SPIR-V-capable SDK `dxc` lookup
+and runtime physical-device checks remain required; a header-version pass
+does not establish either one.
+
 ### 2026-10-27 - Reuse D3D12 submission scratch storage
 
 **Behaviour change.** D3D12 reserves its command-list pointer array with the
