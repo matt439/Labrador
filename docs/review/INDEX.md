@@ -144,7 +144,7 @@ green headless suite supplies a human session or a hardware measurement.
 |---|---|
 | **REV#1**, five-backend G6a, closed 2026-10-26 | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: native-null `AppTests` resizes a live Application and compares the actual HWND size with both caches. Raster-backend/interactive acceptance is not claimed. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
-| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native no-read-back sequences and Debug D3D12 diagnostic capture pass; deterministic outstanding-GPU-work proof remains. The retained queue excludes final device destruction. |
+| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native sequences, Debug diagnostics and instrumented D3D12 pending-work waits pass. Two-slot overlap and Vulkan pending-work proof remain; retained queues exclude final device destruction. |
 | **REV#8**, GPT-6 opportunity 4 | Bounded XAudio2 silent-output retries and six deterministic policy cases are implemented; native XAudio2/null audio regressions pass. Real endpoint loss/reappearance, retained-bank playback and suspension/resume remain unverified. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
@@ -203,6 +203,41 @@ still busy at each boundary: a hidden window can complete a present before
 the next CPU operation. Keep REV#7 open for deterministic outstanding-work
 proof rather than claiming frames in flight from test shape or clean captured
 diagnostics alone.
+
+**Instrumented D3D12 pending-work waits, 2026-10-26.**
+The isolated `D3D12SynchronizationTests` executable compiles the actual
+[DeviceResources translation unit](../../engine/render/d3d12/device_resources.cpp)
+through [a test wrapper](../../tests/render/d3d12_instrumented_device_resources.cpp).
+Only its `WaitForSingleObjectEx` call is redirected; production sources,
+class layout and the normal engine binary are unchanged. Normal static linking
+selects that object without whole-archive or duplicate-definition suppression.
+The wrapper's defined `wait_for_frame` and external bounded-wait reference,
+the recorded link command and successful runtime observations establish that
+the isolated executable used the instrumented object.
+
+[Three cases](../../tests/render/d3d12_pending_submission_tests.cpp) enqueue an
+external queue fence wait, a witness signal and real renderer drawing without
+presenting. The witness remains exactly zero immediately before the operation
+and at its observed production wait, whose event is also unsignaled. The test
+then CPU-signals its gate and requires normal completion and witness value one;
+device-removal sentinel values cannot pass. The operations are same-index
+`begin_frame`, a real hidden-window resize and renderer destruction. A separate
+queue-tail drain precedes test-owned resource cleanup.
+
+The production request is still observed as `INFINITE` and non-alertable, but
+the adapter forwards a finite five-second wait. A ten-second host watchdog is
+armed before the queue wait; missing observer calls, bad waits or an expired
+boundary fail the isolated process after opening its gate. The timeout/fail-fast
+branches were reviewed, not deliberately triggered during these normal runs.
+Debug and Release each pass all three cases and 31 assertions, together with
+their normal `RenderTests` and full `RenderPixelTests`; four standalone CMake
+checks also pass. The D3D12 presets now register 21 CTest entries.
+
+This establishes pending work at the instrumented D3D12 wait boundaries. It
+does not exercise an unmodified infinite wait, prove both swapchain slots
+executing concurrently, or establish Vulkan's corresponding pending-work
+behavior. Retained test fences/queue also exclude final device destruction.
+Those limits keep REV#7 open.
 
 ## Hardening verification
 

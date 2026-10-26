@@ -89,7 +89,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#7` | OPEN | should | M | Native lifecycle and Debug D3D12 diagnostic checks pass. Establish deterministic outstanding GPU work at reuse/resize/teardown boundaries; retained-device capture excludes final device destruction. [Evidence](docs/review/INDEX.md#presentation-lifecycle-evidence). |
+| `REV#7` | OPEN | should | M | Instrumented D3D12 checks observe pending work at reuse/resize/teardown waits. Two-slot overlap, Vulkan pending-work proof and final device diagnostics remain. [Evidence](docs/review/INDEX.md#presentation-lifecycle-evidence). |
 | `REV#8` | OPEN | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
 | `REV#4` | OPEN | could | XS | Minimise a sample on `x64-debug-vulkan` under the validation layers and record whether acquire or present returns `OUT_OF_DATE`, and how severe the minimise throw is (Vulkan review 6.1). |
 | `REV#3` | OPEN | could | M | Measure descriptor-heap query cost and check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records profile evidence, allocation reuse and full patterned mip read-back. |
