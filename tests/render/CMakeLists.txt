@@ -203,6 +203,18 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             labrador_settings
             Vulkan::Vulkan
         )
+
+        # Ordinary presentation plus an exact timeline oracle. Already-retired
+        # work is unverified, so this observation is outside default CTest.
+        add_executable(VulkanPresentedSlotsProbe EXCLUDE_FROM_ALL
+            vulkan_presented_slots_probe.cpp
+            win32/test_window.cpp
+        )
+        target_link_libraries(VulkanPresentedSlotsProbe PRIVATE
+            LabradorEngine
+            labrador_settings
+            Vulkan::Vulkan
+        )
     endif()
 
     if(NOT EMSCRIPTEN)

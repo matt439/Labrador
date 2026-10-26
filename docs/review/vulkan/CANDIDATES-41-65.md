@@ -217,7 +217,7 @@ Original, copied verbatim:
 
 - **[minor]** `engine/render/vulkan/device_resources.h:180` — The frames-in-flight ring reaches index 1 for the first time and never wraps, and nothing in engine/render/vulkan/ discloses it where D3D12's equivalent gap was accepted only because it was disclosed
 
-**Disclosure corrected; actual overlap remains an execution question.** The
+**Disclosure corrected; bounded pending-work evidence recorded.** The
 `FRAME_COUNT` comment in
 [device_resources.h](../../../engine/render/vulkan/device_resources.h)
 explicitly names the native no-read-back presentation sequences and warns that
@@ -229,8 +229,14 @@ advances `frame_index_` modulo `FRAME_COUNT`; the repeated loop in
 [presentation_lifecycle_tests.cpp](../../../tests/render/presentation_lifecycle_tests.cpp)
 now wraps the ring without per-frame read-back, resizes and destroys the
 renderer without a final explicit wait. The Vulkan full pixel suite passes
-under synchronization validation, but that still does not establish concurrent
-execution of both slots or close REV#7's deterministic outstanding-work proof.
+under synchronization validation. Those sequences alone do not establish
+pending work or concurrent execution. The later
+[REV#7 observations](../INDEX.md#presentation-lifecycle-evidence) include
+controlled pending reuse/resize/teardown waits and an actual two-present pair
+whose shared timeline remained below both targets at a zero-time wait. This
+closes the bounded verification question on the recorded runtime. Concurrent
+GPU execution, physical display overlap and deterministic pending generation
+remain unclaimed; an already-retired pair returns unverified.
 
 ### Candidate 52
 
