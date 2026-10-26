@@ -98,7 +98,8 @@ and the last is the job in
 every path it changes is a `.md` file or under `docs/`, the `changes` job
 says so, the build jobs report without building, and `lint` runs the
 citation check, the agent brief check, the include wall, offline source
-revision fixtures, the flash-definition tests and the Python tooling suite.
+revision fixtures, the flash-definition and pacing-analysis tests, and the
+Python tooling suite.
 The website build still runs, because it reads the design documents. `changes`
 is required for that reason: if it failed, the jobs that need it would report
 as skipped, and a skipped check passes.
