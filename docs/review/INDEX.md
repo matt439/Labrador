@@ -144,7 +144,7 @@ green headless suite supplies a human session or a hardware measurement.
 |---|---|
 | **REV#1**, five-backend G6a, closed 2026-10-26 | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: native-null `AppTests` resizes a live Application and compares the actual HWND size with both caches. Raster-backend/interactive acceptance is not claimed. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
-| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native sequences, Debug diagnostics and instrumented D3D12 pending-work waits pass. Two-slot overlap and Vulkan pending-work proof remain; retained queues exclude final device destruction. |
+| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native sequences, Debug diagnostics and instrumented D3D12/Vulkan pending-work waits pass. Presented two-slot overlap remains; retained owners exclude final device destruction. |
 | **REV#8**, GPT-6 opportunity 4 | Bounded XAudio2 silent-output retries and six deterministic policy cases are implemented; native XAudio2/null audio regressions pass. Real endpoint loss/reappearance, retained-bank playback and suspension/resume remain unverified. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
@@ -238,6 +238,39 @@ does not exercise an unmodified infinite wait, prove both swapchain slots
 executing concurrently, or establish Vulkan's corresponding pending-work
 behavior. Retained test fences/queue also exclude final device destruction.
 Those limits keep REV#7 open.
+
+**Instrumented Vulkan pending-work waits, 2026-10-26.**
+[Three Vulkan cases](../../tests/render/vulkan_pending_submission_tests.cpp)
+record real drawing, then hold its actual execute submission behind a test
+timeline witness. A scoped `vkQueueSubmit` adapter adds only that timeline
+wait at `ALL_COMMANDS`, retaining the command buffer, engine timeline signal
+and fence. This is submission instrumentation as well as wait observation.
+A binary bridge cannot depend on a future host semaphore signal
+([VUID 03238](https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html#VUID-vkQueueSubmit-pWaitSemaphores-03238)).
+
+At the backend's actual `vkWaitSemaphores` entry, each case requires witness
+zero, an engine counter below the requested target and `VK_TIMEOUT` from a
+real zero-time query. One worker then signals its gate exactly once, and the
+adapter requires normal completion within five seconds. The worker's absolute
+ten-second deadline stays armed through the operation and separate fenced
+queue-tail retirement. Scoped cases exercise same-index `begin_frame`, a real
+hidden-window resize and renderer destruction. Unarmed submit/wait/idle calls
+forward their original arguments and timeouts. The subsequent device-idle
+calls occur after timeline completion; they do not prove pending presentation
+work. The shared device owner outlives test semaphores and retirement.
+
+Debug and Release each pass the three cases and 45 assertions. Their full
+native runs pass 163 headless render cases, plus 60 Debug and 59 Release pixel
+cases. The Debug run uses the review's shell-visible synchronization settings:
+zero validation errors, zero hazards, zero validation warnings and 791
+performance advisory lines. No golden images changed. Timeout and fail-fast
+branches were reviewed, not deliberately triggered in these normal runs.
+
+This adds controlled evidence that the timeline waits precede reuse and
+resource teardown while submissions are pending. It does not establish an
+unmodified submission/infinite wait, concurrent work in both presented slots,
+pending presentation at device idle or final device destruction. REV#7
+therefore remains open alongside the earlier ordinary presentation sequences.
 
 ## Hardening verification
 
