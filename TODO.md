@@ -12,7 +12,7 @@ An index of open work, one row per item; each row points to the document that ow
 
 1. **`SM-43` (X1): local build, tooling and website checks pass; PR CI verification remains.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
 2. **`BDP-03` (X23): packaged-page checks pass locally; observe the entry in PR CI's wasm output.** `OCA-45` still needs its physical two-pad session.
-3. **`SM-25` (X28): pin, identity log and schedule implemented; verify the endpoint and real scheduled Actions run when access permits.** Remaining Next work needs owner hardware, browser/network access or a remote CI observation.
+3. **`SM-25` (X28): resolve the hosted installer's HTTP 403 and observe a scheduled Actions run.** Remaining Next work needs owner hardware or remote CI evidence.
 4. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
@@ -46,7 +46,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-25` | BLOCKED | should | S | SDK pin/checksum, browser identity and weekly workflow implemented; verify installer endpoint and scheduled Actions history when network/remote runs are permitted. Local HEAD was socket-denied. |
+| `SM-25` | BLOCKED | should | S | Pin/hash confirmed and local HEAD returns 200; PR #59's hosted SDK download receives HTTP 403 before install, cause unconfirmed. Scheduled Actions observation remains. |
 | `SM-19` | OPEN | could | XS | Windows tooling gate and all 81 local Python tests pass; observe a deliberately failing throwaway-branch CI run. |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
 
