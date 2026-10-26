@@ -121,8 +121,6 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `SRL-07` | DECISION | could | S | The owner chooses between amending CONVENTIONS to accept the 26 SCREAMING constants and renaming them in both repositories. |
 | `OCA-66` | DECISION | could | S | The owner decides whether the default DPI awareness stays unaware or becomes per-monitor aware. |
 | `SM-43` | BLOCKED | should | M | Brief and history relocation implemented; full tools-suite acceptance needs Windows to permit the PowerShell fixtures ([verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance)). |
-| `DOC#2` | OPEN | could | XS | `docs/survey/2026-08-26-status.md`'s section-6 item 4 still opens "Still unmade" above its own "Decided and built, 2026-10-11" (D9). Its decision 2, whether markers stay on the seam, is still unmade and has no other owner. |
-| `DOC#3` | OPEN | could | XS | The file-length audit's tripwire has fired: `tests/core/state_context_tests.cpp` is 865 lines against about 650. Re-ask whether `StateContext` has a second job and record the answer in `docs/file-length-audit.md`. |
 
 ## Ports
 
@@ -148,7 +146,7 @@ A new row for one of these gets its section back.
 | The EC2 performance lane | [tools/cloud_performance/README.md](tools/cloud_performance/README.md) | a new reference run after `SM-03`, or a regression question |
 | round-2 plan, the RTCD list, the first review, backend-equivalence | [docs/review/round-2/PLAN.md](docs/review/round-2/PLAN.md), [docs/review/rtcd/](docs/review/rtcd/), [docs/review/IMPLEMENTED.md](docs/review/IMPLEMENTED.md) | nothing: all landed or superseded; the game-side rows live in ColourWars |
 | The 2026-09-26 review's numbered findings and hardening candidates | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and [the review index](docs/review/INDEX.md#hardening-verification) | nothing: all 23 implemented and four hardening candidates addressed; `REV#12` and `SM-19` remain |
-| The repository split, the file-length audit's steps | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md) | nothing beyond `DOC#3` |
+| The repository split, file-length tripwire and survey decisions | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md), [docs/survey/2026-08-26-status.md](docs/survey/2026-08-26-status.md) | nothing: StateContext's responsibility was revisited; markers and the XWB reader were already decided |
 
 ---
 

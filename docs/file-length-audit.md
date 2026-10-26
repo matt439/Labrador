@@ -402,3 +402,55 @@ Step-specific:
 - **Fix the `FLT_EPSILON` boundary cases**, the two assertion-less blocks at `math_tests.cpp:1118-1120` and `:1682-1687`, or the missing `circle_point_intersect` and `triangle_point_intersect` rows. All are real coverage defects, all land in small files where the omission becomes obvious, and none belongs inside a motion commit.
 - **Address `application.h` dragging `<Audio.h>` and `<d3d11_1.h>`** into every client TU through `resource_loader.h:6-7`. Real, filed, and a separate unit of work.
 - **Resolve `RectangleF`'s vptr.** It derives from `Shape`, so it carries a vptr while being the value type `Camera`, `Viewport`, `Widget`, `SpriteSheet` and `Scene` hold by value. The alternative is a collider type wrapping a plain rectangle so that polymorphism is paid for only where `CollisionObject::shape()` needs it. That is a design change with real call-site consequences, not a filing question, and T3 says leave it until something forces it.
+
+## 2026-10-26: StateContext growth tripwire revisited
+
+Finding 6's roughly 650-line tripwire has fired. The counts below are from
+the current standalone checkout, including blank lines and comments;
+the 551 lines and 17 cases above remain the 2026-08-11 measurement.
+
+| File | Lines | Test cases |
+|---|---:|---:|
+| [`engine/core/state_context.h`](../engine/core/state_context.h) | 311 | - |
+| [`engine/core/state_context.cpp`](../engine/core/state_context.cpp) | 367 | - |
+| [`tests/core/state_context_tests.cpp`](../tests/core/state_context_tests.cpp) | 995 | 29 |
+
+**StateContext still has one job: owning a stack of states and coordinating
+that stack's lifetime and callbacks.** Updating the top, drawing the visible
+suffix, suspending and resuming frames, and delivering a popped frame's typed result
+all depend on the same frame ownership and order. A transition preserves the
+frame's result channel; `clear()` destroys queued states before live states
+and live states top first. These are connected rules for that one stack.
+
+Activation notification is the closest candidate for a second job. It stores
+one active level and walks this stack's live frames; it does not dispatch
+arbitrary events or own listeners independently of them. Its callbacks may
+change the stack, so they use the same deferral rule as `update()`, `init()`,
+suspend, resume and result callbacks. The implementation's local `Deferral`
+guard restores the enclosing callback's flag on normal and exceptional exits;
+`apply_pending()` refuses to reenter an active drain. Extracting a queue or a
+notification service would still require coordinating those same lifetimes
+across the proposed boundary.
+
+The tests now cover destructor order, queued-state disposal, nested activation
+inside update and init, callbacks during a drain, and exception unwinding.
+They also cover a root state owning another StateContext. That composition
+uses the existing stack operations: the root owns its extra update and draw
+work and forwards activation to the owned stack. StateContext itself has
+acquired neither an overlay service nor a second update scheduler. These
+cases explain growth without identifying a second production responsibility;
+splitting the tests by callback would scatter checks of the same lifetime
+invariant.
+
+The original finding's uncovered `push(state, on_closed)` note is historical
+too: the nested activation case for suspend, resume and result callbacks now
+exercises that overload and checks the callback's order and deferred transition.
+
+**Keep the type and its test file together.** This discharges the original
+tripwire by reviewing responsibilities, rather than moving its numerical
+ceiling. Revisit at the next new behavioural section, especially if it adds
+work that can be specified independently of owning this frame stack. If that
+happens, name and split that responsibility first; its tests then have a
+truthful second filename. A larger line count alone is a prompt to ask the
+question, not a reason to split. This is a source and test-structure review;
+no execution result is claimed here.
