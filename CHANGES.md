@@ -72,6 +72,13 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 — Identify Vulkan instance-creation failures accurately
+
+**Behaviour change, Vulkan backend.** If instance creation fails, the
+`std::runtime_error` now names the failed operation and its `VkResult` instead
+of diagnosing every result as a missing Vulkan loader. No source migration is
+needed; code matching the old exception text must use the new diagnostic.
+
 ### 2026-10-26 - Remove Vulkan's temporary view-prefix allocation
 
 **Allocation behavior.** Vulkan drawing no longer constructs a temporary
