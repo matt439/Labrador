@@ -7,6 +7,10 @@ namespace labrador
 {
 	// Every pad, this frame and last, and the edges between them.
 	//
+	// A game reads the borrowed instance from Application::gamepads(). The
+	// shell constructs it and calls poll(); game code does not advance the
+	// snapshots itself.
+	//
 	// WHY THE ENGINE POLLS THIS AND A GAME DOES NOT. An edge is "down now, up
 	// last frame", so it is only right if "last frame" is the frame before this
 	// one. An edge detector a game keeps for itself advances its "previous"
@@ -27,12 +31,13 @@ namespace labrador
 	public:
 		static constexpr int max_count = 4;
 
+		// For the shell or a device fixture. A game uses Application::gamepads().
 		// `reader` is borrowed and must outlive this.
 		explicit Gamepads(GamepadReader* reader);
 
-		// Samples the reader once and reads every slot. What was current
-		// becomes previous, so every edge below is measured across exactly one
-		// frame.
+		// Called by the shell before state updates. Samples the reader once
+		// and reads every slot. What was current becomes previous, so every
+		// edge below is measured across exactly one frame.
 		void poll();
 
 		// Throw std::out_of_range naming the slot if it is not in

@@ -8,10 +8,22 @@
 
 namespace labrador
 {
+	// A drawable string, without a scene's GameObject interface. Use Label
+	// when a scene should update, draw and cull the string.
 	class Text : public TextObject
 	{
 	public:
 		Text() = default;
+
+		// `font_name` names a loaded font in `render_resources`, normally
+		// Application::render_resources(). That table is borrowed and must
+		// outlive this object. An unknown font name throws std::out_of_range.
+		//
+		// `position` locates the text's origin in world coordinates. `origin`
+		// is the offset from the layout's top-left in unscaled font texels;
+		// its default zero anchors that corner at `position`. Glyph bearings
+		// can offset the visible ink. `scale` scales the font's pixels, and
+		// `rotation` is in radians, clockwise on screen.
 		Text(const std::wstring& text,
 			const std::string& font_name,
 			const mattmath::Vector2F& position,

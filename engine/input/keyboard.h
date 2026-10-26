@@ -212,6 +212,10 @@ namespace labrador
 	// The keyboard as it was this frame and last, the edges between them, and
 	// what was typed in between.
 	//
+	// A game reads the borrowed instance from Application::keyboard().
+	// Construction, feeding and poll() belong to the shell; a game reads the
+	// snapshots rather than advancing them.
+	//
 	// Application owns one, feeds it from the window's messages and polls it
 	// once per frame before any state updates - which is what makes "down now,
 	// up last frame" true for every reader, and what stops two states keeping
@@ -270,10 +274,10 @@ namespace labrador
 		// above is what makes that safe rather than merely honest.
 		void set_focused(bool focused);
 
-		// THE FRAME BOUNDARY. What was current becomes previous, what the
-		// messages have been building becomes current, and the text typed
-		// since the last call becomes readable. Called once per frame, before
-		// anything reads it.
+		// THE FRAME BOUNDARY, called by the shell. What was current becomes
+		// previous, what the messages have been building becomes current, and
+		// the text typed since the last call becomes readable. Called once per
+		// frame, before anything reads it.
 		void poll();
 
 		const KeyboardState& state() const;

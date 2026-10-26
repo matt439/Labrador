@@ -33,18 +33,30 @@ namespace labrador
 		bool operator==(const Camera& other) const;
 		bool operator!=(const Camera& other) const;
 
+		// Maps a world rectangle into view-local pixels: subtract translation
+		// from its position, then multiply position and extent by scale.
+		// The viewport's offset in the back buffer is not included.
 		mattmath::RectangleF calculate_view_rectangle(
 			const mattmath::RectangleF& world_rectangle) const;
+
+		// Applies the same world-to-view transform in place.
 		void calculate_view_rectangle(
 			mattmath::RectangleF& rectangle) const;
+
+		// The same transform using the supplied camera.
 		static mattmath::RectangleF calculate_view_rectangle(
 			const mattmath::RectangleF& world_rectangle,
 			const Camera& camera);
+
+		// Writes the supplied camera's transform to `view_rectangle`.
 		static void calculate_view_rectangle(
 			const mattmath::RectangleF& world_rectangle,
 			const Camera& camera,
 			mattmath::RectangleF& view_rectangle);
 
+		// Linearly interpolates translation and scale from `first` to `last`.
+		// `amount` is not clamped: 0 selects first, 1 last, and values outside
+		// that interval extrapolate.
 		static Camera calculate_intermediate_camera(
 			const Camera& first, const Camera& last, float amount);
 
@@ -97,10 +109,16 @@ namespace labrador
 		static Camera frame(const mattmath::RectangleF& world_rectangle,
 			const Viewport& viewport);
 
+		// Maps a world point to view-local pixels: (world - translation) * scale.
+		// The viewport's offset in the back buffer is not included.
 		mattmath::Vector2F calculate_view_position(
 			const mattmath::Vector2F& world_position) const;
+
+		// Multiplies a world scale by this camera's scale.
 		float calculate_view_scale(float world_scale) const;
 
+		// The identity camera: zero translation and unit scale, suitable for
+		// screen-space drawing in a view. Constant-initialised before use.
 		static const Camera DEFAULT_CAMERA;
 	};
 }
