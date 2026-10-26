@@ -572,6 +572,12 @@ def analyze(folder: str | Path) -> dict[str, Any]:
     pooled: dict[str, dict[str, list[int]]] = {
         name: {phase: [] for phase in PHASES} for name in declared
     }
+    cadence_pooled: dict[str, dict[str, dict[str, list[int]]]] = {
+        name: {} for name in declared
+    }
+    cadence_repetitions: dict[str, dict[str, list[int]]] = {
+        name: {} for name in declared
+    }
     devices: dict[str, tuple[Any, ...]] = {}
     measurement_identity: tuple[bool, bool] | None = None
     seen: set[tuple[str, int]] = set()
@@ -609,6 +615,7 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             if backend_name in devices and devices[backend_name] != device_identity:
                 raise ValueError("render device identity changed between repetitions")
             devices[backend_name] = device_identity
+            diagnostics = _diagnostics(phases, target_frame_ns)
             observations[backend_name].append({
                 "repetition": repetition,
                 "source": path.relative_to(root).as_posix(),
@@ -623,10 +630,14 @@ def analyze(folder: str | Path) -> dict[str, Any]:
                 "timing": {key: value for key, value in result["timing"].items()
                            if key != "scheduled_interval_ns"},
                 "summary": {phase: _summary(values) for phase, values in phases.items()},
-                **_diagnostics(phases, target_frame_ns),
+                **diagnostics,
             })
+            verdict = diagnostics["presentation_lock"]["verdict"]
+            cadence_repetitions[backend_name].setdefault(verdict, []).append(repetition)
+            cadence_phases = cadence_pooled[backend_name].setdefault(verdict, {})
             for phase, values in phases.items():
                 pooled[backend_name].setdefault(phase, []).extend(values)
+                cadence_phases.setdefault(phase, []).extend(values)
         expected_seen = {
             (name, repetition)
             for name in declared
@@ -654,6 +665,14 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             "presentation_wait_candidate_repetitions": sorted(
                 item["repetition"] for item in observations[name]
                 if item["presentation_lock"]["verdict"] == "presentation_wait_candidate"),
+            "cadence_pools": {
+                verdict: {
+                    "repetitions": sorted(cadence_repetitions[name][verdict]),
+                    "sample_count": len(group["whole_frame_ns"]),
+                    "summary": {phase: _summary(values) for phase, values in group.items()},
+                }
+                for verdict, group in sorted(cadence_pooled[name].items())
+            },
             "repetitions": sorted(observations[name], key=lambda item: item["repetition"]),
         }
     return {
@@ -662,7 +681,15 @@ def analyze(folder: str | Path) -> dict[str, Any]:
         "interpretation": {
             "pooled_summary": (
                 "All declared samples and repetitions are retained. Pooled percentiles can "
-                "hide differences between processes; inspect repetitions and repetition_ranges."),
+                "hide differences between processes; inspect cadence_pools, repetitions "
+                "and repetition_ranges."),
+            "cadence_pools": (
+                "Separate raw-sample summaries for whole repetitions with the same "
+                "presentation_lock verdict. Every repetition and sample appears in exactly "
+                "one pool, including samples before a tail's onset; empty verdicts are omitted. "
+                "The verdict classifies the retained tail, not every frame or the cause of "
+                "a wait. not_locked can include split cadence and does not mean wait-free. "
+                "The existing all-repetition summary is unchanged; no p99 column is selected."),
             "long_begin_or_present": (
                 "CPU-observed begin/present durations exceeding half the target frame period. "
                 "These include work and waits; their cause and GPU time are not measured. "

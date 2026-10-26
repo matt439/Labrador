@@ -585,6 +585,37 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(backend["pacing_measurement"], "unrecorded_legacy")
             self.assertNotIn("present_mode", backend["render_device"])
             self.assertNotIn("start_lateness_ns", backend["summary"])
+            pools = backend["cadence_pools"]
+            self.assertEqual(set(pools), {"not_locked"})
+            self.assertEqual(pools["not_locked"]["repetitions"], [1, 2])
+            self.assertEqual(pools["not_locked"]["sample_count"], 200)
+            self.assertEqual(pools["not_locked"]["summary"], backend["summary"])
+            for phase in analysis.PACING_PHASES:
+                self.assertNotIn(phase, pools["not_locked"]["summary"])
+
+    def test_cadence_pool_percentiles_use_raw_samples_across_repetitions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            for repetition, whole in ((1, 10), (2, 1000)):
+                samples = [{
+                    "ordinal": index, "update_ns": 1, "begin_ns": 2,
+                    "record_submit_ns": 3, "present_ns": whole - 6,
+                    "whole_frame_ns": whole, "scheduled_interval_ns": 16_666_667,
+                } for index in range(100)]
+                self.replace_samples(root, repetition, samples)
+
+            report = analysis.analyze(root)
+
+            self.assertTrue(report["complete"])
+            backend = report["backends"]["d3d11"]
+            pool = backend["cadence_pools"]["not_locked"]
+            self.assertEqual(pool["repetitions"], [1, 2])
+            self.assertEqual(pool["sample_count"], 200)
+            # Averaging the repetitions' percentiles would produce 505.
+            self.assertEqual(pool["summary"]["whole_frame_ns"]["p50"], 10)
+            self.assertEqual(pool["summary"]["whole_frame_ns"]["p99"], 1000)
+            self.assertEqual(pool["summary"], backend["summary"])
 
     def test_first_repetition_with_long_present_is_retained_and_exposed(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -834,6 +865,25 @@ class AnalysisTests(unittest.TestCase):
             self.assertNotIn("tail_start_lateness_ns", second["presentation_lock"])
             self.assertEqual(backend["presentation_wait_candidate_repetitions"], [1])
             self.assertIn("presentation_lock", report["interpretation"])
+            pools = backend["cadence_pools"]
+            self.assertEqual(set(pools), {"not_locked", "presentation_wait_candidate"})
+            candidate = pools["presentation_wait_candidate"]
+            other = pools["not_locked"]
+            self.assertEqual(candidate["repetitions"], [1])
+            self.assertEqual(other["repetitions"], [2])
+            # Classification is by the tail, but all 100 samples survive:
+            # the first 30 pre-onset frames are not silently discarded.
+            self.assertEqual(candidate["sample_count"], 100)
+            self.assertEqual(candidate["summary"]["whole_frame_ns"]["min"], 3_040_000)
+            self.assertEqual(candidate["summary"]["whole_frame_ns"]["p99"], 16_664_000)
+            self.assertEqual(other["summary"]["whole_frame_ns"]["p99"], 3_040_000)
+            self.assertEqual(backend["summary"]["whole_frame_ns"]["p99"], 16_664_000)
+            self.assertEqual(sum(pool["sample_count"] for pool in pools.values()),
+                             backend["sample_count"])
+            for phase in backend["summary"]:
+                self.assertEqual(sum(pool["summary"][phase]["count"] for pool in pools.values()),
+                                 backend["summary"][phase]["count"])
+            self.assertIn("cadence_pools", report["interpretation"])
 
     def test_work_and_mixed_cost_cadence_signatures_do_not_claim_presentation_lock(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -867,6 +917,16 @@ class AnalysisTests(unittest.TestCase):
             self.assertTrue(first["presentation_lock"]["cadence_signature"])
             self.assertTrue(second["presentation_lock"]["cadence_signature"])
             self.assertEqual(backend["presentation_wait_candidate_repetitions"], [])
+            pools = backend["cadence_pools"]
+            self.assertEqual(set(pools), {"work_limited", "ambiguous_cadence"})
+            self.assertEqual(pools["work_limited"]["repetitions"], [1])
+            self.assertEqual(pools["ambiguous_cadence"]["repetitions"], [2])
+            self.assertEqual(pools["work_limited"]["summary"]["update_ns"]["p99"],
+                             16_750_000)
+            self.assertEqual(pools["ambiguous_cadence"]["summary"]["update_ns"]["p99"],
+                             10_000_000)
+            self.assertEqual(sum(pool["sample_count"] for pool in pools.values()),
+                             backend["sample_count"])
 
     def test_alternating_lock_is_recognised_from_the_tail_mean(self):
         # Vulkan's two-slot ring against three FIFO images blocks every second

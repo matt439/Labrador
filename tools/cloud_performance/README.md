@@ -5,6 +5,14 @@ retains the raw evidence. It establishes a repeatable **EC2 reference lane**;
 it does not turn an NVIDIA datacentre GPU or Windows Server into Labrador's
 consumer minimum specification.
 
+**Compare source identities, not just the workload name.** The benchmark still
+calls its workload `full_well_top_out`, but the calmer top-out in `8c69272`
+removed the drawn stack and reduced the frozen sparks' size and heat while
+retaining 9,600 particles. Later runs are not the same rendered workload as
+`g6f-reference-003`/`004`. The [dated workload note](../../docs/performance/2026-10-26-workload-and-cadence.md)
+records that boundary. Match the release/source identity as well as host,
+settings and counts before treating two runs as measurements of equal work.
+
 Local packaging, validation, CloudFormation rendering and analysis require
 Python 3.10 or newer and otherwise use only the standard library. `boto3` is
 imported only by commands that read or change AWS state:
@@ -261,7 +269,18 @@ measurements are never synthesized. Pacing and presentation metadata entered
 the producer together, so a capture must include both groups or neither.
 Raw samples remain the authority.
 
-Read `repetitions` and `repetition_ranges` before the pooled `summary`.
+Read `cadence_pools`, `repetitions` and `repetition_ranges` before the pooled
+`summary`. `cadence_pools` separates whole repetitions by the existing
+`presentation_lock.verdict`: `not_locked`, `presentation_wait_candidate`,
+`work_limited` or `ambiguous_cadence`. Each nonempty pool records its repetition
+ids, sample count and phase summaries computed from those raw samples. Every
+sample appears once, including a repetition's samples before the classified
+tail begins. These are groups of repetitions with the same tail verdict,
+not per-frame state labels; `not_locked` can include split cadence and does
+not establish that a repetition was wait-free. Missing legacy pacing phases
+remain absent. The existing all-repetition `summary` and counts stay intact;
+no p99 column is selected by this grouping.
+
 Per-repetition diagnostics show mean cadence, counts over the frame budget,
 short/long intervals, and long begin/present calls including alternation. They
 also retain the first and last affected sample and the longest consecutive and
