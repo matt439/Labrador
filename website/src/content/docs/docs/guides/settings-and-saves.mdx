@@ -1,0 +1,119 @@
+---
+title: Settings and saves
+description: Write your game's JSON to a per-user Windows folder, and mount and sync persistent storage before starting the browser build.
+sidebar:
+  order: 4
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+Settings and progress are your game's data. Labrador's asset loaders read content; they do not
+choose a save location or write a save format. Keep that code in your game, alongside the values
+it understands. This example writes a small JSON settings file with a version and a volume from
+0 to 100. The same file-writing code works on Windows and in Emscripten's virtual filesystem.
+
+## Choose a per-user folder on Windows
+
+Use the user's **LocalAppData** known folder, with your game's own subfolder. Do not write beside
+the executable: an installed game may be in a read-only folder, and a relative path follows the
+process's working directory rather than the player. The Windows API supplies a Unicode path;
+`std::filesystem::path` carries it to the standard library's file streams.
+
+<SourceFile path="tools/save_check/settings.cpp" from="std::filesystem::path settings_directory()" to="}" />
+
+Include `windows.h` and `shlobj.h` on Windows, and link `shell32.lib` and `ole32.lib`. Replace
+`MyGame` with your own stable name. In CMake, add those libraries to your game in its native
+Windows branch, not its Emscripten branch:
+
+```cmake
+target_link_libraries(MyGame PRIVATE shell32 ole32)
+```
+
+## Write JSON, then check the result
+
+The writer makes the directory, validates the value, opens the file and enables stream
+exceptions. `close()` completes the standard-library write and reports a buffered write failure.
+Its caller catches `std::exception` and shows a save failure; it must not tell the player the save
+succeeded merely because the settings changed in memory.
+
+<SourceFile path="tools/save_check/settings.cpp" from="void write_settings(" to="}" />
+
+Call `write_settings(settings_directory(), 80)` when the player applies a setting. This simple
+example replaces the file in place; a progress save that must survive a crash during writing
+needs your game's recovery scheme, such as a second generation and a checked replacement. Keep
+save writes out of the per-frame update path.
+
+The standard library has no JSON parser. Read bytes with `std::ifstream`, then parse and validate
+them using the JSON reader your game chooses. Check the version, required fields, types and
+ranges before applying anything. A missing settings file means defaults; malformed or unsupported
+data is a reported load failure, rather than permission to silently overwrite the only copy.
+The check below reads the JSON bytes in C++ and parses that tiny record in its host page;
+it is a persistence example, not a general save-file parser.
+
+## Restore browser storage before starting the game
+
+An ordinary Emscripten file lives in memory and disappears on reload. Mount **IDBFS** at `/save`
+and call `FS.syncfs(true, callback)` to populate it from IndexedDB. That operation is asynchronous.
+Add a run dependency before it and remove the dependency only on success, so `main()` cannot read
+defaults and overwrite an existing save while the restore is still running.
+
+Put this JavaScript in `game/web/persist.js`:
+
+<SourceFile path="tools/save_check/persist.js" lang="js" />
+
+This is a `--pre-js` file, so its `FS`, `IDBFS`, `addRunDependency`, `removeRunDependency` and
+`abort` names are inside Emscripten's runtime. It appends to `Module.preRun`; keep any existing
+callbacks the game's host page has there. Add the file and IDBFS to the browser target's existing
+link options, alongside its shell and embedded-content options:
+
+```cmake
+target_link_options(MyGame PRIVATE
+    "-lidbfs.js"
+    "--pre-js" "${CMAKE_CURRENT_SOURCE_DIR}/web/persist.js"
+)
+set_property(TARGET MyGame APPEND PROPERTY LINK_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/web/persist.js")
+```
+
+The browser branch of `settings_directory()` returns `/save`. A file such as
+`/save/settings.json` then uses the same `std::ofstream` writer as Windows. Keep the mount path
+stable across releases: IDBFS uses that path to name its database.
+
+## Finish the browser sync before saying saved
+
+Closing the C++ stream updates the mounted in-memory filesystem. To persist that change, call
+`Module.flushSave()` from your page after the C++ write has completed, and await its promise.
+It calls `FS.syncfs(false, callback)` to copy the mounted filesystem back to IndexedDB. For
+example, a page button can call an exported game function and then flush:
+
+```js
+async function applyVolume(volume) {
+    if (Module._save_volume(volume) !== 0) throw new Error('Could not write settings');
+    await Module.flushSave();
+    // Only now show the player's saved acknowledgement.
+}
+```
+
+`save_volume` is this example's `extern "C" EMSCRIPTEN_KEEPALIVE` wrapper around `write_settings`;
+it returns zero on success. It is game code, not a Labrador function. Serialize save requests:
+disable Apply until this promise settles, or queue the next request. Report a rejected promise
+and allow a deliberate retry. Do not rely on `beforeunload` to finish an asynchronous write;
+save at a checkpoint while the page is still running.
+
+Browser storage belongs to the site's origin and browser profile. A different scheme, host or
+port uses different storage. Private browsing, quota limits, eviction and clearing site data can
+remove or refuse it. Keep failures visible and provide an export/import path if progress must
+remain under the player's control.
+
+## Check a real reload
+
+<RepoLink path="tools/save_check/README.md">The complete example and check commands</RepoLink>
+compile the C++ writer with this exact pre-js file and run a page in headless Chrome. The check
+starts with a fresh profile, writes volume 37 through C++, awaits the sync, reloads the page at
+the same origin, and asserts that C++ reads `{"version":1,"volume":37}` back before it marks the
+page ready. It uses the existing browser page runner; no engine window or renderer is needed.
+
+Use that check for storage changes, then test your game's own validation and recovery rules
+separately. [Build for the browser](/docs/guides/browser/) covers the rest of the browser target;
+[Content and the manifest](/docs/guides/assets/) covers the content the engine reads.

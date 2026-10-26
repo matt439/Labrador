@@ -11,7 +11,7 @@ An index of open work, one row per item; each row points to the document that ow
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
 1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
-2. **`OCA-53` (X14): settings and saves on Windows and in the browser.** `OCA-45` code and guide are implemented; its physical two-pad acceptance remains blocked.
+2. **`OCA-53` (X14): guide and native/wasm examples implemented; real reload acceptance is blocked by Chrome GPU startup access.** `OCA-45` still needs its physical two-pad session.
 3. **`SRL-08`, `OCA-57` (X16): reference audience and generated guide links.** Header contracts, member naming and constant navigation are implemented.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
@@ -25,7 +25,7 @@ An index of open work, one row per item; each row points to the document that ow
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
-| `OCA-53` | OPEN | should | M | Add a settings/saves guide with per-user Windows JSON and verified IDBFS reload persistence. |
+| `OCA-53` | BLOCKED | should | M | Guide and native/wasm writer compile checks implemented; run the real IDBFS reload driver when Chrome GPU startup is permitted (currently 0xC0000022). |
 
 ## Website and the hosted demo
 
