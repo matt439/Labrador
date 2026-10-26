@@ -36,6 +36,31 @@ TEST_CASE("a group starts focused on its first widget")
 	CHECK(group.slot_count() == 1);
 }
 
+TEST_CASE("default focus paint orders focused above unfocused above disabled")
+{
+	StubWidget play(0.0f, 0.0f, 100.0f, 50.0f);
+	StubWidget options(0.0f, 100.0f, 100.0f, 50.0f);
+	StubWidget unavailable(0.0f, 200.0f, 100.0f, 50.0f);
+	FocusGroup group;
+	group.add(&play);
+	group.add(&options);
+	group.add(&unavailable);
+	REQUIRE(group.set_enabled(&unavailable, false));
+
+	const auto luminance = [](const labrador::Colour& colour)
+		{
+			return 0.2126f * colour.r + 0.7152f * colour.g + 0.0722f * colour.b;
+		};
+	CHECK(luminance(play.colour()) > luminance(options.colour()));
+	CHECK(luminance(options.colour()) > luminance(unavailable.colour()));
+
+	// Disabled paint wins even when a cursor is placed on that row.
+	REQUIRE(group.set_focused(0, &unavailable));
+	CHECK(luminance(options.colour()) > luminance(unavailable.colour()));
+	REQUIRE(group.set_enabled(&unavailable, true));
+	CHECK(luminance(unavailable.colour()) > luminance(options.colour()));
+}
+
 TEST_CASE("moving focus repaints both widgets")
 {
 	StubWidget play(0.0f, 0.0f, 100.0f, 50.0f);
