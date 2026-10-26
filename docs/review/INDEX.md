@@ -146,7 +146,7 @@ green headless suite supplies a human session or a hardware measurement.
 |---|---|
 | **REV#1**, five-backend G6a, closed 2026-10-26 | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: native-null `AppTests` resizes a live Application and compares the actual HWND size with both caches. Raster-backend/interactive acceptance is not claimed. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
-| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native sequences, Debug diagnostics and instrumented D3D12/Vulkan pending-work waits pass. Presented two-slot overlap remains; retained owners exclude final device destruction. |
+| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native sequences and pending-work waits pass. D3D12's opt-in callback probe witnesses device destruction; presented overlap and Vulkan final-device diagnostics remain. |
 | **REV#8**, GPT-6 opportunity 4 | Bounded XAudio2 silent-output retries and six deterministic policy cases are implemented; native XAudio2/null audio regressions pass. Real endpoint loss/reappearance, retained-bank playback and suspension/resume remain unverified. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
@@ -273,6 +273,62 @@ resource teardown while submissions are pending. It does not establish an
 unmodified submission/infinite wait, concurrent work in both presented slots,
 pending presentation at device idle or final device destruction. REV#7
 therefore remains open alongside the earlier ordinary presentation sequences.
+
+**D3D12 destruction callback observation, 2026-10-26.**
+The opt-in [D3D12DestructionProbe](../../tests/render/d3d12_destruction_probe.cpp)
+links the ordinary engine. It requires Debug, queries `ID3D12InfoQueue1` and
+`ID3DDestructionNotifier` on the actual device, and registers separate message
+and destruction callbacks. Both diagnostic interfaces are released before
+the workload. An exact INFO control is observed before that release; a second
+temporary query and exact INFO control after the workload checks persistence
+of the original registration. That second interface also ends before teardown.
+No diagnostic COM owner spans renderer or retained-texture release.
+
+[Microsoft's message-callback contract](https://devblogs.microsoft.com/directx/d3d12-debug-layer-message-callback/)
+allows another callback thread and forbids D3D calls there. The probe copies
+messages into fixed slots published with release/acquire atomics. Callback
+state deliberately lives until process exit and owns no device reference.
+Overflow, incomplete records, null/truncated descriptions or warnings and
+worse fail the observation. The separate
+[destruction notification](https://learn.microsoft.com/en-us/windows/win32/api/d3dcommon/nf-d3dcommon-id3ddestructionotifier-registerdestructioncallback)
+supplies an object-destruction witness rather than an inference from releasing
+known test owners. A ten-second watchdog covers workload and teardown; it
+terminates only this probe process on expiry. No artificial queue gate or
+device loss is introduced.
+
+The Debug run exited 0 on NVIDIA GeForce RTX 5080, hardware Direct3D 12,
+vendor/device `10DE:2C02`, Windows NT `10.0.26200.0`. Both interface queries
+and registrations returned `S_OK`. Both application-message calls returned
+`S_FALSE` (`00000001`, successful); their exact callbacks were nevertheless
+observed once each. Six ordinary hidden presents across a real 64-to-32 resize
+visited slots 0 and 1 four and two times. No per-frame read-back was used.
+
+The snapshot contains 81 complete records, all INFO, with zero overflow,
+truncation or warning/error/corruption messages. Callback phase tags include
+36 renderer-release and 11 retained-texture-release records. The separate
+device destruction callback fired once during retained-texture release.
+This closes the retained-observer-owner limitation for this D3D12 observation.
+Initialization before registration, complete callback quiescence/coverage
+during destruction and deterministic pending work in both presented slots are
+not established. Slot visits alone are not overlap evidence. Vulkan's final
+device boundary is not covered by this probe.
+
+Local receipts are `out/overnight-2026-10-26/d3d12-destruction-*`; tested HEAD
+was `4ef0372dc18b6eb228206dc6847d8e51ae46121e` with only this probe and its
+target added. Probe source SHA-256 was
+`25D944D992780656DCDE028C30F5D37B384234B103408FE975BDD7E94C350154`.
+Both Debug and Release targets compiled; Release explicitly refuses the run
+and supplies no diagnostic acceptance. The target is `EXCLUDE_FROM_ALL` and
+outside CTest because these optional interfaces have a newer runtime
+requirement than the engine's Windows 10 floor. Default test counts stay put.
+The four standalone CMake checks and website check, 21 contract tests and
+production build also pass; no hosted CI run is claimed.
+To repeat the bounded observation from a developer shell:
+
+```text
+cmake --build --preset x64-debug-d3d12 --target D3D12DestructionProbe --parallel 2
+out\build\x64-debug-d3d12\tests\render\D3D12DestructionProbe.exe
+```
 
 ## Hardening verification
 
