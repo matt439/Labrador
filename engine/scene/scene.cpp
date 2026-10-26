@@ -254,13 +254,31 @@ namespace labrador
 			this->partitioner_->partition(count,
 				this->thread_pool_->max_num_threads());
 
-		for (const std::pair<int, int>& range : ranges)
+		try
 		{
-			this->thread_pool_->add_task([this, range, offset, &renderer, &overlay]()
-				{
-					this->draw_views(range.first, range.second, offset, renderer,
-						overlay);
-				});
+			for (const std::pair<int, int>& range : ranges)
+			{
+				this->thread_pool_->add_task([this, range, offset, &renderer, &overlay]()
+					{
+						this->draw_views(range.first, range.second, offset, renderer,
+							overlay);
+					});
+			}
+		}
+		catch (...)
+		{
+			// Submitted callbacks borrow this scene, renderer and overlay. They
+			// must finish before the failed submission unwinds those lifetimes.
+			try
+			{
+				this->thread_pool_->wait_for_tasks_to_complete();
+			}
+			catch (...)
+			{
+				// The wait drains every callback before reporting a task error.
+				// Preserve the submission failure that brought us here.
+			}
+			throw;
 		}
 
 		this->thread_pool_->wait_for_tasks_to_complete();

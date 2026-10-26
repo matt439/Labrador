@@ -120,7 +120,7 @@ green headless suite supplies a human session or a hardware measurement.
 | **REV#8**, GPT-6 opportunity 4 | TODO.md: XAudio2 output-device recovery, followed by a real-endpoint check. A redistributable audio sample exists; output recovery remains the question. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
-| **REV#11**, September 26 hardening | [September 26 README](2026-09-26/README.md#lower-priority-hardening-and-unverified-candidates): [hardening verification below](#hardening-verification) records the transactional insertion fix and the remaining modifier, cleanup and glyph-bound checks. |
+| **REV#11**, September 26 hardening | [September 26 README](2026-09-26/README.md#lower-priority-hardening-and-unverified-candidates): [hardening verification below](#hardening-verification) records all four candidate dispositions and their test limits. |
 | **REV#12**, September 26 manual limits | [STATUS.md](2026-09-26/STATUS.md) and [FIXES.md](2026-09-26/FIXES.md): real device removal, interactive minimize/restore/drag, physical layouts/device changes and real sleep/wake need a person and devices. |
 | **SM-19**, September 26 priority 3 | [STATUS.md](2026-09-26/STATUS.md): the offline Windows CI gate is implemented; the deliberately failing throwaway-branch CI observation remains open. Local PowerShell execution-policy limits are recorded there. |
 
@@ -149,9 +149,17 @@ findings. This is the current disposition of **REV#11**:
   the equivalent key-edge cases in that target on every native backend and
   compiles under clang with the browser window. Browser event delivery and
   physical keyboard layouts remain the separate manual/runtime limits.
-- [ ] **Exceptional cleanup.** Check scene task-submission failure and Vulkan
-  buffer construction after allocation. GL texture upload/table insertion
-  already uses a scoped owner; that source finding is not still an open leak.
+- [x] **Exceptional cleanup, 2026-10-26.** A scene submission failure drains
+  callbacks already borrowing its objects before rethrowing the original
+  failure. Vulkan buffer construction owns cleanup through memory selection,
+  allocation, binding and mapping; failed API outputs become owned only after
+  success. Upload begin/end-recording failures also free their command buffer.
+  GL texture upload/table insertion already has a scoped owner. These failure
+  paths were independently reviewed, without allocator/API failure injection.
+  Normal scene regressions pass on all native backends; Vulkan's full pixel
+  suite passes after the guards with synchronization validation: zero errors
+  or synchronization hazards, 696 performance advisories. The normal-path run
+  is not evidence that each exceptional branch executed.
 - [x] **Glyph ink outside layout measurement, 2026-10-26.** Text caches the
   union of the layout rectangle and the cells drawing actually visits, while
   retaining the layout origin. Synthetic-font regressions cover negative y

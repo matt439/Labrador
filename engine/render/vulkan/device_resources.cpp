@@ -307,36 +307,46 @@ namespace labrador
 		check_vk(vkCreateBuffer(owner.device, &description, nullptr,
 			&result.buffer), what);
 
-		VkMemoryRequirements requirements = {};
-		vkGetBufferMemoryRequirements(owner.device, result.buffer,
-			&requirements);
-
-		VkMemoryAllocateInfo allocation = {};
-		allocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocation.allocationSize = requirements.size;
-		allocation.memoryTypeIndex = owner.memory_type(
-			requirements.memoryTypeBits, memory, what);
-
-		const VkResult allocated = vkAllocateMemory(owner.device, &allocation,
-			nullptr, &result.memory);
-		if (allocated != VK_SUCCESS)
+		// The buffer is owned here until every allocation/bind/map succeeds.
+		// Keep that ownership through memory_type() and check_vk() exceptions.
+		try
 		{
-			vkDestroyBuffer(owner.device, result.buffer, nullptr);
-			result.buffer = VK_NULL_HANDLE;
-			check_vk(allocated, what);
+			VkMemoryRequirements requirements = {};
+			vkGetBufferMemoryRequirements(owner.device, result.buffer,
+				&requirements);
+
+			VkMemoryAllocateInfo allocation = {};
+			allocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+			allocation.allocationSize = requirements.size;
+			allocation.memoryTypeIndex = owner.memory_type(
+				requirements.memoryTypeBits, memory, what);
+
+			// A failed API output is not an owned allocation or mapping. Publish
+			// each to the cleanup record only after its call reports success.
+			VkDeviceMemory allocated = VK_NULL_HANDLE;
+			check_vk(vkAllocateMemory(owner.device, &allocation, nullptr,
+				&allocated), what);
+			result.memory = allocated;
+
+			check_vk(vkBindBufferMemory(owner.device, result.buffer, result.memory,
+				0), what);
+
+			// MAPPED ONCE AND NEVER UNMAPPED, for the host-visible ones. That is
+			// the documented way to write from the CPU in this API and it is what
+			// the D3D12 backend's upload-heap pages do; a map per frame would be a
+			// call per frame to say the same thing.
+			if ((memory & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0u)
+			{
+				void* mapped = nullptr;
+				check_vk(vkMapMemory(owner.device, result.memory, 0, VK_WHOLE_SIZE,
+					0, &mapped), what);
+				result.mapped = mapped;
+			}
 		}
-
-		check_vk(vkBindBufferMemory(owner.device, result.buffer, result.memory,
-			0), what);
-
-		// MAPPED ONCE AND NEVER UNMAPPED, for the host-visible ones. That is
-		// the documented way to write from the CPU in this API and it is what
-		// the D3D12 backend's upload-heap pages do; a map per frame would be a
-		// call per frame to say the same thing.
-		if ((memory & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0u)
+		catch (...)
 		{
-			check_vk(vkMapMemory(owner.device, result.memory, 0, VK_WHOLE_SIZE,
-				0, &result.mapped), what);
+			destroy_vulkan_buffer(owner.device, result);
+			throw;
 		}
 
 		return result;
@@ -2090,16 +2100,37 @@ namespace labrador
 		VkCommandBufferBeginInfo begin = {};
 		begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		check_vk(vkBeginCommandBuffer(commands, &begin),
-			"An upload command buffer could not be begun");
+		try
+		{
+			check_vk(vkBeginCommandBuffer(commands, &begin),
+				"An upload command buffer could not be begun");
+		}
+		catch (...)
+		{
+			vkFreeCommandBuffers(this->owner_->device, this->upload_pool_, 1,
+				&commands);
+			throw;
+		}
 
 		return commands;
 	}
 
 	void DeviceResources::end_upload(VkCommandBuffer commands)
 	{
-		check_vk(vkEndCommandBuffer(commands),
-			"An upload command buffer could not be ended");
+		// Ending the recording can fail before the submit's cleanup is reached.
+		// Nothing has sent this buffer to the queue, so release it on that
+		// path too and preserve the original Vulkan error.
+		try
+		{
+			check_vk(vkEndCommandBuffer(commands),
+				"An upload command buffer could not be ended");
+		}
+		catch (...)
+		{
+			vkFreeCommandBuffers(this->owner_->device, this->upload_pool_, 1,
+				&commands);
+			throw;
+		}
 
 		// THE SAME RULE execute() STATES: the counter moves on after the submit
 		// that makes it true, not before. This one has no device-lost branch to

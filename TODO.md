@@ -13,7 +13,7 @@ An index of open work, one row per item; each row points to the document that ow
 1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
 2. **`OCA-53` (X14): guide and native/wasm examples implemented; real reload acceptance is blocked by Chrome GPU startup access.** `OCA-45` still needs its physical two-pad session.
 3. **`SM-25` (X28): pin, identity log and schedule implemented; verify the endpoint and real scheduled Actions run when access permits.** Remaining Next work needs owner hardware, browser/network access or a remote CI observation.
-4. **`REV#7`, `REV#11`: presentation lifecycle coverage and verified hardening candidates.** Continue the existing review queue while those gates remain.
+4. **`REV#7`, `REV#3`, `REV#6`: presentation lifecycle coverage and backend candidate verification.** Continue the existing review queue while those gates remain.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
@@ -92,7 +92,6 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `REV#7` | OPEN | should | M | Presentation-lifecycle coverage: several presented frames with no per-frame read-back (real frames in flight on D3D12 and Vulkan), a resize, and teardown with work outstanding, under D3D12 debug and Vulkan `validate_sync`. gpt6 opportunity 2. |
 | `REV#1` | OPEN | could | S | An AppTests case where a live `Application` with a real window resizes and `fullscreen_viewport()` still matches `back_buffer_size()`; backend-equivalence-2's G6a, its last open section-3 box. |
 | `REV#8` | OPEN | could | S | Recover XAudio2 when its output device goes away: `AudioDevice::update()` ignores `Update()`'s false and never calls `IsCriticalError()`/`Reset()`. Then check it by hand on a real endpoint. gpt6 opportunity 4. |
-| `REV#11` | OPEN | could | M | Finish exceptional scene/resource cleanup; [the live index](docs/review/INDEX.md#hardening-verification) records the transactional insertion, modifier and glyph-bound fixes. |
 | `REV#4` | OPEN | could | XS | Minimise a sample on `x64-debug-vulkan` under the validation layers and record whether acquire or present returns `OUT_OF_DATE`, and how severe the minimise throw is (Vulkan review 6.1). |
 | `REV#3` | OPEN | could | M | Check the D3D12 review's seven unverified behaviour questions in its section 6 (the view-open loop, per-flush heap-start calls, the per-submit list vector, the buffer helper, the factory-refresh branch, `sprite.hlsl`'s profile claims, multi-mip footprints). |
 | `REV#6` | OPEN | could | L | Check the Vulkan review's 65 never-verified findings (section 7); about a third are counts or comment claims settled by reading. The index-buffer barrier has since been applied. |
@@ -148,7 +147,7 @@ A new row for one of these gets its section back.
 | macOS and iOS | [docs/port/android.md](docs/port/android.md) sections 5 and 6 | a plan document; none is in the tree |
 | The EC2 performance lane | [tools/cloud_performance/README.md](tools/cloud_performance/README.md) | a new reference run after `SM-03`, or a regression question |
 | round-2 plan, the RTCD list, the first review, backend-equivalence | [docs/review/round-2/PLAN.md](docs/review/round-2/PLAN.md), [docs/review/rtcd/](docs/review/rtcd/), [docs/review/IMPLEMENTED.md](docs/review/IMPLEMENTED.md) | nothing: all landed or superseded; the game-side rows live in ColourWars |
-| The 2026-09-26 review's numbered findings | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) | nothing: all 23 implemented; only `REV#11`, `REV#12` and `SM-19` remain |
+| The 2026-09-26 review's numbered findings and hardening candidates | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and [the review index](docs/review/INDEX.md#hardening-verification) | nothing: all 23 implemented and four hardening candidates addressed; `REV#12` and `SM-19` remain |
 | The repository split, the file-length audit's steps | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md) | nothing beyond `DOC#3` |
 
 ---

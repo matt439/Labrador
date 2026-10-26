@@ -72,6 +72,16 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 - Drain submitted scene work and release failed Vulkan uploads
+
+**Behaviour change on failure.** If submitting a scene draw task throws, the
+scene waits for tasks already submitted before propagating that failure, so
+their borrowed scene, renderer and overlay remain alive. Vulkan buffer
+construction releases its buffer and any successful allocation or mapping if
+a later step fails; upload-command begin/end failures release their command
+buffer before propagating the original error. Successful drawing and uploads
+keep their existing behavior.
+
 ### 2026-10-26 - Retain aggregate modifier keys until both sides are released
 
 **Behaviour change.** On Windows and in a browser, releasing one Shift,
