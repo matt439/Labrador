@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Reuse D3D12 submission scratch storage
+
+**Behaviour change.** D3D12 reserves its command-list pointer array with the
+configured view capacity during device creation and reuses that storage for
+submission. It no longer creates a temporary array allocation on each drawing
+frame. The array borrows the views' command lists, closes every recording view
+and submits only declared views in order as before. No source migration is
+needed; the change establishes allocation reuse, not a measured speedup.
+
 ### 2026-10-26 — Identify Vulkan instance-creation failures accurately
 
 **Behaviour change, Vulkan backend.** If instance creation fails, the

@@ -17,17 +17,18 @@ a performance problem, a driver failure or a need to change the implementation.
 |---|---|---|
 | 1: duplicated view-opening loops | Confirmed maintenance observation; no behavior defect found | `Renderer::Impl::open_frame()` and `Renderer::set_view_count()` in [renderer.cpp](../../../engine/render/d3d12/renderer.cpp) both obtain the render target and viewport and call `View::begin()` for the declared views. `begin()` leaves a recording view alone. [pixel_tests.cpp](../../../tests/render/pixel_tests.cpp) has the mid-frame resize case and the resize-before-first-view-count case, so both restart shapes have behavioral assertions. No refactor follows merely from counting the loops. |
 | 2: heap-start queries during flush | Calls confirmed; cost unmeasured | `View::flush()` calls `texture_slot_gpu()` and `sampler()`, each of which asks its descriptor heap for its start handle. `DeviceResources::back_buffer_view()` also asks its heap. These calls remain in [renderer.cpp](../../../engine/render/d3d12/renderer.cpp) and [device_resources.cpp](../../../engine/render/d3d12/device_resources.cpp). Their presence does not measure their cost. A profile of the existing frame workload is needed before calling them a bottleneck. |
-| 3: command-list vector in submit | Allocation confirmed; cost unmeasured | The first `Renderer::submit()` in a frame constructs an empty `std::vector<ID3D12CommandList*>` and reserves the configured view capacity before collecting lists. The vector is local, so its capacity is not retained. Later submits in that frame return at `frame_submitted`. No claim is made that this is the only allocation across the backends, or that its cost matters on the target machine. |
+| 3: command-list vector in submit | Measured allocation removed; no timing gain claimed | The first `Renderer::submit()` formerly constructed and reserved a temporary array. The warmed Debug CRT regression below reproduced its allocations. The backend now reserves scratch capacity during device creation, clears entries before collecting and after the queue call, and reuses capacity. Declared-view ordering and closing all recording views are unchanged. |
 | 4: duplicated buffer description | Confirmed maintenance observation; no behavior defect found | The staging-buffer description in [texture_factory.cpp](../../../engine/render/d3d12/texture_factory.cpp) matches `buffer_description()` in renderer.cpp: buffer dimension, supplied byte width, height/depth/mips/sample count of one, unknown format, row-major layout and no flags. Fields omitted from the staging spelling are zero-initialized, matching the helper. The duplication is inside one backend; it is not a seam leak. |
 | 5: D3D11 same-size factory refresh | Bypassed branch confirmed; loss of every refresh path refuted | [D3D11 renderer.cpp](../../../engine/render/d3d11/renderer.cpp)'s size guard returns before its sole call to `DeviceResources::WindowSizeChanged()`, so that method's same-size `UpdateColorSpace()` branch is not reached through the engine. [device_resources.cpp](../../../engine/render/d3d11/device_resources.cpp)'s `Present()` still checks `IsCurrent()` and calls `UpdateColorSpace()`, which recreates a stale factory. Creation and actual resizes also call it. The current comment describes these paths; no monitor-change session or driver behavior is claimed. |
 | 6: minimum profiles and identical arithmetic | Minimum claim disproved for the tested D3D12 pipeline; arithmetic claim narrowed | The creation-only experiment below accepts full 4_0 and 5_0 as well as the selected 5_1 on the named device. The build still selects 5_1. The shared golden checks compare rendered output with a per-channel allowance of 8 in [golden_image.cpp](../../../tests/render/golden_image.cpp); they do not prove identical compiler arithmetic. Current shader/build comments state the selected targets and verification boundary. |
-| 9: complete upload/read-back and multi-mip footprints | Partly covered; lower-level byte correctness remains open | The existing `two_level_texture()` and "CONTRACT: a minified draw samples level zero, not the chain" in pixel_tests.cpp upload two RGBA levels through the real factory, then assert level-zero output under both filters. The factory obtains every placement, row count, row-byte count and `total_bytes` from `GetCopyableFootprints`, and copies source rows into those placements. Renderer read-back also uses a queried footprint, waits, removes row padding and converts BGRA to RGBA; pixel cases observe that result. No source inconsistency was found, but those assertions do not inspect lower mip contents or the tail levels of a BC chain. |
+| 9: complete upload/read-back and multi-mip footprints | Verified for the patterned RGBA/BC chains below | The new backend-specific regression uses the real texture factory, copies every GPU subresource using queried footprints and compares all meaningful row bytes, including lower levels and BC tails. Public sampling still selects level zero; this is upload-byte verification rather than lower-LOD rasterization or a claim about arbitrary formats and dimensions. |
 
 The existing tests named above are source evidence of coverage, not new test
 runs performed for this adjudication. Items 1 and 4 require no behavior change
-on the evidence here. Items 2 and 3 need a measured cost before optimization.
-Item 5's remaining uncertainty is a real display-change session. Item 9 needs
-the deeper verification described below; it is not closed by a level-zero draw.
+on the evidence here. Item 2 needs a measured cost before caching its queries.
+Item 5's remaining uncertainty is a real display-change session. Items 3 and 9
+have the executed, bounded follow-ups below; a level-zero draw alone was not
+used to close the mip-upload question.
 
 ## Shader-profile creation experiment, 2026-10-26
 
@@ -73,13 +74,33 @@ runtime/device/driver combination, not lower-profile raster equivalence,
 support across all D3D12 devices, or an engine platform floor. The ordinary
 golden suite continues to exercise the profiles the engine actually builds.
 
-## Remaining multi-mip verification
+## Submission allocation verification, 2026-10-26
 
-The public seam deliberately samples level zero, so another minified draw
-cannot check the bytes uploaded to the other levels. A useful focused test
-would upload a patterned RGBA chain and a patterned BC chain, including tail
-levels smaller than a block, then copy each GPU subresource to a read-back
-buffer and compare its row bytes with the source after removing footprint
-padding. Keep the resource access inside the D3D12 backend/test boundary.
-Observe the debug layer too, but do not substitute an absence of validation
-messages for byte comparisons. No such deeper read-back test was run here.
+[d3d12_submit_allocation_tests.cpp](../../../tests/render/d3d12_submit_allocation_tests.cpp)
+calibrates a scoped MSVC Debug DLL CRT allocation hook, warms four frames,
+then measures only `submit()` with declared view counts 4, 3, 1 and 4. The
+baseline made two normal-block allocation attempts totaling 48 requested
+bytes on each measured call. The retained array makes zero in that scope.
+Assertions, read-back and presentation remain outside the measured scope;
+the previous hook is restored. This observes that thread's Debug CRT, not
+every driver/system heap, a Release allocator or a timing improvement.
+Analytic images independently check ascending view order and empty views.
+
+## Multi-mip byte verification, 2026-10-26
+
+[d3d12_texture_upload_tests.cpp](../../../tests/render/d3d12_texture_upload_tests.cpp)
+uploads patterned RGBA 17x9 and BC1/2/3 20x12 textures through the actual
+factory. Each has five levels through 1x1, including 2x1 BC tails. A narrow
+backend-private borrowed-resource accessor permits GPU subresource read-back
+without changing the public sampler contract. Queried footprints determine
+all placements and row pitches; the test checks every meaningful row byte
+against its source while excluding padding, then restores shader-readable
+state. It waits before mapping or releasing the read-back resource and checks
+available debug-queue warning/error/corruption messages.
+
+Native Debug D3D12 `RenderTests` passes 163 cases; `RenderPixelTests` passes
+all 54 cases and 49,749 assertions, with no debug-unavailable warning. The
+allocation regression also passes in this run. No new golden image is
+generated. These results establish the tested chains' uploaded bytes on the
+named desktop configuration, not BC decode accuracy, nonzero sampler LOD,
+every format/dimension/device or real device-removal recovery.

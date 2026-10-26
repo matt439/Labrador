@@ -19,13 +19,11 @@
 //
 // renderer.h promises that reaching for the device is "a deliberate include of
 // engine/render/<backend>/ and not something a game file can do by accident".
-// This is that include, and EVERY CLIENT OF IT IS IN THIS FOLDER - which is the
-// rule rather than a count. cmake/check_engine_includes.cmake fails the build
-// for any file outside engine/render/<backend>/ that names any header inside
-// it: the folder, not one filename in it. Stated as the rule and not as a
-// list of names, because a list goes stale. device_resources.cpp is not among
-// them and structurally could not be - it is what this header includes, not
-// something that includes it.
+// This is that include. Engine clients stay in this folder; backend-specific
+// tests may include it deliberately to inspect resources. The check in
+// cmake/check_engine_includes.cmake scans engine sources and refuses any other
+// engine folder naming a header inside this one. The wall covers the folder,
+// not a list of filenames, so a new backend header is covered automatically.
 //
 // WHAT THIS BACKEND DOES DIFFERENTLY, AND WHY IT WAS WORTH WRITING AT ALL. It
 // reaches less hardware than the D3D11 backend, not more: feature level 11_0
@@ -35,8 +33,7 @@
 // now, the fifth being the Vulkan one, which answers the first of the two the
 // same way and is the second answer to it rather than a repeat.
 //
-//  - THIS IS THE ONE API BEHIND THE SEAM WHERE THE ENGINE OWNS
-//    SYNCHRONISATION.
+//  - THE ENGINE OWNS SYNCHRONISATION HERE, AS IT DOES IN THE VULKAN BACKEND.
 //    D3D11 renames a mapped buffer for you and tracks what is still in flight;
 //    OpenGL's driver does the same behind glBufferSubData; the null backend has
 //    no GPU to be out of step with. Here the engine holds the fence: frames in
@@ -106,6 +103,10 @@ namespace labrador
 
 		int slot() const { return this->slot_; }
 		mattmath::Vector2F size() const;
+
+		// Borrowed for backend operations; callers preserve the shader-resource
+		// state and finish queued work before this texture is released.
+		ID3D12Resource* resource() const { return this->resource_.Get(); }
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
@@ -302,6 +303,9 @@ namespace labrador
 		RenderDeviceInfo device_info;
 
 		std::vector<std::unique_ptr<DrawList::View>> views;
+		// Non-owning scratch, reserved with the view capacity. A successful
+		// submission clears it after the queue has consumed the pointer array.
+		std::vector<ID3D12CommandList*> submission_lists;
 		int view_count = 0;
 
 		// BETWEEN begin_frame AND end_frame, WHICH IS A WIDER INTERVAL THAN

@@ -1124,6 +1124,8 @@ namespace labrador
 
 		this->impl_->views.clear();
 		this->impl_->views.reserve(static_cast<size_t>(view_capacity));
+		this->impl_->submission_lists.clear();
+		this->impl_->submission_lists.reserve(static_cast<size_t>(view_capacity));
 		for (int i = 0; i < view_capacity; i++)
 		{
 			this->impl_->views.push_back(std::make_unique<DrawList::View>());
@@ -1352,8 +1354,8 @@ namespace labrador
 		// past a view that was opened and not drawn into is legal -
 		// set_view_count rejects only the ones that were drawn into - and a
 		// list left open cannot have its allocator reset next frame.
-		std::vector<ID3D12CommandList*> lists;
-		lists.reserve(this->impl_->views.size());
+		std::vector<ID3D12CommandList*>& lists = this->impl_->submission_lists;
+		lists.clear();
 
 		const int capacity = static_cast<int>(this->impl_->views.size());
 		for (int i = 0; i < capacity; i++)
@@ -1378,6 +1380,7 @@ namespace labrador
 
 		this->impl_->device_resources.command_queue()->ExecuteCommandLists(
 			static_cast<UINT>(lists.size()), lists.data());
+		lists.clear();
 		this->impl_->device_resources.signal_frame();
 	}
 
