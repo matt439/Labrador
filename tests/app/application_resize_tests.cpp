@@ -52,11 +52,18 @@ namespace
 		const Vector2F actual(static_cast<float>(client.x),
 			static_cast<float>(client.y));
 		const Vector2F buffer = app.renderer()->back_buffer_size();
+		const Vector2F resolution = app.resolution_manager()->resolution_vec();
 		const Viewport viewport = app.viewport_manager()->fullscreen_viewport();
+		CAPTURE(client.x);
+		CAPTURE(client.y);
+		CAPTURE(buffer.x);
+		CAPTURE(buffer.y);
+		CAPTURE(resolution.x);
+		CAPTURE(resolution.y);
 
 		// Comparing the caches alone could let two equally stale sizes pass.
 		CHECK(buffer == actual);
-		CHECK(app.resolution_manager()->resolution_vec() == actual);
+		CHECK(resolution == actual);
 		CHECK(viewport.position() == Vector2F::ZERO);
 		CHECK(viewport.size() == buffer);
 		CHECK_FALSE(IsWindowVisible(window));
@@ -70,15 +77,19 @@ TEST_CASE("a live Application keeps fullscreen viewport and back buffer in step 
 	options.visible = false;
 	options.view_capacity = 1;
 	options.max_threads = 1;
+	SUBCASE("default startup size") {}
+	SUBCASE("large startup size") { options.resolution = ScreenResolution::s_3840_2160; }
 	Application app(std::move(options));
 	app.initialize();
 	const HWND window = static_cast<HWND>(app.window());
 	REQUIRE(window != nullptr);
 	REQUIRE(IsWindow(window));
-	check_size(app, window);
 
-	// Neither is a resolution preset: the layout must retain exact client
-	// pixels instead of coercing an unknown size back to 1280x720.
+	// Hidden creation sends no initial size notification, and Windows can
+	// clamp a startup request to the desktop's maximum tracking size. Exercise
+	// the size-event contract only after a real native resize. Neither size is
+	// a resolution preset: the layout must retain exact client pixels instead
+	// of coercing an unknown size back to 1280x720.
 	for (const Vector2I& requested : { Vector2I(400, 300), Vector2I(513, 277) })
 	{
 		CAPTURE(requested.x);

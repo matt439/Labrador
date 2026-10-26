@@ -94,7 +94,10 @@ class Fixture {
         self.log = self.root / "calls.jsonl"
 
     def run_capture(self, mode="success", extra=()):
-        env = os.environ.copy()
+        # Let Windows PowerShell rebuild its own module paths rather than
+        # inherit a pwsh parent's incompatible PowerShell 7 module paths.
+        env = {key: value for key, value in os.environ.items()
+               if key.casefold() != "psmodulepath"}
         env.update(TRACE_FIXTURE_LOG=str(self.log), TRACE_FIXTURE_MODE=mode,
                    TRACE_FIXTURE_OUTPUT=str(self.output))
         return subprocess.run([
@@ -165,7 +168,8 @@ class Fixture {
         self.assert_owned_stop()
         self.assertTrue(self.capture()["trace_saved"])
         self.assertIn("benchmark.process.json", self.capture()["failure"])
-        env = os.environ.copy()
+        env = {key: value for key, value in os.environ.items()
+               if key.casefold() != "psmodulepath"}
         env["TRACE_FIXTURE_EXE"] = str(self.bundle / "payload/vulkan/LineSweeperFrameBench.exe")
         remaining = subprocess.run([
             "powershell.exe", "-NoProfile", "-NonInteractive", "-Command",

@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -225,7 +226,11 @@ class InfrastructureTests(unittest.TestCase):
                         commands.append("-WrongIdentity")
                     if upload_failure:
                         commands.append("-UploadFailure")
-                    process = subprocess.run(commands, capture_output=True, timeout=30)
+                    # Let Windows PowerShell rebuild its own module paths;
+                    # a pwsh parent can supply incompatible PowerShell 7 modules.
+                    env = {key: value for key, value in os.environ.items()
+                           if key.casefold() != "psmodulepath"}
+                    process = subprocess.run(commands, env=env, capture_output=True, timeout=30)
                     output = (process.stdout + process.stderr).decode("utf-8", errors="replace")
                     self.assertNotEqual(process.returncode, 0, output)
                     shutdown = root / "shutdown.json"
