@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 - Include overhanging glyph cells in text cull bounds
+
+**Behaviour change.** Text bounds include glyph cells that extend outside the
+font's layout rectangle, including negative vertical bearings and drawable
+whitespace. A scene no longer culls visible ink at a view edge merely because
+the layout rectangle is outside it. `Font::measure()` and text placement keep
+their existing layout semantics; a game's spatial index can receive a larger
+text rectangle for a font with overhanging cells.
+
 ### 2026-10-26 - Keep failed table insertions absent and retryable
 
 **Behaviour change.** When storing a new entry throws, `NameTable::add` and

@@ -170,6 +170,61 @@ TEST_CASE("CONTRACT: a label turned into view is drawn")
 	CHECK(harness.sprites_drawn(*scene) == 2);
 }
 
+TEST_CASE("CONTRACT: text ink above its layout survives an edge-view cull")
+{
+	Harness harness;
+	std::vector<Glyph> glyphs;
+	Glyph a;
+	a.character = U'A';
+	a.subrect = RectangleI(0, 0, 10, 10);
+	a.y_offset = -4.0f;
+	glyphs.push_back(a);
+	Glyph b = a;
+	b.character = U'B';
+	b.y_offset = 0.0f;
+	glyphs.push_back(b);
+	harness.resources()->add_font("raised",
+		std::make_unique<Font>(harness.resources()->resolve_texture("quad"),
+			std::move(glyphs), 20.0f));
+	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
+	Label* label = scene->add(std::make_unique<Label>(L"A", "raised",
+		Vector2F(10.0f, 92.0f), harness.resources()));
+	scene->end_tick();
+
+	// Layout begins below the view, but the glyph's top two pixels are in it.
+	REQUIRE(harness.sprites_drawn(*scene) == 1);
+	CHECK(harness.recording().front().corners[0].position == Vector2F(10.0f, 88.0f));
+	CHECK(harness.recording().front().corners[3].position == Vector2F(20.0f, 98.0f));
+
+	// The replacement has no overhang and is still culled: this is not a
+	// disabled cull or the previous string's envelope surviving set_text().
+	label->set_text(L"B");
+	CHECK(harness.sprites_drawn(*scene) == 0);
+}
+
+TEST_CASE("CONTRACT: drawable whitespace below its layout survives an edge-view cull")
+{
+	Harness harness;
+	Glyph space;
+	space.character = U' ';
+	space.subrect = RectangleI(0, 0, 4, 8);
+	space.y_offset = 3.0f;
+	std::vector<Glyph> glyphs;
+	glyphs.push_back(space);
+	harness.resources()->add_font("spaces",
+		std::make_unique<Font>(harness.resources()->resolve_texture("quad"),
+			std::move(glyphs), 4.0f));
+	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
+	scene->add(std::make_unique<Label>(L" ", "spaces",
+		Vector2F(10.0f, -6.0f), harness.resources()));
+	scene->end_tick();
+
+	// The four-high layout ends above the view; the eight-high cell does not.
+	REQUIRE(harness.sprites_drawn(*scene) == 1);
+	CHECK(harness.recording().front().corners[0].position == Vector2F(10.0f, -3.0f));
+	CHECK(harness.recording().front().corners[3].position == Vector2F(14.0f, 5.0f));
+}
+
 TEST_CASE("CONTRACT: a sprite whose drawn pixels are all outside is not")
 {
 	// The cull still culls. Same rectangle, no origin and no turn: every
