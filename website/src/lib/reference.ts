@@ -431,8 +431,26 @@ function members(blocks: Block[], type: TypeItem): void {
 		} else if (item.kind === 'group') {
 			const names = [...new Set(item.declarations.map((declaration) => declaration.name))];
 			const label = item.access === 'protected' ? ' (protected)' : '';
-			blocks.push({ depth: 3, text: `${names.join(' · ')}${label}`, owner: type.name, names });
-			blocks.push(() => fence(item.declarations.map((declaration) => signature(declaration.text)).join('\n')));
+			const constants = names.length > 1 && item.declarations.every((declaration) =>
+				/^static\s+(?:const|constexpr)\s/.test(declaration.text));
+			if (constants) {
+				blocks.push({ depth: 3, text: `Constants${label}`, owner: type.name, names });
+				blocks.push(() => commentHtml(item.comment));
+				blocks.push(() => item.declarations.map((declaration) =>
+					`- \`${signature(declaration.text)}\``).join('\n'));
+				continue;
+			}
+			// Fields have separate link targets even when they share one comment.
+			// Parentheses after an initialiser belong to its value, not a method.
+			const fields = item.declarations.every((declaration) =>
+				!declaration.name.startsWith('operator') &&
+				(!declaration.text.includes('(') || /^[^()]*[={]/.test(declaration.text)));
+			const groups = fields ? item.declarations.map((declaration) => [declaration]) : [item.declarations];
+			for (const declarations of groups) {
+				const groupNames = [...new Set(declarations.map((declaration) => declaration.name))];
+				blocks.push({ depth: 3, text: `${groupNames.join(' · ')}${label}`, owner: type.name, names: groupNames });
+				blocks.push(() => fence(declarations.map((declaration) => signature(declaration.text)).join('\n')));
+			}
 			blocks.push(() => commentHtml(item.comment));
 		}
 	}

@@ -146,8 +146,12 @@ export function declarationName(text: string): string {
 	}
 	// Skip a template parameter list, whose parentheses are not the call's.
 	const body = flat.replace(/^template\s*<[^]*?>\s*/, '');
-	const call = body.indexOf('(');
-	const before = call < 0 ? body.replace(/\s*(=[^]*|\{[^]*|;)$/, '') : body.slice(0, call);
+	// An initialiser can call a function too: in `int limit = default_limit()`
+	// that call names the value, not the member being declared. Function
+	// parameters come first, even when one has a default argument.
+	const declaration = body.replace(/\s*(=[^]*|\{[^]*|;)$/, '');
+	const call = declaration.indexOf('(');
+	const before = call < 0 ? declaration : declaration.slice(0, call);
 	const name = before.match(/(~?[A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*$/);
 	return name ? name[1] : flat;
 }
