@@ -107,10 +107,14 @@ from there, and the running game had loaded `DirectXTK.dll`,
 has the runtime installed. The same project configured with
 `LABRADOR_RENDER_BACKEND=gl` installed the same files, only the program
 differing, and that program, copied beside the first as `MyGame-gl.exe`,
-also passed its smoke test. No clean Windows install has run the folder:
-Windows Sandbox is not enabled on that desktop, and enabling it needs an
-administrator and a restart. `tools/consumer_check/sandbox.py` writes the
-sandbox configuration that will.
+also passed its smoke test.
+
+**On a clean Windows.** On 26 October 2026 the project assembled from the
+tree at `2fdb322` was built and installed the same way, and the folder held
+the same 20 files. The configuration `tools/consumer_check/sandbox.py` wrote
+ran it in Windows Sandbox, Windows 10.0.26100 with none of the three runtime
+DLLs in its `System32` and a virtual GPU in front of the desktop's: the
+smoke test exited 0 with nothing on standard error.
 
 Change one, and the `consumer` job builds it on the pull request; follow the
 page by hand again when a change touches a step the job does not do.

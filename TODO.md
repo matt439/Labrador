@@ -13,16 +13,8 @@ An index of open work, one row per item; each row points to the document that ow
 1. **`SM-43` (X1): trim the agent brief to current state.**
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `OCA-61` (the release folder on a clean Windows) · `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
+- Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
-
-## The public face and the adopter path
-
-**Owner:** [docs/product/STORIES.md](docs/product/STORIES.md); order and batches in [BACKLOG.md, Now](docs/product/BACKLOG.md#now) and [Next](docs/product/BACKLOG.md#next).
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `OCA-61` | DECISION | must | S | Run the template's release folder on a clean Windows with the `.wsb` `tools/consumer_check/sandbox.py` writes (Windows Sandbox needs an administrator to enable it), and record date, commit and result on *Ship a Windows release*. The rest of X10 and X11 has landed. |
 
 ## Website and the hosted demo
 
@@ -107,7 +99,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 |---|---|---|---|---|
 | `PI-09` | DECISION | should | S | The owner decides what private ColourWars detail may be published; then the live drafts (fifteen on 2026-10-22, the packaging gap among them) are rechecked against master and filed through the stated route, or withdrawn with a reason. `PI-10` answers them. |
 | `DOC#4` | WAITING | should | S | When ColourWars' repository goes public (the owner expects it within weeks of 2026-10-13): sweep the tree's "private" and "not public" mentions of it outside dated records, link the repository from the README and the site, and recheck `PI-09`, which then narrows to what its drafts say. |
-| `PI-14` | BLOCKED | should | M | A ColourWars Release ZIP at a current pin, run (or refused loudly) on a clean Windows install without Visual Studio, with edition, GPU, driver and commits named. After `OCA-61`. |
+| `PI-14` | OPEN | should | M | A ColourWars Release ZIP at a current pin, run (or refused loudly) on a clean Windows install without Visual Studio, with edition, GPU, driver and commits named; `tools/consumer_check/sandbox.py` runs it. |
 
 ## Records and design decisions
 
@@ -138,6 +130,7 @@ A new row for one of these gets its section back.
 
 | area | owner | a row returns with |
 |---|---|---|
+| The public face and the adopter path | [STORIES.md](docs/product/STORIES.md); order in [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | an adopter-path story the owner gates, or NOW naming one |
 | The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front; the rows above are the batches NOW names, and the Next stories that the owner or an outside event gates, or that a row here pairs with |
 | Later (L1 to L33) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | Next finishing |
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |

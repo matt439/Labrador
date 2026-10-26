@@ -114,12 +114,17 @@ folder, or Windows refuses to start it on a machine without the runtime, naming 
 
 The template's release folder, run on a desktop with Visual Studio installed, loaded all three
 from the release folder rather than from Windows. That shows the copies are the ones used, but not
-that nothing else is missing, because the desktop has the runtime installed as well. Nobody has yet
-run a release on a clean Windows install, one that has never had Visual Studio or the
-redistributable. Windows Sandbox is one, on Windows Pro or Enterprise:
+that nothing else is missing, because the desktop has the runtime installed as well. A clean
+Windows install, one that has never had Visual Studio or the redistributable, settles that, and
+Windows Sandbox is one, on Windows Pro or Enterprise:
 <RepoLink path="tools/consumer_check/README.md">tools/consumer_check/README.md</RepoLink> describes a
 script that writes a sandbox configuration to run a release folder's smoke test there and record
-the result.
+the result. On 26 October 2026 the template's release folder, built from the engine at `2fdb322`,
+ran there: Windows 10.0.26100 with none of `vcruntime140.dll`, `vcruntime140_1.dll` and
+`msvcp140.dll` installed, and the sandbox's virtual GPU in front of the host's graphics card.
+`MyGame.exe --smoke-test` exited 0 and wrote nothing to standard error. The sandbox's GPU is
+virtual, so that proves the folder loads and its runtime is complete, not that the game draws on
+a player's graphics card.
 
 ## Notices
 

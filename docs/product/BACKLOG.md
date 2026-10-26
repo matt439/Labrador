@@ -216,7 +216,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[OCA-36](STORIES.md#oca-36)** Should · S · The Outside C++ Adopter: Copy a guide sample without broken paths
 - [x] **[OCA-62](STORIES.md#oca-62)** Must · S · The Outside C++ Adopter: Know the notices my Windows game must ship
 - [x] **[OCA-60](STORIES.md#oca-60)** Must · M · The Outside C++ Adopter: Know what files my Windows release needs and build a package — after OCA-62
-- [ ] **[OCA-61](STORIES.md#oca-61)** Must · S · The Outside C++ Adopter · **Owner**: My release runs on a clean Windows machine — after OCA-60
+- [x] **[OCA-61](STORIES.md#oca-61)** Must · S · The Outside C++ Adopter · **Owner**: My release runs on a clean Windows machine — after OCA-60
 - [x] **[OCA-64](STORIES.md#oca-64)** Should · S · The Outside C++ Adopter: Know the minimum hardware and Windows my players need — after OCA-61
 - [x] **[OCA-65](STORIES.md#oca-65)** Should · S · The Outside C++ Adopter: Know which render backend to ship and what to do when a machine refuses it
 - [ ] **[PI-14](STORIES.md#pi-14)** Should · M · The Pinned Submodule Integrator · **Owner**: My release ZIP is known to run on a player's clean Windows machine at a current pin — after OCA-61, SM-36
@@ -273,7 +273,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-36 | G13: guide samples borrow paths that break when copied. Closed 2026-10-24: the solid-rectangle recipe uses the engine's own white texture (`white_texture_name`), so no sample borrows LineSweeper's, and the collision, components and local_multiplayer READMEs each list the paths outside their folder they still use and what a copy does about them. |
 | OCA-62 | G16 (major, merged with PI-12): no notice list for what a Windows game ships. |
 | OCA-60 | G14 (major): no release-package guidance or install rules. The unexplained dependency on OCA-29 is removed (critique). |
-| OCA-61 | G15 (major): nobody has run a release on a clean Windows install. Windows Sandbox is interactive and owner-run. |
+| OCA-61 | G15 (major): nobody had run a release on a clean Windows install. Windows Sandbox is interactive and owner-run. Closed 2026-10-26: the template's release folder, built at `2fdb322`, passed its smoke test in Windows Sandbox (10.0.26100, no runtime DLLs in System32, a virtual GPU over the host's), recorded on *Ship a Windows release* and in the walkthrough's README. Whether it draws on a player's GPU needs a real machine. |
 | OCA-64 | G105: the OS and hardware floors the code enforces are unstated. |
 | OCA-65 | G150: which render backend to ship and what a refusal looks like. |
 | PI-14 | G77: ColourWars' ZIP has never run on a player's clean machine. No longer blocked on the migration; follows the bump. |
