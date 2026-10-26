@@ -108,6 +108,14 @@ if(PROJECT_IS_TOP_LEVEL)
     if(EMSCRIPTEN)
         add_link_options(-sNODERAWFS=1 -sENVIRONMENT=node)
 
+        # Protocol teardown has no browser or GPU dependency. In particular,
+        # a page crash must preserve its failure instead of crashing the
+        # runner on a command reply already in transit.
+        add_test(NAME BrowserProtocolTests
+            COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --test
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/devtools.test.mjs"
+        )
+
         # AND THE ONES NODE CANNOT RUN ARE PAGES, run in a headless Chromium
         # by tests/render/web/run_page.mjs: the render tests' two, which need
         # WebGL2 (the pixel page registered twice, once with S3TC hidden), and
@@ -193,5 +201,20 @@ if(PROJECT_IS_TOP_LEVEL)
         # page loads, draws and quits; ComponentsTests holds what a key does.
         labrador_sample_page_test(ComponentsPageTests ComponentsGallery
             "ArrowDown,ArrowDown,ArrowLeft,ArrowUp,ArrowRight,Escape")
+
+        # The packaged host page mounts an ES-module factory on a click,
+        # rather than exposing the development shell's Module. Its driver
+        # exercises real instances, quit/replay, the touch gate and recovery
+        # UI. Context-loss coverage needs the rasterizing browser build.
+        if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
+            add_test(NAME LineSweeperBundlePageTests
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
+                    --browser "${LABRADOR_TEST_BROWSER}"
+                    --page "${CMAKE_BINARY_DIR}/web-dist/linesweeper/index.html"
+                    --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_input.mjs"
+                    --timeout 120
+            )
+        endif()
     endif()
 endif()
