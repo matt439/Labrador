@@ -72,6 +72,14 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 - Retain aggregate modifier keys until both sides are released
+
+**Behaviour change.** On Windows and in a browser, releasing one Shift,
+Control or Alt key keeps the public aggregate key held while its other side
+is down. Previously the first release could produce a premature key-up.
+Per-window side tracking clears on focus or suspension loss, so a missed
+release cannot keep the aggregate held after returning to the application.
+
 ### 2026-10-26 - Include overhanging glyph cells in text cull bounds
 
 **Behaviour change.** Text bounds include glyph cells that extend outside the

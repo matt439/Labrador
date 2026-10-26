@@ -21,6 +21,19 @@ namespace labrador
 	// A position the engine has no name for is Key::none.
 	Key key_from_code(std::string_view code);
 
+	// Per-window physical modifier sides behind the aggregate public keys.
+	// update() records a side and returns whether to forward that key event;
+	// a release is withheld while its other side remains down. Repeats are
+	// idempotent. Clear when the canvas loses focus or the page is hidden.
+	class DomModifiers
+	{
+	public:
+		bool update(std::string_view code, bool down);
+		void clear();
+	private:
+		unsigned int held_ = 0;
+	};
+
 	// The character a keydown types, from KeyboardEvent.key, or zero when it
 	// types none.
 	//

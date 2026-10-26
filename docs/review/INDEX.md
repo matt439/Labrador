@@ -141,8 +141,14 @@ findings. This is the current disposition of **REV#11**:
   existing `out/build/wasm-release/tests/core/CoreTests.js` is access denied;
   no Node runtime pass is claimed. The caller's vector element/storage
   exception guarantees remain those of the underlying vector.
-- [ ] **Both sides of a modifier.** Verify left/right Shift, Control and Alt
-  aggregation and focus-loss clearing on both window backends.
+- [x] **Both sides of a modifier, 2026-10-26.** Each window tracks the two
+  physical sides of Shift, Control and Alt, withholding an aggregate key-up
+  until both are released and clearing the tracking on focus/suspension loss.
+  Native `AppTests` drives real hidden windows with both release orders,
+  repeats, loss paths and window isolation. The portable DOM translator runs
+  the equivalent key-edge cases in that target on every native backend and
+  compiles under clang with the browser window. Browser event delivery and
+  physical keyboard layouts remain the separate manual/runtime limits.
 - [ ] **Exceptional cleanup.** Check scene task-submission failure and Vulkan
   buffer construction after allocation. GL texture upload/table insertion
   already uses a scoped owner; that source finding is not still an open leak.

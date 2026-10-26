@@ -3,7 +3,9 @@
 #include "engine/app/web/dom_events.h"
 
 #include <initializer_list>
+#include <ostream>
 #include <set>
+#include <string>
 #include <string_view>
 
 using namespace labrador;
@@ -53,6 +55,81 @@ TEST_CASE("a key code is a physical position, as a scan code is on Windows")
 	CHECK(key_from_code("") == Key::none);
 }
 
+TEST_CASE("DOM modifier sides retain one public key until both are released")
+{
+	struct Modifier { std::string_view left; std::string_view right; Key key; };
+	const Modifier modifiers[] = {
+		{ "ShiftLeft", "ShiftRight", Key::shift },
+		{ "ControlLeft", "ControlRight", Key::control },
+		{ "AltLeft", "AltRight", Key::alt },
+	};
+	for (const Modifier& modifier : modifiers)
+	{
+		for (const bool right_first : { false, true })
+		{
+			DomModifiers sides;
+			Keyboard keyboard;
+			keyboard.set_focused(true);
+			keyboard.poll();
+			keyboard.poll();
+			const auto feed = [&](std::string_view code, bool down)
+				{
+					if (sides.update(code, down))
+					{
+						if (down) { keyboard.on_key_down(key_from_code(code)); }
+						else { keyboard.on_key_up(key_from_code(code)); }
+					}
+					keyboard.poll();
+				};
+			const std::string_view first = right_first ? modifier.right : modifier.left;
+			const std::string_view second = right_first ? modifier.left : modifier.right;
+			CAPTURE(first);
+			CAPTURE(second);
+			feed(first, true);
+			CHECK(keyboard.pressed(modifier.key));
+			feed(first, true);
+			CHECK_FALSE(keyboard.pressed(modifier.key));
+			feed(second, true);
+			CHECK_FALSE(keyboard.pressed(modifier.key));
+			feed(first, false);
+			CHECK(keyboard.held(modifier.key));
+			CHECK_FALSE(keyboard.released(modifier.key));
+			feed(second, false);
+			CHECK_FALSE(keyboard.held(modifier.key));
+			CHECK(keyboard.released(modifier.key));
+			feed(second, false);
+			CHECK_FALSE(keyboard.released(modifier.key));
+		}
+	}
+}
+
+TEST_CASE("clearing DOM modifier sides drops holds whose releases went elsewhere")
+{
+	for (const std::string_view family : { "Shift", "Control", "Alt" })
+	{
+		DomModifiers sides;
+		const std::string left = std::string(family) + "Left";
+		const std::string right = std::string(family) + "Right";
+		REQUIRE(sides.update(left, true));
+		sides.clear();
+		REQUIRE(sides.update(right, true));
+		CHECK(sides.update(right, false));
+	}
+}
+
+TEST_CASE("DOM modifier tracking is per window and passes other keys through")
+{
+	DomModifiers first;
+	DomModifiers second;
+	REQUIRE(first.update("ShiftLeft", true));
+	REQUIRE(second.update("ShiftRight", true));
+	CHECK(second.update("ShiftRight", false));
+	CHECK(first.update("KeyA", true));
+	CHECK(first.update("KeyA", false));
+	CHECK(first.update("Unknown", true));
+	CHECK(first.update("Unknown", false));
+}
+
 TEST_CASE("every key the engine names is reachable from a code")
 {
 	// The UI Events code for each of them, written out from the spec rather
@@ -100,8 +177,8 @@ TEST_CASE("a keydown types its key's one character, and a chord types nothing")
 
 	// UTF-8 in, one code point out, past the basic plane included - the
 	// browser assembles what WM_CHAR delivers as a surrogate pair.
-	CHECK(text_from_key("\xC3\xA9", false, false, false) == U'é');
-	CHECK(text_from_key("\xE6\xBC\xA2", false, false, false) == U'漢');
+	CHECK(text_from_key("\xC3\xA9", false, false, false) == U'\u00E9');
+	CHECK(text_from_key("\xE6\xBC\xA2", false, false, false) == U'\u6F22');
 	CHECK(text_from_key("\xF0\x9F\x9A\x80", false, false, false) ==
 		U'\U0001F680');
 

@@ -265,6 +265,7 @@ namespace labrador
 		// nothing.
 		bool focused = false;
 		bool hidden = false;
+		DomModifiers modifiers;
 
 		// The analogue of the Win32 window's capture count. A press that
 		// starts on the canvas is followed off it, and its release is heard
@@ -535,7 +536,10 @@ namespace labrador
 			{
 				if (event_type == EMSCRIPTEN_EVENT_KEYDOWN)
 				{
-					self->notify->on_key_down(key);
+					if (self->modifiers.update(event->code, true))
+					{
+						self->notify->on_key_down(key);
+					}
 					const char32_t text = text_from_key(event->key,
 						event->ctrlKey, event->altKey, event->metaKey);
 					if (text != 0)
@@ -543,7 +547,7 @@ namespace labrador
 						self->notify->on_text(text);
 					}
 				}
-				else
+				else if (self->modifiers.update(event->code, false))
 				{
 					self->notify->on_key_up(key);
 				}
@@ -676,6 +680,7 @@ namespace labrador
 					return;
 				}
 
+				self->modifiers.clear();
 				// Losing the keyboard mid-drag is a lost capture, as
 				// WM_CAPTURECHANGED is on Windows: the release will be
 				// delivered, if at all, to whatever has the page now.
@@ -709,6 +714,7 @@ namespace labrador
 			{
 				if (hidden)
 				{
+					self->modifiers.clear();
 					self->notify->on_suspending();
 				}
 				else
