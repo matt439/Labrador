@@ -11,7 +11,7 @@ An index of open work, one row per item; each row points to the document that ow
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
 1. **`SM-43` (X1): local build, tooling and website checks pass; PR CI verification remains.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
-2. **`SM-25` (X28): resolve the hosted installer's HTTP 403 and observe a scheduled Actions run.** Remaining Next work needs owner hardware or remote CI evidence.
+2. **`SM-25` (X28): verify the application-identified SDK download in PR CI and observe a scheduled Actions run.** Remaining Next work needs owner hardware or remote CI evidence.
 3. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
@@ -44,7 +44,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-25` | BLOCKED | should | S | Pin/hash confirmed and local HEAD returns 200; PR #59's hosted SDK download receives HTTP 403 before install, cause unconfirmed. Scheduled Actions observation remains. |
+| `SM-25` | OPEN | should | S | Downloader identifies LabradorCI; local same-URL GET returns 200 where default urllib receives Cloudflare 403/error 1010. Verify the repaired download in PR CI and observe a scheduled Actions run. |
 | `SM-19` | OPEN | could | XS | Windows tooling gate and all 81 local Python tests pass; observe a deliberately failing throwaway-branch CI run. |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
 

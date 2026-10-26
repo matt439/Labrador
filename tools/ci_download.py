@@ -20,13 +20,14 @@ import tempfile
 import time
 import traceback
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 
 RETRYABLE_HTTP_CODES = frozenset({408, 429, 500, 502, 503, 504})
 MAX_ATTEMPTS = 3
 REQUEST_TIMEOUT_SECONDS = 60
 MAX_RETRY_AFTER_SECONDS = 30
+USER_AGENT = "LabradorCI/1.0 (+https://github.com/matt439/Labrador)"
 
 
 def retry_delay(error: HTTPError, attempt: int) -> float | None:
@@ -86,9 +87,14 @@ def save_response(response, output: Path) -> None:
 
 
 def download(url: str, output: Path) -> None:
+    # Identify the application making the request. Cloudflare can reject the
+    # generic Python-urllib signature; its documented remedy is a descriptive
+    # application identity, without claiming to be a browser.
+    # https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/
+    request = Request(url, headers={"User-Agent": USER_AGENT})
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
-            response = urlopen(url, timeout=REQUEST_TIMEOUT_SECONDS)
+            response = urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS)
         except HTTPError as error:
             # Close even the response we will rethrow. A close failure also
             # propagates immediately, with this HTTP error as its context.

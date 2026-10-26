@@ -104,6 +104,8 @@ Python tooling suite.
 The Vulkan SDK download and its offline helper tests use Python 3.11 or newer. Its bounded HTTP
 retry helper leaves SHA-256 validation and installation outside the retry;
 authentication, transport and filesystem denials stop immediately.
+Requests identify the application as `LabradorCI/1.0` with the repository URL;
+HTTP 403 remains a terminal response rather than a retry condition.
 
 The website build still runs, because it reads the design documents. `changes`
 is required for that reason: if it failed, the jobs that need it would report

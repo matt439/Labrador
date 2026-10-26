@@ -115,6 +115,7 @@ if(PROJECT_IS_TOP_LEVEL)
             COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} --test
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/devtools.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/firefox_protocol.test.mjs"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/sample_key.test.mjs"
         )
 
         # AND THE ONES NODE CANNOT RUN ARE PAGES, run in a headless Chromium
