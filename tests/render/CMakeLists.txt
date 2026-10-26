@@ -133,6 +133,11 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
 
     if(LABRADOR_RENDER_BACKEND STREQUAL "gl")
         target_sources(RenderPixelTests PRIVATE gl_texture_tests.cpp)
+    elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
+        target_sources(RenderPixelTests PRIVATE
+            d3d12_submit_allocation_tests.cpp
+            d3d12_texture_upload_tests.cpp
+        )
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         find_package(Vulkan REQUIRED)
         target_sources(RenderPixelTests PRIVATE
