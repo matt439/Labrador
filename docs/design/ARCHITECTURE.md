@@ -150,8 +150,8 @@ being load-bearing.
 │   │   │                   three backends, two compilers, a profile each
 │   │   ├── d3d11/          the D3D11 backend: a device, buffers, five states
 │   │   ├── d3d12/          the D3D12 backend: a device, a queue, a fence and
-│   │   │                   frames in flight — the one API where the engine
-│   │   │                   owns synchronisation
+│   │   │                   frames in flight — with engine-owned
+│   │   │                   synchronisation, as in Vulkan
 │   │   ├── gl/             the OpenGL backend: 3.3 core through WGL on
 │   │   │                   Windows and WebGL2 in a browser, one context
 │   │   │                   file each, a loader for the entry points WGL

@@ -180,10 +180,9 @@ jobs:
     # Studio, opengl32 with Windows - where this one needs the Vulkan SDK twice
     # over: for a dxc that can emit SPIR-V at build time
     # (cmake/compile_shaders.cmake says which dxc and why), and for the Vulkan
-    # loader the same installer puts in System32, without which every test
-    # executable in this preset that links the engine would not start at all.
-    # MattMathTests, LineSweeperTests and MinimalTests are the ones that do
-    # not.
+    # loader the same installer puts in System32. Executables whose linked
+    # objects import Vulkan entry points require the loader at startup;
+    # linking the static LabradorEngine target alone does not establish that.
     #
     # THE NULL PRESET IS THE ONE THIS MACHINE CAN RUN COMPLETELY, and it is here
     # for that rather than for coverage. It has no platform API at all - no

@@ -144,10 +144,10 @@ the full licence texts in the Emscripten install that linked it.
 
 ### Toolchains, not code
 
-Nothing in this section is linked into a build product or carried in this tree;
-each is a tool or an import library the build finds on the machine, and is
-listed so that "what does this repository need that it does not ship" has one
-answer.
+These tools, headers and import libraries are installed separately and are not
+carried in this source tree. Builds run the tools and link the platform import
+libraries named below. They are listed so that "what does this repository need
+that it does not ship" has one answer.
 
 - **The Windows 10/11 SDK** — `fxc`, for the two Direct3D backends' shader, and
   the Direct3D and DXGI headers and import libraries.
