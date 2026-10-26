@@ -89,6 +89,15 @@ into verified findings.
   Recheck each against the current tree before accepting it. Record the
   candidate's original text and a confirmed/refuted/already-resolved verdict,
   with evidence, rather than editing the frozen list or copying its severity.
+- [x] **Candidate 34: visible oversized-viewport behavior, 2026-10-26.**
+  Analytic pixel tests cover right/bottom overflow, negative origins, panes
+  wholly outside each edge and zero/quantized-zero extents followed by a valid
+  pane. Every output pixel is checked without new goldens. All four native
+  rasterizers pass, retaining local marker size and placement while clipping
+  visible output to the buffer. Vulkan's full suite reports zero validation
+  errors or synchronization hazards, with 769 performance advisories. This
+  settles visible output on the tested configuration, not writes outside an
+  attachment or every driver's behavior.
 
 ## GPT-6 resolution map
 

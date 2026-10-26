@@ -64,10 +64,10 @@
 // Most frames are also checked against the PNG set in tests/render/golden/,
 // holding every rasterising backend to the same fixed reference. Sixty-three
 // frames have those references. Three resize cases opt out because their size
-// changes or differs by backend; the scene-composition case instead asserts
-// every pixel against its analytically known red/blue image. No reference is
-// generated from the output being tested. Harness::end_not_comparable marks
-// these exceptions explicitly.
+// changes or differs by backend; the scene-composition and off-buffer viewport
+// cases instead assert every pixel against analytically known red/blue images.
+// No reference is generated from the output being tested.
+// Harness::end_not_comparable marks these exceptions explicitly.
 //
 // AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
 // Because the text cases below are relationships (see two paragraphs down), a
@@ -401,8 +401,8 @@ namespace
 
 		// Readback without a golden image. Three resize cases use this: one
 		// has backend-dependent dimensions, and two deliberately leave the
-		// reference set's 64x64 size. The scene-composition regression also
-		// uses it, asserting every pixel against a known red/blue image.
+		// reference set's 64x64 size. The analytic composition and viewport
+		// regressions also use it, asserting every pixel against known colours.
 		// Each call site states its reason; ordinary pixel cases use end().
 		void end_not_comparable()
 		{
@@ -553,6 +553,33 @@ namespace
 		Vector2F buffer_ = Vector2F(static_cast<float>(BUFFER_SIZE),
 			static_cast<float>(BUFFER_SIZE));
 	};
+
+	void check_red_and_blue_frame(const Harness& harness,
+		const RectangleI& red, const RectangleI& blue)
+	{
+		const float size = static_cast<float>(BUFFER_SIZE);
+		REQUIRE(harness.buffer_size() == Vector2F(size, size));
+		REQUIRE(harness.byte_count() == BUFFER_SIZE * BUFFER_SIZE * 4);
+		for (int y = 0; y < BUFFER_SIZE; ++y)
+		{
+			for (int x = 0; x < BUFFER_SIZE; ++x)
+			{
+				Pixel expected = BLACK;
+				if (x >= red.x && x < red.x + red.width &&
+					y >= red.y && y < red.y + red.height)
+				{
+					expected = RED;
+				}
+				if (x >= blue.x && x < blue.x + blue.width &&
+					y >= blue.y && y < blue.y + blue.height)
+				{
+					expected = BLUE;
+				}
+				CHECK_MESSAGE(harness.at(x, y) == expected,
+					"pixel (", x, ", ", y, ") should be ", expected);
+			}
+		}
+	}
 }
 
 TEST_CASE("the renderer reports the rasterising device it selected")
@@ -1651,6 +1678,82 @@ TEST_CASE("CONTRACT: a viewport confines a sprite bigger than its pane")
 	CHECK(harness.at(32, 31) == BLACK);
 	CHECK(harness.at(31, 32) == BLACK);
 	CHECK(harness.at(8, 8) == BLACK);
+}
+
+TEST_CASE("CONTRACT: off-buffer viewports preserve placement and clip to the buffer")
+{
+	struct PaneCase
+	{
+		const char* name;
+		Viewport viewport;
+		RectangleI red;
+		RectangleI blue;
+	};
+	const PaneCase cases[] = {
+		{ "past right and bottom", Viewport(12, 8, 80, 72),
+			RectangleI(12, 8, 52, 56), RectangleI(24, 18, 10, 8) },
+		{ "before left and top", Viewport(-8, -6, 32, 24),
+			RectangleI(0, 0, 24, 18), RectangleI(4, 4, 10, 8) },
+		{ "past all four edges", Viewport(-8, -6, 80, 72),
+			RectangleI(0, 0, 64, 64), RectangleI(4, 4, 10, 8) },
+		{ "wholly right", Viewport(80, 8, 32, 24),
+			RectangleI::ZERO, RectangleI::ZERO },
+		{ "wholly below", Viewport(12, 72, 32, 24),
+			RectangleI::ZERO, RectangleI::ZERO },
+		{ "wholly left", Viewport(-40, 8, 32, 24),
+			RectangleI::ZERO, RectangleI::ZERO },
+		{ "wholly above", Viewport(12, -30, 32, 24),
+			RectangleI::ZERO, RectangleI::ZERO }
+	};
+	Harness harness;
+	for (const PaneCase& pane : cases)
+	{
+		CAPTURE(pane.name);
+		DrawList list = harness.begin();
+		list.set_viewport(pane.viewport);
+		// The red sprite exceeds every pane. The blue marker keeps its local
+		// pixel size and offset even when only part of the pane is on screen;
+		// cropping must not relocate or rescale it to fit the visible portion.
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(-64, -64, 192, 192), Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f,
+			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(12, 10, 10, 8), Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f,
+			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		// Every expected pixel follows from the rectangles above, so no golden
+		// image is needed to accept output from the renderer under test.
+		harness.end_not_comparable();
+		check_red_and_blue_frame(harness, pane.red, pane.blue);
+	}
+}
+
+TEST_CASE("CONTRACT: empty viewports draw nothing and leave the next pane usable")
+{
+	const Viewport empty_panes[] = {
+		Viewport(12, 8, 0, 24), Viewport(12, 8, 32, 0),
+		Viewport(5.2f, 5.2f, 0.5f, 24),
+		Viewport(5.2f, 5.2f, 32, 0.5f)
+	};
+	Harness harness;
+	for (const Viewport& pane : empty_panes)
+	{
+		CAPTURE(pane.width);
+		CAPTURE(pane.height);
+		DrawList list = harness.begin();
+		list.set_viewport(pane);
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(0, 0, 64, 64), Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f,
+			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		list.set_viewport(Viewport(0, 0, 64, 64));
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(4, 5, 8, 6), Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f,
+			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		// Analytic readback also covers panes whose edges quantize to no width
+		// or height, without generating a reference from that readback.
+		harness.end_not_comparable();
+		check_red_and_blue_frame(harness, RectangleI::ZERO,
+			RectangleI(4, 5, 8, 6));
+	}
 }
 
 TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them")
