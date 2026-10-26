@@ -1527,6 +1527,18 @@ for a visitor to play at that quality, which the live host does not use, as
 below. The module links the Web Audio backend, the touch device and
 the CPU block decoder whether or not LineSweeper calls them.
 
+### Packaged-page verification, 2026-10-27
+
+The local `wasm-release` build passes all 31 CTest entries in Chrome
+156.0.8078.48, using ANGLE on the RTX 5080 through D3D11.
+`LineSweeperBundlePageTests` loads `web-dist/linesweeper/index.html` and
+verifies real factory frames, quit/replay, touch gating, context loss/restore,
+truncated-wasm startup failure and the captured configuration's `onError`
+recovery UI. The earlier 2026-10-26 GPU startup denial no longer blocks this
+local check. This closes BDP-04's runtime acceptance; BDP-03 still awaits the
+entry's observed result in PR CI's wasm job. The run does not verify the
+hosted page, Firefox, physical touch or display pacing.
+
 **The live page was checked on 2026-10-13**, deployed from the site's `main`
 with `npm run deploy` from a bundle built at `c369e8b`, tagged `v0.1.0`, which
 holds the calm top-out. `curl -I` with `Accept-Encoding: br` showed

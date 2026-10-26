@@ -10,8 +10,8 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
-1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
-2. **`OCA-53` (X14): guide and native/wasm examples implemented; real reload acceptance is blocked by Chrome GPU startup access.** `OCA-45` still needs its physical two-pad session.
+1. **`SM-43` (X1): local build, tooling and website checks pass; PR CI verification remains.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
+2. **`BDP-03` (X23): packaged-page checks pass locally; observe the entry in PR CI's wasm output.** `OCA-45` still needs its physical two-pad session.
 3. **`SM-25` (X28): pin, identity log and schedule implemented; verify the endpoint and real scheduled Actions run when access permits.** Remaining Next work needs owner hardware, browser/network access or a remote CI observation.
 4. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
 
@@ -26,7 +26,6 @@ An index of open work, one row per item; each row points to the document that ow
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
-| `OCA-53` | BLOCKED | should | M | Guide and native/wasm writer compile checks implemented; run the real IDBFS reload driver when Chrome GPU startup is permitted (currently 0xC0000022). |
 
 ## Website and the hosted demo
 
@@ -34,8 +33,7 @@ An index of open work, one row per item; each row points to the document that ow
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `BDP-03` | BLOCKED | should | M | Packaged-page driver and registration implemented; run Play/quit/replay/touch checks when Chrome GPU startup is permitted (currently 0xC0000022). |
-| `BDP-04` | BLOCKED | should | M | Packaged-page context/startup/onError checks implemented; browser runtime acceptance is blocked by the same Chrome GPU access denial. |
+| `BDP-03` | OPEN | should | M | Packaged-page checks pass locally; observe LineSweeperBundlePageTests in PR CI's wasm output. [Evidence](docs/port/web.md#packaged-page-verification-2026-10-27). |
 | `SM-32` | BLOCKED | could | S | Review the encoded JetBrains Mono candidate in whole-clip playback, then replace the MP4. Canonical stills regenerate byte-identically; rule and review-output mode implemented. [Evidence](docs/website-plan.md#2026-10-26-footage-refresh-evidence). |
 | `SITE#3` | DECISION | could | XS | The owner decides whether the site starts versioned snapshots at the first 0.x tag ([docs/website-versioning.md](docs/website-versioning.md)). |
 | `BDP-20` | DECISION | could | XS | The owner decides whether the 4.3 MB phone fallback video stays, or swaps in a smaller encode with `npm run sync-demo -- <bundle> --video <mp4>`. |
@@ -49,7 +47,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-25` | BLOCKED | should | S | SDK pin/checksum, browser identity and weekly workflow implemented; verify installer endpoint and scheduled Actions history when network/remote runs are permitted. Local HEAD was socket-denied. |
-| `SM-19` | BLOCKED | could | XS | Windows tooling gate and ledger row implemented; observe a deliberately failing throwaway-branch CI run when remote writes are permitted. Local PowerShell fixtures are execution-policy blocked. |
+| `SM-19` | OPEN | could | XS | Windows tooling gate and all 81 local Python tests pass; observe a deliberately failing throwaway-branch CI run. |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
 
 `SM-15`, `SM-17`, `SM-18`, `SM-23` and `SM-24` are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
@@ -118,7 +116,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `SRL-14` | DECISION | could | S | The owner says whether the "Introduction to C++" series is not started, planned with an outline, or withdrawn. |
 | `SRL-07` | DECISION | could | S | The owner chooses between amending CONVENTIONS to accept the 26 SCREAMING constants and renaming them in both repositories. |
 | `OCA-66` | DECISION | could | S | The owner decides whether the default DPI awareness stays unaware or becomes per-monitor aware. |
-| `SM-43` | BLOCKED | should | M | Brief and history relocation implemented; full tools-suite acceptance needs Windows to permit the PowerShell fixtures ([verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance)). |
+| `SM-43` | OPEN | should | M | Local build, tooling and website checks pass; verify PR CI ([evidence](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance)). |
 
 ## Ports
 

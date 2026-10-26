@@ -3,7 +3,7 @@
 SM-43 moves the narrative out of the standing agent brief. This is a frozen
 source record from `c03a6f6`, not instructions for work in the current tree.
 [AGENTS.md](../AGENTS.md) is the current brief; CLAUDE.md imports only that file.
-The original has 680 lines; the current-state replacement has 274. The
+The original has 680 lines; the initial current-state replacement had 274. The
 relocation map and verification below accompany the change for review.
 
 ## Relocation map
@@ -46,9 +46,21 @@ Checked on 2026-10-26 with the Visual Studio 18 toolchain, build concurrency 2:
   those denied script operations were not retried. The 47 tests outside those
   10 PowerShell integration cases then passed, with 1 skipped.
 
-SM-43 remains open solely for the full tools-suite acceptance in an environment
-that permits those scripts. The implemented brief and history relocation are
-ready; this record does not claim the denied integration cases passed.
+At that point SM-43 remained open for full tools-suite acceptance in an
+environment that permitted those scripts. The denied integration cases did
+not supply a pass.
+
+**PR verification follow-up, 2026-10-27.** The current brief has 285 lines.
+All four standalone CMake checks pass, and the full Python tooling suite
+passes all 81 tests with no skips after a fixture-only benchmark-source check
+repair. Website `npm ci`, `npm run check`, `npm test` (21 tests) and
+`npm run build` pass, producing 146 pages. Native `x64-debug` and
+`x64-release` each pass 20 CTest entries, `x64-debug-d3d12` passes 21,
+`x64-release-gl` passes 20 and `x64-release-null` passes 19. `wasm-release`
+passes all 31 entries in Chrome 156.0.8078.48, including ordinary sample,
+pacing and packaged-page checks. These local runs supersede the script and
+browser access blockers for the checks they execute; the original denial
+record above is retained. SM-43 still awaits the PR's required CI results.
 
 ## Original brief
 

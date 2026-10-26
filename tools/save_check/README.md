@@ -22,6 +22,12 @@ reloads on the same origin/profile and checks the JSON read back by C++ main.
 This tests browser persistence, not storage retention after the user clears
 site data or a browser evicts it. It is not a real-device acceptance run.
 
+On 2026-10-27 the compiled check passed in headless Chrome 156.0.8078.48.
+The first C++ read returned `{}`; the compiled writer saved volume 37,
+`FS.syncfs(false)` completed, and C++ read `{"version":1,"volume":37}` after
+reload on the same origin and fresh task profile. The driver owns completion
+across navigation and rejects unexpected console or browser complaints.
+
 To check the Windows branch without writing to a user's application-data
 folder, compile it without linking from the x64 Native Tools Command Prompt:
 
