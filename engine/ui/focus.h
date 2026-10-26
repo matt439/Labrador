@@ -25,7 +25,7 @@ namespace labrador
 		// mutation repaints every widget from focus, so a page that colours a
 		// row itself is writing over a colour the next add() or move() writes
 		// back. A colour this group derives is the only kind that survives.
-		Colour disabled = Colour::dark_gray;
+		Colour disabled = Colour::dim_gray;
 	};
 
 	// What activating a slot's focused entry did.

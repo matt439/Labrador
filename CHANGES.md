@@ -70,6 +70,16 @@ browser build to break, and a game on a tag can have one.
 not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
+## Unreleased
+
+### 2026-10-26 — Make default disabled menu rows dimmer than unfocused rows
+
+**Behaviour change.** `FocusStyle::disabled` defaults to `Colour::dim_gray`
+(RGB 105) instead of `Colour::dark_gray` (RGB 169), so disabled rows are darker
+than enabled unfocused rows (`Colour::gray`, RGB 128). Games explicitly setting
+`FocusStyle::disabled` keep that colour. To retain the previous default, set
+`style.disabled = Colour::dark_gray` explicitly.
+
 ## v0.2.0 (2026-10-25)
 
 Of the commits in

@@ -56,9 +56,10 @@ chosen. The pause menu adds its three rows, and each action pops the menu with i
 Popping from inside an action is safe: the action runs inside the menu's `update()`, and the stack
 waits for that to return before it destroys the menu.
 
-The group colours its widgets to show focus: white for the focused one, grey for the rest, dark
-grey for one that is disabled. Pass a `FocusStyle` to the constructor for other colours, and call
-`set_enabled(widget, false)` to grey out a choice that is not available.
+The group colours its widgets to show focus: white for the focused one, grey for the rest, dim
+grey for one that is disabled, darker than an enabled unfocused row. Pass a `FocusStyle` to the
+constructor for other colours, and call `set_enabled(widget, false)` to grey out a choice that is
+not available.
 
 ## Moving and choosing
 
