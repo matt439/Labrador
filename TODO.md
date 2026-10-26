@@ -12,7 +12,8 @@ An index of open work, one row per item; each row points to the document that ow
 
 1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
 2. **`OCA-53` (X14): guide and native/wasm examples implemented; real reload acceptance is blocked by Chrome GPU startup access.** `OCA-45` still needs its physical two-pad session.
-3. **`SRL-08`, `OCA-57` (X16): reference audience and generated guide links.** Header contracts, member naming and constant navigation are implemented.
+3. **`SM-25` (X28): pin CI inputs, log browser identity and add the drift schedule.** Earlier remaining Next work needs owner hardware, browser access or a remote CI observation.
+4. **`REV#7`, `REV#11`: presentation lifecycle coverage and verified hardening candidates.** Continue the existing review queue while those gates remain.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).

@@ -6,7 +6,13 @@
 // unique, the site build fails naming the file and the line, instead of
 // quietly quoting whatever now sits at lines 18 to 40 (PHILOSOPHY T6).
 
-import { readRepositoryFile } from './repository';
+import { readRepositoryFile } from './repository.ts';
+
+export function sourceLanguage(file: string): string {
+	if (file.endsWith('.json')) return 'json';
+	if (file.endsWith('CMakeLists.txt') || file.endsWith('.cmake')) return 'cmake';
+	return 'cpp';
+}
 
 export interface Excerpt {
 	code: string;

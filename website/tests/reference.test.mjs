@@ -2,8 +2,25 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { declarationName, parseHeader } from '../src/lib/cpp-header.ts';
 import GithubSlugger from 'github-slugger';
-import { codeLink, commentHtml, forgetIndexes, freeFunctions, referencePage } from '../src/lib/reference.ts';
-import { REFERENCE_HEADERS } from '../src/lib/published.ts';
+import { codeLink, commentHtml, forgetIndexes, freeFunctions, moduleReferencePage, referencePage } from '../src/lib/reference.ts';
+import { REFERENCE_HEADERS, REFERENCE_MODULES, validateReferenceAudiences } from '../src/lib/published.ts';
+
+test('every reference header has an explicit audience and renderer helpers show it', () => {
+	assert.doesNotThrow(() => validateReferenceAudiences());
+	for (const file of ['resource_factory.h', 'throw_if_failed.h', 'sprite_vertex.h', 'block_decode.h']) {
+		const header = REFERENCE_HEADERS.find((entry) => entry.source === `engine/render/${file}`);
+		assert.equal(header.audience, 'renderer writer', file);
+		assert.match(referencePage(header).markdown, /<strong>Audience: renderer writer\.<\/strong>/);
+	}
+	const module = REFERENCE_MODULES.find((entry) => entry.name === 'render');
+	const markdown = moduleReferencePage(module);
+	assert.match(markdown, /^## Game code\n/m);
+	assert.match(markdown, /^## Renderer writers\n/m);
+	assert.ok(markdown.indexOf('resource-factory/') > markdown.indexOf('## Renderer writers'));
+	const missing = { ...REFERENCE_HEADERS[0], source: 'engine/render/missing_audience.h', audience: undefined };
+	assert.throws(() => validateReferenceAudiences([missing]), /engine\/render\/missing_audience\.h.*audience/);
+	assert.throws(() => referencePage(missing), /engine\/render\/missing_audience\.h.*audience/);
+});
 
 test('initialiser calls name the declared member, while functions retain their own name', () => {
 	const declarations = [
@@ -92,7 +109,7 @@ test('ambiguous names have no guessed target; same-page overloads retain the fir
 	const count = REFERENCE_HEADERS.length;
 	const fixture = {
 		module: 'test', source: 'website/tests/fixtures/reference-functions.h',
-		slug: 'docs/reference/test/functions', title: 'Test functions', order: 1,
+		slug: 'docs/reference/test/functions', title: 'Test functions', order: 1, audience: 'game code',
 	};
 	REFERENCE_HEADERS.push(fixture, {
 		...fixture, source: 'website/tests/fixtures/reference-overloads.h',

@@ -10,8 +10,8 @@
 import type { Loader, LoaderContext } from 'astro/loaders';
 import { docsLoader } from '@astrojs/starlight/loaders';
 import { siteContentFileURL } from './markdown-plugins';
-import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, REFERENCE_MODULES, moduleSlug, type PublishedDocument } from './published';
-import { forgetIndexes, moduleReferencePage, referencePage, unlistedHeaders } from './reference';
+import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, REFERENCE_MODULES, moduleSlug, validateReferenceAudiences, type PublishedDocument } from './published';
+import { EXPLANATION_FOLDERS, explanationDependencies, forgetIndexes, moduleReferencePage, referencePage, unlistedHeaders } from './reference';
 import { REVISION, absolutePath, commitUrl, editUrl, readRepositoryFile, sourceUrl } from './repository';
 
 async function store(
@@ -73,6 +73,7 @@ async function loadReference(context: LoaderContext, index: number): Promise<voi
 }
 
 async function loadCheckout(context: LoaderContext): Promise<void> {
+	validateReferenceAudiences();
 	const unlisted = unlistedHeaders();
 	if (unlisted.length > 0) {
 		throw new Error(
@@ -109,18 +110,31 @@ export function labradorDocsLoader(): Loader {
 			// In dev, an edit to a published document or header reloads its page.
 			// A header change can move what the others link to, so all of them
 			// are rebuilt; there are few enough that it costs nothing.
+			const normalized = (file: string) => file.replace(/\\/g, '/');
 			const watched = new Set<string>([
 				...DESIGN_DOCUMENTS.map((document) => absolutePath(document.source)),
 				...REFERENCE_HEADERS.map((header) => absolutePath(header.source)),
-			]);
-			context.watcher?.add([...watched]);
-			context.watcher?.on('change', async (changed) => {
-				if (watched.has(changed)) {
+			].map(normalized));
+			const explanationFolders = EXPLANATION_FOLDERS.map((folder) => normalized(absolutePath(folder)));
+			context.watcher?.add([...watched, ...explanationFolders]);
+			const watchExcerpts = () => {
+				const files = explanationDependencies().map((source) => normalized(absolutePath(source)));
+				files.forEach((file) => watched.add(file));
+				context.watcher?.add(files);
+			};
+			watchExcerpts();
+			const reload = async (changed: string) => {
+				const file = normalized(changed);
+				if (watched.has(file) || explanationFolders.some((folder) => file.startsWith(`${folder}/`))) {
 					context.logger.info(`Reloading pages read from the checkout (${changed})`);
 					forgetIndexes();
 					await loadCheckout(context);
+					watchExcerpts();
 				}
-			});
+			};
+			context.watcher?.on('change', reload);
+			context.watcher?.on('add', reload);
+			context.watcher?.on('unlink', reload);
 		},
 	};
 }
