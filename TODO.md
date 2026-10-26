@@ -46,8 +46,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-25` | OPEN | should | S | Pin the Vulkan SDK to an exact version instead of `latest`, log the browser's product and version from `run_page.mjs`, and add a scheduled run so outside drift is a red run of its own. |
-| `SM-19` | OPEN | could | XS | Run `python -m unittest discover` over `tools/tests` on every push, on the Windows runner, and add a ticked row for README priority 3 to `docs/review/2026-09-26/STATUS.md`. |
-| `CI#2` | OPEN | could | XS | Run `node --test tools/flash_check/flash_check.test.mjs` in CI beside `SM-19`'s step; the WCAG flash definitions are otherwise held to their synthetic frames only when someone runs it. Owned by samples/linesweeper/README.md. |
+| `SM-19` | BLOCKED | could | XS | Windows tooling gate and ledger row implemented; observe a deliberately failing throwaway-branch CI run when remote writes are permitted. Local PowerShell fixtures are execution-policy blocked. |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
 
 `SM-15`, `SM-17`, `SM-18`, `SM-23` and `SM-24` are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).

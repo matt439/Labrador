@@ -83,12 +83,11 @@ jobs:
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # The checks every build runs first, as scripts of their own: the citation
-  # check, the agent brief and the engine's include wall. The citation check is
-  # the one a documentation change can fail - a renamed document or a moved
-  # section a comment still cites - and on such a change this is the whole
-  # run. Windows, because the build jobs run them on Windows and a path's case
-  # is not a question there.
+  # Repository checks and offline tooling regressions, independent of the
+  # compiler matrix and run for documentation-only changes too. Windows keeps
+  # the build jobs' path semantics and runs the worker/trace PowerShell
+  # fixtures. Python and Node are the hosted runner's; both suites use only
+  # their standard libraries and need no package installation.
   lint:
     name: lint
     runs-on: windows-latest
@@ -107,6 +106,12 @@ jobs:
 
       - name: Check source revision and archive metadata without a compiler
         run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_source_revision.cmake
+
+      - name: Check the flash definitions against synthetic frames
+        run: node --test tools/flash_check/flash_check.test.mjs
+
+      - name: Run the offline tooling tests
+        run: python -m unittest discover tools/tests
 
   windows:
     # The check's name is the preset alone. Without it GitHub names each
