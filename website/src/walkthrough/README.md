@@ -43,7 +43,7 @@ are the job's own, which is what the guide says. `ci.yml` itself ran
 unchanged on 26 October 2026 in
 [matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), the
 walkthrough project at `v0.2.0`, twice and green, the second run restoring the
-first's vcpkg cache; *Check your game in CI* links both runs. CI's `wasm` job assembles the
+first's vcpkg cache; *Check your game in CI* links both runs. CI's `wasm-consumer` job assembles the
 same project and builds its `wasm-release` preset with Emscripten, runs
 `MyGameTests` under Node, and loads `MyGame.html` in headless Chrome with
 `tests/render/web/run_page.mjs`, which presses Escape and Enter and passes when

@@ -93,7 +93,7 @@ GPU needs a real machine. `run.cmd` takes a release folder as its argument
 to try it on the host first. Windows Sandbox needs Windows Pro or Enterprise,
 and an administrator to enable the *Windows Sandbox* optional feature.
 
-CI's `wasm` job assembles the same project and builds the page's browser
+CI's `wasm-consumer` job assembles the same project and builds the page's browser
 preset, from *Build for the browser*
 (`website/src/content/docs/docs/guides/browser.mdx`). To run that as it does,
 from a prompt where Emscripten's `emsdk_env.bat` has also been run, so that

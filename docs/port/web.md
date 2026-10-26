@@ -956,7 +956,7 @@ null benchmark - drop out of executables that still exist, so the `wasm-*`
 presets still counted 14 ctest entries and compile none of those files
 *(17 since M6 registers `RenderPixelTests`, `RenderContextLossTests` and
 `WebWindowTests` where a Chromium is found; below)*. MSVC
-builds them under the two `-null` presets as before, and CI's wasm job
+builds them under the two `-null` presets as before, and CI's `wasm-null` job
 configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null`
 and runs that build's tests too, so the second compiler still sees them.
 
