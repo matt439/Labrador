@@ -157,10 +157,11 @@ namespace
 	class Watchdog
 	{
 	public:
-		Watchdog() : worker_([this]()
+		Watchdog() : deadline_(std::chrono::steady_clock::now() + std::chrono::seconds(10)),
+			worker_([this]()
 			{
 				std::unique_lock<std::mutex> lock(this->mutex_);
-				if (!this->condition_.wait_for(lock, std::chrono::seconds(10),
+				if (!this->condition_.wait_until(lock, this->deadline_,
 					[this]() { return this->finished_; }))
 				{
 					std::fputs("D3D12 destruction probe: ten-second deadline expired; "
@@ -173,17 +174,29 @@ namespace
 		{
 			{
 				std::lock_guard<std::mutex> lock(this->mutex_);
+				this->check_deadline();
 				this->finished_ = true;
 			}
 			this->condition_.notify_one();
 			this->worker_.join();
+			this->check_deadline();
 		}
 		Watchdog(const Watchdog&) = delete;
 		Watchdog& operator=(const Watchdog&) = delete;
 	private:
+		void check_deadline() const noexcept
+		{
+			if (std::chrono::steady_clock::now() >= this->deadline_)
+			{
+				std::fputs("D3D12 destruction probe: ten-second completion deadline expired\n", stderr);
+				std::fflush(stderr);
+				std::_Exit(EXIT_FAILURE);
+			}
+		}
 		std::mutex mutex_;
 		std::condition_variable condition_;
 		bool finished_ = false;
+		const std::chrono::steady_clock::time_point deadline_;
 		std::thread worker_;
 	};
 

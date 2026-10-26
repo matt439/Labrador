@@ -169,6 +169,18 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             LabradorEngine
             labrador_settings
         )
+
+        # Hidden Present may block before two slots can remain queued. Keep
+        # this bounded capability probe opt-in, outside the required tests.
+        add_executable(D3D12PresentedSlotsProbe EXCLUDE_FROM_ALL
+            d3d12_presented_slots_probe.cpp
+            d3d12_instrumented_device_resources.cpp
+            win32/test_window.cpp
+        )
+        target_link_libraries(D3D12PresentedSlotsProbe PRIVATE
+            LabradorEngine
+            labrador_settings
+        )
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         find_package(Vulkan REQUIRED)
         target_sources(RenderPixelTests PRIVATE
