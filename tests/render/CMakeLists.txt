@@ -191,6 +191,18 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             vulkan_pending_submission_tests.cpp
         )
         target_link_libraries(RenderPixelTests PRIVATE Vulkan::Vulkan)
+
+        # Opt-in validation snapshot through actual device destruction. Its
+        # executable owns only an extra instance messenger, not the device.
+        add_executable(VulkanDestructionProbe EXCLUDE_FROM_ALL
+            vulkan_destruction_probe.cpp
+            win32/test_window.cpp
+        )
+        target_link_libraries(VulkanDestructionProbe PRIVATE
+            LabradorEngine
+            labrador_settings
+            Vulkan::Vulkan
+        )
     endif()
 
     if(NOT EMSCRIPTEN)

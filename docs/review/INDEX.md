@@ -146,7 +146,7 @@ green headless suite supplies a human session or a hardware measurement.
 |---|---|
 | **REV#1**, five-backend G6a, closed 2026-10-26 | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: native-null `AppTests` resizes a live Application and compares the actual HWND size with both caches. Raster-backend/interactive acceptance is not claimed. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
-| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): D3D12 has instrumented pending work in two presented slots and an actual destruction witness. Vulkan presented-slot pending work and final-device diagnostics remain. |
+| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): D3D12 has pending work in two presented slots; both backends have final-device observations. Vulkan presented-slot pending work remains. |
 | **REV#8**, GPT-6 opportunity 4 | Bounded XAudio2 silent-output retries and six deterministic policy cases are implemented; native XAudio2/null audio regressions pass. Real endpoint loss/reappearance, retained-bank playback and suspension/resume remain unverified. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
@@ -387,6 +387,64 @@ Run the bounded probe from a developer shell:
 ```text
 cmake --build --preset x64-debug-d3d12 --target D3D12PresentedSlotsProbe --parallel 2
 out\build\x64-debug-d3d12\tests\render\D3D12PresentedSlotsProbe.exe
+```
+
+**Vulkan device-destruction callback observation, 2026-10-26.**
+The optional [VulkanDestructionProbe](../../tests/render/vulkan_destruction_probe.cpp)
+links the ordinary engine, borrows raw instance/device identities without a
+shared owner, and requires the actual Debug validation messenger. It adds one
+independent instance messenger with process-lifetime, preallocated callback
+storage. Two exact INFO controls bracket six ordinary hidden presents and a
+real 64-to-32 resize. Renderer release precedes retained-texture release.
+No read-back drain, queue gate or device loss is introduced.
+
+Executable definitions intercept only destruction of the captured identities;
+all other calls forward unchanged. Actual DLL exports are resolved before
+engine creation. The matching `vkDestroyDevice` records entry and return
+around the real loader call, preserving its arguments. The matching
+`vkDestroyInstance` removes only the test messenger, using its original NULL
+allocator, before forwarding the original call. This respects the
+[device-child](https://docs.vulkan.org/refpages/latest/refpages/source/vkDestroyDevice.html)
+and [instance-child](https://docs.vulkan.org/refpages/latest/refpages/source/vkDestroyInstance.html)
+lifetime requirements. The callback itself makes
+[no Vulkan calls](https://docs.vulkan.org/refpages/latest/refpages/source/PFN_vkDebugUtilsMessengerCallbackEXT.html),
+copies descriptions and publishes each fixed record with release/acquire
+atomics. A ten-second absolute watchdog with completion checks covers the
+workload and cleanup; fatal expiry terminates only this probe process.
+
+The Debug run exited 0 on NVIDIA GeForce RTX 5080, hardware Vulkan 1.4.351,
+vendor/device `10DE:2C02`, with SDK `1.4.357.0`. It used the review's section-2
+settings, including `validate_sync = true`, best practices and shell-visible
+logging, through the task-owned `vulkan-validation/vk_layer_settings.txt`.
+The extra messenger was created successfully. Its snapshot contains nine
+complete records: both exact INFO controls and seven performance-only
+advisories. It has zero errors, general/validation warnings, overflow or
+null/truncated descriptions. The full shell log separately reports zero
+validation errors, sync hazards or validation warnings and ten performance
+advisories, including messages before the test messenger existed.
+
+The captured device's real destruction call entered and returned exactly once
+during retained-texture release. The instance hook entered/returned once and
+removed the test messenger once before forwarding actual instance destruction. This observes
+the final device boundary without retaining its engine owner. Initialization
+before the test messenger, diagnostics from actual instance destruction,
+complete callback quiescence and presented-slot pending work remain outside
+this observation. The snapshot is not a claim about every possible message.
+
+Local receipts use `vulkan-destruction-*` under `out/overnight-2026-10-26/`.
+The tested base was `3e1820ca3a071d8caf28e2f8f8e60a013c02c57d` with this probe
+and its optional target added. Probe source SHA-256 is
+`2FB5E6C0D547F278967E0137927301C0C00E887BE2CD8CABA0BC14C0105B3013`.
+Debug and Release compile; Release refuses execution with exit 1 and supplies
+no validation acceptance. The target is `EXCLUDE_FROM_ALL`, outside CTest and
+does not change the 20 default tests or required CI contexts. All four standalone
+CMake checks and the website check, 21 contract tests and build pass. To repeat from
+a developer shell, point `VK_LAYER_SETTINGS_PATH` at a directory containing
+the section-2 settings and run:
+
+```text
+cmake --build --preset x64-debug-vulkan --target VulkanDestructionProbe --parallel 2
+out\build\x64-debug-vulkan\tests\render\VulkanDestructionProbe.exe
 ```
 
 ## Hardening verification
