@@ -210,10 +210,10 @@ jobs:
             skip_tests: ''
             vulkan_sdk: false
           - preset: x64-debug-gl
-            skip_tests: '-E "RenderPixelTests|MinimalSmokeTests"'
+            skip_tests: '-E "^(RenderPixelTests|MinimalSmokeTests)$"'
             vulkan_sdk: false
           - preset: x64-debug-vulkan
-            skip_tests: '-E "RenderPixelTests|MinimalSmokeTests"'
+            skip_tests: '-E "^(RenderPixelTests|MinimalSmokeTests)$"'
             vulkan_sdk: true
           - preset: x64-debug-null
             skip_tests: ''
