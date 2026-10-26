@@ -59,9 +59,18 @@ namespace
 		mutable Key last_down = Key::none;
 		mutable Key last_up = Key::none;
 		mutable char32_t last_text = 0;
+		mutable labrador::Keyboard keyboard;
 		mutable labrador::Mouse mouse;
-		void on_key_down(Key key) const override { this->last_down = key; }
-		void on_key_up(Key key) const override { this->last_up = key; }
+		void on_key_down(Key key) const override
+		{
+			this->last_down = key;
+			this->keyboard.on_key_down(key);
+		}
+		void on_key_up(Key key) const override
+		{
+			this->last_up = key;
+			this->keyboard.on_key_up(key);
+		}
 		void on_text(char32_t text) const override { this->last_text = text; }
 		void on_mouse_move(int, int) const override {}
 		void on_mouse_button_down(MouseButton button) const override { this->mouse.on_button_down(button); }
@@ -343,6 +352,108 @@ TEST_CASE("keyboard messages map physical positions independently of their chara
 
     SendMessageW(hwnd(window), WM_CHAR, L'z', 1);
     CHECK(notify.last_text == U'z');
+}
+
+TEST_CASE("modifier keys stay held until both physical sides are released")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.keyboard.set_focused(true);
+	notify.keyboard.poll();
+	notify.keyboard.poll();
+	struct Modifier
+	{
+		WPARAM virtual_key;
+		unsigned int left_scan;
+		unsigned int right_scan;
+		bool extended_right;
+		Key key;
+	};
+	const Modifier modifiers[] = {
+		{ VK_SHIFT, 0x2a, 0x36, false, Key::shift },
+		{ VK_CONTROL, 0x1d, 0x1d, true, Key::control },
+		{ VK_MENU, 0x38, 0x38, true, Key::alt },
+	};
+	for (const Modifier& modifier : modifiers)
+	{
+		for (const bool right_first : { false, true })
+		{
+			CAPTURE(static_cast<int>(modifier.key));
+			CAPTURE(right_first);
+			const auto send_key = [&](bool right, bool down)
+				{
+					const unsigned int scan = right
+						? modifier.right_scan : modifier.left_scan;
+					const LPARAM position = static_cast<LPARAM>(scan << 16) |
+						(right && modifier.extended_right ? (1LL << 24) : 0) | 1;
+					const UINT message = modifier.key == Key::alt
+						? (down ? WM_SYSKEYDOWN : WM_SYSKEYUP)
+						: (down ? WM_KEYDOWN : WM_KEYUP);
+					SendMessageW(hwnd(window), message, modifier.virtual_key,
+						position | (down ? 0 : (1LL << 30) | (1LL << 31)));
+					notify.keyboard.poll();
+				};
+
+			send_key(right_first, true);
+			CHECK(notify.keyboard.pressed(modifier.key));
+			send_key(right_first, true);
+			CHECK_FALSE(notify.keyboard.pressed(modifier.key));
+			send_key(!right_first, true);
+			CHECK(notify.keyboard.held(modifier.key));
+			CHECK_FALSE(notify.keyboard.pressed(modifier.key));
+			send_key(right_first, false);
+			CHECK(notify.keyboard.held(modifier.key));
+			CHECK_FALSE(notify.keyboard.released(modifier.key));
+			send_key(!right_first, false);
+			CHECK_FALSE(notify.keyboard.held(modifier.key));
+			CHECK(notify.keyboard.released(modifier.key));
+			send_key(!right_first, false);
+			CHECK_FALSE(notify.keyboard.released(modifier.key));
+		}
+	}
+}
+
+TEST_CASE("focus and suspension loss discard remembered modifier sides")
+{
+	struct Loss { UINT message; WPARAM parameter; };
+	const Loss losses[] = {
+		{ WM_KILLFOCUS, 0 },
+		{ WM_ACTIVATEAPP, FALSE },
+		{ WM_POWERBROADCAST, PBT_APMSUSPEND },
+		{ WM_SIZE, SIZE_MINIMIZED },
+	};
+	for (const Loss& loss : losses)
+	{
+		RecordingNotify notify;
+		Window window(hidden_options(), &notify);
+		SendMessageW(hwnd(window), WM_KEYDOWN, VK_CONTROL,
+			(0x1dLL << 16) | 1);
+		SendMessageW(hwnd(window), loss.message, loss.parameter, 0);
+		notify.last_up = Key::none;
+		// A right-side press after the loss cannot inherit the left-side
+		// hold, whose key-up went to another window while this one was away.
+		SendMessageW(hwnd(window), WM_KEYDOWN, VK_CONTROL,
+			(0x1dLL << 16) | (1LL << 24) | 1);
+		SendMessageW(hwnd(window), WM_KEYUP, VK_CONTROL,
+			(0x1dLL << 16) | (1LL << 24) | (1LL << 30) | (1LL << 31) | 1);
+		CAPTURE(loss.message);
+		CHECK(notify.last_up == Key::control);
+	}
+}
+
+TEST_CASE("modifier sides belong to each window")
+{
+	RecordingNotify first_notify;
+	Window first(hidden_options(), &first_notify);
+	RecordingNotify second_notify;
+	WindowOptions second_options = hidden_options();
+	second_options.window_class_name += L"Second";
+	Window second(second_options, &second_notify);
+	SendMessageW(hwnd(first), WM_KEYDOWN, VK_SHIFT, (0x2aLL << 16) | 1);
+	SendMessageW(hwnd(second), WM_KEYDOWN, VK_SHIFT, (0x36LL << 16) | 1);
+	SendMessageW(hwnd(second), WM_KEYUP, VK_SHIFT,
+		(0x36LL << 16) | (1LL << 30) | (1LL << 31) | 1);
+	CHECK(second_notify.last_up == Key::shift);
 }
 
 TEST_CASE("only a bare keyboard menu activation is the window's to swallow")

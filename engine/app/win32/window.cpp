@@ -269,6 +269,7 @@ namespace labrador
 		Impl& operator=(const Impl&) = delete;
 
 		void update_suspension();
+		bool update_modifier(Key key, LPARAM l_param, bool down);
 
 		// outer_size_for_client, for the style the window is wearing right now.
 		mattmath::Vector2I outer_size(
@@ -286,6 +287,7 @@ namespace labrador
 		bool in_suspend = false;
 		bool minimized = false;
 		bool power_suspended = false;
+		unsigned int held_modifiers = 0;
 		int min_width = 0;
 		int min_height = 0;
 		int exit_code = 0;
@@ -592,8 +594,38 @@ namespace labrador
 		const bool suspended = this->minimized || this->power_suspended;
 		if (suspended == this->in_suspend) { return; }
 		this->in_suspend = suspended;
-		if (suspended) { this->notify->on_suspending(); }
+		if (suspended)
+		{
+			this->held_modifiers = 0;
+			this->notify->on_suspending();
+		}
 		else { this->notify->on_resuming(); }
+	}
+
+	bool Window::Impl::update_modifier(Key key, LPARAM l_param, bool down)
+	{
+		unsigned int first = 0;
+		bool right = (l_param & (1LL << 24)) != 0;
+		switch (key)
+		{
+		case Key::shift:
+			right = ((static_cast<unsigned long long>(l_param) >> 16) & 0xffu) == 0x36u;
+			break;
+		case Key::control: first = 2; break;
+		case Key::alt: first = 4; break;
+		default: return true;
+		}
+
+		// Repeated downs set one side rather than adding a second hold. The
+		// public key goes up only after both physical sides have gone up.
+		const unsigned int bit = 1u << (first + (right ? 1u : 0u));
+		if (down)
+		{
+			this->held_modifiers |= bit;
+			return true;
+		}
+		this->held_modifiers &= ~bit;
+		return (this->held_modifiers & (3u << first)) == 0;
 	}
 
 	// Every message either forwards through WindowNotify or is Windows
@@ -784,6 +816,10 @@ namespace labrador
 			}
 			break;
 
+		case WM_KILLFOCUS:
+			if (self) { self->held_modifiers = 0; }
+			break;
+
 		case WM_ACTIVATEAPP:
 			if (self)
 			{
@@ -793,6 +829,7 @@ namespace labrador
 				}
 				else
 				{
+					self->held_modifiers = 0;
 					self->notify->on_deactivated();
 				}
 			}
@@ -835,7 +872,11 @@ namespace labrador
 		case WM_SYSKEYDOWN:
 			if (self)
 			{
-				self->notify->on_key_down(key_from_message(w_param, l_param));
+				const Key key = key_from_message(w_param, l_param);
+				if (self->update_modifier(key, l_param, true))
+				{
+					self->notify->on_key_down(key);
+				}
 			}
 			break;
 
@@ -843,7 +884,11 @@ namespace labrador
 		case WM_SYSKEYUP:
 			if (self)
 			{
-				self->notify->on_key_up(key_from_message(w_param, l_param));
+				const Key key = key_from_message(w_param, l_param);
+				if (self->update_modifier(key, l_param, false))
+				{
+					self->notify->on_key_up(key);
+				}
 			}
 			break;
 

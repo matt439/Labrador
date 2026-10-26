@@ -1,19 +1,22 @@
 find_package(doctest CONFIG REQUIRED)
 
-# The shell's tests. Three files run on every platform. The fourth is the
-# platform's own window: on Windows a real one, hidden and driven through its
-# message procedure, and in a browser build the translation of DOM events,
-# which is the part of the web window Node can reach with no DOM.
+# The shell's tests, including the pure DOM-event translator on every platform.
+# Native builds compile that portable source into this test target only, while
+# browser builds already link it from the engine. Windows also exercises a real
+# hidden window through its message procedure. The production backend selection
+# is unchanged, and the translator needs no browser or Emscripten API.
 add_executable(AppTests
     application_options_tests.cpp
     content_root_tests.cpp
+    dom_events_tests.cpp
     frame_timer_tests.cpp
     test_main.cpp
 )
-if(EMSCRIPTEN)
-    target_sources(AppTests PRIVATE dom_events_tests.cpp)
-else()
-    target_sources(AppTests PRIVATE window_tests.cpp)
+if(NOT EMSCRIPTEN)
+    target_sources(AppTests PRIVATE
+        window_tests.cpp
+        ../../engine/app/web/dom_events.cpp
+    )
 endif()
 
 # Application's own loop, run with a hidden window: only where the renderer
