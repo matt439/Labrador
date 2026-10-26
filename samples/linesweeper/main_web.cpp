@@ -1,16 +1,24 @@
 // LineSweeper in a browser: main.cpp's twin for the web build, chosen in this
 // folder's CMakeLists.txt so that neither file carries the other platform.
 //
-// The game is the same - the same options, the same first state, the same
+// Ordinary play is the same - the same options, first state and
 // content, packed into the module rather than copied beside an executable -
 // and two things differ, both of them the platform's. A failure has no
 // message box to go to, so it goes to stderr, which is the browser console,
 // and to the page's Module.onError if the page gave one. And the Application
 // is a static rather than a local, because in a browser run() does not
 // return (Application::run says why).
+//
+// The development build alone includes an opt-in pacing observer and full-well
+// fixture, enabled by its pre-js query flag. The packaged module compiles this
+// entry without that code; default development play also starts PlayState.
 
 #include "engine/app/application.h"
 #include "samples/linesweeper/states/play_state.h"
+#if defined(LABRADOR_DEVELOPMENT_PACING)
+#include "samples/linesweeper/web/pacing_observer.h"
+#include "samples/linesweeper/web/pacing_state.h"
+#endif
 
 #include <emscripten/emscripten.h>
 
@@ -54,6 +62,20 @@ int main()
 		// (engine/app/content_root.h).
 		app.load_manifest("./manifest.json");
 
+#if defined(LABRADOR_DEVELOPMENT_PACING)
+		const linesweeper::PacingMode pacing = linesweeper::pacing_mode();
+		static linesweeper::PacingSnapshot pacing_snapshot;
+		if (pacing != linesweeper::PacingMode::disabled)
+		{
+			linesweeper::observe_pacing(app, pacing_snapshot);
+		}
+		if (pacing == linesweeper::PacingMode::top_out ||
+			pacing == linesweeper::PacingMode::top_out_frozen)
+		{
+			return app.run(std::make_unique<linesweeper::PacingState>(&app,
+				&pacing_snapshot, pacing == linesweeper::PacingMode::top_out_frozen));
+		}
+#endif
 		return app.run(std::make_unique<linesweeper::PlayState>(&app));
 	}
 	catch (const std::exception& e)
