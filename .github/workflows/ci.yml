@@ -279,7 +279,10 @@ jobs:
           $installer = Join-Path $env:RUNNER_TEMP $name
           $uri = "https://sdk.lunarg.com/sdk/download/$env:VULKAN_SDK_VERSION/windows/$name"
           Write-Output "Installing Vulkan SDK $env:VULKAN_SDK_VERSION from $uri"
-          Invoke-WebRequest -Uri $uri -OutFile $installer
+          python tools/ci_download.py --url "$uri" --output "$installer"
+          if ($LASTEXITCODE -ne 0) {
+            throw "The Vulkan SDK download failed with exit code $LASTEXITCODE."
+          }
           if ((Get-FileHash $installer -Algorithm SHA256).Hash -ne $env:VULKAN_SDK_SHA256) {
             throw "$name does not match VULKAN_SDK_SHA256."
           }

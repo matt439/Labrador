@@ -100,6 +100,11 @@ says so, the build jobs report without building, and `lint` runs the
 citation check, the agent brief check, the include wall, offline source
 revision fixtures, the flash-definition and pacing-analysis tests, and the
 Python tooling suite.
+
+The Vulkan SDK download and its offline helper tests use Python 3.11 or newer. Its bounded HTTP
+retry helper leaves SHA-256 validation and installation outside the retry;
+authentication, transport and filesystem denials stop immediately.
+
 The website build still runs, because it reads the design documents. `changes`
 is required for that reason: if it failed, the jobs that need it would report
 as skipped, and a skipped check passes.
