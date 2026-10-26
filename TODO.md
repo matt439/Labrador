@@ -13,7 +13,7 @@ An index of open work, one row per item; each row points to the document that ow
 1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
 2. **`OCA-53` (X14): guide and native/wasm examples implemented; real reload acceptance is blocked by Chrome GPU startup access.** `OCA-45` still needs its physical two-pad session.
 3. **`SM-25` (X28): pin, identity log and schedule implemented; verify the endpoint and real scheduled Actions run when access permits.** Remaining Next work needs owner hardware, browser/network access or a remote CI observation.
-4. **`REV#7`, `REV#3`, `REV#6`: presentation lifecycle coverage and backend candidate verification.** Continue the existing review queue while those gates remain.
+4. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
@@ -89,11 +89,10 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#7` | OPEN | should | M | Vulkan presented-slot pending work remains. D3D12 ordering and both backends' final-device observations are recorded in the [evidence](docs/review/INDEX.md#presentation-lifecycle-evidence). |
 | `REV#8` | OPEN | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
 | `REV#4` | OPEN | could | XS | Minimise a sample on `x64-debug-vulkan` under the validation layers and record whether acquire or present returns `OUT_OF_DATE`, and how severe the minimise throw is (Vulkan review 6.1). |
 | `REV#3` | OPEN | could | M | Check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records bounded descriptor-query measurements, profile evidence, allocation reuse and full patterned mip read-back. |
-| `REV#6` | OPEN | could | L | All 65 originals have [source dispositions](docs/review/INDEX.md#vulkan-tracking). The instance-callback question remains without an established lifecycle contract; platform/overlap gates are separate. |
+| `REV#6` | OPEN | could | L | All 65 originals have [source dispositions](docs/review/INDEX.md#vulkan-tracking). The instance-callback question remains without an established lifecycle contract; platform and hardware sessions remain separate. |
 | `REV#12` | BLOCKED | could | M | The 2026-09-26 review's manual checks: real device removal, interactive minimise, restore and drag, physical keyboard layouts and device changes, real sleep and wake. Needs a person at the machine. |
 | `REV#5` | DEFERRED | could | S | Whether the Vulkan surface-format fallback, a fixed `compositeAlpha` and an unapplied `preTransform` are defects (Vulkan review 6.2). Live only on Android; reopens with that port. |
 | `REV#9` | DEFERRED | could | M | Input recording and replay for LineSweeper, with a rules and file version (gpt6 opportunity 3). T1: waits for a client that needs it. |

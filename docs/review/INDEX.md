@@ -25,7 +25,7 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 | [backend-equivalence-2/](backend-equivalence-2/README.md) | Five-backend sweep at `ca5b2e3` | [STATUS.md](backend-equivalence-2/STATUS.md) is live: G6a now has its native-null live Application/viewport regression; the named low-tier p99 remains. See [remaining verification](#remaining-verification-and-hardware). |
 | [d3d12/](d3d12/README.md) | Fourth-backend review | [STATUS.md](d3d12/STATUS.md) adjudicates section 6, the shader-profile experiment, submission allocation reuse, full patterned mip read-back and bounded heap-query measurements. A real display-change session remains. |
 | [vulkan/](vulkan/README.md) | Fifth-backend review at `4d91b91` | [CANDIDATES.md](vulkan/CANDIDATES.md) and [41-65](vulkan/CANDIDATES-41-65.md) preserve and adjudicate every original. [Vulkan tracking below](#vulkan-tracking) owns remaining follow-ups and the two section-6 questions, including the platform re-entry condition. |
-| [gpt6/](gpt6/README.md) | Review at `9dea4516` on 2026-09-17 | The eleven numbered findings are closed in [the resolution map below](#gpt-6-resolution-map). Opportunities remain in TODO.md as REV#7 to REV#10 and the low-tier record; they are separate from those findings. |
+| [gpt6/](gpt6/README.md) | Review at `9dea4516` on 2026-09-17 | The eleven numbered findings are closed in [the resolution map below](#gpt-6-resolution-map). REV#7's bounded lifecycle observations are below; other opportunities remain in TODO.md as REV#8 to REV#10 and the low-tier record. |
 | [2026-09-26/](2026-09-26/README.md) | September 26 review, supplement and reproduction evidence | [STATUS.md](2026-09-26/STATUS.md) is live and [FIXES.md](2026-09-26/FIXES.md) records all 23 numbered resolutions. The four hardening candidates, manual limits and tooling CI follow-up remain separately tracked; see below. |
 | [colourwars-reports/](colourwars-reports/README.md) | Engine decisions on private client reports, assessed at `0c15f34` | Its README's decision table is live. Report 19 still needs evidence of a visible launch before the first present. PI-09's public filing/disclosure decision belongs to the owner. Keep private client detail out of this tree. |
 | INDEX.md | This map | Live. Maintain this roster when adding or retiring a review, and the tracking below when resolving an item it owns. |
@@ -85,7 +85,7 @@ into verified findings.
   section 7's frozen list and must not be counted as a fresh missing barrier.
 - [x] **6.4: disclose thin frames-in-flight coverage.** `b4bcda0` adds the
   missing disclosure. This closes the documentation question, while the
-  actual lifecycle coverage remains **REV#7**, below.
+  bounded lifecycle execution evidence is recorded under **REV#7**, below.
 - [x] **Section 7: source adjudication.** All 65 originals are preserved
   verbatim and in order in [1-40](vulkan/CANDIDATES.md) and
   [41-65](vulkan/CANDIDATES-41-65.md), with current source dispositions.
@@ -98,7 +98,8 @@ into verified findings.
   resilience (47) has bounded offline-tested retries, the reset ordering (60)
   is retained across distinct exception boundaries, and the early frame alias
   (62) is removed. Platform questions (19/21) remain REV#5;
-  actual overlapping-work proof (51) remains REV#7; real device-removal
+  candidate 51's pending-work observation is recorded under closed REV#7;
+  real device-removal
   recovery (1) remains REV#12. Source dispositions do not supply those actual
   platform or device sessions.
 - [x] **Candidate 46: configure-time SDK minimum.** The real CMake finder
@@ -146,7 +147,7 @@ green headless suite supplies a human session or a hardware measurement.
 |---|---|
 | **REV#1**, five-backend G6a, closed 2026-10-26 | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: native-null `AppTests` resizes a live Application and compares the actual HWND size with both caches. Raster-backend/interactive acceptance is not claimed. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
-| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): D3D12 has pending work in two presented slots; both backends have final-device observations. Vulkan presented-slot pending work remains. |
+| **REV#7**, GPT-6 opportunity 2, closed 2026-10-26 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): both backends have actual presented-slot pending observations, controlled reuse/resize/teardown waits and final-device observations. Runtime and diagnostic limits stay explicit. |
 | **REV#8**, GPT-6 opportunity 4 | Bounded XAudio2 silent-output retries and six deterministic policy cases are implemented; native XAudio2/null audio regressions pass. Real endpoint loss/reappearance, retained-bank playback and suspension/resume remain unverified. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
@@ -202,9 +203,9 @@ initialization before the clear are also excluded.
 Removing artificial per-frame read-back drains exercises renderer-owned reuse,
 resize and destruction waits. It does not prove that this particular GPU was
 still busy at each boundary: a hidden window can complete a present before
-the next CPU operation. Keep REV#7 open for deterministic outstanding-work
-proof rather than claiming frames in flight from test shape or clean captured
-diagnostics alone.
+the next CPU operation. That sequence alone left outstanding-work proof open;
+the bounded observations below extend it without inferring pending work from
+test shape or clean captured diagnostics.
 
 **Instrumented D3D12 pending-work waits, 2026-10-26.**
 The isolated `D3D12SynchronizationTests` executable compiles the actual
@@ -239,7 +240,7 @@ This establishes pending work at the instrumented D3D12 wait boundaries. It
 does not exercise an unmodified infinite wait, prove both swapchain slots
 executing concurrently, or establish Vulkan's corresponding pending-work
 behavior. Retained test fences/queue also exclude final device destruction.
-Those limits keep REV#7 open.
+Those are this probe's limits; the later observations below extend its scope.
 
 **Instrumented Vulkan pending-work waits, 2026-10-26.**
 [Three Vulkan cases](../../tests/render/vulkan_pending_submission_tests.cpp)
@@ -271,8 +272,8 @@ branches were reviewed, not deliberately triggered in these normal runs.
 This adds controlled evidence that the timeline waits precede reuse and
 resource teardown while submissions are pending. It does not establish an
 unmodified submission/infinite wait, concurrent work in both presented slots,
-pending presentation at device idle or final device destruction. REV#7
-therefore remains open alongside the earlier ordinary presentation sequences.
+pending presentation at device idle or final device destruction. The later
+observations below extend this evidence without changing those limits.
 
 **D3D12 destruction callback observation, 2026-10-26.**
 The opt-in [D3D12DestructionProbe](../../tests/render/d3d12_destruction_probe.cpp)
@@ -372,7 +373,7 @@ slots at the instrumented reuse boundary on this runtime. It does not prove
 simultaneous GPU execution, physical display overlap, saturation or an
 unmodified infinite wait. This probe captures no Debug InfoQueue; the separate
 diagnostic observations above retain their own workload boundaries. Vulkan's
-equivalent presented-slot proof remains open.
+corresponding observation is recorded below.
 
 Final receipts use `d3d12-presented-slots-final-*` under
 `out/overnight-2026-10-26/`; the source manifest records HEAD
@@ -446,6 +447,70 @@ the section-2 settings and run:
 cmake --build --preset x64-debug-vulkan --target VulkanDestructionProbe --parallel 2
 out\build\x64-debug-vulkan\tests\render\VulkanDestructionProbe.exe
 ```
+
+**Vulkan presented-slot pending observation and REV#7 closure, 2026-10-26.**
+The optional [VulkanPresentedSlotsProbe](../../tests/render/vulkan_presented_slots_probe.cpp)
+uses ordinary renderer calls and no artificial hold. After warming and
+draining, it tries at most four pairs with 1, 64, 256 or 1,024 full-viewport
+sprites per frame in a requested 1280-by-720 hidden fixture. It borrows the
+two actual Frame identities and copies their fresh timeline targets after
+both `end_frame()` calls. Exact-forward `vkQueuePresentKHR` observations require
+one successful call per frame on the same valid queue/swapchain; merely
+advancing the frame ring without a swapchain cannot pass.
+
+At the exact next production `vkWaitSemaphores` reuse entry, the probe requires
+the actual device, one shared timeline and the expected reuse target. Its
+strict oracle requires the timeline counter below both saved targets and a
+real zero-time wait on their minimum returning `VK_TIMEOUT`. Retirement of
+either target or a race to completion does not qualify; if none of the bounded
+pairs qualifies, the process exits 2, **unverified**. Only this scoped
+reuse wait gets a five-second bound; unarmed calls keep their original
+arguments and timeouts. A ten-second absolute watchdog, including completion
+checks, covers workload and cleanup. On normal completion the queue drains
+before engine owners are released.
+
+No future host signal, event or submit mutation generates pending work.
+[Host event signaling](https://docs.vulkan.org/refpages/latest/refpages/source/vkSetEvent.html)
+cannot release an event already awaited by a pending command buffer, and
+[presentation's binary-semaphore dependencies](https://docs.vulkan.org/refpages/latest/refpages/source/vkQueuePresentKHR.html)
+also constrain future-signal gates. Those invalid designs were not used for
+this probe. The current observation changes no presentation arguments.
+
+Debug and Release both exited 0 on the RTX 5080 hardware device, Vulkan
+1.4.351. In each run the one-sprite pair stayed unverified: its counter was
+already 6 (Debug) or 5 (Release), against targets 5 and 6. Both then observed
+the 64-sprite pair on actual slots 0 and 1, two `VK_SUCCESS` Present calls,
+targets `7, 8`, reuse target `7`, and counter `6`. The zero-time wait ran and
+returned `VK_TIMEOUT` (`2`); the actual bounded reuse wait then returned
+`VK_SUCCESS` (`0`). Its production timeout request was `UINT64_MAX`.
+The Debug section-2 layer run reports zero validation errors, sync hazards or
+validation warnings and eight performance advisories. Release supplies no
+validation-layer claim.
+
+This is a witnessed pending instant in two ordinary presented slots, with a
+strict oracle. It is not deterministic pending generation, simultaneous GPU
+execution, display overlap, saturation, pacing acceptance or a portable CI
+timing guarantee. The executable remains outside default builds and CTest;
+other runtimes may correctly return unverified. Local receipts use
+`vulkan-presented-slots-*` under `out/overnight-2026-10-26/`, with tested base
+`7775e5b02e29607ed28c5ce21198be84dbc91942` plus this probe and target. Source
+SHA-256 is `9EE54DEF9A7AA0ED3B9C2BA65D9EFFEE9BFF49AFDC387CAF4C5C05827183BE38`.
+Both targets compile; the four standalone CMake checks and website check,
+21 contract tests and build pass. Default Vulkan CTest entries remain 20;
+required CI contexts are unchanged and no hosted run is claimed.
+To repeat, select the section-2 layer settings for Debug and run:
+
+```text
+cmake --build --preset x64-debug-vulkan --target VulkanPresentedSlotsProbe --parallel 2
+out\build\x64-debug-vulkan\tests\render\VulkanPresentedSlotsProbe.exe
+```
+
+Taken together, the native presented/resize sequences, controlled pending
+reuse/resize/teardown waits, separate diagnostic observations, actual final
+device boundaries and the presented-slot observations close the bounded
+verification opportunity. The D3D12 ordering probe still captures no InfoQueue;
+its separate diagnostics keep their stated scopes. No callback-quiescence,
+physical-device-removal or human acceptance is added by closing REV#7.
 
 ## Hardening verification
 
