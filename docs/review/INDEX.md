@@ -141,7 +141,7 @@ green headless suite supplies a human session or a hardware measurement.
 |---|---|
 | **REV#1**, five-backend G6a, closed 2026-10-26 | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: native-null `AppTests` resizes a live Application and compares the actual HWND size with both caches. Raster-backend/interactive acceptance is not claimed. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
-| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native no-read-back sequences landed; deterministic outstanding-GPU-work proof and captured D3D12 diagnostic acceptance remain. |
+| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native no-read-back sequences and Debug D3D12 diagnostic capture pass; deterministic outstanding-GPU-work proof remains. The retained queue excludes final device destruction. |
 | **REV#8**, GPT-6 opportunity 4 | Bounded XAudio2 silent-output retries and six deterministic policy cases are implemented; native XAudio2/null audio regressions pass. Real endpoint loss/reappearance, retained-bank playback and suspension/resume remain unverified. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
@@ -166,16 +166,40 @@ Both cases and the full pixel suite pass on D3D11, D3D12, GL and Vulkan.
 Vulkan runs with the review's synchronization/best-practices layer settings;
 that lifecycle batch's full suite reports zero validation errors or synchronization
 hazards and 696 performance advisories, mostly small dedicated allocations.
-The D3D12 debug interface is available (`D3D12GetDebugInterface` returned
-`S_OK`) and the debug backend enables it, but this run did not capture its
-device diagnostic queue as a test assertion.
+The D3D12 debug interface was available (`D3D12GetDebugInterface` returned
+`S_OK`) and the debug backend enabled it, but that initial run did not capture
+its device diagnostic queue as a test assertion.
+
+**Debug D3D12 diagnostic follow-up, 2026-10-26.**
+[d3d12_presentation_diagnostics_tests.cpp](../../tests/render/d3d12_presentation_diagnostics_tests.cpp)
+requires a real `ID3D12InfoQueue` and first retrieves an exact application INFO
+message as a calibration control. Missing Debug diagnostics fail the case;
+Release omits these two cases. Scoped empty storage/retrieval filters expose
+all workload messages and are restored afterward. Initialization before the
+calibration clear is outside this capture; cumulative filter/discard counters
+are compared against the snapshot after that clear.
+
+The lifecycle case presents six frames through two views, each crossing two
+full vertex pages and a partial third, resizes the hidden window, then presents
+six more frames. Actual slot observations record three uses of each of the two
+slots before resize and three after. There is no read-back or explicit test
+wait. The renderer performs its teardown wait before the test releases texture
+resources and inspects the retained queue. All 176 retrieved workload messages
+are INFO; none is warning/error/corruption, filtered or discarded during the
+capture. The separate calibration control and lifecycle case pass 77 and 394
+assertions respectively. The full Debug D3D12 run passes 163 headless render
+cases and 56 pixel cases; four CMake lints and 21 website contract tests pass.
+
+Retaining the queue also retains the D3D12 device. This verifies diagnostics
+through engine-resource release, not final device destruction; messages from
+initialization before the clear are also excluded.
 
 Removing artificial per-frame read-back drains exercises renderer-owned reuse,
 resize and destruction waits. It does not prove that this particular GPU was
 still busy at each boundary: a hidden window can complete a present before
-the next CPU operation. Keep REV#7 open for that deterministic proof and the
-captured D3D12 diagnostic result rather than claiming frames in flight from
-test shape alone.
+the next CPU operation. Keep REV#7 open for deterministic outstanding-work
+proof rather than claiming frames in flight from test shape or clean captured
+diagnostics alone.
 
 ## Hardening verification
 

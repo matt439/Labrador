@@ -137,6 +137,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         target_sources(RenderPixelTests PRIVATE
             d3d12_submit_allocation_tests.cpp
             d3d12_texture_upload_tests.cpp
+            "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d12_presentation_diagnostics_tests.cpp>"
         )
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         find_package(Vulkan REQUIRED)
