@@ -121,7 +121,10 @@ built before the manifest was loaded. Build drawables in a state's `init()`
 Keys are read once per step, and a key pressed and released between two steps is not seen. More
 often the cause is reading `pressed` where `held` was meant, or the other way round
 ([Held, pressed and released](/docs/guides/input/#held-pressed-and-released)). If only the gamepad
-is ignored, check it is in slot 0 if the game reads slot 0.
+is ignored on Windows, check that it is XInput-compatible: a controller using another pad API
+does not appear. Then check which slots the game reads. A lone pad can occupy a higher slot,
+and a replug can change its slot; the input guide's
+[single-player pattern](/docs/guides/input/#a-single-player-game-accepts-every-slot) reads all four.
 
 ### `No Direct3D hardware device found` in a release build
 

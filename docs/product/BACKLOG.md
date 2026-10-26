@@ -220,7 +220,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[OCA-64](STORIES.md#oca-64)** Should · S · The Outside C++ Adopter: Know the minimum hardware and Windows my players need — after OCA-61
 - [x] **[OCA-65](STORIES.md#oca-65)** Should · S · The Outside C++ Adopter: Know which render backend to ship and what to do when a machine refuses it
 - [ ] **[PI-14](STORIES.md#pi-14)** Should · M · The Pinned Submodule Integrator · **Owner**: My release ZIP is known to run on a player's clean Windows machine at a current pin — after OCA-61, SM-36
-- [ ] **[OCA-44](STORIES.md#oca-44)** Should · XS · The Outside C++ Adopter: Know which controllers work on Windows and how slots are assigned
+- [x] **[OCA-44](STORIES.md#oca-44)** Should · XS · The Outside C++ Adopter: Know which controllers work on Windows and how slots are assigned
 - [ ] **[OCA-45](STORIES.md#oca-45)** Should · S · The Outside C++ Adopter: A one-player game that accepts the pad in whatever slot it is in — after OCA-44
 - [ ] **[OCA-49](STORIES.md#oca-49)** Could · XS · The Outside C++ Adopter: The default disabled menu row looks unavailable
 - [x] **[OCA-52](STORIES.md#oca-52)** Could · XS · The Outside C++ Adopter: The menus guide routes me to the components I can copy
@@ -277,8 +277,8 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-64 | G105: the OS and hardware floors the code enforces are unstated. |
 | OCA-65 | G150: which render backend to ship and what a refusal looks like. |
 | PI-14 | G77: ColourWars' ZIP has never run on a player's clean machine. No longer blocked on the migration; follows the bump. |
-| OCA-44 | G121: which controllers work on Windows and how slots are assigned. |
-| OCA-45 | G122: a one-player game that accepts the pad in whatever slot it is in. |
+| OCA-44 | G121: which controllers work on Windows and how slots are assigned. Closed 2026-10-26: input and troubleshooting state XInput compatibility, system user slots and replug behavior; the website type check, 14 tests and build pass. |
+| OCA-45 | G122: a one-player game that accepts the pad in whatever slot it is in. Implemented 2026-10-26: minimal greeting and confirmation scan all slots; native MinimalTests, MinimalSmokeTests and InputTests pass, and the guide quotes the loop. Still open for the required dated physical two-pad/unplug run; no such run is claimed. |
 | OCA-49 | G116: the default disabled row is indistinguishable. |
 | OCA-52 | G111: the menus guide does not route to the components. |
 | OCA-53 | G108 (major): settings and saves on desktop and in the browser. On 2026-10-24 its engine half, where a game may write, was split out as OCA-76 (Later), and this story stays the guide. The browser half stays here whole: a review of that date said the persistent mount is shell code no game can write, but a game owns its `main_web.cpp`, which can mount and sync before it builds its `Application`. |

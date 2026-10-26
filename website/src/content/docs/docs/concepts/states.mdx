@@ -57,7 +57,7 @@ with `true` here and `false` when B or Escape is pressed:
 
 <SourceFile
 	path="samples/minimal/states/confirm_state.cpp"
-	from="if (pads.pressed(0, GamepadButton::a) || keyboard.pressed(Key::enter))"
+	from="if (confirm_requested)"
 	to="}"
 />
 
