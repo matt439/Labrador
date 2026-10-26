@@ -746,6 +746,8 @@ namespace labrador
 
 	void Renderer::Impl::abandon_recording()
 	{
+		// Drop the old CPU recording even if open_frame later fails before
+		// reaching its reset against the new colour target's extent.
 		this->reset_views();
 		this->device_resources.abandon_commands();
 	}

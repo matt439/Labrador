@@ -90,12 +90,15 @@ into verified findings.
   Confirmed fixes include injected submission cleanup, measured allocation
   reuse, instance diagnostics, exact CI filters, unused internal accessors
   and contract/prose corrections. The historical count is not a defect count.
-- [ ] **REV#6: remaining bounded follow-ups.** The ledgers distinguish the
-  transfer resilience (47), device-selection
-  policy evidence (18), instance-callback coverage (20), duplicate reset work
-  (60) and redundant aliases (62). Platform questions (19/21) remain REV#5;
+- [ ] **REV#6: remaining bounded follow-ups.** The instance-callback question
+  (20) remains open without an established application lifecycle contract.
+  Device-selection policy (18) is documented without changing scoring. Transfer
+  resilience (47) has bounded offline-tested retries, the reset ordering (60)
+  is retained across distinct exception boundaries, and the early frame alias
+  (62) is removed. Platform questions (19/21) remain REV#5;
   actual overlapping-work proof (51) remains REV#7; real device-removal
-  recovery (1) remains REV#12. None is closed by source inspection alone.
+  recovery (1) remains REV#12. Source dispositions do not supply those actual
+  platform or device sessions.
 - [x] **Candidate 46: configure-time SDK minimum.** The real CMake finder
   now rejects synthetic 1.1 headers and accepts 1.2/newer metadata; an
   unversioned control demonstrates the original gap. All four offline cases

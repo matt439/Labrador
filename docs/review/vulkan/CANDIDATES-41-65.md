@@ -388,16 +388,23 @@ Original, copied verbatim:
 
 - **[minor]** `engine/render/vulkan/renderer.cpp:658` — begin_frame resets every view twice, because abandon_recording() and open_frame() both call reset_views()
 
-**Confirmed duplicated work; benefit of removal unmeasured.** In
+**Retain the resets: their exception boundaries differ.** In
 [renderer.cpp](../../../engine/render/vulkan/renderer.cpp),
-`Renderer::begin_frame` calls `Impl::abandon_recording`, which calls
-`reset_views()`, then calls `Impl::open_frame`, which calls `reset_views()`
-again. `reset_views` clears each view's vertices, runs and pending run state
-and installs its full-buffer viewport. `abandon_recording` has no other
-current caller; `open_frame` is also used to restart an active resized frame.
-A bounded cleanup can retain one reset on the normal path while preserving
-the resize restart and command-abandon ordering. No CPU saving, changed
-complexity or visible rendering effect has been measured in this pass.
+`Renderer::begin_frame` calls `Impl::abandon_recording`, which clears the old
+CPU view recordings before abandoning commands. `Impl::open_frame` resets
+the views again only after opening commands and clearing the colour target.
+Opening commands can throw from `vkBeginCommandBuffer` in
+[`DeviceResources::commands`](../../../engine/render/vulkan/device_resources.cpp).
+Removing the first reset would leave old vertices, runs and view state live
+when reopening fails before the later reset. The resize path also drops the
+recording before rebuilding and resets again against the new target extent.
+
+The successful path does repeat an already-empty clear, but its cost is
+unmeasured and counting calls alone does not justify moving cleanup across
+these failure boundaries. The resets remain, with the ordering explained
+beside `abandon_recording`. This is a source-based rejection of the proposed
+deduplication, not an injected command-opening failure test or a performance
+measurement.
 
 ### Candidate 61
 
@@ -419,16 +426,24 @@ Original, copied verbatim:
 
 - **[minor]** `engine/render/vulkan/device_resources.cpp:1545` — present() binds the same Frame reference twice under two names, so the code reads as if the frame in flight changed when it cannot have
 
-**Confirmed redundant aliases on the surviving presentation path.**
+**Removed the early alias; no semaphore defect was established.**
 [`DeviceResources::present`](../../../engine/render/vulkan/device_resources.cpp)
-binds `Frame& frame = this->frame()` for the first acquire and later
-`Frame& current = this->frame()` for the submission's acquire semaphore.
+now reads `this->frame().acquired` directly for each acquire and binds
+`Frame& current = this->frame()` only after the acquire/rebuild error gates.
 An out-of-date rebuild that loses the device returns before reaching the
-second binding, and a successful swapchain-only rebuild does not advance
-`frame_index_`. Both references therefore denote the same slot on paths
-reaching the later submission. Using a single clearly scoped frame reference
-or reading the first semaphore directly is a bounded clarity cleanup. No
-misbound semaphore or runtime failure was established by the duplicate name.
+late binding, and a successful swapchain-only rebuild does not advance
+`frame_index_`. The two old aliases denoted the same slot on surviving paths;
+the change narrows the reference lifetime without changing acquire arguments,
+submission ordering or frame advancement. No misbound semaphore or runtime
+failure was established by the duplicate name.
+
+The combined 18/60/62 cleanup passes native `RenderTests` on all five
+backends and full `RenderPixelTests` on all four rasterizers. Vulkan's 163
+headless cases and 57 pixel cases pass with shell-visible synchronization
+validation: zero validation errors, zero synchronization hazards and 769
+performance advisory lines. No golden images changed. These regressions do
+not inject an out-of-date acquire, device loss or command-opening failure,
+and do not measure the retained reset's cost or a mixed CPU/iGPU selection.
 
 ### Candidate 63
 
