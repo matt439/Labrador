@@ -120,10 +120,33 @@ green headless suite supplies a human session or a hardware measurement.
 | **REV#8**, GPT-6 opportunity 4 | TODO.md: XAudio2 output-device recovery, followed by a real-endpoint check. A redistributable audio sample exists; output recovery remains the question. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
-| **REV#11**, September 26 hardening | [September 26 README](2026-09-26/README.md#lower-priority-hardening-and-unverified-candidates): modifier aggregation, transactional table insertion, exceptional cleanup and negative glyph bearings need their own verification. |
+| **REV#11**, September 26 hardening | [September 26 README](2026-09-26/README.md#lower-priority-hardening-and-unverified-candidates): [hardening verification below](#hardening-verification) records the transactional insertion fix and the remaining modifier, cleanup and glyph-bound checks. |
 | **REV#12**, September 26 manual limits | [STATUS.md](2026-09-26/STATUS.md) and [FIXES.md](2026-09-26/FIXES.md): real device removal, interactive minimize/restore/drag, physical layouts/device changes and real sleep/wake need a person and devices. |
 | **SM-19**, September 26 priority 3 | [STATUS.md](2026-09-26/STATUS.md): the offline Windows CI gate is implemented; the deliberately failing throwaway-branch CI observation remains open. Local PowerShell execution-policy limits are recorded there. |
 
 When a status owner closes an item, update its TODO row and story box in the
 same commit. Leave the historical finding readable, including any rejected
 premise, so later work can distinguish a repair from a disproved claim.
+
+## Hardening verification
+
+The September 26 hardening candidates are separate from its 23 numbered
+findings. This is the current disposition of **REV#11**:
+
+- [x] **Transactional name insertion, 2026-10-26.** `NameTable::add` and
+  `Registry::add` erase a newly inserted name if the storage append throws.
+  Public-API throwing-move regressions verify failed-name absence, existing
+  handles, an unrelated add and same-name retry without aliasing. Native
+  `CoreTests` passes. Clang compiles the changed code, but replacing the
+  existing `out/build/wasm-release/tests/core/CoreTests.js` is access denied;
+  no Node runtime pass is claimed. The caller's vector element/storage
+  exception guarantees remain those of the underlying vector.
+- [ ] **Both sides of a modifier.** Verify left/right Shift, Control and Alt
+  aggregation and focus-loss clearing on both window backends.
+- [ ] **Exceptional cleanup.** Check scene task-submission failure and Vulkan
+  buffer construction after allocation. GL texture upload/table insertion
+  already uses a scoped owner; that source finding is not still an open leak.
+- [ ] **Glyph ink outside layout measurement.** Verify negative y bearings
+  and culling while preserving `Font::measure()`'s layout semantics. Checked-in
+  sample fonts have no negative y bearings; a custom-font counterexample is
+  distinct from evidence about those samples.

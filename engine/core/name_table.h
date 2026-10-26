@@ -32,6 +32,7 @@ namespace labrador
 
 		// Load-time only. A repeated name replaces the earlier element and keeps
 		// its index, so no handle resolved from this table is ever left dangling.
+		// If storing a new element throws, its name is not retained.
 		void add(const std::string& name, Element element)
 		{
 			const auto it = this->indices_.find(name);
@@ -42,8 +43,18 @@ namespace labrador
 				return;
 			}
 
-			this->indices_.emplace(name, static_cast<int>(this->elements_.size()));
-			this->elements_.push_back(std::move(element));
+			const std::map<std::string, int>::iterator inserted =
+				this->indices_.emplace(name,
+					static_cast<int>(this->elements_.size())).first;
+			try
+			{
+				this->elements_.push_back(std::move(element));
+			}
+			catch (...)
+			{
+				this->indices_.erase(inserted);
+				throw;
+			}
 		}
 
 		// Throws std::out_of_range naming the element and the kind if the table
