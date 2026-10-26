@@ -1,680 +1,274 @@
 # Labrador — notes for AI coding agents
 
-A 2D game engine in C++20 for Windows and, through Emscripten and WebGL2, the
-browser, built with CMake + vcpkg; all six of its samples run in a browser
-as well. This repository is the **engine half
-of a split**: the client that drives it, ColourWars, lives in its own
-repository and consumes this one as a submodule.
-Nothing here depends on it — this tree builds, tests and benchmarks standalone,
-and `samples/` holds six clients: `minimal` (~760 lines), the new-project
-template you copy, with a rules library, its test and a `--smoke-test`;
-`collision`, `audio` and `local_multiplayer`, the focused guide examples;
-`components`, an option row and a slider a game copies a
-piece at a time rather than links, with a gallery that shows them -
-PHILOSOPHY's UI section is the rule for what belongs there; and
-`linesweeper`, a falling-block game you read
-— whose own [README](samples/linesweeper/README.md) records its design
-decisions and is the first thing to read before changing it.
+## Start here
 
-Start from [README.md](README.md). The three design documents are authoritative
-on intent: [PHILOSOPHY.md](docs/design/PHILOSOPHY.md) (the trade-offs T1–T12,
-and the review vocabulary — "T3: take the simpler model" is a complete comment),
-[ARCHITECTURE.md](docs/design/ARCHITECTURE.md) (targets, tree, module table),
-[CONVENTIONS.md](docs/design/CONVENTIONS.md) (naming).
-Open work is indexed in [TODO.md](TODO.md): a fresh thread starts at its NOW
-block, and [BACKLOG.md](docs/product/BACKLOG.md) owns the order of the stories.
+Read [README.md](README.md), then **NOW** in [TODO.md](TODO.md) and the owner
+of the selected item. [BACKLOG.md](docs/product/BACKLOG.md) orders the stories;
+tick its box in the commit that closes one. TODO.md is the open-work index.
 
-## Build, test, run
+The authoritative design documents are
+[PHILOSOPHY.md](docs/design/PHILOSOPHY.md) (T1–T12 and review vocabulary),
+[ARCHITECTURE.md](docs/design/ARCHITECTURE.md) (targets, modules and dependency
+direction), and [CONVENTIONS.md](docs/design/CONVENTIONS.md) (naming and style).
 
-```
-cmake --preset x64-debug          # or x64-release
+This is the standalone C++20 engine repository. ColourWars is a separate,
+private client that consumes it as a submodule; nothing here depends on it.
+The six samples are `minimal` (the new-project template, with rules tests and
+`--smoke-test`), `collision`, `audio`, `local_multiplayer`, `components`
+(copyable option-row and slider code, not an engine library), and `linesweeper`.
+Read [LineSweeper's README](samples/linesweeper/README.md) before changing it.
+PHILOSOPHY's UI section decides what belongs in components.
+
+## Build and test
+
+```text
+cmake --preset x64-debug
 cmake --build --preset x64-debug
 ctest --preset x64-debug
 ```
 
-`VCPKG_ROOT` must be set — `CMakePresets.json` reads it for the toolchain file
-and configuring fails without it. For the two Direct3D backends `fxc` must also
-be on `PATH`, because they compile [engine/render/sprite.hlsl](engine/render/sprite.hlsl)
-at build time into a byte array
-([cmake/compile_shaders.cmake](cmake/compile_shaders.cmake)) — one source, two
-profiles, two generated headers; the GL backend compiles its GLSL at device
-creation and needs no tool. Both come with the Visual Studio install.
-**The Vulkan presets are the exception to that**, and the SDK is the only thing in
-this repository that has to be installed: it needs the
-[Vulkan SDK](https://vulkan.lunarg.com/) — `VULKAN_SDK` set — for its headers,
-its import library and a `dxc` that can emit SPIR-V from the same `sprite.hlsl`.
-There are two `dxc.exe` on a normal machine and only one of them has a SPIR-V
-backend compiled in; `compile_shaders.cmake` says which, why it is looked for in
-`$VULKAN_SDK/Bin` and nowhere else, and what the error looks like when the wrong
-one is found. Ninja generator, out-of-source in `out/build/<preset>/`.
+Ninja builds out of source in `out/build/<preset>/`. Visual Studio's vcvars
+puts CMake, Ninja and the Windows SDK tools on PATH. `VCPKG_ROOT` is required.
+Direct3D also requires `fxc` on PATH. Vulkan requires `VULKAN_SDK`: its headers,
+import library and **its own** `Bin/dxc.exe` with SPIR-V support, not the Windows
+SDK's identically named compiler. [compile_shaders.cmake](cmake/compile_shaders.cmake)
+explains the lookup and errors. The three APIs compile one `sprite.hlsl` at
+three profiles; GL compiles GLSL at device creation.
 
-**The two `wasm-*` presets are the browser build**, and the second thing here
-that has to be installed: [Emscripten](https://emscripten.org/), with `EMSDK`
-set, for the compiler, the toolchain file the preset chains vcpkg to, and the
-Node its tests run under. On this machine it is `C:\Tools\emsdk` at 6.0.12,
-which is the version CI pins; `emsdk_env.bat` sets `EMSDK`, and vcvars is still
-what puts cmake and ninja on the path. They are the first configurations built
-by a second compiler, so `cmake/settings.cmake` has a clang branch, argued
-rather than translated. [docs/port/web.md](docs/port/web.md) is the plan, and
-every milestone's code in it has landed - what each still owes is hardware, a
-browser or the deploy, and its §9 *Where it stands* says which. M1 to M3 are
-the engine and every headless test, the shell's browser half, and WebGL2
-inside `render/gl/` (D1: one backend, a WGL and a web context translation
-unit), so LineSweeper runs and draws in a page -
-`out/build/wasm-*/samples/linesweeper/LineSweeperSample.html`, served over
-HTTP, from the development page
-[samples/linesweeper/web/shell.html](samples/linesweeper/web/shell.html). Its
-tests run under Node, which has no WebGL, except **`RenderPixelTests`, which is
-a page run in headless Chrome** against the same golden PNGs: ctest's command
-is [tests/render/web/run_page.mjs](tests/render/web/run_page.mjs), which serves
-it and drives the browser over the DevTools protocol with Node's own
-WebSocket. It is registered only where configure finds a Chromium
-(`LABRADOR_TEST_BROWSER` names one), and absent rather than skipped where it
-does not. It is the browser build's check that the GLES dialect `gl/`
-compiles there meets the pixel contract, and it runs a second time as
-`RenderPixelTestsWithoutS3tc`, with `WEBGL_compressed_texture_s3tc` hidden
-from the page, so the path a phone's browser takes - `gl/` uploading what
-[engine/render/block_decode.h](engine/render/block_decode.h) decodes from the
-blocks on the CPU - is held to the same images; `RenderContextLossTests`, below,
-also draws, but asserts on a loss and a restore rather than on the golden set. What the page draws was checked by loading it in headless Chrome and
-headless Firefox: board, pieces, text from the BC2 font atlas and the pause
-menu, keys changing the frame, no console errors. Safari has not been checked
-and R5's pacing has not been measured on real displays, and M3's done-when
-needs both, so web.md does not call M3 done. **A lost WebGL2 context is
-restored**, and `DeviceNotify` hears both halves together, in the
-`begin_frame` after the browser hands it back - the shape the three
-Direct3D and Vulkan backends already have, because a browser puts frames
-between the two and a shell that had released its textures would throw from
-the next draw. The host page hears both ends, `Module.onContextLost` and
-`Module.onContextRestored`, each from a frame and optional, and
-`RenderContextLossTests` is a second browser page that pins all of
-it. **`WebWindowTests` is the third, and the web window's counterpart to
-`window_tests.cpp`**: a page that takes its canvas with a real `Window` and
-logs every `WindowNotify` call, while `run_page.mjs --input` runs
-[tests/app/web/window_input.mjs](tests/app/web/window_input.mjs), which
-dispatches real input over the DevTools protocol and says what each must have
-produced - focus, the capture analogue, which defaults the canvas keeps, the
-size measured before the tick, touch, full screen and close. Visibility is the
-one event it fakes, because a headless browser cannot hide a page. `local_multiplayer` is the second sample with a browser build, at
-`out/build/wasm-*/samples/local_multiplayer/LocalMultiplayerSample.html`:
-two views through WebGL2, fanned out on the serial pool. `audio` is the
-third, at `out/build/wasm-*/samples/audio/AudioSample.html`: the sound
-board through `audio/webaudio/`, silent until the page's first key, click
-or touch, with no `--smoke-test` because a page has no command line -
-`AudioSampleTests` runs that lifecycle under Node instead. `minimal` is the
-fourth, at `out/build/wasm-*/samples/minimal/MinimalSample.html`, and draws a
-marker at every touch point, which is how the touch device is looked at; its
-`main_web.cpp` and `CMakeLists.txt` are the browser build a new project
-copies. `collision` is the fifth, at
-`out/build/wasm-*/samples/collision/CollisionSample.html`, and the
-components gallery the sixth, at
-`out/build/wasm-*/samples/components/ComponentsGallery.html`. **Each of the six
-pages is a ctest entry too** - `LineSweeperPageTests`,
-`LocalMultiplayerPageTests`, `MinimalPageTests`, `CollisionPageTests`,
-`AudioPageTests` and `ComponentsPageTests`, registered in the root `CMakeLists.txt` on the same
-condition as `RenderPixelTests`: `run_page.mjs` serves the built development
-page, waits for its frames, presses the sample's own way out and passes when
-`Module.onQuit` is called, and a console error, a browser warning or
-`Module.onError` fails it, so a broken content path fails ctest rather than
-the live site. **LineSweeper is also built for
-another site to host**: `linesweeper.js`, an ES module exporting the factory
-`createLineSweeper`, and `linesweeper.wasm`, which the `linesweeper_web_dist`
-target bundles on every build into `out/build/wasm-*/web-dist/linesweeper/`
-with an example page (`samples/linesweeper/web/index.html`), the licence
-notices for what the module links, and `BUILD.json` naming the commit and
-each file's size raw and under Brotli; CI's wasm job uploads it. The host is
-mattharding.dev, where a project's demo is a page of its own, and deploying
-it is the owner's; it is live at <https://mattharding.dev/demo/linesweeper/>,
-and web.md §7 and §9 say what has been checked against it. **In a browser
-`Application::run` does not return and the stack below it is unwound,
-destructors included, before the first frame**, so a web entry point keeps
-its `Application` in a static: `samples/linesweeper/main_web.cpp` is the shape,
-and `application.h` says why.
+The browser presets require Emscripten and `EMSDK`; on this machine it is
+`C:\Tools\emsdk`, version 6.0.12, matching CI. Run `emsdk_env.bat` as well as
+vcvars. Emscripten's Node runs headless tests. Browser build details and open
+acceptance terms are in [docs/port/web.md](docs/port/web.md), especially §9.
 
-**There are five render backends**, chosen by `LABRADOR_RENDER_BACKEND` at
-configure time — so asking for one that was not built is a missing symbol at
-link (T5). A change to anything in `engine/render/` should be checked against
-all five, and a change in `gl/` under a `wasm-*` preset as well, the only
-build of `web_context.cpp` and the only clang build of `gl/`; CI builds all
-five and the browser build.
+Five render backends are selected by `LABRADOR_RENDER_BACKEND`: `d3d11`,
+`d3d12`, `gl`, `vulkan`, `null`. Three audio backends are independently selected
+by `LABRADOR_AUDIO_BACKEND`: `xaudio2`, `webaudio`, `null`. Two pad backends
+are selected by `LABRADOR_INPUT_BACKEND`: `xinput`, `web`. Keys, mouse and
+touch are fed by the window. Browser defaults are GL/WebGL2, Web Audio and
+web input; configure refuses browser Direct3D/Vulkan/XAudio2 and native Web Audio.
 
-**And three audio backends**, on a second and independent axis:
-`LABRADOR_AUDIO_BACKEND` is `xaudio2`, `webaudio` or `null`, and the two
-`-null` presets ask for the last. Those presets therefore take no platform API
-at all, which is what makes them the configurations a build machine runs end
-to end. `webaudio` is the browser's, the default under Emscripten and what the
-`wasm-*` presets build; it waits for the page's first key, click or touch to
-create its `AudioContext`, because a browser plays nothing before one, and
-under Node it finds no Web Audio and plays nothing while still reading and
-checking every bank. Configure refuses `xaudio2` in a browser build and
-`webaudio` outside one.
-
-**And two input backends, on a third**: `LABRADOR_INPUT_BACKEND` is `xinput`
-or `web`, and only the pad is behind it, because the keyboard, the mouse and
-touch are fed by the window rather than read. `web` is the browser Gamepad API and is the
-default under Emscripten. A pad a page script fakes has played LineSweeper
-through it in headless Chrome; a physical one has not. On the web the pads
-follow the page's visibility, not the canvas's focus, which only takes the
-keys: `Application` keeps foreground, shown and has-the-keyboard apart, and
-`InputTests` pins the standard-mapping translation and slot assignment
-(`input/web/standard_gamepad.h`) under the `wasm-*` presets.
-**Touch is the third fed device** (`input/touch.h`): `WM_POINTER` on Windows
-and pointer events on the canvas, each window dropping the mouse input its
-platform makes from a touch, and a pen staying the mouse on both. `InputTests`
-pins its edges, ids, cancel and overflow and `AppTests` both translations.
-Chrome's touch emulation has driven the browser path into `minimal`, and
-Windows touch injection a visible engine window; a real touchscreen has
-driven neither.
-
-| Preset | Backend | ctest |
+| Preset pair | Render / audio | ctest entries and device requirements |
 |---|---|---|
-| `x64-debug`, `x64-release` | `render/d3d11/` | 20 entries; WARP fallback in debug |
-| `x64-debug-d3d12`, `x64-release-d3d12` | `render/d3d12/` — the one where the engine owns the fence | 20 entries; WARP fallback in debug |
-| `x64-debug-gl`, `x64-release-gl` | `render/gl/` — GL 3.3 core via WGL, same Win32 window | 20 entries; needs a real driver |
-| `x64-debug-vulkan`, `x64-release-vulkan` | `render/vulkan/` — the one that reaches other platforms | 20 entries; needs a driver and the Vulkan SDK |
-| `x64-debug-null`, `x64-release-null` | `render/null/` — no graphics API; records draws. **The only Windows presets that also take `audio/null/`** | 19 entries; `RenderPixelTests` is not built, `AudioTests` gains its recording cases and `AppTests` its Application-loop case |
-| `wasm-debug`, `wasm-release` | `render/gl/` on WebGL2 through `web_context.cpp`, `audio/webaudio/`, `input/web/` — clang and libc++, tests run under Node | 28 entries: the twenty less `MinimalSmokeTests`, with `RenderPixelTests` a page in headless Chrome rather than a module under Node, plus `RenderPixelTestsWithoutS3tc`, the same page with S3TC hidden, two browser-only pages, `RenderContextLossTests`, which loses and restores a WebGL2 context, and `WebWindowTests`, which drives the web window with real input, and the six `*PageTests`, one per sample page (18 where configure finds no Chromium, because no page is then registered). `AudioSampleTests` runs under Node and loads the sample's bank through `audio/webaudio/`, the browser build's stand-in for `--smoke-test`. `AudioTests` runs `webaudio_tests.cpp` in place of its recording cases. The null render backend's sources — `null_tests.cpp`, the scene fan-out and cull cases, `UiTests`' real-`UiText` cases, LineSweeper's particle-draw and `local_multiplayer`'s draw cases, `fanout_bench_null.cpp` — are not compiled in these presets, nor is `audio/null/` with `AudioTests`' recording cases; CI's `wasm-null` job configures `wasm-release` a second time with `LABRADOR_RENDER_BACKEND=null` and `LABRADOR_AUDIO_BACKEND=null`, so clang still compiles and runs them, and the two `-null` presets build them under MSVC. `AppTests`' Application-loop case, `application_loop_tests.cpp`, is the exception: it is left out of every browser build, that reconfigure included, because `run()` does not return in a browser, so only MSVC compiles it. `AppTests` runs its DOM-event cases in place of its Win32 window ones |
+| `x64-debug`, `x64-release` | D3D11 / XAudio2 | 20; debug permits WARP fallback |
+| `x64-debug-d3d12`, `x64-release-d3d12` | D3D12 / XAudio2 | 20; debug permits WARP fallback |
+| `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 20; real GL driver |
+| `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 20; SDK and driver |
+| `x64-debug-null`, `x64-release-null` | null / null | 19; no graphics/audio API; no RenderPixelTests |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 28 with Chromium, 18 without; Node plus browser pages |
 
-`LineSweeperFrameBench` is the absolute hardware measurement and is
-deliberately **not** a ctest entry. Run its Release binary: it holds the real
-LineSweeper presentation at a fixed 9,600-particle top-out, retains
-software-paced frame-start intervals and separate phase samples, and records
-the device the selected backend actually created. It does not claim scan-out.
-`tools/cloud_performance/` packages one reviewed set of those binaries and the
-current source bytes for a one-shot EC2 reference run. Its launch and stop verbs
-are dry-run by default. An EC2 result is evidence for that declared profile, not
-the still-unmeasured Radeon low tier in PHILOSOPHY. **The lane has run twice**
-— `docs/performance/2026-09-19-g6f-reference.md` (`g6f-reference-003`) and
-`2026-09-19-g6f-follow-up.md` (`004`), a quarter L4 in a Windows Server console
-session, all four backends — **and `2026-09-19-g6f-ratchet.md` is what their
-long waits turned out to be, which is not the GPU.** Whole-frame p99 is
-2.2–3.2 ms wherever a repetition's wait landed in the pacer and exactly one
-16.667 ms period wherever it landed in the renderer call, because the bench's
-60 Hz software pacer sits on a synchronised present whose cadence on that host
-is exactly 60.000 Hz: two clocks at one rate are a one-way ratchet, a stall
-moves the wait from one to the other for the rest of the process, and the
-desktop reproduces every state on demand by pacing a little faster or slower
-than its display. Read the ratchet document before either run's tables. The
-pooled p99 is true and misleading in the same breath, `record + submit` is the
-column that measures the work, and the benchmark still has both clocks —
-ratchet §5 says which one to keep.
+`LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
+`RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderContextLossTests`,
+`WebWindowTests` and all six `*PageTests` registered. The second pixel run hides
+S3TC to test CPU block decoding. The page runner
+[run_page.mjs](tests/render/web/run_page.mjs) serves the page and uses Node's
+WebSocket and DevTools; sample pages must draw and call `Module.onQuit`, with
+console errors, browser warnings and `Module.onError` failing the test.
 
-`LineSweeperCapture` (`tools/linesweeper_capture/`) is the other executable
-that needs a device and is not a ctest entry. It plays a checked-in script
-through LineSweeper's rules, draws it with the sample's own presentation and
-writes the website's images from `read_back_buffer`, byte for byte repeatable
-on one machine and backend. A change to the sample's presentation changes
-them: regenerate on `x64-release` and look at every image that moved before
-committing it. All four rasterising backends write the same bytes for
-it now; its README says why two centred text rows once did not, and why
-point-sampled text belongs on a whole pixel rather than half way.
+The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+Changes confined to `.md` files or `docs/` run the three standalone CMake lint
+scripts below; build jobs report without building. The website still runs its
+type check, tests and build. Code changes use the affected configurations;
+CI's full matrix remains required. Match focused local checks to the change.
 
-`RenderPixelTests` is the pixel contract and needs a device. The null backend's
-`read_back_buffer` throws saying so, and [tests/render/null_tests.cpp](tests/render/null_tests.cpp)
-— compiled only in that configuration — asserts the other half: which sprites a
-frame submitted, in what order, from which texture, into which view. Twenty ctest entries: `MattMathTests`, `CoreTests`,
-`CollisionTests`, `SceneTests`, `RenderTests`, `RenderPixelTests`,
-`InputTests`, `UiTests`, `AssetsTests`, `AudioTests`, `AppTests`,
-`CollisionSampleTests`, `AudioSampleTests`, `LocalMultiplayerTests`,
-`ComponentsTests`, `MinimalTests`, `LineSweeperTests`, `LineSweeperViewTests`
-(doctest), `MinimalSmokeTests`, which runs `MinimalSample --smoke-test`, and
-`Benchmarks`; the `wasm-*`
-presets leave out `MinimalSmokeTests`, because a page has no command line,
-and add `RenderPixelTestsWithoutS3tc`, the pixel page again with S3TC
-hidden, `RenderContextLossTests`, a browser-only page that creates a
-WebGL2 context to lose and restore it, `WebWindowTests`, a browser-only
-page that draws nothing, and a `*PageTests` entry for each sample's page,
-which loads it and quits it. Apart from those pages, the second pixel run and
-`MinimalSmokeTests`, which starts the minimal sample hidden, draws 30 frames
-through the configured backend and quits - so it needs a device too and CI's GL
-and Vulkan jobs skip it beside the pixel tests - `RenderPixelTests` is the
-only one that creates a device — a hidden window and a WARP fallback in debug
-under `x64-debug` and
-`x64-debug-d3d12`, a WGL context under `x64-debug-gl`, a `VkDevice` under
-`x64-debug-vulkan`, a WebGL2 context on a canvas of its own per case under the
-`wasm-*` presets — and asserts on the
-pixels
-`Renderer::read_back_buffer` hands back. It is the only test that holds rasterised pixels to a
-contract, and the executable statement of the pixel contract every backend with
-a rasteriser has to reproduce. It runs against one backend at a time — but it no
-longer follows that they are never compared: every frame it reads back is also
-checked byte for byte against a PNG of it in
-[tests/render/golden/](tests/render/golden/), which is one set of images that
-all four rasterising backends are held to, and `gl/`'s browser context with
-them. It is read through lodepng on every platform, a test-only dependency. CI checks two of them, because a
-GPU-less runner still gives Direct3D an adapter where OpenGL falls back to GDI
-1.1 and Vulkan has no in-box fallback at all — its software implementations are
-installed rather than shipped. It is an adapter rather than the WARP fallback,
-which is a correction one job log made: `x64-release` passes `RenderPixelTests`
-with that fallback compiled out, and `.github/workflows/ci.yml` carries the
-evidence and the part a log cannot say. Regenerate with `LABRADOR_GOLDEN_DUMP=1`
-and **review every image it changes** — a regeneration that is not looked at
-turns the contract into a recording of whatever the code does now.
-Two terms sit outside the images and both say so where they are decided:
-`Harness::end_not_comparable` in [pixel_tests.cpp](tests/render/pixel_tests.cpp)
-holds the three frames that are not 64x64 — one whose size the seam makes
-backend-specific, two that resize to 32x32 mid-frame — and
-`ALLOWED_CHANNEL_DRIFT` in
-[golden_image.cpp](tests/render/golden_image.cpp) is the per-channel allowance
-that lets one set serve this machine's hardware adapter and both of CI's — an
-adapter its Direct3D jobs get that no log names, and SwiftShader in the wasm
-job's Chrome — with the measurement that set it. **The text cases draw a font
-atlas the test decodes itself**: devices round BC2's interpolated colours
-differently, SwiftShader's rounding missed the allowance by one, and with the
-atlas decoded every frame is byte-identical here on all four desktop backends,
-ANGLE and SwiftShader, and within 1 on WARP. A case of its own holds the
-device's BC2 decode to a block every decoder must agree on. What runs in all five configurations is
-[tests/render/renderer_seam_tests.cpp](tests/render/renderer_seam_tests.cpp) —
-everything the seam answers without a device. The
-samples land at `out/build/x64-debug/samples/minimal/MinimalSample.exe` and
-`out/build/x64-debug/samples/linesweeper/LineSweeperSample.exe`.
+## Verification boundaries
 
-`LineSweeperTests` links no engine at all — the sample's rules are a static
-library that links only `labrador_settings` — so the whole falling-block game
-runs there with no window and no device. A rule is asserted rather than played.
-**`LineSweeperViewTests` is the other wall and a different one**: it links the
-engine and still creates no window, no adapter and no device, because the
-sample's particle field takes a resolved texture handle rather than the
-resource table and nothing in its `update()` reads one. Ten thousand particles,
-the compaction and the event reconstruction all run headlessly; the board view
-cannot, because measuring text walks an atlas a device filled, and what it
-draws is checked by looking at it. The screen's two arrangements - landscape,
-and the portrait one a phone gets - and the touch controls' hit test are
-arithmetic on a buffer size and run there too; what the controls look like
-is, again, looked at.
+- A change in `engine/render/` is checked against all five backends; a change
+  in `gl/` also under a wasm preset, which alone compiles `web_context.cpp` and
+  compiles GL with clang. Re-run the Vulkan review's §2 synchronization check
+  after a change in `engine/render/vulkan/`: use its `vk_layer_settings.txt`
+  with `validate_sync` so layer output reaches the shell, not only
+  `OutputDebugStringA`. [Vulkan review](docs/review/vulkan/README.md).
+- Desktop `RenderPixelTests` creates a hidden window and device;
+  `MinimalSmokeTests` starts a hidden sample, draws 30 frames and quits. Both
+  need a device. CI skips them for GL/Vulkan where it has no driver. A passing
+  release Direct3D test does not imply WARP: release has no WARP fallback.
+  `renderer_seam_tests.cpp` is headless and runs with every render backend.
+- Pixel tests compare read-back with the shared PNGs in `tests/render/golden/`.
+  Regenerate with `LABRADOR_GOLDEN_DUMP=1` and **review every changed image**.
+  `Harness::end_not_comparable` names the three backend/resize-specific frames;
+  `ALLOWED_CHANNEL_DRIFT` in `golden_image.cpp` states the measured allowance.
+  Text cases decode their BC2 atlas on the CPU to avoid device rounding; a
+  separate case checks device BC2 decoding. Null read-back throws; null tests
+  instead assert submitted sprites, order, textures and views.
+- Null render configurations run scene fan-out/culling, real `UiText`, particle
+  draws, multiplayer draws and `fanout_bench_null.cpp`. CI's separate
+  `wasm-release-null` build selects null render/audio to compile and run those
+  paths under clang. `application_loop_tests.cpp` runs only on native null:
+  browser `Application::run()` never returns, including under wasm-null.
+- `LineSweeperTests` links only the rules library and `labrador_settings`;
+  `LineSweeperViewTests` links the engine but creates no device. Particles,
+  compaction, event reconstruction, layouts and touch hit tests run headlessly.
+  Board text measurement needs a populated font atlas; presentation is looked at.
+- Check `engine/audio/` changes beyond the default preset. `AudioTests` is
+  always headless: XAudio2 presets use `SoundBank::silent()` and bank-reader
+  tests; native null adds recorded wave/level/order assertions; wasm uses
+  `webaudio_tests.cpp` under Node with no Web Audio. The shared `.xwb` reader
+  checks PCM/MS-ADPCM against original WAVs and refuses xWMA/XMA/compact entries.
+  XAudio2 keeps DirectXTK's reader. `samples/audio/README.md` owns authoring and
+  playback; XAudio2 smoke needs an endpoint. Browser `AudioSampleTests` tests
+  lifecycle under Node instead of a command-line smoke. Nobody has listened to
+  this backend's output; an AnalyserNode measurement is not listening evidence.
+- Browser samples are `out/build/wasm-*/samples/<sample>/*.html`; each sample's
+  `main_web.cpp` and CMake file show its build. `Application::run()` unwinds the
+  stack before the first browser frame: keep the Application static, as the
+  LineSweeper entry point does. WebGL context loss and restore notify
+  `DeviceNotify` together at `begin_frame`; optional host callbacks report both
+  ends from frames. Pads follow page visibility, keys canvas focus. Web Audio
+  waits for the first key/click/touch. `WebWindowTests` drives real input through
+  the shell CSS; its visibility event is synthetic.
+- Do not claim real hardware acceptance from emulation. Safari, real pads and
+  touchscreens, real-phone layout/memory and display pacing have open checks in
+  [web-to-be-tested.md](docs/port/web-to-be-tested.md) and TODO.md. Chrome and
+  Firefox have drawn LineSweeper; M3 still owes Safari and measured pacing.
+- `LineSweeperFrameBench` is a Release hardware measurement, not ctest. It
+  records fixed 9,600-particle top-out, frame-start intervals, phases and actual
+  device; it does not measure scan-out. Read
+  [the ratchet document](docs/performance/2026-09-19-g6f-ratchet.md) before
+  interpreting either EC2 run: software pacing and synchronized present can
+  relocate a whole refresh wait; `record + submit` measures work. EC2's L4 is
+  not the unmeasured Radeon low tier. Cloud launch/stop verbs default to dry-run.
+- `LineSweeperCapture` is also outside ctest. A presentation change requires
+  regenerating its website images on `x64-release` and looking at every changed
+  image before committing. Its README owns repeatability and whole-pixel text.
+  The `linesweeper_web_dist` target packages the embeddable ES module, wasm,
+  example, notices and `BUILD.json`; deploy belongs to the owner. The live demo
+  is <https://mattharding.dev/demo/linesweeper/>; web.md §7 owns its checks.
 
-**`AudioTests` is headless in every configuration and can say what a sound did
-in only one of them, and that split is the finding.** This paragraph used to
-read: `engine/audio/` has no backend folder and no seam, DirectXTK is in the
-public headers of three modules, and the only `SoundBank` this repository can
-construct is `SoundBank::silent()` — so eight of that class's thirteen
-instance methods have no observable behaviour at all here, and five sites of
-level clamping, engine arithmetic sitting *below* the check for the platform,
-have never executed. All of it was true, it was `docs/survey/2026-08-26.md`
-§3.4a's measured product, and §3.4b is what spent it. There is a seam now
-([engine/audio/audio_device.h](engine/audio/audio_device.h)); the clamp and
-every handle check are above it; and [engine/audio/null/](engine/audio/null/)
-records what it was asked to play.
+## Website coupling
 
-So what to know before reading a green `AudioTests` is narrower than "audio is
-not covered". Under the presets that build `audio/xaudio2/` this target
-still constructs no device: its `SoundBank` cases run against
-`SoundBank::silent()` — the substitute a missing `.xwb` produces, which is a
-question about content rather than about the seam — and its reader cases,
-[tests/audio/xwb_file_tests.cpp](tests/audio/xwb_file_tests.cpp), read real
-banks with no `SoundBank` and no device at all. **Under either `-null` preset it also compiles
-[tests/audio/null_tests.cpp](tests/audio/null_tests.cpp)**, and its recording cases assert which wave,
-out of which bank, at which clamped levels, in what order. **Under the
-`wasm-*` presets it compiles
-[tests/audio/webaudio_tests.cpp](tests/audio/webaudio_tests.cpp) instead**,
-which runs `audio/webaudio/` under Node with no Web Audio behind it: the real
-bank read and checked, both throws, and the voice states. What that backend
-puts through a speaker has been measured only in headless Chrome, through an
-`AnalyserNode` on a page outside the tree, and heard by nobody. A change under
-`engine/audio/` checked only on the default preset has not been checked.
+Build `website/` separately: `npm ci`, `npm run check`, `npm test`,
+`npm run build`. It needs Node, not CMake; [website/README.md](website/README.md)
+is its guide, [website-plan.md](docs/website-plan.md) its decisions and
+[website-inventory.md](docs/website-inventory.md) its documentation sources.
 
-`samples/audio/` supplies original synthesized WAVs and a named `.xwb` bank,
-with an authoring script and tool provenance in its README. Its playback smoke
-requires an audio endpoint on XAudio2; its null-backend checks assert recorded
-operations without one; and in a browser it plays through Web Audio, with
-its smoke test's lifecycle moved into `AudioSampleTests` under Node. `AudioTests` itself retains the split above.
-**The engine reads `.xwb` itself** in
-[engine/audio/xwb_file.h](engine/audio/xwb_file.h), beside `dds_file.h` and
-for the same reason (D9 in [docs/port/web.md](docs/port/web.md)): PCM and
-MS-ADPCM, decoded to 16-bit samples, with xWMA, XMA and compact entries refused
-by name. `AudioTests` holds it to the sample's bank, sample for sample against
-the WAVs it was packed from, in every configuration and under Node. It is for a
-backend whose API has no reader of its own, which `audio/webaudio/` is;
-`audio/xaudio2/`, and so the playable example on Windows, keeps DirectXTK's.
+The site reads design documents, public headers, vcpkg.json, sample/test
+excerpts and header include sites directly from this checkout. Edits outside
+`website/` can therefore fail its build. Fix any quoting page in the same commit
+when changing the first/last text of an excerpt, linked paths or declarations.
+Public header comments are published word for word: contract or rationale,
+never history. The reference reader rejects unsupported shapes such as block
+comments or a declaration opening its body on the same line. Every new public
+header must be published or explicitly left out in `website/src/lib/published.ts`.
+The website workflow runs on every push. Citation checking skips `website/`.
 
-## The website
+## Build checks
 
-`website/` is the public site: Astro and Starlight, built from inside that
-folder with `npm ci` then `npm run build`, never by CMake, with Node the only
-thing it needs. [website/README.md](website/README.md) is its guide,
-[docs/website-plan.md](docs/website-plan.md) what is decided about it, and
-[docs/website-inventory.md](docs/website-inventory.md) what its documentation
-can be built from.
+- `labrador_settings` applies `/W4 /WX /permissive- /sdl /fp:precise`, or under
+  clang `-Wall -Wextra -Wpedantic -Werror -ffp-contract=off`: zero suppressions.
+  Floating-point options protect exact zero comparisons, tolerances and NaNs.
+  Clang also checks implicit copy assignment beside a defaulted copy constructor
+  (declare both) and derived `draw` hiding overloads (use `using`).
+- [check_engine_includes.cmake](cmake/check_engine_includes.cmake) forbids engine
+  includes of game headers and **any** cross-folder include into a backend,
+  including from headers and the shell. The wall covers render, audio, input
+  and app platform folders. A consumer's include roots do not weaken it.
+- [check_doc_citations.cmake](cmake/check_doc_citations.cmake) checks document,
+  numbered-section and T-number existence in comments on top-level builds.
+  It proves name closure, not that a citation supports its claim.
+  `engine/render/SEAM.md` is rationale; `renderer.h` is caller contract.
+- [check_agent_brief.cmake](cmake/check_agent_brief.cmake) requires CLAUDE.md's
+  first line to be `@AGENTS.md`. Amend only this brief; CLAUDE imports it.
+- Sources are enumerated explicitly in engine/test/sample CMakeLists.txt;
+  add each new `.cpp`, or it is silently absent from the build.
+- CI's `consumer` assembles Get Started against this checkout, verifies only
+  the game's two tests are registered, runs them, installs a Release folder,
+  checks `website/src/walkthrough/release-files.txt` and starts the installed
+  game. `wasm-consumer` builds the same project as a browser page and quits it
+  in Chrome. Follow [consumer_check/README.md](tools/consumer_check/README.md)
+  for local checks; standalone tests cannot prove consumer-relative paths or
+  dependencies. A clean-machine Sandbox check is separate from CI's runtime.
 
-It reads the rest of this checkout at build time rather than copying it: the
-three design documents as written, every public engine header turned into an
-API reference page (`website/src/lib/published.ts` is the list), the root
-`vcpkg.json`, passages of `samples/` and `tests/` that pages quote, located by
-the text of their first and last lines, and which files in those two folders
-include each header, for its reference page. **So an edit outside `website/` can
-fail the website build**, and is meant to: rewording a line a page quotes,
-renaming a file a design document links to, or giving a public header a shape
-the reference reader does not follow - a `/* */` comment, or a body opened on a
-declaration's own line. The failure names the file; fix the page in the same
-commit. `.github/workflows/website.yml` runs it on every push.
-`check_doc_citations.cmake` skips `website/`, whose `node_modules/` holds
-hundreds of `.md` files.
+Standalone lint commands (no configure required):
 
-**A header comment is published word for word**, so the rule CONVENTIONS
-already states - a comment is contract or rationale, never the history of the
-code - now has readers outside the repository. Every public header was swept
-for history on 2026-10-04, and the site build fails on a public header that
-`published.ts` neither lists nor names as left out, so a new one is added there
-in the commit that creates it.
+```text
+cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_doc_citations.cmake
+cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_agent_brief.cmake
+cmake -DENGINE_DIR=C:/Projects/Labrador/engine -P cmake/check_engine_includes.cmake
+```
 
-## What will fail the build
+## Changes and landing
 
-- **`/W4 /WX /permissive- /sdl /fp:precise`**, with **zero suppressions**. One
-  `INTERFACE` target, `labrador_settings` in [cmake/settings.cmake](cmake/settings.cmake),
-  carries it; every real target links it. `/fp:precise` is load-bearing, not
-  inherited — exact `operator==` against `Vector2F::ZERO`, tolerance
-  assumptions and NaN propagation all depend on it. **Under clang, the
-  `wasm-*` presets, it is `-Wall -Wextra -Wpedantic -Werror -ffp-contract=off`**,
-  also with zero suppressions, so a change that is clean under MSVC is not yet
-  known to be clean. Clang warns about what MSVC does not, and the two that
-  will come up are an implicitly declared copy assignment beside a defaulted
-  copy constructor (declare both) and a derived `draw` hiding a base class's
-  overloads (a `using` declaration says it is meant).
-- **An engine file including a game header.** Standalone that is now the
-  compiler's own error, but [cmake/check_engine_includes.cmake](cmake/check_engine_includes.cmake)
-  greps for it on every build anyway, because the compiler only enforces it
-  when this repository is built standalone.
-- **A file outside a backend folder — `engine/render/<backend>/`,
-  `engine/audio/<backend>/`, `engine/input/<backend>/` — including *any* header
-  in that folder.** Second pass in the same script. It
-  guards the folder rather than one filename in it, and it reads headers as
-  well as `.cpp` files, because `device_resources.h` beside `backend.h` is how
-  the backend escaped last time — so naming `engine/render/gl/gl_functions.h`
-  from `engine/app/` fails the build exactly as naming `backend.h` does. It
-  captures the module as well as the backend, so `engine/audio/null/` and
-  `engine/input/xinput/` are covered by the same six lines, and so were
-  `engine/app/win32/` and `engine/app/web/`, the fourth module to grow
-  platform folders, without an edit. **The module was a hard-coded
-  `(render|audio)` until 2026-08-28**, which this line described as a capture
-  for nine days while `engine/input/xinput/` — the third platform seam
-  ARCHITECTURE names — sat outside the wall. Audio is the module where this had
-  already gone wrong unwatched: the check only ever looked at `render/`, and
-  `<Audio.h>` was in four public engine headers across three modules.
-- **A comment citing a document, a section or a trade-off that does not
-  exist.** [cmake/check_doc_citations.cmake](cmake/check_doc_citations.cmake),
-  top-level builds only. `engine/render/SEAM.md` is the seam's charter — the
-  half of `renderer.h` that was rationale rather than caller contract — so the
-  pointer between them is load-bearing in a way a paragraph in one file was
-  not. It checks that every `<path>.md` a comment names exists, every
-  `<document>.md#<number>` names a real section, and every `T<n>` is one
-  PHILOSOPHY defines. **It proves name closure and nothing else**: the file
-  says so at length, and says why, from a repository that ran the same trade at
-  200x the scale and measured what its own green linter was not catching.
-- **Breaking the project Get Started teaches.** CI's `consumer` job assembles
-  it with [tools/consumer_check/assemble.py](tools/consumer_check/assemble.py)
-  from the change's own tree - the engine at `external/labrador`, the minimal
-  sample as `game/`, the derived `vcpkg.json` - builds it, checks that its
-  ctest lists the game's two tests and none of the engine's, and runs them,
-  the start-up check included; then it installs the `x64-release` build,
-  checks the folder against `website/src/walkthrough/release-files.txt` - the
-  list *Ship a Windows release* shows - and starts the game from there. A path spelt
-  from `CMAKE_SOURCE_DIR` inside `engine/` that resolves somewhere else in a
-  consumer, or a package the engine starts to need, passes every standalone
-  job and fails that one; a swap another include root happens to cover is not
-  caught, and the job's comment names the one there is. CI's `wasm-consumer`
-  job assembles the same project, builds the `wasm-release` preset the website's
-  *Build for the browser* guide adds to it and loads its page in headless
-  Chrome. Its README says how to run both locally.
-- **Adding a source file without listing it.** Sources are enumerated
-  explicitly in [engine/CMakeLists.txt](engine/CMakeLists.txt) and each test
-  folder's own `CMakeLists.txt` — no globbing. A new `.cpp` that nobody lists
-  silently is not compiled.
-- **`CLAUDE.md` not starting with `@AGENTS.md`.**
-  [cmake/check_agent_brief.cmake](cmake/check_agent_brief.cmake), top-level
-  builds only. This file is the one brief and CLAUDE.md imports it, so an
-  amendment is made here only, never as a copy in CLAUDE.md.
+[CONTRIBUTING.md](CONTRIBUTING.md) owns the procedure: branch from `master`,
+one self-contained commit with source, tests and every document it makes false,
+then a PR and rebase-merge on green. Master is protected, merges are linear,
+and required checks are strict. Adding, removing or renaming a CI job or matrix
+entry requires the owner to update branch protection and its required-check list.
+Commit, push or open a PR only when the owner asks.
 
-## How a change lands
+A consumer-visible change goes in [CHANGES.md](CHANGES.md), newest first under
+`## Unreleased`. Touching `engine/**/*.h`, `engine/CMakeLists.txt`,
+`cmake/settings.cmake` or `vcpkg.json` requires an entry or `not consumer-visible`
+in the commit message. The rule includes silent behaviour and dependency/flag
+changes. A source break names old/new spellings and the sample migration diff.
+Keep history there, never in header comments. Releases are owner-cut tags by
+CONTRIBUTING's release procedure, with entries under the tag carrying them.
 
-[CONTRIBUTING.md](CONTRIBUTING.md) is the procedure, and it is the same for an
-agent as for the owner: branch from `master`, one self-contained commit (the
-source, its tests and every document it makes false), a pull request, and a
-rebase-merge once CI is green. `master` is protected and merge commits are
-disabled. The required checks are names held in GitHub's settings, listed in
-CONTRIBUTING.md and strict, so a change that adds, removes or renames a CI job
-or matrix entry needs the branch protection updated with it. Commit, push or open a pull request only when the
-owner asks.
+A vcpkg dependency change updates
+`website/src/components/ReleaseNotices.astro` in the same commit. A change a
+copy of the minimal template would want adds a line to
+[samples/minimal/README.md](samples/minimal/README.md)'s change list.
 
-**A change a game can see goes in [CHANGES.md](CHANGES.md).** A commit that
-touches `engine/**/*.h`, `engine/CMakeLists.txt`, `cmake/settings.cmake` or
-`vcpkg.json` adds an entry there, newest first, in the same commit, or says
-`not consumer-visible` in its message. CHANGES.md's opening paragraph defines
-consumer-visible - a source break, a removed or retyped public name, a change
-to `vcpkg.json`'s dependencies, features, overrides or baseline, a moved
-header, a compile-option change in `settings.cmake`, or a silent behaviour
-change - and a source-break entry names the old spelling, the new one and the
-sample diff that migrates it. The entry's text stays in CHANGES.md: a header
-comment says what the code is, never what it was. Entries sit under the
-release tag that carries them, a new one under `## Unreleased`; `v0.1.0`, the
-first, carries the backfill of every engine commit since ColourWars' pin,
-`4cefb68`. A release is a tag the owner cuts, by CONTRIBUTING.md's *Cutting a
-release*.
-**A change to a dependency in `vcpkg.json` changes the notices list** in
-[website/src/components/ReleaseNotices.astro](website/src/components/ReleaseNotices.astro)
-in the same commit, which the website build enforces: every package and
-feature there is a row, or is named as one no release carries.
-A change a copy of the template would want - to what `samples/minimal/` does
-or how it builds, or to an engine behaviour it depends on - adds a line to the
-change list in [samples/minimal/README.md](samples/minimal/README.md) in the
-same commit.
+## Implementation rules
 
-## Rules that are not checked, and matter anyway
+- Dependencies point toward math. `core` is shared; only `app` may depend on
+  everything. Nothing points back at `app` or `assets`. Modules are folders,
+  not build targets: enforce the architecture through includes and review.
+- Include from the repository root (`engine/render/renderer.h`); own header
+  first, then engine, external, standard. Use `#pragma once`, no include guards.
+- PascalCase types; snake_case everything else; SCREAMING_SNAKE macros alone.
+  Private members end in `_`; public struct fields are bare. Accessors are
+  nouns (`bounds()`). No `I`/`M`/`F` prefixes, `m_`, screaming constants or
+  namespace-scope `using namespace` in headers. Follow all of CONVENTIONS,
+  including explicit types except unspellable lambda types.
+- `update()` writes; `draw()` is const all the way down and receives its inputs
+  as parameters. Several views can call draw on the same object concurrently.
+  Native/wasm null tests cover the fan-out; its benchmark compares one thread.
+- Platform code stays behind render/audio/input/app seams. The platform selects
+  the window implementation; `app/window.h` stays neutral. Renderer is concrete
+  with one build-selected implementation, not a virtual call per sprite (T8).
+  Backend translation units are `renderer.cpp`, `render_resources.cpp`,
+  `texture_factory.cpp`, plus device resources where needed. GL alone selects
+  one of `wgl_context.cpp`/`web_context.cpp` for its shared drawing path (web D1).
+  Shared `engine/render/render_resources.cpp` owns engine data and text queries;
+  backend resource code touches textures. All backend-owned data stays inside
+  its folder. The shell passes a `void*` window handle through the seam.
+- Glyph walking, DDS/font parsing and quad arithmetic are shared headless code;
+  backends supply devices, textures, buffers, shaders, blend/rasterizer/filter
+  state and API coordinate translations. D3D12 fences and Vulkan timelines own
+  frames in flight behind the seam. Vulkan draws into an engine-owned image
+  and blits at present, allowing a frame that is never presented. The backend
+  headers and `engine/render/SEAM.md` own these decisions.
+- A new public primitive ships with behavioural tests in the same commit.
+  Benchmarks assert complexity class, not wall-clock: quadrupling object count
+  must preserve the expected scaling independent of the machine.
 
-- **Dependencies point one way, toward `math`.** The module table is
-  ARCHITECTURE's; `core` is the only module everything may lean on, `app` is
-  the only one allowed to depend on everything, and nothing may point back at
-  `app` or at `assets`. A module is a folder inside `engine/`, not a build
-  target — the walls are include discipline plus review.
-- **Includes are written from the repository root**: `#include
-  "engine/render/renderer.h"`. Own header first, then engine, then external,
-  then standard library. `#pragma once`, never include guards.
-- **Naming**: PascalCase types, snake_case everything else, SCREAMING_SNAKE
-  for macros alone. Trailing underscore on private members (`frame_time_`),
-  bare on public struct fields. Accessors are the noun (`bounds()`, never
-  `get_bounds()`). Never an `I`/`M`/`F` type prefix, never `m_`, never
-  SCREAMING constants, never `using namespace` in a header.
-- **`update()` writes, `draw()` is `const` all the way down** and takes what it
-  needs as parameters. The parallelism axis is views, not objects — several
-  workers enter `draw()` on the *same* object at once, so the pure read is
-  load-bearing, not a convenience. It is exercised in the null configuration
-  and nowhere else, because `Scene::draw` needs a `Renderer`:
-  [tests/scene/fanout_tests.cpp](tests/scene/fanout_tests.cpp) pins what the
-  fan-out must produce and
-  [bench/fanout_bench_null.cpp](bench/fanout_bench_null.cpp) prices it against
-  one thread. Both are compiled only under the two `-null` presets, and until they
-  existed the early-out beside the fan-out was the only branch that had ever
-  been taken.
-- **Platform code lives behind seams**: `render/d3d11/`, `audio/xaudio2/`, `audio/webaudio/`,
-  `input/xinput/`, `app/win32/`. The window is the one chosen by the platform
-  being built for rather than by a cache variable, and the one whose header,
-  `app/window.h`, stays neutral above both of its folders.
-  `Renderer` is a concrete class with one implementation selected at build
-  time, not an abstract base — T8 does not permit a virtual call per sprite.
-  Every backend has the same three translation units — `renderer.cpp`,
-  `render_resources.cpp`, `texture_factory.cpp` — and at most one more, being
-  the part of an API that is not about drawing: `d3d11/`, `d3d12/` and
-  `vulkan/` each add `device_resources.cpp`, and `null/` adds nothing. `gl/` is
-  the one sanctioned exception: it adds one context file per platform,
-  `wgl_context.cpp` (the WGL loader and context) or `web_context.cpp` (a
-  WebGL2 context on the page's canvas), and a build compiles exactly one,
-  because the drawing is one GL path on both and only the context differs —
-  [docs/port/web.md](docs/port/web.md), D1, is where that is argued. It
-  compiles its GLSL at device creation, behind a prelude the context supplies,
-  so desktop GL runs the browser's drawing path and `RenderPixelTests` under
-  `x64-debug-gl` covers it. The HLSL three of
-  the five compile is **not** in any of their folders — it is
-  `render/sprite.hlsl`, one file at three profiles through two compilers, and
-  that file says why. Note the name collision, because it is
-  deliberate: [engine/render/render_resources.cpp](engine/render/render_resources.cpp)
-  is a shared file, and the backend one beside it holds only the calls that
-  touch a texture. Two of the three resource tables hold engine data and are
-  members of `RenderResources` itself, so their methods — `measure_text` and
-  `first_unrenderable` among them — are compiled once rather than once per
-  backend. Everything a backend owns lives in
-  `render/<backend>/`. Nothing outside that folder includes anything from it,
-  the shell included: it hands its window handle to `create_device` as a
-  `void*`. `check_engine_includes.cmake` fails the build for a file that
-  reaches across, headers included.
-- **Nothing a backend does decides where a pixel goes.** The glyph walk
-  ([render/font.h](engine/render/font.h)), both file readers
-  ([dds_file.h](engine/render/dds_file.h),
-  [sprite_font_file.h](engine/render/sprite_font_file.h)) and the quad
-  arithmetic ([sprite_geometry.h](engine/render/sprite_geometry.h)) are engine
-  code, tested headlessly, shared by every backend. A backend supplies a
-  device, a texture from bytes, a vertex buffer, a shader, and whatever its API
-  spells the blend, the rasteriser state and the two filters as — five state
-  objects on `d3d11/`, one pipeline state object and two samplers on `d3d12/`,
-  two sampler objects and some `glEnable` on `gl/`, one pipeline and two
-  samplers on `vulkan/`, none at all on `null/`. The
-  one term a backend still decides is where a pane sits in the buffer, and the
-  three answers to it are the map of the folder: Direct3D measures down from
-  the top, GL up from the bottom, and Vulkan hands the rasteriser a negative
-  viewport height so that one shader serves all three. `gl/backend.h` and
-  `vulkan/renderer.cpp` each say what theirs costs. What `d3d12/` decides that
-  no other backend does is **when** rather than where: frames in flight,
-  fence-gated allocator reuse, a per-frame vertex ring and an upload the load
-  path waits for. None of it reaches the seam, which is why that backend
-  exists — `d3d12/backend.h` states the claim, and `vulkan/` is the second
-  answer to it, a timeline semaphore being an `ID3D12Fence` spelt differently.
-  What `vulkan/` decides that no other backend does is what a **back buffer**
-  is: the frame is drawn into an image the engine owns and blitted into a
-  swapchain image at present, because the seam permits a frame that is never
-  presented and a swapchain image does not. `vulkan/device_resources.h` carries
-  that argument and it is the largest decision in the port.
-- **A new public primitive ships with behavioural tests in the same commit.**
-  Benchmarks assert on **complexity class**, not wall-clock — a phase linear in
-  the object count must stay linear when the count quadruples, whatever the
-  machine.
+## Reading records
 
-## Reading the documents correctly
+Design documents describe the destination in the present tense of the target.
+A change that fights them amends them in the same commit, with its reason.
+`docs/product/` is the dated 2026-10-13 product record; only BACKLOG.md stays
+current. The outside-adopter persona is an owner decision, not observed demand.
 
-- `docs/design/` is written in **the present tense of the target**. It
-  describes the destination, deliberately says nothing about the current
-  codebase, and **changes by amendment in the same commit as the change that
-  fights it** — a change that contradicts a philosophy means either the change
-  is wrong or the philosophy is, and if the philosophy is, say so there with
-  the reason. Several commits in the history do nothing else.
-- `docs/product/` is the product design record of 2026-10-13: personas,
-  journeys, a gap register and user stories, all dated and read as of that
-  date, and **`BACKLOG.md`, the one file there kept current** - tick its box in
-  the commit that closes a story. Its primary persona, the outside adopter, is
-  the owner's decision rather than evidence; its README says what that costs.
-- `docs/review/` is **historical**. It is the review as written and is not
-  updated as findings are fixed. Both full rounds were written while the
-  paint-shooter was still in this tree, so any finding citing `game/...` refers
-  to code that now lives in ColourWars — do not go looking for those files
-  here, and do not treat their line numbers as current. `docs/review/rtcd/` is
-  a candidate list mined from Ericson's *Real-Time Collision Detection*, not a
-  plan; the decisions live in `docs/review/round-2/PLAN.md`.
-  `docs/review/backend-equivalence/`, `docs/review/backend-equivalence-2/`,
-  `docs/review/d3d12/` and `docs/review/vulkan/` are the four exceptions to the
-  `game/` caveat, because all four postdate the split. The first
-  holds the three render backends that existed when it was written against one
-  contract. **This line used to call its `DRIFT.md` a live list of comments in
-  `engine/render/` that the code no longer matches. It never was one**, and
-  `backend-equivalence-2` is the sweep that established it: all 28 of those
-  claims were adjudicated at `ca5b2e3` and **26 came back already amended**, one
-  was half-live and one was wrong when the audit wrote it. Nobody was ignoring
-  that list — the tree worked through it one commit at a time and no document
-  recorded that, which is the argument for `docs/survey/2026-08-26-status.md`'s
-  shape rather than for a fourth convention. Read it as historical like
-  everything else here. **`backend-equivalence-2` is where the render folder's
-  live drift now lives**: the same contract at five backends, 40 axes, 113
-  drifted comments of which 48 are one species — a sentence that counts the
-  backends while legislating a term — and all three of the 2026-08-19 defects
-  re-adjudicated and found fixed. Its own `GAPS.md` says what it did not do,
-  and the first item there costs one CI log. **Its `STATUS.md` is the one file
-  in either folder that is kept current** — 162 boxes, ticked in the same commit
-  as the change, which is the mechanism whose absence this whole sweep existed
-  to discover. Read that first; the other five are frozen at `ca5b2e3`.
-  **All eight findings, all 110 drift items, the red team and three of the four
-  decisions have been applied**, over four commits from `13f5507`; what is left
-  is two boxes and `STATUS.md` says what each one needs, the larger being a
-  measured p99 on the named low tier, which is hardware rather than reading.
-  Two things the sweep could not know are recorded there too: the CI premise it
-  reasoned from is false — a GPU-less runner offers Direct3D an adapter rather
-  than falling back to WARP, which one job log settles — and the golden set is
-  sixty-three images now, five of them added by the tests those findings
-  asked for. The
-  third folder reviews the fourth backend against the seam it was written to
-  test. **Its three must-fix findings, all
-  seven should-fix, every minor and the one item it left unresolved have been
-  applied** — nine commits, each naming the section it answers, `6ae4a15`
-  through `06f0b5f`. What has *not* been applied is section 6: nine findings
-  that ranked below the review's own verification budget and were never checked,
-  which are questions rather than findings. Two of them were counts a reader can
-  check and went in with the rest; the other seven are behaviour and need
-  verifying before anybody acts on them. The document itself still reads as it
-  was written, line numbers included, so do not expect them to match.
-- **The fourth reviews the fifth backend.** `docs/review/vulkan/` holds
-  `engine/render/vulkan/` against the same seam: three must-fix, fifteen
-  should-fix, eight minor, and sixty-five findings that ranked below its
-  verification budget and were never checked, which are its section 7 and are
-  questions rather than findings. **All three must-fix, every should-fix and
-  every minor have been applied**, along with two of the four items its section
-  6 left unresolved — the index buffer's missing barrier, and the disclosure
-  that nothing in this tree has ever run two frames in flight. What is **not**
-  applied is section 7, and two of section 6: the severity of the minimise
-  throw, which needs somebody to minimise a sample under the layers, and
-  `compositeAlpha`/`preTransform`, which the review declines to decide because
-  they are live only on a platform this tree does not build.
+`docs/review/` holds historical reviews: do not rewrite findings as fixes land
+or trust their line numbers as current. The first two rounds' `game/...` paths
+refer to ColourWars. Backend-equivalence, backend-equivalence-2, D3D12 and
+Vulkan reviews postdate the split. Read their STATUS.md/README.md for current
+disposition. `rtcd/` is a candidate list, not a plan; round-2/PLAN.md owns it.
+Unverified findings are questions to check before acting: D3D12 §6, Vulkan §7
+and Vulkan's unresolved minimize/platform-surface questions remain in TODO.md.
+Deleting a false sentence does not itself answer the question it got wrong.
 
-  **That sentence was one finding short until 2026-08-29, and how G9 closed is
-  worth reading before trusting any other line like it.** The gap-probe series
-  G1–G16 is counted separately in the review's own README ("16 more raised by
-  gap probes and confirmed") and folded into the should-fix tally here, and
-  fifteen of the sixteen were applied. G9 was not: `renderer.h` went on saying
-  a device "can be lost on both of them, which is half the backends rather than
-  one" and citing, as its authority, a note fifty lines below that says three
-  of five. The count was right at four backends and went stale when Vulkan
-  landed. The comment sweep removed it — the whole parenthesis went, because
-  the paragraph around it was archaeology — which killed the contradiction and
-  left the header silent on a roster G9's stated failure is about a reader
-  getting wrong. So the finding is closed the other way instead: `DeviceNotify`
-  now says the roster is not a caller's question at all and cites
-  `SEAM.md#8`, which is the settlement. **Deleting a false sentence is not the
-  same as answering the question it got wrong**, and a sweep that only deletes
-  will leave that difference behind wherever it touches a finding. The document
-  itself still reads as it was written, line numbers included, so do not expect
-  them to match. It is the first review in
-  this tree that **ran** anything — its section 2 is `RenderPixelTests` under
-  the Khronos validation layer with `validate_sync` on, which is not what the
-  layers check by default and is not what this backend was written against.
-  That sweep found two synchronisation hazards on the present path and both are
-  findings below it, so **re-run it after any change under
-  `engine/render/vulkan/`**: section 2 carries the `vk_layer_settings.txt` that
-  makes the layer's output visible to a shell, which the backend's own messenger
-  (it writes to `OutputDebugStringA`) does not.
-- **`docs/review/colourwars-reports/` is not a review of this tree** but the
-  engine's decision on each of ColourWars' live reports, written ahead of
-  their filing for `PI-10`, and its README's table is kept current: tick a box
-  in the commit that answers that report. It describes the client's
-  workarounds generically because the ledger it answers is private; keep it
-  that way.
+`docs/review/colourwars-reports/` is the engine's decision on private client
+reports, not a review of this tree. Keep its README table current in the commit
+answering a report; describe workarounds generically without private detail.
+The moved brief's narrative and relocation map are preserved in
+[the dated record](docs/2026-10-26-agent-brief-history.md).
 
-## Known-absent, on purpose
+## Scope
 
-An action-mapping layer over the input devices — PHILOSOPHY's boundary table
-gives bindings and any rebinding to the game, and the clients combine their
-input sources by rules that disagree, so a binding table in the engine would
-pick one game's policy (T1). A client now rebinds a key and still owns its
-table; ColourWars' report 21 asked for an evaluator and was declined on these
-grounds ([input.md](docs/review/colourwars-reports/input.md)).
-That is the whole list now; every render backend that was planned has landed.
-
-This section used to end "a fifth is not planned and is not refused either —
-Vulkan was weighed against D3D12 and lost on cost, not on principle — but the
-seam claim a fourth backend existed to test is now tested, so a fifth would
-need a reason of its own." **It found one, and it was not a seam claim.**
-`render/vulkan/` is here because it is the single API that reaches Android,
-Linux and, through MoltenVK, the Apple platforms — [the Android
-port](docs/port/android.md) is where that is argued, and it is the only item
-on that document's spine that runs on hardware this repository already has. It
-did test something the other four could not: Vulkan is the first API behind
-this seam where the *presentation engine* says the window changed, rather than
-Win32, and `renderer.h`'s resize contract turned out to have the right shape
-for it. A sixth is not planned. Metal would be a build target rather than a
-backend if MoltenVK holds, which is the one unmeasured claim that port rests
-on.
-Also permanently out of scope: online play, 3D, an editor, and a scripting
-layer.
+Bindings and rebinding belong to each game; there is no engine action map
+(T1). A client evaluator request is declined in the input report. Online play,
+3D, an editor and a scripting layer are permanently out. All five planned
+render backends exist; no sixth is planned. Vulkan's reach toward Android,
+Linux and Apple platforms is a port path, not a support claim; see
+[android.md](docs/port/android.md).

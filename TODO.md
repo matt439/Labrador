@@ -10,11 +10,24 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
-1. **`SM-43` (X1): trim the agent brief to current state.**
+1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
+2. **`OCA-44`, `OCA-45`, `OCA-49` (X13): controller slots, any-slot single-player input and disabled menu rows.** Earlier unclosed batches need owner hardware or another repository.
+3. **`OCA-53` (X14): settings and saves on Windows and in the browser.**
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
+
+## Input, menus, settings and saves
+
+**Owner:** [STORIES.md](docs/product/STORIES.md); order in [BACKLOG.md, Next](docs/product/BACKLOG.md#next), X13 and X14.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `OCA-44` | OPEN | should | XS | Document Windows controller support and slot assignment in the input guide. |
+| `OCA-45` | OPEN | should | S | Make the minimal sample accept any connected controller slot; verify the physical two-pad slot-0 unplug case. |
+| `OCA-49` | OPEN | could | XS | Make the default disabled menu row visibly unavailable. |
+| `OCA-53` | OPEN | should | M | Add a settings/saves guide with per-user Windows JSON and verified IDBFS reload persistence. |
 
 ## Website and the hosted demo
 
@@ -111,7 +124,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `SRL-14` | DECISION | could | S | The owner says whether the "Introduction to C++" series is not started, planned with an outline, or withdrawn. |
 | `SRL-07` | DECISION | could | S | The owner chooses between amending CONVENTIONS to accept the 26 SCREAMING constants and renaming them in both repositories. |
 | `OCA-66` | DECISION | could | S | The owner decides whether the default DPI awareness stays unaware or becomes per-monitor aware. |
-| `SM-43` | OPEN | should | M | Make AGENTS.md (which CLAUDE.md imports) a current-state brief: move the narrative of how each line came to be into dated documents. |
+| `SM-43` | BLOCKED | should | M | Brief and history relocation implemented; full tools-suite acceptance needs Windows to permit the PowerShell fixtures ([verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance)). |
 | `DOC#2` | OPEN | could | XS | `docs/survey/2026-08-26-status.md`'s section-6 item 4 still opens "Still unmade" above its own "Decided and built, 2026-10-11" (D9). Its decision 2, whether markers stay on the seam, is still unmade and has no other owner. |
 | `DOC#3` | OPEN | could | XS | The file-length audit's tripwire has fired: `tests/core/state_context_tests.cpp` is 865 lines against about 650. Re-ask whether `StateContext` has a second job and record the answer in `docs/file-length-audit.md`. |
 
