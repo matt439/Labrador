@@ -96,6 +96,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { DevTools, browser_version } from './devtools.mjs';
+import { press_sample_key } from './sample_key.mjs';
 
 const options = parse_arguments(process.argv.slice(2));
 const page_path = resolve(options.page);
@@ -445,6 +446,10 @@ async function run_sample(devtools, session, complaints) {
 		return { abort: why };
 	}
 
+	const input_page = {
+		send: (method, params) => devtools.send(method, params, session),
+		evaluate: (expression) => evaluate(devtools, session, expression, true),
+	};
 	for (const code of options.keys) {
 		const key = key_event(code);
 		const event = {
@@ -453,10 +458,7 @@ async function run_sample(devtools, session, complaints) {
 			windowsVirtualKeyCode: key.vk,
 			nativeVirtualKeyCode: key.vk,
 		};
-		await devtools.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...event }, session);
-		await wait(150);
-		await devtools.send('Input.dispatchKeyEvent', { type: 'keyUp', ...event }, session);
-		await wait(150);
+		await press_sample_key(input_page, event);
 		process.stdout.write(`run_page: pressed ${code}\n`);
 	}
 

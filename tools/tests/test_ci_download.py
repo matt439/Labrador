@@ -100,7 +100,14 @@ class CiDownloadTests(unittest.TestCase):
         self.assertEqual(self.output.read_bytes(), b"complete input")
         self.assertTrue(response.closed)
         self.assertEqual(list(self.directory.iterdir()), [self.output])
-        self.urlopen.assert_called_once_with(URL, timeout=60)
+        self.urlopen.assert_called_once()
+        request = self.urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, URL)
+        self.assertEqual(request.get_method(), "GET")
+        self.assertIsNone(request.data)
+        self.assertEqual(request.get_header("User-agent"),
+                         "LabradorCI/1.0 (+https://github.com/matt439/Labrador)")
+        self.assertEqual(self.urlopen.call_args.kwargs, {"timeout": 60})
         self.sleep.assert_not_called()
 
     def test_each_allowed_status_can_retry_and_succeed(self):
