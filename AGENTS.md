@@ -69,8 +69,8 @@ console errors, browser warnings and `Module.onError` failing the test.
 Release also registers `LineSweeperPacingPageTests` for the development-page
 instrument's frame protocol and exact fixture counts; it makes no physical
 pacing claim and does not run in the null-render browser configuration.
-`BrowserProtocolTests` holds command replies and crash teardown to a fake
-WebSocket under Node, with no browser or device.
+`BrowserProtocolTests` holds Chromium and Firefox command replies and crash
+teardown to fake WebSockets under Node, with no browser or device.
 
 The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 Changes confined to `.md` files or `docs/` run the four standalone CMake lint
