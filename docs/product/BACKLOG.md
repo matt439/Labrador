@@ -243,7 +243,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[SM-03](STORIES.md#sm-03)** Should · XS · The Sole Owner-Maintainer · **Owner**: Decide which p99 the pipeline-depth claims are judged by
 - [ ] **[SM-01](STORIES.md#sm-01)** Should · S · The Sole Owner-Maintainer · **Owner**: Run the frame bench on the integrated Radeon, not the RTX 5080 — after SM-03
 - [ ] **[PI-09](STORIES.md#pi-09)** Should · S · The Pinned Submodule Integrator · **Owner**: File the seven live drafts and the packaging gap upstream — after OCA-72
-- [ ] **[SM-16](STORIES.md#sm-16)** Should · S · The Sole Owner-Maintainer: One index of reviews and which ledger is live — after SM-06
+- [x] **[SM-16](STORIES.md#sm-16)** Should · S · The Sole Owner-Maintainer: One index of reviews and which ledger is live — after SM-06
 - [ ] **[SM-19](STORIES.md#sm-19)** Could · XS · The Sole Owner-Maintainer: Gate the offline tooling tests in CI — after SM-21
 - [ ] **[SM-25](STORIES.md#sm-25)** Should · S · The Sole Owner-Maintainer: Pin the Vulkan SDK, record the browser, and detect drift on a schedule — after SM-21
 
@@ -300,7 +300,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | SM-03 | G26: which p99 the pipeline-depth claims are judged by. An owner decision; PHILOSOPHY amendment D only if it lands there. |
 | SM-01 | G01 (major): the bench cannot reach the iGPU. The XS first step (AMD driver, per-app preference, no code) moves it to Next beside SM-03 (critique, owner facts); a code option is argued only if that fails. |
 | PI-09 | G74: seven live drafts and the packaging gap in ColourWars' private ledger, filed into the route OCA-72 opens. What private detail is published is the owner's. |
-| SM-16 | G29: one index of reviews and which ledger is live. Follows SM-06 (Now). |
+| SM-16 | G29: one index of reviews and which ledger is live. Follows SM-06 (Now). Closed 2026-10-26: docs/review/INDEX.md maps every review entry to its live ledger or frozen disposition, owns remaining D3D12/Vulkan candidate tracking and links the verification limits. AGENTS points there; historical review README.md is unchanged. Local paths and anchors were checked. |
 | SM-19 | G32: the offline tooling tests are not gated in CI. Follows SM-21 (Now). Implementation 2026-10-26: the existing Windows lint job runs the tools unittest suite as a non-tolerated step, alongside the flash suite (13 local tests pass); priority 3 is tracked in STATUS.md. Full local Python fixtures are execution-policy blocked; 47 unaffected cases pass with 1 skip. Still open for the required deliberately failing throwaway-branch CI observation, which needs a permitted remote run. |
 | SM-25 | G133: the Vulkan SDK floats and drift is undetected. Follows SM-21 (Now). |
 

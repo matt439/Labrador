@@ -256,6 +256,7 @@ A change that fights them amends them in the same commit, with its reason.
 `docs/product/` is the dated 2026-10-13 product record; only BACKLOG.md stays
 current. The outside-adopter persona is an owner decision, not observed demand.
 
+[docs/review/INDEX.md](docs/review/INDEX.md) maps every review to its live ledger.
 `docs/review/` holds historical reviews: do not rewrite findings as fixes land
 or trust their line numbers as current. The first two rounds' `game/...` paths
 refer to ColourWars. Backend-equivalence, backend-equivalence-2, D3D12 and

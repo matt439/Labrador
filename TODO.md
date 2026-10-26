@@ -87,7 +87,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 ## Engine verification and reviews
 
-**Owner:** each row's review under [docs/review/](docs/review/); story `SM-16` (a `docs/review/INDEX.md`, [BACKLOG.md, Next](docs/product/BACKLOG.md#next)) would track `REV#3` to `REV#6`.
+**Owner:** [the review index](docs/review/INDEX.md) maps every review to its live ledger and tracks the remaining D3D12 and Vulkan candidates (`REV#3` to `REV#6`).
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
