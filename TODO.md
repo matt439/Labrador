@@ -89,7 +89,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#7` | OPEN | should | M | Vulkan presented-slot pending work and final-device diagnostics remain. D3D12 ordering/destruction observations are recorded in the [evidence](docs/review/INDEX.md#presentation-lifecycle-evidence). |
+| `REV#7` | OPEN | should | M | Vulkan presented-slot pending work remains. D3D12 ordering and both backends' final-device observations are recorded in the [evidence](docs/review/INDEX.md#presentation-lifecycle-evidence). |
 | `REV#8` | OPEN | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
 | `REV#4` | OPEN | could | XS | Minimise a sample on `x64-debug-vulkan` under the validation layers and record whether acquire or present returns `OUT_OF_DATE`, and how severe the minimise throw is (Vulkan review 6.1). |
 | `REV#3` | OPEN | could | M | Check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records bounded descriptor-query measurements, profile evidence, allocation reuse and full patterned mip read-back. |
