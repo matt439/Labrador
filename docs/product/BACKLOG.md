@@ -226,7 +226,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[OCA-52](STORIES.md#oca-52)** Could · XS · The Outside C++ Adopter: The menus guide routes me to the components I can copy
 - [ ] **[OCA-53](STORIES.md#oca-53)** Should · M · The Outside C++ Adopter: Keep my players' settings and saves on desktop and in the browser
 - [ ] **[OCA-56](STORIES.md#oca-56)** Must · M · The Outside C++ Adopter: Reference pages say how I get each type and what its parameters mean
-- [ ] **[OCA-58](STORIES.md#oca-58)** Should · S · The Outside C++ Adopter: The Application and Colour reference pages are navigable and correctly named
+- [x] **[OCA-58](STORIES.md#oca-58)** Should · S · The Outside C++ Adopter: The Application and Colour reference pages are navigable and correctly named
 - [ ] **[SRL-08](STORIES.md#srl-08)** Could · S · The Sample-Reading Learner: The reference tells me which headers are for game code — after OCA-58
 - [ ] **[OCA-57](STORIES.md#oca-57)** Could · M · The Outside C++ Adopter: From a reference page, reach the guide that teaches the type — after OCA-56, SRL-08
 - [x] **[OCA-22](STORIES.md#oca-22)** Should · S · The Outside C++ Adopter: A browser preset that omits the render backend gets GL or a named refusal at configure
@@ -283,7 +283,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-52 | G111: the menus guide does not route to the components. |
 | OCA-53 | G108 (major): settings and saves on desktop and in the browser. On 2026-10-24 its engine half, where a game may write, was split out as OCA-76 (Later), and this story stays the guide. The browser half stays here whole: a review of that date said the persistent mount is shell code no game can write, but a game owns its `main_web.cpp`, which can mount and sync before it builds its `Application`. |
 | OCA-56 | G139 (merged with SRL-10): reference pages do not say how a game gets each type. |
-| OCA-58 | G141 (merged with SRL-12): mislabelled members and an unreadable Colour page. |
+| OCA-58 | G141 (merged with SRL-12): mislabelled members and an unreadable Colour page. Closed 2026-10-26: initializer calls no longer name fields, fields have individual anchors, and static constants use a compact list. Website check, 14 tests and build pass; generated Application has max_threads as its own h3 and Colour has a Constants entry with all heading anchors at most 41 characters. |
 | SRL-08 | G93: which headers are for game code. |
 | OCA-57 | G140 (merged with SRL-11): reference pages do not lead to the guide or concept that teaches them. |
 | OCA-22 | G50: a browser preset defaults to d3d11. Moved from Later and ranked before OCA-20 (critique) so the adopter page needs no workaround. |

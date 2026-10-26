@@ -1,8 +1,49 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseHeader } from '../src/lib/cpp-header.ts';
+import { declarationName, parseHeader } from '../src/lib/cpp-header.ts';
+import GithubSlugger from 'github-slugger';
 import { codeLink, commentHtml, forgetIndexes, freeFunctions, referencePage } from '../src/lib/reference.ts';
 import { REFERENCE_HEADERS } from '../src/lib/published.ts';
+
+test('initialiser calls name the declared member, while functions retain their own name', () => {
+	const declarations = [
+		['unsigned int max_threads = detail::default_thread_count();', 'max_threads'],
+		['const Vector2F position = Vector2F(1.0f, 2.0f);', 'position'],
+		['int values[] = { initial_value() };', 'values'],
+		['const auto callback = [](int value) { return scale(value); };', 'callback'],
+		['Vector2F origin{ make_origin() };', 'origin'],
+		['void set_limit(int limit = default_limit());', 'set_limit'],
+		['int operator()(int value = initial_value()) const;', 'operator()'],
+		['bool operator==(const Value& other) const;', 'operator=='],
+		['using Callback = void (*)(int);', 'Callback'],
+		['Value() = default;', 'Value'],
+	];
+	for (const [declaration, name] of declarations) {
+		assert.equal(declarationName(declaration), name, declaration);
+	}
+});
+
+test('Application settings and Colour constants have short, correctly named navigation', () => {
+	const application = REFERENCE_HEADERS.find((header) => header.source === 'engine/app/application.h');
+	const applicationMarkdown = referencePage(application).markdown;
+	assert.match(applicationMarkdown, /^### max_threads\n/m);
+	assert.doesNotMatch(applicationMarkdown, /^### .*default_thread_count/m);
+	assert.equal(codeLink('ApplicationOptions::max_threads', 'fixture'),
+		'/docs/reference/app/application/#max_threads');
+
+	const colour = REFERENCE_HEADERS.find((header) => header.source === 'engine/render/colour.h');
+	const colourMarkdown = referencePage(colour).markdown;
+	const headings = [...colourMarkdown.matchAll(/^#{2,6} (.+)$/gm)].map((match) => match[1]);
+	const slugger = new GithubSlugger();
+	for (const heading of headings) {
+		assert.ok(slugger.slug(heading).length <= 100, heading);
+	}
+	assert.ok(headings.includes('Constants'));
+	assert.ok(headings.every((heading) => !heading.includes('alice_blue')));
+	assert.match(colourMarkdown, /^- `static const Colour alice_blue;`$/m);
+	assert.match(colourMarkdown, /^- `static const Colour yellow_green;`$/m);
+	assert.equal(codeLink('Colour::red', 'fixture'), '/docs/reference/render/colour/#constants');
+});
 
 test('declaration namespaces survive sibling and nested scopes; detail stays unpublished', () => {
 	const document = parseHeader('fixture.h', `namespace first

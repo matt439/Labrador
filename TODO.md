@@ -12,7 +12,7 @@ An index of open work, one row per item; each row points to the document that ow
 
 1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
 2. **`OCA-53` (X14): settings and saves on Windows and in the browser.** `OCA-45` code and guide are implemented; its physical two-pad acceptance remains blocked.
-3. **`OCA-56` (X15), then `OCA-58`, `SRL-08`, `OCA-57` (X16): reference contracts and navigation.**
+3. **`OCA-56` (X15), then `SRL-08`, `OCA-57` (X16): reference contracts, audience and guide links.** Reference member naming and constant navigation are implemented.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
