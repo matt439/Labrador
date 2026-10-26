@@ -116,7 +116,7 @@ green headless suite supplies a human session or a hardware measurement.
 |---|---|
 | **REV#1**, five-backend G6a | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: resize a live Application and compare `fullscreen_viewport()` with `back_buffer_size()`. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
-| **REV#7**, GPT-6 opportunity 2 | TODO.md: consecutive presented frames without per-frame read-back, resize and teardown with work outstanding, under D3D12 diagnostics and Vulkan synchronization validation. |
+| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native no-read-back sequences landed; deterministic outstanding-GPU-work proof and captured D3D12 diagnostic acceptance remain. |
 | **REV#8**, GPT-6 opportunity 4 | TODO.md: XAudio2 output-device recovery, followed by a real-endpoint check. A redistributable audio sample exists; output recovery remains the question. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
@@ -127,6 +127,30 @@ green headless suite supplies a human session or a hardware measurement.
 When a status owner closes an item, update its TODO row and story box in the
 same commit. Leave the historical finding readable, including any rejected
 premise, so later work can distinguish a repair from a disproved claim.
+
+## Presentation lifecycle evidence
+
+**REV#7, partial result, 2026-10-26.** Native `RenderPixelTests` now presents
+six frames, resizes the real hidden window, presents six more and checks one
+final analytic image. Each frame uses two views and crosses two full vertex
+pages plus a partial third. A separate case presents six frames and destroys
+the renderer without any read-back. Resources outlive the renderer in both
+cases. The tests are native-only and add no new golden images.
+
+Both cases and the full pixel suite pass on D3D11, D3D12, GL and Vulkan.
+Vulkan runs with the review's synchronization/best-practices layer settings;
+the final full suite reports zero validation errors or synchronization
+hazards and 696 performance advisories, mostly small dedicated allocations.
+The D3D12 debug interface is available (`D3D12GetDebugInterface` returned
+`S_OK`) and the debug backend enables it, but this run did not capture its
+device diagnostic queue as a test assertion.
+
+Removing artificial per-frame read-back drains exercises renderer-owned reuse,
+resize and destruction waits. It does not prove that this particular GPU was
+still busy at each boundary: a hidden window can complete a present before
+the next CPU operation. Keep REV#7 open for that deterministic proof and the
+captured D3D12 diagnostic result rather than claiming frames in flight from
+test shape alone.
 
 ## Hardening verification
 

@@ -125,7 +125,10 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     if(EMSCRIPTEN)
         target_sources(RenderPixelTests PRIVATE web/test_window.cpp)
     else()
-        target_sources(RenderPixelTests PRIVATE win32/test_window.cpp)
+        target_sources(RenderPixelTests PRIVATE
+            win32/test_window.cpp
+            presentation_lifecycle_tests.cpp
+        )
     endif()
 
     if(LABRADOR_RENDER_BACKEND STREQUAL "gl")
