@@ -141,9 +141,11 @@ namespace labrador
 		// them and asking the driver is a call.
 		VkPhysicalDeviceMemoryProperties memory_properties = {};
 
-		// What a uniform buffer descriptor's offset must be a multiple of. The
-		// transform ring pads to this, which is why a transform costs 256 bytes
-		// on most drivers rather than the sixteen it is.
+		// The transform slot stride: at least the driver's required uniform-buffer
+		// offset alignment and at least the four-float payload. The payload floor
+		// keeps adjacent slots from overlapping when the device alignment is smaller.
+		// The transform ring pads to this; a sixteen-byte transform can therefore
+		// occupy a larger slot.
 		VkDeviceSize uniform_alignment = 16;
 
 		// Whether this device takes BC1/2/3. Asked at selection rather than at
@@ -201,10 +203,11 @@ namespace labrador
 		// into one of them - see the top of this file.
 		//
 		// The samples and LineSweeperFrameBench repeatedly wrap this ring.
-		// tests/render/pixel_tests.cpp presents only once and its read-back
-		// waits for the GPU, so its pixel assertions do not verify overlapping
-		// frames. Exercise the presented loop under synchronization validation
-		// as well; docs/review/vulkan/ carries the settings file. Reusing a slot
+		// Native presentation_lifecycle_tests.cpp also presents several frames
+		// without per-frame read-back, exercising renderer-owned reuse, resize
+		// and destruction waits. Run it with synchronization validation using
+		// docs/review/vulkan/'s settings. Even without read-back drains, a run
+		// does not prove the GPU remains busy at each boundary. Reusing a slot
 		// waits for its earlier submission; that does not establish how many
 		// swapchain images exist or whether both frames execute concurrently.
 		static const int FRAME_COUNT = 2;
@@ -299,7 +302,6 @@ namespace labrador
 		// the previous frame's submit - the hazard class the validation layers
 		// found here, and which the D3D12 reading says cannot exist.
 		VkCommandBuffer commands();
-		bool recording() const { return this->recording_; }
 
 		// Ends and submits it, and moves the timeline on. Does nothing if
 		// nothing opened it.
@@ -378,20 +380,12 @@ namespace labrador
 			return this->owner_ ? this->owner_->device : VK_NULL_HANDLE;
 		}
 
-		VkQueue queue() const
-		{
-			return this->owner_ ? this->owner_->queue : VK_NULL_HANDLE;
-		}
-
 		const VulkanDevice& owner() const { return *this->owner_; }
 
 		VkRenderPass render_pass() const { return this->render_pass_; }
 		VkFramebuffer framebuffer() const { return this->framebuffer_; }
 		VkImage colour_target() const { return this->colour_image_; }
-		VkFormat colour_format() const { return this->colour_format_; }
 		VkExtent2D colour_extent() const { return this->colour_extent_; }
-
-		int frame_index() const { return this->frame_index_; }
 
 		Frame& frame()
 		{

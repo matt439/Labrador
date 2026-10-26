@@ -427,9 +427,11 @@ namespace labrador
 		// chain does not follow its window, so both Direct3D backends answer
 		// the size they were told and let Present stretch; a GL context's
 		// default framebuffer is the window's client area, or in a browser the
-		// canvas's drawing buffer, so the GL backend answers that. read_back_buffer below is sized from this and a
-		// viewport is placed inside it, so a backend that answered from a cache
-		// would have both of those disagree with the pixels it just drew.
+		// canvas's drawing buffer, so the GL backend answers that. Vulkan draws
+		// into an engine-owned colour target and reports its extent;
+		// presentation scales it when the swapchain size differs.
+		// read_back_buffer below is sized from this and a viewport is placed
+		// inside it, so both describe the buffer the backend actually drew into.
 		mattmath::Vector2F back_buffer_size() const;
 
 		// Copies the back buffer out: 8-bit RGBA, row-major, top row first,

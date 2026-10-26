@@ -262,7 +262,7 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     target_link_libraries(LabradorEngine PRIVATE Vulkan::Vulkan)
 
     # The same source as the two backends above that compile it, through a
-    # third compiler - gl is between them and compiles none of it.
+    # second compiler - gl is between them and compiles none of it.
     # cmake/compile_shaders.cmake carries the whole argument - why dxc and not
     # glslc, which of the two dxc.exe on a Windows machine has a SPIR-V backend
     # compiled into it, and what the three register shifts are for. Shader model

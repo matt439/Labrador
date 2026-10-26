@@ -811,8 +811,9 @@ namespace labrador
 		//
 		// So the clear is a vkCmdClearColorImage outside any render pass
 		// (renderer.cpp, open_frame) and this pass loads what it finds. It
-		// costs one image barrier per frame and buys a render pass whose whole
-		// life is inside submit().
+		// costs two image transitions around the clear, to TRANSFER_DST and
+		// back to COLOR_ATTACHMENT, and buys a render pass whose whole life is
+		// inside submit().
 		VkAttachmentDescription colour = {};
 		colour.format = this->colour_format_;
 		colour.samples = VK_SAMPLE_COUNT_1_BIT;
