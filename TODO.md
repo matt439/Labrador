@@ -12,7 +12,7 @@ An index of open work, one row per item; each row points to the document that ow
 
 1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
 2. **`OCA-53` (X14): guide and native/wasm examples implemented; real reload acceptance is blocked by Chrome GPU startup access.** `OCA-45` still needs its physical two-pad session.
-3. **`SM-25` (X28): pin CI inputs, log browser identity and add the drift schedule.** Earlier remaining Next work needs owner hardware, browser access or a remote CI observation.
+3. **`SM-25` (X28): pin, identity log and schedule implemented; verify the endpoint and real scheduled Actions run when access permits.** Remaining Next work needs owner hardware, browser/network access or a remote CI observation.
 4. **`REV#7`, `REV#11`: presentation lifecycle coverage and verified hardening candidates.** Continue the existing review queue while those gates remain.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
@@ -48,7 +48,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-25` | OPEN | should | S | Pin the Vulkan SDK to an exact version instead of `latest`, log the browser's product and version from `run_page.mjs`, and add a scheduled run so outside drift is a red run of its own. |
+| `SM-25` | BLOCKED | should | S | SDK pin/checksum, browser identity and weekly workflow implemented; verify installer endpoint and scheduled Actions history when network/remote runs are permitted. Local HEAD was socket-denied. |
 | `SM-19` | BLOCKED | could | XS | Windows tooling gate and ledger row implemented; observe a deliberately failing throwaway-branch CI run when remote writes are permitted. Local PowerShell fixtures are execution-policy blocked. |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
 

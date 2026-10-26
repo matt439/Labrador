@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DevTools } from './devtools.mjs';
+import { DevTools, browser_version } from './devtools.mjs';
 
 class FixtureSocket extends EventTarget {
 	constructor(url) {
@@ -62,4 +62,20 @@ test('session events can be observed and unsubscribed', () => {
 	unsubscribe();
 	devtools.socket.reply(message);
 	assert.deepEqual(messages, [message]);
+});
+
+test('browser identity keeps the product version and uses the browser session', async () => {
+	const devtools = new DevTools('ws://fixture', FixtureSocket);
+	const identity = browser_version(devtools);
+	assert.deepEqual(devtools.socket.sent, [{ id: 1, method: 'Browser.getVersion', params: {} }]);
+	devtools.socket.reply({ id: 1, result: { product: 'HeadlessChrome/142.0.7444.60',
+		protocolVersion: '1.3', revision: '@fixture' } });
+	assert.equal(await identity, 'HeadlessChrome/142.0.7444.60 (DevTools 1.3, revision @fixture)');
+});
+
+test('missing browser identity fails by the command that returned it', async () => {
+	const devtools = new DevTools('ws://fixture', FixtureSocket);
+	const rejected = assert.rejects(browser_version(devtools), /Browser.getVersion.*product\/version/);
+	devtools.socket.reply({ id: 1, result: {} });
+	await rejected;
 });

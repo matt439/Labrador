@@ -61,3 +61,13 @@ export class DevTools {
 		this.pending.clear();
 	}
 }
+
+// Browser.getVersion is a browser-level command, without a page session. Its
+// product field includes the product name and full browser version together.
+export async function browser_version(devtools) {
+	const version = await devtools.send('Browser.getVersion');
+	if (typeof version.product !== 'string' || version.product.length === 0) {
+		throw new Error('Browser.getVersion returned no browser product/version');
+	}
+	return `${version.product} (DevTools ${version.protocolVersion}, revision ${version.revision})`;
+}
