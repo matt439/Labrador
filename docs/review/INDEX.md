@@ -146,7 +146,7 @@ green headless suite supplies a human session or a hardware measurement.
 |---|---|
 | **REV#1**, five-backend G6a, closed 2026-10-26 | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: native-null `AppTests` resizes a live Application and compares the actual HWND size with both caches. Raster-backend/interactive acceptance is not claimed. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
-| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native sequences and pending-work waits pass. D3D12's opt-in callback probe witnesses device destruction; presented overlap and Vulkan final-device diagnostics remain. |
+| **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): D3D12 has instrumented pending work in two presented slots and an actual destruction witness. Vulkan presented-slot pending work and final-device diagnostics remain. |
 | **REV#8**, GPT-6 opportunity 4 | Bounded XAudio2 silent-output retries and six deterministic policy cases are implemented; native XAudio2/null audio regressions pass. Real endpoint loss/reappearance, retained-bank playback and suspension/resume remain unverified. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
@@ -328,6 +328,65 @@ To repeat the bounded observation from a developer shell:
 ```text
 cmake --build --preset x64-debug-d3d12 --target D3D12DestructionProbe --parallel 2
 out\build\x64-debug-d3d12\tests\render\D3D12DestructionProbe.exe
+```
+
+The destruction and presented-slot probes capture an absolute watchdog deadline before
+spawning their workers and check it before accepting completion and after joining
+the workers. This prevents a delayed worker from accepting an already-expired
+run through its completion predicate. The destruction observation repeated
+after that change with the same 81 INFO records, both controls and the single
+texture-release destruction witness; its Debug exit is 0 and Release refusal
+is 1. Updated source SHA-256 is
+`E62704DA4246F04EE0A21DCE968734FC4E8E7F0CA70A119B95523F38D6E86889`;
+receipts use `d3d12-destruction-final-*` in the same local directory.
+
+**D3D12 presented-slot pending-work observation, 2026-10-26.**
+The optional [D3D12PresentedSlotsProbe](../../tests/render/d3d12_presented_slots_probe.cpp)
+uses the existing instrumented DeviceResources translation unit and its own
+bounded wait observer. It warms six ordinary presents, requires both actual
+swapchain indices and drains before holding the queue on a CPU-owned fence.
+Each slot's witness is queued before its draw submission. Both real
+`end_frame()` calls must return with distinct submitted indices while the
+gate remains held; only then is the final reuse wait observed.
+
+A sole worker CPU-signals the gate once. Rescue expiry and observer claims
+share a mutex and deadline check, so a rescue cannot masquerade as verified
+pending work. A two-second rescue, an earlier backend wait or a first Present
+that retains its slot produces exit 2, **unverified**, after release and drain.
+These can be legitimate presentation constraints rather than engine defects.
+A ten-second process watchdog bounds the workload and cleanup. Tail-fence
+retirement precedes renderer/resource destruction on normal or unwinding armed
+exits; fatal timeouts terminate only this process.
+
+Both Debug and Release exit 0 on the RTX 5080 hardware backend. In both runs,
+the gated frames submit/present slots `0, 1`, both witnesses remain `0`, and
+the next `begin_frame()` reuses slot `0`. At the actual backend wait, the
+requested timeout is `INFINITE`, alertable is `FALSE` and a zero-time event
+probe returns `WAIT_TIMEOUT` (`258`). The observer requests the only CPU gate
+signal; the actual five-second-bounded wait returns `WAIT_OBJECT_0` (`0`).
+The later queue tail and both witnesses finish at exactly `1`, excluding
+device-removal's `UINT64_MAX` as completion.
+
+This establishes two queued, unretired submissions in distinct presented
+slots at the instrumented reuse boundary on this runtime. It does not prove
+simultaneous GPU execution, physical display overlap, saturation or an
+unmodified infinite wait. This probe captures no Debug InfoQueue; the separate
+diagnostic observations above retain their own workload boundaries. Vulkan's
+equivalent presented-slot proof remains open.
+
+Final receipts use `d3d12-presented-slots-final-*` under
+`out/overnight-2026-10-26/`; the source manifest records HEAD
+`45b03ad2778f9ab2de49f660f31b4440b9c073fb` plus the local probe changes.
+Probe SHA-256 is
+`5D4DD5851656F84D8CBFA74E21897A2CDD0742FB26046B9919D5D1844CC637C5`.
+The target is `EXCLUDE_FROM_ALL`, outside CTest and changes no default test
+counts or required CI contexts. Both configurations compile, four standalone
+CMake checks and the website check, 21 contract tests and build pass.
+Run the bounded probe from a developer shell:
+
+```text
+cmake --build --preset x64-debug-d3d12 --target D3D12PresentedSlotsProbe --parallel 2
+out\build\x64-debug-d3d12\tests\render\D3D12PresentedSlotsProbe.exe
 ```
 
 ## Hardening verification
