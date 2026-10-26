@@ -23,7 +23,7 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 | [rtcd/](rtcd/README.md) | *Real-Time Collision Detection* candidate sweep | Frozen candidate list, not an implementation plan. Decisions belong to [round-2/PLAN.md](round-2/PLAN.md), whose engine work is complete. Reopen a technique only against a current need. |
 | [backend-equivalence/](backend-equivalence/README.md) | Three-backend audit at `57b65b3`; INVENTORY, TEST-GAP, DRIFT and GAPS are frozen too | Superseded by the five-backend sweep. Use [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md) and its [LEDGER.md](backend-equivalence-2/LEDGER.md) adjudication; the original DRIFT.md is not live. |
 | [backend-equivalence-2/](backend-equivalence-2/README.md) | Five-backend sweep at `ca5b2e3` | [STATUS.md](backend-equivalence-2/STATUS.md) is live: G6a now has its native-null live Application/viewport regression; the named low-tier p99 remains. See [remaining verification](#remaining-verification-and-hardware). |
-| [d3d12/](d3d12/README.md) | Fourth-backend review | [STATUS.md](d3d12/STATUS.md) adjudicates section 6, the shader-profile experiment, measured submission allocation reuse and full patterned mip read-back. Heap-query cost and a real display-change session remain. |
+| [d3d12/](d3d12/README.md) | Fourth-backend review | [STATUS.md](d3d12/STATUS.md) adjudicates section 6, the shader-profile experiment, submission allocation reuse, full patterned mip read-back and bounded heap-query measurements. A real display-change session remains. |
 | [vulkan/](vulkan/README.md) | Fifth-backend review at `4d91b91` | [CANDIDATES.md](vulkan/CANDIDATES.md) and [41-65](vulkan/CANDIDATES-41-65.md) preserve and adjudicate every original. [Vulkan tracking below](#vulkan-tracking) owns remaining follow-ups and the two section-6 questions, including the platform re-entry condition. |
 | [gpt6/](gpt6/README.md) | Review at `9dea4516` on 2026-09-17 | The eleven numbered findings are closed in [the resolution map below](#gpt-6-resolution-map). Opportunities remain in TODO.md as REV#7 to REV#10 and the low-tier record; they are separate from those findings. |
 | [2026-09-26/](2026-09-26/README.md) | September 26 review, supplement and reproduction evidence | [STATUS.md](2026-09-26/STATUS.md) is live and [FIXES.md](2026-09-26/FIXES.md) records all 23 numbered resolutions. The four hardening candidates, manual limits and tooling CI follow-up remain separately tracked; see below. |
@@ -46,8 +46,10 @@ Work index: **REV#3** in TODO.md.
 
 - [x] **6.1** Both view-opening loops and the existing restart cases were
   checked; no behavior mismatch was found. No count-only refactor is owed.
-- [ ] **6.2** Check per-flush descriptor-heap-start calls and the analogous
-  back-buffer-view calls before changing their caching.
+- [x] **6.2** [Ordinary getter-loop timings and the real workload's query
+  census](../performance/2026-10-26-d3d12-descriptor-queries.md) support retaining
+  the current calls on the named runtime. The count-based model is not a
+  measured frame cost or predicted caching gain; other devices remain unmeasured.
 - [x] **6.3** A warmed Debug CRT regression reproduced the temporary array's
   allocations; retained scratch capacity removes them in the measured scope.
   Analytic images preserve declared-view order and empty-view behavior.
