@@ -497,13 +497,7 @@ namespace labrador
 
 		const VkResult created = vkCreateInstance(&description, nullptr,
 			&this->owner_->instance);
-		if (created != VK_SUCCESS)
-		{
-			throw std::runtime_error("There is no usable Vulkan loader on this "
-				"machine (" + vk_result_name(created) + "). vulkan-1.dll ships "
-				"with a graphics driver and with the Vulkan SDK's runtime; a "
-				"machine with neither has no Vulkan at all.");
-		}
+		check_vk(created, "The Vulkan instance could not be created");
 
 #if defined(_DEBUG)
 		if (validation)

@@ -139,6 +139,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             vulkan_texture_tests.cpp
             vulkan_submit_failure_tests.cpp
             vulkan_submit_allocation_tests.cpp
+            vulkan_initialization_tests.cpp
         )
         target_link_libraries(RenderPixelTests PRIVATE Vulkan::Vulkan)
     endif()
