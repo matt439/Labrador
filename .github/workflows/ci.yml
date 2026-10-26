@@ -3,10 +3,9 @@
 # ARCHITECTURE said ctest runs "on a contributor's machine or in CI" while
 # there was no .github/ at all. This is the CI half made true.
 #
-# Everything this builds is in the repository or in vcpkg.json, so a run here
-# is a real clone of what a new contributor gets. The step that used to launch
-# the paint-shooter to prove a clone with no wave bank still starts went with
-# it to its own repository; there is no game here to launch.
+# Project sources come from this checkout and package dependencies from
+# vcpkg.json. Jobs also use runner-provided build tools and install declared
+# Vulkan SDK, Emscripten and ccache versions where needed.
 
 name: build and test
 
