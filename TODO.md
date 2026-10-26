@@ -56,15 +56,12 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 ## Performance
 
-**Owner:** [docs/review/backend-equivalence-2/STATUS.md](docs/review/backend-equivalence-2/STATUS.md)'s low-tier box; the `PERF#` rows in [docs/performance/](docs/performance/), the ratchet document first.
+**Owner:** [docs/review/backend-equivalence-2/STATUS.md](docs/review/backend-equivalence-2/STATUS.md)'s low-tier box. [The workload/cadence record](docs/performance/2026-10-26-workload-and-cadence.md) owns the completed PERF#1 to PERF#3 corrections; read the ratchet document before the hardware tables.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-03` | DECISION | should | XS | The owner decides which p99 column the pipeline-depth claims are judged by, and whether that lands in PHILOSOPHY (amendment D) or the ratchet document's section 5. It unblocks `SM-01`, `SM-02` and `SM-07`. |
 | `SM-07` | BLOCKED | should | M | Take and publish the low-tier p99 on the Radeon iGPU under the four-core hold, D3D12 and Vulkan, and tick STATUS.md's box. Needs `SM-03`, `SM-01` (AMD's driver, per-app GPU preference), `SM-02`, `SM-04`, `SM-05`; EC2 runs do not count. |
-| `PERF#1` | OPEN | should | XS | Record that `full_well_top_out` changed (no stack at top-out, smaller sparks), so later runs are not compared with `g6f-reference-003`/`004`; consider a new workload id in the result JSON. |
-| `PERF#2` | OPEN | could | XS | Make the ratchet document's section 5 name the fields `analysis.py` emits (`presentation_wait_candidate_repetitions`, `work_limited`, `ambiguous_cadence`), not `presentation_locked_repetitions`. |
-| `PERF#3` | OPEN | could | S | Reconcile the ratchet document's section 5 ("should not pool a locked repetition with a free one") with `analysis.py`, which pools every repetition and only warns: report the pools apart, or amend section 5. |
 
 ## Browsers, phones and hardware
 
