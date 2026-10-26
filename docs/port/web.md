@@ -1094,6 +1094,14 @@ and the vendor and renderer names. What it met and where it departed:
   4 KB to the module and 5 KB to the loader under Brotli. The module is below
   §7.1's estimate and the loader inside it.
 
+**WEB#4 follow-up, 2026-10-26:** a separate Firefox BiDi runner now handles
+minimal, collision, audio, local_multiplayer and components, with 18 offline
+transport/control cases passing alongside Chromium's six in the existing
+`BrowserProtocolTests` entry. The
+[current method and remaining checks](web-to-be-tested.md#firefox-sample-checks-web4)
+keep actual current-page runs and WebWindow's input/CSS parity open. This is
+runner verification, not a new Firefox rendering, listening or device result.
+
 **M6's first item is done: `RenderPixelTests` runs in headless Chrome
 against the same golden set, and on this machine it is byte-identical to
 it.** All 45 cases and 4,532 assertions pass in `wasm-debug` and

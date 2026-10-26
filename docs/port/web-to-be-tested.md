@@ -216,9 +216,33 @@ again.
       video under emulation did not start it in headless Chrome, so what a
       real tap fetches has not been seen.
 
-## Firefox, which the page runner cannot drive
+## Firefox sample checks (WEB#4)
 
-- [ ] `WebWindowTests` and the sample page tests in Firefox (the runner speaks
-      CDP, Firefox only WebDriver BiDi): the minimal, collision, audio,
-      local_multiplayer and components gallery pages by hand, and the shell
-      CSS. LineSweeper's page is the one Firefox has run (`web.md` §9, M3).
+- [ ] Run minimal, collision, audio, local_multiplayer and components against
+      current Release outputs with the separate
+      [Firefox BiDi runner](../../tests/render/web/run_firefox.mjs).
+- [ ] Port and run `WebWindowTests`' input and shell-CSS checks. Chromium's
+      CDP-specific DPR, touch cancellation and fullscreen activation checks
+      have not been translated to Firefox BiDi by this increment.
+
+The runner uses an owned temporary profile, loopback-only serving and default
+Firefox security settings. It requires continuing real WebGL clear/draw
+submissions, trusted key actions and the page's existing `Module.onQuit`;
+warnings, errors and `Module.onError` fail it. Artifact byte lengths/hashes,
+session/browser capabilities and raw WebGL strings are logged. Submission
+counts do not prove pixel correctness, audible audio or a physical adapter.
+No browser run is claimed by the 18 offline transport/control fixtures; with
+Chromium's six existing fixtures, `BrowserProtocolTests` passes 24 cases under
+Node without a browser or device.
+
+After building the five current pages, run each sample name through the same
+command (`minimal`, `collision`, `audio`, `local_multiplayer`, `components`):
+
+```text
+cmake --build --preset wasm-release --target MinimalSample CollisionSample AudioSample LocalMultiplayerSample ComponentsGallery --parallel 1
+node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --sample minimal
+```
+
+Record the build's source identity and each actual outcome before ticking a
+box. Old generated outputs are not evidence of the current checkout.
+LineSweeper's earlier Firefox run remains the separate `web.md` §9 M3 record.
