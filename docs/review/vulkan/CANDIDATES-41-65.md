@@ -146,16 +146,27 @@ Original, copied verbatim:
 
 - **[minor]** `.github/workflows/ci.yml:129` — The only network fetch outside the cached vcpkg step is uncached and unretried, so a LunarG outage reds the workflow on a commit that changed nothing
 
-**Transfer resilience remains limited; the exclusivity claim is obsolete.**
+**Bounded HTTP retries implemented; the exclusivity claim is obsolete.**
 The Vulkan SDK step in
-[.github/workflows/ci.yml](../../../.github/workflows/ci.yml) now downloads a
-pinned version and checks its SHA-256, but its `Invoke-WebRequest` has no
-explicit retry and no installer cache surrounds it. A service or network
-failure can therefore fail the step; no outage was induced or observed by
-this pass. Emscripten/ccache and other workflow inputs also use the network,
-so this is no longer the only non-vcpkg fetch. Bounded download retries are a
-useful follow-up; pinning and digest checks should remain, and installation
-failures should still stop the job rather than silently continue.
+[.github/workflows/ci.yml](../../../.github/workflows/ci.yml) calls
+[ci_download.py](../../../tools/ci_download.py) with its unchanged pinned URL
+and filename. The helper makes at most three attempts, only for HTTP
+408/429/500/502/503/504. It honors valid `Retry-After` waits up to 30 seconds
+and stops on longer ones. Authentication, transport, certificate, socket and
+filesystem failures propagate immediately. A complete transfer replaces the
+destination through an owned temporary sibling; partial failures preserve it.
+The workflow checks the helper's exit before the unchanged SHA-256 rejection
+and installation, neither of which is retried.
+
+Seventeen [offline tests](../../../tools/tests/test_ci_download.py) pass with
+the opener and waits mocked: allowed statuses, exhaustion, immediate denials,
+server waits, incomplete bodies, preserved files, secondary cleanup failures
+and workflow source ordering. No network request, installer, PowerShell
+integration or hosted CI execution was performed for this change. The
+previously denied SDK endpoint request remains stopped; SM-25 still owns its
+verification. The installer remains uncached, and long outages can still fail
+the job. Emscripten/ccache and other inputs also use the network, so the
+historical only-fetch premise is obsolete.
 
 ### Candidate 48
 
