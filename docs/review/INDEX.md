@@ -24,7 +24,7 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 | [backend-equivalence/](backend-equivalence/README.md) | Three-backend audit at `57b65b3`; INVENTORY, TEST-GAP, DRIFT and GAPS are frozen too | Superseded by the five-backend sweep. Use [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md) and its [LEDGER.md](backend-equivalence-2/LEDGER.md) adjudication; the original DRIFT.md is not live. |
 | [backend-equivalence-2/](backend-equivalence-2/README.md) | Five-backend sweep at `ca5b2e3` | [STATUS.md](backend-equivalence-2/STATUS.md) is live: G6a now has its native-null live Application/viewport regression; the named low-tier p99 remains. See [remaining verification](#remaining-verification-and-hardware). |
 | [d3d12/](d3d12/README.md) | Fourth-backend review | [STATUS.md](d3d12/STATUS.md) adjudicates section 6, the shader-profile experiment, measured submission allocation reuse and full patterned mip read-back. Heap-query cost and a real display-change session remain. |
-| [vulkan/](vulkan/README.md) | Fifth-backend review at `4d91b91` | No separate STATUS.md. [Vulkan tracking below](#vulkan-tracking) owns section 7's candidate group and the two open section-6 questions, including the platform re-entry condition. |
+| [vulkan/](vulkan/README.md) | Fifth-backend review at `4d91b91` | [CANDIDATES.md](vulkan/CANDIDATES.md) and [41-65](vulkan/CANDIDATES-41-65.md) preserve and adjudicate every original. [Vulkan tracking below](#vulkan-tracking) owns remaining follow-ups and the two section-6 questions, including the platform re-entry condition. |
 | [gpt6/](gpt6/README.md) | Review at `9dea4516` on 2026-09-17 | The eleven numbered findings are closed in [the resolution map below](#gpt-6-resolution-map). Opportunities remain in TODO.md as REV#7 to REV#10 and the low-tier record; they are separate from those findings. |
 | [2026-09-26/](2026-09-26/README.md) | September 26 review, supplement and reproduction evidence | [STATUS.md](2026-09-26/STATUS.md) is live and [FIXES.md](2026-09-26/FIXES.md) records all 23 numbered resolutions. The four hardening candidates, manual limits and tooling CI follow-up remain separately tracked; see below. |
 | [colourwars-reports/](colourwars-reports/README.md) | Engine decisions on private client reports, assessed at `0c15f34` | Its README's decision table is live. Report 19 still needs evidence of a visible launch before the first present. PI-09's public filing/disclosure decision belongs to the owner. Keep private client detail out of this tree. |
@@ -84,13 +84,18 @@ into verified findings.
 - [x] **6.4: disclose thin frames-in-flight coverage.** `b4bcda0` adds the
   missing disclosure. This closes the documentation question, while the
   actual lifecycle coverage remains **REV#7**, below.
-- [ ] **Section 7 / REV#6: adjudicate the candidate group.** The source lists
-  65 candidates that its verification budget did not reach. That is the
-  historical list size, not a count of current defects: the index barrier
-  above is resolved, and shared comment claims may overlap later sweeps.
-  Recheck each against the current tree before accepting it. Record the
-  candidate's original text and a confirmed/refuted/already-resolved verdict,
-  with evidence, rather than editing the frozen list or copying its severity.
+- [x] **Section 7: source adjudication.** All 65 originals are preserved
+  verbatim and in order in [1-40](vulkan/CANDIDATES.md) and
+  [41-65](vulkan/CANDIDATES-41-65.md), with current source dispositions.
+  Confirmed fixes include injected submission cleanup, measured allocation
+  reuse, instance diagnostics, exact CI filters, unused internal accessors
+  and contract/prose corrections. The historical count is not a defect count.
+- [ ] **REV#6: remaining bounded follow-ups.** The ledgers distinguish the
+  configure-time SDK minimum (46), transfer resilience (47), device-selection
+  policy evidence (18), instance-callback coverage (20), duplicate reset work
+  (60) and redundant aliases (62). Platform questions (19/21) remain REV#5;
+  actual overlapping-work proof (51) remains REV#7; real device-removal
+  recovery (1) remains REV#12. None is closed by source inspection alone.
 - [x] **Candidate 34: visible oversized-viewport behavior, 2026-10-26.**
   Analytic pixel tests cover right/bottom overflow, negative origins, panes
   wholly outside each edge and zero/quantized-zero extents followed by a valid
@@ -154,7 +159,7 @@ cases. The tests are native-only and add no new golden images.
 
 Both cases and the full pixel suite pass on D3D11, D3D12, GL and Vulkan.
 Vulkan runs with the review's synchronization/best-practices layer settings;
-the final full suite reports zero validation errors or synchronization
+that lifecycle batch's full suite reports zero validation errors or synchronization
 hazards and 696 performance advisories, mostly small dedicated allocations.
 The D3D12 debug interface is available (`D3D12GetDebugInterface` returned
 `S_OK`) and the debug backend enables it, but this run did not capture its

@@ -389,8 +389,8 @@ about synchronisation: **who is entitled to say the window changed.** All four
 of the others learn it from Win32, and `Renderer::window_size_changed` is
 written entirely in terms of a caller that already knows the new size. Vulkan's
 presentation engine says it instead — `VK_ERROR_OUT_OF_DATE_KHR`, out of an
-acquire or a present, on a frame no window message touched. The contract held
-and not by luck: `render/vulkan/` draws the frame into an image the engine owns
+acquire or a present, on a frame no window message touched. The contract holds
+because `render/vulkan/` draws the frame into an image the engine owns
 and blits it into a swapchain image at present, so what the presentation engine
 declares stale is not what the seam calls the back buffer. Whether the list of
 untested claims is empty now is not a thing this document should assert twice.

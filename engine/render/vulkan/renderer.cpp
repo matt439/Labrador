@@ -492,8 +492,8 @@ namespace labrador
 		// and leaves the corners where they were (sprite_geometry.cpp). It
 		// matters more here than anywhere else, because the negative viewport
 		// height in submit() reverses the winding as it reverses y - so a
-		// backend that culled would have to pick the opposite face from every
-		// other one and would look correct until somebody changed the flip.
+		// backend that culled would have to match its front-face convention
+		// to that viewport.
 		VkPipelineRasterizationStateCreateInfo rasteriser = {};
 		rasteriser.sType =
 			VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -1179,9 +1179,10 @@ namespace labrador
 
 					// The scissor is not optional and is not the viewport: this API
 					// clips to both, and a scissor offset may not be negative. The
-					// clamp is the intersection with the buffer rather than a move,
-					// so a pane that starts off the left edge loses the part that
-					// was never in the picture and keeps the rest.
+					// clamp removes negative near edges without moving the pane.
+					// Its far edges retain the pane extent; the render area's extent
+					// and the colour target bound the visible output. An oversized
+					// pane keeps its local pixel scale and is cropped to that output.
 					const int scissor_x = std::max(0, pixels.x);
 					const int scissor_y = std::max(0, pixels.y);
 

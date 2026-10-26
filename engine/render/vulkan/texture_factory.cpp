@@ -43,8 +43,8 @@ namespace labrador
 
 		// The engine's format vocabulary, into this API's.
 		//
-		// TWO OF THE SIX ARE REFUSED BY NAME HERE, AND THEY ARE REFUSED FOR
-		// DIFFERENT REASONS.
+		// TWO REASONS TO REFUSE A FORMAT, BOTH NAMED HERE: the block-compressed
+		// formats require a device feature, and b4g4r4a4 needs a conversion.
 		//
 		// The block-compressed three are a DEVICE FEATURE. Vulkan makes BC
 		// optional - it is universal on desktop and absent from most mobile

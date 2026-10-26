@@ -7,17 +7,16 @@ namespace labrador
 {
 	// One corner of one sprite, in the form a vertex buffer wants it.
 	//
-	// THE FIELD SET IS THE LAYOUT; THE DECLARATION ORDER IS NOT, EXCEPT WHERE A
-	// BACKEND BINDS BY LOCATION. Every backend with a vertex buffer builds its
-	// offsets from offsetof, but they bind by three different things: by
-	// semantic on the two Direct3D ones, by name on gl, and BY LOCATION NUMBER
-	// on vulkan - where dxc assigns SPIR-V locations in declaration order, so
-	// reordering these three fields silently renumbers what the pipeline binds.
-	// engine/render/sprite.hlsl says the same thing about VertexIn and is the
-	// other end of the same ABI. Reorder these and the three fields still
-	// follow correctly on d3d11, d3d12 and gl, and swap on vulkan. What is
-	// load-bearing is which fields exist, what types they are, and that this is
-	// one interleaved struct rather than three parallel streams.
+	// THE FIELD SET IS THE LAYOUT; THE C++ DECLARATION ORDER IS NOT. Every
+	// backend with a vertex buffer builds its offsets from offsetof. They bind
+	// by semantic on the two Direct3D ones, by name on gl, and by location
+	// number on vulkan. The Vulkan pipeline maps each shader location to its
+	// named C++ member's offset, so reordering this struct does not renumber
+	// shader inputs. Declaration order does matter in the separate HLSL
+	// VertexIn struct: dxc assigns its SPIR-V locations in that order, as
+	// engine/render/sprite.hlsl documents. What is load-bearing here is which
+	// fields exist, what types they are, and that this is one interleaved struct
+	// rather than three parallel streams.
 	//
 	// NO DEPTH, AND THAT IS A DECISION RATHER THAN AN OMISSION. The seam takes
 	// a layer_depth, and a float3 position could carry it as z, but nothing

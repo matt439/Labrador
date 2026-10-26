@@ -51,11 +51,13 @@
 // records into plain memory - vertices, and a list of what to draw them with -
 // and submit() replays the views in order on the one thread that owns the
 // queue. That is not a shortcut: a VkCommandPool may not be used from two
-// threads at once, so per-view recording would mean a pool per view per frame
-// in flight, and the seam's parallelism axis is views precisely because a
-// view's vertices are already built on the CPU before any backend sees them
-// (engine/render/sprite_geometry.h). Memory is thread-safe by construction
-// rather than by a rule about pools.
+// threads at once, so concurrent command recording would need a pool per view
+// per frame in flight. This backend instead gives each worker its own view's
+// vectors: DrawList builds quads through the shared build_sprite_quad and
+// records them there; submit alone turns those recordings into GPU commands.
+// That meets the seam's independently writable recording-target requirement.
+// The engine chooses views because several workers may read the same objects
+// while drawing, and update writes them (PHILOSOPHY, Simulation and rendering).
 //
 // The rest, each written down where it happens: the frame is drawn into an
 // image this engine owns and blitted into a swapchain image at present
@@ -191,11 +193,11 @@ namespace labrador
 		// BETWEEN begin_frame AND end_frame, WHICH IS THE INTERVAL renderer.h
 		// LEGISLATES AND NOT ONE THE COMMAND BUFFER CAN ANSWER FOR. A resize
 		// arriving before the first set_view_count still has a frame to
-		// restart, and DeviceResources::recording() is not the question:
+		// restart, and command-buffer recording state is not the question:
 		// engine/render/d3d12/backend.h can say its command lists answer no,
 		// because its open_frame executes the frame list on the way out, but
-		// here open_frame leaves the buffer open and recording() is true from
-		// the frame's first barrier onwards. It also goes FALSE mid-frame,
+		// here open_frame leaves the buffer recording from the frame's first
+		// barrier onwards. It also stops recording mid-frame,
 		// every time read_back_buffer submits, which is the half that would
 		// actually get this wrong: a resize arriving in that window would find
 		// no frame to restart when there is one. So the frame is tracked rather
