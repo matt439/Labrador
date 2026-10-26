@@ -45,7 +45,14 @@
 // failure naming its message. A page that aborts or exits with a failure
 // first ends the run as it would without one; one that exits cleanly first
 // is waited past, because a script may have closed it on purpose and still
-// have something to ask of it. It is for a test page, not a sample's.
+// have something to ask of it. By default it waits for a test page's
+// labradorExit. A host-page driver can export a `ready` expression instead,
+// and prepare(page), called before navigation to install hooks or emulation.
+// page.on(listener) subscribes to session events and returns an unsubscribe
+// function. A driver exporting strict_complaints = true fails on every
+// console/browser complaint; expected_complaint({ source, level, text }) may
+// recognize a diagnostic its deliberate failure injection requires. Keep such
+// expectations specific to that case, and assert that the failure occurred.
 //
 // --browser-warnings fail makes a warning or an error the browser itself logs
 // a failure of the run, whatever the page's exit code. It is for a page whose
@@ -88,6 +95,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { DevTools } from './devtools.mjs';
 
 const options = parse_arguments(process.argv.slice(2));
 const page_path = resolve(options.page);
@@ -229,10 +237,17 @@ function launch(browser, profile) {
 		'about:blank',
 	], { stdio: ['ignore', 'ignore', 'pipe'] });
 
+	let stderr_tail = '';
+	child.stderr.on('data', (chunk) => {
+		stderr_tail = (stderr_tail + chunk.toString()).slice(-16384);
+	});
+	const diagnostics = () => `pid=${child.pid ?? 'unavailable'}, ` +
+		`exit=${child.exitCode ?? 'not reported'}, signal=${child.signalCode ?? 'none'}\n` +
+		`last browser stderr (at most 16 KiB):\n${stderr_tail || '(empty)'}\n`;
 	const endpoint = new Promise((found, refused) => {
 		let seen = '';
 		child.stderr.on('data', (chunk) => {
-			seen += chunk.toString();
+			seen = (seen + chunk.toString()).slice(-16384);
 			const match = seen.match(/DevTools listening on (ws:\/\/\S+)/);
 			if (match) {
 				found(match[1]);
@@ -242,69 +257,7 @@ function launch(browser, profile) {
 		child.on('exit', (code) => refused(new Error(
 			`the browser exited (${code}) before it was listening:\n${seen}`)));
 	});
-	return { child, endpoint };
-}
-
-// One WebSocket to the browser, with sessions flattened onto it, so a page's
-// events and the answers to its commands arrive in the order they were sent.
-class DevTools {
-	constructor(url) {
-		this.socket = new WebSocket(url);
-		this.next_id = 1;
-		this.pending = new Map();
-		this.listeners = [];
-		// A socket that closes - the browser crashed or was killed - will
-		// answer nothing still waiting on it, so all of it is refused rather
-		// than left to hold the run open.
-		this.socket.addEventListener('close', () => this.refuse_all('the browser went away'));
-		this.socket.addEventListener('message', (event) => {
-			const message = JSON.parse(event.data);
-			if (message.id !== undefined) {
-				const waiting = this.pending.get(message.id);
-				this.pending.delete(message.id);
-				if (message.error) {
-					waiting.refused(new Error(`${waiting.method}: ${message.error.message}`));
-				} else {
-					waiting.found(message.result);
-				}
-				return;
-			}
-			for (const listener of this.listeners) {
-				listener(message);
-			}
-		});
-	}
-
-	opened() {
-		return new Promise((found, refused) => {
-			this.socket.addEventListener('open', () => found(), { once: true });
-			this.socket.addEventListener('error', () => refused(
-				new Error('could not reach the browser\'s DevTools endpoint')), { once: true });
-		});
-	}
-
-	send(method, params = {}, session_id = undefined) {
-		const id = this.next_id++;
-		const message = { id, method, params };
-		if (session_id) {
-			message.sessionId = session_id;
-		}
-		return new Promise((found, refused) => {
-			this.pending.set(id, { found, refused, method });
-			this.socket.send(JSON.stringify(message));
-		});
-	}
-
-	on(listener) {
-		this.listeners.push(listener);
-	}
-
-	refuse_all(why) {
-		for (const waiting of this.pending.values()) {
-			waiting.refused(new Error(`${waiting.method}: ${why}`));
-		}
-		this.pending.clear();
-	}
+	return { child, endpoint, diagnostics };
 }
 
 function console_text(args) {
@@ -533,10 +486,12 @@ async function run_sample(devtools, session, complaints) {
 const PERFORMANCE_NOTE = /GL Driver Message \([^,]*, Performance,/;
 
 async function run() {
+	const input_driver = options.input === undefined ? undefined :
+		await import(pathToFileURL(resolve(options.input)).href);
 	const server = await serve(root);
 	const url = `http://127.0.0.1:${server.address().port}/${page_name}`;
 	const profile = mkdtempSync(join(tmpdir(), 'labrador-browser-'));
-	const { child, endpoint } = launch(options.browser, profile);
+	const { child, endpoint, diagnostics } = launch(options.browser, profile);
 
 	let exit_code = 1;
 	let browser_complaints = 0;
@@ -560,6 +515,23 @@ async function run() {
 		}
 		const { sessionId: session } = await devtools.send('Target.attachToTarget',
 			{ targetId: page.targetId, flatten: true });
+		const page_api = {
+			evaluate: (expression, { user_gesture = false } = {}) =>
+				evaluate(devtools, session, expression, true, user_gesture),
+			send: (method, params = {}) => devtools.send(method, params, session),
+			on: (listener) => devtools.on((message) => {
+				if (message.sessionId === session) { listener(message); }
+			}),
+			wait,
+		};
+		const complaint = (source, level, text) => {
+			if (input_driver?.expected_complaint?.({ source, level, text }) === true) {
+				process.stdout.write(`run_page: expected ${source} diagnostic: ${text}\n`);
+				return;
+			}
+			sample_complaints.count++;
+			if (source === 'browser') { browser_complaints++; }
+		};
 
 		devtools.on((message) => {
 			if (message.sessionId !== session) {
@@ -570,14 +542,14 @@ async function run() {
 				const type = message.params.type;
 				if (type === 'error' || type === 'warning' || type === 'assert') {
 					process.stderr.write(text);
-					sample_complaints.count++;
+					complaint('console', type, text.trimEnd());
 				} else {
 					process.stdout.write(text);
 				}
 			} else if (message.method === 'Runtime.exceptionThrown') {
 				const details = message.params.exceptionDetails;
 				process.stderr.write(`run_page: uncaught: ${details.exception?.description ?? details.text}\n`);
-				sample_complaints.count++;
+				complaint('exception', 'error', details.exception?.description ?? details.text);
 			} else if (message.method === 'Inspector.targetCrashed') {
 				// Nothing waiting on the page will be answered now.
 				devtools.refuse_all('the page crashed');
@@ -587,8 +559,7 @@ async function run() {
 				process.stderr.write(`run_page: browser ${entry.level}: ${entry.text}${where}\n`);
 				if ((entry.level === 'warning' || entry.level === 'error') &&
 					!PERFORMANCE_NOTE.test(entry.text)) {
-					browser_complaints++;
-					sample_complaints.count++;
+					complaint('browser', entry.level, entry.text);
 				}
 			}
 		});
@@ -596,6 +567,7 @@ async function run() {
 		await devtools.send('Runtime.enable', {}, session);
 		await devtools.send('Log.enable', {}, session);
 		await devtools.send('Page.enable', {}, session);
+		if (input_driver?.prepare) { await input_driver.prepare(page_api); }
 		if (options['hide-extension']) {
 			await devtools.send('Page.addScriptToEvaluateOnNewDocument', {
 				source: hide_extension_script(options['hide-extension']),
@@ -617,7 +589,7 @@ async function run() {
 		// FOR THE WHOLE OF IT, because a page whose main thread never yields
 		// answers neither question, and an evaluate that is never answered
 		// would otherwise hold the run past any check made between them.
-		const finished = options.keys
+		const finished = input_driver?.ready !== undefined ? new Promise(() => {}) : options.keys
 			? (async () => {
 				while (await evaluate(devtools, session,
 					`typeof window.labradorRun === 'object' && location.href === ${JSON.stringify(url)}`) !== true) {
@@ -641,17 +613,12 @@ async function run() {
 		// has failed is not waited for.
 		const driven = options.input === undefined ? new Promise(() => {}) :
 			(async () => {
-				const script = await import(pathToFileURL(resolve(options.input)).href);
+				const ready = input_driver.ready ?? "typeof window.labradorExit === 'object'";
 				while (await evaluate(devtools, session,
-					`typeof window.labradorExit === 'object' && location.href === ${JSON.stringify(url)}`) !== true) {
+					`(${ready}) && location.href === ${JSON.stringify(url)}`) !== true) {
 					await wait(50);
 				}
-				await script.default({
-					evaluate: (expression, { user_gesture = false } = {}) =>
-						evaluate(devtools, session, expression, true, user_gesture),
-					send: (method, params = {}) => devtools.send(method, params, session),
-					wait,
-				});
+				await input_driver.default(page_api);
 				return { code: 0 };
 			})().catch((error) => ({ failed: error.stack ?? String(error) }));
 
@@ -682,6 +649,11 @@ async function run() {
 		if (options['browser-warnings'] === 'fail' && browser_complaints > 0) {
 			process.stderr.write(`run_page: the browser logged ${browser_complaints} ` +
 				'warning(s) or error(s), and --browser-warnings fail counts each as a failure\n');
+			exit_code = exit_code === 0 ? 1 : exit_code;
+		}
+		if (input_driver?.strict_complaints === true && sample_complaints.count > 0) {
+			process.stderr.write(`run_page: the input page logged ${sample_complaints.count} ` +
+				'unexpected error(s) or warning(s)\n');
 			exit_code = exit_code === 0 ? 1 : exit_code;
 		}
 
@@ -723,6 +695,7 @@ async function run() {
 		}
 	} catch (error) {
 		process.stderr.write(`run_page: ${error.message}\n`);
+		process.stderr.write(`run_page: browser receipt: ${diagnostics()}`);
 		exit_code = 1;
 	} finally {
 		if (devtools) {

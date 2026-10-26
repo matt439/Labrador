@@ -16,6 +16,17 @@ starts on a click and plays with a keyboard. Phones are a planned phase, so a
 phone gets a poster and a recording of the game to tap and watch, not the game
 itself, until a real iPhone and a real Android phone have played it.
 
+`LineSweeperBundlePageTests` loads the packaged `web-dist/linesweeper/index.html`
+in headless Chromium when configure finds one in a rasterizing browser build.
+It clicks Play, observes rendered frames, loses and restores the WebGL context,
+quits through the pause menu and plays a fresh instance. It also checks that
+touch emulation hides Play and fetches no wasm until a key is seen, that a
+truncated wasm response offers an exposed Try again button, and that the page's
+captured `onError` does the same after frames have drawn. These are automated
+browser checks, not real-phone or physical-controller acceptance. The driver
+is `tests/render/web/bundle_input.mjs`; its injected factory wrapper delegates
+to the packaged module, and only the truncated-response case changes its wasm.
+
 **Status: playable, and both halves are here.** All three layers exist.
 `rules/` is the whole game — the
 seven-bag deal, the gravity curve, the wall kicks, lock delay, hold, hard drop,

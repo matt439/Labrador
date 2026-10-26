@@ -1,0 +1,260 @@
+// The packaged host page, rather than the development shell: real module
+// instances and frames, quit/replay, the phone gate and the host's recovery UI.
+// The only substituted responses are a thin wrapper around the real factory
+// and, in one named case, the first 32 bytes of the real wasm response.
+
+export const ready = "document.readyState === 'complete' && typeof window.labradorBundle === 'object'";
+export const strict_complaints = true;
+
+let phase = 'touch gate';
+const requests = [];
+const interception_errors = [];
+const expected_diagnostics = [];
+
+// Emscripten reports the compile failure before rejecting its factory promise.
+// These diagnostics are expected only while deliberately serving truncated
+// wasm. Any warning, unrelated error or uncaught exception still fails the run.
+export function expected_complaint({ source, level, text }) {
+	const expected = phase === 'truncated wasm' && source === 'console' && level === 'error' &&
+		/^(wasm streaming compile failed:|falling back to ArrayBuffer instantiation$|failed to asynchronously prepare wasm:|Aborted\()/.test(text);
+	if (expected) { expected_diagnostics.push(text); }
+	return expected;
+}
+
+const PRELUDE = `(() => {
+	window.labradorBundle = { runs: [] };
+	const clear = WebGL2RenderingContext.prototype.clear;
+	WebGL2RenderingContext.prototype.clear = function (...args) {
+		this.canvas.labradorFrames = (this.canvas.labradorFrames ?? 0) + 1;
+		return clear.apply(this, args);
+	};
+})()`;
+
+const FACTORY_WRAPPER = `
+import factory from './linesweeper.js?labrador-bundle-source';
+export default function createLineSweeper(config) {
+	const heard = { config, canvas: config.canvas, initialized: false, quit: false,
+		errors: [], context: [] };
+	window.labradorBundle.runs.push(heard);
+	for (const name of ['onRuntimeInitialized', 'onQuit', 'onError',
+		'onContextLost', 'onContextRestored']) {
+		const original = config[name];
+		config[name] = function (...args) {
+			const result = typeof original === 'function' ? original.apply(this, args) : undefined;
+			if (name === 'onRuntimeInitialized') { heard.initialized = true; }
+			if (name === 'onQuit') { heard.quit = true; }
+			if (name === 'onError') { heard.errors.push(String(args[0])); }
+			if (name === 'onContextLost' || name === 'onContextRestored') {
+				heard.context.push({ name, text: document.getElementById('status').textContent });
+			}
+			return result;
+		};
+	}
+	return factory(config);
+}
+`;
+
+export async function prepare(page) {
+	await page.send('Emulation.setFocusEmulationEnabled', { enabled: true });
+	await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+	await page.send('Page.addScriptToEvaluateOnNewDocument', { source: PRELUDE });
+	await page.send('Network.enable');
+	page.on((message) => {
+		if (message.method === 'Network.requestWillBeSent') {
+			requests.push(message.params.request.url);
+		}
+		if (message.method !== 'Fetch.requestPaused') { return; }
+		intercept(page, message.params).catch((error) => {
+			interception_errors.push(error.stack ?? String(error));
+		});
+	});
+	await page.send('Fetch.enable', { patterns: [
+		{ urlPattern: '*linesweeper.js*', requestStage: 'Response' },
+		{ urlPattern: '*linesweeper.wasm*', requestStage: 'Response' },
+	] });
+}
+
+async function intercept(page, paused) {
+	const { requestId, request } = paused;
+	const url = new URL(request.url);
+	let body;
+	let type;
+	if (url.pathname.endsWith('/linesweeper.js') && url.search === '') {
+		body = Buffer.from(FACTORY_WRAPPER);
+		type = 'text/javascript; charset=utf-8';
+	} else if (url.pathname.endsWith('/linesweeper.wasm') && phase === 'truncated wasm') {
+		const response = await page.send('Fetch.getResponseBody', { requestId });
+		const original = Buffer.from(response.body, response.base64Encoded ? 'base64' : 'utf8');
+		if (original.length <= 32) { throw new Error('the packaged wasm is already truncated'); }
+		body = original.subarray(0, 32);
+		type = 'application/wasm';
+	} else {
+		await page.send('Fetch.continueRequest', { requestId });
+		return;
+	}
+	if (paused.responseStatusCode !== 200) {
+		throw new Error(`packaged response ${url.pathname} returned ${paused.responseStatusCode}`);
+	}
+	await page.send('Fetch.fulfillRequest', {
+		requestId, responseCode: 200,
+		responseHeaders: [
+			{ name: 'Content-Type', value: type },
+			{ name: 'Cache-Control', value: 'no-store' },
+		],
+		body: body.toString('base64'),
+	});
+}
+
+export default async function drive(page) {
+	const { evaluate, send } = page;
+	const assert = (condition, message) => {
+		if (!condition) { throw new Error(`${phase}: ${message}`); }
+	};
+	const until = async (expression, message, navigating = false) => {
+		for (let attempt = 0; attempt < 500; attempt++) {
+			assert(interception_errors.length === 0, interception_errors.join('\n'));
+			try {
+				if (await evaluate(expression) === true) { return; }
+			} catch (error) {
+				if (!navigating || !/Execution context was destroyed|Cannot find (?:default execution context|context with specified id)/.test(error.message)) {
+					throw error;
+				}
+			}
+			await page.wait(20);
+		}
+		throw new Error(`${phase}: ${message}`);
+	};
+	const frames = (count) => evaluate(`new Promise((done) => {
+		let left = ${count};
+		const next = () => (--left > 0 ? requestAnimationFrame(next) : done(true));
+		requestAnimationFrame(next);
+	})`);
+	const button_visible = `!document.getElementById('start').hidden &&
+		!document.getElementById('play').hidden && !document.getElementById('play').disabled`;
+	const button_exposed = `(() => {
+		const button = document.getElementById('play');
+		const box = button.getBoundingClientRect();
+		return box.width > 0 && box.height > 0 &&
+			document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2) === button;
+	})()`;
+	const click_play = async () => {
+		assert(await evaluate(button_visible), 'Play is unavailable');
+		assert(await evaluate(button_exposed), 'a canvas overlays the Play button');
+		const at = await evaluate(`(() => {
+			const box = document.getElementById('play').getBoundingClientRect();
+			return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+		})()`);
+		await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...at,
+			button: 'left', buttons: 1, clickCount: 1 });
+		await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at,
+			button: 'left', buttons: 0, clickCount: 1 });
+	};
+	const key = async (code, vk) => {
+		const event = { code, key: code === 'KeyA' ? 'a' : code,
+			windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk };
+		await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...event });
+		await page.wait(100);
+		await send('Input.dispatchKeyEvent', { type: 'keyUp', ...event });
+		await page.wait(100);
+	};
+	const loaded = (index) => until(`window.labradorBundle.runs[${index}]?.initialized === true &&
+		(window.labradorBundle.runs[${index}].canvas.labradorFrames ?? 0) >= 5`,
+		`instance ${index + 1} did not draw frames`);
+	const clean_runs = async () => {
+		const errors = await evaluate('window.labradorBundle.runs.flatMap((run) => run.errors)');
+		assert(errors.length === 0, `unexpected onError: ${errors.join(' | ')}`);
+	};
+	const quit = async (index) => {
+		for (const [code, vk] of [['Escape', 27], ['ArrowDown', 40], ['ArrowDown', 40], ['Enter', 13]]) {
+			await key(code, vk);
+		}
+		await until(`window.labradorBundle.runs[${index}].quit === true && ${button_visible}`,
+			'QUIT did not reach the host callback and replay button');
+		assert(await evaluate("document.getElementById('status').textContent === 'Thanks for playing.'"),
+			'QUIT did not show its status');
+		assert(await evaluate("document.getElementById('play').textContent === 'Play again'"),
+			'QUIT did not offer Play again');
+		await clean_runs();
+	};
+	const base_url = new URL(await evaluate('location.href'));
+	const navigate = async (name) => {
+		const url = new URL(base_url);
+		url.searchParams.set('bundle-case', name);
+		await send('Page.navigate', { url: url.href });
+		await until(`location.search === ${JSON.stringify(url.search)} && (${ready})`,
+			'the next host page did not settle', true);
+	};
+
+	assert(await evaluate("matchMedia('(pointer: coarse)').matches"), 'touch emulation did not produce a coarse pointer');
+	assert(await evaluate("document.getElementById('play').hidden && !document.getElementById('needs-keyboard').hidden"),
+		'a touch-only visitor was offered Play');
+	await frames(10);
+	assert(!requests.some((url) => new URL(url).pathname.endsWith('/linesweeper.wasm')),
+		'the touch gate downloaded wasm');
+	await key('KeyA', 65);
+	assert(await evaluate(button_visible), 'a key did not lift the touch gate');
+	console.log('ok - touch gate hides Play and fetches no wasm until a keyboard is seen');
+
+	phase = 'play and replay';
+	await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+	await navigate('desktop');
+	await click_play();
+	await loaded(0);
+	await clean_runs();
+	const instructions = await evaluate("document.getElementById('status').textContent");
+	await evaluate(`(() => {
+		const canvas = window.labradorBundle.runs[0].canvas;
+		window.labradorBundle.loss = canvas.getContext('webgl2').getExtension('WEBGL_lose_context');
+		if (!window.labradorBundle.loss) { throw new Error('WEBGL_lose_context is unavailable'); }
+		window.labradorBundle.loss.loseContext();
+	})()`);
+	await until("window.labradorBundle.runs[0].context[0]?.name === 'onContextLost'",
+		'the host never heard context loss');
+	assert(await evaluate("document.getElementById('status').textContent === 'The browser took the graphics away; waiting for them to come back.'"),
+		'the loss status is missing');
+	await frames(5);
+	const before_restore = await evaluate('window.labradorBundle.runs[0].canvas.labradorFrames');
+	await evaluate('window.labradorBundle.loss.restoreContext()');
+	await until("window.labradorBundle.runs[0].context[1]?.name === 'onContextRestored'",
+		'the host never heard context restoration');
+	await until(`window.labradorBundle.runs[0].canvas.labradorFrames > ${before_restore + 3}`,
+		'frames did not resume after context restoration');
+	const context = await evaluate('window.labradorBundle.runs[0].context');
+	assert(context.length === 2 && context[0].name === 'onContextLost' &&
+		context[1].name === 'onContextRestored' && context[1].text === instructions,
+		'context callbacks or their status texts were out of order');
+	await quit(0);
+	await click_play();
+	await loaded(1);
+	assert(await evaluate('window.labradorBundle.runs[0].canvas !== window.labradorBundle.runs[1].canvas && ' +
+		'!window.labradorBundle.runs[0].canvas.isConnected && document.querySelectorAll("canvas").length === 1'),
+		'replay did not replace the first instance canvas');
+	await quit(1);
+	console.log('ok - packaged module draws, restores its context, quits and draws a fresh replay');
+
+	phase = 'truncated wasm';
+	await navigate('truncated');
+	await click_play();
+	await until("document.getElementById('status').classList.contains('error') && " + button_visible,
+		'a truncated wasm did not show an error with a recovery button');
+	assert(await evaluate("document.getElementById('status').textContent.startsWith('LineSweeper could not start: ') && " +
+		"document.getElementById('play').textContent === 'Try again'"), 'startup failure message or Try again is missing');
+	assert(await evaluate(button_exposed), 'a failed startup canvas overlays Try again');
+	assert(expected_diagnostics.some((text) => text.startsWith('failed to asynchronously prepare wasm:')),
+		'the deliberately truncated response did not reach compilation');
+	console.log('ok - truncated wasm shows its startup error and an exposed Try again button');
+
+	phase = 'runtime onError';
+	await navigate('runtime-error');
+	await click_play();
+	await loaded(0);
+	await clean_runs();
+	await evaluate("window.labradorBundle.runs[0].config.onError('bundle test failure')");
+	assert(await evaluate("document.getElementById('status').classList.contains('error') && " +
+		"document.getElementById('status').textContent === 'LineSweeper stopped: bundle test failure' && " +
+		"document.getElementById('play').textContent === 'Try again' && " + button_visible),
+		'onError did not show its failure state and recovery button');
+	assert(await evaluate(button_exposed), 'a runtime failure canvas overlays Try again');
+	assert(interception_errors.length === 0, interception_errors.join('\n'));
+	console.log('ok - the page\'s captured onError shows its error and an exposed Try again button');
+}
