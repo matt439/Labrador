@@ -139,6 +139,25 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             d3d12_texture_upload_tests.cpp
             "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d12_presentation_diagnostics_tests.cpp>"
         )
+
+        # One isolated executable supplies the actual DeviceResources object
+        # with only its Win32 wait call redirected to bounded observation.
+        # Normal static linking leaves the original archive member unextracted;
+        # do not use whole-archive or duplicate-definition suppression here.
+        add_executable(D3D12SynchronizationTests
+            d3d12_pending_submission_tests.cpp
+            d3d12_instrumented_device_resources.cpp
+            d3d12_wait_observer.h
+            win32/test_window.cpp
+            test_main.cpp
+        )
+        target_link_libraries(D3D12SynchronizationTests PRIVATE
+            LabradorEngine
+            doctest::doctest
+            labrador_settings
+        )
+        add_test(NAME D3D12SynchronizationTests COMMAND D3D12SynchronizationTests)
+        set_tests_properties(D3D12SynchronizationTests PROPERTIES TIMEOUT 60)
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         find_package(Vulkan REQUIRED)
         target_sources(RenderPixelTests PRIVATE

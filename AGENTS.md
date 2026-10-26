@@ -50,7 +50,7 @@ web input; configure refuses browser Direct3D/Vulkan/XAudio2 and native Web Audi
 | Preset pair | Render / audio | ctest entries and device requirements |
 |---|---|---|
 | `x64-debug`, `x64-release` | D3D11 / XAudio2 | 20; debug permits WARP fallback |
-| `x64-debug-d3d12`, `x64-release-d3d12` | D3D12 / XAudio2 | 20; debug permits WARP fallback |
+| `x64-debug-d3d12`, `x64-release-d3d12` | D3D12 / XAudio2 | 21; debug permits WARP fallback |
 | `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 20; real GL driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 20; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 19; no graphics/audio API; no RenderPixelTests |
