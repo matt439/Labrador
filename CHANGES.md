@@ -72,6 +72,19 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 - Retry unavailable XAudio2 output without restarting voices
+
+**Behaviour change.** XAudio2 retries an unavailable default output once a
+second while active, including a launch with no output. Suspension defers
+recovery; resuming makes the next update eligible immediately. Banks and
+persistent voice handles remain valid, but one-shots are dropped and voices
+stop on device loss. Games explicitly play persistent sounds again after
+recovery. Missing output remains silent; other reset failures propagate.
+
+Six deterministic retry-policy cases pass without creating an audio graph;
+native XAudio2 and null audio regressions pass. Real endpoint loss,
+reappearance and audible playback still need a manual session.
+
 ### 2026-10-26 - Drain submitted scene work and release failed Vulkan uploads
 
 **Behaviour change on failure.** If submitting a scene draw task throws, the

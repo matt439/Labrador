@@ -117,7 +117,7 @@ green headless suite supplies a human session or a hardware measurement.
 | **REV#1**, five-backend G6a | [backend-equivalence-2/STATUS.md](backend-equivalence-2/STATUS.md), section 3: resize a live Application and compare `fullscreen_viewport()` with `back_buffer_size()`. |
 | Named low-tier p99, **SM-07** | The same STATUS.md, section 4: the Radeon/four-core measurement, after SM-01 to SM-05. EC2's L4 results do not substitute for this machine. |
 | **REV#7**, GPT-6 opportunity 2 | [Presentation lifecycle evidence below](#presentation-lifecycle-evidence): native no-read-back sequences landed; deterministic outstanding-GPU-work proof and captured D3D12 diagnostic acceptance remain. |
-| **REV#8**, GPT-6 opportunity 4 | TODO.md: XAudio2 output-device recovery, followed by a real-endpoint check. A redistributable audio sample exists; output recovery remains the question. |
+| **REV#8**, GPT-6 opportunity 4 | Bounded XAudio2 silent-output retries and six deterministic policy cases are implemented; native XAudio2/null audio regressions pass. Real endpoint loss/reappearance, retained-bank playback and suspension/resume remain unverified. |
 | **REV#9**, GPT-6 opportunity 3 | TODO.md: replay/file-version work is deferred until a client needs it (T1). |
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
 | **REV#11**, September 26 hardening | [September 26 README](2026-09-26/README.md#lower-priority-hardening-and-unverified-candidates): [hardening verification below](#hardening-verification) records all four candidate dispositions and their test limits. |
