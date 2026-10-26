@@ -239,7 +239,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [ ] **[BDP-24](STORIES.md#bdp-24)** Could · XS · The Browser and Phone Demo Player: The demo says what it offers players with access needs — after OCA-08
 - [ ] **[BDP-03](STORIES.md#bdp-03)** Should · M · The Browser and Phone Demo Player: ctest loads and plays the bundle page a visitor gets
 - [ ] **[BDP-04](STORIES.md#bdp-04)** Should · M · The Browser and Phone Demo Player: The bundle page's failure paths are tested — after BDP-03
-- [ ] **[PI-05](STORIES.md#pi-05)** Could · S · The Pinned Submodule Integrator: The engine tells my build which revision of it I am shipping — after OCA-67
+- [x] **[PI-05](STORIES.md#pi-05)** Could · S · The Pinned Submodule Integrator: The engine tells my build which revision of it I am shipping — after OCA-67
 - [ ] **[SM-03](STORIES.md#sm-03)** Should · XS · The Sole Owner-Maintainer · **Owner**: Decide which p99 the pipeline-depth claims are judged by
 - [ ] **[SM-01](STORIES.md#sm-01)** Should · S · The Sole Owner-Maintainer · **Owner**: Run the frame bench on the integrated Radeon, not the RTX 5080 — after SM-03
 - [ ] **[PI-09](STORIES.md#pi-09)** Should · S · The Pinned Submodule Integrator · **Owner**: File the seven live drafts and the packaging gap upstream — after OCA-72
@@ -296,7 +296,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | BDP-24 | G119: the demo states what it offers players with access needs, following the recorded position. |
 | BDP-03 | G33 (major): the page hosts serve has no automated test. |
 | BDP-04 | G33: the bundle page's failure paths. Promoted to Should because BDP-15 (Should) depends on it (critique). |
-| PI-05 | G53: no engine revision a consumer can stamp; two present callers (the web bundle and a client). The first tag (Now) gives the fallback value. |
+| PI-05 | G53: no engine revision a consumer can stamp; two present callers (the web bundle and a client). The first tag (Now) gives the fallback value. Closed 2026-10-26: LABRADOR_SOURCE_REVISION exports a configure-time hash/dirty or unknown identity, with an own-root guard for archives. Offline checkout/consumer/dirty-refresh/worktree/unborn/archive/missing-Git and bundle fixtures pass; the existing CI lint job runs them. README documents reconfigure-before-packaging and the bundle build-time distinction. |
 | SM-03 | G26: which p99 the pipeline-depth claims are judged by. An owner decision; PHILOSOPHY amendment D only if it lands there. |
 | SM-01 | G01 (major): the bench cannot reach the iGPU. The XS first step (AMD driver, per-app preference, no code) moves it to Next beside SM-03 (critique, owner facts); a code option is argued only if that fails. |
 | PI-09 | G74: seven live drafts and the packaging gap in ColourWars' private ledger, filed into the route OCA-72 opens. What private detail is published is the owner's. |

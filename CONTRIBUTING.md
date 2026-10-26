@@ -97,7 +97,8 @@ and the last is the job in
 **A change that touches only documentation is linted, not built**: when
 every path it changes is a `.md` file or under `docs/`, the `changes` job
 says so, the build jobs report without building, and `lint` runs the
-citation check, the agent brief check and the include wall on their own.
+citation check, the agent brief check, the include wall and offline source
+revision fixtures on their own.
 The website build still runs, because it reads the design documents. `changes`
 is required for that reason: if it failed, the jobs that need it would report
 as skipped, and a skipped check passes.

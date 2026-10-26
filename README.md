@@ -207,6 +207,29 @@ no backend because `gl` is the default under Emscripten.
 copying: a game's simulation as a static library that links nothing, so the
 whole game is playable from `ctest` with no window and no device.
 
+### Name the engine source in a release
+
+After `add_subdirectory(external/labrador)`, a consumer's CMake can read
+`LABRADOR_SOURCE_REVISION`. It is the engine's full Git commit hash, with
+`-dirty` appended when tracked files have local changes. Untracked and ignored
+files do not affect it. A source archive, an unavailable Git executable or
+an unreadable revision produces the literal `unknown`, never the containing
+game repository's commit.
+
+For example, write the value into the game's build-info file:
+
+```cmake
+add_subdirectory(external/labrador)
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/engine-revision.txt"
+    "${LABRADOR_SOURCE_REVISION}\n")
+```
+
+This read-only INTERNAL cache value is refreshed on each configure. It is a
+configure-time snapshot: reconfigure after changing the pin or the source,
+before packaging a release. Building alone need not rerun configure. The web
+bundle's `BUILD.json` queries the same Git facts when it bundles, since that
+target runs on every build and needs the current build-time identity.
+
 ## The engine
 
 Ten modules, each depending only on modules above it in the table

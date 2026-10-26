@@ -72,6 +72,17 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 - Expose the engine source revision to consumer builds
+
+**Behaviour change (browser bundles).** A source archive nested in another Git
+checkout now records `commit: "unknown"` and `dirty: null` in `BUILD.json`
+instead of borrowing the containing repository's identity. Build from a
+Labrador checkout to record its commit. Consumer CMake projects can also read
+`LABRADOR_SOURCE_REVISION` after adding Labrador: its configure-time commit
+and optional `-dirty` suffix, or `unknown`. Reconfigure after source changes
+before writing release build information; [README.md](README.md#name-the-engine-source-in-a-release)
+shows the usage.
+
 ### 2026-10-26 — Make default disabled menu rows dimmer than unfocused rows
 
 **Behaviour change.** `FocusStyle::disabled` defaults to `Colour::dim_gray`
