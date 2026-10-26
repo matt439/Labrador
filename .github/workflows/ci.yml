@@ -16,19 +16,102 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A second push to the same branch cancels the first. A queue of stale runs on
-# a repository with one maintainer is a queue nobody reads.
+# A second push to a pull request's branch cancels the first. A queue of stale
+# runs on a repository with one maintainer is a queue nobody reads. A push to
+# master does not: every commit there gets a whole run, so a red master names
+# its commit rather than the one after it.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# The three browser jobs share one compiler, so they share its pins. ccache is
+# what holds a pull request's browser build to a few minutes: a cold
+# wasm-release build is six minutes on this runner and a warm one two, every
+# compile a hit and the rest the links, because Emscripten compiles every
+# file through a Python driver and clang.
+# It is downloaded and checked against its release's digest rather than taken
+# from an action, for the reason the jobs below find vcvars64 themselves.
+env:
+  EMSDK_VERSION: 6.0.12
+  CCACHE_VERSION: 4.14.1
+  CCACHE_SHA256: 6219f3865ca59aec41ee4b678df171d5d35855ecb2b6dbbbd20690b3a68af7b4
+  CCACHE_DIR: C:\ccache
+  CCACHE_MAXSIZE: 500M
 
 jobs:
+  # WHETHER THIS CHANGE IS DOCUMENTATION ONLY: every path it touches is a .md
+  # file or under docs/. Nothing that builds reads either, except the three
+  # checks the lint job below runs, so a change like that gets those and
+  # nothing else. Anything else - a header, a workflow, website/'s walkthrough
+  # the consumer jobs assemble, LICENSE, which the web bundle carries - is
+  # code, and so is a run with nothing to diff against.
+  #
+  # THE BUILD JOBS STILL REPORT, because their names are required checks and a
+  # check that never reports holds a pull request forever (CONTRIBUTING.md).
+  # A job skipped by its own if: reports as skipped, which branch protection
+  # accepts. The windows matrix cannot be skipped that way - a matrix skipped
+  # before it expands reports one check under its unexpanded name, and none of
+  # the six it is required as - so it runs, and each of its steps is skipped.
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Is anything but documentation changed
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "Nothing to diff against; treating this as code."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only "$BASE" HEAD > "$RUNNER_TEMP/changed.txt"
+          cat "$RUNNER_TEMP/changed.txt"
+          if grep -v -E '(\.md$)|(^docs/)' "$RUNNER_TEMP/changed.txt" > /dev/null; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Documentation only: the build jobs report without building."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # The checks every build runs first, as scripts of their own: the citation
+  # check, the agent brief and the engine's include wall. The citation check is
+  # the one a documentation change can fail - a renamed document or a moved
+  # section a comment still cites - and on such a change this is the whole
+  # run. Windows, because the build jobs run them on Windows and a path's case
+  # is not a question there.
+  lint:
+    name: lint
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check every document a comment cites resolves
+        run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_doc_citations.cmake
+
+      - name: Check that CLAUDE.md imports AGENTS.md
+        run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_agent_brief.cmake
+
+      - name: Check that no engine file includes a game header
+        run: cmake "-DENGINE_DIR=${{ github.workspace }}/engine" -P cmake/check_engine_includes.cmake
+
   windows:
     # The check's name is the preset alone. Without it GitHub names each
     # matrix job after every value in its entry, so changing skip_tests or
     # vulkan_sdk would rename a required check and leave every pull request
     # waiting on a context that never reports (CONTRIBUTING.md).
     name: windows (${{ matrix.preset }})
+    needs: changes
     runs-on: windows-latest
     # Bounded well above a cold vcpkg cache, so a stalled step fails the check
     # rather than holding every pull request for GitHub's six-hour default.
@@ -134,11 +217,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        if: needs.changes.outputs.code == 'true'
 
       # CMakePresets.json reads $env{VCPKG_ROOT} for the toolchain file and
       # configuring fails without it. This is the same one-time step the README
       # asks a person to do.
       - name: Point at the runner's vcpkg
+        if: needs.changes.outputs.code == 'true'
         shell: pwsh
         run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
@@ -146,6 +231,7 @@ jobs:
       # of this job's wall clock. Keyed on vcpkg.json, so a run that changes no
       # dependency reuses the last one's binaries.
       - name: Cache vcpkg binaries
+        if: needs.changes.outputs.code == 'true'
         uses: actions/cache@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
@@ -168,7 +254,7 @@ jobs:
       # cmake/compile_shaders.cmake with VULKAN_SDK named and nothing wrong
       # with VULKAN_SDK.
       - name: Install the Vulkan SDK
-        if: matrix.vulkan_sdk
+        if: needs.changes.outputs.code == 'true' && matrix.vulkan_sdk
         # A download and an install that take a minute or two; the installer
         # can stall without exiting, and this is what turns that into a failure.
         timeout-minutes: 15
@@ -187,10 +273,12 @@ jobs:
           echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
 
       - name: Find vcvars64
+        if: needs.changes.outputs.code == 'true'
         run: |
           for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
       - name: Configure
+        if: needs.changes.outputs.code == 'true'
         run: |
           call "%VCVARS%"
           cmake --preset ${{ matrix.preset }}
@@ -198,6 +286,7 @@ jobs:
       # This includes cmake/check_engine_includes.cmake, so an engine file that
       # includes a game header fails here as well as locally.
       - name: Build
+        if: needs.changes.outputs.code == 'true'
         run: |
           call "%VCVARS%"
           cmake --build --preset ${{ matrix.preset }}
@@ -206,6 +295,7 @@ jobs:
       # rather than wall-clock, so it is a real test on a shared runner where an
       # absolute timing would be noise.
       - name: Test
+        if: needs.changes.outputs.code == 'true'
         run: |
           call "%VCVARS%"
           ctest --preset ${{ matrix.preset }} ${{ matrix.skip_tests }}
@@ -229,6 +319,7 @@ jobs:
       # all. A shared runner's absolute timings are not comparable to a
       # developer machine's and are not meant to be.
       - name: Benchmark numbers
+        if: needs.changes.outputs.code == 'true'
         run: out\build\${{ matrix.preset }}\bench\LabradorBench.exe
 
   # The browser build, configured, built and tested. It compiles gl/ against
@@ -252,17 +343,21 @@ jobs:
   # add a supply chain to do it. The version is pinned because it is the one
   # this build was proven on, and a compiler that moves under a -Werror build
   # moves it from green to red with no commit to blame.
+  #
+  # TWO MORE BROWSER JOBS RUN BESIDE IT RATHER THAN AFTER IT: wasm-null, the
+  # same preset with both null backends, and wasm-consumer, the Get Started
+  # project's page. Each is a build of its own, and as steps of this job they
+  # tripled its wall clock.
   wasm:
     name: wasm
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: windows-latest
     timeout-minutes: 90
 
     defaults:
       run:
         shell: cmd
-
-    env:
-      EMSDK_VERSION: 6.0.12
 
     steps:
       - uses: actions/checkout@v4
@@ -278,11 +373,47 @@ jobs:
           key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}
           restore-keys: vcpkg-wasm-
 
+      # The SDK installed and activated, kept whole: unpacking it is most of
+      # what installing it costs on this runner. Saved by this job alone, and
+      # restored by the two beside it.
+      - name: Cache Emscripten
+        id: emsdk
+        uses: actions/cache@v4
+        with:
+          path: C:\emsdk
+          key: emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}
+
       - name: Install Emscripten
+        if: steps.emsdk.outputs.cache-hit != 'true'
         run: |
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git C:\emsdk
           call C:\emsdk\emsdk.bat install %EMSDK_VERSION% || exit /b 1
           call C:\emsdk\emsdk.bat activate %EMSDK_VERSION% || exit /b 1
+
+      # Emscripten runs EM_COMPILER_WRAPPER in front of every clang it starts.
+      # The compiler check is the pinned version rather than clang's mtime,
+      # because emsdk installs a fresh clang on every run and an mtime check
+      # would miss every time. The cache key is the run, so every run saves,
+      # and restores the newest; a pull request reads master's.
+      - name: Install ccache
+        shell: pwsh
+        run: |
+          $name = "ccache-$env:CCACHE_VERSION-windows-x86_64"
+          $zip = Join-Path $env:RUNNER_TEMP "$name.zip"
+          Invoke-WebRequest -Uri "https://github.com/ccache/ccache/releases/download/v$env:CCACHE_VERSION/$name.zip" -OutFile $zip
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $env:CCACHE_SHA256) {
+            throw "$name.zip does not match CCACHE_SHA256."
+          }
+          Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+          echo "EM_COMPILER_WRAPPER=$env:RUNNER_TEMP\$name\ccache.exe" >> $env:GITHUB_ENV
+          echo "CCACHE_COMPILERCHECK=string:emsdk-$env:EMSDK_VERSION" >> $env:GITHUB_ENV
+
+      - name: Cache compiled objects
+        uses: actions/cache@v4
+        with:
+          path: C:\ccache
+          key: ccache-wasm-gl-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ccache-wasm-gl-
 
       # Ninja and cmake come with Visual Studio, so the MSVC environment is
       # still what puts them on the path, though nothing here compiles with
@@ -298,18 +429,21 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           cmake --preset wasm-release
 
+      # The statistics are the evidence the cache is doing its job: a warm run
+      # on a change that touches no widely included header is nearly all hits.
       - name: Build
-        id: build
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          cmake --build --preset wasm-release
+          "%EM_COMPILER_WRAPPER%" -z
+          cmake --build --preset wasm-release || exit /b 1
+          "%EM_COMPILER_WRAPPER%" -s
 
       - name: Test
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -E "RenderPixelTests|RenderContextLossTests|WebWindowTests|PageTests"
+          ctest --preset wasm-release -j 4 -E "RenderPixelTests|RenderContextLossTests|WebWindowTests|PageTests"
 
       # THE PIXEL CONTRACT IN A BROWSER, as a step of its own so that a failure
       # here names itself rather than reading as the second compiler's.
@@ -336,7 +470,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -R "RenderPixelTests|RenderContextLossTests" --no-tests=error -V
+          ctest --preset wasm-release -j 3 -R "RenderPixelTests|RenderContextLossTests" --no-tests=error -V
 
       # THE WEB WINDOW, DRIVEN: WebWindowTests is a page in the same Chrome,
       # which tests/app/web/window_input.mjs clicks, types into, resizes and
@@ -359,30 +493,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -R "PageTests" --no-tests=error --output-on-failure
-
-      # THE PROJECT GET STARTED TEACHES, AS A PAGE: the consumer job's project,
-      # assembled by the same script, built under the browser preset the
-      # website's Build for the browser guide adds to it, its rules test run
-      # under Node, and its page loaded and quit in the same Chrome as the
-      # samples' pages. Here rather than in the consumer job because this job
-      # already has Emscripten and the wasm32-emscripten packages. It catches
-      # what the steps above cannot: a browser build that needs more from a
-      # consumer's preset than the guide gives it, such as a backend the
-      # engine stops choosing by itself under Emscripten. The Chrome is the one
-      # this job's configure found, and the Node is Emscripten's, because
-      # run_page.mjs needs Node's own WebSocket.
-      - name: Build and load the Get Started project's page
-        run: |
-          call "%VCVARS%"
-          call C:\emsdk\emsdk_env.bat
-          for /f "tokens=2 delims==" %%i in ('findstr /B /C:"LABRADOR_TEST_BROWSER:" out\build\wasm-release\CMakeCache.txt') do set "CHROME=%%i"
-          python tools\consumer_check\assemble.py C:\dev\mygame || exit /b 1
-          cd /d C:\dev\mygame
-          cmake --preset wasm-release || exit /b 1
-          cmake --build --preset wasm-release || exit /b 1
-          ctest --preset wasm-release || exit /b 1
-          "%EMSDK_NODE%" "%GITHUB_WORKSPACE%\tests\render\web\run_page.mjs" --browser "%CHROME%" --page out\build\wasm-release\game\MyGame.html --quit-keys Escape,Enter --timeout 60
+          ctest --preset wasm-release -j 3 -R "PageTests" --no-tests=error --output-on-failure
 
       # WHAT A HOST SERVES: the build writes LineSweeper's bundle to
       # web-dist/linesweeper/ - the module, its example page, the notices for
@@ -406,30 +517,238 @@ jobs:
           path: out/build/wasm-release/tests/render/golden-actual/
           if-no-files-found: ignore
 
-      # THE SAME PRESET A SECOND TIME WITH BOTH NULL BACKENDS, because the
-      # sources that assert drawing and playing are compiled only when the
-      # backend is null: RenderTests' recording cases, SceneTests' fan-out and
-      # cull, the particle-draw and local-multiplayer draw cases, the bench
-      # beside them, and AudioTests' recording cases. The preset builds gl/ and
-      # webaudio/, so without this clang would never see them, and the test
-      # count would not say so - they leave executables that still exist. Two
-      # cache variables on the command line and a binary directory of its own
-      # is the whole cost; a second pair of presets would be two more names for
-      # two configure flags.
-      #
-      # IT RUNS WHATEVER THE TEST STEPS ABOVE SAID, because it checks
-      # different sources: a red pixel step that skipped it is a push on which
-      # clang compiled none of them. The job still fails when any step does.
-      # What it does need is the preset to have built, since a compiler error
-      # there would only be reported twice.
-      - name: Configure, build and test with the null backends
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+  # THE SAME PRESET A SECOND TIME WITH BOTH NULL BACKENDS, because the sources
+  # that assert drawing and playing are compiled only when the backend is null:
+  # RenderTests' recording cases, SceneTests' fan-out and cull, the
+  # particle-draw and local-multiplayer draw cases, the bench beside them, and
+  # AudioTests' recording cases. The preset builds gl/ and webaudio/, so
+  # without this clang would never see them, and the test count would not say
+  # so - they leave executables that still exist. Two cache variables on the
+  # command line and a binary directory of its own is the whole cost; a second
+  # pair of presets would be two more names for two configure flags.
+  #
+  # A JOB OF ITS OWN, so it runs whatever the wasm job's steps say: it checks
+  # different sources, and a red pixel step must not be a push on which clang
+  # compiled none of them. It restores the wasm job's vcpkg binaries and never
+  # saves them, as the consumer job does the windows jobs'.
+  wasm-null:
+    name: wasm-null
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Point at the runner's vcpkg
+        shell: pwsh
+        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+
+      - name: Restore the wasm job's vcpkg binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-wasm-
+
+      - name: Restore the wasm job's Emscripten
+        id: emsdk
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\emsdk
+          key: emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}
+
+      - name: Install Emscripten
+        if: steps.emsdk.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git C:\emsdk
+          call C:\emsdk\emsdk.bat install %EMSDK_VERSION% || exit /b 1
+          call C:\emsdk\emsdk.bat activate %EMSDK_VERSION% || exit /b 1
+
+      # As the wasm job's, under a key of its own: the null build compiles
+      # with other definitions and would only evict the other's objects.
+      - name: Install ccache
+        shell: pwsh
+        run: |
+          $name = "ccache-$env:CCACHE_VERSION-windows-x86_64"
+          $zip = Join-Path $env:RUNNER_TEMP "$name.zip"
+          Invoke-WebRequest -Uri "https://github.com/ccache/ccache/releases/download/v$env:CCACHE_VERSION/$name.zip" -OutFile $zip
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $env:CCACHE_SHA256) {
+            throw "$name.zip does not match CCACHE_SHA256."
+          }
+          Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+          echo "EM_COMPILER_WRAPPER=$env:RUNNER_TEMP\$name\ccache.exe" >> $env:GITHUB_ENV
+          echo "CCACHE_COMPILERCHECK=string:emsdk-$env:EMSDK_VERSION" >> $env:GITHUB_ENV
+
+      - name: Cache compiled objects
+        uses: actions/cache@v4
+        with:
+          path: C:\ccache
+          key: ccache-wasm-null-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ccache-wasm-null-
+
+      - name: Find vcvars64
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
+
+      - name: Configure
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          cmake --preset wasm-release -B out/build/wasm-release-null -DLABRADOR_RENDER_BACKEND=null -DLABRADOR_AUDIO_BACKEND=null || exit /b 1
+          cmake --preset wasm-release -B out/build/wasm-release-null -DLABRADOR_RENDER_BACKEND=null -DLABRADOR_AUDIO_BACKEND=null
+
+      - name: Build
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          "%EM_COMPILER_WRAPPER%" -z
           cmake --build out/build/wasm-release-null || exit /b 1
-          ctest --test-dir out/build/wasm-release-null --output-on-failure
+          "%EM_COMPILER_WRAPPER%" -s
+
+      - name: Test
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          ctest --test-dir out/build/wasm-release-null -j 3 --output-on-failure
+
+  # THE PROJECT GET STARTED TEACHES, AS A PAGE: the consumer job's project,
+  # assembled by the same script, built under the browser preset the website's
+  # Build for the browser guide adds to it, its rules test run under Node, and
+  # its page loaded and quit in headless Chrome by the runner the samples'
+  # pages use. It catches what the wasm job cannot: a browser build that needs
+  # more from a consumer's preset than the guide gives it, such as a backend
+  # the engine stops choosing by itself under Emscripten. The Node is
+  # Emscripten's, because run_page.mjs needs Node's own WebSocket.
+  wasm-consumer:
+    name: wasm-consumer
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Point at the runner's vcpkg
+        shell: pwsh
+        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+
+      # The consumer job's argument, for the wasm job's cache: a consumer's
+      # packages are a subset of the engine's, so saving here could leave the
+      # key holding a set the wasm job then lacks.
+      - name: Restore the wasm job's vcpkg binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-wasm-
+
+      - name: Restore the wasm job's Emscripten
+        id: emsdk
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\emsdk
+          key: emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}
+
+      - name: Install Emscripten
+        if: steps.emsdk.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git C:\emsdk
+          call C:\emsdk\emsdk.bat install %EMSDK_VERSION% || exit /b 1
+          call C:\emsdk\emsdk.bat activate %EMSDK_VERSION% || exit /b 1
+
+      - name: Install ccache
+        shell: pwsh
+        run: |
+          $name = "ccache-$env:CCACHE_VERSION-windows-x86_64"
+          $zip = Join-Path $env:RUNNER_TEMP "$name.zip"
+          Invoke-WebRequest -Uri "https://github.com/ccache/ccache/releases/download/v$env:CCACHE_VERSION/$name.zip" -OutFile $zip
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $env:CCACHE_SHA256) {
+            throw "$name.zip does not match CCACHE_SHA256."
+          }
+          Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+          echo "EM_COMPILER_WRAPPER=$env:RUNNER_TEMP\$name\ccache.exe" >> $env:GITHUB_ENV
+          echo "CCACHE_COMPILERCHECK=string:emsdk-$env:EMSDK_VERSION" >> $env:GITHUB_ENV
+
+      - name: Cache compiled objects
+        uses: actions/cache@v4
+        with:
+          path: C:\ccache
+          key: ccache-wasm-consumer-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ccache-wasm-consumer-
+
+      # The places the root CMakeLists.txt looks for a Chromium on Windows,
+      # since this job configures no Labrador build to look for it.
+      - name: Find Chrome
+        shell: pwsh
+        run: |
+          $chrome = @(
+            "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+            "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $chrome) { throw "No Chrome on this runner, so the Get Started page cannot be loaded." }
+          echo "CHROME=$chrome" >> $env:GITHUB_ENV
+
+      - name: Find vcvars64
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
+
+      - name: Assemble the Get Started project
+        run: python tools\consumer_check\assemble.py C:\dev\mygame
+
+      - name: Configure
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          cmake --preset wasm-release
+
+      - name: Build
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          "%EM_COMPILER_WRAPPER%" -z
+          cmake --build --preset wasm-release || exit /b 1
+          "%EM_COMPILER_WRAPPER%" -s
+
+      - name: Run the game's tests under Node
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          ctest --preset wasm-release
+
+      # THE FIRST WEBGL PAGE A FRESH RUNNER LOADS LOSES ITS CONTEXT ONCE, and
+      # the browser logs it, which a sample's page counts as a failure. It
+      # did on all three first loads this job has made (runs 40312661812
+      # twice and 40315133083), and the load after it has not. Why is not
+      # known: the wasm job's first page, three minutes later in a job of
+      # its own, has not lost one. So this load is the browser's first and
+      # is not the check; the step after it is.
+      - name: Load the game's page once to start the browser's GPU process
+        continue-on-error: true
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          "%EMSDK_NODE%" "%GITHUB_WORKSPACE%\tests\render\web\run_page.mjs" --browser "%CHROME%" --page out\build\wasm-release\game\MyGame.html --quit-keys Escape,Enter --timeout 60
+
+      - name: Load and quit the game's page in headless Chrome
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          "%EMSDK_NODE%" "%GITHUB_WORKSPACE%\tests\render\web\run_page.mjs" --browser "%CHROME%" --page out\build\wasm-release\game\MyGame.html --quit-keys Escape,Enter --timeout 60
 
   # THE PROJECT GET STARTED TEACHES, BUILT AGAINST THIS CHANGE'S ENGINE. Every
   # job above builds Labrador as the top-level project, where CMAKE_SOURCE_DIR
@@ -460,6 +779,8 @@ jobs:
   # this tree, and what it downloads besides this repository is vcpkg's.
   consumer:
     name: consumer
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: windows-latest
     # The windows jobs' bound, for their reason: this job restores their vcpkg
     # cache and never saves one, so after a vcpkg.json change or an evicted

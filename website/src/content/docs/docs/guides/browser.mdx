@@ -177,9 +177,8 @@ On 25 October 2026 this page was followed on Windows 11: Emscripten {EMSDK_VERSI
 an empty folder by the commands above, on a machine that already had Python 3 on its `PATH`, and
 the project from Get Started configured with it, built under both presets, its test run under Node, and its page served and loaded in headless Chrome,
 which drew the greeting, took Escape and Enter, and quit with nothing in the console. Installing
-Python first, on a machine or account without it, has not been followed. CI's wasm job builds that
-project's `wasm-release` page and loads it the same way on every pull request to Labrador; that
-step has not yet run on GitHub.
+Python first, on a machine or account without it, has not been followed. CI's `wasm-consumer` job builds that
+project's `wasm-release` page and loads it the same way on every pull request to Labrador.
 
 The browser build has been checked in desktop Chrome and, for LineSweeper's page, Firefox. It has
 not been checked in Safari, on a phone, with a real touchscreen or with a physical gamepad.

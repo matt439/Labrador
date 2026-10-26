@@ -74,8 +74,10 @@ protection for a trivial fix; nobody else does.
 so this list is the record of what those settings must hold. Each name is the
 job's `name:` in its workflow, and the windows jobs are named for their preset
 alone, so changing a matrix entry's `skip_tests` or `vulkan_sdk` does not
-rename its check. The required contexts are exactly these nine:
+rename its check. The required contexts are exactly these thirteen:
 
+- `changes`
+- `lint`
 - `windows (x64-debug)`
 - `windows (x64-release)`
 - `windows (x64-debug-d3d12)`
@@ -83,12 +85,27 @@ rename its check. The required contexts are exactly these nine:
 - `windows (x64-debug-vulkan)`
 - `windows (x64-debug-null)`
 - `wasm`
+- `wasm-null`
+- `wasm-consumer`
 - `consumer`
 - `website`
 
-The first eight are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml)
+The first twelve are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml)
 and the last is the job in
 [.github/workflows/website.yml](.github/workflows/website.yml).
+
+**A change that touches only documentation is linted, not built**: when
+every path it changes is a `.md` file or under `docs/`, the `changes` job
+says so, the build jobs report without building, and `lint` runs the
+citation check, the agent brief check and the include wall on their own.
+The website build still runs, because it reads the design documents. `changes`
+is required for that reason: if it failed, the jobs that need it would report
+as skipped, and a skipped check passes.
+
+A pull request's run is meant to finish in about five minutes, and it does
+so on caches: the windows jobs' vcpkg binaries, and ccache for the three
+browser builds. A run after a `vcpkg.json` change, or after a cache has been
+evicted, builds from source and takes longer.
 `gh api repos/matt439/Labrador/branches/master/protection` shows what the
 settings hold, and its contexts should be this list.
 
