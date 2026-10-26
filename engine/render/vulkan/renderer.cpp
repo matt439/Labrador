@@ -1121,150 +1121,159 @@ namespace labrador
 
 		vkCmdBeginRenderPass(commands, &pass, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			impl.pipeline);
-
-		const VkDeviceSize vertex_offset = 0;
-		vkCmdBindVertexBuffers(commands, 0, 1, &frame.vertices.buffer,
-			&vertex_offset);
-		vkCmdBindIndexBuffer(commands, impl.indices.buffer, 0,
-			VK_INDEX_TYPE_UINT16);
-
-		size_t transform_slot = 0;
-
-		// In view order, which is the only ordering guarantee the seam makes -
-		// and here it is the only ordering there is, because a view's recording
-		// is a vector rather than a command list.
-		for (int i = 0; i < impl.view_count; i++)
+		try
 		{
-			const DrawList::View& view = *impl.views[static_cast<size_t>(i)];
+			vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
+				impl.pipeline);
 
-			for (const DrawList::View::Run& run : view.runs)
+			const VkDeviceSize vertex_offset = 0;
+			vkCmdBindVertexBuffers(commands, 0, 1, &frame.vertices.buffer,
+				&vertex_offset);
+			vkCmdBindIndexBuffer(commands, impl.indices.buffer, 0,
+				VK_INDEX_TYPE_UINT16);
+
+			size_t transform_slot = 0;
+
+			// In view order, which is the only ordering guarantee the seam makes -
+			// and here it is the only ordering there is, because a view's recording
+			// is a vector rather than a command list.
+			for (int i = 0; i < impl.view_count; i++)
 			{
-				// ONE RECTANGLE, AND EVERYTHING BELOW READS IT. Vulkan takes a
-				// float viewport, so this backend could skip pixel_rect - and
-				// must not: viewport.h says it is the only conversion to whole
-				// pixels any backend may make, and the point of that rule is
-				// that all of them make the same one.
-				const RectangleI pixels = run.viewport.pixel_rect();
+				const DrawList::View& view = *impl.views[static_cast<size_t>(i)];
 
-				if (pixels.width <= 0 || pixels.height <= 0)
+				for (const DrawList::View::Run& run : view.runs)
 				{
-					// An empty pane draws nothing on every backend. Here it
-					// would also be a zero-height viewport, which this API does
-					// not define, so it is skipped rather than submitted.
-					continue;
+					// ONE RECTANGLE, AND EVERYTHING BELOW READS IT. Vulkan takes a
+					// float viewport, so this backend could skip pixel_rect - and
+					// must not: viewport.h says it is the only conversion to whole
+					// pixels any backend may make, and the point of that rule is
+					// that all of them make the same one.
+					const RectangleI pixels = run.viewport.pixel_rect();
+
+					if (pixels.width <= 0 || pixels.height <= 0)
+					{
+						// An empty pane draws nothing on every backend. Here it
+						// would also be a zero-height viewport, which this API does
+						// not define, so it is skipped rather than submitted.
+						continue;
+					}
+
+					// THE NEGATIVE HEIGHT IS THE Y FLIP, AND IT IS THIS BACKEND'S
+					// WHOLE SHARE OF THE ONE TERM renderer.h SAYS A BACKEND STILL
+					// DECIDES. Vulkan's clip space runs y down where Direct3D's and
+					// GL's run up, so the shader those two share - which is this
+					// one, unchanged - would put the top of every pane at the
+					// bottom. Handing the rasteriser a viewport whose origin is the
+					// pane's BOTTOM edge and whose height is negative inverts y
+					// once, in the one place a backend is allowed to. The GL
+					// backend answers the mirror image of this question by
+					// subtracting from the framebuffer height, and says so there.
+					VkViewport pane = {};
+					pane.x = static_cast<float>(pixels.x);
+					pane.y = static_cast<float>(pixels.y + pixels.height);
+					pane.width = static_cast<float>(pixels.width);
+					pane.height = -static_cast<float>(pixels.height);
+					pane.minDepth = run.viewport.minDepth;
+					pane.maxDepth = run.viewport.maxDepth;
+					vkCmdSetViewport(commands, 0, 1, &pane);
+
+					// The scissor is not optional and is not the viewport: this API
+					// clips to both, and a scissor offset may not be negative. The
+					// clamp is the intersection with the buffer rather than a move,
+					// so a pane that starts off the left edge loses the part that
+					// was never in the picture and keeps the rest.
+					const int scissor_x = std::max(0, pixels.x);
+					const int scissor_y = std::max(0, pixels.y);
+
+					VkRect2D scissor = {};
+					scissor.offset = { scissor_x, scissor_y };
+					scissor.extent.width = static_cast<uint32_t>(std::max(0,
+						pixels.x + pixels.width - scissor_x));
+					scissor.extent.height = static_cast<uint32_t>(std::max(0,
+						pixels.y + pixels.height - scissor_y));
+					vkCmdSetScissor(commands, 0, 1, &scissor);
+
+					const VkDeviceSize transform_offset =
+						static_cast<VkDeviceSize>(transform_slot) *
+						transform_stride;
+
+					float transform[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+					fill_transform(transform, pixels);
+					std::memcpy(transform_bytes + transform_offset, transform,
+						sizeof(transform));
+					transform_slot++;
+
+					// A DESCRIPTOR SET PER RUN, THROWN AWAY WITH THE FRAME. D3D12
+					// keeps one shader-visible heap and gives every texture a slot
+					// in it for the life of the process, which is a fixed capacity
+					// and a re-load rule (its render_resources.cpp carries both).
+					// This is the other answer: the pool is the frame's, resetting
+					// it frees every set at once, and a texture holds no descriptor
+					// state at all. What it costs is one allocate and one update
+					// per run per frame, on a path that already touches the driver
+					// once per run.
+					VkDescriptorSet set = device_resources.allocate_descriptor_set(
+						impl.set_layout);
+
+					VkDescriptorBufferInfo transform_binding = {};
+					transform_binding.buffer = frame.transforms.buffer;
+					transform_binding.offset = transform_offset;
+					transform_binding.range = sizeof(transform);
+
+					VkDescriptorImageInfo texture_binding = {};
+					texture_binding.imageView = run.texture->view();
+					texture_binding.imageLayout =
+						VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+					VkDescriptorImageInfo sampler_binding = {};
+					sampler_binding.sampler = impl.sampler(run.filter);
+
+					VkWriteDescriptorSet writes[3] = {};
+					writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					writes[0].dstSet = set;
+					writes[0].dstBinding = 0;
+					writes[0].descriptorCount = 1;
+					writes[0].descriptorType =
+						VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+					writes[0].pBufferInfo = &transform_binding;
+
+					writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					writes[1].dstSet = set;
+					writes[1].dstBinding = 1;
+					writes[1].descriptorCount = 1;
+					writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+					writes[1].pImageInfo = &texture_binding;
+
+					writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					writes[2].dstSet = set;
+					writes[2].dstBinding = 2;
+					writes[2].descriptorCount = 1;
+					writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+					writes[2].pImageInfo = &sampler_binding;
+
+					vkUpdateDescriptorSets(device_resources.device(), 3, writes, 0,
+						nullptr);
+
+					vkCmdBindDescriptorSets(commands,
+						VK_PIPELINE_BIND_POINT_GRAPHICS, impl.pipeline_layout, 0,
+						1, &set, 0, nullptr);
+
+					const int32_t base_vertex = static_cast<int32_t>(
+						view_vertex_base[static_cast<size_t>(i)] +
+						static_cast<size_t>(run.first_sprite) *
+							VERTICES_PER_SPRITE);
+
+					vkCmdDrawIndexed(commands,
+						static_cast<uint32_t>(run.sprites * INDICES_PER_SPRITE), 1,
+						0, base_vertex, 0);
 				}
-
-				// THE NEGATIVE HEIGHT IS THE Y FLIP, AND IT IS THIS BACKEND'S
-				// WHOLE SHARE OF THE ONE TERM renderer.h SAYS A BACKEND STILL
-				// DECIDES. Vulkan's clip space runs y down where Direct3D's and
-				// GL's run up, so the shader those two share - which is this
-				// one, unchanged - would put the top of every pane at the
-				// bottom. Handing the rasteriser a viewport whose origin is the
-				// pane's BOTTOM edge and whose height is negative inverts y
-				// once, in the one place a backend is allowed to. The GL
-				// backend answers the mirror image of this question by
-				// subtracting from the framebuffer height, and says so there.
-				VkViewport pane = {};
-				pane.x = static_cast<float>(pixels.x);
-				pane.y = static_cast<float>(pixels.y + pixels.height);
-				pane.width = static_cast<float>(pixels.width);
-				pane.height = -static_cast<float>(pixels.height);
-				pane.minDepth = run.viewport.minDepth;
-				pane.maxDepth = run.viewport.maxDepth;
-				vkCmdSetViewport(commands, 0, 1, &pane);
-
-				// The scissor is not optional and is not the viewport: this API
-				// clips to both, and a scissor offset may not be negative. The
-				// clamp is the intersection with the buffer rather than a move,
-				// so a pane that starts off the left edge loses the part that
-				// was never in the picture and keeps the rest.
-				const int scissor_x = std::max(0, pixels.x);
-				const int scissor_y = std::max(0, pixels.y);
-
-				VkRect2D scissor = {};
-				scissor.offset = { scissor_x, scissor_y };
-				scissor.extent.width = static_cast<uint32_t>(std::max(0,
-					pixels.x + pixels.width - scissor_x));
-				scissor.extent.height = static_cast<uint32_t>(std::max(0,
-					pixels.y + pixels.height - scissor_y));
-				vkCmdSetScissor(commands, 0, 1, &scissor);
-
-				const VkDeviceSize transform_offset =
-					static_cast<VkDeviceSize>(transform_slot) *
-					transform_stride;
-
-				float transform[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-				fill_transform(transform, pixels);
-				std::memcpy(transform_bytes + transform_offset, transform,
-					sizeof(transform));
-				transform_slot++;
-
-				// A DESCRIPTOR SET PER RUN, THROWN AWAY WITH THE FRAME. D3D12
-				// keeps one shader-visible heap and gives every texture a slot
-				// in it for the life of the process, which is a fixed capacity
-				// and a re-load rule (its render_resources.cpp carries both).
-				// This is the other answer: the pool is the frame's, resetting
-				// it frees every set at once, and a texture holds no descriptor
-				// state at all. What it costs is one allocate and one update
-				// per run per frame, on a path that already touches the driver
-				// once per run.
-				VkDescriptorSet set = device_resources.allocate_descriptor_set(
-					impl.set_layout);
-
-				VkDescriptorBufferInfo transform_binding = {};
-				transform_binding.buffer = frame.transforms.buffer;
-				transform_binding.offset = transform_offset;
-				transform_binding.range = sizeof(transform);
-
-				VkDescriptorImageInfo texture_binding = {};
-				texture_binding.imageView = run.texture->view();
-				texture_binding.imageLayout =
-					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-				VkDescriptorImageInfo sampler_binding = {};
-				sampler_binding.sampler = impl.sampler(run.filter);
-
-				VkWriteDescriptorSet writes[3] = {};
-				writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writes[0].dstSet = set;
-				writes[0].dstBinding = 0;
-				writes[0].descriptorCount = 1;
-				writes[0].descriptorType =
-					VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				writes[0].pBufferInfo = &transform_binding;
-
-				writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writes[1].dstSet = set;
-				writes[1].dstBinding = 1;
-				writes[1].descriptorCount = 1;
-				writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				writes[1].pImageInfo = &texture_binding;
-
-				writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writes[2].dstSet = set;
-				writes[2].dstBinding = 2;
-				writes[2].descriptorCount = 1;
-				writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-				writes[2].pImageInfo = &sampler_binding;
-
-				vkUpdateDescriptorSets(device_resources.device(), 3, writes, 0,
-					nullptr);
-
-				vkCmdBindDescriptorSets(commands,
-					VK_PIPELINE_BIND_POINT_GRAPHICS, impl.pipeline_layout, 0,
-					1, &set, 0, nullptr);
-
-				const int32_t base_vertex = static_cast<int32_t>(
-					view_vertex_base[static_cast<size_t>(i)] +
-					static_cast<size_t>(run.first_sprite) *
-						VERTICES_PER_SPRITE);
-
-				vkCmdDrawIndexed(commands,
-					static_cast<uint32_t>(run.sprites * INDICES_PER_SPRITE), 1,
-					0, base_vertex, 0);
 			}
+
+		}
+		catch (...)
+		{
+			vkCmdEndRenderPass(commands);
+			throw;
 		}
 
 		vkCmdEndRenderPass(commands);
