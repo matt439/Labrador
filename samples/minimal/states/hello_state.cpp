@@ -116,15 +116,20 @@ void HelloState::update(float dt)
 	const Gamepads& pads = *this->app_->gamepads();
 	const Keyboard& keyboard = *this->app_->keyboard();
 
-	// BOTH DEVICES, AND NO connected() AROUND THE PAD. Wrapping everything
-	// below in `if (pads.connected(0))` is the guard gamepad.h asks callers not
-	// to write, and in this template - the one a new project is copied from -
-	// it would make the sample impossible to quit on a machine with no pad.
-	// Neither half needs it: pressed() answers false unless the slot was
-	// occupied on both frames, and an empty slot reads as a neutral state
-	// rather than a stale one, so a pad that is not there contributes nothing
-	// and costs nothing to ask.
-	if (pads.pressed(0, GamepadButton::b) || keyboard.pressed(Key::escape))
+	// A single-player game accepts every slot: the system need not put its
+	// only pad in slot 0. Empty slots contribute neutral input, so neither
+	// the stick nor the button needs a connected() guard. Several pads share
+	// the greeting; their directions add, with the rules clamping the sum.
+	bool quit_requested = keyboard.pressed(Key::escape);
+	Vector2F stick_direction = Vector2F::ZERO;
+	for (int slot = 0; slot < Gamepads::max_count; ++slot)
+	{
+		quit_requested |= pads.pressed(slot, GamepadButton::b);
+		stick_direction += apply_deadzone(pads.state(slot).left_stick,
+			stick_deadzone);
+	}
+
+	if (quit_requested)
 	{
 		// Ask, rather than quit. The result type is named here and matched
 		// at the pop; the question knows nothing about this state, and the
@@ -149,7 +154,7 @@ void HelloState::update(float dt)
 	// answers as directions and never see a device, which is what lets
 	// tests/motion_tests.cpp run them with none.
 	this->motion_ = step_motion(this->motion_,
-		apply_deadzone(pads.state(0).left_stick, stick_deadzone),
+		stick_direction,
 		keyboard_direction(keyboard), dt);
 
 	// A marker on every finger, at the point's client pixels - which are this

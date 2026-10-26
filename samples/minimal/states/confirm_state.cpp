@@ -40,6 +40,13 @@ void ConfirmState::update(float /*dt*/)
 {
 	const Gamepads& pads = *this->app_->gamepads();
 	const Keyboard& keyboard = *this->app_->keyboard();
+	bool confirm_requested = keyboard.pressed(Key::enter);
+	bool cancel_requested = keyboard.pressed(Key::escape);
+	for (int slot = 0; slot < Gamepads::max_count; ++slot)
+	{
+		confirm_requested |= pads.pressed(slot, GamepadButton::a);
+		cancel_requested |= pads.pressed(slot, GamepadButton::b);
+	}
 
 	// pressed(), not held(): the B - or the Escape - that opened this question
 	// is still down on the frame it opens, and the engine polls every frame
@@ -54,12 +61,11 @@ void ConfirmState::update(float /*dt*/)
 	// Popping from inside update() is the ordinary case, and it is safe: the
 	// stack defers it until this call has returned, so the object whose
 	// update() is running is never destroyed underneath it.
-	if (pads.pressed(0, GamepadButton::a) || keyboard.pressed(Key::enter))
+	if (confirm_requested)
 	{
 		this->context()->pop(true);
 	}
-	else if (pads.pressed(0, GamepadButton::b) ||
-		keyboard.pressed(Key::escape))
+	else if (cancel_requested)
 	{
 		this->context()->pop(false);
 	}

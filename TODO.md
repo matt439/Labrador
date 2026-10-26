@@ -11,7 +11,7 @@ An index of open work, one row per item; each row points to the document that ow
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
 1. **`SM-43` (X1): brief trimmed; full tooling-suite acceptance is blocked by Windows script execution policy.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
-2. **`OCA-44`, `OCA-45`, `OCA-49` (X13): controller slots, any-slot single-player input and disabled menu rows.** Earlier unclosed batches need owner hardware or another repository.
+2. **`OCA-49` (X13): disabled menu rows.** `OCA-45` code and guide are implemented; its physical two-pad acceptance remains blocked. Earlier unclosed batches need owner hardware or another repository.
 3. **`OCA-53` (X14): settings and saves on Windows and in the browser.**
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
@@ -24,8 +24,7 @@ An index of open work, one row per item; each row points to the document that ow
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-44` | OPEN | should | XS | Document Windows controller support and slot assignment in the input guide. |
-| `OCA-45` | OPEN | should | S | Make the minimal sample accept any connected controller slot; verify the physical two-pad slot-0 unplug case. |
+| `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
 | `OCA-49` | OPEN | could | XS | Make the default disabled menu row visibly unavailable. |
 | `OCA-53` | OPEN | should | M | Add a settings/saves guide with per-user Windows JSON and verified IDBFS reload persistence. |
 

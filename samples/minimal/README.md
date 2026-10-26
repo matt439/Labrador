@@ -36,6 +36,13 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-26.** A single-player pad can occupy any slot. `HelloState::update()`
+  reads every slot's B edge and deadzoned left stick, and `ConfirmState` reads
+  every slot's A/B edges, alongside the keyboard. Several pads share control:
+  directions add and the rules clamp the sum. A copy that reads slot 0 alone
+  wants both loops so a remaining controller in a higher slot can move the
+  greeting, open the quit dialog and answer it. This is game policy, not a new
+  engine input service; the input guide quotes the sample's loop.
 - **2026-10-25.** A release folder. `CMakeLists.txt` now has install rules,
   so `cmake --install out/build/x64-release --prefix <folder>` stages what a
   player gets: the program, `DirectXTK.dll` and `xaudio2_9redist.dll`, the

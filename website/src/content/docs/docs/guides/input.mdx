@@ -50,23 +50,38 @@ on by itself after an alt-tab.
 slot and a `GamepadButton`. The full state of a slot, sticks and triggers included, is
 `state(slot)`.
 
+On Windows the pads are read through XInput, so only XInput-compatible controllers appear;
+being a USB or Bluetooth controller alone does not make one compatible. A Windows slot is
+XInput's system user index. A pad keeps that slot while connected, but unplugging and plugging
+it back in can give it another slot. A slot is not a persistent controller identity.
+
+In a browser the pads come from the Gamepad API. The engine assigns each new standard-mapping
+pad the lowest free engine slot, and keeps it there until it disconnects; the browser's own
+gamepad index is not the engine slot. That path has been driven only by fake pads a page script
+supplies in headless Chrome: no physical pad has played through it yet.
+
 **Do not check whether a pad is connected before reading it.** An empty slot reads as a neutral
-pad with nothing pressed, and `pressed` is false unless the slot was occupied at both steps. So
-reading a pad that is not there costs nothing and does nothing, and a game that reads keyboard
-and pad side by side works with either. The minimal sample's quit check:
+pad with nothing pressed, and `pressed` is false unless the slot was occupied at both steps.
+The `connected(slot)`, `just_connected(slot)` and `just_disconnected(slot)` queries are for
+decisions such as showing "Player 2, press Start" or rebinding a player after a disconnect.
+
+### A single-player game accepts every slot
+
+Reading only slot 0 can ignore the player's only controller: Windows can leave it in a higher
+slot after another pad is unplugged. The minimal sample reads all four slots' B edges and left
+sticks, alongside Escape, with no connected guard:
 
 <SourceFile
 	path="samples/minimal/states/hello_state.cpp"
-	from="if (pads.pressed(0, GamepadButton::b) || keyboard.pressed(Key::escape))"
-	to="if (pads.pressed(0, GamepadButton::b) || keyboard.pressed(Key::escape))"
+	from="bool quit_requested = keyboard.pressed(Key::escape);"
+	to="}"
 />
 
-`connected(slot)`, `just_connected(slot)` and `just_disconnected(slot)` are there for when the
-answer matters to the game, such as showing "Player 2, press Start".
-
-On Windows the pads are read through XInput. In a browser they come from the Gamepad API, and
-that path has been driven only by a fake pad a page script supplies in headless Chrome: no
-physical pad has played through it yet.
+Any pad can move the greeting or ask to quit, and any pad can answer the confirmation. Several
+pads' directions add, so opposite pushes cancel; the motion rules clamp the combined direction
+to one unit. That is the sample's policy. A game assigning pads to separate players instead
+keeps a slot for each player and handles its disconnects; see
+[Local multiplayer](/docs/guides/local-multiplayer/).
 
 **Sticks are raw**, from −1 to 1 on each axis, with **+y pointing down** like every other
 coordinate in the engine. Choosing a deadzone is the game's decision, made once with

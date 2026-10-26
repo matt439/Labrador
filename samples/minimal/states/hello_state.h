@@ -13,12 +13,9 @@
 // moves, and B or Escape to quit - which asks first, by putting a second state
 // on top of this one.
 //
-// BOTH DEVICES, BECAUSE THIS IS THE TEMPLATE A NEW PROJECT IS COPIED FROM.
-// It read the pad alone once, wrapped in `if (pads.connected(0))`, and the
-// first thing a stranger with no controller met was a window that could only
-// be closed with Alt+F4. The replacement is the shape worth copying as much as
-// the fix: neither device is asked whether it is there, because neither has to
-// be (update(), and engine/input/gamepad.h on why that guard is a trap).
+// The keyboard and every pad slot contribute to the same greeting. Empty
+// slots read as neutral input, so a keyboard-only player and a player whose
+// pad occupies a higher slot can both move it and open the quit question.
 //
 // A state is the whole of what a game is to the engine (PHILOSOPHY, Structural
 // types) - there is no IGame to implement. The engine calls init() once, then
