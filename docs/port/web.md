@@ -1535,9 +1535,15 @@ The local `wasm-release` build passes all 31 CTest entries in Chrome
 verifies real factory frames, quit/replay, touch gating, context loss/restore,
 truncated-wasm startup failure and the captured configuration's `onError`
 recovery UI. The earlier 2026-10-26 GPU startup denial no longer blocks this
-local check. This closes BDP-04's runtime acceptance; BDP-03 still awaits the
-entry's observed result in PR CI's wasm job. The run does not verify the
-hosted page, Firefox, physical touch or display pacing.
+local check. This closes BDP-04's runtime acceptance.
+
+The [PR #59 wasm job](https://github.com/matt439/Labrador/actions/runs/40419996949/job/121911813526)
+at initial head `0fffdf1` also succeeds. Its page-test output reports
+`LineSweeperBundlePageTests` passed in 6.62 seconds and all eight page entries
+passed. The CI browser is Chrome 156.0.8078.48 using Google's SwiftShader
+Vulkan renderer, distinct from the local RTX 5080 run. This observes the
+required CI entry and closes BDP-03. Neither run verifies the hosted page,
+Firefox, physical touch or display pacing.
 
 **The live page was checked on 2026-10-13**, deployed from the site's `main`
 with `npm run deploy` from a bundle built at `c369e8b`, tagged `v0.1.0`, which
