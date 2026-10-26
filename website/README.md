@@ -151,11 +151,23 @@ The script and the capture tool's README describe the match. Each PNG is one
 presentation update at 1/60 second, including the particles after top-out;
 the encoder verifies that every frame reached a silent 1280×720, 60 fps H.264
 MP4. It uses CRF 20 and YUV 4:2:0, so the video is compressed rather than an
-exact pixel contract. The four PNG stills remain the exact frames.
+exact pixel contract. PNG decoding and filtering use one thread each, and
+H.264 encoding uses two. The four PNG stills remain the exact frames.
+
+A change under `samples/linesweeper/presentation/` or
+`samples/linesweeper/states/`, or a font/text change elsewhere, that changes the
+website's imagery regenerates the MP4 and every affected PNG still in the same
+commit as the source change. Review every changed still.
 
 Watch the whole clip before keeping a regeneration, including the clear and
 top-out effects. Encoding needs FFmpeg only when replacing the checked-in
 MP4: `npm ci`, `npm run check`, `npm run build` and CI still need only Node.
+To prepare a candidate without replacing the checked-in asset, pass an output
+filename as the encoder's second argument, for example
+`node website/scripts/encode-footage.mjs out/website-footage/frames out/website-footage/review.mp4`.
+The same format and frame-count checks apply. Review that whole candidate
+before copying it to `src/assets/footage/linesweeper.mp4`; an encoded candidate
+and its selected stills alone do not establish playback acceptance.
 `LineSweeperFootage` shares the player across Home and Examples, with an
 existing still as its poster, native controls, a download link and a text
 description. It neither autoplays nor preloads the video.
