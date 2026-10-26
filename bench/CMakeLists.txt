@@ -84,4 +84,52 @@ if(WIN32)
         VERBATIM
     )
     add_dependencies(LineSweeperFrameBench linesweeper_frame_bench_content)
+
+    if(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
+        # Optional investigation tools, outside ALL and ctest. Timing links the
+        # ordinary engine; the separate census replaces only renderer.cpp with
+        # an instrumented wrapper and reuses the real frame-benchmark workload.
+        # Its timings are explicitly labelled as instrumented, not acceptance.
+        add_executable(D3D12DescriptorQueryProbe EXCLUDE_FROM_ALL
+            d3d12_descriptor_query_probe.cpp
+            "${CMAKE_CURRENT_SOURCE_DIR}/../tests/render/win32/test_window.cpp"
+        )
+        target_link_libraries(D3D12DescriptorQueryProbe PRIVATE
+            LabradorEngine labrador_settings
+        )
+        add_executable(D3D12DescriptorCountProbe EXCLUDE_FROM_ALL
+            d3d12_descriptor_count_main.cpp
+            d3d12_descriptor_count_renderer.cpp
+            frame_pacer.cpp
+            frame_statistics.cpp
+            linesweeper_frame_result.cpp
+            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/board_view.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/particles.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/top_out_banner.cpp"
+        )
+        target_link_libraries(D3D12DescriptorCountProbe PRIVATE
+            LineSweeperRules LabradorEngine labrador_settings
+        )
+        target_include_directories(D3D12DescriptorCountProbe PRIVATE
+            "${CMAKE_BINARY_DIR}/generated"
+        )
+        target_include_directories(D3D12DescriptorCountProbe SYSTEM PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
+        )
+        add_dependencies(D3D12DescriptorCountProbe
+            LabradorEngine linesweeper_frame_bench_content
+        )
+        file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/renderer.cpp"
+            descriptor_renderer_sha256)
+        file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/device_resources.cpp"
+            descriptor_device_sha256)
+        foreach(descriptor_probe IN ITEMS
+                D3D12DescriptorQueryProbe D3D12DescriptorCountProbe)
+            target_compile_definitions(${descriptor_probe} PRIVATE
+                LABRADOR_DESCRIPTOR_SOURCE_REVISION="${LABRADOR_SOURCE_REVISION}"
+                LABRADOR_DESCRIPTOR_RENDERER_SHA256="${descriptor_renderer_sha256}"
+                LABRADOR_DESCRIPTOR_DEVICE_SHA256="${descriptor_device_sha256}"
+            )
+        endforeach()
+    endif()
 endif()
