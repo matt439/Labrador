@@ -72,6 +72,16 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-26 - Close Vulkan render passes when submission throws
+
+**Behaviour change on failure.** If Vulkan submission throws while recording
+a render pass, including a descriptor-allocation failure, it closes that pass
+before propagating the original exception. Follow-up read-back, presentation
+or abandonment no longer encounters the pass left open by that failure.
+Earlier draws are not rolled back, and the failed submission is not replayed.
+This adds no atomic-frame, genuine out-of-memory or device-loss recovery
+guarantee.
+
 ### 2026-10-26 - Retry unavailable XAudio2 output without restarting voices
 
 **Behaviour change.** XAudio2 retries an unavailable default output once a
