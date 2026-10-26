@@ -5,6 +5,9 @@ namespace labrador
 	class Renderer;
 	class StateContext;
 
+	// A screen or overlay owned by StateContext, normally Application. The
+	// context enters it when a push or transition takes effect: it assigns
+	// context(), then calls init() before the first update() or draw().
 	class State
 	{
 	public:
@@ -34,6 +37,10 @@ namespace labrador
 		// (Renderer::read_back_buffer says how).
 		virtual void draw(Renderer& renderer) const = 0;
 
+		// Called once when this state enters the stack, after context() is set
+		// and before its first update() or draw(). A push or transition issued
+		// inside another state's update() or init() waits until that call
+		// returns. Resuming a covered state calls on_resume(), not init().
 		virtual void init() = 0;
 
 		// Whether this state fills the frame on its own.

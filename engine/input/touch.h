@@ -120,6 +120,10 @@ namespace labrador
 	// The touchscreen as it was this frame and last, and the edges between
 	// them.
 	//
+	// A game reads the borrowed instance from Application::touch().
+	// Construction, feeding and poll() belong to the shell; a game reads the
+	// snapshots rather than advancing them.
+	//
 	// Application owns one, feeds it from the window's messages and polls it
 	// once per frame beside the other devices, before any state updates.
 	class Touch
@@ -160,10 +164,10 @@ namespace labrador
 		// gone - a hidden page gets no frames - and just_unfocused never fires.
 		void set_focused(bool focused);
 
-		// THE FRAME BOUNDARY. What was current becomes previous, and what the
-		// messages have built becomes current: every point still down, every
-		// point that went down and up again unseen, and the ids cancelled
-		// since the last call.
+		// THE FRAME BOUNDARY, called by the shell. What was current becomes
+		// previous, and what the messages have built becomes current: every
+		// point still down, every point that went down and up again unseen,
+		// and the ids cancelled since the last call.
 		void poll();
 
 		const TouchState& state() const;

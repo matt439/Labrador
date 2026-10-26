@@ -132,6 +132,10 @@ namespace labrador
 
 	// The mouse as it was this frame and last, and the edges between them.
 	//
+	// A game reads the borrowed instance from Application::mouse().
+	// Construction, feeding and poll() belong to the shell; a game reads the
+	// snapshots rather than advancing them.
+	//
 	// Application owns one, feeds it from the window's messages and polls it
 	// once per frame before any state updates - the same arrangement, and the
 	// same reason, as Gamepads and Keyboard.
@@ -162,9 +166,9 @@ namespace labrador
 		// there is worse than admitting nothing is known.
 		void set_focused(bool focused);
 
-		// THE FRAME BOUNDARY. What was current becomes previous, what the
-		// messages have been building becomes current, and the wheel
-		// accumulator resets so the next frame counts from nothing.
+		// THE FRAME BOUNDARY, called by the shell. What was current becomes
+		// previous, what the messages have been building becomes current, and
+		// the wheel accumulator resets so the next frame counts from nothing.
 		void poll();
 
 		const MouseState& state() const;
