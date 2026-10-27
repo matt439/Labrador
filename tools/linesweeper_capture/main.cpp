@@ -34,6 +34,7 @@
 #include "engine/render/viewport.h"
 #include "engine/scene/scene.h"
 #include "samples/linesweeper/presentation/board_view.h"
+#include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
 #include "samples/linesweeper/rules/world.h"
@@ -50,6 +51,7 @@
 #include <filesystem>
 #include <format>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -82,8 +84,10 @@ namespace
 	public:
 		// The shell is borrowed and must have loaded the sample's manifest:
 		// every drawable here resolves its handles on construction.
+		// `palette` is the one the board, the sparks and the pause menu's
+		// COLOURS row are drawn in for the whole run.
 		CaptureSession(Application* app, std::filesystem::path output,
-			bool sequence);
+			bool sequence, Palette palette);
 
 		void run(const std::vector<capture::Command>& script);
 
@@ -100,6 +104,10 @@ namespace
 		bool sequence_ = false;
 		std::size_t frames_ = 0;
 
+		// Lent to the board, the field and the pause menu, which is what
+		// PlayState does with its own; declared before all three.
+		Palette palette_ = standard_palette;
+
 		// Declared before the scene, so the World and the TickResult every
 		// drawable borrows outlive them - the same order PlayState's members
 		// are in.
@@ -112,13 +120,14 @@ namespace
 	};
 
 	CaptureSession::CaptureSession(Application* app,
-		std::filesystem::path output, bool sequence) :
+		std::filesystem::path output, bool sequence, Palette palette) :
 		app_(app),
 		output_(std::move(output)),
 		sequence_(sequence),
+		palette_(palette),
 		match_([this]() { this->after_tick(); }),
 		scene_(nullptr, nullptr),
-		pause_(app)
+		pause_(app, &this->palette_)
 	{
 		const Vector2F resolution =
 			this->app_->resolution_manager()->resolution_vec();
@@ -127,12 +136,13 @@ namespace
 		// PlayState::init's objects, in PlayState::init's order, which is the
 		// sample's whole depth system: the board, the sparks over it, the
 		// banner over the sparks, then the hints.
-		std::ignore = this->scene_.add(
-			std::make_unique<BoardView>(&this->match_.world(), resources));
+		std::ignore = this->scene_.add(std::make_unique<BoardView>(
+			&this->match_.world(), resources, &this->palette_));
 
 		this->particles_ = this->scene_.add(std::make_unique<ParticleField>(
 			&this->match_.world(), &this->match_.last_tick(),
-			resources->resolve_texture(block_texture_name)));
+			resources->resolve_texture(block_texture_name), nullptr,
+			Motion::full, &this->palette_));
 
 		std::ignore = this->scene_.add(
 			std::make_unique<TopOutBanner>(&this->match_.world(), resources));
@@ -241,33 +251,107 @@ namespace
 	void print_usage()
 	{
 		std::fprintf(stderr,
-			"usage: LineSweeperCapture <output-directory> [<script>] [--sequence]\n"
+			"usage: LineSweeperCapture <output-directory> [<script>] "
+			"[--sequence] [--palette <name>]\n"
 			"  --sequence also writes every 60 Hz update to frames/000000.png, ...\n"
+			"  --palette draws the pieces in standard (the default), protan,\n"
+			"    deutan or tritan; the match is the same in every one.\n"
 			"  The script defaults to the checked-in one:\n"
 			"  %s\n", LINESWEEPER_CAPTURE_SCRIPT);
+	}
+
+	// The palette a --palette argument names, or none for a name that is not
+	// one of the four.
+	std::optional<Palette> palette_named(std::wstring_view name)
+	{
+		if (name == L"standard")
+		{
+			return Palette::standard;
+		}
+		if (name == L"protan")
+		{
+			return Palette::protan;
+		}
+		if (name == L"deutan")
+		{
+			return Palette::deutan;
+		}
+		if (name == L"tritan")
+		{
+			return Palette::tritan;
+		}
+		return std::nullopt;
+	}
+
+	// The command line: one or two positional arguments, and the two flags
+	// anywhere among them.
+	struct Arguments
+	{
+		std::vector<std::wstring> positional;
+		bool sequence = false;
+		Palette palette = standard_palette;
+	};
+
+	std::optional<Arguments> parse_arguments(int argc, wchar_t* argv[])
+	{
+		Arguments arguments;
+
+		for (int index = 1; index < argc; ++index)
+		{
+			const std::wstring_view argument(argv[index]);
+
+			if (argument == L"--sequence")
+			{
+				arguments.sequence = true;
+			}
+			else if (argument == L"--palette")
+			{
+				if (index + 1 >= argc)
+				{
+					return std::nullopt;
+				}
+
+				const std::optional<Palette> palette =
+					palette_named(argv[++index]);
+				if (!palette.has_value())
+				{
+					return std::nullopt;
+				}
+
+				arguments.palette = *palette;
+			}
+			else
+			{
+				arguments.positional.emplace_back(argument);
+			}
+		}
+
+		if (arguments.positional.empty() || arguments.positional.size() > 2)
+		{
+			return std::nullopt;
+		}
+
+		return arguments;
 	}
 }
 
 int wmain(int argc, wchar_t* argv[])
 {
-	const bool sequence = argc > 1 &&
-		std::wstring_view(argv[argc - 1]) == L"--sequence";
-	if (sequence)
-	{
-		--argc;
-	}
-
-	if (argc < 2 || argc > 3)
+	const std::optional<Arguments> arguments = parse_arguments(argc, argv);
+	if (!arguments.has_value())
 	{
 		print_usage();
 		return 2;
 	}
 
+	const bool sequence = arguments->sequence;
+
 	try
 	{
-		const std::filesystem::path output = argv[1];
-		const std::filesystem::path script_path = argc == 3
-			? std::filesystem::path(argv[2])
+		const std::filesystem::path output = arguments->positional[0];
+		const std::filesystem::path script_path =
+			arguments->positional.size() == 2
+			? std::filesystem::path(arguments->positional[1])
 			: std::filesystem::path(LINESWEEPER_CAPTURE_SCRIPT);
 
 		// The whole script is read and checked before a window exists.
@@ -311,6 +395,7 @@ int wmain(int argc, wchar_t* argv[])
 			device.kind == RenderDeviceKind::hardware
 				? "hardware"
 				: "software");
+		std::printf("Palette: %s\n", palette_label(arguments->palette));
 
 		std::filesystem::create_directories(output);
 		if (sequence)
@@ -318,7 +403,7 @@ int wmain(int argc, wchar_t* argv[])
 			std::filesystem::create_directories(frames);
 		}
 
-		CaptureSession session(&app, output, sequence);
+		CaptureSession session(&app, output, sequence, arguments->palette);
 		session.run(script);
 		return 0;
 	}

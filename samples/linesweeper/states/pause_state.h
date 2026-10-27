@@ -8,6 +8,7 @@
 #include "engine/ui/navigation.h"
 #include "engine/ui/widget.h"
 #include "samples/linesweeper/presentation/arrangement.h"
+#include "samples/linesweeper/presentation/palette.h"
 
 #include <array>
 #include <memory>
@@ -40,8 +41,15 @@
 // deferred.
 //
 // The layout is manual (`PHILOSOPHY.md`, UI: "the game positions widgets
-// explicitly"), and no autolayout crept in: three rows and a title, centred by
-// measuring each string once in `init()`.
+// explicitly"), and no autolayout crept in: four rows and a title, centred by
+// measuring each string in `init()`, and the COLOURS row again each time it
+// changes.
+//
+// THE COLOURS ROW IS THE ONE THAT DOES NOT CLOSE THE MENU. It steps through
+// palette.h's palettes - forward on a confirm or a tap, either way on left and
+// right - and writes the choice straight into the palette PlayState lent it,
+// so the match under the scrim is redrawn in it on the next frame and the
+// player sees what they picked before going back to it.
 namespace linesweeper
 {
 	// What the pause screen decided, carried back to `PlayState` by
@@ -59,7 +67,9 @@ namespace linesweeper
 	class PauseState : public labrador::State
 	{
 	public:
-		explicit PauseState(labrador::Application* app);
+		// `palette` is PlayState's, borrowed to write for as long as this
+		// menu is open: the COLOURS row shows it and changes it.
+		PauseState(labrador::Application* app, Palette* palette);
 
 		void init() override;
 		void update(float dt) override;
@@ -96,32 +106,44 @@ namespace linesweeper
 		// THE GAME'S HALF, NOT THE WIDGETS'. `engine/ui/` does not depend on
 		// `input`, so a touch reaches a menu the way the mouse would: the
 		// page asks the device where the finger is, finds the row, and tells
-		// the focus group. A row answers a band the width of the menu and the
-		// height of the gap between rows rather than its measured text, which
-		// is a target sixteen units tall.
+		// the focus group. A row answers a band the width of the menu, or its
+		// measured width and a margin when that is wider, and the height of
+		// the gap between rows rather than its measured text, which is a
+		// target sixteen units tall.
 		labrador::UiText* tapped_row() const;
 
 		// The same arrangement PlayState draws the match through, worked out
 		// again every tick (arrangement.h).
 		void arrange_screen();
 
+		// Writes `palette` into the borrowed selection and rewrites the
+		// COLOURS row to name it, centred again on its new width.
+		void select_palette(Palette palette);
+
 		// Borrowed. The shell built every service before this existed and
 		// outlives it (PHILOSOPHY, Services and lifetimes).
 		labrador::Application* app_ = nullptr;
+		Palette* palette_ = nullptr;
+
+		// Resolved once in init(), for measuring the COLOURS row each time
+		// it changes.
+		labrador::FontHandle font_;
 
 		// Which way up the screen is, refreshed every tick. Declared before
 		// the scene because the scrim in it borrows the visible rectangle out
 		// of this, and a member is destroyed after every member below it.
 		Arrangement arrangement_;
 
-		// The scrim, the title and the three rows. The scene owns them; the
+		// The scrim, the title and the four rows. The scene owns them; the
 		// focus group below holds loans into it, which is legal because the
 		// scene outlives the group - both die with this object, members last.
 		std::unique_ptr<labrador::Scene> scene_ = nullptr;
 
-		// The three rows, for the tap test. Loans into the scene, like the
-		// focus group's.
-		std::array<labrador::UiText*, 3> rows_ = {};
+		// The four rows, for the tap test, and the one of them that names the
+		// palette, for left and right and for rewriting. Loans into the
+		// scene, like the focus group's.
+		std::array<labrador::UiText*, 4> rows_ = {};
+		labrador::UiText* colours_row_ = nullptr;
 
 		// One slot. Split-screen is why `FocusGroup` has them at all
 		// (focus.h), and a one-player falling-block game is the case that

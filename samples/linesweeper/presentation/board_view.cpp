@@ -61,10 +61,9 @@ namespace linesweeper
 		// copy of one of those is a cross-unit initialisation order the
 		// standard does not fix. Inside a function it would be fine; here it
 		// is a black rectangle on some builds and not others.
-		// The well's own colour is palette.h's, because the shadow's contrast
-		// is measured against it.
+		// The well's own colour and the grid line's are palette.h's, because
+		// the shadow's contrast is measured against both.
 		constexpr Colour frame_colour(60, 66, 78);
-		constexpr Colour grid_colour = faded(Colour(1.0f, 1.0f, 1.0f), 0.05f);
 		constexpr Colour label_colour(150, 158, 172);
 		constexpr Colour value_colour(255, 255, 255);
 
@@ -75,8 +74,9 @@ namespace linesweeper
 	}
 
 	BoardView::BoardView(const World* world,
-		RenderResources* render_resources) :
+		RenderResources* render_resources, const Palette* palette) :
 		world_(world),
+		palette_(palette),
 		block_(render_resources->resolve_texture(block_texture_name)),
 		font_(render_resources->resolve_sprite_font(font_name))
 	{
@@ -207,7 +207,7 @@ namespace linesweeper
 				}
 
 				this->fill(draw_list, cell_rectangle(x, y),
-					kind_colour(kind));
+					kind_colour(kind, *this->palette_));
 			}
 		}
 	}
@@ -230,14 +230,15 @@ namespace linesweeper
 		// cannot disagree, because they are one function.
 		this->draw_shadow(draw_list, shadow(*this->world_));
 
-		this->draw_piece(draw_list, current, kind_colour(current.kind));
+		this->draw_piece(draw_list, current,
+			kind_colour(current.kind, *this->palette_));
 	}
 
 	void BoardView::draw_shadow(DrawList& draw_list, const Piece& piece) const
 	{
 		const std::array<Coord, piece_cell_count> cells = piece_cells(piece);
-		const Colour edge = shadow_edge_colour(piece.kind);
-		const Colour inside = shadow_fill_colour(piece.kind);
+		const Colour edge = shadow_edge_colour(piece.kind, *this->palette_);
+		const Colour inside = shadow_fill_colour(piece.kind, *this->palette_);
 
 		for (int index = 0; index < piece_cell_count; ++index)
 		{
@@ -345,7 +346,7 @@ namespace linesweeper
 						preview_cell_size + cell_inset,
 					preview_cell_size - cell_inset * 2.0f,
 					preview_cell_size - cell_inset * 2.0f),
-				kind_colour(kind));
+				kind_colour(kind, *this->palette_));
 		}
 	}
 

@@ -17,11 +17,11 @@ the layout, the look and what each choice does to your game.
 
 This guide follows LineSweeper's pause menu,
 <RepoLink path="samples/linesweeper/states/pause_state.cpp">`states/pause_state.cpp`</RepoLink>:
-three rows, *Resume*, *Restart* and *Quit*, over the dimmed game.
+four rows, *Resume*, *Restart*, *Colours* and *Quit*, over the dimmed game.
 
 <Capture
 	src={pause}
-	alt="LineSweeper's pause menu: the word PAUSED and three rows, RESUME in white and RESTART and QUIT in grey, over the game darkened behind them."
+	alt="LineSweeper's pause menu: the word PAUSED and four rows, RESUME in white and RESTART, COLOURS: STANDARD and QUIT in grey, over the game darkened behind them."
 	caption="The pause menu as it opens: the focused row is white, the others grey."
 />
 
@@ -48,9 +48,15 @@ text and centres it, as the [Sprites and text guide](/docs/guides/sprites-and-te
 ## The focus group
 
 A `FocusGroup` holds the widgets the cursor can land on, each with the action that runs when it is
-chosen. The pause menu adds its three rows, and each action pops the menu with its answer:
+chosen. The pause menu lists its four rows with the answer each would give; the *Colours* row's is
+never given, because its action does not close the menu:
 
-<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="for (int index = 0; index < 3; ++index)" to="}" />
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="const std::array<Row, 4> rows = { {" to="} };" />
+
+then adds them. Three actions pop the menu with their answer; the *Colours* row's action changes
+the palette, rewrites its own text and leaves the menu open:
+
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="for (std::size_t index = 0; index < rows.size(); ++index)" to="}" />
 
 Popping from inside an action is safe: the action runs inside the menu's `update()`, and the stack
 waits for that to return before it destroys the menu.
@@ -74,6 +80,10 @@ all navigate correctly with no extra code, and by default moving off one edge wr
 `activate(slot)` runs the focused widget's action, and reports whether it ran, or was refused
 because the widget is disabled.
 
+The rows are one column, so the pause menu gives only up and down to `move`: in one column, a
+sideways `move` could only wrap the cursor to a row the player did not point at. Left and right
+instead step the palette while the cursor is on *Colours*, and do nothing elsewhere.
+
 Directions come from [`DirectionRepeat`](/docs/guides/input/#directions-for-menus), which turns a
 held stick or key into one move at once and then repeated moves, the way menus in console games
 behave. The pause menu handles cancel first, so the button that opened the menu always closes it,
@@ -90,7 +100,8 @@ and the play state that opened it decides what each answer means:
 <SourceFile path="samples/linesweeper/states/play_state.cpp" from="void PlayState::open_pause_menu()" to="}" />
 
 Because the menu only reports a choice, the same menu could be opened from anywhere that wants
-those three answers.
+those three answers. The palette is the exception: the play state lends the menu a pointer to its
+selection, and the menu writes it in place.
 
 ## Drawing over the game
 
@@ -126,7 +137,10 @@ Physical controller play still awaits the
 LineSweeper's landing shadow meets 3:1 against the empty well for every piece, checked by a test.
 In a browser whose system asks for reduced motion, LineSweeper throws an eighth of the sparks
 from each line clear, landing and top-out; the desktop build does not ask.
-The selectable palette groups remain planned: **Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and
-**Tritanomaly / Tritanopia**. These names describe the intended palette groups; their colours
-and player validation remain open in the
-<RepoLink path="docs/product/BACKLOG.md" hash="bdp-25">palette plan</RepoLink>.
+The pause menu's *Colours* row selects a piece palette for **Protanomaly / Protanopia**,
+**Deuteranomaly / Deuteranopia** or **Tritanomaly / Tritanopia**, beside the standard one. The
+palettes were chosen by simulation and checked against the landing-shadow contrast and the flash
+criteria; no player with a colour-vision deficiency has validated them yet, and the selection is
+not saved. The sample's
+<RepoLink path="samples/linesweeper/README.md" hash="colour-vision-palettes">README</RepoLink>
+records the colours, the method and their limits.

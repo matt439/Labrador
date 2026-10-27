@@ -176,7 +176,8 @@ export default async function drive(page) {
 		assert(errors.length === 0, `unexpected onError: ${errors.join(' | ')}`);
 	};
 	const quit = async (index) => {
-		for (const [code, vk] of [['Escape', 27], ['ArrowDown', 40], ['ArrowDown', 40], ['Enter', 13]]) {
+		for (const [code, vk] of [['Escape', 27], ['ArrowDown', 40], ['ArrowDown', 40],
+			['ArrowDown', 40], ['Enter', 13]]) {
 			await key(code, vk);
 		}
 		await until(`window.labradorBundle.runs[${index}].quit === true && ${button_visible}`,

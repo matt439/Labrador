@@ -261,3 +261,9 @@ replaces the checked-in `linesweeper.mp4`. `linesweeper-play.png`,
 looked at; `linesweeper-top-out.png`, which has no falling piece, regenerated
 byte for byte. Selected footage frames were inspected, and the owner watched
 the whole clip on 2026-10-27, which closes SM-32.
+
+On 2026-10-28 BDP-25 added the pause menu's COLOURS row. The same D3D11 Release
+capture regenerated `linesweeper-play.png`, `linesweeper-clear.png` and
+`linesweeper-top-out.png` byte for byte; only `linesweeper-pause.png` changed,
+and it was looked at. `footage.txt` never pauses, and all 2,095 of its frames
+matched BDP-21's capture byte for byte, so `linesweeper.mp4` was not re-encoded.

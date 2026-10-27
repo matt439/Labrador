@@ -46,15 +46,24 @@ out\build\x64-release\tools\linesweeper_capture\LineSweeperCapture.exe website\s
 ```
 
 ```
-LineSweeperCapture <output-directory> [<script>] [--sequence]
+LineSweeperCapture <output-directory> [<script>] [--sequence] [--palette <name>]
 ```
 
 The output directory is created if it is missing. The script defaults to
 [website.txt](website.txt) in this folder, read from the source tree rather
 than from a copy. An edit to it takes effect on the next run with no rebuild.
-The tool prints the device it drew on, then one line per capture: the tick,
-the score, lines, level and the number of live particles. It exits non-zero
-with a message naming the script line when anything is not as the script says.
+The tool prints the device it drew on and the palette, then one line per
+capture: the tick, the score, lines, level and the number of live particles. It
+exits non-zero with a message naming the script line when anything is not as
+the script says.
+
+`--palette` draws the pieces, the sparks and the pause menu's COLOURS row in
+`standard` (the default), `protan`, `deutan` or `tritan`
+([palette.h](../../samples/linesweeper/presentation/palette.h)). The match is
+the same in every palette, so the printed tick, score and lines are too. Either
+flag may come anywhere on the command line. Captures in
+the three colour-vision palettes are for review and for the flash check, not for
+the website.
 
 The images are 1280x720, the size both samples ask for. The tool refuses to run
 if the back buffer is any other size.

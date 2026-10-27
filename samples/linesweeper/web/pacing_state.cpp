@@ -30,7 +30,8 @@ namespace linesweeper
 	void PacingState::init()
 	{
 		labrador::RenderResources* const resources = this->app_->render_resources();
-		std::ignore = this->scene_.add(std::make_unique<BoardView>(&this->world_, resources));
+		std::ignore = this->scene_.add(std::make_unique<BoardView>(&this->world_, resources,
+			&standard_palette));
 		this->particles_ = this->scene_.add(std::make_unique<ParticleField>(
 			&this->world_, &this->last_tick_, resources->resolve_texture("white"),
 			&this->app_->step_position()));

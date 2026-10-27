@@ -11,6 +11,8 @@
 //
 // The page's prefers-reduced-motion is asked once, before the match, and a
 // player who has set it gets a calmer particle field (particles.h, Motion).
+// The palette the match is drawn in is logged when the match starts and each
+// time the pause menu closes on a new one (palette.h).
 //
 // The development build alone includes an opt-in pacing observer and full-well
 // fixture, enabled by its pre-js query flag. The packaged module compiles this
@@ -44,11 +46,25 @@ EM_JS(int, linesweeper_prefers_reduced_motion, (), {
 	return reduced ? 1 : 0;
 });
 
+// One console line per palette the match is drawn in, which is what a page
+// test reads to know the pause menu's COLOURS row reached the match.
+EM_JS(void, linesweeper_log_palette, (const char* label), {
+	console.info("LineSweeper: palette " + UTF8ToString(label));
+});
+
 EM_JS(void, linesweeper_tell_page_error, (const char* message), {
 	if (typeof Module.onError === "function") {
 		Module.onError(UTF8ToString(message));
 	}
 });
+
+namespace
+{
+	void report_palette(linesweeper::Palette palette)
+	{
+		linesweeper_log_palette(linesweeper::palette_label(palette));
+	}
+}
 
 int main()
 {
@@ -93,7 +109,8 @@ int main()
 		const linesweeper::Motion motion =
 			linesweeper_prefers_reduced_motion() != 0 ?
 			linesweeper::Motion::reduced : linesweeper::Motion::full;
-		return app.run(std::make_unique<linesweeper::PlayState>(&app, motion));
+		return app.run(std::make_unique<linesweeper::PlayState>(&app, motion,
+			report_palette));
 	}
 	catch (const std::exception& e)
 	{

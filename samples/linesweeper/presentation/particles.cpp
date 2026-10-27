@@ -125,10 +125,11 @@ namespace linesweeper
 
 	ParticleField::ParticleField(const World* world,
 		const TickResult* last_tick, TextureHandle block,
-		const StepPosition* step, Motion motion) :
+		const StepPosition* step, Motion motion, const Palette* palette) :
 		world_(world),
 		last_tick_(last_tick),
 		motion_(motion),
+		palette_(palette),
 		step_(step),
 		previous_(*world),
 		block_(block)
@@ -407,6 +408,10 @@ namespace linesweeper
 		// next update draws the curve's true point.
 		const float lead = this->lead();
 
+		// Once a frame, not once a spark: the selection only changes between
+		// frames (palette.h).
+		const Palette palette = *this->palette_;
+
 		for (int index = 0; index < this->count_; ++index)
 		{
 			const Particle& particle =
@@ -426,7 +431,7 @@ namespace linesweeper
 			// dimmer switch.
 			draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1),
 				RectangleF(position.x - half, position.y - half, side, side),
-				glowing(kind_colour(static_cast<Kind>(particle.kind)),
+				glowing(kind_colour(static_cast<Kind>(particle.kind), palette),
 					particle.life * particle.life * glow_intensity),
 				0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 		}

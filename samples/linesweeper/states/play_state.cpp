@@ -118,9 +118,11 @@ namespace linesweeper
 		};
 	}
 
-	PlayState::PlayState(Application* app, Motion motion) :
+	PlayState::PlayState(Application* app, Motion motion,
+		void (*report_palette)(Palette)) :
 		app_(app),
-		motion_(motion)
+		motion_(motion),
+		report_palette_(report_palette)
 	{
 	}
 
@@ -134,8 +136,8 @@ namespace linesweeper
 
 		// The board reads the World this state owns. It never writes one, and
 		// it could not: presentation/ does not include tick.h.
-		this->board_ = this->scene_->add(
-			std::make_unique<BoardView>(&this->world_, resources));
+		this->board_ = this->scene_->add(std::make_unique<BoardView>(
+			&this->world_, resources, &this->palette_));
 
 		// AFTER THE BOARD, AND THAT IS THE WHOLE DEPTH SYSTEM. Every draw in
 		// this sample is at layer_depth 0, so the order the scene was filled
@@ -153,7 +155,7 @@ namespace linesweeper
 		this->particles_ = this->scene_->add(std::make_unique<ParticleField>(
 			&this->world_, &this->last_tick_,
 			resources->resolve_texture(block_texture_name),
-			&this->app_->step_position(), this->motion_));
+			&this->app_->step_position(), this->motion_, &this->palette_));
 
 		// LAST, AND OVER THE SPARKS. The top-out banner appears on the exact
 		// frame the field throws its largest burst, so the one screen a player
@@ -190,6 +192,12 @@ namespace linesweeper
 
 		this->arrange_screen();
 		this->show_hints();
+
+		this->reported_palette_ = this->palette_;
+		if (this->report_palette_ != nullptr)
+		{
+			this->report_palette_(this->palette_);
+		}
 	}
 
 	void PlayState::show_hints()
@@ -292,9 +300,20 @@ namespace linesweeper
 	void PlayState::open_pause_menu()
 	{
 		this->context()->push<PauseChoice>(
-			std::make_unique<PauseState>(this->app_),
+			std::make_unique<PauseState>(this->app_, &this->palette_),
 			[this](const PauseChoice& choice)
 			{
+				// Before QUIT acts, so a player who changed palette and then
+				// quit is still reported.
+				if (this->palette_ != this->reported_palette_)
+				{
+					this->reported_palette_ = this->palette_;
+					if (this->report_palette_ != nullptr)
+					{
+						this->report_palette_(this->palette_);
+					}
+				}
+
 				switch (choice)
 				{
 				case PauseChoice::restart:

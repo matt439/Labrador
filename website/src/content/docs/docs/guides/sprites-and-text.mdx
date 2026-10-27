@@ -112,9 +112,10 @@ text that came from outside the game, such as a player's name, check it with
 `RenderResources::can_render(font, text)`.
 
 **Centring text means measuring it.** `RenderResources::measure_text(font, text)` returns its
-size. LineSweeper's pause menu centres each row this way, once, when the menu is built:
+size. LineSweeper's pause menu centres each row this way when the menu is built, and the COLOURS
+row again each time it names a different palette:
 
-<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="const auto centred = [&]" to="};" />
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="Vector2F centred(const RenderResources& resources, FontHandle font," to="}" />
 
 The position is rounded down to a whole pixel. Half of an odd width is half a pixel, and text
 there sits with every pixel centre on the edge between two texels of its font. Each graphics
