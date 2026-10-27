@@ -6,7 +6,6 @@
 #include <cmath>
 #include <vector>
 
-
 namespace labrador
 {
 	namespace
@@ -76,12 +75,36 @@ namespace labrador
 		pairs.clear();
 		this->clear_buffers();
 
-		// Every object that could take part, and its bounding box read once.
+		this->collect_candidates(objects);
+		if (this->candidates_.size() < 2)
+		{
+			return;
+		}
+
+		this->choose_cell_size();
+		this->index_cells();
+		this->append_cell_pairs(pairs);
+		this->append_large_pairs(pairs);
+
+		// Ascending, and each pair once.
 		//
-		// Once, and not once per pair: shape()->bounding_box() is a virtual
-		// call that computes, and the all-pairs sweep called it O(n) times per
-		// object. Reading them into a flat vector here is also what makes the
-		// grid build a walk over contiguous memory.
+		// The order is the contract, not a convenience: dispatch re-measures
+		// each pair in list order and a response moves things, so enumerating
+		// the same pairs in a different order is a different resolution. This
+		// is the line that makes the grid's output identical to the sweep's.
+		std::sort(pairs.begin(), pairs.end());
+		pairs.erase(std::unique(pairs.begin(), pairs.end()), pairs.end());
+	}
+
+	// Every object that could take part, and its bounding box read once.
+	//
+	// Once, and not once per pair: shape()->bounding_box() is a virtual call
+	// that computes, and the all-pairs sweep called it O(n) times per object.
+	// Reading them into a flat vector here is also what makes the grid build a
+	// walk over contiguous memory.
+	void BroadPhase::collect_candidates(
+		std::span<CollisionObject* const> objects)
+	{
 		this->candidates_.reserve(objects.size());
 		this->boxes_.reserve(objects.size());
 
@@ -95,28 +118,31 @@ namespace labrador
 			this->candidates_.push_back(static_cast<int>(i));
 			this->boxes_.push_back(object->shape()->bounding_box());
 		}
+	}
 
-		const size_t count = this->candidates_.size();
-		if (count < 2)
-		{
-			return;
-		}
-
-		// The cell edge, from the mean extent of what is actually in the
-		// scene. A grid sized against a constant would be wrong for every
-		// scene except the one it was tuned on.
+	// The cell edge, from the mean extent of what is actually in the scene. A
+	// grid sized against a constant would be wrong for every scene except the
+	// one it was tuned on.
+	void BroadPhase::choose_cell_size()
+	{
 		double extent_total = 0.0;
 		for (const RectangleF& box : this->boxes_)
 		{
 			extent_total += static_cast<double>(box.width) +
 				static_cast<double>(box.height);
 		}
-		const float mean_extent =
-			static_cast<float>(extent_total / (2.0 * static_cast<double>(count)));
+		const float mean_extent = static_cast<float>(extent_total /
+			(2.0 * static_cast<double>(this->boxes_.size())));
 		this->cell_size_ =
 			std::max(min_cell_size, mean_extent * cell_size_factor);
+	}
 
-		// Index each object into the cells its box touches, or set it aside.
+	// Each object into the cells its box touches, or set aside as large, and
+	// then sorted by cell, so each cell is a contiguous run and there is no
+	// map and no per-cell allocation.
+	void BroadPhase::index_cells()
+	{
+		const size_t count = this->candidates_.size();
 		this->entries_.reserve(count * 4);
 		for (size_t c = 0; c < count; c++)
 		{
@@ -147,18 +173,20 @@ namespace labrador
 			}
 		}
 
-		// Sorted by cell, so each cell is a contiguous run and there is no map
-		// and no per-cell allocation.
 		std::sort(this->entries_.begin(), this->entries_.end(),
 			[](const Entry& a, const Entry& b)
 			{
 				if (a.key != b.key) { return a.key < b.key; }
 				return a.index < b.index;
 			});
+	}
 
-		// Within-cell pairs. An object in two cells with another object in
-		// both produces the pair twice; the sort and unique below is what
-		// removes that, rather than a per-pair set lookup.
+	// Within-cell pairs. An object in two cells with another object in both
+	// produces the pair twice; find_pairs' sort and unique is what removes
+	// that, rather than a per-pair set lookup.
+	void BroadPhase::append_cell_pairs(
+		std::vector<std::pair<int, int>>& pairs) const
+	{
 		for (size_t start = 0; start < this->entries_.size();)
 		{
 			size_t end = start + 1;
@@ -193,8 +221,13 @@ namespace labrador
 
 			start = end;
 		}
+	}
 
-		// The objects the grid refused, against everything.
+	// The objects the grid refused, against everything.
+	void BroadPhase::append_large_pairs(
+		std::vector<std::pair<int, int>>& pairs) const
+	{
+		const size_t count = this->candidates_.size();
 		for (int large : this->large_)
 		{
 			for (size_t other = 0; other < count; other++)
@@ -214,14 +247,5 @@ namespace labrador
 				pairs.emplace_back(std::min(a, b), std::max(a, b));
 			}
 		}
-
-		// Ascending, and each pair once.
-		//
-		// The order is the contract, not a convenience: dispatch re-measures
-		// each pair in list order and a response moves things, so enumerating
-		// the same pairs in a different order is a different resolution. This
-		// is the line that makes the grid's output identical to the sweep's.
-		std::sort(pairs.begin(), pairs.end());
-		pairs.erase(std::unique(pairs.begin(), pairs.end()), pairs.end());
 	}
 }

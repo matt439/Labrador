@@ -82,7 +82,14 @@ namespace labrador
 			int index = 0;
 		};
 
+		// find_pairs' steps, in the order it takes them. Each reads what the
+		// one before it left in the buffers below.
 		void clear_buffers();
+		void collect_candidates(std::span<CollisionObject* const> objects);
+		void choose_cell_size();
+		void index_cells();
+		void append_cell_pairs(std::vector<std::pair<int, int>>& pairs) const;
+		void append_large_pairs(std::vector<std::pair<int, int>>& pairs) const;
 
 		// Sorted by key, so every cell's members are a contiguous run.
 		std::vector<Entry> entries_;
