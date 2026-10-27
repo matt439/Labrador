@@ -9,6 +9,9 @@
 // is a static rather than a local, because in a browser run() does not
 // return (Application::run says why).
 //
+// The page's prefers-reduced-motion is asked once, before the match, and a
+// player who has set it gets a calmer particle field (particles.h, Motion).
+//
 // The development build alone includes an opt-in pacing observer and full-well
 // fixture, enabled by its pre-js query flag. The packaged module compiles this
 // entry without that code; default development play also starts PlayState.
@@ -29,6 +32,17 @@
 using namespace labrador;
 
 EM_JS_DEPS(linesweeper_main, "$UTF8ToString");
+
+// The player's system setting, asked once at start: the field is made with
+// it and keeps it for the page's life. The console line is what a page test
+// reads to know which field it got.
+EM_JS(int, linesweeper_prefers_reduced_motion, (), {
+	const reduced = typeof matchMedia === "function" &&
+		matchMedia("(prefers-reduced-motion: reduce)").matches;
+	console.info("LineSweeper: motion " + (reduced ? "reduced" : "full") +
+		" (prefers-reduced-motion)");
+	return reduced ? 1 : 0;
+});
 
 EM_JS(void, linesweeper_tell_page_error, (const char* message), {
 	if (typeof Module.onError === "function") {
@@ -76,7 +90,10 @@ int main()
 				&pacing_snapshot, pacing == linesweeper::PacingMode::top_out_frozen));
 		}
 #endif
-		return app.run(std::make_unique<linesweeper::PlayState>(&app));
+		const linesweeper::Motion motion =
+			linesweeper_prefers_reduced_motion() != 0 ?
+			linesweeper::Motion::reduced : linesweeper::Motion::full;
+		return app.run(std::make_unique<linesweeper::PlayState>(&app, motion));
 	}
 	catch (const std::exception& e)
 	{

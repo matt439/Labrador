@@ -54,12 +54,12 @@ web input; configure refuses browser Direct3D/Vulkan/XAudio2 and native Web Audi
 | `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 20; real GL driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 20; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 19; no graphics/audio API; no RenderPixelTests |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 30 Debug / 31 Release with Chromium, 19 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 31 Debug / 32 Release with Chromium, 19 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderContextLossTests`,
-`WebWindowTests`, all six sample `*PageTests` and `LineSweeperBundlePageTests`
-registered. The bundle test loads `web-dist/linesweeper/index.html`, plays and
+`WebWindowTests`, all six sample `*PageTests`, `LineSweeperReducedMotionPageTests`
+and `LineSweeperBundlePageTests` registered. The bundle test loads `web-dist/linesweeper/index.html`, plays and
 replays, checks the touch gate, restores a context and asserts failure UI.
 It requires a rasterizing backend. The second pixel run hides
 S3TC to test CPU block decoding. The page runner

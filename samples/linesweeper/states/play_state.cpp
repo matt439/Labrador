@@ -118,9 +118,10 @@ namespace linesweeper
 		};
 	}
 
-	PlayState::PlayState(Application* app) : app_(app)
+	PlayState::PlayState(Application* app, Motion motion) :
+		app_(app),
+		motion_(motion)
 	{
-
 	}
 
 	void PlayState::init()
@@ -152,7 +153,7 @@ namespace linesweeper
 		this->particles_ = this->scene_->add(std::make_unique<ParticleField>(
 			&this->world_, &this->last_tick_,
 			resources->resolve_texture(block_texture_name),
-			&this->app_->step_position()));
+			&this->app_->step_position(), this->motion_));
 
 		// LAST, AND OVER THE SPARKS. The top-out banner appears on the exact
 		// frame the field throws its largest burst, so the one screen a player

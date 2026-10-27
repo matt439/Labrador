@@ -163,6 +163,7 @@ if(PROJECT_IS_TOP_LEVEL)
     # sample's folder because minimal's is the template a new project
     # copies, and the runner is this repository's, not the project's.
     if(EMSCRIPTEN AND LABRADOR_TEST_BROWSER)
+        # Arguments after quit_keys are passed to the runner as they are.
         function(labrador_sample_page_test name target quit_keys)
             add_test(NAME ${name}
                 COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
@@ -171,11 +172,20 @@ if(PROJECT_IS_TOP_LEVEL)
                     --page "$<TARGET_FILE:${target}>"
                     --quit-keys "${quit_keys}"
                     --timeout 60
+                    ${ARGN}
             )
         endfunction()
-        # The pause menu: RESUME, RESTART, QUIT.
+        # The pause menu: RESUME, RESTART, QUIT. The page reports which
+        # particle field it made from prefers-reduced-motion, once for each
+        # value emulated, since a CI runner's own setting may be either.
         labrador_sample_page_test(LineSweeperPageTests LineSweeperSample
-            "Escape,ArrowDown,ArrowDown,Enter")
+            "Escape,ArrowDown,ArrowDown,Enter"
+            --emulate-media "prefers-reduced-motion=no-preference"
+            --expect-console "LineSweeper: motion full")
+        labrador_sample_page_test(LineSweeperReducedMotionPageTests
+            LineSweeperSample "Escape,ArrowDown,ArrowDown,Enter"
+            --emulate-media "prefers-reduced-motion=reduce"
+            --expect-console "LineSweeper: motion reduced")
         labrador_sample_page_test(LocalMultiplayerPageTests
             LocalMultiplayerSample "Escape")
         # Escape asks, and Enter answers yes.

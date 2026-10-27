@@ -125,9 +125,10 @@ namespace linesweeper
 
 	ParticleField::ParticleField(const World* world,
 		const TickResult* last_tick, TextureHandle block,
-		const StepPosition* step) :
+		const StepPosition* step, Motion motion) :
 		world_(world),
 		last_tick_(last_tick),
+		motion_(motion),
 		step_(step),
 		previous_(*world),
 		block_(block)
@@ -338,8 +339,9 @@ namespace linesweeper
 		float heat)
 	{
 		const Vector2F centre = cell_centre(x, y);
+		const int sparks = sparks_per_cell(count, this->motion_);
 
-		for (int index = 0; index < count; ++index)
+		for (int index = 0; index < sparks; ++index)
 		{
 			// Somewhere inside the cell, not all from its exact middle: a
 			// burst from one point reads as a firework and a burst from a

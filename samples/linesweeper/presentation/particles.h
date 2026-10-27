@@ -59,6 +59,29 @@ namespace linesweeper
 	// between 10,000 sparks and 9,600 is nothing anybody can see.
 	inline constexpr int particle_capacity = 10000;
 
+	// Whether the player has asked their system for reduced motion. A field
+	// made with Motion::reduced throws the same bursts with fewer sparks: a
+	// count, not a second effect (T3). The browser build asks the page's
+	// prefers-reduced-motion once at start (main_web.cpp); the desktop build
+	// does not ask, and plays Motion::full.
+	enum class Motion
+	{
+		full,
+		reduced,
+	};
+
+	// Each burst's sparks per cell under Motion::reduced are its full count
+	// divided by this, rounded up, so a cell that went still sparks. A
+	// top-out of the whole well is then 200 cells of 6 rather than of 48.
+	inline constexpr int reduced_motion_divisor = 8;
+
+	// What a burst of `full_count` sparks per cell becomes under `motion`.
+	constexpr int sparks_per_cell(int full_count, Motion motion)
+	{
+		return motion == Motion::full ? full_count :
+			(full_count + reduced_motion_divisor - 1) / reduced_motion_divisor;
+	}
+
 	// How hot each burst's sparks are born, between zero and one. A spark
 	// adds its colour times the square of what is left of its heat
 	// (particles.cpp, draw), so these are the field's brightness ceilings,
@@ -217,9 +240,12 @@ namespace linesweeper
 		// sparks from repeating positions on a display faster than the step.
 		// Without one - a test, a capture - every spark is drawn where the
 		// last update left it.
+		//
+		// `motion` scales every burst's count by sparks_per_cell, above.
 		ParticleField(const World* world, const TickResult* last_tick,
 			labrador::TextureHandle block,
-			const labrador::StepPosition* step = nullptr);
+			const labrador::StepPosition* step = nullptr,
+			Motion motion = Motion::full);
 
 		// Reads the difference against last frame's match, emits whatever it
 		// finds, then integrates and compacts. One pass, one thread.
@@ -308,6 +334,7 @@ namespace linesweeper
 
 		const World* world_ = nullptr;
 		const TickResult* last_tick_ = nullptr;
+		Motion motion_ = Motion::full;
 
 		// The shell's step, the step this field was last updated on, and how
 		// long that step was. draw() reads all three and writes none.
