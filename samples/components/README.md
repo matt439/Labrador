@@ -8,6 +8,7 @@ beside it. The gallery shows all of them on one settings screen.
 | --- | --- | --- |
 | Option row | `option_row.h`, `option_row.cpp` | A label and a value picked from a fixed list with left and right: a difficulty, a window mode. Wraps or stops at the ends. |
 | Slider | `slider.h`, `slider.cpp` | A label, a bar and a number for an integer in a range: a volume, a sensitivity. Clamps, never wraps. |
+| Nine-slice | `nine_slice.h`, `nine_slice.cpp` | One small image drawn at any size with its corners kept: a panel, a button background, a speech bubble. Nine `draw_sprite` calls and no engine change. |
 
 ## Taking one
 
@@ -52,6 +53,10 @@ hangs on. Focus colours the label, and the slider's fill as well. The value
 keeps a colour of its own, so the player can tell what is selected from what
 the cursor is on.
 
+The nine-slice is not a row: it has no value and takes no focus, and a page
+adds it to a scene before whatever it frames, because a scene draws in the
+order things were added.
+
 ## The gallery
 
 ```bat
@@ -69,8 +74,9 @@ ctest --preset x64-debug -R "^ComponentsTests$"
 | Escape or gamepad B | Quit |
 
 It draws its bars from the engine's own white texture, `white_texture_name`,
-and its text from the minimal sample's font, which the build copies beside it
-from `../minimal/content/fonts/`. That folder is the one path outside this one
+its panel from `content/textures/panel.dds`, a 16-texel premultiplied frame
+with 6-texel corners, and its text from the minimal sample's font, which the
+build copies beside it from `../minimal/content/fonts/`. That folder is the one path outside this one
 the gallery uses, and the components themselves use none: a copy of the
 gallery puts the `.spritefont` in its own `content/fonts/` and points the
 three lines of `CMakeLists.txt` that reach into it there. Under a `wasm-*`

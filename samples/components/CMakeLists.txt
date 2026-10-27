@@ -4,7 +4,7 @@
 # the tests compile them once. A game that takes one copies its .h and .cpp
 # into its own tree and lists them there; nothing outside this folder links
 # ComponentsExample.
-add_library(ComponentsExample STATIC option_row.cpp slider.cpp)
+add_library(ComponentsExample STATIC nine_slice.cpp option_row.cpp slider.cpp)
 target_link_libraries(ComponentsExample PUBLIC LabradorEngine labrador_settings)
 
 if(EMSCRIPTEN)
@@ -16,6 +16,7 @@ if(EMSCRIPTEN)
     set_target_properties(ComponentsGallery PROPERTIES SUFFIX ".html")
     target_link_options(ComponentsGallery PRIVATE
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json@/manifest.json"
+        "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/textures@/textures"
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts@/fonts"
         "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         -sENVIRONMENT=web
@@ -23,6 +24,7 @@ if(EMSCRIPTEN)
     set_property(TARGET ComponentsGallery APPEND PROPERTY LINK_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/panel.dds"
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
     )
 elseif(WIN32)
@@ -32,11 +34,15 @@ elseif(WIN32)
     target_link_libraries(ComponentsGallery PRIVATE ComponentsExample labrador_settings)
 
     # Reuse the minimal sample's font. The white texel the bars are drawn from
-    # is the engine's own (white_texture_name).
+    # is the engine's own (white_texture_name); the panel's frame is this
+    # sample's one texture.
     add_custom_target(components_content ALL
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
             "$<TARGET_FILE_DIR:ComponentsGallery>/manifest.json"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/content/textures"
+            "$<TARGET_FILE_DIR:ComponentsGallery>/textures"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts"
             "$<TARGET_FILE_DIR:ComponentsGallery>/fonts"
@@ -49,6 +55,7 @@ endif()
 # disk: test_content.h builds a font from glyphs in memory.
 find_package(doctest CONFIG REQUIRED)
 add_executable(ComponentsTests
+    nine_slice_tests.cpp
     option_row_tests.cpp
     slider_tests.cpp
     test_main.cpp
