@@ -166,6 +166,12 @@ Three things worth knowing:
   (ARCHITECTURE, The build). Do not define your own copy — CMake will fail on
   the duplicate target name, and the fix is not a guard: two copies across two
   repositories is precisely the second place that target exists to prevent.
+- **JSON is read for you; writing it is yours.** `engine/assets/json.h`'s
+  `read_json_file` and `parse_json` read a file or string into checked
+  `JsonValue`s. rapidjson, the parser behind them, is `PRIVATE` to
+  `LabradorEngine` and no engine header names it, so it is not on your include
+  path. A game that writes JSON, a save file say, brings its own writer from
+  vcpkg or vendored.
 - **You need your own include root.** Includes are written from the repository
   root (CONVENTIONS), so your own `#include "yourgame/thing.h"` needs the
   directory above `yourgame/` on the include path. Labrador publishes its root,
