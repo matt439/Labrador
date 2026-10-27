@@ -9,8 +9,6 @@
 
 namespace labrador
 {
-	struct RectangleI;
-
 	struct RectangleF : public Shape
 	{
 		float x = 0.0f;
@@ -49,7 +47,6 @@ namespace labrador
 		Segment left_edge() const;
 		Segment right_edge() const;
 		std::array<Segment, 4> edges() const;
-		RectangleI rectangle_i() const;
 
 		bool operator==(const RectangleF& other) const;
 		bool operator!=(const RectangleF& other) const;
@@ -73,16 +70,8 @@ namespace labrador
 		void set_position(float x, float y);
 		void set_position_at_center(const Vector2F& position);
 		void set_position_at_center(float x, float y);
-		void set_position_x(float x);
-		void set_position_x_from_right(float x);
-		void set_position_y(float y);
-		void set_position_y_from_bottom(float y);
 		void set_position_from_top_right(const Vector2F& position);
 		void set_position_from_top_right(float x, float y);
-		void set_position_from_bottom_left(const Vector2F& position);
-		void set_position_from_bottom_left(float x, float y);
-		void set_position_from_bottom_right(const Vector2F& position);
-		void set_position_from_bottom_right(float x, float y);
 		void set_size(const Vector2F& size);
 		void set_size(float width, float height);
 		void set_width(float width);
@@ -101,11 +90,6 @@ namespace labrador
 		// broad-phase candidate walks. The predicates downstream are the ones
 		// written to survive a NaN (see test_AABB_AABB); this stays cheap.
 		static RectangleF bounding_box_of(std::span<const Point2F> points);
-
-		static RectangleF from_top_left_bottom_right(const Vector2F& top_left,
-			const Vector2F& bottom_right);
-		static RectangleF from_top_left_bottom_right(float top, float left,
-			float bottom, float right);
 
 		static const RectangleF zero;
 	};

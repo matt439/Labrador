@@ -185,17 +185,6 @@ namespace labrador
 			edge_opposite_vertex(right_angle_vertex));
 	}
 
-	//bool TriangleRightAxisAligned::is_right_triangle(const Triangle& tri) const
-	//{
-	//	int hypotenuse = this->find_hypotenuse(tri);
-	//	if (hypotenuse == -1)
-	//	{
-	//		return false;
-	//	}
-
-	//	return true;
-	//}
-
 	int TriangleRightAxisAligned::find_hypotenuse(const Triangle& tri) const
 	{
 		// find the hypotenuse

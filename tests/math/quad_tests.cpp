@@ -32,6 +32,27 @@ TEST_SUITE("Quad")
 		CHECK(q.point_1() == Point2F(20.0f, 0.0f));
 		CHECK(quad_point_intersect(q, Point2F(5.0f, 5.0f)));
 	}
+	TEST_CASE("every Quad setter refuses a dart and accepts a convex move")
+	{
+		// The centre of the square lies on both diagonals, so moving any one
+		// corner there leaves a quad that is not strictly convex.
+		const Quad square(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+			Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f));
+		const Point2F centre(5.0f, 5.0f);
+
+		Quad q = square;
+		CHECK_THROWS_AS(q.set_point_0(centre), std::invalid_argument);
+		CHECK_THROWS_AS(q.set_point_2(centre), std::invalid_argument);
+		CHECK_THROWS_AS(q.set_point_3(centre), std::invalid_argument);
+		CHECK(q == square);
+
+		q.set_point_0(Point2F(-10.0f, 0.0f));
+		CHECK(q.point_0() == Point2F(-10.0f, 0.0f));
+		q.set_point_2(Point2F(20.0f, 10.0f));
+		CHECK(q.point_2() == Point2F(20.0f, 10.0f));
+		q.set_point_3(Point2F(0.0f, 20.0f));
+		CHECK(q.point_3() == Point2F(0.0f, 20.0f));
+	}
 	TEST_CASE("a Quad must be convex, not merely non-self-intersecting")
 	{
 		// A dart: the square with one corner pushed back through the

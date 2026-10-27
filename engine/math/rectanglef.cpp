@@ -1,6 +1,5 @@
 #include "engine/math/rectanglef.h"
 
-#include "engine/math/rectanglei.h"
 #include "engine/math/ericson_math.h"
 
 #include <algorithm>
@@ -105,13 +104,6 @@ namespace labrador
 			this->right_edge()
 		};
 	}
-	RectangleI RectangleF::rectangle_i() const
-	{
-		return RectangleI(static_cast<int>(this->x),
-			static_cast<int>(this->y),
-			static_cast<int>(this->width),
-			static_cast<int>(this->height));
-	}
 	bool RectangleF::operator==(const RectangleF& other) const
 	{
 		return this->x == other.x &&
@@ -123,13 +115,6 @@ namespace labrador
 	{
 		return !(*this == other);
 	}
-	//bool RectangleF::contains(const Vector2F& point) const
-	//{
-	//	return point.x >= this->x &&
-	//		point.x <= this->x + this->width &&
-	//		point.y >= this->y &&
-	//		point.y <= this->y + this->height;
-	//}
 	bool RectangleF::contains(const RectangleF& other) const
 	{
 		return other.x >= this->x &&
@@ -199,22 +184,6 @@ namespace labrador
 		this->x = new_x - this->width / 2.0f;
 		this->y = new_y - this->height / 2.0f;
 	}
-	void RectangleF::set_position_x(float new_x)
-	{
-		this->x = new_x;
-	}
-	void RectangleF::set_position_x_from_right(float new_x)
-	{
-		this->x = new_x - this->width;
-	}
-	void RectangleF::set_position_y(float new_y)
-	{
-		this->y = new_y;
-	}
-	void RectangleF::set_position_y_from_bottom(float new_y)
-	{
-		this->y = new_y - this->height;
-	}
 	void RectangleF::set_position_from_top_right(const Vector2F& position)
 	{
 		this->x = position.x - this->width;
@@ -224,26 +193,6 @@ namespace labrador
 	{
 		this->x = new_x - this->width;
 		this->y = new_y;
-	}
-	void RectangleF::set_position_from_bottom_left(const Vector2F& position)
-	{
-		this->x = position.x;
-		this->y = position.y - this->height;
-	}
-	void RectangleF::set_position_from_bottom_left(float new_x, float new_y)
-	{
-		this->x = new_x;
-		this->y = new_y - this->height;
-	}
-	void RectangleF::set_position_from_bottom_right(const Vector2F& position)
-	{
-		this->x = position.x - this->width;
-		this->y = position.y - this->height;
-	}
-	void RectangleF::set_position_from_bottom_right(float new_x, float new_y)
-	{
-		this->x = new_x - this->width;
-		this->y = new_y - this->height;
 	}
 	void RectangleF::set_size(const Vector2F& size)
 	{
@@ -292,18 +241,6 @@ namespace labrador
 		float y1 = std::min(a.y, b.y);
 		float y2 = std::max(a.y + a.height, b.y + b.height);
 		return RectangleF(x1, y1, x2 - x1, y2 - y1);
-	}
-	RectangleF RectangleF::from_top_left_bottom_right(const Vector2F& top_left,
-		const Vector2F& bottom_right)
-	{
-		return RectangleF(top_left.x, top_left.y,
-			bottom_right.x - top_left.x,
-			bottom_right.y - top_left.y);
-	}
-	RectangleF RectangleF::from_top_left_bottom_right(float top, float left,
-		float bottom, float right)
-	{
-		return RectangleF(left, top, right - left, bottom - top);
 	}
 	constinit const RectangleF RectangleF::zero = { 0.0f, 0.0f, 0.0f, 0.0f };
 

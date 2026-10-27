@@ -63,24 +63,7 @@ namespace labrador
 		// channels.
 		void set_from_hex(const std::string& hex);
 
-		// Scales each channel's distance from the colour's luminance: 0 is
-		// fully grey, 1 leaves it alone, above 1 saturates. One function with a
-		// documented range: desaturating is an amount below 1.
-		void saturate(float amount);
-
 		void brighten(float amount);
-		void darken(float amount);
-
-		void invert();
-
-		void make_opaque();
-
-		// Zeroes alpha and leaves the colour channels alone - which, as a
-		// tint, is not invisible. Under the engine's premultiplied blend
-		// (engine/render/SEAM.md#5) a tint's colour channels are added over
-		// what is beneath whatever its alpha, so the tint that contributes
-		// nothing is Colour(0, 0, 0, 0).
-		void make_transparent();
 
 		void clamp_colours();
 

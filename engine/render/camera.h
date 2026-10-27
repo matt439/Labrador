@@ -54,12 +54,6 @@ namespace labrador
 			const Camera& camera,
 			RectangleF& view_rectangle);
 
-		// Linearly interpolates translation and scale from `first` to `last`.
-		// `amount` is not clamped: 0 selects first, 1 last, and values outside
-		// that interval extrapolate.
-		static Camera calculate_intermediate_camera(
-			const Camera& first, const Camera& last, float amount);
-
 		// What `viewport` actually shows of the world under this camera - the
 		// inverse of calculate_view_rectangle for the whole pane.
 		//

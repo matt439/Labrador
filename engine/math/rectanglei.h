@@ -47,18 +47,8 @@ namespace labrador
 		void offset(int horizontal_amount, int vertical_amount);
 		void offset(const Vector2I& amount);
 
-		void set_left(int left);
-		void set_top(int top);
-		void set_right(int right);
-		void set_bottom(int bottom);
-
 		void set_position(const Vector2I& position);
 		void set_size(const Vector2I& size);
-
-		void set_top_left(const Vector2I& top_left);
-		void set_bottom_right(const Vector2I& bottom_right);
-		void set_top_left_and_bottom_right(const Vector2I& top_left,
-			const Vector2I& bottom_right);
 
 		static const RectangleI zero;
 	};

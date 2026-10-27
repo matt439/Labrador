@@ -90,10 +90,6 @@ namespace labrador
 			}
 		}
 	}
-	void UiContainer::remove_all_children()
-	{
-		this->children_.clear();
-	}
 	size_t UiContainer::child_count() const
 	{
 		return this->children_.size();
@@ -205,11 +201,6 @@ namespace labrador
 		return sprite_world_bounds(this->rectangle_, frame.source_rectangle(),
 			this->draw_rotation(), frame.origin() + this->origin(), units_per_pixel);
 	}
-	void UiTexture::set_texture(const std::string& sheet_name,
-		const std::string& frame_name)
-	{
-		this->set_frame(sheet_name, frame_name);
-	}
 	void UiTexture::set_sprite_frame(const std::string& frame_name)
 	{
 		this->set_frame(frame_name);
@@ -249,10 +240,6 @@ namespace labrador
 	void UiTexture::set_size(const Vector2F& size)
 	{
 		this->rectangle_.set_size(size);
-	}
-	void UiTexture::set_position_from_top_right_origin(const Vector2F& position)
-	{
-		this->rectangle_.set_position_from_top_right(position);
 	}
 
 #pragma endregion UiTexture

@@ -39,7 +39,6 @@ namespace labrador
 		Button& operator=(Button&&) noexcept = default;
 
 		UiWidget* visual() const;
-		bool has_action() const;
 
 		// Runs the action if there is one. Returns whether anything ran, so a
 		// caller can tell "nothing is bound here" from "something happened"
