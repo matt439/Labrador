@@ -91,7 +91,10 @@ namespace
 		Event()
 		{
 			this->handle_ = CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-			if (this->handle_ == nullptr) { ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError())); }
+			if (this->handle_ == nullptr)
+			{
+				ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
+			}
 		}
 		~Event() { CloseHandle(this->handle_); }
 		Event(const Event&) = delete;
@@ -176,7 +179,8 @@ namespace
 		void checkpoint()
 		{
 			std::lock_guard<std::mutex> lock(this->mutex_);
-			if (this->release_ == Release::held && std::chrono::steady_clock::now() >= this->deadline_)
+			if (this->release_ == Release::held &&
+				std::chrono::steady_clock::now() >= this->deadline_)
 			{
 				this->release_ = Release::deadline;
 				this->condition_.notify_all();
@@ -195,13 +199,19 @@ namespace
 			ThrowIfFailed(this->queue_->Signal(this->witnesses_[index].Get(), 1));
 		}
 
-		UINT64 witness(std::size_t index) const { return this->witnesses_[index]->GetCompletedValue(); }
+		UINT64 witness(std::size_t index) const
+		{
+			return this->witnesses_[index]->GetCompletedValue();
+		}
 		bool observe(HANDLE event, DWORD milliseconds, BOOL alertable, WaitRecord& record) noexcept;
 
 		void release_and_wait(Release reason) noexcept
 		{
 			std::unique_lock<std::mutex> lock(this->mutex_);
-			if (this->release_ == Release::held) { this->release_ = reason; }
+			if (this->release_ == Release::held)
+			{
+				this->release_ = reason;
+			}
 			this->condition_.notify_all();
 			if (!this->condition_.wait_for(lock, std::chrono::seconds(5),
 				[this]() { return this->released_; }))
@@ -212,20 +222,31 @@ namespace
 
 		void finish() noexcept
 		{
-			if (this->finished_ || !this->armed_) { return; }
+			if (this->finished_ || !this->armed_)
+			{
+				return;
+			}
 			this->release_and_wait(Release::cleanup);
 			this->worker_.join();
 			HRESULT result = this->queue_->Signal(this->tail_.Get(), 1);
-			if (FAILED(result)) { fail_fast("queue-tail signal failed", static_cast<unsigned long>(result)); }
+			if (FAILED(result))
+			{
+				fail_fast("queue-tail signal failed", static_cast<unsigned long>(result));
+			}
 			result = this->tail_->SetEventOnCompletion(1, this->tail_done_.handle());
-			if (FAILED(result)) { fail_fast("queue-tail event failed", static_cast<unsigned long>(result)); }
-			const DWORD waited = ::WaitForSingleObjectEx(this->tail_done_.handle(), completion_timeout_ms, FALSE);
+			if (FAILED(result))
+			{
+				fail_fast("queue-tail event failed", static_cast<unsigned long>(result));
+			}
+			const DWORD waited = ::WaitForSingleObjectEx(this->tail_done_.handle(),
+				completion_timeout_ms, FALSE);
 			if (waited != WAIT_OBJECT_0 || this->tail_->GetCompletedValue() != 1)
 			{
 				fail_fast("queue-tail completion failed", waited);
 			}
 			std::printf("gate_release=%s CPU_signals=%u tail=1 witnesses=%llu,%llu\n",
-				release_name(this->release_), this->signal_calls_, this->witness(0), this->witness(1));
+				release_name(this->release_), this->signal_calls_, this->witness(0),
+				this->witness(1));
 			this->finished_ = true;
 		}
 
@@ -268,7 +289,8 @@ namespace
 		GateScope& operator=(const GateScope&) = delete;
 	};
 
-	bool Gate::observe(HANDLE event, DWORD milliseconds, BOOL alertable, WaitRecord& record) noexcept
+	bool Gate::observe(HANDLE event, DWORD milliseconds, BOOL alertable,
+		WaitRecord& record) noexcept
 	{
 		std::unique_lock<std::mutex> lock(this->mutex_);
 		// Claim the release under the SAME mutex as the rescue. Checking a
@@ -281,7 +303,8 @@ namespace
 		}
 		record.requested_timeout = milliseconds;
 		record.alertable = alertable;
-		if (milliseconds != INFINITE || alertable != FALSE || this->gate_->GetCompletedValue() != 0 ||
+		if (milliseconds != INFINITE || alertable != FALSE ||
+			this->gate_->GetCompletedValue() != 0 ||
 			this->witness(0) != 0 || this->witness(1) != 0)
 		{
 			lock.unlock();
@@ -355,15 +378,22 @@ namespace
 		{
 			renderer->begin_frame();
 			const int slot = device.frame_index();
-			if (slot < 0 || slot >= 2) { throw std::runtime_error("invalid warm frame index"); }
+			if (slot < 0 || slot >= 2)
+			{
+				throw std::runtime_error("invalid warm frame index");
+			}
 			warm_mask |= 1u << static_cast<unsigned>(slot);
 			draw(*renderer, texture);
 			renderer->end_frame();
 		}
 		device.wait_for_gpu();
-		std::printf("ordinary warm presents=6 slot_mask=0x%x, drained before queue gate\n", warm_mask);
+		std::printf("ordinary warm presents=6 slot_mask=0x%x, drained before queue gate\n",
+			warm_mask);
 		std::fflush(stdout);
-		if (warm_mask != 3) { throw Unverified("warm hidden presents did not visit both slots"); }
+		if (warm_mask != 3)
+		{
+			throw Unverified("warm hidden presents did not visit both slots");
+		}
 
 		// Declared AFTER engine owners: every exit opens the gate and retires
 		// its queue tail before renderer/resources can be destroyed.
@@ -387,7 +417,8 @@ namespace
 				gate.mark(frame);
 				draw(*renderer, texture);
 				gate.checkpoint();
-				std::printf("held-gate frame=%zu submitted_slot=%d entering Present\n", frame, slots[frame]);
+				std::printf("held-gate frame=%zu submitted_slot=%d entering Present\n",
+					frame, slots[frame]);
 				std::fflush(stdout);
 				renderer->end_frame();
 				gate.checkpoint();
@@ -396,10 +427,14 @@ namespace
 				std::fflush(stdout);
 				if (frame == 0 && device.frame_index() == slots[0])
 				{
-					throw Unverified("first hidden Present retained its slot; second frame not attempted");
+					throw Unverified("first hidden Present retained its slot; second frame not "
+						"attempted");
 				}
 			}
-			if (slots[0] == slots[1]) { throw Unverified("gated frames did not use distinct slots"); }
+			if (slots[0] == slots[1])
+			{
+				throw Unverified("gated frames did not use distinct slots");
+			}
 			reused_slot = device.frame_index();
 			if (reused_slot != slots[0] && reused_slot != slots[1])
 			{
@@ -413,7 +448,10 @@ namespace
 			active_wait = nullptr;
 		}
 		gate.finish();
-		if (!record.observed) { throw Unverified("two-slot reuse wait was not observed before rescue"); }
+		if (!record.observed)
+		{
+			throw Unverified("two-slot reuse wait was not observed before rescue");
+		}
 		if (record.completion != WAIT_OBJECT_0 || gate.witness(0) != 1 || gate.witness(1) != 1)
 		{
 			throw std::runtime_error("two-slot completion or queue retirement differs");
@@ -422,7 +460,8 @@ namespace
 			"alertable=%d initial_event=%lu completion=%lu\n", slots[0], slots[1], reused_slot,
 			record.requested_timeout, record.alertable, record.event_before, record.completion);
 		std::fputs("Instrumented wait with two queued, unretired presented slots; no physical "
-			"display overlap, simultaneous GPU execution, saturation or final-device claim.\n", stdout);
+			"display overlap, simultaneous GPU execution, saturation or final-device claim.\n",
+			stdout);
 		return EXIT_SUCCESS;
 	}
 }
@@ -449,10 +488,16 @@ namespace labrador::d3d12_wait_test
 			std::min(milliseconds, completion_timeout_ms), alertable);
 		if (result != WAIT_OBJECT_0)
 		{
-			if (active_gate != nullptr) { active_gate->release_and_wait(Release::cleanup); }
+			if (active_gate != nullptr)
+			{
+				active_gate->release_and_wait(Release::cleanup);
+			}
 			fail_fast("bounded production wait failed", result);
 		}
-		if (record != nullptr) { record->completion = result; }
+		if (record != nullptr)
+		{
+			record->completion = result;
+		}
 		return result;
 	}
 }

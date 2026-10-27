@@ -48,7 +48,10 @@ namespace
 		{
 			RECT client = {};
 			if (!GetClientRect(static_cast<HWND>(this->handle()), &client))
-				throw std::runtime_error("The descriptor census could not query its hidden client area");
+			{
+				throw std::runtime_error("The descriptor census could not query its hidden client "
+					"area");
+			}
 			// The normal benchmark receives WM_SIZE when shown. Counting uses
 			// a hidden window and supplies its actual queried size instead.
 			notify->on_window_size_changed(static_cast<int>(client.right - client.left),
@@ -61,22 +64,36 @@ namespace descriptor_query_counts
 {
 	void gpu_query(const char* function) noexcept
 	{
-		if (!active.load(std::memory_order_relaxed)) return;
+		if (!active.load(std::memory_order_relaxed))
+		{
+			return;
+		}
 		if (std::strcmp(function, "sampler") == 0)
+		{
 			sampler_queries.fetch_add(1, std::memory_order_relaxed);
+		}
 		else if (std::strcmp(function, "texture_slot_gpu") == 0)
+		{
 			texture_queries.fetch_add(1, std::memory_order_relaxed);
+		}
 		else
+		{
 			unexpected_queries.fetch_add(1, std::memory_order_relaxed);
+		}
 	}
 	void back_buffer_query() noexcept
 	{
 		if (active.load(std::memory_order_relaxed))
+		{
 			target_queries.fetch_add(1, std::memory_order_relaxed);
+		}
 	}
 	void begin_frame() noexcept
 	{
-		if (active.load(std::memory_order_relaxed)) incomplete = true;
+		if (active.load(std::memory_order_relaxed))
+		{
+			incomplete = true;
+		}
 		sampler_queries.store(0, std::memory_order_relaxed);
 		texture_queries.store(0, std::memory_order_relaxed);
 		target_queries.store(0, std::memory_order_relaxed);
@@ -95,7 +112,9 @@ namespace descriptor_query_counts
 			target_queries.load(std::memory_order_relaxed),
 			unexpected_queries.load(std::memory_order_relaxed) };
 		if ((rows_used & (rows_used - 1)) == 0)
+		{
 			std::fprintf(stderr, "Completed %zu census frames.\n", rows_used);
+		}
 	}
 }
 
@@ -129,11 +148,18 @@ int wmain(int argc, wchar_t* argv[])
 			linesweeper_frame_bench::parse_options(argc, argv);
 		rows.resize(static_cast<std::size_t>(options.warmup) +
 			static_cast<std::size_t>(options.sample));
-		std::puts("COUNTS ONLY: instrumented timings are intrusive; no pacing, low-tier or p99 acceptance.");
+		std::puts("COUNTS ONLY: instrumented timings are intrusive; no pacing, low-tier or p99 "
+			"acceptance.");
 		const int result = descriptor_count_workload_main(argc, argv);
-		if (result != 0) return result;
+		if (result != 0)
+		{
+			return result;
+		}
 		if (incomplete || active.load(std::memory_order_relaxed) || rows_used != rows.size())
-			throw std::runtime_error("Descriptor census did not capture exactly the requested frames");
+		{
+			throw std::runtime_error("Descriptor census did not capture exactly the requested "
+				"frames");
+		}
 		std::string csv = "# instrumented getter invocations, not production timings\n"
 			"# source_revision=" LABRADOR_DESCRIPTOR_SOURCE_REVISION "\n"
 			"# renderer_sha256=" LABRADOR_DESCRIPTOR_RENDERER_SHA256 "\n"
@@ -143,9 +169,14 @@ int wmain(int argc, wchar_t* argv[])
 		{
 			const QueryCounts& row = rows[index];
 			if (row.unexpected != 0)
+			{
 				throw std::runtime_error("Unexpected GPU heap query call shape");
+			}
 			if (row.sampler == 0 || row.sampler != row.texture || row.target == 0)
-				throw std::runtime_error("The workload did not observe paired GPU getters and an RTV getter");
+			{
+				throw std::runtime_error("The workload did not observe paired GPU "
+					"getters and an RTV getter");
+			}
 			csv += std::to_string(index) + "," +
 				(index >= static_cast<std::size_t>(options.warmup) ? "1," : "0,") +
 				std::to_string(row.sampler) + "," + std::to_string(row.texture) + "," +

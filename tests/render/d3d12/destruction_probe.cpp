@@ -188,7 +188,8 @@ namespace
 		{
 			if (std::chrono::steady_clock::now() >= this->deadline_)
 			{
-				std::fputs("D3D12 destruction probe: ten-second completion deadline expired\n", stderr);
+				std::fputs("D3D12 destruction probe: ten-second completion deadline expired\n",
+					stderr);
 				std::fflush(stderr);
 				std::_Exit(EXIT_FAILURE);
 			}
@@ -304,9 +305,11 @@ namespace
 		}
 		capture->phase.store(Phase::resize, std::memory_order_release);
 		require(window.resize(resized_size, resized_size), "real hidden-window resize failed");
-		require(renderer->window_size_changed(resized_size, resized_size), "renderer resize failed");
+		require(renderer->window_size_changed(resized_size, resized_size),
+			"renderer resize failed");
 		require(renderer->back_buffer_size() == Vector2F(
-			static_cast<float>(resized_size), static_cast<float>(resized_size)), "resize dimensions differ");
+			static_cast<float>(resized_size), static_cast<float>(resized_size)),
+			"resize dimensions differ");
 		capture->phase.store(Phase::frames, std::memory_order_release);
 		for (int frame = 0; frame < 3; ++frame)
 		{
@@ -322,7 +325,8 @@ namespace
 		{
 			ComPtr<ID3D12InfoQueue1> late_messages;
 			require_hresult(renderer->impl()->device_resources.device()->QueryInterface(
-				IID_PPV_ARGS(late_messages.GetAddressOf())), "late QueryInterface(ID3D12InfoQueue1)");
+				IID_PPV_ARGS(late_messages.GetAddressOf())),
+				"late QueryInterface(ID3D12InfoQueue1)");
 			// Use the original registration after a diagnostic-interface-free
 			// workload interval. This temporary interface ends before teardown.
 			require_hresult(late_messages->AddApplicationMessage(D3D12_MESSAGE_SEVERITY_INFO,
@@ -348,7 +352,8 @@ namespace
 			count = capture.started.load(std::memory_order_acquire);
 			settled = capture.destructions.load(std::memory_order_acquire) == 1 &&
 				capture.completed.load(std::memory_order_acquire) == count;
-			for (std::size_t index = 0; settled && index < std::min(count, message_capacity); ++index)
+			for (std::size_t index = 0; settled && index < std::min(count, message_capacity);
+				++index)
 			{
 				settled = capture.messages[index].ready.load(std::memory_order_acquire);
 			}
@@ -365,7 +370,8 @@ namespace
 			{
 				std::printf("message[%zu] phase=%s category=%d severity=%d id=%d: %s\n", index,
 					phase_name(message.phase), static_cast<int>(message.category),
-					static_cast<int>(message.severity), static_cast<int>(message.id), message.description.data());
+					static_cast<int>(message.severity), static_cast<int>(message.id),
+					message.description.data());
 			}
 		}
 		const std::size_t completed = capture.completed.load(std::memory_order_acquire);
@@ -373,15 +379,19 @@ namespace
 		const std::size_t truncated = capture.truncated.load(std::memory_order_acquire);
 		const std::size_t warnings = capture.warning_or_worse.load(std::memory_order_acquire);
 		const unsigned calibrations = capture.calibrations.load(std::memory_order_acquire);
-		const unsigned late_calibrations = capture.late_calibrations.load(std::memory_order_acquire);
+		const unsigned late_calibrations =
+			capture.late_calibrations.load(std::memory_order_acquire);
 		const unsigned destructions = capture.destructions.load(std::memory_order_acquire);
 		std::printf("snapshot_started=%zu completed=%zu overflow=%zu truncated_or_null=%zu "
 			"warning_or_worse=%zu calibrations=%u late_calibrations=%u destructions=%u "
 			"destruction_phase=%s settled=%s\n",
-			count, completed, overflow, truncated, warnings, calibrations, late_calibrations, destructions,
-			phase_name(capture.destruction_phase.load(std::memory_order_acquire)), settled ? "yes" : "no");
-		std::fputs("Observed callback snapshot only: initialization before registration and complete "
-			"callback quiescence/coverage during destruction are not established.\n", stdout);
+			count, completed, overflow, truncated, warnings, calibrations, late_calibrations,
+			destructions,
+			phase_name(capture.destruction_phase.load(std::memory_order_acquire)),
+			settled ? "yes" : "no");
+		std::fputs("Observed callback snapshot only: initialization before registration "
+			"and complete callback quiescence/coverage during destruction are not "
+			"established.\n", stdout);
 		return settled && completed == count && overflow == 0 && truncated == 0 && warnings == 0 &&
 			calibrations == 1 && late_calibrations == 1 && destructions == 1;
 	}
@@ -413,7 +423,8 @@ int main()
 	}
 	const bool captured = capture != nullptr && report(*capture);
 	const bool passed = workload_completed && captured;
-	std::printf("D3D12DestructionProbe: %s\n", passed ? "observations passed" : "FAILED / unverified");
+	std::printf("D3D12DestructionProbe: %s\n",
+		passed ? "observations passed" : "FAILED / unverified");
 	return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 #endif
 }

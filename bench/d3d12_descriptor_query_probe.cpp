@@ -38,11 +38,17 @@ namespace
 		LARGE_INTEGER start = {};
 		LARGE_INTEGER finish = {};
 		if (!QueryPerformanceCounter(&start))
+		{
 			throw std::runtime_error("QueryPerformanceCounter failed");
+		}
 		for (std::uint64_t index = 0; index < iterations; ++index)
+		{
 			checksum += getter();
+		}
 		if (!QueryPerformanceCounter(&finish))
+		{
 			throw std::runtime_error("QueryPerformanceCounter failed");
+		}
 		observed_checksum = checksum;
 		return { finish.QuadPart - start.QuadPart, checksum };
 	}
@@ -53,7 +59,9 @@ namespace
 	{
 		const Sample sample = measure(iterations, getter);
 		if (sample.checksum != expected * iterations)
+		{
 			throw std::runtime_error("Descriptor checksum changed during the probe");
+		}
 		std::printf("%s,%d,%llu,%lld,%llu\n", name, repetition,
 			static_cast<unsigned long long>(iterations), sample.ticks,
 			static_cast<unsigned long long>(sample.checksum));
@@ -65,10 +73,14 @@ int main(int argc, char* argv[])
 	try
 	{
 		if (!release_build())
+		{
 			throw std::runtime_error("D3D12DescriptorQueryProbe requires Release");
+		}
 		std::uint64_t iterations = 1000000;
 		if (argc > 2)
+		{
 			throw std::invalid_argument("Usage: D3D12DescriptorQueryProbe [iterations]");
+		}
 		if (argc == 2)
 		{
 			char* end = nullptr;
@@ -76,7 +88,9 @@ int main(int argc, char* argv[])
 			iterations = std::strtoull(argv[1], &end, 10);
 			if (errno != 0 || end == argv[1] || *end != '\0' ||
 				iterations == 0 || iterations > 100000000)
+			{
 				throw std::invalid_argument("iterations must be between 1 and 100000000");
+			}
 		}
 		render_tests::TestWindow window(320, 200);
 		labrador::Renderer renderer;
@@ -86,7 +100,9 @@ int main(int argc, char* argv[])
 		const LUID luid = impl.device_resources.device()->GetAdapterLuid();
 		LARGE_INTEGER frequency = {};
 		if (!QueryPerformanceFrequency(&frequency))
+		{
 			throw std::runtime_error("QueryPerformanceFrequency failed");
+		}
 		std::printf("source_revision=%s\nrenderer_sha256=%s\ndevice_resources_sha256=%s\n",
 			LABRADOR_DESCRIPTOR_SOURCE_REVISION, LABRADOR_DESCRIPTOR_RENDERER_SHA256,
 			LABRADOR_DESCRIPTOR_DEVICE_SHA256);
@@ -97,8 +113,10 @@ int main(int argc, char* argv[])
 			device.device_id, static_cast<unsigned long>(luid.HighPart),
 			luid.LowPart, _MSC_FULL_VER, frequency.QuadPart,
 			static_cast<unsigned long long>(warmup_iterations));
-		std::puts("scope=unmodified engine methods; single calling thread; no affinity/power changes");
-		std::puts("baseline=volatile cached handle load; includes loop/checksum work; no timing thresholds");
+		std::puts("scope=unmodified engine methods; single calling thread; no affinity/power "
+			"changes");
+		std::puts("baseline=volatile cached handle load; includes loop/checksum work; no timing "
+			"thresholds");
 		std::puts("configure-time source hashes require a fresh configure after source edits");
 
 		const auto sampler = [&impl]() { return impl.sampler(labrador::TextureFilter::point).ptr; };
