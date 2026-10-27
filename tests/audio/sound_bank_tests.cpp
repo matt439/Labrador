@@ -21,22 +21,18 @@ using namespace labrador;
 // where a sound can be asserted to have happened. Read the two together before
 // concluding anything about audio coverage from this file alone.
 //
-// 3.4b IS WHAT THAT LIST WAS FOR AND IT HAS BEEN SPENT. engine/audio/ has a
-// seam now (audio_device.h) and a headless implementation behind it
-// (engine/audio/null/), so all thirteen methods have observable behaviour in
-// the configuration that builds it - tests/audio/null_tests.cpp is where the
-// eight say what they did, and where the clamp is read back off the numbers
-// that reached the device. What is left here is the other bank, and it is a
-// different question: not "what can a test see", but what a game gets when the
-// wave bank a manifest marked optional is not on disk.
+// The audible bank's observable behaviour is pinned in the null configuration
+// (engine/audio/null/), where tests/audio/null_tests.cpp reads back what
+// reached the device, the clamp included. What is left here is the other bank,
+// and it is a different question: not "what can a test see", but what a game
+// gets when the wave bank a manifest marked optional is not on disk.
 //
 // SO EVERY CASE BELOW IS ABOUT SoundBank::silent() ON PURPOSE, rather than for
 // want of an alternative. It is the substitute the loader installs for a
 // missing container, it is reachable in every configuration, and the two
-// promises it cannot keep are stated in sound_bank.h as deliberate trades. What
-// changed in this commit is the third one, which it CAN now keep: a handle
-// nobody resolved is refused by every bank, because the check for it moved
-// above the check for content.
+// promises it cannot keep are stated in sound_bank.h as deliberate trades. The
+// one it does keep is the third: a handle nobody resolved is refused by every
+// bank, because that check comes before the check for content.
 
 TEST_CASE("a bank with no content says so, and nothing else does")
 {

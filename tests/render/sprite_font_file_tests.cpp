@@ -185,7 +185,7 @@ TEST_CASE("spritefont rejects overflowed atlas layouts with the source name")
 		append(width);
 		append(1); // height
 		append(28); // RGBA
-		append(4); // wrapped stride from the old arithmetic
+		append(4); // the stride width * 4 wraps to in 32 bits
 		append(1); // rows
 		append(0xffffffff); // only four payload bytes
 		const ScratchFile file("overflow_atlas.spritefont", bytes);

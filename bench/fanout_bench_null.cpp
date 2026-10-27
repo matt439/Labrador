@@ -26,17 +26,13 @@
 
 // The per-view render fan-out, run.
 //
-// THIS IS THE FIRST THING IN THIS REPOSITORY THAT TAKES THE PARALLEL BRANCH.
+// THIS TAKES THE PARALLEL BRANCH, WHICH NOTHING ELSE BUT ITS TEST DOES.
 // PHILOSOPHY commits to one axis of parallelism "and that one alone", and
 // scene.cpp returns before the fan-out when the view count is one or the pool
-// is null or the partitioner is null. Both samples construct
-// Scene(nullptr, nullptr); nothing in tests/ or bench/ ever handed a scene a
-// pool. So the early-out was the only branch that had ever been taken, on any
-// machine - which is worse than untested and different from it, because the
-// rule the conventions are built around governed code that had not run.
-// docs/survey/2026-08-26.md 2.1 is the finding and this file is half of its
-// answer; tests/scene/fanout_tests.cpp is the other half, and pins what the
-// fan-out must produce where this only measures what it costs.
+// is null or the partitioner is null. The samples construct
+// Scene(nullptr, nullptr), so without this file the fan-out's cost would be
+// measured on no machine. tests/scene/fanout_tests.cpp pins what the fan-out
+// must produce; this measures what it costs.
 //
 // COMPILED ONLY IN THE null CONFIGURATION, which is why it is its own file
 // rather than a case in scene_bench.cpp. Scene::draw needs a Renderer, and the

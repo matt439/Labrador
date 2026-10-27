@@ -32,8 +32,8 @@ namespace
 		"Scene::update",
 		"Scene::end_tick",
 		"render cull (one view)",
-		// The grid is why this one is here. Before it, resolve was the
-		// all-pairs sweep and could not have been on this list.
+		// Linear because of the broad phase's grid; an all-pairs
+		// enumeration would be quadratic.
 		"Scene::resolve (broad phase)",
 
 		// The draw path's engine-side arithmetic (render_bench.cpp). Linear

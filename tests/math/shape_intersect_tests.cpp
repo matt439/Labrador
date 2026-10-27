@@ -679,10 +679,10 @@ TEST_SUITE("ShapeIntersect")
 		// (-5,-5) to (15,15) enters the square (0,0)..(10,10) at one corner
 		// and leaves at the other, through the whole of its interior. Both
 		// endpoints are outside and every crossing is at a vertex, which the
-		// proper segment primitive excludes by contract - so the
-		// containment-plus-crossing routines this replaced answered false
-		// to a traversal (docs/review/gpt6/README.md, G6-05). Each of the
-		// three shape routines, each direction.
+		// proper segment primitive excludes by contract - so a
+		// containment-plus-crossing test answers false to a traversal
+		// (docs/review/gpt6/README.md, G6-05). Each of the three shape
+		// routines, each direction.
 		const Segment across(Point2F(-5.0f, -5.0f), Point2F(15.0f, 15.0f));
 		const Segment back(Point2F(15.0f, 15.0f), Point2F(-5.0f, -5.0f));
 

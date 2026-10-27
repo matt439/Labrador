@@ -245,10 +245,7 @@ namespace labrador
 		SpriteFlip flip,
 		float layer_depth)
 	{
-		// UNUSED, AND SAYING SO IS THE POINT. layer_depth orders nothing -
-		// RenderPixelTests pins that call order decides - and the sprite vertex
-		// has no z for the value to go into. It stays on the seam because the
-		// seam is what a client writes against.
+		// Orders nothing; engine/render/SEAM.md#6 says why it is a parameter.
 		std::ignore = layer_depth;
 
 		const VulkanTexture& device_texture =
@@ -271,9 +268,8 @@ namespace labrador
 	{
 		std::ignore = layer_depth;
 
-		// The font table is the seam's own and the texture table is this
-		// folder's, which is the rule about which half lives where reading as
-		// two lines of code (engine/render/render_resources.h).
+		// The font is the seam's table and its atlas this folder's
+		// (engine/render/render_resources.h).
 		const RenderResources& resources = *this->view_->owner->resources;
 		const Font& the_font = *resources.font(font);
 		const VulkanTexture& atlas =
