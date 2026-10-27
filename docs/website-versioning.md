@@ -44,6 +44,40 @@ promise that the release is still supported. Corrections to a frozen snapshot
 are dated errata linked beside it, rather than a silent replacement with newer
 documentation. A release tag must not be moved to rewrite a snapshot.
 
+## Release-source verification
+
+The first `SITE#3` slice provides a read-only source gate. From `website/` in
+the release's checkout, after the owner has created its annotated tag, run:
+
+```text
+npm run --silent snapshot:source -- v0.3.0
+```
+
+[snapshot-source.mjs](../website/scripts/snapshot-source.mjs) writes a JSON
+record to standard output: schema version, tag, full commit, committer date
+and intended `/versions/<tag>/` path. Failure exits nonzero, writes its reason
+to standard error and emits no source record. The command creates no files,
+tags or builds and publishes nothing. A record identifies candidate source;
+it is not an entry in the future published-release index, engine qualification
+or a successful website build. Do not list a release as published from this
+record alone.
+
+Verification requires the checkout's own Git root, a stable tag at or after
+`v0.3.0`, an annotated tag whose name and peeled commit match the request and
+`HEAD`, a matching `vcpkg.json` version and a tracked website dependency
+lockfile. Tracked changes, untracked files, ignored additions in the website's
+root or input folders, hidden index flags, tracked symlinks and submodules are
+refused. Ignored build output and installed dependencies remain permitted.
+Git replacement objects and caller-supplied Git routing variables cannot
+substitute another source tree. `LABRADOR_COMMIT` and `LABRADOR_COMMIT_DATE`
+must be unset; this first gate requires Git and refuses source archives.
+
+The source checks and command-line behavior have offline fixtures in
+[snapshot-source.test.mjs](../website/tests/snapshot-source.test.mjs), run by
+`npm test`. Routing, independent snapshot builds, the published-release
+manifest, selector, preservation and publication qualification below remain
+open. No release snapshot or version selector exists yet.
+
 ## Work required for v0.3.0
 
 Implement and qualify the versioned build before cutting `v0.3.0`. Prepare and
