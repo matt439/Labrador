@@ -18,6 +18,7 @@ An index of open work, one row per item; each row points to the document that ow
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
 - Later: `WEB#3` (listen to the audio sample).
+- Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 
 ## Input, menus, settings and saves
 
@@ -109,6 +110,26 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `SRL-07` | OPEN | could | S | Rename non-macro uppercase constants to `snake_case`, migrate callers in both repositories, and record every old/new spelling. The owner chose renaming; CONVENTIONS stays. [Scope](docs/product/BACKLOG.md#later). |
 | `OCA-66` | OPEN | could | S | The samples/template declare per-monitor DPI awareness and the release guide states it; review and record the template at 150% scaling. [Scope](docs/product/BACKLOG.md#later). |
 
+## Features other engines have
+
+**Owner:** [the engine comparison of 2026-10-27](docs/survey/2026-10-27.md), which holds what each involves and what was left out. Every row is the owner's call; a yes becomes a story in [BACKLOG.md](docs/product/BACKLOG.md) before the work starts.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `GAP#1` | DECISION | should | L | PlayStation, Switch and generic pads on Windows, and more than four: built on Windows.Gaming.Input or GameInput, or SDL's gamepad layer bought (T9). |
+| `GAP#2` | DECISION | should | L | Streamed, compressed music (Ogg or MP3) on XAudio2, Web Audio and null; decide after `OCA-40` states what PCM music costs. |
+| `GAP#3` | DECISION | could | L | Render to texture: integer-scaled pixel art, transitions, minimaps; five backends and new goldens. |
+| `GAP#4` | DECISION | could | M | Load PNG and other common image formats, premultiplied at load, so texconv leaves the first hour. |
+| `GAP#5` | DECISION | could | M | A clip rectangle inside a view, for scrolling lists and panels. |
+| `GAP#6` | DECISION | could | M | Circles, polygons and debug drawing of collision shapes; rectangles and lines already draw from `engine:white`. |
+| `GAP#7` | DECISION | could | M | Let a game make or update a texture from pixels at run time; `resource_factory.h` already has the backend half. |
+| `GAP#8` | DECISION | could | S | Easing functions, extracted from what LineSweeper and ColourWars already hand-roll (T1). |
+| `GAP#9` | DECISION | could | M | Camera rotation, with culling's visible rectangle grown to cover it. |
+| `GAP#10` | DECISION | could | S | LineSweeper's particle field as a component, if a second client would copy it. |
+| `GAP#11` | DECISION | could | M | Tilemaps and Tiled import; waits for a client that uses tiles. |
+| `GAP#12` | DECISION | could | L | TrueType and OpenType fonts; likely folded into `OCA-43` rather than a story of its own. |
+| `GAP#13` | DECISION | could | M | Relative mouse motion: Win32 raw input, and a browser pointer lock granted only inside an input event. |
+
 ## Ports
 
 **Owner:** [docs/port/android.md](docs/port/android.md), section 4.
@@ -154,6 +175,7 @@ Rules for writing it: read them before editing a row, not before picking one.
    - `REV#`: the review under [docs/review/](docs/review/) the row names.
    - `PORT#`: [docs/port/android.md](docs/port/android.md).
    - `DOC#`: the record the row names.
+   - `GAP#`: [the engine comparison of 2026-10-27](docs/survey/2026-10-27.md).
 5. **NOW changes only when its items finish or the owner reorders them.**
 
 **`id`:** a stable handle, not an order. A story's id where one owns the item (`OCA-03`), else a prefixed one from rule 4; a retired id is never reused. Other ids an item covers are named in its clause.
