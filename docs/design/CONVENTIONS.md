@@ -136,7 +136,10 @@ Almost everything below falls out of one rule:
   file including `"game/..."` is thereby visible at a glance — and fails
   to build (see ARCHITECTURE.md).
 - Include order: own header first — proving every header compiles on its
-  own — then engine headers, then external, then standard library.
+  own — then engine headers, then external, then standard library. A test has
+  no header of its own, so it opens with `<doctest/doctest.h>` and then follows
+  the same order; its subject's header has already proved itself in its own
+  `.cpp`.
 - Tests are named for their subject: `vector2_tests.cpp`.
 
 ## Comments

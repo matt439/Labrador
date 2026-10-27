@@ -1,10 +1,10 @@
+#include <doctest/doctest.h>
 #include "engine/render/d3d12/backend.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/throw_if_failed.h"
 #include "tests/render/device_fixture.h"
 
-#include <doctest/doctest.h>
 #include <d3d12sdklayers.h>
 
 #include <algorithm>

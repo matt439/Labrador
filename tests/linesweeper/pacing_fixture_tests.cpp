@@ -1,9 +1,8 @@
+#include <doctest/doctest.h>
 #include "samples/linesweeper/web/pacing_fixture.h"
 
 #include "engine/render/renderer.h"
 #include "samples/linesweeper/presentation/particles.h"
-
-#include <doctest/doctest.h>
 
 #include <cstddef>
 #include <cstdint>

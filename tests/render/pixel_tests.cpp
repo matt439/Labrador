@@ -1,3 +1,4 @@
+#include <doctest/doctest.h>
 #include "engine/render/renderer.h"
 #include "engine/scene/scene.h"
 #include "engine/core/game_object.h"
@@ -15,8 +16,6 @@
 
 #include "tests/render/golden_image.h"
 #include "tests/render/test_window.h"
-
-#include <doctest/doctest.h>
 
 #include <algorithm>
 #include <cmath>

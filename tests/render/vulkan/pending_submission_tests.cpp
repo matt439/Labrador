@@ -1,10 +1,9 @@
+#include <doctest/doctest.h>
 #include "tests/render/test_window.h"
 
 #include "engine/render/vulkan/backend.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
-
-#include <doctest/doctest.h>
 
 #include <algorithm>
 #include <bit>
