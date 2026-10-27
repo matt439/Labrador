@@ -73,7 +73,7 @@ pacing claim and does not run in the null-render browser configuration.
 teardown to fake WebSockets under Node, with no browser or device.
 
 The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
-Changes confined to `.md` files or `docs/` run the four standalone CMake lint
+Changes confined to `.md` files or `docs/` run the five standalone CMake lint
 checks below plus the offline Python tooling and Node flash/pacing suites;
 build jobs report without building. The website still runs its type check,
 tests and build. Code changes use the affected configurations;
@@ -198,6 +198,7 @@ cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_doc_citations.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_agent_brief.cmake
 cmake -DENGINE_DIR=C:/Projects/Labrador/engine -P cmake/check_engine_includes.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_source_revision.cmake
+cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_whitespace.cmake
 ```
 
 ## Changes and landing

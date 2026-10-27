@@ -121,7 +121,7 @@ namespace labrador
 
 		// Returns (1, 0) for a zero-length vector. See to_unit_vector().
 		static Vector2F unit_vector(const Vector2F& vec);
-		
+
 		static Vector2F normal(const Vector2F& vec);
 
 		// CONSTANT-INITIALISED, and the definitions say constinit so that the

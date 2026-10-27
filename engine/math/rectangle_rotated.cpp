@@ -365,7 +365,7 @@ namespace labrador
 		{
 			return false;
 		}
-		
+
 		// check if x_axis and y_axis are perpendicular
 		if (!are_equal(Vector2F::dot(x_axis_, y_axis_), 0.0f, default_epsilon))
 		{

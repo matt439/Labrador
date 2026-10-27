@@ -37,7 +37,7 @@ namespace labrador
 
 	Vector2I operator+ (const Vector2I& V1, const Vector2I& V2);
 	Vector2I operator- (const Vector2I& V1, const Vector2I& V2);
-	Vector2I operator* (const Vector2I& V1, const Vector2I& V2);	
+	Vector2I operator* (const Vector2I& V1, const Vector2I& V2);
 	Vector2I operator* (const Vector2I& V, int S);
 	Vector2I operator/ (const Vector2I& V1, const Vector2I& V2);
 	Vector2I operator/ (const Vector2I& V, int S);

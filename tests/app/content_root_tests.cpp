@@ -188,25 +188,25 @@ TEST_CASE("a real manifest read from elsewhere names the folders beside itself")
 
 TEST_CASE("UTF-8 manifest and binary content load under non-ANSI directory names")
 {
-    const std::filesystem::path folder = std::filesystem::temp_directory_path() /
-        L"labrador_content_\u6f22_\U0001f680";
-    std::filesystem::create_directories(folder / L"textures-\u6f22");
-    const std::filesystem::path manifest_file = folder / "manifest.json";
-    {
-        std::ofstream manifest(manifest_file);
-        manifest << R"({"assets":[{"kind":"texture","directory":"textures-\u6f22/","names":["tile"]}]})";
-        std::ofstream data(folder / L"textures-\u6f22" / "tile.bin", std::ios::binary);
-        data << "binary payload";
-    }
-    const std::string path = labrador::path_to_utf8(manifest_file);
+	const std::filesystem::path folder = std::filesystem::temp_directory_path() /
+		L"labrador_content_\u6f22_\U0001f680";
+	std::filesystem::create_directories(folder / L"textures-\u6f22");
+	const std::filesystem::path manifest_file = folder / "manifest.json";
+	{
+		std::ofstream manifest(manifest_file);
+		manifest << R"({"assets":[{"kind":"texture","directory":"textures-\u6f22/","names":["tile"]}]})";
+		std::ofstream data(folder / L"textures-\u6f22" / "tile.bin", std::ios::binary);
+		data << "binary payload";
+	}
+	const std::string path = labrador::path_to_utf8(manifest_file);
 #if !defined(__EMSCRIPTEN__)
-    // Not under Node, for the reason the case above gives.
-    CHECK(resolved_under(executable_directory(), path) == path);
+	// Not under Node, for the reason the case above gives.
+	CHECK(resolved_under(executable_directory(), path) == path);
 #endif
-    const AssetManifest manifest = anchored_to_source(labrador::read_asset_manifest(path.c_str()));
-    REQUIRE(manifest.entries.size() == 1);
-    const std::vector<unsigned char> bytes = labrador::read_file_bytes(
-        manifest.entries[0].directory + "tile.bin");
-    CHECK(std::string(bytes.begin(), bytes.end()) == "binary payload");
-    std::filesystem::remove_all(folder);
+	const AssetManifest manifest = anchored_to_source(labrador::read_asset_manifest(path.c_str()));
+	REQUIRE(manifest.entries.size() == 1);
+	const std::vector<unsigned char> bytes = labrador::read_file_bytes(
+		manifest.entries[0].directory + "tile.bin");
+	CHECK(std::string(bytes.begin(), bytes.end()) == "binary payload");
+	std::filesystem::remove_all(folder);
 }

@@ -301,57 +301,57 @@ TEST_CASE("a minimise is one suspend and a restore is one resume")
 
 TEST_CASE("keyboard messages map physical positions independently of their characters")
 {
-    RecordingNotify notify;
-    Window window(hidden_options(), &notify);
-    struct Mapping { WPARAM key; unsigned int scan; bool extended; Key expected; };
-    const Mapping mappings[] = {
-        { 'Z', 0x11, false, Key::w }, // AZERTY
-        { 'Q', 0x1e, false, Key::a },
-        { 'Y', 0x2c, false, Key::z }, // QWERTZ
-        { VK_OEM_1, 0x27, false, Key::semicolon },
-        { VK_HOME, 0x47, false, Key::numpad_7 }, // NumLock off
-        { VK_NUMPAD7, 0x47, false, Key::numpad_7 },
-        { VK_HOME, 0x47, true, Key::home },
-        { VK_DELETE, 0x53, false, Key::numpad_decimal },
-        { VK_DELETE, 0x53, true, Key::del },
-        { VK_DIVIDE, 0x35, true, Key::numpad_divide },
-        { VK_RETURN, 0x1c, true, Key::enter },
-        { VK_CONTROL, 0x1d, true, Key::control },
-        { VK_PAUSE, 0x45, false, Key::pause },
-        { VK_NUMLOCK, 0x45, true, Key::num_lock },
-        { VK_SNAPSHOT, 0x37, true, Key::print_screen },
-        { 'W', 0x00, false, Key::none },
-    };
-    for (const Mapping& mapping : mappings)
-    {
-        const LPARAM position = static_cast<LPARAM>(mapping.scan << 16) |
-            (mapping.extended ? (1LL << 24) : 0) | 1;
-        SendMessageW(hwnd(window), WM_KEYDOWN, mapping.key, position);
-        SendMessageW(hwnd(window), WM_KEYUP, mapping.key, position | (1LL << 31));
-        CHECK(notify.last_down == mapping.expected);
-        CHECK(notify.last_up == mapping.expected);
-    }
-    SendMessageW(hwnd(window), WM_SYSKEYDOWN, VK_MENU, (0x38LL << 16) | 1);
-    CHECK(notify.last_down == Key::alt);
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	struct Mapping { WPARAM key; unsigned int scan; bool extended; Key expected; };
+	const Mapping mappings[] = {
+		{ 'Z', 0x11, false, Key::w }, // AZERTY
+		{ 'Q', 0x1e, false, Key::a },
+		{ 'Y', 0x2c, false, Key::z }, // QWERTZ
+		{ VK_OEM_1, 0x27, false, Key::semicolon },
+		{ VK_HOME, 0x47, false, Key::numpad_7 }, // NumLock off
+		{ VK_NUMPAD7, 0x47, false, Key::numpad_7 },
+		{ VK_HOME, 0x47, true, Key::home },
+		{ VK_DELETE, 0x53, false, Key::numpad_decimal },
+		{ VK_DELETE, 0x53, true, Key::del },
+		{ VK_DIVIDE, 0x35, true, Key::numpad_divide },
+		{ VK_RETURN, 0x1c, true, Key::enter },
+		{ VK_CONTROL, 0x1d, true, Key::control },
+		{ VK_PAUSE, 0x45, false, Key::pause },
+		{ VK_NUMLOCK, 0x45, true, Key::num_lock },
+		{ VK_SNAPSHOT, 0x37, true, Key::print_screen },
+		{ 'W', 0x00, false, Key::none },
+	};
+	for (const Mapping& mapping : mappings)
+	{
+		const LPARAM position = static_cast<LPARAM>(mapping.scan << 16) |
+			(mapping.extended ? (1LL << 24) : 0) | 1;
+		SendMessageW(hwnd(window), WM_KEYDOWN, mapping.key, position);
+		SendMessageW(hwnd(window), WM_KEYUP, mapping.key, position | (1LL << 31));
+		CHECK(notify.last_down == mapping.expected);
+		CHECK(notify.last_up == mapping.expected);
+	}
+	SendMessageW(hwnd(window), WM_SYSKEYDOWN, VK_MENU, (0x38LL << 16) | 1);
+	CHECK(notify.last_down == Key::alt);
 
-    // F10 and Alt alone arrive as the SYS pair, and are keys like any other,
-    // down then up.
-    for (const Mapping& mapping : { Mapping{ VK_F10, 0x44, false, Key::f10 },
-        Mapping{ VK_MENU, 0x38, false, Key::alt } })
-    {
-        notify.last_down = Key::none;
-        notify.last_up = Key::none;
-        const LPARAM position = static_cast<LPARAM>(mapping.scan << 16) | 1;
-        SendMessageW(hwnd(window), WM_SYSKEYDOWN, mapping.key, position);
-        CHECK(notify.last_down == mapping.expected);
-        CHECK(notify.last_up == Key::none);
-        SendMessageW(hwnd(window), WM_SYSKEYUP, mapping.key,
-            position | (1LL << 30) | (1LL << 31));
-        CHECK(notify.last_up == mapping.expected);
-    }
+	// F10 and Alt alone arrive as the SYS pair, and are keys like any other,
+	// down then up.
+	for (const Mapping& mapping : { Mapping{ VK_F10, 0x44, false, Key::f10 },
+		Mapping{ VK_MENU, 0x38, false, Key::alt } })
+	{
+		notify.last_down = Key::none;
+		notify.last_up = Key::none;
+		const LPARAM position = static_cast<LPARAM>(mapping.scan << 16) | 1;
+		SendMessageW(hwnd(window), WM_SYSKEYDOWN, mapping.key, position);
+		CHECK(notify.last_down == mapping.expected);
+		CHECK(notify.last_up == Key::none);
+		SendMessageW(hwnd(window), WM_SYSKEYUP, mapping.key,
+			position | (1LL << 30) | (1LL << 31));
+		CHECK(notify.last_up == mapping.expected);
+	}
 
-    SendMessageW(hwnd(window), WM_CHAR, L'z', 1);
-    CHECK(notify.last_text == U'z');
+	SendMessageW(hwnd(window), WM_CHAR, L'z', 1);
+	CHECK(notify.last_text == U'z');
 }
 
 TEST_CASE("modifier keys stay held until both physical sides are released")
@@ -483,45 +483,45 @@ TEST_CASE("only a bare keyboard menu activation is the window's to swallow")
 
 TEST_CASE("capture cancellation and transfer clear buttons without a normal release")
 {
-    RecordingNotify notify;
-    Window window(hidden_options(), &notify);
-    notify.mouse.set_focused(true);
-    notify.mouse.poll();
-    SendMessageW(hwnd(window), WM_LBUTTONDOWN, MK_LBUTTON, 0);
-    SendMessageW(hwnd(window), WM_RBUTTONDOWN, MK_LBUTTON | MK_RBUTTON, 0);
-    notify.mouse.poll();
-    REQUIRE(notify.mouse.held(MouseButton::left));
-    REQUIRE(notify.mouse.held(MouseButton::right));
-    const labrador::MouseState before = notify.mouse.state();
-    SUBCASE("cancel mode")
-    {
-        SendMessageW(hwnd(window), WM_CANCELMODE, 0, 0);
-    }
-    SUBCASE("same-thread capture transfer")
-    {
-        WindowOptions other_options = hidden_options();
-        other_options.window_class_name += L"Other";
-        Window other(other_options, &notify);
-        SetCapture(hwnd(other));
-        REQUIRE(GetCapture() == hwnd(other));
-        ReleaseCapture();
-    }
-    notify.mouse.poll();
-    CHECK(notify.mouse.focused());
-    for (const MouseButton button : { MouseButton::left, MouseButton::right })
-    {
-        CHECK_FALSE(notify.mouse.held(button));
-        CHECK_FALSE(notify.mouse.released(button));
-        CHECK_FALSE(labrador::released(notify.mouse.state(), before, button));
-    }
-    notify.mouse.poll();
-    SendMessageW(hwnd(window), WM_LBUTTONDOWN, MK_LBUTTON, 0);
-    notify.mouse.poll();
-    CHECK(notify.mouse.pressed(MouseButton::left));
-    SendMessageW(hwnd(window), WM_LBUTTONUP, 0, 0);
-    notify.mouse.poll();
-    CHECK(notify.mouse.released(MouseButton::left));
-    CHECK(GetCapture() == nullptr);
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.mouse.set_focused(true);
+	notify.mouse.poll();
+	SendMessageW(hwnd(window), WM_LBUTTONDOWN, MK_LBUTTON, 0);
+	SendMessageW(hwnd(window), WM_RBUTTONDOWN, MK_LBUTTON | MK_RBUTTON, 0);
+	notify.mouse.poll();
+	REQUIRE(notify.mouse.held(MouseButton::left));
+	REQUIRE(notify.mouse.held(MouseButton::right));
+	const labrador::MouseState before = notify.mouse.state();
+	SUBCASE("cancel mode")
+	{
+		SendMessageW(hwnd(window), WM_CANCELMODE, 0, 0);
+	}
+	SUBCASE("same-thread capture transfer")
+	{
+		WindowOptions other_options = hidden_options();
+		other_options.window_class_name += L"Other";
+		Window other(other_options, &notify);
+		SetCapture(hwnd(other));
+		REQUIRE(GetCapture() == hwnd(other));
+		ReleaseCapture();
+	}
+	notify.mouse.poll();
+	CHECK(notify.mouse.focused());
+	for (const MouseButton button : { MouseButton::left, MouseButton::right })
+	{
+		CHECK_FALSE(notify.mouse.held(button));
+		CHECK_FALSE(notify.mouse.released(button));
+		CHECK_FALSE(labrador::released(notify.mouse.state(), before, button));
+	}
+	notify.mouse.poll();
+	SendMessageW(hwnd(window), WM_LBUTTONDOWN, MK_LBUTTON, 0);
+	notify.mouse.poll();
+	CHECK(notify.mouse.pressed(MouseButton::left));
+	SendMessageW(hwnd(window), WM_LBUTTONUP, 0, 0);
+	notify.mouse.poll();
+	CHECK(notify.mouse.released(MouseButton::left));
+	CHECK(GetCapture() == nullptr);
 }
 
 TEST_CASE("a hidden pointer is no cursor over the client area and the arrow elsewhere")
@@ -591,34 +591,34 @@ TEST_CASE("a window nobody can see never takes the pointer, confined or not")
 
 TEST_CASE("modern power notifications are idempotent and independent of minimize")
 {
-    RecordingNotify notify;
-    Window window(hidden_options(), &notify);
-    notify.log.clear();
-    SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMSUSPEND, 0);
-    SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMSUSPEND, 0);
-    SUBCASE("automatic resume followed by user resume")
-    {
-        SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMEAUTOMATIC, 0);
-        SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMESUSPEND, 0);
-        CHECK(notify.log == std::vector<std::string>{ "suspending", "resuming" });
-    }
-    SUBCASE("restore during power suspension stays suspended")
-    {
-        SendMessageW(hwnd(window), WM_SIZE, SIZE_MINIMIZED, 0);
-        SendMessageW(hwnd(window), WM_SIZE, SIZE_RESTORED, MAKELPARAM(64, 64));
-        CHECK(notify.log == std::vector<std::string>{ "suspending", "size 64x64" });
-        SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMEAUTOMATIC, 0);
-        CHECK(notify.log.back() == "resuming");
-    }
-    SUBCASE("power resume while minimized waits for restore")
-    {
-        SendMessageW(hwnd(window), WM_SIZE, SIZE_MINIMIZED, 0);
-        SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMEAUTOMATIC, 0);
-        SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMESUSPEND, 0);
-        CHECK(notify.log == std::vector<std::string>{ "suspending" });
-        SendMessageW(hwnd(window), WM_SIZE, SIZE_RESTORED, MAKELPARAM(64, 64));
-        CHECK(notify.log == std::vector<std::string>{ "suspending", "size 64x64", "resuming" });
-    }
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.log.clear();
+	SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMSUSPEND, 0);
+	SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMSUSPEND, 0);
+	SUBCASE("automatic resume followed by user resume")
+	{
+		SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMEAUTOMATIC, 0);
+		SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMESUSPEND, 0);
+		CHECK(notify.log == std::vector<std::string>{ "suspending", "resuming" });
+	}
+	SUBCASE("restore during power suspension stays suspended")
+	{
+		SendMessageW(hwnd(window), WM_SIZE, SIZE_MINIMIZED, 0);
+		SendMessageW(hwnd(window), WM_SIZE, SIZE_RESTORED, MAKELPARAM(64, 64));
+		CHECK(notify.log == std::vector<std::string>{ "suspending", "size 64x64" });
+		SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMEAUTOMATIC, 0);
+		CHECK(notify.log.back() == "resuming");
+	}
+	SUBCASE("power resume while minimized waits for restore")
+	{
+		SendMessageW(hwnd(window), WM_SIZE, SIZE_MINIMIZED, 0);
+		SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMEAUTOMATIC, 0);
+		SendMessageW(hwnd(window), WM_POWERBROADCAST, PBT_APMRESUMESUSPEND, 0);
+		CHECK(notify.log == std::vector<std::string>{ "suspending" });
+		SendMessageW(hwnd(window), WM_SIZE, SIZE_RESTORED, MAKELPARAM(64, 64));
+		CHECK(notify.log == std::vector<std::string>{ "suspending", "size 64x64", "resuming" });
+	}
 }
 
 TEST_CASE("a touch pointer's messages are the four touch calls")

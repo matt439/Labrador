@@ -54,8 +54,8 @@ add_test(NAME LineSweeperTests COMMAND LineSweeperTests)
 # The browser pacing fixture also runs here against the real particle field,
 # without constructing its device-bound BoardView or application state.
 add_executable(LineSweeperViewTests
-	"${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_statistics.cpp"
-	frame_statistics_tests.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_statistics.cpp"
+    frame_statistics_tests.cpp
     pacing_fixture_tests.cpp
     palette_tests.cpp
     test_main.cpp

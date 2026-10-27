@@ -98,7 +98,7 @@ and the last is the job in
 every path it changes is a `.md` file or under `docs/`, the `changes` job
 says so, the build jobs report without building, and `lint` runs the
 citation check, the agent brief check, the include wall, offline source
-revision fixtures, the flash-definition and pacing-analysis tests, and the
+revision fixtures, the whitespace check, the flash-definition and pacing-analysis tests, and the
 Python tooling suite.
 
 The Vulkan SDK download and its offline helper tests use Python 3.11 or newer. Its bounded HTTP

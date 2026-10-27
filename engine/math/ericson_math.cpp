@@ -24,7 +24,7 @@ namespace labrador
 		Vector2F a_max = a.bottom_right();
 		Vector2F b_min = b.top_left();
 		Vector2F b_max = b.bottom_right();
-	
+
 		// Stated as "overlapping on both axes", not as "not separated on
 		// either". The two are the same for real numbers and are not the same
 		// for NaN: every comparison against NaN is false, so the rejecting
@@ -461,7 +461,7 @@ namespace labrador
 	bool test_2D_segment_segment(const Point2F& a,
 		const Point2F& b, const Point2F& c,
 		const Point2F& d, float& t, Point2F& p)
-	{	
+	{
 		// Sign of areas correspond to which side of ab points c and d are.
 		//
 		// Compared by sign rather than by multiplying the two areas together,
