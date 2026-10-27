@@ -198,7 +198,7 @@ green headless suite supplies a human session or a hardware measurement.
 | **REV#10**, GPT-6 opportunity 5 | TODO.md: the overlay remains deferred until a client needs it. `Application::frame_timings()` supplies phase measurements, not the proposed distribution overlay or low-tier p99. |
 | **REV#11**, September 26 hardening | [September 26 README](2026-09-26/README.md#lower-priority-hardening-and-unverified-candidates): [hardening verification below](#hardening-verification) records all four candidate dispositions and their test limits. |
 | **REV#12**, September 26 manual limits | [STATUS.md](2026-09-26/STATUS.md) and [FIXES.md](2026-09-26/FIXES.md): real device removal, interactive minimize/restore/drag, physical layouts/device changes and real sleep/wake need a person and devices. |
-| **SM-19**, September 26 priority 3 | [STATUS.md](2026-09-26/STATUS.md): the offline Windows CI gate is implemented. The 2026-10-27 local run passed all 81 tests with no skips, superseding the local execution-policy blocker; the deliberately failing throwaway-branch CI observation remains open. |
+| **SM-19**, September 26 priority 3 | [STATUS.md](2026-09-26/STATUS.md): the offline Windows CI gate is implemented. The 2026-10-27 local run passed all 81 tests with no skips, superseding the local execution-policy blocker; on the same day a deliberately failing throwaway test turned the [lint job](https://github.com/matt439/Labrador/actions/runs/40470680489/job/122076786279) red, closing the story. |
 
 When a status owner closes an item, update its TODO row and story box in the
 same commit. Leave the historical finding readable, including any rejected

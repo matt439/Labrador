@@ -45,7 +45,6 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-25` | OPEN | should | S | Observe a scheduled Actions run. The repaired SDK download, checksum, install and Vulkan tests pass in PR #59; [evidence](docs/product/BACKLOG.md#next). |
-| `SM-19` | OPEN | could | XS | Windows tooling gate and all 81 local Python tests pass; observe a deliberately failing throwaway-branch CI run. |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
 
 `SM-15`, `SM-17`, `SM-18`, `SM-23` and `SM-24` are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
@@ -133,7 +132,7 @@ A new row for one of these gets its section back.
 | macOS and iOS | [docs/port/android.md](docs/port/android.md) sections 5 and 6 | a plan document; none is in the tree |
 | The EC2 performance lane | [tools/cloud_performance/README.md](tools/cloud_performance/README.md) | a new declared reference run, or a regression question |
 | round-2 plan, the RTCD list, the first review, backend-equivalence | [docs/review/round-2/PLAN.md](docs/review/round-2/PLAN.md), [docs/review/rtcd/](docs/review/rtcd/), [docs/review/IMPLEMENTED.md](docs/review/IMPLEMENTED.md) | nothing: all landed or superseded; the game-side rows live in ColourWars |
-| The 2026-09-26 review's numbered findings and hardening candidates | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and [the review index](docs/review/INDEX.md#hardening-verification) | nothing: all 23 implemented and four hardening candidates addressed; `REV#12` and `SM-19` remain |
+| The 2026-09-26 review's numbered findings and hardening candidates | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and [the review index](docs/review/INDEX.md#hardening-verification) | nothing: all 23 implemented and four hardening candidates addressed; `REV#12` remains |
 | The repository split, file-length tripwire and survey decisions | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md), [docs/survey/2026-08-26-status.md](docs/survey/2026-08-26-status.md) | nothing: StateContext's responsibility was revisited; markers and the XWB reader were already decided |
 
 ---
