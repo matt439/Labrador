@@ -520,7 +520,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | SRL-16 | G97: a glossary of the terms minimal uses. |
 | SRL-18 | G88: run LineSweeper's rules tests knowing what is needed. |
 | SRL-06 | G91: LineSweeper's design notes give reasons without internal records. |
-| SRL-07 | G92. Decided 2026-10-27: rename non-macro uppercase constants to snake_case, preserving CONVENTIONS' distinction between values and macros. Inventory current declarations rather than assuming the historical count of 26, migrate engine/sample/test/website uses and the ColourWars callers, and record every old/new spelling and the counted caller repositories. The source break needs CHANGES.md and the public sample migration. Keep this story open for implementation and its affected build, test and website checks. |
+| SRL-07 | G92. Decided 2026-10-27: rename non-macro uppercase constants to snake_case, preserving CONVENTIONS' distinction between values and macros. Inventory current declarations rather than assuming the historical count of 26, migrate engine/sample/test/website uses and the ColourWars callers, and record every old/new spelling and the counted caller repositories. The source break needs CHANGES.md and the public sample migration. Keep this story open for implementation and its affected build, test and website checks. Implemented in this tree 2026-10-27 by *Spell constants in snake_case*: engine, samples, tests and benches, with platform-API restatements kept as CONVENTIONS now allows and the public renames in CHANGES.md. The ColourWars migration and the counted caller record remain. |
 
 </details>
 
