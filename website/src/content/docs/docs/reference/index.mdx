@@ -8,10 +8,11 @@ sidebar:
 
 import RepoLink from '~/components/RepoLink.astro';
 import { REFERENCE_HEADERS, REFERENCE_MODULES, moduleSlug } from '~/lib/published';
+import { sitePath } from '~/lib/site-path';
 
 The API reference gives the exact contract of every public type and function in the engine,
-generated from its headers at the revision named at the foot of each page. That revision is
-`master`; when your project pins an older one, the headers under `external/labrador/engine` are
+generated from its headers at the revision named at the foot of each page. When your project
+pins a different revision, the headers under `external/labrador/engine` are
 the reference for the engine you build, as [Move your engine pin](/docs/guides/move-pin/#the-reference-at-your-pin)
 says. It is organised by
 module, in the order the modules depend on one another: each one depends only on modules above
@@ -30,7 +31,7 @@ its module, and every module has an Overview in the sidebar.
 		{REFERENCE_MODULES.map((module) => (
 			<tr>
 				<td>
-					<a href={`/${moduleSlug(module)}/`}>
+					<a href={sitePath(`/${moduleSlug(module)}/`)}>
 						<code>{module.name}</code>
 					</a>
 				</td>
@@ -63,9 +64,9 @@ calls, including the utilities a game can use for its own assets and devices:
 		const headers = REFERENCE_HEADERS.filter((header) => header.module === module.name && header.audience === 'game code');
 		return headers.length > 0 && (
 			<li>
-				<a href={`/${moduleSlug(module)}/`}>{module.name}</a>:{' '}
+				<a href={sitePath(`/${moduleSlug(module)}/`)}>{module.name}</a>:{' '}
 				{headers.map((header, index) => (
-					<>{index > 0 && ', '}<a href={`/${header.slug}/`}>{header.title}</a></>
+					<>{index > 0 && ', '}<a href={sitePath(`/${header.slug}/`)}>{header.title}</a></>
 				))}
 			</li>
 		);
@@ -80,7 +81,7 @@ uses for solid-colour sprites.
 
 <ul>
 	{REFERENCE_HEADERS.filter((header) => header.audience === 'renderer writer').map((header) => (
-		<li><a href={`/${header.slug}/`}>{header.title}</a> — <code>{header.source}</code></li>
+		<li><a href={sitePath(`/${header.slug}/`)}>{header.title}</a> — <code>{header.source}</code></li>
 	))}
 </ul>
 

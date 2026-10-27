@@ -4,6 +4,7 @@ import type { ExpressiveCodePlugin } from '@astrojs/starlight/expressive-code';
 import { h } from '@astrojs/starlight/expressive-code/hast';
 import { codeLink, freeFunctions, symbols } from './reference.ts';
 import { codeReferences, type CodeReference } from './reference-mentions.ts';
+import { sitePath } from './site-path.ts';
 
 export function codeLinks(code: string): CodeReference[] {
 	return codeReferences(code, {
@@ -27,7 +28,7 @@ export const apiCodeLinks: ExpressiveCodePlugin = {
 						inlineRange: { columnStart: link.start - offset, columnEnd: link.end - offset },
 						renderPhase: 'latest',
 						render: ({ nodesToTransform }) => nodesToTransform.map((node) =>
-							h('a', { href: link.url, className: ['api-link'] }, node)),
+							h('a', { href: sitePath(link.url), className: ['api-link'] }, node)),
 					});
 				}
 				offset += line.text.length + 1;

@@ -11,13 +11,18 @@ import starlight from '@astrojs/starlight';
 import { satteri } from '@astrojs/markdown-satteri';
 import starlightLinksValidator from 'starlight-links-validator';
 import { checkoutLinks, mermaidBlocks, referenceLinks } from './src/lib/markdown-plugins';
-import { GITHUB_REPOSITORY, EDIT_BRANCH } from './src/lib/repository';
+import { GITHUB_REPOSITORY, EDIT_BRANCH, RELEASE_SOURCE } from './src/lib/repository';
+import { SITE_BASE } from './src/lib/site-path';
 import { REFERENCE_MODULES, moduleSlug } from './src/lib/published';
 
 export default defineConfig({
 	// The one host the site is served from. Canonical links and the sitemap
 	// are built from it, and wrangler.jsonc serves no workers.dev copy.
 	site: 'https://labradorengine.com',
+	base: SITE_BASE,
+	// Candidate snapshots have their own output folder; publishing and retaining
+	// permanent versions is a separate operation.
+	outDir: RELEASE_SOURCE ? './dist/snapshot/' : './dist/',
 	markdown: {
 		processor: satteri({ mdastPlugins: [checkoutLinks, mermaidBlocks, referenceLinks] }),
 	},
@@ -29,11 +34,15 @@ export default defineConfig({
 			favicon: '/favicon.svg',
 			logo: { src: './src/assets/mark.svg', alt: '', replacesTitle: false },
 			social: [{ icon: 'github', label: 'Labrador on GitHub', href: GITHUB_REPOSITORY }],
-			editLink: { baseUrl: `${GITHUB_REPOSITORY}/edit/${EDIT_BRANCH}/website/` },
+			editLink: { baseUrl: RELEASE_SOURCE
+				? `${GITHUB_REPOSITORY}/blob/${RELEASE_SOURCE.commit}/website/`
+				: `${GITHUB_REPOSITORY}/edit/${EDIT_BRANCH}/website/` },
 			customCss: ['./src/styles/site.css'],
+			routeMiddleware: './src/route-data.ts',
 			components: {
 				Header: './src/components/overrides/Header.astro',
 				Footer: './src/components/overrides/Footer.astro',
+				EditLink: './src/components/overrides/EditLink.astro',
 				MarkdownContent: './src/components/overrides/MarkdownContent.astro',
 				MobileMenuFooter: './src/components/overrides/MobileMenuFooter.astro',
 			},

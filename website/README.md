@@ -19,6 +19,7 @@ npm test          # API indexing and rendered code-link regressions
 npm run build     # the site, into dist/ - fails on any broken internal link
 npm run preview   # serve dist/
 npm run --silent snapshot:source -- v0.3.0  # verify candidate release source; no build or publication
+npm run snapshot:build -- v0.3.0  # verified candidate in dist/snapshot/; no publication
 ```
 
 ## It reads the rest of the repository
@@ -68,6 +69,7 @@ src/content/docs/         pages written for the site (.mdx)
                                       and the reference's introduction
 src/lib/
   repository.ts           where the checkout is, its revision, GitHub links
+  site-path.ts            the selected documentation version's URL prefix
   published.ts            THE list of documents and headers the site publishes
   content-loader.ts       adds those to the collection beside the site's pages
   markdown-plugins.ts     relative links in published documents, diagrams, and
@@ -86,6 +88,9 @@ src/assets/captures/      frames of LineSweeper, written by
                           tools/linesweeper_capture/ and never edited by hand
 src/assets/footage/       the encoded LineSweeper video, served on Home and Examples
 scripts/encode-footage.mjs  offline PNG-to-MP4 encoding and format verification
+scripts/build-snapshot.mjs  source-gated release candidate build and output verification
+scripts/snapshot-output.mjs  isolated HTML/assets/source/search checks
+src/route-data.ts         version paths for hero and pagination frontmatter
 src/walkthrough/          the files Get Started tells a reader to create
 src/styles/site.css       colours and the few layouts Starlight lacks
 ```
@@ -190,13 +195,13 @@ Actual sample captures and footage supply the imagery. The design uses no
 downloaded fonts. Keep `src/assets/mark.svg` and `public/favicon.svg` identical
 when changing the mark, and review both themes at desktop and phone widths.
 
-Every page is labelled development documentation and shows its source commit.
+The default build labels every page development documentation and shows its source commit.
 A preview with local changes says so, including changes to the website itself.
 [The versioning policy](../docs/website-versioning.md) defines complete,
 commit-bound snapshots. The owner chose `v0.3.0` as the first snapshot;
 `v0.1.0` and `v0.2.0` are not backfilled. Implement and verify versioning before
 `v0.3.0` is cut, while keeping the current site as development documentation.
-No release date is set. There are no release snapshots or version selector yet.
+No release date is set. There are no published release snapshots or version selector yet.
 
 The first versioning gate is `npm run --silent snapshot:source -- <tag>`.
 It verifies a clean Git checkout at the exact annotated release tag, checks
@@ -204,7 +209,18 @@ the package version and tracked lockfile, and emits candidate source metadata
 as JSON. It requires `v0.3.0` or later and refuses archive commit overrides.
 It does not build a snapshot or add a published release; the
 [source-verification policy](../docs/website-versioning.md#release-source-verification)
-owns its checks and the remaining work.
+owns its checks.
+
+`npm run snapshot:build -- <tag>` uses that gate and builds the release's own
+checkout under `/versions/<tag>/`, with release labels and commit-bound source
+links. It validates the emitted HTML/assets and Pagefind search before writing
+candidate metadata to `dist/snapshot/snapshot-build.json`. This flat directory
+must be hosted at its recorded prefix. It is disposable output: a development
+build replaces `dist/`, so copy reviewed candidates elsewhere first. The command
+does not deploy, retain published versions or add a release-index entry.
+[Candidate-build checks and evidence](../docs/website-versioning.md#candidate-snapshot-builds)
+describe the isolated fixture qualification and the remaining manifest,
+selector, preservation and publication work.
 
 ## Hosting and deployment
 
