@@ -69,9 +69,12 @@ if(EMSCRIPTEN)
     return()
 endif()
 
+# dpi_aware.manifest declares per-monitor DPI awareness, so Windows does not
+# stretch the frame on a scaled display; the file says what that means.
 add_executable(MinimalSample WIN32
     main.cpp
     ${minimal_sources}
+    dpi_aware.manifest
 )
 target_link_libraries(MinimalSample PRIVATE
     MinimalRules

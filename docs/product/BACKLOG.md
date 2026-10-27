@@ -21,7 +21,7 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Clarified 2026-10-27: the C++ introduction has substantial pre-production work but is unfinished; publish its actual scope and status, without claiming a completed engine API series | SRL-14, SRL-15, SRL-17, SRL-16 |
 | Decided 2026-10-27: rename non-macro uppercase constants to snake_case across both repositories; retain CONVENTIONS and record the source migration | SRL-07 |
 | Decided 2026-10-27: v0.3.0 gets the first complete immutable documentation snapshot; no earlier-release backfill; implement and verify versioning before cutting it, with no release date promised | SITE#3 |
-| Decided 2026-10-27: the Windows samples/template default to per-monitor DPI awareness; implementation and the reviewed 150% scaling run remain | OCA-66 |
+| Decided 2026-10-27: the Windows samples/template default to per-monitor DPI awareness; implemented, and the reviewed 150% scaling run remains | OCA-66 |
 
 `SITE#3` remains open under [the versioning policy](../website-versioning.md)
 and is a prerequisite for cutting `v0.3.0`. Verified candidate builds,
@@ -491,7 +491,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | OCA-40 | G131: what background music costs in the page download. Follows OCA-38 (Next). |
 | OCA-18 | G109: debugging in Visual Studio from the presets. |
 | OCA-32 | G48: the recording renderer in an adopter's tests. Follows OCA-29 (Next). |
-| OCA-66 | G151. Decided 2026-10-27: use per-monitor DPI awareness for the Windows samples/template to avoid Windows scaling their output. The engine's per-monitor window sizing support already exists; add the default declaration and adopter guidance, then record a reviewed 150% scaling run with date and commit. Keep the story open until that implementation and evidence exist; no scaled-display result is implied by the decision. |
+| OCA-66 | G151. Decided 2026-10-27: use per-monitor DPI awareness for the Windows samples/template to avoid Windows scaling their output. The engine's per-monitor window sizing support already exists; add the default declaration and adopter guidance, then record a reviewed 150% scaling run with date and commit. Keep the story open until that implementation and evidence exist; no scaled-display result is implied by the decision. Implemented 2026-10-27: `samples/minimal/dpi_aware.manifest` declares PerMonitorV2 with a PerMonitor fallback, and all six samples and the Get Started project embed it. The release guide's *Scaled displays* section states the choice. The running template was per-monitor v2 on a 100% display; the 150% run remains. |
 | PI-10 | G74: an upstream answer for each filed report. Follows PI-09 (Next); the decisions are the owner's. |
 | PI-19 | G74, G27: report 14, accepted narrowed and split out of PI-10 on 2026-10-22. Should, because SM-08 depends on it. |
 | PI-11 | G14: the engine staging helper, only if PI-10 accepts the packaging request. Follows OCA-60 (Next). |

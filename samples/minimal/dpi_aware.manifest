@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Per-monitor DPI awareness, so Windows never stretches the frame on a scaled
+  display: the game draws at the client's real pixels and its point-sampled
+  text stays sharp. CMakeLists.txt lists this file with the sources, and the
+  linker embeds it in the program. The engine's window keeps its client pixels
+  across a DPI change (engine/app/win32/window.cpp); what a game draws at a
+  larger resolution is its own choice. Delete the file from the sources to let
+  Windows scale the window instead.
+
+  PerMonitorV2 needs Windows 10 version 1703; version 1607 takes PerMonitor,
+  the second value, and the engine then sizes the frame at the system DPI.
+-->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+    </windowsSettings>
+  </application>
+</assembly>

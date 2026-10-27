@@ -27,7 +27,9 @@ if(EMSCRIPTEN)
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
     )
 elseif(WIN32)
-    add_executable(CollisionSample WIN32 main.cpp collision_state.cpp)
+    # The template's DPI awareness declaration (samples/minimal/dpi_aware.manifest).
+    add_executable(CollisionSample WIN32 main.cpp collision_state.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/dpi_aware.manifest")
     target_link_libraries(CollisionSample PRIVATE CollisionExample labrador_settings)
     # The capture writes its PNG through WIC, which is Windows', and reads back
     # a device, which the null renderer does not have.

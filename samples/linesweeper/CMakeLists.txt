@@ -163,9 +163,11 @@ if(EMSCRIPTEN)
         VERBATIM
     )
 elseif(WIN32)
+    # The template's DPI awareness declaration (samples/minimal/dpi_aware.manifest).
     add_executable(LineSweeperSample WIN32
         main.cpp
         ${linesweeper_game_sources}
+        "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/dpi_aware.manifest"
     )
     target_link_libraries(LineSweeperSample PRIVATE
         LineSweeperRules

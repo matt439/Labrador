@@ -26,7 +26,9 @@ if(EMSCRIPTEN)
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
     )
 elseif(WIN32)
-    add_executable(ComponentsGallery WIN32 main.cpp gallery_state.cpp)
+    # The template's DPI awareness declaration (samples/minimal/dpi_aware.manifest).
+    add_executable(ComponentsGallery WIN32 main.cpp gallery_state.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/dpi_aware.manifest")
     target_link_libraries(ComponentsGallery PRIVATE ComponentsExample labrador_settings)
 
     # Reuse the minimal sample's font. The white texel the bars are drawn from

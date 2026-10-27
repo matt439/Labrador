@@ -33,9 +33,11 @@ if(EMSCRIPTEN)
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
     )
 elseif(WIN32)
+    # The template's DPI awareness declaration (samples/minimal/dpi_aware.manifest).
     add_executable(LocalMultiplayerSample WIN32
         main.cpp
         ${local_multiplayer_sources}
+        "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/dpi_aware.manifest"
     )
     target_link_libraries(LocalMultiplayerSample PRIVATE LabradorEngine labrador_settings shell32)
     if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
