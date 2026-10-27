@@ -150,18 +150,7 @@ if(PROJECT_IS_TOP_LEVEL)
         endif()
     endif()
 
-    add_subdirectory(tests/app)
-    add_subdirectory(tests/assets)
-    add_subdirectory(tests/audio)
-    add_subdirectory(tests/collision)
-    add_subdirectory(tests/core)
-    add_subdirectory(tests/input)
-    add_subdirectory(tests/linesweeper)
-    add_subdirectory(tests/local_multiplayer)
-    add_subdirectory(tests/math)
-    add_subdirectory(tests/render)
-    add_subdirectory(tests/scene)
-    add_subdirectory(tests/ui)
+    add_subdirectory(tests)
 
     # EACH SAMPLE'S PAGE, LOADED AND QUIT, because the page is what a browser
     # build ships and nothing else here loads one: a content path the module
