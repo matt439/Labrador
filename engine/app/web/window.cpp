@@ -37,6 +37,11 @@ EM_JS(int, labrador_canvas_has_focus, (), {
 	return document.activeElement === specialHTMLTargets["!canvas"] ? 1 : 0;
 });
 
+// The canvas's own CSS cursor, so the rest of the page keeps the page's.
+EM_JS(void, labrador_show_canvas_cursor, (int visible), {
+	specialHTMLTargets["!canvas"].style.cursor = visible ? "" : "none";
+});
+
 EM_JS(double, labrador_canvas_left, (), {
 	return specialHTMLTargets["!canvas"].getBoundingClientRect().left;
 });
@@ -315,6 +320,10 @@ namespace labrador
 		// focus it, or the player click it - so an owner that starts out
 		// assuming the keyboard, as a Win32 window has it, is told.
 		this->report_size();
+		if (!options.cursor_visible)
+		{
+			labrador_show_canvas_cursor(0);
+		}
 		this->focused = labrador_canvas_has_focus() != 0;
 		if (!this->focused)
 		{
@@ -833,6 +842,20 @@ namespace labrador
 			return;
 		}
 		this->impl_->request_fullscreen();
+	}
+
+	void Window::set_cursor_visible(bool visible) const
+	{
+		if (this->impl_->closed)
+		{
+			return;
+		}
+		labrador_show_canvas_cursor(visible ? 1 : 0);
+	}
+
+	// window.h: a page can lock the pointer but not confine it.
+	void Window::set_cursor_confined(bool) const
+	{
 	}
 
 	void Window::leave_fullscreen(const Vector2I&) const

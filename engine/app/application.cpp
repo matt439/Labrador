@@ -178,6 +178,8 @@ namespace labrador
 			this->resolution_manager_->resolution_ivec();
 		window_options.fullscreen = this->options_.fullscreen;
 		window_options.visible = this->options_.visible;
+		window_options.cursor_visible = this->options_.cursor_visible;
+		window_options.cursor_confined = this->options_.cursor_confined;
 		window_options.min_window_width = this->options_.min_window_width;
 		window_options.min_window_height = this->options_.min_window_height;
 
@@ -280,6 +282,36 @@ namespace labrador
 	bool Application::fullscreen() const
 	{
 		return this->options_.fullscreen;
+	}
+
+	// Kept in the options as well as handed on, so a call before the window
+	// exists is the option it would have been.
+	void Application::set_cursor_visible(bool visible)
+	{
+		this->options_.cursor_visible = visible;
+		if (this->window_)
+		{
+			this->window_->set_cursor_visible(visible);
+		}
+	}
+
+	bool Application::cursor_visible() const
+	{
+		return this->options_.cursor_visible;
+	}
+
+	void Application::set_cursor_confined(bool confined)
+	{
+		this->options_.cursor_confined = confined;
+		if (this->window_)
+		{
+			this->window_->set_cursor_confined(confined);
+		}
+	}
+
+	bool Application::cursor_confined() const
+	{
+		return this->options_.cursor_confined;
 	}
 
 	void Application::reset_elapsed_time()

@@ -524,6 +524,71 @@ TEST_CASE("capture cancellation and transfer clear buttons without a normal rele
     CHECK(GetCapture() == nullptr);
 }
 
+TEST_CASE("a hidden pointer is no cursor over the client area and the arrow elsewhere")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	const HWND handle = hwnd(window);
+	const HCURSOR arrow = LoadCursorW(nullptr, IDC_ARROW);
+	const WPARAM over = reinterpret_cast<WPARAM>(handle);
+
+	window.set_cursor_visible(false);
+	SetCursor(arrow);
+	CHECK(SendMessageW(handle, WM_SETCURSOR, over,
+		MAKELPARAM(HTCLIENT, WM_MOUSEMOVE)) == TRUE);
+	CHECK(GetCursor() == nullptr);
+
+	// The frame is the system's whatever the game asked.
+	SendMessageW(handle, WM_SETCURSOR, over,
+		MAKELPARAM(HTCAPTION, WM_MOUSEMOVE));
+	CHECK(GetCursor() == arrow);
+
+	window.set_cursor_visible(true);
+	SetCursor(nullptr);
+	SendMessageW(handle, WM_SETCURSOR, over,
+		MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+	CHECK(GetCursor() == arrow);
+
+	SUBCASE("hidden from the options, before any call")
+	{
+		WindowOptions options = hidden_options();
+		options.window_class_name += L"Hidden";
+		options.cursor_visible = false;
+		Window hidden(options, &notify);
+		SetCursor(arrow);
+		SendMessageW(hwnd(hidden), WM_SETCURSOR,
+			reinterpret_cast<WPARAM>(hwnd(hidden)),
+			MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+		CHECK(GetCursor() == nullptr);
+	}
+}
+
+TEST_CASE("a window nobody can see never takes the pointer, confined or not")
+{
+	// The clip is the whole system's pointer, so a confined window takes it
+	// only while it is active and shown. A hidden one told it is active is
+	// neither, and the clip in force must be whatever it was before.
+	RECT before = {};
+	REQUIRE(GetClipCursor(&before) != FALSE);
+
+	RecordingNotify notify;
+	WindowOptions options = hidden_options();
+	options.cursor_confined = true;
+	Window window(options, &notify);
+	SendMessageW(hwnd(window), WM_ACTIVATEAPP, TRUE, 0);
+	window.set_cursor_confined(true);
+
+	RECT during = {};
+	REQUIRE(GetClipCursor(&during) != FALSE);
+	CHECK(EqualRect(&before, &during) != FALSE);
+
+	window.set_cursor_confined(false);
+	SendMessageW(hwnd(window), WM_ACTIVATEAPP, FALSE, 0);
+	RECT after = {};
+	REQUIRE(GetClipCursor(&after) != FALSE);
+	CHECK(EqualRect(&before, &after) != FALSE);
+}
+
 TEST_CASE("modern power notifications are idempotent and independent of minimize")
 {
     RecordingNotify notify;

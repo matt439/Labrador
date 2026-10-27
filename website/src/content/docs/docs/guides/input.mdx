@@ -149,6 +149,12 @@ and `x2`, and also reports `position()` in window pixels, `motion()` since the l
 `wheel()` and `wheel_horizontal()` in notches. While a button is held the mouse keeps reporting
 movement outside the window, so a drag is one gesture.
 
+A game played with a pad usually hides the pointer: `app->set_cursor_visible(false)`, or
+`cursor_visible = false` in `ApplicationOptions` to hide it from the first frame. The mouse is
+still read while the pointer is hidden. `set_cursor_confined(true)` keeps the pointer inside the
+window on Windows while the window is active, and lets it go while the player moves or resizes the
+window. A browser can lock a pointer but not confine one, so there it does nothing.
+
 ## Touch
 
 `Touch` holds every finger on the glass, up to ten, as points with an id and a `position` in

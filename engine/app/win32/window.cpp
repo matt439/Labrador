@@ -337,6 +337,15 @@ namespace labrador
 		void update_suspension();
 		bool update_modifier(Key key, LPARAM l_param, bool down);
 
+		// Clips the pointer to the client area when it should be confined
+		// now, and releases a clip this window made when it should not
+		// (Window::set_cursor_confined).
+		void update_cursor_clip(HWND window);
+
+		// Shows the pointer's current visibility at once if it is over the
+		// client area, rather than at the next WM_SETCURSOR.
+		void apply_cursor_shape(HWND window) const;
+
 		// outer_size_for_client, for the style the window is wearing right now.
 		Vector2I outer_size(
 			const Vector2I& client_size) const;
@@ -354,6 +363,8 @@ namespace labrador
 		LRESULT on_char_message(HWND window, WPARAM w_param, LPARAM l_param);
 		LRESULT on_mouse_message(HWND window, UINT message, WPARAM w_param,
 			LPARAM l_param);
+		LRESULT on_cursor_message(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param);
 		LRESULT on_pointer_message(HWND window, UINT message, WPARAM w_param,
 			LPARAM l_param);
 		LRESULT on_destroy_message(HWND window, UINT message, WPARAM w_param,
@@ -368,6 +379,15 @@ namespace labrador
 		bool in_suspend = false;
 		bool minimized = false;
 		bool power_suspended = false;
+
+		// The pointer. `active` is the last WM_ACTIVATEAPP, and `clipping` is
+		// whether the clip in force is this window's, so that releasing it
+		// never releases another program's.
+		bool active = false;
+		bool cursor_hidden = false;
+		bool cursor_confined = false;
+		bool clipping = false;
+
 		unsigned int held_modifiers = 0;
 		int min_width = 0;
 		int min_height = 0;
@@ -419,6 +439,8 @@ namespace labrador
 	Window::Impl::Impl(const WindowOptions& options,
 		WindowNotify* window_notify) :
 		notify(window_notify),
+		cursor_hidden(!options.cursor_visible),
+		cursor_confined(options.cursor_confined),
 		min_width(options.min_window_width),
 		min_height(options.min_window_height),
 		class_name(options.window_class_name)
@@ -547,6 +569,15 @@ namespace labrador
 			this->handle = nullptr;
 		}
 
+		// A clip outlives the window that made it: it is the system's, and
+		// left in place it would hold the pointer in a rectangle that is no
+		// longer anything.
+		if (this->clipping)
+		{
+			ClipCursor(nullptr);
+			this->clipping = false;
+		}
+
 		// After the window, because it refuses while one of the class exists.
 		// The return value is not checked: this is teardown, and T6 says it
 		// stays silent.
@@ -661,6 +692,65 @@ namespace labrador
 			SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	}
 
+	void Window::set_cursor_visible(bool visible) const
+	{
+		this->impl_->cursor_hidden = !visible;
+		if (this->impl_->handle != nullptr)
+		{
+			this->impl_->apply_cursor_shape(this->impl_->handle);
+		}
+	}
+
+	void Window::set_cursor_confined(bool confined) const
+	{
+		this->impl_->cursor_confined = confined;
+		if (this->impl_->handle != nullptr)
+		{
+			this->impl_->update_cursor_clip(this->impl_->handle);
+		}
+	}
+
+	void Window::Impl::update_cursor_clip(HWND window)
+	{
+		const bool wanted = this->cursor_confined && this->active &&
+			!this->minimized && !this->in_sizemove &&
+			IsWindowVisible(window) != FALSE;
+
+		if (wanted)
+		{
+			// The client rect in screen pixels. ClipCursor takes the right and
+			// bottom edges as exclusive, as GetClientRect gives them.
+			RECT client;
+			GetClientRect(window, &client);
+			MapWindowPoints(window, nullptr,
+				reinterpret_cast<POINT*>(&client), 2);
+			if (ClipCursor(&client) != FALSE)
+			{
+				this->clipping = true;
+			}
+		}
+		else if (this->clipping)
+		{
+			ClipCursor(nullptr);
+			this->clipping = false;
+		}
+	}
+
+	void Window::Impl::apply_cursor_shape(HWND window) const
+	{
+		POINT point;
+		if (GetCursorPos(&point) == FALSE || WindowFromPoint(point) != window)
+		{
+			return;
+		}
+		if (SendMessageW(window, WM_NCHITTEST, 0,
+			MAKELPARAM(point.x, point.y)) != HTCLIENT)
+		{
+			return;
+		}
+		SetCursor(this->cursor_hidden ? nullptr : LoadCursorW(nullptr, IDC_ARROW));
+	}
+
 	Vector2I Window::Impl::outer_size(
 		const Vector2I& client_size) const
 	{
@@ -747,6 +837,7 @@ namespace labrador
 			{
 				this->notify->on_window_moved();
 			}
+			this->update_cursor_clip(window);
 			break;
 
 		case WM_SIZE:
@@ -788,15 +879,20 @@ namespace labrador
 				this->notify->on_window_size_changed(
 					LOWORD(l_param), HIWORD(l_param));
 			}
+			this->update_cursor_clip(window);
 			break;
 
+		// A confined pointer is let go for the drag, or the player could not
+		// reach the edge they meant to pull.
 		case WM_ENTERSIZEMOVE:
 			this->in_sizemove = true;
+			this->update_cursor_clip(window);
 			break;
 
 		case WM_EXITSIZEMOVE:
 		{
 			this->in_sizemove = false;
+			this->update_cursor_clip(window);
 
 			RECT client;
 			GetClientRect(window, &client);
@@ -831,6 +927,8 @@ namespace labrador
 			break;
 
 		case WM_ACTIVATEAPP:
+			this->active = w_param != 0;
+			this->update_cursor_clip(window);
 			if (w_param)
 			{
 				this->notify->on_activated();
@@ -938,6 +1036,20 @@ namespace labrador
 
 		this->notify->on_text(codepoint);
 		return DefWindowProc(window, WM_CHAR, w_param, l_param);
+	}
+
+	// THE POINTER'S SHAPE OVER THE CLIENT AREA, asked for every time it moves.
+	// Hidden is no cursor at all; otherwise DefWindowProc answers with the
+	// class's arrow, and over the frame with the frame's own cursors.
+	LRESULT Window::Impl::on_cursor_message(HWND window, UINT message,
+		WPARAM w_param, LPARAM l_param)
+	{
+		if (LOWORD(l_param) == HTCLIENT && this->cursor_hidden)
+		{
+			SetCursor(nullptr);
+			return TRUE;
+		}
+		return DefWindowProc(window, message, w_param, l_param);
 	}
 
 	// NO DOUBLE-CLICK MESSAGES ARRIVE, and that is deliberate rather than
@@ -1102,6 +1214,11 @@ namespace labrador
 		// posted then. For close() and for the user's own X it is set, and
 		// this is the quit the pump is waiting for.
 		case WM_DESTROY:
+			if (this->clipping)
+			{
+				ClipCursor(nullptr);
+				this->clipping = false;
+			}
 			PostQuitMessage(0);
 			break;
 
@@ -1255,6 +1372,9 @@ namespace labrador
 		case WM_MOUSEWHEEL:
 		case WM_MOUSEHWHEEL:
 			return self->on_mouse_message(window, message, w_param, l_param);
+
+		case WM_SETCURSOR:
+			return self->on_cursor_message(window, message, w_param, l_param);
 
 		case WM_POINTERDOWN:
 		case WM_POINTERUPDATE:

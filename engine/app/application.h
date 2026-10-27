@@ -58,6 +58,12 @@ namespace labrador
 		// shows, so it is not read there.
 		bool visible = true;
 
+		// The pointer over the window from the first frame: whether it is
+		// drawn, and whether it is kept inside (Application::set_cursor_visible,
+		// set_cursor_confined).
+		bool cursor_visible = true;
+		bool cursor_confined = false;
+
 		// The fixed step the simulation advances at. Rendering is not capped by it.
 		// Must convert to at least one StepTimer tick (at most 10,000,000 FPS).
 		int target_fps = 60;
@@ -214,6 +220,20 @@ namespace labrador
 		// with Escape, and a page in a frame may refuse - and this follows
 		// what it decided, so an options menu reading it shows the truth.
 		bool fullscreen() const;
+
+		// Whether the pointer is drawn over the window. A game played with a
+		// pad hides it; the mouse is still read, so a hidden pointer still
+		// moves and clicks. Over anything but the client area the pointer is
+		// the platform's (Window::set_cursor_visible).
+		void set_cursor_visible(bool visible);
+		bool cursor_visible() const;
+
+		// Whether the pointer is kept inside the window while the window is
+		// active - on Windows; a browser cannot confine a pointer, and this
+		// does nothing there (Window::set_cursor_confined). The answer below
+		// is what was asked, on either platform.
+		void set_cursor_confined(bool confined);
+		bool cursor_confined() const;
 
 		// Tells the clock that the time just spent was not gameplay.
 		//
