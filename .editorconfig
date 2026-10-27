@@ -1,0 +1,33 @@
+# Indentation as the tree already has it. Vendored files keep their upstream
+# style (NOTICE lists them).
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{h,cpp,hlsl,mjs,js,ts,astro,css}]
+indent_style = tab
+indent_size = 4
+
+[{CMakeLists.txt,*.cmake,*.py,*.ps1,*.html}]
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.{md,mdx}]
+trim_trailing_whitespace = false
+
+[{engine/core/step_timer.h,engine/render/throw_if_failed.h,engine/render/d3d11/device_resources.*}]
+indent_style = space
+indent_size = 4
+
+[external/**]
+indent_style = unset
+indent_size = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
