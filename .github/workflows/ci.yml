@@ -123,8 +123,8 @@ jobs:
 
   windows:
     # The check's name is the preset alone. Without it GitHub names each
-    # matrix job after every value in its entry, so changing skip_tests or
-    # vulkan_sdk would rename a required check and leave every pull request
+    # matrix job after every value in its entry, so changing skip_tests,
+    # vulkan_sdk or probes would rename a required check and leave every pull request
     # waiting on a context that never reports (CONTRIBUTING.md).
     name: windows (${{ matrix.preset }})
     needs: changes
@@ -204,21 +204,27 @@ jobs:
           - preset: x64-debug
             skip_tests: ''
             vulkan_sdk: false
+            probes: ''
           - preset: x64-release
             skip_tests: ''
             vulkan_sdk: false
+            probes: ''
           - preset: x64-debug-d3d12
             skip_tests: ''
             vulkan_sdk: false
+            probes: 'D3D12DestructionProbe D3D12PresentedSlotsProbe D3D12DescriptorQueryProbe D3D12DescriptorCountProbe'
           - preset: x64-debug-gl
             skip_tests: '-E "^(RenderPixelTests|MinimalSmokeTests)$"'
             vulkan_sdk: false
+            probes: ''
           - preset: x64-debug-vulkan
             skip_tests: '-E "^(RenderPixelTests|MinimalSmokeTests)$"'
             vulkan_sdk: true
+            probes: 'VulkanDestructionProbe VulkanPresentedSlotsProbe'
           - preset: x64-debug-null
             skip_tests: ''
             vulkan_sdk: false
+            probes: ''
 
     # The presets use the Ninja generator, so every cmake step needs the MSVC
     # environment. vcvars64 is found through vswhere rather than a hardcoded
@@ -314,6 +320,15 @@ jobs:
         run: |
           call "%VCVARS%"
           cmake --build --preset ${{ matrix.preset }}
+
+      # The opt-in GPU probes are EXCLUDE_FROM_ALL and outside ctest, because
+      # running them needs hardware a runner has not got. Compiling them does
+      # not, and keeps the evidence docs/review/INDEX.md cites from rotting.
+      - name: Build the opt-in probes
+        if: needs.changes.outputs.code == 'true' && matrix.probes != ''
+        run: |
+          call "%VCVARS%"
+          cmake --build --preset ${{ matrix.preset }} --target ${{ matrix.probes }}
 
       # The benchmark is one of these targets. It asserts on complexity class
       # rather than wall-clock, so it is a real test on a shared runner where an
