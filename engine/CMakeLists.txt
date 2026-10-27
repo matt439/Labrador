@@ -18,7 +18,6 @@ add_library(LabradorEngine STATIC
     assets/sprite_sheet_loader.cpp
     audio/audio_resources.cpp
     audio/sound_bank.cpp
-    audio/sound_bank_object.cpp
     audio/xwb_file.cpp
     collision/broad_phase.cpp
     collision/contacts.cpp
@@ -27,7 +26,6 @@ add_library(LabradorEngine STATIC
     collision/resolve.cpp
     core/byte_reader.cpp
     core/file_path.cpp
-    core/moving_object.cpp
     core/state.cpp
     core/state_context.cpp
     core/thread_pool.cpp
@@ -37,11 +35,9 @@ add_library(LabradorEngine STATIC
     input/keyboard.cpp
     input/mouse.cpp
     input/touch.cpp
-    render/animation_object.cpp
     render/animation_strip.cpp
     render/block_decode.cpp
     render/camera.cpp
-    render/camera_tools.cpp
     render/colour.cpp
     render/dds_file.cpp
     render/draw_object.cpp
@@ -56,7 +52,6 @@ add_library(LabradorEngine STATIC
     render/sprite_sheet.cpp
     render/sprite_sheet_object.cpp
     render/text.cpp
-    render/text_drop_shadow.cpp
     render/text_encoding.cpp
     render/text_object.cpp
     render/texture_data.cpp

@@ -59,7 +59,7 @@ namespace
 	};
 
 	// A leaf with one extra behaviour, which is what "every leaf is final"
-	// made impossible: the client's own version composes a UiTextDropShadow
+	// made impossible: the client's own version composes a UiText
 	// and forwards four virtuals to it to add one.
 	class CountingTexture final : public UiTexture
 	{

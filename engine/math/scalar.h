@@ -76,7 +76,7 @@ namespace mattmath
 	// Takes the min branch first, so with a floor above the ceiling a value
 	// below the floor gets the floor and any other value gets the ceiling.
 	// Callers wanting one bound to win for an inverted range have to say so
-	// themselves - camera_tools.cpp does, and writes the four lines out.
+	// themselves.
 	float clamp(float value, float min, float max);
 
 	bool are_equal(float a, float b, float epsilon = EPSILON);

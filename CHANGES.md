@@ -72,6 +72,28 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Remove engine types nothing uses
+
+**Source break.** These public types are removed, with their headers. No
+sample, tool or engine code used them:
+
+- `MovingObject` (`engine/core/moving_object.h`)
+- `RotationOrigin` (`engine/render/rotation_origin.h`)
+- `SoundBankObject` (`engine/audio/sound_bank_object.h`)
+- `AnimationObject` (`engine/render/animation_object.h`)
+- `CameraTools` (`engine/render/camera_tools.h`)
+- `TextDropShadow` (`engine/render/text_drop_shadow.h`) and the widget built
+  on it, `UiTextDropShadow` (`engine/ui/widget.h`)
+
+There is no replacement. A game that used one should copy the class from the
+previous release into its own source. To play an animation strip without
+`AnimationObject`, resolve it with `SpriteSheet::resolve_animation_strip`, keep
+the elapsed time in the game's own `update()`, and draw
+`AnimationStrip::calculate_frame(index)` through the `SpriteSheet::draw`
+overloads that take a source rectangle. `engine/ui/widget.h` no longer includes
+`engine/render/text_drop_shadow.h`. It now includes `engine/render/text.h`
+directly. No sample changed.
+
 ### 2026-10-27 - Keep window resizing from requesting activation
 
 **Silent behaviour change, Windows only.** `Window::resize_client`, including

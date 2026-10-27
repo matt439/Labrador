@@ -6,7 +6,6 @@
 #include "engine/render/font.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/text.h"
-#include "engine/render/text_drop_shadow.h"
 
 #include <memory>
 #include <string>
@@ -16,8 +15,7 @@
 //
 // Text publishes these two readers beside its setters so that anything built
 // from it - a widget, a settings row - can be asked what it is showing. The
-// cases below pin that each reader follows its setter, and that a drop shadow
-// inherits both without its shadow colour leaking into either.
+// cases below pin that each reader follows its setter.
 
 namespace
 {
@@ -26,7 +24,6 @@ namespace
 	using labrador::Glyph;
 	using labrador::RenderResources;
 	using labrador::Text;
-	using labrador::TextDropShadow;
 	using labrador::TextureHandle;
 	using mattmath::RectangleI;
 	using mattmath::Vector2F;
@@ -77,18 +74,4 @@ TEST_CASE("a text's readers follow its setters")
 
 	CHECK(text.text() == L"BA");
 	CHECK(text.colour() == Colour::blue);
-}
-
-TEST_CASE("a drop shadow reads back its text's colour, not its shadow's")
-{
-	Content content;
-	TextDropShadow shadow(L"AB", "font", Vector2F::ZERO, &content.resources,
-		Colour::yellow, Colour::black);
-
-	CHECK(shadow.text() == L"AB");
-	CHECK(shadow.colour() == Colour::yellow);
-
-	shadow.set_colour(Colour::green);
-	CHECK(shadow.colour() == Colour::green);
-	CHECK(shadow.shadow_color() == Colour::black);
 }

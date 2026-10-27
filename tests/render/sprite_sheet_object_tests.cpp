@@ -29,8 +29,8 @@
 // name, and it cuts both ways. A sheet replaced under the same name IS seen
 // through a handle already held - which is what a device restore needs and is
 // the last case below. And a handle resolved against one sheet means nothing
-// against another, which is why set_sprite_sheet is protected and why
-// AnimationObject moves both together.
+// against another, which is why set_sprite_sheet is protected and
+// moves both together.
 
 namespace
 {
@@ -46,7 +46,7 @@ namespace
 
 	// THE STATE IS protected AND THAT IS THE CLASS'S SHAPE - the same argument
 	// draw_object_tests.cpp makes next door. A SpriteSheetObject is a base for
-	// TextureObject and AnimationObject, so a derived probe is how its caller
+	// TextureObject, so a derived probe is how its caller
 	// sees it.
 	class Probe : public SpriteSheetObject
 	{

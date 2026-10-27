@@ -1,8 +1,8 @@
 #pragma once
 
 #include "engine/core/game_object.h"
+#include "engine/render/text.h"
 #include "engine/render/texture_object.h"
-#include "engine/render/text_drop_shadow.h"
 #include "engine/render/colour.h"
 #include "engine/render/camera.h"
 #include "engine/math/rectanglef.h"
@@ -195,31 +195,6 @@ namespace labrador
 			const Colour& color = Colour::white,
 			bool hidden = false,
 			float scale = 1.0f,
-			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
-			float layer_depth = 0.0f);
-
-		void update(float dt) override;
-		void draw(DrawList& draw_list) const override;
-		mattmath::RectangleF bounds() const override;
-		void set_colour(const Colour& colour) override;
-	};
-
-	class UiTextDropShadow : public UiWidget, public TextDropShadow
-	{
-	public:
-		UiTextDropShadow() = default;
-		UiTextDropShadow(const std::string& name,
-			const std::wstring& text,
-			const std::string& font_name,
-			const mattmath::Vector2F& position,
-			RenderResources* render_resources,
-			const Colour& color = Colour::white,
-			const Colour& shadow_color = Colour::black,
-			const mattmath::Vector2F& shadow_offset = { 2.0f, 2.0f },
-			bool hidden = false,
-			float scale = 1.0f,
-			float shadow_scale = 1.0f,
 			float rotation = 0.0f,
 			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
 			float layer_depth = 0.0f);
