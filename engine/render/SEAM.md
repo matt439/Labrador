@@ -247,6 +247,9 @@ none: `vulkan/` replays vectors like `gl/`, because a `VkCommandPool` may not be
 used from two threads at once and a view's vertices are already built on the CPU
 before any backend sees them.
 
+A second `submit` in one frame adds nothing. That is one flag per backend, set
+by `submit` and cleared by `begin_frame`, off the per-sprite path (T8).
+
 ### Why `read_back_buffer` exists
 
 It is what makes the first purpose in §1 real. Until it, there was no way for a
@@ -257,13 +260,74 @@ library the backend happened to call and written down nowhere. A seam whose
 output nothing can read cannot be held to a contract, however many backends fill
 it.
 
-It answers RGBA regardless of what the backend stores. Three of the four
+It answers RGBA regardless of what the backend stores, so that the assertions
+another backend has to pass are the same bytes and not the same bytes after a
+per-backend swizzle. Three of the four
 rasterisers' buffers are BGRA and all three swap on the way out — both Direct3D
 ones and the Vulkan one, whose colour target is `B8G8R8A8_UNORM` for exactly
 that reason. The D3D12 one additionally unpads a row pitch its API rounds up to
 256 bytes; the GL one is asked for as RGBA and only flipped, because GL reads
 from the bottom. One swap and no flip on three, one flip and no swap on the
 fourth.
+
+The null backend refuses, because it records draws and never rasterises them,
+and that refusal is why `RenderPixelTests` is not built in the null
+configuration at all rather than built and skipped.
+
+### Why `layer_depth` is still a parameter
+
+No backend reads it, but the seam is what a client writes against, and a
+backend that sorts would need it per draw rather than per object, for the
+reason the tint and the flip are per draw: the same sprite drawn into two views
+at two depths must be expressible, and under the view fan-out a depth read off
+the shared object is inexpressible rather than merely racy.
+
+### Why the text entry point is wide
+
+A glyph table is keyed by code unit, so a narrow overload is a conversion, and a
+conversion on the draw path is either an allocation per string per view per
+frame or a buffer shared between workers. Wide in, wide all the way down; there
+is no narrow overload to fall back to and there should not be one.
+
+### Why `create_device` takes `void*`
+
+`renderer.h` is the file every backend implements, and a window handle is not a
+graphics type: it is the platform's window. So the shell passes it as `void*`
+and the backend casts it back. The null backend ignores it, which is what lets
+a client run on a machine with no display.
+
+### Why a resize restarts a frame rather than refusing it
+
+"Do not call `window_size_changed` between `begin_frame` and `submit`" is not a
+rule a caller could keep. A resize reaches the shell as a window message, and a
+window message can be *sent* - straight to the window procedure, on the calling
+thread, with no queue and no pump in between. `engine/app/win32/window.cpp`'s
+`resize_client` is a `SetWindowPos`, which does exactly that, and
+`Application::render` runs the state's whole draw walk between `begin_frame`
+and `submit`. So a client that changes resolution from inside its own drawing
+arrives with a frame open, in one call stack, and no care at the call site would
+have told it so. A prohibition on something the caller does not control is the
+kind of rule T6 says to make impossible rather than to document.
+
+### Why the resource table is set separately
+
+`draw_sprite` takes a `TextureHandle`, and the only thing that can turn one back
+into whatever a backend calls a texture is the table that issued it. The
+alternative is for the caller to resolve first and hand the resolved resource
+in, which puts the backend's own type in a game file's hands and undoes the seam
+on the first call. The table is set after `create_device` because the resource
+factory needs a device before it can load anything into one.
+
+### What `back_buffer_size` answers on each backend
+
+During a drag-resize the shell discards every `WM_SIZE` and still asks for
+frames, so the buffer and the last size anyone gave can differ. Each backend
+answers what it is really drawing into. A swap chain does not follow its window,
+so both Direct3D backends answer the size they were told and let `Present`
+stretch. A GL context's default framebuffer is the window's client area, or in a
+browser the canvas's drawing buffer, so `gl/` answers that. `vulkan/` draws into
+an engine-owned colour target and reports its extent; presentation scales it
+when the swapchain size differs.
 
 ## 7. What holds the five to one another
 
