@@ -408,7 +408,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[OCA-50](STORIES.md#oca-50)** Could · S · The Outside C++ Adopter: Make a menu work with a click or a tap
 - [ ] **[OCA-76](STORIES.md#oca-76)** Could · S · The Outside C++ Adopter: Ask the engine where my game may write, on Windows and in the browser — after OCA-53
 - [ ] **[OCA-41](STORIES.md#oca-41)** Could · S · The Outside C++ Adopter: My non-English literals draw the same on Windows and in the browser
-- [ ] **[OCA-43](STORIES.md#oca-43)** Could · S · The Outside C++ Adopter: Know which languages the text path can draw
+- [x] **[OCA-43](STORIES.md#oca-43)** Could · S · The Outside C++ Adopter: Know which languages the text path can draw
 - [ ] **[OCA-42](STORIES.md#oca-42)** Could · M · The Outside C++ Adopter: Get my game's language from a string table to the screen — after OCA-41, OCA-43, OCA-34
 - [ ] **[OCA-77](STORIES.md#oca-77)** Could · S · The Outside C++ Adopter: Wrap a translated string to a width — after OCA-43, OCA-42
 - [ ] **[OCA-40](STORIES.md#oca-40)** Could · S · The Outside C++ Adopter: Know what background music costs and how to keep it out of the page download — after OCA-38
@@ -485,7 +485,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | OCA-50 | G127: a menu that works with a click or a tap, in game code. An engine hit test over `bounds()` was weighed on 2026-10-24 and declined: the one caller, LineSweeper's pause menu (`tapped_row`), sizes each tap target from the row's centre and the row spacing rather than its bounds, because a finger needs more than the text's extent. The target is policy, so the hit test stays the game's (T1; PHILOSOPHY, UI). |
 | OCA-76 | G108: the engine half of OCA-53, split out on 2026-10-24. ColourWars is the recorded caller (`game/directory_consts.cpp` reads `%LOCALAPPDATA%` and falls back beside the executable), Windows-only; it waits for a second caller, or a browser one, before it is built. |
 | OCA-41 | G145: non-English literals differ between Windows and the browser without /utf-8. |
-| OCA-43 | G147: which languages the text path can draw. |
+| OCA-43 | G147. Closed 2026-10-27: the *Sprites and text* guide's *Which languages the text path can draw* and `engine/render/font.h`'s header state that the walk has no kerning, shaping, bidirectional ordering or placed combining marks, list the scripts in and out of reach, and say why a character beyond the basic plane draws as two stand-ins on Windows and one in the browser. No script beyond ASCII has been drawn. |
 | OCA-42 | G146: a string table to the screen. |
 | OCA-77 | G146, G147: word wrap to a measured width, weighed on 2026-10-24 after a review asked for wrap and alignment helpers. Wrap is cheap - `Font::measure` already lays out line feeds, so a wrap only chooses where to insert them - but where a line may break depends on the script, which OCA-43 settles, and no caller in either client wraps by width yet: the one wrap there is a debug console cutting at a column count on purpose. It follows OCA-43 and lands with or after OCA-42, whose translated strings are the first caller. An alignment helper was declined in the same weighing: centring is one line at each of the half-dozen sites that do it, and `renderer.h` already says to `std::floor` a centred point-sampled position. |
 | OCA-40 | G131: what background music costs in the page download. Follows OCA-38 (Next). |

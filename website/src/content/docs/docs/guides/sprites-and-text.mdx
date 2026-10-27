@@ -123,6 +123,32 @@ as it would on the nearest whole pixel, under the point filter.
 
 The engine has no layout system: positions are numbers your game works out, as here.
 
+### Which languages the text path can draw
+
+Text is drawn one glyph per code unit, left to right, with each glyph's own advance. There is no
+kerning, no shaping or ligatures, no right-to-left or bidirectional ordering, and no combining
+mark placed over the letter before it: a mark is a glyph of its own that moves the pen. The only
+line break is `\n`.
+
+So a script in which every character is one precomposed glyph is in reach, given a font made with
+those characters:
+
+| In reach | Out of reach |
+| --- | --- |
+| Latin with precomposed accents (`é`, not `e` plus a combining accent) | Arabic and Hebrew, which are right-to-left and joined |
+| Greek and Cyrillic | Devanagari and the other Indic scripts, and Thai, which need shaping and placed marks |
+| Chinese, Japanese kana and kanji, and Korean Hangul syllables | Emoji and anything else outside the Basic Multilingual Plane |
+
+No font in this repository holds anything but printable ASCII, so none of these scripts has been
+drawn here; a large character set is also a large atlas, which is your game's to size.
+
+A character beyond the Basic Multilingual Plane (above U+FFFF) is not supported. A narrow string
+converted with `widen()` holds it as two UTF-16 code units, which draw as two stand-in glyphs on
+every platform. A wide literal in your source does not agree across platforms: `wchar_t` is 16
+bits on Windows and 32 in the browser build, so the same `L"..."` is two units and two stand-ins
+on Windows but one unit and one stand-in in the browser. `can_render` reports either as text the
+font cannot draw.
+
 ## Sprites from a sheet
 
 A sprite sheet is one texture with named rectangles in it. Its JSON file lists **frames**, each a
