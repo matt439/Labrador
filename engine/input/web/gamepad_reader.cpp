@@ -1,14 +1,94 @@
 #include "engine/input/gamepad_reader.h"
 #include "engine/input/gamepads.h"
+#include "engine/input/vibration_output.h"
 #include "engine/input/web/standard_gamepad.h"
 
+#include <emscripten/em_js.h>
 #include <emscripten/html5.h>
 
 #include <memory>
 #include <vector>
 
+// Global rather than in labrador::, because EM_JS declares a C function, and
+// prefixed for the same reason.
+//
+// The Gamepad API's one portable rumble is the "dual-rumble" effect on
+// Gamepad.vibrationActuator. A browser without it, or a pad whose actuator
+// lists effects without that one, is unavailable output. The effect's own
+// promise is caught: a rejection is a pad that would not rumble, which the
+// engine has already answered as best it can, not an error for the page.
+EM_JS(int, labrador_play_dual_rumble, (int index, double strong, double weak,
+	double milliseconds), {
+	if (typeof navigator === "undefined" || !navigator.getGamepads) {
+		return 0;
+	}
+	const pad = navigator.getGamepads()[index];
+	const actuator = pad ? pad.vibrationActuator : null;
+	if (!actuator || typeof actuator.playEffect !== "function") {
+		return 0;
+	}
+	if (Array.isArray(actuator.effects) &&
+		!actuator.effects.includes("dual-rumble")) {
+		return 0;
+	}
+	try {
+		actuator.playEffect("dual-rumble", {
+			startDelay: 0,
+			duration: milliseconds,
+			strongMagnitude: strong,
+			weakMagnitude: weak,
+		}).catch(() => {});
+	} catch (error) {
+		return 0;
+	}
+	return 1;
+});
+
+EM_JS(void, labrador_reset_rumble, (int index), {
+	if (typeof navigator === "undefined" || !navigator.getGamepads) {
+		return;
+	}
+	const pad = navigator.getGamepads()[index];
+	const actuator = pad ? pad.vibrationActuator : null;
+	if (!actuator || typeof actuator.reset !== "function") {
+		return;
+	}
+	try {
+		actuator.reset().catch(() => {});
+	} catch (error) {
+	}
+});
+
 namespace labrador
 {
+	namespace
+	{
+		// A slot's request goes to whichever browser pad is in it. The effect
+		// carries its own duration, and VibrationOutput resets the actuator
+		// at the same end, so a request ends at one time on both sides.
+		struct WebVibration
+		{
+			const GamepadSlots* slots = nullptr;
+
+			bool send(int slot, const Vibration& vibration)
+			{
+				const int index = (*this->slots)[slot];
+				return index != no_gamepad && labrador_play_dual_rumble(index,
+					vibration.low_frequency, vibration.high_frequency,
+					static_cast<double>(vibration.seconds) * 1000.0) != 0;
+			}
+
+			void stop(int slot)
+			{
+				const int index = (*this->slots)[slot];
+				if (index != no_gamepad)
+				{
+					labrador_reset_rumble(index);
+				}
+			}
+		};
+	}
+
 	// The browser Gamepad API, which is polled: navigator.getGamepads() is a
 	// snapshot taken on demand, which is the shape sample() already asks for,
 	// so this backend needs no event queue and no thread. What a pad means is
@@ -30,6 +110,10 @@ namespace labrador
 		// Kept rather than rebuilt, so a sample allocates nothing once it has
 		// seen as many pads as it ever will.
 		std::vector<int> present;
+
+		// After the slots it reads, so it is destroyed first and its last
+		// stop still knows which pad each slot holds.
+		VibrationOutput<WebVibration> vibration{ WebVibration{ &this->slots } };
 	};
 
 	GamepadReader::GamepadReader() :
@@ -76,7 +160,18 @@ namespace labrador
 			}
 		}
 
-		assign_gamepad_slots(impl.slots, impl.present);
+		// The new assignment beside the old one, so a request on a slot whose
+		// pad has gone, or been replaced, is stopped on the pad it was sent
+		// to rather than on whichever arrived.
+		GamepadSlots next = impl.slots;
+		assign_gamepad_slots(next, impl.present);
+		const double now = vibration_clock_seconds();
+		for (int slot = 0; slot < Gamepads::max_count; ++slot)
+		{
+			impl.vibration.sampled(slot,
+				next[slot] != no_gamepad && next[slot] == impl.slots[slot], now);
+		}
+		impl.slots = next;
 
 		for (int slot = 0; slot < Gamepads::max_count; ++slot)
 		{
@@ -101,11 +196,24 @@ namespace labrador
 
 	void GamepadReader::suspend()
 	{
+		this->impl_->vibration.suspend();
 		this->impl_->suspended = true;
 	}
 
 	void GamepadReader::resume()
 	{
 		this->impl_->suspended = false;
+		this->impl_->vibration.resume();
+	}
+
+	bool GamepadReader::vibrate(int slot, const Vibration& vibration)
+	{
+		return this->impl_->vibration.start(slot, vibration,
+			vibration_clock_seconds());
+	}
+
+	void GamepadReader::stop_vibration(int slot)
+	{
+		this->impl_->vibration.stop(slot);
 	}
 }

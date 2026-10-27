@@ -66,8 +66,29 @@ namespace labrador
 		// absence this reader DOES report - a replug, the first poll, a
 		// suspension that works - is suppressed rather than delivered as a
 		// press. That holds whichever backend is behind this seam.
+		//
+		// Suspension also stops every pad's motors and refuses vibration
+		// until resume, and resume replays nothing: a rumble asked for before
+		// the game went into the background does not start again when it
+		// comes back.
 		void suspend();
 		void resume();
+
+		// The output half: one bounded request to `slot`'s two motors, which
+		// Gamepads::vibrate has already checked, and an explicit stop. vibrate
+		// answers whether the pad API took the request. False is unavailable
+		// output - a slot out of range or with no pad, a pad whose rumble the
+		// API cannot reach, or a suspended reader - and nothing is kept to be
+		// sent later. A request ends when its seconds pass, at a stop, a newer
+		// request on its slot, or when its pad leaves; sample() is where its
+		// time and its pad are checked, so its end is seen within a frame.
+		// Destroying the reader stops every pad it vibrated, without throwing.
+		//
+		// What reaches a motor is the pad API's affair and is not verified by
+		// any test in this tree. engine/input/vibration_output.h holds the
+		// lifetime rules both backends share, and InputTests holds those.
+		bool vibrate(int slot, const Vibration& vibration);
+		void stop_vibration(int slot);
 
 	private:
 		struct Impl;

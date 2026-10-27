@@ -64,6 +64,27 @@ namespace labrador
 		bool just_connected(int slot) const;
 		bool just_disconnected(int slot) const;
 
+		// Sends one bounded request to the pad in `slot`, replacing any request
+		// still running there; gamepad.h's Vibration says what the fields
+		// mean and what is the game's to decide. The slot is checked as
+		// state() checks it, then the request as check_vibration checks it,
+		// and both throw rather than send something else.
+		//
+		// unavailable when the slot had no pad at the last poll or the reader
+		// could not pass the request on; nothing is then waiting to be sent.
+		// submitted when the pad API took it, which is not evidence that a
+		// motor turned. A request is stopped when its seconds pass, its pad
+		// leaves the slot, the reader is suspended or the reader is destroyed,
+		// and resuming does not replay it. Which of a game's own transitions
+		// should also stop one - a pause menu, a scene change - is the game's
+		// call, with stop_vibration.
+		VibrationResult vibrate(int slot, const Vibration& vibration);
+
+		// Stops `slot`'s motors and forgets its request. Safe on an empty slot
+		// and on one with nothing running. Throws std::out_of_range for a slot
+		// state() would refuse.
+		void stop_vibration(int slot);
+
 	private:
 		const GamepadState& checked(const GamepadState* states,
 			int slot) const;

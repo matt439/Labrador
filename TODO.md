@@ -16,7 +16,7 @@ An index of open work, one row per item; each row points to the document that ow
 **Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
+- Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
 - Later: `WEB#3` (listen to the audio sample).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 
@@ -27,6 +27,7 @@ An index of open work, one row per item; each row points to the document that ow
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
+| `PI-21` | DECISION | should | S | Vibration implemented and headlessly tested; record each motor, stop, background, disconnect, reconnect and shutdown on a physical pad, natively and in Chrome. Can ride `OCA-48`'s session. [Acceptance](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
 
 ## Website and the hosted demo
 

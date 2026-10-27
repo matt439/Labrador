@@ -244,6 +244,10 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 		"Microsoft's timer from the DirectX templates, carried as written (NOTICE) and private to Application.",
 	],
 	[
+		'engine/input/vibration_output.h',
+		'The lifetime rules both input backends share behind Gamepads::vibrate, private to them; the reference documents what a game calls, in gamepads.h and gamepad.h.',
+	],
+	[
 		'engine/app/frame_timer.h',
 		'The arithmetic behind Application::frame_timings(), private to Application; the reference documents what it publishes, in application.h.',
 	],

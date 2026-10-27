@@ -43,7 +43,7 @@ separately from that completed batch:
 | # | Engine-focused claim | Answer |
 |---|---|---|
 | [x] 23 | Resizing a hidden window requests activation. | [Accept and implement](resize.md): *Keep window resizing from requesting activation* adds `SWP_NOACTIVATE` to `resize_client`. The engine's hidden-window regression reproduces foreground activation before the fix in both windowed and fullscreen modes and passes afterwards. |
-| [x] 25 | Controller vibration has no public output operation. | [Accept, narrowed](vibration.md): slot-addressed output transport belongs behind the input seam. Implementation is [PI-21](../../product/BACKLOG.md#pi-21); timing, effects, preferences and player routing stay game policy. No output API or physical acceptance is claimed yet. |
+| [x] 25 | Controller vibration has no public output operation. | [Accept, narrowed](vibration.md): slot-addressed output transport belongs behind the input seam. Implementation is [PI-21](../../product/BACKLOG.md#pi-21): `Gamepads::vibrate` and `stop_vibration` are implemented with headless lifetime tests; timing, effects, preferences and player routing stay game policy. No physical output is claimed yet. |
 
 Both are answered here without a duplicate public issue. Together with the
 withdrawal of the original fifteen, this closes `PI-09`'s filing queue.

@@ -72,6 +72,14 @@ its heading here.
 
 ## Unreleased
 
+Controller vibration (`Gamepads::vibrate` and `stop_vibration`, with
+`Vibration`, `VibrationResult` and `check_vibration` in `gamepad.h`) adds names
+only, so it is a note rather than an entry. A request is bounded to
+`max_vibration_seconds`, is stopped by the engine when its time passes, its pad
+leaves or the reader is suspended or destroyed, and is never replayed on
+resume. `submitted` means the pad API took the request, not that a motor
+turned: no physical output has been checked on either backend.
+
 ### 2026-10-27 - Name Direct3D adapters with a portable narrow()
 
 **Behaviour change, Direct3D 11 and 12 only.** Creating a device used to throw
