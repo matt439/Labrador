@@ -162,8 +162,8 @@ TEST_SUITE("Camera::frame")
 			// The direction the multiply got backwards. This is the case
 			// Camera::frame produces for any world larger than its pane, and
 			// the one a cull is built on.
-			const Camera zoomed_out(Vector2F::ZERO, 0.5f);
-			const Camera zoomed_in(Vector2F::ZERO, 2.0f);
+			const Camera zoomed_out(Vector2F::zero, 0.5f);
+			const Camera zoomed_in(Vector2F::zero, 2.0f);
 
 			CHECK(zoomed_out.visible_rectangle(screen).width >
 				zoomed_in.visible_rectangle(screen).width);
@@ -189,7 +189,7 @@ TEST_SUITE("Camera::frame")
 
 		SUBCASE("a zero scale is refused rather than divided by")
 		{
-			const Camera blind(Vector2F::ZERO, 0.0f);
+			const Camera blind(Vector2F::zero, 0.0f);
 
 			CHECK_THROWS_AS(blind.visible_rectangle(screen),
 				std::invalid_argument);
@@ -205,7 +205,7 @@ TEST_SUITE("Camera::world_position")
 		{
 			const Viewport buffer(0.0f, 0.0f, 1280.0f, 720.0f);
 			const Vector2F world =
-				Camera::DEFAULT_CAMERA.world_position(Vector2I(37, 501), buffer);
+				Camera::default_camera.world_position(Vector2I(37, 501), buffer);
 
 			CHECK(world.x == 37.0f);
 			CHECK(world.y == 501.0f);
@@ -232,7 +232,7 @@ TEST_SUITE("Camera::world_position")
 		SUBCASE("zoomed out, a pixel covers more than one world unit")
 		{
 			const Viewport buffer(0.0f, 0.0f, 1920.0f, 1080.0f);
-			const Camera camera(Vector2F::ZERO, 0.25f);
+			const Camera camera(Vector2F::zero, 0.25f);
 
 			CHECK(camera.world_position(Vector2I(10, 20), buffer).x == 40.0f);
 			CHECK(camera.world_position(Vector2I(10, 20), buffer).y == 80.0f);
@@ -244,7 +244,7 @@ TEST_SUITE("Camera::world_position")
 			// 100, not 100.75, and a draw at its view origin lands there.
 			const Viewport pane(100.75f, 50.5f, 300.0f, 200.0f);
 			const Vector2F world =
-				Camera::DEFAULT_CAMERA.world_position(Vector2I(100, 50), pane);
+				Camera::default_camera.world_position(Vector2I(100, 50), pane);
 
 			CHECK(world.x == 0.0f);
 			CHECK(world.y == 0.0f);
@@ -254,7 +254,7 @@ TEST_SUITE("Camera::world_position")
 		{
 			const Viewport pane(640.0f, 0.0f, 640.0f, 720.0f);
 			const Vector2F world =
-				Camera::DEFAULT_CAMERA.world_position(Vector2I(0, 0), pane);
+				Camera::default_camera.world_position(Vector2I(0, 0), pane);
 
 			CHECK(world.x == -640.0f);
 			CHECK(world.y == 0.0f);
@@ -262,7 +262,7 @@ TEST_SUITE("Camera::world_position")
 
 		SUBCASE("a zero scale throws rather than divide by it")
 		{
-			const Camera blind(Vector2F::ZERO, 0.0f);
+			const Camera blind(Vector2F::zero, 0.0f);
 			CHECK_THROWS_AS(
 				blind.world_position(Vector2I(1, 1), Viewport(0, 0, 10, 10)),
 				std::invalid_argument);

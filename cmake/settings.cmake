@@ -22,7 +22,7 @@ if(MSVC)
         # compiler default, and that is the reason to write it down: a great deal
         # of this tree is only correct under exactly-rounded arithmetic that does
         # not reassociate. Vector2F::normalized tests its length against zero,
-        # narrow_phase compares an axis against Vector2F::ZERO through an exact
+        # narrow_phase compares an axis against Vector2F::zero through an exact
         # operator==, every are_equal tolerance assumes a known rounding bound,
         # and the collision path's NaN handling assumes NaN is produced and
         # propagated rather than optimised away - which /fp:fast permits.

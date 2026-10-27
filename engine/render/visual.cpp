@@ -69,7 +69,7 @@ namespace labrador
 		const Vector2F origin = frame.origin() + this->origin();
 		this->bounds_ = sprite_world_bounds(this->rectangle_, frame.source_rectangle(),
 			this->draw_rotation(), origin);
-		const RectangleF error = sprite_world_bounds(RectangleF::ZERO,
+		const RectangleF error = sprite_world_bounds(RectangleF::zero,
 			frame.source_rectangle(), this->draw_rotation(), origin, 1.0f);
 		this->pixel_padding_ = Vector2F(-error.x, -error.y);
 	}

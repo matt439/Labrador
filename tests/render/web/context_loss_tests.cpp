@@ -98,19 +98,19 @@ namespace
 	using namespace labrador;
 	using namespace labrador;
 
-	constexpr int BUFFER_SIZE = 64;
+	constexpr int buffer_side = 64;
 
 	// What labrador_page_heard answers.
-	constexpr int PAGE_HEARD_LOST = 1;
-	constexpr int PAGE_HEARD_RESTORED = 2;
+	constexpr int page_heard_lost = 1;
+	constexpr int page_heard_restored = 2;
 
 	// How many frames to draw into the lost context before asking for it
 	// back: more than one, so that a frame between the loss event and the
 	// restore is certainly drawn.
-	constexpr int LOST_FRAMES = 3;
+	constexpr int frames_to_lose = 3;
 
 	// How long anything may take before the run fails rather than waits.
-	constexpr int GIVE_UP_AFTER_FRAMES = 600;
+	constexpr int give_up_after_frames = 600;
 
 	int failures = 0;
 
@@ -168,7 +168,7 @@ namespace
 	// destructors included (engine/app/application.h says why).
 	struct Run
 	{
-		render_tests::TestWindow window{ BUFFER_SIZE, BUFFER_SIZE };
+		render_tests::TestWindow window{ buffer_side, buffer_side };
 		RenderResources resources;
 		Renderer renderer;
 		std::unique_ptr<RecordingShell> shell;
@@ -186,9 +186,9 @@ namespace
 		run.renderer.set_view_count(1);
 		DrawList list = run.renderer.view(0);
 		list.draw_sprite(run.quad, RectangleI(0, 0, 1, 1),
-			RectangleF(0.0f, 0.0f, static_cast<float>(BUFFER_SIZE),
-				static_cast<float>(BUFFER_SIZE)),
-			Colour::white, 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			RectangleF(0.0f, 0.0f, static_cast<float>(buffer_side),
+				static_cast<float>(buffer_side)),
+			Colour::white, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 		run.renderer.submit();
 	}
 
@@ -196,9 +196,9 @@ namespace
 	{
 		run.renderer.read_back_buffer(run.pixels);
 		const size_t centre =
-			(static_cast<size_t>(BUFFER_SIZE / 2) * BUFFER_SIZE + BUFFER_SIZE / 2) * 4;
-		return run.pixels.size() == static_cast<size_t>(BUFFER_SIZE) *
-				BUFFER_SIZE * 4 &&
+			(static_cast<size_t>(buffer_side / 2) * buffer_side + buffer_side / 2) * 4;
+		return run.pixels.size() == static_cast<size_t>(buffer_side) *
+				buffer_side * 4 &&
 			run.pixels[centre] == 255 && run.pixels[centre + 1] == 0 &&
 			run.pixels[centre + 2] == 0 && run.pixels[centre + 3] == 255;
 	}
@@ -235,10 +235,10 @@ namespace
 	void step(Run& run)
 	{
 		run.frame++;
-		if (run.frame > GIVE_UP_AFTER_FRAMES)
+		if (run.frame > give_up_after_frames)
 		{
 			check(false, "the run finished within " +
-				std::to_string(GIVE_UP_AFTER_FRAMES) + " frames");
+				std::to_string(give_up_after_frames) + " frames");
 			finish();
 			return;
 		}
@@ -288,15 +288,15 @@ namespace
 				"the shell hears nothing while the context is lost");
 			// The event may not have arrived before this frame's
 			// begin_frame, so the page has heard of the loss or nothing.
-			check(page_heard({}) || page_heard({ PAGE_HEARD_LOST }),
+			check(page_heard({}) || page_heard({ page_heard_lost }),
 				"the page hears at most the loss, once and from a frame, "
 				"while the context is lost");
 
 			run.lost_frames++;
 			// Asked back only once the page has heard it went, so that the
 			// order checked below is the renderer's and not the browser's.
-			if (run.lost_frames >= LOST_FRAMES &&
-				page_heard({ PAGE_HEARD_LOST }))
+			if (run.lost_frames >= frames_to_lose &&
+				page_heard({ page_heard_lost }))
 			{
 				labrador_restore_context();
 				run.step = Step::wait_for_restore;
@@ -321,7 +321,7 @@ namespace
 				"the shell hears lost then restored, together");
 			check(centre_is_red(run),
 				"the reloaded quad draws in the frame that heard the restore");
-			check(page_heard({ PAGE_HEARD_LOST, PAGE_HEARD_RESTORED }),
+			check(page_heard({ page_heard_lost, page_heard_restored }),
 				"the page hears lost then restored, each once and from a "
 				"frame, by the end of the frame that restored the shell");
 			run.renderer.end_frame();
@@ -335,7 +335,7 @@ namespace
 			check(centre_is_red(run), "the quad draws after the restore");
 			run.renderer.end_frame();
 			check(run.shell->heard.size() == 2 &&
-				page_heard({ PAGE_HEARD_LOST, PAGE_HEARD_RESTORED }),
+				page_heard({ page_heard_lost, page_heard_restored }),
 				"neither the shell nor the page hears anything more");
 			finish();
 			return;
@@ -365,8 +365,8 @@ int main()
 	try
 	{
 		static Run run;
-		run.renderer.create_device(run.window.handle(), BUFFER_SIZE,
-			BUFFER_SIZE, 1);
+		run.renderer.create_device(run.window.handle(), buffer_side,
+			buffer_side, 1);
 		run.renderer.set_resources(&run.resources);
 		run.shell = std::make_unique<RecordingShell>(run.renderer,
 			run.resources);

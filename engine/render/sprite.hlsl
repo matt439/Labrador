@@ -28,7 +28,7 @@
 // is in each backend's renderer.cpp, because it is a call and not a build
 // setting: D3D11 gives the vertex shader its b0 through a constant buffer,
 // D3D12 gives it the same b0 as four root constants, and Vulkan as a uniform
-// buffer in a descriptor set. ONE difference reaches
+// buffer in a descriptor set. one difference reaches
 // this file and it is worth knowing before that sentence is read as none: the
 // declaration order of VertexIn's three members is an ABI term on the Vulkan
 // backend, because dxc assigns SPIR-V locations in declaration order and a
@@ -124,7 +124,7 @@ PixelIn vertex_main(VertexIn input)
 // the two apart, so a red texel under a green tint has to come out black.
 //
 // Nothing here divides by alpha or multiplies by it. The engine's blend
-// equation is premultiplied (the source factor is ONE), so a texel arrives
+// equation is premultiplied (the source factor is one), so a texel arrives
 // premultiplied and leaves premultiplied, and a tint's alpha scaling the
 // colour is exactly what premultiplied fading is.
 float4 pixel_main(PixelIn input) : SV_Target

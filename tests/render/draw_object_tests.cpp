@@ -65,7 +65,7 @@ TEST_CASE("a drawable starts with the defaults its constructor names")
 
 	CHECK(object.colour() == Colour::white);
 	CHECK(object.draw_rotation() == 0.0f);
-	CHECK(object.origin() == Vector2F::ZERO);
+	CHECK(object.origin() == Vector2F::zero);
 	CHECK(object.flip() == SpriteFlip::none);
 	CHECK(object.layer_depth() == 0.0f);
 	CHECK(object.render_resources() == nullptr);

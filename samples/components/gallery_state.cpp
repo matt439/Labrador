@@ -241,7 +241,7 @@ namespace components
 		// window is, so a resize scales it rather than moving the rows.
 		const Vector2F resolution =
 			this->app_->resolution_manager()->resolution_vec();
-		const Viewport viewport(RectangleF(Vector2F::ZERO, resolution));
+		const Viewport viewport(RectangleF(Vector2F::zero, resolution));
 
 		this->scene_->clear_views();
 		this->scene_->add_view(viewport,

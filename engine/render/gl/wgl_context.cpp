@@ -186,7 +186,7 @@ namespace labrador
 
 		// The desktop dialect. The body in sprite_shader.h is written to the
 		// intersection of this and GLES 3.00, so this line is all it needs.
-		const char* const DESKTOP_SHADER_PRELUDE = "#version 330 core\n";
+		const char* const desktop_shader_prelude = "#version 330 core\n";
 	}
 
 	Renderer::Impl::Impl() = default;
@@ -387,7 +387,7 @@ namespace labrador
 			made->device_context, *this->device_info.requested_swap_interval);
 		this->block_compression =
 			has_gl_extension("GL_EXT_texture_compression_s3tc");
-		this->shader_prelude = DESKTOP_SHADER_PRELUDE;
+		this->shader_prelude = desktop_shader_prelude;
 
 		this->context = std::move(made);
 	}

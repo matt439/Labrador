@@ -80,12 +80,12 @@ namespace labrador
 		};
 	}
 	// The INTERIOR angle at each vertex - the one a reader means by "the
-	// angles of a triangle", and the one that makes angles() sum to PI.
+	// angles of a triangle", and the one that makes angles() sum to pi.
 	//
 	// NOT the angle between the two edge DIRECTIONS meeting at the vertex,
 	// which is a different quantity: edge_2 runs p2 -> p0 while the interior
-	// angle at p0 is measured from p0 outwards, so that gives PI minus the
-	// interior angle and makes angles() sum to 2*PI. A right angle is its own
+	// angle at p0 is measured from p0 outwards, so that gives pi minus the
+	// interior angle and makes angles() sum to 2*pi. A right angle is its own
 	// supplement, so find_hypotenuse cannot detect the difference.
 	float Triangle::angle_0() const
 	{
@@ -199,15 +199,15 @@ namespace labrador
 	int TriangleRightAxisAligned::find_hypotenuse(const Triangle& tri) const
 	{
 		// find the hypotenuse
-		if (are_equal(tri.angle_0(), PI_OVER_2))
+		if (are_equal(tri.angle_0(), pi_over_2))
 		{
 			return 0;
 		}
-		else if (are_equal(tri.angle_1(), PI_OVER_2))
+		else if (are_equal(tri.angle_1(), pi_over_2))
 		{
 			return 1;
 		}
-		else if (are_equal(tri.angle_2(), PI_OVER_2))
+		else if (are_equal(tri.angle_2(), pi_over_2))
 		{
 			return 2;
 		}

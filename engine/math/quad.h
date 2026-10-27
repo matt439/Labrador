@@ -55,7 +55,7 @@ namespace labrador
 		Vector2F center() const override;
 
 	private:
-		Point2F points_[4] = { Vector2F::ZERO, Vector2F::ZERO,
-					Vector2F::ZERO, Vector2F::ZERO };
+		Point2F points_[4] = { Vector2F::zero, Vector2F::zero,
+					Vector2F::zero, Vector2F::zero };
 	};
 }

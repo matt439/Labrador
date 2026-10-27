@@ -140,7 +140,7 @@ namespace labrador
 		// rather than growing anything. The same 2048 the other three drawing
 		// backends use, arrived at the same way: 16-bit indices cap a run at
 		// 16384 sprites and 2048 of them is 256KB of vertices.
-		static const int MAX_RUN_SPRITES = 2048;
+		static const int max_run_sprites = 2048;
 
 		Renderer::Impl* owner = nullptr;
 
@@ -152,7 +152,7 @@ namespace labrador
 		bool open_valid = false;
 
 		// Reset at the top of every frame, not carried across one.
-		Camera camera = Camera::DEFAULT_CAMERA;
+		Camera camera = Camera::default_camera;
 		TextureFilter filter = TextureFilter::point;
 		Viewport viewport;
 

@@ -23,8 +23,8 @@ using labrador::Vector2F;
 
 namespace
 {
-	constexpr CollisionLayer WORLD = 1u << 0;
-	constexpr CollisionLayer MOVER = 1u << 1;
+	constexpr CollisionLayer world_layer = 1u << 0;
+	constexpr CollisionLayer mover_layer = 1u << 1;
 
 	class Box final : public CollisionObject
 	{
@@ -102,8 +102,8 @@ namespace
 			const bool mover = (i % 3) == 0;
 			boxes.push_back(std::make_unique<Box>(
 				RectangleF(rng.in(0.0f, world), rng.in(0.0f, world), w, h),
-				mover ? MOVER : WORLD,
-				mover ? (WORLD | MOVER) : MOVER));
+				mover ? mover_layer : world_layer,
+				mover ? (world_layer | mover_layer) : mover_layer));
 		}
 		return boxes;
 	}
@@ -193,7 +193,7 @@ TEST_SUITE("BroadPhaseTests")
 			{
 				boxes.push_back(std::make_unique<Box>(
 					RectangleF(0.0f, 0.0f, 5000.0f, 5000.0f),
-					WORLD, MOVER));
+					world_layer, mover_layer));
 			}
 
 			// A few retired objects, because both enumerations have to drop
@@ -225,7 +225,7 @@ TEST_SUITE("BroadPhaseTests")
 		find_contacts(none, contacts, &broad_phase);
 		CHECK(contacts.empty());
 
-		const Box only(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), WORLD, MOVER);
+		const Box only(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), world_layer, mover_layer);
 		std::vector<CollisionObject*> one{ const_cast<Box*>(&only) };
 		find_contacts(one, contacts, &broad_phase);
 		CHECK(contacts.empty());
@@ -239,7 +239,7 @@ TEST_SUITE("BroadPhaseTests")
 		for (int i = 0; i < 8; i++)
 		{
 			boxes.push_back(std::make_unique<Box>(
-				RectangleF(0.0f, 0.0f, 0.0f, 0.0f), WORLD, MOVER));
+				RectangleF(0.0f, 0.0f, 0.0f, 0.0f), world_layer, mover_layer));
 		}
 
 		BroadPhase broad_phase;
@@ -253,9 +253,9 @@ TEST_SUITE("BroadPhaseTests")
 	{
 		std::vector<std::unique_ptr<Box>> boxes;
 		boxes.push_back(std::make_unique<Box>(
-			RectangleF(0.0f, 0.0f, 10.0f, 10.0f), MOVER, WORLD | MOVER));
+			RectangleF(0.0f, 0.0f, 10.0f, 10.0f), mover_layer, world_layer | mover_layer));
 		boxes.push_back(std::make_unique<Box>(
-			RectangleF(5.0f, 5.0f, 10.0f, 10.0f), WORLD, MOVER));
+			RectangleF(5.0f, 5.0f, 10.0f, 10.0f), world_layer, mover_layer));
 
 		std::vector<CollisionObject*> objects{ boxes[0].get(), nullptr,
 			boxes[1].get() };

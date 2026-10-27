@@ -23,9 +23,9 @@ using labrador::Vector2F;
 
 namespace
 {
-	constexpr CollisionLayer PLAYER = 1u << 0;
-	constexpr CollisionLayer WALL = 1u << 1;
-	constexpr CollisionLayer BULLET = 1u << 2;
+	constexpr CollisionLayer player_layer = 1u << 0;
+	constexpr CollisionLayer wall_layer = 1u << 1;
+	constexpr CollisionLayer bullet_layer = 1u << 2;
 
 	class TestObject : public CollisionObject
 	{
@@ -112,9 +112,9 @@ TEST_CASE("an overlapping pair is reported once, not twice and not against itsel
 	// Three objects all in the same place. Three pairs, so three contacts -
 	// the nested loops this replaces produced six, plus three self-pairs that
 	// only an identity check kept out.
-	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL | BULLET);
-	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), WALL, PLAYER | BULLET);
-	TestObject c(RectangleF(4.0f, 4.0f, 10.0f, 10.0f), BULLET, PLAYER | WALL);
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer | bullet_layer);
+	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), wall_layer, player_layer | bullet_layer);
+	TestObject c(RectangleF(4.0f, 4.0f, 10.0f, 10.0f), bullet_layer, player_layer | wall_layer);
 
 	CollisionObject* objects[] = { &a, &b, &c };
 	std::vector<Contact> contacts;
@@ -131,8 +131,8 @@ TEST_CASE("either side can veto a pair")
 	// A responds to walls; B is a wall that responds to nothing. The filter
 	// it replaces asked one participant only, so which answer counted came
 	// down to which of two nested loops reached the pair first.
-	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL);
-	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), WALL, 0);
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer);
+	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), wall_layer, 0);
 
 	CollisionObject* objects[] = { &a, &b };
 	std::vector<Contact> contacts;
@@ -143,8 +143,8 @@ TEST_CASE("either side can veto a pair")
 
 TEST_CASE("objects in unrelated layers overlapping in space are not a contact")
 {
-	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL);
-	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), BULLET, WALL);
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer);
+	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), bullet_layer, wall_layer);
 
 	CollisionObject* objects[] = { &a, &b };
 	std::vector<Contact> contacts;
@@ -155,8 +155,8 @@ TEST_CASE("objects in unrelated layers overlapping in space are not a contact")
 
 TEST_CASE("an object already flagged for deletion takes part in nothing")
 {
-	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL);
-	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), WALL, PLAYER);
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer);
+	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), wall_layer, player_layer);
 	b.set_for_deletion(true);
 
 	CollisionObject* objects[] = { &a, &b };
@@ -168,8 +168,8 @@ TEST_CASE("an object already flagged for deletion takes part in nothing")
 
 TEST_CASE("the contact vector is cleared before it is filled")
 {
-	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL);
-	TestObject b(RectangleF(100.0f, 100.0f, 10.0f, 10.0f), WALL, PLAYER);
+	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer);
+	TestObject b(RectangleF(100.0f, 100.0f, 10.0f, 10.0f), wall_layer, player_layer);
 
 	std::vector<Contact> contacts(7);
 	CollisionObject* objects[] = { &a, &b };
@@ -184,8 +184,8 @@ TEST_CASE("both participants are told, once each, with opposite normals")
 	// object's predicate, so a player's response to a projectile ran because
 	// the *projectile* thought they were touching - and then the reversed
 	// pass ran both again.
-	TestObject player(RectangleF(0.0f, 0.0f, 10.0f, 100.0f), PLAYER, WALL);
-	TestObject wall(RectangleF(8.0f, 0.0f, 100.0f, 100.0f), WALL, PLAYER);
+	TestObject player(RectangleF(0.0f, 0.0f, 10.0f, 100.0f), player_layer, wall_layer);
+	TestObject wall(RectangleF(8.0f, 0.0f, 100.0f, 100.0f), wall_layer, player_layer);
 
 	CollisionObject* objects[] = { &player, &wall };
 	std::vector<Contact> contacts;
@@ -198,8 +198,8 @@ TEST_CASE("both participants are told, once each, with opposite normals")
 	CHECK(player.received()[0].other == &wall);
 	CHECK(wall.received()[0].other == &player);
 
-	CHECK(player.received()[0].normal == Vector2F::DIRECTION_RIGHT);
-	CHECK(wall.received()[0].normal == Vector2F::DIRECTION_LEFT);
+	CHECK(player.received()[0].normal == Vector2F::direction_right);
+	CHECK(wall.received()[0].normal == Vector2F::direction_left);
 
 	CHECK(player.received()[0].penetration == doctest::Approx(2.0f));
 	CHECK(wall.received()[0].penetration == doctest::Approx(2.0f));
@@ -212,9 +212,9 @@ TEST_CASE("a contact an earlier response already separated is dropped")
 	// applying the depth that was true before it would push them out twice -
 	// a visible pop at every tile seam, which is why the depth is measured
 	// again at dispatch rather than taken from the list.
-	TestObject player(RectangleF(95.0f, 100.0f, 20.0f, 100.0f), PLAYER, WALL);
-	TestObject left(RectangleF(0.0f, 196.0f, 100.0f, 40.0f), WALL, PLAYER);
-	TestObject right(RectangleF(100.0f, 196.0f, 100.0f, 40.0f), WALL, PLAYER);
+	TestObject player(RectangleF(95.0f, 100.0f, 20.0f, 100.0f), player_layer, wall_layer);
+	TestObject left(RectangleF(0.0f, 196.0f, 100.0f, 40.0f), wall_layer, player_layer);
+	TestObject right(RectangleF(100.0f, 196.0f, 100.0f, 40.0f), wall_layer, player_layer);
 	player.separate_on_contact();
 
 	CollisionObject* objects[] = { &player, &left, &right };
@@ -237,9 +237,9 @@ TEST_CASE("a contact is dropped when an earlier response retired a participant")
 	// depending on which nested loop reached the pair; here it holds for both
 	// sides of every pair.
 	TestObject bullet(RectangleF(50.0f, 50.0f, 10.0f, 10.0f),
-		BULLET, WALL | PLAYER);
-	TestObject wall(RectangleF(0.0f, 0.0f, 100.0f, 55.0f), WALL, BULLET);
-	TestObject player(RectangleF(0.0f, 58.0f, 100.0f, 50.0f), PLAYER, BULLET);
+		bullet_layer, wall_layer | player_layer);
+	TestObject wall(RectangleF(0.0f, 0.0f, 100.0f, 55.0f), wall_layer, bullet_layer);
+	TestObject player(RectangleF(0.0f, 58.0f, 100.0f, 50.0f), player_layer, bullet_layer);
 	bullet.retire_on_contact();
 
 	CollisionObject* objects[] = { &bullet, &wall, &player };
@@ -263,7 +263,7 @@ TEST_CASE("overlapping AABBs do not manufacture contact between disjoint thin po
 	{
 	public:
 		explicit ThinCollider(const labrador::RectangleRotated& shape) :
-			TestObject(shape.bounding_box(), PLAYER, PLAYER), shape_(shape) {}
+			TestObject(shape.bounding_box(), player_layer, player_layer), shape_(shape) {}
 		const labrador::Shape* shape() const override { return &this->shape_; }
 	private:
 		labrador::RectangleRotated shape_;

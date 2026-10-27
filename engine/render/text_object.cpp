@@ -91,7 +91,7 @@ namespace labrador
 		// and no font pointer retained across device loss.
 		const Font* loaded_font = this->render_resources()->font(this->font_);
 		const Vector2F layout_size = loaded_font->measure(this->text_);
-		RectangleF measured_bounds(Vector2F::ZERO, layout_size);
+		RectangleF measured_bounds(Vector2F::zero, layout_size);
 		loaded_font->for_each_glyph(this->text_,
 			[&measured_bounds](const Glyph& glyph, const Vector2F& pen)
 			{

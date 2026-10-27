@@ -95,7 +95,7 @@ CI's full matrix remains required. Match focused local checks to the change.
 - Pixel tests compare read-back with the shared PNGs in `tests/render/golden/`.
   Regenerate with `LABRADOR_GOLDEN_DUMP=1` and **review every changed image**.
   `Harness::end_not_comparable` names the three backend/resize-specific frames;
-  `ALLOWED_CHANNEL_DRIFT` in `golden_image.cpp` states the measured allowance.
+  `allowed_channel_drift` in `golden_image.cpp` states the measured allowance.
   Text cases decode their BC2 atlas on the CPU to avoid device rounding; a
   separate case checks device BC2 decoding. Null read-back throws; null tests
   instead assert submitted sprites, order, textures and views.

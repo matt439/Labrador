@@ -68,13 +68,13 @@ namespace labrador
 	{
 		if (!now.focused || !before.focused)
 		{
-			return Vector2I::ZERO;
+			return Vector2I::zero;
 		}
 		const TouchPoint* const to = now.find(id);
 		const TouchPoint* const from = before.find(id);
 		if (to == nullptr || from == nullptr)
 		{
-			return Vector2I::ZERO;
+			return Vector2I::zero;
 		}
 		return to->position - from->position;
 	}

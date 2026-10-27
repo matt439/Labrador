@@ -227,7 +227,7 @@ real on WebGL2:
 
 1. **`glDrawElementsBaseVertex` does not exist in WebGL2**
    (`Impl::replay` in `renderer.cpp`). The base vertex is how one index
-   buffer, built for `MAX_RUN_SPRITES`, serves every run. Without it, the
+   buffer, built for `max_run_sprites`, serves every run. Without it, the
    replacement is to re-point the three `glVertexAttribPointer` offsets at the
    run's first vertex before each draw, where `create_context` points them
    once. That is three calls per run rather than one argument, and draws the
@@ -255,7 +255,7 @@ shader has no default float precision and its sampler defaults to lowp, and at
 mediump, which may be half precision, an atlas coordinate cannot name every
 texel of a 2048-texel atlas. highp is required of GLES 3.0 fragment shaders,
 so it costs no reach ([`gl/web_context.cpp`](../../engine/render/gl/web_context.cpp),
-`WEB_SHADER_PRELUDE`). The shader body is otherwise the same text under both
+`web_shader_prelude`). The shader body is otherwise the same text under both
 contexts, as the header predicted; the other two differences are the base
 vertex and the BGRA upload above, and both are answered on WGL as well.
 Presentation: the browser composites at the end of each animation-frame
@@ -554,7 +554,7 @@ file. Node 24 is already on this machine for the website.
   Chromium with Playwright, comparing `read_back_buffer` against the same
   `tests/render/golden/` PNGs. *General knowledge:* Chrome's WebGL on Windows
   is ANGLE over Direct3D 11, so it plausibly lands inside
-  `ALLOWED_CHANNEL_DRIFT`. That is a measurement to make, not a premise. It is
+  `allowed_channel_drift`. That is a measurement to make, not a premise. It is
   worth doing, because it is the only check that the ES dialect still meets
   the pixel contract. It is not on the critical path for a demo (M6).
   *(Done in M6, without Playwright: a page driven over the DevTools protocol
@@ -1119,7 +1119,7 @@ of a Firefox launch.
 against the same golden set, and on this machine it is byte-identical to
 it.** All 45 cases and 4,532 assertions pass in `wasm-debug` and
 `wasm-release`, drawn by ANGLE over Direct3D 11 on the RTX 5080, and run once
-more with `ALLOWED_CHANNEL_DRIFT` at zero, not one frame differed by a single
+more with `allowed_channel_drift` at zero, not one frame differed by a single
 level. So the ES dialect, the highp prelude and the browser's S3TC decode
 meet the pixel contract exactly, not just within the allowance. A
 deliberately wrong blend factor fails the blend and text cases and leaves

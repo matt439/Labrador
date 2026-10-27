@@ -24,7 +24,7 @@ namespace labrador
 		const float cosine = std::cos(angle);
 		const float sine = std::sin(angle);
 
-		// The first row is where DIRECTION_RIGHT lands, which is what makes
+		// The first row is where direction_right lands, which is what makes
 		// this agree with Vector2F::unit_vec_from_angle - see the header.
 		return Matrix3x2F(cosine, sine,
 			-sine, cosine,

@@ -125,13 +125,13 @@ namespace labrador
 		// predicate form could only approximate by asking every child in turn.
 		// An empty container occupies nothing.
 		//
-		// Empty-boxed children are skipped rather than unioned. RectangleF::ZERO
+		// Empty-boxed children are skipped rather than unioned. RectangleF::zero
 		// is a point at the world origin, so unioning an empty nested container
 		// drags its parent's box all the way back to (0,0) - a parent of one
 		// label at (900,400) and one empty container reporting a box from the
 		// origin to the label. Culling reads this, and so does the navigation
 		// walk, which is why the harmless-looking union is not harmless.
-		RectangleF result = RectangleF::ZERO;
+		RectangleF result = RectangleF::zero;
 		bool any = false;
 		for (auto const& child : this->children_)
 		{

@@ -37,7 +37,7 @@ namespace labrador
 		Viewport fullscreen_viewport() const;
 
 	private:
-		static constexpr float DIVIDER_THICKNESS = 2.0f;
+		static constexpr float divider_thickness = 2.0f;
 
 		ResolutionManager* resolution_manager_ = nullptr;
 

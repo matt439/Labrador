@@ -21,7 +21,7 @@ namespace labrador
 		RectangleF() = default;
 		RectangleF(const RectangleF&) = default;
 		RectangleF& operator=(const RectangleF&) = default;
-		// constexpr and defined here so ZERO is constant-initialised. See
+		// constexpr and defined here so zero is constant-initialised. See
 		// Vector2F's constants for what the dynamic alternative risks.
 		constexpr RectangleF(float x, float y, float width, float height) :
 			x(x), y(y), width(width), height(height) {}
@@ -93,7 +93,7 @@ namespace labrador
 		// The smallest axis-aligned box containing every point.
 		//
 		// Triangle, Quad and RectangleRotated all take their bounding_box()
-		// from this. Empty in, ZERO out - a box around nothing.
+		// from this. Empty in, zero out - a box around nothing.
 		//
 		// A non-finite coordinate is NOT rejected. std::min(a, NaN) returns a,
 		// so a poisoned vertex is silently dropped rather than poisoning the
@@ -107,7 +107,7 @@ namespace labrador
 		static RectangleF from_top_left_bottom_right(float top, float left,
 			float bottom, float right);
 
-		static const RectangleF ZERO;
+		static const RectangleF zero;
 	};
 
 	typedef RectangleF AABB;

@@ -200,7 +200,7 @@ namespace labrador
 			// than left to the rectangle overload's by-value comparison - two
 			// widgets can honestly share a box, and only one of them is you.
 			boxes.push_back(candidate == nullptr || candidate == &from
-				? RectangleF::ZERO
+				? RectangleF::zero
 				: candidate->bounds());
 		}
 

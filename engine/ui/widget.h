@@ -152,7 +152,7 @@ namespace labrador
 			const Colour& color = Colour::white,
 			bool hidden = false,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -173,7 +173,7 @@ namespace labrador
 
 		const RectangleF& rectangle() const;
 	private:
-		RectangleF rectangle_ = RectangleF::ZERO;
+		RectangleF rectangle_ = RectangleF::zero;
 
 		// TextureObject's two positioned draws, kept out of reach: draw()
 		// above hides them by name, because a widget draws where its own
@@ -196,7 +196,7 @@ namespace labrador
 			bool hidden = false,
 			float scale = 1.0f,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			float layer_depth = 0.0f);
 
 		void update(float dt) override;

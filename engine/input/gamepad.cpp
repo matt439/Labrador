@@ -102,7 +102,7 @@ namespace labrador
 		const float magnitude = stick.length();
 		if (magnitude <= deadzone)
 		{
-			return Vector2F::ZERO;
+			return Vector2F::zero;
 		}
 
 		// The direction survives untouched and only the magnitude is rescaled,

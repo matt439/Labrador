@@ -16,7 +16,7 @@ TEST_CASE("the stick and the keys add up to at most one unit")
 {
 	// Up and left on the keys is longer than a unit on its own, and is cut
 	// back to one, pointing the same way.
-	const Vector2F diagonal = combined_direction(Vector2F::ZERO,
+	const Vector2F diagonal = combined_direction(Vector2F::zero,
 		Vector2F(-1.0f, -1.0f));
 	CHECK(diagonal.length() == doctest::Approx(1.0f));
 	CHECK(diagonal.x == doctest::Approx(diagonal.y));
@@ -24,7 +24,7 @@ TEST_CASE("the stick and the keys add up to at most one unit")
 	// A small push of the stick with no key is left as it is, so it moves
 	// slowly rather than jumping to full speed.
 	const Vector2F nudge = combined_direction(Vector2F(0.25f, 0.0f),
-		Vector2F::ZERO);
+		Vector2F::zero);
 	CHECK(nudge.x == doctest::Approx(0.25f));
 	CHECK(nudge.y == doctest::Approx(0.0f));
 }
@@ -34,7 +34,7 @@ TEST_CASE("a step moves the centre and turns the greeting")
 	const Motion start{ Vector2F(100.0f, 100.0f), 0.0f };
 
 	// A whole second to the right on the keys.
-	const Motion moved = step_motion(start, Vector2F::ZERO,
+	const Motion moved = step_motion(start, Vector2F::zero,
 		Vector2F(1.0f, 0.0f), 1.0f);
 	CHECK(moved.centre.x == doctest::Approx(100.0f + move_speed));
 	CHECK(moved.centre.y == doctest::Approx(100.0f));

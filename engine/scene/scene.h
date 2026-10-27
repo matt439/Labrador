@@ -63,7 +63,7 @@ namespace labrador
 		struct View
 		{
 			Viewport viewport;
-			Camera camera = Camera::DEFAULT_CAMERA;
+			Camera camera = Camera::default_camera;
 		};
 
 		// Whatever the game draws over a view once the world is in it: a HUD, a
@@ -184,7 +184,7 @@ namespace labrador
 		// therefore chosen where the player moved, in update().
 		void clear_views();
 		void add_view(const Viewport& viewport,
-			const Camera& camera = Camera::DEFAULT_CAMERA);
+			const Camera& camera = Camera::default_camera);
 
 		int view_count() const;
 

@@ -163,7 +163,7 @@ namespace
 		void draw(DrawList& list) const override
 		{
 			list.draw_sprite(this->texture_, RectangleI(0, 0, 2, 2),
-				this->rectangle_, Colour::white, 0.0f, Vector2F::ZERO,
+				this->rectangle_, Colour::white, 0.0f, Vector2F::zero,
 				SpriteFlip::none, 0.0f);
 		}
 

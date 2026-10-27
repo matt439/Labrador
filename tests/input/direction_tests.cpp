@@ -58,7 +58,7 @@ namespace DirectionTests
 	{
 		TEST_CASE("a stick inside the deadzone points nowhere")
 		{
-			CHECK(stick_direction(Vector2F::ZERO, 0.5f) == Direction::none);
+			CHECK(stick_direction(Vector2F::zero, 0.5f) == Direction::none);
 			CHECK(stick_direction(Vector2F(0.4f, 0.0f), 0.5f) ==
 				Direction::none);
 			CHECK(stick_direction(Vector2F(0.0f, -0.49f), 0.5f) ==

@@ -21,11 +21,11 @@ namespace labrador
 		SpriteFrame() = default;
 		explicit SpriteFrame(const RectangleI& source_rectangle,
 		                     const Vector2F& origin =
-			                     Vector2F::ZERO);
+			                     Vector2F::zero);
 		SpriteFrame(const Vector2F& position,
 			const Vector2F& size,
 			const Vector2F& origin =
-				Vector2F::ZERO);
+				Vector2F::zero);
 
 		// A RectangleI, and not a RECT*. Handing out a pointer means keeping
 		// both forms of the same rectangle for a stable address to return, and
@@ -44,7 +44,7 @@ namespace labrador
 		// compose rather than one replacing the other.
 		const Vector2F& origin() const;
 	private:
-		RectangleI source_rectangle_ = RectangleI::ZERO;
-		Vector2F origin_ = Vector2F::ZERO;
+		RectangleI source_rectangle_ = RectangleI::zero;
+		Vector2F origin_ = Vector2F::zero;
 	};
 }

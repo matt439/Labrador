@@ -13,7 +13,7 @@ namespace labrador
 		Vector2I() = default;
 		Vector2I(const Vector2I&) = default;
 		Vector2I& operator=(const Vector2I&) = default;
-		// constexpr and defined here so ZERO is constant-initialised. See
+		// constexpr and defined here so zero is constant-initialised. See
 		// Vector2F's constants for what the dynamic alternative risks.
 		constexpr Vector2I(int x, int y) : x(x), y(y) {}
 		explicit Vector2I(const Vector2F& vector);
@@ -32,7 +32,7 @@ namespace labrador
 		void scale(int horizontal_amount, int vertical_amount);
 		void set(int x, int y);
 
-		static const Vector2I ZERO;
+		static const Vector2I zero;
 	};
 
 	Vector2I operator+ (const Vector2I& V1, const Vector2I& V2);

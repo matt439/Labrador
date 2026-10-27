@@ -10,7 +10,7 @@ namespace labrador
 {
 	struct Triangle : public Shape
 	{
-		Vector2F points[3] = { Vector2F::ZERO, Vector2F::ZERO, Vector2F::ZERO };
+		Vector2F points[3] = { Vector2F::zero, Vector2F::zero, Vector2F::zero };
 
 		Triangle() = default;
 		Triangle(const Triangle&) = default;

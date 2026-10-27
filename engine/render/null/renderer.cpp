@@ -42,7 +42,7 @@ namespace labrador
 
 	void DrawList::View::reset()
 	{
-		this->camera = Camera::DEFAULT_CAMERA;
+		this->camera = Camera::default_camera;
 		this->filter = TextureFilter::point;
 		this->sprites.clear();
 		this->touched = false;

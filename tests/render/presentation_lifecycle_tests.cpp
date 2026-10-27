@@ -58,7 +58,7 @@ namespace
 				list.draw_sprite(texture, RectangleI(0, 0, 2, 2),
 					RectangleF(x, y, 2.0f, 2.0f),
 					frame % 2 == 0 ? Colour::red : Colour::blue, 0.0f,
-					Vector2F::ZERO, SpriteFlip::none, 0.0f);
+					Vector2F::zero, SpriteFlip::none, 0.0f);
 			}
 		}
 		renderer.submit();
@@ -102,7 +102,7 @@ TEST_CASE("CONTRACT: consecutive presented frames survive resize without per-fra
 	DrawList last = renderer.view(0);
 	last.draw_sprite(texture, RectangleI(0, 0, 2, 2),
 		RectangleF(4.0f, 4.0f, 8.0f, 8.0f), Colour::lime, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	renderer.submit();
 	std::vector<unsigned char> pixels;
 	renderer.read_back_buffer(pixels);

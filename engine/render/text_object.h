@@ -34,7 +34,7 @@ namespace labrador
 			const Colour& color = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			float layer_depth = 0.0f);
 
 		virtual void draw(DrawList& draw_list) const;
@@ -93,12 +93,12 @@ namespace labrador
 	private:
 		std::wstring text_ = L"";
 		FontHandle font_;
-		Vector2F position_ = Vector2F::ZERO;
+		Vector2F position_ = Vector2F::zero;
 		float scale_ = 1.0f;
 
 		// Unscaled layout and glyph-cell envelope of text_ in font_. Its
 		// position can differ from the layout's (0, 0). See text_bounds().
-		RectangleF measured_bounds_ = RectangleF::ZERO;
+		RectangleF measured_bounds_ = RectangleF::zero;
 		void remeasure();
 	};
 }

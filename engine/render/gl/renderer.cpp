@@ -25,8 +25,8 @@ namespace labrador
 {
 	namespace
 	{
-		const int VERTICES_PER_SPRITE = 4;
-		const int INDICES_PER_SPRITE = 6;
+		const int vertices_per_sprite = 4;
+		const int indices_per_sprite = 6;
 
 		std::string driver_string(const Renderer::Impl& impl, GLenum name,
 			const char* what)
@@ -89,7 +89,7 @@ namespace labrador
 		// bound vertex buffer.
 		//
 		// THIS IS THE BASE VERTEX, SPELT AS AN OFFSET, and both contexts do it
-		// this way. One index buffer built for MAX_RUN_SPRITES serves every run
+		// this way. One index buffer built for max_run_sprites serves every run
 		// because its indices count from the run's first vertex; 3.3 core
 		// would add that first vertex in the draw call itself
 		// (glDrawElementsBaseVertex), and GLES 3.0 - which is what WebGL2 is -
@@ -204,13 +204,13 @@ namespace labrador
 		const SpriteVertex* corners)
 	{
 		const int first =
-			static_cast<int>(this->vertices.size()) / VERTICES_PER_SPRITE;
+			static_cast<int>(this->vertices.size()) / vertices_per_sprite;
 
 		const bool joins = this->open_valid &&
 			this->open.texture == texture.name() &&
 			this->open.filter == this->filter &&
 			same_viewport(this->open.viewport, this->viewport) &&
-			this->open.sprites < MAX_RUN_SPRITES;
+			this->open.sprites < max_run_sprites;
 
 		if (!joins)
 		{
@@ -224,7 +224,7 @@ namespace labrador
 		}
 
 		this->vertices.insert(this->vertices.end(), corners,
-			corners + VERTICES_PER_SPRITE);
+			corners + vertices_per_sprite);
 		this->open.sprites++;
 		this->touched = true;
 	}
@@ -242,7 +242,7 @@ namespace labrador
 
 	void DrawList::View::reset()
 	{
-		this->camera = Camera::DEFAULT_CAMERA;
+		this->camera = Camera::default_camera;
 		this->filter = TextureFilter::point;
 		this->vertices.clear();
 		this->runs.clear();
@@ -371,9 +371,9 @@ namespace labrador
 	void Renderer::Impl::create_gl_resources()
 	{
 		const GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER_,
-			this->shader_prelude, SPRITE_VERTEX_SHADER, "sprite vertex");
+			this->shader_prelude, sprite_vertex_shader, "sprite vertex");
 		const GLuint pixel_shader = compile_shader(GL_FRAGMENT_SHADER_,
-			this->shader_prelude, SPRITE_PIXEL_SHADER, "sprite fragment");
+			this->shader_prelude, sprite_pixel_shader, "sprite fragment");
 
 		this->program = glCreateProgram();
 		glAttachShader(this->program, vertex_shader);
@@ -415,13 +415,13 @@ namespace labrador
 		// grown here; replay() neither splits nor clamps, and would draw
 		// whatever it was handed.
 		std::vector<unsigned short> index_data;
-		index_data.reserve(static_cast<size_t>(DrawList::View::MAX_RUN_SPRITES)
-			* INDICES_PER_SPRITE);
-		for (int sprite = 0; sprite < DrawList::View::MAX_RUN_SPRITES;
+		index_data.reserve(static_cast<size_t>(DrawList::View::max_run_sprites)
+			* indices_per_sprite);
+		for (int sprite = 0; sprite < DrawList::View::max_run_sprites;
 			sprite++)
 		{
 			const unsigned short first =
-				static_cast<unsigned short>(sprite * VERTICES_PER_SPRITE);
+				static_cast<unsigned short>(sprite * vertices_per_sprite);
 			index_data.push_back(static_cast<unsigned short>(first + 0));
 			index_data.push_back(static_cast<unsigned short>(first + 1));
 			index_data.push_back(static_cast<unsigned short>(first + 2));
@@ -485,8 +485,8 @@ namespace labrador
 
 		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
 		// RenderPixelTests calls this the term most likely to be got wrong, and
-		// it is the same two words in every rasteriser's descriptor: ONE and
-		// INV_SRC_ALPHA on both Direct3D backends, ONE and
+		// it is the same two words in every rasteriser's descriptor: one and
+		// INV_SRC_ALPHA on both Direct3D backends, one and
 		// ONE_MINUS_SRC_ALPHA on Vulkan, and the call below here.
 		glEnable(GL_BLEND);
 		glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA_, GL_ONE,
@@ -623,9 +623,9 @@ namespace labrador
 			glBindSampler(0, this->sampler(run.filter));
 
 			point_attributes(static_cast<std::size_t>(run.first_sprite) *
-				VERTICES_PER_SPRITE);
+				vertices_per_sprite);
 			glDrawElements(GL_TRIANGLES,
-				static_cast<GLsizei>(run.sprites * INDICES_PER_SPRITE),
+				static_cast<GLsizei>(run.sprites * indices_per_sprite),
 				GL_UNSIGNED_SHORT, nullptr);
 		}
 	}

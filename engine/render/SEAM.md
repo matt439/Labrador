@@ -227,7 +227,7 @@ never submitted contributes nothing to the next one" is worth stating:
 
 What a caller can observe of that reset is the same on all five. After
 `begin_frame`, and after a resize that restarts the frame mid-way, a list's
-`camera()` is `Camera::DEFAULT_CAMERA` and its `viewport()` is the whole back
+`camera()` is `Camera::default_camera` and its `viewport()` is the whole back
 buffer, `Viewport(0, 0, width, height)`. `gl/`, `null/` and `vulkan/` reset the
 stored `Viewport` beside the camera; `d3d11/` and `d3d12/` write it when a view
 is bound, from the screen viewport they bind it with, which has the same
@@ -286,7 +286,7 @@ in-box fallback at all.
 
 Two terms sit outside the images, both stated where they are decided:
 `Harness::end_not_comparable` holds the three frames that are not 64x64, and
-`ALLOWED_CHANNEL_DRIFT` in `golden_image.cpp` is the per-channel allowance that
+`allowed_channel_drift` in `golden_image.cpp` is the per-channel allowance that
 lets one set serve more than one adapter.
 
 [`tests/render/renderer_seam_tests.cpp`](../../tests/render/renderer_seam_tests.cpp)

@@ -104,8 +104,8 @@ namespace labrador
 
 		// Four corners, two triangles, and the winding the corner order in
 		// sprite_geometry.h fixes.
-		const int VERTICES_PER_SPRITE = 4;
-		const int INDICES_PER_SPRITE = 6;
+		const int vertices_per_sprite = 4;
+		const int indices_per_sprite = 6;
 
 		// What the vertex shader's one constant buffer holds. Sixteen bytes,
 		// which is the smallest a constant buffer is allowed to be.
@@ -159,15 +159,15 @@ namespace labrador
 		// sheet each share a texture and each collapse into a single draw,
 		// which is why a scene with thousands of sprites has tens of calls.
 		if (texture != this->batch_texture ||
-			this->batch.size() >= static_cast<size_t>(MAX_BATCH_SPRITES) *
-				VERTICES_PER_SPRITE)
+			this->batch.size() >= static_cast<size_t>(max_batch_sprites) *
+				vertices_per_sprite)
 		{
 			this->flush();
 			this->batch_texture = texture;
 		}
 
 		this->batch.insert(this->batch.end(), corners,
-			corners + VERTICES_PER_SPRITE);
+			corners + vertices_per_sprite);
 		this->touched = true;
 	}
 
@@ -179,7 +179,7 @@ namespace labrador
 		}
 
 		const int sprites =
-			static_cast<int>(this->batch.size()) / VERTICES_PER_SPRITE;
+			static_cast<int>(this->batch.size()) / vertices_per_sprite;
 
 		// DISCARD ON A WRAP OR AT THE TOP OF A FRAME, NO_OVERWRITE OTHERWISE,
 		// and the distinction is what keeps a flush from stalling. NO_OVERWRITE
@@ -192,7 +192,7 @@ namespace labrador
 		// has just happened or a frame that has just started, and both want the
 		// same answer for the same reason.
 		D3D11_MAP how = D3D11_MAP_WRITE_NO_OVERWRITE;
-		if (this->buffer_position + sprites > MAX_BATCH_SPRITES)
+		if (this->buffer_position + sprites > max_batch_sprites)
 		{
 			this->buffer_position = 0;
 			how = D3D11_MAP_WRITE_DISCARD;
@@ -207,7 +207,7 @@ namespace labrador
 			&mapped));
 		SpriteVertex* destination =
 			static_cast<SpriteVertex*>(mapped.pData) +
-			static_cast<size_t>(this->buffer_position) * VERTICES_PER_SPRITE;
+			static_cast<size_t>(this->buffer_position) * vertices_per_sprite;
 		std::memcpy(destination, this->batch.data(),
 			this->batch.size() * sizeof(SpriteVertex));
 		this->context->Unmap(this->vertices.Get(), 0);
@@ -247,8 +247,8 @@ namespace labrador
 		this->context->RSSetState(owner_impl.rasterizer.Get());
 
 		this->context->DrawIndexed(
-			static_cast<UINT>(sprites * INDICES_PER_SPRITE),
-			static_cast<UINT>(this->buffer_position * INDICES_PER_SPRITE), 0);
+			static_cast<UINT>(sprites * indices_per_sprite),
+			static_cast<UINT>(this->buffer_position * indices_per_sprite), 0);
 
 		this->buffer_position += sprites;
 		this->batch.clear();
@@ -283,7 +283,7 @@ namespace labrador
 
 	void DrawList::View::reset()
 	{
-		this->camera = Camera::DEFAULT_CAMERA;
+		this->camera = Camera::default_camera;
 		this->filter = TextureFilter::point;
 		this->batch.clear();
 		this->batch_texture = nullptr;
@@ -498,11 +498,11 @@ namespace labrador
 	{
 		ID3D11Device1* device = this->device_resources.GetD3DDevice();
 
-		ThrowIfFailed(device->CreateVertexShader(SPRITE_VERTEX_SHADER,
-			sizeof(SPRITE_VERTEX_SHADER), nullptr,
+		ThrowIfFailed(device->CreateVertexShader(sprite_vertex_shader,
+			sizeof(sprite_vertex_shader), nullptr,
 			this->vertex_shader.ReleaseAndGetAddressOf()));
-		ThrowIfFailed(device->CreatePixelShader(SPRITE_PIXEL_SHADER,
-			sizeof(SPRITE_PIXEL_SHADER), nullptr,
+		ThrowIfFailed(device->CreatePixelShader(sprite_pixel_shader,
+			sizeof(sprite_pixel_shader), nullptr,
 			this->pixel_shader.ReleaseAndGetAddressOf()));
 
 		// The three fields of SpriteVertex, located by offsetof rather than by
@@ -521,8 +521,8 @@ namespace labrador
 				D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 		ThrowIfFailed(device->CreateInputLayout(elements,
-			static_cast<UINT>(std::size(elements)), SPRITE_VERTEX_SHADER,
-			sizeof(SPRITE_VERTEX_SHADER),
+			static_cast<UINT>(std::size(elements)), sprite_vertex_shader,
+			sizeof(sprite_vertex_shader),
 			this->input_layout.ReleaseAndGetAddressOf()));
 
 		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
@@ -607,12 +607,12 @@ namespace labrador
 		// be: two triangles over four corners, immutable, filled once.
 		std::vector<unsigned short> index_data;
 		index_data.reserve(static_cast<size_t>(DrawList::View::
-			MAX_BATCH_SPRITES) * INDICES_PER_SPRITE);
-		for (int sprite = 0; sprite < DrawList::View::MAX_BATCH_SPRITES;
+			max_batch_sprites) * indices_per_sprite);
+		for (int sprite = 0; sprite < DrawList::View::max_batch_sprites;
 			sprite++)
 		{
 			const unsigned short first =
-				static_cast<unsigned short>(sprite * VERTICES_PER_SPRITE);
+				static_cast<unsigned short>(sprite * vertices_per_sprite);
 			index_data.push_back(static_cast<unsigned short>(first + 0));
 			index_data.push_back(static_cast<unsigned short>(first + 1));
 			index_data.push_back(static_cast<unsigned short>(first + 2));
@@ -650,8 +650,8 @@ namespace labrador
 		// instead of leaking one per view.
 		D3D11_BUFFER_DESC vertex_description = {};
 		vertex_description.ByteWidth = static_cast<UINT>(
-			static_cast<size_t>(DrawList::View::MAX_BATCH_SPRITES) *
-			VERTICES_PER_SPRITE * sizeof(SpriteVertex));
+			static_cast<size_t>(DrawList::View::max_batch_sprites) *
+			vertices_per_sprite * sizeof(SpriteVertex));
 		vertex_description.Usage = D3D11_USAGE_DYNAMIC;
 		vertex_description.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		vertex_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -841,8 +841,8 @@ namespace labrador
 				device.GetRenderTargetView();
 			const D3D11_VIEWPORT viewport = device.GetScreenViewport();
 
-			const float BLACK[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-			context->ClearRenderTargetView(render_target, BLACK);
+			const float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			context->ClearRenderTargetView(render_target, black);
 			context->OMSetRenderTargets(1, &render_target, nullptr);
 			context->RSSetViewports(1, &viewport);
 
@@ -880,8 +880,8 @@ namespace labrador
 		// Opaque black, spelt out: the clear colour is a term RenderPixelTests
 		// pins, so it is worth being able to read it here rather than in a
 		// table of a hundred and forty names.
-		const float BLACK[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		context->ClearRenderTargetView(render_target, BLACK);
+		const float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		context->ClearRenderTargetView(render_target, black);
 		context->OMSetRenderTargets(1, &render_target, nullptr);
 		context->RSSetViewports(1, &viewport);
 

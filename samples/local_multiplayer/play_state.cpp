@@ -69,19 +69,19 @@ namespace multiplayer
 		{
 			const size_t player = static_cast<size_t>(view_index);
 			const Viewport& viewport = this->scene_->view(view_index).viewport;
-			list.set_camera(Camera::DEFAULT_CAMERA);
+			list.set_camera(Camera::default_camera);
 			list.draw_sprite(this->white_, RectangleI(0, 0, 1, 1),
 				RectangleF(0.0f, 0.0f, viewport.width, 68.0f), Colour(12, 18, 27),
-				0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 			const std::wstring title = player == 0 ?
 				L"PLAYER 1  |  WASD / pad slot 0" : L"PLAYER 2  |  Arrows / pad slot 1";
 			list.draw_text(this->font_, title, Vector2F(18.0f, 12.0f),
-				Arena::player_colour(player), 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+				Arena::player_colour(player), 1.0f, 0.0f, Vector2F::zero, 0.0f);
 			list.draw_text(this->font_, L"One world, two cameras. Meet at the purple cross.  Esc / B: quit",
-				Vector2F(18.0f, 38.0f), Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+				Vector2F(18.0f, 38.0f), Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 			list.draw_sprite(this->white_, RectangleI(0, 0, 1, 1),
 				RectangleF(0.0f, viewport.height - 2.0f, viewport.width, 2.0f),
-				Arena::player_colour(player), 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				Arena::player_colour(player), 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 		});
 	}
 

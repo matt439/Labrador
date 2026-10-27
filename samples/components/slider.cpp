@@ -66,7 +66,7 @@ namespace components
 		}
 
 		draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1),
-			this->rectangle_, this->colour_, 0.0f, Vector2F::ZERO,
+			this->rectangle_, this->colour_, 0.0f, Vector2F::zero,
 			SpriteFlip::none, 0.0f);
 	}
 

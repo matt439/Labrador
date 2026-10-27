@@ -159,11 +159,11 @@ if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
     # not three files.
     compile_hlsl(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
-        vs_4_0_level_9_1 vertex_main SPRITE_VERTEX_SHADER
+        vs_4_0_level_9_1 vertex_main sprite_vertex_shader
         "engine/render/d3d11/sprite_vertex_shader.h")
     compile_hlsl(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
-        ps_4_0_level_9_1 pixel_main SPRITE_PIXEL_SHADER
+        ps_4_0_level_9_1 pixel_main sprite_pixel_shader
         "engine/render/d3d11/sprite_pixel_shader.h")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
     target_sources(LabradorEngine PRIVATE
@@ -182,11 +182,11 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
     # even though they share every line that produced it.
     compile_hlsl(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
-        vs_5_1 vertex_main SPRITE_VERTEX_SHADER
+        vs_5_1 vertex_main sprite_vertex_shader
         "engine/render/d3d12/sprite_vertex_shader.h")
     compile_hlsl(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
-        ps_5_1 pixel_main SPRITE_PIXEL_SHADER
+        ps_5_1 pixel_main sprite_pixel_shader
         "engine/render/d3d12/sprite_pixel_shader.h")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     target_sources(LabradorEngine PRIVATE
@@ -262,11 +262,11 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     # for, exactly as there was none below 5_1 for D3D12.
     compile_hlsl_to_spirv(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
-        vs_6_0 vertex_main SPRITE_VERTEX_SHADER
+        vs_6_0 vertex_main sprite_vertex_shader
         "engine/render/vulkan/sprite_vertex_shader.h")
     compile_hlsl_to_spirv(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
-        ps_6_0 pixel_main SPRITE_PIXEL_SHADER
+        ps_6_0 pixel_main sprite_pixel_shader
         "engine/render/vulkan/sprite_pixel_shader.h")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(LabradorEngine PRIVATE

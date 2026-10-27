@@ -107,11 +107,11 @@ namespace
 		DrawList list = renderer.view(0);
 		list.draw_sprite(texture, RectangleI(0, 0, 2, 2),
 			RectangleF(4.0f, 4.0f, 16.0f, 16.0f), Colour::red, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		list.set_filter(TextureFilter::linear);
 		list.draw_sprite(texture, RectangleI(0, 0, 2, 2),
 			RectangleF(28.0f, 4.0f, 16.0f, 16.0f), Colour::lime, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 	}
 }
 

@@ -85,7 +85,7 @@ namespace collisiondemo
 		case BodyKind::wall: break;
 		}
 		draw_list.draw_sprite(this->texture_, RectangleI(0, 0, 1, 1),
-			this->rectangle_, tint, 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			this->rectangle_, tint, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	}
 
 	RectangleF Body::bounds() const { return this->rectangle_; }

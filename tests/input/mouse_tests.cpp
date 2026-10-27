@@ -130,7 +130,7 @@ namespace MouseTests
 			const MouseState before = unfocused_at(0, 0);
 			const MouseState now = at(900, 700, {});
 
-			CHECK(motion(now, before) == labrador::Vector2I::ZERO);
+			CHECK(motion(now, before) == labrador::Vector2I::zero);
 
 			// And across two focused frames it is the plain difference.
 			const MouseState settled = at(100, 100, {});
@@ -243,7 +243,7 @@ namespace MouseTests
 			mouse.poll();
 
 			CHECK(mouse.position() == labrador::Vector2I(300, 200));
-			CHECK(mouse.motion() == labrador::Vector2I::ZERO);
+			CHECK(mouse.motion() == labrador::Vector2I::zero);
 		}
 
 		TEST_CASE("a position outside the client area is kept as given")

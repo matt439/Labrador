@@ -69,19 +69,19 @@ TEST_CASE("the shipping sniper exceeds the budget, and this is the record of it"
 	// and it will fail the moment the content is corrected, which is the
 	// point: the failure is the reminder to delete it, and until then nobody
 	// can believe T3's cap exists by reading the philosophy alone.
-	constexpr float SNIPER_SPEED = 2000.0f;
-	constexpr float JET_EXTENT = 20.0f;
-	constexpr float THINNEST_CEILING = 10.0f;
-	constexpr float STEP = 1.0f / 60.0f;
+	constexpr float sniper_speed = 2000.0f;
+	constexpr float jet_extent = 20.0f;
+	constexpr float thinnest_ceiling = 10.0f;
+	constexpr float step = 1.0f / 60.0f;
 
-	CHECK(can_tunnel(SNIPER_SPEED * STEP, JET_EXTENT, THINNEST_CEILING));
+	CHECK(can_tunnel(sniper_speed * step, jet_extent, thinnest_ceiling));
 
-	CHECK(max_safe_speed(JET_EXTENT, THINNEST_CEILING, STEP)
+	CHECK(max_safe_speed(jet_extent, thinnest_ceiling, step)
 		== doctest::Approx(1800.0f));
 
 	// Which is the number the tuning would have to come down to, or the
 	// geometry would have to come up to 13.34 units thick.
-	CHECK(SNIPER_SPEED > max_safe_speed(JET_EXTENT, THINNEST_CEILING, STEP));
+	CHECK(sniper_speed > max_safe_speed(jet_extent, thinnest_ceiling, step));
 }
 
 TEST_CASE("projected extents cannot rule out a diagonal corner crossing")

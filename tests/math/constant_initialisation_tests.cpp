@@ -26,36 +26,36 @@ using labrador::Vector2I;
 // the value a stranger reads, from the position a stranger reads it in.
 namespace
 {
-	const Vector2F COPIED_RIGHT = Vector2F::DIRECTION_RIGHT;
-	const Vector2F COPIED_UP_RIGHT = Vector2F::DIRECTION_UP_RIGHT;
-	const Vector2F COPIED_ONE = Vector2F::ONE;
-	const Vector2I COPIED_INT_ZERO = Vector2I::ZERO;
-	const RectangleF COPIED_RECT_ZERO = RectangleF::ZERO;
-	const RectangleI COPIED_RECT_INT_ZERO = RectangleI::ZERO;
-	const Matrix3x2F COPIED_IDENTITY = Matrix3x2F::identity;
+	const Vector2F copied_right = Vector2F::direction_right;
+	const Vector2F copied_up_right = Vector2F::direction_up_right;
+	const Vector2F copied_one = Vector2F::one;
+	const Vector2I copied_int_zero = Vector2I::zero;
+	const RectangleF copied_rect_zero = RectangleF::zero;
+	const RectangleI copied_rect_int_zero = RectangleI::zero;
+	const Matrix3x2F copied_identity = Matrix3x2F::identity;
 
 	// A derived value too, since that is what a client global usually is:
 	// the sum reads two constants and would have been (0, 0) from either.
-	const Vector2F COPIED_DOWN_LEFT_SUM =
-		Vector2F::DIRECTION_DOWN + Vector2F::DIRECTION_LEFT;
+	const Vector2F copied_down_left_sum =
+		Vector2F::direction_down + Vector2F::direction_left;
 }
 
 TEST_CASE("a namespace-scope copy in another translation unit sees the value")
 {
-	CHECK(COPIED_RIGHT == Vector2F(1.0f, 0.0f));
-	CHECK(COPIED_UP_RIGHT.x == doctest::Approx(0.70710678f));
-	CHECK(COPIED_UP_RIGHT.y == doctest::Approx(-0.70710678f));
-	CHECK(COPIED_ONE == Vector2F(1.0f, 1.0f));
-	CHECK(COPIED_DOWN_LEFT_SUM == Vector2F(-1.0f, 1.0f));
+	CHECK(copied_right == Vector2F(1.0f, 0.0f));
+	CHECK(copied_up_right.x == doctest::Approx(0.70710678f));
+	CHECK(copied_up_right.y == doctest::Approx(-0.70710678f));
+	CHECK(copied_one == Vector2F(1.0f, 1.0f));
+	CHECK(copied_down_left_sum == Vector2F(-1.0f, 1.0f));
 
-	CHECK(COPIED_INT_ZERO == Vector2I(0, 0));
-	CHECK(COPIED_RECT_ZERO.width == 0.0f);
-	CHECK(COPIED_RECT_INT_ZERO.width == 0);
+	CHECK(copied_int_zero == Vector2I(0, 0));
+	CHECK(copied_rect_zero.width == 0.0f);
+	CHECK(copied_rect_int_zero.width == 0);
 
 	// The two diagonal elements, which a zero matrix has at zero.
-	CHECK(COPIED_IDENTITY.m11 == 1.0f);
-	CHECK(COPIED_IDENTITY.m22 == 1.0f);
-	CHECK(COPIED_IDENTITY == Matrix3x2F::identity);
+	CHECK(copied_identity.m11 == 1.0f);
+	CHECK(copied_identity.m22 == 1.0f);
+	CHECK(copied_identity == Matrix3x2F::identity);
 }
 
 TEST_CASE("the constants are usable in a constant expression's shape")
@@ -75,5 +75,5 @@ TEST_CASE("the constants are usable in a constant expression's shape")
 	static_assert(unit_int.height == 1);
 	static_assert(flip.m11 == -1.0f);
 
-	CHECK(right == Vector2F::DIRECTION_RIGHT);
+	CHECK(right == Vector2F::direction_right);
 }

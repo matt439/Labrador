@@ -64,7 +64,7 @@ namespace
 		// Comparing the caches alone could let two equally stale sizes pass.
 		CHECK(buffer == actual);
 		CHECK(resolution == actual);
-		CHECK(viewport.position() == Vector2F::ZERO);
+		CHECK(viewport.position() == Vector2F::zero);
 		CHECK(viewport.size() == buffer);
 		CHECK_FALSE(IsWindowVisible(window));
 	}

@@ -35,7 +35,7 @@ namespace
 	{
 		list.draw_sprite(white, RectangleI(0, 0, 1, 1),
 			RectangleF(static_cast<float>(id), 0.0f, 1.0f, 1.0f),
-			Colour::white, 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Colour::white, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	}
 
 	class Plain final : public GameObject

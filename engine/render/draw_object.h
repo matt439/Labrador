@@ -15,7 +15,7 @@ namespace labrador
 		DrawObject(RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -45,7 +45,7 @@ namespace labrador
 		RenderResources* render_resources_ = nullptr;
 		Colour colour_ = Colour::white;
 		float draw_rotation_ = 0.0f;
-		Vector2F origin_ = Vector2F::ZERO;
+		Vector2F origin_ = Vector2F::zero;
 		SpriteFlip flip_ = SpriteFlip::none;
 		float layer_depth_ = 0.0f;
 	};

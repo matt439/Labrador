@@ -28,8 +28,8 @@ namespace labrador
 		// which is the safe direction. T3: nobody will see the corner.
 		void inflate_convex_polygon(Vector2F* points, int count, float amount)
 		{
-			constexpr int MAX_POINTS = 4;
-			if (count < 3 || count > MAX_POINTS)
+			constexpr int max_points = 4;
+			if (count < 3 || count > max_points)
 			{
 				return;
 			}
@@ -54,7 +54,7 @@ namespace labrador
 				return;
 			}
 
-			Vector2F centre = Vector2F::ZERO;
+			Vector2F centre = Vector2F::zero;
 			for (int i = 0; i < count; i++)
 			{
 				centre += points[i];
@@ -63,15 +63,15 @@ namespace labrador
 
 			// Each edge as an outward unit normal and the offset line's
 			// constant, so a vertex is a 2x2 solve rather than a construction.
-			Vector2F normals[MAX_POINTS];
-			float constants[MAX_POINTS];
+			Vector2F normals[max_points];
+			float constants[max_points];
 			for (int i = 0; i < count; i++)
 			{
 				const Vector2F& from = points[i];
 				const Vector2F edge = points[(i + 1) % count] - from;
 
 				Vector2F normal = Vector2F(-edge.y, edge.x).normalized();
-				if (normal == Vector2F::ZERO)
+				if (normal == Vector2F::zero)
 				{
 					// A degenerate edge has no normal to offset along. Leave
 					// the polygon alone rather than invent a direction.
@@ -87,7 +87,7 @@ namespace labrador
 				constants[i] = Vector2F::dot(from, normal) + amount;
 			}
 
-			Vector2F moved[MAX_POINTS];
+			Vector2F moved[max_points];
 			for (int i = 0; i < count; i++)
 			{
 				// Vertex i is shared by the edge that ends at it and the edge
@@ -124,7 +124,7 @@ namespace labrador
 				// unreachable here: a perfect spike encloses nothing, and the
 				// area guard at the top of this function has already returned.
 				if (determinant == 0.0f ||
-					(std::abs(determinant) < EPSILON &&
+					(std::abs(determinant) < default_epsilon &&
 						Vector2F::dot(n0, n1) > 0.0f))
 				{
 					moved[i] = points[i] + n1 * amount;

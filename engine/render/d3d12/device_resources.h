@@ -68,7 +68,7 @@ namespace labrador
 		// PHILOSOPHY.md, Performance, names the low tier - and says that this
 		// claim, unlike the vertex page's, is latency rather than a memory
 		// budget, so it is one of the two waiting on a p99 nobody has taken.
-		static const int FRAME_COUNT = 2;
+		static const int frame_count = 2;
 
 		explicit DeviceResources(
 			DXGI_FORMAT back_buffer_format = DXGI_FORMAT_B8G8R8A8_UNORM);
@@ -217,8 +217,8 @@ namespace labrador
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> command_queue_;
 		Microsoft::WRL::ComPtr<IDXGISwapChain3> swap_chain_;
 
-		Microsoft::WRL::ComPtr<ID3D12Resource> back_buffers_[FRAME_COUNT];
-		D3D12_RESOURCE_STATES back_buffer_states_[FRAME_COUNT];
+		Microsoft::WRL::ComPtr<ID3D12Resource> back_buffers_[frame_count];
+		D3D12_RESOURCE_STATES back_buffer_states_[frame_count];
 
 		// Non shader-visible: a render target view is only ever read by the
 		// command list that binds it.
@@ -231,7 +231,7 @@ namespace labrador
 		// Monotonic. `frame_fences_[i]` is the value that, once reached, means
 		// everything ever submitted against frame index i has finished.
 		UINT64 fence_value_ = 0;
-		UINT64 frame_fences_[FRAME_COUNT];
+		UINT64 frame_fences_[frame_count];
 
 		int frame_index_ = 0;
 

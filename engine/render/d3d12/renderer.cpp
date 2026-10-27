@@ -100,8 +100,8 @@ namespace labrador
 
 		// Four corners, two triangles, and the winding the corner order in
 		// sprite_geometry.h fixes.
-		const int VERTICES_PER_SPRITE = 4;
-		const int INDICES_PER_SPRITE = 6;
+		const int vertices_per_sprite = 4;
+		const int indices_per_sprite = 6;
 
 		// Where the engine's values become this API's.
 		//
@@ -215,15 +215,15 @@ namespace labrador
 		// call and a change is a flush. That is the whole of the batching, and
 		// it is the same on every backend that draws.
 		if (&texture != this->batch_texture ||
-			this->batch.size() >= static_cast<size_t>(MAX_PAGE_SPRITES) *
-				VERTICES_PER_SPRITE)
+			this->batch.size() >= static_cast<size_t>(max_page_sprites) *
+				vertices_per_sprite)
 		{
 			this->flush();
 			this->batch_texture = &texture;
 		}
 
 		this->batch.insert(this->batch.end(), corners,
-			corners + VERTICES_PER_SPRITE);
+			corners + vertices_per_sprite);
 		this->touched = true;
 	}
 
@@ -235,7 +235,7 @@ namespace labrador
 		}
 
 		const int sprites =
-			static_cast<int>(this->batch.size()) / VERTICES_PER_SPRITE;
+			static_cast<int>(this->batch.size()) / vertices_per_sprite;
 
 		const int frame = this->owner->device_resources.frame_index();
 		std::vector<VertexPage>& frame_pages =
@@ -247,7 +247,7 @@ namespace labrador
 		// the old; here nobody is tracking that, and the draw calls already
 		// recorded into this list point into this page. So the page is left
 		// alone and the next one is taken.
-		if (this->page_position + sprites > MAX_PAGE_SPRITES)
+		if (this->page_position + sprites > max_page_sprites)
 		{
 			this->page++;
 			this->page_position = 0;
@@ -258,7 +258,7 @@ namespace labrador
 			VertexPage fresh;
 			fresh.buffer = create_buffer(this->owner->device_resources.device(),
 				D3D12_HEAP_TYPE_UPLOAD,
-				static_cast<UINT64>(MAX_PAGE_SPRITES) * VERTICES_PER_SPRITE *
+				static_cast<UINT64>(max_page_sprites) * vertices_per_sprite *
 					sizeof(SpriteVertex),
 				D3D12_RESOURCE_STATE_GENERIC_READ);
 
@@ -277,7 +277,7 @@ namespace labrador
 			frame_pages[static_cast<size_t>(this->page)];
 
 		std::memcpy(page_in_use.mapped +
-				static_cast<size_t>(this->page_position) * VERTICES_PER_SPRITE,
+				static_cast<size_t>(this->page_position) * vertices_per_sprite,
 			this->batch.data(),
 			this->batch.size() * sizeof(SpriteVertex));
 
@@ -295,7 +295,7 @@ namespace labrador
 		D3D12_VERTEX_BUFFER_VIEW vertices = {};
 		vertices.BufferLocation = page_in_use.address;
 		vertices.SizeInBytes = static_cast<UINT>(
-			static_cast<size_t>(MAX_PAGE_SPRITES) * VERTICES_PER_SPRITE *
+			static_cast<size_t>(max_page_sprites) * vertices_per_sprite *
 			sizeof(SpriteVertex));
 		vertices.StrideInBytes = static_cast<UINT>(sizeof(SpriteVertex));
 
@@ -307,8 +307,8 @@ namespace labrador
 			owner_impl.sampler(this->filter));
 
 		this->list->DrawIndexedInstanced(
-			static_cast<UINT>(sprites * INDICES_PER_SPRITE), 1,
-			static_cast<UINT>(this->page_position * INDICES_PER_SPRITE), 0, 0);
+			static_cast<UINT>(sprites * indices_per_sprite), 1,
+			static_cast<UINT>(this->page_position * indices_per_sprite), 0, 0);
 
 		this->page_position += sprites;
 		this->batch.clear();
@@ -392,7 +392,7 @@ namespace labrador
 
 	void DrawList::View::reset()
 	{
-		this->camera = Camera::DEFAULT_CAMERA;
+		this->camera = Camera::default_camera;
 		this->filter = TextureFilter::point;
 		this->batch.clear();
 		this->batch_texture = nullptr;
@@ -557,13 +557,13 @@ namespace labrador
 
 	int Renderer::Impl::allocate_texture_slot(const std::string& name)
 	{
-		if (this->next_texture_slot >= TEXTURE_CAPACITY)
+		if (this->next_texture_slot >= texture_capacity)
 		{
 			throw std::runtime_error("Texture '" + name + "' does not fit: "
 				"this backend's descriptor heap holds " +
-				std::to_string(TEXTURE_CAPACITY) + " distinct texture names "
+				std::to_string(texture_capacity) + " distinct texture names "
 				"and they are all taken. Re-loading a name already in it is "
-				"free. See Renderer::Impl::TEXTURE_CAPACITY.");
+				"free. See Renderer::Impl::texture_capacity.");
 		}
 
 		return this->next_texture_slot++;
@@ -623,10 +623,10 @@ namespace labrador
 
 		// Opaque black, spelt out - the clear colour is a term
 		// RenderPixelTests pins, so it is worth being able to read it here.
-		const float BLACK[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		const float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		const D3D12_CPU_DESCRIPTOR_HANDLE render_target =
 			this->device_resources.back_buffer_view();
-		this->open_frame_list()->ClearRenderTargetView(render_target, BLACK, 0,
+		this->open_frame_list()->ClearRenderTargetView(render_target, black, 0,
 			nullptr);
 		this->execute_frame_list();
 
@@ -805,8 +805,8 @@ namespace labrador
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline = {};
 		pipeline.pRootSignature = this->root_signature.Get();
-		pipeline.VS = { SPRITE_VERTEX_SHADER, sizeof(SPRITE_VERTEX_SHADER) };
-		pipeline.PS = { SPRITE_PIXEL_SHADER, sizeof(SPRITE_PIXEL_SHADER) };
+		pipeline.VS = { sprite_vertex_shader, sizeof(sprite_vertex_shader) };
+		pipeline.PS = { sprite_pixel_shader, sizeof(sprite_pixel_shader) };
 
 		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
 		// RenderPixelTests calls this the term most likely to be got wrong,
@@ -870,7 +870,7 @@ namespace labrador
 		D3D12_DESCRIPTOR_HEAP_DESC texture_heap_description = {};
 		texture_heap_description.Type =
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		texture_heap_description.NumDescriptors = TEXTURE_CAPACITY;
+		texture_heap_description.NumDescriptors = texture_capacity;
 		texture_heap_description.Flags =
 			D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		ThrowIfFailed(device->CreateDescriptorHeap(&texture_heap_description,
@@ -929,7 +929,7 @@ namespace labrador
 		//
 		// The frame's own list first, because the index buffer below is
 		// uploaded through it.
-		for (int i = 0; i < DeviceResources::FRAME_COUNT; i++)
+		for (int i = 0; i < DeviceResources::frame_count; i++)
 		{
 			ThrowIfFailed(device->CreateCommandAllocator(
 				D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(
@@ -955,7 +955,7 @@ namespace labrador
 			DrawList::View& view = *view_ptr;
 			view.owner = this;
 
-			for (int i = 0; i < DeviceResources::FRAME_COUNT; i++)
+			for (int i = 0; i < DeviceResources::frame_count; i++)
 			{
 				ThrowIfFailed(device->CreateCommandAllocator(
 					D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(
@@ -990,12 +990,12 @@ namespace labrador
 		// owns the allocation as well as the copy.
 		std::vector<unsigned short> index_data;
 		index_data.reserve(static_cast<size_t>(DrawList::View::
-			MAX_PAGE_SPRITES) * INDICES_PER_SPRITE);
-		for (int sprite = 0; sprite < DrawList::View::MAX_PAGE_SPRITES;
+			max_page_sprites) * indices_per_sprite);
+		for (int sprite = 0; sprite < DrawList::View::max_page_sprites;
 			sprite++)
 		{
 			const unsigned short first =
-				static_cast<unsigned short>(sprite * VERTICES_PER_SPRITE);
+				static_cast<unsigned short>(sprite * vertices_per_sprite);
 			index_data.push_back(static_cast<unsigned short>(first + 0));
 			index_data.push_back(static_cast<unsigned short>(first + 1));
 			index_data.push_back(static_cast<unsigned short>(first + 2));
@@ -1054,7 +1054,7 @@ namespace labrador
 		for (std::unique_ptr<DrawList::View>& view : this->views)
 		{
 			view->list.Reset();
-			for (int i = 0; i < DeviceResources::FRAME_COUNT; i++)
+			for (int i = 0; i < DeviceResources::frame_count; i++)
 			{
 				view->allocators[i].Reset();
 				view->pages[i].clear();
@@ -1067,7 +1067,7 @@ namespace labrador
 		}
 
 		this->frame_list.Reset();
-		for (int i = 0; i < DeviceResources::FRAME_COUNT; i++)
+		for (int i = 0; i < DeviceResources::frame_count; i++)
 		{
 			this->frame_allocators[i].Reset();
 		}
@@ -1238,7 +1238,7 @@ namespace labrador
 		impl.device_resources.wait_for_frame();
 
 		// A FRAME BEGUN AND NEVER SUBMITTED CONTRIBUTES NOTHING TO THE NEXT
-		// ONE (renderer.h), and here that means closing what was left open.
+		// one (renderer.h), and here that means closing what was left open.
 		// The five backends have three different things to drop: three clear a
 		// vector, the D3D11 one drains a deferred context, and this one has a
 		// command list that is still recording - which cannot be reset, and

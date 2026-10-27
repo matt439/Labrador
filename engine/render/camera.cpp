@@ -134,8 +134,8 @@ namespace labrador
 	{
 		return world_scale * this->scale;
 	}
-	// Literals rather than Vector2F::ZERO, because a const object is not a
+	// Literals rather than Vector2F::zero, because a const object is not a
 	// constant expression even when it was constant-initialised, and this
 	// definition has to be one to say constinit.
-	constinit const Camera Camera::DEFAULT_CAMERA = { 0.0f, 0.0f, 1.0f };
+	constinit const Camera Camera::default_camera = { 0.0f, 0.0f, 1.0f };
 }

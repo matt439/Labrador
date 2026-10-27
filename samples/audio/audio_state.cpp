@@ -49,7 +49,7 @@ namespace audio_sample
 			L"Adjustments change the drone and the next one-shot.",
 			font, Vector2F(48.0f, 588.0f), resources));
 		this->scene_.end_tick();
-		this->scene_.add_view(Viewport(RectangleF(Vector2F::ZERO,
+		this->scene_.add_view(Viewport(RectangleF(Vector2F::zero,
 			this->app_->resolution_manager()->resolution_vec())));
 		this->refresh_status();
 	}

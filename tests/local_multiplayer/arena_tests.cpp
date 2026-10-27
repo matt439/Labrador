@@ -26,7 +26,7 @@ TEST_CASE("keyboard bindings route simultaneous input to different players witho
 	CHECK(directions[1] == Vector2F(0.0f, -1.0f));
 	keyboard.on_key_up(Key::d);
 	keyboard.poll();
-	CHECK(read_directions(keyboard, sticks)[0] == Vector2F::ZERO);
+	CHECK(read_directions(keyboard, sticks)[0] == Vector2F::zero);
 	CHECK(read_directions(keyboard, sticks)[1] == Vector2F(0.0f, -1.0f));
 }
 
@@ -37,7 +37,7 @@ TEST_CASE("stick ownership is per player and deadzone is applied before movement
 		Vector2F(0.1f, 0.0f), Vector2F(0.0f, 1.0f)
 	};
 	const std::array<Vector2F, Arena::player_count> directions = read_directions(keyboard, sticks);
-	CHECK(directions[0] == Vector2F::ZERO);
+	CHECK(directions[0] == Vector2F::zero);
 	CHECK(directions[1] == Vector2F(0.0f, 1.0f));
 }
 

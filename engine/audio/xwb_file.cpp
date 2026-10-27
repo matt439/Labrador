@@ -19,50 +19,50 @@ namespace labrador
 {
 	namespace
 	{
-		const uint32_t SIGNATURE = 0x444E4257;             // "WBND"
-		const uint32_t BIG_ENDIAN_SIGNATURE = 0x57424E44;  // "DNBW"
-		const uint32_t HEADER_VERSION = 44;
+		const uint32_t wave_bank_signature = 0x444E4257;   // "WBND"
+		const uint32_t big_endian_signature = 0x57424E44;  // "DNBW"
+		const uint32_t supported_version = 44;
 
 		// The five regions the header points at, in the order it lists them.
-		const size_t SEGMENT_COUNT = 5;
-		const size_t BANK_DATA = 0;
-		const size_t ENTRY_METADATA = 1;
-		const size_t ENTRY_NAMES = 3;
-		const size_t ENTRY_WAVE_DATA = 4;
-		const std::array<const char*, SEGMENT_COUNT> SEGMENT_NAMES = {
+		const size_t segment_count = 5;
+		const size_t bank_data = 0;
+		const size_t entry_metadata = 1;
+		const size_t entry_names = 3;
+		const size_t entry_wave_data = 4;
+		const std::array<const char*, segment_count> segment_names = {
 			"bank data", "entry metadata", "seek tables", "entry names",
 			"wave data" };
 
 		// The bank data record: flags, count, a 64-byte name, three sizes, the
 		// compact format and an 8-byte build time.
-		const uint32_t BANK_DATA_SIZE = 96;
-		const size_t BANK_NAME_LENGTH = 64;
-		const uint32_t FLAG_ENTRY_NAMES = 0x00010000;
-		const uint32_t FLAG_COMPACT = 0x00020000;
+		const uint32_t bank_data_size = 96;
+		const size_t bank_name_length = 64;
+		const uint32_t flag_entry_names = 0x00010000;
+		const uint32_t flag_compact = 0x00020000;
 
 		// A standard entry: flags and duration, format, play region, loop
 		// region - six DWORDs.
-		const uint32_t ENTRY_SIZE = 24;
+		const uint32_t standard_entry_size = 24;
 
 		// The mini wave format's codec tags.
-		const uint32_t TAG_PCM = 0;
-		const uint32_t TAG_XMA = 1;
-		const uint32_t TAG_ADPCM = 2;
-		const uint32_t TAG_WMA = 3;
+		const uint32_t tag_pcm = 0;
+		const uint32_t tag_xma = 1;
+		const uint32_t tag_adpcm = 2;
+		const uint32_t tag_wma = 3;
 
 		// A bank stores an ADPCM block alignment per channel and less this
 		// much, so that a useful one fits the format's eight bits.
-		const int ADPCM_BLOCK_ALIGN_OFFSET = 22;
+		const int adpcm_block_align_offset = 22;
 
 		// MS-ADPCM's seven predictor pairs and its step adaptation table.
 		// An .xwb does not carry the coefficients, because every encoder that
 		// writes one uses these and DirectXTK fills them in when it builds the
 		// WAVEFORMATEX; a file that wanted others could not say so.
-		const std::array<int, 7> COEFFICIENT_1 = {
+		const std::array<int, 7> coefficient_1 = {
 			256, 512, 0, 192, 240, 460, 392 };
-		const std::array<int, 7> COEFFICIENT_2 = {
+		const std::array<int, 7> coefficient_2 = {
 			0, -256, 0, 64, 0, -208, -232 };
-		const std::array<int, 16> ADAPTATION = {
+		const std::array<int, 16> adaptation = {
 			230, 230, 230, 230, 307, 409, 512, 614,
 			768, 614, 512, 409, 307, 230, 230, 230 };
 
@@ -70,8 +70,8 @@ namespace labrador
 		// corrupt block can grow the step by three times a nibble, and an
 		// unbounded one overflows. Real content never comes near it, so the
 		// bound changes no file an encoder wrote.
-		const int64_t MINIMUM_DELTA = 16;
-		const int64_t MAXIMUM_DELTA = 0x7FFFFFFF / 768;
+		const int64_t minimum_delta = 16;
+		const int64_t maximum_delta = 0x7FFFFFFF / 768;
 
 		struct Segment
 		{
@@ -160,7 +160,7 @@ namespace labrador
 			for (size_t c = 0; c < count; c++)
 			{
 				predictor[c] = at[c];
-				if (predictor[c] >= static_cast<int>(COEFFICIENT_1.size()))
+				if (predictor[c] >= static_cast<int>(coefficient_1.size()))
 				{
 					throw std::runtime_error(label + " is MS-ADPCM whose block " +
 						std::to_string(block_index) + " names predictor " +
@@ -200,14 +200,14 @@ namespace labrador
 				const size_t p = static_cast<size_t>(predictor[c]);
 
 				const int64_t prediction =
-					(sample_1[c] * COEFFICIENT_1[p] +
-						sample_2[c] * COEFFICIENT_2[p]) / 256;
+					(sample_1[c] * coefficient_1[p] +
+						sample_2[c] * coefficient_2[p]) / 256;
 				const int16_t value =
 					clamp_sample(prediction + signed_nibble * delta[c]);
 
-				int64_t next = delta[c] * ADAPTATION[static_cast<size_t>(nibble)] / 256;
-				next = next < MINIMUM_DELTA ? MINIMUM_DELTA : next;
-				delta[c] = next > MAXIMUM_DELTA ? MAXIMUM_DELTA : next;
+				int64_t next = delta[c] * adaptation[static_cast<size_t>(nibble)] / 256;
+				next = next < minimum_delta ? minimum_delta : next;
+				delta[c] = next > maximum_delta ? maximum_delta : next;
 				sample_2[c] = sample_1[c];
 				sample_1[c] = value;
 				out.push_back(value);
@@ -225,12 +225,12 @@ namespace labrador
 			const int block_align = static_cast<int>((format >> 23) & 0xFFu);
 			const bool sixteen_bit = ((format >> 31) & 0x1u) != 0;
 
-			if (tag == TAG_WMA)
+			if (tag == tag_wma)
 			{
 				throw std::runtime_error(label + " is xWMA, which this engine "
 					"does not decode. Re-pack it from PCM or ADPCM sources.");
 			}
-			if (tag == TAG_XMA)
+			if (tag == tag_xma)
 			{
 				throw std::runtime_error(label + " is XMA, the Xbox 360 codec, "
 					"which this engine does not decode. Re-pack it from PCM or "
@@ -247,7 +247,7 @@ namespace labrador
 			wave.sample_rate = sample_rate;
 			const unsigned char* data = bytes.data() + data_at;
 
-			if (tag == TAG_PCM)
+			if (tag == tag_pcm)
 			{
 				const int bytes_per_sample = sixteen_bit ? 2 : 1;
 				if (block_align != channels * bytes_per_sample)
@@ -294,7 +294,7 @@ namespace labrador
 
 			// A tag is two bits and the other three values are handled above,
 			// so this cannot fire; it is spelt out so that it is never silent.
-			if (tag != TAG_ADPCM)
+			if (tag != tag_adpcm)
 			{
 				throw std::runtime_error(label + " has codec tag " +
 					std::to_string(tag) + ", which this engine does not read.");
@@ -307,7 +307,7 @@ namespace labrador
 			}
 
 			const size_t full_align = static_cast<size_t>(
-				(block_align + ADPCM_BLOCK_ALIGN_OFFSET) * channels);
+				(block_align + adpcm_block_align_offset) * channels);
 			const size_t samples_per_block = full_align * 2 /
 				static_cast<size_t>(channels) - 12;
 			if (data_length % full_align != 0)
@@ -348,13 +348,13 @@ namespace labrador
 		ByteReader reader(bytes, path);
 
 		const uint32_t signature = reader.read_u32();
-		if (signature == BIG_ENDIAN_SIGNATURE)
+		if (signature == big_endian_signature)
 		{
 			throw std::runtime_error(path + " is a big-endian (Xbox 360) "
 				"wave bank, which this engine does not read. Re-pack it for "
 				"Windows.");
 		}
-		if (signature != SIGNATURE)
+		if (signature != wave_bank_signature)
 		{
 			throw std::runtime_error(path +
 				" is not a wave bank: it does not start with \"WBND\".");
@@ -362,18 +362,18 @@ namespace labrador
 
 		std::ignore = reader.read_u32();                   // content version
 		const uint32_t header_version = reader.read_u32();
-		if (header_version != HEADER_VERSION)
+		if (header_version != supported_version)
 		{
 			throw std::runtime_error(path + " is a version " +
 				std::to_string(header_version) + " wave bank; this engine "
-				"reads version " + std::to_string(HEADER_VERSION) +
+				"reads version " + std::to_string(supported_version) +
 				", which is XACT 3's.");
 		}
 
 		// Every region is checked against the file before any is read, so a
 		// truncated bank is refused by which part of it is missing.
-		std::array<Segment, SEGMENT_COUNT> segments;
-		for (size_t i = 0; i < SEGMENT_COUNT; i++)
+		std::array<Segment, segment_count> segments;
+		for (size_t i = 0; i < segment_count; i++)
 		{
 			segments[i].offset = reader.read_u32();
 			segments[i].length = reader.read_u32();
@@ -381,43 +381,43 @@ namespace labrador
 				segments[i].length;
 			if (end > bytes.size())
 			{
-				throw std::runtime_error(path + ": its " + SEGMENT_NAMES[i] +
+				throw std::runtime_error(path + ": its " + segment_names[i] +
 					" runs to byte " + std::to_string(end) + " of a " +
 					std::to_string(bytes.size()) + "-byte file. It is "
 					"truncated.");
 			}
 		}
 
-		const Segment& bank_segment = segments[BANK_DATA];
-		if (bank_segment.length < BANK_DATA_SIZE)
+		const Segment& bank_segment = segments[bank_data];
+		if (bank_segment.length < bank_data_size)
 		{
 			throw std::runtime_error(path + ": its bank data is " +
 				std::to_string(bank_segment.length) + " bytes; it is " +
-				std::to_string(BANK_DATA_SIZE) + ".");
+				std::to_string(bank_data_size) + ".");
 		}
 		const size_t bank_at = bank_segment.offset;
 		const uint32_t flags = u32_at(bytes, bank_at);
 		const uint32_t entry_count = u32_at(bytes, bank_at + 4);
 		const std::string bank_name =
-			fixed_string(bytes, bank_at + 8, BANK_NAME_LENGTH);
+			fixed_string(bytes, bank_at + 8, bank_name_length);
 		const uint32_t entry_size = u32_at(bytes, bank_at + 72);
 		const uint32_t name_size = u32_at(bytes, bank_at + 76);
 
-		if ((flags & FLAG_COMPACT) != 0)
+		if ((flags & flag_compact) != 0)
 		{
 			throw std::runtime_error(path + " uses compact entries, which "
 				"this engine does not read. Re-pack it with xwbtool -nc.");
 		}
-		if (entry_size < ENTRY_SIZE)
+		if (entry_size < standard_entry_size)
 		{
 			throw std::runtime_error(path + " declares " +
 				std::to_string(entry_size) + "-byte entries; a standard entry "
-				"is " + std::to_string(ENTRY_SIZE) + ".");
+				"is " + std::to_string(standard_entry_size) + ".");
 		}
 
 		// The count sizes everything after it, so it is held to the region
 		// that has to contain it before anything is allocated.
-		const Segment& entries = segments[ENTRY_METADATA];
+		const Segment& entries = segments[entry_metadata];
 		if (static_cast<uint64_t>(entry_count) * entry_size > entries.length)
 		{
 			throw std::runtime_error(path + " says it has " +
@@ -426,8 +426,8 @@ namespace labrador
 				"is " + std::to_string(entries.length) + " bytes.");
 		}
 
-		const bool named = (flags & FLAG_ENTRY_NAMES) != 0;
-		const Segment& names = segments[ENTRY_NAMES];
+		const bool named = (flags & flag_entry_names) != 0;
+		const Segment& names = segments[entry_names];
 		if (named && (name_size == 0 ||
 			static_cast<uint64_t>(entry_count) * name_size > names.length))
 		{
@@ -437,7 +437,7 @@ namespace labrador
 				"is " + std::to_string(names.length) + " bytes.");
 		}
 
-		const Segment& wave_data = segments[ENTRY_WAVE_DATA];
+		const Segment& wave_data = segments[entry_wave_data];
 
 		WaveBankData bank;
 		bank.name = bank_name;

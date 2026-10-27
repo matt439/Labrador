@@ -426,7 +426,7 @@ namespace linesweeper
 				RectangleF(position.x - half, position.y - half, side, side),
 				glowing(kind_colour(static_cast<Kind>(particle.kind)),
 					particle.life * particle.life * glow_intensity),
-				0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 		}
 	}
 

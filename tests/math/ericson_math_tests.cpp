@@ -108,11 +108,11 @@ TEST_SUITE("EricsonMath")
 		// formulations agree and prove nothing.
 		constexpr float X = 6232.75f;
 		constexpr float Y = 5408.46f;
-		constexpr float SIDE = 13.3f;
+		constexpr float side = 13.3f;
 
 		const std::array<Point2F, 4> tile = {
-			Point2F(X, Y), Point2F(X + SIDE, Y),
-			Point2F(X + SIDE, Y + SIDE), Point2F(X, Y + SIDE) };
+			Point2F(X, Y), Point2F(X + side, Y),
+			Point2F(X + side, Y + side), Point2F(X, Y + side) };
 
 		// The side lengths the corners actually store, once each sum has
 		// been rounded to a float.
@@ -509,8 +509,8 @@ TEST_SUITE("EricsonMath")
 	{
 		// An axis-aligned OBB spanning (-5,-5) to (5,5), so every answer
 		// can be checked against the AABB result.
-		OBB b(Point2F::ZERO, Vector2F::DIRECTION_RIGHT,
-			Vector2F::DIRECTION_DOWN, Vector2F(5.0f, 5.0f));
+		OBB b(Point2F::zero, Vector2F::direction_right,
+			Vector2F::direction_down, Vector2F(5.0f, 5.0f));
 		Point2F q;
 
 		// inside the box: the closest point is the point itself
@@ -538,8 +538,8 @@ TEST_SUITE("EricsonMath")
 		// A square rotated 45 degrees - a diamond with vertices at
 		// (+-5*sqrt2, 0) and (0, +-5*sqrt2). Here the OBB answer differs
 		// from the AABB answer, which is the whole point of the routine.
-		OBB b(Point2F::ZERO, Vector2F::DIRECTION_DOWN_RIGHT,
-			Vector2F::DIRECTION_DOWN_LEFT, Vector2F(5.0f, 5.0f));
+		OBB b(Point2F::zero, Vector2F::direction_down_right,
+			Vector2F::direction_down_left, Vector2F(5.0f, 5.0f));
 		Point2F q;
 
 		const float half_diagonal = 5.0f * std::sqrt(2.0f);

@@ -103,7 +103,7 @@ The HUD runs after the world, on that view's worker. It selects the player from 
 and switches the list to the identity camera, keeping text fixed in its pane while the world
 moves beneath it:
 
-<SourceFile path="samples/local_multiplayer/play_state.cpp" from="this->scene_->draw(renderer, [this]" to="list.set_camera(Camera::DEFAULT_CAMERA);" />
+<SourceFile path="samples/local_multiplayer/play_state.cpp" from="this->scene_->draw(renderer, [this]" to="list.set_camera(Camera::default_camera);" />
 
 The rest of <RepoLink path="samples/local_multiplayer/play_state.cpp">the callback</RepoLink>
 draws the player's controls and a coloured separator. It reads shared state and writes only

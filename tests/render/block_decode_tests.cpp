@@ -48,11 +48,11 @@ namespace
 			"," << texel.alpha;
 	}
 
-	const unsigned int RED_565 = 0xF800;
-	const unsigned int GREEN_565 = 0x07E0;
-	const unsigned int BLUE_565 = 0x001F;
-	const unsigned int WHITE_565 = 0xFFFF;
-	const unsigned int BLACK_565 = 0x0000;
+	const unsigned int red_565 = 0xF800;
+	const unsigned int green_565 = 0x07E0;
+	const unsigned int blue_565 = 0x001F;
+	const unsigned int white_565 = 0xFFFF;
+	const unsigned int black_565 = 0x0000;
 
 	// A single-level texture of `format` made of `bytes`, laid out as
 	// texture_level says a level of that size is.
@@ -150,7 +150,7 @@ TEST_CASE("BC1 with the first endpoint above the second decodes four colours")
 		indices[i] = i % 4;
 	}
 	std::vector<unsigned char> bytes;
-	append_colour(bytes, RED_565, BLUE_565, indices);
+	append_colour(bytes, red_565, blue_565, indices);
 
 	const TextureData decoded = decode_block_compressed(
 		texture_of(TextureFormat::bc1_unorm, 4, 4, bytes));
@@ -182,7 +182,7 @@ TEST_CASE("BC1 with the first endpoint not above the second decodes three colour
 	SUBCASE("first below second")
 	{
 		std::vector<unsigned char> bytes;
-		append_colour(bytes, BLUE_565, RED_565, indices);
+		append_colour(bytes, blue_565, red_565, indices);
 		const TextureData decoded = decode_block_compressed(
 			texture_of(TextureFormat::bc1_unorm, 4, 4, bytes));
 
@@ -199,7 +199,7 @@ TEST_CASE("BC1 with the first endpoint not above the second decodes three colour
 	SUBCASE("equal endpoints are the three-colour mode too")
 	{
 		std::vector<unsigned char> bytes;
-		append_colour(bytes, WHITE_565, WHITE_565, indices);
+		append_colour(bytes, white_565, white_565, indices);
 		const TextureData decoded = decode_block_compressed(
 			texture_of(TextureFormat::bc1_unorm, 4, 4, bytes));
 
@@ -220,7 +220,7 @@ TEST_CASE("BC2 alpha is explicit, four bits a texel, and its colour block is alw
 	}
 	// First endpoint below second, which in BC1 would make index 3
 	// transparent black. In BC2 it is the third of the four colours.
-	append_solid_colour(bytes, BLUE_565, RED_565, 3);
+	append_solid_colour(bytes, blue_565, red_565, 3);
 
 	const TextureData decoded = decode_block_compressed(
 		texture_of(TextureFormat::bc2_unorm, 4, 4, bytes));
@@ -243,19 +243,19 @@ TEST_CASE("BC3 alpha with the first endpoint above the second interpolates six a
 	}
 	std::vector<unsigned char> bytes;
 	append_interpolated_alpha(bytes, 255, 0, alpha_indices);
-	append_solid_colour(bytes, BLUE_565, RED_565, 3);
+	append_solid_colour(bytes, blue_565, red_565, 3);
 
 	const TextureData decoded = decode_block_compressed(
 		texture_of(TextureFormat::bc3_unorm, 4, 4, bytes));
 
 	// 255 and 0, then 6/7 to 1/7 of 255 to nearest: 218.57, 182.14, 145.71,
 	// 109.29, 72.86, 36.43.
-	const int EXPECTED[8] = { 255, 0, 219, 182, 146, 109, 73, 36 };
+	const int expected[8] = { 255, 0, 219, 182, 146, 109, 73, 36 };
 	for (int i = 0; i < 16; i++)
 	{
 		CAPTURE(i);
 		// And the colour block is BC2's: always four colours.
-		CHECK(texel(decoded, i) == Rgba{ 170, 0, 85, EXPECTED[i % 8] });
+		CHECK(texel(decoded, i) == Rgba{ 170, 0, 85, expected[i % 8] });
 	}
 }
 
@@ -268,7 +268,7 @@ TEST_CASE("BC3 alpha with the first endpoint not above the second interpolates f
 	}
 	std::vector<unsigned char> bytes;
 	append_interpolated_alpha(bytes, 0, 255, alpha_indices);
-	append_solid_colour(bytes, GREEN_565, BLACK_565, 0);
+	append_solid_colour(bytes, green_565, black_565, 0);
 
 	const TextureData decoded = decode_block_compressed(
 		texture_of(TextureFormat::bc3_unorm, 4, 4, bytes));
@@ -276,18 +276,18 @@ TEST_CASE("BC3 alpha with the first endpoint not above the second interpolates f
 	// Indices 0 and 1 are the endpoints, 2 to 5 are 1/5 to 4/5 of the way
 	// from the first to the second, and 6 and 7 are 0 and 255 whatever the
 	// endpoints are.
-	const int EXPECTED[8] = { 0, 255, 51, 102, 153, 204, 0, 255 };
+	const int expected[8] = { 0, 255, 51, 102, 153, 204, 0, 255 };
 	for (int i = 0; i < 16; i++)
 	{
 		CAPTURE(i);
-		CHECK(texel(decoded, i) == Rgba{ 0, 255, 0, EXPECTED[7 - (i % 8)] });
+		CHECK(texel(decoded, i) == Rgba{ 0, 255, 0, expected[7 - (i % 8)] });
 	}
 
 	SUBCASE("equal endpoints are this mode too")
 	{
 		std::vector<unsigned char> equal;
 		append_interpolated_alpha(equal, 100, 100, alpha_indices);
-		append_solid_colour(equal, GREEN_565, BLACK_565, 0);
+		append_solid_colour(equal, green_565, black_565, 0);
 		const TextureData same = decode_block_compressed(
 			texture_of(TextureFormat::bc3_unorm, 4, 4, equal));
 		// Texel 0 is index 7 and texel 1 index 6.
@@ -302,8 +302,8 @@ TEST_CASE("a level whose size is not a multiple of four keeps only the texels in
 	// 5x3 is two blocks by one. The left block is red and the right blue,
 	// and of the right block only its first column is inside the image.
 	std::vector<unsigned char> bytes;
-	append_solid_colour(bytes, RED_565, BLACK_565, 0);
-	append_solid_colour(bytes, BLUE_565, BLACK_565, 0);
+	append_solid_colour(bytes, red_565, black_565, 0);
+	append_solid_colour(bytes, blue_565, black_565, 0);
 
 	const TextureData decoded = decode_block_compressed(
 		texture_of(TextureFormat::bc1_unorm, 5, 3, bytes));
@@ -335,7 +335,7 @@ TEST_CASE("every level of a mip chain is decoded, and packed one after another")
 	texture.width = 8;
 	texture.height = 8;
 	texture.format = TextureFormat::bc1_unorm;
-	const unsigned int COLOURS[4] = { RED_565, GREEN_565, BLUE_565, WHITE_565 };
+	const unsigned int colours[4] = { red_565, green_565, blue_565, white_565 };
 	int size = 8;
 	for (int level = 0; level < 4; level++)
 	{
@@ -344,7 +344,7 @@ TEST_CASE("every level of a mip chain is decoded, and packed one after another")
 		const int blocks = ((size + 3) / 4) * ((size + 3) / 4);
 		for (int block = 0; block < blocks; block++)
 		{
-			append_solid_colour(texture.pixels, COLOURS[level], BLACK_565, 0);
+			append_solid_colour(texture.pixels, colours[level], black_565, 0);
 		}
 		size /= 2;
 	}
@@ -352,16 +352,16 @@ TEST_CASE("every level of a mip chain is decoded, and packed one after another")
 	const TextureData decoded = decode_block_compressed(texture);
 
 	REQUIRE(decoded.levels.size() == 4);
-	const int SIZES[4] = { 8, 4, 2, 1 };
-	const size_t OFFSETS[4] = { 0, 256, 320, 336 };
+	const int sizes[4] = { 8, 4, 2, 1 };
+	const size_t offsets[4] = { 0, 256, 320, 336 };
 	for (size_t level = 0; level < 4; level++)
 	{
 		CAPTURE(level);
-		CHECK(decoded.levels[level].width == SIZES[level]);
-		CHECK(decoded.levels[level].height == SIZES[level]);
-		CHECK(decoded.levels[level].offset == OFFSETS[level]);
+		CHECK(decoded.levels[level].width == sizes[level]);
+		CHECK(decoded.levels[level].height == sizes[level]);
+		CHECK(decoded.levels[level].offset == offsets[level]);
 		CHECK(decoded.levels[level].size ==
-			static_cast<size_t>(SIZES[level] * SIZES[level] * 4));
+			static_cast<size_t>(sizes[level] * sizes[level] * 4));
 	}
 	CHECK(decoded.pixels.size() == 340u);
 
@@ -397,7 +397,7 @@ TEST_CASE("the shipped font atlas decodes to one pixel per texel, every alpha a 
 TEST_CASE("a texture that is not block compressed, or whose levels do not fit, is refused")
 {
 	std::vector<unsigned char> bytes;
-	append_solid_colour(bytes, RED_565, BLACK_565, 0);
+	append_solid_colour(bytes, red_565, black_565, 0);
 
 	SUBCASE("an uncompressed format")
 	{

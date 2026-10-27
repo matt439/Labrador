@@ -9,11 +9,10 @@ namespace labrador
 	namespace
 	{
 		// Counteracts arithmetic error when a segment runs (near) parallel to a
-		// coordinate axis, in test_segment_AABB alone. It is deliberately not
-		// spelt EPSILON and deliberately not shared with EPSILON: this
-		// is a slab-test fudge two orders of magnitude tighter than the engine's
-		// general float tolerance, and the two are not the same quantity.
-		constexpr float SEGMENT_PARALLEL_EPSILON = 0.000001f;
+		// coordinate axis, in test_segment_AABB alone. It is deliberately
+		// not default_epsilon: this is a slab-test fudge two orders of magnitude
+		// tighter than the engine's general float tolerance, and the two are not the same quantity.
+		constexpr float segment_parallel_epsilon = 0.000001f;
 	}
 
 
@@ -265,8 +264,8 @@ namespace labrador
 		// (near) parallel to a coordinate axis (see text for detail). It
 		// belongs to the cross test alone, and is still added after the two
 		// axis tests have been decided, exactly as before.
-		const float adx_e = adx + SEGMENT_PARALLEL_EPSILON;
-		const float ady_e = ady + SEGMENT_PARALLEL_EPSILON;
+		const float adx_e = adx + segment_parallel_epsilon;
+		const float ady_e = ady + segment_parallel_epsilon;
 
 		const bool overlap_cross =
 			std::abs(m.x * d.y - m.y * d.x) <= e.x * ady_e + e.y * adx_e;
@@ -369,7 +368,7 @@ namespace labrador
 		// function is the one other place in the file that has to agree.
 		//
 		// The disagreement was not academic. A default-constructed Triangle is
-		// three copies of Vector2F::ZERO, so every edge vector was (0, 0),
+		// three copies of Vector2F::zero, so every edge vector was (0, 0),
 		// every cross product was zero, and the fall-through said "inside" -
 		// which made Triangle().contains(p) true for every point in the plane
 		// and triangles_intersect(anything, Triangle()) true unconditionally,

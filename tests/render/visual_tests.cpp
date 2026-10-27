@@ -110,10 +110,10 @@ TEST_CASE("a turned sprite's box is the box around the turned rectangle")
 	// The review's second row: a half turn about the top left puts the whole
 	// sprite up and left of it.
 	Content content;
-	const float HALF_TURN = 3.14159265f;
+	const float half_turn = 3.14159265f;
 	const Visual visual("sheet", "plain",
 		RectangleF(100.0f, 20.0f, 20.0f, 20.0f), &content.resources,
-		labrador::Colour::white, HALF_TURN);
+		labrador::Colour::white, half_turn);
 
 	CHECK(close(visual.bounds(), RectangleF(80.0f, 0.0f, 20.0f, 20.0f)));
 }

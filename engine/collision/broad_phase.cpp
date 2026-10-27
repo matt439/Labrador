@@ -19,7 +19,7 @@ namespace labrador
 		// of building a grid first. Twenty-five is generous for the case this
 		// is for - an object a few times the size of its neighbours - and
 		// small enough that the pathological one never gets there.
-		constexpr int MAX_CELLS_PER_OBJECT = 25;
+		constexpr int max_cells_per_object = 25;
 
 		// Cell edge as a multiple of the mean object extent.
 		//
@@ -27,11 +27,11 @@ namespace labrador
 		// objects straddle cells constantly and the duplicate-pair count
 		// climbs; at four, cells hold enough members that the within-cell
 		// comparison starts to look quadratic again.
-		constexpr float CELL_SIZE_FACTOR = 2.0f;
+		constexpr float cell_size_factor = 2.0f;
 
 		// A scene where every object sits at the same point has a mean extent
 		// of zero, and a cell size of zero is a division by it.
-		constexpr float MIN_CELL_SIZE = 1.0f;
+		constexpr float min_cell_size = 1.0f;
 
 		uint64_t pack(int32_t x, int32_t y)
 		{
@@ -114,7 +114,7 @@ namespace labrador
 		const float mean_extent =
 			static_cast<float>(extent_total / (2.0 * static_cast<double>(count)));
 		this->cell_size_ =
-			std::max(MIN_CELL_SIZE, mean_extent * CELL_SIZE_FACTOR);
+			std::max(min_cell_size, mean_extent * cell_size_factor);
 
 		// Index each object into the cells its box touches, or set it aside.
 		this->entries_.reserve(count * 4);
@@ -131,7 +131,7 @@ namespace labrador
 				static_cast<int64_t>(max_x - min_x + 1) *
 				static_cast<int64_t>(max_y - min_y + 1);
 
-			if (spanned > MAX_CELLS_PER_OBJECT)
+			if (spanned > max_cells_per_object)
 			{
 				this->large_.push_back(static_cast<int>(c));
 				continue;

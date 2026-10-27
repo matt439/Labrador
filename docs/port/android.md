@@ -486,7 +486,7 @@ Small, mechanical, and it blocks compiling anything.
   WIN32_LEAN_AND_MEAN` handed to every translation unit in the tree. The clang
   equivalents are known; `/fp:precise` is the one to get right rather than
   approximate, and the file's own comment says why — exact `operator==` against
-  `Vector2F::ZERO`, tolerance assumptions, NaN propagation. `-ffp-model` or
+  `Vector2F::zero`, tolerance assumptions, NaN propagation. `-ffp-model` or
   `-ffp-contract=off` is a decision, not a translation, and it should be argued
   in that file the way `/fp:precise` already is.
 - `CMakePresets.json` binds Ninja, vcpkg and `x64` with `architecture.strategy`

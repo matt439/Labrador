@@ -21,8 +21,8 @@ using labrador::Viewport;
 
 namespace
 {
-	constexpr CollisionLayer PLAYER = 1u << 0;
-	constexpr CollisionLayer WALL = 1u << 1;
+	constexpr CollisionLayer player_layer = 1u << 0;
+	constexpr CollisionLayer wall_layer = 1u << 1;
 
 	// Counts the ticks it was stepped for, which is all the scene does to a
 	// plain object.
@@ -179,7 +179,7 @@ TEST_CASE("add() returns the object's own type, and defers the insertion")
 	Scene scene = make_scene();
 
 	TestCollider* collider = scene.add(std::make_unique<TestCollider>(
-		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL));
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer));
 
 	// A pointer of the derived type, valid the moment add() returns - which is
 	// what a caller that has to keep speaking to the object needs.
@@ -202,7 +202,7 @@ TEST_CASE("update() steps every object in the world, and nothing pending")
 	TestObject* plain = scene.add(std::make_unique<TestObject>(
 		RectangleF(0.0f, 0.0f, 4.0f, 4.0f)));
 	TestCollider* collider = scene.add(std::make_unique<TestCollider>(
-		RectangleF(0.0f, 0.0f, 4.0f, 4.0f), PLAYER, WALL));
+		RectangleF(0.0f, 0.0f, 4.0f, 4.0f), player_layer, wall_layer));
 
 	// Nothing has been admitted, so nothing steps.
 	scene.update(0.5f);
@@ -222,9 +222,9 @@ TEST_CASE("resolve() measures the pairs in the world and tells both sides")
 	Scene scene = make_scene();
 
 	TestCollider* player = scene.add(std::make_unique<TestCollider>(
-		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL));
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer));
 	TestCollider* wall = scene.add(std::make_unique<TestCollider>(
-		RectangleF(8.0f, 0.0f, 10.0f, 10.0f), WALL, PLAYER));
+		RectangleF(8.0f, 0.0f, 10.0f, 10.0f), wall_layer, player_layer));
 	scene.end_tick();
 
 	scene.resolve();
@@ -244,12 +244,12 @@ TEST_CASE("an object added mid-tick is swept by the next tick, not this one")
 	Scene scene = make_scene();
 
 	TestCollider* wall = scene.add(std::make_unique<TestCollider>(
-		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), WALL, PLAYER));
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), wall_layer, player_layer));
 	scene.end_tick();
 
 	// A weapon fires, on top of the wall.
 	TestCollider* bullet = scene.add(std::make_unique<TestCollider>(
-		RectangleF(2.0f, 2.0f, 2.0f, 2.0f), PLAYER, WALL));
+		RectangleF(2.0f, 2.0f, 2.0f, 2.0f), player_layer, wall_layer));
 
 	scene.resolve();
 	CHECK(scene.contacts().empty());
@@ -268,13 +268,13 @@ TEST_CASE("end_tick() retires before it admits")
 	Scene scene = make_scene();
 
 	TestCollider* doomed = scene.add(std::make_unique<TestCollider>(
-		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL));
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer));
 	scene.end_tick();
 	REQUIRE(scene.collision_objects().size() == 1);
 
 	doomed->set_for_deletion(true);
 	TestCollider* fresh = scene.add(std::make_unique<TestCollider>(
-		RectangleF(100.0f, 100.0f, 10.0f, 10.0f), PLAYER, WALL));
+		RectangleF(100.0f, 100.0f, 10.0f, 10.0f), player_layer, wall_layer));
 
 	scene.end_tick();
 
@@ -290,9 +290,9 @@ TEST_CASE("the world's bounds retire what leaves them")
 	scene.set_bounds(RectangleF(0.0f, 0.0f, 100.0f, 100.0f));
 
 	TestCollider* inside = scene.add(std::make_unique<TestCollider>(
-		RectangleF(10.0f, 10.0f, 5.0f, 5.0f), PLAYER, WALL));
+		RectangleF(10.0f, 10.0f, 5.0f, 5.0f), player_layer, wall_layer));
 	TestCollider* outside = scene.add(std::make_unique<TestCollider>(
-		RectangleF(500.0f, 500.0f, 5.0f, 5.0f), PLAYER, WALL));
+		RectangleF(500.0f, 500.0f, 5.0f, 5.0f), player_layer, wall_layer));
 
 	// The pending pass admits both, and the retirement pass ran before them, so
 	// the one out of bounds survives its first end_tick and dies on its second.
@@ -310,7 +310,7 @@ TEST_CASE("bounds are optional, and an object that refuses removal keeps it")
 {
 	Scene unbounded = make_scene();
 	TestCollider* far_away = unbounded.add(std::make_unique<TestCollider>(
-		RectangleF(-9000.0f, -9000.0f, 5.0f, 5.0f), PLAYER, WALL));
+		RectangleF(-9000.0f, -9000.0f, 5.0f, 5.0f), player_layer, wall_layer));
 	unbounded.end_tick();
 	unbounded.end_tick();
 
@@ -323,7 +323,7 @@ TEST_CASE("bounds are optional, and an object that refuses removal keeps it")
 	Scene bounded = make_scene();
 	bounded.set_bounds(RectangleF(0.0f, 0.0f, 100.0f, 100.0f));
 	TestCollider* fixed = bounded.add(std::make_unique<TestCollider>(
-		RectangleF(500.0f, 500.0f, 5.0f, 5.0f), WALL, PLAYER));
+		RectangleF(500.0f, 500.0f, 5.0f, 5.0f), wall_layer, player_layer));
 	fixed->make_fixed();
 	bounded.end_tick();
 	bounded.end_tick();
@@ -348,7 +348,7 @@ TEST_CASE("the view list is the game's, and it is refilled not appended to")
 
 	// The default is the identity, so a caller that only ever wanted screen
 	// space never mentions a camera.
-	CHECK(scene.view(1).camera == Camera::DEFAULT_CAMERA);
+	CHECK(scene.view(1).camera == Camera::default_camera);
 
 	CHECK_THROWS_AS(scene.view(2), std::out_of_range);
 	CHECK_THROWS_AS(scene.view(-1), std::out_of_range);
@@ -365,9 +365,9 @@ TEST_CASE("end_tick expires contacts whether or not their participants retire")
 {
 	Scene scene = make_scene();
 	TestCollider* player = scene.add(std::make_unique<TestCollider>(
-		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL));
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer));
 	scene.add(std::make_unique<TestCollider>(
-		RectangleF(8.0f, 0.0f, 10.0f, 10.0f), WALL, PLAYER));
+		RectangleF(8.0f, 0.0f, 10.0f, 10.0f), wall_layer, player_layer));
 	scene.end_tick();
 	scene.resolve();
 	REQUIRE(scene.contacts().size() == 1);
@@ -424,10 +424,10 @@ TEST_CASE("remove() takes a collision object out whatever it says about deletion
 	// Fixed geometry ignores set_for_deletion, so neither the sweep nor a
 	// flag retires it. remove() is the game saying so itself.
 	TestCollider* wall = scene.add(std::make_unique<TestCollider>(
-		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), WALL, PLAYER));
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), wall_layer, player_layer));
 	wall->make_fixed();
 	TestCollider* other = scene.add(std::make_unique<TestCollider>(
-		RectangleF(50.0f, 0.0f, 10.0f, 10.0f), WALL, PLAYER));
+		RectangleF(50.0f, 0.0f, 10.0f, 10.0f), wall_layer, player_layer));
 	scene.end_tick();
 	REQUIRE(scene.collision_objects().size() == 2);
 
@@ -449,7 +449,7 @@ TEST_CASE("an object added and removed in the same tick is never admitted")
 	LoggingObject* brief =
 		scene.add(std::make_unique<LoggingObject>(1, &log, &destroyed));
 	TestCollider* brief_collider = scene.add(std::make_unique<TestCollider>(
-		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), PLAYER, WALL));
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer));
 	scene.remove(brief);
 	scene.remove(brief_collider);
 	scene.end_tick();

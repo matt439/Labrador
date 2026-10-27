@@ -156,7 +156,7 @@ TEST_CASE("a frame with no origin draws from its top-left corner")
 	const SpriteFrame& frame =
 		sheet->sprite_frame(sheet->resolve_sprite_frame("plain"));
 
-	CHECK(frame.origin() == Vector2F::ZERO);
+	CHECK(frame.origin() == Vector2F::zero);
 }
 
 TEST_CASE("a frame the sheet says is rotated is refused, and named")

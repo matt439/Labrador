@@ -31,7 +31,7 @@ namespace labrador
 			const Colour& color = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			float layer_depth = 0.0f);
 
 		// What the string says and what colour it is drawn in, readable by

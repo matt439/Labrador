@@ -69,7 +69,7 @@ namespace labrador
 		//
 		// The sense is the library's own, and the two other places that name
 		// an angle agree with it exactly:
-		// rotation(a).transform_vector(Vector2F::DIRECTION_RIGHT) is
+		// rotation(a).transform_vector(Vector2F::direction_right) is
 		// Vector2F::unit_vec_from_angle(a), and Vector2F::angle() reads that
 		// angle back.
 		//
@@ -130,12 +130,12 @@ namespace labrador
 		// taken through it and names nothing when it does (T6).
 		//
 		// The test is that the reciprocal of the determinant is finite, and it
-		// is deliberately not a comparison against EPSILON. Every tolerance in
+		// is deliberately not a comparison against default_epsilon. Every tolerance in
 		// scalar.h's ordering bounds a LENGTH, where an absolute number means
 		// something over a bounded range of coordinates. A determinant is an
 		// AREA RATIO, so the same bound would mean something different at
 		// every scale: a uniform scale of 0.005 - a legitimate, invertible,
-		// zoomed-far-out camera - has a determinant of 2.5e-5, and EPSILON
+		// zoomed-far-out camera - has a determinant of 2.5e-5, and default_epsilon
 		// would refuse it as collapsed. Only the values that cannot produce a
 		// finite answer are refused.
 		Matrix3x2F inverse() const;

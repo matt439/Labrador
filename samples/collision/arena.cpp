@@ -53,7 +53,7 @@ namespace collisiondemo
 	void Arena::reset()
 	{
 		this->player_->set_position(Vector2F(180.0f, 320.0f));
-		this->player_->set_velocity(Vector2F::ZERO);
+		this->player_->set_velocity(Vector2F::zero);
 		this->player_->update(0.0f);
 		this->contact_count_ = 0;
 		this->trigger_entries_ = 0;

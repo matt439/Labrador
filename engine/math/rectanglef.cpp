@@ -267,7 +267,7 @@ namespace labrador
 	{
 		if (points.empty())
 		{
-			return RectangleF::ZERO;
+			return RectangleF::zero;
 		}
 
 		float min_x = points[0].x;
@@ -305,6 +305,6 @@ namespace labrador
 	{
 		return RectangleF(left, top, right - left, bottom - top);
 	}
-	constinit const RectangleF RectangleF::ZERO = { 0.0f, 0.0f, 0.0f, 0.0f };
+	constinit const RectangleF RectangleF::zero = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 }

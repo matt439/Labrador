@@ -45,7 +45,7 @@ namespace collisiondemo
 		BodyKind kind_;
 		labrador::RectangleF rectangle_;
 		labrador::TextureHandle texture_;
-		labrador::Vector2F velocity_ = labrador::Vector2F::ZERO;
+		labrador::Vector2F velocity_ = labrador::Vector2F::zero;
 		bool touching_wall_ = false;
 		bool touching_trigger_ = false;
 	};

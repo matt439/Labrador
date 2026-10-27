@@ -24,7 +24,7 @@
 //    loop. Interface granularity is the user's performance dial."
 //
 // Nothing in this repository stood at that end until this file did. The scene
-// holds ONE object here, not ten thousand: one update(), one draw(), one
+// holds one object here, not ten thousand: one update(), one draw(), one
 // bounds(), and three virtual calls a frame whatever the particle count. Ten
 // thousand GameObjects would be ten thousand virtual updates, ten thousand
 // heap allocations, ten thousand bounds() against the cull, and a scene whose

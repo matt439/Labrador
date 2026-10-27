@@ -100,7 +100,7 @@ namespace labrador
 
 	Vector2F Font::measure(std::wstring_view text) const
 	{
-		Vector2F extent = Vector2F::ZERO;
+		Vector2F extent = Vector2F::zero;
 
 		this->for_each_glyph(text,
 			[&extent, this](const Glyph& glyph, const Vector2F& pen)

@@ -53,7 +53,7 @@ namespace labrador
 			const Colour& colour = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			float layer_depth = 0.0f);
 
 		// Nothing to step. A label that animates is a label something else

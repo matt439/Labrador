@@ -71,7 +71,7 @@ namespace multiplayer
 		const auto rectangle = [this, &list](const RectangleF& bounds, const Colour& colour)
 		{
 			list.draw_sprite(this->white_, RectangleI(0, 0, 1, 1), bounds,
-				colour, 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				colour, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 		};
 
 		const RectangleF world = this->bounds();

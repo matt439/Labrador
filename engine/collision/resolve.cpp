@@ -48,7 +48,7 @@ namespace labrador
 		}
 
 		const float along = Vector2F::dot(normal, axis);
-		if (std::abs(along) < MIN_AXIS_ALIGNMENT)
+		if (std::abs(along) < min_axis_alignment)
 		{
 			throw std::invalid_argument(
 				"separation_along: axis is too far from the normal to separate "

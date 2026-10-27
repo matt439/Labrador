@@ -40,7 +40,7 @@ namespace labrador
 		// other two). That is a claim about the successor machine rather than
 		// about the reference one, and it is the only NEGATIVE low-tier
 		// sentence in the tree - which is why it is worth being exact in.
-		const D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
+		const D3D_FEATURE_LEVEL min_feature_level = D3D_FEATURE_LEVEL_11_0;
 	}
 
 	DeviceResources::DeviceResources(DXGI_FORMAT back_buffer_format)
@@ -50,7 +50,7 @@ namespace labrador
 		  screen_viewport_{},
 		  output_size_{ 0, 0, 1, 1 }
 	{
-		for (int i = 0; i < FRAME_COUNT; i++)
+		for (int i = 0; i < frame_count; i++)
 		{
 			this->back_buffer_states_[i] = D3D12_RESOURCE_STATE_PRESENT;
 			this->frame_fences_[i] = 0;
@@ -174,7 +174,7 @@ namespace labrador
 				// catches that case either way and nothing throws. With the
 				// probe the loop keeps looking, and the capable GPU is used.
 				if (SUCCEEDED(D3D12CreateDevice(candidate.Get(),
-					MIN_FEATURE_LEVEL, __uuidof(ID3D12Device), nullptr)))
+					min_feature_level, __uuidof(ID3D12Device), nullptr)))
 				{
 					break;
 				}
@@ -197,7 +197,7 @@ namespace labrador
 				}
 
 				if (SUCCEEDED(D3D12CreateDevice(candidate.Get(),
-					MIN_FEATURE_LEVEL, __uuidof(ID3D12Device), nullptr)))
+					min_feature_level, __uuidof(ID3D12Device), nullptr)))
 				{
 					break;
 				}
@@ -217,7 +217,7 @@ namespace labrador
 		HRESULT hr = E_FAIL;
 		if (adapter)
 		{
-			hr = D3D12CreateDevice(adapter.Get(), MIN_FEATURE_LEVEL,
+			hr = D3D12CreateDevice(adapter.Get(), min_feature_level,
 				IID_PPV_ARGS(this->device_.ReleaseAndGetAddressOf()));
 		}
 #if defined(NDEBUG)
@@ -241,7 +241,7 @@ namespace labrador
 			if (SUCCEEDED(this->factory_->EnumWarpAdapter(
 				IID_PPV_ARGS(warp.GetAddressOf()))))
 			{
-				hr = D3D12CreateDevice(warp.Get(), MIN_FEATURE_LEVEL,
+				hr = D3D12CreateDevice(warp.Get(), min_feature_level,
 					IID_PPV_ARGS(this->device_.ReleaseAndGetAddressOf()));
 
 				if (SUCCEEDED(hr))
@@ -282,7 +282,7 @@ namespace labrador
 
 		D3D12_DESCRIPTOR_HEAP_DESC heap_description = {};
 		heap_description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		heap_description.NumDescriptors = FRAME_COUNT;
+		heap_description.NumDescriptors = frame_count;
 		heap_description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		ThrowIfFailed(this->device_->CreateDescriptorHeap(&heap_description,
 			IID_PPV_ARGS(this->render_target_heap_.ReleaseAndGetAddressOf())));
@@ -295,7 +295,7 @@ namespace labrador
 			IID_PPV_ARGS(this->fence_.ReleaseAndGetAddressOf())));
 
 		this->fence_value_ = 0;
-		for (int i = 0; i < FRAME_COUNT; i++)
+		for (int i = 0; i < frame_count; i++)
 		{
 			this->frame_fences_[i] = 0;
 		}
@@ -357,7 +357,7 @@ namespace labrador
 			ThrowIfFailed(E_FAIL);
 		}
 
-		for (int i = 0; i < FRAME_COUNT; i++)
+		for (int i = 0; i < frame_count; i++)
 		{
 			this->back_buffers_[i].Reset();
 			this->back_buffer_states_[i] = D3D12_RESOURCE_STATE_PRESENT;
@@ -370,7 +370,7 @@ namespace labrador
 
 		if (this->swap_chain_)
 		{
-			const HRESULT hr = this->swap_chain_->ResizeBuffers(FRAME_COUNT,
+			const HRESULT hr = this->swap_chain_->ResizeBuffers(frame_count,
 				width, height, this->back_buffer_format_, 0u);
 
 			if (hr == DXGI_ERROR_DEVICE_REMOVED ||
@@ -401,7 +401,7 @@ namespace labrador
 			description.Height = height;
 			description.Format = this->back_buffer_format_;
 			description.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-			description.BufferCount = FRAME_COUNT;
+			description.BufferCount = frame_count;
 			description.SampleDesc.Count = 1;
 			description.SampleDesc.Quality = 0;
 			description.Scaling = DXGI_SCALING_STRETCH;
@@ -436,7 +436,7 @@ namespace labrador
 		view_description.Format = this->back_buffer_format_;
 		view_description.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-		for (int i = 0; i < FRAME_COUNT; i++)
+		for (int i = 0; i < frame_count; i++)
 		{
 			ThrowIfFailed(this->swap_chain_->GetBuffer(static_cast<UINT>(i),
 				IID_PPV_ARGS(this->back_buffers_[i].ReleaseAndGetAddressOf())));
@@ -482,7 +482,7 @@ namespace labrador
 			this->notify_->on_device_lost();
 		}
 
-		for (int i = 0; i < FRAME_COUNT; i++)
+		for (int i = 0; i < frame_count; i++)
 		{
 			this->back_buffers_[i].Reset();
 			this->back_buffer_states_[i] = D3D12_RESOURCE_STATE_PRESENT;

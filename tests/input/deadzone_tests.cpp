@@ -55,7 +55,7 @@ namespace DeadzoneTests
 
 			// And it stops one that is inside it on both counts.
 			const Vector2F small = apply_deadzone(Vector2F(0.3f, 0.3f), 0.5f);
-			CHECK(small == Vector2F::ZERO);
+			CHECK(small == Vector2F::zero);
 		}
 
 		TEST_CASE("the stick deadzone rescales the magnitude and keeps the angle")
@@ -76,9 +76,9 @@ namespace DeadzoneTests
 
 		TEST_CASE("a stick inside the deadzone is exactly zero")
 		{
-			// Callers test the result against ZERO to mean "nothing was asked
+			// Callers test the result against zero to mean "nothing was asked
 			// for", so it has to be exactly that and not merely small.
-			CHECK(apply_deadzone(Vector2F::ZERO, 0.5f) == Vector2F::ZERO);
+			CHECK(apply_deadzone(Vector2F::zero, 0.5f) == Vector2F::zero);
 		}
 	}
 }

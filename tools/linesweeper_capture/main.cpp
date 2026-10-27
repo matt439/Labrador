@@ -148,7 +148,7 @@ namespace
 			Colour::dark_gray));
 
 		this->scene_.end_tick();
-		this->scene_.add_view(Viewport(RectangleF(Vector2F::ZERO, resolution)));
+		this->scene_.add_view(Viewport(RectangleF(Vector2F::zero, resolution)));
 
 		// Built once and only ever drawn. Its update() is never called, so
 		// the menu stays as it opens: the first row focused, nothing pressed.

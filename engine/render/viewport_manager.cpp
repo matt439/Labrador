@@ -85,17 +85,17 @@ namespace labrador
 		}
 		else if (layout == ScreenLayout::two_player)
 		{
-			result.push_back(RectangleF(0.0f, res.y / 2.0f - DIVIDER_THICKNESS / 2.0f,
-				res.x, DIVIDER_THICKNESS));
+			result.push_back(RectangleF(0.0f, res.y / 2.0f - divider_thickness / 2.0f,
+				res.x, divider_thickness));
 			return result;
 		}
 		else if (layout == ScreenLayout::three_player ||
 			layout == ScreenLayout::four_player)
 		{
-			result.push_back(RectangleF(0.0f, res.y / 2.0f - DIVIDER_THICKNESS / 2.0f,
-				res.x, DIVIDER_THICKNESS));
-			result.push_back(RectangleF(res.x / 2.0f - DIVIDER_THICKNESS / 2.0f, 0.0f,
-				DIVIDER_THICKNESS, res.y));
+			result.push_back(RectangleF(0.0f, res.y / 2.0f - divider_thickness / 2.0f,
+				res.x, divider_thickness));
+			result.push_back(RectangleF(res.x / 2.0f - divider_thickness / 2.0f, 0.0f,
+				divider_thickness, res.y));
 			return result;
 		}
 		else

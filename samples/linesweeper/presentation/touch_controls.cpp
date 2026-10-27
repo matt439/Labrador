@@ -185,14 +185,14 @@ namespace linesweeper
 				rectangle,
 				faded(Colour(1.0f, 1.0f, 1.0f),
 					held ? held_alpha : resting_alpha),
-				0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 
 			const Vector2F& size = this->label_sizes_[index];
 
 			draw_list.draw_text(this->font_, labels[index],
 				Vector2F(rectangle.x + (rectangle.width - size.x) * 0.5f,
 					rectangle.y + (rectangle.height - size.y) * 0.5f),
-				label_colour, label_scale, 0.0f, Vector2F::ZERO, 0.0f);
+				label_colour, label_scale, 0.0f, Vector2F::zero, 0.0f);
 		}
 	}
 

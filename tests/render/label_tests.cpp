@@ -82,7 +82,7 @@ TEST_CASE("a label with no font and no string has an empty box")
 	// The default constructor resolves nothing and measures nothing -
 	// render_resources_ stays null and remeasure() is never reached - so this
 	// is also the statement that a default-constructed one is safe to ask.
-	CHECK(label.bounds() == RectangleF::ZERO);
+	CHECK(label.bounds() == RectangleF::zero);
 }
 
 TEST_CASE("a label's box is the measured string, at the position")
@@ -144,7 +144,7 @@ TEST_CASE("glyph envelopes keep the layout origin through scaling and rotation")
 	const Vector2F other_position(-20.0f, 15.0f);
 	for (float rotation : { 0.0f, 1.57079633f, -0.7f })
 	for (float scale : { 1.0f, 2.0f })
-	for (const Vector2F& origin : { Vector2F::ZERO, Vector2F(3.0f, 5.0f) })
+	for (const Vector2F& origin : { Vector2F::zero, Vector2F(3.0f, 5.0f) })
 	{
 		const Label label(L"A\nB", "font", position, &content.resources,
 			labrador::Colour::white, scale, rotation, origin);
@@ -194,7 +194,7 @@ TEST_CASE("drawable whitespace can extend below layout while skipped whitespace 
 		}
 		else
 		{
-			CHECK(resources.measure_text(font, L" ") == Vector2F::ZERO);
+			CHECK(resources.measure_text(font, L" ") == Vector2F::zero);
 			CHECK(label.bounds() == RectangleF(10.0f, -6.0f, 0.0f, 0.0f));
 		}
 	}
@@ -284,9 +284,9 @@ TEST_CASE("a turned label reports the box around the turned string")
 	// sprite_geometry.h's and is held to the glyph quads there; this pins
 	// that a Label hands it on through the base a scene holds.
 	Content content;
-	const float HALF_TURN = 3.14159265f;
+	const float half_turn = 3.14159265f;
 	const Label label(L"AB", "font", Vector2F(100.0f, 20.0f),
-		&content.resources, labrador::Colour::white, 1.0f, HALF_TURN);
+		&content.resources, labrador::Colour::white, 1.0f, half_turn);
 
 	const GameObject& object = label;
 	const RectangleF box = object.bounds();

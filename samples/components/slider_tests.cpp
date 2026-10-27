@@ -162,7 +162,7 @@ TEST_CASE("a range that is not one, or a value outside it, throws")
 	const auto make = [&content](int minimum, int maximum, int step, int value)
 	{
 		return Slider("bad", L"Bad", minimum, maximum, step, value,
-			Vector2F::ZERO, track, "font", TextureHandle(), &content.resources);
+			Vector2F::zero, track, "font", TextureHandle(), &content.resources);
 	};
 
 	CHECK_THROWS_AS(make(10, 10, 1, 10), std::invalid_argument);
