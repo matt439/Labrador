@@ -10,9 +10,8 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
-1. **`PI-09` (X27): file or answer the two newer ColourWars reports within the approved minimal engine-focused disclosure boundary.** The original fifteen are withdrawn from filing as already answered; [recheck](docs/review/colourwars-reports/README.md#filing-recheck-2026-10-27).
-2. **`SM-25` (X28): observe a scheduled Actions run.** The repaired SDK download passed PR CI; hardware sessions and owner decisions are listed below.
-3. **`REV#3`: verify factory refresh in a real display-change session.** Bounded backend verification is recorded in [the review index](docs/review/INDEX.md); the display-change session remains.
+1. **`SM-25` (X28): observe a scheduled Actions run.** The repaired SDK download passed PR CI; hardware sessions and owner decisions are listed below.
+2. **`REV#3`: verify factory refresh in a real display-change session.** Bounded backend verification is recorded in [the review index](docs/review/INDEX.md); the display-change session remains.
 
 **Before `v0.3.0` is cut:** `SITE#3` implements and verifies the first documentation snapshot pipeline. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
@@ -102,8 +101,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `PI-09` | OPEN | should | S | File or answer reports 23 (hidden resize activation) and 25 (vibration output), using only minimal engine-focused disclosure. The original fifteen are already answered; [recheck](docs/review/colourwars-reports/README.md#filing-recheck-2026-10-27). |
-| `DOC#4` | WAITING | should | S | When ColourWars' repository goes public (the owner expects it within weeks of 2026-10-13): sweep the tree's "private" and "not public" mentions of it outside dated records, link the repository from the README and the site, and recheck `PI-09`, which then narrows to what its drafts say. |
+| `DOC#4` | WAITING | should | S | When ColourWars' repository goes public: sweep "private" and "not public" mentions outside dated records, link it from the README and site, and review report links within the approved disclosure boundary. |
 | `PI-14` | OPEN | should | M | A ColourWars Release ZIP at a current pin, run (or refused loudly) on a clean Windows install without Visual Studio, with edition, GPU, driver and commits named; `tools/consumer_check/sandbox.py` runs it. |
 
 ## Records and design decisions

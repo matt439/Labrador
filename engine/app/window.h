@@ -264,6 +264,7 @@ namespace labrador
 		// Resizes so `client_size` pixels are left to draw into, under
 		// whatever frame the window is currently wearing, and reports what it
 		// actually got - a size past the monitor's comes back clamped.
+		// On Windows this does not show or activate the window.
 		//
 		// In a browser the page lays the canvas out and the drawing buffer
 		// follows that box, so there is nothing to ask for. The report is

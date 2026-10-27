@@ -524,7 +524,7 @@ namespace labrador
 		// monitor's comes back clamped.
 		const mattmath::Vector2I outer = this->impl_->outer_size(client_size);
 		SetWindowPos(this->impl_->handle, HWND_TOP, 0, 0, outer.x, outer.y,
-			SWP_NOMOVE | SWP_NOZORDER);
+			SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 	}
 
 	// A HIDDEN WINDOW STAYS HIDDEN, here and in leave_fullscreen. ShowWindow

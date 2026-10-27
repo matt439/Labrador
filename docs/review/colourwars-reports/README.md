@@ -7,8 +7,8 @@ engine side's answer to each, decided ahead of their filing (`PI-09`) so that
 `PI-10` ([STORIES.md](../../product/STORIES.md#pi-10)) has its thinking done
 and an implementer can work from it without the ledger.
 
-**Each file was written before anything in it was implemented**, and the
-table below says what has been since. A file records a decision, its argument in
+**The original five decision files were written before their changes were
+implemented**, and the table below says what has been since. A file records a decision, its argument in
 PHILOSOPHY's vocabulary, the shape of the change, the tests that ship with it,
 the CHANGES.md entry it needs and what it lets the client delete. Each report
 was assessed against the source at `0c15f34` and then argued against by a
@@ -36,15 +36,19 @@ or documentation subject. This includes report 19's request for evidence;
 recording that answer does not supply the requested first-frame captures.
 No issue is needed to ask for the same answer again.
 
-Two newer drafts remain for `PI-09`, separately from that completed batch:
+Two newer drafts were rechecked at
+`1b3120b0424e005a904db090a6695c678bb44d3f` and answered for `PI-09`,
+separately from that completed batch:
 
-| # | Engine-focused claim | Recheck against the upstream revision above |
+| # | Engine-focused claim | Answer |
 |---|---|---|
-| 23 | Resizing a hidden window requests activation. | `Window::resize_client` in `engine/app/win32/window.cpp` calls `SetWindowPos` without `SWP_NOACTIVATE`; the hidden fullscreen paths include it. The source gap remains. This recheck does not reproduce foreground takeover. |
-| 25 | Controller vibration has no public output operation. | `Gamepads` and `GamepadReader`, including both reader backends, have no vibration output. A caller must provide its own platform transport. Output timing, preferences and lifecycle remain game policy; no new engine API is decided by this source recheck. |
+| [x] 23 | Resizing a hidden window requests activation. | [Accept and implement](resize.md): *Keep window resizing from requesting activation* adds `SWP_NOACTIVATE` to `resize_client`. The engine's hidden-window regression reproduces foreground activation before the fix in both windowed and fullscreen modes and passes afterwards. |
+| [x] 25 | Controller vibration has no public output operation. | [Accept, narrowed](vibration.md): slot-addressed output transport belongs behind the input seam. Implementation is [PI-21](../../product/BACKLOG.md#pi-21); timing, effects, preferences and player routing stay game policy. No output API or physical acceptance is claimed yet. |
 
-These claims remain unfiled and unanswered. This record contains only the
-engine mechanisms needed to identify them, with no private exhibit content.
+Both are answered here without a duplicate public issue. Together with the
+withdrawal of the original fifteen, this closes `PI-09`'s filing queue.
+The records contain only public engine mechanisms and engine-owned evidence,
+with no private exhibit content; the client's own ledger remains its own.
 
 ## The files
 
@@ -55,6 +59,8 @@ engine mechanisms needed to identify them, with no private exhibit content.
 | [input.md](input.md) | 13, 21 | Both come from the client shipping the first rebinding screen. Names are mechanism, and evaluating bindings is policy. |
 | [draw.md](draw.md) | 18, 20, 22 | None changes `GameObject::draw`'s signature or `Scene`'s dispatch. |
 | [content.md](content.md) | 6, 12, 15 | Above the audio seam, in `assets/json`, and in the template's CMake. Three independent PRs. |
+| [resize.md](resize.md) | 23 | The size-only Win32 path and its hidden-window activation regression. |
+| [vibration.md](vibration.md) | 25 | A narrowed output-transport decision; PI-21 owns implementation. |
 
 ## The decisions
 
