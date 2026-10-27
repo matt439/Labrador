@@ -54,7 +54,7 @@ implementation backlog.
 
 | Recommendation | Implementation | Verification boundary |
 |---|---|---|
-| README priority 3 (`SM-19`) | [x] The existing Windows `lint` job runs `python -m unittest discover tools/tests` on every push CI handles and every pull request, including documentation-only changes. | The command is an ordinary failing CI step, with no `continue-on-error`. A deliberately failing throwaway-branch CI run remains to be observed. |
+| README priority 3 (`SM-19`) | [x] The existing Windows `lint` job runs `python -m unittest discover tools/tests` on every push CI handles and every pull request, including documentation-only changes. | The command is an ordinary failing CI step, with no `continue-on-error`. On 2026-10-27 a deliberately failing test on a throwaway PR head turned the [lint job](https://github.com/matt439/Labrador/actions/runs/40470680489/job/122076786279) red at that step. |
 
 The gate is added on 2026-10-26 in the commit introducing this row. The same
 job runs `node --test tools/flash_check/flash_check.test.mjs` (`CI#2`) beside
