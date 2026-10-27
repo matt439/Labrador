@@ -1,6 +1,6 @@
 ---
 title: Ship a Windows release
-description: The release package a player gets - the program, its DLLs, the MSVC runtime, the content and the notices - built with cmake --install; which renderer to ship, what a machine that refuses it shows, and the Windows version and graphics hardware players need.
+description: The release package a player gets - the program, its DLLs, the MSVC runtime, the content and the notices - built with cmake --install; which renderer to ship, what a machine that refuses it shows, DPI awareness on scaled displays, and the Windows version and graphics hardware players need.
 sidebar:
   order: 10
 ---
@@ -222,6 +222,22 @@ Direct3D message to run it instead. It does not help a machine with no vendor gr
 so this is the choice T5 allows, made by which program the player starts. Both programs were
 checked to start from one folder this way. Which machines refuse Direct3D 11 and accept OpenGL 3.3
 has not been measured.
+
+## Scaled displays
+
+Many laptops run Windows at 125% or 150% scaling. A program that does not declare DPI awareness
+is drawn at 100% and then stretched by Windows, which blurs point-sampled text. The template
+declares per-monitor DPI awareness, so Windows does not stretch it. The declaration is
+`game\dpi_aware.manifest`, which `game\CMakeLists.txt` lists with the sources; the linker embeds it
+in the program, and the release folder gains no file. The engine's window keeps its client size
+in pixels across a DPI change
+(<RepoLink path="engine/app/win32/window.cpp">engine/app/win32/window.cpp</RepoLink>), so on a
+150% display the window is the size you asked for in physical pixels and looks smaller than an
+unaware program's. Whether to draw larger there is your game's choice. To let Windows stretch the
+window instead, remove the manifest from the sources.
+
+Each of Labrador's samples carries the same declaration. A running sample has been checked to be
+per-monitor aware on a 100% display. Nobody has yet looked at the template at 150% scaling.
 
 ## What players need
 

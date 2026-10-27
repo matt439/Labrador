@@ -108,7 +108,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SRL-07` | OPEN | could | S | Rename non-macro uppercase constants to `snake_case`, migrate callers in both repositories, and record every old/new spelling. The owner chose renaming; CONVENTIONS stays. [Scope](docs/product/BACKLOG.md#later). |
-| `OCA-66` | OPEN | could | S | Declare per-monitor DPI awareness in the Windows samples/template and document the choice; review and record the template at 150% scaling. Implementation remains. [Scope](docs/product/BACKLOG.md#later). |
+| `OCA-66` | OPEN | could | S | The samples/template declare per-monitor DPI awareness and the release guide states it; review and record the template at 150% scaling. [Scope](docs/product/BACKLOG.md#later). |
 
 ## Ports
 

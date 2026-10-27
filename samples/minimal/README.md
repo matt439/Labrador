@@ -36,6 +36,12 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-27.** Per-monitor DPI awareness. `dpi_aware.manifest` is new, and
+  `CMakeLists.txt` lists it with the program's sources, so Windows no longer
+  stretches the window and blurs its text on a scaled display. The window is
+  then its requested size in physical pixels. A copy wanting the same adds the
+  file and the line; the Windows release guide's *Scaled displays* section
+  says what it changes.
 - **2026-10-27.** Windows resolution changes resize the window without
   requesting activation. A hidden smoke-test window stays hidden and inactive;
   CHANGES.md's *Keep window resizing from requesting activation* entry is the

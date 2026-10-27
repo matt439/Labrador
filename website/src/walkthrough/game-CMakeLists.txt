@@ -59,10 +59,13 @@ if(EMSCRIPTEN)
     return()
 endif()
 
+# dpi_aware.manifest declares per-monitor DPI awareness, so Windows does not
+# stretch the frame on a scaled display; the file says what that means.
 add_executable(MyGame WIN32
     main.cpp
     states/confirm_state.cpp
     states/hello_state.cpp
+    dpi_aware.manifest
 )
 target_link_libraries(MyGame PRIVATE
     MyGameRules
