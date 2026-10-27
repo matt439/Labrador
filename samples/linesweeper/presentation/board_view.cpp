@@ -61,14 +61,17 @@ namespace linesweeper
 		// copy of one of those is a cross-unit initialisation order the
 		// standard does not fix. Inside a function it would be fine; here it
 		// is a black rectangle on some builds and not others.
+		// The well's own colour is palette.h's, because the shadow's contrast
+		// is measured against it.
 		constexpr Colour frame_colour(60, 66, 78);
-		constexpr Colour well_colour(12, 14, 18);
 		constexpr Colour grid_colour = faded(Colour(1.0f, 1.0f, 1.0f), 0.05f);
 		constexpr Colour label_colour(150, 158, 172);
 		constexpr Colour value_colour(255, 255, 255);
 
-		// How much of a piece's own colour the landing shadow keeps.
-		constexpr float shadow_alpha = 0.28f;
+		// How wide the landing shadow's full-strength edge is, inside each
+		// cell. Two board pixels stay at least one on a phone's scaled-down
+		// board.
+		constexpr float shadow_edge_width = 2.0f;
 	}
 
 	BoardView::BoardView(const World* world,
@@ -225,10 +228,52 @@ namespace linesweeper
 		// here, which is the point of that function being a declared query:
 		// the outline the player aims with and the square a hard drop lands on
 		// cannot disagree, because they are one function.
-		this->draw_piece(draw_list, shadow(*this->world_),
-			faded(kind_colour(current.kind), shadow_alpha));
+		this->draw_shadow(draw_list, shadow(*this->world_));
 
 		this->draw_piece(draw_list, current, kind_colour(current.kind));
+	}
+
+	void BoardView::draw_shadow(DrawList& draw_list, const Piece& piece) const
+	{
+		const std::array<Coord, piece_cell_count> cells = piece_cells(piece);
+		const Colour edge = shadow_edge_colour(piece.kind);
+		const Colour inside = shadow_fill_colour(piece.kind);
+
+		for (int index = 0; index < piece_cell_count; ++index)
+		{
+			if (cells[index].y < well_buffer_rows)
+			{
+				continue;
+			}
+
+			// Four edges and the inside between them, none overlapping, so
+			// the inside's fade is over the well and not over the edge.
+			const RectangleF cell =
+				cell_rectangle(cells[index].x, cells[index].y);
+			const float inner_height = cell.height - shadow_edge_width * 2.0f;
+
+			this->fill(draw_list,
+				RectangleF(cell.x, cell.y, cell.width, shadow_edge_width),
+				edge);
+			this->fill(draw_list,
+				RectangleF(cell.x, cell.y + cell.height - shadow_edge_width,
+					cell.width, shadow_edge_width),
+				edge);
+			this->fill(draw_list,
+				RectangleF(cell.x, cell.y + shadow_edge_width,
+					shadow_edge_width, inner_height),
+				edge);
+			this->fill(draw_list,
+				RectangleF(cell.x + cell.width - shadow_edge_width,
+					cell.y + shadow_edge_width, shadow_edge_width,
+					inner_height),
+				edge);
+			this->fill(draw_list,
+				RectangleF(cell.x + shadow_edge_width,
+					cell.y + shadow_edge_width,
+					cell.width - shadow_edge_width * 2.0f, inner_height),
+				inside);
+		}
 	}
 
 	void BoardView::draw_piece(DrawList& draw_list, const Piece& piece,

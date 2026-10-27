@@ -54,11 +54,11 @@ namespace linesweeper
 	// quad to a quarter - it adds nearly all of the colour and lets nearly all
 	// of the background through, which reads as a glow.
 	//
-	// Which is a feature elsewhere and a bug here. The shadow under a falling
-	// piece wants to be dimmer than the piece, so it multiplies. The sample's
-	// README argues that the same one state expresses opaque drawing, a fade
-	// and additive glow; this is the line where that stops being an argument
-	// and starts being two multiplications.
+	// Which is a feature elsewhere and a bug here. The inside of the shadow
+	// under a falling piece wants to be dimmer than the piece, so it
+	// multiplies. The sample's README argues that the same one state expresses
+	// opaque drawing, a fade and additive glow; this is the line where that
+	// stops being an argument and starts being two multiplications.
 	constexpr labrador::Colour faded(const labrador::Colour& colour,
 		float alpha)
 	{
@@ -90,5 +90,34 @@ namespace linesweeper
 	{
 		return labrador::Colour(colour.r * brightness, colour.g * brightness,
 			colour.b * brightness, 0.0f);
+	}
+
+	// What an empty cell looks like: the colour everything in the well is
+	// drawn over, and so the colour every contrast in it is measured against.
+	inline constexpr labrador::Colour well_colour(12, 14, 18);
+
+	// THE LANDING SHADOW IS AN OUTLINE, because a fill alone cannot be both
+	// visible and unlike a piece.
+	//
+	// The shadow must stand out from the empty well at WCAG's 3:1 for a
+	// graphic the player needs, for all seven kinds. A faded fill fails that
+	// for the dark ones: J at full strength is only about 3.6:1 against the
+	// well, so a fill that reached 3:1 would keep about 88% of the piece and
+	// read as a second piece. So the visible edge is the piece's own colour at
+	// full strength, which is as far from the well as that kind can get, and
+	// what stops it reading as a piece is the inside: a fill that keeps only
+	// a little of the colour. palette_tests.cpp checks the edge of every kind
+	// against the well through the blend equation, so a palette edit that
+	// drops one below 3:1 fails a test rather than a player.
+	inline constexpr float shadow_fill_alpha = 0.28f;
+
+	constexpr labrador::Colour shadow_edge_colour(Kind kind)
+	{
+		return kind_colour(kind);
+	}
+
+	constexpr labrador::Colour shadow_fill_colour(Kind kind)
+	{
+		return faded(kind_colour(kind), shadow_fill_alpha);
 	}
 }

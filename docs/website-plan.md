@@ -249,3 +249,15 @@ inspected, but whole-clip playback review remains outstanding. The candidate
 is retained locally and the checked-in MP4 has not been replaced; SM-32 stays
 open. [The media procedure](../website/README.md) now states the same-commit
 regeneration rule and supports encoding to a review path before replacement.
+
+On 2026-10-27 BDP-21 changed the landing shadow to an outline, so the stills and
+the footage were regenerated under that rule and the 2026-10-26 candidate is
+superseded. The D3D11 Release capture on the RTX 5080 completed all 2,095 frames.
+The encoder verified a silent 1280x720, 60 fps H.264 MP4 of 34.917 seconds,
+2,471,464 bytes, SHA-256
+`C7C8EBFDAB05CEB8E66C2B4C63C427BFE5E65923480D808781C5F60BF1B1D6D7`, which
+replaces the checked-in `linesweeper.mp4`. `linesweeper-play.png`,
+`linesweeper-pause.png` and `linesweeper-clear.png` changed and were each
+looked at; `linesweeper-top-out.png`, which has no falling piece, regenerated
+byte for byte. Selected footage frames were inspected, and the owner watched
+the whole clip on 2026-10-27, which closes SM-32.

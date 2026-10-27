@@ -57,6 +57,7 @@ add_executable(LineSweeperViewTests
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_statistics.cpp"
 	frame_statistics_tests.cpp
     pacing_fixture_tests.cpp
+    palette_tests.cpp
     test_main.cpp
     touch_controls_tests.cpp
     view_tests.cpp

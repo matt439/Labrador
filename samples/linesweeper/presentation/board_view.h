@@ -81,6 +81,10 @@ namespace linesweeper
 		// A piece's four cells, at the well's scale or the preview's.
 		void draw_piece(labrador::DrawList& draw_list, const Piece& piece,
 			const labrador::Colour& colour) const;
+		// Where the falling piece lands: each cell an outline in the piece's
+		// colour around a faint inside (palette.h).
+		void draw_shadow(labrador::DrawList& draw_list,
+			const Piece& piece) const;
 		void draw_preview(labrador::DrawList& draw_list, Kind kind,
 			const mattmath::Vector2F& origin) const;
 
