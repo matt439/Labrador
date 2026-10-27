@@ -174,7 +174,7 @@ cut once PHILOSOPHY's settle criterion has run.
    It is the first release with a complete immutable snapshot; `v0.1.0` and
    `v0.2.0` are not backfilled. The build, provenance, routing, search and
    selector checks are in [the versioning policy](docs/website-versioning.md).
-   GitHub immutable releases must be enabled on the repository before then.
+   GitHub immutable releases are enabled on the repository; keep them on.
 3. **Merge it, then wait for its push runs.** The commit's hash on `master`
    differs from the pull request's head, so find it there, and run
    `gh run list --branch master --commit <sha> --json workflowName,conclusion`

@@ -33,8 +33,8 @@ distinguishes that fixture from an actual engine release. The selector, index
 page and notice were qualified on assembled real snapshot output
 [in headless Chrome](../website-versioning.md#headless-chrome-qualification-2026-10-27),
 as emulation. What remains is acceptance in Safari and Firefox, on a real phone
-with touch and with a screen reader; then the owner enables immutable
-releases, and `v0.3.0`'s snapshot is published and its deploy checked.
+with touch and with a screen reader; then `v0.3.0`'s snapshot is published
+and its deploy checked. Immutable releases were enabled on 2026-10-27.
 
 ## Now
 

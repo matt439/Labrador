@@ -36,7 +36,7 @@ An index of open work, one row per item; each row points to the document that ow
 | `SM-32` | BLOCKED | could | S | Review the encoded JetBrains Mono candidate in whole-clip playback, then replace the MP4. Canonical stills regenerate byte-identically; rule and review-output mode implemented. [Evidence](docs/website-plan.md#2026-10-26-footage-refresh-evidence). |
 | `BDP-21` | OPEN | could | S | Make each piece's landing shadow meet the 3:1 contrast target while remaining distinct from the live piece; test it and review regenerated captures. [Scope](docs/product/STORIES.md#bdp-21). |
 | `BDP-25` | OPEN | could | M | Implement the three agreed colour-vision-deficiency palette groups in LineSweeper; [BACKLOG](docs/product/BACKLOG.md#bdp-25) owns their full names, scope and acceptance. |
-| `SITE#3` | OPEN | must | M | Left: re-run axe after the contrast fix; Firefox, Safari, real-phone touch and screen-reader acceptance; the owner enables immutable releases; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
+| `SITE#3` | OPEN | must | M | Left: re-run axe after the contrast fix; Firefox, Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 
 The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 

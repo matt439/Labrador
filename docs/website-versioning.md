@@ -380,9 +380,9 @@ links to `/versions/`. A version's overview shows the arrival notice above.
 
 The owner publishes a snapshot as part of
 [cutting the release](../CONTRIBUTING.md#cutting-a-release), after the tag is
-pushed. GitHub immutable releases must be enabled on the repository first;
-without them `versions:verify` refuses every entry. On 27 October 2026 the
-repository setting was not enabled.
+pushed. `versions:verify` refuses every entry
+unless GitHub immutable releases are enabled on the repository; the owner
+enabled them on 27 October 2026.
 
 1. In a clean checkout of the tag, from `website/`: `npm ci`, then
    `npm run snapshot:build -- vX.Y.Z`. Review the candidate.
