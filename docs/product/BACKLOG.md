@@ -23,13 +23,18 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-10-27: v0.3.0 gets the first complete immutable documentation snapshot; no earlier-release backfill; implement and verify versioning before cutting it, with no release date promised | SITE#3 |
 | Decided 2026-10-27: the Windows samples/template default to per-monitor DPI awareness; implementation and the reviewed 150% scaling run remain | OCA-66 |
 
-`SITE#3` remains open for implementation and verification under
-[the versioning policy](../website-versioning.md). It is a prerequisite for
-cutting `v0.3.0`; verified candidate builds and versioned links/search are
-implemented and checked with an isolated release fixture. The published-release
-index/selector, snapshot preservation and publication qualification remain;
+`SITE#3` remains open under [the versioning policy](../website-versioning.md)
+and is a prerequisite for cutting `v0.3.0`. Verified candidate builds,
+versioned links and search, the release manifest, the snapshot archive,
+assembly, CI verification, the release index and the version selector are
+implemented and checked offline with fixtures;
 [the policy's evidence](../website-versioning.md#candidate-build-evidence-2026-10-27)
-distinguishes that fixture from an actual engine release.
+distinguishes that fixture from an actual engine release. The selector, index
+page and notice were qualified on assembled real snapshot output
+[in headless Chrome](../website-versioning.md#headless-chrome-qualification-2026-10-27),
+as emulation. What remains is acceptance in Safari and Firefox, on a real phone
+with touch and with a screen reader; then the owner enables immutable
+releases, and `v0.3.0`'s snapshot is published and its deploy checked.
 
 ## Now
 

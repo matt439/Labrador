@@ -158,7 +158,10 @@ Public header comments are published word for word: contract or rationale,
 never history. The reference reader rejects unsupported shapes such as block
 comments or a declaration opening its body on the same line. Every new public
 header must be published or explicitly left out in `website/src/lib/published.ts`.
-The website workflow runs on every push. Citation checking skips `website/`.
+`website/published-versions.json` is append-only canonical text; once it lists
+a release, `npm run build` downloads that snapshot from its GitHub release.
+The website workflow runs on every pull request and on pushes to master and
+`review-*` branches. Citation checking skips `website/`.
 
 ## Build checks
 

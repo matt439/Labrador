@@ -7,6 +7,7 @@ import { parse } from 'parse5';
 
 const SITE_ORIGIN = 'https://labradorengine.com';
 const REPOSITORY_PATH = '/matt439/Labrador';
+const VERSION_INDEX = `${SITE_ORIGIN}/versions/`;
 
 function sourcePrefix(source) {
 	if (source?.schemaVersion !== 1 || !/^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/.test(source.tag)
@@ -32,7 +33,8 @@ function outputFiles(directory) {
 	return files;
 }
 
-function pagePath(file) {
+/** The route an output HTML file is served at, relative to its site's base. */
+export function pagePath(file) {
 	if (file === 'index.html') return '';
 	return file.endsWith('/index.html') ? file.slice(0, -'index.html'.length) : file.replace(/\.html$/, '/');
 }
@@ -145,7 +147,16 @@ export async function verifySnapshotOutput(outputDirectory, sourceRecord) {
 	const pages = [...files].filter((file) => file.endsWith('.html'));
 	if (!pages.length || !files.has('index.html')) throw new Error('Snapshot output has no homepage.');
 	let references = 0;
-	function verifyUrl(value, pageUrl, location, { canonical = false, search = false, releaseExample = false } = {}) {
+	function verifyUrl(value, pageUrl, location, { canonical = false, search = false, releaseExample = false, versionIndex = false } = {}) {
+		if (versionIndex) {
+			// Every version links to the development site's one list of versions,
+			// which no snapshot contains. Only that exact page may be marked.
+			let target;
+			try { target = new URL(value ?? '', pageUrl).href; }
+			catch { throw new Error(`${location}: invalid URL ${JSON.stringify(value)}`); }
+			if (target !== VERSION_INDEX) throw new Error(`${location}: expected a version-index link to ${VERSION_INDEX}, found ${target}`);
+			return;
+		}
 		if (!value || value.startsWith('#')) return;
 		let url;
 		try { url = new URL(value, pageUrl); }
@@ -206,6 +217,7 @@ export async function verifySnapshotOutput(outputDirectory, sourceRecord) {
 				if (attrs[attr] !== undefined) verifyUrl(attrs[attr], pageUrl, `${file} ${node.tagName}[${attr}]`, {
 					canonical: canonical && attr === 'href',
 					releaseExample: node.tagName === 'a' && attr === 'href' && Object.hasOwn(attrs, 'data-release-example'),
+					versionIndex: node.tagName === 'a' && attr === 'href' && Object.hasOwn(attrs, 'data-version-index'),
 				});
 			}
 			if (attrs.srcset) for (const url of srcsetUrls(attrs.srcset)) verifyUrl(url, pageUrl, `${file} ${node.tagName}[srcset]`);

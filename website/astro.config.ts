@@ -45,6 +45,8 @@ export default defineConfig({
 				EditLink: './src/components/overrides/EditLink.astro',
 				MarkdownContent: './src/components/overrides/MarkdownContent.astro',
 				MobileMenuFooter: './src/components/overrides/MobileMenuFooter.astro',
+				Sidebar: './src/components/overrides/Sidebar.astro',
+				Banner: './src/components/overrides/Banner.astro',
 			},
 			sidebar: [
 				{ label: 'Overview', link: '/docs/' },

@@ -1,0 +1,153 @@
+---
+// The list of every documentation version, served once, from the development
+// site, at /versions/. Every version's selector and footer link here, so a
+// release snapshot builds no copy of this page: in release mode it has no path.
+// That is why this is a rest route; a static route cannot decline to exist.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { GITHUB_REPOSITORY, RELEASE_SOURCE, REVISION, commitUrl } from '../../lib/repository';
+import { sitePath } from '../../lib/site-path';
+import { publishedReleases } from '../../lib/versions';
+
+export function getStaticPaths() {
+	return RELEASE_SOURCE ? [] : [{ params: { index: undefined } }];
+}
+
+const releases = publishedReleases();
+const headings = [
+	{ depth: 2, slug: 'development', text: 'Development' },
+	...releases.map((release) => ({ depth: 2, slug: release.tag, text: release.tag })),
+];
+---
+
+<StarlightPage
+	frontmatter={{
+		title: 'Documentation versions',
+		description: 'Every published version of the Labrador documentation, and the development documentation.',
+		pagefind: false,
+		editUrl: false,
+		template: 'doc',
+	}}
+	headings={headings}
+>
+	<p>
+		Each release has its own copy of the documentation, built from the commit its tag names and
+		never rebuilt. A release's documentation is a record of what that release was, not a promise
+		of support. When a release's documentation turns out to be wrong, the copy stays as it was and
+		a dated erratum below says what was wrong.
+	</p>
+	{
+		releases.length === 0 && (
+			<p>
+				No release documentation has been published yet; everything on this site describes
+				development Labrador.
+			</p>
+		)
+	}
+
+	<ul class="version-list">
+		<li class="version-card">
+			<h2 id="development">Development</h2>
+			<p class="version-facts">Unreleased. Rebuilt from <code>master</code> whenever it changes.</p>
+			<ul class="version-links">
+				<li><a href={sitePath('/docs/')}>Documentation</a></li>
+			</ul>
+			<p class="version-commit">
+				Built from <a href={commitUrl()}><code>{REVISION.commit}</code></a> of {REVISION.date}.
+			</p>
+		</li>
+		{
+			releases.map((release) => (
+				<li class="version-card">
+					<h2 id={release.tag}>{release.tag}</h2>
+					<p class="version-facts">
+						{release.latest && <span class="version-badge">Latest release</span>}
+						Published {release.published}; source of {release.sourceDate}.
+					</p>
+					<ul class="version-links">
+						<li><a href={`${release.path}docs/`}>Documentation</a></li>
+						<li><a href={release.path}>Home page</a></li>
+						<li><a href={`${GITHUB_REPOSITORY}/tree/${release.tag}`}>Source at {release.tag}</a></li>
+					</ul>
+					<p class="version-commit">
+						Commit <a href={`${GITHUB_REPOSITORY}/commit/${release.commit}`}><code>{release.commit}</code></a>.
+					</p>
+					<p class="version-commit">
+						Archive <a href={release.assetUrl}><code>{release.asset}</code></a>, SHA-256{' '}
+						<code>{release.sha256}</code>.
+					</p>
+					{
+						release.errata.length > 0 && (
+							<>
+								<h3>Errata</h3>
+								<ul class="version-errata">
+									{release.errata.map((erratum) => (
+										<li>
+											{erratum.date}: <a href={erratum.href.startsWith('/') ? sitePath(erratum.href) : erratum.href}>{erratum.title}</a>
+										</li>
+									))}
+								</ul>
+							</>
+						)
+					}
+				</li>
+			))
+		}
+	</ul>
+</StarlightPage>
+
+<style>
+	.version-list {
+		display: grid;
+		gap: 1rem;
+		padding: 0;
+		list-style: none;
+	}
+	.version-list > li + li {
+		margin-top: 0;
+	}
+	.version-card {
+		padding: 1.25rem 1.5rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: var(--labrador-radius);
+	}
+	.version-card > :first-child {
+		margin-top: 0;
+	}
+	.version-card h2 {
+		font-size: var(--sl-text-h3);
+	}
+	.version-card h3 {
+		font-size: var(--sl-text-h5);
+	}
+	.version-facts {
+		color: var(--sl-color-gray-2);
+	}
+	.version-badge {
+		display: inline-block;
+		margin-inline-end: 0.5rem;
+		padding: 0 0.5rem;
+		border: 1px solid var(--sl-color-text-accent);
+		border-radius: 1rem;
+		color: var(--sl-color-text-accent);
+		font-size: var(--sl-text-xs);
+		font-weight: 600;
+	}
+	.version-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.5rem;
+		padding: 0;
+		list-style: none;
+	}
+	.version-links li {
+		margin: 0;
+	}
+	.version-commit {
+		color: var(--sl-color-gray-2);
+		font-size: var(--sl-text-sm);
+		overflow-wrap: anywhere;
+	}
+	.version-commit code {
+		overflow-wrap: anywhere;
+	}
+</style>

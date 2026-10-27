@@ -19,6 +19,27 @@
 # This workflow keeps the built site as an artifact for review. Production
 # deployment is handled separately by Cloudflare Workers Builds from master;
 # website/README.md records the live URL and dashboard build settings.
+#
+# The build mounts every release listed in website/published-versions.json,
+# downloading each one's snapshot from its GitHub release. Before building,
+# versions:verify checks what only this job can check: that the manifest only
+# grew by appending since the base commit, that each appended release is a
+# published, immutable GitHub release whose one asset has the pinned size and
+# digest and whose tag peels to the pinned commit, and that the live site's
+# index agrees with this manifest wherever both list a release. The live
+# comparison fails the job only when the change appends a release; otherwise
+# a disagreement or an unreachable site is a warning, so a live-site outage or
+# rollback cannot block the change that repairs it. After the build, the same
+# script checks that each erratum the change appends links to an emitted page,
+# file or heading, or to a repository URL that answers. Comparing with the base
+# needs the base commit, hence the full-history checkout; the host's build does
+# not depend on history, so the check lives here rather than in npm run build.
+# The base is the pull request's base, or the previous commit of a push to
+# master that was not forced. Every other run passes an empty base: a branch
+# push may be forced, and a forced push names an old tip the checkout no
+# longer has. The script then compares with the merge base on origin/master,
+# as it also does when a named base does not resolve. The token only reads
+# release metadata.
 
 name: website
 
@@ -44,6 +65,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -59,10 +82,26 @@ jobs:
 
       - run: npm test
 
+      # The base reaches the script through the environment, not the command
+      # line text, so no event value is ever parsed as shell.
+      - name: Verify published versions
+        run: npm run versions:verify -- --base "$BASE"
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/master' && !github.event.forced && github.event.before) || '' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # Fails on a broken internal link or anchor (starlight-links-validator),
       # on a quoted passage whose first or last line has gone, and on a header
       # the reference reader does not understand.
       - run: npm run build
+
+      # Only errata this change appends: their links are immutable once merged,
+      # so checking old ones on every build would let one renamed page block
+      # every later deployment.
+      - name: Verify appended errata links
+        run: npm run versions:verify -- --base "$BASE" --dist dist
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/master' && !github.event.forced && github.event.before) || '' }}
 
       - uses: actions/upload-artifact@v4
         with:

@@ -1,17 +1,29 @@
 ---
-// Starlight's footer, then the revision every page on the site describes.
+// Starlight's footer, then the revision every page on the site describes and
+// the way to every other version of it. Pages without a sidebar have no
+// version selector, so this link is how they reach the list.
+//
+// The list lives once, on the development site, so its link is written
+// literally rather than through sitePath (VersionSelect.astro). Both lines
+// are on every page, so search ignores them, as it does the selector.
 import Default from '@astrojs/starlight/components/Footer.astro';
 import Revision from '../Revision.astro';
 ---
 
 <Default />
-<p class="site-revision"><Revision /></p>
+<p class="site-revision" data-pagefind-ignore><Revision /></p>
+<p class="site-versions" data-pagefind-ignore><a href="/versions/" data-version-index>All documentation versions</a></p>
 
 <style>
 	.site-revision {
 		margin-top: 2rem;
 		font-size: var(--sl-text-xs);
 		color: var(--sl-color-gray-3);
+		text-align: center;
+	}
+	.site-versions {
+		margin-top: 0.5rem;
+		font-size: var(--sl-text-xs);
 		text-align: center;
 	}
 </style>

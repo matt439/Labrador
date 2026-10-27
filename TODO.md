@@ -13,7 +13,7 @@ An index of open work, one row per item; each row points to the document that ow
 1. **`SM-25` (X28): observe a scheduled Actions run.** The repaired SDK download passed PR CI; hardware sessions and owner decisions are listed below.
 2. **`REV#3`: verify factory refresh in a real display-change session.** Bounded backend verification is recorded in [the review index](docs/review/INDEX.md); the display-change session remains.
 
-**Before `v0.3.0` is cut:** `SITE#3` implements and verifies the first documentation snapshot pipeline. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
+**Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
@@ -36,7 +36,7 @@ An index of open work, one row per item; each row points to the document that ow
 | `SM-32` | BLOCKED | could | S | Review the encoded JetBrains Mono candidate in whole-clip playback, then replace the MP4. Canonical stills regenerate byte-identically; rule and review-output mode implemented. [Evidence](docs/website-plan.md#2026-10-26-footage-refresh-evidence). |
 | `BDP-21` | OPEN | could | S | Make each piece's landing shadow meet the 3:1 contrast target while remaining distinct from the live piece; test it and review regenerated captures. [Scope](docs/product/STORIES.md#bdp-21). |
 | `BDP-25` | OPEN | could | M | Implement the three agreed colour-vision-deficiency palette groups in LineSweeper; [BACKLOG](docs/product/BACKLOG.md#bdp-25) owns their full names, scope and acceptance. |
-| `SITE#3` | OPEN | must | M | Add the published-release index/selector and snapshot preservation, then qualify publication before `v0.3.0`; verified candidate builds implemented. [Scope and checks](docs/website-versioning.md). |
+| `SITE#3` | OPEN | must | M | Left: re-run axe after the contrast fix; Firefox, Safari, real-phone touch and screen-reader acceptance; the owner enables immutable releases; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 
 The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
