@@ -25,6 +25,27 @@ filings. Recheck each report against current master and file an engine-focused
 exhibit within that boundary, or withdraw it with a reason. This approval does
 not broaden disclosure of the private ledger.
 
+## Filing recheck, 2026-10-27
+
+A fresh read-only upstream check resolved `master` to
+`febff245e7819c622c278426717c1fd45c15a03a`. All fifteen originals in the
+decision table below have answers, and the client has closed each one. They
+are withdrawn from the public filing queue because those answers already
+exist: the table gives each report's individual disposition and implementation
+or documentation subject. This includes report 19's request for evidence;
+recording that answer does not supply the requested first-frame captures.
+No issue is needed to ask for the same answer again.
+
+Two newer drafts remain for `PI-09`, separately from that completed batch:
+
+| # | Engine-focused claim | Recheck against the upstream revision above |
+|---|---|---|
+| 23 | Resizing a hidden window requests activation. | `Window::resize_client` in `engine/app/win32/window.cpp` calls `SetWindowPos` without `SWP_NOACTIVATE`; the hidden fullscreen paths include it. The source gap remains. This recheck does not reproduce foreground takeover. |
+| 25 | Controller vibration has no public output operation. | `Gamepads` and `GamepadReader`, including both reader backends, have no vibration output. A caller must provide its own platform transport. Output timing, preferences and lifecycle remain game policy; no new engine API is decided by this source recheck. |
+
+These claims remain unfiled and unanswered. This record contains only the
+engine mechanisms needed to identify them, with no private exhibit content.
+
 ## The files
 
 | File | Reports | What they share |
@@ -45,7 +66,7 @@ or files its answer, and say there which commit or issue answered it.
 | [x] | [16](window.md) | Accept | S | A hidden window stays hidden and inactive through `set_fullscreen(true/false)`: it is sized with `SetWindowPos` instead of `ShowWindow`. **Implement first**, because it is a contract break (`window.h`'s `visible`). Done: *Keep a hidden window hidden when it changes full screen*. Its first-size-report case found that a hidden windowed window makes no report before the constructor returns, and a hidden full-screen one reports its requested size; `window.h` now says so. |
 | [x] | [11](window.md) | Accept, narrowed | S | The Win32 window always swallows a bare `SC_KEYMENU` (F10, or Alt alone), with no option. Alt+Space and Alt+F4 are unchanged. A silent behaviour change. Done: *Let F10 and Alt alone be keys, not the system menu*. No live case: a hidden window never enters the menu loop, so it could not fail. |
 | [x] | [17](window.md) | Accept, narrowed | M | A per-monitor-aware process gets the window's own DPI in the frame arithmetic, and a DPI change keeps the client pixel size. No portable DPI API. Needs the owner to set a Windows floor first. Done: *Keep the client size in a per-monitor-aware process*, with the owner's floor of Windows 10 1607 and static imports (G105). |
-| [ ] | [19](window.md) | Needs more evidence | — | No `show()` yet. First capture what a visible launch shows before the first present. In the meantime, 16's commit states that a window created hidden is never shown by the engine. |
+| [x] | [19](window.md) | Needs more evidence | — | Answer recorded in `cacf112`; withdrawn from filing as already answered. No `show()` yet. First capture what a visible launch shows before the first present. In the meantime, 16's commit states that a window created hidden is never shown by the engine. |
 | [x] | [9](loop.md) | Document only | S | No observer hook on `Application`. A root `State` that owns a nested `StateContext` already sees every frame. Document and test that. Capture and routing are declined as game policy. Done: Document the root state that sees every frame |
 | [x] | [10](loop.md) | Document only | S | No capture hook. Document the out-of-band frame (`begin_frame`, draw, `submit`, `read_back_buffer`, no `end_frame`), and state that a frame submitted and never presented is legal. Done: State that a frame submitted and never presented is legal |
 | [x] | [14](loop.md) | Accept, narrowed | M | `Application::frame_timings()` returns the last completed frame's CPU phase times. GPU time, history and an overlay are declined; `REV#10` stays deferred. Done: Publish the last frame's CPU phase times from Application (story PI-19) |

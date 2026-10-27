@@ -27,7 +27,7 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 | [vulkan/](vulkan/README.md) | Fifth-backend review at `4d91b91` | [CANDIDATES.md](vulkan/CANDIDATES.md) and [41-65](vulkan/CANDIDATES-41-65.md) preserve and adjudicate every original. [Vulkan tracking below](#vulkan-tracking) owns remaining follow-ups and the two section-6 questions, including the platform re-entry condition. |
 | [gpt6/](gpt6/README.md) | Review at `9dea4516` on 2026-09-17 | The eleven numbered findings are closed in [the resolution map below](#gpt-6-resolution-map). REV#7's bounded lifecycle observations are below; other opportunities remain in TODO.md as REV#8 to REV#10 and the low-tier record. |
 | [2026-09-26/](2026-09-26/README.md) | September 26 review, supplement and reproduction evidence | [STATUS.md](2026-09-26/STATUS.md) is live and [FIXES.md](2026-09-26/FIXES.md) records all 23 numbered resolutions. The four hardening candidates, manual limits and tooling CI follow-up remain separately tracked; see below. |
-| [colourwars-reports/](colourwars-reports/README.md) | Engine decisions on private client reports, assessed at `0c15f34` | Its README's decision table is live. Report 19 still needs evidence of a visible launch before the first present. PI-09's public filing/disclosure decision belongs to the owner. Keep private client detail out of this tree. |
+| [colourwars-reports/](colourwars-reports/README.md) | Engine decisions on private client reports, assessed at `0c15f34` | Its README's decision table is live: all fifteen originals are answered and withdrawn from filing. Report 19's first-frame evidence is still absent; newer reports 23 and 25 remain. PI-09's approved disclosure boundary excludes private client detail. |
 | INDEX.md | This map | Live. Maintain this roster when adding or retiring a review, and the tracking below when resolving an item it owns. |
 
 ## D3D12 tracking
@@ -92,8 +92,12 @@ into verified findings.
   Confirmed fixes include injected submission cleanup, measured allocation
   reuse, instance diagnostics, exact CI filters, unused internal accessors
   and contract/prose corrections. The historical count is not a defect count.
-- [ ] **REV#6: remaining bounded follow-ups.** The instance-callback question
-  (20) remains open without an established application lifecycle contract.
+- [x] **REV#6: bounded follow-ups closed, 2026-10-27.** Candidate 20 now
+  follows Vulkan's documented instance lifecycle contract: a `pNext`
+  registration covers instance creation/destruction, and the persistent
+  messenger covers calls between them. Both use the same stateless callback
+  with null user data. The [candidate record](vulkan/CANDIDATES.md#candidate-20)
+  links the primary contract and the registration/lifetime regression evidence.
   Device-selection policy (18) is documented without changing scoring. Transfer
   resilience (47) has bounded offline-tested retries, the reset ordering (60)
   is retained across distinct exception boundaries, and the early frame alias
@@ -116,6 +120,39 @@ into verified findings.
   errors or synchronization hazards, with 769 performance advisories. This
   settles visible output on the tested configuration, not writes outside an
   attachment or every driver's behavior.
+
+**Instance diagnostics and shutdown verification, 2026-10-27.** Candidate 20's
+Debug regression passes all three cases and 63 assertions, after failing 21
+assertions against the old registration. Its synthetic callbacks establish
+registration and callable lifetime, not actual layer-message delivery to the
+debugger. The stateless callback and null user data also remain valid when a
+retained texture releases the shared instance after its renderer.
+
+The full verification exposed a separate shutdown defect: `MinimalSmokeTests`
+failed with `VK_ERROR_SURFACE_LOST_KHR` in both Debug and Release, including
+with the lifecycle registration disabled. An update had closed the window
+before that tick rendered. The shell now completes owed fixed updates, then
+checks the neutral window handle before rendering. The
+[native-null loop regression](../../tests/app/application_loop_tests.cpp)
+fails four assertions on the old path and passes all 15 focused assertions
+with the guard; the full `AppTests` suite passes 61 cases and 849 assertions.
+Both the native window and browser canvas return a null handle after closing.
+
+Final configure/build/CTest runs pass on `x64-debug` (20),
+`x64-debug-d3d12` (21), `x64-release-gl` (20), `x64-release-null` (19), and both
+`x64-debug-vulkan` and `x64-release-vulkan` (20 each), including the repaired
+smoke path. `wasm-release` passes all 31 entries, including all sample pages,
+and the website check, 21 tests and 146-page build pass. All four standalone
+CMake checks pass. Local receipts are under
+`out/instance-diagnostics-20261027/`; these runs add no physical pad, phone,
+display-change or device-removal acceptance.
+
+The Debug Vulkan pixel suite also passes under the review's synchronization
+and best-practices settings with independent layer stdout logging: 61 cases,
+49,680 assertions, zero validation errors and zero synchronization hazards.
+It emits 794 performance advisories, including the known small dedicated
+allocations. This executed sweep covers the tested paths, not real device
+removal or every possible instance-lifecycle diagnostic.
 
 ## GPT-6 resolution map
 

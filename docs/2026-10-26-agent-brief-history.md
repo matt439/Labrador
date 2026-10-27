@@ -60,7 +60,17 @@ repair. Website `npm ci`, `npm run check`, `npm test` (21 tests) and
 passes all 31 entries in Chrome 156.0.8078.48, including ordinary sample,
 pacing and packaged-page checks. These local runs supersede the script and
 browser access blockers for the checks they execute; the original denial
-record above is retained. SM-43 still awaits the PR's required CI results.
+record above is retained.
+
+**CI acceptance, checked 2026-10-27.** [PR #59](https://github.com/matt439/Labrador/pull/59)
+passed all thirteen required checks at head
+`0ed6b12a382ef305a5336afbf272d321b78e5d4b` and merged as
+`9a1b54c5d2c31615f5af32f89ea97c9528dfe607`.
+The [lint job](https://github.com/matt439/Labrador/actions/runs/40422181511/job/121919039101)
+passed all four CMake checks and all 81 Python tests. The
+[website job](https://github.com/matt439/Labrador/actions/runs/40422182605/job/121919042760)
+reported zero errors, 21 passing tests and 146 built pages. These results close
+SM-43's remaining CI acceptance; they do not close separate hardware sessions.
 
 ## Original brief
 

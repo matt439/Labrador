@@ -206,6 +206,8 @@ namespace labrador
 		// Closes the window, which ends run(). This is the whole of the quit path:
 		// a game asking to exit does not need to know which platform it is on.
 		// In a browser the page is told, and decides what comes next.
+		// If called during update, the tick completes its remaining fixed steps
+		// but does not draw or publish another completed frame.
 		void quit() const;
 
 		// THE LAYOUT SIZE FOLLOWS THE WINDOW. However the window comes to change

@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -103,6 +104,94 @@ namespace
 		bool capturing_ = false;
 		bool quit_ = false;
 	};
+
+	struct QuitObservation
+	{
+		int updates = 0;
+		int updates_after_quit = 0;
+		int draws = 0;
+		int draws_at_quit = 0;
+		std::uint64_t frame_at_quit = 0;
+		bool quit = false;
+	};
+
+	class QuitDuringUpdate : public State
+	{
+	public:
+		QuitDuringUpdate(Application* app, QuitObservation* observation,
+			bool wait_for_frame) :
+			app_(app), observation_(observation), wait_for_frame_(wait_for_frame)
+		{
+		}
+
+		void init() override
+		{
+			// The first tick owes several fixed steps, so quitting its first
+			// update also exercises the remaining updates in that same tick.
+			std::this_thread::sleep_for(std::chrono::milliseconds(20));
+		}
+
+		void update(float /*dt*/) override
+		{
+			++this->observation_->updates;
+			if (this->observation_->quit)
+			{
+				++this->observation_->updates_after_quit;
+				return;
+			}
+			if (this->wait_for_frame_ && this->app_->frame_timings().frame == 0)
+				return;
+
+			this->observation_->frame_at_quit = this->app_->frame_timings().frame;
+			this->observation_->draws_at_quit = this->observation_->draws;
+			this->app_->quit();
+			this->observation_->quit = true;
+		}
+
+		void draw(Renderer& /*renderer*/) const override
+		{
+			++this->observation_->draws;
+		}
+
+	private:
+		Application* app_;
+		QuitObservation* observation_;
+		bool wait_for_frame_;
+	};
+}
+
+TEST_CASE("quitting in update finishes owed steps without drawing or publishing another frame")
+{
+	bool wait_for_frame = false;
+	SUBCASE("quit on the first update") {}
+	SUBCASE("quit after completed frames") { wait_for_frame = true; }
+
+	ApplicationOptions options;
+	options.window_class_name = L"QuitDuringUpdateTestWindow";
+	options.visible = false;
+	options.view_capacity = 1;
+	options.max_threads = 1;
+	options.target_fps = 240;
+	Application app(std::move(options));
+	app.initialize();
+
+	QuitObservation observation;
+	CHECK(app.run(std::make_unique<QuitDuringUpdate>(
+		&app, &observation, wait_for_frame)) == 0);
+	CHECK(observation.quit);
+	CHECK(app.window() == nullptr);
+	CHECK(observation.draws == observation.draws_at_quit);
+	CHECK(app.frame_timings().frame == observation.frame_at_quit);
+	CHECK(app.step_position().step == static_cast<std::uint64_t>(observation.updates));
+	if (wait_for_frame)
+	{
+		CHECK(observation.frame_at_quit > 0);
+	}
+	else
+	{
+		CHECK(observation.frame_at_quit == 0);
+		CHECK(observation.updates_after_quit > 0);
+	}
 }
 
 TEST_CASE("frame_timings follows the loop's own frames and no others")
@@ -163,7 +252,7 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 		CHECK(timings.end_frame_time.count() >= 0);
 	}
 
-	// What the last update saw is a frame the loop rendered after updating.
+	// The final update still sees the last completed frame.
 	CHECK(seen.back().frame > 0);
 	CHECK(app.frame_timings().frame >= seen.back().frame);
 }

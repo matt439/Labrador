@@ -298,8 +298,8 @@ namespace labrador
 		return this->step_position_;
 	}
 
-	// SIX CLOCK READS A RENDERED TICK, AND TWO OTHERWISE, whatever the frame
-	// holds: one at each phase boundary and none per view or per object
+	// SIX CLOCK READS A RENDERED TICK, whatever the frame holds: one at each
+	// phase boundary and none per view or per object
 	// (T8). In a browser each is a call out to performance.now(), so the
 	// number is fixed here rather than grown by whoever adds a phase.
 	void Application::tick()
@@ -311,6 +311,13 @@ namespace labrador
 		this->step_position_ = labrador::step_position(
 			this->timer_.GetFrameCount(), this->timer_.GetLeftOverTicks(),
 			this->timer_.GetTargetElapsedTicks());
+
+		// A state can close the window during a fixed update. Every owed
+		// update still runs, but a closed window has no frame to present.
+		if (this->window_->handle() == nullptr)
+		{
+			return;
+		}
 
 		FrameMarks marks;
 		marks.updates =

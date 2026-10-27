@@ -331,17 +331,29 @@ Original, copied verbatim:
 
 - **[minor]** `engine/render/vulkan/device_resources.cpp:490` — The debug messenger is created after vkCreateInstance and destroyed before vkDestroyInstance, so the validation layer is silent for exactly the two instance calls this file makes
 
-**Refuted as an absolute silence claim; application callback gap confirmed.**
-`create_instance` in
+**Callback gap resolved, 2026-10-27; absolute silence claim refuted.**
+[Vulkan's instance contract](https://docs.vulkan.org/refpages/latest/refpages/source/VkInstanceCreateInfo.html)
+allows a `VkDebugUtilsMessengerCreateInfoEXT` in `pNext` to receive messages
+during `vkCreateInstance` and `vkDestroyInstance`; a persistent messenger is
+still needed for the calls between them. Debug `create_instance` in
 [device_resources.cpp](../../../engine/render/vulkan/device_resources.cpp)
-creates the instance without a messenger create-info in `pNext` and creates
-the application messenger afterward. `VulkanDevice` destroys that messenger
-before instance destruction. The two calls lack this application's callback,
-but [review section 2](README.md#2-what-was-run-and-what-the-layers-said)
-configures independent validation-layer stdout logging. Callback absence does
-not establish layer-wide silence. No instance-callback/logging comparison was
-run for this candidate; candidate 12's synthetic return codes do not test
-creation/destruction logging.
+now supplies the same descriptor to both registrations when validation is
+available. Its callback is a static function with null user data, so neither
+registration borrows the descriptor's stack storage or renderer state through
+the callback. The persistent messenger is still destroyed before the instance.
+
+[Initialization regressions](../../../tests/render/vulkan_initialization_tests.cpp)
+inspect the actual instance description and invoke the registered callback
+with synthetic markers at intercepted creation and destruction boundaries,
+while successful instances use the real loader. Three injected creation
+failures check that no instance is destroyed. With the old production code,
+the focused Debug run fails 21 assertions; with the fix all three cases and
+63 assertions pass. These tests check registration and callable lifetime,
+not delivery of real layer-generated diagnostics or debugger output.
+[Review section 2](README.md#2-what-was-run-and-what-the-layers-said) already
+configures independent layer stdout logging, so callback absence never
+established layer-wide silence. The broader validation results are recorded
+in [the live index](../INDEX.md#vulkan-tracking).
 
 ### Candidate 21
 

@@ -10,10 +10,9 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
-1. **`SM-43` (X1): local build, tooling and website checks pass; PR CI verification remains.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
-2. **`PI-09` (X27): recheck and file or withdraw the ColourWars reports within the approved minimal engine-focused disclosure boundary.** The publication scope is settled; the filing work remains.
-3. **`SM-25` (X28): verify the application-identified SDK download in PR CI and observe a scheduled Actions run.** Hardware sessions and owner decisions are listed below.
-4. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
+1. **`PI-09` (X27): file or answer the two newer ColourWars reports within the approved minimal engine-focused disclosure boundary.** The original fifteen are withdrawn from filing as already answered; [recheck](docs/review/colourwars-reports/README.md#filing-recheck-2026-10-27).
+2. **`SM-25` (X28): observe a scheduled Actions run.** The repaired SDK download passed PR CI; hardware sessions and owner decisions are listed below.
+3. **`REV#3`: verify factory refresh in a real display-change session.** Bounded backend verification is recorded in [the review index](docs/review/INDEX.md); the display-change session remains.
 
 **Before `v0.3.0` is cut:** `SITE#3` implements and verifies the first documentation snapshot pipeline. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
@@ -48,7 +47,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-25` | OPEN | should | S | Downloader identifies LabradorCI; local same-URL GET returns 200 where default urllib receives Cloudflare 403/error 1010. Verify the repaired download in PR CI and observe a scheduled Actions run. |
+| `SM-25` | OPEN | should | S | Observe a scheduled Actions run. The repaired SDK download, checksum, install and Vulkan tests pass in PR #59; [evidence](docs/product/BACKLOG.md#next). |
 | `SM-19` | OPEN | could | XS | Windows tooling gate and all 81 local Python tests pass; observe a deliberately failing throwaway-branch CI run. |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
 
@@ -85,14 +84,13 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 ## Engine verification and reviews
 
-**Owner:** [the review index](docs/review/INDEX.md) maps every review to its live ledger and tracks the remaining D3D12 and Vulkan candidates (`REV#3` to `REV#6`).
+**Owner:** [the review index](docs/review/INDEX.md) maps every review to its live ledger and tracks the remaining D3D12 and Vulkan candidates (`REV#3` to `REV#5`).
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `REV#8` | OPEN | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
 | `REV#4` | OPEN | could | XS | Minimise a sample on `x64-debug-vulkan` under the validation layers and record whether acquire or present returns `OUT_OF_DATE`, and how severe the minimise throw is (Vulkan review 6.1). |
 | `REV#3` | OPEN | could | M | Check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records bounded descriptor-query measurements, profile evidence, allocation reuse and full patterned mip read-back. |
-| `REV#6` | OPEN | could | L | All 65 originals have [source dispositions](docs/review/INDEX.md#vulkan-tracking). The instance-callback question remains without an established lifecycle contract; platform and hardware sessions remain separate. |
 | `REV#12` | BLOCKED | could | M | The 2026-09-26 review's manual checks: real device removal, interactive minimise, restore and drag, physical keyboard layouts and device changes, real sleep and wake. Needs a person at the machine. |
 | `REV#5` | DEFERRED | could | S | Whether the Vulkan surface-format fallback, a fixed `compositeAlpha` and an unapplied `preTransform` are defects (Vulkan review 6.2). Live only on Android; reopens with that port. |
 | `REV#9` | DEFERRED | could | M | Input recording and replay for LineSweeper, with a rules and file version (gpt6 opportunity 3). T1: waits for a client that needs it. |
@@ -100,11 +98,11 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 ## ColourWars and the pin
 
-**Owner:** [docs/product/STORIES.md](docs/product/STORIES.md); the drafts in ColourWars' `docs/review/engine-reports.md`, which is private. The engine's decision on each of the fifteen live drafts, made ahead of filing so `PI-10` can be implemented from it, is [docs/review/colourwars-reports/](docs/review/colourwars-reports/README.md), whose table is kept current.
+**Owner:** [docs/product/STORIES.md](docs/product/STORIES.md); the drafts in ColourWars' `docs/review/engine-reports.md`, which is private. [docs/review/colourwars-reports/](docs/review/colourwars-reports/README.md) records the original fifteen answers and the two newer drafts; its table is kept current.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `PI-09` | OPEN | should | S | Recheck the ColourWars drafts against master and file or withdraw each with a reason, using only minimal engine-focused disclosure. Keep private client paths, names and lines out. `PI-10` answers them. |
+| `PI-09` | OPEN | should | S | File or answer reports 23 (hidden resize activation) and 25 (vibration output), using only minimal engine-focused disclosure. The original fifteen are already answered; [recheck](docs/review/colourwars-reports/README.md#filing-recheck-2026-10-27). |
 | `DOC#4` | WAITING | should | S | When ColourWars' repository goes public (the owner expects it within weeks of 2026-10-13): sweep the tree's "private" and "not public" mentions of it outside dated records, link the repository from the README and the site, and recheck `PI-09`, which then narrows to what its drafts say. |
 | `PI-14` | OPEN | should | M | A ColourWars Release ZIP at a current pin, run (or refused loudly) on a clean Windows install without Visual Studio, with edition, GPU, driver and commits named; `tools/consumer_check/sandbox.py` runs it. |
 
@@ -116,7 +114,6 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 |---|---|---|---|---|
 | `SRL-07` | OPEN | could | S | Rename non-macro uppercase constants to `snake_case`, migrate callers in both repositories, and record every old/new spelling. The owner chose renaming; CONVENTIONS stays. [Scope](docs/product/BACKLOG.md#later). |
 | `OCA-66` | OPEN | could | S | Declare per-monitor DPI awareness in the Windows samples/template and document the choice; review and record the template at 150% scaling. Implementation remains. [Scope](docs/product/BACKLOG.md#later). |
-| `SM-43` | OPEN | should | M | Local build, tooling and website checks pass; verify PR CI ([evidence](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance)). |
 
 ## Ports
 

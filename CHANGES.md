@@ -72,6 +72,24 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Stop rendering after quit and cover Vulkan instance diagnostics
+
+**Behaviour change.** When an update calls `Application::quit()`, the tick
+finishes its remaining fixed updates and skips rendering. Previously it could
+draw and present after the native window was destroyed or the browser canvas
+was closed. On Vulkan the minimal sample's smoke test then failed while
+querying the destroyed window's surface (`VK_ERROR_SURFACE_LOST_KHR`).
+`frame_timings()` retains the last completed frame. No source migration is
+needed; code must not rely on a final draw after calling `quit()`.
+
+**Behaviour change, Debug Vulkan backend.** When the Khronos validation layer
+is available, the engine registers its debugger diagnostic callback for
+`vkCreateInstance` and `vkDestroyInstance` as well as the calls between them.
+Warnings and errors from those two instance operations can now reach
+`OutputDebugStringA`. The callback borrows no renderer or texture state. No
+source migration is needed; independent validation-layer stdout logging is
+still configured separately.
+
 ### 2026-10-27 - Require Vulkan 1.2 headers at configure time
 
 **Build requirement clarified.** Configuring the Vulkan backend now requires
