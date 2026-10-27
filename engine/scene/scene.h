@@ -40,7 +40,7 @@ namespace labrador
 	// here point one way, at core, math, collision and render, which is the
 	// shape `ui` has for the same reason (ARCHITECTURE, Modules).
 	//
-	// WHAT IS DELIBERATELY NOT HERE. No ViewportManager, no CameraTools, no
+	// WHAT IS DELIBERATELY NOT HERE. No ViewportManager, no camera follow, no
 	// ResolutionManager, no RenderResources. Where the panes are, how a camera
 	// follows a player and what filtering the pixels want are all policy, and
 	// policy belongs to the client (T1) - which is why the view list below is

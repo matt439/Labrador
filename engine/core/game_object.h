@@ -22,8 +22,8 @@ namespace labrador
 	//
 	// What that costs an implementer: anything varying per draw - a tint, a
 	// flip, a shadow offset - is computed into a local and passed down, never
-	// assigned to a member first. The draw_with() overloads on TextureObject,
-	// AnimationObject and TextObject exist to take those locals. Anything
+	// assigned to a member first. The draw_with() overloads on TextureObject
+	// and TextObject exist to take those locals. Anything
 	// varying per *frame* - the animation clip, the facing - is chosen in
 	// update(), which runs once, on one thread.
 	class GameObject

@@ -57,11 +57,8 @@ Three things follow from the table.
   `bench/fanout_bench_null.cpp`. A local-multiplayer guide waits on the public
   demonstration the plan already lists as needing to be chosen or made.
 
-Two public types are used nowhere outside their own files, by any sample, test
-or engine code: `MovingObject` (`engine/core/moving_object.h`) and
-`RotationOrigin` (`engine/render/rotation_origin.h`). Thirteen headers in all
-are included by no sample and no test, though most of their types are reached
-through other headers.
+Some headers are included by no sample and no test, though their types are
+reached through other headers.
 
 ## What can be adapted
 
@@ -74,7 +71,7 @@ line numbers are at `383b14c`.
 | What a game is to the engine | Concepts | PHILOSOPHY *The object model*, *Structural types*, *Services and lifetimes* |
 | States and the stack | Concepts | `core/state.h:38-93`; `core/state_context.h:42-49, 103-124`, with a typed-result example; both samples |
 | The tick: update, collision, end of tick, draw | Concepts | `scene/scene.h:187-250`; `samples/minimal/states/hello_state.cpp:85-107` |
-| Drawing, views and cameras | Concepts | `render/renderer.h:109-198` (the draw list), `223-362` (the frame); `render/camera.h`; `render/camera_tools.h` |
+| Drawing, views and cameras | Concepts | `render/renderer.h:109-198` (the draw list), `223-362` (the frame); `render/camera.h` |
 | Names, handles and resources | Concepts | `core/registry.h:24-48`; `core/handle.h:5-15`; `render/render_resources.h:16-39` |
 | Sprites and text | Guide | `render/sprite_sheet.h:15-102`; `render/font.h:11-48`; `render/label.h:13-27`; LineSweeper's README, *The whole screen is one white texel* |
 | Input | Guide | `input/keyboard.h:9-47, 149-178`; `input/gamepad.h:9-16, 47-154`; `input/direction.h:39-152`; LineSweeper's README, *Input is read as held* |

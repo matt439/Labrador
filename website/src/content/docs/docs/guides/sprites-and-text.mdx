@@ -148,15 +148,16 @@ rotated by, such as the middle of a character's feet. A sheet whose packer rotat
 them is refused, because the engine draws frames as they are stored. Every key is checked when the
 sheet loads, and a missing or mistyped one names the file and the key.
 
-Two classes draw from a sheet, and both are designed to be **inherited alongside `GameObject`**,
-so your own class gets their drawing and keeps its own update:
+`TextureObject` draws one named frame from a sheet, and is designed to be **inherited alongside
+`GameObject`**, so your own class gets its drawing and keeps its own update. Its constructor
+takes the sheet name and the frame name. It has `draw(draw_list, destination_rectangle)` and
+`draw(draw_list, position, scale)`, and a `draw_with` that takes the colour or flip as a
+parameter instead.
 
-- `TextureObject` draws one named frame. Its constructor takes the sheet name and the frame name.
-- `AnimationObject` plays a strip. Its `update(dt)` advances the frame, and `play`, `pause`,
-  `stop`, `reset` and `set_animation_strip_and_reset` control it from your own `update()`.
-
-Both have `draw(draw_list, destination_rectangle)` and `draw(draw_list, position, scale)`, and a
-`draw_with` that takes the colour or flip as a parameter instead. Because several views can draw
+The engine has no animation player. To play a strip, resolve it with
+`SpriteSheet::resolve_animation_strip`, keep the elapsed time in your own `update()`, and pass
+`AnimationStrip::calculate_frame(index)` to the `SpriteSheet::draw` overloads that take a source
+rectangle. Because several views can draw
 the same object at once, a tint or flip that varies from draw to draw is passed through
 `draw_with` rather than set on the object first. None of the six samples uses a sprite sheet
 yet; the engine's tests do.

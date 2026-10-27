@@ -97,8 +97,8 @@ namespace labrador
 		// SO `origin` IS THE CALLER'S ALONE HERE, and the asymmetry with the
 		// pair above is not an oversight: there is no frame, so there is no
 		// authored pivot to add. A strip's definition has no origin key either,
-		// which is why the one caller that reaches these - AnimationObject -
-		// loses nothing by it. A sheet that wants a per-frame pivot on an
+		// which is why a caller playing a strip through these loses nothing
+		// by it. A sheet that wants a per-frame pivot on an
 		// animation is asking for a schema this loader does not have.
 		void draw(DrawList& draw_list,
 			const mattmath::RectangleI& source,

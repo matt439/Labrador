@@ -16,8 +16,8 @@ namespace labrador
 	// render worker at once (PHILOSOPHY T7, T8).
 	//
 	// What a sheet *element* is depends on the subclass - a frame for
-	// TextureObject, an animation strip for AnimationObject - so the element
-	// handle lives down there. The sheet lives up here because both need it and
+	// TextureObject - so the element handle lives down there. The sheet lives
+	// up here because every subclass needs it and
 	// because an element handle only means anything against the sheet it was
 	// resolved from. Those two therefore change together: see set_sprite_sheet.
 	class SpriteSheetObject : public DrawObject

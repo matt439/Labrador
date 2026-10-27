@@ -252,8 +252,7 @@ TEST_CASE("two effects over one bank are two voices")
 
 	fixture.bank->play_effect(engine, true);
 
-	// The one thing sound_bank_object_tests.cpp said it could not show with two
-	// silent banks: handles from different names are different things. Playing
+	// What two silent banks cannot show: handles from different names are different things. Playing
 	// one leaves the other alone, which is only assertable where a voice has a
 	// state to be left alone in.
 	CHECK(fixture.bank->effect_state(engine) == SoundState::playing);

@@ -75,8 +75,8 @@ namespace labrador
 		mattmath::RectangleF text_bounds() const;
 
 		// The same box for a hypothetical draw at another position and scale,
-		// so TextDropShadow can size its shadow exactly rather than assuming
-		// the shadow matches the text.
+		// so a derived drawable can size a second draw, such as a shadow,
+		// exactly rather than assuming it matches the text.
 		mattmath::RectangleF text_bounds_at(const mattmath::Vector2F& position,
 			float scale) const;
 

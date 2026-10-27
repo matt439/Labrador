@@ -2,7 +2,6 @@ find_package(doctest CONFIG REQUIRED)
 
 add_executable(AudioTests
     audio_resources_tests.cpp
-    sound_bank_object_tests.cpp
     sound_bank_tests.cpp
     test_main.cpp
     xwb_file_tests.cpp
