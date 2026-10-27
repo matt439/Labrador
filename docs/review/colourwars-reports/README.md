@@ -20,6 +20,11 @@ The client's workarounds are described generically on purpose. The ledger is
 private, and its owner approved only minimal engine-focused disclosure. So no
 ColourWars path, name or line appears here.
 
+The owner reaffirmed this boundary on 27 October 2026 for `PI-09`'s public
+filings. Recheck each report against current master and file an engine-focused
+exhibit within that boundary, or withdraw it with a reason. This approval does
+not broaden disclosure of the private ledger.
+
 ## The files
 
 | File | Reports | What they share |

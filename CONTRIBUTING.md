@@ -169,6 +169,12 @@ cut once PHILOSOPHY's settle criterion has run.
    entry gets the heading with nothing under it. Its message says
    `not consumer-visible` for the `vcpkg.json` change, which CHANGES.md's
    *Entries* explains.
+
+   **For `v0.3.0`, implement and verify documentation versioning before the
+   tag is cut.** It is the first release with a complete immutable snapshot;
+   `v0.1.0` and `v0.2.0` are not backfilled. The build, provenance, routing,
+   search and selector checks are in
+   [the versioning policy](docs/website-versioning.md).
 3. **Merge it, then wait for its push runs.** The commit's hash on `master`
    differs from the pull request's head, so find it there, and run
    `gh run list --branch master --commit <sha> --json workflowName,conclusion`
@@ -201,6 +207,10 @@ cut once PHILOSOPHY's settle criterion has run.
      newest entry, and the 0.x tags cut since it;
    - the supported revisions, as [SECURITY.md](SECURITY.md) states them;
    - a link to PHILOSOPHY at the tag.
+
+   For `v0.3.0`, build the documentation snapshot from that release's clean
+   checkout and follow the versioning policy's publication and rollback
+   checks. Keep the development site and all published snapshot paths.
 6. **Afterwards**, the next consumer-visible change opens `## Unreleased`
    above the release's heading, and `version-string` stays as it is until the
    next release commit changes it.

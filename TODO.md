@@ -12,12 +12,15 @@ An index of open work, one row per item; each row points to the document that ow
 
 1. **`SM-43` (X1): local build, tooling and website checks pass; PR CI verification remains.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
 2. **`BDP-24` (X22): publish the demo's accessibility support and limitations note.** The owner approved the aim; the page note, sample README section and bundle-page assertion remain.
-3. **`SM-25` (X28): verify the application-identified SDK download in PR CI and observe a scheduled Actions run.** Hardware sessions and owner decisions are listed below.
-4. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
+3. **`PI-09` (X27): recheck and file or withdraw the ColourWars reports within the approved minimal engine-focused disclosure boundary.** The publication scope is settled; the filing work remains.
+4. **`SM-25` (X28): verify the application-identified SDK download in PR CI and observe a scheduled Actions run.** Hardware sessions and owner decisions are listed below.
+5. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
+
+**Before `v0.3.0` is cut:** `SITE#3` implements and verifies the first documentation snapshot pipeline. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
-- Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
+- Next: `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
+- Later: `WEB#3` (listen to the audio sample).
 
 ## Input, menus, settings and saves
 
@@ -37,8 +40,7 @@ An index of open work, one row per item; each row points to the document that ow
 | `BDP-24` | OPEN | could | XS | Add the demo's accessible support/limitations note and sample README section, and assert the note is referenced in the bundle page. [Scope](docs/product/STORIES.md#bdp-24). |
 | `BDP-21` | OPEN | could | S | Make each piece's landing shadow meet the 3:1 contrast target while remaining distinct from the live piece; test it and review regenerated captures. [Scope](docs/product/STORIES.md#bdp-21). |
 | `BDP-25` | OPEN | could | M | Implement the three agreed colour-vision-deficiency palette groups in LineSweeper; [BACKLOG](docs/product/BACKLOG.md#bdp-25) owns their full names, scope and acceptance. |
-| `SITE#3` | DECISION | could | XS | The owner decides whether the site starts versioned snapshots at the first 0.x tag ([docs/website-versioning.md](docs/website-versioning.md)). |
-| `BDP-20` | DECISION | could | XS | The owner decides whether the 4.3 MB phone fallback video stays, or swaps in a smaller encode with `npm run sync-demo -- <bundle> --video <mp4>`. |
+| `SITE#3` | OPEN | must | M | Implement and verify complete immutable documentation snapshots before `v0.3.0` is cut; start with that release, with no earlier backfill. [Scope and checks](docs/website-versioning.md). |
 
 The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
@@ -78,8 +80,8 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `BDP-07` | BLOCKED | could | M | Measure the fixed 60 Hz step under `requestAnimationFrame` on a 60 Hz and a high-refresh display (R5), M3's second open term. After `SM-08`; may need a borrowed display. |
 | `WEB#6` | BLOCKED | could | XS | Record hosted-stage scaling, zoom and HUD legibility after local HTTPS access is restored. The read-only HEAD was socket-permission denied. [Evidence](docs/port/web-to-be-tested.md). |
 | `SM-13` | BLOCKED | should | M | Play the development page and the live demo on the owner's iPhone and record layout, rotation, touch, legibility, load time, memory (R4) and the top-out frame (R6). After `SM-14` (serving to a phone on the LAN) and `SM-08`. |
-| `BDP-10` | DECISION | could | XS | The owner decides whether the iPhone's evidence alone may lift the bundle page's phone gate, or an Android run (`SM-44`) is required. The lift itself also waits on `SM-13` and `BDP-09`. |
-| `SM-44` | DEFERRED | could | S | The same real-phone record on a mid-range Android phone in Chrome. Waits on a borrowed phone; none is owned. |
+| `BDP-10` | BLOCKED | could | XS | Lift the bundle page's phone gate after `SM-13` and `BDP-09`. The owner approved iPhone-only evidence; Android is not a prerequisite. [Decision](docs/product/BACKLOG.md#decisions-only-the-owner-can-make). |
+| `SM-44` | DEFERRED | could | S | Optional future real-phone record on a mid-range Android phone in Chrome. Waits on a borrowed phone; none is accessible. Does not gate iPhone acceptance. |
 | `WEB#2` | BLOCKED | could | S | A standard-mapping pad in Firefox and Safari (Chrome is `BDP-06`'s), and unplug and replug with more than four pads seen. Firefox can ride `OCA-48`'s session; Safari waits on `SM-09`, and five pads are not owned. |
 | `WEB#5` | BLOCKED | could | S | Touch on real glass: several fingers with distinct ids, no tap also a click, foreground loss cancelling every point, LineSweeper's buttons through `WM_POINTER`, a pen as the mouse, Firefox and Safari. Needs a touchscreen. |
 
@@ -104,7 +106,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `PI-09` | DECISION | should | S | The owner decides what private ColourWars detail may be published; then the live drafts (fifteen on 2026-10-22, the packaging gap among them) are rechecked against master and filed through the stated route, or withdrawn with a reason. `PI-10` answers them. |
+| `PI-09` | OPEN | should | S | Recheck the ColourWars drafts against master and file or withdraw each with a reason, using only minimal engine-focused disclosure. Keep private client paths, names and lines out. `PI-10` answers them. |
 | `DOC#4` | WAITING | should | S | When ColourWars' repository goes public (the owner expects it within weeks of 2026-10-13): sweep the tree's "private" and "not public" mentions of it outside dated records, link the repository from the README and the site, and recheck `PI-09`, which then narrows to what its drafts say. |
 | `PI-14` | OPEN | should | M | A ColourWars Release ZIP at a current pin, run (or refused loudly) on a clean Windows install without Visual Studio, with edition, GPU, driver and commits named; `tools/consumer_check/sandbox.py` runs it. |
 
@@ -114,9 +116,8 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SRL-14` | DECISION | could | S | The owner says whether the "Introduction to C++" series is not started, planned with an outline, or withdrawn. |
-| `SRL-07` | DECISION | could | S | The owner chooses between amending CONVENTIONS to accept the 26 SCREAMING constants and renaming them in both repositories. |
-| `OCA-66` | DECISION | could | S | The owner decides whether the default DPI awareness stays unaware or becomes per-monitor aware. |
+| `SRL-07` | OPEN | could | S | Rename non-macro uppercase constants to `snake_case`, migrate callers in both repositories, and record every old/new spelling. The owner chose renaming; CONVENTIONS stays. [Scope](docs/product/BACKLOG.md#later). |
+| `OCA-66` | OPEN | could | S | Declare per-monitor DPI awareness in the Windows samples/template and document the choice; review and record the template at 150% scaling. Implementation remains. [Scope](docs/product/BACKLOG.md#later). |
 | `SM-43` | OPEN | should | M | Local build, tooling and website checks pass; verify PR CI ([evidence](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance)). |
 
 ## Ports
