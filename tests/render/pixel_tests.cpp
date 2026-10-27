@@ -76,7 +76,7 @@
 //
 // TEXT IS PINNED BY THE SECOND HALF OF THIS FILE, and it is pinned as
 // relationships rather than as colours. A sprite case above can assert that one
-// pixel is exactly red_pixel because the test texture has four flat texels in it. A
+// pixel is exactly red because the test texture has four flat texels in it. A
 // glyph has neither property: its edges are anti-aliased, and the atlas a
 // .spritefont carries is block-compressed, so the coverage value at any one
 // pixel is a fact about the compressor. What a caller actually depends on is
@@ -2055,7 +2055,7 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 	}
 }
 
-TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not zero")
+TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not ZERO")
 {
 	Harness harness;
 
