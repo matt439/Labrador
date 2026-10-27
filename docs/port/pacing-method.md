@@ -320,8 +320,9 @@ denied and stopped. No generated-output link or browser run is claimed.
 
 Release rasterizing browser builds now register `LineSweeperPacingPageTests`
 for the driver above when Chromium is found. Registration was checked with
-`ctest --preset wasm-release -N` (31 entries); the new test has not run here.
+`ctest --preset wasm-release -N` (31 entries, 32 since
+`LineSweeperReducedMotionPageTests`); the new test has not run here.
 Run it and the ordinary `LineSweeperPageTests` once the recorded access gates
-are resolved. Debug retains 30 entries with Chromium, and configurations with
+are resolved. Debug retains 31 entries with Chromium, and configurations with
 no Chromium retain 19; the null-render browser configuration omits this
 WebGL acceptance entry.

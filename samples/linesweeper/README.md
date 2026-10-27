@@ -68,7 +68,14 @@ and phone-layout checks pass. Android remains unverified.
 
 The landing shadow's edge stands out from the empty well at 3:1 or more for
 every piece, checked by a test (*The landing shadow is an outline*).
-Reduced-motion options (`BDP-22`) and selectable colour-vision-deficiency
+In a browser, `main_web.cpp` asks `prefers-reduced-motion` once at start and
+logs which field it made; a player who has asked for reduced motion gets every
+burst with `sparks_per_cell`'s reduced count, an eighth of each cell's sparks
+rounded up (`particles.h`, `Motion`). The bursts keep their heat, so the flash
+check below still bounds them. The desktop build does not read the system's
+animation setting and always plays the full field. `LineSweeperViewTests`
+holds the reduced counts, and `LineSweeperReducedMotionPageTests` runs the page
+with the preference emulated. Selectable colour-vision-deficiency
 palettes (`BDP-25`) remain planned. LineSweeper owns the palette work: the
 agreed groups are **Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and
 **Tritanomaly / Tritanopia**. Their colours and player validation remain open

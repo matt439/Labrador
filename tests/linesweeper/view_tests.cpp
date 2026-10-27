@@ -14,6 +14,7 @@ using labrador::StepPosition;
 using labrador::TextureHandle;
 using linesweeper::Coord;
 using linesweeper::Kind;
+using linesweeper::Motion;
 using linesweeper::ParticleField;
 using linesweeper::Piece;
 using linesweeper::TickResult;
@@ -23,8 +24,10 @@ using linesweeper::particle_capacity;
 using linesweeper::piece_cell_count;
 using linesweeper::piece_cells;
 using linesweeper::shadow;
+using linesweeper::sparks_per_cell;
 using linesweeper::well_columns;
 using linesweeper::well_rows;
+using linesweeper::well_visible_rows;
 
 // The particle field, stepped with no device.
 //
@@ -438,11 +441,12 @@ namespace
 	// Each of these builds its field in a frame of its own, because a field
 	// is 320 KB and a debug build gives every local in one test case a slot
 	// of its own: four of them in one function overflow the default stack.
-	Burst piece_landing()
+	Burst piece_landing(Motion motion = Motion::full)
 	{
 		World world;
 		TickResult result;
-		ParticleField field(&world, &result, TextureHandle{});
+		ParticleField field(&world, &result, TextureHandle{}, nullptr,
+			motion);
 
 		fill(world, 0, well_rows - 1);
 		++world.tick;
@@ -451,11 +455,12 @@ namespace
 		return Burst{ field.live(), field.hottest() };
 	}
 
-	Burst row_leaving()
+	Burst row_leaving(Motion motion = Motion::full)
 	{
 		World world = about_to_clear();
 		TickResult result;
-		ParticleField field(&world, &result, TextureHandle{});
+		ParticleField field(&world, &result, TextureHandle{}, nullptr,
+			motion);
 
 		lock_and_clear(world, result);
 		field.update(0.0f);
@@ -463,7 +468,7 @@ namespace
 		return Burst{ field.live(), field.hottest() };
 	}
 
-	Burst full_well_topping_out()
+	Burst full_well_topping_out(Motion motion = Motion::full)
 	{
 		World world;
 
@@ -473,7 +478,8 @@ namespace
 		}
 
 		TickResult result;
-		ParticleField field(&world, &result, TextureHandle{});
+		ParticleField field(&world, &result, TextureHandle{}, nullptr,
+			motion);
 
 		world.topped_out = 1;
 		++world.tick;
@@ -703,6 +709,50 @@ namespace
 			REQUIRE(field.live() > 0);
 			CHECK(field.bounds().width > 0.0f);
 			CHECK(field.bounds().height > 0.0f);
+		}
+	}
+
+	// BDP-22: a player who asked for reduced motion gets the same bursts with
+	// at most sparks_per_cell's reduced count from each cell, and still some.
+	// Each burst's full count per cell is read off the full field, so the
+	// tuning in particles.cpp can move without this moving.
+	TEST_CASE("a reduced field throws each burst with at most its reduced count")
+	{
+		SUBCASE("a piece landing, one cell")
+		{
+			const int full = piece_landing().live;
+			const int reduced = piece_landing(Motion::reduced).live;
+			CHECK(reduced > 0);
+			CHECK(reduced <= sparks_per_cell(full, Motion::reduced));
+		}
+
+		SUBCASE("a row leaving, ten cells")
+		{
+			const int full = row_leaving().live;
+			REQUIRE(full % well_columns == 0);
+			const int reduced = row_leaving(Motion::reduced).live;
+			CHECK(reduced > 0);
+			CHECK(reduced <= well_columns *
+				sparks_per_cell(full / well_columns, Motion::reduced));
+		}
+
+		SUBCASE("the whole well topping out, two hundred cells")
+		{
+			const int cells = well_columns * well_visible_rows;
+			const int full = full_well_topping_out().live;
+			REQUIRE(full % cells == 0);
+			const int reduced = full_well_topping_out(Motion::reduced).live;
+			CHECK(reduced > 0);
+			CHECK(reduced <= cells *
+				sparks_per_cell(full / cells, Motion::reduced));
+		}
+
+		SUBCASE("and a full field is what it was")
+		{
+			CHECK(sparks_per_cell(48, Motion::full) == 48);
+			CHECK(sparks_per_cell(48, Motion::reduced) == 6);
+			CHECK(sparks_per_cell(10, Motion::reduced) == 2);
+			CHECK(sparks_per_cell(1, Motion::reduced) == 1);
 		}
 	}
 }

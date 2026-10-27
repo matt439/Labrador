@@ -10,6 +10,9 @@
 //                     --quit-keys <code,code,...> [--frames <n>]
 //                     [--timeout <seconds>]
 //
+// Either form also takes [--emulate-media <feature>=<value>] and
+// [--expect-console <text>].
+//
 // ctest's command for RenderPixelTests and RenderContextLossTests in the
 // wasm-* presets (tests/render/CMakeLists.txt), for WebWindowTests
 // (tests/app/CMakeLists.txt), and for each sample's development page (the
@@ -69,6 +72,13 @@
 // WEBGL_compressed_texture_s3tc hidden, which is what most phones' browsers
 // offer. The run fails if a context made after the page finished still sees
 // the extension, so a hide that did not take cannot pass for one that did.
+//
+// --emulate-media sets one CSS media feature for the page before it loads,
+// through Emulation.setEmulatedMedia: prefers-reduced-motion=reduce is how
+// LineSweeperReducedMotionPageTests stands in for a player who has asked
+// their system for reduced motion. --expect-console fails a run, whatever its
+// exit, in which no console message the page logged contains the text, so a
+// page's own report of what it read is held as well as its exit.
 //
 // WHAT IT DOES, IN ORDER. Serves the page's folder over HTTP on a loopback
 // port, because a browser will not compile a module read from file://. Starts
@@ -502,6 +512,8 @@ async function run() {
 	const sample_complaints = { count: 0 };
 	let devtools;
 	let browser = 'unknown (DevTools did not answer)';
+	// Every console message the page logged, for --expect-console.
+	const console_heard = [];
 	try {
 		devtools = new DevTools(await Promise.race([
 			endpoint,
@@ -547,6 +559,7 @@ async function run() {
 			if (message.method === 'Runtime.consoleAPICalled') {
 				const text = console_text(message.params.args) + '\n';
 				const type = message.params.type;
+				console_heard.push(text);
 				if (type === 'error' || type === 'warning' || type === 'assert') {
 					process.stderr.write(text);
 					complaint('console', type, text.trimEnd());
@@ -575,6 +588,15 @@ async function run() {
 		await devtools.send('Log.enable', {}, session);
 		await devtools.send('Page.enable', {}, session);
 		if (input_driver?.prepare) { await input_driver.prepare(page_api); }
+		if (options['emulate-media']) {
+			const [name, value] = options['emulate-media'].split('=');
+			if (!name || value === undefined) {
+				fail_usage(`--emulate-media takes <feature>=<value>, not "${options['emulate-media']}"`);
+			}
+			await devtools.send('Emulation.setEmulatedMedia',
+				{ features: [{ name, value }] }, session);
+			process.stdout.write(`run_page: emulating ${name}: ${value}\n`);
+		}
 		if (options['hide-extension']) {
 			await devtools.send('Page.addScriptToEvaluateOnNewDocument', {
 				source: hide_extension_script(options['hide-extension']),
@@ -653,6 +675,12 @@ async function run() {
 			exit_code = outcome.code;
 		}
 
+		if (options['expect-console'] !== undefined &&
+			!console_heard.some((text) => text.includes(options['expect-console']))) {
+			process.stderr.write(`run_page: the page logged no console message containing ` +
+				`"${options['expect-console']}", which --expect-console requires\n`);
+			exit_code = exit_code === 0 ? 1 : exit_code;
+		}
 		if (options['browser-warnings'] === 'fail' && browser_complaints > 0) {
 			process.stderr.write(`run_page: the browser logged ${browser_complaints} ` +
 				'warning(s) or error(s), and --browser-warnings fail counts each as a failure\n');

@@ -31,7 +31,10 @@ namespace linesweeper
 	class PlayState : public labrador::State
 	{
 	public:
-		explicit PlayState(labrador::Application* app);
+		// `motion` is how much the particle field throws (particles.h): the
+		// browser build passes what the page's reduced-motion query said.
+		explicit PlayState(labrador::Application* app,
+			Motion motion = Motion::full);
 
 		void init() override;
 		void update(float dt) override;
@@ -72,6 +75,7 @@ namespace linesweeper
 		// Borrowed. The shell built every service before this existed and
 		// outlives it (PHILOSOPHY, Services and lifetimes).
 		labrador::Application* app_ = nullptr;
+		Motion motion_ = Motion::full;
 
 		// The match, by value, as a member. Not a unique_ptr, not a handle,
 		// not registered with anything - 276 bytes that die when this state
