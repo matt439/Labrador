@@ -24,6 +24,7 @@ add_library(LabradorEngine STATIC
     collision/resolve.cpp
     core/byte_reader.cpp
     core/file_path.cpp
+    core/random.cpp
     core/state.cpp
     core/state_context.cpp
     core/thread_pool.cpp
