@@ -1,0 +1,82 @@
+# Emscripten and ccache for the three browser jobs in ci.yml, which share one
+# compiler and so share its pins (EMSDK_VERSION, CCACHE_VERSION,
+# CCACHE_SHA256, CCACHE_DIR and CCACHE_MAXSIZE in that workflow's env).
+#
+# EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the
+# reason ci.yml finds vcvars64 through vswhere: the tools to do it are git and
+# the SDK itself, and a build that can be done with those should not add a
+# supply chain to do it. The version is pinned because it is the one this
+# build was proven on, and a compiler that moves under a -Werror build moves
+# it from green to red with no commit to blame. ccache is downloaded and
+# checked against its release's digest for the same reason.
+#
+# This is a local composite action, so it adds no job and changes no
+# required check.
+name: Emscripten and ccache
+description: Install the pinned Emscripten SDK at C:\emsdk and put ccache in front of its clang.
+
+inputs:
+  save-sdk:
+    description: >-
+      'true' in the one job that saves the installed SDK to the cache; the
+      others only restore it.
+    default: 'false'
+  objects:
+    description: >-
+      The ccache key's name. Each build keeps its own: one compiled with
+      other definitions would only evict another's objects.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # The SDK installed and activated, kept whole: unpacking it is most of
+    # what installing it costs on this runner.
+    - name: Cache Emscripten
+      id: save
+      if: inputs.save-sdk == 'true'
+      uses: actions/cache@v4
+      with:
+        path: C:\emsdk
+        key: emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}
+
+    - name: Restore Emscripten
+      id: restore
+      if: inputs.save-sdk != 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: C:\emsdk
+        key: emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}
+
+    - name: Install Emscripten
+      if: steps.save.outputs.cache-hit != 'true' && steps.restore.outputs.cache-hit != 'true'
+      shell: cmd
+      run: |
+        git clone --depth 1 https://github.com/emscripten-core/emsdk.git C:\emsdk
+        call C:\emsdk\emsdk.bat install %EMSDK_VERSION% || exit /b 1
+        call C:\emsdk\emsdk.bat activate %EMSDK_VERSION% || exit /b 1
+
+    # Emscripten runs EM_COMPILER_WRAPPER in front of every clang it starts.
+    # The compiler check is the pinned version rather than clang's mtime,
+    # because emsdk installs a fresh clang on every run and an mtime check
+    # would miss every time. The cache key is the run, so every run saves,
+    # and restores the newest; a pull request reads master's.
+    - name: Install ccache
+      shell: pwsh
+      run: |
+        $name = "ccache-$env:CCACHE_VERSION-windows-x86_64"
+        $zip = Join-Path $env:RUNNER_TEMP "$name.zip"
+        Invoke-WebRequest -Uri "https://github.com/ccache/ccache/releases/download/v$env:CCACHE_VERSION/$name.zip" -OutFile $zip
+        if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $env:CCACHE_SHA256) {
+          throw "$name.zip does not match CCACHE_SHA256."
+        }
+        Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+        echo "EM_COMPILER_WRAPPER=$env:RUNNER_TEMP\$name\ccache.exe" >> $env:GITHUB_ENV
+        echo "CCACHE_COMPILERCHECK=string:emsdk-$env:EMSDK_VERSION" >> $env:GITHUB_ENV
+
+    - name: Cache compiled objects
+      uses: actions/cache@v4
+      with:
+        path: C:\ccache
+        key: ccache-${{ inputs.objects }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: ccache-${{ inputs.objects }}-
