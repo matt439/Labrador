@@ -108,7 +108,6 @@ namespace labrador
 		void add_child(UiObject* child);
 		void remove_child(const std::string& name);
 		void remove_child(const UiObject* child);
-		void remove_all_children();
 		size_t child_count() const;
 		std::vector<std::pair<std::string, UiObject*>> children();
 
@@ -161,7 +160,6 @@ namespace labrador
 		RectangleF bounds() const override;
 		RectangleF cull_bounds(float units_per_pixel) const override;
 
-		void set_texture(const std::string& sheet_name, const std::string& frame_name);
 		void set_sprite_frame(const std::string& frame_name);
 		void set_colour(const Colour& colour) override;
 		void set_position(const Vector2F& position);
@@ -169,7 +167,6 @@ namespace labrador
 		void set_width(float width);
 		void set_height(float height);
 		void set_size(const Vector2F& size);
-		void set_position_from_top_right_origin(const Vector2F& position);
 
 		const RectangleF& rectangle() const;
 	private:

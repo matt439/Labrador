@@ -72,6 +72,27 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Remove public members that nothing calls or tests
+
+**Source break.** These members had no caller in the engine, the samples, the
+tests or the benchmark, and no test, which a public primitive needs. They are
+removed:
+
+| Type | Removed |
+|---|---|
+| `RectangleF` | `set_position_x`, `set_position_y`, `set_position_x_from_right`, `set_position_y_from_bottom`, both `set_position_from_bottom_left` and both `set_position_from_bottom_right` overloads, both `from_top_left_bottom_right` overloads, `rectangle_i` |
+| `RectangleI` | `set_left`, `set_top`, `set_right`, `set_bottom`, `set_top_left`, `set_bottom_right`, `set_top_left_and_bottom_right` |
+| `Colour` | `saturate`, `darken`, `invert`, `make_opaque`, `make_transparent` |
+| `Camera` | `calculate_intermediate_camera` |
+| `UiContainer` | `remove_all_children` |
+| `UiTexture` | `set_texture`, `set_position_from_top_right_origin` |
+| `Button` | `has_action` |
+
+`rectanglef.h` no longer declares `RectangleI`; include
+`engine/math/rectanglei.h` for it. To migrate, set the fields directly
+(`rectangle.x = ...`, `colour.a = 1.0f`), or keep a copy of the removed
+function in the game. No sample used any of them, so there is no sample diff.
+
 ### 2026-10-27 - Spell constants in snake_case
 
 **Source break.** Public constants follow the CONVENTIONS rule that only a

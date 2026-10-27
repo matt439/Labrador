@@ -31,11 +31,6 @@ namespace labrador
 		return this->visual_;
 	}
 
-	bool Button::has_action() const
-	{
-		return static_cast<bool>(this->on_activate_);
-	}
-
 	bool Button::activate() const
 	{
 		const std::shared_ptr<Action> action = this->on_activate_;

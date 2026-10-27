@@ -122,43 +122,12 @@ namespace labrador
 		this->b = byte_at(hex, 4);
 		this->a = has_alpha ? byte_at(hex, 6) : 1.0f;
 	}
-	void Colour::saturate(float amount)
-	{
-		const float luminance =
-			this->r * 0.3f + this->g * 0.59f + this->b * 0.11f;
-		this->r = luminance + amount * (this->r - luminance);
-		this->g = luminance + amount * (this->g - luminance);
-		this->b = luminance + amount * (this->b - luminance);
-		this->clamp_colours();
-	}
 	void Colour::brighten(float amount)
 	{
 		this->r += amount;
 		this->g += amount;
 		this->b += amount;
 		this->clamp_colours();
-	}
-	void Colour::darken(float amount)
-	{
-		this->r -= amount;
-		this->g -= amount;
-		this->b -= amount;
-		this->clamp_colours();
-	}
-	void Colour::invert()
-	{
-		this->r = 1.0f - this->r;
-		this->g = 1.0f - this->g;
-		this->b = 1.0f - this->b;
-		this->clamp_colours();
-	}
-	void Colour::make_opaque()
-	{
-		this->a = 1.0f;
-	}
-	void Colour::make_transparent()
-	{
-		this->a = 0.0f;
 	}
 	void Colour::clamp_colours()
 	{

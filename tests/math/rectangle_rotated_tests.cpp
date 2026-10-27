@@ -158,6 +158,13 @@ TEST_SUITE("RectangleRotated")
 		CHECK(are_equal(rr.half_x_width(), 5.0f));
 		CHECK(rr.is_valid());
 
+		CHECK_THROWS_AS([&] { rr.set_half_y_width(-1.0f); }(), std::invalid_argument);
+		CHECK(are_equal(rr.half_y_width(), 5.0f));
+		rr.set_half_y_width(3.0f);
+		CHECK(are_equal(rr.half_y_width(), 3.0f));
+		rr.set_half_y_width(5.0f);
+		CHECK(rr.is_valid());
+
 		CHECK_THROWS_AS([&] { rr.set_half_extents(Vector2F(0.0f, 0.0f)); }(), std::invalid_argument);
 		CHECK(are_equal(rr.half_x_width(), 5.0f));
 		CHECK(are_equal(rr.half_y_width(), 5.0f));

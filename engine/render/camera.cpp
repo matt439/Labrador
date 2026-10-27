@@ -63,11 +63,6 @@ namespace labrador
 		view_rectangle.width = world_rectangle.width * camera.scale;
 		view_rectangle.height = world_rectangle.height * camera.scale;
 	}
-	Camera Camera::calculate_intermediate_camera(const Camera& first, const Camera& last, float amount)
-	{
-		return Camera(Vector2F::lerp(first.translation, last.translation, amount),
-			lerp(first.scale, last.scale, amount));
-	}
 	Camera Camera::frame(const RectangleF& world_rectangle,
 		const Viewport& viewport)
 	{

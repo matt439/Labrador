@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 using labrador::BroadPhase;
@@ -269,5 +270,25 @@ TEST_SUITE("BroadPhaseTests")
 
 		CHECK(swept.size() == 1);
 		CHECK(same(swept, indexed));
+	}
+
+	TEST_CASE("only an object covering many cells is set aside, and only for that call")
+	{
+		Rng rng;
+		std::vector<std::unique_ptr<Box>> boxes =
+			scatter(20, rng, 400.0f, 10.0f, 10.0f);
+		boxes.push_back(std::make_unique<Box>(
+			RectangleF(0.0f, 0.0f, 5000.0f, 5000.0f), world_layer, mover_layer));
+
+		BroadPhase broad_phase;
+		std::vector<std::pair<int, int>> pairs;
+		broad_phase.find_pairs(pointers(boxes), pairs);
+		CHECK(broad_phase.large_object_count() == 1);
+
+		// Without the giant every box fits the grid, and the count is this
+		// call's rather than a total.
+		boxes.pop_back();
+		broad_phase.find_pairs(pointers(boxes), pairs);
+		CHECK(broad_phase.large_object_count() == 0);
 	}
 }

@@ -45,10 +45,6 @@ namespace labrador
 	{
 		return !(*this == other);
 	}
-	//bool Circle::contains(const Vector2F& point) const
-	//{
-	//	return Vector2F::distance(this->center_, point) <= this->radius_;
-	//}
 	Point2F Circle::center() const
 	{
 		return this->center_;

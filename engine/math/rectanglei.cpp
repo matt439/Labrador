@@ -97,24 +97,6 @@ namespace labrador
 		this->x += amount.x;
 		this->y += amount.y;
 	}
-	void RectangleI::set_left(int left)
-	{
-		this->width += this->x - left;
-		this->x = left;
-	}
-	void RectangleI::set_top(int top)
-	{
-		this->height += this->y - top;
-		this->y = top;
-	}
-	void RectangleI::set_right(int right)
-	{
-		this->width = right - this->x;
-	}
-	void RectangleI::set_bottom(int bottom)
-	{
-		this->height = bottom - this->y;
-	}
 	void RectangleI::set_position(const Vector2I& position)
 	{
 		this->x = position.x;
@@ -124,26 +106,6 @@ namespace labrador
 	{
 		this->width = size.x;
 		this->height = size.y;
-	}
-	void RectangleI::set_top_left(const Vector2I& top_left)
-	{
-		this->width += this->x - top_left.x;
-		this->height += this->y - top_left.y;
-		this->x = top_left.x;
-		this->y = top_left.y;
-	}
-	void RectangleI::set_bottom_right(const Vector2I& bottom_right)
-	{
-		this->width = bottom_right.x - this->x;
-		this->height = bottom_right.y - this->y;
-	}
-	void RectangleI::set_top_left_and_bottom_right(const Vector2I& top_left,
-		const Vector2I& bottom_right)
-	{
-		this->width = bottom_right.x - top_left.x;
-		this->height = bottom_right.y - top_left.y;
-		this->x = top_left.x;
-		this->y = top_left.y;
 	}
 	constinit const RectangleI RectangleI::zero = { 0, 0, 0, 0 };
 
