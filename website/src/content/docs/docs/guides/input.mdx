@@ -158,6 +158,9 @@ one every interval. LineSweeper's pause menu combines the keyboard and the pad, 
 
 <SourceFile path="samples/linesweeper/states/pause_state.cpp" from="Direction PauseState::held_direction() const" to="}" />
 
+All four directions are read, and the menu decides what each means: up and down move the cursor,
+and left and right change the piece palette on its *Colours* row.
+
 <SourceFile
 	path="samples/linesweeper/states/pause_state.cpp"
 	from="const Direction direction ="

@@ -175,17 +175,27 @@ if(PROJECT_IS_TOP_LEVEL)
                     ${ARGN}
             )
         endfunction()
-        # The pause menu: RESUME, RESTART, QUIT. The page reports which
-        # particle field it made from prefers-reduced-motion, once for each
-        # value emulated, since a CI runner's own setting may be either.
+        # The pause menu: RESUME, RESTART, COLOURS, QUIT. The page reports
+        # which particle field it made from prefers-reduced-motion, once for
+        # each value emulated, since a CI runner's own setting may be either.
         labrador_sample_page_test(LineSweeperPageTests LineSweeperSample
-            "Escape,ArrowDown,ArrowDown,Enter"
+            "Escape,ArrowDown,ArrowDown,ArrowDown,Enter"
             --emulate-media "prefers-reduced-motion=no-preference"
             --expect-console "LineSweeper: motion full")
         labrador_sample_page_test(LineSweeperReducedMotionPageTests
-            LineSweeperSample "Escape,ArrowDown,ArrowDown,Enter"
+            LineSweeperSample "Escape,ArrowDown,ArrowDown,ArrowDown,Enter"
             --emulate-media "prefers-reduced-motion=reduce"
             --expect-console "LineSweeper: motion reduced")
+        # On COLOURS, left steps back (wrapping from STANDARD to tritan),
+        # right steps on, and Enter steps on (wrapping back to STANDARD) and
+        # keeps the menu open: standard, tritan, deutan, tritan, standard,
+        # protan. Had left or right moved the cursor instead, Enter would
+        # land on another row. QUIT then closes the menu, and the match logs
+        # the palette it was left in before it quits.
+        labrador_sample_page_test(LineSweeperPalettePageTests
+            LineSweeperSample
+            "Escape,ArrowDown,ArrowDown,ArrowLeft,ArrowLeft,ArrowRight,Enter,Enter,ArrowDown,Enter"
+            --expect-console "LineSweeper: palette Protanomaly / Protanopia")
         labrador_sample_page_test(LocalMultiplayerPageTests
             LocalMultiplayerSample "Escape")
         # Escape asks, and Enter answers yes.

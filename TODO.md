@@ -35,7 +35,6 @@ An index of open work, one row per item; each row points to the document that ow
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `BDP-25` | OPEN | could | M | Implement the three agreed colour-vision-deficiency palette groups in LineSweeper; [BACKLOG](docs/product/BACKLOG.md#bdp-25) owns their full names, scope and acceptance. |
 | `SITE#3` | OPEN | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 
 The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).

@@ -12,6 +12,8 @@
 #include "engine/render/viewport.h"
 #include "samples/linesweeper/presentation/palette.h"
 
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <memory>
@@ -35,6 +37,15 @@ namespace linesweeper
 		constexpr float first_row_y = 312.0f;
 		constexpr float row_spacing = 44.0f;
 
+		// Where the row at `index` from the top sits.
+		constexpr float row_y(std::size_t index)
+		{
+			return first_row_y + static_cast<float>(index) * row_spacing;
+		}
+
+		// COLOURS is the third row, above QUIT.
+		constexpr std::size_t colours_row_index = 2;
+
 		constexpr Colour title_colour(200, 208, 222);
 
 		// How much of the screen a row answers a finger over: the full gap
@@ -42,6 +53,46 @@ namespace linesweeper
 		// bounds are the text the font measured, sixteen units tall, which is
 		// a target a thumb misses on a phone.
 		constexpr float row_tap_half_width = 160.0f;
+
+		// A row wider than the band above - the COLOURS row naming a palette
+		// is nearly five hundred units - answers its whole measured width and
+		// this much more either side, so a finger on its last word is still
+		// on it.
+		constexpr float row_tap_margin = 16.0f;
+
+		// What the COLOURS row says for `palette`.
+		std::wstring colours_text(Palette palette)
+		{
+			return std::wstring(L"COLOURS: ") + palette_name(palette);
+		}
+
+		// CENTRED BY MEASURING, NOT BY COUNTING CHARACTERS. The HUD in
+		// board_view.cpp columnises by hand and says it only works because the
+		// font is monospaced; that is true and it is a property of this one
+		// font. A menu whose rows are different lengths should not inherit it,
+		// and `measure_text` is on the seam for exactly this
+		// (render_resources.h). Measured when a row's text is set, never in
+		// draw().
+		//
+		// Centred on the landscape screen, which in portrait is the middle of
+		// the well: both arrangements put that column in the middle of the
+		// buffer.
+		//
+		// AND PUT ON A WHOLE UNIT OF BOARD SPACE. Half of an odd width is half
+		// a unit, and at 1280x720, where the arrangement's camera is the
+		// identity (presentation/arrangement.h), a unit is a pixel:
+		// point-sampled text there is a tie each backend breaks its own way
+		// (renderer.h, draw_text). RESTART is one such row. At any other
+		// buffer the camera scales the text, which is outside draw_text's
+		// contract at a scale of one, and no rounding of the position puts
+		// every glyph's texels on whole pixels.
+		Vector2F centred(const RenderResources& resources, FontHandle font,
+			const std::wstring& text, float y)
+		{
+			const Vector2F size = resources.measure_text(font, text);
+
+			return Vector2F(std::floor((landscape_width - size.x) * 0.5f), y);
+		}
 
 		// How dark the match goes while the menu is up. Premultiplied black,
 		// so it leaves a quarter of the board showing through and reads as a
@@ -101,7 +152,9 @@ namespace linesweeper
 		};
 	}
 
-	PauseState::PauseState(Application* app) : app_(app)
+	PauseState::PauseState(Application* app, Palette* palette) :
+		app_(app),
+		palette_(palette)
 	{
 
 	}
@@ -109,7 +162,7 @@ namespace linesweeper
 	void PauseState::init()
 	{
 		RenderResources* resources = this->app_->render_resources();
-		const FontHandle font = resources->resolve_sprite_font(font_name);
+		this->font_ = resources->resolve_sprite_font(font_name);
 
 		this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 
@@ -122,75 +175,65 @@ namespace linesweeper
 			resources->resolve_texture(block_texture_name),
 			&this->arrangement_.visible));
 
-		// CENTRED BY MEASURING, NOT BY COUNTING CHARACTERS. The HUD in
-		// board_view.cpp columnises by hand and says it only works because the
-		// font is monospaced; that is true and it is a property of this one
-		// font. A menu whose rows are different lengths should not inherit it,
-		// and `measure_text` is on the seam for exactly this
-		// (render_resources.h). Measured once here, never in draw().
-		//
-		// Centred on the landscape screen, which in portrait is the middle of
-		// the well: both arrangements put that column in the middle of the
-		// buffer.
-		//
-		// AND PUT ON A WHOLE UNIT OF BOARD SPACE. Half of an odd width is half
-		// a unit, and at 1280x720, where the arrangement's camera is the
-		// identity (presentation/arrangement.h), a unit is a pixel:
-		// point-sampled text there is a tie each backend breaks its own way
-		// (renderer.h, draw_text). RESTART is one such row. At any other
-		// buffer the camera scales the text, which is outside draw_text's
-		// contract at a scale of one, and no rounding of the position puts
-		// every glyph's texels on whole pixels.
-		const auto centred = [&](const std::wstring& text, float y)
-		{
-			const Vector2F size = resources->measure_text(font, text);
-
-			return Vector2F(std::floor((landscape_width - size.x) * 0.5f), y);
-		};
-
 		this->scene_->add(std::make_unique<UiText>("title", L"PAUSED",
-			font_name, centred(L"PAUSED", title_y), resources, title_colour));
+			font_name, centred(*resources, this->font_, L"PAUSED", title_y),
+			resources, title_colour));
 
-		// THE THREE ROWS, AND THE ACTIONS ARE THE GAME'S HALF OF button.h's
+		// THE FOUR ROWS, AND THE ACTIONS ARE THE GAME'S HALF OF button.h's
 		// split: the engine knows which row the cursor is on and when the
 		// player pressed A, and knows nothing about what pressing it does.
 		//
-		// Each action pops this state with its answer. That is safe from
-		// inside `update()` - which is where `FocusGroup::activate` is called
-		// from - because `StateContext::pop` is queued while the context has
-		// something of its own on the stack, and applied after update()
-		// returns. Without that it would be a use-after-free of the most
-		// literal kind: the pop destroys this object, and the `std::function`
-		// being executed is a member of a member of it.
+		// Three of the actions pop this state with their answer. That is safe
+		// from inside `update()` - which is where `FocusGroup::activate` is
+		// called from - because `StateContext::pop` is queued while the
+		// context has something of its own on the stack, and applied after
+		// update() returns. Without that it would be a use-after-free of the
+		// most literal kind: the pop destroys this object, and the
+		// `std::function` being executed is a member of a member of it.
+		//
+		// COLOURS sits above QUIT, so the way out stays the last row. Its
+		// action steps the palette and leaves the menu open, so the choice
+		// beside it is never given.
 		struct Row
 		{
-			const wchar_t* text;
+			std::wstring text;
 			PauseChoice choice;
 		};
 
-		const Row rows[] = {
+		const std::array<Row, 4> rows = { {
 			{ L"RESUME", PauseChoice::resume },
 			{ L"RESTART", PauseChoice::restart },
+			{ colours_text(*this->palette_), PauseChoice::resume },
 			{ L"QUIT", PauseChoice::quit },
-		};
+		} };
 
-		for (int index = 0; index < 3; ++index)
+		for (std::size_t index = 0; index < rows.size(); ++index)
 		{
-			const std::wstring text = rows[index].text;
-			const PauseChoice choice = rows[index].choice;
+			const Row& entry = rows[index];
 
 			UiText* row = this->scene_->add(std::make_unique<UiText>(
-				"row", text, font_name,
-				centred(text, first_row_y +
-					static_cast<float>(index) * row_spacing),
+				"row", entry.text, font_name,
+				centred(*resources, this->font_, entry.text, row_y(index)),
 				resources));
 
-			this->focus_.add(row, [this, choice]()
-				{
-					this->context()->pop(choice);
-				});
+			if (index == colours_row_index)
+			{
+				this->colours_row_ = row;
+				this->focus_.add(row, [this]()
+					{
+						this->select_palette(next_palette(*this->palette_));
+					});
+			}
+			else
+			{
+				const PauseChoice choice = entry.choice;
+				this->focus_.add(row, [this, choice]()
+					{
+						this->context()->pop(choice);
+					});
+			}
 
-			this->rows_[static_cast<std::size_t>(index)] = row;
+			this->rows_[index] = row;
 		}
 
 		// Adds are pending until a tick ends, and the frame drawn before the
@@ -217,6 +260,17 @@ namespace linesweeper
 			this->arrangement_.camera);
 	}
 
+	void PauseState::select_palette(Palette palette)
+	{
+		*this->palette_ = palette;
+
+		const std::wstring text = colours_text(palette);
+		this->colours_row_->set_text(text);
+		this->colours_row_->set_position(centred(
+			*this->app_->render_resources(), this->font_, text,
+			row_y(colours_row_index)));
+	}
+
 	UiText* PauseState::tapped_row() const
 	{
 		const Touch& touch = *this->app_->touch();
@@ -233,10 +287,13 @@ namespace linesweeper
 
 			for (UiText* row : this->rows_)
 			{
-				const Vector2F centre = row->bounds().center();
+				const RectangleF bounds = row->bounds();
+				const Vector2F centre = bounds.center();
+				const float half_width = std::max(row_tap_half_width,
+					bounds.width * 0.5f + row_tap_margin);
 
-				if (tap.x >= centre.x - row_tap_half_width &&
-					tap.x < centre.x + row_tap_half_width &&
+				if (tap.x >= centre.x - half_width &&
+					tap.x < centre.x + half_width &&
 					tap.y >= centre.y - row_spacing * 0.5f &&
 					tap.y < centre.y + row_spacing * 0.5f)
 				{
@@ -266,6 +323,16 @@ namespace linesweeper
 			return Direction::down;
 		}
 
+		if (keyboard.held(Key::left))
+		{
+			return Direction::left;
+		}
+
+		if (keyboard.held(Key::right))
+		{
+			return Direction::right;
+		}
+
 		// Slot 0, spelt here rather than tracked, because this is a one-player
 		// game - the same decision read_input() makes in play_state.cpp and
 		// for the same reason.
@@ -293,7 +360,7 @@ namespace linesweeper
 
 		// Cancel first, so that the key which opened the menu closes it
 		// whatever the cursor is on. A player who paused by accident should not
-		// have to read three rows to get back.
+		// have to read four rows to get back.
 		if (this->cancel_pressed())
 		{
 			this->context()->pop(PauseChoice::resume);
@@ -303,12 +370,24 @@ namespace linesweeper
 		const Direction direction =
 			this->repeat_.update(this->held_direction(), dt);
 
-		if (direction != Direction::none)
+		// Up and down walk the rows. Left and right change the palette when
+		// the cursor is on COLOURS and do nothing anywhere else: the rows are
+		// one column, so a sideways walk could only wrap the cursor somewhere
+		// the player did not point.
+		if (direction == Direction::up || direction == Direction::down)
 		{
 			// The return value is "focus actually moved", which is the signal a
 			// cursor sound hangs on (focus.h). This sample has no audio, so it
 			// is deliberately ignored rather than plumbed to nothing.
 			this->focus_.move(0, direction);
+		}
+		else if ((direction == Direction::left ||
+				direction == Direction::right) &&
+			this->focus_.focused(0) == this->colours_row_)
+		{
+			this->select_palette(direction == Direction::left ?
+				previous_palette(*this->palette_) :
+				next_palette(*this->palette_));
 		}
 
 		if (this->confirm_pressed())

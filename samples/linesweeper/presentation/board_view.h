@@ -6,6 +6,7 @@
 #include "engine/render/colour.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
+#include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/rules/world.h"
 
 #include <cstdint>
@@ -37,14 +38,20 @@ namespace linesweeper
 	class BoardView final : public labrador::GameObject
 	{
 	public:
-		// Both borrowed. The state owns the World by value and outlives this,
-		// and the resource table was filled before either existed
-		// (PHILOSOPHY, Services and lifetimes).
+		// All three borrowed. The state owns the World and the palette by
+		// value and outlives this, and the resource table was filled before
+		// either existed (PHILOSOPHY, Services and lifetimes).
+		//
+		// `palette` is read on every draw and never written here, so the
+		// state can change it between two frames and the next one shows it
+		// (palette.h). It is required: nothing draws a piece without saying
+		// which palette it is in.
 		//
 		// The handles are resolved here, once, and never looked up by name
 		// again - which is the only thing T7 asks of a name.
 		BoardView(const World* world,
-			labrador::RenderResources* render_resources);
+			labrador::RenderResources* render_resources,
+			const Palette* palette);
 
 		// Rebuilds the four strings the HUD draws, and only when the number
 		// behind one has changed.
@@ -89,6 +96,7 @@ namespace linesweeper
 			const labrador::Vector2F& origin) const;
 
 		const World* world_ = nullptr;
+		const Palette* palette_ = nullptr;
 
 		labrador::TextureHandle block_;
 		labrador::FontHandle font_;

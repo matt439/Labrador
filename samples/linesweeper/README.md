@@ -75,11 +75,18 @@ rounded up (`particles.h`, `Motion`). The bursts keep their heat, so the flash
 check below still bounds them. The desktop build does not read the system's
 animation setting and always plays the full field. `LineSweeperViewTests`
 holds the reduced counts, and `LineSweeperReducedMotionPageTests` runs the page
-with the preference emulated. Selectable colour-vision-deficiency
-palettes (`BDP-25`) remain planned. LineSweeper owns the palette work: the
-agreed groups are **Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and
-**Tritanomaly / Tritanopia**. Their colours and player validation remain open
-in the [palette plan](../../docs/product/BACKLOG.md#bdp-25).
+with the preference emulated.
+
+The pause menu's COLOURS row selects one of four piece palettes: STANDARD and
+one each for **Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and
+**Tritanomaly / Tritanopia**. Enter, Space, A or a tap steps forward through
+them, and Left or Right steps either way while the row has the cursor. The
+pieces, the landing shadow, the hold slot, the next queue and the sparks all
+change on the next frame, and the match does not. A selection lasts until the
+program closes: nothing saves it, and nothing reads the system's colour
+settings to choose one. The palettes were chosen by simulation, and no player
+with a colour-vision deficiency has checked them yet
+(*Colour-vision palettes*, below).
 
 `LineSweeperBundlePageTests` checks that the note is visible and referenced
 before play and on the first and replay canvases, and that Tab moves focus
@@ -288,16 +295,109 @@ outline in the piece's own full-strength colour around an inside that keeps
 12.63 (O) and 13.54 (I). The faint inside, a fill alpha below 1, is what keeps
 it distinct from the opaque live piece of the same kind.
 
-`palette.h` owns the well colour and both shadow colours, and
-`tests/linesweeper/palette_tests.cpp` checks every kind's edge against the well
-through the premultiplied blend equation. A palette edit that drops a kind
-below 3:1 fails `LineSweeperViewTests`, which matters for the colour-vision
-palettes still to come. The test checks constants, not drawing:
-`board_view.cpp` draws the outline, and the captures are where it was looked
-at. Two limits remain. The one-pixel grid line just outside each cell is
-slightly lighter than the well, and J's edge measures about 3.3:1 against it.
-A phone's scaled-down board draws the two-pixel edge at about one pixel.
-Nobody has yet tested the shadow with low-vision players.
+`palette.h` owns the well colour, the grid line and both shadow colours, and
+`tests/linesweeper/palette_tests.cpp` checks every kind's edge in every palette
+against the well, and against the one-pixel grid line drawn over it just
+outside each cell, through the premultiplied blend equation. The grid line is
+slightly lighter than the well (24, 26, 30 once blended), so it is the harder
+of the two. A palette edit that drops a kind below 3:1 against either fails
+`LineSweeperViewTests`. The edges against the well, then the grid line:
+
+| Palette | Lowest against the well | Lowest against the grid line | Highest |
+|---|---|---|---|
+| Standard | 3.62 (J) | 3.26 (J) | 13.54 (I) |
+| Protanomaly / Protanopia | 3.67 (T) | 3.31 (T) | 15.92 (O) |
+| Deuteranomaly / Deuteranopia | 3.66 (S) | 3.30 (S) | 15.87 (O) |
+| Tritanomaly / Tritanopia | 3.69 (T) | 3.32 (T) | 14.34 (I) |
+
+Those tests check constants. `tests/linesweeper/board_view_tests.cpp` checks
+the drawing under the null renderer: every piece, shadow edge and shadow fill
+the board submits is the selected palette's colour for its kind. How the
+outline looks is the captures', where it was looked at. Two limits remain. A
+phone's scaled-down board draws the two-pixel edge at about one pixel. Nobody
+has yet tested the shadow with low-vision players.
+
+### Colour-vision palettes
+
+The genre's seven colours are hard to tell apart for some players. Simulated
+for protanopia, the standard J and T come out 2.8 apart by CIEDE2000 (method
+below), where the closest standard pair for a viewer with typical colour vision
+is 20.1 apart. So the sample has three more palettes, one for each group
+BDP-25 names, chosen from the pause menu (*Accessibility*, above). A palette
+changes how the pieces look and nothing else: it is not in `World`, not in a
+recording and not an input to `tick()`. `PlayState` owns the selection and
+lends it to the board and the particle field, and the pause menu is the one
+place that writes it (`presentation/palette.h`).
+
+| Kind | Standard | Protanomaly / Protanopia | Deuteranomaly / Deuteranopia | Tritanomaly / Tritanopia |
+|---|---|---|---|---|
+| I | 0, 240, 240 | 80, 255, 220 | 16, 252, 212 | 24, 248, 228 |
+| J | 0, 96, 240 | 0, 116, 255 | 40, 116, 228 | 0, 140, 196 |
+| L | 240, 152, 0 | 212, 132, 8 | 196, 144, 96 | 188, 100, 56 |
+| O | 240, 208, 0 | 244, 240, 0 | 255, 236, 0 | 204, 224, 28 |
+| S | 0, 208, 80 | 0, 132, 120 | 0, 126, 0 | 104, 116, 44 |
+| T | 168, 48, 240 | 204, 24, 124 | 244, 140, 255 | 148, 40, 255 |
+| Z | 240, 48, 48 | 244, 180, 224 | 188, 64, 120 | 244, 180, 220 |
+
+**Method.** Each of the three was held to two limits that tests enforce:
+
+- every kind's landing-shadow edge is at least 3:1 against the well and against
+  the grid line, by WCAG's relative luminance (*The landing shadow is an
+  outline*);
+- no kind is a saturated red by the flash check's measure, linear
+  `R / (R + G + B)` below 0.8. The highest are 0.74 (protan L and T), 0.68
+  (deutan Z) and 0.75 (tritan L). The standard Z is 0.94, and the standard
+  palette is left as it was.
+
+Inside those limits, each palette was searched to keep its seven as far apart
+as possible for its own group. Every pair was simulated and converted to
+CIELAB, and the pair's difference measured by CIEDE2000. The search started
+from hand-picked values, moved them locally, and then raised the darkest kinds
+until their edges also cleared the grid line, not only the well. Three
+simulations were used: Machado, Oliveira and Fernandes (2009) at severity 1.0
+(dichromacy) and 0.6 (a moderate anomaly), and, for protan and deutan,
+Viénot, Brettel and Mollon (1999). The closest pair in each palette:
+
+| Palette | Typical colour vision | Own group, Machado 1.0 | Machado 0.6 | Viénot |
+|---|---|---|---|---|
+| Standard, simulated as protan | 20.1 (L/O) | 2.8 (J/T) | 5.4 (J/T) | 4.6 (J/T) |
+| Standard, simulated as deutan | | 6.4 (J/T) | 4.2 (J/T) | 6.8 (J/T) |
+| Standard, simulated as tritan | | 11.5 (I/S) | 20.2 (L/O) | - |
+| Protanomaly / Protanopia | 32.2 (T/Z) | 22.8 (J/T) | 25.1 (L/O) | 22.5 (J/T) |
+| Deuteranomaly / Deuteranopia | 27.6 (T/Z) | 20.6 (L/S) | 21.5 (L/S) | 20.7 (L/S) |
+| Tritanomaly / Tritanopia | 33.7 (O/S) | 25.3 (I/J) | 29.3 (I/O) | - |
+
+The three palettes were drawn by `LineSweeperCapture --palette`
+([its README](../../tools/linesweeper_capture/README.md)) and every still was
+looked at. The printed tick, score and lines matched the standard run's in
+every palette. They were also checked against WCAG 2.3.1 (*The bursts against
+WCAG 2.3.1*). Their captures are review material and are not on the website.
+
+**Limits.**
+
+- **Simulation is a development aid, not evidence that a player can tell the
+  pieces apart.** The models describe an average observer of each type, and
+  nobody with a colour-vision deficiency has played these palettes. Player
+  validation remains separately identified, as
+  [XAG 103](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/103)
+  asks.
+- **Each palette is for its own group only.** Simulated as deutan, the protan
+  palette's S and T are 4.7 apart. Simulated as protan, the tritan palette's L
+  and S are 2.5 apart, and simulated as deutan its I and Z are 2.7 apart.
+  Choosing the wrong palette can be worse than choosing the standard one.
+- **Tritan rests on one model.** Viénot's method was applied to protan and
+  deutan only, so there is no second simulation to cross-check the tritan
+  palette.
+- **Shape is still the main cue.** Every kind has its own shape in the well, the
+  hold slot and the queue. The palettes make colour a better second cue; they
+  do not make it the only one.
+- **They depart from the genre's colours.** Z is not red in any of the three,
+  and S and T change too. A player who knows the genre by colour will have to
+  relearn which is which.
+- **Only the pieces change.** The HUD, the menu, the frame and the top-out
+  banner are the same in every palette. Nothing saves a selection or reads the
+  system's colour settings. The browser page offers no way to choose one
+  before play: that would widen the bundle's factory contract.
 
 ### Input is read as held, never as pressed
 
@@ -338,7 +438,7 @@ not exist. A promise a document makes on a module's behalf is not kept by four
 **A stub is not a client, and the difference showed up immediately.** A stub
 reports whatever bounds the test asks for; a `UiText` reports the box the font
 measured, and directional navigation is arithmetic over exactly those boxes.
-The three rows navigate and wrap because the measurements are real, which is a
+The rows navigate and wrap because the measurements are real, which is a
 thing only a client can demonstrate.
 
 **Nothing in `engine/` changed.** That is the outcome the survey predicted and
@@ -357,9 +457,10 @@ been exercised:
   were not deferred. `tests/core/state_context_tests.cpp` already pins it.
 
 **The layout is manual and stayed manual.** `PHILOSOPHY.md` refuses an
-autolayout engine, so the three rows are three y-coordinates and a spacing
+autolayout engine, so the rows are y-coordinates and a spacing
 constant. The one thing not done by hand is centring: each string is measured
-once in `init()` through `RenderResources::measure_text`. The HUD in
+once in `init()` through `RenderResources::measure_text`, and the COLOURS row
+again each time it changes. The HUD in
 `board_view.cpp` columnises by counting characters and says it only works
 because the font is monospaced — true, and not a habit a menu with rows of
 different lengths should inherit.
@@ -645,7 +746,9 @@ top-out, then five seconds of the burst decaying: 989 frames, the shatter on
 frame 687. [`footage.txt`](../../tools/linesweeper_capture/footage.txt) is the
 same match at the website video's pace: 2,095 frames, the shatter on frame
 1973. Both were drawn by the x64-release D3D11 build on an NVIDIA GeForce RTX
-5080, from the tree of the commit that added this paragraph.
+5080. The *Before this change* row and the run with no particle drawn are from
+the tree of the commit that added this paragraph; every other figure below was
+measured again on 2026-10-28, beside the colour-vision palettes' runs.
 
 ```bat
 out\build\x64-release\tools\linesweeper_capture\LineSweeperCapture.exe out\flash tools\linesweeper_capture\flash.txt --sequence
@@ -674,10 +777,10 @@ CI handles and every pull request (`CI#2`), beside the offline tooling tests.
 
 | | `flash.txt` | `footage.txt` |
 |---|---|---|
-| General, pixel bound | 1.5, the top-out (window ending at frame 699) | 1, a clear (ending at 363) |
+| General, pixel bound | 1.5, the top-out (window ending at frame 699) | 1, a clear (ending at 360) |
 | Red, pixel bound | 0 | 0 |
 | General, concurrent | 0.5 | 0.5 |
-| Top-out alone (`--frames 686-988`, `1960-2094`), pixel bound | 1.5 (ending at 701) | 1.5 (ending at 1987) |
+| Top-out alone (`--frames 686-988`, `1960-2094`), pixel bound | 1.5 (ending at 702) | 1.5 (ending at 1988) |
 | Line clears alone (`--frames 0-685`, `0-1972`), pixel bound | 1 | 1 |
 | Widest change in one field | 29% falling at frame 689 | 29% falling at 1975 |
 | Before this change, general, pixel bound | 8, the top-out (frames 675-734) | 8, the top-out (frames 1961-2020) |
@@ -691,17 +794,47 @@ against the threshold and `footage.txt` with two, and both are inside the
 target of two this change was held to.
 
 **The assumed screen, priced.** `--edge 6`, which lets a concurrent change span
-six frames, changes nothing: the pixel bound is 1.5 in `flash.txt` and 1 in
-`footage.txt`, and the concurrent count 0.5 in both. `--field 213x120`, the game seen at twice the size - a
+six frames, leaves the pixel bound, the verdict, where it was: 1.5 in
+`flash.txt` and 1 in `footage.txt`. The concurrent count becomes 1 in
+`flash.txt`, a line clear (window ending at frame 427), and stays 0.5 in
+`footage.txt`. `--field 213x120`, the game seen at twice the size - a
 large monitor up close, a phone at reading distance - counts 2 by the pixel
 bound in `footage.txt` (window ending at frame 366) and 3 in `flash.txt`
-(ending at 373), with no red flash over 1. The top-out alone counts 2.5 there
-in both runs (ending at 721 and 2007). The 3 is not the particles: the
+(ending at 373), with no red flash over 1. The top-out alone counts 2 there
+in both runs (ending at 707 and 1993). The 3 is not the particles: the
 same frames drawn with the field's `draw()` returning at once count 3 in the
 same window. It is pieces spawning and stepping across the top of the well
 with no wait between them, which `flash.txt` does and a player cannot; at the
 video's pace the same match counts 2. The concurrent count at that field is
 1.5 in `flash.txt`, where it was 2.5 before, and 1 in `footage.txt`.
+
+**The colour-vision palettes** (*Colour-vision palettes*) change every spark's
+colour, so both matches were drawn again in each of them with
+`--sequence --palette protan`, `deutan` and `tritan`. That was the same
+x64-release D3D11 build on the same RTX 5080, on 2026-10-28. Every run wrote
+989 or 2,095 frames, and in every run the stack goes on frame 687 or 1973, as
+in the standard palette. The pixel bound, the verdict, in flashes:
+
+| | Protanomaly / Protanopia | Deuteranomaly / Deuteranopia | Tritanomaly / Tritanopia |
+|---|---|---|---|
+| `flash.txt`, general | 1.5 (ending at 696) | 1.5 (ending at 697) | 1.5 (ending at 245) |
+| `flash.txt`, red | 0 | 0 | 0 |
+| `footage.txt`, general | 1.5 (ending at 1998) | 1.5 (ending at 1999) | 1 (ending at 360) |
+| `footage.txt`, red | 0 | 0 | 0 |
+| Top-out alone (`flash.txt`, `footage.txt`) | 1.5, 1.5 | 1.5, 1.5 | 1.5, 1.5 |
+| Line clears alone (`flash.txt`, `footage.txt`) | 1, 1 | 1, 1 | 1.5, 1 |
+| General, concurrent (`flash.txt`, `footage.txt`) | 0.5, 0.5 | 0.5, 0.5 | 0.5, 0.5 |
+
+All six pass, inside the target of two. The top-out alone counts 1.5 in every
+palette, as it does in the standard one; the heats are unchanged. The protan
+and deutan `footage.txt` runs reach 1.5 in a window of the top-out, where the
+standard run's worst window is 1, in a clear. The tritan line clears in `flash.txt` reach 1.5, half a flash over the
+standard palette, in the window ending at frame 245. No palette has a saturated
+red, so no red flash is counted at all, and `palette_tests.cpp` keeps it that
+way. At `--field 213x120` the colour palettes count 3 in `flash.txt` as the
+standard one does, and 2.5 in `footage.txt`, where the standard one counts 2.
+The CIE 1976 UCS measure of red has not been run for these palettes either
+(*Still open*).
 
 ### A phone held upright
 
@@ -762,9 +895,9 @@ top would restart a match they had not finished looking at. The banner says
 **The menu reaches touch through the game**, the way it would reach the mouse:
 `engine/ui/` does not depend on `input`, so `PauseState` asks the device where
 a new finger is, finds the row, puts the cursor on it and activates it. A row
-answers a band the width of the menu and the height of the gap between rows,
-because its measured text is sixteen units tall - on a phone, a target a thumb
-misses.
+answers a band the width of the menu, or its measured width and a margin when
+that is wider, and the height of the gap between rows, because its measured
+text is sixteen units tall - on a phone, a target a thumb misses.
 
 **What is checked and what is not.** The arrangement's arithmetic and the hit
 test are pinned headlessly in `LineSweeperViewTests`
@@ -828,9 +961,14 @@ need their actual browser run before SM-08 can close.
   reproducible reference profiles; the Radeon measurements remain open.
 - **WCAG 2.2's saturated-red measure.** *The bursts against WCAG 2.3.1* counts
   red flashes by the Understanding document's working definition, and both
-  runs count none by the pixel bound. WCAG 2.2's own note measures a red
-  change as more than 0.2 in CIE 1976 UCS chromaticity, and that has not been
-  run.
+  runs count none by the pixel bound, in every palette. WCAG 2.2's own note
+  measures a red change as more than 0.2 in CIE 1976 UCS chromaticity, and
+  that has not been run.
+- **Whether the colour-vision palettes serve their players.** They were chosen
+  by simulation (*Colour-vision palettes*). Nobody with a colour-vision
+  deficiency has played them, and that validation
+  ([XAG 103](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/103))
+  has no story yet.
 - **Whether the layer rule gets a build check.** It is now checkable and
   unchecked, which is the worst of the three states, and `presentation/`
   has grown well past the three files it held when the rule was written: every

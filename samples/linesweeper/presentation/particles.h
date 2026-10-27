@@ -5,6 +5,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/renderer.h"
+#include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/rules/world.h"
 
 #include <array>
@@ -167,7 +168,10 @@ namespace linesweeper
 		// Not a Colour, which is four floats and would take this to forty-eight
 		// bytes on its own. The presentation colours a byte here for exactly
 		// the reason world.h gives for storing one - a colour is not a rule,
-		// and palette.h is the one place that turns the byte into light.
+		// and palette.h is the one place that turns the byte into light. It
+		// does so at draw time, in whichever palette is selected then, so a
+		// spark born before the player changed palette is drawn in the new
+		// one.
 		std::uint8_t kind = 0;
 
 		std::uint8_t spare[3] = {};
@@ -222,9 +226,10 @@ namespace linesweeper
 		// integer: nothing in update() touches it, so a field built with an
 		// unresolved handle simulates ten thousand particles perfectly well
 		// and only draw() would object. That is why tests/linesweeper/ can
-		// assert on this file and cannot assert on the other one, and it is
-		// the sample's own version of the rule that a seam ships with a
-		// headless implementation (PHILOSOPHY, Tests and toolchain).
+		// step this file in every configuration and the other one only where
+		// the null renderer can load it a font, and it is the sample's own
+		// version of the rule that a seam ships with a headless
+		// implementation (PHILOSOPHY, Tests and toolchain).
 		//
 		// The state spells the asset name and resolves it, the same way it
 		// spells the font name for the labels beside this (play_state.cpp).
@@ -242,10 +247,16 @@ namespace linesweeper
 		// last update left it.
 		//
 		// `motion` scales every burst's count by sparks_per_cell, above.
+		//
+		// `palette` is borrowed for the same life as the World and read only
+		// by draw(), which colours each spark's kind in it. The simulation
+		// never reads it, so which palette is selected cannot change a
+		// spark's count, position or life.
 		ParticleField(const World* world, const TickResult* last_tick,
 			labrador::TextureHandle block,
 			const labrador::StepPosition* step = nullptr,
-			Motion motion = Motion::full);
+			Motion motion = Motion::full,
+			const Palette* palette = &standard_palette);
 
 		// Reads the difference against last frame's match, emits whatever it
 		// finds, then integrates and compacts. One pass, one thread.
@@ -335,6 +346,7 @@ namespace linesweeper
 		const World* world_ = nullptr;
 		const TickResult* last_tick_ = nullptr;
 		Motion motion_ = Motion::full;
+		const Palette* palette_ = nullptr;
 
 		// The shell's step, the step this field was last updated on, and how
 		// long that step was. draw() reads all three and writes none.

@@ -31,9 +31,9 @@ target_include_directories(LineSweeperTests PRIVATE
 # discipline: PHILOSOPHY, Tests and toolchain, asks that everything below the
 # platform edge be testable headlessly, and a sample is below it too.
 #
-# Three presentation files are in it. The board view needs the resource table
-# to measure text and measuring walks an atlas a device filled, so a BoardView
-# cannot be constructed here and what it draws is checked by looking at it.
+# Three presentation files are in it everywhere. The board view needs the
+# resource table to measure text, and measuring walks a loaded font atlas, so a
+# BoardView is constructed only where the null renderer can load one (below).
 # The particle field takes a resolved texture handle instead - an integer
 # nothing in update() reads - so the ten thousand particles, the compaction and
 # the event reconstruction all run. The screen's arrangement and the touch
@@ -77,6 +77,16 @@ if(WIN32)
     )
 endif()
 
+# Under the null renderer the field's draws and the whole board are recorded
+# rather than rasterised. The board loads the sample's own font from the source
+# tree, which a browser build's Node test reads through NODERAWFS.
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
-    target_sources(LineSweeperViewTests PRIVATE particle_draw_tests.cpp)
+    target_sources(LineSweeperViewTests PRIVATE
+        board_view_tests.cpp
+        particle_draw_tests.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/board_view.cpp"
+    )
+    target_compile_definitions(LineSweeperViewTests PRIVATE
+        LINESWEEPER_FONT_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/content/fonts/"
+    )
 endif()

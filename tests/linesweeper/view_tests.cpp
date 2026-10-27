@@ -2,6 +2,7 @@
 
 #include "engine/render/renderer.h"
 #include "samples/linesweeper/presentation/layout.h"
+#include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/rules/tick.h"
 #include "samples/linesweeper/rules/world.h"
@@ -15,6 +16,7 @@ using labrador::TextureHandle;
 using linesweeper::Coord;
 using linesweeper::Kind;
 using linesweeper::Motion;
+using linesweeper::Palette;
 using linesweeper::ParticleField;
 using linesweeper::Piece;
 using linesweeper::TickResult;
@@ -31,13 +33,14 @@ using linesweeper::well_visible_rows;
 
 // The particle field, stepped with no device.
 //
-// THIS IS THE ONLY TEST IN THE TREE THAT ASSERTS ON THE SAMPLE'S PRESENTATION,
-// and it is worth saying why the other four hundred lines of presentation/
-// have none. board_view.cpp measures text, and measuring walks a font atlas
-// that a device filled - so a BoardView cannot be constructed without one, and
-// what it draws is verified by looking at it (README, Still open). The
-// particle field takes a resolved handle instead of the resource table and
-// nothing in update() touches it, so the whole simulation half runs here.
+// THE SIMULATION HALF OF THE SAMPLE'S PRESENTATION, with no renderer at all.
+// board_view.cpp measures text, and measuring walks a font atlas, so a
+// BoardView needs at least the null renderer to load one into; what it draws
+// is recorded under that backend (board_view_tests.cpp, in the null
+// configurations only) and looked at everywhere else. The particle field
+// takes a resolved handle instead of the resource table and nothing in
+// update() touches it, so the whole simulation half runs here, in every
+// configuration.
 //
 // WHAT IS ASSERTED IS THE POLICY, NOT THE TUNING. Every count below is a ratio
 // or a bound: how many sparks a lock is worth against a clear is a number in
@@ -753,6 +756,63 @@ namespace
 			CHECK(sparks_per_cell(48, Motion::reduced) == 6);
 			CHECK(sparks_per_cell(10, Motion::reduced) == 2);
 			CHECK(sparks_per_cell(1, Motion::reduced) == 1);
+		}
+	}
+
+	// A palette is a lookup in draw() and nothing else (particles.h), so two
+	// fields that differ only in which palette they were lent - one changed
+	// partway through, as the pause menu changes PlayState's - see the same
+	// bursts and keep the same sparks. Every observable of the simulation is
+	// compared on every frame; that the sparks are drawn at the same places
+	// is particle_draw_tests.cpp's, under the null renderer.
+	TEST_CASE("the particle state does not depend on the palette")
+	{
+		World world = about_to_clear();
+		for (int y = well_rows - 6; y < well_rows - 1; ++y)
+		{
+			for (int x = 0; x < well_columns - 2; ++x)
+			{
+				world.cells[static_cast<std::size_t>(cell_index(x, y))] =
+					static_cast<std::uint8_t>((x + y) % 7 + 1);
+			}
+		}
+
+		TickResult result;
+		const Palette standard = Palette::standard;
+		Palette selected = Palette::protan;
+		ParticleField field(&world, &result, TextureHandle{}, nullptr,
+			Motion::full, &standard);
+		ParticleField other(&world, &result, TextureHandle{}, nullptr,
+			Motion::full, &selected);
+
+		const auto same = [&]()
+		{
+			CHECK(field.live() == other.live());
+			CHECK(field.dropped() == other.dropped());
+			CHECK(field.hottest() == other.hottest());
+			CHECK(field.bounds() == other.bounds());
+		};
+
+		// A clear, a few frames of it, a change of palette, then a top-out.
+		lock_and_clear(world, result);
+
+		for (int step = 0; step < 30; ++step)
+		{
+			field.update(frame);
+			other.update(frame);
+			same();
+		}
+
+		REQUIRE(field.live() > 0);
+		selected = Palette::tritan;
+
+		world.topped_out = 1;
+		++world.tick;
+		for (int step = 0; step < 30; ++step)
+		{
+			field.update(frame);
+			other.update(frame);
+			same();
 		}
 	}
 }

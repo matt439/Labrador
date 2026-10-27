@@ -214,7 +214,8 @@ namespace
 			}
 
 			std::ignore = this->scene_.add(
-				std::make_unique<BoardView>(&this->world_, &this->resources_));
+				std::make_unique<BoardView>(&this->world_, &this->resources_,
+					&standard_palette));
 			this->particles_ = this->scene_.add(std::make_unique<ParticleField>(
 				&this->world_, &this->last_tick_,
 				this->resources_.resolve_texture(block_texture_name)));

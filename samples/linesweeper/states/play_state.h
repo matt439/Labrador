@@ -6,6 +6,7 @@
 #include "engine/scene/scene.h"
 #include "samples/linesweeper/presentation/arrangement.h"
 #include "samples/linesweeper/presentation/board_view.h"
+#include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
 #include "samples/linesweeper/presentation/touch_controls.h"
@@ -33,8 +34,14 @@ namespace linesweeper
 	public:
 		// `motion` is how much the particle field throws (particles.h): the
 		// browser build passes what the page's reduced-motion query said.
+		//
+		// `report_palette`, if given, is called with the palette the match
+		// starts in and again each time the pause menu closes on a different
+		// one. The browser build logs it to the console, which is how a page
+		// test knows the selection reached the match.
 		explicit PlayState(labrador::Application* app,
-			Motion motion = Motion::full);
+			Motion motion = Motion::full,
+			void (*report_palette)(Palette) = nullptr);
 
 		void init() override;
 		void update(float dt) override;
@@ -76,6 +83,19 @@ namespace linesweeper
 		// outlives it (PHILOSOPHY, Services and lifetimes).
 		labrador::Application* app_ = nullptr;
 		Motion motion_ = Motion::full;
+
+		// Which colours the pieces are drawn in. The board and the particle
+		// field borrow it const and read it every draw, including under the
+		// pause menu's scrim; the menu borrows it to write, from its update()
+		// and only while it is open. Every draw runs after update() returns,
+		// so no draw sees a write in progress (palette.h). RESTART keeps it:
+		// a palette is the player's, not the match's.
+		Palette palette_ = standard_palette;
+
+		// The palette report_palette was last called with, so it is called
+		// on a change and not on every close of the menu.
+		void (*report_palette_)(Palette) = nullptr;
+		Palette reported_palette_ = standard_palette;
 
 		// The match, by value, as a member. Not a unique_ptr, not a handle,
 		// not registered with anything - 276 bytes that die when this state
