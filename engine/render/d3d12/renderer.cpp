@@ -5,6 +5,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
+#include "engine/render/text_encoding.h"
 #include "engine/render/throw_if_failed.h"
 
 // The shaders, as bytes this build compiled (cmake/compile_shaders.cmake) from
@@ -29,27 +30,6 @@ namespace labrador
 {
 	namespace
 	{
-		std::string utf8(const wchar_t* text)
-		{
-			const int bytes = WideCharToMultiByte(CP_UTF8,
-				WC_ERR_INVALID_CHARS, text, -1, nullptr, 0, nullptr, nullptr);
-			if (bytes <= 1)
-			{
-				throw std::runtime_error(
-					"The selected Direct3D adapter has no readable name.");
-			}
-
-			std::string result(static_cast<size_t>(bytes), '\0');
-			if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text, -1,
-				result.data(), bytes, nullptr, nullptr) == 0)
-			{
-				throw std::runtime_error(
-					"The selected Direct3D adapter name is not valid Unicode.");
-			}
-			result.pop_back();
-			return result;
-		}
-
 		RenderDeviceInfo selected_device(ID3D12Device* device)
 		{
 			ComPtr<IDXGIFactory4> factory;
@@ -90,7 +70,7 @@ namespace labrador
 			info.present_mode = "dxgi_sync_interval";
 			info.requested_swap_interval = 1;
 			info.api = "Direct3D 12";
-			info.device_name = utf8(description.Description);
+			info.device_name = narrow(description.Description);
 			info.vendor_id = description.VendorId;
 			info.device_id = description.DeviceId;
 			info.kind = (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0

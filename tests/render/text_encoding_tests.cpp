@@ -4,6 +4,7 @@
 
 #include <string>
 
+using labrador::narrow;
 using labrador::widen;
 
 TEST_CASE("ASCII crosses unchanged, and nothing crosses as nothing")
@@ -80,4 +81,59 @@ TEST_CASE("past the basic plane is a surrogate pair whatever wchar_t is")
 	CHECK(widen("\xF4\x8F\xBF\xBF").size() == 2);
 	CHECK(widen("\xEF\xBF\xBF").size() == 1);
 	CHECK(widen("\xF0\x90\x80\x80").size() == 2);
+}
+
+TEST_CASE("narrow is widen's inverse for well-formed text")
+{
+	CHECK(narrow(L"Press A to proceed") == "Press A to proceed");
+	CHECK(narrow(L"").empty());
+
+	// One, two, three and four UTF-8 bytes, the last from a surrogate pair.
+	const std::string every_length = "A\xC3\xA9\xE2\x80\x99\xF0\x9F\x8E\xAE";
+	CHECK(narrow(widen(every_length)) == every_length);
+
+	// The largest code point there is, and the boundary either side of the
+	// basic plane.
+	CHECK(narrow(widen("\xF4\x8F\xBF\xBF")) == "\xF4\x8F\xBF\xBF");
+	CHECK(narrow(widen("\xEF\xBF\xBF")) == "\xEF\xBF\xBF");
+	CHECK(narrow(widen("\xF0\x90\x80\x80")) == "\xF0\x90\x80\x80");
+}
+
+TEST_CASE("an unpaired surrogate narrows to U+FFFD and the rest survives")
+{
+	std::wstring lone_high = L"a";
+	lone_high += static_cast<wchar_t>(0xD83C);
+	lone_high += L"b";
+	CHECK(narrow(lone_high) == "a\xEF\xBF\xBD" "b");
+
+	std::wstring lone_low;
+	lone_low += static_cast<wchar_t>(0xDFAE);
+	CHECK(narrow(lone_low) == "\xEF\xBF\xBD");
+
+	// A high surrogate at the very end has no partner to wait for.
+	std::wstring trailing_high = L"end";
+	trailing_high += static_cast<wchar_t>(0xD83C);
+	CHECK(narrow(trailing_high) == "end\xEF\xBF\xBD");
+
+	// The pair reversed is two strays, not one character.
+	std::wstring reversed;
+	reversed += static_cast<wchar_t>(0xDFAE);
+	reversed += static_cast<wchar_t>(0xD83C);
+	CHECK(narrow(reversed) == "\xEF\xBF\xBD\xEF\xBF\xBD");
+}
+
+TEST_CASE("a 32-bit wchar_t may hold a whole code point")
+{
+	// Only clang's platforms can say this; under MSVC every unit is 16 bits
+	// and the surrogate pair above is the only spelling.
+	if constexpr (sizeof(wchar_t) == 4)
+	{
+		std::wstring pad;
+		pad += static_cast<wchar_t>(0x1F3AE);
+		CHECK(narrow(pad) == "\xF0\x9F\x8E\xAE");
+
+		std::wstring past_unicode;
+		past_unicode += static_cast<wchar_t>(0x110000);
+		CHECK(narrow(past_unicode) == "\xEF\xBF\xBD");
+	}
 }
