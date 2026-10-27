@@ -1,7 +1,7 @@
 #pragma once
 
 
-namespace mattmath
+namespace labrador
 {
 	struct Vector2F;
 
@@ -80,7 +80,7 @@ namespace mattmath
 	float clamp(float value, float min, float max);
 
 	bool are_equal(float a, float b, float epsilon = EPSILON);
-	bool are_equal(const mattmath::Vector2F& a, const mattmath::Vector2F& b,
+	bool are_equal(const Vector2F& a, const Vector2F& b,
 		float epsilon = EPSILON);
 
 	// NOT HERE: to_radians and to_degrees. Every angle in the engine is

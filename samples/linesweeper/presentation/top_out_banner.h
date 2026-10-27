@@ -64,7 +64,7 @@ namespace linesweeper
 		// well - not the well. Nothing culls it today; it is reported honestly
 		// because the day this sample grows a second view it should already be
 		// right.
-		mattmath::RectangleF bounds() const override;
+		labrador::RectangleF bounds() const override;
 
 	private:
 		const World* world_ = nullptr;
@@ -74,7 +74,7 @@ namespace linesweeper
 		labrador::FontHandle font_;
 
 		std::wstring text_;
-		mattmath::Vector2F text_size_;
+		labrador::Vector2F text_size_;
 
 		// What text_ was built from, and whether it has been built at all -
 		// which a flag that starts at zero cannot say on its own.

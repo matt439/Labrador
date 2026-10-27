@@ -195,11 +195,11 @@ namespace labrador
 		// with zero alpha still adds its colour channels: the tint that draws
 		// nothing is Colour(0, 0, 0, 0).
 		void draw_sprite(TextureHandle texture,
-			const mattmath::RectangleI& source,
-			const mattmath::RectangleF& destination,
+			const RectangleI& source,
+			const RectangleF& destination,
 			const Colour& tint,
 			float rotation,
-			const mattmath::Vector2F& origin,
+			const Vector2F& origin,
 			SpriteFlip flip,
 			float layer_depth);
 
@@ -226,11 +226,11 @@ namespace labrador
 		// premultiplied blend draw_sprite states.
 		void draw_text(FontHandle font,
 			const std::wstring& text,
-			const mattmath::Vector2F& position,
+			const Vector2F& position,
 			const Colour& tint,
 			float scale,
 			float rotation,
-			const mattmath::Vector2F& origin,
+			const Vector2F& origin,
 			float layer_depth);
 
 	private:
@@ -432,7 +432,7 @@ namespace labrador
 		// presentation scales it when the swapchain size differs.
 		// read_back_buffer below is sized from this and a viewport is placed
 		// inside it, so both describe the buffer the backend actually drew into.
-		mattmath::Vector2F back_buffer_size() const;
+		Vector2F back_buffer_size() const;
 
 		// Copies the back buffer out: 8-bit RGBA, row-major, top row first,
 		// exactly width * height * 4 bytes. `pixels` is resized to fit.

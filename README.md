@@ -149,7 +149,7 @@ Add it as a submodule and `add_subdirectory` it before the target that links
 it:
 
 ```cmake
-add_subdirectory(external/labrador)   # defines LabradorEngine, MattMath and labrador_settings
+add_subdirectory(external/labrador)   # defines LabradorEngine, LabradorMath and labrador_settings
 
 target_link_libraries(YourGame PRIVATE LabradorEngine labrador_settings)
 target_include_directories(YourGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")

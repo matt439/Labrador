@@ -48,9 +48,9 @@
 using labrador::Colour;
 using labrador::SpriteFlip;
 using labrador::SpriteVertex;
-using mattmath::RectangleF;
-using mattmath::RectangleI;
-using mattmath::Vector2F;
+using labrador::RectangleF;
+using labrador::RectangleI;
+using labrador::Vector2F;
 
 namespace
 {

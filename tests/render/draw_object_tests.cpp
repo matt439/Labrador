@@ -21,9 +21,9 @@ namespace
 	using labrador::Colour;
 	using labrador::DrawObject;
 	using labrador::SpriteFlip;
-	using mattmath::Point2F;
-	using mattmath::RectangleRotated;
-	using mattmath::Vector2F;
+	using labrador::Point2F;
+	using labrador::RectangleRotated;
+	using labrador::Vector2F;
 
 	// A rectangle turned by `radians` about the origin, built the way the
 	// collision module builds one: an orthonormal axis pair rather than an

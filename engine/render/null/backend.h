@@ -38,9 +38,9 @@ namespace labrador
 	public:
 		NullTexture(int width, int height) : width_(width), height_(height) {}
 
-		mattmath::Vector2F size() const
+		Vector2F size() const
 		{
-			return mattmath::Vector2F(static_cast<float>(this->width_),
+			return Vector2F(static_cast<float>(this->width_),
 				static_cast<float>(this->height_));
 		}
 

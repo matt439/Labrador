@@ -86,7 +86,7 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 				{
 					std::vector<unsigned char> pixels;
 					app.renderer()->read_back_buffer(pixels);
-					const mattmath::Vector2F size = app.renderer()->back_buffer_size();
+					const labrador::Vector2F size = app.renderer()->back_buffer_size();
 					capture::write_png(capture_path, static_cast<int>(size.x),
 						static_cast<int>(size.y), pixels);
 				}

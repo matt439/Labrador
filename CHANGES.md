@@ -72,6 +72,24 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Move the math library into namespace labrador as LabradorMath
+
+**Source break.** The math types and functions (`Vector2F`, `Vector2I`,
+`RectangleF`, `RectangleI`, `Circle`, `Segment`, `Triangle`, `Quad`,
+`RectangleRotated`, `Matrix3x2F`, `Shape`, `are_equal`, `clamp` and the
+rest of `engine/math/`) move from `namespace mattmath` to
+`namespace labrador`, and the CMake target `MattMath` becomes
+`LabradorMath`. The headers stay where they were.
+
+To migrate, replace `mattmath::` with `labrador::`, replace
+`using namespace mattmath;` with `using namespace labrador;` (or delete it
+where `using namespace labrador;` is already there), and link `LabradorMath`
+in place of `MattMath`. In this repository the same edits were made across
+every sample, including `samples/minimal/CMakeLists.txt` and
+`samples/minimal/rules/motion.h`. Code inside `namespace labrador` that called
+a math free function with the same name as a member of the calling class must
+now qualify it, as `Vector2F::angle_between` does with `labrador::clamp`.
+
 ### 2026-10-27 - Remove engine types nothing uses
 
 **Source break.** These public types are removed, with their headers. No

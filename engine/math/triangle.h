@@ -6,7 +6,7 @@
 
 #include <array>
 
-namespace mattmath
+namespace labrador
 {
 	struct Triangle : public Shape
 	{
@@ -15,14 +15,14 @@ namespace mattmath
 		Triangle() = default;
 		Triangle(const Triangle&) = default;
 		Triangle& operator=(const Triangle&) = default;
-		Triangle(const mattmath::Vector2F& point0,
-			const mattmath::Vector2F& point1,
-			const mattmath::Vector2F& point2);
+		Triangle(const Vector2F& point0,
+			const Vector2F& point1,
+			const Vector2F& point2);
 		Triangle(float x0, float y0, float x1, float y1, float x2, float y2);
 
-		mattmath::RectangleF bounding_box() const override;
+		RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
-		void offset(const mattmath::Vector2F& amount) override;
+		void offset(const Vector2F& amount) override;
 		void inflate(float amount) override;
 
 		const Vector2F& point_0() const;
@@ -41,7 +41,7 @@ namespace mattmath
 		bool operator==(const Triangle& other) const;
 		bool operator!=(const Triangle& other) const;
 
-		mattmath::Vector2F center() const override;
+		Vector2F center() const override;
 
 		float calculate_gradient(int edge) const;
 	};
@@ -50,8 +50,8 @@ namespace mattmath
 		TriangleRightAxisAligned() = default;
 		TriangleRightAxisAligned(const TriangleRightAxisAligned&) = default;
 		TriangleRightAxisAligned& operator=(const TriangleRightAxisAligned&) = default;
-		TriangleRightAxisAligned(const mattmath::Vector2F& top,
-			const mattmath::Vector2F& left, const mattmath::Vector2F& right);
+		TriangleRightAxisAligned(const Vector2F& top,
+			const Vector2F& left, const Vector2F& right);
 		TriangleRightAxisAligned(float x0, float y0, float x1, float y1,
 			float x2, float y2);
 

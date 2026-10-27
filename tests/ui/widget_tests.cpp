@@ -28,9 +28,9 @@ namespace
 
 		void update(float /*dt*/) override {}
 		void draw(labrador::DrawList& /*draw_list*/) const override {}
-		mattmath::RectangleF bounds() const override
+		labrador::RectangleF bounds() const override
 		{
-			return mattmath::RectangleF(0.0f, 0.0f, 10.0f, 10.0f);
+			return labrador::RectangleF(0.0f, 0.0f, 10.0f, 10.0f);
 		}
 	};
 
@@ -97,7 +97,7 @@ TEST_CASE("a container draws, measures and updates its children")
 
 	// The union of the children's boxes, which is what the navigation walk and
 	// the culler read.
-	const mattmath::RectangleF bounds = container.bounds();
+	const labrador::RectangleF bounds = container.bounds();
 	CHECK(bounds.x == doctest::Approx(0.0f));
 	CHECK(bounds.y == doctest::Approx(0.0f));
 	CHECK(bounds.width == doctest::Approx(100.0f));
@@ -199,7 +199,7 @@ TEST_CASE("a leaf can be derived from and still be held as a widget")
 	// dropping `final` bought, and the client's exhibit - a line of text plus
 	// a rule for building it - is this shape with a different base.
 	CountingTexture texture;
-	texture.set_size(mattmath::Vector2F(40.0f, 20.0f));
+	texture.set_size(labrador::Vector2F(40.0f, 20.0f));
 
 	UiWidget* as_widget = &texture;
 	as_widget->update(0.016f);

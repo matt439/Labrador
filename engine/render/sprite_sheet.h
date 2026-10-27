@@ -73,19 +73,19 @@ namespace labrador
 		// pivot adds zero, so the caller's origin is the whole of it.
 		void draw(DrawList& draw_list,
 			frame_handle frame,
-			const mattmath::RectangleF& destination,
+			const RectangleF& destination,
 			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f) const;
 
 		void draw(DrawList& draw_list,
 			frame_handle frame,
-			const mattmath::Vector2F& position,
+			const Vector2F& position,
 			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			float scale = 1.0f,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f) const;
@@ -101,20 +101,20 @@ namespace labrador
 		// by it. A sheet that wants a per-frame pivot on an
 		// animation is asking for a schema this loader does not have.
 		void draw(DrawList& draw_list,
-			const mattmath::RectangleI& source,
-			const mattmath::RectangleF& destination,
+			const RectangleI& source,
+			const RectangleF& destination,
 			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f) const;
 
 		void draw(DrawList& draw_list,
-			const mattmath::RectangleI& source,
-			const mattmath::Vector2F& position,
+			const RectangleI& source,
+			const Vector2F& position,
 			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			float scale = 1.0f,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f) const;

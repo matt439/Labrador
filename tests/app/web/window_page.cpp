@@ -219,7 +219,7 @@ int main()
 		labrador::WindowOptions options;
 		// Smaller than the box the page gives the canvas, so the first report
 		// is visibly the measured box rather than the size asked for.
-		options.client_size = mattmath::Vector2I(320, 200);
+		options.client_size = labrador::Vector2I(320, 200);
 		window = std::make_unique<labrador::Window>(options, &recorder);
 	}
 	catch (const std::exception& error)

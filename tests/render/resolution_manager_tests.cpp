@@ -8,7 +8,7 @@
 
 using labrador::ResolutionManager;
 using labrador::ScreenResolution;
-using mattmath::Vector2I;
+using labrador::Vector2I;
 
 TEST_CASE("the default size is the default preset's size")
 {

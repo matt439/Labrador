@@ -2,7 +2,7 @@
 
 #include "engine/math/rectanglef.h"
 
-namespace mattmath
+namespace labrador
 {
 
 	bool Shape::AABB_intersects(const Shape* other) const

@@ -46,7 +46,7 @@ namespace components
 			const std::wstring& label,
 			std::vector<std::wstring> choices,
 			size_t index,
-			const mattmath::Vector2F& label_position,
+			const labrador::Vector2F& label_position,
 			float value_x,
 			const std::string& font_name,
 			labrador::RenderResources* render_resources,

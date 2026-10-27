@@ -9,7 +9,7 @@
 #include "engine/math/shape.h"
 #include "engine/math/ericson_math.h"
 
-namespace mattmath
+namespace labrador
 {
 
 	bool rectangle_circle_intersect(const RectangleF& rectangle, const Circle& circle,

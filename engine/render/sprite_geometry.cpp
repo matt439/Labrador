@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {
@@ -45,7 +45,7 @@ namespace labrador
 		// origin is.
 		float without_zero(float value)
 		{
-			// FLT_EPSILON, spelt out rather than taken from mattmath::EPSILON -
+			// FLT_EPSILON, spelt out rather than taken from EPSILON -
 			// that one is a tolerance for comparing geometry and this is a
 			// stand-in for a divisor, and the two having the same value today
 			// would be a coincidence rather than a reason.

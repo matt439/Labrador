@@ -48,12 +48,12 @@ namespace labrador
 		// `rotation` is in radians, clockwise on screen.
 		Label(const std::wstring& text,
 			const std::string& font_name,
-			const mattmath::Vector2F& position,
+			const Vector2F& position,
 			RenderResources* render_resources,
 			const Colour& colour = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			float layer_depth = 0.0f);
 
 		// Nothing to step. A label that animates is a label something else
@@ -70,6 +70,6 @@ namespace labrador
 		// is taken when the string or the font changes and not here: this is
 		// the culling path, and measuring walks the string. A scale or rotation
 		// change takes no measurement and needs none.
-		mattmath::RectangleF bounds() const override;
+		RectangleF bounds() const override;
 	};
 }

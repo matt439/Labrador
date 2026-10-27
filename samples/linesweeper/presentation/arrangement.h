@@ -76,10 +76,10 @@ namespace linesweeper
 		// than what was framed whenever the aspects differ; anything anchored
 		// to an edge of the screen - the scrim, the controls - is anchored to
 		// this.
-		mattmath::RectangleF visible;
+		labrador::RectangleF visible;
 	};
 
 	// The arrangement for a buffer of this size, in pixels. Throws
 	// std::invalid_argument for a non-positive extent, as Camera::frame does.
-	Arrangement arrange(const mattmath::Vector2F& buffer);
+	Arrangement arrange(const labrador::Vector2F& buffer);
 }

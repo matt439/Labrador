@@ -196,8 +196,8 @@ namespace labrador
 		// silently, at every preset.
 		//
 		// The DPI is frame_dpi's, below.
-		mattmath::Vector2I outer_size_for_client(
-			const mattmath::Vector2I& client_size, DWORD style, DWORD ex_style,
+		Vector2I outer_size_for_client(
+			const Vector2I& client_size, DWORD style, DWORD ex_style,
 			UINT dpi)
 		{
 			RECT rect = { 0, 0, static_cast<LONG>(client_size.x),
@@ -213,7 +213,7 @@ namespace labrador
 				return client_size;
 			}
 
-			return mattmath::Vector2I(static_cast<int>(rect.right - rect.left),
+			return Vector2I(static_cast<int>(rect.right - rect.left),
 				static_cast<int>(rect.bottom - rect.top));
 		}
 
@@ -291,8 +291,8 @@ namespace labrador
 
 			RECT client;
 			GetClientRect(window, &client);
-			const mattmath::Vector2I outer = outer_size_for_client(
-				mattmath::Vector2I(client.right - client.left,
+			const Vector2I outer = outer_size_for_client(
+				Vector2I(client.right - client.left,
 					client.bottom - client.top),
 				static_cast<DWORD>(GetWindowLongPtrW(window, GWL_STYLE)),
 				static_cast<DWORD>(GetWindowLongPtrW(window, GWL_EXSTYLE)),
@@ -338,8 +338,8 @@ namespace labrador
 		bool update_modifier(Key key, LPARAM l_param, bool down);
 
 		// outer_size_for_client, for the style the window is wearing right now.
-		mattmath::Vector2I outer_size(
-			const mattmath::Vector2I& client_size) const;
+		Vector2I outer_size(
+			const Vector2I& client_size) const;
 
 		static LRESULT CALLBACK window_proc(HWND window, UINT message,
 			WPARAM w_param, LPARAM l_param);
@@ -453,7 +453,7 @@ namespace labrador
 		// which is why one call covers both. There is no window to ask for a
 		// DPI yet, so this is the system's, and the window is corrected below
 		// if the monitor it lands on has another.
-		const mattmath::Vector2I outer = outer_size_for_client(
+		const Vector2I outer = outer_size_for_client(
 			options.client_size, style, ex_style, GetDpiForSystem());
 
 		// This Impl rides in as the create parameter and is stashed in the
@@ -505,7 +505,7 @@ namespace labrador
 		// so the size report the show fires is already the size asked for.
 		if (frame_dpi(this->handle) != GetDpiForSystem())
 		{
-			const mattmath::Vector2I corrected = this->outer_size(
+			const Vector2I corrected = this->outer_size(
 				options.client_size);
 			SetWindowPos(this->handle, nullptr, 0, 0, corrected.x, corrected.y,
 				SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
@@ -596,14 +596,14 @@ namespace labrador
 		}
 	}
 
-	void Window::resize_client(const mattmath::Vector2I& client_size) const
+	void Window::resize_client(const Vector2I& client_size) const
 	{
 		// Adjusted for whatever frame the window is currently wearing, so the
 		// caller gets the client area it asked for rather than that minus a
 		// caption. The WM_SIZE this produces reports what the window actually
 		// became, which is not always what was asked for - a size past the
 		// monitor's comes back clamped.
-		const mattmath::Vector2I outer = this->impl_->outer_size(client_size);
+		const Vector2I outer = this->impl_->outer_size(client_size);
 		SetWindowPos(this->impl_->handle, HWND_TOP, 0, 0, outer.x, outer.y,
 			SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 	}
@@ -637,7 +637,7 @@ namespace labrador
 			SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	}
 
-	void Window::leave_fullscreen(const mattmath::Vector2I& client_size) const
+	void Window::leave_fullscreen(const Vector2I& client_size) const
 	{
 		const HWND handle = this->impl_->handle;
 
@@ -647,7 +647,7 @@ namespace labrador
 		SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 		SetWindowLongPtr(handle, GWL_EXSTYLE, 0);
 
-		const mattmath::Vector2I outer = this->impl_->outer_size(client_size);
+		const Vector2I outer = this->impl_->outer_size(client_size);
 
 		if (IsWindowVisible(handle) != FALSE)
 		{
@@ -661,8 +661,8 @@ namespace labrador
 			SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 	}
 
-	mattmath::Vector2I Window::Impl::outer_size(
-		const mattmath::Vector2I& client_size) const
+	Vector2I Window::Impl::outer_size(
+		const Vector2I& client_size) const
 	{
 		return outer_size_for_client(client_size,
 			static_cast<DWORD>(GetWindowLongPtrW(this->handle, GWL_STYLE)),

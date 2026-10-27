@@ -4,7 +4,7 @@
 #include "engine/math/rectanglei.h"
 #include "engine/render/renderer.h"
 
-using namespace mattmath;
+using namespace labrador;
 using namespace labrador;
 
 namespace collisiondemo

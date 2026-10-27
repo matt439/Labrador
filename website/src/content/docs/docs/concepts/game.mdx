@@ -46,7 +46,7 @@ three obligations:
 ```cpp
 virtual void update(float dt) = 0;                       // change things here
 virtual void draw(DrawList& draw_list) const = 0;        // and only read them here
-virtual mattmath::RectangleF bounds() const = 0;         // where it is, for culling
+virtual labrador::RectangleF bounds() const = 0;         // where it is, for culling
 ```
 
 `CollisionObject` is a `GameObject` that also has a shape, a collision layer and mask, a tag the

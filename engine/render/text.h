@@ -26,12 +26,12 @@ namespace labrador
 		// `rotation` is in radians, clockwise on screen.
 		Text(const std::wstring& text,
 			const std::string& font_name,
-			const mattmath::Vector2F& position,
+			const Vector2F& position,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			float layer_depth = 0.0f);
 
 		// What the string says and what colour it is drawn in, readable by
@@ -45,6 +45,6 @@ namespace labrador
 		void set_text(const std::wstring& text) override;
 		void set_colour(const Colour& colour) override;
 		void set_scale(float scale) override;
-		void set_position(const mattmath::Vector2F& position) override;
+		void set_position(const Vector2F& position) override;
 	};
 }

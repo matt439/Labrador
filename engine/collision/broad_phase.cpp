@@ -6,7 +6,6 @@
 #include <cmath>
 #include <vector>
 
-using mattmath::RectangleF;
 
 namespace labrador
 {

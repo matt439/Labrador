@@ -8,7 +8,7 @@
 #include <array>
 #include <stdexcept>
 
-namespace mattmath
+namespace labrador
 {
 
 	Quad::Quad(const Vector2F& point0,

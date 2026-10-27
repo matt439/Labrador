@@ -22,7 +22,7 @@
 #include <tuple>
 #include <vector>
 
-using namespace mattmath;
+using namespace labrador;
 using Microsoft::WRL::ComPtr;
 
 namespace labrador

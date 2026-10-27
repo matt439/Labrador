@@ -57,19 +57,19 @@ namespace audio_sample
 
 	void SoundBoard::set_volume(float volume)
 	{
-		this->volume_ = mattmath::clamp(volume, 0.0f, 1.0f);
+		this->volume_ = labrador::clamp(volume, 0.0f, 1.0f);
 		this->bank_->set_effect_volume(this->drone_, this->volume_);
 	}
 
 	void SoundBoard::set_pan(float pan)
 	{
-		this->pan_ = mattmath::clamp(pan, -1.0f, 1.0f);
+		this->pan_ = labrador::clamp(pan, -1.0f, 1.0f);
 		this->bank_->set_effect_pan(this->drone_, this->pan_);
 	}
 
 	void SoundBoard::set_pitch(float pitch)
 	{
-		this->pitch_ = mattmath::clamp(pitch, -1.0f, 1.0f);
+		this->pitch_ = labrador::clamp(pitch, -1.0f, 1.0f);
 		this->bank_->set_effect_pitch(this->drone_, this->pitch_);
 	}
 

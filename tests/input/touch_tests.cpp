@@ -9,9 +9,9 @@ using namespace labrador;
 
 namespace
 {
-	mattmath::Vector2I at(int x, int y)
+	labrador::Vector2I at(int x, int y)
 	{
-		return mattmath::Vector2I(x, y);
+		return labrador::Vector2I(x, y);
 	}
 
 	// A Touch focused for two frames, so edges are live.

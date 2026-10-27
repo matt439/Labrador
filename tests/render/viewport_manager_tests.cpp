@@ -177,7 +177,7 @@ TEST_CASE("the layout follows a window size that is not a preset")
 	ViewportManager manager(&resolution);
 	manager.set_layout(ScreenLayout::two_player);
 
-	resolution.set_resolution_exactly(mattmath::Vector2I(1600, 900));
+	resolution.set_resolution_exactly(labrador::Vector2I(1600, 900));
 
 	CHECK(same(manager.fullscreen_viewport(), 0.0f, 0.0f, 1600.0f, 900.0f));
 
@@ -186,7 +186,7 @@ TEST_CASE("the layout follows a window size that is not a preset")
 	CHECK(same(manager.player_viewport(1), 0.0f, 450.0f, 1600.0f, 450.0f));
 
 	// And the divider is still centred on the screen it is actually dividing.
-	const std::vector<mattmath::RectangleF> dividers =
+	const std::vector<labrador::RectangleF> dividers =
 		manager.viewport_dividers();
 	REQUIRE(dividers.size() == 1);
 	CHECK(dividers[0].width == doctest::Approx(1600.0f));

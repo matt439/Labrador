@@ -41,7 +41,7 @@ namespace labrador
 		// rectangle and negative, because a point that went down inside the
 		// window is followed when it slides off the edge, as a dragged mouse
 		// is.
-		mattmath::Vector2I position;
+		Vector2I position;
 	};
 
 	// The touchscreen, one frame. A value, for the reason every other device
@@ -111,7 +111,7 @@ namespace labrador
 	// unless the point is down on both and the device was focused on both, so
 	// the frame a point appears on is never a jump from wherever the last one
 	// was.
-	mattmath::Vector2I motion(const TouchState& now, const TouchState& before,
+	Vector2I motion(const TouchState& now, const TouchState& before,
 		uint32_t id);
 
 	bool just_focused(const TouchState& now, const TouchState& before);
@@ -147,9 +147,9 @@ namespace labrador
 		// inventing input. A move, up or cancel for an id that is not down is
 		// dropped, which is also what happens to every message of a point
 		// that arrived past `capacity`.
-		void on_down(uint32_t platform_id, const mattmath::Vector2I& position);
-		void on_move(uint32_t platform_id, const mattmath::Vector2I& position);
-		void on_up(uint32_t platform_id, const mattmath::Vector2I& position);
+		void on_down(uint32_t platform_id, const Vector2I& position);
+		void on_move(uint32_t platform_id, const Vector2I& position);
+		void on_up(uint32_t platform_id, const Vector2I& position);
 		void on_cancel(uint32_t platform_id);
 
 		// Cancels every point, as on_cancel cancels one: gone at the next
@@ -179,7 +179,7 @@ namespace labrador
 		bool held(uint32_t id) const;
 		bool pressed(uint32_t id) const;
 		bool released(uint32_t id) const;
-		mattmath::Vector2I motion(uint32_t id) const;
+		Vector2I motion(uint32_t id) const;
 
 		bool focused() const;
 		bool just_focused() const;

@@ -78,6 +78,6 @@ namespace labrador
 	// rather than reporting no overlap, because silently missing collisions is
 	// the worse failure and nothing in the tree is a collidable circle. Adding
 	// them is one more axis, the centre-to-closest-point one.
-	std::optional<Manifold> narrow_phase(const mattmath::Shape& a,
-		const mattmath::Shape& b);
+	std::optional<Manifold> narrow_phase(const Shape& a,
+		const Shape& b);
 }

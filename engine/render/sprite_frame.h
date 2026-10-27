@@ -19,19 +19,19 @@ namespace labrador
 	{
 	public:
 		SpriteFrame() = default;
-		explicit SpriteFrame(const mattmath::RectangleI& source_rectangle,
-		                     const mattmath::Vector2F& origin =
-			                     mattmath::Vector2F::ZERO);
-		SpriteFrame(const mattmath::Vector2F& position,
-			const mattmath::Vector2F& size,
-			const mattmath::Vector2F& origin =
-				mattmath::Vector2F::ZERO);
+		explicit SpriteFrame(const RectangleI& source_rectangle,
+		                     const Vector2F& origin =
+			                     Vector2F::ZERO);
+		SpriteFrame(const Vector2F& position,
+			const Vector2F& size,
+			const Vector2F& origin =
+				Vector2F::ZERO);
 
 		// A RectangleI, and not a RECT*. Handing out a pointer means keeping
 		// both forms of the same rectangle for a stable address to return, and
 		// the two can drift. The seam takes a RectangleI, so there is no
 		// duplicate and the conversion happens once, in the backend.
-		const mattmath::RectangleI& source_rectangle() const;
+		const RectangleI& source_rectangle() const;
 
 		// The pivot the sheet authored, in unscaled source texels measured from
 		// this frame's top left - the seam's own units for an origin
@@ -42,9 +42,9 @@ namespace labrador
 		// It is not a term of the draw on its own: SpriteSheet::draw adds it to
 		// whatever origin the caller passed, and that file says why the two
 		// compose rather than one replacing the other.
-		const mattmath::Vector2F& origin() const;
+		const Vector2F& origin() const;
 	private:
-		mattmath::RectangleI source_rectangle_ = mattmath::RectangleI::ZERO;
-		mattmath::Vector2F origin_ = mattmath::Vector2F::ZERO;
+		RectangleI source_rectangle_ = RectangleI::ZERO;
+		Vector2F origin_ = Vector2F::ZERO;
 	};
 }

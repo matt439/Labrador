@@ -33,13 +33,13 @@ namespace labrador
 		// In view pixels: x right, y down, origin at the viewport's top left.
 		// A backend's own clip space is its own business and is where the
 		// conversion happens.
-		mattmath::Vector2F position;
+		Vector2F position;
 
 		// Multiplied with the sampled texel, which is what makes the tint a
 		// tint (RenderPixelTests: "the tint multiplies the texel").
 		Colour colour;
 
 		// 0..1 across the whole texture, not the source rectangle.
-		mattmath::Vector2F texcoord;
+		Vector2F texcoord;
 	};
 }

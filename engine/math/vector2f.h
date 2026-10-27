@@ -2,7 +2,7 @@
 
 #include "engine/math/scalar.h"
 
-namespace mattmath
+namespace labrador
 {
 	struct Vector2I;
 
@@ -26,7 +26,7 @@ namespace mattmath
 		// see them for what that buys.
 		constexpr explicit Vector2F(float f) : x(f), y(f) {}
 		constexpr Vector2F(float x, float y) : x(x), y(y) {}
-		explicit Vector2F(const mattmath::Vector2I& vector);
+		explicit Vector2F(const Vector2I& vector);
 
 		bool operator==(const Vector2F& other) const;
 		bool operator!=(const Vector2F& other) const;

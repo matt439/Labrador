@@ -42,9 +42,9 @@ namespace linesweeper
 	// Row well_buffer_rows is the top VISIBLE row, so the two spawn rows above
 	// it map to negative offsets and are never asked for - every caller starts
 	// counting at the first visible row.
-	inline mattmath::RectangleF cell_rectangle(int x, int y)
+	inline labrador::RectangleF cell_rectangle(int x, int y)
 	{
-		return mattmath::RectangleF(
+		return labrador::RectangleF(
 			well_origin_x + static_cast<float>(x) * cell_size + cell_inset,
 			well_origin_y +
 				static_cast<float>(y - well_buffer_rows) * cell_size +
@@ -54,9 +54,9 @@ namespace linesweeper
 	}
 
 	// The middle of a cell, which is what anything thrown out of one wants.
-	inline mattmath::Vector2F cell_centre(int x, int y)
+	inline labrador::Vector2F cell_centre(int x, int y)
 	{
-		return mattmath::Vector2F(
+		return labrador::Vector2F(
 			well_origin_x + (static_cast<float>(x) + 0.5f) * cell_size,
 			well_origin_y +
 				(static_cast<float>(y - well_buffer_rows) + 0.5f) * cell_size);

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mattmath
+namespace labrador
 {
 	enum class ShapeType
 	{

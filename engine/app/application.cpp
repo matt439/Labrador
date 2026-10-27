@@ -126,7 +126,7 @@ namespace labrador
 		// included.
 		this->audio_device_ = std::make_unique<AudioDevice>();
 
-		const mattmath::Vector2I size =
+		const Vector2I size =
 			this->resolution_manager_->resolution_ivec();
 
 		// The layout's number, not the pool's. A thread count here builds one
@@ -487,7 +487,7 @@ namespace labrador
 
 	void Application::on_window_moved() const
 	{
-		const mattmath::Vector2F size = this->renderer_->back_buffer_size();
+		const Vector2F size = this->renderer_->back_buffer_size();
 		std::ignore = this->renderer_->window_size_changed(
 			static_cast<int>(size.x), static_cast<int>(size.y));
 	}
@@ -512,7 +512,7 @@ namespace labrador
 		// answers 720p for any size outside its four presets, which would make
 		// this line a no-op that looks like a fix.
 		this->resolution_manager_->set_resolution_exactly(
-			mattmath::Vector2I(width, height));
+			Vector2I(width, height));
 
 		std::ignore = this->renderer_->window_size_changed(width, height);
 	}
@@ -622,7 +622,7 @@ namespace labrador
 	{
 		if (this->mouse_)
 		{
-			this->mouse_->on_move(mattmath::Vector2I(x, y));
+			this->mouse_->on_move(Vector2I(x, y));
 		}
 	}
 
@@ -670,7 +670,7 @@ namespace labrador
 	{
 		if (this->touch_)
 		{
-			this->touch_->on_down(point, mattmath::Vector2I(x, y));
+			this->touch_->on_down(point, Vector2I(x, y));
 		}
 	}
 
@@ -678,7 +678,7 @@ namespace labrador
 	{
 		if (this->touch_)
 		{
-			this->touch_->on_move(point, mattmath::Vector2I(x, y));
+			this->touch_->on_move(point, Vector2I(x, y));
 		}
 	}
 
@@ -686,7 +686,7 @@ namespace labrador
 	{
 		if (this->touch_)
 		{
-			this->touch_->on_up(point, mattmath::Vector2I(x, y));
+			this->touch_->on_up(point, Vector2I(x, y));
 		}
 	}
 

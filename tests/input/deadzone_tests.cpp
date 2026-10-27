@@ -2,7 +2,7 @@
 #include "engine/input/gamepad.h"
 #include "engine/math/vector2f.h"
 using namespace labrador;
-using namespace mattmath;
+using namespace labrador;
 
 namespace DeadzoneTests
 {

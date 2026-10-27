@@ -23,7 +23,7 @@
 #include <tuple>
 #include <utility>
 
-using namespace mattmath;
+using namespace labrador;
 
 // The page's two optional hooks for a lost context, asked for by name on
 // Module exactly as the window's onQuit and onError are, and called only when

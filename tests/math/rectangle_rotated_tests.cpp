@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-using namespace mattmath;
+using namespace labrador;
 
 TEST_SUITE("RectangleRotated")
 {

@@ -33,9 +33,9 @@ export function codeReferences(code: string, resolver: ReferenceResolver): CodeR
 		if (!/^(?:::)?[A-Za-z_]\w*(?:::(?:~?[A-Za-z_]\w*))*$/.test(token)) continue;
 		const name = token.replace(/^::/, '');
 		if (before.endsWith('.') || before.endsWith('->') || before.endsWith('::')) continue;
-		const unqualified = name.replace(/^(?:labrador|mattmath)::/, '');
+		const unqualified = name.replace(/^labrador::/, '');
 		const type = unqualified.split('::')[0];
-		const isType = resolver.hasType(type) && (!name.includes('::') || name === unqualified || /^(?:labrador|mattmath)::/.test(name));
+		const isType = resolver.hasType(type) && (!name.includes('::') || name === unqualified || /^labrador::/.test(name));
 		const isFunction = resolver.hasFunction(name) && /^\s*(?:<[^;{}]*>)?\s*\(/.test(code.slice(match.index + token.length));
 		if (!isType && !isFunction) continue;
 		const url = resolver.codeLink(name, 'C++ code block');

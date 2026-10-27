@@ -21,7 +21,7 @@
 // is, in radians.
 struct Motion
 {
-	mattmath::Vector2F centre = { 0.0f, 0.0f };
+	labrador::Vector2F centre = { 0.0f, 0.0f };
 	float spin = 0.0f;
 };
 
@@ -40,14 +40,14 @@ inline constexpr float orbit_radius = 24.0f;
 //
 // Both are in the engine's convention, +y down, with the stick's deadzone
 // already applied.
-mattmath::Vector2F combined_direction(const mattmath::Vector2F& stick,
-	const mattmath::Vector2F& keys);
+labrador::Vector2F combined_direction(const labrador::Vector2F& stick,
+	const labrador::Vector2F& keys);
 
 // One step of dt seconds: the centre moved along combined_direction at
 // move_speed, and the spin advanced.
-Motion step_motion(const Motion& motion, const mattmath::Vector2F& stick,
-	const mattmath::Vector2F& keys, float dt);
+Motion step_motion(const Motion& motion, const labrador::Vector2F& stick,
+	const labrador::Vector2F& keys, float dt);
 
 // Where the greeting is drawn: orbit_radius above the centre, turned about it
 // by the spin.
-mattmath::Vector2F greeting_position(const Motion& motion);
+labrador::Vector2F greeting_position(const Motion& motion);

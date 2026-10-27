@@ -36,7 +36,7 @@
 
 using namespace labrador;
 using namespace linesweeper;
-using namespace mattmath;
+using namespace labrador;
 
 namespace
 {

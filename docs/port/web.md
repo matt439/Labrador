@@ -539,7 +539,7 @@ host and the target do not matter. The include check *helps*: once
 Node, so `add_test` runs a doctest `.js` under Node without changing any test
 file. Node 24 is already on this machine for the website.
 
-- **Expected to run under Node:** `MattMathTests`, `CoreTests` (serial pool),
+- **Expected to run under Node:** `LabradorMathTests`, `CoreTests` (serial pool),
   `CollisionTests`, `SceneTests`, `RenderTests` (the seam tests need no
   device), `InputTests`, `UiTests`, `AssetsTests`, `AudioTests` (with its null
   recording cases), `LineSweeperTests` and `LineSweeperViewTests`.

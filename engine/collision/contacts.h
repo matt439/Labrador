@@ -22,7 +22,7 @@ namespace labrador
 		CollisionObject* b = nullptr;
 
 		// Unit, pointing from `a` towards `b`.
-		mattmath::Vector2F normal = mattmath::Vector2F::ZERO;
+		Vector2F normal = Vector2F::ZERO;
 
 		// Overlap along `normal`, always greater than zero.
 		float penetration = 0.0f;

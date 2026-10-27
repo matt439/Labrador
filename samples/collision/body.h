@@ -21,31 +21,31 @@ namespace collisiondemo
 	class Body final : public labrador::CollisionObject
 	{
 	public:
-		Body(BodyKind kind, const mattmath::RectangleF& rectangle,
+		Body(BodyKind kind, const labrador::RectangleF& rectangle,
 			labrador::TextureHandle texture);
 
 		void update(float dt) override;
 		void draw(labrador::DrawList& draw_list) const override;
-		mattmath::RectangleF bounds() const override;
-		const mattmath::Shape* shape() const override;
+		labrador::RectangleF bounds() const override;
+		const labrador::Shape* shape() const override;
 		labrador::CollisionLayer layer() const override;
 		labrador::CollisionMask mask() const override;
 		labrador::CollisionTag tag() const override;
 		bool for_deletion() const override;
 		void on_contact(const labrador::CollisionObject& other,
-			const mattmath::Vector2F& normal, float penetration) override;
+			const labrador::Vector2F& normal, float penetration) override;
 
-		void set_position(const mattmath::Vector2F& position);
-		void set_velocity(const mattmath::Vector2F& velocity);
-		mattmath::Vector2F velocity() const;
+		void set_position(const labrador::Vector2F& position);
+		void set_velocity(const labrador::Vector2F& velocity);
+		labrador::Vector2F velocity() const;
 		bool touching_wall() const;
 		bool touching_trigger() const;
 
 	private:
 		BodyKind kind_;
-		mattmath::RectangleF rectangle_;
+		labrador::RectangleF rectangle_;
 		labrador::TextureHandle texture_;
-		mattmath::Vector2F velocity_ = mattmath::Vector2F::ZERO;
+		labrador::Vector2F velocity_ = labrador::Vector2F::ZERO;
 		bool touching_wall_ = false;
 		bool touching_trigger_ = false;
 	};

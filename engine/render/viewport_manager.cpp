@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <vector>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {
@@ -73,7 +73,7 @@ namespace labrador
 		return this->player_count_from_layout(layout);
 	}
 
-	std::vector<mattmath::RectangleF> ViewportManager::viewport_dividers() const
+	std::vector<RectangleF> ViewportManager::viewport_dividers() const
 	{
 		std::vector<RectangleF> result = std::vector<RectangleF>();
 		const Vector2F res = this->resolution_manager_->resolution_vec();

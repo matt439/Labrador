@@ -25,12 +25,12 @@ function hasClass(node, name) {
 test('qualified engine types, members and free calls reach their documented sections', () => {
 	assert.deepEqual(matches([
 		'labrador::Scene scene;',
-		'mattmath::Vector2F point;',
+		'labrador::Vector2F point;',
 		'auto draw = &labrador::Scene::draw;',
 		'auto path = labrador::path_from_utf8("assets/test.dds");',
 	].join('\n')), [
 		{ text: 'labrador::Scene', url: '/docs/reference/scene/scene/#class-scene' },
-		{ text: 'mattmath::Vector2F', url: '/docs/reference/math/vector2f/#struct-vector2f' },
+		{ text: 'labrador::Vector2F', url: '/docs/reference/math/vector2f/#struct-vector2f' },
 		{ text: 'labrador::Scene::draw', url: '/docs/reference/scene/scene/#draw' },
 		{ text: 'labrador::path_from_utf8', url: '/docs/reference/core/file-path/#path_from_utf8--path_to_utf8' },
 	]);

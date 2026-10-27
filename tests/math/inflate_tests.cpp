@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-using namespace mattmath;
+using namespace labrador;
 
 TEST_SUITE("Inflate")
 {

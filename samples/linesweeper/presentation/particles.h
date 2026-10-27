@@ -119,8 +119,8 @@ namespace linesweeper
 		// half of this sample allowed to be smooth - every duration in rules/
 		// is counted in fixed ticks and none in seconds, and every duration
 		// here is the other way round.
-		mattmath::Vector2F position;
-		mattmath::Vector2F velocity;
+		labrador::Vector2F position;
+		labrador::Vector2F velocity;
 
 		// The spark's heat at birth, zero at death, and it is the brightness
 		// as well as the clock. Counting down rather than up to a lifetime
@@ -249,8 +249,8 @@ namespace linesweeper
 		// on the frames a burst is alive the box is the burst. It costs the
 		// update loop four comparisons a particle and it costs draw() nothing,
 		// which is the right side of the split for it to be on.
-		mattmath::RectangleF bounds() const override;
-		mattmath::RectangleF cull_bounds(float units_per_pixel) const override;
+		labrador::RectangleF bounds() const override;
+		labrador::RectangleF cull_bounds(float units_per_pixel) const override;
 
 		// How many particles are alive. The array's live prefix is [0, live()).
 		int live() const
@@ -287,12 +287,12 @@ namespace linesweeper
 		// One cell's worth of sparks, aimed by `direction` and spread around
 		// it, each born at `heat`.
 		void burst(int x, int y, std::uint8_t kind, int count, float speed,
-			const mattmath::Vector2F& direction, float lifetime, float size,
+			const labrador::Vector2F& direction, float lifetime, float size,
 			float heat);
 
 		// Appends one particle, or counts a drop. The only place count_ grows.
-		void emit(const mattmath::Vector2F& position,
-			const mattmath::Vector2F& velocity, std::uint8_t kind,
+		void emit(const labrador::Vector2F& position,
+			const labrador::Vector2F& velocity, std::uint8_t kind,
 			float lifetime, float size, float heat);
 
 		// SplitMix32, the same mixer rules/tick.cpp deals pieces with, and
@@ -328,7 +328,7 @@ namespace linesweeper
 		std::uint32_t dropped_ = 0;
 		std::uint32_t rng_ = 0;
 
-		mattmath::RectangleF extent_;
+		labrador::RectangleF extent_;
 
 		labrador::TextureHandle block_;
 	};

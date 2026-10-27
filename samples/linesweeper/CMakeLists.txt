@@ -6,7 +6,7 @@
 # the whole game is playable from tests/ with no window and no device.
 #
 # It is a static library rather than a folder for exactly the reason
-# ARCHITECTURE gives for MattMath being one: when a wall has to be load-bearing
+# ARCHITECTURE gives for LabradorMath being one: when a wall has to be load-bearing
 # rather than a convention, the escalation is cheap and it is this.
 add_library(LineSweeperRules STATIC
     rules/tables.cpp

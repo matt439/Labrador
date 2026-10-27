@@ -36,6 +36,11 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-27.** The math library is `LabradorMath` and its types live in
+  `labrador::`. `CMakeLists.txt` links `LabradorMath` where it linked
+  `MattMath`, and the sources spell `labrador::Vector2F` and
+  `using namespace labrador;` where they spelt `mattmath::`. A copy must make
+  the same edits when it moves its engine pin; CHANGES.md has the commit.
 - **2026-10-27.** Per-monitor DPI awareness. `dpi_aware.manifest` is new, and
   `CMakeLists.txt` lists it with the program's sources, so Windows no longer
   stretches the window and blurs its text on a scaled display. The window is
@@ -87,7 +92,7 @@ copy taken before them would want.
   `rules/motion.h` and `rules/motion.cpp` as `step_motion` and
   `greeting_position`, with the tuning constants beside them, and
   `HelloState` holds a `Motion` where it held `position_` and `spin_`.
-  `CMakeLists.txt` builds the rules as `MinimalRules`, which links `MattMath`
+  `CMakeLists.txt` builds the rules as `MinimalRules`, which links `LabradorMath`
   and not the engine, tests them in `MinimalTests` from
   `tests/motion_tests.cpp` with doctest, and registers
   `MinimalSample --smoke-test`, which `main.cpp` answers by running the first

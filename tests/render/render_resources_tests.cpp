@@ -52,7 +52,7 @@ namespace
 	using labrador::SpriteFrame;
 	using labrador::SpriteSheet;
 	using labrador::TextureHandle;
-	using mattmath::RectangleI;
+	using labrador::RectangleI;
 
 	// Two sheets that both hold a frame and a strip called "a", in different
 	// slots - so a pair resolved against the wrong sheet would name the

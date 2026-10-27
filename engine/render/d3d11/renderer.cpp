@@ -22,7 +22,7 @@
 #include <tuple>
 #include <vector>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {
@@ -78,7 +78,7 @@ namespace labrador
 		}
 
 		// Where the engine's values become the backend's. It belongs here and
-		// not on the mattmath type: a Viewport::d3d_viewport() would put
+		// not on the math type: a Viewport::d3d_viewport() would put
 		// <d3d11.h> in a library documented as depending on nothing, and this
 		// file is its only caller. A second backend writes its own; it does not
 		// inherit this.
@@ -93,7 +93,7 @@ namespace labrador
 		// which are whole pixels already.
 		D3D11_VIEWPORT to_d3d_viewport(const Viewport& viewport)
 		{
-			const mattmath::RectangleI pixels = viewport.pixel_rect();
+			const RectangleI pixels = viewport.pixel_rect();
 
 			return { static_cast<float>(pixels.x),
 				static_cast<float>(pixels.y),

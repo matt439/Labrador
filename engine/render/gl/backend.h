@@ -90,7 +90,7 @@ namespace labrador
 		GlTexture& operator=(const GlTexture&) = delete;
 
 		GLuint name() const { return this->name_; }
-		mattmath::Vector2F size() const;
+		Vector2F size() const;
 
 	private:
 		GLuint name_ = 0;
@@ -289,7 +289,7 @@ namespace labrador
 		// cannot go stale on it anyway: its flip is pane-local, so the origin
 		// it measures from is the pane's own bottom edge rather than the
 		// buffer's (vulkan/backend.h).
-		mattmath::Vector2I drawable_size() const;
+		Vector2I drawable_size() const;
 
 		// Makes a context on `native_window` - an HWND, or the canvas's html5
 		// target - makes it current, and fills in the answers above. Defined

@@ -15,7 +15,7 @@
 #include <limits>
 #include <span>
 
-using namespace mattmath;
+using namespace labrador;
 
 TEST_SUITE("EricsonMath")
 {

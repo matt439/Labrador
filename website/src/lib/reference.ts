@@ -115,7 +115,7 @@ export function symbols(): Map<string, SymbolTarget> {
 		}
 	}
 	// Qualified spellings must name the namespace that actually declares the
-	// type. In particular, mattmath::Scene must not borrow labrador::Scene's
+	// type. In particular, other::Scene must not borrow labrador::Scene's
 	// destination just because its final identifier is familiar.
 	for (const header of REFERENCE_HEADERS) {
 		const qualify = (items: Item[], owners: string[] = []) => {

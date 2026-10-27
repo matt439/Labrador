@@ -5,7 +5,7 @@
 #include <GamePad.h>
 #include <memory>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {

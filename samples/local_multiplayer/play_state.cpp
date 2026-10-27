@@ -9,7 +9,7 @@
 #include <string>
 
 using namespace labrador;
-using namespace mattmath;
+using namespace labrador;
 
 namespace multiplayer
 {

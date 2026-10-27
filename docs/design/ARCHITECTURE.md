@@ -57,7 +57,7 @@ flowchart TD
     end
     subgraph libs["static libraries"]
         engine["LabradorEngine"]
-        math["MattMath"]
+        math["LabradorMath"]
         rules["LineSweeperRules"]
         collision_example["CollisionExample"]
         components["ComponentsExample"]
@@ -138,7 +138,7 @@ being load-bearing.
 ├── vcpkg.json              the bought edge, declared (T9)
 ├── cmake/                  the shared settings target, helper modules
 ├── engine/                 the product
-│   ├── math/               MattMath — depends on nothing, and links
+│   ├── math/               LabradorMath — depends on nothing, and links
 │   │                       nothing: no DirectXTK, no D3D11, no Windows
 │   ├── core/               game loop, fixed-step timing, states, services,
 │   │                       registries, reading numbers out of a file
@@ -361,7 +361,7 @@ between modules are include discipline — every include names its module
 (`#include "engine/collision/narrow_phase.h"`, see
 [CONVENTIONS.md](CONVENTIONS.md)) — and review enforces the direction
 below. If a wall ever needs to be load-bearing, the escalation path is
-known and cheap: promote the folder to a static library, as MattMath
+known and cheap: promote the folder to a static library, as LabradorMath
 already is (T5). That option is held, not spent.
 
 | Module | May depend on |

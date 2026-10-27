@@ -4,7 +4,7 @@ add_library(MyGameRules STATIC
     rules/motion.cpp
 )
 target_link_libraries(MyGameRules PUBLIC
-    MattMath
+    LabradorMath
     labrador_settings
 )
 

@@ -94,14 +94,14 @@ void global_name();`);
 test('free functions link to generated headings, including an overload group', () => {
 	assert.equal(codeLink('labrador::find_contacts', 'fixture'), '/docs/reference/collision/contacts/#find_contacts');
 	assert.equal(codeLink('find_contacts(objects, contacts)', 'fixture'), '/docs/reference/collision/contacts/#find_contacts');
-	assert.equal(codeLink('mattmath::are_equal(a, b)', 'fixture'), '/docs/reference/math/scalar/#are_equal');
+	assert.equal(codeLink('labrador::are_equal(a, b)', 'fixture'), '/docs/reference/math/scalar/#are_equal');
 	assert.equal(codeLink('are_equal', 'fixture'), '/docs/reference/math/scalar/#are_equal');
 	assert.equal(codeLink('std::clamp', 'fixture'), undefined);
 	assert.equal(codeLink('object.clamp()', 'fixture'), undefined);
 	assert.equal(codeLink('object->clamp()', 'fixture'), undefined);
 	assert.equal(codeLink('inflate_convex_polygon', 'fixture'), undefined);
 	assert.equal(codeLink('labrador::StateContext::push', 'fixture'), '/docs/reference/core/state-context/#push');
-	assert.equal(codeLink('mattmath::Scene', 'fixture'), undefined);
+	assert.equal(codeLink('other::Scene', 'fixture'), undefined);
 	assert.equal(codeLink('Key::w', 'fixture'), codeLink('Key', 'fixture'));
 });
 
@@ -137,7 +137,7 @@ test('ambiguous names have no guessed target; same-page overloads retain the fir
 
 test('header prose links functions without linking member calls or ordinary words', () => {
 	const html = commentHtml({ line: 0, lines: [
-		'Use `find_contacts`, mattmath::clamp() and `labrador::Scene`. A clamp holds it.',
+		'Use `find_contacts`, labrador::clamp() and `labrador::Scene`. A clamp holds it.',
 		'`object.clamp()` and `object->clamp()` are member calls; `std::clamp` is external.',
 	] });
 	assert.match(html, /href="\/docs\/reference\/collision\/contacts\/#find_contacts"/);

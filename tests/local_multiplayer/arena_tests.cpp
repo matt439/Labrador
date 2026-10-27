@@ -10,7 +10,7 @@
 #include <memory>
 
 using namespace labrador;
-using namespace mattmath;
+using namespace labrador;
 using namespace multiplayer;
 
 TEST_CASE("keyboard bindings route simultaneous input to different players without controllers")

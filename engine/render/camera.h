@@ -11,18 +11,18 @@ namespace labrador
 	// become screen coordinates. One per view, held by DrawList and applied as
 	// each draw is recorded.
 	//
-	// A render type and not a mattmath one, because mattmath's contract is that
-	// it knows nothing about drawing - and a camera is constructible from a
+	// A render type and not a math one, because the math library's contract
+	// is that it knows nothing about drawing - and a camera is constructible from a
 	// Viewport, which is a render type for the same reason.
 	struct Camera
 	{
-		mattmath::Vector2F translation = mattmath::Vector2F::ZERO;
+		Vector2F translation = Vector2F::ZERO;
 		float scale = 1.0f;
 
 		Camera() = default;
 		Camera(const Camera&) = default;
 		Camera& operator=(const Camera&) = default;
-		Camera(const mattmath::Vector2F& translation, float scale);
+		Camera(const Vector2F& translation, float scale);
 		// constexpr and defined here so DEFAULT_CAMERA is constant-initialised
 		// (camera.cpp defines it constinit), and a static in another
 		// translation unit that copies it can never read it before it is set.
@@ -36,23 +36,23 @@ namespace labrador
 		// Maps a world rectangle into view-local pixels: subtract translation
 		// from its position, then multiply position and extent by scale.
 		// The viewport's offset in the back buffer is not included.
-		mattmath::RectangleF calculate_view_rectangle(
-			const mattmath::RectangleF& world_rectangle) const;
+		RectangleF calculate_view_rectangle(
+			const RectangleF& world_rectangle) const;
 
 		// Applies the same world-to-view transform in place.
 		void calculate_view_rectangle(
-			mattmath::RectangleF& rectangle) const;
+			RectangleF& rectangle) const;
 
 		// The same transform using the supplied camera.
-		static mattmath::RectangleF calculate_view_rectangle(
-			const mattmath::RectangleF& world_rectangle,
+		static RectangleF calculate_view_rectangle(
+			const RectangleF& world_rectangle,
 			const Camera& camera);
 
 		// Writes the supplied camera's transform to `view_rectangle`.
 		static void calculate_view_rectangle(
-			const mattmath::RectangleF& world_rectangle,
+			const RectangleF& world_rectangle,
 			const Camera& camera,
-			mattmath::RectangleF& view_rectangle);
+			RectangleF& view_rectangle);
 
 		// Linearly interpolates translation and scale from `first` to `last`.
 		// `amount` is not clamped: 0 selects first, 1 last, and values outside
@@ -77,7 +77,7 @@ namespace labrador
 		// Throws std::invalid_argument for a zero scale, which is not a
 		// viewpoint but a division by nothing. Camera::frame cannot produce
 		// one; a hand-built camera can.
-		mattmath::RectangleF visible_rectangle(const Viewport& viewport) const;
+		RectangleF visible_rectangle(const Viewport& viewport) const;
 
 		// The world point under a back-buffer pixel seen through `viewport`
 		// with this camera - the inverse of calculate_view_position. A mouse
@@ -94,7 +94,7 @@ namespace labrador
 		//
 		// Throws std::invalid_argument for a zero scale, as visible_rectangle
 		// does.
-		mattmath::Vector2F world_position(const mattmath::Vector2I& buffer_point,
+		Vector2F world_position(const Vector2I& buffer_point,
 			const Viewport& viewport) const;
 
 		// The camera that shows all of `world_rectangle` in `viewport`.
@@ -106,13 +106,13 @@ namespace labrador
 		// Throws std::invalid_argument if either rectangle has a
 		// non-positive extent: a zero there is an infinite or a zero scale,
 		// which poisons every cull and every draw taken through the result.
-		static Camera frame(const mattmath::RectangleF& world_rectangle,
+		static Camera frame(const RectangleF& world_rectangle,
 			const Viewport& viewport);
 
 		// Maps a world point to view-local pixels: (world - translation) * scale.
 		// The viewport's offset in the back buffer is not included.
-		mattmath::Vector2F calculate_view_position(
-			const mattmath::Vector2F& world_position) const;
+		Vector2F calculate_view_position(
+			const Vector2F& world_position) const;
 
 		// Multiplies a world scale by this camera's scale.
 		float calculate_view_scale(float world_scale) const;

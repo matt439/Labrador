@@ -86,12 +86,12 @@ TEST_CASE("the shipping sniper exceeds the budget, and this is the record of it"
 
 TEST_CASE("projected extents cannot rule out a diagonal corner crossing")
 {
-	const mattmath::RectangleF fixed(0.0f, 0.0f, 1.0f, 1.0f);
-	const mattmath::RectangleF before(-1.1f, 0.8f, 1.0f, 1.0f);
-	const mattmath::RectangleF middle(-0.95f, 0.95f, 1.0f, 1.0f);
-	const mattmath::RectangleF after(-0.8f, 1.1f, 1.0f, 1.0f);
+	const labrador::RectangleF fixed(0.0f, 0.0f, 1.0f, 1.0f);
+	const labrador::RectangleF before(-1.1f, 0.8f, 1.0f, 1.0f);
+	const labrador::RectangleF middle(-0.95f, 0.95f, 1.0f, 1.0f);
+	const labrador::RectangleF after(-0.8f, 1.1f, 1.0f, 1.0f);
 	const float displacement = (after.position() - before.position()).length();
-	const float projected_extent = mattmath::Vector2F(1.0f, 1.0f).length();
+	const float projected_extent = labrador::Vector2F(1.0f, 1.0f).length();
 
 	// Outside the helper's axis-parallel assumptions, its numeric result is
 	// only a heuristic. This finite counterexample must not become a claim

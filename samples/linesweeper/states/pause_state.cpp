@@ -17,7 +17,7 @@
 #include <memory>
 #include <string>
 
-using namespace mattmath;
+using namespace labrador;
 using namespace labrador;
 
 namespace linesweeper

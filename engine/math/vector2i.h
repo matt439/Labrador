@@ -1,7 +1,7 @@
 #pragma once
 
 
-namespace mattmath
+namespace labrador
 {
 	struct Vector2F;
 
@@ -16,7 +16,7 @@ namespace mattmath
 		// constexpr and defined here so ZERO is constant-initialised. See
 		// Vector2F's constants for what the dynamic alternative risks.
 		constexpr Vector2I(int x, int y) : x(x), y(y) {}
-		explicit Vector2I(const mattmath::Vector2F& vector);
+		explicit Vector2I(const Vector2F& vector);
 
 		bool operator==(const Vector2I& other) const;
 		bool operator!=(const Vector2I& other) const;

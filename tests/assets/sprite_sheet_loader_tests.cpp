@@ -11,7 +11,7 @@
 #include <string>
 #include <tuple>
 using namespace labrador;
-using namespace mattmath;
+using namespace labrador;
 
 // What a sheet definition is allowed to say, and what it is not.
 //

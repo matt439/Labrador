@@ -270,10 +270,10 @@ namespace labrador
 		return DomTouch::none;
 	}
 
-	mattmath::Vector2I client_pixels(double css_x, double css_y,
+	Vector2I client_pixels(double css_x, double css_y,
 		double scale_x, double scale_y)
 	{
-		return mattmath::Vector2I(
+		return Vector2I(
 			static_cast<int>(std::floor(css_x * scale_x)),
 			static_cast<int>(std::floor(css_y * scale_y)));
 	}

@@ -109,7 +109,7 @@ namespace
 		WindowOptions options;
 		options.window_class_name = L"LabradorWindowTests";
 		options.window_title = L"window tests";
-		options.client_size = mattmath::Vector2I(64, 64);
+		options.client_size = labrador::Vector2I(64, 64);
 		options.visible = false;
 		return options;
 	}
@@ -768,7 +768,7 @@ TEST_CASE("resizing a hidden window never requests activation")
 	notify.log.clear();
 	WindowPositionProbe probe(handle);
 
-	window.resize_client(mattmath::Vector2I(400, 300));
+	window.resize_client(labrador::Vector2I(400, 300));
 
 	CHECK(probe.observed());
 	CHECK(probe.no_activation());
@@ -794,7 +794,7 @@ TEST_CASE("what a hidden window reports before the constructor returns")
 		// a show. Nothing corrects the caller, and nothing needs to while the
 		// request is above the smallest window the system allows.
 		WindowOptions options = unclamped_hidden_options();
-		options.client_size = mattmath::Vector2I(320, 240);
+		options.client_size = labrador::Vector2I(320, 240);
 		Window window(options, &notify);
 		CHECK(notify.log.empty());
 		const RECT client = client_of(hwnd(window));
@@ -807,7 +807,7 @@ TEST_CASE("what a hidden window reports before the constructor returns")
 		// A popup's first WM_SIZE comes from its creation, so the report is
 		// made; with no show to maximise it, it is the requested size.
 		WindowOptions options = unclamped_hidden_options();
-		options.client_size = mattmath::Vector2I(320, 240);
+		options.client_size = labrador::Vector2I(320, 240);
 		options.fullscreen = true;
 		Window window(options, &notify);
 		CHECK(notify.log == std::vector<std::string>{ "size 320x240" });
@@ -842,7 +842,7 @@ TEST_CASE("a hidden window stays hidden and inactive through enter_fullscreen")
 	SUBCASE("leave_fullscreen restores the frame and the client size without showing")
 	{
 		notify.log.clear();
-		window.leave_fullscreen(mattmath::Vector2I(320, 240));
+		window.leave_fullscreen(labrador::Vector2I(320, 240));
 
 		CHECK_FALSE(IsWindowVisible(handle));
 		CHECK(GetForegroundWindow() != handle);
@@ -864,7 +864,7 @@ TEST_CASE("an already-windowed leave_fullscreen is a resize and nothing else")
 	const HWND handle = hwnd(window);
 	notify.log.clear();
 
-	window.leave_fullscreen(mattmath::Vector2I(320, 240));
+	window.leave_fullscreen(labrador::Vector2I(320, 240));
 
 	CHECK_FALSE(IsWindowVisible(handle));
 	CHECK(GetForegroundWindow() != handle);
@@ -933,7 +933,7 @@ namespace
 	WindowOptions aware_options()
 	{
 		WindowOptions options = unclamped_hidden_options();
-		options.client_size = mattmath::Vector2I(320, 240);
+		options.client_size = labrador::Vector2I(320, 240);
 		return options;
 	}
 }
@@ -951,7 +951,7 @@ TEST_CASE("a per-monitor-aware window gets the client size it asked for")
 	CHECK(client.right - client.left == 320);
 	CHECK(client.bottom - client.top == 240);
 
-	window.resize_client(mattmath::Vector2I(400, 300));
+	window.resize_client(labrador::Vector2I(400, 300));
 	const RECT resized = client_of(handle);
 	CHECK(resized.right - resized.left == 400);
 	CHECK(resized.bottom - resized.top == 300);
@@ -1058,7 +1058,7 @@ TEST_CASE("a per-monitor v1 window keeps its client pixels through a DPI change"
 	CHECK(now.bottom == before.bottom);
 	CHECK(notify.log.empty());
 
-	window.resize_client(mattmath::Vector2I(400, 300));
+	window.resize_client(labrador::Vector2I(400, 300));
 	const RECT resized = client_of(handle);
 	CHECK(resized.right - resized.left == 400);
 	CHECK(resized.bottom - resized.top == 300);

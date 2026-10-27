@@ -15,8 +15,8 @@ using labrador::CollisionTag;
 using labrador::GameObject;
 using labrador::Scene;
 using labrador::Camera;
-using mattmath::RectangleF;
-using mattmath::Vector2F;
+using labrador::RectangleF;
+using labrador::Vector2F;
 using labrador::Viewport;
 
 namespace
@@ -65,7 +65,7 @@ namespace
 		void draw(labrador::DrawList& /*draw_list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
-		const mattmath::Shape* shape() const override
+		const labrador::Shape* shape() const override
 		{
 			return &this->rectangle_;
 		}

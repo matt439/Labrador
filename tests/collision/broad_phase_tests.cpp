@@ -18,8 +18,8 @@ using labrador::CollisionMask;
 using labrador::CollisionObject;
 using labrador::CollisionTag;
 using labrador::Contact;
-using mattmath::RectangleF;
-using mattmath::Vector2F;
+using labrador::RectangleF;
+using labrador::Vector2F;
 
 namespace
 {
@@ -39,7 +39,7 @@ namespace
 		void draw(labrador::DrawList& /*list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
-		const mattmath::Shape* shape() const override
+		const labrador::Shape* shape() const override
 		{
 			return &this->rectangle_;
 		}

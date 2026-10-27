@@ -9,7 +9,7 @@ namespace labrador
 	namespace detail
 	{
 		// Colour's constructors clamp, and they are constexpr so that the
-		// palette below costs no initialisation at all. mattmath::clamp is
+		// palette below costs no initialisation at all. clamp is
 		// neither, and making it so would be a change to a library this one
 		// only borrows from.
 		constexpr float clamp01(float value)
@@ -20,7 +20,7 @@ namespace labrador
 
 	// An RGBA colour, each channel clamped to [0, 1].
 	//
-	// NOT IN MattMath, whose job is shapes and vectors and which is documented
+	// NOT IN LabradorMath, whose job is shapes and vectors and which is documented
 	// as depending on nothing. A colour is not geometry - it is what a renderer
 	// tints a sprite with - so it lives here, and so does the palette.
 	struct Colour

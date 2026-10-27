@@ -117,7 +117,7 @@ preset in `CMakePresets.json` with them.
    <Code code={rootCMake} lang="cmake" title="CMakeLists.txt" />
 
    `enable_testing()` makes your tests ctest's. `add_subdirectory(external/labrador)` builds the
-   engine library and defines the targets your build links: `LabradorEngine`; `MattMath`, the
+   engine library and defines the targets your build links: `LabradorEngine`; `LabradorMath`, the
    engine's maths on its own, which the rules library links instead of the whole engine; and
    `labrador_settings`, which applies the engine's compiler settings to your code too, warnings
    as errors included. Do not define your own `labrador_settings`; CMake stops at a second target

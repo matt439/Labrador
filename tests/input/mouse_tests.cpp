@@ -14,7 +14,7 @@ namespace
 	{
 		MouseState state;
 		state.focused = true;
-		state.position = mattmath::Vector2I(x, y);
+		state.position = labrador::Vector2I(x, y);
 		for (const MouseButton button : down)
 		{
 			state.buttons = static_cast<uint8_t>(state.buttons |
@@ -130,12 +130,12 @@ namespace MouseTests
 			const MouseState before = unfocused_at(0, 0);
 			const MouseState now = at(900, 700, {});
 
-			CHECK(motion(now, before) == mattmath::Vector2I::ZERO);
+			CHECK(motion(now, before) == labrador::Vector2I::ZERO);
 
 			// And across two focused frames it is the plain difference.
 			const MouseState settled = at(100, 100, {});
 			const MouseState moved = at(130, 90, {});
-			CHECK(motion(moved, settled) == mattmath::Vector2I(30, -10));
+			CHECK(motion(moved, settled) == labrador::Vector2I(30, -10));
 		}
 
 		TEST_CASE("nothing is visible until the frame turns over")
@@ -144,13 +144,13 @@ namespace MouseTests
 			settle(mouse);
 
 			mouse.on_button_down(MouseButton::left);
-			mouse.on_move(mattmath::Vector2I(40, 50));
+			mouse.on_move(labrador::Vector2I(40, 50));
 			CHECK_FALSE(mouse.held(MouseButton::left));
 
 			mouse.poll();
 			CHECK(mouse.held(MouseButton::left));
 			CHECK(mouse.pressed(MouseButton::left));
-			CHECK(mouse.position() == mattmath::Vector2I(40, 50));
+			CHECK(mouse.position() == labrador::Vector2I(40, 50));
 
 			mouse.poll();
 			CHECK_FALSE(mouse.pressed(MouseButton::left));
@@ -236,14 +236,14 @@ namespace MouseTests
 			Mouse mouse;
 			settle(mouse);
 
-			mouse.on_move(mattmath::Vector2I(300, 200));
+			mouse.on_move(labrador::Vector2I(300, 200));
 			mouse.poll();
 
 			mouse.set_focused(false);
 			mouse.poll();
 
-			CHECK(mouse.position() == mattmath::Vector2I(300, 200));
-			CHECK(mouse.motion() == mattmath::Vector2I::ZERO);
+			CHECK(mouse.position() == labrador::Vector2I(300, 200));
+			CHECK(mouse.motion() == labrador::Vector2I::ZERO);
 		}
 
 		TEST_CASE("a position outside the client area is kept as given")
@@ -255,10 +255,10 @@ namespace MouseTests
 			Mouse mouse;
 			settle(mouse);
 
-			mouse.on_move(mattmath::Vector2I(-12, -40));
+			mouse.on_move(labrador::Vector2I(-12, -40));
 			mouse.poll();
 
-			CHECK(mouse.position() == mattmath::Vector2I(-12, -40));
+			CHECK(mouse.position() == labrador::Vector2I(-12, -40));
 		}
 
 		TEST_CASE("an unrecognised button changes nothing")

@@ -6,7 +6,6 @@
 
 #include <vector>
 
-using mattmath::Vector2F;
 
 namespace labrador
 {

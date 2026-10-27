@@ -7,7 +7,7 @@
 #include <initializer_list>
 
 using namespace labrador;
-using mattmath::Vector2F;
+using labrador::Vector2F;
 
 // The producer engine/ui/navigation.h spent its whole life claiming existed.
 //

@@ -73,14 +73,14 @@ namespace labrador
 		// Note what is not expressible: an object cannot report itself
 		// invisible. Whether anything is drawn is a property of draw(),
 		// not of the extent.
-		virtual mattmath::RectangleF bounds() const = 0;
+		virtual RectangleF bounds() const = 0;
 
 		// Conservative drawn extent for culling at this view's world units per
 		// pixel (nonnegative). Ordinary geometry needs no adjustment. Drawables
 		// that snap in view pixels override this: quantization happens after the camera, so
 		// its world-space allowance depends on zoom. bounds() remains the
 		// unsnapped geometry used by layout and collision.
-		virtual mattmath::RectangleF cull_bounds(float /*units_per_pixel*/) const
+		virtual RectangleF cull_bounds(float /*units_per_pixel*/) const
 		{
 			return this->bounds();
 		}

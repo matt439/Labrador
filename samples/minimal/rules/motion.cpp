@@ -2,7 +2,7 @@
 
 #include "engine/math/matrix3x2f.h"
 
-using namespace mattmath;
+using namespace labrador;
 
 Vector2F combined_direction(const Vector2F& stick, const Vector2F& keys)
 {

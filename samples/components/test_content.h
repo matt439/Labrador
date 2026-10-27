@@ -28,7 +28,7 @@ namespace components
 			{
 				labrador::Glyph glyph;
 				glyph.character = character;
-				glyph.subrect = mattmath::RectangleI(0, 0, 10, 10);
+				glyph.subrect = labrador::RectangleI(0, 0, 10, 10);
 				glyphs.push_back(glyph);
 			}
 

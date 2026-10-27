@@ -5,7 +5,7 @@
 #include "engine/math/triangle.h"
 #include "engine/math/vector2f.h"
 
-using namespace mattmath;
+using namespace labrador;
 
 TEST_SUITE("RectangleF")
 {

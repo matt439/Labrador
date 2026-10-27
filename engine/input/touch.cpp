@@ -63,18 +63,18 @@ namespace labrador
 			!was_cancelled(now, id);
 	}
 
-	mattmath::Vector2I motion(const TouchState& now, const TouchState& before,
+	Vector2I motion(const TouchState& now, const TouchState& before,
 		uint32_t id)
 	{
 		if (!now.focused || !before.focused)
 		{
-			return mattmath::Vector2I::ZERO;
+			return Vector2I::ZERO;
 		}
 		const TouchPoint* const to = now.find(id);
 		const TouchPoint* const from = before.find(id);
 		if (to == nullptr || from == nullptr)
 		{
-			return mattmath::Vector2I::ZERO;
+			return Vector2I::ZERO;
 		}
 		return to->position - from->position;
 	}
@@ -127,7 +127,7 @@ namespace labrador
 	}
 
 	void Touch::on_down(uint32_t platform_id,
-		const mattmath::Vector2I& position)
+		const Vector2I& position)
 	{
 		if (!this->live_focused_)
 		{
@@ -162,7 +162,7 @@ namespace labrador
 	}
 
 	void Touch::on_move(uint32_t platform_id,
-		const mattmath::Vector2I& position)
+		const Vector2I& position)
 	{
 		const int index = this->find_live(platform_id);
 		if (index >= 0)
@@ -171,7 +171,7 @@ namespace labrador
 		}
 	}
 
-	void Touch::on_up(uint32_t platform_id, const mattmath::Vector2I& position)
+	void Touch::on_up(uint32_t platform_id, const Vector2I& position)
 	{
 		const int index = this->find_live(platform_id);
 		if (index < 0)
@@ -287,7 +287,7 @@ namespace labrador
 		return labrador::released(this->current_, this->previous_, id);
 	}
 
-	mattmath::Vector2I Touch::motion(uint32_t id) const
+	Vector2I Touch::motion(uint32_t id) const
 	{
 		return labrador::motion(this->current_, this->previous_, id);
 	}

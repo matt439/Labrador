@@ -3,7 +3,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/math/rectanglef.h"
 
-namespace mattmath
+namespace labrador
 {
 
 	RectangleI::RectangleI(const Vector2I& position,

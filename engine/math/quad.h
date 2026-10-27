@@ -7,7 +7,7 @@
 
 #include <array>
 
-namespace mattmath
+namespace labrador
 {
 	struct RectangleRotated;
 
@@ -23,9 +23,9 @@ namespace mattmath
 		explicit Quad(const RectangleF& rectangle);
 		explicit Quad(const RectangleRotated& rectangle);
 
-		mattmath::RectangleF bounding_box() const override;
+		RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
-		void offset(const mattmath::Vector2F& amount) override;
+		void offset(const Vector2F& amount) override;
 		void inflate(float amount) override;
 
 		bool is_valid() const;
@@ -52,7 +52,7 @@ namespace mattmath
 		bool operator==(const Quad& other) const;
 		bool operator!=(const Quad& other) const;
 
-		mattmath::Vector2F center() const override;
+		Vector2F center() const override;
 
 	private:
 		Point2F points_[4] = { Vector2F::ZERO, Vector2F::ZERO,

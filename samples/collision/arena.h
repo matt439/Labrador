@@ -14,7 +14,7 @@ namespace collisiondemo
 		// An unresolved texture is useful for headless simulation. Drawing
 		// requires a handle resolved against the renderer's resource table.
 		explicit Arena(labrador::TextureHandle texture = {});
-		void step(mattmath::Vector2F direction, float dt);
+		void step(labrador::Vector2F direction, float dt);
 		void reset();
 		Body& player();
 		const Body& player() const;

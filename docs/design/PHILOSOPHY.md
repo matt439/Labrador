@@ -292,9 +292,9 @@ the tests share one dependency direction and one compiler-settings target
 
 | Target | Type | Directory | Depends on |
 |---|---|---|---|
-| `MattMath` | static library | `engine/math/` | nothing |
-| `LabradorEngine` | static library | `engine/` | MattMath, platform SDKs |
-| `MinimalRules` | static library | `samples/minimal/rules/` | MattMath |
+| `LabradorMath` | static library | `engine/math/` | nothing |
+| `LabradorEngine` | static library | `engine/` | LabradorMath, platform SDKs |
+| `MinimalRules` | static library | `samples/minimal/rules/` | LabradorMath |
 | `MinimalSample` | application | `samples/minimal/` | MinimalRules, LabradorEngine |
 | `LineSweeperRules` | static library | `samples/linesweeper/rules/` | nothing — the settings target carries no libraries |
 | `LineSweeperSample` | application | `samples/linesweeper/` | LineSweeperRules, LabradorEngine |
@@ -311,7 +311,7 @@ the tests share one dependency direction and one compiler-settings target
 
 A client's own application target lives in the client's repository, linking
 `LabradorEngine` and `labrador_settings` across the submodule boundary, and a
-library of its rules that its tests run without the engine links `MattMath`
+library of its rules that its tests run without the engine links `LabradorMath`
 alone, as `MinimalRules` does.
 
 The disk layout mirrors the targets — `engine/math/`, `engine/core/`,
@@ -873,7 +873,7 @@ Named so their absence is deliberate. Four of them are permanent: online play,
   local-multiplayer engine — split-screen, shared screen, one machine.
   Being excellent at couch multiplayer is the niche; no design tax is paid
   for netcode, replication, or rollback determinism, ever.
-- **3D. Permanent.** MattMath is a 2D library; the dimension is a design
+- **3D. Permanent.** LabradorMath is a 2D library; the dimension is a design
   constant, not a parameter.
 - **An editor. Permanent.** Content is data (T7); data files plus a text
   editor are the toolchain, and what tooling there is runs from the command
