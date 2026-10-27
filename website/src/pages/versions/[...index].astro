@@ -49,7 +49,7 @@ const headings = [
 			<h2 id="development">Development</h2>
 			<p class="version-facts">Unreleased. Rebuilt from <code>master</code> whenever it changes.</p>
 			<ul class="version-links">
-				<li><a href={sitePath('/docs/')}>Documentation</a></li>
+				<li><a href={sitePath('/docs/')}>Documentation<span class="sr-only"> for Development</span></a></li>
 			</ul>
 			<p class="version-commit">
 				Built from <a href={commitUrl()}><code>{REVISION.commit}</code></a> of {REVISION.date}.
@@ -64,8 +64,8 @@ const headings = [
 						Published {release.published}; source of {release.sourceDate}.
 					</p>
 					<ul class="version-links">
-						<li><a href={`${release.path}docs/`}>Documentation</a></li>
-						<li><a href={release.path}>Home page</a></li>
+						<li><a href={`${release.path}docs/`}>Documentation<span class="sr-only"> for {release.tag}</span></a></li>
+						<li><a href={release.path}>Home page<span class="sr-only"> of {release.tag}</span></a></li>
 						<li><a href={`${GITHUB_REPOSITORY}/tree/${release.tag}`}>Source at {release.tag}</a></li>
 					</ul>
 					<p class="version-commit">
