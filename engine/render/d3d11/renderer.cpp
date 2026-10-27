@@ -392,21 +392,17 @@ namespace labrador
 	{
 		// UNUSED, AND SAYING SO IS THE POINT. layer_depth orders nothing -
 		// RenderPixelTests pins that call order decides - and the sprite vertex
-		// has no z, so there is nowhere for the value to go. It stays on the
-		// seam because the seam is what a client writes against and because a
-		// backend that ever does sort will want it.
+		// has no z for the value to go into. It stays on the seam because the
+		// seam is what a client writes against.
 		std::ignore = layer_depth;
 
 		ID3D11ShaderResourceView* view =
 			this->view_->owner->resources->impl()->texture(texture);
 
-		SpriteVertex corners[4];
-		build_sprite_quad(
-			this->view_->camera.calculate_view_rectangle(destination),
-			source, Renderer::Impl::texture_size(view), tint, rotation, origin,
-			flip, corners);
-
-		this->view_->draw(view, corners);
+		const ResolvedTexture<ID3D11ShaderResourceView*> resolved{
+			view, Renderer::Impl::texture_size(view) };
+		record_sprite(*this->view_, resolved, source, destination, tint,
+			rotation, origin, flip);
 	}
 
 	void DrawList::draw_text(FontHandle font,
@@ -420,40 +416,18 @@ namespace labrador
 	{
 		std::ignore = layer_depth;
 
-		// Two tables and two lookups, and which side of the seam each comes
-		// from is the rule rather than a habit: a Font is engine data, so its
-		// table is the seam's own; a shader resource view is not, so its table
-		// is this folder's.
+		// The font table is the seam's own and the texture table is this
+		// folder's, which is the rule about which half lives where reading as
+		// two lines of code (engine/render/render_resources.h).
 		const RenderResources& resources = *this->view_->owner->resources;
 		const Font& the_font = *resources.font(font);
-
-		// A GLYPH IS A SPRITE, AND THAT IS THE WHOLE OF THIS FUNCTION. The walk
-		// is the engine's (font.h) and so is the quad (sprite_geometry.h); what
-		// is left here is resolving two handles and asking for one quad per
-		// glyph. A second backend writes this and nothing more to draw text.
 		ID3D11ShaderResourceView* atlas =
 			resources.impl()->texture(the_font.atlas());
-		const Vector2F atlas_size = Renderer::Impl::texture_size(atlas);
 
-		const Vector2F screen_position =
-			this->view_->camera.calculate_view_position(position);
-		const float screen_scale =
-			this->view_->camera.calculate_view_scale(scale);
-
-		// THE PEN AND THE BEARING ARE THE ENGINE'S TOO, and this backend spells
-		// neither of them. build_glyph_quad takes the glyph and
-		// the pen the walk reported and answers with four corners, so what is
-		// left here is resolving two handles and submitting.
-		DrawList::View& view = *this->view_;
-		the_font.for_each_glyph(text,
-			[&](const Glyph& glyph, const Vector2F& pen)
-			{
-				SpriteVertex corners[4];
-				build_glyph_quad(screen_position, screen_scale, glyph, pen,
-					atlas_size, tint, rotation, origin, corners);
-
-				view.draw(atlas, corners);
-			});
+		const ResolvedTexture<ID3D11ShaderResourceView*> resolved{
+			atlas, Renderer::Impl::texture_size(atlas) };
+		record_text(*this->view_, the_font, resolved, text, position, tint,
+			scale, rotation, origin);
 	}
 
 	// --- Renderer::Impl ------------------------------------------------------

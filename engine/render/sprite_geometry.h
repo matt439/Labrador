@@ -8,6 +8,8 @@
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_vertex.h"
 
+#include <string>
+
 // Where a sprite's four corners go, and what they sample.
 //
 // THIS FILE IS THE PIXEL CONTRACT. Every term RenderPixelTests pins is decided
@@ -165,4 +167,64 @@ namespace labrador
 		const Vector2F& measured_size,
 		float rotation,
 		const Vector2F& origin);
+
+	// A texture handle a backend has resolved: whatever its view's draw()
+	// records, and the size in texels that the quad arithmetic needs.
+	// `Texture` is a pointer, a reference or a handle, as the backend's
+	// draw() takes it.
+	template <typename Texture>
+	struct ResolvedTexture
+	{
+		Texture texture;
+		Vector2F size;
+	};
+
+	// DrawList::draw_sprite once the backend has resolved the handle. The
+	// view's camera maps `destination`, build_sprite_quad builds the corners,
+	// and the view records them. `View` is the backend's DrawList::View; it
+	// has a `camera` and a `draw(texture, corners)`. A template rather than a
+	// virtual call, because it runs once per sprite (T8).
+	template <typename View, typename Texture>
+	void record_sprite(View& view,
+		const ResolvedTexture<Texture>& texture,
+		const RectangleI& source,
+		const RectangleF& destination,
+		const Colour& tint,
+		float rotation,
+		const Vector2F& origin,
+		SpriteFlip flip)
+	{
+		SpriteVertex corners[4];
+		build_sprite_quad(view.camera.calculate_view_rectangle(destination),
+			source, texture.size, tint, rotation, origin, flip, corners);
+		view.draw(texture.texture, corners);
+	}
+
+	// DrawList::draw_text once the backend has resolved the font's atlas. A
+	// glyph is a sprite: the font walks the text, build_glyph_quad places
+	// each glyph, and the view records it as record_sprite's view does.
+	template <typename View, typename Texture>
+	void record_text(View& view,
+		const Font& font,
+		const ResolvedTexture<Texture>& atlas,
+		const std::wstring& text,
+		const Vector2F& position,
+		const Colour& tint,
+		float scale,
+		float rotation,
+		const Vector2F& origin)
+	{
+		const Vector2F screen_position =
+			view.camera.calculate_view_position(position);
+		const float screen_scale = view.camera.calculate_view_scale(scale);
+
+		font.for_each_glyph(text,
+			[&](const Glyph& glyph, const Vector2F& pen)
+			{
+				SpriteVertex corners[4];
+				build_glyph_quad(screen_position, screen_scale, glyph, pen,
+					atlas.size, tint, rotation, origin, corners);
+				view.draw(atlas.texture, corners);
+			});
+	}
 }

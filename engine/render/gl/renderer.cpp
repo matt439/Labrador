@@ -300,19 +300,17 @@ namespace labrador
 	{
 		// UNUSED, AND SAYING SO IS THE POINT. layer_depth orders nothing -
 		// RenderPixelTests pins that call order decides - and the sprite vertex
-		// has no z for it to ride in. It stays on the seam because the seam is
-		// what a client writes against.
+		// has no z for the value to go into. It stays on the seam because the
+		// seam is what a client writes against.
 		std::ignore = layer_depth;
 
-		const GlTexture& gl_texture =
+		const GlTexture& device_texture =
 			*this->view_->owner->resources->impl()->texture(texture);
 
-		SpriteVertex corners[4];
-		build_sprite_quad(
-			this->view_->camera.calculate_view_rectangle(destination),
-			source, gl_texture.size(), tint, rotation, origin, flip, corners);
-
-		this->view_->draw(gl_texture, corners);
+		const ResolvedTexture<const GlTexture&> resolved{
+			device_texture, device_texture.size() };
+		record_sprite(*this->view_, resolved, source, destination, tint,
+			rotation, origin, flip);
 	}
 
 	void DrawList::draw_text(FontHandle font,
@@ -332,26 +330,11 @@ namespace labrador
 		const RenderResources& resources = *this->view_->owner->resources;
 		const Font& the_font = *resources.font(font);
 		const GlTexture& atlas = *resources.impl()->texture(the_font.atlas());
-		const Vector2F atlas_size = atlas.size();
 
-		const Vector2F screen_position =
-			this->view_->camera.calculate_view_position(position);
-		const float screen_scale =
-			this->view_->camera.calculate_view_scale(scale);
-
-		// IDENTICAL TO EVERY OTHER BACKEND'S, LINE FOR LINE BAR THE TYPES, which
-		// is the point of the walk and the quad both being the engine's. A
-		// glyph is a sprite; what is left here is resolving two handles.
-		DrawList::View& view = *this->view_;
-		the_font.for_each_glyph(text,
-			[&](const Glyph& glyph, const Vector2F& pen)
-			{
-				SpriteVertex corners[4];
-				build_glyph_quad(screen_position, screen_scale, glyph, pen,
-					atlas_size, tint, rotation, origin, corners);
-
-				view.draw(atlas, corners);
-			});
+		const ResolvedTexture<const GlTexture&> resolved{
+			atlas, atlas.size() };
+		record_text(*this->view_, the_font, resolved, text, position, tint,
+			scale, rotation, origin);
 	}
 
 	// --- Renderer::Impl ------------------------------------------------------
