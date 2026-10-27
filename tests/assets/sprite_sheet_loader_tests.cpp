@@ -4,14 +4,13 @@
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
-#include <filesystem>
-#include <fstream>
+#include "tests/scratch_file.h"
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <tuple>
 using namespace labrador;
-using namespace labrador;
+using labrador_tests::ScratchFile;
 
 // What a sheet definition is allowed to say, and what it is not.
 //
@@ -31,44 +30,6 @@ using namespace labrador;
 
 namespace
 {
-	// A sheet definition on disk, deleted when the test leaves. The same shape
-	// tests/assets/json_tests.cpp uses and deliberately not shared with it: the
-	// loader takes a path, both files need four lines of RAII to give it one,
-	// and a header holding those four lines would be a third file in the folder
-	// earning nothing.
-	class TempSheet
-	{
-	public:
-		explicit TempSheet(const std::string& contents)
-		{
-			this->path_ = std::filesystem::temp_directory_path() /
-				("labrador_sheet_test_" + std::to_string(next_id()) + ".json");
-
-			std::ofstream file(this->path_, std::ios::binary);
-			file << contents;
-		}
-
-		~TempSheet()
-		{
-			std::error_code ignored;
-			std::filesystem::remove(this->path_, ignored);
-		}
-
-		TempSheet(const TempSheet&) = delete;
-		TempSheet& operator=(const TempSheet&) = delete;
-
-		std::string path() const { return this->path_.string(); }
-
-	private:
-		static int next_id()
-		{
-			static int id = 0;
-			return ++id;
-		}
-
-		std::filesystem::path path_;
-	};
-
 	// One frame, with whatever extra keys the case under test wants after the
 	// size. `extra` is written verbatim, so a case can spell a key the schema
 	// does not have as easily as one it does.
@@ -87,7 +48,7 @@ namespace
 
 	std::unique_ptr<SpriteSheet> load(const std::string& contents)
 	{
-		const TempSheet file(contents);
+		const ScratchFile file("sheet.json", contents);
 		return read_sprite_sheet(file.path().c_str(), TextureHandle());
 	}
 
@@ -96,7 +57,7 @@ namespace
 	// and the text is the entire product of this branch (T6).
 	std::string refusal_message(const std::string& contents)
 	{
-		const TempSheet file(contents);
+		const ScratchFile file("sheet.json", contents);
 		try
 		{
 			read_sprite_sheet(file.path().c_str(), TextureHandle());

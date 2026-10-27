@@ -3,8 +3,8 @@
 #include "engine/render/sprite_font_file.h"
 #include "engine/render/font.h"
 #include "engine/render/texture_format.h"
+#include "tests/scratch_file.h"
 
-#include <cstdio>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -30,36 +30,9 @@ namespace
 	using labrador::SpriteFontFile;
 	using labrador::TextureFormat;
 	using labrador::read_sprite_font_file;
+	using labrador_tests::ScratchFile;
 
 	const char* font_path = "./content/jetbrains_mono_bold_16.spritefont";
-
-	// A file in the working directory, removed when the test leaves.
-	class ScratchFile
-	{
-	public:
-		ScratchFile(const std::string& name,
-			const std::vector<unsigned char>& bytes)
-			: path_(name)
-		{
-			std::ofstream file(this->path_, std::ios::binary);
-			REQUIRE(file.good());
-			if (!bytes.empty())
-			{
-				file.write(reinterpret_cast<const char*>(bytes.data()),
-					static_cast<std::streamsize>(bytes.size()));
-			}
-		}
-
-		~ScratchFile() { std::remove(this->path_.c_str()); }
-
-		ScratchFile(const ScratchFile&) = delete;
-		ScratchFile& operator=(const ScratchFile&) = delete;
-
-		const std::string& path() const { return this->path_; }
-
-	private:
-		std::string path_;
-	};
 
 	std::vector<unsigned char> whole_font()
 	{

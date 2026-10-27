@@ -3,8 +3,8 @@
 #include "engine/render/dds_file.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
+#include "tests/scratch_file.h"
 
-#include <cstdio>
 #include <fstream>
 #include <stdexcept>
 #include <limits>
@@ -29,35 +29,9 @@ namespace
 	using labrador::TextureLevel;
 	using labrador::read_dds_file;
 	using labrador::texture_level;
+	using labrador_tests::ScratchFile;
 
 	const char* quad_path = "./content/quad.dds";
-
-	class ScratchFile
-	{
-	public:
-		ScratchFile(const std::string& name,
-			const std::vector<unsigned char>& bytes)
-			: path_(name)
-		{
-			std::ofstream file(this->path_, std::ios::binary);
-			REQUIRE(file.good());
-			if (!bytes.empty())
-			{
-				file.write(reinterpret_cast<const char*>(bytes.data()),
-					static_cast<std::streamsize>(bytes.size()));
-			}
-		}
-
-		~ScratchFile() { std::remove(this->path_.c_str()); }
-
-		ScratchFile(const ScratchFile&) = delete;
-		ScratchFile& operator=(const ScratchFile&) = delete;
-
-		const std::string& path() const { return this->path_; }
-
-	private:
-		std::string path_;
-	};
 
 	std::vector<unsigned char> quad_bytes()
 	{

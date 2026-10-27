@@ -1,15 +1,15 @@
 #include <doctest/doctest.h>
 
 #include "engine/assets/sound_bank_loader.h"
+#include "tests/scratch_file.h"
 
-#include <filesystem>
-#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
 
 using namespace labrador;
+using labrador_tests::ScratchFile;
 
 // What a bank definition is allowed to say, and what comes out of it.
 //
@@ -27,50 +27,10 @@ using namespace labrador;
 // configuration that has the headless backend. The split is the seam's: this
 // file is above it and that one is across it.
 
-namespace
-{
-	// A bank definition on disk, deleted when the test leaves. The same shape
-	// sprite_sheet_loader_tests.cpp uses beside it, and deliberately not shared
-	// with it for the reason that file already gives: two loaders each need
-	// four lines of RAII to be handed a path, and a header holding those four
-	// lines would be a third file in the folder earning nothing.
-	class TempDefinition
-	{
-	public:
-		explicit TempDefinition(const std::string& contents)
-		{
-			this->path_ = std::filesystem::temp_directory_path() /
-				("labrador_bank_test_" + std::to_string(next_id()) + ".json");
-
-			std::ofstream file(this->path_, std::ios::binary);
-			file << contents;
-		}
-
-		~TempDefinition()
-		{
-			std::error_code ignored;
-			std::filesystem::remove(this->path_, ignored);
-		}
-
-		TempDefinition(const TempDefinition&) = delete;
-		TempDefinition& operator=(const TempDefinition&) = delete;
-
-		std::string path() const { return this->path_.string(); }
-
-	private:
-		static int next_id()
-		{
-			static int id = 0;
-			return ++id;
-		}
-
-		std::filesystem::path path_;
-	};
-}
 
 TEST_CASE("a definition names its waves and its effect instances")
 {
-	const TempDefinition definition_file(R"({
+	const ScratchFile definition_file("bank.json", R"({
 		"waves": [ "shot", "hit", "engine" ],
 		"create_effect_instance_for_each_wave": false,
 		"sound_effect_instances": [
@@ -96,7 +56,7 @@ TEST_CASE("a definition names its waves and its effect instances")
 
 TEST_CASE("an effect may name a wave the wave list did not, and it joins the list")
 {
-	const TempDefinition definition_file(R"({
+	const ScratchFile definition_file("bank.json", R"({
 		"waves": [ "shot" ],
 		"create_effect_instance_for_each_wave": false,
 		"sound_effect_instances": [
@@ -119,7 +79,7 @@ TEST_CASE("an effect may name a wave the wave list did not, and it joins the lis
 
 TEST_CASE("a definition can ask for one instance per wave")
 {
-	const TempDefinition definition_file(R"({
+	const ScratchFile definition_file("bank.json", R"({
 		"waves": [ "shot", "hit" ],
 		"create_effect_instance_for_each_wave": true,
 		"sound_effect_instances": [
@@ -140,7 +100,7 @@ TEST_CASE("a definition can ask for one instance per wave")
 
 TEST_CASE("two effect instances of one name is a content bug, and it says so")
 {
-	const TempDefinition definition_file(R"({
+	const ScratchFile definition_file("bank.json", R"({
 		"waves": [ "shot", "hit" ],
 		"create_effect_instance_for_each_wave": false,
 		"sound_effect_instances": [
@@ -160,7 +120,7 @@ TEST_CASE("two effect instances of one name is a content bug, and it says so")
 
 TEST_CASE("a name claimed by a per-wave instance is claimed")
 {
-	const TempDefinition definition_file(R"({
+	const ScratchFile definition_file("bank.json", R"({
 		"waves": [ "shot" ],
 		"create_effect_instance_for_each_wave": true,
 		"sound_effect_instances": [
@@ -178,7 +138,7 @@ TEST_CASE("a name claimed by a per-wave instance is claimed")
 
 TEST_CASE("a repeated wave is one wave")
 {
-	const TempDefinition definition_file(R"({
+	const ScratchFile definition_file("bank.json", R"({
 		"waves": [ "shot", "shot" ],
 		"create_effect_instance_for_each_wave": true,
 		"sound_effect_instances": []
