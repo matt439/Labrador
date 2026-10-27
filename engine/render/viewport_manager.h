@@ -32,7 +32,7 @@ namespace labrador
 		// The strips between the panes, in the same pixels as the viewports,
 		// and none for a one-player layout. What fills them is the game's
 		// business: this class hands out rectangles and draws nothing.
-		std::vector<mattmath::RectangleF> viewport_dividers() const;
+		std::vector<RectangleF> viewport_dividers() const;
 
 		Viewport fullscreen_viewport() const;
 
@@ -47,6 +47,6 @@ namespace labrador
 		int viewport_count_from_layout(ScreenLayout layout) const;
 
 		Viewport calculate_viewport(ScreenLayout layout,
-			int player_num, const mattmath::Vector2F& screen_size) const;
+			int player_num, const Vector2F& screen_size) const;
 	};
 }

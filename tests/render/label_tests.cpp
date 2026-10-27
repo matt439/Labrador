@@ -35,9 +35,9 @@ namespace
 	using labrador::Label;
 	using labrador::RenderResources;
 	using labrador::TextureHandle;
-	using mattmath::RectangleF;
-	using mattmath::RectangleI;
-	using mattmath::Vector2F;
+	using labrador::RectangleF;
+	using labrador::RectangleI;
+	using labrador::Vector2F;
 
 	Glyph cell(char32_t character, int width, int height)
 	{

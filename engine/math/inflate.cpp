@@ -5,7 +5,7 @@
 
 #include <cmath>
 
-namespace mattmath
+namespace labrador
 {
 	namespace detail
 	{

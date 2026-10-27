@@ -111,7 +111,7 @@ A rule can be asserted rather than played. It is also what makes the replay
 test possible at all, since a headless test cannot construct an `Application`.
 
 A static library rather than a folder for the same reason ARCHITECTURE gives
-for MattMath being one: when a wall has to be load-bearing rather than a
+for LabradorMath being one: when a wall has to be load-bearing rather than a
 convention, the escalation is cheap and this is it.
 
 ### Three layers, and the middle one may not see the rules' verbs

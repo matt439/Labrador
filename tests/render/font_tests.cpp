@@ -29,8 +29,8 @@ namespace
 	using labrador::Font;
 	using labrador::Glyph;
 	using labrador::TextureHandle;
-	using mattmath::RectangleI;
-	using mattmath::Vector2F;
+	using labrador::RectangleI;
+	using labrador::Vector2F;
 
 	// A glyph whose cell is `width` by `height` with no bearing and no advance
 	// adjustment, so its step is exactly its width until a test says otherwise.

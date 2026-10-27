@@ -71,7 +71,7 @@ namespace labrador
 		// camera of whichever view it decides the point belongs to. The engine
 		// does not choose that view: there are up to four of them on one
 		// screen and one cursor, and which player owns it is policy (T1).
-		mattmath::Vector2I position;
+		Vector2I position;
 
 		// One bit per MouseButton, indexed by the enumerator.
 		uint8_t buttons = 0;
@@ -125,7 +125,7 @@ namespace labrador
 	// wherever the desktop left it when focus comes back - possibly the other
 	// side of the screen - and a camera or a slider driven by the raw
 	// difference would take one enormous step on that frame.
-	mattmath::Vector2I motion(const MouseState& now, const MouseState& before);
+	Vector2I motion(const MouseState& now, const MouseState& before);
 
 	bool just_focused(const MouseState& now, const MouseState& before);
 	bool just_unfocused(const MouseState& now, const MouseState& before);
@@ -146,7 +146,7 @@ namespace labrador
 		// may not name a class in `app` to friend it, and a test double or a
 		// replay source wants exactly this seam. The tests in tests/input/
 		// drive a Mouse with no window anywhere.
-		void on_move(const mattmath::Vector2I& position);
+		void on_move(const Vector2I& position);
 		void on_button_down(MouseButton button);
 		void on_button_up(MouseButton button);
 		// Clears buttons at the next poll without synthesizing normal release
@@ -179,8 +179,8 @@ namespace labrador
 		bool released(MouseButton button) const;
 
 		// Client pixels, and only meaningful while focused().
-		const mattmath::Vector2I& position() const;
-		mattmath::Vector2I motion() const;
+		const Vector2I& position() const;
+		Vector2I motion() const;
 
 		float wheel() const;
 		float wheel_horizontal() const;

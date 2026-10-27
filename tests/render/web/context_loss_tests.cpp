@@ -96,7 +96,7 @@ EM_JS(int, labrador_page_heard, (int index), {
 namespace
 {
 	using namespace labrador;
-	using namespace mattmath;
+	using namespace labrador;
 
 	constexpr int BUFFER_SIZE = 64;
 

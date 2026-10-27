@@ -50,14 +50,14 @@ namespace labrador
 		return !now.is_down(button) && before.is_down(button);
 	}
 
-	mattmath::Vector2I motion(const MouseState& now, const MouseState& before)
+	Vector2I motion(const MouseState& now, const MouseState& before)
 	{
 		// The cursor is wherever the desktop left it when focus returns, so
 		// the difference across an unfocused frame is not motion - it is the
 		// distance between two unrelated places.
 		if (!now.focused || !before.focused)
 		{
-			return mattmath::Vector2I::ZERO;
+			return Vector2I::ZERO;
 		}
 		return now.position - before.position;
 	}
@@ -72,7 +72,7 @@ namespace labrador
 		return !now.focused && before.focused;
 	}
 
-	void Mouse::on_move(const mattmath::Vector2I& position)
+	void Mouse::on_move(const Vector2I& position)
 	{
 		this->live_.position = position;
 	}
@@ -174,12 +174,12 @@ namespace labrador
 		return labrador::released(this->current_, this->previous_, button);
 	}
 
-	const mattmath::Vector2I& Mouse::position() const
+	const Vector2I& Mouse::position() const
 	{
 		return this->current_.position;
 	}
 
-	mattmath::Vector2I Mouse::motion() const
+	Vector2I Mouse::motion() const
 	{
 		return labrador::motion(this->current_, this->previous_);
 	}

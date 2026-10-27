@@ -54,7 +54,7 @@ namespace labrador
 	// one - half the stick's travel is a reasonable default and is what
 	// pad_direction uses - because a cursor that moves when a thumb rests on
 	// the stick is worse than one that needs a deliberate push.
-	Direction stick_direction(const mattmath::Vector2F& stick, float deadzone);
+	Direction stick_direction(const Vector2F& stick, float deadzone);
 
 	// Which way a pad is being pushed, from the stick AND the d-pad.
 	//

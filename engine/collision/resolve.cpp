@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <string>
 
-using mattmath::Vector2F;
 
 namespace labrador
 {

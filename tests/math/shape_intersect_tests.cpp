@@ -12,7 +12,7 @@
 
 #include <cfloat>
 
-using namespace mattmath;
+using namespace labrador;
 
 constexpr float EPSILON_F = 0.000001f;
 constexpr float EPSILON_F_2 = 0.000002f;

@@ -25,20 +25,20 @@ namespace components
 		// `block` names a texture whose top-left texel is white.
 		Bar(const std::string& name,
 			labrador::TextureHandle block,
-			const mattmath::RectangleF& rectangle,
+			const labrador::RectangleF& rectangle,
 			const labrador::Colour& colour);
 
 		void update(float dt) override;
 		void draw(labrador::DrawList& draw_list) const override;
-		mattmath::RectangleF bounds() const override;
+		labrador::RectangleF bounds() const override;
 		void set_colour(const labrador::Colour& colour) override;
 
-		void set_rectangle(const mattmath::RectangleF& rectangle);
+		void set_rectangle(const labrador::RectangleF& rectangle);
 		const labrador::Colour& colour() const;
 
 	private:
 		labrador::TextureHandle block_;
-		mattmath::RectangleF rectangle_;
+		labrador::RectangleF rectangle_;
 		labrador::Colour colour_;
 	};
 
@@ -75,8 +75,8 @@ namespace components
 			int maximum,
 			int step,
 			int value,
-			const mattmath::Vector2F& label_position,
-			const mattmath::RectangleF& track,
+			const labrador::Vector2F& label_position,
+			const labrador::RectangleF& track,
 			const std::string& font_name,
 			labrador::TextureHandle block,
 			labrador::RenderResources* render_resources,
@@ -110,14 +110,14 @@ namespace components
 		void set_colour(const labrador::Colour& colour) override;
 
 	private:
-		mattmath::RectangleF fill_rectangle() const;
+		labrador::RectangleF fill_rectangle() const;
 		void show_value();
 
 		int minimum_;
 		int maximum_;
 		int step_;
 		int value_;
-		mattmath::RectangleF track_rectangle_;
+		labrador::RectangleF track_rectangle_;
 
 		// Added in this order, so the fill draws over the track and both
 		// under nothing.

@@ -17,11 +17,11 @@ namespace labrador
 		Visual() = default;
 		Visual(const std::string& sheet_name,
 			const std::string& frame_name,
-			const mattmath::RectangleF& rectangle,
+			const RectangleF& rectangle,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -29,11 +29,11 @@ namespace labrador
 		// origins are additional local source-texel offsets from that center.
 		Visual(const std::string& sheet_name,
 			const std::string& frame_name,
-			const mattmath::RectangleRotated& rect_rotated,
+			const RectangleRotated& rect_rotated,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -45,15 +45,15 @@ namespace labrador
 		// Both the geometry and per-pixel padding are cached at construction;
 		// this final class exposes no geometry/frame setters. Adding one must
 		// refresh both, keeping lookups and trigonometry off the cull path.
-		mattmath::RectangleF bounds() const override;
-		mattmath::RectangleF cull_bounds(float units_per_pixel) const override;
+		RectangleF bounds() const override;
+		RectangleF cull_bounds(float units_per_pixel) const override;
 
 	protected:
-		mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;
+		RectangleF rectangle_ = RectangleF::ZERO;
 
 	private:
-		mattmath::RectangleF bounds_ = mattmath::RectangleF::ZERO;
-		mattmath::Vector2F pixel_padding_ = mattmath::Vector2F::ZERO;
+		RectangleF bounds_ = RectangleF::ZERO;
+		Vector2F pixel_padding_ = Vector2F::ZERO;
 
 		// From rectangle_ and the frame, once both are set.
 		void initialize_bounds();

@@ -62,7 +62,7 @@
 namespace
 {
 	using namespace labrador;
-	using namespace mattmath;
+	using namespace labrador;
 
 	// A renderer, a table, and content loaded through the real load path.
 	//
@@ -916,7 +916,7 @@ TEST_CASE("the engine's white texture is one texel, and survives a reload in its
 	// The solid-rectangle recipe: the one texel, stretched. A texcoord of 1 at
 	// the far corner of a one-texel source is what a 1x1 texture gives.
 	DrawList list = harness.begin();
-	list.draw_sprite(white, mattmath::RectangleI(0, 0, 1, 1),
+	list.draw_sprite(white, labrador::RectangleI(0, 0, 1, 1),
 		RectangleF(10.0f, 20.0f, 30.0f, 4.0f), Colour::red, 0.0f,
 		Vector2F::ZERO, SpriteFlip::none, 0.0f);
 	const std::vector<RecordedSprite> drawn = harness.end();

@@ -6,11 +6,11 @@
 #include "engine/math/vector2f.h"
 #include "engine/math/vector2i.h"
 
-using mattmath::Matrix3x2F;
-using mattmath::RectangleF;
-using mattmath::RectangleI;
-using mattmath::Vector2F;
-using mattmath::Vector2I;
+using labrador::Matrix3x2F;
+using labrador::RectangleF;
+using labrador::RectangleI;
+using labrador::Vector2F;
+using labrador::Vector2I;
 
 // THE ORDER THIS TRANSLATION UNIT INITIALISES IN IS THE FINDING. These are
 // namespace-scope objects in a test executable, copied from constants that

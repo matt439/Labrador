@@ -32,10 +32,10 @@ keys, hands them to the rules as directions, and places its label where the rule
 
 The rules are ordinary functions on ordinary values:
 
-<SourceFile path="samples/minimal/rules/motion.h" from="struct Motion" to="mattmath::Vector2F greeting_position(const Motion& motion);" />
+<SourceFile path="samples/minimal/rules/motion.h" from="struct Motion" to="labrador::Vector2F greeting_position(const Motion& motion);" />
 
 **The wall is the build file, not a convention.** The rules are a static library that links
-`MattMath`, the engine's maths on its own, and the compiler settings, and nothing else of the
+`LabradorMath`, the engine's maths on its own, and the compiler settings, and nothing else of the
 engine. A call from `game\rules` into the engine's compiled code, a window or a renderer, fails
 to link, so the rules cannot start depending on a device without the build saying so. The wall
 catches calls rather than includes: an engine header still compiles there, and what is inline or

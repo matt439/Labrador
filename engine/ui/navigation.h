@@ -70,8 +70,8 @@ namespace labrador
 	// because it is the testable half and because a caller with geometry but
 	// no widgets (a grid of spawn points, a tile picker) should not have to
 	// invent widgets to use it. Returns an index into `candidates`, or -1.
-	int nearest_in_direction(const mattmath::RectangleF& from,
+	int nearest_in_direction(const RectangleF& from,
 		Direction direction,
-		const std::vector<mattmath::RectangleF>& candidates,
+		const std::vector<RectangleF>& candidates,
 		bool wrap = true);
 }

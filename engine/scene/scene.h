@@ -199,8 +199,8 @@ namespace labrador
 		// retirement and not an error. An object the game cannot afford to lose
 		// this way says so by ignoring set_for_deletion(), which is the default
 		// for anything that is part of the fixed geometry.
-		void set_bounds(const mattmath::RectangleF& bounds);
-		const std::optional<mattmath::RectangleF>& bounds() const;
+		void set_bounds(const RectangleF& bounds);
+		const std::optional<RectangleF>& bounds() const;
 
 		// Whether the object is inside the bounds above, which is always true
 		// while they are unset. Public because "my player left the world" is a
@@ -312,7 +312,7 @@ namespace labrador
 
 		std::vector<View> views_;
 
-		std::optional<mattmath::RectangleF> bounds_;
+		std::optional<RectangleF> bounds_;
 
 		ThreadPool* thread_pool_ = nullptr;
 		const Partitioner* partitioner_ = nullptr;

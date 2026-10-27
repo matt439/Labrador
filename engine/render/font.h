@@ -59,7 +59,7 @@ namespace labrador
 		char32_t character = 0;
 
 		// Where in the atlas, in texels.
-		mattmath::RectangleI subrect;
+		RectangleI subrect;
 
 		// Added to the pen before drawing, and carried forward with it: the
 		// walk writes it into the pen variable itself and nothing takes it out
@@ -114,7 +114,7 @@ namespace labrador
 
 		// The unscaled extent of `text`: the width of the longest line, and the
 		// bottom of the lowest one.
-		mattmath::Vector2F measure(std::wstring_view text) const;
+		Vector2F measure(std::wstring_view text) const;
 
 		// Where the first character with no glyph of its own is, or
 		// std::wstring_view::npos. Per UTF-16 unit, so a character outside the
@@ -182,7 +182,7 @@ namespace labrador
 				if (!is_blank(character) || glyph.subrect.width > 1 ||
 					glyph.subrect.height > 1)
 				{
-					action(glyph, mattmath::Vector2F(x, y));
+					action(glyph, Vector2F(x, y));
 				}
 
 				x += static_cast<float>(glyph.subrect.width) + glyph.x_advance;

@@ -134,7 +134,7 @@ namespace labrador
 		// Turning one into the other is this class's job and nobody else's,
 		// at the DPI its frame is drawn at, which under per-monitor awareness
 		// v2 is the window's own, and a DPI change keeps it.
-		mattmath::Vector2I client_size;
+		Vector2I client_size;
 
 		bool fullscreen = false;
 
@@ -270,7 +270,7 @@ namespace labrador
 		// follows that box, so there is nothing to ask for. The report is
 		// still made, of the size the canvas already has, because it is the
 		// report that corrects the caller (Application::set_resolution).
-		void resize_client(const mattmath::Vector2I& client_size) const;
+		void resize_client(const Vector2I& client_size) const;
 
 		// Borderless and monitor-sized, and back again at `client_size`.
 		//
@@ -284,7 +284,7 @@ namespace labrador
 		// the last word either way - it may refuse, and the player may leave
 		// with Escape - and on_fullscreen_changed reports what it decided.
 		void enter_fullscreen() const;
-		void leave_fullscreen(const mattmath::Vector2I& client_size) const;
+		void leave_fullscreen(const Vector2I& client_size) const;
 
 	private:
 		// Declared here and defined once per platform, so the platform's

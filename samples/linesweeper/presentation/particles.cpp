@@ -8,7 +8,7 @@
 #include <array>
 #include <cstddef>
 
-using namespace mattmath;
+using namespace labrador;
 using namespace labrador;
 
 namespace linesweeper

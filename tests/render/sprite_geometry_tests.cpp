@@ -29,7 +29,7 @@
 namespace
 {
 	using namespace labrador;
-	using namespace mattmath;
+	using namespace labrador;
 
 	// A texture big enough that a source rectangle inside it gives texture
 	// coordinates worth reading: 16 texels means a quarter is 0.25 exactly, so

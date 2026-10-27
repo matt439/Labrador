@@ -19,8 +19,8 @@ using components::TestContent;
 using labrador::Colour;
 using labrador::Direction;
 using labrador::FocusGroup;
-using mattmath::RectangleF;
-using mattmath::Vector2F;
+using labrador::RectangleF;
+using labrador::Vector2F;
 
 namespace
 {

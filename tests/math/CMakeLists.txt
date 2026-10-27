@@ -1,6 +1,6 @@
 find_package(doctest CONFIG REQUIRED)
 
-add_executable(MattMathTests
+add_executable(LabradorMathTests
     constant_initialisation_tests.cpp
     ericson_math_tests.cpp
     inflate_tests.cpp
@@ -14,10 +14,10 @@ add_executable(MattMathTests
     triangle_tests.cpp
     vector2_tests.cpp
 )
-target_link_libraries(MattMathTests PRIVATE
-    MattMath
+target_link_libraries(LabradorMathTests PRIVATE
+    LabradorMath
     doctest::doctest
     labrador_settings
 )
 
-add_test(NAME MattMathTests COMMAND MattMathTests)
+add_test(NAME LabradorMathTests COMMAND LabradorMathTests)

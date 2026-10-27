@@ -13,7 +13,7 @@ namespace labrador
 	struct Manifold
 	{
 		// Unit length, pointing from the first shape towards the second.
-		mattmath::Vector2F normal = mattmath::Vector2F::ZERO;
+		Vector2F normal = Vector2F::ZERO;
 
 		// How far the two overlap along `normal`. Always greater than zero: a
 		// manifold only exists where there is an overlap, and shapes that

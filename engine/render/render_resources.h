@@ -239,7 +239,7 @@ namespace labrador
 		//
 		// So a TextObject measures in its constructor, on one thread, through
 		// exactly the pointer it already holds.
-		mattmath::Vector2F measure_text(FontHandle font,
+		Vector2F measure_text(FontHandle font,
 			const std::wstring& text) const;
 
 		// Whether `font` has a glyph for every character in `text`, and where the

@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <span>
 
-namespace mattmath
+namespace labrador
 {
 
 	Triangle::Triangle(const Vector2F& point0,

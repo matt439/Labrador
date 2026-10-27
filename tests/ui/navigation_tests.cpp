@@ -7,7 +7,7 @@
 
 using labrador::Direction;
 using labrador::nearest_in_direction;
-using mattmath::RectangleF;
+using labrador::RectangleF;
 
 namespace
 {

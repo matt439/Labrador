@@ -5,7 +5,7 @@ project(MyGame LANGUAGES CXX)
 # registers.
 enable_testing()
 
-# Defines LabradorEngine, MattMath and labrador_settings. Labrador is not the
+# Defines LabradorEngine, LabradorMath and labrador_settings. Labrador is not the
 # top-level project here, so its tests, benchmarks and samples are not built,
 # and none of its tests is in this project's ctest.
 add_subdirectory(external/labrador)

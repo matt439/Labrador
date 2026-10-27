@@ -85,9 +85,9 @@ using labrador::TextureFormat;
 using labrador::TextureHandle;
 using labrador::ThreadPool;
 using labrador::Viewport;
-using mattmath::RectangleF;
-using mattmath::RectangleI;
-using mattmath::Vector2F;
+using labrador::RectangleF;
+using labrador::RectangleI;
+using labrador::Vector2F;
 
 namespace
 {

@@ -25,9 +25,9 @@ using linesweeper::control_bit;
 using linesweeper::control_count;
 using linesweeper::control_rectangles;
 using linesweeper::controls_held;
-using mattmath::RectangleF;
-using mattmath::Vector2F;
-using mattmath::Vector2I;
+using labrador::RectangleF;
+using labrador::Vector2F;
+using labrador::Vector2I;
 
 // The screen's two arrangements and the touch controls' hit test, with no
 // device.

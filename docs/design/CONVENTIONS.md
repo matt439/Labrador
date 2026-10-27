@@ -21,7 +21,7 @@ Almost everything below falls out of one rule:
 | Private data members | `snake_case_` (trailing underscore) | `frame_time_` |
 | Public struct fields | `snake_case` (bare) | `origin`, `layer_depth` |
 | Constants and enumerators | `snake_case` | `max_velocity`, `WeaponType::sprayer` |
-| Namespaces | one lowercase word | `labrador`, `mattmath` |
+| Namespaces | one lowercase word | `labrador` |
 | Macros (rare) | `SCREAMING_SNAKE` | `AA_ASSERT` |
 | Files and directories | `snake_case` | `animated_sprite.h`, `engine/render/` |
 | JSON keys, asset and registry names | `snake_case` | `frame_time`, `player_walk` |
@@ -89,15 +89,16 @@ Almost everything below falls out of one rule:
 
 ## Namespaces
 
-- One namespace per library: everything in `MattMath` lives in
-  `mattmath::`; everything in `LabradorEngine` lives in `labrador::`.
-  No deeper nesting, with one exception: `detail` wraps internals that
+- One namespace for the engine: everything in `LabradorMath` and
+  `LabradorEngine` lives in `labrador::`. The libraries are separate build
+  targets so the math has no dependencies; the folder, not the namespace,
+  marks the module. No deeper nesting, with one exception: `detail` wraps internals that
   headers must expose but users must not touch.
 - The engine never claims the global namespace. Game code owns its own
   namespace and never reopens the engine's.
 - `using namespace` never appears at namespace scope in a header. In a
-  `.cpp`, `using namespace mattmath;` is acceptable — math reads badly
-  fully qualified — and others are used sparingly.
+  `.cpp` outside the engine, `using namespace labrador;` is acceptable —
+  math reads badly fully qualified — and others are used sparingly.
 
 ## Files
 

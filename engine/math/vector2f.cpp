@@ -6,7 +6,7 @@
 #include <cmath>
 #include <algorithm>
 
-namespace mattmath
+namespace labrador
 {
 
 	Vector2F::Vector2F(const Vector2I& vector)
@@ -145,7 +145,7 @@ namespace mattmath
 		// a few ulps outside, and acos of 1.0000001 is NaN - a domain error
 		// produced by arithmetic that was never wrong by more than a rounding
 		// step (11.1, p.428).
-		const float cosine = mattmath::clamp(
+		const float cosine = labrador::clamp(
 			Vector2F::dot(a, b) / lengths, -1.0f, 1.0f);
 
 		return std::acos(cosine);

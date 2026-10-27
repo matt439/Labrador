@@ -15,7 +15,7 @@ namespace labrador
 		DrawObject(RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -23,7 +23,7 @@ namespace labrador
 		virtual RenderResources* render_resources() const;
 		virtual const Colour& colour() const;
 		virtual float draw_rotation() const;
-		virtual const mattmath::Vector2F& origin() const;
+		virtual const Vector2F& origin() const;
 		virtual SpriteFlip flip() const;
 
 		// TextureObject and TextObject pass this to every draw
@@ -35,17 +35,17 @@ namespace labrador
 
 		virtual void set_colour(const Colour& colour);
 		virtual void set_draw_rotation(float rotation);
-		virtual void set_origin(const mattmath::Vector2F& origin);
+		virtual void set_origin(const Vector2F& origin);
 		virtual void set_flip(SpriteFlip flip);
 		virtual void set_layer_depth(float layer_depth);
 
-		void set_draw_rotation_by_rectangle_rotated(const mattmath::RectangleRotated& rect);
+		void set_draw_rotation_by_rectangle_rotated(const RectangleRotated& rect);
 
 	private:
 		RenderResources* render_resources_ = nullptr;
 		Colour colour_ = Colour::white;
 		float draw_rotation_ = 0.0f;
-		mattmath::Vector2F origin_ = mattmath::Vector2F::ZERO;
+		Vector2F origin_ = Vector2F::ZERO;
 		SpriteFlip flip_ = SpriteFlip::none;
 		float layer_depth_ = 0.0f;
 	};

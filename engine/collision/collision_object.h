@@ -27,7 +27,7 @@ namespace labrador
 		// The fine half of the pair GameObject::bounds() opens. bounds() is
 		// the coarse extent a broad phase indexes; this is the geometry the
 		// narrow phase measures. Never null.
-		virtual const mattmath::Shape* shape() const = 0;
+		virtual const Shape* shape() const = 0;
 
 		virtual CollisionLayer layer() const = 0;
 		virtual CollisionMask mask() const = 0;
@@ -47,7 +47,7 @@ namespace labrador
 		// does not separate at all - it dies. engine/collision/resolve.h has
 		// the arithmetic for the cases that do separate.
 		virtual void on_contact(const CollisionObject& other,
-			const mattmath::Vector2F& normal, float penetration) = 0;
+			const Vector2F& normal, float penetration) = 0;
 
 		// Retired at the end of this tick. Objects flagged mid-frame generate
 		// no further contacts, so a projectile that hits a wall cannot also

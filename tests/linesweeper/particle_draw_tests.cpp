@@ -18,7 +18,7 @@ TEST_CASE("particle bounds contain visible edges and survive an edge-view cull")
 {
 	using namespace labrador;
 	using namespace linesweeper;
-	using namespace mattmath;
+	using namespace labrador;
 	RenderResources resources;
 	Renderer renderer;
 	renderer.create_device(nullptr, 1280, 720, 1);
@@ -71,7 +71,7 @@ TEST_CASE("sparks carried on between steps stay inside the cull bounds")
 {
 	using namespace labrador;
 	using namespace linesweeper;
-	using namespace mattmath;
+	using namespace labrador;
 	RenderResources resources;
 	Renderer renderer;
 	renderer.create_device(nullptr, 1280, 720, 1);

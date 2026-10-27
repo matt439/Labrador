@@ -92,7 +92,7 @@ namespace labrador
 
 		// Live objects, in the caller's indexing.
 		std::vector<int> candidates_;
-		std::vector<mattmath::RectangleF> boxes_;
+		std::vector<RectangleF> boxes_;
 
 		// Kept here so find_contacts allocates nothing per frame.
 		std::vector<std::pair<int, int>> pairs_;

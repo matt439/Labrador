@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {

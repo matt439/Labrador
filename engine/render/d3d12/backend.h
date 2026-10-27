@@ -100,7 +100,7 @@ namespace labrador
 		D3d12Texture& operator=(const D3d12Texture&) = delete;
 
 		int slot() const { return this->slot_; }
-		mattmath::Vector2F size() const;
+		Vector2F size() const;
 
 		// Borrowed for backend operations; callers preserve the shader-resource
 		// state and finish queued work before this texture is released.

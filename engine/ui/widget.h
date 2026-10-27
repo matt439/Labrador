@@ -40,7 +40,7 @@ namespace labrador
 
 		void update(float dt) override = 0;
 		void draw(DrawList& draw_list) const override = 0;
-		mattmath::RectangleF bounds() const override = 0;
+		RectangleF bounds() const override = 0;
 
 		// Painting a thing that has no colour is nothing, not an error, which
 		// is why this is a no-op here and pure one level down.
@@ -69,7 +69,7 @@ namespace labrador
 
 		void update(float dt) override = 0;
 		void draw(DrawList& draw_list) const override = 0;
-		mattmath::RectangleF bounds() const override = 0;
+		RectangleF bounds() const override = 0;
 
 		// Pure again. UiObject's no-op is for a thing that is drawn and not
 		// coloured; a widget is the other kind, and being the other kind is
@@ -114,8 +114,8 @@ namespace labrador
 
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
-		mattmath::RectangleF bounds() const override;
-		mattmath::RectangleF cull_bounds(float units_per_pixel) const override;
+		RectangleF bounds() const override;
+		RectangleF cull_bounds(float units_per_pixel) const override;
 
 		// Every child, in the order they were added, and whatever a child
 		// makes of it - a nested container passes it down, and a child with no
@@ -147,33 +147,33 @@ namespace labrador
 		UiTexture(const std::string& name,
 			const std::string& sheet_name,
 			const std::string& frame_name,
-			const mattmath::RectangleF& rectangle,
+			const RectangleF& rectangle,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			bool hidden = false,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
-		mattmath::RectangleF bounds() const override;
-		mattmath::RectangleF cull_bounds(float units_per_pixel) const override;
+		RectangleF bounds() const override;
+		RectangleF cull_bounds(float units_per_pixel) const override;
 
 		void set_texture(const std::string& sheet_name, const std::string& frame_name);
 		void set_sprite_frame(const std::string& frame_name);
 		void set_colour(const Colour& colour) override;
-		void set_position(const mattmath::Vector2F& position);
-		void set_position_at_center(const mattmath::Vector2F& position);
+		void set_position(const Vector2F& position);
+		void set_position_at_center(const Vector2F& position);
 		void set_width(float width);
 		void set_height(float height);
-		void set_size(const mattmath::Vector2F& size);
-		void set_position_from_top_right_origin(const mattmath::Vector2F& position);
+		void set_size(const Vector2F& size);
+		void set_position_from_top_right_origin(const Vector2F& position);
 
-		const mattmath::RectangleF& rectangle() const;
+		const RectangleF& rectangle() const;
 	private:
-		mattmath::RectangleF rectangle_ = mattmath::RectangleF::ZERO;
+		RectangleF rectangle_ = RectangleF::ZERO;
 
 		// TextureObject's two positioned draws, kept out of reach: draw()
 		// above hides them by name, because a widget draws where its own
@@ -190,18 +190,18 @@ namespace labrador
 		UiText(const std::string& name,
 			const std::wstring& text,
 			const std::string& font_name,
-			const mattmath::Vector2F& position,
+			const Vector2F& position,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			bool hidden = false,
 			float scale = 1.0f,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			float layer_depth = 0.0f);
 
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
-		mattmath::RectangleF bounds() const override;
+		RectangleF bounds() const override;
 		void set_colour(const Colour& colour) override;
 	};
 }

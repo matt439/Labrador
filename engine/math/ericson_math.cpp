@@ -2,15 +2,15 @@
 
 #include <cmath>
 
-using namespace mattmath;
+using namespace labrador;
 
-namespace mattmath
+namespace labrador
 {
 	namespace
 	{
 		// Counteracts arithmetic error when a segment runs (near) parallel to a
 		// coordinate axis, in test_segment_AABB alone. It is deliberately not
-		// spelt EPSILON and deliberately not shared with mattmath::EPSILON: this
+		// spelt EPSILON and deliberately not shared with EPSILON: this
 		// is a slab-test fudge two orders of magnitude tighter than the engine's
 		// general float tolerance, and the two are not the same quantity.
 		constexpr float SEGMENT_PARALLEL_EPSILON = 0.000001f;

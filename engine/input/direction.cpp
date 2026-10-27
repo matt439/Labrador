@@ -6,9 +6,9 @@
 
 namespace labrador
 {
-	Direction stick_direction(const mattmath::Vector2F& stick, float deadzone)
+	Direction stick_direction(const Vector2F& stick, float deadzone)
 	{
-		const mattmath::Vector2F pushed = apply_deadzone(stick, deadzone);
+		const Vector2F pushed = apply_deadzone(stick, deadzone);
 
 		// Exact equality against ZERO, which is the idiom this engine builds on
 		// deliberately: /fp:precise is a compiler setting the whole tree
@@ -17,7 +17,7 @@ namespace labrador
 		// here would be a second deadzone applied on top of the first, which
 		// is the mistake gamepad.h warns about two lines above the function
 		// this calls.
-		if (pushed == mattmath::Vector2F::ZERO)
+		if (pushed == Vector2F::ZERO)
 		{
 			return Direction::none;
 		}

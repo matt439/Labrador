@@ -16,12 +16,12 @@
 using labrador::Manifold;
 using labrador::narrow_phase;
 using labrador::separation;
-using mattmath::Circle;
-using mattmath::Point2F;
-using mattmath::RectangleF;
-using mattmath::RectangleRotated;
-using mattmath::Triangle;
-using mattmath::Vector2F;
+using labrador::Circle;
+using labrador::Point2F;
+using labrador::RectangleF;
+using labrador::RectangleRotated;
+using labrador::Triangle;
+using labrador::Vector2F;
 
 namespace
 {
@@ -189,7 +189,7 @@ TEST_CASE("one move still separates the pair out where the levels actually are")
 	// Every other collision test in this file sits within 100 units of the
 	// origin, where floats are dense and everything works. Levels run to
 	// around 6200, where consecutive floats are 4.88e-4 apart - which is
-	// larger than mattmath::EPSILON (1e-4), so the engine's general tolerance
+	// larger than labrador::EPSILON (1e-4), so the engine's general tolerance
 	// is exact equality wearing a costume out here.
 	//
 	// This is the measurement that decides whether resolution needs a contact
@@ -268,7 +268,7 @@ TEST_CASE("a NaN coordinate reports no contact, rather than a NaN one")
 TEST_CASE("a rotated rectangle is measured without being turned into a Quad")
 {
 	// Two distinct axes, read off the shape's own corners rather than out of a
-	// mattmath::Quad built per shape per pair, which allocates and validates
+	// labrador::Quad built per shape per pair, which allocates and validates
 	// twice over - inside the function whose comment says it carries points in
 	// an array precisely to avoid a heap allocation per shape per pair.
 	const float diagonal = 0.70710678f;
@@ -307,9 +307,9 @@ TEST_CASE("tiny nonzero polygon edges still contribute separating axes")
 		CHECK(narrow_phase(first, first).has_value());
 		CHECK_FALSE(narrow_phase(first, far).has_value());
 	}
-	const mattmath::Quad first(Point2F(0.0f, 0.0f), Point2F(0.0001f, 0.0f),
+	const labrador::Quad first(Point2F(0.0f, 0.0f), Point2F(0.0001f, 0.0f),
 		Point2F(0.0001f, 1.0f), Point2F(0.0f, 1.0f));
-	const mattmath::Quad second(Point2F(0.0f, 2.0f), Point2F(0.0001f, 2.0f),
+	const labrador::Quad second(Point2F(0.0f, 2.0f), Point2F(0.0001f, 2.0f),
 		Point2F(0.0001f, 3.0f), Point2F(0.0f, 3.0f));
 	CHECK_FALSE(narrow_phase(first, second).has_value());
 }

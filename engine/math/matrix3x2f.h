@@ -2,7 +2,7 @@
 
 #include "engine/math/vector2f.h"
 
-namespace mattmath
+namespace labrador
 {
 	// A 2D affine transform - translation, rotation, scale and shear held as
 	// one value that composes and inverts. This is what to reach for when

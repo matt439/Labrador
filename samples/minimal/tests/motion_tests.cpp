@@ -10,7 +10,7 @@
 
 #include "samples/minimal/rules/motion.h"
 
-using namespace mattmath;
+using namespace labrador;
 
 TEST_CASE("the stick and the keys add up to at most one unit")
 {

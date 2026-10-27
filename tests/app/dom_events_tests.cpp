@@ -288,14 +288,14 @@ TEST_CASE("only a touch pointer is touch, and each event type is one call")
 TEST_CASE("a CSS position is client pixels of the buffer, floored")
 {
 	// A canvas 640 CSS pixels wide drawn at 1280: twice the buffer's pixels.
-	CHECK(client_pixels(10.0, 20.0, 2.0, 2.0) == mattmath::Vector2I(20, 40));
-	CHECK(client_pixels(10.25, 20.75, 2.0, 2.0) == mattmath::Vector2I(20, 41));
+	CHECK(client_pixels(10.0, 20.0, 2.0, 2.0) == labrador::Vector2I(20, 40));
+	CHECK(client_pixels(10.25, 20.75, 2.0, 2.0) == labrador::Vector2I(20, 41));
 
 	// A fractional ratio, as a zoomed page has.
 	CHECK(client_pixels(100.0, 100.0, 1.25, 1.5) ==
-		mattmath::Vector2I(125, 150));
+		labrador::Vector2I(125, 150));
 
 	// Off the top-left edge is negative, not the first column.
-	CHECK(client_pixels(-0.5, -0.25, 1.0, 1.0) == mattmath::Vector2I(-1, -1));
-	CHECK(client_pixels(0.0, 0.0, 1.0, 1.0) == mattmath::Vector2I(0, 0));
+	CHECK(client_pixels(-0.5, -0.25, 1.0, 1.0) == labrador::Vector2I(-1, -1));
+	CHECK(client_pixels(0.0, 0.0, 1.0, 1.0) == labrador::Vector2I(0, 0));
 }

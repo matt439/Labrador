@@ -38,9 +38,9 @@ namespace
 	using labrador::SpriteSheet;
 	using labrador::TextureHandle;
 	using labrador::Visual;
-	using mattmath::RectangleF;
-	using mattmath::RectangleI;
-	using mattmath::Vector2F;
+	using labrador::RectangleF;
+	using labrador::RectangleI;
+	using labrador::Vector2F;
 
 	// Two frames of the same eight-by-eight source: one with no origin and
 	// one whose authored origin is its own far corner, which is how a sheet
@@ -134,7 +134,7 @@ TEST_CASE("rotated shape visuals preserve their center and orientation")
 	Content content;
 	for (float angle : { 0.0f, 1.57079633f, 0.7f, -0.7f })
 	{
-		const mattmath::RectangleRotated shape(Vector2F(50, 50),
+		const labrador::RectangleRotated shape(Vector2F(50, 50),
 			Vector2F(std::cos(angle), std::sin(angle)),
 			Vector2F(-std::sin(angle), std::cos(angle)), Vector2F(20, 10));
 		const Visual visual("sheet", "plain", shape, &content.resources);

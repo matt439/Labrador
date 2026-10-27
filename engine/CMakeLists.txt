@@ -397,7 +397,7 @@ target_include_directories(LabradorEngine SYSTEM PRIVATE
 # the same way, and the reason cmake/check_engine_includes.cmake guards
 # engine/audio/<backend>/ as well as engine/render/<backend>/.
 target_link_libraries(LabradorEngine
-    PUBLIC MattMath
+    PUBLIC LabradorMath
     PRIVATE labrador_settings
 )
 

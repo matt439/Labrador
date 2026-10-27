@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-namespace mattmath
+namespace labrador
 {
 
 	Segment::Segment(const Point2F& point_0, const Point2F& point_1) :

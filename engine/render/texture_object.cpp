@@ -6,7 +6,7 @@
 #include <string>
 #include <tuple>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {

@@ -7,8 +7,8 @@
 namespace labrador
 {
 	// A rectangle of the back buffer, plus a depth range, in the shape every
-	// graphics API wants it. A render type and not a mattmath one, because
-	// mattmath depends on nothing and knows nothing about drawing.
+	// graphics API wants it. A render type and not a math one, because
+	// the math library depends on nothing and knows nothing about drawing.
 	//
 	// minDepth and maxDepth are camelCase because they mirror D3D11_VIEWPORT's
 	// last two fields, which that header spells MinDepth and MaxDepth - so this
@@ -31,14 +31,14 @@ namespace labrador
 		Viewport& operator=(const Viewport&) = default;
 		Viewport(float x, float y, float width, float height,
 			float minDepth = 0.0f, float maxDepth = 1.0f);
-		Viewport(const mattmath::RectangleF& rectangle,
+		Viewport(const RectangleF& rectangle,
 			float minDepth = 0.0f, float maxDepth = 1.0f);
-		Viewport(const mattmath::RectangleI& rectangle,
+		Viewport(const RectangleI& rectangle,
 			float minDepth = 0.0f, float maxDepth = 1.0f);
 
-		mattmath::RectangleF rectangle() const;
-		mattmath::Vector2F position() const;
-		mattmath::Vector2F size() const;
+		RectangleF rectangle() const;
+		Vector2F position() const;
+		Vector2F size() const;
 
 		// The whole pixels this viewport covers, and THE ONLY CONVERSION TO
 		// THEM ANY BACKEND IS ALLOWED TO PERFORM.
@@ -60,10 +60,10 @@ namespace labrador
 		// projection disagree about how big the viewport is, scaling every
 		// sprite in a fractional pane by the ratio between them.
 		// One rectangle, computed once, feeds both.
-		mattmath::RectangleI pixel_rect() const;
+		RectangleI pixel_rect() const;
 
-		Viewport& operator=(const mattmath::RectangleF& rectangle);
-		Viewport& operator=(const mattmath::RectangleI& rectangle);
+		Viewport& operator=(const RectangleF& rectangle);
+		Viewport& operator=(const RectangleI& rectangle);
 
 		bool operator==(const Viewport& other) const;
 		bool operator!=(const Viewport& other) const;

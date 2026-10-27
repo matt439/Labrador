@@ -797,7 +797,7 @@ jobs:
   # else in a consumer, or a package the engine starts to need that the
   # derived vcpkg.json lacks, passes every job above and fails here. A swap
   # another include root happens to cover is not caught: LabradorEngine's own
-  # include root and MattMath's are the same directory, so spelling the first
+  # include root and LabradorMath's are the same directory, so spelling the first
   # from CMAKE_SOURCE_DIR still builds as a consumer.
   #
   # tools/consumer_check/assemble.py does the page's steps 3 to 6 into the

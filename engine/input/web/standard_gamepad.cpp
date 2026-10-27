@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstring>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {

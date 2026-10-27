@@ -6,7 +6,7 @@
 
 #include <array>
 
-namespace mattmath
+namespace labrador
 {
 	struct Quad;
 
@@ -15,10 +15,10 @@ namespace mattmath
 		RectangleRotated() = default;
 		RectangleRotated(const RectangleRotated&) = default;
 		RectangleRotated& operator=(const RectangleRotated&) = default;
-		RectangleRotated(const mattmath::Point2F& center,
-			const mattmath::Vector2F& x_axis, const mattmath::Vector2F& y_axis,
-			const mattmath::Vector2F& hw_extents);
-		RectangleRotated(const mattmath::Segment& center_line, float thickness);
+		RectangleRotated(const Point2F& center,
+			const Vector2F& x_axis, const Vector2F& y_axis,
+			const Vector2F& hw_extents);
+		RectangleRotated(const Segment& center_line, float thickness);
 
 		RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;
@@ -97,9 +97,9 @@ namespace mattmath
 
 		std::array<Point2F, 4> calculate_points() const;
 
-		std::array<mattmath::Point2F, 4> calculate_points(const mattmath::Point2F& center,
-			const mattmath::Vector2F& x_axis, const mattmath::Vector2F& y_axis,
-			const mattmath::Vector2F& hw_extents) const;
+		std::array<Point2F, 4> calculate_points(const Point2F& center,
+			const Vector2F& x_axis, const Vector2F& y_axis,
+			const Vector2F& hw_extents) const;
 
 		bool half_widths_valid() const;
 		bool axes_valid() const;

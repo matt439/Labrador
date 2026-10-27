@@ -69,14 +69,14 @@ namespace linesweeper
 	inline constexpr float control_margin = 16.0f;
 
 	// Where each control is for this arrangement, indexed by Control.
-	std::array<mattmath::RectangleF, control_count> control_rectangles(
+	std::array<labrador::RectangleF, control_count> control_rectangles(
 		const Arrangement& arrangement);
 
 	// The control under a buffer pixel, if any. A rectangle holds its top and
 	// left edges and not its bottom and right, so two that share an edge
 	// cannot both answer.
 	std::optional<Control> control_at(const Arrangement& arrangement,
-		const mattmath::Vector2I& buffer_point);
+		const labrador::Vector2I& buffer_point);
 
 	// Every control a point is on this frame.
 	ControlSet controls_held(const Arrangement& arrangement,
@@ -105,15 +105,15 @@ namespace linesweeper
 
 		// What is visible while the controls are shown, and nothing while
 		// they are not.
-		mattmath::RectangleF bounds() const override;
+		labrador::RectangleF bounds() const override;
 
 	private:
 		labrador::TextureHandle block_;
 		labrador::FontHandle font_;
 
-		std::array<mattmath::Vector2F, control_count> label_sizes_ = {};
-		std::array<mattmath::RectangleF, control_count> rectangles_ = {};
-		mattmath::RectangleF visible_;
+		std::array<labrador::Vector2F, control_count> label_sizes_ = {};
+		std::array<labrador::RectangleF, control_count> rectangles_ = {};
+		labrador::RectangleF visible_;
 		ControlSet held_ = 0;
 		bool shown_ = false;
 	};

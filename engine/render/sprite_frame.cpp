@@ -1,6 +1,6 @@
 #include "engine/render/sprite_frame.h"
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {

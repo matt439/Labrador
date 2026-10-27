@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {

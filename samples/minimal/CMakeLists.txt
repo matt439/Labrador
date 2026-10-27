@@ -18,7 +18,7 @@ set(minimal_sources
 )
 
 # The game's rules, in a library that links the engine's maths and nothing else
-# of it: MattMath and the settings carry no window, no device and no input, so
+# of it: LabradorMath and the settings carry no window, no device and no input, so
 # MinimalTests below runs them with none of those (rules/motion.h says what
 # moved there to make that true). samples/linesweeper's LineSweeperRules is
 # the same wall around a whole game.
@@ -26,7 +26,7 @@ add_library(MinimalRules STATIC
     rules/motion.cpp
 )
 target_link_libraries(MinimalRules PUBLIC
-    MattMath
+    LabradorMath
     labrador_settings
 )
 

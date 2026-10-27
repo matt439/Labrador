@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-using namespace mattmath;
+using namespace labrador;
 
 namespace labrador
 {
@@ -59,7 +59,7 @@ namespace labrador
 		return RectangleI(static_cast<int>(left), static_cast<int>(top),
 			static_cast<int>(right - left), static_cast<int>(bottom - top));
 	}
-	Viewport& Viewport::operator=(const mattmath::RectangleF& rectangle)
+	Viewport& Viewport::operator=(const RectangleF& rectangle)
 	{
 		this->x = rectangle.x;
 		this->y = rectangle.y;
@@ -67,7 +67,7 @@ namespace labrador
 		this->height = rectangle.height;
 		return *this;
 	}
-	Viewport& Viewport::operator=(const mattmath::RectangleI& rectangle)
+	Viewport& Viewport::operator=(const RectangleI& rectangle)
 	{
 		this->x = static_cast<float>(rectangle.x);
 		this->y = static_cast<float>(rectangle.y);

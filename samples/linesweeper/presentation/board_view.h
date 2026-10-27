@@ -62,7 +62,7 @@ namespace linesweeper
 		// them. One view, so nothing ever culls this - it is reported because
 		// the interface asks and because the day this sample grows a second
 		// view it should already be right.
-		mattmath::RectangleF bounds() const override;
+		labrador::RectangleF bounds() const override;
 
 	private:
 		void draw_well(labrador::DrawList& draw_list) const;
@@ -75,7 +75,7 @@ namespace linesweeper
 		// there is exactly one place that knows a block is a white texel with
 		// a tint on it.
 		void fill(labrador::DrawList& draw_list,
-			const mattmath::RectangleF& rectangle,
+			const labrador::RectangleF& rectangle,
 			const labrador::Colour& colour) const;
 
 		// A piece's four cells, at the well's scale or the preview's.
@@ -86,7 +86,7 @@ namespace linesweeper
 		void draw_shadow(labrador::DrawList& draw_list,
 			const Piece& piece) const;
 		void draw_preview(labrador::DrawList& draw_list, Kind kind,
-			const mattmath::Vector2F& origin) const;
+			const labrador::Vector2F& origin) const;
 
 		const World* world_ = nullptr;
 

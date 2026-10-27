@@ -24,14 +24,14 @@ namespace labrador
 		// the size is whatever the default preset's size is.
 		ResolutionManager();
 
-		mattmath::Vector2I resolution_ivec() const;
-		mattmath::Vector2F resolution_vec() const;
+		Vector2I resolution_ivec() const;
+		Vector2F resolution_vec() const;
 		std::string resolution_string() const;
 		ScreenResolution resolution() const;
 		void set_resolution(ScreenResolution resolution);
 		void set_resolution(const std::string& resolution);
-		void set_resolution(const mattmath::Vector2F& resolution);
-		void set_resolution(const mattmath::Vector2I& resolution);
+		void set_resolution(const Vector2F& resolution);
+		void set_resolution(const Vector2I& resolution);
 
 		// The size as given, with no preset anywhere near it. This is what a
 		// real window is, and Application calls it from on_window_size_changed
@@ -67,7 +67,7 @@ namespace labrador
 		// size that is not 16:9. Anything assuming a single scale factor from
 		// one axis has a letterboxing decision to make. That is correct rather
 		// than free.
-		void set_resolution_exactly(const mattmath::Vector2I& size);
+		void set_resolution_exactly(const Vector2I& size);
 
 		static std::string convert_resolution_to_string(
 			ScreenResolution resolution);
@@ -78,17 +78,17 @@ namespace labrador
 
 		// The live size, and the authority. Every accessor above that returns a
 		// size returns this one.
-		mattmath::Vector2I size_;
+		Vector2I size_;
 
-		mattmath::Vector2I convert_resolution_to_ivec(
+		Vector2I convert_resolution_to_ivec(
 			ScreenResolution resolution) const;
-		mattmath::Vector2F convert_resolution_to_vec(
+		Vector2F convert_resolution_to_vec(
 			ScreenResolution resolution) const;
 		ScreenResolution convert_string_to_resolution(
 			const std::string& string) const;
 		ScreenResolution convert_vec_to_resolution(
-			const mattmath::Vector2F& vec) const;
+			const Vector2F& vec) const;
 		ScreenResolution convert_ivec_to_resolution(
-			const mattmath::Vector2I& vec) const;
+			const Vector2I& vec) const;
 	};
 }

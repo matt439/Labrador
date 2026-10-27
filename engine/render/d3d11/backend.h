@@ -282,7 +282,7 @@ namespace labrador
 		// The size of a texture, in texels, for the geometry that turns a
 		// source rectangle into texture coordinates. Read off the view rather
 		// than remembered beside it, because the table stores views.
-		static mattmath::Vector2F texture_size(
+		static Vector2F texture_size(
 			ID3D11ShaderResourceView* texture);
 
 		// Everything above that belongs to the device, remade with it.

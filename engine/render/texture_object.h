@@ -36,7 +36,7 @@ namespace labrador
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -46,7 +46,7 @@ namespace labrador
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -68,9 +68,9 @@ namespace labrador
 		void set_frame(const std::string& frame_name);
 
 		virtual void draw(DrawList& draw_list,
-			const mattmath::RectangleF& destination_rectangle) const;
+			const RectangleF& destination_rectangle) const;
 		virtual void draw(DrawList& draw_list,
-			const mattmath::Vector2F& position, float scale = 1.0f) const;
+			const Vector2F& position, float scale = 1.0f) const;
 
 		// Draws reading only one per-draw member, layer_depth, which orders
 		// nothing on any backend - so callers can compute frame / colour /
@@ -85,10 +85,10 @@ namespace labrador
 		// describes is engine/scene/scene.cpp's and is pinned by
 		// tests/scene/fanout_tests.cpp.
 		void draw_with(DrawList& draw_list,
-			const mattmath::RectangleF& destination_rectangle,
+			const RectangleF& destination_rectangle,
 			SpriteSheet::frame_handle frame,
 			const Colour& colour,
-			const mattmath::Vector2F& origin,
+			const Vector2F& origin,
 			SpriteFlip flip,
 			float rotation) const;
 

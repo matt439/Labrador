@@ -2,7 +2,7 @@
 
 #include "engine/math/vector2f.h"
 
-namespace mattmath
+namespace labrador
 {
 
 	Vector2I::Vector2I(const Vector2F& vector)

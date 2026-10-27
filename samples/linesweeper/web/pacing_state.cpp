@@ -37,11 +37,11 @@ namespace linesweeper
 		std::ignore = this->scene_.add(std::make_unique<TopOutBanner>(&this->world_, resources));
 		std::ignore = this->scene_.add(std::make_unique<labrador::Label>(
 			L"keyboard   arrows move   Z X rotate   space drops   C holds",
-			"jetbrains_mono_bold_16", mattmath::Vector2F(344.0f, landscape_height - 60.0f),
+			"jetbrains_mono_bold_16", labrador::Vector2F(344.0f, landscape_height - 60.0f),
 			resources, labrador::Colour::dark_gray));
 		std::ignore = this->scene_.add(std::make_unique<labrador::Label>(
 			L"pad        d-pad moves   A B rotate   Y drops       X holds",
-			"jetbrains_mono_bold_16", mattmath::Vector2F(344.0f, landscape_height - 36.0f),
+			"jetbrains_mono_bold_16", labrador::Vector2F(344.0f, landscape_height - 36.0f),
 			resources, labrador::Colour::dark_gray));
 		this->scene_.end_tick();
 		this->arrange_screen();

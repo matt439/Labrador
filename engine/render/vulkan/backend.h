@@ -93,7 +93,7 @@ namespace labrador
 		VulkanTexture& operator=(const VulkanTexture&) = delete;
 
 		VkImageView view() const { return this->view_; }
-		mattmath::Vector2F size() const;
+		Vector2F size() const;
 
 	private:
 		std::shared_ptr<VulkanDevice> owner_;

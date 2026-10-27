@@ -5,7 +5,7 @@
 
 #include <cmath>
 
-using namespace mattmath;
+using namespace labrador;
 using namespace collisiondemo;
 
 namespace

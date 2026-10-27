@@ -42,7 +42,7 @@ namespace
 	using labrador::SpriteSheet;
 	using labrador::SpriteSheetObject;
 	using labrador::TextureHandle;
-	using mattmath::RectangleI;
+	using labrador::RectangleI;
 
 	// THE STATE IS protected AND THAT IS THE CLASS'S SHAPE - the same argument
 	// draw_object_tests.cpp makes next door. A SpriteSheetObject is a base for
@@ -120,7 +120,7 @@ TEST_CASE("the drawable's own state is untouched by the sheet it points at")
 {
 	Content content;
 	const Probe object("first", &content.resources, labrador::Colour::red,
-		1.5f, mattmath::Vector2F(4.0f, 8.0f), labrador::SpriteFlip::horizontal,
+		1.5f, labrador::Vector2F(4.0f, 8.0f), labrador::SpriteFlip::horizontal,
 		0.25f);
 
 	// Everything past the table is DrawObject's and passes straight through.
@@ -128,7 +128,7 @@ TEST_CASE("the drawable's own state is untouched by the sheet it points at")
 	// of them, which is exactly the shape a reordering breaks silently.
 	CHECK(object.colour() == labrador::Colour::red);
 	CHECK(object.draw_rotation() == 1.5f);
-	CHECK(object.origin() == mattmath::Vector2F(4.0f, 8.0f));
+	CHECK(object.origin() == labrador::Vector2F(4.0f, 8.0f));
 	CHECK(object.flip() == labrador::SpriteFlip::horizontal);
 	CHECK(object.layer_depth() == 0.25f);
 }

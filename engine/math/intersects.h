@@ -18,7 +18,7 @@
 // an axis and a depth - rather than answering yes or no, and builds its own
 // polygons and runs its own separating-axis test to do it.
 
-namespace mattmath
+namespace labrador
 {
 	struct RectangleF;
 	struct Circle;
@@ -30,88 +30,88 @@ namespace mattmath
 	// No rectangles_intersect here: RectangleF::intersects(const RectangleF&)
 	// is that predicate.
 
-	bool rectangle_circle_intersect(const mattmath::RectangleF& rectangle,
-		const mattmath::Circle& circle, mattmath::Point2F& point);
+	bool rectangle_circle_intersect(const RectangleF& rectangle,
+		const Circle& circle, Point2F& point);
 
-	bool rectangle_circle_intersect(const mattmath::RectangleF& rectangle,
-		const mattmath::Circle& circle);
+	bool rectangle_circle_intersect(const RectangleF& rectangle,
+		const Circle& circle);
 
-	bool rectangle_triangle_intersect(const mattmath::RectangleF& rectangle, 
-		const mattmath::Triangle& triangle);
+	bool rectangle_triangle_intersect(const RectangleF& rectangle, 
+		const Triangle& triangle);
 
-	bool rectangle_quad_intersect(const mattmath::RectangleF& rectangle,
-		const mattmath::Quad& quad);
+	bool rectangle_quad_intersect(const RectangleF& rectangle,
+		const Quad& quad);
 
-	bool rectangle_segment_intersect(const mattmath::RectangleF& rectangle, 
-		const mattmath::Segment& segment);
+	bool rectangle_segment_intersect(const RectangleF& rectangle, 
+		const Segment& segment);
 
-	bool rectangle_point_intersect(const mattmath::RectangleF& rectangle, 
-		const mattmath::Point2F& point);
+	bool rectangle_point_intersect(const RectangleF& rectangle, 
+		const Point2F& point);
 
-	bool rectangle_rotated_rectangle_intersect(const mattmath::RectangleF& rect,
-		const mattmath::RectangleRotated& rotated_rect);
+	bool rectangle_rotated_rectangle_intersect(const RectangleF& rect,
+		const RectangleRotated& rotated_rect);
 
-	bool circles_intersect(const mattmath::Circle& a,
-		const mattmath::Circle& b);
+	bool circles_intersect(const Circle& a,
+		const Circle& b);
 
-	bool circle_triangle_intersect(const mattmath::Circle& circle,
-		const mattmath::Triangle& triangle, mattmath::Point2F& point);
+	bool circle_triangle_intersect(const Circle& circle,
+		const Triangle& triangle, Point2F& point);
 
-	bool circle_triangle_intersect(const mattmath::Circle& circle,
-		const mattmath::Triangle& triangle);
+	bool circle_triangle_intersect(const Circle& circle,
+		const Triangle& triangle);
 
-	bool circle_quad_intersect(const mattmath::Circle& circle,
-		const mattmath::Quad& quad);
+	bool circle_quad_intersect(const Circle& circle,
+		const Quad& quad);
 
-	bool circle_segment_intersect(const mattmath::Circle& circle,
-		const mattmath::Segment& segment, mattmath::Point2F& point);
+	bool circle_segment_intersect(const Circle& circle,
+		const Segment& segment, Point2F& point);
 
-	bool circle_segment_intersect(const mattmath::Circle& circle,
-		const mattmath::Segment& segment);
+	bool circle_segment_intersect(const Circle& circle,
+		const Segment& segment);
 
-	bool circle_point_intersect(const mattmath::Circle& circle, 
-		const mattmath::Point2F& point);
+	bool circle_point_intersect(const Circle& circle, 
+		const Point2F& point);
 
-	bool circle_rectangle_rotated_intersect(const mattmath::Circle& circle,
-		const mattmath::RectangleRotated& rect_rotated);
+	bool circle_rectangle_rotated_intersect(const Circle& circle,
+		const RectangleRotated& rect_rotated);
 
-	bool triangles_intersect(const mattmath::Triangle& a, 
-		const mattmath::Triangle& b);
+	bool triangles_intersect(const Triangle& a, 
+		const Triangle& b);
 
-	bool triangle_quad_intersect(const mattmath::Triangle& triangle, 
-		const mattmath::Quad& quad);
+	bool triangle_quad_intersect(const Triangle& triangle, 
+		const Quad& quad);
 
-	bool triangle_segment_intersect(const mattmath::Triangle& triangle, 
-		const mattmath::Segment& segment);
+	bool triangle_segment_intersect(const Triangle& triangle, 
+		const Segment& segment);
 
-	bool triangle_point_intersect(const mattmath::Triangle& triangle,
-		const mattmath::Point2F& point);
+	bool triangle_point_intersect(const Triangle& triangle,
+		const Point2F& point);
 
-	bool triangle_rectangle_rotated_intersect(const mattmath::Triangle& triangle,
-		const mattmath::RectangleRotated& rect_rotated);
+	bool triangle_rectangle_rotated_intersect(const Triangle& triangle,
+		const RectangleRotated& rect_rotated);
 
-	bool quads_intersect(const mattmath::Quad& a, const mattmath::Quad& b);
+	bool quads_intersect(const Quad& a, const Quad& b);
 
-	bool quad_segment_intersect(const mattmath::Quad& quad,
-		const mattmath::Segment& segment);
+	bool quad_segment_intersect(const Quad& quad,
+		const Segment& segment);
 
-	bool quad_point_intersect(const mattmath::Quad& quad, 
-		const mattmath::Point2F& point);
+	bool quad_point_intersect(const Quad& quad, 
+		const Point2F& point);
 
-	bool quad_rectangle_rotated_intersect(const mattmath::Quad& quad, 
-		const mattmath::RectangleRotated& rect_rotated);
+	bool quad_rectangle_rotated_intersect(const Quad& quad, 
+		const RectangleRotated& rect_rotated);
 
-	bool segments_intersect(const mattmath::Segment& a, const mattmath::Segment& b,
-		float& t, mattmath::Point2F& p);
+	bool segments_intersect(const Segment& a, const Segment& b,
+		float& t, Point2F& p);
 
-	bool segments_intersect(const mattmath::Segment& a, const mattmath::Segment& b);
+	bool segments_intersect(const Segment& a, const Segment& b);
 
-	bool segment_rectangle_rotated_intersect(const mattmath::Segment& segment,
-		const mattmath::RectangleRotated& rect_rotated);
+	bool segment_rectangle_rotated_intersect(const Segment& segment,
+		const RectangleRotated& rect_rotated);
 
-	bool point_rectangle_rotated_intersect(const mattmath::Point2F& point,
-		const mattmath::RectangleRotated& rect_rotated);
+	bool point_rectangle_rotated_intersect(const Point2F& point,
+		const RectangleRotated& rect_rotated);
 
-	bool rectangles_rotated_intersect(const mattmath::RectangleRotated& a,
-		const mattmath::RectangleRotated& b);
+	bool rectangles_rotated_intersect(const RectangleRotated& a,
+		const RectangleRotated& b);
 }

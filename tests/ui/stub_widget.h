@@ -33,7 +33,7 @@ public:
 		// Never called by anything under test; a focus group draws nothing.
 	}
 
-	mattmath::RectangleF bounds() const override { return this->bounds_; }
+	labrador::RectangleF bounds() const override { return this->bounds_; }
 
 	void set_colour(const labrador::Colour& colour) override
 	{
@@ -43,6 +43,6 @@ public:
 	const labrador::Colour& colour() const { return this->colour_; }
 
 private:
-	mattmath::RectangleF bounds_;
+	labrador::RectangleF bounds_;
 	labrador::Colour colour_ = labrador::Colour::black;
 };

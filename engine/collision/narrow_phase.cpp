@@ -12,10 +12,6 @@
 #include <limits>
 #include <stdexcept>
 
-using mattmath::RectangleF;
-using mattmath::Shape;
-using mattmath::ShapeType;
-using mattmath::Vector2F;
 
 namespace labrador
 {
@@ -105,7 +101,7 @@ namespace labrador
 			}
 			case ShapeType::triangle:
 			{
-				const auto& triangle = static_cast<const mattmath::Triangle&>(shape);
+				const auto& triangle = static_cast<const Triangle&>(shape);
 				polygon.points[0] = triangle.point_0();
 				polygon.points[1] = triangle.point_1();
 				polygon.points[2] = triangle.point_2();
@@ -118,7 +114,7 @@ namespace labrador
 			}
 			case ShapeType::quad:
 			{
-				const auto& quad = static_cast<const mattmath::Quad&>(shape);
+				const auto& quad = static_cast<const Quad&>(shape);
 				polygon.points[0] = quad.point_0();
 				polygon.points[1] = quad.point_1();
 				polygon.points[2] = quad.point_2();
@@ -134,12 +130,12 @@ namespace labrador
 			case ShapeType::rectangle_rotated:
 			{
 				// Read straight off the shape, and NOT by building a
-				// mattmath::Quad from it: that constructor allocates and
+				// Quad from it: that constructor allocates and
 				// validates twice over, inside the one function whose comment
 				// above is about avoiding a heap allocation per shape per pair
 				// per frame.
 				const auto& rotated =
-					static_cast<const mattmath::RectangleRotated&>(shape);
+					static_cast<const RectangleRotated&>(shape);
 				polygon.points[0] = rotated.point_0();
 				polygon.points[1] = rotated.point_1();
 				polygon.points[2] = rotated.point_2();
@@ -189,7 +185,7 @@ namespace labrador
 		//
 		// Zero area is exactly the condition, and it is checked exactly:
 		// a very thin triangle is a real shape and the separating-axis test
-		// handles it correctly. mattmath::Triangle permits a collinear one -
+		// handles it correctly. Triangle permits a collinear one -
 		// its constructor validates nothing - so this is caught here rather
 		// than being assumed away.
 		bool has_interior(const Polygon& polygon)

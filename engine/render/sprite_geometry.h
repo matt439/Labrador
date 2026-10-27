@@ -59,12 +59,12 @@ namespace labrador
 	// truncated edges rather than the truncation of the size - which is not the
 	// same number, and is why this takes a rectangle rather than a position and
 	// a size. A right edge of 18.9 becomes 18 and is exclusive.
-	void build_sprite_quad(const mattmath::RectangleF& destination,
-		const mattmath::RectangleI& source,
-		const mattmath::Vector2F& texture_size,
+	void build_sprite_quad(const RectangleF& destination,
+		const RectangleI& source,
+		const Vector2F& texture_size,
 		const Colour& tint,
 		float rotation,
-		const mattmath::Vector2F& origin,
+		const Vector2F& origin,
 		SpriteFlip flip,
 		SpriteVertex* corners);
 
@@ -83,13 +83,13 @@ namespace labrador
 	// interpolated coordinate rather than anything written here. The caller
 	// avoids it, as renderer.h's draw_text says; a nudge applied here would
 	// move every fractional position to fix one of them.
-	void build_scaled_quad(const mattmath::Vector2F& position,
+	void build_scaled_quad(const Vector2F& position,
 		float scale,
-		const mattmath::RectangleI& source,
-		const mattmath::Vector2F& texture_size,
+		const RectangleI& source,
+		const Vector2F& texture_size,
 		const Colour& tint,
 		float rotation,
-		const mattmath::Vector2F& origin,
+		const Vector2F& origin,
 		SpriteVertex* corners);
 
 	// One glyph of a line of text, at the pen the walk (font.h) reported.
@@ -108,14 +108,14 @@ namespace labrador
 	// string's position by exactly the pen. Both are in unscaled source
 	// texels, which is what build_scaled_quad already means by an origin, so
 	// the two compose without a conversion.
-	void build_glyph_quad(const mattmath::Vector2F& position,
+	void build_glyph_quad(const Vector2F& position,
 		float scale,
 		const Glyph& glyph,
-		const mattmath::Vector2F& pen,
-		const mattmath::Vector2F& texture_size,
+		const Vector2F& pen,
+		const Vector2F& texture_size,
 		const Colour& tint,
 		float rotation,
-		const mattmath::Vector2F& origin,
+		const Vector2F& origin,
 		SpriteVertex* corners);
 
 	// THE AXIS-ALIGNED BOX AROUND THE QUAD build_sprite_quad WOULD BUILD from
@@ -137,21 +137,21 @@ namespace labrador
 	// `origin` is the WHOLE origin - the frame's authored one plus the
 	// caller's, summed the way SpriteSheet::draw sums them - in unscaled
 	// source texels, exactly as build_sprite_quad takes it.
-	mattmath::RectangleF sprite_quad_bounds(
-		const mattmath::RectangleF& destination,
-		const mattmath::RectangleI& source,
+	RectangleF sprite_quad_bounds(
+		const RectangleF& destination,
+		const RectangleI& source,
 		float rotation,
-		const mattmath::Vector2F& origin);
+		const Vector2F& origin);
 
 	// World geometry before view-space quantization, expanded by a bound on
 	// its error at nonnegative world units per pixel (zero for layout).
 	// Each truncated edge moves by less than one pixel; a size moves by less
 	// than two. Rotation mixes those errors and the source-relative pivot
 	// scales them, including origins outside the source rectangle.
-	mattmath::RectangleF sprite_world_bounds(
-		const mattmath::RectangleF& destination,
-		const mattmath::RectangleI& source, float rotation,
-		const mattmath::Vector2F& origin, float units_per_pixel = 0.0f);
+	RectangleF sprite_world_bounds(
+		const RectangleF& destination,
+		const RectangleI& source, float rotation,
+		const Vector2F& origin, float units_per_pixel = 0.0f);
 
 	// The same, for a string laid out by build_glyph_quad: `measured_size`
 	// is the unscaled size of its enclosing local rectangle, and
@@ -160,9 +160,9 @@ namespace labrador
 	// layout extent; callers enclosing drawn glyph cells as well must include
 	// overhanging bearings and subtract the local rectangle's position from
 	// the text's original origin. The transform then keeps that origin fixed.
-	mattmath::RectangleF text_quad_bounds(const mattmath::Vector2F& position,
+	RectangleF text_quad_bounds(const Vector2F& position,
 		float scale,
-		const mattmath::Vector2F& measured_size,
+		const Vector2F& measured_size,
 		float rotation,
-		const mattmath::Vector2F& origin);
+		const Vector2F& origin);
 }

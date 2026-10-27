@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-namespace mattmath
+namespace labrador
 {
 
 	RectangleRotated::RectangleRotated(const Point2F& center,

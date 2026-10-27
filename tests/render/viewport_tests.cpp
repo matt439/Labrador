@@ -28,8 +28,8 @@
 namespace
 {
 	using labrador::Viewport;
-	using mattmath::RectangleF;
-	using mattmath::RectangleI;
+	using labrador::RectangleF;
+	using labrador::RectangleI;
 }
 
 TEST_CASE("CONTRACT: a whole-pixel viewport is already its own pixel rect")

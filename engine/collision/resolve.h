@@ -14,7 +14,7 @@ namespace labrador
 	// gameplay question the engine cannot answer: a player separates from a
 	// wall, a projectile does not separate from anything - it dies - and the
 	// wall never moves at all.
-	mattmath::Vector2F separation(const mattmath::Vector2F& normal,
+	Vector2F separation(const Vector2F& normal,
 		float penetration);
 
 	// How oblique an axis may be to the normal before separating along it is
@@ -58,8 +58,8 @@ namespace labrador
 	// return that the caller could use: an axis perpendicular to the normal
 	// does not separate the pair however far you travel along it, so zero is
 	// not a translation - it is a shrug.
-	mattmath::Vector2F separation_along(const mattmath::Vector2F& normal,
-		float penetration, const mattmath::Vector2F& axis);
+	Vector2F separation_along(const Vector2F& normal,
+		float penetration, const Vector2F& axis);
 
 	// `velocity` with the component that drives it into the surface removed,
 	// and the component along the surface left alone. `normal` must be unit
@@ -86,6 +86,6 @@ namespace labrador
 	// separation(), the engine offers the arithmetic and never performs it -
 	// whether a contact should cost an object its speed is a gameplay
 	// question.
-	mattmath::Vector2F slide(const mattmath::Vector2F& velocity,
-		const mattmath::Vector2F& normal);
+	Vector2F slide(const Vector2F& velocity,
+		const Vector2F& normal);
 }

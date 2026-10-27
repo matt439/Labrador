@@ -179,9 +179,9 @@ namespace labrador
 
 		// A position in the page's CSS pixels, as client pixels of the
 		// drawing buffer.
-		mattmath::Vector2I client_position(double client_x,
+		Vector2I client_position(double client_x,
 			double client_y) const;
-		bool inside(const mattmath::Vector2I& position) const;
+		bool inside(const Vector2I& position) const;
 
 		// Asks for full screen, and reports a request the browser refused on
 		// the spot. One deferred to the next input event is reported by the
@@ -443,7 +443,7 @@ namespace labrador
 			this->buffer_height);
 	}
 
-	mattmath::Vector2I Window::Impl::client_position(double client_x,
+	Vector2I Window::Impl::client_position(double client_x,
 		double client_y) const
 	{
 		// Measured from the canvas's corner whichever element the listener
@@ -457,7 +457,7 @@ namespace labrador
 			client_y - labrador_canvas_top(), scale_x, scale_y);
 	}
 
-	bool Window::Impl::inside(const mattmath::Vector2I& position) const
+	bool Window::Impl::inside(const Vector2I& position) const
 	{
 		return position.x >= 0 && position.y >= 0 &&
 			position.x < this->buffer_width && position.y < this->buffer_height;
@@ -570,7 +570,7 @@ namespace labrador
 
 		self->guarded([&]()
 			{
-				const mattmath::Vector2I position =
+				const Vector2I position =
 					self->client_position(event->clientX, event->clientY);
 				self->notify->on_mouse_move(position.x, position.y);
 				++self->held_buttons;
@@ -588,7 +588,7 @@ namespace labrador
 		Impl* const self = static_cast<Impl*>(user_data);
 		self->guarded([&]()
 			{
-				const mattmath::Vector2I position =
+				const Vector2I position =
 					self->client_position(event->clientX, event->clientY);
 				if (self->held_buttons > 0 || self->inside(position))
 				{
@@ -751,7 +751,7 @@ namespace labrador
 
 		self->guarded([&]()
 			{
-				const mattmath::Vector2I position =
+				const Vector2I position =
 					self->client_position(client_x, client_y);
 				switch (touch)
 				{
@@ -821,7 +821,7 @@ namespace labrador
 		labrador_tell_page_quit();
 	}
 
-	void Window::resize_client(const mattmath::Vector2I&) const
+	void Window::resize_client(const Vector2I&) const
 	{
 		this->impl_->report_size();
 	}
@@ -835,7 +835,7 @@ namespace labrador
 		this->impl_->request_fullscreen();
 	}
 
-	void Window::leave_fullscreen(const mattmath::Vector2I&) const
+	void Window::leave_fullscreen(const Vector2I&) const
 	{
 		// The box changes when the browser has finished leaving, which is
 		// after this returns, and the next frame's measure() reports it then.

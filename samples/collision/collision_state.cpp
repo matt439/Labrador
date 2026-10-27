@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <string>
 
-using namespace mattmath;
+using namespace labrador;
 using namespace labrador;
 
 namespace collisiondemo

@@ -25,8 +25,8 @@ namespace
 	using labrador::RenderResources;
 	using labrador::Text;
 	using labrador::TextureHandle;
-	using mattmath::RectangleI;
-	using mattmath::Vector2F;
+	using labrador::RectangleI;
+	using labrador::Vector2F;
 
 	// Two cells on a line, which is all a string here needs: nothing below
 	// measures, so the glyphs only have to exist.

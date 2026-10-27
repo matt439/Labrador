@@ -3,7 +3,7 @@
 #include "engine/math/shape_type.h"
 #include "engine/math/vector2f.h"
 
-namespace mattmath
+namespace labrador
 {
 	struct RectangleF;
 

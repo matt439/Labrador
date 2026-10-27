@@ -7,7 +7,7 @@
 #include <span>
 #include <cmath>
 
-namespace mattmath
+namespace labrador
 {
 
 	RectangleF::RectangleF(const Vector2F& position,
@@ -164,7 +164,7 @@ namespace mattmath
 		this->x += horizontal_amount;
 		this->y += vertical_amount;
 	}
-	void RectangleF::offset(const mattmath::Vector2F& amount)
+	void RectangleF::offset(const Vector2F& amount)
 	{
 		this->x += amount.x;
 		this->y += amount.y;

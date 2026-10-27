@@ -57,7 +57,7 @@
 namespace
 {
 	using namespace labrador;
-	using namespace mattmath;
+	using namespace labrador;
 
 	// A renderer with no graphics API, and a texture built without a file, in
 	// the shape tests/render/renderer_seam_tests.cpp builds one: two texels is

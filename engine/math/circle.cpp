@@ -2,7 +2,7 @@
 
 #include "engine/math/rectanglef.h"
 
-namespace mattmath
+namespace labrador
 {
 
 	Circle::Circle(const Vector2F& center, float radius) :
@@ -16,7 +16,7 @@ namespace mattmath
 	}
 	RectangleF Circle::bounding_box() const
 	{
-		return mattmath::RectangleF(this->center_.x - this->radius_,
+		return RectangleF(this->center_.x - this->radius_,
 					this->center_.y - this->radius_,
 					this->radius_ * 2.0f, this->radius_ * 2.0f);
 

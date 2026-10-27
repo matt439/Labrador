@@ -8,7 +8,7 @@
 
 #include <array>
 
-using namespace mattmath;
+using namespace labrador;
 
 // The subject is the contracts every Shape implementation states, rather
 // than the base class: edges() was deliberately taken off Shape (see the

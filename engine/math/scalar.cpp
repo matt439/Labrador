@@ -4,7 +4,7 @@
 
 #include <cmath>
 
-namespace mattmath
+namespace labrador
 {
 
 	float clamp(float value, float min, float max)

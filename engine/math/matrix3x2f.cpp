@@ -5,7 +5,7 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace mattmath
+namespace labrador
 {
 	// Spelled out rather than defaulted, so the constant states its own value
 	// instead of inheriting it from six member initialisers in another file.

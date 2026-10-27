@@ -18,8 +18,8 @@ using labrador::CollisionTag;
 using labrador::Contact;
 using labrador::dispatch_contacts;
 using labrador::find_contacts;
-using mattmath::RectangleF;
-using mattmath::Vector2F;
+using labrador::RectangleF;
+using labrador::Vector2F;
 
 namespace
 {
@@ -47,7 +47,7 @@ namespace
 		void draw(labrador::DrawList& /*draw_list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
-		const mattmath::Shape* shape() const override { return &this->rectangle_; }
+		const labrador::Shape* shape() const override { return &this->rectangle_; }
 		CollisionLayer layer() const override { return this->layer_; }
 		CollisionMask mask() const override { return this->mask_; }
 		CollisionTag tag() const override { return this->tag_; }
@@ -262,19 +262,19 @@ TEST_CASE("overlapping AABBs do not manufacture contact between disjoint thin po
 	class ThinCollider : public TestObject
 	{
 	public:
-		explicit ThinCollider(const mattmath::RectangleRotated& shape) :
+		explicit ThinCollider(const labrador::RectangleRotated& shape) :
 			TestObject(shape.bounding_box(), PLAYER, PLAYER), shape_(shape) {}
-		const mattmath::Shape* shape() const override { return &this->shape_; }
+		const labrador::Shape* shape() const override { return &this->shape_; }
 	private:
-		mattmath::RectangleRotated shape_;
+		labrador::RectangleRotated shape_;
 	};
 
 	const Vector2F x_axis(0.70710678f, 0.70710678f);
 	const Vector2F y_axis(-0.70710678f, 0.70710678f);
 	const Vector2F half_extents(0.0001f, 1.0f);
-	ThinCollider first(mattmath::RectangleRotated(Vector2F(0.0f, 0.0f),
+	ThinCollider first(labrador::RectangleRotated(Vector2F(0.0f, 0.0f),
 		x_axis, y_axis, half_extents));
-	ThinCollider second(mattmath::RectangleRotated(y_axis * 2.0001f,
+	ThinCollider second(labrador::RectangleRotated(y_axis * 2.0001f,
 		x_axis, y_axis, half_extents));
 	REQUIRE(first.bounds().intersects(second.bounds()));
 	REQUIRE(Vector2F::dot(second.shape()->center() - first.shape()->center(), y_axis) > 2.0f);

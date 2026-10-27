@@ -10,9 +10,9 @@
 
 using labrador::Camera;
 using labrador::Viewport;
-using mattmath::RectangleF;
-using mattmath::Vector2F;
-using mattmath::Vector2I;
+using labrador::RectangleF;
+using labrador::Vector2F;
+using labrador::Vector2I;
 
 namespace
 {

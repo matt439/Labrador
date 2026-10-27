@@ -29,12 +29,12 @@ namespace labrador
 		TextObject() = default;
 		TextObject(const std::wstring& text,
 			const std::string& font_name,
-			const mattmath::Vector2F& position,
+			const Vector2F& position,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
-			const mattmath::Vector2F& origin = mattmath::Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::ZERO,
 			float layer_depth = 0.0f);
 
 		virtual void draw(DrawList& draw_list) const;
@@ -45,7 +45,7 @@ namespace labrador
 		// render workers run it on the same object.
 		void draw_with(DrawList& draw_list,
 			const Colour& colour,
-			const mattmath::Vector2F& position,
+			const Vector2F& position,
 			float scale) const;
 
 		// The box this string occupies, for whoever has to cull or index it.
@@ -72,33 +72,33 @@ namespace labrador
 		// inside. The arithmetic is sprite_geometry.h's text_quad_bounds,
 		// beside the glyph quad it has to agree with, and an unrotated string
 		// costs it no trigonometry.
-		mattmath::RectangleF text_bounds() const;
+		RectangleF text_bounds() const;
 
 		// The same box for a hypothetical draw at another position and scale,
 		// so a derived drawable can size a second draw, such as a shadow,
 		// exactly rather than assuming it matches the text.
-		mattmath::RectangleF text_bounds_at(const mattmath::Vector2F& position,
+		RectangleF text_bounds_at(const Vector2F& position,
 			float scale) const;
 
 	protected:
 		const std::wstring& text() const;
 		FontHandle font() const;
-		const mattmath::Vector2F& position() const;
+		const Vector2F& position() const;
 		float scale() const;
 
 		virtual void set_text(const std::wstring& text);
 		void set_font(const std::string& font_name);
-		virtual void set_position(const mattmath::Vector2F& position);
+		virtual void set_position(const Vector2F& position);
 		virtual void set_scale(float scale);
 	private:
 		std::wstring text_ = L"";
 		FontHandle font_;
-		mattmath::Vector2F position_ = mattmath::Vector2F::ZERO;
+		Vector2F position_ = Vector2F::ZERO;
 		float scale_ = 1.0f;
 
 		// Unscaled layout and glyph-cell envelope of text_ in font_. Its
 		// position can differ from the layout's (0, 0). See text_bounds().
-		mattmath::RectangleF measured_bounds_ = mattmath::RectangleF::ZERO;
+		RectangleF measured_bounds_ = RectangleF::ZERO;
 		void remeasure();
 	};
 }

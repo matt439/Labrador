@@ -37,7 +37,7 @@ add_custom_target(check_engine_includes ALL
 # on an interface library is followed to whatever links it, so this one line
 # is the dependency for the engine, the samples, the tests, the benchmark
 # and a consumer's game alike. It is deliberately here rather than on
-# LabradorEngine: MattMath is under engine/ too and builds without it.
+# LabradorEngine: LabradorMath is under engine/ too and builds without it.
 add_dependencies(labrador_settings check_engine_includes)
 
 add_subdirectory(engine)

@@ -69,8 +69,8 @@ namespace labrador
 		// speed want different ones, and asking the pad API for one and then
 		// applying a second by hand is how a stick ends up with half its travel
 		// dead and the other half starting at 0.5.
-		mattmath::Vector2F left_stick = mattmath::Vector2F::ZERO;
-		mattmath::Vector2F right_stick = mattmath::Vector2F::ZERO;
+		Vector2F left_stick = Vector2F::ZERO;
+		Vector2F right_stick = Vector2F::ZERO;
 
 		float left_trigger = 0.0f;
 		float right_trigger = 0.0f;
@@ -158,6 +158,6 @@ namespace labrador
 	// alone. A per-axis deadzone on a stick is a square hole in a round gate -
 	// it lets a diagonal through that a straight push of the same distance
 	// would not.
-	mattmath::Vector2F apply_deadzone(const mattmath::Vector2F& stick,
+	Vector2F apply_deadzone(const Vector2F& stick,
 		float deadzone);
 }

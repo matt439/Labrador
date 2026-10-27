@@ -107,6 +107,6 @@ namespace labrador
 	// client pixels of the drawing buffer: scaled by the buffer's size over
 	// the box's, and floored, so a position just left of or above the canvas
 	// is negative rather than rounded onto its first column.
-	mattmath::Vector2I client_pixels(double css_x, double css_y,
+	Vector2I client_pixels(double css_x, double css_y,
 		double scale_x, double scale_y);
 }
