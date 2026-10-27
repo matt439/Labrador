@@ -137,6 +137,17 @@ export default async function drive(page) {
 		return box.width > 0 && box.height > 0 &&
 			document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2) === button;
 	})()`;
+	const accessibility_note = async (selector) => {
+		assert(await evaluate(`(() => {
+			const note = document.getElementById('accessibility');
+			const target = document.querySelector(${JSON.stringify(selector)});
+			if (!note || !target || note.textContent.trim().length === 0) { return false; }
+			const box = note.getBoundingClientRect();
+			return box.width > 0 && box.height > 0 &&
+				getComputedStyle(note).visibility === 'visible' &&
+				(target.getAttribute('aria-describedby') ?? '').split(/\\s+/).includes(note.id);
+		})()`), `${selector} does not reference a visible accessibility note`);
+	};
 	const click_play = async () => {
 		assert(await evaluate(button_visible), 'Play is unavailable');
 		assert(await evaluate(button_exposed), 'a canvas overlays the Play button');
@@ -188,6 +199,7 @@ export default async function drive(page) {
 	assert(await evaluate("matchMedia('(pointer: coarse)').matches"), 'touch emulation did not produce a coarse pointer');
 	assert(await evaluate("document.getElementById('play').hidden && !document.getElementById('needs-keyboard').hidden"),
 		'a touch-only visitor was offered Play');
+	await accessibility_note('#play');
 	await frames(10);
 	assert(!requests.some((url) => new URL(url).pathname.endsWith('/linesweeper.wasm')),
 		'the touch gate downloaded wasm');
@@ -201,6 +213,14 @@ export default async function drive(page) {
 	await click_play();
 	await loaded(0);
 	await clean_runs();
+	await accessibility_note('canvas');
+	assert(await evaluate("document.activeElement === document.querySelector('canvas')"),
+		'the running canvas did not receive focus');
+	await key('Tab', 9);
+	assert(await evaluate("document.activeElement !== document.querySelector('canvas') && document.activeElement.matches('a[href]')"),
+		'Tab did not move focus from the game to a page link');
+	await evaluate("document.querySelector('canvas').focus()");
+	console.log('ok - the visible accessibility note describes Play and the canvas, and Tab leaves the game');
 	const instructions = await evaluate("document.getElementById('status').textContent");
 	await evaluate(`(() => {
 		const canvas = window.labradorBundle.runs[0].canvas;
@@ -226,6 +246,7 @@ export default async function drive(page) {
 	await quit(0);
 	await click_play();
 	await loaded(1);
+	await accessibility_note('canvas');
 	assert(await evaluate('window.labradorBundle.runs[0].canvas !== window.labradorBundle.runs[1].canvas && ' +
 		'!window.labradorBundle.runs[0].canvas.isConnected && document.querySelectorAll("canvas").length === 1'),
 		'replay did not replace the first instance canvas');

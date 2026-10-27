@@ -59,6 +59,7 @@
   .start p { max-width: 32em; margin: 0 16px; padding: 12px 16px; background: rgba(0, 0, 0, 0.75); text-align: center; }
   .status { margin: 12px 0 0; min-height: 1.5em; }
   .status.error { color: #f77; }
+  .accessibility { max-width: 80ch; margin: 12px 0 0; }
   .about { margin: 16px 0 0; color: #aaa; font-size: 0.9rem; }
   [hidden] { display: none !important; }
 </style>
@@ -68,13 +69,19 @@
   <h1>LineSweeper</h1>
   <div class="stage" id="stage">
     <div class="start" id="start">
-      <button type="button" id="play">Play LineSweeper</button>
+      <button type="button" id="play" aria-describedby="accessibility">Play LineSweeper</button>
       <p id="needs-keyboard" hidden>LineSweeper has touch controls, but no real phone
         has played it yet, so for now this page asks for a keyboard or a controller.</p>
     </div>
   </div>
   <p class="status" id="status" role="status">Arrows move, Up or X rotates, Space drops,
     C holds, Escape pauses.</p>
+  <p class="accessibility" id="accessibility"><strong>Accessibility:</strong>
+    Keyboard play is supported; controller input is implemented but physical-controller
+    checks are pending. Tab moves focus out of the game. Controls are fixed, and
+    screen readers cannot read the game state. Touch play is held back pending real
+    iPhone and phone-layout checks. Reduced-motion options, landing-shadow contrast
+    improvements and selectable colour-vision-deficiency palettes are planned.</p>
   <p class="about">A falling-block game and a sample for
     <a href="https://labradorengine.com/">Labrador</a>, a 2D game engine in C++, compiled
     to WebAssembly and drawn with WebGL2.
@@ -128,6 +135,7 @@
       canvas = document.createElement("canvas");
       canvas.tabIndex = 0;
       canvas.setAttribute("aria-label", "LineSweeper");
+      canvas.setAttribute("aria-describedby", "accessibility");
       // A right click is a button the game may read, not a request for the
       // browser's menu over it.
       canvas.addEventListener("contextmenu", (event) => event.preventDefault());

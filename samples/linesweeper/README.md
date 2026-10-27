@@ -53,6 +53,32 @@ randomisation, T-spins and back-to-back scoring.
 Not included: perfect-clear bonus tables. Those exist to reward a technique
 against opponents, and this game has none.
 
+## Accessibility
+
+Keyboard play is supported; controller input is implemented but physical-controller
+checks remain open. The bundle's visible accessibility note describes both Play
+and every game canvas through `aria-describedby`. Tab stays with the browser so
+focus can leave the game. The page gives Play and the canvas visible focus
+outlines; the pause menu distinguishes its focused row by brightness.
+Rendered game state is not read out to screen readers. Controls are fixed by
+sample design: actions, bindings and any rebinding belong to the game, and
+Labrador deliberately has no engine action map (PHILOSOPHY, *The boundary*).
+Touch controls exist, but the host page holds back touch play until real iPhone
+and phone-layout checks pass. Android remains unverified.
+
+Landing-shadow contrast improvements (`BDP-21`), reduced-motion options
+(`BDP-22`) and selectable colour-vision-deficiency palettes (`BDP-25`) remain
+planned. LineSweeper owns the palette work: the agreed groups are
+**Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and
+**Tritanomaly / Tritanopia**. Their colours and player validation remain open
+in the [palette plan](../../docs/product/BACKLOG.md#bdp-25).
+
+`LineSweeperBundlePageTests` checks that the note is visible and referenced
+before play and on the first and replay canvases, and that Tab moves focus
+from the game to a page link. These automated checks do not establish physical
+controller, real-phone or screen-reader acceptance; the
+[hardware checklist](../../docs/port/web-to-be-tested.md) owns those limits.
+
 ## The decisions
 
 ### It is a second sample, not a replacement for `samples/minimal`

@@ -1554,6 +1554,21 @@ Vulkan renderer, distinct from the local RTX 5080 run. This observes the
 required CI entry and closes BDP-03. Neither run verifies the hosted page,
 Firefox, physical touch or display pacing.
 
+**BDP-24, 2026-10-27.** The packaged host page now has a visible accessibility
+note referenced by Play and each fresh canvas through `aria-describedby`.
+The [sample README](../../samples/linesweeper/README.md#accessibility) states
+the same support and limitations and identifies LineSweeper as owner of the
+planned palette work. After rebuilding `linesweeper_web_dist` with
+`wasm-release`, `LineSweeperBundlePageTests` passes in 3.87 seconds in local
+Chrome 156.0.8078.48 on the RTX 5080. It checks the note before play and on
+first/replay canvases, and sends Tab through browser input to verify that
+focus leaves the game for a page link. Captures at desktop viewport widths
+1280 and 720 pixels were reviewed: the note wraps without horizontal overflow.
+All four standalone CMake checks, website type checking, 21 website tests and
+the 146-page website build pass. These checks do not establish physical-pad,
+real-phone or screen-reader acceptance, and the changed page has not been
+deployed to the live demo.
+
 **The live page was checked on 2026-10-13**, deployed from the site's `main`
 with `npm run deploy` from a bundle built at `c369e8b`, tagged `v0.1.0`, which
 holds the calm top-out. `curl -I` with `Accept-Encoding: br` showed
