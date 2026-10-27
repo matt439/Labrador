@@ -11,10 +11,9 @@ An index of open work, one row per item; each row points to the document that ow
 **Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
 
 1. **`SM-43` (X1): local build, tooling and website checks pass; PR CI verification remains.** [Verification](docs/2026-10-26-agent-brief-history.md#verification-and-remaining-acceptance).
-2. **`BDP-24` (X22): publish the demo's accessibility support and limitations note.** The owner approved the aim; the page note, sample README section and bundle-page assertion remain.
-3. **`PI-09` (X27): recheck and file or withdraw the ColourWars reports within the approved minimal engine-focused disclosure boundary.** The publication scope is settled; the filing work remains.
-4. **`SM-25` (X28): verify the application-identified SDK download in PR CI and observe a scheduled Actions run.** Hardware sessions and owner decisions are listed below.
-5. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
+2. **`PI-09` (X27): recheck and file or withdraw the ColourWars reports within the approved minimal engine-focused disclosure boundary.** The publication scope is settled; the filing work remains.
+3. **`SM-25` (X28): verify the application-identified SDK download in PR CI and observe a scheduled Actions run.** Hardware sessions and owner decisions are listed below.
+4. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
 
 **Before `v0.3.0` is cut:** `SITE#3` implements and verifies the first documentation snapshot pipeline. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
@@ -37,7 +36,6 @@ An index of open work, one row per item; each row points to the document that ow
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-32` | BLOCKED | could | S | Review the encoded JetBrains Mono candidate in whole-clip playback, then replace the MP4. Canonical stills regenerate byte-identically; rule and review-output mode implemented. [Evidence](docs/website-plan.md#2026-10-26-footage-refresh-evidence). |
-| `BDP-24` | OPEN | could | XS | Add the demo's accessible support/limitations note and sample README section, and assert the note is referenced in the bundle page. [Scope](docs/product/STORIES.md#bdp-24). |
 | `BDP-21` | OPEN | could | S | Make each piece's landing shadow meet the 3:1 contrast target while remaining distinct from the live piece; test it and review regenerated captures. [Scope](docs/product/STORIES.md#bdp-21). |
 | `BDP-25` | OPEN | could | M | Implement the three agreed colour-vision-deficiency palette groups in LineSweeper; [BACKLOG](docs/product/BACKLOG.md#bdp-25) owns their full names, scope and acceptance. |
 | `SITE#3` | OPEN | must | M | Implement and verify complete immutable documentation snapshots before `v0.3.0` is cut; start with that release, with no earlier backfill. [Scope and checks](docs/website-versioning.md). |
