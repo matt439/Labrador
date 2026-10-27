@@ -14,7 +14,8 @@ commitment, it says so and names the document it belongs in.
 the hosted demo runs the module the `linesweeper_web_dist` target bundles,
 starts on a click and plays with a keyboard. Phones are a planned phase, so a
 phone gets a poster and a recording of the game to tap and watch, not the game
-itself, until a real iPhone and a real Android phone have played it.
+itself, until real iPhone checks and the host page's phone layout pass. Android
+remains unverified.
 
 `LineSweeperBundlePageTests` loads the packaged `web-dist/linesweeper/index.html`
 in headless Chromium when configure finds one in a rasterizing browser build.

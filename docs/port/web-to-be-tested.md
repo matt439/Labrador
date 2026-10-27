@@ -79,10 +79,15 @@ access is needed before this hosted-page acceptance can proceed.
 
 ## Needs real phones (M7b)
 
-- [ ] A current iPhone in Safari and a mid-range Android phone in Chrome play
-      LineSweeper's development page: portrait layout, safe-area insets, no
-      scroll or zoom under a finger, no full-screen button on iOS, rotation,
-      two fingers held at once, button size by thumb.
+**Owner decision, 2026-10-27 (`BDP-10`):** recorded iPhone evidence (`SM-13`)
+and the host page's phone layout (`BDP-09`) are sufficient to lift the phone
+gate. It stays closed until both are complete. No Android phone is available;
+`SM-44` is deferred optional evidence. Android remains unverified.
+
+- [ ] A current iPhone in Safari plays LineSweeper's development page:
+      portrait layout, safe-area insets, no scroll or zoom under a finger, no
+      full-screen button on iOS, rotation, two fingers held at once, button
+      size by thumb.
 - [ ] Without S3TC the CPU-decoded atlas draws legibly and its load time and
       memory are acceptable.
 - [ ] R6: time the 9,600-particle top-out frame on a phone.
@@ -95,6 +100,9 @@ access is needed before this hosted-page acceptance can proceed.
       timings cannot supply this phone result. No phone measurement is added.
 - [ ] Rotating with the pause menu open re-arranges the match underneath only
       on resume (known and documented; check it reads acceptably).
+- [ ] Deferred, optional (`SM-44`): repeat the phone checks on a mid-range
+      Android phone in Chrome when one is available. This does not gate
+      `BDP-10`.
 
 ## Needs ears (Web Audio)
 
@@ -203,8 +211,8 @@ again.
       no request for `linesweeper.js`, `linesweeper.wasm` or
       `linesweeper.mp4`; a key press then removed the video and brought back
       "Play LineSweeper", still without fetching any of them. This is
-      emulation, not a phone: the real-phone half waits on **SM-13** (an
-      iPhone; the Android half is SM-44).
+      emulation, not a phone: the required real-phone half waits on **SM-13**
+      (an iPhone); Android's **SM-44** is deferred optional evidence.
 - [x] A machine without WebGL2 shows the `onError` message. Headless Chrome
       started with `--disable-webgl2`, Play clicked: the page fetched the loader
       and the module, and its status line read "LineSweeper stopped: This
@@ -217,14 +225,12 @@ again.
       and clears the page's message. **Blocked on BDP-06**, which takes a real
       tab switch and a real loss; `RenderContextLossTests` covers the engine
       half with a forced loss. Not run against this deploy.
-- [ ] Decide whether 4.3 MB of video is acceptable on phones, or swap in a
-      smaller encode with `npm run sync-demo -- <bundle> --video <mp4>`.
-      **The owner's decision, open as BDP-20.** What the emulated phone run
-      saw: the site's page now sets the recording to `preload="none"` with
-      controls, so it neither plays nor downloads until it is asked to, and
-      the run fetched none of it (the file is 4,305,947 bytes). A tap on the
-      video under emulation did not start it in headless Chrome, so what a
-      real tap fetches has not been seen.
+- [x] **Owner decision, 2026-10-27 (`BDP-20`): keep the existing 4.3 MB
+      on-demand recording** (4,305,947 bytes); no smaller encode is needed.
+      The site's page sets it to `preload="none"` with controls, so it neither
+      plays nor downloads until it is asked to, and the emulated phone run
+      fetched none of it. A tap on the video under emulation did not start it
+      in headless Chrome, so real-phone playback remains part of **SM-13**.
 
 ## Firefox sample checks (WEB#4)
 

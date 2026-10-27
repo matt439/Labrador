@@ -15,12 +15,18 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-10-27: the engine supplies input/UI mechanisms and games own accessibility choices; LineSweeper aims for keyboard/controller play, clear focus, readable contrast, reduced motion and the agreed palettes, with verified support and limitations stated | OCA-08, BDP-24, BDP-21, BDP-22, BDP-25 |
 | Decided 2026-10-26: ColourWars' pin reaches each Labrador minor tag within a week of it being cut; its gameplay check is ColourWars' own, outside this repository | SM-36, PI-14 |
 | Decided 2026-10-27: separate CPU phase and cadence p99s from GPU execution and pipeline latency; the ratchet document's section 5 owns the mapping and PHILOSOPHY cites it | SM-03, SM-01, SM-07, SM-02 |
-| What private ColourWars detail may be published when the seven drafts and the packaging gap are filed, then accept, decline or split each report | PI-09, PI-10, PI-11 |
-| Whether one phone platform's evidence (the iPhone) is enough to lift the phone gate, or the Android run is required | BDP-10 |
-| The 'Introduction to C++' series: not started, planned with an outline, or withdrawn | SRL-14, SRL-15, SRL-17, SRL-16 |
-| Constants naming: amend CONVENTIONS to the 26 SCREAMING constants or rename them across both repositories | SRL-07 |
-| Whether the site starts versioning at the first 0.x tag (docs/website-versioning.md) |  |
-| Whether the default DPI awareness stays unaware or becomes per-monitor aware | OCA-66 |
+| Decided 2026-10-27: retain minimal engine-focused ColourWars disclosure, with no private client paths, names or lines; recheck and file or withdraw the reports within that boundary | PI-09, PI-10, PI-11 |
+| Decided 2026-10-27: iPhone evidence alone may lift the phone gate after SM-13 and BDP-09; Android is optional future evidence, not a prerequisite | BDP-10 |
+| Decided 2026-10-27: keep the existing 4.3 MB on-demand phone fallback video | BDP-20 |
+| Clarified 2026-10-27: the C++ introduction has substantial pre-production work but is unfinished; publish its actual scope and status, without claiming a completed engine API series | SRL-14, SRL-15, SRL-17, SRL-16 |
+| Decided 2026-10-27: rename non-macro uppercase constants to snake_case across both repositories; retain CONVENTIONS and record the source migration | SRL-07 |
+| Decided 2026-10-27: v0.3.0 gets the first complete immutable documentation snapshot; no earlier-release backfill; implement and verify versioning before cutting it, with no release date promised | SITE#3 |
+| Decided 2026-10-27: the Windows samples/template default to per-monitor DPI awareness; implementation and the reviewed 150% scaling run remain | OCA-66 |
+
+`SITE#3` remains open for implementation and verification under
+[the versioning policy](../website-versioning.md). It is a prerequisite for
+cutting `v0.3.0`; the release choice is settled, while the snapshot pipeline,
+versioned links/search and selector still need their checks.
 
 ## Now
 
@@ -242,7 +248,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[PI-05](STORIES.md#pi-05)** Could · S · The Pinned Submodule Integrator: The engine tells my build which revision of it I am shipping — after OCA-67
 - [x] **[SM-03](STORIES.md#sm-03)** Should · XS · The Sole Owner-Maintainer · **Owner**: Assign separate measurements to CPU phases, cadence, GPU execution and pipeline latency
 - [ ] **[SM-01](STORIES.md#sm-01)** Should · S · The Sole Owner-Maintainer · **Owner**: Run the frame bench on the integrated Radeon, not the RTX 5080 — after SM-03
-- [ ] **[PI-09](STORIES.md#pi-09)** Should · S · The Pinned Submodule Integrator · **Owner**: File the seven live drafts and the packaging gap upstream — after OCA-72
+- [ ] **[PI-09](STORIES.md#pi-09)** Should · S · The Pinned Submodule Integrator: Recheck and file or withdraw the live reports within the approved disclosure boundary — after OCA-72
 - [x] **[SM-16](STORIES.md#sm-16)** Should · S · The Sole Owner-Maintainer: One index of reviews and which ledger is live — after SM-06
 - [ ] **[SM-19](STORIES.md#sm-19)** Could · XS · The Sole Owner-Maintainer: Gate the offline tooling tests in CI — after SM-21
 - [ ] **[SM-25](STORIES.md#sm-25)** Should · S · The Sole Owner-Maintainer: Pin the Vulkan SDK, record the browser, and detect drift on a schedule — after SM-21
@@ -299,7 +305,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | PI-05 | G53: no engine revision a consumer can stamp; two present callers (the web bundle and a client). The first tag (Now) gives the fallback value. Closed 2026-10-26: LABRADOR_SOURCE_REVISION exports a configure-time hash/dirty or unknown identity, with an own-root guard for archives. Offline checkout/consumer/dirty-refresh/worktree/unborn/archive/missing-Git and bundle fixtures pass; the existing CI lint job runs them. README documents reconfigure-before-packaging and the bundle build-time distinction. |
 | SM-03 | G26. Closed 2026-10-27 by the owner's decision to split the measurements: [ratchet section 5](../performance/2026-09-19-g6f-ratchet.md#measurement-decision-sm-03) owns the field mapping; PHILOSOPHY's Performance section cites it. CPU update, recording/submission and frame-start cadence have separate p99s. GPU execution and pipeline latency require separate evidence with stated endpoints. The low-tier capture uses the existing presentation pacing and synchronised present; an unsynchronised seam option is not adopted (T5, T8). This Performance amendment was independent of OCA-08's UI position. SM-07 and the low-tier acceptance box remain open; no hardware result is added. |
 | SM-01 | G01 (major): the bench cannot reach the iGPU. The XS first step (AMD driver, per-app preference, no code) moves it to Next beside SM-03 (critique, owner facts); a code option is argued only if that fails. |
-| PI-09 | G74: seven live drafts and the packaging gap in ColourWars' private ledger, filed into the route OCA-72 opens. What private detail is published is the owner's. |
+| PI-09 | G74. The owner reaffirmed minimal engine-focused disclosure on 2026-10-27: no private client paths, names or lines. Recheck the current drafts against master, using the [reports table](../review/colourwars-reports/README.md) for existing answers rather than reopening settled verdicts, then file a sanitised engine exhibit or withdraw each with a reason. The publication decision is complete; the filing work remains. |
 | SM-16 | G29: one index of reviews and which ledger is live. Follows SM-06 (Now). Closed 2026-10-26: docs/review/INDEX.md maps every review entry to its live ledger or frozen disposition, owns remaining D3D12/Vulkan candidate tracking and links the verification limits. AGENTS points there; historical review README.md is unchanged. Local paths and anchors were checked. |
 | SM-19 | G32: the offline tooling tests were not gated in CI. Implemented 2026-10-26: the existing Windows lint job runs the tools unittest suite as a non-tolerated step beside the flash suite; priority 3 is tracked in STATUS.md. On 2026-10-27 all 81 local Python tests pass with no skips, superseding the earlier execution-policy blocker. The deliberately failing throwaway-branch CI observation remains. |
 | SM-25 | G133: the Vulkan SDK floats and drift is undetected. Implemented 2026-10-26: SDK 1.4.357.0 and its official SHA-256 are pinned, Monday 03:17 UTC forces the full CI matrix, and the page runner logs browser identity. On 2026-10-27 [LunarG metadata](https://vulkan.lunarg.com/sdk/home) confirms the pin/hash. After PR #59's hosted download received HTTP 403, a local GET with default urllib reproduces Cloudflare 403/error 1010; identifying the application as LabradorCI returns 200 from the same URL. The helper now sends that application identity. The exact pin/checksum and terminal handling of HTTP 403 are unchanged. Repaired PR CI download verification and the scheduled Actions observation remain open. |
@@ -330,14 +336,14 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 7. L7 Demo failure paths a player can act on: BDP-15, BDP-16, BDP-17
 8. L8 Demo controls, focus and phone instructions: BDP-11, BDP-12, BDP-13, BDP-14
 9. L9 Demo contrast, reduced motion and colour-vision-deficiency palettes: BDP-21, BDP-22, BDP-25
-10. L10 Phone fallback data use (PersonalWebsite repository): BDP-20
+10. L10 Phone fallback data use: BDP-20 (closed; existing on-demand video accepted)
 11. L11 Play again stays fast: BDP-18
 12. L12 Host page fits a phone held upright: BDP-09
 13. L13 Local bench procedure, lock verdict and four-core hold (PHILOSOPHY amendment E): SM-04, SM-05, SM-02
 14. L14 Take and publish the low-tier per-claim measurements: SM-07
 15. L15 Headless XInput translation test: SM-40
 16. L16 Browser pacing and phone top-out method: SM-08
-17. L17 Real iPhone run with the LAN-serve procedure: SM-14, SM-13
+17. L17 Real iPhone run with the LAN-serve procedure, then lift the phone gate: SM-14, SM-13, BDP-10 (also after BDP-09)
 18. L18 Pacing on visitors displays: BDP-07
 19. L19 Couch play: join screen: OCA-46
 20. L20 Settings screen and pointer menus: OCA-51, OCA-50
@@ -352,7 +358,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 29. L29 Pin procedures and configuration sweeps: SM-24, SM-17, SM-18, SM-15
 30. L30 Hosted demo lag and site operations: SM-26, SM-29, SM-30, SM-32
 31. L31 Platform support links and the non-Windows configure refusal: NMS-03, NMS-04
-32. L32 C++ series status (PHILOSOPHY amendment F only if withdrawn) and the learner path: SRL-14, SRL-15, SRL-17, SRL-16
+32. L32 C++ introduction status (documented; no withdrawal) and the learner path: SRL-14, SRL-15, SRL-17, SRL-16
 33. L33 LineSweeper design notes and the constants rule: SRL-18, SRL-06, SRL-07
 34. L34 A per-user data directory from the engine, once a second caller asks: OCA-76
 
@@ -375,7 +381,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[BDP-21](STORIES.md#bdp-21)** Could · S · The Browser and Phone Demo Player: A landing shadow I can see for every piece — after OCA-08
 - [ ] **[BDP-22](STORIES.md#bdp-22)** Could · S · The Browser and Phone Demo Player: Fewer sparks when I have asked my system for reduced motion — after BDP-23
 - [ ] **[BDP-25](#bdp-25)** Could · M · The Browser and Phone Demo Player: Select palettes intended for Protanomaly / Protanopia, Deuteranomaly / Deuteranopia and Tritanomaly / Tritanopia
-- [ ] **[BDP-20](STORIES.md#bdp-20)** Could · XS · The Browser and Phone Demo Player · **Owner**: The phone fallback does not spend my data without asking
+- [x] **[BDP-20](STORIES.md#bdp-20)** Could · XS · The Browser and Phone Demo Player: Keep the existing 4.3 MB on-demand phone fallback video
 - [ ] **[BDP-18](STORIES.md#bdp-18)** Could · S · The Browser and Phone Demo Player: Playing again many times stays fast and keeps the graphics — after BDP-03
 - [ ] **[BDP-09](STORIES.md#bdp-09)** Could · S · The Browser and Phone Demo Player: The host page fits a phone held upright — after BDP-03
 - [ ] **[SM-04](STORIES.md#sm-04)** Should · S · The Sole Owner-Maintainer: A local run procedure for LineSweeperFrameBench
@@ -386,6 +392,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
 - [ ] **[SM-14](STORIES.md#sm-14)** Should · S · The Sole Owner-Maintainer · **Owner**: Serve a development page to a phone on my network
 - [ ] **[SM-13](STORIES.md#sm-13)** Should · M · The Sole Owner-Maintainer · **Owner**: Record a real iPhone run of the development page and the live demo — after SM-14, SM-08
+- [ ] **[BDP-10](STORIES.md#bdp-10)** Could · XS · The Browser and Phone Demo Player: Lift the phone gate after the real iPhone and host layout pass — after SM-13, BDP-09
 - [ ] **[BDP-07](STORIES.md#bdp-07)** Could · M · The Browser and Phone Demo Player · **Owner**: Smooth play on the displays visitors actually use — after SM-08
 - [ ] **[OCA-46](STORIES.md#oca-46)** Could · M · The Outside C++ Adopter: See a join screen for couch play I can copy
 - [ ] **[OCA-51](STORIES.md#oca-51)** Could · M · The Outside C++ Adopter: Wire a settings screen to what the engine can actually set — after OCA-53
@@ -398,7 +405,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[OCA-40](STORIES.md#oca-40)** Could · S · The Outside C++ Adopter: Know what background music costs and how to keep it out of the page download — after OCA-38
 - [ ] **[OCA-18](STORIES.md#oca-18)** Could · S · The Outside C++ Adopter: Debug my game in Visual Studio from the presets
 - [ ] **[OCA-32](STORIES.md#oca-32)** Could · S · The Outside C++ Adopter: Use the recording renderer in my own tests — after OCA-29
-- [ ] **[OCA-66](STORIES.md#oca-66)** Could · S · The Outside C++ Adopter: Know whether my game is crisp on a scaled display
+- [ ] **[OCA-66](STORIES.md#oca-66)** Could · S · The Outside C++ Adopter: Declare per-monitor DPI awareness and review the template at 150% scaling
 - [ ] **[PI-10](STORIES.md#pi-10)** Could · M · The Pinned Submodule Integrator · **Owner**: An upstream answer for each filed report — after PI-09
   - Each report's decision and the commit that answered it: [the reports table](../review/colourwars-reports/README.md#the-decisions).
 - [x] **[PI-19](STORIES.md#pi-19)** Should · M · The Pinned Submodule Integrator: Read what the engine's last frame cost, phase by phase
@@ -421,13 +428,13 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[SM-32](STORIES.md#sm-32)** Could · S · The Sole Owner-Maintainer: Keep the site's LineSweeper footage in step with the sample
 - [ ] **[NMS-03](STORIES.md#nms-03)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): The Why page's Platform support section links the plans, their scope, and what would change the answer — after OCA-01
 - [ ] **[NMS-04](STORIES.md#nms-04)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): Configuring on a non-Windows host refuses early and points at the platform statement — after OCA-01
-- [ ] **[SRL-14](STORIES.md#srl-14)** Could · S · The Sample-Reading Learner · **Owner**: Know whether the 'Introduction to C++' series exists, is planned or is dropped
+- [x] **[SRL-14](STORIES.md#srl-14)** Could · S · The Sample-Reading Learner: State the C++ introduction's substantial pre-production progress and unfinished status
 - [ ] **[SRL-15](STORIES.md#srl-15)** Could · XS · The Sample-Reading Learner: Get Started tells me where to go if I do not know C++ yet — after SRL-14
 - [ ] **[SRL-17](STORIES.md#srl-17)** Could · M · The Sample-Reading Learner: A recorded check that the game-facing API is teachable to a beginner — after SRL-14
 - [ ] **[SRL-16](STORIES.md#srl-16)** Could · M · The Sample-Reading Learner: A guide to the C++ and engine terms the minimal sample uses — after SRL-17
 - [ ] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
 - [ ] **[SRL-06](STORIES.md#srl-06)** Could · S · The Sample-Reading Learner: LineSweeper's design notes give their reasons without sending me to internal records
-- [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner · **Owner**: One naming rule for constants that matches the published headers
+- [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
 
 <details><summary>Why each is placed here</summary>
 
@@ -450,7 +457,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | BDP-21 | G117: a landing shadow every player can see. OCA-08's approved position removes its decision prerequisite; the contrast implementation, tests and capture review remain open. |
 | BDP-22 | G118: fewer sparks under reduced motion. Follows BDP-23 (Now). The default is already calm: N3b passes the top-out on the strict, pixel-by-pixel reading of WCAG 2.3.1 for every player, so reduced motion goes further for those who ask rather than being what makes the demo safe. |
 | <a id="bdp-25"></a>BDP-25 | Added 2026-10-27 from the owner's palette decision under OCA-08. LineSweeper owns three selectable palette groups, named in full: Protanomaly / Protanopia, Deuteranomaly / Deuteranopia and Tritanomaly / Tritanopia, alongside its existing palette. This is sample-owned presentation work. Acceptance: selection consistently changes all seven piece presentations without changing rules; each palette is checked with the landing-shadow contrast and flash criteria, and every changed capture is reviewed as the sample README requires. Record the chosen colours, review method and limits; simulation is a development aid, while player validation remains separately identified ([XAG 103](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/103)). No particular colour values, persistence, automatic detection or engine palette API is selected by this decision. |
-| BDP-20 | G86: the phone fallback plays footage without asking. In the owner's PersonalWebsite repository. |
+| BDP-20 | G86. Closed 2026-10-27: the owner accepted the existing 4,305,947-byte (4.3 MB) video. The [live-check ledger](../port/web-to-be-tested.md) already records controls and preload=none with no video fetched before interaction in emulation. Keep that on-demand behaviour and the existing encode; no replacement or deployment is required by this decision. |
 | BDP-18 | G114: repeated plays; measure before fixing. |
 | BDP-09 | G34: the host page fits a phone held upright; needed before BDP-10. |
 | SM-04 | G63: a local run procedure for the frame bench. Promoted to Should because SM-07 depends on it. |
@@ -461,6 +468,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. Procedure, reducer and development-only fixture/export source implemented; generated-output and browser acceptance remain in [the method](../port/pacing-method.md). |
 | SM-14 | G71: serve a development page to a phone. Out of deferred: the owner has an iPhone; written and tried in SM-13's session. |
 | SM-13 | G34, G05 (merged with BDP-08): a real iPhone run. Split from the Android half (SM-44, deferred) per the owner facts. |
+| BDP-10 | Moved from Deferred to Later on 2026-10-27: the owner has no Android access and accepts iPhone-only evidence for lifting the phone gate. The gate stays closed until SM-13 and BDP-09 pass, then its implementation and public support wording are updated together. SM-44 is optional future evidence; this decision verifies no device and makes no Android support claim. |
 | BDP-07 | G23: pacing on the displays visitors use; may need a borrowed high-refresh display. |
 | OCA-46 | G123: a join screen for couch play, as a sample piece first. |
 | OCA-51 | G128: a settings screen wired to what the engine can set. Follows OCA-53 (Next). |
@@ -473,7 +481,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | OCA-40 | G131: what background music costs in the page download. Follows OCA-38 (Next). |
 | OCA-18 | G109: debugging in Visual Studio from the presets. |
 | OCA-32 | G48: the recording renderer in an adopter's tests. Follows OCA-29 (Next). |
-| OCA-66 | G151: crispness on a scaled display; the default is undecided. |
+| OCA-66 | G151. Decided 2026-10-27: use per-monitor DPI awareness for the Windows samples/template to avoid Windows scaling their output. The engine's per-monitor window sizing support already exists; add the default declaration and adopter guidance, then record a reviewed 150% scaling run with date and commit. Keep the story open until that implementation and evidence exist; no scaled-display result is implied by the decision. |
 | PI-10 | G74: an upstream answer for each filed report. Follows PI-09 (Next); the decisions are the owner's. |
 | PI-19 | G74, G27: report 14, accepted narrowed and split out of PI-10 on 2026-10-22. Should, because SM-08 depends on it. |
 | PI-11 | G14: the engine staging helper, only if PI-10 accepts the packaging request. Follows OCA-60 (Next). |
@@ -495,13 +503,13 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | SM-32 | G137: the site's LineSweeper footage in step with the sample. |
 | NMS-03 | G103: Platform support links the plans and what would change the answer. Follows OCA-01 (Now). |
 | NMS-04 | G104: x64-* presets refuse a non-Windows host; wasm-* stays available and is stated as unverified (critique). |
-| SRL-14 | G22: the C++ series' status, an owner decision; PHILOSOPHY amendment F only if withdrawn. |
+| SRL-14 | G22. Closed 2026-10-27: the owner clarified substantial progress and an unfinished course, and Get Started now states its status. The course checkout's README, production outline and rehearsal owner describe one roughly two-hour introduction for people who already program, with storyboard, demos, graphics and shooting plans prepared; rehearsal and recording remain. Its scope is memory, tooling, stack, pointers, heap, aggregates, ownership and the build pipeline; the first teaching section explains RAM as numbered bytes and addresses. This amends the dated story's three status choices to include actual work in progress. The source copy gives no course repository link or completion claim; deployment is separate. PHILOSOPHY's introductory engine API teaching target remains; the language introduction does not establish its fulfilment, and there is no withdrawal amendment. |
 | SRL-15 | G96: where to go without C++. |
 | SRL-17 | G98: an interim teachability audit. |
 | SRL-16 | G97: a glossary of the terms minimal uses. |
 | SRL-18 | G88: run LineSweeper's rules tests knowing what is needed. |
 | SRL-06 | G91: LineSweeper's design notes give reasons without internal records. |
-| SRL-07 | G92: one constants rule matching the headers; amend or rename is the owner's choice. |
+| SRL-07 | G92. Decided 2026-10-27: rename non-macro uppercase constants to snake_case, preserving CONVENTIONS' distinction between values and macros. Inventory current declarations rather than assuming the historical count of 26, migrate engine/sample/test/website uses and the ColourWars callers, and record every old/new spelling and the counted caller repositories. The source break needs CHANGES.md and the public sample migration. Keep this story open for implementation and its affected build, test and website checks. |
 
 </details>
 
@@ -545,8 +553,7 @@ Not in any horizon: each waits on something outside the backlog.
 
 | Story | Why | Unblocked by |
 |---|---|---|
-| [SM-44](STORIES.md#sm-44) Record a real Android phone run of the development page and the live demo | Needs a real Android phone, and the owner has none (owner facts 2026-10-13). Buying hardware is not proposed. | A borrowed Android phone; SM-14 written and SM-08 available, as SM-13 uses them |
-| [BDP-10](STORIES.md#bdp-10) Lift the phone gate once real phones have played | Lifting the phone gate needs recorded passes on the two devices web.md:748-750 names. The iPhone half (SM-13) is reachable; the Android half (SM-44) is not. | SM-13, SM-44 and BDP-09; or SM-13, BDP-09 and the owner's recorded decision that one platform's evidence is enough |
+| [SM-44](STORIES.md#sm-44) Record a real Android phone run of the development page and the live demo | No Android phone is accessible. This is optional future evidence and does not gate iPhone acceptance (owner decision 2026-10-27). | A borrowed Android phone; SM-14 written and SM-08 available, as SM-13 uses them |
 
 ## Risks to the plan
 
@@ -556,7 +563,7 @@ Not in any horizon: each waits on something outside the backlog.
 - The primary persona is unevidenced: no issues, analytics or independent adopter. Next spends real capacity on a stranger's ship path. Mitigation: most of Now is truth fixes that also serve the agents who read the same documents, and PI-09/PI-10 are the only stories backed by recorded demand.
 - Doc edits can fail the website build by design: quoted lines and public header comments are read at build time. Header-contract stories (OCA-55, OCA-59, OCA-56) and the brief trim (SM-43) must fix any quoting page in the same commit.
 - The consumer CI job adds build minutes and a vcpkg cold cache to every PR. If it is slow it will tempt someone to drop it; cache it deliberately and keep SM-21's documented contexts in place.
-- Hardware-bound claims may stay open: the iGPU p99 needs AMD's driver first and may still need a code option if the per-app preference fails; the Big Sur MacBook Air's Safari may sit below the wasm-exceptions floor; the Android phone is not owned, so BDP-10 waits on a borrowed device or an owner exception.
+- Hardware-bound claims may stay open: the iGPU p99 needs AMD's driver first and may still need a code option if the per-app preference fails; the Big Sur MacBook Air's Safari may sit below the wasm-exceptions floor. BDP-10 now waits only on the real iPhone and host layout checks; Android remains unverified without an accessible device.
 - Windows Sandbox (OCA-61, PI-14) proves the loader and runtime requirements on a clean OS, but its GPU is virtual and Release has no WARP fallback, so the gameplay half may show only a loud refusal; G77's target-GPU half stays open until a real machine runs it.
 - Linking the live demo widens its exposure before Safari, real phones and the player-facing failure messages are settled. BDP-23's flash check now precedes the link, and the platform statement names the phone gate plainly.
 

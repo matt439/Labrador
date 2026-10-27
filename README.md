@@ -32,8 +32,8 @@ it, and read [its README](samples/linesweeper/README.md) for the decisions
 behind it. [Play LineSweeper in a desktop browser](https://mattharding.dev/demo/linesweeper/)
 before building anything: the hosted demo starts on a click and plays with a
 keyboard. Phones are a planned phase, so a phone gets a poster and a recording
-of the game to tap and watch, not the game itself, until a real iPhone and a
-real Android phone have played it.
+of the game to tap and watch, not the game itself, until real iPhone checks and
+the host page's phone layout pass. Android remains unverified.
 
 `samples/collision`, `samples/audio` and `samples/local_multiplayer` are
 focused examples for the website's guides: a collision arena, a playable

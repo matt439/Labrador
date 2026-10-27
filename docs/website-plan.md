@@ -192,8 +192,8 @@ ambiguous names stay plain. Code links preserve highlighted text and copy
 payloads, with one link per destination per block and visible keyboard focus.
 The amber L identity is settled and the mark now accompanies the header's
 wordmark. The footer identifies the current docs as development/unreleased;
-[the release policy](website-versioning.md) defines what starts at the first
-published engine release.
+[the release policy](website-versioning.md) defines the immutable snapshots
+that start with `v0.3.0`.
 
 Validation passed: 12 focused parser/index/rendering tests, a clean type check,
 and a 134-page build with valid internal links. Eight representative routes
@@ -229,7 +229,7 @@ The requirements and implementation choices are established. The remaining launc
 | Documentation release scope | **Agreed** as [the inventory’s last table](website-inventory.md) proposed. Written, including the three guides backed by the collision, audio and local-multiplayer samples. |
 | API reference | **Decided:** the line reader, with history taken out of the headers first. Every public header is published. |
 | Visual identity and media | **Decided:** amber four-cell L mark and Labrador wordmark, neutral light/dark surfaces, system sans-serif and monospace type. The mark is shared by the header and favicon; text uses contrast-safe amber shades. Original sample captures and footage supply the imagery. |
-| Version and publishing policy | **Decided:** development label and source commit today; complete immutable snapshots start with the first published engine release that `SITE#3`, still open, names for one. [The versioning policy](website-versioning.md) records the routes and first-release checks. The website launch does not declare an engine release. |
+| Version and publishing policy | **Decided 2026-10-27:** `v0.3.0` gets the first complete immutable snapshot; `v0.1.0` and `v0.2.0` are not backfilled. The current site stays development documentation. `SITE#3` implements and verifies versioning before `v0.3.0` is cut; no release date is set. [The versioning policy](website-versioning.md) owns the routes and checks. No snapshot or version selector exists yet. |
 | Production URL metadata | **Done:** `site` in `website/astro.config.ts` is `https://labradorengine.com`; pages carry canonical links and the build writes a sitemap. `wrangler.jsonc` turns off the `workers.dev` address, so `labradorengine.com` is the only host. |
 
 The site is published. The collision, audio and local-multiplayer guides and their worked examples are included; ongoing changes follow the maintenance stage above.

@@ -192,8 +192,10 @@ when changing the mark, and review both themes at desktop and phone widths.
 Every page is labelled development documentation and shows its source commit.
 A preview with local changes says so, including changes to the website itself.
 [The versioning policy](../docs/website-versioning.md) defines complete,
-commit-bound snapshots and the implementation checks required at the first
-engine release to get one. There are no release snapshots or version selector yet.
+commit-bound snapshots. The owner chose `v0.3.0` as the first snapshot;
+`v0.1.0` and `v0.2.0` are not backfilled. Implement and verify versioning before
+`v0.3.0` is cut, while keeping the current site as development documentation.
+No release date is set. There are no release snapshots or version selector yet.
 
 ## Hosting and deployment
 

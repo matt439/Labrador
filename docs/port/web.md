@@ -770,19 +770,28 @@ for the page and one image.
 **The gate stays although the module plays by touch.** The module the bundle
 ships links the touch controls and the portrait arrangement (M7b's sample
 half, §9), and the development page lets a phone play; the bundle's page
-holds them back until a real iPhone and a real Android phone have played it,
-and its line says so rather than that the controls are coming. Its stage is
-a fixed 16:9, so it always takes the landscape arrangement: lifting the gate
-means taking `web/shell.html`'s phone handling with it - no coarse-pointer
-gate, `viewport-fit=cover` with the safe-area insets as padding, and the
-portrait rule that drops the 16:9.
+holds them back until a recorded real iPhone pass (`SM-13`) and the host page's
+phone layout (`BDP-09`) are complete. Its stage is a fixed 16:9, so it always
+takes the landscape arrangement: lifting the gate means taking
+`web/shell.html`'s phone handling with it - no coarse-pointer gate,
+`viewport-fit=cover` with the safe-area insets as padding, and the portrait
+rule that drops the 16:9.
+
+**Owner decision, 2026-10-27 (`BDP-10`).** The iPhone's recorded evidence is
+sufficient to lift the phone gate after `SM-13` and `BDP-09`; the gate stays
+closed until then. No Android phone is available, so `SM-44` remains deferred
+as optional future evidence, rather than a prerequisite. This decision adds
+no Android support claim.
 
 **On mattharding.dev a phone gets the poster and a recording**: the site's
-page shows a muted, looped recording of the game, `linesweeper.mp4` beside
-the page, 4.3 MB of `LineSweeperCapture`'s footage that the site copies in
-with `sync-demo --video` rather than the bundle carrying it, and the Worker
-answers byte ranges on it, which Safari needs to play a video. It still
-fetches no module.
+page offers an on-demand recording of the game, `linesweeper.mp4` beside the
+page, with `preload="none"` and playback controls. The owner accepted the
+existing 4.3 MB recording on 2026-10-27 (`BDP-20`); no smaller encode is needed.
+It is `LineSweeperCapture`'s footage that the site copies in with
+`sync-demo --video` rather than the bundle carrying it, and the Worker answers
+byte ranges on it, which Safari needs to play a video. It still fetches no
+module. [The live-demo ledger](web-to-be-tested.md#the-live-demo-m5-checked-2026-10-13)
+records the emulated no-download check and the remaining real-phone check.
 
 ---
 
@@ -1598,6 +1607,10 @@ Each is cheap and could change the plan:
 | **M6** | After v1, each separate: `RenderPixelTests` in headless Chromium (done); WebGL context-loss restore (done, and the host page told of both ends); `local_multiplayer` on the web (done); the web window driven by real input in headless Chromium, `WebWindowTests` (done); `audio/webaudio/` (done; its container is D9); `samples/audio` on the web (done); `collision` on the web (done); each sample's page a ctest entry (done). **All done** | days each; audio a week | Each its own commit, as usual |
 | **M7a** | The touch device (P1): `input/touch.{h,cpp}`, fed from `app/win32/` (`WM_POINTER`) and `app/web/` (pointer events), with headless tests in `InputTests` (code landed; Chrome's emulation drives `minimal` and `WebWindowTests`, and a real Windows touchscreen is the open check) | week | A Windows touchscreen and Chrome's touch emulation both drive a test state; the input tests pin the edges |
 | **M7b** | Phones for LineSweeper (D5): on-screen controls drawn by the game over M7a, textures without S3TC (done: `block_decode.h`), a portrait layout, `touch-action` and iOS viewport handling, and a measured frame on a real phone (controls, portrait layout and the development page's viewport handling landed; headless Chrome's emulation drives them, and real phones and the measured frame are open; the bundle's host page still asks a phone for a keyboard, §7.4) | weeks | LineSweeper plays on a current iPhone and a mid-range Android phone in their default browsers |
+
+M7b includes both phone platforms as a broader target. The current phone gate
+follows §7.4's owner decision: `SM-13` and `BDP-09` remain required, and
+Android's `SM-44` remains deferred optional evidence.
 
 The critical path to the desktop demo is M0 → M1 → M2 → M3 → M5, roughly
 **three to four weeks** of work on these definitions. The spread is mostly

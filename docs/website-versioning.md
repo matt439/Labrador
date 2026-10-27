@@ -10,19 +10,19 @@ releases. This was checked with `git ls-remote --tags origin` and the GitHub
 releases API. A package's `version` field, a CMake Release configuration, and a
 commit are not engine releases. There is no version selector or archive yet.
 
-## Once the engine has a release
+## First documentation snapshot: v0.3.0
 
-A published engine release with a fixed tag and commit, once `SITE#3` names
-one, starts versioned documentation. Each snapshot is complete and static,
-built from its release's own clean checkout: authored guides, generated API reference, design documents,
-sample quotations, media and dependency lockfile all come from that revision.
-The build must not combine released headers with development guides.
+On 27 October 2026 the owner chose `v0.3.0` as the first release with a
+complete, immutable documentation snapshot. `v0.1.0` and `v0.2.0` will not be
+backfilled. Each snapshot is built from its release's own clean checkout:
+authored guides, generated API reference, design documents, sample quotations,
+media and dependency lockfile all come from that revision. The build must not
+combine released headers with development guides.
 
-The 0.x tags are releases, and which of them is the first to get a snapshot is
-the owner's decision, open as `SITE#3` in [TODO.md](../TODO.md). Until that
-decision names one, a tag publishes no snapshot and the whole site stays
-development documentation; the work below is done in the change that prepares
-the first release it names.
+`SITE#3` in [TODO.md](../TODO.md) tracks the implementation and qualification,
+which must be complete before `v0.3.0` is cut. The decision sets no release
+date. Until the first snapshot is published, the whole site remains development
+documentation.
 
 Keep the current site and `/docs/` as development documentation. Store release
 snapshots under `/versions/<release-tag>/`, with the same page paths below that
@@ -44,10 +44,10 @@ promise that the release is still supported. Corrections to a frozen snapshot
 are dated errata linked beside it, rather than a silent replacement with newer
 documentation. A release tag must not be moved to rewrite a snapshot.
 
-## Work required at the first snapshotted release
+## Work required for v0.3.0
 
-Implement and qualify the versioned build in the same change that prepares the
-first snapshotted release's documentation:
+Implement and qualify the versioned build before cutting `v0.3.0`. Prepare and
+publish the first snapshot with these checks:
 
 1. Add a release manifest binding each published tag to its full commit and
    snapshot path. Reject a dirty checkout, a tag/commit mismatch, or an archive
