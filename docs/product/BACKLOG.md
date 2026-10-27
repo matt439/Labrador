@@ -420,7 +420,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [x] **[PI-19](STORIES.md#pi-19)** Should · M · The Pinned Submodule Integrator: Read what the engine's last frame cost, phase by phase
 - [ ] **[PI-11](STORIES.md#pi-11)** Could · M · The Pinned Submodule Integrator: Stage the runtime files the engine makes my game need, without hand-keeping that list — after PI-10, OCA-60
 - [ ] **[PI-08](STORIES.md#pi-08)** Could · S · The Pinned Submodule Integrator: See what happened to each request and which commit answered it — after OCA-72
-- [ ] **[PI-15](STORIES.md#pi-15)** Could · S · The Pinned Submodule Integrator: Launching my game hidden through STARTUPINFO is tested upstream
+- [x] **[PI-15](STORIES.md#pi-15)** Could · S · The Pinned Submodule Integrator: Launching my game hidden through STARTUPINFO is tested upstream
 - [ ] **[PI-16](STORIES.md#pi-16)** Could · S · The Pinned Submodule Integrator: Drive my game past its title screen with injected input in a smoke run — after OCA-30
 - [x] **[PI-17](STORIES.md#pi-17)** Could · XS · The Pinned Submodule Integrator: Know what JSON the engine reads for me and when my game must bring its own parser
 - [x] **[PI-18](STORIES.md#pi-18)** Could · XS · The Pinned Submodule Integrator: The include wall says exactly what it protects in my build
@@ -496,7 +496,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | PI-19 | G74, G27: report 14, accepted narrowed and split out of PI-10 on 2026-10-22. Should, because SM-08 depends on it. |
 | PI-11 | G14: the engine staging helper, only if PI-10 accepts the packaging request. Follows OCA-60 (Next). |
 | PI-08 | G54: request status on the tracker. Follows OCA-72 (Now). |
-| PI-15 | G78: hidden launch through STARTUPINFO tested upstream. |
+| PI-15 | G78. Closed 2026-10-27: AppTests on every Windows preset launches `StartupInfoChild`, which makes its window as Application does from default ApplicationOptions with no device, once with STARTUPINFO's `SW_HIDE` and once with `SW_SHOWNORMAL`, and asserts with `IsWindowVisible` that the first stays hidden and the second is shown. Not compiled under Emscripten. |
 | PI-16 | G79: drive a game past its title screen in a smoke run. Follows OCA-30 (Next). |
 | PI-17 | G75. Closed 2026-10-27: README's *Using Labrador in a project* and the *Settings and saves* guide say that `read_json_file` and `parse_json` read JSON, that rapidjson is linked `PRIVATE` and named by no engine header, as `engine/CMakeLists.txt` links it, and that a game writing JSON brings its own writer. |
 | PI-18 | G76. Closed 2026-10-27: `cmake/check_engine_includes.cmake` states that its pattern matches only a folder named `game/`, quoted, angle-bracketed or reached through `../`, and that a client folder with another name is not covered. The check stays the one name (T5). |
