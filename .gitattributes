@@ -68,3 +68,12 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# Files whose exact bytes are checked
+#
+# The published-versions manifest must be canonical text with LF line endings,
+# and the website build refuses it otherwise, so a Windows checkout must not
+# convert it.
+###############################################################################
+website/published-versions.json text eol=lf

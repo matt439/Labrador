@@ -1,0 +1,47 @@
+---
+// Starlight's banner, then the notice a reader sees on arriving at a version's
+// overview because the page they were reading is not part of that version
+// (version-switch.mjs). The banner sits inside the indexed <main>, so the
+// notice is kept out of search.
+import Default from '@astrojs/starlight/components/Banner.astro';
+import { RELEASE_SOURCE } from '../../lib/repository';
+
+const label = RELEASE_SOURCE?.tag ?? 'Development';
+---
+
+<Default />
+<p class="version-notice" role="status" data-version-notice data-label={label} data-pagefind-ignore hidden></p>
+
+<script>
+	import { missingNotice } from '../../lib/version-switch.mjs';
+
+	const notice = document.querySelector<HTMLElement>('[data-version-notice]');
+	const url = new URL(location.href);
+	const text = notice && missingNotice(url.searchParams, notice.dataset.label ?? '');
+	if (notice && text) {
+		notice.textContent = text;
+		notice.hidden = false;
+		// The query has done its work; a reload or a copied link should not
+		// repeat the notice. The canonical URL never carried it.
+		url.searchParams.delete('version-missing');
+		url.searchParams.delete('from');
+		history.replaceState(history.state, '', url);
+	}
+</script>
+
+<style>
+	.version-notice {
+		margin: 0;
+		padding: var(--sl-nav-pad-y) var(--sl-nav-pad-x);
+		border-bottom: 1px solid var(--sl-color-hairline);
+		background-color: var(--sl-color-gray-6);
+		color: var(--sl-color-white);
+		line-height: var(--sl-line-height-headings);
+		text-align: center;
+		text-wrap: balance;
+		overflow-wrap: anywhere;
+	}
+	.version-notice[hidden] {
+		display: none;
+	}
+</style>

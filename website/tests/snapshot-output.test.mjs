@@ -199,3 +199,21 @@ test('an unverified source record cannot select arbitrary output routing', async
 	const root = fixture(t);
 	await assert.rejects(verifySnapshotOutput(root, { ...SOURCE, snapshotPath: '/' }), /verified release-source record/);
 });
+
+test('a marked link may leave the snapshot only for the development list of versions', async (t) => {
+	for (const href of ['/versions/', `${ORIGIN}/versions/`, '//labradorengine.com/versions/', '../../versions/']) {
+		const html = page('', `<a href="${href}" data-version-index>All documentation versions</a>`);
+		await verifySnapshotOutput(fixture(t, { html }), SOURCE);
+	}
+	for (const href of ['/versions/v0.3.0/', '/versions/x/', '/docs/', `${PREFIX}docs/`, '/versions/?all', '/versions/#list', '/versions',
+		'https://example.invalid/versions/', 'http://labradorengine.com/versions/', '']) {
+		const html = page('', `<a href="${href}" data-version-index>All documentation versions</a>`);
+		await assert.rejects(verifySnapshotOutput(fixture(t, { html }), SOURCE), /expected a version-index link/, href);
+	}
+});
+
+test('an unmarked link to the list of versions is still outside the snapshot', async (t) => {
+	for (const extra of ['<a href="/versions/">All documentation versions</a>', '<link rel="prefetch" href="/versions/" data-version-index>']) {
+		await assert.rejects(verifySnapshotOutput(fixture(t, { html: page('', extra) }), SOURCE), /escapes snapshot prefix/);
+	}
+});

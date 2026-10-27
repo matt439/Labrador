@@ -16,10 +16,13 @@ npm ci            # once, and after package-lock.json changes
 npm run dev       # a local server that reloads on edits, including to the files below
 npm run check     # types
 npm test          # API indexing and rendered code-link regressions
-npm run build     # the site, into dist/ - fails on any broken internal link
+npm run build     # the site into dist/, published snapshots under dist/versions/ - fails on any broken internal link
 npm run preview   # serve dist/
 npm run --silent snapshot:source -- v0.3.0  # verify candidate release source; no build or publication
 npm run snapshot:build -- v0.3.0  # verified candidate in dist/snapshot/; no publication
+npm run snapshot:pack -- v0.3.0   # that candidate as release-assets/labrador-docs-v0.3.0.tar.gz, and its manifest entry
+npm run versions:verify -- --base <commit>  # CI's manifest, GitHub release and live-index check; needs history and network
+npm run versions:verify -- --base <commit> --dist dist  # after the build: appended errata link to something that exists
 ```
 
 ## It reads the rest of the repository
@@ -54,7 +57,10 @@ wrong (PHILOSOPHY T6):
 - any internal link or `#anchor` that does not resolve
   ([starlight-links-validator](https://github.com/HiDeoo/starlight-links-validator)).
 
-`.github/workflows/website.yml` runs the check and the build on every push.
+`.github/workflows/website.yml` runs the check, the tests, `versions:verify`
+and the build, then checks appended errata links with
+`versions:verify -- --dist dist`, on every pull request and on pushes to
+master and `review-*` branches.
 
 ## Where things are
 
@@ -90,6 +96,14 @@ src/assets/footage/       the encoded LineSweeper video, served on Home and Exam
 scripts/encode-footage.mjs  offline PNG-to-MP4 encoding and format verification
 scripts/build-snapshot.mjs  source-gated release candidate build and output verification
 scripts/snapshot-output.mjs  isolated HTML/assets/source/search checks
+scripts/published-versions.mjs  the published-release manifest's format and append-only rule
+scripts/snapshot-archive.mjs  the release asset's archive writer and strict reader
+scripts/pack-snapshot.mjs   a verified candidate packed as its release asset
+scripts/assemble-versions.mjs  published snapshots mounted into dist/versions/ after astro build
+scripts/verify-published-versions.mjs  CI's check of a manifest change
+published-versions.json   THE list of published release snapshots, append-only
+src/lib/version-switch.mjs  the selector's index reader and link targets
+src/pages/versions/       the release index at /versions/, development only
 src/route-data.ts         version paths for hero and pagination frontmatter
 src/walkthrough/          the files Get Started tells a reader to create
 src/styles/site.css       colours and the few layouts Starlight lacks
@@ -201,7 +215,9 @@ A preview with local changes says so, including changes to the website itself.
 commit-bound snapshots. The owner chose `v0.3.0` as the first snapshot;
 `v0.1.0` and `v0.2.0` are not backfilled. Implement and verify versioning before
 `v0.3.0` is cut, while keeping the current site as development documentation.
-No release date is set. There are no published release snapshots or version selector yet.
+No release date is set. The release index at `/versions/` and the version
+selector exist; `published-versions.json` lists no releases yet, so both offer
+Development alone.
 
 The first versioning gate is `npm run --silent snapshot:source -- <tag>`.
 It verifies a clean Git checkout at the exact annotated release tag, checks
@@ -216,11 +232,22 @@ checkout under `/versions/<tag>/`, with release labels and commit-bound source
 links. It validates the emitted HTML/assets and Pagefind search before writing
 candidate metadata to `dist/snapshot/snapshot-build.json`. This flat directory
 must be hosted at its recorded prefix. It is disposable output: a development
-build replaces `dist/`, so copy reviewed candidates elsewhere first. The command
+build replaces `dist/`, so pack a reviewed candidate first. The command
 does not deploy, retain published versions or add a release-index entry.
 [Candidate-build checks and evidence](../docs/website-versioning.md#candidate-snapshot-builds)
-describe the isolated fixture qualification and the remaining manifest,
-selector, preservation and publication work.
+describe the isolated fixture qualification.
+
+`npm run snapshot:pack -- <tag>` verifies the source and candidate again and
+writes the release asset to `release-assets/`, which Git ignores; it prints the
+entry that would publish it and changes nothing else. `published-versions.json`
+is the record of published snapshots: canonical LF text, append-only, never
+edited in place. `npm run build` runs `astro build` and then mounts every
+listed release from its GitHub release asset under `dist/versions/<tag>/`,
+writing `dist/versions/index.json`. With no listed release it makes no network
+request; once one is listed the build needs GitHub, or a folder named by
+`LABRADOR_SNAPSHOT_CACHE` holding the assets, and fails rather than build a
+site without it. [The versioning policy](../docs/website-versioning.md#publishing-a-releases-documentation)
+owns the manifest, the checks and the owner's publication procedure.
 
 ## Hosting and deployment
 
@@ -248,7 +275,10 @@ repository: the site reads engine headers, design documents, samples and tests
 outside `website/`. The build creates `website/dist/`;
 [`wrangler.jsonc`](wrangler.jsonc) tells Wrangler to upload that output, serve
 it as static files and use the generated 404 page for missing routes. Running
-only the deploy command in a fresh checkout does not build the site.
+only the deploy command in a fresh checkout does not build the site. Once a
+release is listed, the build downloads its snapshot from GitHub; a failed
+download or verification fails the build, so nothing deploys and the previous
+deployment stays live. Cloudflare's deployment history is the rollback.
 
 These build settings live in Cloudflare's dashboard. The separate
 `.github/workflows/website.yml` continues to check, build and retain an artifact;

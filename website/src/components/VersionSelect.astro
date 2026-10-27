@@ -1,0 +1,233 @@
+---
+// Which documentation version this page belongs to, and a way to the same page
+// in another one. The server markup names the current version and links to the
+// list of all versions, which is enough without JavaScript. The script asks the
+// development site which versions exist, so a snapshot frozen at its release
+// still offers releases published after it.
+//
+// The list link and the index URL are written literally, never through
+// sitePath: every version shares the one list on the development site.
+// snapshot-output.mjs accepts that link only with data-version-index.
+import { RELEASE_SOURCE } from '../lib/repository';
+import { SITE_BASE } from '../lib/site-path';
+
+const id = RELEASE_SOURCE?.tag ?? 'development';
+const label = RELEASE_SOURCE?.tag ?? 'Development';
+---
+
+<div class="version-select" data-version-select data-base={SITE_BASE} data-id={id} data-label={label} data-pagefind-ignore>
+	<details>
+		<summary><span class="label">Documentation version</span> <strong>{label}</strong></summary>
+		<ul class="version-choices">
+			<li><a href="/versions/" data-version-index>All documentation versions</a></li>
+		</ul>
+	</details>
+</div>
+
+<script>
+	import { parseVersionsIndex, stripBase, targetFor, type Version } from '../lib/version-switch.mjs';
+
+	const INDEX_URL = '/versions/index.json';
+
+	function item(version: Version, root: HTMLElement): HTMLLIElement {
+		const { base = '/', id = 'development' } = root.dataset;
+		const li = document.createElement('li');
+		const suffix = version.id === 'development' ? ' (unreleased)' : version.latest ? ' (latest release)' : '';
+		if (version.id === id) {
+			const current = document.createElement('span');
+			current.className = 'current';
+			current.setAttribute('aria-current', 'page');
+			current.textContent = version.label + suffix;
+			li.append(current);
+			return li;
+		}
+		const target = targetFor(stripBase(location.pathname, base), location.hash, id, version);
+		const link = document.createElement('a');
+		link.href = target.href;
+		const name = document.createElement('span');
+		name.textContent = version.label + suffix;
+		link.append(name);
+		if (target.missing) {
+			// Inside the link, so it is part of the name a screen reader announces.
+			const note = document.createElement('span');
+			note.className = 'note';
+			note.textContent = ` This page is not in ${version.label} – opens its documentation overview.`;
+			link.append(note);
+		}
+		li.append(link);
+		return li;
+	}
+
+	for (const root of document.querySelectorAll<HTMLElement>('[data-version-select]')) {
+		const details = root.querySelector('details')!;
+		const summary = root.querySelector('summary')!;
+		const list = root.querySelector<HTMLUListElement>('.version-choices')!;
+		const indexItem = list.lastElementChild!;
+		let versions: Promise<Version[]> | undefined;
+		let loaded: Version[] | undefined;
+
+		function load(): Promise<Version[]> {
+			versions ??= fetch(INDEX_URL, { cache: 'no-cache' })
+				.then((response) => {
+					if (!response.ok) throw new Error(`${INDEX_URL}: expected 200, found ${response.status}.`);
+					return response.json();
+				})
+				.then((json) => (loaded = parseVersionsIndex(json)))
+				.catch((error: unknown) => {
+					// A later opening may try again; until then the static list stands.
+					versions = undefined;
+					throw error;
+				});
+			return versions;
+		}
+
+		// The location's heading can change while the page is open, so the
+		// links are built again each time the list opens.
+		function render(): void {
+			if (!loaded) return;
+			const items = loaded.map((version) => item(version, root));
+			if (!loaded.some((version) => version.id === root.dataset.id)) {
+				const current = document.createElement('li');
+				const span = document.createElement('span');
+				span.className = 'current';
+				span.setAttribute('aria-current', 'page');
+				span.textContent = root.dataset.label ?? '';
+				current.append(span);
+				items.unshift(current);
+			}
+			list.replaceChildren(...items, indexItem);
+		}
+
+		async function open(): Promise<void> {
+			if (loaded) return render();
+			const status = document.createElement('li');
+			status.className = 'status';
+			status.textContent = 'Checking versions…';
+			list.setAttribute('aria-busy', 'true');
+			list.prepend(status);
+			try {
+				await load();
+				render();
+			} catch {
+				status.remove();
+			} finally {
+				list.removeAttribute('aria-busy');
+			}
+		}
+
+		const prefetch = (): void => void load().catch(() => {});
+		summary.addEventListener('focus', prefetch, { once: true });
+		summary.addEventListener('pointerenter', prefetch, { once: true });
+		details.addEventListener('toggle', () => {
+			if (details.open) void open();
+		});
+
+		root.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape' && details.open) {
+				details.open = false;
+				summary.focus();
+				event.preventDefault();
+				return;
+			}
+			if ((event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || !details.open) return;
+			// A convenience beside Tab, which still walks the same links in order.
+			const stops = [summary, ...list.querySelectorAll<HTMLAnchorElement>('a')];
+			const at = stops.indexOf(document.activeElement as HTMLElement);
+			const next = event.key === 'ArrowDown' ? Math.min(at + 1, stops.length - 1) : Math.max(at - 1, 0);
+			stops[next].focus();
+			event.preventDefault();
+		});
+
+		// Focus moving elsewhere on the page closes the list. A click on plain
+		// text inside it moves focus nowhere, so it does not.
+		root.addEventListener('focusout', (event) => {
+			const next = event.relatedTarget;
+			if (next instanceof Node && !root.contains(next)) details.open = false;
+		});
+	}
+</script>
+
+<style>
+	.version-select {
+		margin-bottom: 1rem;
+		border: 1px solid var(--sl-color-hairline);
+		border-radius: 0.5rem;
+		font-size: var(--sl-text-sm);
+	}
+	summary {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem 0.5rem;
+		min-height: 2.75rem;
+		padding: 0.5rem 0.75rem;
+		cursor: pointer;
+		color: var(--sl-color-gray-2);
+	}
+	summary strong {
+		color: var(--sl-color-white);
+	}
+	/* A flex summary loses the browser's marker, so it draws its own. */
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	summary {
+		list-style: none;
+	}
+	summary::after {
+		content: '';
+		width: 0.45em;
+		height: 0.45em;
+		margin-inline-start: auto;
+		border-inline-end: 2px solid currentColor;
+		border-bottom: 2px solid currentColor;
+		transform: translateY(-25%) rotate(45deg);
+	}
+	details[open] > summary::after {
+		transform: translateY(25%) rotate(-135deg);
+	}
+	summary:focus-visible {
+		outline: 2px solid var(--sl-color-text-accent);
+		outline-offset: -2px;
+		border-radius: 0.5rem;
+	}
+	.version-choices {
+		margin: 0;
+		padding: 0 0 0.25rem;
+		border-top: 1px solid var(--sl-color-hairline);
+		list-style: none;
+	}
+	/* The script builds these items, so they carry no scope attribute. */
+	.version-choices :global(:is(a, .current, .status)) {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		min-height: 2.75rem;
+		padding: 0.375rem 0.75rem;
+		overflow-wrap: anywhere;
+	}
+	.version-choices :global(a) {
+		color: var(--sl-color-gray-2);
+		text-decoration: none;
+	}
+	.version-choices :global(a:hover) {
+		color: var(--sl-color-white);
+		text-decoration: underline;
+	}
+	.version-choices :global(a:focus-visible) {
+		outline: 2px solid var(--sl-color-text-accent);
+		outline-offset: -2px;
+	}
+	.version-choices :global(.current) {
+		color: var(--sl-color-white);
+		font-weight: 600;
+	}
+	/* gray-3 measured 4.48:1 on the dark desktop sidebar; size sets the note apart. */
+	.version-choices :global(.status),
+	.version-choices :global(.note) {
+		color: var(--sl-color-gray-2);
+	}
+	.version-choices :global(.note) {
+		font-size: var(--sl-text-xs);
+	}
+</style>

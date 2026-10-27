@@ -170,11 +170,11 @@ cut once PHILOSOPHY's settle criterion has run.
    `not consumer-visible` for the `vcpkg.json` change, which CHANGES.md's
    *Entries* explains.
 
-   **For `v0.3.0`, implement and verify documentation versioning before the
-   tag is cut.** It is the first release with a complete immutable snapshot;
-   `v0.1.0` and `v0.2.0` are not backfilled. The build, provenance, routing,
-   search and selector checks are in
-   [the versioning policy](docs/website-versioning.md).
+   **For `v0.3.0`, qualify documentation versioning before the tag is cut.**
+   It is the first release with a complete immutable snapshot; `v0.1.0` and
+   `v0.2.0` are not backfilled. The build, provenance, routing, search and
+   selector checks are in [the versioning policy](docs/website-versioning.md).
+   GitHub immutable releases must be enabled on the repository before then.
 3. **Merge it, then wait for its push runs.** The commit's hash on `master`
    differs from the pull request's head, so find it there, and run
    `gh run list --branch master --commit <sha> --json workflowName,conclusion`
@@ -190,9 +190,11 @@ cut once PHILOSOPHY's settle criterion has run.
    ([docs/website-versioning.md](docs/website-versioning.md)), and a tag
    ruleset on `refs/tags/v*` (*Release tags are never moved or deleted*,
    in the repository's *Rules* settings) refuses both.
-5. **Create the release:**
-   `gh release create vX.Y.Z --verify-tag --title "Labrador X.Y.Z" --notes-file <notes>`.
-   The notes hold:
+5. **Create the release as a draft:**
+   `gh release create vX.Y.Z --verify-tag --draft --title "Labrador X.Y.Z" --notes-file <notes>`.
+   Publish it with `gh release edit vX.Y.Z --draft=false` only after the
+   documentation asset below is uploaded: an immutable release takes no asset
+   after publication. The notes hold:
    - two sentences from *The public face*, word for word: the bold lead,
      "Releases are versioned, and before 1.0 a release promises a record, not
      compatibility.", and the one after it that begins "A 0.x tag promises one
@@ -208,9 +210,22 @@ cut once PHILOSOPHY's settle criterion has run.
    - the supported revisions, as [SECURITY.md](SECURITY.md) states them;
    - a link to PHILOSOPHY at the tag.
 
-   For `v0.3.0`, build the documentation snapshot from that release's clean
-   checkout and follow the versioning policy's publication and rollback
-   checks. Keep the development site and all published snapshot paths.
+   From `v0.3.0`, publish the release's documentation snapshot with it, by
+   [the versioning policy's procedure](docs/website-versioning.md#publishing-a-releases-documentation):
+   - in a clean checkout of the tag, from `website/`, run `npm ci` and
+     `npm run snapshot:build -- vX.Y.Z`, review the candidate, then run
+     `npm run snapshot:pack -- vX.Y.Z` and keep the entry it prints;
+   - attach `release-assets/labrador-docs-vX.Y.Z.tar.gz` to the draft with
+     `gh release upload vX.Y.Z release-assets/labrador-docs-vX.Y.Z.tar.gz`,
+     and only then publish it with `gh release edit vX.Y.Z --draft=false`.
+     Never replace an asset (`--clobber`);
+   - append the entry to `website/published-versions.json` in a pull request,
+     with `published` set to the release's UTC publication date, and
+     rebase-merge it on green; the `website` job's `versions:verify` checks it;
+   - check the deployed index, label, links, search and selector, and that
+     earlier versions are unchanged. Roll back through Cloudflare's deployment
+     history; never edit or remove a published entry, and correct a snapshot
+     with an appended erratum or a newer release.
 6. **Afterwards**, the next consumer-visible change opens `## Unreleased`
    above the release's heading, and `version-string` stays as it is until the
    next release commit changes it.
