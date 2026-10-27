@@ -124,7 +124,9 @@ namespace
 		const HMODULE module = GetModuleHandleW(L"vulkan-1.dll");
 		const FARPROC address = module == nullptr ? nullptr : GetProcAddress(module, name);
 		if (address == nullptr)
+		{
 			throw std::runtime_error(std::string("Vulkan loader export unavailable: ") + name);
+		}
 		static_assert(sizeof(Function) == sizeof(FARPROC));
 		return std::bit_cast<Function>(address);
 	}
@@ -134,7 +136,9 @@ namespace
 	{
 		const PFN_vkVoidFunction address = vkGetInstanceProcAddr(instance, name);
 		if (address == nullptr)
+		{
 			throw std::runtime_error(std::string("Actual instance function unavailable: ") + name);
+		}
 		static_assert(sizeof(Function) == sizeof(PFN_vkVoidFunction));
 		return std::bit_cast<Function>(address);
 	}
@@ -150,13 +154,19 @@ namespace
 		CallbackState& capture = *static_cast<CallbackState*>(context);
 		const std::size_t index = capture.started.fetch_add(1, std::memory_order_relaxed);
 		if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		{
 			capture.errors.fetch_add(1, std::memory_order_relaxed);
+		}
 		if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
 			if (type == VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+			{
 				capture.performance_advisories.fetch_add(1, std::memory_order_relaxed);
+			}
 			else
+			{
 				capture.validation_warnings.fetch_add(1, std::memory_order_relaxed);
+			}
 		}
 		if (index >= message_capacity)
 		{
@@ -181,15 +191,23 @@ namespace
 		}
 		message.description[length] = '\0';
 		if (description == nullptr || description[length] != '\0')
+		{
 			capture.truncated_or_null.fetch_add(1, std::memory_order_relaxed);
+		}
 		const bool first = severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT &&
 			std::strcmp(message.description.data(), first_marker) == 0;
 		const bool last = severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT &&
 			std::strcmp(message.description.data(), last_marker) == 0;
 		message.ready.store(true, std::memory_order_release);
 		capture.completed.fetch_add(1, std::memory_order_release);
-		if (first) capture.first_calibrations.fetch_add(1, std::memory_order_release);
-		if (last) capture.last_calibrations.fetch_add(1, std::memory_order_release);
+		if (first)
+		{
+			capture.first_calibrations.fetch_add(1, std::memory_order_release);
+		}
+		if (last)
+		{
+			capture.last_calibrations.fetch_add(1, std::memory_order_release);
+		}
 		return VK_FALSE;
 	}
 
@@ -202,7 +220,9 @@ namespace
 				std::unique_lock<std::mutex> lock(this->mutex_);
 				if (!this->condition_.wait_until(lock, this->deadline_,
 					[this]() { return this->finished_; }))
+				{
 					fail_fast("ten-second process deadline expired");
+				}
 			}) {}
 		~Watchdog()
 		{
@@ -234,7 +254,10 @@ namespace
 
 	void require(bool condition, const char* message)
 	{
-		if (!condition) throw std::runtime_error(message);
+		if (!condition)
+		{
+			throw std::runtime_error(message);
+		}
 	}
 
 	void marker(CallbackState& capture, const char* text, std::atomic<unsigned>& counter)
@@ -249,7 +272,9 @@ namespace
 			std::chrono::steady_clock::now() + std::chrono::seconds(2);
 		while (counter.load(std::memory_order_acquire) == 0 &&
 			std::chrono::steady_clock::now() < deadline)
+		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 		require(counter.load(std::memory_order_acquire) == 1,
 			"exact INFO calibration callback was not observed once");
 	}
@@ -314,7 +339,10 @@ namespace
 		VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
 		const VkResult created = capture->create_messenger(capture->instance, &description,
 			nullptr, &messenger);
-		if (created == VK_SUCCESS) capture->messenger.store(messenger, std::memory_order_release);
+		if (created == VK_SUCCESS)
+		{
+			capture->messenger.store(messenger, std::memory_order_release);
+		}
 		std::printf("actual instance create test messenger: %s (%d)\n",
 			vk_result_name(created).c_str(), static_cast<int>(created));
 		std::fflush(stdout);
@@ -339,9 +367,11 @@ namespace
 		}
 		capture->phase.store(Phase::resize, std::memory_order_release);
 		require(window.resize(resized_size, resized_size), "real hidden-window resize failed");
-		require(renderer->window_size_changed(resized_size, resized_size), "renderer resize failed");
+		require(renderer->window_size_changed(resized_size, resized_size),
+			"renderer resize failed");
 		require(renderer->back_buffer_size() == Vector2F(
-			static_cast<float>(resized_size), static_cast<float>(resized_size)), "resize dimensions differ");
+			static_cast<float>(resized_size), static_cast<float>(resized_size)),
+			"resize dimensions differ");
 		capture->phase.store(Phase::frames, std::memory_order_release);
 		for (int frame = 0; frame < 3; ++frame)
 		{
@@ -354,7 +384,8 @@ namespace
 				capture->instance_entered.load(std::memory_order_acquire) == 0,
 				"the observed device or instance changed during the workload");
 		}
-		std::puts("ordinary hidden presents=6 real resize=64-to-32; no read-back, gates or overlap proof");
+		std::puts("ordinary hidden presents=6 real resize=64-to-32; no read-back, gates or overlap "
+			"proof");
 		capture->phase.store(Phase::before_teardown, std::memory_order_release);
 		marker(*capture, last_marker, capture->last_calibrations);
 		capture->phase.store(Phase::renderer_release, std::memory_order_release);
@@ -376,18 +407,26 @@ namespace
 			settled = capture.device_returned.load(std::memory_order_acquire) == 1 &&
 				capture.instance_returned.load(std::memory_order_acquire) == 1 &&
 				capture.completed.load(std::memory_order_acquire) == count;
-			for (std::size_t index = 0; settled && index < std::min(count, message_capacity); ++index)
+			for (std::size_t index = 0; settled && index < std::min(count, message_capacity);
+				++index)
+			{
 				settled = capture.messages[index].ready.load(std::memory_order_acquire);
+			}
 			settled = settled && count == capture.started.load(std::memory_order_acquire);
-			if (!settled) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			if (!settled)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
 		} while (!settled && std::chrono::steady_clock::now() < deadline);
 		for (std::size_t index = 0; index < std::min(count, message_capacity); ++index)
 		{
 			const Message& message = capture.messages[index];
 			if (message.ready.load(std::memory_order_acquire))
+			{
 				std::printf("message[%zu] phase=%s severity=0x%x type=0x%x id=%d: %s\n",
 					index, phase_name(message.phase), static_cast<unsigned>(message.severity),
 					static_cast<unsigned>(message.type), message.id, message.description.data());
+			}
 		}
 		const std::size_t completed = capture.completed.load(std::memory_order_acquire);
 		const std::size_t overflow = capture.overflow.load(std::memory_order_acquire);
@@ -429,14 +468,18 @@ namespace
 extern "C" VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(
 	VkDevice device, const VkAllocationCallbacks* allocator)
 {
-	if (actual.destroy_device == nullptr) fail_fast("device destroy export was not pre-resolved");
+	if (actual.destroy_device == nullptr)
+	{
+		fail_fast("device destroy export was not pre-resolved");
+	}
 	CallbackState* const capture = armed.load(std::memory_order_acquire);
 	if (capture == nullptr || device != capture->device)
 	{
 		actual.destroy_device(device, allocator);
 		return;
 	}
-	const Phase previous = capture->phase.exchange(Phase::device_destroy, std::memory_order_acq_rel);
+	const Phase previous = capture->phase.exchange(Phase::device_destroy,
+		std::memory_order_acq_rel);
 	capture->device_release_phase.store(previous, std::memory_order_relaxed);
 	capture->device_entered.fetch_add(1, std::memory_order_release);
 	actual.destroy_device(device, allocator);
@@ -447,14 +490,18 @@ extern "C" VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(
 extern "C" VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(
 	VkInstance instance, const VkAllocationCallbacks* allocator)
 {
-	if (actual.destroy_instance == nullptr) fail_fast("instance destroy export was not pre-resolved");
+	if (actual.destroy_instance == nullptr)
+	{
+		fail_fast("instance destroy export was not pre-resolved");
+	}
 	CallbackState* const capture = armed.load(std::memory_order_acquire);
 	if (capture == nullptr || instance != capture->instance)
 	{
 		actual.destroy_instance(instance, allocator);
 		return;
 	}
-	const Phase previous = capture->phase.exchange(Phase::instance_destroy, std::memory_order_acq_rel);
+	const Phase previous = capture->phase.exchange(Phase::instance_destroy,
+		std::memory_order_acq_rel);
 	capture->instance_entered.fetch_add(1, std::memory_order_release);
 	// VUID-vkDestroyInstance-instance-00629: remove the test's instance child
 	// first. Its creation used NULL, so 01916 requires NULL here too. Leave
@@ -475,7 +522,8 @@ extern "C" VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(
 int main()
 {
 #ifdef NDEBUG
-	std::fputs("VulkanDestructionProbe requires Debug validation; Release is unverified and refused.\n", stderr);
+	std::fputs("VulkanDestructionProbe requires Debug validation; Release is unverified "
+		"and refused.\n", stderr);
 	return EXIT_FAILURE;
 #else
 	Watchdog watchdog;
@@ -496,7 +544,8 @@ int main()
 	}
 	const bool captured = capture != nullptr && report(*capture);
 	const bool passed = workload_completed && captured;
-	std::printf("VulkanDestructionProbe: %s\n", passed ? "observations passed" : "FAILED / unverified");
+	std::printf("VulkanDestructionProbe: %s\n",
+		passed ? "observations passed" : "FAILED / unverified");
 	return passed ? EXIT_SUCCESS : EXIT_FAILURE;
 #endif
 }

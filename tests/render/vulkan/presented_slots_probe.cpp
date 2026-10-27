@@ -189,8 +189,14 @@ namespace
 	int frame_index(const std::array<DeviceResources::Frame*, 2>& frames,
 		const DeviceResources::Frame* frame)
 	{
-		if (frame == frames[0]) { return 0; }
-		if (frame == frames[1]) { return 1; }
+		if (frame == frames[0])
+		{
+			return 0;
+		}
+		if (frame == frames[1])
+		{
+			return 1;
+		}
 		throw std::runtime_error("frame address differs from both warmed slots");
 	}
 
@@ -217,7 +223,8 @@ namespace
 			std::fflush(stdout);
 			if (info.kind != RenderDeviceKind::hardware)
 			{
-				std::fputs("UNVERIFIED: this observation requires the actual hardware rasterizer\n", stderr);
+				std::fputs("UNVERIFIED: this observation requires the actual hardware rasterizer\n",
+					stderr);
 				return unverified_exit;
 			}
 		}
@@ -262,25 +269,33 @@ namespace
 			}
 			if (device.device() != expected_device || submitted[0] == submitted[1])
 			{
-				throw std::runtime_error("device or distinct frame identities changed during the pair");
+				throw std::runtime_error("device or distinct frame identities changed during the "
+					"pair");
 			}
 			// end_frame can advance without a swapchain. Only two exact API
 			// observations on the same valid queue/chain qualify as presented.
 			// SUBOPTIMAL is an actual successful present, reported explicitly.
-			const bool actual_presents = presentations[0].calls == 1 && presentations[1].calls == 1 &&
-				presentations[0].queue == expected_queue && presentations[1].queue == expected_queue &&
+			const bool actual_presents = presentations[0].calls == 1 &&
+				presentations[1].calls == 1 &&
+				presentations[0].queue == expected_queue &&
+				presentations[1].queue == expected_queue &&
 				presentations[0].swapchain != VK_NULL_HANDLE &&
 				presentations[0].swapchain == presentations[1].swapchain &&
-				(presentations[0].result == VK_SUCCESS || presentations[0].result == VK_SUBOPTIMAL_KHR) &&
-				(presentations[1].result == VK_SUCCESS || presentations[1].result == VK_SUBOPTIMAL_KHR);
+				(presentations[0].result == VK_SUCCESS ||
+					presentations[0].result == VK_SUBOPTIMAL_KHR) &&
+				(presentations[1].result == VK_SUCCESS ||
+					presentations[1].result == VK_SUBOPTIMAL_KHR);
 			if (!actual_presents)
 			{
 				std::printf("pair=%zu Present calls=%u,%u queues=%p,%p swapchains=%p,%p "
 					"results=%d,%d decision=UNVERIFIED-presented-pair\n", pair,
 					presentations[0].calls, presentations[1].calls,
-					reinterpret_cast<void*>(presentations[0].queue), reinterpret_cast<void*>(presentations[1].queue),
-					reinterpret_cast<void*>(presentations[0].swapchain), reinterpret_cast<void*>(presentations[1].swapchain),
-					static_cast<int>(presentations[0].result), static_cast<int>(presentations[1].result));
+					reinterpret_cast<void*>(presentations[0].queue),
+					reinterpret_cast<void*>(presentations[1].queue),
+					reinterpret_cast<void*>(presentations[0].swapchain),
+					reinterpret_cast<void*>(presentations[1].swapchain),
+					static_cast<int>(presentations[0].result),
+					static_cast<int>(presentations[1].result));
 				for (const Presentation& presentation : presentations)
 				{
 					// OUT_OF_DATE is rebuilt by the backend and leaves this pair
@@ -315,7 +330,8 @@ namespace
 				"targets=%llu,%llu reuse_target=%llu observer_calls=%u counter=%llu "
 				"zero_wait_ran=%s zero_wait=%d completion=%d requested_timeout=%llu "
 				"Present_calls=%u,%u Present_results=%d,%d decision=%s\n", pair,
-				sprite_counts[pair], frame_index(frames, submitted[0]), frame_index(frames, submitted[1]),
+				sprite_counts[pair], frame_index(frames, submitted[0]),
+				frame_index(frames, submitted[1]),
 				static_cast<void*>(submitted[0]), static_cast<void*>(submitted[1]),
 				static_cast<unsigned long long>(observation.targets[0]),
 				static_cast<unsigned long long>(observation.targets[1]),
@@ -325,10 +341,14 @@ namespace
 				static_cast<int>(observation.zero_wait), static_cast<int>(observation.completion),
 				static_cast<unsigned long long>(observation.requested_timeout),
 				presentations[0].calls, presentations[1].calls,
-				static_cast<int>(presentations[0].result), static_cast<int>(presentations[1].result),
+				static_cast<int>(presentations[0].result),
+				static_cast<int>(presentations[1].result),
 				witnessed ? "pending-instant-observed" : "UNVERIFIED");
 			std::fflush(stdout);
-			if (witnessed) { break; }
+			if (witnessed)
+			{
+				break;
+			}
 		}
 		device.wait_for_gpu();
 		renderer.reset();
@@ -344,9 +364,13 @@ extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkQueuePresentKHR(
 {
 	const VulkanCalls& calls = real_calls();
 	Presentation* const record = active_presentation;
-	if (record == nullptr) { return calls.present(queue, presentation); }
+	if (record == nullptr)
+	{
+		return calls.present(queue, presentation);
+	}
 	if (queue == VK_NULL_HANDLE || presentation == nullptr ||
-		presentation->sType != VK_STRUCTURE_TYPE_PRESENT_INFO_KHR || presentation->swapchainCount != 1 ||
+		presentation->sType != VK_STRUCTURE_TYPE_PRESENT_INFO_KHR ||
+		presentation->swapchainCount != 1 ||
 		presentation->pSwapchains == nullptr || presentation->pSwapchains[0] == VK_NULL_HANDLE)
 	{
 		fail_fast("unexpected actual Present shape", VK_ERROR_UNKNOWN);
@@ -369,19 +393,26 @@ extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkWaitSemaphores(
 {
 	const VulkanCalls& calls = real_calls();
 	Observation* const observation = active_observation;
-	if (observation == nullptr) { return calls.wait(device, wait, timeout); }
+	if (observation == nullptr)
+	{
+		return calls.wait(device, wait, timeout);
+	}
 	++observation->calls;
 	if (observation->calls != 1 || device != observation->device || wait == nullptr ||
 		wait->sType != VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO || wait->pNext != nullptr ||
 		wait->flags != 0 || wait->semaphoreCount != 1 || wait->pSemaphores == nullptr ||
 		wait->pSemaphores[0] == VK_NULL_HANDLE ||
-		wait->pValues == nullptr || wait->pValues[0] != observation->reuse_target || timeout != UINT64_MAX)
+		wait->pValues == nullptr || wait->pValues[0] != observation->reuse_target ||
+		timeout != UINT64_MAX)
 	{
 		fail_fast("unexpected actual reuse-wait shape", VK_ERROR_UNKNOWN);
 	}
 	observation->requested_timeout = timeout;
 	VkResult result = calls.counter(device, wait->pSemaphores[0], &observation->counter_before);
-	if (result != VK_SUCCESS) { fail_fast("actual timeline counter query failed", result); }
+	if (result != VK_SUCCESS)
+	{
+		fail_fast("actual timeline counter query failed", result);
+	}
 	const uint64_t minimum_target = std::min(observation->targets[0], observation->targets[1]);
 	if (observation->counter_before < observation->targets[0] &&
 		observation->counter_before < observation->targets[1])
@@ -400,7 +431,10 @@ extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkWaitSemaphores(
 		observation->pending = observation->zero_wait == VK_TIMEOUT;
 	}
 	result = calls.wait(device, wait, std::min(timeout, completion_timeout_ns));
-	if (result != VK_SUCCESS) { fail_fast("bounded actual reuse wait failed", result); }
+	if (result != VK_SUCCESS)
+	{
+		fail_fast("bounded actual reuse wait failed", result);
+	}
 	observation->completion = result;
 	return result;
 }
@@ -415,10 +449,14 @@ int main()
 		static_cast<void>(real_calls()); // Resolve actual exports before any engine Vulkan call.
 		const int result = run_probe();
 		std::fputs(result == EXIT_SUCCESS
-			? "OBSERVED: two ordinary presented frame slots were unretired at the actual reuse wait.\n"
-			: "UNVERIFIED: no two-slot pending instant witnessed in the bounded ordinary pairs.\n", stdout);
-		std::fputs("Observational ordering only; no deterministic pending generation, GPU saturation, "
-			"physical display overlap, final-device or complete layer-diagnostic claim.\n", stdout);
+			? "OBSERVED: two ordinary presented frame slots were unretired at the "
+				"actual reuse wait.\n"
+			: "UNVERIFIED: no two-slot pending instant witnessed in the bounded "
+				"ordinary pairs.\n",
+			stdout);
+		std::fputs("Observational ordering only; no deterministic pending generation, "
+			"GPU saturation, physical display overlap, final-device or complete "
+			"layer-diagnostic claim.\n", stdout);
 		return result;
 	}
 	catch (const std::exception& error)
