@@ -14,3 +14,14 @@ labrador_add_test_suite(InputTests
 if(LABRADOR_INPUT_BACKEND STREQUAL "web")
     target_sources(InputTests PRIVATE standard_gamepad_tests.cpp)
 endif()
+
+# The XInput pad's translation, the part of engine/input/xinput/ that needs no
+# pad. It includes DirectXTK's GamePad.h for the state it fills, so it finds
+# the package the engine links PRIVATE: xaudio2redist first, because
+# directxtk's config references it without finding it.
+if(LABRADOR_INPUT_BACKEND STREQUAL "xinput")
+    find_package(xaudio2redist CONFIG REQUIRED)
+    find_package(directxtk CONFIG REQUIRED)
+    target_sources(InputTests PRIVATE xinput_gamepad_tests.cpp)
+    target_link_libraries(InputTests PRIVATE Microsoft::DirectXTK)
+endif()

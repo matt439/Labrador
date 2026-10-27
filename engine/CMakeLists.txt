@@ -364,6 +364,7 @@ set_property(CACHE LABRADOR_INPUT_BACKEND PROPERTY STRINGS xinput web)
 if(LABRADOR_INPUT_BACKEND STREQUAL "xinput")
     target_sources(LabradorEngine PRIVATE
         input/xinput/gamepad_reader.cpp
+        input/xinput/xinput_gamepad.cpp
     )
 elseif(LABRADOR_INPUT_BACKEND STREQUAL "web")
     target_sources(LabradorEngine PRIVATE
