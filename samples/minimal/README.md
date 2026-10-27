@@ -36,6 +36,10 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-27.** Windows resolution changes resize the window without
+  requesting activation. A hidden smoke-test window stays hidden and inactive;
+  CHANGES.md's *Keep window resizing from requesting activation* entry is the
+  engine side. No template source migration is needed.
 - **2026-10-27.** Quitting during update skips the tick's render after its
   remaining fixed updates. The smoke test draws its requested 30 completed
   frames and closes without another present against a destroyed Vulkan

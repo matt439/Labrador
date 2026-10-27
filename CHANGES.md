@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Keep window resizing from requesting activation
+
+**Silent behaviour change, Windows only.** `Window::resize_client`, including
+the path from `Application::set_resolution`, no longer requests activation.
+A hidden window stays hidden and inactive when resized; a shown window is
+resized without bringing it to the foreground. Previously the size request
+could activate even a hidden window. No source migration is needed. A caller
+that needs to activate a native window must request that separately.
+
 ### 2026-10-27 - Stop rendering after quit and cover Vulkan instance diagnostics
 
 **Behaviour change.** When an update calls `Application::quit()`, the tick

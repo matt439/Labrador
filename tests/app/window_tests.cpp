@@ -699,6 +699,85 @@ namespace
 		GetClientRect(handle, &client);
 		return client;
 	}
+
+	// Observe the activation request even when Windows leaves a hidden
+	// window inactive anyway. The engine owns GWLP_USERDATA, so the probe
+	// keeps its state in a separate property and forwards every message.
+	class WindowPositionProbe
+	{
+	public:
+		explicit WindowPositionProbe(HWND handle) : handle_(handle)
+		{
+			REQUIRE(SetPropW(handle, property_name(), this) != FALSE);
+			this->previous_ = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(
+				handle, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(window_proc)));
+			if (this->previous_ == nullptr)
+			{
+				RemovePropW(handle, property_name());
+				FAIL("could not observe window position requests");
+			}
+		}
+
+		~WindowPositionProbe()
+		{
+			SetWindowLongPtrW(this->handle_, GWLP_WNDPROC,
+				reinterpret_cast<LONG_PTR>(this->previous_));
+			RemovePropW(this->handle_, property_name());
+		}
+
+		WindowPositionProbe(const WindowPositionProbe&) = delete;
+		WindowPositionProbe& operator=(const WindowPositionProbe&) = delete;
+
+		bool observed() const { return this->observed_; }
+		bool no_activation() const { return this->no_activation_; }
+
+	private:
+		static const wchar_t* property_name()
+		{
+			return L"LabradorWindowTestsPositionProbe";
+		}
+
+		static LRESULT CALLBACK window_proc(HWND handle, UINT message,
+			WPARAM w_param, LPARAM l_param)
+		{
+			WindowPositionProbe* probe = static_cast<WindowPositionProbe*>(
+				GetPropW(handle, property_name()));
+			if (message == WM_WINDOWPOSCHANGING)
+			{
+				const WINDOWPOS* position = reinterpret_cast<const WINDOWPOS*>(l_param);
+				probe->observed_ = true;
+				probe->no_activation_ &= (position->flags & SWP_NOACTIVATE) != 0;
+			}
+			return CallWindowProcW(probe->previous_, handle, message, w_param, l_param);
+		}
+
+		HWND handle_;
+		WNDPROC previous_ = nullptr;
+		bool observed_ = false;
+		bool no_activation_ = true;
+	};
+}
+
+TEST_CASE("resizing a hidden window never requests activation")
+{
+	RecordingNotify notify;
+	Window window(unclamped_hidden_options(), &notify);
+	const HWND handle = hwnd(window);
+	SUBCASE("windowed") {}
+	SUBCASE("fullscreen") { window.enter_fullscreen(); }
+	notify.log.clear();
+	WindowPositionProbe probe(handle);
+
+	window.resize_client(mattmath::Vector2I(400, 300));
+
+	CHECK(probe.observed());
+	CHECK(probe.no_activation());
+	CHECK_FALSE(IsWindowVisible(handle));
+	CHECK(GetForegroundWindow() != handle);
+	CHECK(notify.log == std::vector<std::string>{ "size 400x300" });
+	const RECT client = client_of(handle);
+	CHECK(client.right - client.left == 400);
+	CHECK(client.bottom - client.top == 300);
 }
 
 TEST_CASE("what a hidden window reports before the constructor returns")
