@@ -101,7 +101,7 @@ namespace labrador
 			}
 			case ShapeType::triangle:
 			{
-				const auto& triangle = static_cast<const Triangle&>(shape);
+				const Triangle& triangle = static_cast<const Triangle&>(shape);
 				polygon.points[0] = triangle.point_0();
 				polygon.points[1] = triangle.point_1();
 				polygon.points[2] = triangle.point_2();
@@ -114,7 +114,7 @@ namespace labrador
 			}
 			case ShapeType::quad:
 			{
-				const auto& quad = static_cast<const Quad&>(shape);
+				const Quad& quad = static_cast<const Quad&>(shape);
 				polygon.points[0] = quad.point_0();
 				polygon.points[1] = quad.point_1();
 				polygon.points[2] = quad.point_2();
@@ -134,7 +134,7 @@ namespace labrador
 				// validates twice over, inside the one function whose comment
 				// above is about avoiding a heap allocation per shape per pair
 				// per frame.
-				const auto& rotated =
+				const RectangleRotated& rotated =
 					static_cast<const RectangleRotated&>(shape);
 				polygon.points[0] = rotated.point_0();
 				polygon.points[1] = rotated.point_1();

@@ -46,9 +46,9 @@ namespace bench
 		{
 			if (setup) { setup(); }
 
-			const auto start = std::chrono::steady_clock::now();
+			const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 			body();
-			const auto end = std::chrono::steady_clock::now();
+			const std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 			samples.push_back(std::chrono::duration<double, std::nano>(
 				end - start).count());

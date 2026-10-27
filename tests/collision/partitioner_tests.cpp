@@ -17,7 +17,7 @@ namespace
 	bool covers_exactly(const Ranges& ranges, int num_elements)
 	{
 		int next = 0;
-		for (const auto& range : ranges)
+		for (const std::pair<int, int>& range : ranges)
 		{
 			if (range.first != next || range.second < range.first)
 			{
@@ -86,7 +86,7 @@ TEST_CASE("coverage holds across every element count and partition count")
 			// No range more than one longer than any other.
 			int shortest = elements + 1;
 			int longest = 0;
-			for (const auto& range : ranges)
+			for (const std::pair<int, int>& range : ranges)
 			{
 				const int length = range.second - range.first;
 				shortest = std::min(shortest, length);

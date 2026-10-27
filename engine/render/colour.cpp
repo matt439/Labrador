@@ -516,7 +516,8 @@ namespace labrador
 
 	std::optional<Colour> colour_from_name(std::string_view name)
 	{
-		const auto found = std::find_if(named_colours.begin(),
+		const std::array<NamedColour, 148>::const_iterator found =
+			std::find_if(named_colours.begin(),
 			named_colours.end(),
 			[name](const NamedColour& entry) { return entry.name == name; });
 

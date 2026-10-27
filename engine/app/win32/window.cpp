@@ -904,7 +904,7 @@ namespace labrador
 		case WM_GETMINMAXINFO:
 			if (l_param)
 			{
-				auto info = reinterpret_cast<MINMAXINFO*>(l_param);
+				MINMAXINFO* info = reinterpret_cast<MINMAXINFO*>(l_param);
 				info->ptMinTrackSize.x = this->min_width;
 				info->ptMinTrackSize.y = this->min_height;
 			}
@@ -1244,7 +1244,7 @@ namespace labrador
 	LRESULT CALLBACK Window::Impl::window_proc(HWND window, UINT message,
 		WPARAM w_param, LPARAM l_param)
 	{
-		auto* self = reinterpret_cast<Impl*>(
+		Impl* self = reinterpret_cast<Impl*>(
 			GetWindowLongPtr(window, GWLP_USERDATA));
 
 		// ONE TOUCH IS ONE INPUT. The touch itself arrives as WM_POINTER
@@ -1267,7 +1267,7 @@ namespace labrador
 		case WM_CREATE:
 			if (l_param)
 			{
-				auto params = reinterpret_cast<LPCREATESTRUCTW>(l_param);
+				LPCREATESTRUCTW params = reinterpret_cast<LPCREATESTRUCTW>(l_param);
 				SetWindowLongPtr(window, GWLP_USERDATA,
 					reinterpret_cast<LONG_PTR>(params->lpCreateParams));
 			}

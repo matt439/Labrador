@@ -75,7 +75,8 @@ namespace labrador
 	{
 		for (const AssetEntry& entry : manifest.entries)
 		{
-			const auto kind = this->kinds_.find(entry.kind);
+			const std::map<std::string, AssetKind>::const_iterator kind =
+				this->kinds_.find(entry.kind);
 			if (kind == this->kinds_.end())
 			{
 				throw std::out_of_range("Asset '" + entry.name + "' in '" +

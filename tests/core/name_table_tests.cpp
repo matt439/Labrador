@@ -108,7 +108,7 @@ namespace NameTableTests
 			table.add("walk", Element(1));
 			table.add("jump", Element(2));
 
-			const auto walk = table.resolve("walk");
+			const Handle<Element> walk = table.resolve("walk");
 			table.add("walk", Element(99));
 
 			CHECK(table.resolve("walk") == walk);
@@ -125,7 +125,7 @@ namespace NameTableTests
 			NameTable<Element> table("element");
 			table.add("first", Element(1));
 
-			const auto first = table.resolve("first");
+			const Handle<Element> first = table.resolve("first");
 			for (int i = 0; i < 64; i++)
 			{
 				table.add("filler_" + std::to_string(i), Element(i));

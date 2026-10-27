@@ -376,7 +376,7 @@ namespace labrador
 	}
 	bool RectangleRotated::edges_valid() const
 	{
-		const auto edges = this->edges();
+		const std::array<Segment, 4> edges = this->edges();
 
 		// One pass, one square root per edge - against the twelve a loop that
 		// normalises two edges per iteration and then re-measures all four with

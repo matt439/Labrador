@@ -4,9 +4,16 @@
 #include "engine/math/vector2f.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace labrador;
+
+namespace
+{
+	// UiContainer's child list, named once so that its loops can spell it.
+	using Children = std::vector<std::pair<std::string, UiObject*>>;
+}
 
 #pragma region UiObject
 
@@ -61,7 +68,8 @@ namespace labrador
 	}
 	void UiContainer::remove_child(const std::string& name)
 	{
-		for (auto it = this->children_.begin(); it != this->children_.end(); ++it)
+		for (Children::iterator it = this->children_.begin();
+			it != this->children_.end(); ++it)
 		{
 			if (it->first == name)
 			{
@@ -72,7 +80,8 @@ namespace labrador
 	}
 	void UiContainer::remove_child(const UiObject* child)
 	{
-		for (auto it = this->children_.begin(); it != this->children_.end(); ++it)
+		for (Children::iterator it = this->children_.begin();
+			it != this->children_.end(); ++it)
 		{
 			if (it->second == child)
 			{
@@ -95,7 +104,7 @@ namespace labrador
 	}
 	void UiContainer::update(float dt)
 	{
-		for (auto const& child : this->children_)
+		for (const Children::value_type& child : this->children_)
 		{
 			child.second->update(dt);
 		}
@@ -110,7 +119,7 @@ namespace labrador
 		{
 			return;
 		}
-		for (auto const& child : this->children_)
+		for (const Children::value_type& child : this->children_)
 		{
 			child.second->draw(draw_list);
 		}
@@ -133,7 +142,7 @@ namespace labrador
 		// walk, which is why the harmless-looking union is not harmless.
 		RectangleF result = RectangleF::zero;
 		bool any = false;
-		for (auto const& child : this->children_)
+		for (const Children::value_type& child : this->children_)
 		{
 			const RectangleF child_bounds = child.second->cull_bounds(units_per_pixel);
 			if (child_bounds.width <= 0.0f || child_bounds.height <= 0.0f)
@@ -151,7 +160,7 @@ namespace labrador
 		// No hidden() check, unlike draw(). A hidden subtree that is about to
 		// be shown should already be the colour it was told to be, and a focus
 		// group has no idea which of the widgets it holds are visible.
-		for (auto const& child : this->children_)
+		for (const Children::value_type& child : this->children_)
 		{
 			child.second->set_colour(colour);
 		}
