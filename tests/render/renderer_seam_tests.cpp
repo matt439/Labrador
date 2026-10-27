@@ -106,8 +106,8 @@ TEST_CASE("CONTRACT: a view capacity below one is refused, and it is invalid_arg
 {
 	// TEST-GAP.md's A1, and what it is for is the ratchet rather than the
 	// behaviour: the check exists five times by hand-copy, one line at the top
-	// of each create_device, and until now nothing asserted any of them. A
-	// backend written next year gets this wrong silently - a capacity of zero
+	// of each create_device. A backend written next year that gets it wrong
+	// does so silently - a capacity of zero
 	// then means a renderer with no views at all, and every view() call after
 	// it is an out_of_range a client reads as its own mistake.
 	//

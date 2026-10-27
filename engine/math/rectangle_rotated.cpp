@@ -22,7 +22,7 @@ namespace mattmath
 		this->y_axis_.normalize();
 
 		// Points first: is_valid() -> edges_valid() reads points_, so
-		// validating before this line checked four zero corners and could
+		// validating before this line would check four zero corners and
 		// never reject anything.
 		this->points_ = this->calculate_points();
 
@@ -154,8 +154,8 @@ namespace mattmath
 	}
 	// Each setter validates the candidate value before committing it, so a
 	// rejected argument leaves the rectangle exactly as it was. Assigning to
-	// the member first and throwing afterwards left the object corrupt: it
-	// held the bad value and a stale points_ cache.
+	// the member first and throwing afterwards would leave the object
+	// corrupt: holding the bad value and a stale points_ cache.
 	void RectangleRotated::set_axes(const Point2F& x_axis, const Point2F& y_axis)
 	{
 		const Vector2F new_x = x_axis.normalized();

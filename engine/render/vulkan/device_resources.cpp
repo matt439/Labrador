@@ -1612,43 +1612,36 @@ namespace labrador
 		// directions at once: it forgets a discarded transition and it keeps
 		// one that has already run.
 		//
-		// FOUND BY THE VALIDATION LAYERS AND BY NOTHING ELSE, on
+		// ONLY THE VALIDATION LAYERS SEE THIS GO WRONG. On
 		// tests/render/pixel_tests.cpp's "a frame that is never submitted
 		// contributes nothing" - a frame whose clear is recorded and dropped,
 		// followed by one that begins a render pass expecting the layout the
-		// dropped clear would have left. Every assertion in that case passed
-		// while it was wrong, on this machine's driver, because the render pass
-		// loads an attachment the clear had just filled either way.
+		// dropped clear would have left - every assertion passes either way,
+		// because the render pass loads an attachment the clear had just
+		// filled.
 		//
-		// WHAT THE LAYERS SAID WHEN IT WAS UNCONDITIONAL, because it is the
-		// argument for this line existing at all. Its one per-frame caller is
+		// WHY NOT RESET THE LAYOUT UNCONDITIONALLY. Its one per-frame caller is
 		// Renderer::begin_frame, where nothing has been thrown away: present()
 		// left the image a TRANSFER_SRC and execute() submitted the barrier
-		// that put it there, so the member was TRUE and was cleared anyway.
-		// transition_colour then built the frame's opening barrier with
-		// stage_of(UNDEFINED) as its source, which is TOP_OF_PIPE and orders
-		// nothing - leaving frame N+1's clear unordered against frame N's
-		// present-time read of the same image, one image being shared by both
-		// frames in flight. Synchronization validation reports it as
+		// that put it there. Forgetting that would make transition_colour build
+		// the frame's opening barrier with stage_of(UNDEFINED) as its source,
+		// which is TOP_OF_PIPE and orders nothing - leaving frame N+1's clear
+		// unordered against frame N's present-time read of the same image.
+		// Synchronization validation reports that as
 		// SYNC-HAZARD-WRITE-AFTER-READ against vkCmdCopyImage; the default
-		// layer configuration does not check for it, which is why the run this
-		// backend was written against was silent. docs/review/vulkan/ carries
-		// the settings file that turns it on.
+		// layer configuration does not check for it. docs/review/vulkan/
+		// carries the settings file that turns it on.
 		//
-		// THE FIX FOR THAT WAS A `discarded` FLAG AND IT WAS HALF OF ONE, which
-		// is the five-backend sweep's finding 4 and the residual half of this
-		// review's own C4/C5. The flag asked whether a command buffer was open,
-		// which is not the same question as whether the transitions in it had
-		// run: a frame that submits and then records again - read_back_buffer
-		// is the path that does, reopening the buffer through commands() - and
-		// is then abandoned had a live, executed layout thrown away by the
-		// branch that exists to protect it. Tracking the submitted layout
-		// answers both cases with one assignment and no branch, and when
-		// nothing has been recorded since the last submit the two are equal and
-		// this line does nothing, which is the case the flag was written for.
+		// WHY NOT A FLAG FOR "A COMMAND BUFFER IS OPEN". That asks a different
+		// question from whether the transitions in it ran: a frame that submits
+		// and then records again - read_back_buffer reopens the buffer through
+		// commands() - and is then abandoned would have a live, executed layout
+		// thrown away. Tracking the submitted layout answers both cases with
+		// one assignment and no branch, and when nothing has been recorded
+		// since the last submit the two are equal and this line does nothing.
 		//
 		// THE RESIZE CALLER NEEDS NOTHING FROM THIS LINE, which is worth
-		// knowing before anybody narrows it again: destroy_colour_target and
+		// knowing before anybody narrows it: destroy_colour_target and
 		// create_colour_target both set the members themselves, immediately
 		// after this returns.
 		//
@@ -1722,9 +1715,8 @@ namespace labrador
 			}
 
 			// A window that went away between the acquire and the rebuild -
-			// minimised, most often. Reachable now that create_swapchain
-			// releases the swapchain it declines to replace, which is what
-			// this branch was written for and could not do before.
+			// minimised, most often. Reachable because create_swapchain
+			// releases the swapchain it declines to replace.
 			if (this->swapchain_ == VK_NULL_HANDLE)
 			{
 				if (this->execute())
@@ -1785,8 +1777,8 @@ namespace labrador
 		// same distinction DXGI_SCALING_STRETCH makes for the Direct3D
 		// backends and makes invisibly. They agree whenever the shell is
 		// keeping up; the state where they do not is a drag-resize, which
-		// renderer.h's back_buffer_size describes and which this backend is now
-		// able to be in for the same reason those two are.
+		// renderer.h's back_buffer_size describes and which this backend can be
+		// in for the same reason those two can.
 		//
 		// AND "AGREE" IS THE FORMAT AS WELL AS THE EXTENT, which is not a
 		// theoretical term on the platform this backend exists for.

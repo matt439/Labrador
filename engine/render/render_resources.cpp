@@ -12,17 +12,12 @@ using namespace mattmath;
 namespace labrador
 {
 	// The half of RenderResources that names no backend type, compiled once.
+	// Every method here reaches a table, and the two tables that hold engine
+	// data are members of RenderResources rather than of Impl, which is a
+	// complete type only inside a backend folder; render_resources.h says why.
 	//
-	// It was compiled three times until now - once per backend, from three
-	// files that said so in their own comments and stayed word for word
-	// identical anyway. What kept them there was that every one of these
-	// methods reaches a table, and all three tables lived on Impl, which is a
-	// complete type only inside a backend folder. Two of those tables hold
-	// engine data and did not need to be there; render_resources.h says why at
-	// length. They are members of RenderResources now, so this file can exist.
-	//
-	// WHAT IS STILL WRITTEN ONCE PER BACKEND - five times now, and it is the
-	// honest remainder rather than an oversight: the constructor, the
+	// WHAT IS WRITTEN ONCE PER BACKEND, and it is the honest remainder rather
+	// than an oversight: the constructor, the
 	// destructor, the moves, resolve_texture and release_device_resources. Every one of them either touches the
 	// texture table or needs Impl complete in order to make or destroy one -
 	// which is the rule this class states, arriving at a file list instead of

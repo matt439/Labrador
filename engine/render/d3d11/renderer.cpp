@@ -391,11 +391,10 @@ namespace labrador
 		float layer_depth)
 	{
 		// UNUSED, AND SAYING SO IS THE POINT. layer_depth orders nothing -
-		// RenderPixelTests pins that call order decides - and now that the
-		// sprite vertex has no z there is nowhere left for the value to go. It
-		// stays on the seam because the seam is what a client writes against
-		// and because a backend that ever does sort will want it; it does not
-		// stay in the vertex, where it was written and ignored.
+		// RenderPixelTests pins that call order decides - and the sprite vertex
+		// has no z, so there is nowhere for the value to go. It stays on the
+		// seam because the seam is what a client writes against and because a
+		// backend that ever does sort will want it.
 		std::ignore = layer_depth;
 
 		ID3D11ShaderResourceView* view =
@@ -578,12 +577,12 @@ namespace labrador
 		sampler_description.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
 		// LEVEL ZERO, ALWAYS, and this line is the whole of the term on this
-		// backend. It was D3D11_FLOAT32_MAX, which samples whatever chain the
-		// texture carries; the GL backend's min filters are GL_NEAREST and
-		// GL_LINEAR, which are the non-mipmap ones, so it has always answered
-		// level zero. The two agreed only because no file in either client has
-		// ever carried a second level - agreement by content, which stops the
-		// first time somebody authors a chain and stops silently.
+		// backend. D3D11_FLOAT32_MAX would sample whatever chain the texture
+		// carries, while the GL backend's min filters are GL_NEAREST and
+		// GL_LINEAR, the non-mipmap ones, which answer level zero. Without
+		// this line the two would agree only while no texture carries a second
+		// level - agreement by content, which stops the first time somebody
+		// authors a chain and stops silently.
 		//
 		// The seam decides it this way round because the alternative hands a
 		// which-texel decision to the rasteriser: a mip level is chosen per
@@ -878,10 +877,9 @@ namespace labrador
 		ID3D11RenderTargetView* render_target = device.GetRenderTargetView();
 		const D3D11_VIEWPORT viewport = device.GetScreenViewport();
 
-		// Opaque black, spelt out. It was DirectX::Colors::Black, which is the
-		// last thing <DirectXColors.h> was in this file for - and the clear
-		// colour is a term RenderPixelTests pins, so it is worth being able to
-		// read it here rather than in a table of a hundred and forty names.
+		// Opaque black, spelt out: the clear colour is a term RenderPixelTests
+		// pins, so it is worth being able to read it here rather than in a
+		// table of a hundred and forty names.
 		const float BLACK[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		context->ClearRenderTargetView(render_target, BLACK);
 		context->OMSetRenderTargets(1, &render_target, nullptr);

@@ -85,8 +85,7 @@ namespace linesweeper
 		// .spritefont will not write the transparent-black glyphs additive
 		// blending would need. Here it earns its place twice over - red words
 		// over an orange block are unreadable whatever they are blended with,
-		// and since the particle field landed there are ten thousand sparks
-		// over them as well.
+		// and the particle field puts ten thousand sparks over them as well.
 		//
 		// The quad is premultiplied black at 88%, so it does not darken to
 		// black: it leaves an eighth of what is behind it showing through,

@@ -198,10 +198,7 @@ namespace labrador
 	// A DRAW TOUCHES NO DRIVER. Everything a view records is memory: the four
 	// corners the engine's geometry produced, and a run saying what to draw them
 	// with. That is what lets several workers record at once into a single-
-	// threaded API. It is NOT the one place this backend differs in shape from
-	// D3D11 - gl/backend.h retracted that heading twelve files ago and this copy
-	// of it was left behind - and it is not this backend's alone either: null/
-	// and vulkan/ record a frame into vectors the same way, where the two
+	// threaded API. It is not this backend's alone: null/ and vulkan/ record a frame into vectors the same way, where the two
 	// Direct3D backends record into a deferred context and a command list.
 	void DrawList::View::draw(const GlTexture& texture,
 		const SpriteVertex* corners)

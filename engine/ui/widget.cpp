@@ -282,10 +282,8 @@ namespace labrador
 	}
 	RectangleF UiText::bounds() const
 	{
-		// Was "TODO: implement text bounding box; return true". The TODO was
-		// only ever answerable once the interface asked for an extent instead
-		// of a yes/no - there is no honest "true" to return, but there is an
-		// honest box.
+		// The extent of the text as drawn: there is no honest yes/no for "has
+		// bounds", but there is an honest box.
 		return this->text_bounds();
 	}
 	void UiText::set_colour(const Colour& colour)

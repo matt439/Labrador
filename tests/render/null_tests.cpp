@@ -200,8 +200,8 @@ TEST_CASE("one glyph is one sprite, and the atlas is the texture")
 	const std::vector<RecordedSprite> drawn = harness.end();
 
 	// TWO CHARACTERS, TWO QUADS - which no read-back can tell from one quad of
-	// the same shape, and which is the whole of what draw_text does now that
-	// the walk is the engine's.
+	// the same shape, and which is the whole of what draw_text does: the glyph
+	// walk is the engine's.
 	REQUIRE(drawn.size() == 2);
 	CHECK(drawn[0].texture.index() == drawn[1].texture.index());
 
@@ -355,12 +355,6 @@ TEST_CASE("reading pixels back says plainly that there are none")
 //
 // What these two hold that it cannot is the stamp itself: what a run was
 // recorded UNDER, rather than what came out of it.
-//
-// THE set_filter CASE WAS ALSO THE ONLY ODR-USE OF IT IN THE REPOSITORY, and
-// is not any more: pixel_tests.cpp names DrawList::set_filter in two cases, so
-// the definition is needed in the four configurations this file is not
-// compiled in as well as in this one. It was the link error T5 asks for rather
-// than a silence, and it is that in five configurations now.
 
 TEST_CASE("the filter in force is stamped on each draw, and changes mid-list")
 {
@@ -830,12 +824,6 @@ TEST_CASE("submit is once per frame, and a second one adds nothing")
 	// flag begin_frame clears. This is the one configuration that can assert
 	// it, because "adds nothing" is a statement about a recording and the four
 	// that rasterise can only be asked what a picture looked like.
-	//
-	// WHAT IT WAS BEFORE THE DECISION: the OpenGL backend replayed every run
-	// and drew the frame twice, this backend re-gathered and answered the same
-	// list, and the Vulkan one carried a paragraph about which layout made a
-	// second submit legal. Three answers to a call the seam described in one
-	// line and legislated in none.
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,

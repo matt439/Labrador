@@ -1,24 +1,18 @@
 # docs/design/ARCHITECTURE.md: an engine file including a game header "fails to
-# compile, and that is the feature (T5)". IT DOES FAIL NOW, AND THE SPLIT IS
-# WHAT MADE IT. This block was written when it did not, and E1 - the item that
-# was going to fix it - established why not rather than fixing it.
+# compile, and that is the feature (T5)".
 #
 # Includes are written from the repository root (CONVENTIONS, Files), so an
-# engine file says "engine/render/renderer.h". That means the engine's own
-# include root has to be the directory above engine/, and while game/ was a
-# sibling of engine/ there was no include path that admitted the first spelling
-# and refused the second. What closed it was the repo split: engine/ and
-# samples/ here, the paint-shooter in its own repository consuming this one as
-# a submodule. E1 made the include roots relative so that split was a move and
-# not a build rewrite, and there is no game/ in this tree to reach for.
+# engine file says "engine/render/renderer.h" and the engine's include root is
+# the directory above engine/. Built standalone there is no game/ beside
+# engine/, so the compiler refuses a game include on its own.
 #
 # SO WHY THIS STILL RUNS. The compiler enforces the rule only when this
 # repository is built standalone, which is the configuration a contributor and
 # CI have and not the one a downstream game has: consumed as a submodule, its
-# own headers are on an include path again and "game/..." resolves. The wall
-# below is the half that does not depend on who is building. It runs on every
-# build, which is the property that matters: the rule is enforced, not merely
-# written down.
+# own headers are on an include path and "game/..." resolves. The wall below is
+# the half that does not depend on who is building. It runs on every build,
+# which is the property that matters: the rule is enforced, not merely written
+# down.
 #
 # Run with: cmake -DENGINE_DIR=<path> -P cmake/check_engine_includes.cmake
 
@@ -51,53 +45,24 @@ endif()
 # The second wall: a backend's folder is for itself.
 #
 # ARCHITECTURE says a file outside engine/render/<backend>/ including that
-# backend's header would be a mistake. That was review's job until now, and
-# review counted .cpp files - which is how engine/assets/resource_loader.h came
-# to name ID3D11Device1 in a constructor, and engine/app/application.h to
-# include it, and every state file in both samples to compile <d3d11_1.h>
-# without anyone choosing that. A header carries a backend further in one line
-# than a translation unit can, so the check reads both.
+# backend's header is a mistake. A header carries a backend further in one line
+# than a translation unit can - one public header naming <d3d11_1.h> puts it on
+# the command line of every sample state and every downstream game - so the
+# check reads headers as well as .cpp files.
 #
-# THE FOLDER, NOT ONE FILENAME IN IT. This used to match "backend.h" alone,
-# which left three ways through: the angle-bracket spelling, which the include
-# root admits exactly as it admits the quoted one; the "../render/d3d11/..."
-# relative form; and - the one that matters - EVERY OTHER HEADER IN THE FOLDER.
-# device_resources.h opens with <d3d11_1.h>, <dxgi1_6.h> and a D3DDeviceNotify
-# interface, and naming it from engine/app/application.h passed this check
-# silently while doing precisely the damage the paragraph above describes. It
-# is the same header as that incident. gl_functions.h and sprite_shader.h were
-# the same hole on the other backend.
+# THE FOLDER, NOT ONE FILENAME IN IT. Every header in a backend folder is that
+# backend's: device_resources.h opens with <d3d11_1.h> and <dxgi1_6.h> as
+# surely as backend.h does. The check also catches the angle-bracket spelling,
+# which the include root admits exactly as it admits the quoted one, and the
+# "../render/d3d11/..." relative form. A subfolder of render/ IS a backend, so
+# a new backend needs no edit here.
 #
-# So the rule is now what it always meant: a subfolder of render/ IS a backend,
-# and its headers are its own. Nothing needs editing here when a fourth one
-# lands, which is the property the filename form was reaching for and missed -
-# and nothing did when a fifth did, which is the same claim checked rather than
-# made. engine/render/vulkan/ was added without a line of this file changing.
+# THE MODULE IS CAPTURED TOO, NOT LISTED. engine/audio/, engine/input/ and
+# engine/app/ have platform folders under exactly the same rule, and another
+# module that grows them needs no edit here either.
 #
-# AND IT IS NOT ABOUT render/ ANY MORE, WHICH IS WHY THE MODULE IS CAPTURED TOO.
-# engine/audio/ has a seam and two backends now - xaudio2/ and null/ - and the
-# rule that protects them is word for word the rule above: the folder is the
-# backend, its headers are its own, and one line of #include carries a platform
-# further than a translation unit can. That is not a hypothetical here. Audio is
-# the module where it had already happened and nothing caught it, because this
-# check only ever looked at render/: <Audio.h> sat in FOUR public engine
-# headers across three modules, so every sample, every test and every
-# downstream game compiled XAudio2's headers whether it made a noise or not. A
-# rule written for one module is a rule the next module is allowed to break.
-#
-# The module is captured rather than listed, so a third one that grows backend
-# folders needs no edit here either - the same property the backend name has,
-# and the same reason.
-#
-# IT WAS LISTED UNTIL THE FIVE-BACKEND SWEEP READ THE LINE UNDER THE SENTENCE.
-# The regexes said "(render|audio)" while this paragraph claimed a capture, and
-# the module ARCHITECTURE names third - engine/input/xinput/, the third
-# platform seam - was outside the wall entirely. Nothing had reached across it,
-# which is the only reason this cost nothing: one #include of an xinput header
-# from engine/app/ would have passed the check that exists to refuse it.
-#
-# WHAT THE PATTERN PAYS FOR CAPTURING THE MODULE is that it can no longer match
-# on shape alone. A three-component include is not by itself an engine one -
+# WHAT THE PATTERN PAYS FOR CAPTURING THE MODULE is that it cannot match on
+# shape alone. A three-component include is not by itself an engine one -
 # <rapidjson/error/en.h> has that shape - so the path must be the engine's own
 # spelling: rooted at engine/, or relative with ../, which are the two forms
 # CONVENTIONS and the compiler between them admit.

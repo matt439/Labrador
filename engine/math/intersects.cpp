@@ -178,8 +178,8 @@ namespace mattmath
 			segment.point_0, segment.point_1, t, point);
 
 		// Squared both sides - see circles_intersect. This one is called once
-		// per edge from circle_rectangle_rotated_intersect, so it was four
-		// roots per query for an answer that never needed one.
+		// per edge from circle_rectangle_rotated_intersect, so a root here
+		// would be four per query for an answer that never needs one.
 		return Vector2F::distance_squared(circle.center(), point) <=
 			circle.radius() * circle.radius();
 	}
@@ -242,16 +242,13 @@ namespace mattmath
 
 		// All nine edge pairs.
 		//
-		// This is not a bug fix, and the previous four-pair version was not
-		// wrong. It ran i < 2 against b_edges[0] and b_edges[1], never testing
-		// a_edges[2] or b_edges[2] against anything, which reads like an
-		// obvious hole - and is not one, for a reason worth writing down
-		// before somebody "restores" the optimisation or, worse, keeps the
-		// subset believing it is broken.
+		// Four pairs would be enough: testing only a_edges[0..1] against
+		// b_edges[0..1] gives the same answer, for a reason worth writing
+		// down before somebody "optimises" this loop.
 		//
 		// Given the containment test above has already failed, no vertex of
 		// either triangle lies inside the other. Now suppose no crossing fell
-		// among the four pairs that were tested. Then a_edges[0] and
+		// among those four pairs. Then a_edges[0] and
 		// a_edges[1] could only ever cross b_edges[2]. But a segment that
 		// enters a convex region has to leave it again - with no endpoint
 		// inside, its crossings come in pairs - and two straight segments
@@ -262,11 +259,11 @@ namespace mattmath
 		// needs an endpoint inside. Contradiction: there were no crossings at
 		// all, and the triangles do not overlap.
 		//
-		// So the subset was sufficient. It was not *evidently* sufficient, and
+		// So the subset is sufficient, but not *evidently* sufficient, and
 		// nine segment tests on a predicate the narrow phase is replacing is
 		// not a cost worth defending against the reader who has to re-derive
 		// that proof. A search over half a million overlapping vertex-free
-		// triangle pairs produced no disagreement between the two forms, which
+		// triangle pairs finds no disagreement between the two forms, which
 		// is the empirical half of the same statement.
 		for (int i = 0; i < 3; i++)
 		{

@@ -204,7 +204,7 @@ TEST_CASE("all eight of the verbs that answered nothing now say what they did")
 	// And every one of them names the voice the effect resolved to, which is
 	// what makes the forwarding checkable at all: an effect handle is an index
 	// into the bank's own table and a voice handle is an index into the
-	// device's, and nothing before this could tell you they lined up.
+	// device's, and this is what tells you they line up.
 	CHECK(played[1].voice == played[8].voice);
 	CHECK(played[1].wave == 2);
 }

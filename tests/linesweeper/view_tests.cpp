@@ -282,12 +282,11 @@ namespace
 		return field.live();
 	}
 
-	// THE TICK THAT ROTATES AND LOCKS, through the real tick(). The field
-	// used to rebuild the board from where a hard drop would have put LAST
-	// frame's piece, and README said the failure on a piece that turned on
-	// its locking tick was a missed burst. It was a burst from the wrong row
-	// (docs/review/gpt6/README.md, G6-11): this is the review's board, and
-	// the sparks have to come out of the row that went.
+	// THE TICK THAT ROTATES AND LOCKS, through the real tick(). Rebuilding
+	// the board from where a hard drop would have put LAST frame's piece
+	// gives a burst from the wrong row (docs/review/gpt6/README.md, G6-11):
+	// this is the review's board, and the sparks have to come out of the row
+	// that went.
 	TEST_CASE("a piece that turns on the tick it locks sparks from the row that went")
 	{
 		World world;
@@ -310,7 +309,7 @@ namespace
 
 		// The setup's own proof, from the position the field will read: the
 		// horizontal shadow lands across row 20, completing it, which is the
-		// row the old answer threw its sparks from.
+		// row a shadow-based answer would throw its sparks from.
 		const Piece horizontal = shadow(world);
 		REQUIRE(horizontal.rotation == 0);
 		for (const Coord& cell : piece_cells(horizontal))
@@ -343,8 +342,7 @@ namespace
 
 		// Spark centers are inside row 21; their shrinking quads extend past
 		// the band by at most half their initial side: 2.5 pixels. Row 20's
-		// band is 28 pixels above it, and the review measured the old answer
-		// at y = 576..604 - that band exactly.
+		// band is 28 pixels above it, at y = 576..604.
 		const float row_top = linesweeper::well_origin_y +
 			static_cast<float>(21 - linesweeper::well_buffer_rows) *
 			linesweeper::cell_size;

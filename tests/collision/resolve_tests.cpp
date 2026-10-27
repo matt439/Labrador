@@ -52,11 +52,11 @@ TEST_CASE("an axis that cannot separate the pair is refused, not answered")
 	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_RIGHT, 10.0f,
 		Vector2F::DIRECTION_DOWN), std::invalid_argument);
 
-	// And the case that made returning zero dangerous rather than merely
-	// unhelpful: near-perpendicular passed the old guard, because it only
-	// rejected a dot product below 1e-4. A dot of 1.0001e-4 returned a
-	// translation ten thousand times the penetration - a silent teleport out
-	// of the primitive whose whole job is safe arithmetic.
+	// And the case that makes returning zero necessary rather than merely
+	// tidy: a guard that only rejected a dot product below 1e-4 would let a
+	// dot of 1.0001e-4 return a translation ten thousand times the
+	// penetration - a silent teleport out of the primitive whose whole job is
+	// safe arithmetic.
 	const float tiny = 1.0001e-4f;
 	const Vector2F almost_perpendicular =
 		Vector2F(tiny, std::sqrt(1.0f - tiny * tiny));

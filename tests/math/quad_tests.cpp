@@ -43,8 +43,7 @@ TEST_SUITE("Quad")
 			Point2F(2.0f, 2.0f), Point2F(0.0f, 10.0f)),
 			std::invalid_argument);
 
-		// A bowtie, which the old test also caught, since its edges do
-		// cross.
+		// A bowtie, whose edges cross.
 		CHECK_THROWS_AS(Quad(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
 			Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f)),
 			std::invalid_argument);

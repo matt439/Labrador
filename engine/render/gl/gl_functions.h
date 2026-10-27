@@ -177,9 +177,9 @@ namespace labrador
 	// (web_context.cpp), which a desktop context has no call for.
 	//
 	// Through glGetStringi rather than by searching glGetString(GL_EXTENSIONS),
-	// which returns null in a core profile. The old spelling is the one every
-	// tutorial still shows and the reason a core-profile port fails at its
-	// first extension check.
+	// which returns null in a core profile. That spelling is the one many
+	// tutorials show and the reason a core-profile port fails at its first
+	// extension check.
 	bool has_gl_extension(const char* extension);
 #endif
 }

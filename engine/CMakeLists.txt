@@ -1,11 +1,9 @@
 add_subdirectory(math)
 
 # LabradorEngine — the engine static library (docs/design/ARCHITECTURE.md).
-# Modules are folders; dependencies point one way, toward math. The sentence
-# that used to end this paragraph - "files migrate in from the game as they
-# become dependency-clean" - described a tree with a game in it, and the split
-# ended that migration: the client is its own repository and consumes this one
-# as a submodule (AGENTS.md, ARCHITECTURE.md).
+# Modules are folders; dependencies point one way, toward math. A game is its
+# own repository and consumes this one as a submodule (AGENTS.md,
+# ARCHITECTURE.md).
 
 add_library(LabradorEngine STATIC
     app/application.cpp
@@ -67,15 +65,14 @@ add_library(LabradorEngine STATIC
 )
 # The include root, relative to this file and not to the top-level project.
 # CMAKE_SOURCE_DIR is whoever ran cmake, so when the engine is consumed as a
-# submodule - which is now the actual repo topology, not a planned one - it
-# points at the *consumer's* root and every "engine/..." include stops
+# submodule it points at the *consumer's* root and every "engine/..." include stops
 # resolving. CMAKE_CURRENT_SOURCE_DIR is this directory whatever is above it.
 #
 # It is the directory *above* engine/ because includes are written from the
 # repository root (CONVENTIONS, Files), so an engine file says
-# "engine/render/renderer.h" and means it. This is now also the wall
-# ARCHITECTURE describes: nothing named game/ sits beside engine/ any more, so
-# an engine file including a game header fails in the compiler. The
+# "engine/render/renderer.h" and means it. This is also the wall ARCHITECTURE
+# describes: nothing named game/ sits beside engine/, so an engine file
+# including a game header fails in the compiler. The
 # check_engine_includes target still runs on every build, because that is only
 # true when this repository is built standalone - a consumer builds it from a
 # tree that may well have a game/ in it.
@@ -379,11 +376,11 @@ else()
         "holding gamepad_reader.cpp.")
 endif()
 
-# rapidjson is PRIVATE and SYSTEM. It used to be PUBLIC, so a sample that
-# parses nothing still had a JSON parser's headers on its command line, and
-# their warnings were measured against /W4 /WX.
+# rapidjson is PRIVATE and SYSTEM, so a game that parses nothing has no JSON
+# parser's headers on its command line, and their warnings are not measured
+# against /W4 /WX.
 #
-# PRIVATE now means what it says: assets/json.h hands out JsonDocument and
+# PRIVATE means what it says: assets/json.h hands out JsonDocument and
 # JsonValue, whose only rapidjson is a void* recovered inside json.cpp, so no
 # engine header names the parser and no client needs it to include one. A
 # client that parses files of its own asks for rapidjson on its own account -
@@ -391,15 +388,12 @@ endif()
 target_include_directories(LabradorEngine SYSTEM PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
 )
-# DirectXTK IS PRIVATE, AND IT USED TO BE THE ONE DEPENDENCY EVERY CLIENT PAID
-# FOR. Linking it PUBLIC put <Audio.h> and <GamePad.h> on the command line of
-# every sample, every test and every downstream game - which was not a
-# precaution, it was a requirement, because four public engine headers named
-# DirectX:: types and could not be included without it. All four are gone: the
-# audio seam took the last of them (engine/audio/audio_device.h), and the input
-# seam had already taken the other kind (engine/input/gamepad_reader.h). Nothing
-# above a backend folder names a DirectXTK type now, so nothing above one needs
-# its headers - which is the same claim the Vulkan block above makes, checked
+# DirectXTK IS PRIVATE. Linked PUBLIC, it would put <Audio.h> and <GamePad.h>
+# on the command line of every sample, every test and every downstream game.
+# No public engine header names a DirectX:: type: the audio seam
+# (engine/audio/audio_device.h) and the input seam
+# (engine/input/gamepad_reader.h) keep them behind backend folders, so nothing
+# above one needs its headers - which is the same claim the Vulkan block above makes, checked
 # the same way, and the reason cmake/check_engine_includes.cmake guards
 # engine/audio/<backend>/ as well as engine/render/<backend>/.
 target_link_libraries(LabradorEngine

@@ -200,12 +200,10 @@ namespace linesweeper
 
 		// The menu can open while a stick is already pushed - Start is on the
 		// pad, and a thumb does not leave the stick to press it - and what is
-		// pushed now is not a press. This used to call reset(), which forgets
-		// and so makes the next frame's push a fresh one: the cursor was off
-		// the top row before the screen was visible, on a repeat that was
-		// freshly built and had nothing to forget
-		// (docs/review/gpt6/README.md, G6-08). The push has to be let go
-		// before this menu reads it.
+		// pushed now is not a press. reset() would forget it and make the next
+		// frame's push a fresh one, moving the cursor off the top row before
+		// the screen is visible (docs/review/gpt6/README.md, G6-08). The push
+		// has to be let go before this menu reads it.
 		this->repeat_.start_held(this->held_direction());
 	}
 

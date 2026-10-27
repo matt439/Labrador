@@ -706,16 +706,13 @@ namespace labrador
 			{
 				self->minimized = false;
 
-				// THE SIZE GOES OUT TOO, and before the resume. This branch
-				// used to end at on_resuming() and swallow the dimensions the
-				// message carries, on the assumption that a window comes back
-				// the size it left - and a window restored from the taskbar
-				// into the maximised state it held before, or restored after
-				// the monitor changed under it, does not. Both arrive as one
-				// WM_SIZE, the first this branch has seen since the minimise,
-				// so what it does not deliver is never delivered: the layout
-				// and the back buffer stayed at the pre-minimise size while
-				// the window drew at the new one.
+				// THE SIZE GOES OUT TOO, and before the resume. A window does
+				// not always come back the size it left: one restored from the
+				// taskbar into the maximised state it held before, or restored
+				// after the monitor changed under it, arrives as one WM_SIZE,
+				// the first this branch has seen since the minimise. What it
+				// does not deliver is never delivered, and the layout and back
+				// buffer would stay at the pre-minimise size.
 				//
 				// Size first because of what the two mean to the owner. The
 				// size re-points the layout and resizes the swap chain; the

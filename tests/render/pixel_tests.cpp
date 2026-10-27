@@ -31,10 +31,9 @@
 // WHY THIS CAN EXIST AT ALL. device_resources.cpp falls back to a WARP device
 // in every build that is not NDEBUG, so a debug build makes a real Direct3D
 // device with no GPU and no display attached - which means the whole drawing
-// path is reachable from a test executable, and always was. What was missing
-// was a way to see the result: Renderer::read_back_buffer, added with these
-// tests, is what turns "the seam serves headless testing" from a claim into
-// something a build can check.
+// path is reachable from a test executable. Renderer::read_back_buffer is the
+// way to see the result, and is what turns "the seam serves headless testing"
+// from a claim into something a build can check.
 //
 // AND WHY IT DOES NOT MAKE THE NULL BACKEND UNNECESSARY. WARP is a D3D-only
 // luxury: an in-box, fully conformant software rasteriser that no other API
@@ -44,22 +43,16 @@
 // still what makes the seam testable everywhere; this file is what tells it
 // what the right answers are.
 //
-// WHAT THESE PIN. Every term below was decided by DirectXTK's defaults and
-// written down nowhere, which means a second backend could differ on any of
-// them and nothing would say so - the samples would simply look slightly
-// wrong, and only to somebody who knew what to look for. They are executable
-// now. A second backend is correct when this file passes against it, and each
-// case names the term it fixes rather than describing what it does.
+// WHAT THESE PIN. Every term below is one a backend could differ on with
+// nothing else saying so - the samples would simply look slightly wrong, and
+// only to somebody who knew what to look for. A backend is correct when this
+// file passes against it, and each case names the term it fixes rather than
+// describing what it does.
 //
 // WHAT THEY DO NOT PIN, said plainly rather than left to be discovered:
 // non-uniform scale, flipped text, and the clamp that stops a glyph with a
 // negative left bearing hanging off the start of its line - which no glyph in
-// this font has, so no assertion here can reach it. Rotation and the
-// difference between point and linear filtering were on this list and are not
-// any more: "a positive rotation turns the sprite clockwise on screen" pins
-// the first, and "a filter change mid-list applies to what follows it" the
-// second. Each was added later than this paragraph and neither amended it at
-// the time, which is how a list of gaps becomes a list of the wrong gaps.
+// this font has, so no assertion here can reach it.
 //
 // Most frames are also checked against the PNG set in tests/render/golden/,
 // holding every rasterising backend to the same fixed reference. Sixty-three
@@ -92,8 +85,7 @@
 // is a statement about two rectangles, which survives a different rasteriser
 // exactly as the sprite assertions do.
 //
-// THE TERMS BELOW WERE DECIDED BY DirectXTK'S SpriteFont AND WRITTEN DOWN
-// NOWHERE, which is worse here than it is for sprites: the pen arithmetic is a
+// THE TEXT TERMS MATTER MORE THAN THE SPRITE ONES: the pen arithmetic is a
 // pile of quirks - a per-glyph left bearing, an XAdvance that is an adjustment
 // to the advance rather than the advance, a whitespace glyph that steps the pen
 // without drawing, a line height that is the larger of the glyph and the line
@@ -297,11 +289,10 @@ namespace
 			// asks for, and it is not four because anything here draws four.
 			// A capacity is a property of the layout - four for split-screen,
 			// one for a sample - and the two files asking for the same one is
-			// what lets a case be written in the same vocabulary in both. This
-			// was 1 until the golden set made a multi-view frame checkable, and
-			// while it was 1 every multi-view path in both backends - D3D11's
-			// per-view deferred contexts, GL's per-view record-and-replay,
-			// view order against call order - reached no rasteriser anywhere.
+			// what lets a case be written in the same vocabulary in both. With
+			// one, no multi-view path - D3D11's per-view deferred contexts,
+			// GL's per-view record-and-replay, view order against call order -
+			// would reach a rasteriser.
 			this->renderer_.create_device(this->window_.handle(), BUFFER_SIZE,
 				BUFFER_SIZE, 4);
 			this->renderer_.set_resources(&this->resources_);
@@ -748,7 +739,7 @@ TEST_CASE("CONTRACT: a positive rotation turns the sprite clockwise on screen")
 
 	// Where it was before the turn, and where an anticlockwise convention
 	// would have put it. Either being red is a backend that turned the other
-	// way, which no assertion in this file could previously have noticed.
+	// way.
 	CHECK(harness.at(40, 34) == BLACK);
 	CHECK(harness.at(30, 24) == BLACK);
 
@@ -2442,7 +2433,7 @@ TEST_CASE("CONTRACT: a BC2 texture draws the texels its blocks encode")
 
 	// EVERY FONT ATLAS IS BC2, so this is the format a backend that mapped one
 	// enum to the wrong compressed format would lose all its text through -
-	// and the text cases no longer show it, because they draw a decoded copy
+	// and the text cases do not show it, because they draw a decoded copy
 	// (the harness says why). This is what holds the device's own decoder to
 	// pixels instead, on a block built so that every decoder must agree.
 	add_texture_asset(harness.renderer(), harness.resources(), "bc2",

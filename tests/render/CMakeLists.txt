@@ -31,8 +31,8 @@ target_link_libraries(RenderTests PRIVATE
 # directory and the harnesses load "./content/" relative to it - a four-colour
 # texture and a font, both owned by these tests rather than borrowed from a
 # sample, so that restyling a sample cannot move a pin in here. RenderTests
-# wants it because a font stopped being a device resource, so reading one and
-# measuring with it is now arithmetic this executable can do:
+# wants it because a font is not a device resource, so reading one and
+# measuring with it is arithmetic this executable can do:
 # sprite_font_file_tests.cpp reads the real file rather than a fixture, because
 # a fixture could only agree with the parser that wrote it. RenderPixelTests
 # wants it to draw with.

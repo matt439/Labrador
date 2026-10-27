@@ -25,8 +25,8 @@ TEST_SUITE("RectangleRotated")
 		const float turn = PI / 6.0f;
 		const Vector2F x = Vector2F::unit_vec_from_angle(turn);
 
-		// The old route, both orders, still throws - that is what it is
-		// for and it is not what is being fixed.
+		// Setting one axis at a time, in either order, throws - that is
+		// what it is for.
 		CHECK_THROWS_AS(r.set_x_axis(x), std::invalid_argument);
 		CHECK_THROWS_AS(r.set_y_axis(Vector2F::normal(x)),
 			std::invalid_argument);
@@ -69,10 +69,8 @@ TEST_SUITE("RectangleRotated")
 	TEST_CASE("a rotated rectangle's angle keeps its sign")
 	{
 		// angle_between is an acos, so its range is [0, PI] and a
-		// rectangle turned one way reported the same number as its mirror
-		// image. Nothing could rebuild the orientation from it - which is
-		// the likeliest reason the DrawObject setter that consumes it was
-		// never written.
+		// rectangle turned one way would report the same number as its
+		// mirror image. Nothing could rebuild the orientation from it.
 		const Vector2F hw(10.0f, 5.0f);
 
 		const float turn = PI / 6.0f;

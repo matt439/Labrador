@@ -21,20 +21,18 @@ namespace labrador
 		// there is no stand-in, and U+0000 - "nobody chose" - is what every
 		// .spritefont in this tree carries, because it is what MakeSpriteFont
 		// writes by default, along with exactly 95 glyphs, U+0020 to U+007E.
-		// Nothing chose that region and nothing records it, so the
-		// out-of-the-box behaviour of the engine's own font kind was: any
-		// character a text editor inserts on its own - a curly apostrophe, an
-		// en-dash - kills the process on the frame that first drew it, which is
-		// typically several screens from wherever the string was read.
+		// Nothing chose that region and nothing records it, so without a
+		// stand-in any character a text editor inserts on its own - a curly
+		// apostrophe, an en-dash - would kill the process on the frame that
+		// first drew it, typically several screens from wherever the string
+		// was read.
 		//
-		// The engine already documented the opposite. text_encoding.h promises
-		// that invalid UTF-8 becomes U+FFFD so that "text about to be drawn
-		// should show mojibake, not vanish" - and U+FFFD is outside 32..126, so
-		// the documented graceful path led directly into the throw it was
-		// written to avoid. It leads to a question mark now.
+		// text_encoding.h promises that invalid UTF-8 becomes U+FFFD so that
+		// "text about to be drawn should show mojibake, not vanish" - and
+		// U+FFFD is outside 32..126, so that promise needs a stand-in to keep.
 		//
 		// Degradation rather than a throw is also what the audio half of the
-		// loader already does: a missing optional wave bank becomes a bank that
+		// loader does: a missing optional wave bank becomes a bank that
 		// plays nothing rather than a dead process.
 		//
 		// '?' FIRST, ' ' AFTER IT, and nothing if the font has neither. A
@@ -45,11 +43,9 @@ namespace labrador
 		// an icon atlas, say - and is left exactly as it was rather than warned
 		// about, because there is nothing wrong with it.
 		//
-		// THE FILE'S OWN CHOICE IS HONOURED FIRST, which it never was before: a
-		// .spritefont says which character it would like, and SpriteFont read
-		// that and then this overwrote it. It is U+0000 in every font here, so
-		// nothing in this tree changes; a font built by somebody who did choose
-		// now gets what they chose.
+		// THE FILE'S OWN CHOICE IS HONOURED FIRST: a .spritefont says which
+		// character it would like. It is U+0000 in every font here; a font
+		// built by somebody who did choose gets what they chose.
 		void install_stand_in(Font& font, char32_t chosen)
 		{
 			if (chosen != 0 && font.contains(chosen))

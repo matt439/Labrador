@@ -69,16 +69,13 @@ namespace linesweeper
 		// in this frame's. A field looking for one finds none, ever.
 		//
 		// So it is rebuilt: last frame's cells, plus the piece as it locked,
-		// which is the one value tick() hands back (world.h, TickResult). It
-		// used to be shadow(before) instead - where a hard drop would have
-		// put last frame's piece - on the argument that a piece which moved
-		// or rotated on its locking tick would merely produce no full row and
-		// no sparks. That argument was wrong about the failure: a horizontal
-		// I rotated and dropped in one tick cleared row 21, and the shadow of
-		// the horizontal one filled row 20, so two hundred and twenty sparks
-		// came out of a row that was still there
-		// (docs/review/gpt6/README.md, G6-11). The exact piece costs the
-		// World nothing, which is why it is a return value and not a member.
+		// which is the one value tick() hands back (world.h, TickResult). Not
+		// shadow(before) - where a hard drop would have put last frame's
+		// piece: a horizontal I rotated and dropped in one tick clears row 21
+		// while the shadow of the horizontal one fills row 20, which would
+		// throw sparks out of a row that is still there. The exact piece
+		// costs the World nothing, which is why it is a return value and not
+		// a member.
 		std::array<std::uint8_t, well_columns * well_rows> board_at_lock(
 			const World& before, const Piece& landed)
 		{

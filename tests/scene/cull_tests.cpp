@@ -50,8 +50,8 @@ namespace
 
 	// A renderer with no graphics API, a two-texel texture, and a sheet with
 	// one frame whose authored origin is its own far corner - the shape a
-	// sheet author uses to pin a sprite by its bottom right, and the shape
-	// the old bounds() did not account for.
+	// sheet author uses to pin a sprite by its bottom right, which
+	// bounds() has to account for.
 	class Harness
 	{
 	public:

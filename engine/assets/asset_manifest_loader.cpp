@@ -9,7 +9,7 @@ namespace labrador
 		// person edits by hand to add an asset, so a typo comes back as a
 		// sentence naming the file and the group it was in rather than as an
 		// assert a Release build has disarmed (T6) - which is what JsonValue is
-		// for, and this loader is no longer the only thing that has it.
+		// for.
 		const JsonDocument document = read_json_file(json_path);
 
 		AssetManifest manifest;
