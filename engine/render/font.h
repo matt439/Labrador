@@ -42,6 +42,23 @@
 //   - a line is the taller of the glyph's own extent and the font's line
 //     spacing, so a line of full stops measures as tall as a line of capitals.
 //
+// WHAT THE WALK DOES NOT DO, AND SO WHICH LANGUAGES IT CAN DRAW. It places
+// one glyph per code unit of a std::wstring, left to right, and moves the pen
+// by that glyph alone. There is no kerning between pairs, no ligature or
+// shaping, no right-to-left or bidirectional ordering, no combining mark
+// placed over the character before it (a mark is a glyph of its own that
+// steps the pen), and no line break but U+000A. A script whose characters
+// each draw as one precomposed glyph is in reach given an atlas that holds
+// them: Latin with precomposed accents, Greek, Cyrillic, and Chinese,
+// Japanese kana and kanji, and Korean Hangul syllables. Arabic, Hebrew, the
+// Indic scripts, Thai, decomposed accents and emoji are not.
+//
+// A character outside the basic plane is not supported. widen() makes it two
+// UTF-16 code units on every platform, neither of which is a character, so it
+// draws as two stand-ins. A wide literal in source is different: wchar_t is
+// 16 bits under MSVC and 32 under clang, so the browser build holds such a
+// literal as one unit and draws one stand-in where Windows draws two.
+//
 // ONE THING UPSTREAM HAS THAT THIS DOES NOT. SpriteFont's walk takes an
 // ignoreWhitespace flag; both callers in this engine want the same value, so
 // there is no flag (T3). MeasureDrawBounds, the upstream caller that wants the
