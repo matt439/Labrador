@@ -403,6 +403,11 @@ namespace labrador
 			std::ignore = vkDeviceWaitIdle(this->owner_->device);
 		}
 
+		this->destroy_device_objects();
+	}
+
+	void DeviceResources::destroy_device_objects()
+	{
 		this->destroy_swapchain();
 		this->destroy_colour_target();
 		this->destroy_frames();
@@ -437,6 +442,10 @@ namespace labrador
 			}
 		}
 
+		// Released rather than destroyed: anything still holding one of these -
+		// a texture whose owner has not got round to dropping it - keeps the
+		// old device alive until it does, which is exactly the guarantee COM
+		// gives the D3D12 backend for free.
 		this->owner_.reset();
 	}
 
@@ -1399,42 +1408,7 @@ namespace labrador
 			this->notify_->on_device_lost();
 		}
 
-		this->destroy_swapchain();
-		this->destroy_colour_target();
-		this->destroy_frames();
-
-		if (this->owner_)
-		{
-			VkDevice device = this->owner_->device;
-
-			if (this->render_pass_ != VK_NULL_HANDLE)
-			{
-				vkDestroyRenderPass(device, this->render_pass_, nullptr);
-				this->render_pass_ = VK_NULL_HANDLE;
-			}
-			if (this->upload_pool_ != VK_NULL_HANDLE)
-			{
-				vkDestroyCommandPool(device, this->upload_pool_, nullptr);
-				this->upload_pool_ = VK_NULL_HANDLE;
-			}
-			if (this->timeline_ != VK_NULL_HANDLE)
-			{
-				vkDestroySemaphore(device, this->timeline_, nullptr);
-				this->timeline_ = VK_NULL_HANDLE;
-			}
-			if (this->surface_ != VK_NULL_HANDLE)
-			{
-				vkDestroySurfaceKHR(this->owner_->instance, this->surface_,
-					nullptr);
-				this->surface_ = VK_NULL_HANDLE;
-			}
-		}
-
-		// Released rather than destroyed: anything still holding one of these -
-		// a texture whose owner has not got round to dropping it - keeps the
-		// old device alive until it does, which is exactly the guarantee COM
-		// gives the D3D12 backend for free.
-		this->owner_.reset();
+		this->destroy_device_objects();
 
 		this->frame_index_ = 0;
 		this->timeline_value_ = 0;

@@ -472,6 +472,12 @@ namespace labrador
 		void destroy_colour_target();
 		void destroy_frames();
 
+		// Everything this object made against the device, and then its
+		// reference to the device itself. The destructor and
+		// handle_device_lost each wait for the GPU before calling it; it does
+		// not wait.
+		void destroy_device_objects();
+
 		std::shared_ptr<VulkanDevice> owner_;
 
 		HWND window_ = nullptr;
