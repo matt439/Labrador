@@ -1,16 +1,15 @@
-find_package(doctest CONFIG REQUIRED)
-
 # The shell's tests, including the pure DOM-event translator on every platform.
 # Native builds compile that portable source into this test target only, while
 # browser builds already link it from the engine. Windows also exercises a real
 # hidden window through its message procedure. The production backend selection
 # is unchanged, and the translator needs no browser or Emscripten API.
-add_executable(AppTests
-    application_options_tests.cpp
-    content_root_tests.cpp
-    dom_events_tests.cpp
-    frame_timer_tests.cpp
-    test_main.cpp
+labrador_add_test_suite(AppTests
+    SOURCES
+        application_options_tests.cpp
+        content_root_tests.cpp
+        dom_events_tests.cpp
+        frame_timer_tests.cpp
+    LINKS LabradorEngine
 )
 if(NOT EMSCRIPTEN)
     target_sources(AppTests PRIVATE
@@ -30,13 +29,6 @@ if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null"
         application_resize_tests.cpp
     )
 endif()
-target_link_libraries(AppTests PRIVATE
-    LabradorEngine
-    doctest::doctest
-    labrador_settings
-)
-
-add_test(NAME AppTests COMMAND AppTests)
 
 # WebWindowTests - the web window's own state, which AppTests cannot reach
 # under Node: focus and blur, the capture analogue, which defaults the canvas

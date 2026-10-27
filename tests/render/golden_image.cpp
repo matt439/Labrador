@@ -295,10 +295,10 @@ namespace
 	// Whether this run is a regeneration rather than a check.
 	//
 	// An environment variable rather than a command-line flag, and the reason
-	// is tests/render/test_main.cpp: it is DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-	// and it is shared with RenderTests, so doctest owns argv and taking it
-	// back to add one option would change the entry point of a second
-	// executable that has no golden set. The variable reads the same from
+	// is tests/test_main.cpp: it is DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN and
+	// every test suite shares it, so doctest owns argv and taking it back to
+	// add one option would change the entry point of executables that have
+	// no golden set. The variable reads the same from
 	// ctest, from CMake and from a shell, which is all a regeneration needs.
 	//
 	// NEVER IN A BROWSER. A page cannot see the environment of the shell that

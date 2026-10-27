@@ -1,5 +1,3 @@
-find_package(doctest CONFIG REQUIRED)
-
 # The whole game, with no engine in the binary.
 #
 # NOTE WHAT IS NOT LINKED: LabradorEngine. This target has LineSweeperRules,
@@ -8,18 +6,14 @@ find_package(doctest CONFIG REQUIRED)
 # made a library for, and it is what makes a replay test - four thousand ticks
 # of scripted input, compared with std::memcmp - a test that can run on a build
 # agent with no display attached.
-add_executable(LineSweeperTests
-    replay_tests.cpp
-    resume_gate_tests.cpp
-    scoring_tests.cpp
-    test_main.cpp
-    tick_tests.cpp
-    world_tests.cpp
-)
-target_link_libraries(LineSweeperTests PRIVATE
-    LineSweeperRules
-    doctest::doctest
-    labrador_settings
+labrador_add_test_suite(LineSweeperTests
+    SOURCES
+        replay_tests.cpp
+        resume_gate_tests.cpp
+        scoring_tests.cpp
+        tick_tests.cpp
+        world_tests.cpp
+    LINKS LineSweeperRules
 )
 
 # The tests include their own fixtures header from the repository root, the
@@ -27,8 +21,6 @@ target_link_libraries(LineSweeperTests PRIVATE
 target_include_directories(LineSweeperTests PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../.."
 )
-
-add_test(NAME LineSweeperTests COMMAND LineSweeperTests)
 
 # --- LineSweeperViewTests - the presentation, with no DEVICE ---
 #
@@ -53,24 +45,19 @@ add_test(NAME LineSweeperTests COMMAND LineSweeperTests)
 # library. Listing these sources is cheaper than another library to justify.
 # The browser pacing fixture also runs here against the real particle field,
 # without constructing its device-bound BoardView or application state.
-add_executable(LineSweeperViewTests
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_statistics.cpp"
-    frame_statistics_tests.cpp
-    pacing_fixture_tests.cpp
-    palette_tests.cpp
-    test_main.cpp
-    touch_controls_tests.cpp
-    view_tests.cpp
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/arrangement.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/particles.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/touch_controls.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/web/pacing_fixture.cpp"
-)
-target_link_libraries(LineSweeperViewTests PRIVATE
-    LineSweeperRules
-    LabradorEngine
-    doctest::doctest
-    labrador_settings
+labrador_add_test_suite(LineSweeperViewTests
+    SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_statistics.cpp"
+        frame_statistics_tests.cpp
+        pacing_fixture_tests.cpp
+        palette_tests.cpp
+        touch_controls_tests.cpp
+        view_tests.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/arrangement.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/particles.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/touch_controls.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/web/pacing_fixture.cpp"
+    LINKS LineSweeperRules LabradorEngine
 )
 target_include_directories(LineSweeperViewTests PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../.."
@@ -89,8 +76,6 @@ if(WIN32)
         frame_result_tests.cpp
     )
 endif()
-
-add_test(NAME LineSweeperViewTests COMMAND LineSweeperViewTests)
 
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(LineSweeperViewTests PRIVATE particle_draw_tests.cpp)

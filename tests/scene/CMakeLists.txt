@@ -1,13 +1,6 @@
-find_package(doctest CONFIG REQUIRED)
-
-add_executable(SceneTests
-    scene_tests.cpp
-    test_main.cpp
-)
-target_link_libraries(SceneTests PRIVATE
-    LabradorEngine
-    doctest::doctest
-    labrador_settings
+labrador_add_test_suite(SceneTests
+    SOURCES scene_tests.cpp
+    LINKS LabradorEngine
 )
 
 # The per-view render fan-out and the cull, in the one configuration that can
@@ -22,5 +15,3 @@ target_link_libraries(SceneTests PRIVATE
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(SceneTests PRIVATE fanout_tests.cpp cull_tests.cpp order_tests.cpp)
 endif()
-
-add_test(NAME SceneTests COMMAND SceneTests)

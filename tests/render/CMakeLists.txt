@@ -1,30 +1,24 @@
-find_package(doctest CONFIG REQUIRED)
-
-add_executable(RenderTests
-    block_decode_tests.cpp
-    camera_tests.cpp
-    colour_tests.cpp
-    dds_file_tests.cpp
-    draw_object_tests.cpp
-    font_tests.cpp
-    label_tests.cpp
-    render_resources_tests.cpp
-    renderer_seam_tests.cpp
-    resolution_manager_tests.cpp
-    sprite_font_file_tests.cpp
-    sprite_geometry_tests.cpp
-    sprite_sheet_object_tests.cpp
-    text_encoding_tests.cpp
-    text_tests.cpp
-    viewport_manager_tests.cpp
-    viewport_tests.cpp
-    visual_tests.cpp
-    test_main.cpp
-)
-target_link_libraries(RenderTests PRIVATE
-    LabradorEngine
-    doctest::doctest
-    labrador_settings
+labrador_add_test_suite(RenderTests
+    SOURCES
+        block_decode_tests.cpp
+        camera_tests.cpp
+        colour_tests.cpp
+        dds_file_tests.cpp
+        draw_object_tests.cpp
+        font_tests.cpp
+        label_tests.cpp
+        render_resources_tests.cpp
+        renderer_seam_tests.cpp
+        resolution_manager_tests.cpp
+        sprite_font_file_tests.cpp
+        sprite_geometry_tests.cpp
+        sprite_sheet_object_tests.cpp
+        text_encoding_tests.cpp
+        text_tests.cpp
+        viewport_manager_tests.cpp
+        viewport_tests.cpp
+        visual_tests.cpp
+    LINKS LabradorEngine
 )
 
 # The test content, beside the executables. ctest runs from the build
@@ -72,8 +66,6 @@ if(WIN32)
     target_sources(RenderTests PRIVATE throw_if_failed_tests.cpp)
 endif()
 
-add_test(NAME RenderTests COMMAND RenderTests)
-
 # RenderPixelTests — the drawing half, on a real device.
 #
 # A separate executable from RenderTests, which is pure arithmetic and wants no
@@ -108,7 +100,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     add_executable(RenderPixelTests
         golden_image.cpp
         pixel_tests.cpp
-        test_main.cpp
+        ../test_main.cpp
     )
     target_link_libraries(RenderPixelTests PRIVATE
         LabradorEngine
@@ -146,7 +138,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             d3d12/instrumented_device_resources.cpp
             d3d12/wait_observer.h
             win32/test_window.cpp
-            test_main.cpp
+            ../test_main.cpp
         )
         target_link_libraries(D3D12SynchronizationTests PRIVATE
             LabradorEngine

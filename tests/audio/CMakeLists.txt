@@ -1,19 +1,13 @@
-find_package(doctest CONFIG REQUIRED)
-
-add_executable(AudioTests
-    audio_resources_tests.cpp
-    sound_bank_tests.cpp
-    test_main.cpp
-    xwb_file_tests.cpp
-)
 # No find_package for DirectXTK here. No public engine header names a
 # DirectX:: type, DirectXTK is PRIVATE on LabradorEngine, and nothing in this
 # folder includes an audio API's header, so a headless test of the audio
 # module compiles no platform header.
-target_link_libraries(AudioTests PRIVATE
-    LabradorEngine
-    doctest::doctest
-    labrador_settings
+labrador_add_test_suite(AudioTests
+    SOURCES
+        audio_resources_tests.cpp
+        sound_bank_tests.cpp
+        xwb_file_tests.cpp
+    LINKS LabradorEngine
 )
 
 # The banks xwb_file_tests.cpp reads, beside the executable, and the WAVs it
@@ -65,5 +59,3 @@ endif()
 if(LABRADOR_AUDIO_BACKEND STREQUAL "webaudio")
     target_sources(AudioTests PRIVATE webaudio_tests.cpp)
 endif()
-
-add_test(NAME AudioTests COMMAND AudioTests)
