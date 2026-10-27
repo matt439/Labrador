@@ -44,14 +44,17 @@ export default defineConfig({
 				Footer: './src/components/overrides/Footer.astro',
 				EditLink: './src/components/overrides/EditLink.astro',
 				MarkdownContent: './src/components/overrides/MarkdownContent.astro',
-				MobileMenuFooter: './src/components/overrides/MobileMenuFooter.astro',
 				Sidebar: './src/components/overrides/Sidebar.astro',
 				Banner: './src/components/overrides/Banner.astro',
+				Hero: './src/components/overrides/Hero.astro',
 			},
+			// Every group starts collapsed; Starlight opens the one holding the
+			// current page, so the reader sees where they are without scrolling.
 			sidebar: [
 				{ label: 'Overview', link: '/docs/' },
 				{
 					label: 'Get Started',
+					collapsed: true,
 					items: [
 						{ label: 'Introduction', link: '/docs/get-started/' },
 						{ label: 'Install the tools', link: '/docs/get-started/prerequisites/' },
@@ -61,10 +64,11 @@ export default defineConfig({
 						{ label: 'Make a first change', link: '/docs/get-started/first-change/' },
 					],
 				},
-				{ label: 'Concepts', items: [{ autogenerate: { directory: 'docs/concepts' } }] },
-				{ label: 'Guides', items: [{ autogenerate: { directory: 'docs/guides' } }] },
+				{ label: 'Concepts', collapsed: true, items: [{ autogenerate: { directory: 'docs/concepts' } }] },
+				{ label: 'Guides', collapsed: true, items: [{ autogenerate: { directory: 'docs/guides' } }] },
 				{
 					label: 'API Reference',
+					collapsed: true,
 					items: [
 						{ label: 'About the reference', link: '/docs/reference/' },
 						// One collapsed group per module, in the order published.ts lists them.
@@ -78,7 +82,7 @@ export default defineConfig({
 						})),
 					],
 				},
-				{ label: 'Design', items: [{ autogenerate: { directory: 'docs/design' } }] },
+				{ label: 'Design', collapsed: true, items: [{ autogenerate: { directory: 'docs/design' } }] },
 				{ label: 'Troubleshooting', link: '/docs/troubleshooting/' },
 			],
 			plugins: [starlightLinksValidator()],

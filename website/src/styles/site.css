@@ -3,13 +3,20 @@
  *
  * The accent is the L piece from LineSweeper (samples/linesweeper/presentation/
  * palette.h, 240 152 0): a colour the engine actually draws. In the light theme
- * it is darkened until link text keeps at least 4.5:1 against white.
+ * it is darkened until link text keeps at least 4.5:1 against white. Text is
+ * the only thing darkened: a filled surface - the primary button, the current
+ * sidebar entry - is the amber itself in both themes, with near-black text on
+ * it, so the two themes show one brand colour.
  */
 
 :root {
 	--sl-color-accent-low: hsl(34, 62%, 17%);
 	--sl-color-accent: hsl(38, 100%, 47%);
 	--sl-color-accent-high: hsl(38, 100%, 74%);
+
+	--labrador-amber: #f09800;
+	--labrador-amber-hover: #ffad2e;
+	--labrador-on-amber: #1c1300;
 
 	--labrador-space-section: 4rem;
 	--labrador-radius: 0.5rem;
@@ -19,6 +26,24 @@
 	--sl-color-accent-low: hsl(37, 100%, 90%);
 	--sl-color-accent: hsl(32, 100%, 29%);
 	--sl-color-accent-high: hsl(28, 90%, 18%);
+}
+
+/* Near-black on #f09800 is about 9:1. */
+.sl-link-button.primary {
+	background: var(--labrador-amber);
+	border-color: var(--labrador-amber);
+	color: var(--labrador-on-amber);
+}
+.sl-link-button.primary:hover {
+	background: var(--labrador-amber-hover);
+	border-color: var(--labrador-amber-hover);
+	color: var(--labrador-on-amber);
+}
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+	background-color: var(--labrador-amber);
+	color: var(--labrador-on-amber);
 }
 
 /* ----------------------------------------------------------- the splash pages */
@@ -45,10 +70,11 @@
 	font-size: var(--sl-text-lg);
 }
 
+/* A grid of equal cells, so the facts never wrap into a ragged second line. */
 .facts {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem 1.5rem;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+	gap: 1rem 1.5rem;
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -57,6 +83,8 @@
 }
 .facts li {
 	margin: 0;
+	padding-top: 0.5rem;
+	border-top: 2px solid var(--sl-color-gray-5);
 }
 .facts strong {
 	color: var(--sl-color-white);
@@ -103,6 +131,25 @@
 .choice .evidence {
 	margin-top: auto;
 	font-size: var(--sl-text-sm);
+}
+
+/* The link cards under them take the same top edge, in the pieces the choices
+ * left unused. */
+.home-section .card-grid > .sl-link-card {
+	border-top: 4px solid var(--card-colour, var(--sl-color-accent));
+	border-radius: var(--labrador-radius);
+}
+.home-section .card-grid > .sl-link-card:nth-child(1) {
+	--card-colour: #f0d000;
+}
+.home-section .card-grid > .sl-link-card:nth-child(2) {
+	--card-colour: #0060f0;
+}
+.home-section .card-grid > .sl-link-card:nth-child(3) {
+	--card-colour: #f03030;
+}
+.home-section .card-grid > .sl-link-card:nth-child(4) {
+	--card-colour: #f09800;
 }
 
 /* ------------------------------------------------------------- the captures */
@@ -181,6 +228,21 @@
 .source-file {
 	margin-top: 1rem;
 }
+.sl-markdown-content .source-disclosure {
+	padding: 0;
+	border: 0;
+}
+.source-disclosure > summary {
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--sl-color-gray-5);
+	border-radius: var(--labrador-radius);
+	background-color: var(--sl-color-gray-6);
+	cursor: pointer;
+	font-weight: 600;
+}
+.source-disclosure[open] > summary {
+	margin-bottom: 0.75rem;
+}
 .source-link {
 	margin-top: 0.35rem !important;
 	color: var(--sl-color-gray-3);
@@ -198,6 +260,38 @@
 }
 :root[data-theme='dark'] starlight-file-tree .comment {
 	color: var(--sl-color-gray-2);
+}
+
+/* ---------------------------------------------------------- stacked tables */
+
+/* A table whose cells hold sentences reads one row at a time on a phone: each
+ * row becomes a block with its first cell as the heading. Its header row is
+ * hidden, so the cells after the first must say what they are on their own. */
+@media (max-width: 49.99rem) {
+	.stacked-table table,
+	.stacked-table tbody,
+	.stacked-table tr,
+	.stacked-table td {
+		display: block;
+	}
+	.stacked-table thead {
+		display: none;
+	}
+	.stacked-table tr {
+		padding-block: 0.75rem;
+		border-bottom: 1px solid var(--sl-color-gray-5);
+	}
+	.sl-markdown-content .stacked-table td {
+		padding: 0;
+		border: 0;
+	}
+	.stacked-table td + td {
+		margin-top: 0.25rem;
+	}
+	.stacked-table td:first-child {
+		font-size: var(--sl-text-lg);
+		font-weight: 600;
+	}
 }
 
 /* --------------------------------------------------------------- the diagrams */

@@ -1,12 +1,12 @@
 ---
 // Starlight's header with the site's own sections added.
 //
-// On a wide screen the sections sit beside the search box. On a phone they
-// stay in the header only on pages with no sidebar - the home, Why and
-// Examples pages - because a page with a sidebar has a menu button there
-// instead, and the menu lists them (MobileMenuFooter.astro). Narrow splash
-// pages keep search and the theme selector beside the title, with the site
-// sections in a second row. They have no sidebar menu to hold preferences.
+// On a wide screen the sections sit beside the search box. On a phone every
+// page keeps search beside the title and puts the site sections in a second
+// row, so they are in the same place whichever page a reader is on. Pages
+// with no sidebar - the home, Why and Examples pages - also keep the theme
+// selector there, because they have no menu to hold preferences; a page with
+// a sidebar has its menu button in that place instead.
 import Search from '@astrojs/starlight/components/Search.astro';
 import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
 import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
@@ -65,38 +65,44 @@ import SiteNavigation from '../SiteNavigation.astro';
 	}
 
 	@media (max-width: 49.99rem) {
-		:global(:root[data-has-sidebar]) .right-group {
-			display: none;
-		}
-		.right-group :global(.site-nav ul) {
-			gap: 0.875rem;
-		}
-		:global(:root:not([data-has-sidebar])) {
+		:global(:root) {
 			--sl-nav-height: 6rem;
 		}
-		:global(:root:not([data-has-sidebar])) .header {
+		/* Starlight centres its menu button in the header's height; keep it
+		 * level with the title in the first row. */
+		:global(:root[data-has-sidebar] .sl-menu-button) {
+			top: calc(
+				var(--sl-nav-pad-y) + (var(--sl-nav-height) - 2 * var(--sl-nav-pad-y)) / 4 -
+					var(--sl-menu-button-size) / 2
+			);
+		}
+		.header {
 			display: grid;
 			grid-template-columns: minmax(0, 1fr) auto auto;
 			grid-template-rows: 1fr 1fr;
 			row-gap: 0;
 		}
-		:global(:root:not([data-has-sidebar])) .search {
+		.search {
 			grid-column: 2;
 			grid-row: 1;
 		}
-		:global(:root:not([data-has-sidebar])) .right-group {
+		.right-group {
 			display: contents;
 		}
-		:global(:root:not([data-has-sidebar])) .theme-select {
+		.right-group :global(.site-nav ul) {
+			gap: 0.875rem;
+			justify-content: space-between;
+		}
+		.theme-select {
 			grid-column: 3;
 			grid-row: 1;
 		}
-		:global(:root:not([data-has-sidebar])) .header :global(.header-nav) {
+		:global(:root[data-has-sidebar]) .theme-select {
+			display: none;
+		}
+		.header :global(.header-nav) {
 			grid-column: 1 / -1;
 			grid-row: 2;
-		}
-		:global(:root:not([data-has-sidebar])) .right-group :global(.site-nav ul) {
-			justify-content: space-between;
 		}
 	}
 

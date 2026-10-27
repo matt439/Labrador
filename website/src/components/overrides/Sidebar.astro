@@ -1,9 +1,25 @@
 ---
-// Starlight's sidebar with the version selector above it. The default sidebar
-// is also the phone menu, so one selector serves both.
+// Starlight's sidebar with the version selector below it. The default sidebar
+// is also the phone menu, so one selector serves both. Most readers never
+// change version, so the selector follows the pages rather than leading them.
 import Default from '@astrojs/starlight/components/Sidebar.astro';
 import VersionSelect from '../VersionSelect.astro';
 ---
 
-<VersionSelect />
 <Default />
+<VersionSelect />
+
+<script>
+	// Starlight restores the sidebar's scroll position within a visit, but a
+	// page opened fresh starts at the top, where a deep page's link can be out
+	// of sight. Bring it into view, after any restore, only when it is hidden.
+	const pane = document.querySelector<HTMLElement>('.sidebar-pane');
+	const current = pane?.querySelector<HTMLElement>('.sidebar-content a[aria-current="page"]');
+	if (pane && current && matchMedia('(min-width: 50em)').matches) {
+		const view = pane.getBoundingClientRect();
+		const link = current.getBoundingClientRect();
+		if (link.top < view.top || link.bottom > view.bottom) {
+			pane.scrollTop += link.top - view.top - (view.height - link.height) / 2;
+		}
+	}
+</script>

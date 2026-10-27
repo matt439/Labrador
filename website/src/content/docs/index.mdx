@@ -2,6 +2,7 @@
 title: Labrador
 description: A 2D game engine for developers who want to write games in ordinary C++ and understand the machinery beneath them.
 template: splash
+editUrl: false
 hero:
   title: Labrador
   tagline: A 2D game engine for developers who want to write games in ordinary C++, and understand the machinery beneath them.
@@ -126,12 +127,13 @@ way of others, so each comes with its price.
 ## A whole game's entry point
 
 <p class="lead">
-This is <code>main.cpp</code> from the minimal sample, the project you copy to start a game. It names
-the window, loads the content and hands the engine a first state. Everything it leaves out
-belongs to the engine.
+These lines are the heart of <code>main.cpp</code> in the minimal sample, the project you copy to
+start a game. They start the engine, load the content and hand it a first state. Above them the
+file names the window; below them it reports a failed start. Everything it leaves out belongs to
+the engine.
 </p>
 
-<SourceFile path="samples/minimal/main.cpp" from="int WINAPI wWinMain" to="}" />
+<SourceFile path="samples/minimal/main.cpp" from="Application app(std::move(options));" to="return app.run(std::move(first_state));" />
 
 </section>
 
