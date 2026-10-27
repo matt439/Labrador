@@ -145,6 +145,6 @@ namespace labrador
 		this->x = top_left.x;
 		this->y = top_left.y;
 	}
-	constinit const RectangleI RectangleI::ZERO = { 0, 0, 0, 0 };
+	constinit const RectangleI RectangleI::zero = { 0, 0, 0, 0 };
 
 }

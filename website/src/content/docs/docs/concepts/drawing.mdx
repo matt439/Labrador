@@ -51,7 +51,7 @@ position in the pane = (position in the world - camera.translation) × camera.sc
 ```
 
 so `translation` is the world point shown at the pane's top-left corner, and `scale` is the zoom.
-The default camera, `Camera::DEFAULT_CAMERA`, is the identity: world coordinates are pane pixels.
+The default camera, `Camera::default_camera`, is the identity: world coordinates are pane pixels.
 A view added without a camera gets it. The minimal sample and the audio sample keep it, with one
 view covering the window, which makes their world coordinates the same as window pixels:
 
@@ -140,7 +140,7 @@ after the world has been drawn into it, with the view's index and its `DrawList`
 HUD, a split-screen divider or a countdown goes. It runs on the same worker as the view, so it is
 held to the same rule as `draw()`: read your game's state, change nothing. The list still has
 the view's camera when the overlay starts, so an overlay laid out in pane pixels sets
-`Camera::DEFAULT_CAMERA` first.
+`Camera::default_camera` first.
 
 A state drawn over another one has two ways to add to the frame. It can draw without a scene:
 `renderer.view(0)` hands back the `DrawList` for the first view, and the minimal sample's question

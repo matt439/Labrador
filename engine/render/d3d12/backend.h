@@ -35,7 +35,7 @@
 //    D3D11 renames a mapped buffer for you and tracks what is still in flight;
 //    OpenGL's driver does the same behind glBufferSubData; the null backend has
 //    no GPU to be out of step with. Here the engine holds the fence: frames in
-//    flight are a number this file picks (DeviceResources::FRAME_COUNT), a
+//    flight are a number this file picks (DeviceResources::frame_count), a
 //    command allocator may not be reset until the GPU has finished reading it,
 //    a vertex page written this frame may still be being read next frame, and a
 //    texture upload is a copy the CPU must wait for. Every one of those is
@@ -155,7 +155,7 @@ namespace labrador
 		// and large enough that the fill-and-flush path is not what a frame
 		// spends its time on. The index buffer is built once for this many and
 		// reused by every page.
-		static const int MAX_PAGE_SPRITES = 2048;
+		static const int max_page_sprites = 2048;
 
 		// One page of one view's vertex memory for one frame in flight.
 		//
@@ -196,9 +196,9 @@ namespace labrador
 		// there is more than one.
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> list;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>
-			allocators[DeviceResources::FRAME_COUNT];
+			allocators[DeviceResources::frame_count];
 
-		std::vector<VertexPage> pages[DeviceResources::FRAME_COUNT];
+		std::vector<VertexPage> pages[DeviceResources::frame_count];
 
 		// Where the next batch goes: which page, and how many sprites into it.
 		int page = 0;
@@ -219,7 +219,7 @@ namespace labrador
 		float transform[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 		// Reset at the top of every frame, not carried across one.
-		Camera camera = Camera::DEFAULT_CAMERA;
+		Camera camera = Camera::default_camera;
 		TextureFilter filter = TextureFilter::point;
 
 		// The pane DrawList::viewport() answers with: the Viewport last given
@@ -295,7 +295,7 @@ namespace labrador
 		// once per level costs the heap nothing after the first walk. The only
 		// thing that returns slots is a device loss, which remakes the heap
 		// whole and resets the allocator to zero.
-		static const int TEXTURE_CAPACITY = 256;
+		static const int texture_capacity = 256;
 
 		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };
 		RenderDeviceInfo device_info;
@@ -350,7 +350,7 @@ namespace labrador
 		// exists.
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> frame_list;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>
-			frame_allocators[DeviceResources::FRAME_COUNT];
+			frame_allocators[DeviceResources::frame_count];
 		bool frame_list_open = false;
 
 		const RenderResources* resources = nullptr;

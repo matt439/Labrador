@@ -145,11 +145,11 @@ TEST_CASE("CONTRACT: a sprite turned into view is drawn")
 {
 	// The second row: no origin, a half turn about the top left.
 	Harness harness;
-	const float HALF_TURN = 3.14159265f;
+	const float half_turn = 3.14159265f;
 	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
 	scene->add(std::make_unique<Visual>("sheet", "plain",
 		RectangleF(100.0f, 20.0f, 20.0f, 20.0f), harness.resources(),
-		Colour::white, HALF_TURN));
+		Colour::white, half_turn));
 	scene->end_tick();
 
 	CHECK(harness.sprites_drawn(*scene) == 1);
@@ -160,11 +160,11 @@ TEST_CASE("CONTRACT: a label turned into view is drawn")
 	// The third row: two glyphs, so two sprites, both of them on the far
 	// side of the position once turned.
 	Harness harness;
-	const float HALF_TURN = 3.14159265f;
+	const float half_turn = 3.14159265f;
 	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
 	scene->add(std::make_unique<Label>(L"AB", "font",
 		Vector2F(100.0f, 20.0f), harness.resources(), Colour::white, 1.0f,
-		HALF_TURN));
+		half_turn));
 	scene->end_tick();
 
 	CHECK(harness.sprites_drawn(*scene) == 2);
@@ -287,7 +287,7 @@ TEST_CASE("rotated shape visuals emit their centered geometry with local origins
 		const Vector2F center(100, 100);
 		const Vector2F half(20, 10);
 		const Vector2F caller_origin(2, -1);
-		const Vector2F frame_origin = authored ? Vector2F(8, 8) : Vector2F::ZERO;
+		const Vector2F frame_origin = authored ? Vector2F(8, 8) : Vector2F::zero;
 		const RectangleRotated shape(center,
 			Vector2F(std::cos(angle), std::sin(angle)),
 			Vector2F(-std::sin(angle), std::cos(angle)), half);

@@ -19,10 +19,10 @@ TEST_SUITE("RectangleRotated")
 		// was rejected whichever was called first - the rectangle could
 		// not be turned through its own API at all. Both single-axis
 		// setters still refuse, correctly; set_axes is the one that turns.
-		RectangleRotated r(Point2F(0.0f, 0.0f), Vector2F::DIRECTION_RIGHT,
-			Vector2F::DIRECTION_DOWN, Vector2F(10.0f, 5.0f));
+		RectangleRotated r(Point2F(0.0f, 0.0f), Vector2F::direction_right,
+			Vector2F::direction_down, Vector2F(10.0f, 5.0f));
 
-		const float turn = PI / 6.0f;
+		const float turn = pi / 6.0f;
 		const Vector2F x = Vector2F::unit_vec_from_angle(turn);
 
 		// Setting one axis at a time, in either order, throws - that is
@@ -38,7 +38,7 @@ TEST_SUITE("RectangleRotated")
 
 		// A non-orthogonal pair is refused, and refused transactionally.
 		const RectangleRotated before = r;
-		CHECK_THROWS_AS(r.set_axes(Vector2F::DIRECTION_RIGHT,
+		CHECK_THROWS_AS(r.set_axes(Vector2F::direction_right,
 			Vector2F(1.0f, 1.0f)), std::invalid_argument);
 		CHECK(r == before);
 	}
@@ -54,26 +54,26 @@ TEST_SUITE("RectangleRotated")
 
 		CHECK_NOTHROW(point_rectangle_rotated_intersect(Point2F(1.0f, 1.0f), degenerate));
 		CHECK_FALSE(point_rectangle_rotated_intersect(Point2F(1.0f, 1.0f), degenerate));
-		CHECK_FALSE(point_rectangle_rotated_intersect(Point2F::ZERO, degenerate));
+		CHECK_FALSE(point_rectangle_rotated_intersect(Point2F::zero, degenerate));
 
 		// A real one is unaffected, boundary included.
 		const RectangleRotated real(Point2F(0.0f, 0.0f),
-			Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN,
+			Vector2F::direction_right, Vector2F::direction_down,
 			Vector2F(10.0f, 5.0f));
 
-		CHECK(point_rectangle_rotated_intersect(Point2F::ZERO, real));
+		CHECK(point_rectangle_rotated_intersect(Point2F::zero, real));
 		CHECK(point_rectangle_rotated_intersect(Point2F(9.9f, 4.9f), real));
 		CHECK(point_rectangle_rotated_intersect(Point2F(10.0f, 5.0f), real));
 		CHECK_FALSE(point_rectangle_rotated_intersect(Point2F(10.1f, 0.0f), real));
 	}
 	TEST_CASE("a rotated rectangle's angle keeps its sign")
 	{
-		// angle_between is an acos, so its range is [0, PI] and a
+		// angle_between is an acos, so its range is [0, pi] and a
 		// rectangle turned one way would report the same number as its
 		// mirror image. Nothing could rebuild the orientation from it.
 		const Vector2F hw(10.0f, 5.0f);
 
-		const float turn = PI / 6.0f;
+		const float turn = pi / 6.0f;
 		const Vector2F x_pos = Vector2F::unit_vec_from_angle(turn);
 		const RectangleRotated positive(Point2F(0.0f, 0.0f), x_pos,
 			Vector2F::normal(x_pos), hw);
@@ -88,7 +88,7 @@ TEST_SUITE("RectangleRotated")
 
 		// An unrotated rectangle is still zero.
 		const RectangleRotated flat(Point2F(0.0f, 0.0f),
-			Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN, hw);
+			Vector2F::direction_right, Vector2F::direction_down, hw);
 
 		CHECK(are_equal(flat.angle(), 0.0f));
 	}
@@ -139,20 +139,20 @@ TEST_SUITE("RectangleRotated")
 		CHECK_THROWS_AS([&] { RectangleRotated rr(degenerate, 1.0f); }(), std::invalid_argument);
 
 		// zero half extents
-		CHECK_THROWS_AS([&] { RectangleRotated rr(Point2F::ZERO,
-				Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN,
-				Vector2F::ZERO); }(), std::invalid_argument);
+		CHECK_THROWS_AS([&] { RectangleRotated rr(Point2F::zero,
+				Vector2F::direction_right, Vector2F::direction_down,
+				Vector2F::zero); }(), std::invalid_argument);
 
 		// non-perpendicular axes
-		CHECK_THROWS_AS([&] { RectangleRotated rr(Point2F::ZERO,
-				Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN_RIGHT,
+		CHECK_THROWS_AS([&] { RectangleRotated rr(Point2F::zero,
+				Vector2F::direction_right, Vector2F::direction_down_right,
 				Vector2F(5.0f, 5.0f)); }(), std::invalid_argument);
 	}
 	TEST_CASE("test_rectangle_rotated_setters_are_transactional")
 	{
 		// A rejected setter argument must leave the rectangle untouched.
-		RectangleRotated rr(Point2F::ZERO, Vector2F::DIRECTION_RIGHT,
-			Vector2F::DIRECTION_DOWN, Vector2F(5.0f, 5.0f));
+		RectangleRotated rr(Point2F::zero, Vector2F::direction_right,
+			Vector2F::direction_down, Vector2F(5.0f, 5.0f));
 
 		CHECK_THROWS_AS([&] { rr.set_half_x_width(-1.0f); }(), std::invalid_argument);
 		CHECK(are_equal(rr.half_x_width(), 5.0f));
@@ -162,7 +162,7 @@ TEST_SUITE("RectangleRotated")
 		CHECK(are_equal(rr.half_x_width(), 5.0f));
 		CHECK(are_equal(rr.half_y_width(), 5.0f));
 
-		CHECK_THROWS_AS([&] { rr.set_x_axis(Vector2F::DIRECTION_DOWN_RIGHT); }(), std::invalid_argument);
+		CHECK_THROWS_AS([&] { rr.set_x_axis(Vector2F::direction_down_right); }(), std::invalid_argument);
 		CHECK(are_equal(rr.x_axis().x, 1.0f));
 		CHECK(rr.is_valid());
 

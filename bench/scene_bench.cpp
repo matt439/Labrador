@@ -31,14 +31,14 @@ namespace
 	// benchmark: everything is fast at fifty. The counts below run past it by
 	// three orders of magnitude, because what is being measured is which phase
 	// stops scaling first, and at fifty the answer is none of them.
-	constexpr CollisionLayer WORLD = 1u << 0;
-	constexpr CollisionLayer MOVER = 1u << 1;
+	constexpr CollisionLayer world_layer = 1u << 0;
+	constexpr CollisionLayer mover_layer = 1u << 1;
 
 	// The world is a grid, which is what a paint arena is: structures laid out
 	// in a plane, mostly not touching. A random scatter would measure the
 	// random number generator's cache behaviour as much as the sweep's.
-	constexpr float CELL = 64.0f;
-	constexpr float SIZE = 48.0f;
+	constexpr float cell = 64.0f;
+	constexpr float size = 48.0f;
 
 	class BenchObject final : public GameObject
 	{
@@ -110,9 +110,9 @@ namespace
 
 	RectangleF cell_at(int index, int side)
 	{
-		const float x = static_cast<float>(index % side) * CELL;
-		const float y = static_cast<float>(index / side) * CELL;
-		return RectangleF(x, y, SIZE, SIZE);
+		const float x = static_cast<float>(index % side) * cell;
+		const float y = static_cast<float>(index / side) * cell;
+		return RectangleF(x, y, size, size);
 	}
 
 	// Half world geometry and half movers, so the layer filter rejects some
@@ -127,8 +127,8 @@ namespace
 		{
 			const bool mover = (i % 2) == 1;
 			scene->add(std::make_unique<BenchCollider>(cell_at(i, side),
-				mover ? MOVER : WORLD,
-				mover ? (WORLD | MOVER) : MOVER));
+				mover ? mover_layer : world_layer,
+				mover ? (world_layer | mover_layer) : mover_layer));
 		}
 
 		const int object_side = side_of(object_count);

@@ -36,6 +36,8 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-27.** Constants are snake_case: `Vector2F::zero` where the
+  sources spelt `Vector2F::ZERO`. CHANGES.md lists every renamed constant.
 - **2026-10-27.** The math library is `LabradorMath` and its types live in
   `labrador::`. `CMakeLists.txt` links `LabradorMath` where it linked
   `MattMath`, and the sources spell `labrador::Vector2F` and

@@ -34,10 +34,10 @@ TEST_SUITE("RectangleF")
 		CHECK(q.bounding_box() == RectangleF(0.0f, 0.0f, 10.0f, 10.0f));
 
 		// A single point is a box with no extent, and nothing at all is
-		// ZERO rather than a guess.
+		// zero rather than a guess.
 		const Point2F one[1] = { Point2F(4.0f, 9.0f) };
 		CHECK(RectangleF::bounding_box_of(one) ==
 			RectangleF(4.0f, 9.0f, 0.0f, 0.0f));
-		CHECK(RectangleF::bounding_box_of({}) == RectangleF::ZERO);
+		CHECK(RectangleF::bounding_box_of({}) == RectangleF::zero);
 	}
 }

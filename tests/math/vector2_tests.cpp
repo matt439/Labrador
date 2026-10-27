@@ -18,8 +18,8 @@ TEST_SUITE("Vector2")
 
 		CHECK(-v == Vector2F(-3.0f, 4.0f));
 		CHECK(-(-v) == v);
-		CHECK(v + (-v) == Vector2F::ZERO);
-		CHECK(-Vector2F::ZERO == Vector2F::ZERO);
+		CHECK(v + (-v) == Vector2F::zero);
+		CHECK(-Vector2F::zero == Vector2F::zero);
 
 		// It agrees with the spelling it replaces.
 		CHECK(-v == v * -1.0f);
@@ -49,7 +49,7 @@ TEST_SUITE("Vector2")
 		CHECK(Vector2F::cross(v, v * -2.0f) == 0.0f);
 
 		// A zero vector spans no area with anything.
-		CHECK(Vector2F::cross(v, Vector2F::ZERO) == 0.0f);
+		CHECK(Vector2F::cross(v, Vector2F::zero) == 0.0f);
 	}
 	TEST_CASE("cross and dot answer opposite questions")
 	{
@@ -104,10 +104,10 @@ TEST_SUITE("Vector2")
 		// acos(0/0) instead gives a NaN that surfaces two call levels away as
 		// "Triangle is not a right triangle", thrown about a triangle that
 		// is one.
-		CHECK(Vector2F::angle_between(Vector2F::ZERO,
+		CHECK(Vector2F::angle_between(Vector2F::zero,
 			Vector2F(1.0f, 0.0f)) == 0.0f);
 		CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),
-			Vector2F::ZERO) == 0.0f);
+			Vector2F::zero) == 0.0f);
 
 		// Parallel and antiparallel are the two places the quotient lands
 		// exactly on the edge of acos's domain, so rounding can push it
@@ -116,12 +116,12 @@ TEST_SUITE("Vector2")
 		const Vector2F v(3.0f, 4.0f);
 		CHECK(Vector2F::angle_between(v, v) == doctest::Approx(0.0f));
 		CHECK(Vector2F::angle_between(v, v * -1.0f)
-			== doctest::Approx(PI));
+			== doctest::Approx(pi));
 		CHECK_FALSE(std::isnan(Vector2F::angle_between(v, v)));
 
 		// A right angle, which is what the triangle predicates ask for.
 		CHECK(Vector2F::angle_between(Vector2F(1.0f, 0.0f),
-			Vector2F(0.0f, 1.0f)) == doctest::Approx(PI_OVER_2));
+			Vector2F(0.0f, 1.0f)) == doctest::Approx(pi_over_2));
 	}
 	TEST_CASE("rotate_vector turns a vector and keeps its length")
 	{
@@ -130,18 +130,18 @@ TEST_SUITE("Vector2")
 		// A quarter turn takes +x to +y. That is counter-clockwise in maths
 		// axes and clockwise on screen, and the two call sites that wanted
 		// this back are screen-space ones.
-		const Vector2F quarter = Vector2F::rotate_vector(right, PI_OVER_2);
+		const Vector2F quarter = Vector2F::rotate_vector(right, pi_over_2);
 		CHECK(quarter.x == doctest::Approx(0.0f));
 		CHECK(quarter.y == doctest::Approx(1.0f));
 
 		// Half a turn is the unary minus, and a full turn is identity - the
 		// two answers a caller can check without trusting the arithmetic.
 		const Vector2F v(3.0f, -4.0f);
-		const Vector2F half = Vector2F::rotate_vector(v, PI);
+		const Vector2F half = Vector2F::rotate_vector(v, pi);
 		CHECK(half.x == doctest::Approx(-v.x));
 		CHECK(half.y == doctest::Approx(-v.y));
 
-		const Vector2F whole = Vector2F::rotate_vector(v, 2.0f * PI);
+		const Vector2F whole = Vector2F::rotate_vector(v, 2.0f * pi);
 		CHECK(whole.x == doctest::Approx(v.x));
 		CHECK(whole.y == doctest::Approx(v.y));
 
@@ -153,17 +153,17 @@ TEST_SUITE("Vector2")
 		// Zero rotates to zero rather than inventing a direction, which is
 		// normalized()'s contract rather than to_unit_vector()'s and is what
 		// a caller rotating a rest velocity needs.
-		CHECK(Vector2F::rotate_vector(Vector2F::ZERO, 1.3f)
-			== Vector2F::ZERO);
+		CHECK(Vector2F::rotate_vector(Vector2F::zero, 1.3f)
+			== Vector2F::zero);
 	}
 	TEST_CASE("rotate_vector is the general case of normal")
 	{
 		// normal() is a quarter turn and this is any turn, so they must agree
-		// at a quarter - to rounding, and only to rounding: cos(PI/2) is not
+		// at a quarter - to rounding, and only to rounding: cos(pi/2) is not
 		// exactly zero, which is why normal() is kept rather than folded into
 		// this and why the header says to prefer it at a right angle.
 		const Vector2F v(3.0f, -4.0f);
-		const Vector2F turned = Vector2F::rotate_vector(v, PI_OVER_2);
+		const Vector2F turned = Vector2F::rotate_vector(v, pi_over_2);
 
 		CHECK(turned.x == doctest::Approx(Vector2F::normal(v).x));
 		CHECK(turned.y == doctest::Approx(Vector2F::normal(v).y));

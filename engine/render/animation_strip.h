@@ -23,7 +23,7 @@ namespace labrador
 
 	private:
 		std::vector<RectangleI> frame_rects_;
-		RectangleI first_frame_ = RectangleI::ZERO;
+		RectangleI first_frame_ = RectangleI::zero;
 		int frame_count_ = 0;
 		float frame_time_ = 0.0f;
 		bool looping_ = false;

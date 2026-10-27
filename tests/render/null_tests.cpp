@@ -155,7 +155,7 @@ TEST_CASE("a sprite is recorded with the corners a device would have been given"
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(10.0f, 20.0f, 8.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	const std::vector<RecordedSprite> drawn = harness.end();
 
 	REQUIRE(drawn.size() == 1);
@@ -178,7 +178,7 @@ TEST_CASE("the camera reaches the recording, because it is applied before it")
 	list.set_camera(Camera(4.0f, 4.0f, 1.0f));
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(4.0f, 4.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	const std::vector<RecordedSprite> drawn = harness.end();
 
 	// view = (world - translation) * scale, so world (4,4) is at the top left
@@ -196,7 +196,7 @@ TEST_CASE("one glyph is one sprite, and the atlas is the texture")
 
 	DrawList list = harness.begin();
 	list.draw_text(harness.font, L"AB", Vector2F(0.0f, 0.0f), Colour::white,
-		1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		1.0f, 0.0f, Vector2F::zero, 0.0f);
 	const std::vector<RecordedSprite> drawn = harness.end();
 
 	// TWO CHARACTERS, TWO QUADS - which no read-back can tell from one quad of
@@ -222,7 +222,7 @@ TEST_CASE("one glyph is one sprite, and the atlas is the texture")
 	// walk that a picture can only show by absence.
 	DrawList spaced = harness.begin();
 	spaced.draw_text(harness.font, L"A B", Vector2F(0.0f, 0.0f), Colour::white,
-		1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		1.0f, 0.0f, Vector2F::zero, 0.0f);
 	const std::vector<RecordedSprite> with_space = harness.end();
 
 	// One cell further than the B of "AB", and a cell is what measure_text
@@ -255,16 +255,16 @@ TEST_CASE("the recording is in view order, then in call order")
 	// order it got.
 	third.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 1.0f, 1.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	first.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(1.0f, 0.0f, 1.0f, 1.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	second.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(2.0f, 0.0f, 1.0f, 1.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	first.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(3.0f, 0.0f, 1.0f, 1.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	const std::vector<RecordedSprite> drawn = harness.end();
 
@@ -295,7 +295,7 @@ TEST_CASE("the seam's own rules hold here exactly as they do on a device")
 		std::ignore = list;
 		harness.view(1).draw_sprite(harness.quad, Harness::whole(),
 			RectangleF(0.0f, 0.0f, 1.0f, 1.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 
 		// Lowering the count past a view holding a recording strands it. On
 		// Direct3D that is commands left inside a deferred context, surfacing
@@ -367,19 +367,19 @@ TEST_CASE("the filter in force is stamped on each draw, and changes mid-list")
 	// slightly soft in every frame and fail nothing.
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	list.set_filter(TextureFilter::linear);
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// And back, because "it changed once" and "it tracks" are different
 	// claims and only the second is the contract.
 	list.set_filter(TextureFilter::point);
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	const std::vector<RecordedSprite> drawn = harness.end();
 
@@ -398,7 +398,7 @@ TEST_CASE("the viewport in force is stamped on each draw")
 	// The default is the whole back buffer the harness asked for.
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// A pane, and a fractional one - which is the shape that makes two device
 	// backends disagree if either reaches whole pixels twice with two different
@@ -408,7 +408,7 @@ TEST_CASE("the viewport in force is stamped on each draw")
 	list.set_viewport(Viewport(0.0f, 240.5f, 640.0f, 239.5f));
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	const std::vector<RecordedSprite> drawn = harness.end();
 
@@ -439,11 +439,11 @@ TEST_CASE("state set on one view does not leak into its neighbour")
 	first.set_viewport(Viewport(0.0f, 0.0f, 320.0f, 480.0f));
 	first.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	second.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	const std::vector<RecordedSprite> drawn = harness.end();
 
@@ -472,7 +472,7 @@ TEST_CASE("a fresh list reads the default camera and the whole back buffer")
 	// What a list starts with, which renderer.h states and every backend has
 	// to answer the same: the identity camera, and a pane that is the whole
 	// buffer the harness asked create_device for.
-	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.camera() == Camera::default_camera);
 	CHECK(list.viewport() == Viewport(0.0f, 0.0f, 640.0f, 480.0f));
 
 	std::ignore = harness.end();
@@ -496,18 +496,18 @@ TEST_CASE("the readers return what was last set, mid-list too, and the draws agr
 
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(4.0f, 4.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// And changed mid-list, which is ordinary: the world, then the HUD.
 	const Viewport second_pane(0.0f, 0.0f, 320.0f, 240.0f);
-	list.set_camera(Camera::DEFAULT_CAMERA);
+	list.set_camera(Camera::default_camera);
 	list.set_viewport(second_pane);
-	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.camera() == Camera::default_camera);
 	CHECK(list.viewport() == second_pane);
 
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(4.0f, 4.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	const std::vector<RecordedSprite> drawn = harness.end();
 
@@ -538,7 +538,7 @@ TEST_CASE("what one view's readers return does not depend on its neighbour")
 	// from one worker must not see what another worker set on another view.
 	CHECK(first.camera() == Camera(10.0f, 20.0f, 3.0f));
 	CHECK(first.viewport() == Viewport(0.0f, 0.0f, 320.0f, 480.0f));
-	CHECK(second.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(second.camera() == Camera::default_camera);
 	CHECK(second.viewport() == Viewport(0.0f, 0.0f, 640.0f, 480.0f));
 
 	std::ignore = harness.end();
@@ -555,7 +555,7 @@ TEST_CASE("begin_frame resets what the readers return")
 
 	// Reset at the top of every frame, not carried across one.
 	const DrawList next = harness.begin();
-	CHECK(next.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(next.camera() == Camera::default_camera);
 	CHECK(next.viewport() == Viewport(0.0f, 0.0f, 640.0f, 480.0f));
 	std::ignore = harness.end();
 }
@@ -574,7 +574,7 @@ TEST_CASE("a resize mid-frame resets what a held list's readers return")
 	CHECK(harness.renderer().window_size_changed(320, 240));
 
 	REQUIRE(list.valid());
-	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.camera() == Camera::default_camera);
 	CHECK(list.viewport() == Viewport(0.0f, 0.0f, 320.0f, 240.0f));
 
 	std::ignore = harness.end();
@@ -597,9 +597,9 @@ TEST_CASE("a frame that is never submitted contributes nothing to the next")
 	DrawList abandoned = harness.begin();
 	abandoned.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	abandoned.draw_text(harness.font, L"AA", Vector2F(0.0f, 0.0f),
-		Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 
 	// And no end(), which is the case. The frame is begun, drawn into, and
 	// abandoned - a client reaches it by catching an exception out of its own
@@ -623,10 +623,10 @@ TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing t
 	DrawList captured = harness.begin();
 	captured.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	captured.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(8.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	REQUIRE(harness.end().size() == 2);
 
 	// And no end_frame, which is the case.
@@ -634,7 +634,7 @@ TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing t
 	DrawList next = harness.begin();
 	next.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(32.0f, 32.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	const std::vector<RecordedSprite> drawn = harness.end();
 
 	REQUIRE(drawn.size() == 1);
@@ -663,7 +663,7 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 32.0f, 32.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	CHECK(harness.renderer().window_size_changed(320, 240));
 
@@ -671,7 +671,7 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// the frame that is now running.
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	const std::vector<RecordedSprite> drawn = harness.end();
 
@@ -703,10 +703,10 @@ TEST_CASE("CONTRACT: a resize clears `touched`, so the layout may be re-run")
 	DrawList first = harness.begin(2);
 	first.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.view(1).draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	CHECK(harness.renderer().window_size_changed(320, 240));
 
@@ -827,7 +827,7 @@ TEST_CASE("submit is once per frame, and a second one adds nothing")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.renderer().submit();
 	const std::vector<RecordedSprite> once = recorded_sprites(harness.renderer());
@@ -851,7 +851,7 @@ TEST_CASE("submit is once per frame, and a second one adds nothing")
 	DrawList second = harness.begin();
 	second.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(4.0f, 4.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	const std::vector<RecordedSprite> next = harness.end();
 
 	REQUIRE(next.size() == 1);
@@ -897,7 +897,7 @@ TEST_CASE("a handle resolved before release_device_resources draws after the rel
 	DrawList list = harness.begin();
 	list.draw_sprite(before, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	const std::vector<RecordedSprite> drawn = harness.end();
 
 	REQUIRE(drawn.size() == 1);
@@ -918,7 +918,7 @@ TEST_CASE("the engine's white texture is one texel, and survives a reload in its
 	DrawList list = harness.begin();
 	list.draw_sprite(white, labrador::RectangleI(0, 0, 1, 1),
 		RectangleF(10.0f, 20.0f, 30.0f, 4.0f), Colour::red, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	const std::vector<RecordedSprite> drawn = harness.end();
 
 	REQUIRE(drawn.size() == 1);

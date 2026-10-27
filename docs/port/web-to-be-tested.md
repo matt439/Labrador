@@ -23,7 +23,7 @@ and amend `web.md` §9 with the result.
       names the commit CI built, clean. On a pull request that is GitHub's
       merge commit for it rather than the branch head, since that is what the
       job checks out.
-- [ ] Optional: one run with `ALLOWED_CHANNEL_DRIFT` at 0 to measure the
+- [ ] Optional: one run with `allowed_channel_drift` at 0 to measure the
       runner's adapter, so the allowance can come down from 8.
 
 ## Needs Safari (M3's done-when)

@@ -71,8 +71,8 @@ namespace labrador
 	// Written in the accepting form - it returns the conjunction of three
 	// overlaps rather than falling through a run of rejections - so a NaN
 	// coordinate in either endpoint or in the box reports no intersection.
-	// See test_AABB_AABB, which is the same decision, and the note on EPSILON
-	// in scalar.h for where SEGMENT_PARALLEL_EPSILON sits in the ordering.
+	// See test_AABB_AABB, which is the same decision, and the note on default_epsilon
+	// in scalar.h for where segment_parallel_epsilon sits in the ordering.
 	bool test_segment_AABB(const Point2F& p0,
 		const Point2F& p1, const AABB& b);
 

@@ -210,7 +210,7 @@ namespace labrador
 		// does not prove the GPU remains busy at each boundary. Reusing a slot
 		// waits for its earlier submission; that does not establish how many
 		// swapchain images exist or whether both frames execute concurrently.
-		static const int FRAME_COUNT = 2;
+		static const int frame_count = 2;
 
 		// Everything one frame in flight owns.
 		struct Frame
@@ -520,7 +520,7 @@ namespace labrador
 		VkSemaphore timeline_ = VK_NULL_HANDLE;
 		uint64_t timeline_value_ = 0;
 
-		Frame frames_[FRAME_COUNT];
+		Frame frames_[frame_count];
 		int frame_index_ = 0;
 		bool recording_ = false;
 

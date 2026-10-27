@@ -230,8 +230,8 @@ namespace GamepadTests
 			CHECK_FALSE(absent.connected);
 			CHECK_FALSE(absent.is_down(GamepadButton::a));
 			CHECK(absent.trigger(GamepadTrigger::left) == doctest::Approx(0.0f));
-			CHECK(absent.left_stick == labrador::Vector2F::ZERO);
-			CHECK(absent.right_stick == labrador::Vector2F::ZERO);
+			CHECK(absent.left_stick == labrador::Vector2F::zero);
+			CHECK(absent.right_stick == labrador::Vector2F::zero);
 		}
 	}
 }

@@ -142,7 +142,7 @@ namespace linesweeper
 		// because the rectangle overload measures the origin in source pixels
 		// and there is only the one.
 		draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1), rectangle,
-			colour, 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			colour, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	}
 
 	void BoardView::draw_well(DrawList& draw_list) const
@@ -352,12 +352,12 @@ namespace linesweeper
 	void BoardView::draw_side_panels(DrawList& draw_list) const
 	{
 		draw_list.draw_text(this->font_, L"HOLD", hold_origin + label_offset,
-			label_colour, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+			label_colour, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 		this->draw_preview(draw_list,
 			static_cast<Kind>(this->world_->hold_kind), hold_origin);
 
 		draw_list.draw_text(this->font_, L"NEXT", next_origin + label_offset,
-			label_colour, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+			label_colour, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 
 		// The queue always holds at least nine, so five is never a read past
 		// what has been dealt (tick.cpp, refill_queue).
@@ -388,10 +388,10 @@ namespace linesweeper
 
 			draw_list.draw_text(this->font_, names[index],
 				Vector2F(hud_origin.x, top), label_colour, 1.0f, 0.0f,
-				Vector2F::ZERO, 0.0f);
+				Vector2F::zero, 0.0f);
 			draw_list.draw_text(this->font_, *values[index],
 				Vector2F(hud_origin.x, top + hud_line_height), value_colour,
-				1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+				1.0f, 0.0f, Vector2F::zero, 0.0f);
 		}
 	}
 }

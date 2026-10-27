@@ -87,7 +87,7 @@ namespace linesweeper
 			{
 				draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1),
 					*this->area_, faded(Colour(0.0f, 0.0f, 0.0f), scrim_alpha),
-					0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+					0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 			}
 
 			RectangleF bounds() const override

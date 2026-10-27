@@ -57,13 +57,13 @@ TEST_CASE("trigger contacts report entry without separating or repeating each ti
 	CHECK(arena.player().velocity().x == doctest::Approx(240.0f));
 	CHECK(arena.player().touching_trigger());
 	CHECK(arena.trigger_entries() == 1);
-	move(arena, Vector2F::ZERO, 5);
+	move(arena, Vector2F::zero, 5);
 	CHECK(arena.trigger_entries() == 1);
 	arena.player().set_position(Vector2F(800.0f, 320.0f));
-	arena.step(Vector2F::ZERO, step_time);
+	arena.step(Vector2F::zero, step_time);
 	CHECK_FALSE(arena.player().touching_trigger());
 	arena.player().set_position(Vector2F(920.0f, 320.0f));
-	arena.step(Vector2F::ZERO, step_time);
+	arena.step(Vector2F::zero, step_time);
 	CHECK(arena.trigger_entries() == 2);
 	arena.reset();
 	CHECK(arena.trigger_entries() == 0);

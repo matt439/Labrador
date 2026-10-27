@@ -29,7 +29,7 @@ namespace labrador
 		float radius() const;
 
 	private:
-		Vector2F center_ = Vector2F::ZERO;
+		Vector2F center_ = Vector2F::zero;
 		float radius_ = 0.0f;
 	};
 }

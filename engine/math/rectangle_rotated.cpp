@@ -166,9 +166,9 @@ namespace labrador
 		// each validate a candidate against the partner they are not changing,
 		// so a rotation is rejected in either order and the rectangle could
 		// not be turned at all through its own API.
-		if (!are_equal(new_x.length(), 1.0f, EPSILON) ||
-			!are_equal(new_y.length(), 1.0f, EPSILON) ||
-			!are_equal(Vector2F::dot(new_x, new_y), 0.0f, EPSILON))
+		if (!are_equal(new_x.length(), 1.0f, default_epsilon) ||
+			!are_equal(new_y.length(), 1.0f, default_epsilon) ||
+			!are_equal(Vector2F::dot(new_x, new_y), 0.0f, default_epsilon))
 		{
 			throw std::invalid_argument("Axes are not valid");
 		}
@@ -181,8 +181,8 @@ namespace labrador
 	{
 		const Vector2F candidate = x_axis.normalized();
 
-		if (!are_equal(candidate.length(), 1.0f, EPSILON) ||
-			!are_equal(Vector2F::dot(candidate, this->y_axis_), 0.0f, EPSILON))
+		if (!are_equal(candidate.length(), 1.0f, default_epsilon) ||
+			!are_equal(Vector2F::dot(candidate, this->y_axis_), 0.0f, default_epsilon))
 		{
 			throw std::invalid_argument("Axes are not valid");
 		}
@@ -194,8 +194,8 @@ namespace labrador
 	{
 		const Vector2F candidate = y_axis.normalized();
 
-		if (!are_equal(candidate.length(), 1.0f, EPSILON) ||
-			!are_equal(Vector2F::dot(this->x_axis_, candidate), 0.0f, EPSILON))
+		if (!are_equal(candidate.length(), 1.0f, default_epsilon) ||
+			!are_equal(Vector2F::dot(this->x_axis_, candidate), 0.0f, default_epsilon))
 		{
 			throw std::invalid_argument("Axes are not valid");
 		}
@@ -284,7 +284,7 @@ namespace labrador
 	float RectangleRotated::angle() const
 	{
 		// atan2 through Vector2F::angle(), not angle_between. angle_between is
-		// an acos, so its range is [0, PI] and it cannot tell +30 degrees from
+		// an acos, so its range is [0, pi] and it cannot tell +30 degrees from
 		// -30: a rectangle and its mirror image reported the same rotation,
 		// and nothing could reconstruct the orientation from the number.
 		return this->x_axis_.angle();
@@ -360,14 +360,14 @@ namespace labrador
 	bool RectangleRotated::axes_valid() const
 	{
 		// check if x_axis and y_axis are unit vectors
-		if (!are_equal(x_axis_.length(), 1.0f, EPSILON) ||
-			!are_equal(y_axis_.length(), 1.0f, EPSILON))
+		if (!are_equal(x_axis_.length(), 1.0f, default_epsilon) ||
+			!are_equal(y_axis_.length(), 1.0f, default_epsilon))
 		{
 			return false;
 		}
 		
 		// check if x_axis and y_axis are perpendicular
-		if (!are_equal(Vector2F::dot(x_axis_, y_axis_), 0.0f, EPSILON))
+		if (!are_equal(Vector2F::dot(x_axis_, y_axis_), 0.0f, default_epsilon))
 		{
 			return false;
 		}
@@ -395,7 +395,7 @@ namespace labrador
 			// perpendicularity test below, because the dot product of two zero
 			// vectors is zero.
 			directions[i] = lengths[i] == 0.0f
-				? Vector2F::ZERO
+				? Vector2F::zero
 				: Vector2F(edge.x / lengths[i], edge.y / lengths[i]);
 		}
 
@@ -406,7 +406,7 @@ namespace labrador
 		for (size_t i = 0; i < 4; i++)
 		{
 			if (!are_equal(Vector2F::dot(directions[i], directions[(i + 1) % 4]),
-				0.0f, EPSILON))
+				0.0f, default_epsilon))
 			{
 				return false;
 			}
@@ -415,9 +415,9 @@ namespace labrador
 		// Opposite edges must match in length, to a tolerance that scales with
 		// the edges themselves for the same reason.
 		if (std::fabs(lengths[0] - lengths[2]) >
-				EPSILON * std::max(1.0f, lengths[0]) ||
+				default_epsilon * std::max(1.0f, lengths[0]) ||
 			std::fabs(lengths[1] - lengths[3]) >
-				EPSILON * std::max(1.0f, lengths[1]))
+				default_epsilon * std::max(1.0f, lengths[1]))
 		{
 			return false;
 		}

@@ -10,7 +10,7 @@ namespace labrador
 	namespace
 	{
 		// The unit square, in the corner order sprite_geometry.h fixes.
-		const Vector2F CORNERS[4] =
+		const Vector2F unit_corners[4] =
 		{
 			Vector2F(0.0f, 0.0f),
 			Vector2F(1.0f, 0.0f),
@@ -20,7 +20,7 @@ namespace labrador
 
 		// A FLIP IS AN INDEX, NOT A NEGATION, and this is the trick worth
 		// keeping rather than reinventing. The texture coordinate of corner i
-		// is read from CORNERS[i ^ flip] instead of CORNERS[i]: 1 swaps left
+		// is read from unit_corners[i ^ flip] instead of unit_corners[i]: 1 swaps left
 		// and right, 2 swaps top and bottom, 3 does both. That is why a flip
 		// mirrors the texture and leaves the destination rectangle exactly
 		// where it was, which is a term RenderPixelTests pins and the obvious
@@ -45,12 +45,12 @@ namespace labrador
 		// origin is.
 		float without_zero(float value)
 		{
-			// FLT_EPSILON, spelt out rather than taken from EPSILON -
+			// FLT_EPSILON, spelt out rather than taken from default_epsilon -
 			// that one is a tolerance for comparing geometry and this is a
 			// stand-in for a divisor, and the two having the same value today
 			// would be a coincidence rather than a reason.
-			const float SMALLEST = 1.192092896e-7f;
-			return value == 0.0f ? SMALLEST : value;
+			const float smallest = 1.192092896e-7f;
+			return value == 0.0f ? smallest : value;
 		}
 
 		// The core both entry points reach: a destination already resolved to a
@@ -100,7 +100,7 @@ namespace labrador
 			for (int i = 0; i < 4; i++)
 			{
 				const Vector2F offset =
-					(CORNERS[i] - origin_ratio) * size;
+					(unit_corners[i] - origin_ratio) * size;
 
 				corners[i].position = Vector2F(
 					position.x + offset.x * cosine - offset.y * sine,
@@ -109,7 +109,7 @@ namespace labrador
 				corners[i].colour = tint;
 
 				corners[i].texcoord =
-					uv_origin + CORNERS[i ^ mirror] * uv_size;
+					uv_origin + unit_corners[i ^ mirror] * uv_size;
 			}
 		}
 
@@ -139,7 +139,7 @@ namespace labrador
 			Point2F points[4];
 			for (int i = 0; i < 4; i++)
 			{
-				const Vector2F offset = CORNERS[i] * size - origin_pixels;
+				const Vector2F offset = unit_corners[i] * size - origin_pixels;
 				points[i] = Vector2F(
 					position.x + offset.x * cosine - offset.y * sine,
 					position.y + offset.x * sine + offset.y * cosine);

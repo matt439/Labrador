@@ -41,7 +41,7 @@ namespace labrador
 				// file's: unscaled source texels, measured from the frame's own
 				// top left (engine/render/sprite_geometry.h). SpriteSheet::draw
 				// is where it reaches a quad.
-				Vector2F origin = Vector2F::ZERO;
+				Vector2F origin = Vector2F::zero;
 				if (frame.has("origin"))
 				{
 					const JsonValue origin_json = frame.object("origin");

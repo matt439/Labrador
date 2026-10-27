@@ -6,8 +6,8 @@ namespace labrador
 {
 	struct Segment
 	{
-		Point2F point_0 = Point2F::ZERO;
-		Point2F point_1 = Point2F::ZERO;
+		Point2F point_0 = Point2F::zero;
+		Point2F point_1 = Point2F::zero;
 
 		Segment() = default;
 		Segment(const Segment&) = default;

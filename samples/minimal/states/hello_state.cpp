@@ -43,7 +43,7 @@ namespace
 	// them (keyboard.h).
 	Vector2F keyboard_direction(const Keyboard& keyboard)
 	{
-		Vector2F direction = Vector2F::ZERO;
+		Vector2F direction = Vector2F::zero;
 
 		if (keyboard.held(Key::left) || keyboard.held(Key::a))
 		{
@@ -96,7 +96,7 @@ void HelloState::init()
 	for (Label*& marker : this->touch_markers_)
 	{
 		marker = this->scene_->add(std::make_unique<Label>(L"", font_name,
-			Vector2F::ZERO, resources, labrador::Colour::gold));
+			Vector2F::zero, resources, labrador::Colour::gold));
 	}
 
 	// Every add is pending until a tick ends, so that a weapon firing mid-tick
@@ -108,7 +108,7 @@ void HelloState::init()
 	// what a list starts with, so this one is never mentioned again. A
 	// split-screen game clears this list and refills it every tick, one entry
 	// per player, and nothing else about the shape changes.
-	this->scene_->add_view(Viewport(RectangleF(Vector2F::ZERO, resolution)));
+	this->scene_->add_view(Viewport(RectangleF(Vector2F::zero, resolution)));
 }
 
 void HelloState::update(float dt)
@@ -121,7 +121,7 @@ void HelloState::update(float dt)
 	// the stick nor the button needs a connected() guard. Several pads share
 	// the greeting; their directions add, with the rules clamping the sum.
 	bool quit_requested = keyboard.pressed(Key::escape);
-	Vector2F stick_direction = Vector2F::ZERO;
+	Vector2F stick_direction = Vector2F::zero;
 	for (int slot = 0; slot < Gamepads::max_count; ++slot)
 	{
 		quit_requested |= pads.pressed(slot, GamepadButton::b);

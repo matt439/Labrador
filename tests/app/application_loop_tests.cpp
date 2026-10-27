@@ -46,7 +46,7 @@ namespace
 			// quit() closes the window, and the tick that called it still
 			// runs every step the clock owes. On a loaded machine that is
 			// several more, so after quitting nothing is recorded: the cases
-			// below count exactly UPDATES.
+			// below count exactly update_count.
 			if (this->quit_)
 			{
 				return;
@@ -56,7 +56,7 @@ namespace
 			this->updates_++;
 			this->steps_.push_back(this->app_->step_position());
 
-			if (this->updates_ == CAPTURE_AT)
+			if (this->updates_ == capture_at)
 			{
 				this->capture_before_ = this->app_->frame_timings().frame;
 				this->capturing_ = true;
@@ -68,7 +68,7 @@ namespace
 				this->capture_after_ = this->app_->frame_timings().frame;
 			}
 
-			if (this->updates_ == UPDATES)
+			if (this->updates_ == update_count)
 			{
 				this->app_->quit();
 				this->quit_ = true;
@@ -86,8 +86,8 @@ namespace
 			}
 		}
 
-		static constexpr int CAPTURE_AT = 4;
-		static constexpr int UPDATES = 8;
+		static constexpr int capture_at = 4;
+		static constexpr int update_count = 8;
 
 		std::uint64_t capture_before_ = 0;
 		std::uint64_t capture_after_ = 0;
@@ -217,7 +217,7 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 	CHECK(app.frame_timings().frame == 0);
 	CHECK(app.run(std::move(owned)) == 0);
 
-	REQUIRE(seen.size() == static_cast<size_t>(TimingState::UPDATES));
+	REQUIRE(seen.size() == static_cast<size_t>(TimingState::update_count));
 	REQUIRE(drawn.size() >= 2);
 
 	// The first update runs before any frame has been rendered.
@@ -284,7 +284,7 @@ TEST_CASE("step_position is published before each of the loop's draws")
 
 	// Inside an update it is that update's own step, counted from one, and
 	// no fraction.
-	REQUIRE(state->steps_.size() == static_cast<size_t>(TimingState::UPDATES));
+	REQUIRE(state->steps_.size() == static_cast<size_t>(TimingState::update_count));
 	for (size_t index = 0; index < state->steps_.size(); index++)
 	{
 		CHECK(state->steps_[index].step == index + 1);

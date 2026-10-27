@@ -61,7 +61,7 @@ namespace linesweeper
 				: std::wstring(L"TOPPED OUT - PRESS R OR START");
 
 		this->text_size_ = this->text_.empty()
-			? Vector2F::ZERO
+			? Vector2F::zero
 			: this->render_resources_->measure_text(this->font_, this->text_);
 	}
 
@@ -94,7 +94,7 @@ namespace linesweeper
 		draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1),
 			RectangleF(well_origin_x, middle - banner_padding, well_width,
 				this->text_size_.y + banner_padding * 2.0f),
-			faded(Colour(0.0f, 0.0f, 0.0f), 0.88f), 0.0f, Vector2F::ZERO,
+			faded(Colour(0.0f, 0.0f, 0.0f), 0.88f), 0.0f, Vector2F::zero,
 			SpriteFlip::none, 0.0f);
 
 		// Centred on a whole unit of board space, for the reason the pause
@@ -105,7 +105,7 @@ namespace linesweeper
 				std::floor(
 					well_origin_x + (well_width - this->text_size_.x) * 0.5f),
 				middle),
-			banner_colour, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+			banner_colour, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 	}
 
 	RectangleF TopOutBanner::bounds() const

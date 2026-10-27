@@ -27,7 +27,7 @@ namespace
 	constexpr DWORD completion_timeout_ms = 5000;
 	constexpr int window_size = 64;
 	constexpr int unverified_exit = 2;
-	static_assert(DeviceResources::FRAME_COUNT == 2);
+	static_assert(DeviceResources::frame_count == 2);
 
 	class Unverified : public std::runtime_error
 	{
@@ -315,7 +315,7 @@ namespace
 		renderer.set_view_count(1);
 		renderer.view(0).draw_sprite(texture, RectangleI(0, 0, 2, 2),
 			RectangleF(4.0f, 4.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		renderer.submit();
 	}
 

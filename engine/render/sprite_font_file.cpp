@@ -15,11 +15,11 @@ namespace labrador
 {
 	namespace
 	{
-		const char MAGIC[] = "DXTKfont";
-		const size_t MAGIC_LENGTH = 8;
+		const char font_magic[] = "DXTKfont";
+		const size_t font_magic_length = 8;
 
 		// One glyph is a character, four rectangle edges and three floats.
-		const size_t GLYPH_BYTES = 32;
+		const size_t glyph_record_bytes = 32;
 
 		// The format numbers are DXGI's, and this reader is the one place
 		// outside engine/render/<backend>/ that knows any - because they are
@@ -54,16 +54,16 @@ namespace labrador
 		const std::vector<unsigned char> bytes = read_file_bytes(path);
 		ByteReader reader(bytes, path);
 
-		reader.require(MAGIC_LENGTH);
-		for (size_t i = 0; i < MAGIC_LENGTH; i++)
+		reader.require(font_magic_length);
+		for (size_t i = 0; i < font_magic_length; i++)
 		{
-			if (bytes[i] != static_cast<unsigned char>(MAGIC[i]))
+			if (bytes[i] != static_cast<unsigned char>(font_magic[i]))
 			{
 				throw std::runtime_error(path + " is not a MakeSpriteFont "
 					"binary: it does not start with \"DXTKfont\".");
 			}
 		}
-		reader.skip(MAGIC_LENGTH);
+		reader.skip(font_magic_length);
 
 		SpriteFontFile font;
 
@@ -74,7 +74,7 @@ namespace labrador
 		// a wasm build a count of 2^27 or more would wrap the product, pass
 		// the check and leave the reserve below to throw without the path.
 		const uint64_t glyph_bytes =
-			static_cast<uint64_t>(glyph_count) * GLYPH_BYTES;
+			static_cast<uint64_t>(glyph_count) * glyph_record_bytes;
 		if (glyph_bytes > static_cast<uint64_t>(reader.remaining()))
 		{
 			throw std::runtime_error(path + " says it holds " +

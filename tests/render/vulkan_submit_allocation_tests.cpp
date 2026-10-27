@@ -58,16 +58,16 @@ namespace
 		// These distinct uploaded vertices still contribute to later bases.
 		skipped.draw_sprite(fixture.texture, RectangleI(0, 0, 2, 2),
 			RectangleF(0.0f, 0.0f, 64.0f, 64.0f), Colour::blue, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		// View 1 deliberately has neither vertices nor runs.
 		DrawList visible = fixture.renderer.view(2);
 		visible.draw_sprite(fixture.texture, RectangleI(0, 0, 2, 2),
 			RectangleF(4.0f, 4.0f, 16.0f, 16.0f), Colour::red, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		visible.set_filter(TextureFilter::linear);
 		visible.draw_sprite(fixture.texture, RectangleI(0, 0, 2, 2),
 			RectangleF(28.0f, 4.0f, 16.0f, 16.0f), Colour::lime, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 	}
 
 	std::vector<unsigned char> expected_pixels()

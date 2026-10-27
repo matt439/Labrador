@@ -64,7 +64,7 @@ namespace
 			DrawList last = fixture.renderer.view(3);
 			last.draw_sprite(fixture.texture, RectangleI(0, 0, 2, 2),
 				RectangleF(24.0f, 16.0f, 24.0f, 24.0f), Colour::blue, 0.0f,
-				Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				Vector2F::zero, SpriteFlip::none, 0.0f);
 		}
 		if (view_count > 2)
 		{
@@ -72,12 +72,12 @@ namespace
 			middle.set_viewport(Viewport(32.0f, 0.0f, 32.0f, 64.0f));
 			middle.draw_sprite(fixture.texture, RectangleI(0, 0, 2, 2),
 				RectangleF(0.0f, 8.0f, 32.0f, 24.0f), Colour::lime, 0.0f,
-				Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				Vector2F::zero, SpriteFlip::none, 0.0f);
 		}
 		DrawList first = fixture.renderer.view(0);
 		first.draw_sprite(fixture.texture, RectangleI(0, 0, 2, 2),
 			RectangleF(4.0f, 4.0f, 36.0f, 24.0f), Colour::red, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 	}
 
 	std::vector<unsigned char> expected_pixels(int view_count)

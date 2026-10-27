@@ -21,7 +21,7 @@ namespace labrador
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -33,7 +33,7 @@ namespace labrador
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -49,11 +49,11 @@ namespace labrador
 		RectangleF cull_bounds(float units_per_pixel) const override;
 
 	protected:
-		RectangleF rectangle_ = RectangleF::ZERO;
+		RectangleF rectangle_ = RectangleF::zero;
 
 	private:
-		RectangleF bounds_ = RectangleF::ZERO;
-		Vector2F pixel_padding_ = Vector2F::ZERO;
+		RectangleF bounds_ = RectangleF::zero;
+		Vector2F pixel_padding_ = Vector2F::zero;
 
 		// From rectangle_ and the frame, once both are set.
 		void initialize_bounds();

@@ -57,7 +57,7 @@ namespace labrador
 		// distance between two unrelated places.
 		if (!now.focused || !before.focused)
 		{
-			return Vector2I::ZERO;
+			return Vector2I::zero;
 		}
 		return now.position - before.position;
 	}

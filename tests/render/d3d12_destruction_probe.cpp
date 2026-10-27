@@ -228,17 +228,17 @@ namespace
 	}
 
 	void present_frame(Renderer& renderer, TextureHandle texture,
-		std::array<unsigned, DeviceResources::FRAME_COUNT>& visits, unsigned& mask)
+		std::array<unsigned, DeviceResources::frame_count>& visits, unsigned& mask)
 	{
 		renderer.begin_frame();
 		const int slot = renderer.impl()->device_resources.frame_index();
-		require(slot >= 0 && slot < DeviceResources::FRAME_COUNT, "invalid swapchain frame index");
+		require(slot >= 0 && slot < DeviceResources::frame_count, "invalid swapchain frame index");
 		++visits[static_cast<std::size_t>(slot)];
 		mask |= 1u << static_cast<unsigned>(slot);
 		renderer.set_view_count(1);
 		renderer.view(0).draw_sprite(texture, RectangleI(0, 0, 2, 2),
 			RectangleF(4.0f, 4.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		renderer.submit();
 		renderer.end_frame();
 	}
@@ -296,7 +296,7 @@ namespace
 			add_texture_asset(*renderer, resources, "destruction_probe", white);
 			texture = resources.resolve_texture("destruction_probe");
 		}
-		std::array<unsigned, DeviceResources::FRAME_COUNT> visits{};
+		std::array<unsigned, DeviceResources::frame_count> visits{};
 		unsigned mask = 0;
 		for (int frame = 0; frame < 3; ++frame)
 		{

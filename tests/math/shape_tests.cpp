@@ -51,8 +51,8 @@ TEST_SUITE("Shape")
 		CHECK(quad_edges[0] == quad.edge_0());
 		CHECK(quad_edges[3] == quad.edge_3());
 
-		const RectangleRotated rr(Point2F::ZERO, Vector2F::DIRECTION_RIGHT,
-			Vector2F::DIRECTION_DOWN, Vector2F(5.0f, 5.0f));
+		const RectangleRotated rr(Point2F::zero, Vector2F::direction_right,
+			Vector2F::direction_down, Vector2F(5.0f, 5.0f));
 		const auto rr_edges = rr.edges();
 		static_assert(rr_edges.size() == 4);
 		CHECK(rr_edges[0] == rr.edge_0());

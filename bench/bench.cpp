@@ -14,8 +14,8 @@ namespace bench
 		// Enough repetitions that the median is not one sample's luck, and few
 		// enough that the whole suite stays inside a ctest run somebody is
 		// willing to wait for.
-		constexpr int REPETITIONS = 9;
-		constexpr int WARMUP = 2;
+		constexpr int repetitions = 9;
+		constexpr int warmup = 2;
 
 		double median(std::vector<double>& samples)
 		{
@@ -33,16 +33,16 @@ namespace bench
 		const std::function<void()>& body,
 		const std::function<void()>& setup)
 	{
-		for (int i = 0; i < WARMUP; i++)
+		for (int i = 0; i < warmup; i++)
 		{
 			if (setup) { setup(); }
 			body();
 		}
 
 		std::vector<double> samples;
-		samples.reserve(REPETITIONS);
+		samples.reserve(repetitions);
 
-		for (int i = 0; i < REPETITIONS; i++)
+		for (int i = 0; i < repetitions; i++)
 		{
 			if (setup) { setup(); }
 

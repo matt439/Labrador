@@ -79,7 +79,7 @@ namespace labrador
 
 		std::vector<RecordedSprite> sprites;
 
-		Camera camera = Camera::DEFAULT_CAMERA;
+		Camera camera = Camera::default_camera;
 		TextureFilter filter = TextureFilter::point;
 		Viewport viewport;
 

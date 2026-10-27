@@ -113,14 +113,14 @@ TEST_CASE("a row with nothing to choose, or a start outside its list, throws")
 	TestContent content;
 
 	CHECK_THROWS_AS(OptionRow("empty", L"Empty", {}, 0,
-		Vector2F::ZERO, 300.0f, "font", &content.resources),
+		Vector2F::zero, 300.0f, "font", &content.resources),
 		std::invalid_argument);
 	CHECK_THROWS_AS(OptionRow("past", L"Past", difficulties(), 3,
-		Vector2F::ZERO, 300.0f, "font", &content.resources),
+		Vector2F::zero, 300.0f, "font", &content.resources),
 		std::invalid_argument);
 
 	OptionRow row("difficulty", L"Difficulty", difficulties(), 0,
-		Vector2F::ZERO, 300.0f, "font", &content.resources);
+		Vector2F::zero, 300.0f, "font", &content.resources);
 	CHECK_THROWS_AS(row.set_index(3), std::invalid_argument);
 	CHECK(row.index() == 0);
 }

@@ -72,6 +72,28 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Spell constants in snake_case
+
+**Source break.** Public constants follow the CONVENTIONS rule that only a
+macro is SCREAMING_SNAKE:
+
+| Old | New |
+|---|---|
+| `Vector2F::ZERO`, `Vector2I::ZERO` | `Vector2F::zero`, `Vector2I::zero` |
+| `RectangleF::ZERO`, `RectangleI::ZERO` | `RectangleF::zero`, `RectangleI::zero` |
+| `Vector2F::ONE` | `Vector2F::one` |
+| `Vector2F::DIRECTION_RIGHT` and the other seven | `Vector2F::direction_right` and so on |
+| `PI`, `PI_OVER_2` | `pi`, `pi_over_2` |
+| `EPSILON` | `default_epsilon` |
+| `MIN_AXIS_ALIGNMENT` (`engine/collision/resolve.h`) | `min_axis_alignment` |
+| `Camera::DEFAULT_CAMERA` | `Camera::default_camera` |
+
+`EPSILON` is not plain `epsilon` because that is the name of the parameter it
+defaults. To migrate, replace each old spelling with the new one. In this
+repository the same edits were made across every sample, including
+`samples/minimal/states/hello_state.cpp` and
+`samples/minimal/tests/motion_tests.cpp`.
+
 ### 2026-10-27 - Move the math library into namespace labrador as LabradorMath
 
 **Source break.** The math types and functions (`Vector2F`, `Vector2I`,

@@ -28,7 +28,7 @@ namespace labrador
 	// being the wrong one - separating a wall contact by moving straight down
 	// is not a costly manoeuvre, it is a category error, and the caller wants
 	// separation() instead.
-	constexpr float MIN_AXIS_ALIGNMENT = 0.1f;
+	constexpr float min_axis_alignment = 0.1f;
 
 	// The smallest translation *along `axis`* that does the same.
 	//
@@ -47,7 +47,7 @@ namespace labrador
 	//     caller's world uses.
 	//   - `penetration` is finite and greater than zero, which is what a manifold
 	//     promises - a contact that does not overlap is not a contact.
-	//   - `axis` is no more than MIN_AXIS_ALIGNMENT away from being useless.
+	//   - `axis` is no more than min_axis_alignment away from being useless.
 	//
 	// It throws rather than returning zero, or an optional, or a very large
 	// vector. A guard that returns zero only below some small divisor still

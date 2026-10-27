@@ -10,14 +10,14 @@ namespace labrador
 	{
 		const Vector2F pushed = apply_deadzone(stick, deadzone);
 
-		// Exact equality against ZERO, which is the idiom this engine builds on
+		// Exact equality against zero, which is the idiom this engine builds on
 		// deliberately: /fp:precise is a compiler setting the whole tree
 		// carries (cmake/settings.cmake), and apply_deadzone answers exactly
 		// zero inside the deadzone rather than something small. A tolerance
 		// here would be a second deadzone applied on top of the first, which
 		// is the mistake gamepad.h warns about two lines above the function
 		// this calls.
-		if (pushed == Vector2F::ZERO)
+		if (pushed == Vector2F::zero)
 		{
 			return Direction::none;
 		}

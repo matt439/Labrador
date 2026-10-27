@@ -13,16 +13,16 @@ namespace labrador
 {
 	namespace
 	{
-		const uint32_t MAGIC = 0x20534444;          // "DDS "
-		const uint32_t HEADER_SIZE = 124;
-		const uint32_t PIXEL_FORMAT_SIZE = 32;
+		const uint32_t dds_magic = 0x20534444;  // "DDS "
+		const uint32_t dds_header_size = 124;
+		const uint32_t dds_pixel_format_size = 32;
 
 		// DDS_PIXELFORMAT flags, and the two caps bits that say a file is not
 		// the one kind of texture this engine draws.
-		const uint32_t FOURCC = 0x4;
-		const uint32_t RGB = 0x40;
-		const uint32_t CUBEMAP = 0x200;
-		const uint32_t VOLUME = 0x200000;
+		const uint32_t fourcc_flag = 0x4;
+		const uint32_t rgb_flag = 0x40;
+		const uint32_t cubemap_flag = 0x200;
+		const uint32_t volume_flag = 0x200000;
 
 		std::string hex(uint32_t value)
 		{
@@ -65,7 +65,7 @@ namespace labrador
 		// there is no format here that says which - the block layouts are
 		// identical and DXGI has never distinguished them, so the pair collapse.
 		// That is not a shortcut: this engine's blend equation IS premultiplied
-		// (RenderPixelTests pins the source factor at ONE), so every one of
+		// (RenderPixelTests pins the source factor at one), so every one of
 		// these files is expected to be premultiplied whatever its fourCC
 		// claims, and the fourCC is a label on the content rather than an
 		// instruction to the renderer.
@@ -73,7 +73,7 @@ namespace labrador
 			uint32_t bit_count, uint32_t red, uint32_t green, uint32_t blue,
 			uint32_t alpha, const std::string& path)
 		{
-			if ((flags & FOURCC) != 0)
+			if ((flags & fourcc_flag) != 0)
 			{
 				if (fourcc == make_four_cc('D', 'X', 'T', '1'))
 				{
@@ -101,7 +101,7 @@ namespace labrador
 					"(texture_format.h).");
 			}
 
-			if ((flags & RGB) != 0 && bit_count == 32)
+			if ((flags & rgb_flag) != 0 && bit_count == 32)
 			{
 				if (red == 0x000000FFu && green == 0x0000FF00u &&
 					blue == 0x00FF0000u && alpha == 0xFF000000u)
@@ -146,7 +146,7 @@ namespace labrador
 		const std::vector<unsigned char> bytes = read_file_bytes(path);
 		ByteReader reader(bytes, path);
 
-		if (reader.read_u32() != MAGIC)
+		if (reader.read_u32() != dds_magic)
 		{
 			throw std::runtime_error(path +
 				" is not a .dds: it does not start with \"DDS \".");
@@ -156,11 +156,11 @@ namespace labrador
 		// which is the cheapest way to catch a file that is a .dds by extension
 		// and something else by content.
 		const uint32_t header_size = reader.read_u32();
-		if (header_size != HEADER_SIZE)
+		if (header_size != dds_header_size)
 		{
 			throw std::runtime_error(path + " declares a " +
 				std::to_string(header_size) + " byte header; a .dds header is " +
-				std::to_string(HEADER_SIZE) + " bytes.");
+				std::to_string(dds_header_size) + " bytes.");
 		}
 
 		std::ignore = reader.read_u32();                       // flags
@@ -179,11 +179,11 @@ namespace labrador
 		reader.skip(11 * 4);                                   // reserved
 
 		const uint32_t pixel_format_size = reader.read_u32();
-		if (pixel_format_size != PIXEL_FORMAT_SIZE)
+		if (pixel_format_size != dds_pixel_format_size)
 		{
 			throw std::runtime_error(path + " declares a " +
 				std::to_string(pixel_format_size) + " byte pixel format; a "
-				".dds pixel format is " + std::to_string(PIXEL_FORMAT_SIZE) +
+				".dds pixel format is " + std::to_string(dds_pixel_format_size) +
 				" bytes.");
 		}
 
@@ -211,13 +211,13 @@ namespace labrador
 		// asking for either through load_texture_asset wants something this
 		// engine has no way to draw - so it is told, rather than handed the
 		// first face and left to wonder why the other five never appear.
-		if ((caps2 & CUBEMAP) != 0)
+		if ((caps2 & cubemap_flag) != 0)
 		{
 			throw std::runtime_error(path + " is a cube map. This engine draws "
 				"one face of one 2D texture and has nowhere to put the other "
 				"five.");
 		}
-		if ((caps2 & VOLUME) != 0 || depth > 1)
+		if ((caps2 & volume_flag) != 0 || depth > 1)
 		{
 			throw std::runtime_error(path + " is a volume texture, " +
 				std::to_string(depth) + " slices deep. This engine draws 2D.");

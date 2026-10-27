@@ -370,7 +370,7 @@ namespace
 	// one is already the only inexact statement in the pixel contract. The
 	// direction it should move is down, once CI's Direct3D adapter has been
 	// measured against the set.
-	constexpr int ALLOWED_CHANNEL_DRIFT = 8;
+	constexpr int allowed_channel_drift = 8;
 }
 
 void golden::check_frame(int width, int height,
@@ -478,7 +478,7 @@ void golden::check_frame(int width, int height,
 			{
 				worst = delta;
 			}
-			if (delta > ALLOWED_CHANNEL_DRIFT)
+			if (delta > allowed_channel_drift)
 			{
 				beyond++;
 				if (first == byte_count)
@@ -501,7 +501,7 @@ void golden::check_frame(int width, int height,
 			report = "golden mismatch: " + slug + "\n  " +
 				std::to_string(beyond) + " of " +
 				std::to_string(byte_count / 4) + " pixels differ by more than " +
-				std::to_string(ALLOWED_CHANNEL_DRIFT) + " (" +
+				std::to_string(allowed_channel_drift) + " (" +
 				std::to_string(differing) +
 				" differ at all), worst channel by " + std::to_string(worst) +
 				"\n  first at (" + std::to_string(x) + ", " +

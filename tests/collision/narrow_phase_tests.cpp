@@ -69,7 +69,7 @@ TEST_CASE("the manifold is the axis of least penetration")
 	const std::optional<Manifold> manifold = narrow_phase(a, b);
 
 	REQUIRE(manifold.has_value());
-	CHECK(manifold->normal == Vector2F::DIRECTION_RIGHT);
+	CHECK(manifold->normal == Vector2F::direction_right);
 	CHECK(manifold->penetration == doctest::Approx(2.0f));
 	CHECK(separating(a, b));
 }
@@ -84,8 +84,8 @@ TEST_CASE("the normal points from the first shape towards the second")
 
 	REQUIRE(forwards.has_value());
 	REQUIRE(backwards.has_value());
-	CHECK(forwards->normal == Vector2F::DIRECTION_DOWN);
-	CHECK(backwards->normal == Vector2F::DIRECTION_UP);
+	CHECK(forwards->normal == Vector2F::direction_down);
+	CHECK(backwards->normal == Vector2F::direction_up);
 	CHECK(forwards->penetration == doctest::Approx(backwards->penetration));
 }
 
@@ -107,7 +107,7 @@ TEST_CASE("a player impaled on a thin platform is pushed off it, not along it")
 	const std::optional<Manifold> manifold = narrow_phase(player, platform);
 
 	REQUIRE(manifold.has_value());
-	CHECK(manifold->normal == Vector2F::DIRECTION_DOWN);
+	CHECK(manifold->normal == Vector2F::direction_down);
 	CHECK(manifold->penetration == doctest::Approx(50.0f));
 	CHECK(separating(player, platform));
 }
@@ -123,7 +123,7 @@ TEST_CASE("a shape wholly inside another is pushed out the nearest way")
 	const std::optional<Manifold> manifold = narrow_phase(inner, outer);
 
 	REQUIRE(manifold.has_value());
-	CHECK(manifold->normal == Vector2F::DIRECTION_LEFT);
+	CHECK(manifold->normal == Vector2F::direction_left);
 	CHECK(manifold->penetration == doctest::Approx(30.0f));
 	CHECK(separating(inner, outer));
 }
@@ -189,7 +189,7 @@ TEST_CASE("one move still separates the pair out where the levels actually are")
 	// Every other collision test in this file sits within 100 units of the
 	// origin, where floats are dense and everything works. Levels run to
 	// around 6200, where consecutive floats are 4.88e-4 apart - which is
-	// larger than labrador::EPSILON (1e-4), so the engine's general tolerance
+	// larger than labrador::default_epsilon (1e-4), so the engine's general tolerance
 	// is exact equality wearing a costume out here.
 	//
 	// This is the measurement that decides whether resolution needs a contact

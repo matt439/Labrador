@@ -16,7 +16,7 @@
 // backend it was compiled against, which is how the rest of that file reads.
 //
 // The two names the fan-out case records are still listed in main.cpp's
-// LINEAR_PHASES. A phase with fewer than two results is skipped there, so they
+// linear_phases. A phase with fewer than two results is skipped there, so they
 // cost nothing here and do not have to be moved in and out with the file.
 
 std::string run_fanout_benchmarks()

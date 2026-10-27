@@ -108,8 +108,8 @@ namespace labrador
 		// cross()'s note above, and for the same reason. The sign is
 		// consistent either way.
 		//
-		// It is the general case of normal(), which is this at PI_OVER_2 and
-		// exact where this is not: cos(PI/2) is not zero in floating point,
+		// It is the general case of normal(), which is this at pi_over_2 and
+		// exact where this is not: cos(pi/2) is not zero in floating point,
 		// so rotating (1, 0) by a right angle lands a few ulps off the y
 		// axis. Where a right angle is what is wanted, want normal().
 		//
@@ -130,16 +130,16 @@ namespace labrador
 		// that copied one - a game's own direction table, a default in a
 		// static - would read (0, 0) or the real value depending on link
 		// order, with no error anywhere.
-		static const Vector2F ZERO;
-		static const Vector2F ONE;
-		static const Vector2F DIRECTION_RIGHT;
-		static const Vector2F DIRECTION_DOWN;
-		static const Vector2F DIRECTION_LEFT;
-		static const Vector2F DIRECTION_UP;
-		static const Vector2F DIRECTION_UP_RIGHT;
-		static const Vector2F DIRECTION_DOWN_RIGHT;
-		static const Vector2F DIRECTION_DOWN_LEFT;
-		static const Vector2F DIRECTION_UP_LEFT;
+		static const Vector2F zero;
+		static const Vector2F one;
+		static const Vector2F direction_right;
+		static const Vector2F direction_down;
+		static const Vector2F direction_left;
+		static const Vector2F direction_up;
+		static const Vector2F direction_up_right;
+		static const Vector2F direction_down_right;
+		static const Vector2F direction_down_left;
+		static const Vector2F direction_up_left;
 	};
 
 	// A point and a vector are the same two floats, and the library says so.

@@ -233,7 +233,7 @@ namespace
 				&this->resources_, Colour::dark_gray));
 
 			this->scene_.end_tick();
-			this->scene_.add_view(Viewport(RectangleF(Vector2F::ZERO,
+			this->scene_.add_view(Viewport(RectangleF(Vector2F::zero,
 				Vector2F(static_cast<float>(frame_width),
 					static_cast<float>(frame_height)))));
 

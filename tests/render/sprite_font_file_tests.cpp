@@ -31,7 +31,7 @@ namespace
 	using labrador::TextureFormat;
 	using labrador::read_sprite_font_file;
 
-	const char* FONT_PATH = "./content/jetbrains_mono_bold_16.spritefont";
+	const char* font_path = "./content/jetbrains_mono_bold_16.spritefont";
 
 	// A file in the working directory, removed when the test leaves.
 	class ScratchFile
@@ -63,7 +63,7 @@ namespace
 
 	std::vector<unsigned char> whole_font()
 	{
-		std::ifstream file(FONT_PATH, std::ios::binary | std::ios::ate);
+		std::ifstream file(font_path, std::ios::binary | std::ios::ate);
 		REQUIRE(file.good());
 		const std::streamoff size = file.tellg();
 		std::vector<unsigned char> bytes(static_cast<size_t>(size));
@@ -75,7 +75,7 @@ namespace
 
 TEST_CASE("the sample font reads back as the table MakeSpriteFont wrote")
 {
-	const SpriteFontFile font = read_sprite_font_file(FONT_PATH);
+	const SpriteFontFile font = read_sprite_font_file(font_path);
 
 	// The default region and nothing else, which is the fact the stand-in
 	// glyph exists because of: 95 characters is U+0020 to U+007E, so every
@@ -108,7 +108,7 @@ TEST_CASE("the sample font reads back as the table MakeSpriteFont wrote")
 
 TEST_CASE("the atlas comes out as bytes and a format, not as a texture")
 {
-	const SpriteFontFile font = read_sprite_font_file(FONT_PATH);
+	const SpriteFontFile font = read_sprite_font_file(font_path);
 
 	CHECK(font.atlas.width == 128);
 	CHECK(font.atlas.height == 168);

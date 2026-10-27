@@ -139,7 +139,7 @@ namespace labrador
 		// this many and reused from each run's first vertex (renderer.cpp,
 		// point_attributes), so a longer run is split rather than growing
 		// anything.
-		static const int MAX_RUN_SPRITES = 2048;
+		static const int max_run_sprites = 2048;
 
 		Renderer::Impl* owner = nullptr;
 
@@ -151,7 +151,7 @@ namespace labrador
 		bool open_valid = false;
 
 		// Reset at the top of every frame, not carried across one.
-		Camera camera = Camera::DEFAULT_CAMERA;
+		Camera camera = Camera::default_camera;
 		TextureFilter filter = TextureFilter::point;
 		Viewport viewport;
 

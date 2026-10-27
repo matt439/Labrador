@@ -118,10 +118,10 @@ namespace
 			(sixteen_bit ? 0x80000000u : 0u);
 	}
 
-	const uint32_t PCM = 0;
-	const uint32_t XMA = 1;
-	const uint32_t ADPCM = 2;
-	const uint32_t WMA = 3;
+	const uint32_t tag_pcm = 0;
+	const uint32_t tag_xma = 1;
+	const uint32_t tag_adpcm = 2;
+	const uint32_t tag_wma = 3;
 
 	struct Entry
 	{
@@ -248,9 +248,9 @@ namespace
 		return block;
 	}
 
-	// A stored ADPCM alignment of zero is a 22-byte mono block: 7 bytes of
+	// A stored tag_adpcm alignment of zero is a 22-byte mono block: 7 bytes of
 	// header and 15 of nibbles, so 32 samples.
-	const size_t MONO_BLOCK = 22;
+	const size_t mono_block = 22;
 }
 
 TEST_CASE("the audio sample's bank reads back as the WAVs it was packed from")
@@ -280,7 +280,7 @@ TEST_CASE("the audio sample's bank reads back as the WAVs it was packed from")
 	}
 }
 
-TEST_CASE("an MS-ADPCM bank decodes to its source within the codec's error")
+TEST_CASE("an MS-tag_adpcm bank decodes to its source within the codec's error")
 {
 	const WaveBankData bank = read_xwb_file("./content/ping_adpcm.xwb");
 	REQUIRE(bank.waves.size() == 1);
@@ -300,7 +300,7 @@ TEST_CASE("an MS-ADPCM bank decodes to its source within the codec's error")
 	CHECK(wave.samples[0] == source[0]);
 	CHECK(wave.samples[1] == source[1]);
 
-	// ADPCM is lossy, so the comparison with the source is a bound: the
+	// tag_adpcm is lossy, so the comparison with the source is a bound: the
 	// largest error is 454 on a peak of 9830 for this encode.
 	int largest_error = 0;
 	for (size_t i = 0; i < source.size(); i++)
@@ -327,16 +327,16 @@ TEST_CASE("an MS-ADPCM bank decodes to its source within the codec's error")
 	CHECK(wave.samples[503] == 4648);
 }
 
-TEST_CASE("MS-ADPCM arithmetic, one block at a time")
+TEST_CASE("MS-tag_adpcm arithmetic, one block at a time")
 {
 	SUBCASE("the header's samples come first, older first, then the nibbles")
 	{
 		// Predictor 0 is (256, 0): predict the last sample. A nibble of 7
 		// adds seven steps and adapts the step by 614/256; -1 subtracts one.
 		const std::vector<unsigned char> block =
-			adpcm_block(0, 16, 100, 50, { 0x7F }, MONO_BLOCK);
+			adpcm_block(0, 16, 100, 50, { 0x7F }, mono_block);
 		const WaveBankData bank = read_bank(build_bank({ { "a",
-			mini_format(ADPCM, 1, 8000, 0, false), block } }));
+			mini_format(tag_adpcm, 1, 8000, 0, false), block } }));
 		const std::vector<int16_t>& samples = bank.waves[0].samples;
 
 		REQUIRE(samples.size() == 32);
@@ -352,9 +352,9 @@ TEST_CASE("MS-ADPCM arithmetic, one block at a time")
 		// Predictor 3 is (192, 64): -1 * 192 / 256 is -0.75, which a
 		// division makes 0 and an arithmetic shift would make -1.
 		const std::vector<unsigned char> block =
-			adpcm_block(3, 16, -1, 0, {}, MONO_BLOCK);
+			adpcm_block(3, 16, -1, 0, {}, mono_block);
 		const WaveBankData bank = read_bank(build_bank({ { "a",
-			mini_format(ADPCM, 1, 8000, 0, false), block } }));
+			mini_format(tag_adpcm, 1, 8000, 0, false), block } }));
 
 		CHECK(bank.waves[0].samples[0] == 0);
 		CHECK(bank.waves[0].samples[1] == -1);
@@ -364,9 +364,9 @@ TEST_CASE("MS-ADPCM arithmetic, one block at a time")
 	SUBCASE("a prediction past full scale clamps")
 	{
 		const std::vector<unsigned char> block =
-			adpcm_block(0, 1000, 32000, 0, { 0x78 }, MONO_BLOCK);
+			adpcm_block(0, 1000, 32000, 0, { 0x78 }, mono_block);
 		const WaveBankData bank = read_bank(build_bank({ { "a",
-			mini_format(ADPCM, 1, 8000, 0, false), block } }));
+			mini_format(tag_adpcm, 1, 8000, 0, false), block } }));
 
 		CHECK(bank.waves[0].samples[2] == 32767);
 		// -8 steps of 1000 * 614 / 256 = 2398 from the clamped value.
@@ -386,10 +386,10 @@ TEST_CASE("MS-ADPCM arithmetic, one block at a time")
 			block.push_back(static_cast<unsigned char>(bits >> 8));
 		}
 		block.push_back(0x1F);
-		block.resize(2 * MONO_BLOCK, 0);
+		block.resize(2 * mono_block, 0);
 
 		const WaveBankData bank = read_bank(build_bank({ { "a",
-			mini_format(ADPCM, 2, 8000, 0, false), block } }));
+			mini_format(tag_adpcm, 2, 8000, 0, false), block } }));
 		const WaveData& wave = bank.waves[0];
 
 		REQUIRE(wave.frames() == 32);
@@ -400,8 +400,8 @@ TEST_CASE("MS-ADPCM arithmetic, one block at a time")
 
 	SUBCASE("the duration trims the last block's padding")
 	{
-		Entry entry = { "a", mini_format(ADPCM, 1, 8000, 0, false),
-			adpcm_block(0, 16, 0, 0, {}, MONO_BLOCK) };
+		Entry entry = { "a", mini_format(tag_adpcm, 1, 8000, 0, false),
+			adpcm_block(0, 16, 0, 0, {}, mono_block) };
 		entry.duration = 5;
 		CHECK(read_bank(build_bank({ entry })).waves[0].frames() == 5);
 
@@ -411,10 +411,10 @@ TEST_CASE("MS-ADPCM arithmetic, one block at a time")
 	}
 }
 
-TEST_CASE("eight-bit PCM widens to sixteen exactly")
+TEST_CASE("eight-bit tag_pcm widens to sixteen exactly")
 {
 	const WaveBankData bank = read_bank(build_bank({ { "a",
-		mini_format(PCM, 2, 11025, 2, false), { 0, 128, 255, 64 } } }));
+		mini_format(tag_pcm, 2, 11025, 2, false), { 0, 128, 255, 64 } } }));
 	const WaveData& wave = bank.waves[0];
 
 	CHECK(wave.encoding == WaveEncoding::pcm8);
@@ -426,9 +426,9 @@ TEST_CASE("eight-bit PCM widens to sixteen exactly")
 
 TEST_CASE("entries are found by offset, carry their loop, and may be unnamed")
 {
-	Entry first = { "first", mini_format(PCM, 1, 8000, 2, true),
+	Entry first = { "first", mini_format(tag_pcm, 1, 8000, 2, true),
 		{ 1, 0, 2, 0 } };
-	Entry second = { "second", mini_format(PCM, 1, 8000, 2, true),
+	Entry second = { "second", mini_format(tag_pcm, 1, 8000, 2, true),
 		{ 3, 0, 4, 0, 5, 0 } };
 	second.loop_start = 1;
 	second.loop_length = 2;
@@ -458,7 +458,7 @@ TEST_CASE("entries are found by offset, carry their loop, and may be unnamed")
 
 TEST_CASE("a bank this engine cannot play says which way")
 {
-	const Entry pcm = { "tone", mini_format(PCM, 1, 8000, 2, true),
+	const Entry pcm = { "tone", mini_format(tag_pcm, 1, 8000, 2, true),
 		{ 1, 0, 2, 0 } };
 
 	SUBCASE("nothing there")
@@ -518,18 +518,18 @@ TEST_CASE("a bank this engine cannot play says which way")
 
 	SUBCASE("xWMA")
 	{
-		const Entry wma = { "music", mini_format(WMA, 2, 44100, 0, false),
+		const Entry wma = { "music", mini_format(tag_wma, 2, 44100, 0, false),
 			{ 0, 0, 0, 0 } };
 		const std::string message = refusal(build_bank({ pcm, wma }));
 		CHECK(contains(message, "xWMA"));
 		CHECK(contains(message, "entry 1 (\"music\")"));
 	}
 
-	SUBCASE("XMA")
+	SUBCASE("tag_xma")
 	{
-		const Entry xma = { "music", mini_format(XMA, 2, 44100, 0, false),
+		const Entry xma = { "music", mini_format(tag_xma, 2, 44100, 0, false),
 			{ 0, 0, 0, 0 } };
-		CHECK(contains(refusal(build_bank({ xma })), "XMA"));
+		CHECK(contains(refusal(build_bank({ xma })), "tag_xma"));
 	}
 
 	SUBCASE("a play region past the wave data")
@@ -549,34 +549,34 @@ TEST_CASE("a bank this engine cannot play says which way")
 		CHECK(contains(refusal(build_bank({ looped })), "loops frames 1 to 3"));
 	}
 
-	SUBCASE("PCM whose block alignment disagrees with its format")
+	SUBCASE("tag_pcm whose block alignment disagrees with its format")
 	{
-		const Entry wrong = { "tone", mini_format(PCM, 2, 8000, 2, true),
+		const Entry wrong = { "tone", mini_format(tag_pcm, 2, 8000, 2, true),
 			{ 1, 0, 2, 0 } };
 		CHECK(contains(refusal(build_bank({ wrong })), "block alignment"));
 	}
 
-	SUBCASE("MS-ADPCM that stops part way through a block")
+	SUBCASE("MS-tag_adpcm that stops part way through a block")
 	{
 		std::vector<unsigned char> block =
-			adpcm_block(0, 16, 0, 0, {}, MONO_BLOCK);
+			adpcm_block(0, 16, 0, 0, {}, mono_block);
 		block.pop_back();
-		const Entry part = { "tone", mini_format(ADPCM, 1, 8000, 0, false),
+		const Entry part = { "tone", mini_format(tag_adpcm, 1, 8000, 0, false),
 			block };
 		CHECK(contains(refusal(build_bank({ part })), "whole number"));
 	}
 
-	SUBCASE("MS-ADPCM naming a predictor that does not exist")
+	SUBCASE("MS-tag_adpcm naming a predictor that does not exist")
 	{
-		const Entry bad = { "tone", mini_format(ADPCM, 1, 8000, 0, false),
-			adpcm_block(7, 16, 0, 0, {}, MONO_BLOCK) };
+		const Entry bad = { "tone", mini_format(tag_adpcm, 1, 8000, 0, false),
+			adpcm_block(7, 16, 0, 0, {}, mono_block) };
 		CHECK(contains(refusal(build_bank({ bad })), "predictor 7"));
 	}
 
-	SUBCASE("MS-ADPCM in more than two channels")
+	SUBCASE("MS-tag_adpcm in more than two channels")
 	{
-		const Entry wide = { "tone", mini_format(ADPCM, 3, 8000, 0, false),
-			std::vector<unsigned char>(3 * MONO_BLOCK, 0) };
+		const Entry wide = { "tone", mini_format(tag_adpcm, 3, 8000, 0, false),
+			std::vector<unsigned char>(3 * mono_block, 0) };
 		CHECK(contains(refusal(build_bank({ wide })), "3 channels"));
 	}
 }

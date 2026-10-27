@@ -30,7 +30,7 @@ namespace
 	constexpr int unverified_exit = 2;
 	constexpr uint64_t completion_timeout_ns = 5'000'000'000;
 	constexpr std::array<int, 4> sprite_counts{ 1, 64, 256, 1024 };
-	static_assert(DeviceResources::FRAME_COUNT == 2);
+	static_assert(DeviceResources::frame_count == 2);
 
 	[[noreturn]] void fail_fast(const char* operation, VkResult result) noexcept
 	{
@@ -172,7 +172,7 @@ namespace
 		{
 			renderer.view(0).draw_sprite(texture, RectangleI(0, 0, 2, 2),
 				RectangleF(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
-				Colour::white, 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				Colour::white, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 		}
 		renderer.submit();
 		if (presentation != nullptr)

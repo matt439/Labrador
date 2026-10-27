@@ -12,31 +12,31 @@ using namespace labrador;
 
 TEST_SUITE("Triangle")
 {
-	TEST_CASE("a triangle's angles are its interior angles, and they sum to PI")
+	TEST_CASE("a triangle's angles are its interior angles, and they sum to pi")
 	{
 		// They were taken between the two edge directions meeting at each
-		// vertex, which is PI minus the interior angle - so an equilateral
+		// vertex, which is pi minus the interior angle - so an equilateral
 		// triangle reported three 120-degree corners and angles() summed
-		// to 2*PI. A right angle is its own supplement, which is why the
+		// to 2*pi. A right angle is its own supplement, which is why the
 		// only consumer never noticed.
 		const Triangle right(Point2F(0.0f, 0.0f), Point2F(0.0f, 10.0f),
 			Point2F(10.0f, 0.0f));
 
-		CHECK(are_equal(right.angle_0(), PI_OVER_2));
-		CHECK(are_equal(right.angle_1(), PI / 4.0f));
-		CHECK(are_equal(right.angle_2(), PI / 4.0f));
+		CHECK(are_equal(right.angle_0(), pi_over_2));
+		CHECK(are_equal(right.angle_1(), pi / 4.0f));
+		CHECK(are_equal(right.angle_2(), pi / 4.0f));
 
 		CHECK(are_equal(right.angle_0() + right.angle_1() + right.angle_2(),
-			PI));
+			pi));
 
 		// Equilateral: 60 degrees at every corner, not 120.
 		const float height = 10.0f * std::sqrt(3.0f) / 2.0f;
 		const Triangle equilateral(Point2F(0.0f, 0.0f),
 			Point2F(10.0f, 0.0f), Point2F(5.0f, height));
 
-		CHECK(are_equal(equilateral.angle_0(), PI / 3.0f));
-		CHECK(are_equal(equilateral.angle_1(), PI / 3.0f));
-		CHECK(are_equal(equilateral.angle_2(), PI / 3.0f));
+		CHECK(are_equal(equilateral.angle_0(), pi / 3.0f));
+		CHECK(are_equal(equilateral.angle_1(), pi / 3.0f));
+		CHECK(are_equal(equilateral.angle_2(), pi / 3.0f));
 	}
 	TEST_CASE("the hypotenuse is the side opposite the right angle, not the one beside it")
 	{
@@ -61,7 +61,7 @@ TEST_SUITE("Triangle")
 	}
 	TEST_CASE("a default Triangle contains nothing, and collides with nothing")
 	{
-		// Triangle() is three copies of Vector2F::ZERO, and its
+		// Triangle() is three copies of Vector2F::zero, and its
 		// constructor validates nothing - narrow_phase.h says so in
 		// writing and guards itself accordingly. Every edge vector is
 		// (0, 0), so every signed area is exactly zero, and a predicate
@@ -72,7 +72,7 @@ TEST_SUITE("Triangle")
 		const Triangle degenerate;
 
 		CHECK_FALSE(triangle_point_intersect(degenerate, Point2F(1000.0f, 1000.0f)));
-		CHECK_FALSE(triangle_point_intersect(degenerate, Point2F::ZERO));
+		CHECK_FALSE(triangle_point_intersect(degenerate, Point2F::zero));
 
 		// Deliberately away from the origin. A real triangle with a vertex
 		// AT the origin genuinely touches the degenerate one, and would

@@ -24,9 +24,9 @@ namespace labrador
 		// PHILOSOPHY's performance section names outright.
 		struct Polygon
 		{
-			static constexpr int MAX_POINTS = 4;
+			static constexpr int max_points = 4;
 
-			Vector2F points[MAX_POINTS];
+			Vector2F points[max_points];
 			int count = 0;
 
 			// The candidate axes this shape contributes: its edge normals,
@@ -41,7 +41,7 @@ namespace labrador
 			// win the strict comparison in narrow_phase, and dropping it costs
 			// nothing and saves half the work on the pair type that is
 			// essentially all of this game's collision traffic.
-			Vector2F axes[MAX_POINTS];
+			Vector2F axes[max_points];
 			int axis_count = 0;
 		};
 
@@ -221,7 +221,7 @@ namespace labrador
 			bool separated = true;
 			// Signed so the caller does not have to guess which way to point
 			// the normal: the axis, flipped if `a` is the one further along it.
-			Vector2F normal = Vector2F::ZERO;
+			Vector2F normal = Vector2F::zero;
 			float penetration = 0.0f;
 		};
 
@@ -324,7 +324,7 @@ namespace labrador
 			}
 		}
 
-		if (least.normal == Vector2F::ZERO)
+		if (least.normal == Vector2F::zero)
 		{
 			// Every edge was degenerate, so neither shape has an interior.
 			return std::nullopt;

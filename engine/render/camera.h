@@ -16,14 +16,14 @@ namespace labrador
 	// Viewport, which is a render type for the same reason.
 	struct Camera
 	{
-		Vector2F translation = Vector2F::ZERO;
+		Vector2F translation = Vector2F::zero;
 		float scale = 1.0f;
 
 		Camera() = default;
 		Camera(const Camera&) = default;
 		Camera& operator=(const Camera&) = default;
 		Camera(const Vector2F& translation, float scale);
-		// constexpr and defined here so DEFAULT_CAMERA is constant-initialised
+		// constexpr and defined here so default_camera is constant-initialised
 		// (camera.cpp defines it constinit), and a static in another
 		// translation unit that copies it can never read it before it is set.
 		constexpr Camera(float x, float y, float scale) :
@@ -119,6 +119,6 @@ namespace labrador
 
 		// The identity camera: zero translation and unit scale, suitable for
 		// screen-space drawing in a view. Constant-initialised before use.
-		static const Camera DEFAULT_CAMERA;
+		static const Camera default_camera;
 	};
 }

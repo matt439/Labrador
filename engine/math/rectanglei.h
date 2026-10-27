@@ -17,7 +17,7 @@ namespace labrador
 		RectangleI() = default;
 		RectangleI(const RectangleI&) = default;
 		RectangleI& operator=(const RectangleI&) = default;
-		// constexpr and defined here so ZERO is constant-initialised. See
+		// constexpr and defined here so zero is constant-initialised. See
 		// Vector2F's constants for what the dynamic alternative risks.
 		constexpr RectangleI(int x, int y, int width, int height) :
 			x(x), y(y), width(width), height(height) {}
@@ -60,6 +60,6 @@ namespace labrador
 		void set_top_left_and_bottom_right(const Vector2I& top_left,
 			const Vector2I& bottom_right);
 
-		static const RectangleI ZERO;
+		static const RectangleI zero;
 	};
 }

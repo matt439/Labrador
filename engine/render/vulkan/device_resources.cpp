@@ -37,7 +37,7 @@ namespace labrador
 		// whole of this file's synchronisation would stop being D3D12's
 		// transliterated. If the tier a port targets turns out to include those
 		// devices, that is the work - not a smaller edit here.
-		const uint32_t MIN_API_VERSION = VK_API_VERSION_1_2;
+		const uint32_t min_api_version = VK_API_VERSION_1_2;
 
 		// How many descriptor sets one pool holds. A set is one run - one
 		// texture, one filter, one viewport - and a frame that wants more takes
@@ -45,11 +45,11 @@ namespace labrador
 		// and is not load-bearing in either direction: too small costs one
 		// allocation on the first frame that needs it, too large costs a few
 		// kilobytes that are never touched.
-		const uint32_t SETS_PER_POOL = 64;
+		const uint32_t sets_per_pool = 64;
 
 		// What the swapchain must be able to be the destination of, because the
 		// frame is blitted into it rather than drawn into it.
-		const VkImageUsageFlags SWAPCHAIN_USAGE =
+		const VkImageUsageFlags swapchain_usage =
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -82,7 +82,7 @@ namespace labrador
 			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
 				// READ AS WELL AS WRITE, because the blend equation reads what
 				// is already there - the destination factor is
-				// ONE_MINUS_SRC_ALPHA and not ZERO, which is a term
+				// ONE_MINUS_SRC_ALPHA and not zero, which is a term
 				// RenderPixelTests pins by name.
 				return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
 					VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
@@ -458,7 +458,7 @@ namespace labrador
 		application.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		application.pEngineName = "Labrador";
 		application.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		application.apiVersion = MIN_API_VERSION;
+		application.apiVersion = min_api_version;
 
 		std::vector<const char*> extensions;
 		extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -571,7 +571,7 @@ namespace labrador
 			VkPhysicalDeviceProperties properties = {};
 			vkGetPhysicalDeviceProperties(candidate, &properties);
 
-			if (properties.apiVersion < MIN_API_VERSION)
+			if (properties.apiVersion < min_api_version)
 			{
 				refusals += std::string("\n  ") + properties.deviceName +
 					": Vulkan " +
@@ -723,7 +723,7 @@ namespace labrador
 		// call and lets the driver reuse the block; the per-buffer reset flag
 		// asks it to track buffers individually instead, and buys nothing here
 		// because nothing here ever resets one buffer on its own.
-		for (int i = 0; i < FRAME_COUNT; i++)
+		for (int i = 0; i < frame_count; i++)
 		{
 			Frame& frame = this->frames_[static_cast<size_t>(i)];
 
@@ -769,7 +769,7 @@ namespace labrador
 
 		VkDevice device = this->owner_->device;
 
-		for (int i = 0; i < FRAME_COUNT; i++)
+		for (int i = 0; i < frame_count; i++)
 		{
 			Frame& frame = this->frames_[static_cast<size_t>(i)];
 
@@ -1158,7 +1158,7 @@ namespace labrador
 		description.imageColorSpace = chosen.colorSpace;
 		description.imageExtent = extent;
 		description.imageArrayLayers = 1;
-		description.imageUsage = SWAPCHAIN_USAGE;
+		description.imageUsage = swapchain_usage;
 		description.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		description.preTransform = capabilities.currentTransform;
 		description.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -1691,7 +1691,7 @@ namespace labrador
 				return;
 			}
 
-			this->frame_index_ = (this->frame_index_ + 1) % FRAME_COUNT;
+			this->frame_index_ = (this->frame_index_ + 1) % frame_count;
 			return;
 		}
 
@@ -1722,7 +1722,7 @@ namespace labrador
 				if (this->execute())
 				{
 					this->frame_index_ =
-						(this->frame_index_ + 1) % FRAME_COUNT;
+						(this->frame_index_ + 1) % frame_count;
 				}
 				return;
 			}
@@ -1880,7 +1880,7 @@ namespace labrador
 			check_vk(presented, "The frame could not be presented");
 		}
 
-		this->frame_index_ = (this->frame_index_ + 1) % FRAME_COUNT;
+		this->frame_index_ = (this->frame_index_ + 1) % frame_count;
 	}
 
 	// --- The timeline ---------------------------------------------------------
@@ -2026,7 +2026,7 @@ namespace labrador
 		// VK_ERROR_OUT_OF_POOL_MEMORY is the other way to write this and is
 		// worse in the direction that matters: a driver refusing for any other
 		// reason turns the retry into a spin.
-		if (frame.descriptor_sets_taken >= SETS_PER_POOL &&
+		if (frame.descriptor_sets_taken >= sets_per_pool &&
 			!frame.descriptor_pools.empty())
 		{
 			frame.descriptor_pool_in_use++;
@@ -2041,15 +2041,15 @@ namespace labrador
 		{
 			const VkDescriptorPoolSize sizes[] =
 			{
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SETS_PER_POOL },
-				{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, SETS_PER_POOL },
-				{ VK_DESCRIPTOR_TYPE_SAMPLER, SETS_PER_POOL },
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, sets_per_pool },
+				{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sets_per_pool },
+				{ VK_DESCRIPTOR_TYPE_SAMPLER, sets_per_pool },
 			};
 
 			VkDescriptorPoolCreateInfo description = {};
 			description.sType =
 				VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			description.maxSets = SETS_PER_POOL;
+			description.maxSets = sets_per_pool;
 			description.poolSizeCount = 3;
 			description.pPoolSizes = sizes;
 

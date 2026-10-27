@@ -18,7 +18,7 @@ namespace render_tests
 
 	namespace
 	{
-		const wchar_t* const CLASS_NAME = L"LabradorRenderTestWindow";
+		const wchar_t* const class_name = L"LabradorRenderTestWindow";
 
 		bool register_class()
 		{
@@ -28,7 +28,7 @@ namespace render_tests
 					window_class.cbSize = sizeof(WNDCLASSEXW);
 					window_class.lpfnWndProc = DefWindowProcW;
 					window_class.hInstance = GetModuleHandleW(nullptr);
-					window_class.lpszClassName = CLASS_NAME;
+					window_class.lpszClassName = class_name;
 					return RegisterClassExW(&window_class);
 				}();
 			return atom != 0;
@@ -44,7 +44,7 @@ namespace render_tests
 				"The render tests' window class would not register.");
 		}
 
-		this->impl_->window = CreateWindowExW(0, CLASS_NAME, L"render tests",
+		this->impl_->window = CreateWindowExW(0, class_name, L"render tests",
 			WS_POPUP, 0, 0, width, height, nullptr, nullptr,
 			GetModuleHandleW(nullptr), nullptr);
 		if (this->impl_->window == nullptr)

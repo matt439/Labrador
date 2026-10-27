@@ -75,7 +75,7 @@ namespace labrador
 		float length = this->length();
 		if (length == 0.0f)
 		{
-			return Vector2F::ZERO;
+			return Vector2F::zero;
 		}
 		return Vector2F(this->x / length, this->y / length);
 	}
@@ -133,7 +133,7 @@ namespace labrador
 			// reason, and it beats dividing by nothing and returning NaN,
 			// because NaN travels. Triangle::angle_0/1/2 feed
 			// TriangleRightAxisAligned::find_hypotenuse, where every
-			// are_equal(NaN, PI_OVER_2) is false, so find_hypotenuse answers
+			// are_equal(NaN, pi_over_2) is false, so find_hypotenuse answers
 			// -1 and hypotenuse() throws "Triangle is not a right triangle" -
 			// about a triangle that is one, two call levels from the actual
 			// fault.
@@ -211,14 +211,14 @@ namespace labrador
 	// it. The constructor is constexpr and the arguments are literals, so
 	// none of these exists at all before main - there is no dynamic
 	// initialisation for another translation unit to run ahead of.
-	constinit const Vector2F Vector2F::ZERO = { 0.0f, 0.0f };
-	constinit const Vector2F Vector2F::ONE = { 1.0f, 1.0f };
-	constinit const Vector2F Vector2F::DIRECTION_RIGHT = { 1.0f, 0.0f };
-	constinit const Vector2F Vector2F::DIRECTION_DOWN = { 0.0f, 1.0f };
-	constinit const Vector2F Vector2F::DIRECTION_LEFT = { -1.0f, 0.0f };
-	constinit const Vector2F Vector2F::DIRECTION_UP = { 0.0f, -1.0f };
-	// Written out rather than derived. unit_vector(DIRECTION_UP +
-	// DIRECTION_RIGHT) is a function call and a square root, and neither is
+	constinit const Vector2F Vector2F::zero = { 0.0f, 0.0f };
+	constinit const Vector2F Vector2F::one = { 1.0f, 1.0f };
+	constinit const Vector2F Vector2F::direction_right = { 1.0f, 0.0f };
+	constinit const Vector2F Vector2F::direction_down = { 0.0f, 1.0f };
+	constinit const Vector2F Vector2F::direction_left = { -1.0f, 0.0f };
+	constinit const Vector2F Vector2F::direction_up = { 0.0f, -1.0f };
+	// Written out rather than derived. unit_vector(direction_up +
+	// direction_right) is a function call and a square root, and neither is
 	// a constant expression - std::sqrt is not constexpr here - so a diagonal
 	// spelt that way would not pass constinit. Without constinit it would be
 	// worse than a compile error: it would read the four cardinal constants
@@ -229,12 +229,12 @@ namespace labrador
 	// square root produced.
 	namespace
 	{
-		constexpr float ROOT_HALF = 0.70710678f;
+		constexpr float root_half = 0.70710678f;
 	}
-	constinit const Vector2F Vector2F::DIRECTION_UP_RIGHT = { ROOT_HALF, -ROOT_HALF };
-	constinit const Vector2F Vector2F::DIRECTION_DOWN_RIGHT = { ROOT_HALF, ROOT_HALF };
-	constinit const Vector2F Vector2F::DIRECTION_DOWN_LEFT = { -ROOT_HALF, ROOT_HALF };
-	constinit const Vector2F Vector2F::DIRECTION_UP_LEFT = { -ROOT_HALF, -ROOT_HALF };
+	constinit const Vector2F Vector2F::direction_up_right = { root_half, -root_half };
+	constinit const Vector2F Vector2F::direction_down_right = { root_half, root_half };
+	constinit const Vector2F Vector2F::direction_down_left = { -root_half, root_half };
+	constinit const Vector2F Vector2F::direction_up_left = { -root_half, -root_half };
 
 
 	Vector2F operator- (const Vector2F& V)

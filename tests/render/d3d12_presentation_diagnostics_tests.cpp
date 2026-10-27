@@ -22,8 +22,8 @@ namespace
 
 	constexpr int initial_size = 64;
 	constexpr int resized_size = 32;
-	constexpr int presented_frames = DeviceResources::FRAME_COUNT * 2 + 2;
-	using SlotVisits = std::array<int, DeviceResources::FRAME_COUNT>;
+	constexpr int presented_frames = DeviceResources::frame_count * 2 + 2;
+	using SlotVisits = std::array<int, DeviceResources::frame_count>;
 
 	struct Fixture
 	{
@@ -150,7 +150,7 @@ namespace
 			renderer.begin_frame();
 			const int slot = renderer.impl()->device_resources.frame_index();
 			REQUIRE(slot >= 0);
-			REQUIRE(slot < DeviceResources::FRAME_COUNT);
+			REQUIRE(slot < DeviceResources::frame_count);
 			++visits[static_cast<size_t>(slot)];
 			renderer.set_view_count(2);
 			for (int view = 0; view < 2; ++view)
@@ -163,7 +163,7 @@ namespace
 						RectangleF(static_cast<float>((sprite + frame) % 8) * 2.0f,
 							static_cast<float>((sprite / 8 + view) % 8) * 2.0f, 2.0f, 2.0f),
 						frame % 2 == 0 ? Colour::red : Colour::blue,
-						0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+						0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 				}
 			}
 			renderer.submit();

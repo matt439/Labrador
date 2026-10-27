@@ -121,7 +121,7 @@ namespace
 		void draw(DrawList& list) const override
 		{
 			list.draw_sprite(this->texture_, RectangleI(0, 0, 2, 2),
-				this->rectangle_, Colour::white, 0.0f, Vector2F::ZERO,
+				this->rectangle_, Colour::white, 0.0f, Vector2F::zero,
 				SpriteFlip::none, 0.0f);
 		}
 
@@ -321,7 +321,7 @@ TEST_CASE("a drawable reads its own view's camera and viewport, serial or fanned
 				pane.width / 1000.0f, 1.0f);
 			list.draw_sprite(this->texture_, RectangleI(0, 0, 2, 2),
 				RectangleF(0.0f, 0.0f, 8.0f, 8.0f), reading, 0.0f,
-				Vector2F::ZERO, SpriteFlip::none, 0.0f);
+				Vector2F::zero, SpriteFlip::none, 0.0f);
 		}
 
 		RectangleF bounds() const override

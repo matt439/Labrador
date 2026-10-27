@@ -76,7 +76,7 @@
 //
 // TEXT IS PINNED BY THE SECOND HALF OF THIS FILE, and it is pinned as
 // relationships rather than as colours. A sprite case above can assert that one
-// pixel is exactly RED because the test texture has four flat texels in it. A
+// pixel is exactly red_pixel because the test texture has four flat texels in it. A
 // glyph has neither property: its edges are anti-aliased, and the atlas a
 // .spritefont carries is block-compressed, so the coverage value at any one
 // pixel is a fact about the compressor. What a caller actually depends on is
@@ -114,7 +114,7 @@ namespace
 	using namespace labrador;
 	using namespace labrador;
 
-	constexpr int BUFFER_SIZE = 64;
+	constexpr int buffer_side = 64;
 
 	struct Pixel
 	{
@@ -140,11 +140,11 @@ namespace
 			<< ", " << static_cast<int>(pixel.a) << ")";
 	}
 
-	constexpr Pixel BLACK{ 0, 0, 0, 255 };
-	constexpr Pixel RED{ 255, 0, 0, 255 };
-	constexpr Pixel GREEN{ 0, 255, 0, 255 };
-	constexpr Pixel BLUE{ 0, 0, 255, 255 };
-	constexpr Pixel WHITE{ 255, 255, 255, 255 };
+	constexpr Pixel black_pixel{ 0, 0, 0, 255 };
+	constexpr Pixel red_pixel{ 255, 0, 0, 255 };
+	constexpr Pixel green_pixel{ 0, 255, 0, 255 };
+	constexpr Pixel blue_pixel{ 0, 0, 255, 255 };
+	constexpr Pixel white_pixel{ 255, 255, 255, 255 };
 
 	// Two by two, one colour, one level. For the case that cares which bytes a
 	// name is holding rather than what an atlas looks like.
@@ -293,8 +293,8 @@ namespace
 			// one, no multi-view path - D3D11's per-view deferred contexts,
 			// GL's per-view record-and-replay, view order against call order -
 			// would reach a rasteriser.
-			this->renderer_.create_device(this->window_.handle(), BUFFER_SIZE,
-				BUFFER_SIZE, 4);
+			this->renderer_.create_device(this->window_.handle(), buffer_side,
+				buffer_side, 4);
 			this->renderer_.set_resources(&this->resources_);
 
 			// content/ is copied beside the executable by this folder's
@@ -412,7 +412,7 @@ namespace
 		}
 
 		// What the last end() read back, and how big the renderer said it was.
-		// Every case except the three that resize knows both are BUFFER_SIZE;
+		// Every case except the three that resize knows both are buffer_side;
 		// at() goes through the reported width anyway so that the three which
 		// do not can be written in the same vocabulary as the rest.
 		Vector2F buffer_size() const { return this->buffer_; }
@@ -442,10 +442,10 @@ namespace
 		std::vector<Pixel> snapshot() const
 		{
 			std::vector<Pixel> frame;
-			frame.reserve(BUFFER_SIZE * BUFFER_SIZE);
-			for (int y = 0; y < BUFFER_SIZE; y++)
+			frame.reserve(buffer_side * buffer_side);
+			for (int y = 0; y < buffer_side; y++)
 			{
-				for (int x = 0; x < BUFFER_SIZE; x++)
+				for (int x = 0; x < buffer_side; x++)
 				{
 					frame.push_back(this->at(x, y));
 				}
@@ -460,16 +460,16 @@ namespace
 		// itself an assertion two of the cases make.
 		RectangleI ink_bounds() const
 		{
-			int left = BUFFER_SIZE;
-			int top = BUFFER_SIZE;
+			int left = buffer_side;
+			int top = buffer_side;
 			int right = -1;
 			int bottom = -1;
 
-			for (int y = 0; y < BUFFER_SIZE; y++)
+			for (int y = 0; y < buffer_side; y++)
 			{
-				for (int x = 0; x < BUFFER_SIZE; x++)
+				for (int x = 0; x < buffer_side; x++)
 				{
-					if (this->at(x, y) == BLACK)
+					if (this->at(x, y) == black_pixel)
 					{
 						continue;
 					}
@@ -482,7 +482,7 @@ namespace
 
 			if (right < 0)
 			{
-				return RectangleI::ZERO;
+				return RectangleI::zero;
 			}
 			// Right and bottom are exclusive here, as they are everywhere else
 			// in this file - RectangleI is (x, y, width, height).
@@ -491,9 +491,9 @@ namespace
 
 		bool row_has_ink(int y) const
 		{
-			for (int x = 0; x < BUFFER_SIZE; x++)
+			for (int x = 0; x < buffer_side; x++)
 			{
-				if (!(this->at(x, y) == BLACK))
+				if (!(this->at(x, y) == black_pixel))
 				{
 					return true;
 				}
@@ -532,7 +532,7 @@ namespace
 		// FIRST, SO IT IS THE LAST TO GO. The device was made on it, and a
 		// context outliving the window or canvas it draws into is a state no
 		// backend is written for.
-		render_tests::TestWindow window_{ BUFFER_SIZE, BUFFER_SIZE };
+		render_tests::TestWindow window_{ buffer_side, buffer_side };
 
 		// THE TABLE BEFORE THE RENDERER, so it dies after one:
 		// render_resources.h states it as a term of the seam. A sequence that
@@ -541,30 +541,30 @@ namespace
 		RenderResources resources_;
 		Renderer renderer_;
 		std::vector<unsigned char> pixels_;
-		Vector2F buffer_ = Vector2F(static_cast<float>(BUFFER_SIZE),
-			static_cast<float>(BUFFER_SIZE));
+		Vector2F buffer_ = Vector2F(static_cast<float>(buffer_side),
+			static_cast<float>(buffer_side));
 	};
 
 	void check_red_and_blue_frame(const Harness& harness,
 		const RectangleI& red, const RectangleI& blue)
 	{
-		const float size = static_cast<float>(BUFFER_SIZE);
+		const float size = static_cast<float>(buffer_side);
 		REQUIRE(harness.buffer_size() == Vector2F(size, size));
-		REQUIRE(harness.byte_count() == BUFFER_SIZE * BUFFER_SIZE * 4);
-		for (int y = 0; y < BUFFER_SIZE; ++y)
+		REQUIRE(harness.byte_count() == buffer_side * buffer_side * 4);
+		for (int y = 0; y < buffer_side; ++y)
 		{
-			for (int x = 0; x < BUFFER_SIZE; ++x)
+			for (int x = 0; x < buffer_side; ++x)
 			{
-				Pixel expected = BLACK;
+				Pixel expected = black_pixel;
 				if (x >= red.x && x < red.x + red.width &&
 					y >= red.y && y < red.y + red.height)
 				{
-					expected = RED;
+					expected = red_pixel;
 				}
 				if (x >= blue.x && x < blue.x + blue.width &&
 					y >= blue.y && y < blue.y + blue.height)
 				{
-					expected = BLUE;
+					expected = blue_pixel;
 				}
 				CHECK_MESSAGE(harness.at(x, y) == expected,
 					"pixel (", x, ", ", y, ") should be ", expected);
@@ -622,9 +622,9 @@ TEST_CASE("a frame nobody drew into is cleared to opaque black")
 	std::ignore = harness.begin();
 	harness.end();
 
-	CHECK(harness.at(0, 0) == BLACK);
-	CHECK(harness.at(BUFFER_SIZE / 2, BUFFER_SIZE / 2) == BLACK);
-	CHECK(harness.at(BUFFER_SIZE - 1, BUFFER_SIZE - 1) == BLACK);
+	CHECK(harness.at(0, 0) == black_pixel);
+	CHECK(harness.at(buffer_side / 2, buffer_side / 2) == black_pixel);
+	CHECK(harness.at(buffer_side - 1, buffer_side - 1) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: the destination is in pixels, y runs down, origin top left")
@@ -634,16 +634,16 @@ TEST_CASE("CONTRACT: the destination is in pixels, y runs down, origin top left"
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// A 4x4 sprite at the origin covers the top-left corner and nothing else.
-	CHECK(harness.at(0, 0) == WHITE);
-	CHECK(harness.at(3, 3) == WHITE);
-	CHECK(harness.at(4, 4) == BLACK);
+	CHECK(harness.at(0, 0) == white_pixel);
+	CHECK(harness.at(3, 3) == white_pixel);
+	CHECK(harness.at(4, 4) == black_pixel);
 
 	// If y ran up, this is where it would be instead.
-	CHECK(harness.at(2, BUFFER_SIZE - 2) == BLACK);
+	CHECK(harness.at(2, buffer_side - 2) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: texel (0,0) draws at the top left of the destination")
@@ -653,15 +653,15 @@ TEST_CASE("CONTRACT: texel (0,0) draws at the top left of the destination")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// The single assertion a y-inverted texture coordinate fails, and the
 	// reason the test texture has four different corners.
-	CHECK(harness.at(2, 2) == RED);
-	CHECK(harness.at(6, 2) == GREEN);
-	CHECK(harness.at(2, 6) == BLUE);
-	CHECK(harness.at(6, 6) == WHITE);
+	CHECK(harness.at(2, 2) == red_pixel);
+	CHECK(harness.at(6, 2) == green_pixel);
+	CHECK(harness.at(2, 6) == blue_pixel);
+	CHECK(harness.at(6, 6) == white_pixel);
 }
 
 TEST_CASE("CONTRACT: flip mirrors the texture, not the destination rectangle")
@@ -673,13 +673,13 @@ TEST_CASE("CONTRACT: flip mirrors the texture, not the destination rectangle")
 		DrawList list = harness.begin();
 		list.draw_sprite(harness.quad, Harness::whole(),
 			RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::horizontal, 0.0f);
+			Vector2F::zero, SpriteFlip::horizontal, 0.0f);
 		harness.end();
 
-		CHECK(harness.at(2, 2) == GREEN);
-		CHECK(harness.at(6, 2) == RED);
-		CHECK(harness.at(2, 6) == WHITE);
-		CHECK(harness.at(6, 6) == BLUE);
+		CHECK(harness.at(2, 2) == green_pixel);
+		CHECK(harness.at(6, 2) == red_pixel);
+		CHECK(harness.at(2, 6) == white_pixel);
+		CHECK(harness.at(6, 6) == blue_pixel);
 	}
 
 	SUBCASE("vertical swaps top and bottom, leaving left and right")
@@ -687,13 +687,13 @@ TEST_CASE("CONTRACT: flip mirrors the texture, not the destination rectangle")
 		DrawList list = harness.begin();
 		list.draw_sprite(harness.quad, Harness::whole(),
 			RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::vertical, 0.0f);
+			Vector2F::zero, SpriteFlip::vertical, 0.0f);
 		harness.end();
 
-		CHECK(harness.at(2, 2) == BLUE);
-		CHECK(harness.at(6, 2) == WHITE);
-		CHECK(harness.at(2, 6) == RED);
-		CHECK(harness.at(6, 6) == GREEN);
+		CHECK(harness.at(2, 2) == blue_pixel);
+		CHECK(harness.at(6, 2) == white_pixel);
+		CHECK(harness.at(2, 6) == red_pixel);
+		CHECK(harness.at(6, 6) == green_pixel);
 	}
 
 	SUBCASE("both is the same as one after the other")
@@ -701,13 +701,13 @@ TEST_CASE("CONTRACT: flip mirrors the texture, not the destination rectangle")
 		DrawList list = harness.begin();
 		list.draw_sprite(harness.quad, Harness::whole(),
 			RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::both, 0.0f);
+			Vector2F::zero, SpriteFlip::both, 0.0f);
 		harness.end();
 
-		CHECK(harness.at(2, 2) == WHITE);
-		CHECK(harness.at(6, 2) == BLUE);
-		CHECK(harness.at(2, 6) == GREEN);
-		CHECK(harness.at(6, 6) == RED);
+		CHECK(harness.at(2, 2) == white_pixel);
+		CHECK(harness.at(6, 2) == blue_pixel);
+		CHECK(harness.at(2, 6) == green_pixel);
+		CHECK(harness.at(6, 6) == red_pixel);
 	}
 }
 
@@ -727,21 +727,21 @@ TEST_CASE("CONTRACT: a positive rotation turns the sprite clockwise on screen")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::red_texel(),
 		RectangleF(32.0f, 32.0f, 16.0f, 4.0f), Colour::white, quarter_turn,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// x' = x cos - y sin, y' = x sin + y cos, with y running DOWN the screen -
 	// so +x turns towards +y, which is right turning to down. The bar was
 	// pointing right and now points down, four pixels wide, hanging to the
 	// left of the pivot because its own height went that way.
-	CHECK(harness.at(30, 40) == RED);
-	CHECK(harness.at(30, 46) == RED);
+	CHECK(harness.at(30, 40) == red_pixel);
+	CHECK(harness.at(30, 46) == red_pixel);
 
 	// Where it was before the turn, and where an anticlockwise convention
 	// would have put it. Either being red is a backend that turned the other
 	// way.
-	CHECK(harness.at(40, 34) == BLACK);
-	CHECK(harness.at(30, 24) == BLACK);
+	CHECK(harness.at(40, 34) == black_pixel);
+	CHECK(harness.at(30, 24) == black_pixel);
 
 	// AND THIS IS THE ONLY FRAME IN THE FILE WITH EDGES THAT ARE NOT AXIS
 	// ALIGNED, which is worth more than the four assertions above.
@@ -753,7 +753,7 @@ TEST_CASE("CONTRACT: a positive rotation turns the sprite clockwise on screen")
 	// implementation, and Vulkan specifies it again - so this is a term the
 	// three specifications do NOT agree on, and the golden image is what says
 	// whether the four devices do. They do, and the check has to be byte
-	// identity rather than a passing run: ALLOWED_CHANNEL_DRIFT is 8, which is
+	// identity rather than a passing run: allowed_channel_drift is 8, which is
 	// enough to hide a one-row tie-break disagreement, so what settles it is
 	// regenerating the set on each backend and finding the file unchanged.
 	// All four write this frame byte for byte on this machine's adapter. What
@@ -769,12 +769,12 @@ TEST_CASE("CONTRACT: the source rectangle selects, and is in texels")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::red_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// One texel stretched over the whole destination, so every sample is it.
-	CHECK(harness.at(1, 1) == RED);
-	CHECK(harness.at(6, 6) == RED);
+	CHECK(harness.at(1, 1) == red_pixel);
+	CHECK(harness.at(6, 6) == red_pixel);
 }
 
 TEST_CASE("CONTRACT: a source rectangle outside the texture clamps to the edge texel")
@@ -800,30 +800,30 @@ TEST_CASE("CONTRACT: a source rectangle outside the texture clamps to the edge t
 	// under WRAP the first column would come round again.
 	list.draw_sprite(edge, RectangleI(0, 0, 4, 2),
 		RectangleF(0.0f, 0.0f, 32.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// The texture itself, in the left half: red then green.
-	CHECK(harness.at(3, 8) == RED);
-	CHECK(harness.at(12, 8) == GREEN);
+	CHECK(harness.at(3, 8) == red_pixel);
+	CHECK(harness.at(12, 8) == green_pixel);
 
 	// And the overhang, which is the case. Green all the way to the right
-	// edge; a wrapping sampler answers RED at x=17 and x=28.
-	CHECK(harness.at(17, 8) == GREEN);
-	CHECK(harness.at(28, 8) == GREEN);
-	CHECK(harness.at(31, 8) == GREEN);
+	// edge; a wrapping sampler answers red_pixel at x=17 and x=28.
+	CHECK(harness.at(17, 8) == green_pixel);
+	CHECK(harness.at(28, 8) == green_pixel);
+	CHECK(harness.at(31, 8) == green_pixel);
 
 	// A negative source origin is the same question at the other end.
 	DrawList second = harness.begin();
 	second.draw_sprite(edge, RectangleI(-2, 0, 4, 2),
 		RectangleF(0.0f, 0.0f, 32.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
-	CHECK(harness.at(3, 8) == RED);
-	CHECK(harness.at(12, 8) == RED);
-	CHECK(harness.at(20, 8) == RED);
-	CHECK(harness.at(28, 8) == GREEN);
+	CHECK(harness.at(3, 8) == red_pixel);
+	CHECK(harness.at(12, 8) == red_pixel);
+	CHECK(harness.at(20, 8) == red_pixel);
+	CHECK(harness.at(28, 8) == green_pixel);
 }
 
 TEST_CASE("CONTRACT: a minified draw samples level zero, not the chain")
@@ -848,11 +848,11 @@ TEST_CASE("CONTRACT: a minified draw samples level zero, not the chain")
 		list.set_filter(TextureFilter::point);
 		list.draw_sprite(chained, RectangleI(0, 0, 16, 16),
 			RectangleF(8.0f, 8.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		harness.end();
 
-		CHECK(harness.at(9, 9) == RED);
-		CHECK(harness.at(10, 10) == RED);
+		CHECK(harness.at(9, 9) == red_pixel);
+		CHECK(harness.at(10, 10) == red_pixel);
 	}
 
 	SUBCASE("and under the linear filter")
@@ -861,14 +861,14 @@ TEST_CASE("CONTRACT: a minified draw samples level zero, not the chain")
 		list.set_filter(TextureFilter::linear);
 		list.draw_sprite(chained, RectangleI(0, 0, 16, 16),
 			RectangleF(8.0f, 8.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		harness.end();
 
 		// Level zero is one flat colour, so linear filtering has nothing to
 		// blend towards and the answer is exact rather than approximately red.
 		// That is the whole reason the two levels are flat.
-		CHECK(harness.at(9, 9) == RED);
-		CHECK(harness.at(10, 10) == RED);
+		CHECK(harness.at(9, 9) == red_pixel);
+		CHECK(harness.at(10, 10) == red_pixel);
 	}
 }
 
@@ -879,22 +879,22 @@ TEST_CASE("CONTRACT: the tint multiplies the texel")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour(1.0f, 0.0f, 0.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// White texel, red tint. A tint that replaced rather than multiplied would
 	// give the same answer here, which is why the second draw below puts a
 	// green tint on a red texel.
-	CHECK(harness.at(4, 4) == RED);
+	CHECK(harness.at(4, 4) == red_pixel);
 
 	DrawList second = harness.begin();
 	second.draw_sprite(harness.quad, Harness::red_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour(0.0f, 1.0f, 0.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// Red texel times green tint is black. Replacement would give green.
-	CHECK(harness.at(4, 4) == BLACK);
+	CHECK(harness.at(4, 4) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: the blend equation is premultiplied alpha")
@@ -904,19 +904,19 @@ TEST_CASE("CONTRACT: the blend equation is premultiplied alpha")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour(1.0f, 1.0f, 1.0f, 0.5f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// THE TERM MOST LIKELY TO BE GOT WRONG, and the one a screenshot will not
 	// settle because both answers look plausible.
 	//
-	// The source factor is ONE, not SRC_ALPHA. A white texel under a half-alpha
+	// The source factor is one, not SRC_ALPHA. A white texel under a half-alpha
 	// tint is (1,1,1,0.5) going in, so the result over black is 1*(1,1,1) +
 	// (1-0.5)*(0,0,0) = white. Straight alpha would give mid grey. The engine
 	// therefore expects textures whose colour is already multiplied by their
 	// alpha, and a backend that picks SRC_ALPHA here is wrong even though every
 	// opaque sprite in both samples would still look exactly right.
-	CHECK(harness.at(4, 4) == WHITE);
+	CHECK(harness.at(4, 4) == white_pixel);
 }
 
 TEST_CASE("CONTRACT: a fractional destination truncates, it does not round")
@@ -926,17 +926,17 @@ TEST_CASE("CONTRACT: a fractional destination truncates, it does not round")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(10.9f, 0.0f, 8.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// Left edge 10.9 becomes 10. Rounding would put it at 11 and leave this
 	// pixel black.
-	CHECK(harness.at(9, 2) == BLACK);
-	CHECK(harness.at(10, 2) == WHITE);
+	CHECK(harness.at(9, 2) == black_pixel);
+	CHECK(harness.at(10, 2) == white_pixel);
 
 	// Right edge 18.9 becomes 18, and is exclusive.
-	CHECK(harness.at(17, 2) == WHITE);
-	CHECK(harness.at(18, 2) == BLACK);
+	CHECK(harness.at(17, 2) == white_pixel);
+	CHECK(harness.at(18, 2) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: origin is in unscaled source texels")
@@ -955,10 +955,10 @@ TEST_CASE("CONTRACT: origin is in unscaled source texels")
 	//
 	// If origin were measured in destination pixels the shift would be two, the
 	// sprite would sit at (6,6), and (1,1) would be black.
-	CHECK(harness.at(1, 1) == RED);
-	CHECK(harness.at(6, 1) == GREEN);
-	CHECK(harness.at(1, 6) == BLUE);
-	CHECK(harness.at(8, 8) == BLACK);
+	CHECK(harness.at(1, 1) == red_pixel);
+	CHECK(harness.at(6, 1) == green_pixel);
+	CHECK(harness.at(1, 6) == blue_pixel);
+	CHECK(harness.at(8, 8) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: layer_depth does not order draws, call order does")
@@ -971,18 +971,18 @@ TEST_CASE("CONTRACT: layer_depth does not order draws, call order does")
 	// leave red on top; the batch does not sort, so the later call wins.
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour(1.0f, 0.0f, 0.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour(0.0f, 1.0f, 0.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 1.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 1.0f);
 
 	harness.end();
 
-	// A backend that honoured layer_depth would answer RED here, and that is a
+	// A backend that honoured layer_depth would answer red_pixel here, and that is a
 	// difference in behaviour rather than in rounding - so if depth is ever
 	// made to mean something, this is the test to change deliberately rather
 	// than the one that starts failing.
-	CHECK(harness.at(4, 4) == GREEN);
+	CHECK(harness.at(4, 4) == green_pixel);
 }
 
 TEST_CASE("CONTRACT: a batch longer than one vertex buffer keeps its order")
@@ -1002,36 +1002,36 @@ TEST_CASE("CONTRACT: a batch longer than one vertex buffer keeps its order")
 	// nothing about how many arrived; the last one is drawn somewhere else and
 	// in another colour, so a wrap that dropped the tail, replayed a page
 	// twice, or reordered the two pages is visible.
-	const int SPRITES = 2050;
+	const int sprites = 2050;
 
 	DrawList list = harness.begin();
-	for (int i = 0; i < SPRITES - 1; i++)
+	for (int i = 0; i < sprites - 1; i++)
 	{
 		list.draw_sprite(harness.quad, Harness::red_texel(),
 			RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 	}
 
 	// The 2050th, on the far side of the wrap and on top of the pile, in a
 	// colour nothing before it used.
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(8.0f, 8.0f, 16.0f, 16.0f), Colour(0.0f, 1.0f, 0.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// The pile is there.
-	CHECK(harness.at(2, 2) == RED);
+	CHECK(harness.at(2, 2) == red_pixel);
 
 	// The last sprite is on top of it, which is call order surviving a page
 	// boundary - the thing a backend that flushed pages out of order would
 	// get wrong.
-	CHECK(harness.at(12, 12) == GREEN);
+	CHECK(harness.at(12, 12) == green_pixel);
 
 	// And it is where it was asked for rather than where the first page was:
 	// a wrap that reset the vertex offset without telling the draw call would
 	// put this quad at the pile's position instead.
-	CHECK(harness.at(20, 20) == GREEN);
-	CHECK(harness.at(2, 20) == BLACK);
+	CHECK(harness.at(20, 20) == green_pixel);
+	CHECK(harness.at(2, 20) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: a texture change keeps call order, it does not group runs")
@@ -1061,24 +1061,24 @@ TEST_CASE("CONTRACT: a texture change keeps call order, it does not group runs")
 	// faster one: the last overlap would come out green.
 	list.draw_sprite(red, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	list.draw_sprite(green, Harness::white_texel(),
 		RectangleF(8.0f, 8.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	list.draw_sprite(red, Harness::white_texel(),
 		RectangleF(16.0f, 16.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end();
 
 	// Where only one call reached.
-	CHECK(harness.at(4, 4) == RED);
-	CHECK(harness.at(28, 28) == RED);
+	CHECK(harness.at(4, 4) == red_pixel);
+	CHECK(harness.at(28, 28) == red_pixel);
 
 	// Where the second covered the first, and the third covered the second.
-	// The second of these is the assertion: grouping answers GREEN here.
-	CHECK(harness.at(10, 10) == GREEN);
-	CHECK(harness.at(20, 20) == RED);
+	// The second of these is the assertion: grouping answers green_pixel here.
+	CHECK(harness.at(10, 10) == green_pixel);
+	CHECK(harness.at(20, 20) == red_pixel);
 }
 
 TEST_CASE("CONTRACT: a filter change mid-list applies to what follows it")
@@ -1101,23 +1101,23 @@ TEST_CASE("CONTRACT: a filter change mid-list applies to what follows it")
 	list.set_filter(TextureFilter::point);
 	list.draw_sprite(edge, RectangleI(0, 0, 2, 2),
 		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	list.set_filter(TextureFilter::linear);
 	list.draw_sprite(edge, RectangleI(0, 0, 2, 2),
 		RectangleF(24.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end();
 
 	// Point: a hard edge in the middle, because every sample is a texel.
-	CHECK(harness.at(7, 8) == RED);
-	CHECK(harness.at(8, 8) == GREEN);
+	CHECK(harness.at(7, 8) == red_pixel);
+	CHECK(harness.at(8, 8) == green_pixel);
 
 	// Linear: the same two texels, mixed where the sample falls between them.
 	// Asserted as a relationship rather than as a number, for the reason the
 	// text cases are - what a driver rounds a weight to is not this engine's
-	// decision, and ALLOWED_CHANNEL_DRIFT is what holds the four backends to
+	// decision, and allowed_channel_drift is what holds the four backends to
 	// each other on it (tests/render/golden_image.cpp).
 	const Pixel blended = harness.at(31, 8);
 	CHECK(blended.r > 0);
@@ -1127,16 +1127,16 @@ TEST_CASE("CONTRACT: a filter change mid-list applies to what follows it")
 
 	// And still exactly the texel where the sample is outside both centres,
 	// which is the CLAMP address mode answering rather than the filter.
-	CHECK(harness.at(25, 8) == RED);
-	CHECK(harness.at(38, 8) == GREEN);
+	CHECK(harness.at(25, 8) == red_pixel);
+	CHECK(harness.at(38, 8) == green_pixel);
 
 	// THE FILTER IS PER RUN AND THE RUN IS WHAT THE CHANGE BREAKS, which is
 	// what the first sprite still being hard-edged says: a backend that
 	// applied the last filter to the whole frame - one sampler bound once, the
 	// mistake the seam's per-run stamp exists to prevent - would have blurred
 	// this boundary too.
-	CHECK(harness.at(6, 8) == RED);
-	CHECK(harness.at(9, 8) == GREEN);
+	CHECK(harness.at(6, 8) == red_pixel);
+	CHECK(harness.at(9, 8) == green_pixel);
 }
 
 TEST_CASE("CONTRACT: the camera maps the destination, and changes mid list")
@@ -1150,23 +1150,23 @@ TEST_CASE("CONTRACT: the camera maps the destination, and changes mid list")
 	list.set_camera(Camera(4.0f, 4.0f, 1.0f));
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(4.0f, 4.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// Back to screen space mid-list, which is what a HUD over a world does and
 	// what set_camera being per range rather than per view exists for.
-	list.set_camera(Camera::DEFAULT_CAMERA);
+	list.set_camera(Camera::default_camera);
 	list.draw_sprite(harness.quad, Harness::red_texel(),
 		RectangleF(32.0f, 32.0f, 4.0f, 4.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end();
 
 	// The camera moved the world sprite to the origin.
-	CHECK(harness.at(1, 1) == WHITE);
-	CHECK(harness.at(5, 5) == BLACK);
+	CHECK(harness.at(1, 1) == white_pixel);
+	CHECK(harness.at(5, 5) == black_pixel);
 
 	// The screen-space sprite ignored it.
-	CHECK(harness.at(33, 33) == RED);
+	CHECK(harness.at(33, 33) == red_pixel);
 }
 
 // --- text ------------------------------------------------------------------
@@ -1184,7 +1184,7 @@ TEST_CASE("CONTRACT: the position is the top left of the text, and y runs down")
 	{
 		DrawList list = harness.begin();
 		list.draw_text(harness.font, L"AB", Vector2F(12.0f, 8.0f),
-			Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+			Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 		harness.end();
 
 		const RectangleI ink = harness.ink_bounds();
@@ -1218,13 +1218,13 @@ TEST_CASE("CONTRACT: the position is the top left of the text, and y runs down")
 	{
 		DrawList high = harness.begin();
 		high.draw_text(harness.font, L"AB", Vector2F(12.0f, 8.0f),
-			Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+			Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 		harness.end();
 		const RectangleI first = harness.ink_bounds();
 
 		DrawList low = harness.begin();
 		low.draw_text(harness.font, L"AB", Vector2F(12.0f, 28.0f),
-			Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+			Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 		harness.end();
 		const RectangleI second = harness.ink_bounds();
 
@@ -1244,13 +1244,13 @@ TEST_CASE("CONTRACT: the pen advances by what measure_text says it does")
 
 	DrawList single = harness.begin();
 	single.draw_text(harness.font, L"A", position, Colour::white, 1.0f, 0.0f,
-		Vector2F::ZERO, 0.0f);
+		Vector2F::zero, 0.0f);
 	harness.end();
 	const RectangleI one = harness.ink_bounds();
 
 	DrawList doubled = harness.begin();
 	doubled.draw_text(harness.font, L"AA", position, Colour::white, 1.0f, 0.0f,
-		Vector2F::ZERO, 0.0f);
+		Vector2F::zero, 0.0f);
 	harness.end();
 	const RectangleI two = harness.ink_bounds();
 
@@ -1284,7 +1284,7 @@ TEST_CASE("CONTRACT: a space advances the pen and draws nothing")
 	{
 		DrawList list = harness.begin();
 		list.draw_text(harness.font, L"   ", position, Colour::white, 1.0f,
-			0.0f, Vector2F::ZERO, 0.0f);
+			0.0f, Vector2F::zero, 0.0f);
 		harness.end();
 
 		// THE ATLAS HAS A GLYPH FOR U+0020 AND IT IS NOT EMPTY. MakeSpriteFont
@@ -1292,20 +1292,20 @@ TEST_CASE("CONTRACT: a space advances the pen and draws nothing")
 		// to be transparent - so a backend that drew every glyph the pen walked
 		// over would put a row of dots on the screen wherever a caller wrote a
 		// space. Whitespace is skipped at draw time and only at draw time.
-		CHECK(harness.ink_bounds() == RectangleI::ZERO);
+		CHECK(harness.ink_bounds() == RectangleI::zero);
 	}
 
 	SUBCASE("but the character after it has moved")
 	{
 		DrawList near_list = harness.begin();
 		near_list.draw_text(harness.font, L"AA", position, Colour::white, 1.0f,
-			0.0f, Vector2F::ZERO, 0.0f);
+			0.0f, Vector2F::zero, 0.0f);
 		harness.end();
 		const RectangleI adjacent = harness.ink_bounds();
 
 		DrawList far_list = harness.begin();
 		far_list.draw_text(harness.font, L"A A", position, Colour::white, 1.0f,
-			0.0f, Vector2F::ZERO, 0.0f);
+			0.0f, Vector2F::zero, 0.0f);
 		harness.end();
 		const RectangleI spaced = harness.ink_bounds();
 
@@ -1325,13 +1325,13 @@ TEST_CASE("CONTRACT: a newline returns to the left margin and drops a line")
 
 	DrawList single = harness.begin();
 	single.draw_text(harness.font, L"A", position, Colour::white, 1.0f, 0.0f,
-		Vector2F::ZERO, 0.0f);
+		Vector2F::zero, 0.0f);
 	harness.end();
 	const RectangleI one_line = harness.ink_bounds();
 
 	DrawList wrapped = harness.begin();
 	wrapped.draw_text(harness.font, L"A\nA", position, Colour::white, 1.0f,
-		0.0f, Vector2F::ZERO, 0.0f);
+		0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const RectangleI two_lines = harness.ink_bounds();
 
@@ -1369,13 +1369,13 @@ TEST_CASE("CONTRACT: the tint multiplies the glyph, as it does a sprite")
 
 	DrawList plain = harness.begin();
 	plain.draw_text(harness.font, L"Ag", position, Colour::white, 1.0f, 0.0f,
-		Vector2F::ZERO, 0.0f);
+		Vector2F::zero, 0.0f);
 	harness.end();
 	const std::vector<Pixel> white_text = harness.snapshot();
 
 	DrawList tinted = harness.begin();
 	tinted.draw_text(harness.font, L"Ag", position,
-		Colour(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		Colour(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const std::vector<Pixel> red_text = harness.snapshot();
 
@@ -1391,11 +1391,11 @@ TEST_CASE("CONTRACT: the tint multiplies the glyph, as it does a sprite")
 
 	for (size_t i = 0; i < white_text.size(); i++)
 	{
-		if (white_text[i] == BLACK)
+		if (white_text[i] == black_pixel)
 		{
 			// Nothing was drawn here, so nothing may appear here either.
 			other_channels_cleared = other_channels_cleared &&
-				red_text[i] == BLACK;
+				red_text[i] == black_pixel;
 			continue;
 		}
 		ink_pixels++;
@@ -1420,13 +1420,13 @@ TEST_CASE("CONTRACT: text scales about the origin, in unscaled text pixels")
 
 	DrawList plain_list = harness.begin();
 	plain_list.draw_text(harness.font, L"A", position, Colour::white, 1.0f,
-		0.0f, Vector2F::ZERO, 0.0f);
+		0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const RectangleI plain = harness.ink_bounds();
 
 	DrawList doubled_list = harness.begin();
 	doubled_list.draw_text(harness.font, L"A", position, Colour::white, 2.0f,
-		0.0f, Vector2F::ZERO, 0.0f);
+		0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const RectangleI doubled = harness.ink_bounds();
 
@@ -1484,9 +1484,9 @@ TEST_CASE("CONTRACT: point-sampled text off a whole pixel lands on the nearest o
 	DrawList fractional = harness.begin();
 	fractional.set_filter(TextureFilter::point);
 	fractional.draw_text(harness.font, L"Ag", quarter, Colour::white, 1.0f,
-		0.0f, Vector2F::ZERO, 0.0f);
+		0.0f, Vector2F::zero, 0.0f);
 	fractional.draw_text(harness.font, L"Ag", three_quarters, Colour::white,
-		1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		1.0f, 0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const std::vector<Pixel> off_whole = harness.snapshot();
 	const RectangleI off_whole_ink = harness.ink_bounds();
@@ -1494,9 +1494,9 @@ TEST_CASE("CONTRACT: point-sampled text off a whole pixel lands on the nearest o
 	DrawList whole = harness.begin();
 	whole.set_filter(TextureFilter::point);
 	whole.draw_text(harness.font, L"Ag", Vector2F(4.0f, 7.0f), Colour::white,
-		1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		1.0f, 0.0f, Vector2F::zero, 0.0f);
 	whole.draw_text(harness.font, L"Ag", Vector2F(31.0f, 34.0f),
-		Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const std::vector<Pixel> on_whole = harness.snapshot();
 
@@ -1523,7 +1523,7 @@ TEST_CASE("CONTRACT: the camera maps text position and text scale together")
 
 	DrawList screen = harness.begin();
 	screen.draw_text(harness.font, L"A", Vector2F(6.0f, 10.0f), Colour::white,
-		2.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		2.0f, 0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const RectangleI direct = harness.ink_bounds();
 
@@ -1533,7 +1533,7 @@ TEST_CASE("CONTRACT: the camera maps text position and text scale together")
 	// is screen (6, 10) and a text scale of one is a screen scale of two.
 	world.set_camera(Camera(16.0f, 8.0f, 2.0f));
 	world.draw_text(harness.font, L"A", Vector2F(19.0f, 13.0f), Colour::white,
-		1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		1.0f, 0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const RectangleI through_camera = harness.ink_bounds();
 
@@ -1560,7 +1560,7 @@ TEST_CASE("CONTRACT: a character the font lacks draws the stand-in glyph")
 
 	DrawList question = harness.begin();
 	question.draw_text(harness.font, L"?", position, Colour::white, 1.0f, 0.0f,
-		Vector2F::ZERO, 0.0f);
+		Vector2F::zero, 0.0f);
 	harness.end();
 	const std::vector<Pixel> expected = harness.snapshot();
 
@@ -1570,7 +1570,7 @@ TEST_CASE("CONTRACT: a character the font lacks draws the stand-in glyph")
 	// which is every .spritefont in this tree. Spelt as an escape so that this
 	// file stays ASCII and no encoding decision can change what is tested.
 	curly.draw_text(harness.font, L"\u2019", position, Colour::white, 1.0f,
-		0.0f, Vector2F::ZERO, 0.0f);
+		0.0f, Vector2F::zero, 0.0f);
 	harness.end();
 	const std::vector<Pixel> drawn = harness.snapshot();
 
@@ -1615,7 +1615,7 @@ TEST_CASE("CONTRACT: a viewport offsets the pane and scales the whole of it")
 	list.set_viewport(Viewport(32.0f, 8.0f, 32.0f, 24.0f));
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 32.0f, 24.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// The pane is filled corner to corner. THE FAR CORNER IS THE ASSERTION
@@ -1623,15 +1623,15 @@ TEST_CASE("CONTRACT: a viewport offsets the pane and scales the whole of it")
 	// its pixels-to-clip transform from the back buffer instead of the pane
 	// would put this sprite in the top left quarter of the pane and leave
 	// (63, 31) black. That is exactly the shape of the bug the GL backend had.
-	CHECK(harness.at(32, 8) == WHITE);
-	CHECK(harness.at(63, 31) == WHITE);
-	CHECK(harness.at(47, 20) == WHITE);
+	CHECK(harness.at(32, 8) == white_pixel);
+	CHECK(harness.at(63, 31) == white_pixel);
+	CHECK(harness.at(47, 20) == white_pixel);
 
 	// And nothing outside it. A viewport confines; it does not merely offset.
-	CHECK(harness.at(31, 8) == BLACK);
-	CHECK(harness.at(32, 7) == BLACK);
-	CHECK(harness.at(32, 32) == BLACK);
-	CHECK(harness.at(0, 0) == BLACK);
+	CHECK(harness.at(31, 8) == black_pixel);
+	CHECK(harness.at(32, 7) == black_pixel);
+	CHECK(harness.at(32, 32) == black_pixel);
+	CHECK(harness.at(0, 0) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: a viewport confines a sprite bigger than its pane")
@@ -1653,22 +1653,22 @@ TEST_CASE("CONTRACT: a viewport confines a sprite bigger than its pane")
 	list.set_viewport(Viewport(16.0f, 16.0f, 16.0f, 16.0f));
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(-8.0f, -8.0f, 32.0f, 32.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// Every pixel of the pane is covered, corners included.
-	CHECK(harness.at(16, 16) == WHITE);
-	CHECK(harness.at(31, 31) == WHITE);
-	CHECK(harness.at(24, 24) == WHITE);
+	CHECK(harness.at(16, 16) == white_pixel);
+	CHECK(harness.at(31, 31) == white_pixel);
+	CHECK(harness.at(24, 24) == white_pixel);
 
 	// And not one pixel outside it, on any side. A sprite that started eight
 	// pixels above and to the left of the pane would paint into the rows and
 	// columns before it if nothing clipped.
-	CHECK(harness.at(15, 16) == BLACK);
-	CHECK(harness.at(16, 15) == BLACK);
-	CHECK(harness.at(32, 31) == BLACK);
-	CHECK(harness.at(31, 32) == BLACK);
-	CHECK(harness.at(8, 8) == BLACK);
+	CHECK(harness.at(15, 16) == black_pixel);
+	CHECK(harness.at(16, 15) == black_pixel);
+	CHECK(harness.at(32, 31) == black_pixel);
+	CHECK(harness.at(31, 32) == black_pixel);
+	CHECK(harness.at(8, 8) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: off-buffer viewports preserve placement and clip to the buffer")
@@ -1688,13 +1688,13 @@ TEST_CASE("CONTRACT: off-buffer viewports preserve placement and clip to the buf
 		{ "past all four edges", Viewport(-8, -6, 80, 72),
 			RectangleI(0, 0, 64, 64), RectangleI(4, 4, 10, 8) },
 		{ "wholly right", Viewport(80, 8, 32, 24),
-			RectangleI::ZERO, RectangleI::ZERO },
+			RectangleI::zero, RectangleI::zero },
 		{ "wholly below", Viewport(12, 72, 32, 24),
-			RectangleI::ZERO, RectangleI::ZERO },
+			RectangleI::zero, RectangleI::zero },
 		{ "wholly left", Viewport(-40, 8, 32, 24),
-			RectangleI::ZERO, RectangleI::ZERO },
+			RectangleI::zero, RectangleI::zero },
 		{ "wholly above", Viewport(12, -30, 32, 24),
-			RectangleI::ZERO, RectangleI::ZERO }
+			RectangleI::zero, RectangleI::zero }
 	};
 	Harness harness;
 	for (const PaneCase& pane : cases)
@@ -1707,10 +1707,10 @@ TEST_CASE("CONTRACT: off-buffer viewports preserve placement and clip to the buf
 		// cropping must not relocate or rescale it to fit the visible portion.
 		list.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(-64, -64, 192, 192), Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		list.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(12, 10, 10, 8), Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		// Every expected pixel follows from the rectangles above, so no golden
 		// image is needed to accept output from the renderer under test.
 		harness.end_not_comparable();
@@ -1734,15 +1734,15 @@ TEST_CASE("CONTRACT: empty viewports draw nothing and leave the next pane usable
 		list.set_viewport(pane);
 		list.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(0, 0, 64, 64), Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		list.set_viewport(Viewport(0, 0, 64, 64));
 		list.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(4, 5, 8, 6), Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		// Analytic readback also covers panes whose edges quantize to no width
 		// or height, without generating a reference from that readback.
 		harness.end_not_comparable();
-		check_red_and_blue_frame(harness, RectangleI::ZERO,
+		check_red_and_blue_frame(harness, RectangleI::zero,
 			RectangleI(4, 5, 8, 6));
 	}
 }
@@ -1764,21 +1764,21 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 	list.set_viewport(Viewport(0.0f, 0.0f, 64.0f, 31.5f));
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 64.0f, 31.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	list.set_viewport(Viewport(0.0f, 31.5f, 64.0f, 32.5f));
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 64.0f, 33.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end();
 
 	// EVERY ROW, stated as a loop rather than as three sampled rows, because
 	// the failure this exists to catch is a single row of clear colour and
 	// sampling is how it survived this long.
-	for (int y = 0; y < BUFFER_SIZE; y++)
+	for (int y = 0; y < buffer_side; y++)
 	{
-		CHECK_MESSAGE(harness.at(32, y) == WHITE,
+		CHECK_MESSAGE(harness.at(32, y) == white_pixel,
 			"row ", y, " is not covered by either pane");
 	}
 
@@ -1786,8 +1786,8 @@ TEST_CASE("CONTRACT: two panes splitting a fraction cover every row between them
 	// panes have to be two runs. If the second set_viewport had not flushed,
 	// the first pane's sprite would have been rasterised under the second
 	// pane's transform and the top of the frame would be black.
-	CHECK(harness.at(0, 0) == WHITE);
-	CHECK(harness.at(63, 63) == WHITE);
+	CHECK(harness.at(0, 0) == white_pixel);
+	CHECK(harness.at(63, 63) == white_pixel);
 }
 
 // THE FOUR CASES BELOW ARE THE FIRST MULTI-VIEW ANYTHING ON A RASTERISER.
@@ -1820,18 +1820,18 @@ TEST_CASE("CONTRACT: views draw in view order, whatever order they were filled")
 
 	one.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 64.0f, 64.0f), Colour(1.0f, 0.0f, 0.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	zero.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 64.0f, 64.0f), Colour(0.0f, 0.0f, 1.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end();
 
 	// View 1 went last and is opaque, so view 1 is the whole frame. Call order
 	// would have left this blue.
-	CHECK(harness.at(0, 0) == RED);
-	CHECK(harness.at(32, 32) == RED);
-	CHECK(harness.at(63, 63) == RED);
+	CHECK(harness.at(0, 0) == red_pixel);
+	CHECK(harness.at(32, 32) == red_pixel);
+	CHECK(harness.at(63, 63) == red_pixel);
 }
 
 TEST_CASE("CONTRACT: view state belongs to its view and not to the frame")
@@ -1847,7 +1847,7 @@ TEST_CASE("CONTRACT: view state belongs to its view and not to the frame")
 		zero.set_viewport(Viewport(0.0f, 0.0f, 32.0f, 64.0f));
 		zero.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(0.0f, 0.0f, 32.0f, 64.0f),
-			Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f, Vector2F::ZERO,
+			Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f, Vector2F::zero,
 			SpriteFlip::none, 0.0f);
 
 		// No set_viewport at all, so this view's pane is the whole buffer and
@@ -1857,13 +1857,13 @@ TEST_CASE("CONTRACT: view state belongs to its view and not to the frame")
 		DrawList one = harness.view(1);
 		one.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(32.0f, 0.0f, 32.0f, 64.0f),
-			Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, Vector2F::ZERO,
+			Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, Vector2F::zero,
 			SpriteFlip::none, 0.0f);
 
 		harness.end();
 
-		CHECK(harness.at(16, 32) == RED);
-		CHECK(harness.at(48, 32) == BLUE);
+		CHECK(harness.at(16, 32) == red_pixel);
+		CHECK(harness.at(48, 32) == blue_pixel);
 	}
 
 	SUBCASE("a camera set on one view does not move its neighbour")
@@ -1874,7 +1874,7 @@ TEST_CASE("CONTRACT: view state belongs to its view and not to the frame")
 		zero.set_camera(Camera(32.0f, 0.0f, 1.0f));
 		zero.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(32.0f, 0.0f, 32.0f, 64.0f),
-			Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f, Vector2F::ZERO,
+			Colour(1.0f, 0.0f, 0.0f, 1.0f), 0.0f, Vector2F::zero,
 			SpriteFlip::none, 0.0f);
 
 		// The same rectangle, no camera, so it stays where it was written. A
@@ -1882,13 +1882,13 @@ TEST_CASE("CONTRACT: view state belongs to its view and not to the frame")
 		DrawList one = harness.view(1);
 		one.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(32.0f, 0.0f, 32.0f, 64.0f),
-			Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, Vector2F::ZERO,
+			Colour(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, Vector2F::zero,
 			SpriteFlip::none, 0.0f);
 
 		harness.end();
 
-		CHECK(harness.at(16, 32) == RED);
-		CHECK(harness.at(48, 32) == BLUE);
+		CHECK(harness.at(16, 32) == red_pixel);
+		CHECK(harness.at(48, 32) == blue_pixel);
 	}
 }
 
@@ -1902,7 +1902,7 @@ TEST_CASE("CONTRACT: a view starts every frame holding nothing")
 	first.set_camera(Camera(8.0f, 8.0f, 1.0f));
 	first.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(8.0f, 8.0f, 32.0f, 64.0f), Colour(1.0f, 0.0f, 0.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// The same view index, the next frame, and it sets neither. The five
@@ -1913,15 +1913,15 @@ TEST_CASE("CONTRACT: a view starts every frame holding nothing")
 	DrawList second = harness.begin();
 	second.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 64.0f, 64.0f), Colour(0.0f, 0.0f, 1.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// Corner to corner. A pane that survived would leave the left half black;
 	// a camera that survived would leave the far corner black, because the
 	// sprite would start eight pixels up and to the left of where it says.
-	CHECK(harness.at(0, 0) == BLUE);
-	CHECK(harness.at(32, 32) == BLUE);
-	CHECK(harness.at(63, 63) == BLUE);
+	CHECK(harness.at(0, 0) == blue_pixel);
+	CHECK(harness.at(32, 32) == blue_pixel);
+	CHECK(harness.at(63, 63) == blue_pixel);
 }
 
 TEST_CASE("CONTRACT: declaring another view leaves the filled ones alone")
@@ -1937,7 +1937,7 @@ TEST_CASE("CONTRACT: declaring another view leaves the filled ones alone")
 	zero.set_viewport(Viewport(32.0f, 0.0f, 32.0f, 64.0f));
 	zero.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 32.0f, 64.0f), Colour(1.0f, 0.0f, 0.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// Raising the count mid-frame is legal and a scene does it whenever a
 	// second player joins a running match. On D3D11 this is the call that
@@ -1948,15 +1948,15 @@ TEST_CASE("CONTRACT: declaring another view leaves the filled ones alone")
 	DrawList one = harness.view(1);
 	one.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 32.0f, 64.0f), Colour(0.0f, 0.0f, 1.0f, 1.0f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end();
 
 	// View 0 in the right half under its own pane, view 1 in the left half
 	// under the whole buffer. A rebind would have put both in the left half
 	// and view 1 replays second, so the right half would be black.
-	CHECK(harness.at(48, 32) == RED);
-	CHECK(harness.at(16, 32) == BLUE);
+	CHECK(harness.at(48, 32) == red_pixel);
+	CHECK(harness.at(16, 32) == blue_pixel);
 }
 
 TEST_CASE("CONTRACT: a frame that is never submitted contributes nothing")
@@ -1969,11 +1969,11 @@ TEST_CASE("CONTRACT: a frame that is never submitted contributes nothing")
 	// nothing on any backend and would pass this on the code that fails it.
 	DrawList abandoned = harness.begin();
 	abandoned.draw_sprite(harness.quad, Harness::white_texel(),
-		RectangleF(0.0f, 0.0f, static_cast<float>(BUFFER_SIZE),
-			static_cast<float>(BUFFER_SIZE)),
-		Colour::white, 0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		RectangleF(0.0f, 0.0f, static_cast<float>(buffer_side),
+			static_cast<float>(buffer_side)),
+		Colour::white, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	abandoned.draw_text(harness.font, L"AAAA", Vector2F(4.0f, 4.0f),
-		Colour::white, 1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+		Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 
 	// AND NO end(), which is the whole case. A client reaches this state by
 	// letting an exception out of its draw walk and carrying on; both samples
@@ -1987,8 +1987,8 @@ TEST_CASE("CONTRACT: a frame that is never submitted contributes nothing")
 	// The next frame is the clear and nothing else. Not sampled - the stranded
 	// geometry is a full-screen quad, but the failure it stands for is any
 	// already-flushed run arriving at the head of the next frame's commands.
-	CHECK(harness.at(0, 0) == BLACK);
-	CHECK(harness.ink_bounds() == RectangleI::ZERO);
+	CHECK(harness.at(0, 0) == black_pixel);
+	CHECK(harness.ink_bounds() == RectangleI::zero);
 }
 
 TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
@@ -2005,10 +2005,10 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 	harness.end();
 
 	CHECK(harness.buffer_size() ==
-		Vector2F(static_cast<float>(BUFFER_SIZE),
-			static_cast<float>(BUFFER_SIZE)));
+		Vector2F(static_cast<float>(buffer_side),
+			static_cast<float>(buffer_side)));
 	CHECK(harness.byte_count() ==
-		static_cast<size_t>(BUFFER_SIZE) * BUFFER_SIZE * 4);
+		static_cast<size_t>(buffer_side) * buffer_side * 4);
 
 	SUBCASE("and it still does when the window changed and nobody said so")
 	{
@@ -2030,14 +2030,14 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 		// pixels - see docs/review/backend-equivalence/TEST-GAP.md. What is
 		// assertable is that the two answers agree, which is what makes the
 		// size above a fact about the buffer rather than about a cache.
-		harness.resize_window(BUFFER_SIZE, BUFFER_SIZE - 16);
+		harness.resize_window(buffer_side, buffer_side - 16);
 
 		DrawList list = harness.begin();
 		const Vector2F pane = harness.buffer_size();
 		list.set_viewport(Viewport(0.0f, 0.0f, pane.x, pane.y));
 		list.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(0.0f, 0.0f, pane.x, pane.y), Colour::white, 0.0f,
-			Vector2F::ZERO, SpriteFlip::none, 0.0f);
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 		// The one frame here that is not held against a golden image, because
 		// the buffer it was read out of is a different size on each backend and
 		// the seam says it must be. Harness::end_not_comparable explains.
@@ -2049,13 +2049,13 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 
 		// And a pane the size of that buffer covers it corner to corner, which
 		// is the placement half of the same statement.
-		CHECK(harness.at(0, 0) == WHITE);
+		CHECK(harness.at(0, 0) == white_pixel);
 		CHECK(harness.at(static_cast<int>(buffer.x) - 1,
-			static_cast<int>(buffer.y) - 1) == WHITE);
+			static_cast<int>(buffer.y) - 1) == white_pixel);
 	}
 }
 
-TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not ZERO")
+TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not zero")
 {
 	Harness harness;
 
@@ -2063,13 +2063,13 @@ TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not ZERO")
 
 	// An opaque white ground first. THE CASE ABOVE CANNOT DO THIS. It composites
 	// its one sprite over the cleared frame, which is black - and black times
-	// any destination factor is black, so ZERO and INV_SRC_ALPHA give the same
+	// any destination factor is black, so zero and INV_SRC_ALPHA give the same
 	// answer there and the RGB destination factor is undistinguished by it. The
 	// alpha channel is pinned by that case; the colour channels were not pinned
 	// by anything.
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// Then a half-alpha black scrim over it. Premultiplied, which for black
 	// means the colour channels are zero and stay zero however the alpha moves
@@ -2079,7 +2079,7 @@ TEST_CASE("CONTRACT: the destination factor is INV_SRC_ALPHA, not ZERO")
 	// alone saturates the result to white.
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour(0.0f, 0.0f, 0.0f, 0.5f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end();
 
@@ -2123,16 +2123,16 @@ TEST_CASE("CONTRACT: a tint with more colour than alpha saturates, it is not cla
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 16.0f, 16.0f), Colour(1.0f, 1.0f, 1.0f, 0.5f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// And over an opaque ground, where a backend that clamped the source to
 	// its alpha would leave the destination showing through at half strength.
 	list.draw_sprite(harness.quad, Harness::red_texel(),
 		RectangleF(32.0f, 0.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(32.0f, 0.0f, 16.0f, 16.0f), Colour(0.0f, 1.0f, 0.0f, 0.5f),
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// Over black: the source term alone is 1.0 in every colour channel.
@@ -2181,7 +2181,7 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	DrawList list = harness.begin();
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 32.0f, 32.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// Here, with a draw recorded and the list still in the caller's hand.
 	//
@@ -2193,8 +2193,8 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// telling the renderer about a resize the window never had would leave GL
 	// drawing into 64x64 while the other three moved to 32x32. A real resize
 	// moves both, in this order: the window changes, then the shell says so.
-	harness.resize_window(BUFFER_SIZE / 2, BUFFER_SIZE / 2);
-	CHECK(renderer.window_size_changed(BUFFER_SIZE / 2, BUFFER_SIZE / 2));
+	harness.resize_window(buffer_side / 2, buffer_side / 2);
+	CHECK(renderer.window_size_changed(buffer_side / 2, buffer_side / 2));
 
 	// THE LIST THE CALLER IS HOLDING IS STILL A LIST. That is the half of the
 	// rule a backend could satisfy by tearing everything down and still get
@@ -2202,22 +2202,22 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// frame that is now running.
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end_not_comparable();
 
 	// The buffer is the size the resize asked for, and read_back_buffer agreed
 	// with it - which is what makes the assertions below addressable at all.
-	CHECK(harness.buffer_size().x == static_cast<float>(BUFFER_SIZE / 2));
-	CHECK(harness.buffer_size().y == static_cast<float>(BUFFER_SIZE / 2));
+	CHECK(harness.buffer_size().x == static_cast<float>(buffer_side / 2));
+	CHECK(harness.buffer_size().y == static_cast<float>(buffer_side / 2));
 
 	// WHAT WAS DRAWN BEFORE THE RESIZE IS GONE, AND WHAT WAS DRAWN AFTER IT IS
 	// THERE. The first sprite covered 32x32 of a 64x64 buffer and the second
 	// covers 8x8 of a 32x32 one, so a pixel at (20, 20) is inside the first and
 	// outside the second: it is the one place the two disagree, and it says
 	// which frame the buffer is holding.
-	CHECK(harness.at(4, 4) == WHITE);
-	CHECK(harness.at(20, 20) == BLACK);
+	CHECK(harness.at(4, 4) == white_pixel);
+	CHECK(harness.at(20, 20) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: a list reads back its camera and viewport, on a device")
@@ -2233,10 +2233,10 @@ TEST_CASE("CONTRACT: a list reads back its camera and viewport, on a device")
 	// the frame. null_tests.cpp asks the same of the backend without a device.
 	Harness harness;
 	Renderer& renderer = harness.renderer();
-	const float size = static_cast<float>(BUFFER_SIZE);
+	const float size = static_cast<float>(buffer_side);
 
 	DrawList list = harness.begin();
-	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.camera() == Camera::default_camera);
 	CHECK(list.viewport() == Viewport(0.0f, 0.0f, size, size));
 
 	// A fractional pane, which the Direct3D backends snap before the
@@ -2250,11 +2250,11 @@ TEST_CASE("CONTRACT: a list reads back its camera and viewport, on a device")
 
 	// The window first, then the shell says so, for the reason "a resize
 	// arriving mid-frame restarts the frame" gives.
-	harness.resize_window(BUFFER_SIZE / 2, BUFFER_SIZE / 2);
-	CHECK(renderer.window_size_changed(BUFFER_SIZE / 2, BUFFER_SIZE / 2));
+	harness.resize_window(buffer_side / 2, buffer_side / 2);
+	CHECK(renderer.window_size_changed(buffer_side / 2, buffer_side / 2));
 
 	REQUIRE(list.valid());
-	CHECK(list.camera() == Camera::DEFAULT_CAMERA);
+	CHECK(list.camera() == Camera::default_camera);
 	CHECK(list.viewport() ==
 		Viewport(0.0f, 0.0f, size / 2.0f, size / 2.0f));
 
@@ -2298,8 +2298,8 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 	// on the Direct3D backends and from the window on the OpenGL one, so a
 	// resize the window never had would ask two backends a different question
 	// from the third.
-	harness.resize_window(BUFFER_SIZE / 2, BUFFER_SIZE / 2);
-	CHECK(renderer.window_size_changed(BUFFER_SIZE / 2, BUFFER_SIZE / 2));
+	harness.resize_window(buffer_side / 2, buffer_side / 2);
+	CHECK(renderer.window_size_changed(buffer_side / 2, buffer_side / 2));
 
 	// And now the frame says what it has, which is the ordinary next call and
 	// the one the resize arrived in front of.
@@ -2307,17 +2307,17 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 	DrawList list = renderer.view(0);
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	harness.end_not_comparable();
 
-	CHECK(harness.buffer_size().x == static_cast<float>(BUFFER_SIZE / 2));
-	CHECK(harness.buffer_size().y == static_cast<float>(BUFFER_SIZE / 2));
+	CHECK(harness.buffer_size().x == static_cast<float>(buffer_side / 2));
+	CHECK(harness.buffer_size().y == static_cast<float>(buffer_side / 2));
 
 	// The 8x8 sprite is there, and the buffer around it is the clear colour
 	// rather than whatever ResizeBuffers left in it.
-	CHECK(harness.at(4, 4) == WHITE);
-	CHECK(harness.at(20, 20) == BLACK);
+	CHECK(harness.at(4, 4) == white_pixel);
+	CHECK(harness.at(20, 20) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: a frame may be read back and then presented")
@@ -2351,11 +2351,11 @@ TEST_CASE("CONTRACT: a frame may be read back and then presented")
 	DrawList first = harness.begin();
 	first.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
-	CHECK(harness.at(4, 4) == WHITE);
-	CHECK(harness.at(20, 20) == BLACK);
+	CHECK(harness.at(4, 4) == white_pixel);
+	CHECK(harness.at(20, 20) == black_pixel);
 
 	// The half of the interval nothing else in this file walks.
 	harness.renderer().end_frame();
@@ -2366,11 +2366,11 @@ TEST_CASE("CONTRACT: a frame may be read back and then presented")
 	DrawList second = harness.begin();
 	second.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(16.0f, 16.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
-	CHECK(harness.at(20, 20) == WHITE);
-	CHECK(harness.at(4, 4) == BLACK);
+	CHECK(harness.at(20, 20) == white_pixel);
+	CHECK(harness.at(4, 4) == black_pixel);
 }
 
 TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing to the next")
@@ -2398,7 +2398,7 @@ TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing t
 
 	DrawList captured = harness.begin();
 	captured.draw_sprite(harness.quad, Harness::white_texel(), place, half,
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
 	// Half of white over black: 127 or 128 by the device's rounding, and
@@ -2408,13 +2408,13 @@ TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing t
 	CHECK(once.r <= 129);
 	CHECK(once.g == once.r);
 	CHECK(once.b == once.r);
-	CHECK(harness.at(40, 40) == BLACK);
+	CHECK(harness.at(40, 40) == black_pixel);
 	const std::vector<Pixel> expected = harness.snapshot();
 
 	// The Application's frame, which a present ends.
 	DrawList shown = harness.begin();
 	shown.draw_sprite(harness.quad, Harness::white_texel(), place, half,
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 	CHECK(harness.snapshot() == expected);
 	harness.renderer().end_frame();
@@ -2422,7 +2422,7 @@ TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing t
 	// And the frame after it.
 	DrawList next = harness.begin();
 	next.draw_sprite(harness.quad, Harness::white_texel(), place, half,
-		0.0f, Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 	CHECK(harness.snapshot() == expected);
 }
@@ -2446,24 +2446,24 @@ TEST_CASE("CONTRACT: a BC2 texture draws the texels its blocks encode")
 	// own rather than the clear the opaque black one also looks like.
 	list.draw_sprite(harness.quad, Harness::white_texel(),
 		RectangleF(0.0f, 0.0f, 32.0f, 32.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 
 	// Point, so that every pixel asserted below is one texel and no filter
 	// weight is consulted; each texel is four pixels wide.
 	list.set_filter(TextureFilter::point);
 	list.draw_sprite(bc2, RectangleI(0, 0, 4, 4),
 		RectangleF(8.0f, 8.0f, 16.0f, 16.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
-	CHECK(harness.at(10, 10) == RED);
-	CHECK(harness.at(21, 10) == BLACK);
-	CHECK(harness.at(10, 21) == WHITE);
-	CHECK(harness.at(21, 21) == RED);
+	CHECK(harness.at(10, 10) == red_pixel);
+	CHECK(harness.at(21, 10) == black_pixel);
+	CHECK(harness.at(10, 21) == white_pixel);
+	CHECK(harness.at(21, 21) == red_pixel);
 
 	// And the white around it, which the sprite did not reach.
-	CHECK(harness.at(4, 4) == WHITE);
-	CHECK(harness.at(27, 27) == WHITE);
+	CHECK(harness.at(4, 4) == white_pixel);
+	CHECK(harness.at(27, 27) == white_pixel);
 }
 
 TEST_CASE("CONTRACT: every format the seam names is uploaded, or refused by name")
@@ -2494,7 +2494,7 @@ TEST_CASE("CONTRACT: every format the seam names is uploaded, or refused by name
 		const char* name;
 	};
 
-	const Named FORMATS[] = {
+	const Named formats[] = {
 		{ TextureFormat::r8g8b8a8_unorm, "r8g8b8a8_unorm" },
 		{ TextureFormat::b8g8r8a8_unorm, "b8g8r8a8_unorm" },
 		{ TextureFormat::b4g4r4a4_unorm, "b4g4r4a4_unorm" },
@@ -2503,7 +2503,7 @@ TEST_CASE("CONTRACT: every format the seam names is uploaded, or refused by name
 		{ TextureFormat::bc3_unorm, "bc3_unorm" },
 	};
 
-	for (const Named& entry : FORMATS)
+	for (const Named& entry : formats)
 	{
 		// Four by four, which is one block of every compressed format and four
 		// rows of every uncompressed one, so texture_level answers a real size
@@ -2577,10 +2577,10 @@ TEST_CASE("CONTRACT: re-loading a name reuses its slot, however many times")
 	DrawList list = harness.begin();
 	list.draw_sprite(reloaded, RectangleI(0, 0, 2, 2),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,
-		Vector2F::ZERO, SpriteFlip::none, 0.0f);
+		Vector2F::zero, SpriteFlip::none, 0.0f);
 	harness.end();
 
-	CHECK(harness.at(4, 4) == GREEN);
+	CHECK(harness.at(4, 4) == green_pixel);
 }
 
 TEST_CASE("a fullscreen scene overlays both split viewports after their drawing")
@@ -2594,7 +2594,7 @@ TEST_CASE("a fullscreen scene overlays both split viewports after their drawing"
 		void draw(DrawList& list) const override
 		{
 			list.draw_sprite(texture_, RectangleI(0, 0, 2, 2), rectangle_,
-				Colour::white, 0, Vector2F::ZERO, SpriteFlip::none, 0);
+				Colour::white, 0, Vector2F::zero, SpriteFlip::none, 0);
 		}
 	private:
 		TextureHandle texture_;
@@ -2620,5 +2620,5 @@ TEST_CASE("a fullscreen scene overlays both split viewports after their drawing"
 	h.end_not_comparable();
 	for (int y = 0; y < 64; ++y)
 	for (int x = 0; x < 64; ++x)
-		CHECK(h.at(x, y) == ((x >= 16 && x < 48 && y >= 16 && y < 48) ? BLUE : RED));
+		CHECK(h.at(x, y) == ((x >= 16 && x < 48 && y >= 16 && y < 48) ? blue_pixel : red_pixel));
 }

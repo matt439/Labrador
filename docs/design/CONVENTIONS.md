@@ -79,7 +79,9 @@ Almost everything below falls out of one rule:
 - Constants are values (T11) and follow value naming: `max_velocity`,
   `gravity`, `Colour::white`. SCREAMING_SNAKE is reserved for macros
   alone, so that a screaming name always signals preprocessor danger and
-  nothing else ever does.
+  nothing else ever does. The one exception is a constant that restates a
+  platform API's own name, such as `DXGI_BC2_UNORM` or `GL_VERTEX_SHADER_`,
+  which keeps that spelling so the API's documentation can be searched for it.
 - Enumerations are `enum class`; the type is PascalCase, the enumerators
   snake_case: `WeaponType::sprayer`, `ScreenLayer::hud`.
 - A header full of numeric constants is usually tuning data in the wrong

@@ -69,8 +69,8 @@ namespace labrador
 		// speed want different ones, and asking the pad API for one and then
 		// applying a second by hand is how a stick ends up with half its travel
 		// dead and the other half starting at 0.5.
-		Vector2F left_stick = Vector2F::ZERO;
-		Vector2F right_stick = Vector2F::ZERO;
+		Vector2F left_stick = Vector2F::zero;
+		Vector2F right_stick = Vector2F::zero;
 
 		float left_trigger = 0.0f;
 		float right_trigger = 0.0f;

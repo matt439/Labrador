@@ -65,7 +65,7 @@ TEST_CASE("a text reads back the string and colour it was built with")
 TEST_CASE("a text's readers follow its setters")
 {
 	Content content;
-	Text text(L"AB", "font", Vector2F::ZERO, &content.resources);
+	Text text(L"AB", "font", Vector2F::zero, &content.resources);
 
 	CHECK(text.colour() == Colour::white);
 

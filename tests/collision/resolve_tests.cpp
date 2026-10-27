@@ -14,7 +14,7 @@ using labrador::Vector2F;
 
 TEST_CASE("separation moves against the normal, by the penetration")
 {
-	const Vector2F move = separation(Vector2F::DIRECTION_DOWN, 12.0f);
+	const Vector2F move = separation(Vector2F::direction_down, 12.0f);
 
 	CHECK(move.x == doctest::Approx(0.0f));
 	CHECK(move.y == doctest::Approx(-12.0f));
@@ -28,7 +28,7 @@ TEST_CASE("separation along an axis closes the overlap, not the distance")
 	const Vector2F normal = Vector2F(3.0f, 4.0f).normalized();
 
 	const Vector2F move =
-		separation_along(normal, 4.0f, Vector2F::DIRECTION_DOWN);
+		separation_along(normal, 4.0f, Vector2F::direction_down);
 
 	CHECK(move.x == doctest::Approx(0.0f));
 	CHECK(move.y == doctest::Approx(-5.0f));
@@ -49,8 +49,8 @@ TEST_CASE("an axis that cannot separate the pair is refused, not answered")
 {
 	// Perpendicular: no distance along this axis closes any of the overlap.
 	// Zero would read as a translation and is not one.
-	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_RIGHT, 10.0f,
-		Vector2F::DIRECTION_DOWN), std::invalid_argument);
+	CHECK_THROWS_AS(separation_along(Vector2F::direction_right, 10.0f,
+		Vector2F::direction_down), std::invalid_argument);
 
 	// And the case that makes returning zero necessary rather than merely
 	// tidy: a guard that only rejected a dot product below 1e-4 would let a
@@ -61,13 +61,13 @@ TEST_CASE("an axis that cannot separate the pair is refused, not answered")
 	const Vector2F almost_perpendicular =
 		Vector2F(tiny, std::sqrt(1.0f - tiny * tiny));
 
-	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_RIGHT, 1.0f,
+	CHECK_THROWS_AS(separation_along(Vector2F::direction_right, 1.0f,
 		almost_perpendicular), std::invalid_argument);
 
 	// The bound is on the answer as much as on the input: anything accepted
 	// travels at most ten times the overlap it closes.
 	const Vector2F oblique = Vector2F(0.2f, std::sqrt(1.0f - 0.04f));
-	const Vector2F move = separation_along(Vector2F::DIRECTION_RIGHT, 1.0f,
+	const Vector2F move = separation_along(Vector2F::direction_right, 1.0f,
 		oblique);
 	CHECK(move.length() <= 10.0f);
 }
@@ -75,17 +75,17 @@ TEST_CASE("an axis that cannot separate the pair is refused, not answered")
 TEST_CASE("separation_along checks the preconditions its header states")
 {
 	// The header always said `axis` must be unit length and never looked.
-	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_DOWN, 5.0f,
+	CHECK_THROWS_AS(separation_along(Vector2F::direction_down, 5.0f,
 		Vector2F(0.0f, 3.0f)), std::invalid_argument);
 	CHECK_THROWS_AS(separation_along(Vector2F(0.0f, 3.0f), 5.0f,
-		Vector2F::DIRECTION_DOWN), std::invalid_argument);
+		Vector2F::direction_down), std::invalid_argument);
 
 	// A manifold promises a positive penetration; zero and NaN are both
 	// broken contracts rather than quiet no-ops.
-	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_DOWN, 0.0f,
-		Vector2F::DIRECTION_DOWN), std::invalid_argument);
-	CHECK_THROWS_AS(separation_along(Vector2F::DIRECTION_DOWN,
-		std::numeric_limits<float>::quiet_NaN(), Vector2F::DIRECTION_DOWN),
+	CHECK_THROWS_AS(separation_along(Vector2F::direction_down, 0.0f,
+		Vector2F::direction_down), std::invalid_argument);
+	CHECK_THROWS_AS(separation_along(Vector2F::direction_down,
+		std::numeric_limits<float>::quiet_NaN(), Vector2F::direction_down),
 		std::invalid_argument);
 }
 
@@ -97,7 +97,7 @@ TEST_CASE("a floor takes the fall and leaves the run alone")
 	// wrong rule and the right one agree.
 	const Vector2F run_and_fall = Vector2F(200.0f, 100.0f);
 
-	const Vector2F after = slide(run_and_fall, Vector2F::DIRECTION_DOWN);
+	const Vector2F after = slide(run_and_fall, Vector2F::direction_down);
 
 	CHECK(after.x == doctest::Approx(200.0f));
 	CHECK(after.y == doctest::Approx(0.0f));
@@ -138,14 +138,14 @@ TEST_CASE("a velocity already leaving the surface is untouched")
 	// A resolver that clamps regardless would eat the jump.
 	const Vector2F jump = Vector2F(0.0f, -300.0f);
 
-	const Vector2F after = slide(jump, Vector2F::DIRECTION_DOWN);
+	const Vector2F after = slide(jump, Vector2F::direction_down);
 
 	CHECK(after == jump);
 }
 
 TEST_CASE("a velocity straight into the surface is stopped completely")
 {
-	const Vector2F after = slide(Vector2F(0.0f, 50.0f), Vector2F::DIRECTION_DOWN);
+	const Vector2F after = slide(Vector2F(0.0f, 50.0f), Vector2F::direction_down);
 
 	CHECK(after.x == doctest::Approx(0.0f));
 	CHECK(after.y == doctest::Approx(0.0f));
@@ -155,7 +155,7 @@ TEST_CASE("a velocity already along the surface keeps all of it")
 {
 	const Vector2F along = Vector2F(150.0f, 0.0f);
 
-	const Vector2F after = slide(along, Vector2F::DIRECTION_DOWN);
+	const Vector2F after = slide(along, Vector2F::direction_down);
 
 	CHECK(after == along);
 }

@@ -33,8 +33,8 @@ namespace labrador
 	{
 		// Four corners, two triangles, and the winding the corner order in
 		// sprite_geometry.h fixes.
-		const int VERTICES_PER_SPRITE = 4;
-		const int INDICES_PER_SPRITE = 6;
+		const int vertices_per_sprite = 4;
+		const int indices_per_sprite = 6;
 
 		bool names_software(std::string name)
 		{
@@ -151,13 +151,13 @@ namespace labrador
 		const SpriteVertex* corners)
 	{
 		const int first =
-			static_cast<int>(this->vertices.size()) / VERTICES_PER_SPRITE;
+			static_cast<int>(this->vertices.size()) / vertices_per_sprite;
 
 		const bool joins = this->open_valid &&
 			this->open.texture == &texture &&
 			this->open.filter == this->filter &&
 			same_viewport(this->open.viewport, this->viewport) &&
-			this->open.sprites < MAX_RUN_SPRITES;
+			this->open.sprites < max_run_sprites;
 
 		if (!joins)
 		{
@@ -171,7 +171,7 @@ namespace labrador
 		}
 
 		this->vertices.insert(this->vertices.end(), corners,
-			corners + VERTICES_PER_SPRITE);
+			corners + vertices_per_sprite);
 		this->open.sprites++;
 		this->touched = true;
 	}
@@ -189,7 +189,7 @@ namespace labrador
 
 	void DrawList::View::reset()
 	{
-		this->camera = Camera::DEFAULT_CAMERA;
+		this->camera = Camera::default_camera;
 		this->filter = TextureFilter::point;
 		this->vertices.clear();
 		this->runs.clear();
@@ -406,10 +406,10 @@ namespace labrador
 		// draw list change its filter mid-list, so they are descriptors a draw
 		// call names rather than state a pipeline fixes.
 		VkShaderModule vertex_shader = create_shader(device,
-			SPRITE_VERTEX_SHADER, sizeof(SPRITE_VERTEX_SHADER),
+			sprite_vertex_shader, sizeof(sprite_vertex_shader),
 			"The sprite vertex shader could not be created");
 		VkShaderModule pixel_shader = create_shader(device,
-			SPRITE_PIXEL_SHADER, sizeof(SPRITE_PIXEL_SHADER),
+			sprite_pixel_shader, sizeof(sprite_pixel_shader),
 			"The sprite pixel shader could not be created");
 
 		VkPipelineShaderStageCreateInfo stages[2] = {};
@@ -606,13 +606,13 @@ namespace labrador
 		// buffer and a wait - the same three steps every texture takes
 		// (texture_factory.cpp).
 		std::vector<unsigned short> index_data;
-		index_data.reserve(static_cast<size_t>(DrawList::View::MAX_RUN_SPRITES)
-			* INDICES_PER_SPRITE);
-		for (int sprite = 0; sprite < DrawList::View::MAX_RUN_SPRITES;
+		index_data.reserve(static_cast<size_t>(DrawList::View::max_run_sprites)
+			* indices_per_sprite);
+		for (int sprite = 0; sprite < DrawList::View::max_run_sprites;
 			sprite++)
 		{
 			const unsigned short first =
-				static_cast<unsigned short>(sprite * VERTICES_PER_SPRITE);
+				static_cast<unsigned short>(sprite * vertices_per_sprite);
 			index_data.push_back(static_cast<unsigned short>(first + 0));
 			index_data.push_back(static_cast<unsigned short>(first + 1));
 			index_data.push_back(static_cast<unsigned short>(first + 2));
@@ -1264,10 +1264,10 @@ namespace labrador
 					const int32_t base_vertex = static_cast<int32_t>(
 						view_vertex_base +
 						static_cast<size_t>(run.first_sprite) *
-							VERTICES_PER_SPRITE);
+							vertices_per_sprite);
 
 					vkCmdDrawIndexed(commands,
-						static_cast<uint32_t>(run.sprites * INDICES_PER_SPRITE), 1,
+						static_cast<uint32_t>(run.sprites * indices_per_sprite), 1,
 						0, base_vertex, 0);
 				}
 			}

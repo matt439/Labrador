@@ -25,10 +25,10 @@ namespace
 	// and then L2 - so a tight bound here would fail on a busy machine and
 	// teach everyone to ignore it. 8x over a 64x growth in n still catches the
 	// thing this is for: a phase that quietly became quadratic would show 64x.
-	constexpr double LINEAR_SLACK = 8.0;
+	constexpr double linear_slack = 8.0;
 
 	// The phases that must stay linear in the object count.
-	const char* const LINEAR_PHASES[] = {
+	const char* const linear_phases[] = {
 		"Scene::update",
 		"Scene::end_tick",
 		"render cull (one view)",
@@ -82,7 +82,7 @@ int main()
 	bench::report();
 
 	int failures = 0;
-	for (const char* phase : LINEAR_PHASES)
+	for (const char* phase : linear_phases)
 	{
 		const std::vector<bench::Result> runs = for_case(phase);
 		if (runs.size() < 2)
@@ -91,7 +91,7 @@ int main()
 		}
 
 		const std::string failure = bench::check_scaling(runs.front(),
-			runs.back(), LINEAR_SLACK);
+			runs.back(), linear_slack);
 		if (!failure.empty())
 		{
 			std::printf("FAILED  %s\n", failure.c_str());

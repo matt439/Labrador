@@ -14,9 +14,9 @@
 
 using namespace labrador;
 
-constexpr float EPSILON_F = 0.000001f;
-constexpr float EPSILON_F_2 = 0.000002f;
-constexpr float EPSILON_F_100 = 0.0001f;
+constexpr float epsilon_f = 0.000001f;
+constexpr float epsilon_f_2 = 0.000002f;
+constexpr float epsilon_f_100 = 0.0001f;
 
 TEST_SUITE("ShapeIntersect")
 {
@@ -61,11 +61,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(a.intersects(b));
 
 		// a and b are just touching
-		b = RectangleF(10.0f - EPSILON_F, 10.0f, 10.0f, 10.0f);
+		b = RectangleF(10.0f - epsilon_f, 10.0f, 10.0f, 10.0f);
 		CHECK(a.intersects(b));
 
 		// a and b are just not touching
-		b = RectangleF(10.0f + EPSILON_F, 10.0f, 10.0f, 10.0f);
+		b = RectangleF(10.0f + epsilon_f, 10.0f, 10.0f, 10.0f);
 		CHECK_FALSE(a.intersects(b));
 
 		// b is inside a
@@ -103,12 +103,12 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(p == Point2F(5.0f, 5.0f));
 
 		// a and c are just touching
-		c = Circle(15.0f - EPSILON_F, 5.0f, 5.0f);
+		c = Circle(15.0f - epsilon_f, 5.0f, 5.0f);
 		CHECK(rectangle_circle_intersect(a, c, p));
 		CHECK(p == Point2F(10.0f, 5.0f));
 
 		// a and c are just not touching
-		c = Circle(15.0f + EPSILON_F, 5.0f, 5.0f);
+		c = Circle(15.0f + epsilon_f, 5.0f, 5.0f);
 		CHECK_FALSE(rectangle_circle_intersect(a, c, p));
 		CHECK(p == Point2F(10.0f, 5.0f));
 	}
@@ -158,11 +158,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(rectangle_quad_intersect(a, q));
 
 		// a and q are just touching
-		q = Quad(RectangleF(10.0f - EPSILON_F, 10.0f, 10.0f, 10.0f));
+		q = Quad(RectangleF(10.0f - epsilon_f, 10.0f, 10.0f, 10.0f));
 		CHECK(rectangle_quad_intersect(a, q));
 
 		// a and q are just not touching
-		q = Quad(RectangleF(10.0f + EPSILON_F, 10.0f, 10.0f, 10.0f));
+		q = Quad(RectangleF(10.0f + epsilon_f, 10.0f, 10.0f, 10.0f));
 		CHECK_FALSE(rectangle_quad_intersect(a, q));
 
 		// 2 identical rectangles
@@ -188,11 +188,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(rectangle_segment_intersect(a, s));
 
 		// a and s are just touching
-		s = Segment(Point2F(10.0f - EPSILON_F, 10.0f), Point2F(20.0f, 10.0f));
+		s = Segment(Point2F(10.0f - epsilon_f, 10.0f), Point2F(20.0f, 10.0f));
 		CHECK(rectangle_segment_intersect(a, s));
 
 		// a and s are just not touching
-		s = Segment(Point2F(10.0f + EPSILON_F_2, 10.0f), Point2F(20.0f, 10.0f));
+		s = Segment(Point2F(10.0f + epsilon_f_2, 10.0f), Point2F(20.0f, 10.0f));
 		CHECK_FALSE(rectangle_segment_intersect(a, s));
 	}
 	TEST_CASE("test_rectangle_point_intersect")
@@ -216,26 +216,26 @@ TEST_SUITE("ShapeIntersect")
 	TEST_CASE("test_rectangle_rotated_rectangle_intersect")
 	{
 		// first test with axes aligned
-		RectangleRotated rr = RectangleRotated(Vector2F::ZERO,
-			Vector2F::DIRECTION_RIGHT,
-			Vector2F::DIRECTION_UP, Vector2F(5.0f, 5.0f));
+		RectangleRotated rr = RectangleRotated(Vector2F::zero,
+			Vector2F::direction_right,
+			Vector2F::direction_up, Vector2F(5.0f, 5.0f));
 
 		RectangleF r(0.0f, 0.0f, 10.0f, 10.0f);
 		CHECK(rectangle_rotated_rectangle_intersect(r, rr));
 
-		r = RectangleF(5.0f - EPSILON_F, 5.0f - EPSILON_F, 10.0f, 10.0f);
+		r = RectangleF(5.0f - epsilon_f, 5.0f - epsilon_f, 10.0f, 10.0f);
 		CHECK(rectangle_rotated_rectangle_intersect(r, rr));
 
-		r = RectangleF(5.0f + EPSILON_F, 5.0f + EPSILON_F, 10.0f, 10.0f);
+		r = RectangleF(5.0f + epsilon_f, 5.0f + epsilon_f, 10.0f, 10.0f);
 		CHECK_FALSE(rectangle_rotated_rectangle_intersect(r, rr));
 
 		r = RectangleF(10.0f, 10.0f, 10.0f, 10.0f);
 		CHECK_FALSE(rectangle_rotated_rectangle_intersect(r, rr));
 		
 		// second test with axes not aligned
-		rr = RectangleRotated(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		rr = RectangleRotated(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 
 		r = RectangleF(0.0f, 0.0f, 10.0f, 10.0f);
 		CHECK(rectangle_rotated_rectangle_intersect(r, rr));
@@ -248,9 +248,9 @@ TEST_SUITE("ShapeIntersect")
 		r = RectangleF(-2.0f, -2.0f, 20.0f, 20.0f);
 		CHECK(rectangle_rotated_rectangle_intersect(r, rr));
 
-		Vector2F v = Vector2F::DIRECTION_DOWN_RIGHT * 10.0f;
-		Vector2F v_touching = v - Vector2F::DIRECTION_DOWN_RIGHT * EPSILON_F;
-		Vector2F v_not_touching = v + Vector2F::DIRECTION_DOWN_RIGHT * EPSILON_F_100;
+		Vector2F v = Vector2F::direction_down_right * 10.0f;
+		Vector2F v_touching = v - Vector2F::direction_down_right * epsilon_f;
+		Vector2F v_not_touching = v + Vector2F::direction_down_right * epsilon_f_100;
 
 		r = RectangleF(v_touching.x, v_touching.y, 10.0f, 10.0f);
 		CHECK(rectangle_rotated_rectangle_intersect(r, rr));
@@ -269,11 +269,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(circles_intersect(a, b));
 
 		// a and b are just touching
-		b = Circle(10.0f - EPSILON_F, 5.0f, 5.0f);
+		b = Circle(10.0f - epsilon_f, 5.0f, 5.0f);
 		CHECK(circles_intersect(a, b));
 
 		// a and b are just not touching
-		b = Circle(15.0f + EPSILON_F, 0.0f, 5.0f);
+		b = Circle(15.0f + epsilon_f, 0.0f, 5.0f);
 		CHECK_FALSE(circles_intersect(a, b));
 
 		// b is inside a
@@ -311,16 +311,16 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(p == Point2F(0.0f, 0.0f));
 
 		// a and t are just touching
-		t = Triangle(Point2F(10.0f - EPSILON_F, 0.0f), Point2F(20.0f, 0.0f),
-			Point2F(10.0f - EPSILON_F, 20.0f));
+		t = Triangle(Point2F(10.0f - epsilon_f, 0.0f), Point2F(20.0f, 0.0f),
+			Point2F(10.0f - epsilon_f, 20.0f));
 		CHECK(circle_triangle_intersect(a, t, p));
-		CHECK(are_equal(p, Point2F(10.0f - EPSILON_F, 0.0f), 0.1f));
+		CHECK(are_equal(p, Point2F(10.0f - epsilon_f, 0.0f), 0.1f));
 
 		// a and t are just not touching
-		t = Triangle(Point2F(10.0f + EPSILON_F, 10.0f), Point2F(20.0f, 10.0f),
-			Point2F(10.0f + EPSILON_F, 20.0f));
+		t = Triangle(Point2F(10.0f + epsilon_f, 10.0f), Point2F(20.0f, 10.0f),
+			Point2F(10.0f + epsilon_f, 20.0f));
 		CHECK_FALSE(circle_triangle_intersect(a, t, p));
-		CHECK(p == Point2F(10.0f + EPSILON_F, 10.0f));
+		CHECK(p == Point2F(10.0f + epsilon_f, 10.0f));
 	}
 	TEST_CASE("test_circle_quad_intersect")
 	{
@@ -341,18 +341,18 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(circle_quad_intersect(a, q));
 
 		// a and q are just touching
-		q = Quad(RectangleF(10.0f - EPSILON_F, 0.0f, 10.0f, 10.0f));
+		q = Quad(RectangleF(10.0f - epsilon_f, 0.0f, 10.0f, 10.0f));
 		CHECK(circle_quad_intersect(a, q));
 
 		// a and q are just not touching
-		q = Quad(RectangleF(10.0f + EPSILON_F, 10.0f, 10.0f, 10.0f));
+		q = Quad(RectangleF(10.0f + epsilon_f, 10.0f, 10.0f, 10.0f));
 		CHECK_FALSE(circle_quad_intersect(a, q));
 	}
 	TEST_CASE("test_circle_rectangle_rotated_intersect")
 	{
-		RectangleRotated rr(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		RectangleRotated rr(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 
 		Circle c(5.0f, 5.0f, 10.0f);
 		CHECK(circle_rectangle_rotated_intersect(c, rr));
@@ -366,11 +366,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(circle_rectangle_rotated_intersect(c, rr));
 
 		// c and rr are just touching
-		c = Circle(Vector2F::DIRECTION_DOWN_RIGHT * (20.0f - EPSILON_F), 10.0f);
+		c = Circle(Vector2F::direction_down_right * (20.0f - epsilon_f), 10.0f);
 		CHECK(circle_rectangle_rotated_intersect(c, rr));
 
 		// c and rr are just not touching
-		c = Circle(Vector2F::DIRECTION_DOWN_RIGHT * (20.0f + EPSILON_F), 10.0f);
+		c = Circle(Vector2F::direction_down_right * (20.0f + epsilon_f), 10.0f);
 		CHECK_FALSE(circle_rectangle_rotated_intersect(c, rr));
 	}
 	TEST_CASE("test_circle_segment_intersect")
@@ -397,14 +397,14 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(p == Point2F(0.0f, 0.0f));
 
 		// c and s are just touching
-		s = Segment(Point2F(10.0f - EPSILON_F, 0.0f), Point2F(20.0f, 0.0f));
+		s = Segment(Point2F(10.0f - epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK(circle_segment_intersect(c, s, p));
-		CHECK(are_equal(p, Point2F(10.0f - EPSILON_F, 0.0f), 0.1f));
+		CHECK(are_equal(p, Point2F(10.0f - epsilon_f, 0.0f), 0.1f));
 
 		// c and s are just not touching
-		s = Segment(Point2F(10.0f + EPSILON_F, 0.0f), Point2F(20.0f, 0.0f));
+		s = Segment(Point2F(10.0f + epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK_FALSE(circle_segment_intersect(c, s, p));
-		CHECK(p == Point2F(10.0f + EPSILON_F, 0.0f));
+		CHECK(p == Point2F(10.0f + epsilon_f, 0.0f));
 	}
 	TEST_CASE("test_triangles_intersect")
 	{
@@ -425,13 +425,13 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(triangles_intersect(a, b));
 
 		// a and b are just touching
-		b = Triangle(Point2F(10.0f - EPSILON_F, 0.0f), Point2F(20.0f, 0.0f),
-			Point2F(10.0f - EPSILON_F, 10.0f));
+		b = Triangle(Point2F(10.0f - epsilon_f, 0.0f), Point2F(20.0f, 0.0f),
+			Point2F(10.0f - epsilon_f, 10.0f));
 		CHECK(triangles_intersect(a, b));
 
 		// a and b are just not touching
-		b = Triangle(Point2F(10.0f + EPSILON_F, 00.0f), Point2F(20.0f, 00.0f),
-			Point2F(10.0f + EPSILON_F, 10.0f));
+		b = Triangle(Point2F(10.0f + epsilon_f, 00.0f), Point2F(20.0f, 00.0f),
+			Point2F(10.0f + epsilon_f, 10.0f));
 		CHECK_FALSE(triangles_intersect(a, b));
 	}
 	TEST_CASE("test_triangle_quad_intersect")
@@ -453,11 +453,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(triangle_quad_intersect(a, q));
 
 		// a and q are just touching
-		q = Quad(RectangleF(10.0f - EPSILON_F, 0.0f, 10.0f, 10.0f));
+		q = Quad(RectangleF(10.0f - epsilon_f, 0.0f, 10.0f, 10.0f));
 		CHECK(triangle_quad_intersect(a, q));
 
 		// a and q are just not touching
-		q = Quad(RectangleF(10.0f + EPSILON_F, 0.0f, 10.0f, 10.0f));
+		q = Quad(RectangleF(10.0f + epsilon_f, 0.0f, 10.0f, 10.0f));
 		CHECK_FALSE(triangle_quad_intersect(a, q));
 	}
 	TEST_CASE("test_triangle_segment_intersect")
@@ -479,18 +479,18 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(triangle_segment_intersect(a, s));
 
 		// a and s are just touching
-		s = Segment(Point2F(10.0f - EPSILON_F, 0.0f), Point2F(20.0f, 0.0f));
+		s = Segment(Point2F(10.0f - epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK(triangle_segment_intersect(a, s));
 
 		// a and s are just not touching
-		s = Segment(Point2F(10.0f + EPSILON_F, 0.0f), Point2F(20.0f, 0.0f));
+		s = Segment(Point2F(10.0f + epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK_FALSE(triangle_segment_intersect(a, s));
 	}
 	TEST_CASE("test_triangle_rectangle_rotated_intersect")
 	{
-		RectangleRotated rr(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		RectangleRotated rr(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 
 		Triangle t(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f));
 		CHECK(triangle_rectangle_rotated_intersect(t, rr));
@@ -509,15 +509,15 @@ TEST_SUITE("ShapeIntersect")
 		CHECK_FALSE(triangle_rectangle_rotated_intersect(t, rr));
 
 		// t and rr are just touching
-		t = Triangle(Vector2F::DIRECTION_DOWN_RIGHT * (10.0f - EPSILON_F),
-			Vector2F::DIRECTION_DOWN_RIGHT * 20.0f,
-			Vector2F::DIRECTION_DOWN_RIGHT * 20.0f + Vector2F::DIRECTION_UP_RIGHT * 10.0f);
+		t = Triangle(Vector2F::direction_down_right * (10.0f - epsilon_f),
+			Vector2F::direction_down_right * 20.0f,
+			Vector2F::direction_down_right * 20.0f + Vector2F::direction_up_right * 10.0f);
 		CHECK(triangle_rectangle_rotated_intersect(t, rr));
 
 		// t and rr are just not touching
-		t = Triangle(Vector2F::DIRECTION_DOWN_RIGHT * (10.0f + EPSILON_F_100),
-			Vector2F::DIRECTION_DOWN_RIGHT * 20.0f,
-			Vector2F::DIRECTION_DOWN_RIGHT * 20.0f + Vector2F::DIRECTION_UP_RIGHT * 10.0f);
+		t = Triangle(Vector2F::direction_down_right * (10.0f + epsilon_f_100),
+			Vector2F::direction_down_right * 20.0f,
+			Vector2F::direction_down_right * 20.0f + Vector2F::direction_up_right * 10.0f);
 		CHECK_FALSE(triangle_rectangle_rotated_intersect(t, rr));
 	}
 	TEST_CASE("test_quads_intersect")
@@ -539,11 +539,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(quads_intersect(a, b));
 
 		// a and b are just touching
-		b = Quad(RectangleF(10.0f - EPSILON_F, 0.0f, 10.0f, 10.0f));
+		b = Quad(RectangleF(10.0f - epsilon_f, 0.0f, 10.0f, 10.0f));
 		CHECK(quads_intersect(a, b));
 
 		// a and b are just not touching
-		b = Quad(RectangleF(10.0f + EPSILON_F_2, 0.0f, 10.0f, 10.0f));
+		b = Quad(RectangleF(10.0f + epsilon_f_2, 0.0f, 10.0f, 10.0f));
 		CHECK_FALSE(quads_intersect(a, b));
 
 		// 2 identical quads
@@ -568,11 +568,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(quad_segment_intersect(a, s));
 
 		// a and s are just touching
-		s = Segment(Point2F(10.0f - EPSILON_F, 0.0f), Point2F(20.0f, 0.0f));
+		s = Segment(Point2F(10.0f - epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK(quad_segment_intersect(a, s));
 
 		// a and s are just not touching
-		s = Segment(Point2F(10.0f + EPSILON_F, 0.0f), Point2F(20.0f, 0.0f));
+		s = Segment(Point2F(10.0f + epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK_FALSE(quad_segment_intersect(a, s));
 	}
 	TEST_CASE("test_quad_point_intersect")
@@ -595,9 +595,9 @@ TEST_SUITE("ShapeIntersect")
 	}
 	TEST_CASE("test_quad_rectangle_rotated_intersect")
 	{
-		RectangleRotated rr(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		RectangleRotated rr(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 
 		Quad q(RectangleF(5.0f, 5.0f, 10.0f, 10.0f));
 		CHECK(quad_rectangle_rotated_intersect(q, rr));
@@ -614,12 +614,12 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(quad_rectangle_rotated_intersect(q, rr));
 
 		// q and rr are just touching
-		q = Quad(RectangleF(Vector2F::DIRECTION_DOWN_RIGHT * (10.0f - EPSILON_F),
+		q = Quad(RectangleF(Vector2F::direction_down_right * (10.0f - epsilon_f),
 			Vector2F(10.0f, 10.0f)));
 		CHECK(quad_rectangle_rotated_intersect(q, rr));
 
 		// q and rr are just not touching
-		q = Quad(RectangleF(Vector2F::DIRECTION_DOWN_RIGHT * (10.0f + EPSILON_F_100),
+		q = Quad(RectangleF(Vector2F::direction_down_right * (10.0f + epsilon_f_100),
 			Vector2F(10.0f, 10.0f)));
 		CHECK_FALSE(quad_rectangle_rotated_intersect(q, rr));
 	}
@@ -631,10 +631,10 @@ TEST_SUITE("ShapeIntersect")
 		b = Segment(Point2F(500.0f, 500.0f), Point2F(1500.0f, 500.0f));
 		CHECK_FALSE(segments_intersect(a, b));
 		// a and b are just touching
-		b = Segment(Point2F(5.0f, -5.0f), Point2F(5.0f, EPSILON_F));
+		b = Segment(Point2F(5.0f, -5.0f), Point2F(5.0f, epsilon_f));
 		CHECK(segments_intersect(a, b));
 		// a and b are just not touching
-		b = Segment(Point2F(5.0f, -5.0f), Point2F(5.0f, -EPSILON_F));
+		b = Segment(Point2F(5.0f, -5.0f), Point2F(5.0f, -epsilon_f));
 		CHECK_FALSE(segments_intersect(a, b));
 
 		// Two identical segments do not CROSS, and this predicate only
@@ -660,9 +660,9 @@ TEST_SUITE("ShapeIntersect")
 	}
 	TEST_CASE("test_segment_rectangle_rotated_intersect")
 	{
-		 RectangleRotated rr(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		 RectangleRotated rr(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 
 		 Segment s(Point2F(5.0f, 5.0f), Point2F(15.0f, 5.0f));
 		 CHECK(segment_rectangle_rotated_intersect(s, rr));
@@ -692,7 +692,7 @@ TEST_SUITE("ShapeIntersect")
 
 		// An axis-aligned RectangleRotated over the same square.
 		const RectangleRotated rotated(Point2F(5.0f, 5.0f),
-			Vector2F::DIRECTION_RIGHT, Vector2F::DIRECTION_DOWN,
+			Vector2F::direction_right, Vector2F::direction_down,
 			Vector2F(5.0f, 5.0f));
 		CHECK(segment_rectangle_rotated_intersect(across, rotated));
 		CHECK(segment_rectangle_rotated_intersect(back, rotated));
@@ -721,9 +721,9 @@ TEST_SUITE("ShapeIntersect")
 	}
 	TEST_CASE("test_point_rectangle_rotated_intersect")
 	{
-		RectangleRotated rr(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		RectangleRotated rr(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 
 		Point2F p(5.0f, 5.0f);
 		CHECK(point_rectangle_rotated_intersect(p, rr));
@@ -732,20 +732,20 @@ TEST_SUITE("ShapeIntersect")
 		CHECK_FALSE(point_rectangle_rotated_intersect(p, rr));
 
 		// p is on the edge of rr
-		p = Vector2F::DIRECTION_DOWN_RIGHT * 10.0f;
+		p = Vector2F::direction_down_right * 10.0f;
 		CHECK(point_rectangle_rotated_intersect(p, rr));
 
 		// p is just outside the edge of rr
-		p = Vector2F::DIRECTION_DOWN_RIGHT * (10.0f + EPSILON_F_100);
+		p = Vector2F::direction_down_right * (10.0f + epsilon_f_100);
 		CHECK_FALSE(point_rectangle_rotated_intersect(p, rr));
 
 		// p is on the corner of rr
-		p = Vector2F::DIRECTION_DOWN_RIGHT * 10.0f + Vector2F::DIRECTION_UP_RIGHT * 10.0f;
+		p = Vector2F::direction_down_right * 10.0f + Vector2F::direction_up_right * 10.0f;
 		CHECK(point_rectangle_rotated_intersect(p, rr));
 
 		// p is just outside the corner of rr
-		p = Vector2F::DIRECTION_DOWN_RIGHT * (10.0f + EPSILON_F_100) +
-			Vector2F::DIRECTION_UP_RIGHT * (10.0f + EPSILON_F_100);
+		p = Vector2F::direction_down_right * (10.0f + epsilon_f_100) +
+			Vector2F::direction_up_right * (10.0f + epsilon_f_100);
 
 		// p is inside rr
 		p = Point2F(2.0f, 2.0f);
@@ -753,42 +753,42 @@ TEST_SUITE("ShapeIntersect")
 	}
 	TEST_CASE("test_rectangles_rotated_intersect")
 	{
-		RectangleRotated a(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		RectangleRotated a(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 
-		RectangleRotated b(Vector2F::DIRECTION_DOWN_RIGHT * 5.0f,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		RectangleRotated b(Vector2F::direction_down_right * 5.0f,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 		CHECK(rectangles_rotated_intersect(a, b));
 
-		b = RectangleRotated(Vector2F::DIRECTION_DOWN_RIGHT * 200.0f,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		b = RectangleRotated(Vector2F::direction_down_right * 200.0f,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 		CHECK_FALSE(rectangles_rotated_intersect(a, b));
 
 		// b is inside a
-		b = RectangleRotated(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(2.0f, 2.0f));
+		b = RectangleRotated(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(2.0f, 2.0f));
 		CHECK(rectangles_rotated_intersect(a, b));
 
 		// a is inside b
-		b = RectangleRotated(Vector2F::ZERO,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(40.0f, 40.0f));
+		b = RectangleRotated(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(40.0f, 40.0f));
 		CHECK(rectangles_rotated_intersect(a, b));
 
 		// a and b are just touching
-		b = RectangleRotated(Vector2F::DIRECTION_DOWN_RIGHT * 20.0f,
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		b = RectangleRotated(Vector2F::direction_down_right * 20.0f,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 		CHECK(rectangles_rotated_intersect(a, b));
 
 		// a and b are just not touching
-		b = RectangleRotated(Vector2F::DIRECTION_DOWN_RIGHT * (20.0f + EPSILON_F_100),
-			Vector2F::DIRECTION_UP_RIGHT,
-			Vector2F::DIRECTION_DOWN_RIGHT, Vector2F(10.0f, 10.0f));
+		b = RectangleRotated(Vector2F::direction_down_right * (20.0f + epsilon_f_100),
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 		CHECK_FALSE(rectangles_rotated_intersect(a, b));
 
 		// 2 identical rectangles

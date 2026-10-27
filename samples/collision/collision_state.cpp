@@ -16,7 +16,7 @@ namespace collisiondemo
 	{
 		Vector2F keyboard_direction(const Keyboard& keyboard)
 		{
-			Vector2F direction = Vector2F::ZERO;
+			Vector2F direction = Vector2F::zero;
 			if (keyboard.held(Key::a) || keyboard.held(Key::left)) { direction.x -= 1.0f; }
 			if (keyboard.held(Key::d) || keyboard.held(Key::right)) { direction.x += 1.0f; }
 			if (keyboard.held(Key::w) || keyboard.held(Key::up)) { direction.y -= 1.0f; }
@@ -92,7 +92,7 @@ namespace collisiondemo
 				float x, float y, const Colour& tint)
 			{
 				draw_list.draw_text(this->font_, text, Vector2F(x, y), tint,
-					1.0f, 0.0f, Vector2F::ZERO, 0.0f);
+					1.0f, 0.0f, Vector2F::zero, 0.0f);
 			};
 			line(L"COLLISION / move, resolve, observe", 40.0f, 30.0f, Colour::white);
 			line(L"WASD / arrows / left stick: move    R / Y: reset    Esc / B: quit",
@@ -109,7 +109,7 @@ namespace collisiondemo
 	void CollisionState::refresh_view()
 	{
 		const Vector2F resolution = this->app_->resolution_manager()->resolution_vec();
-		const Viewport viewport(RectangleF(Vector2F::ZERO, resolution));
+		const Viewport viewport(RectangleF(Vector2F::zero, resolution));
 		const Camera camera = Camera::frame(RectangleF(0.0f, 0.0f, 1280.0f, 720.0f),
 			viewport);
 		this->arena_->scene().clear_views();

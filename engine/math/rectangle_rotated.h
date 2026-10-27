@@ -83,17 +83,17 @@ namespace labrador
 		bool operator!=(const RectangleRotated& other) const;
 
 	private:
-		Point2F center_ = Point2F::ZERO;
-		Vector2F x_axis_ = Vector2F::DIRECTION_RIGHT;
-		Vector2F y_axis_ = Vector2F::DIRECTION_UP;
-		Vector2F hw_extents_ = Vector2F::ZERO;
+		Point2F center_ = Point2F::zero;
+		Vector2F x_axis_ = Vector2F::direction_right;
+		Vector2F y_axis_ = Vector2F::direction_up;
+		Vector2F hw_extents_ = Vector2F::zero;
 
 		// Four points of fixed size, in fixed storage, so constructing,
 		// copying or assigning an OBB never allocates and neither does
 		// refreshing this cache when a defining member is written - the
 		// argument Shape's note on edges() makes.
-		std::array<Point2F, 4> points_ = { Point2F::ZERO, Point2F::ZERO,
-					Point2F::ZERO, Point2F::ZERO };
+		std::array<Point2F, 4> points_ = { Point2F::zero, Point2F::zero,
+					Point2F::zero, Point2F::zero };
 
 		std::array<Point2F, 4> calculate_points() const;
 

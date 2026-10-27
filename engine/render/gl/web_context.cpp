@@ -117,7 +117,7 @@ namespace labrador
 		// sampler is highp for the same reason: texture() returns the
 		// sampler's precision, and a sampler's default in a fragment shader is
 		// lowp.
-		const char* const WEB_SHADER_PRELUDE =
+		const char* const web_shader_prelude =
 			"#version 300 es\n"
 			"precision highp float;\n"
 			"precision highp sampler2D;\n";
@@ -130,7 +130,7 @@ namespace labrador
 		// on the console when it is enabled.
 		const GLenum UNMASKED_VENDOR_WEBGL = 0x9245;
 		const GLenum UNMASKED_RENDERER_WEBGL = 0x9246;
-		const char* const MASKED_RENDERER = "WebKit WebGL";
+		const char* const masked_renderer = "WebKit WebGL";
 	}
 
 	namespace
@@ -169,7 +169,7 @@ namespace labrador
 				"WEBGL_compressed_texture_s3tc");
 
 			const std::string plain = impl.device_string(GL_RENDERER);
-			const bool masked = plain.empty() || plain == MASKED_RENDERER;
+			const bool masked = plain.empty() || plain == masked_renderer;
 			if (masked && emscripten_webgl_enable_extension(handle,
 				"WEBGL_debug_renderer_info"))
 			{
@@ -337,6 +337,6 @@ namespace labrador
 		// No interval to ask for or read back: the browser presents at the
 		// display's rate and offers no control over it.
 		this->device_info.present_mode = "browser_animation_frame";
-		this->shader_prelude = WEB_SHADER_PRELUDE;
+		this->shader_prelude = web_shader_prelude;
 	}
 }

@@ -69,7 +69,7 @@ namespace labrador
 		this->x = new_x;
 		this->y = new_y;
 	}
-	constinit const Vector2I Vector2I::ZERO = { 0, 0 };
+	constinit const Vector2I Vector2I::zero = { 0, 0 };
 	Vector2I operator+ (const Vector2I& V1, const Vector2I& V2)
 	{
 		return Vector2I(V1.x + V2.x, V1.y + V2.y);

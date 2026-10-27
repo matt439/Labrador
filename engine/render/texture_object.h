@@ -36,7 +36,7 @@ namespace labrador
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 
@@ -46,7 +46,7 @@ namespace labrador
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,
-			const Vector2F& origin = Vector2F::ZERO,
+			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,
 			float layer_depth = 0.0f);
 

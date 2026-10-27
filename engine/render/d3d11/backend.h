@@ -110,12 +110,12 @@ namespace labrador
 		// what a frame is spending its time on. PHILOSOPHY.md, Performance,
 		// names the low tier this is affordable on, and this is the half of
 		// that term a written spec settles: 256KB is a memory budget.
-		static const int MAX_BATCH_SPRITES = 2048;
+		static const int max_batch_sprites = 2048;
 
 		Renderer::Impl* owner = nullptr;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
-		// Dynamic, MAX_BATCH_SPRITES * 4 vertices. Written by Map, never by
+		// Dynamic, max_batch_sprites * 4 vertices. Written by Map, never by
 		// UpdateSubresource: a deferred context records the copy either way,
 		// but DISCARD is what lets the driver hand back fresh memory instead of
 		// waiting for the last frame's draw to finish reading this one.
@@ -141,7 +141,7 @@ namespace labrador
 		ID3D11ShaderResourceView* batch_texture = nullptr;
 
 		// Reset at the top of every frame, not carried across one.
-		Camera camera = Camera::DEFAULT_CAMERA;
+		Camera camera = Camera::default_camera;
 		TextureFilter filter = TextureFilter::point;
 
 		// The pane DrawList::viewport() answers with: the Viewport last given

@@ -142,13 +142,13 @@ namespace labrador
 		// space, into the same viewport, on the same frame. Changing it mid-list
 		// is therefore ordinary, not exceptional.
 		//
-		// The identity is Camera::DEFAULT_CAMERA, which is what a list starts
+		// The identity is Camera::default_camera, which is what a list starts
 		// with, so a caller that only ever wanted screen space never mentions a
 		// camera at all.
 		void set_camera(const Camera& camera);
 
 		// The camera the next draw on this list is mapped through: the last
-		// set_camera on it this frame, else Camera::DEFAULT_CAMERA. Valid only
+		// set_camera on it this frame, else Camera::default_camera. Valid only
 		// on a valid() list. A draw() may read it to choose what it draws for
 		// this view, and must not store it: the list is gone at the next
 		// Renderer::submit(). SEAM.md#6 says why it is read here rather than

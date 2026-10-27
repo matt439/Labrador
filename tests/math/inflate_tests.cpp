@@ -35,7 +35,7 @@ TEST_SUITE("Inflate")
 
 		SUBCASE("a needle's tip is not pushed sideways off its own mitre")
 		{
-			// The determinant at the tip is -2e-5, inside EPSILON, so the
+			// The determinant at the tip is -2e-5, inside default_epsilon, so the
 			// parallel branch fired and moved the tip one unit UP. The
 			// edges are not parallel: they double back, and they meet a
 			// long way to the left.
@@ -105,14 +105,14 @@ TEST_SUITE("Inflate")
 			before[i] = edge_distance(t, i, reference);
 		}
 
-		constexpr float AMOUNT = 5.0f;
-		t.inflate(AMOUNT);
+		constexpr float amount = 5.0f;
+		t.inflate(amount);
 
 		for (int i = 0; i < 3; i++)
 		{
 			CAPTURE(i);
 			CHECK(edge_distance(t, i, reference)
-				== doctest::Approx(before[i] + AMOUNT).epsilon(0.001));
+				== doctest::Approx(before[i] + amount).epsilon(0.001));
 		}
 	}
 	TEST_CASE("an inflated shape contains the shape it grew from")

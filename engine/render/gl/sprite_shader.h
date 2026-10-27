@@ -35,7 +35,7 @@
 
 namespace labrador
 {
-	const char* const SPRITE_VERTEX_SHADER = R"(
+	const char* const sprite_vertex_shader = R"(
 
 // Pixels to clip space, as two multiply-adds rather than a 4x4 matrix.
 //
@@ -64,7 +64,7 @@ void main()
 }
 )";
 
-	const char* const SPRITE_PIXEL_SHADER = R"(
+	const char* const sprite_pixel_shader = R"(
 
 uniform sampler2D sprite_texture;
 
@@ -78,7 +78,7 @@ out vec4 fragment;
 // the two apart, so a red texel under a green tint has to come out black.
 //
 // Nothing here divides by alpha or multiplies by it. The engine's blend
-// equation is premultiplied (the source factor is ONE), so a texel arrives
+// equation is premultiplied (the source factor is one), so a texel arrives
 // premultiplied and leaves premultiplied.
 void main()
 {

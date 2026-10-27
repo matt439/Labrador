@@ -78,7 +78,7 @@ TEST_SUITE("Matrix3x2F")
 
 		// It is the bottom row, and the bottom row is where the origin lands.
 		check_close(transform.translation(),
-			transform.transform_point(Point2F::ZERO));
+			transform.transform_point(Point2F::zero));
 	}
 	TEST_CASE("rotation agrees with the angle convention Vector2F already has")
 	{
@@ -87,19 +87,19 @@ TEST_SUITE("Matrix3x2F")
 		const float angle = 0.7f;
 		const Matrix3x2F turn = Matrix3x2F::rotation(angle);
 
-		check_close(turn.transform_vector(Vector2F::DIRECTION_RIGHT),
+		check_close(turn.transform_vector(Vector2F::direction_right),
 			Vector2F::unit_vec_from_angle(angle));
 
-		CHECK(turn.transform_vector(Vector2F::DIRECTION_RIGHT).angle() ==
+		CHECK(turn.transform_vector(Vector2F::direction_right).angle() ==
 			doctest::Approx(angle));
 	}
 	TEST_CASE("rotation turns a quarter circle without changing length")
 	{
-		const Matrix3x2F quarter = Matrix3x2F::rotation(PI_OVER_2);
+		const Matrix3x2F quarter = Matrix3x2F::rotation(pi_over_2);
 
 		// In maths axes this is counter-clockwise; on a y-down screen the same
 		// number reads as clockwise. The arithmetic is what is pinned here.
-		check_close(quarter.transform_vector(Vector2F::DIRECTION_RIGHT),
+		check_close(quarter.transform_vector(Vector2F::direction_right),
 			Vector2F(0.0f, 1.0f));
 		check_close(quarter.transform_vector(Vector2F(0.0f, 1.0f)),
 			Vector2F(-1.0f, 0.0f));
@@ -114,11 +114,11 @@ TEST_SUITE("Matrix3x2F")
 	}
 	TEST_CASE("rotation is about the origin, and moves everything else")
 	{
-		const Matrix3x2F quarter = Matrix3x2F::rotation(PI_OVER_2);
+		const Matrix3x2F quarter = Matrix3x2F::rotation(pi_over_2);
 
 		// The origin is the fixed point, exactly - there is nothing in that
 		// arithmetic to round.
-		CHECK(quarter.transform_point(Point2F::ZERO) == Point2F::ZERO);
+		CHECK(quarter.transform_point(Point2F::zero) == Point2F::zero);
 
 		// Every other position swings around it. A sprite that orbits when it
 		// was meant to spin is this, applied to a position that is not at the
@@ -148,7 +148,7 @@ TEST_SUITE("Matrix3x2F")
 	}
 	TEST_CASE("composition applies left to right, and does not commute")
 	{
-		const Matrix3x2F turn = Matrix3x2F::rotation(PI_OVER_2);
+		const Matrix3x2F turn = Matrix3x2F::rotation(pi_over_2);
 		const Matrix3x2F move = Matrix3x2F::translation(Vector2F(10.0f, 0.0f));
 
 		// Turn first, then move: the point ends up ten to the right of where
@@ -190,7 +190,7 @@ TEST_SUITE("Matrix3x2F")
 		const Point2F centre(100.0f, 50.0f);
 		const Matrix3x2F spin_about_centre =
 			Matrix3x2F::translation(-centre) *
-			Matrix3x2F::rotation(PI_OVER_2) *
+			Matrix3x2F::rotation(pi_over_2) *
 			Matrix3x2F::translation(centre);
 
 		// The centre is the one point that does not move.
@@ -259,15 +259,15 @@ TEST_SUITE("Matrix3x2F")
 			std::numeric_limits<float>::quiet_NaN()).inverse(),
 			std::invalid_argument);
 	}
-	TEST_CASE("inverse accepts a scale far below EPSILON")
+	TEST_CASE("inverse accepts a scale far below default_epsilon")
 	{
 		// The claim the header makes about tolerances, made executable. A
 		// zoomed-far-out camera is a uniform scale of 0.005, whose determinant
-		// is 2.5e-5 - a quarter of EPSILON. It is perfectly invertible, and a
-		// guard written against EPSILON would refuse it.
+		// is 2.5e-5 - a quarter of default_epsilon. It is perfectly invertible, and a
+		// guard written against default_epsilon would refuse it.
 		const Matrix3x2F zoomed_out = Matrix3x2F::scaling(0.005f);
 
-		CHECK(zoomed_out.determinant() < EPSILON);
+		CHECK(zoomed_out.determinant() < default_epsilon);
 
 		const Matrix3x2F back = zoomed_out.inverse();
 		CHECK(back.m11 == doctest::Approx(200.0f));
@@ -292,7 +292,7 @@ TEST_SUITE("Matrix3x2F")
 	{
 		// Deliberately not a tolerance, and the case that says so: these two
 		// transforms do the same thing and are not the same six floats.
-		const Matrix3x2F built = Matrix3x2F::rotation(PI_OVER_2);
+		const Matrix3x2F built = Matrix3x2F::rotation(pi_over_2);
 		const Matrix3x2F written = Matrix3x2F(0.0f, 1.0f,
 			-1.0f, 0.0f,
 			0.0f, 0.0f);
@@ -300,7 +300,7 @@ TEST_SUITE("Matrix3x2F")
 		CHECK(built != written);
 		check_close(built, written);
 
-		CHECK(built == Matrix3x2F::rotation(PI_OVER_2));
-		CHECK_FALSE(built != Matrix3x2F::rotation(PI_OVER_2));
+		CHECK(built == Matrix3x2F::rotation(pi_over_2));
+		CHECK_FALSE(built != Matrix3x2F::rotation(pi_over_2));
 	}
 }
