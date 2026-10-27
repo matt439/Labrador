@@ -177,7 +177,8 @@ The website workflow runs on every pull request and on pushes to master and
 - [check_doc_citations.cmake](cmake/check_doc_citations.cmake) checks document,
   numbered-section and T-number existence in comments on top-level builds.
   It proves name closure, not that a citation supports its claim.
-  `engine/render/SEAM.md` is rationale; `renderer.h` is caller contract.
+  `engine/render/SEAM.md` and `engine/app/APPLICATION.md` are rationale;
+  `renderer.h` and `application.h` are caller contract.
 - [check_agent_brief.cmake](cmake/check_agent_brief.cmake) requires CLAUDE.md's
   first line to be `@AGENTS.md`. Amend only this brief; CLAUDE imports it.
 - Sources are enumerated explicitly in engine/test/sample CMakeLists.txt;

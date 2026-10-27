@@ -30,12 +30,9 @@ namespace labrador
 {
 	// How many logical processors the machine reports, and never fewer than one.
 	//
-	// THE SHELL ASKS THE MACHINE TWO QUESTIONS, AND THIS IS ONE OF THEM - the
-	// other is where the executable is (content_root.h). What this answer sizes is the thread pool and nothing else: the
-	// renderer's view capacity is a property of the layout
-	// (ApplicationOptions::view_capacity) and the partition count is a
-	// property of the work (Scene::draw). One constant answering all three
-	// conflates them.
+	// It sizes the thread pool and nothing else. The renderer's view capacity
+	// is a property of the layout (ApplicationOptions::view_capacity) and the
+	// partition count is a property of the work (Scene::draw).
 	int default_thread_count();
 
 	// What a game hands the shell before it opens a window. Everything here is a
@@ -65,27 +62,15 @@ namespace labrador
 		// Must convert to at least one StepTimer tick (at most 10,000,000 FPS).
 		int target_fps = 60;
 
-		// The render thread pool's floor and ceiling.
-		//
-		// The ceiling is a property of the MACHINE, so it defaults to what the
-		// machine reports rather than to a number written here. A fan-out wider
-		// than the box has hardware for is slower than not fanning out at all,
-		// and the box least able to absorb that mistake is the one this engine
-		// most wants to run on: a fixed sixteen would make four tasks plus a
-		// blocked submitter out of a four-view frame on a two-core part.
+		// The render thread pool's floor and ceiling. The ceiling defaults to
+		// what the machine reports (APPLICATION.md#1).
 		int min_threads = 1;
 		int max_threads = default_thread_count();
 
 		// The widest a frame may ever fan out, which is what sizes the
 		// renderer's per-view recording state - a backend that records into
-		// per-thread contexts has to make them before any frame starts.
-		//
-		// A PROPERTY OF THE LAYOUT, NOT OF THE MACHINE, and taking it from a
-		// thread count is not merely untidy: every view costs a deferred context
-		// and a sprite batch's dynamic vertex buffer, built eagerly at
-		// create_device and rebuilt after every device restore, whether or not a
-		// frame ever uses it. A sixteen-thread default would build sixteen of
-		// them to draw one pane, out of the same memory the game runs in.
+		// per-thread contexts has to make them before any frame starts. Every
+		// view costs memory whether or not a frame uses it (APPLICATION.md#1).
 		//
 		// Four is four-player split-screen. A game drawing one pane says 1 and
 		// pays for one.
@@ -98,14 +83,9 @@ namespace labrador
 
 		// Throws std::invalid_argument naming the field, rather than letting
 		// a bad number reach the code that divides by it. Application calls
-		// this before it opens a window.
-		//
-		// max_threads reaches Partitioner as a divisor on every frame of every
-		// view, and target_fps reaches StepTimer as one, so a zero in either
-		// would be a hang or a crash on the first frame - and a game may read
-		// both from a save file it does not control.
-		// view_capacity is the same shape: create_device throws below 1, and
-		// throwing here instead names the field rather than the parameter.
+		// this before it opens a window. max_threads and target_fps are
+		// divisors, and a game may read them from a save file it does not
+		// control.
 		void validate() const;
 	};
 
@@ -216,14 +196,7 @@ namespace labrador
 		// size before the renderer resizes its back buffer. All three arrive as
 		// the window's size report - WM_SIZE on Windows - so
 		// on_window_size_changed is the single place that holds the invariant,
-		// and it cannot be got at from a game.
-		//
-		// WITHOUT IT, NEITHER HOLDS. A set_fullscreen that restyles to WS_POPUP
-		// and shows maximized while the resolution manager still reports the last
-		// requested preset has ViewportManager lay out every viewport and divider
-		// for 1280x720 inside a 1440p back buffer, and the game renders into the
-		// top-left corner of its own window with the rest cleared black. A
-		// dragged window edge is the same door.
+		// and it cannot be got at from a game (APPLICATION.md#2).
 
 		// Resizes the window so the game gets `resolution` pixels of CLIENT area,
 		// and re-points the resolution manager at what it actually got. The game
@@ -308,20 +281,9 @@ namespace labrador
 		// Borrowed, every one: the Application owns them and outlives the states
 		// it runs.
 		//
-		// THAT SENTENCE IS TRUE BECAUSE ~Application DRAINS THE STACK FIRST.
-		// The states live in the StateContext base and every service below is a
-		// member, so member destruction would otherwise run first and each of
-		// these would be gone by the time the states holding them were
-		// destroyed. ~Application calls StateContext::clear() as its first
-		// statement; that is the whole of what makes a state safe to release a
-		// service in its destructor, which is the teardown pattern
-		// state_context.h documents.
-		//
-		// The tidier arrangement is for StateContext to be a member declared
-		// last rather than a base, so that the ordering needs no first
-		// statement. It is not taken because it removes push/pop/transition_to
-		// /depth from every Application*, and PHILOSOPHY batches source breaks.
-		// ~StateContext is virtual only because it is inherited from.
+		// ~Application drains the state stack before any service is destroyed,
+		// so a state may release a service in its destructor, which is the
+		// teardown pattern state_context.h documents (APPLICATION.md#3).
 		Renderer* renderer() const;
 		RenderResources* render_resources() const;
 		AudioResources* audio_resources() const;
@@ -337,11 +299,8 @@ namespace labrador
 		// measured across the same frame boundary whichever device it came
 		// from.
 		//
-		// They differ from Gamepads in where their data comes from and in
-		// nothing a client can see: the pads are read from XInput on demand,
-		// while these are fed from the window's messages as they arrive
-		// (engine/input/keyboard.h says why that is forced rather than
-		// chosen). The question a game asks is the same shape for all four.
+		// They differ from Gamepads only in where their data comes from: these
+		// are fed from the window's messages (engine/input/keyboard.h).
 		//
 		// Touch is live while the player is here - the window in the
 		// foreground and shown - whether or not the canvas has the keyboard,
@@ -361,28 +320,15 @@ namespace labrador
 		// Members destruct in reverse declaration order, and the audio device
 		// owns every wave bank and every voice opened against it, so it is
 		// declared FIRST and dies LAST - after the AudioResources whose banks
-		// hold a borrowed pointer to it.
-		//
-		// WHAT ORDER THE AUDIO OBJECTS DIE IN IS NOT THE SHELL'S BUSINESS, which
-		// is what the seam bought. DirectXTK requires its AudioEngine to outlive
-		// every WaveBank and SoundEffectInstance; that rule is six lines from the
-		// library that imposes it, in engine/audio/xaudio2/audio_device.cpp,
-		// where the next backend can have a different one without this file
-		// learning it.
+		// hold a borrowed pointer to it (APPLICATION.md#4).
 		std::unique_ptr<AudioDevice> audio_device_ = nullptr;
 
 		ApplicationOptions options_;
 		std::unique_ptr<Window> window_ = nullptr;
 
-		// AND THE TABLE IS DECLARED BEFORE THE RENDERER, so it dies after one.
-		// render_resources.h states it as a term of the seam and says what it
-		// costs to get wrong: the table holds whatever a backend calls a
-		// texture, and on a backend that owns its own synchronisation that is a
-		// resource the GPU may still be reading - an ID3D12Resource on D3D12, a
-		// VkImage on Vulkan - whose only wait is in ~Renderer::Impl. Declared
-		// the other way round, which is the order they are created in, every
-		// texture would be released ahead of that wait on every normal exit,
-		// and only those backends would show it.
+		// AND THE TABLE IS DECLARED BEFORE THE RENDERER, so it dies after one:
+		// render_resources.h states it as a term of the seam
+		// (APPLICATION.md#4).
 		std::unique_ptr<RenderResources> render_resources_ = nullptr;
 		std::unique_ptr<Renderer> renderer_ = nullptr;
 		StepTimer timer_ = StepTimer();
@@ -420,13 +366,7 @@ namespace labrador
 
 		// WindowNotify. The window forwards these; nothing else calls them,
 		// and they are private because a private override is still reachable
-		// through the base pointer the window holds.
-		//
-		// They stay on Application rather than moving into Window with the rest
-		// of the Win32, and that is a choice about layering rather than a
-		// constraint - nothing below the seam needs telling. Publishing a
-		// Renderer::display_changed() would free them, at the price of a
-		// permanent seam method serving a call that changes nothing.
+		// through the base pointer the window holds (APPLICATION.md#5).
 		void tick() override;
 
 		// The four that mean "the player is looking at us" or "the player is
@@ -467,23 +407,16 @@ namespace labrador
 		// suspended both mean the key-ups and button-ups for whatever is held
 		// will be delivered somewhere else. Touch is told beside it, by
 		// settle_presence, because losing the keyboard is not a reason to
-		// lose the fingers. settle_presence, the two keyboard handlers and
-		// initialize call this, and the alternative is the same pair of lines
-		// written four times.
+		// lose the fingers.
 		void set_input_focus(bool focused) const;
 
 		// WHAT THE WINDOW HAS SAID, AS THREE FACTS, because the platforms
 		// do not agree on which of them arrive together. Foreground is
 		// on_activated, shown is on_resuming, and has_keyboard_ is
 		// on_keyboard_gained, which only a canvas separates from the first.
-		//
-		// The services follow from them rather than from whichever message
-		// came last. The player is here when the window is in the foreground
-		// and shown: the pads are read and the stack is told it is active.
-		// The keyboard and the mouse need that and the keyboard as well. So a
-		// tab shown again while the canvas does not have the keyboard gives
-		// the pads back and not the keys, and a click beside a canvas takes
-		// the keys and not the pads.
+		// The player is here when the window is in the foreground and shown;
+		// the keyboard and the mouse need that and the keyboard as well
+		// (APPLICATION.md#6).
 		bool foreground_ = true;
 		bool shown_ = true;
 		bool has_keyboard_ = true;

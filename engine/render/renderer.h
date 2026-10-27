@@ -135,12 +135,9 @@ namespace labrador
 		// Viewport(0, 0, width, height). Valid only on a valid() list.
 		const Viewport& viewport() const;
 
-		// World to view, for every draw recorded after it.
-		//
-		// It is per range and not per view because one view genuinely has two: a
-		// client draws the world through its camera and the HUD over it in screen
-		// space, into the same viewport, on the same frame. Changing it mid-list
-		// is therefore ordinary, not exceptional.
+		// World to view, for every draw recorded after it. Changing it mid-list
+		// is ordinary: a view draws the world through its camera and then the
+		// HUD over it in screen space.
 		//
 		// The identity is Camera::default_camera, which is what a list starts
 		// with, so a caller that only ever wanted screen space never mentions a
@@ -180,13 +177,7 @@ namespace labrador
 		// reads layer_depth: there is no depth buffer and no sort, which
 		// RenderPixelTests pins - "layer_depth does not order draws, call order
 		// does". A background is put behind a player by drawing it first.
-		//
-		// It is still a parameter, and per draw rather than per object, because
-		// the seam is what a client writes against and a backend that sorts
-		// would need it in that shape, for the reason the tint and the flip
-		// are per draw: the same sprite drawn into two views at two depths must
-		// be expressible, and under the view fan-out a depth read off the
-		// shared object is inexpressible rather than merely racy.
+		// SEAM.md#6 says why it is still a parameter.
 		//
 		// destination is in world space; the list's current camera maps it.
 		//
@@ -203,13 +194,8 @@ namespace labrador
 			SpriteFlip flip,
 			float layer_depth);
 
-		// CONSTRAINT: the text entry point is wide.
-		//
-		// A glyph table is keyed by code unit, so a narrow overload is a
-		// conversion, and a conversion on the draw path is either an allocation
-		// per string per view per frame or a buffer shared between workers. Wide
-		// in, wide all the way down; there is no narrow overload to fall back to
-		// and there should not be one.
+		// CONSTRAINT: the text entry point is wide, and there is no narrow
+		// overload (SEAM.md#6).
 		//
 		// The position need not be a whole pixel, and under the point filter at
 		// a scale of one, text off a whole pixel draws as it would on the
@@ -249,14 +235,10 @@ namespace labrador
 	// Not a graphics type: a game object that has to rebuild something after a
 	// device loss implements this and knows nothing about what was lost.
 	//
-	// AND NOT A QUESTION ABOUT WHICH BACKEND YOU BUILT. A device is lost on
-	// some backends and never on others, but that is a fact about a build and
-	// not about a caller: LABRADOR_RENDER_BACKEND picks one at configure time
-	// (T5) over one game source, so what varies is which build ever RUNS this
-	// path, never which source has to write it. A client that reasons "my
-	// preset cannot lose a device, so I need no rebuild" has written a shell
-	// that is wrong the moment it is configured against another backend.
-	// SEAM.md#8 settles it and says what the rebuild belongs to.
+	// AND NOT A QUESTION ABOUT WHICH BACKEND YOU BUILT. One game source is
+	// built against every backend (T5), so a shell handles device loss
+	// whether or not its own preset can lose a device. SEAM.md#8 says what
+	// the rebuild belongs to.
 	class DeviceNotify
 	{
 	public:
@@ -285,13 +267,8 @@ namespace labrador
 		// The shell hands the renderer its window, and says how many views the
 		// frame may ever fan out to - which sizes the recording state, because a
 		// backend that records into per-thread contexts has to make them before
-		// any frame starts.
-		//
-		// void* rather than HWND because this is the file every backend
-		// implements, and a window handle is not a graphics type: it is this
-		// platform's window. The backend casts it back - or, in the null
-		// backend's case, ignores it, which is what lets a client run on a
-		// machine with no display.
+		// any frame starts. The window is the platform's handle as void*: the
+		// backend casts it back, and the null backend ignores it (SEAM.md#6).
 		//
 		// Throws std::invalid_argument for a view capacity below one, before it
 		// touches a window. The GL backend on Windows requires
@@ -312,20 +289,9 @@ namespace labrador
 		// wants for "re-run the layout".
 		//
 		// CONSTRAINT: IT MAY ARRIVE IN THE MIDDLE OF A FRAME, AND A FRAME IN
-		// PROGRESS IS RESTARTED RATHER THAN REFUSED.
-		//
-		// IT IS NOT A RULE THE CALLER COULD KEEP EVEN IF THIS FILE STATED ONE.
-		// A resize reaches the shell as a window message, and a window message
-		// can be SENT - straight to the window procedure, on the calling
-		// thread, with no queue and no pump in between.
-		// engine/app/win32/window.cpp's resize_client is a SetWindowPos, which
-		// does exactly that, and Application::render runs the state's whole
-		// draw walk between begin_frame and submit. So a client that changes
-		// resolution from inside its own drawing lands here with a frame open,
-		// in one call stack, and no amount of care at the call site would have
-		// told it so. "Do not call this between begin_frame and submit" would
-		// be a prohibition on something the caller does not control, which is
-		// the kind of rule T6 says to make impossible rather than to document.
+		// PROGRESS IS RESTARTED RATHER THAN REFUSED. A client that changes
+		// resolution from inside its own drawing reaches this with a frame
+		// open; SEAM.md#6 says why that cannot be the caller's rule to keep.
 		//
 		// WHAT RESTARTED MEANS, EXACTLY, because a caller may be holding a
 		// DrawList when this lands and that list must not become a trap:
@@ -352,17 +318,8 @@ namespace labrador
 		void set_device_notify(DeviceNotify* device_notify);
 
 		// The table the draw lists resolve handles against. Borrowed, like the
-		// notify above.
-		//
-		// draw_sprite takes a TextureHandle, and the only thing that can turn one
-		// back into whatever this backend calls a texture is the table that
-		// issued it. The alternative is for the caller to resolve first and hand
-		// the resolved resource in - which is the backend's own type, in a game
-		// file's hands, which is the seam undone on the first call.
-		//
-		// Separate from create_device because the order is fixed the other way:
-		// the resource factory needs a device before it can load anything into a
-		// table, so the table cannot exist when the device is made.
+		// notify above. Set after create_device, because the resource factory
+		// needs a device before it can load anything into a table (SEAM.md#6).
 		//
 		// AND THE TEARDOWN ORDER IS FIXED THE OTHER WAY AGAIN. The table outlives
 		// the renderer, because on some backends it holds resources the GPU may
@@ -412,9 +369,7 @@ namespace labrador
 		// SEAM.md#6 has each backend's answer.
 		//
 		// Called once per frame, between begin_frame and end_frame - AND A SECOND
-		// CALL ADDS NOTHING, which is a decision rather than a description. One
-		// flag per backend, set here and cleared by begin_frame, off the
-		// per-sprite path entirely (T8).
+		// CALL ADDS NOTHING.
 		void submit();
 
 		// Back-buffer size in pixels.
@@ -422,31 +377,19 @@ namespace labrador
 		// THE SIZE OF THE BUFFER, NOT OF THE LAST THING ANYONE SAID. The two
 		// agree whenever the shell is keeping up, and the one state where they
 		// need not is a drag-resize, during which the shell discards every
-		// WM_SIZE and still asks for frames (engine/app/win32/window.cpp). What
-		// a backend answers then is whatever it is really drawing into: a swap
-		// chain does not follow its window, so both Direct3D backends answer
-		// the size they were told and let Present stretch; a GL context's
-		// default framebuffer is the window's client area, or in a browser the
-		// canvas's drawing buffer, so the GL backend answers that. Vulkan draws
-		// into an engine-owned colour target and reports its extent;
-		// presentation scales it when the swapchain size differs.
-		// read_back_buffer below is sized from this and a viewport is placed
+		// WM_SIZE and still asks for frames (engine/app/win32/window.cpp). A
+		// backend then answers whatever it is really drawing into, which
+		// SEAM.md#6 gives for each. read_back_buffer below is sized from this and a viewport is placed
 		// inside it, so both describe the buffer the backend actually drew into.
 		Vector2F back_buffer_size() const;
 
 		// Copies the back buffer out: 8-bit RGBA, row-major, top row first,
 		// exactly width * height * 4 bytes. `pixels` is resized to fit.
 		//
-		// RGBA REGARDLESS OF WHAT THE BACKEND STORES, so that the assertions
-		// another backend has to pass are the same bytes and not the same bytes
-		// after a per-backend swizzle. What that costs is the backend's business
-		// and is written down in the backend.
+		// RGBA REGARDLESS OF WHAT THE BACKEND STORES (SEAM.md#6).
 		//
-		// A BACKEND MAY REFUSE, and one does. There is nothing for the null
-		// backend to copy - it records what it was asked to draw and never
-		// rasterises it - so it throws std::logic_error saying so, which is the
-		// honest answer and the reason RenderPixelTests is not built in that
-		// configuration at all rather than built and skipped.
+		// A BACKEND MAY REFUSE, and one does. The null backend never
+		// rasterises, so it throws std::logic_error.
 		//
 		// BETWEEN submit() AND end_frame(), because on the backends where a
 		// present discards what it presented there is nothing left to read
