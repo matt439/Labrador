@@ -28,4 +28,13 @@ namespace labrador
 	// RenderResources::can_render is how a caller finds out before it gets that
 	// far.
 	std::wstring widen(std::string_view utf8);
+
+	// UTF-16 to UTF-8, for text a platform API hands back wide, such as an
+	// adapter's name. The inverse of widen() for every well-formed string.
+	//
+	// A surrogate without its partner becomes U+FFFD, as invalid UTF-8 does
+	// in widen(): the text is reported, not refused. Where wchar_t is 32 bits
+	// a unit may also hold a whole code point past the basic plane, which
+	// encodes as itself; one past U+10FFFF is U+FFFD.
+	std::string narrow(std::wstring_view wide);
 }

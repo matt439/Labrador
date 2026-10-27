@@ -72,6 +72,16 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-27 - Name Direct3D adapters with a portable narrow()
+
+**Behaviour change, Direct3D 11 and 12 only.** Creating a device used to throw
+when the adapter reported an empty name or one that was not valid UTF-16. It
+now reports the name as it is: empty stays empty, as on OpenGL and Vulkan, and
+an unpaired surrogate becomes U+FFFD. The conversion is the new
+`narrow()` in `engine/render/text_encoding.h`, `widen()`'s inverse. A game that
+relied on the throw to refuse such an adapter can check
+`device_info().device_name` itself.
+
 ### 2026-10-27 - Remove public members that nothing calls or tests
 
 **Source break.** These members had no caller in the engine, the samples, the

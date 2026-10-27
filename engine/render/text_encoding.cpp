@@ -67,6 +67,42 @@ namespace labrador
 			wide += static_cast<wchar_t>(0xD800 + (offset >> 10));
 			wide += static_cast<wchar_t>(0xDC00 + (offset & 0x3FF));
 		}
+
+		void append_utf8(std::string& utf8, char32_t code_point)
+		{
+			if (code_point < 0x80)
+			{
+				utf8 += static_cast<char>(code_point);
+			}
+			else if (code_point < 0x800)
+			{
+				utf8 += static_cast<char>(0xC0 | (code_point >> 6));
+				utf8 += static_cast<char>(0x80 | (code_point & 0x3F));
+			}
+			else if (code_point < 0x10000)
+			{
+				utf8 += static_cast<char>(0xE0 | (code_point >> 12));
+				utf8 += static_cast<char>(0x80 | ((code_point >> 6) & 0x3F));
+				utf8 += static_cast<char>(0x80 | (code_point & 0x3F));
+			}
+			else
+			{
+				utf8 += static_cast<char>(0xF0 | (code_point >> 18));
+				utf8 += static_cast<char>(0x80 | ((code_point >> 12) & 0x3F));
+				utf8 += static_cast<char>(0x80 | ((code_point >> 6) & 0x3F));
+				utf8 += static_cast<char>(0x80 | (code_point & 0x3F));
+			}
+		}
+
+		bool high_surrogate(char32_t unit)
+		{
+			return unit >= 0xD800 && unit <= 0xDBFF;
+		}
+
+		bool low_surrogate(char32_t unit)
+		{
+			return unit >= 0xDC00 && unit <= 0xDFFF;
+		}
 	}
 
 	// Each ill-formed run becomes one U+FFFD, and the runs are cut exactly
@@ -132,5 +168,36 @@ namespace labrador
 			index += consumed;
 		}
 		return wide;
+	}
+
+	std::string narrow(std::wstring_view wide)
+	{
+		std::string utf8;
+		utf8.reserve(wide.size());
+
+		std::size_t index = 0;
+		while (index < wide.size())
+		{
+			const char32_t unit = static_cast<char32_t>(wide[index]);
+			++index;
+			if (high_surrogate(unit) && index < wide.size() &&
+				low_surrogate(static_cast<char32_t>(wide[index])))
+			{
+				const char32_t low = static_cast<char32_t>(wide[index]);
+				++index;
+				append_utf8(utf8,
+					0x10000 + ((unit - 0xD800) << 10) + (low - 0xDC00));
+			}
+			else if (high_surrogate(unit) || low_surrogate(unit) ||
+				unit > 0x10FFFF)
+			{
+				append_utf8(utf8, replacement_character);
+			}
+			else
+			{
+				append_utf8(utf8, unit);
+			}
+		}
+		return utf8;
 	}
 }
