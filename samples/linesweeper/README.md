@@ -66,10 +66,11 @@ Labrador deliberately has no engine action map (PHILOSOPHY, *The boundary*).
 Touch controls exist, but the host page holds back touch play until real iPhone
 and phone-layout checks pass. Android remains unverified.
 
-Landing-shadow contrast improvements (`BDP-21`), reduced-motion options
-(`BDP-22`) and selectable colour-vision-deficiency palettes (`BDP-25`) remain
-planned. LineSweeper owns the palette work: the agreed groups are
-**Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and
+The landing shadow's edge stands out from the empty well at 3:1 or more for
+every piece, checked by a test (*The landing shadow is an outline*).
+Reduced-motion options (`BDP-22`) and selectable colour-vision-deficiency
+palettes (`BDP-25`) remain planned. LineSweeper owns the palette work: the
+agreed groups are **Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and
 **Tritanomaly / Tritanopia**. Their colours and player validation remain open
 in the [palette plan](../../docs/product/BACKLOG.md#bdp-25).
 
@@ -263,6 +264,33 @@ That keeps "this sample's content is a font and a JSON file" nearly true, which
 is the sentence the whole in-tree-samples argument rests on. It is also the
 honest shape of the eventual answer: when the particle field lands, the glow is
 an atlas, and an atlas is this file with more in it.
+
+### The landing shadow is an outline
+
+The shadow under a falling piece is the genre's landing aid, so it has to be
+seen by a player with low vision. The target is WCAG 1.4.11's 3:1 for a graphic
+the player needs: the shadow's visible edge against the empty well
+(`well_colour`, 12, 14, 18), for all seven kinds.
+
+A faded fill cannot meet that and still look unlike a piece. The shadow used to
+keep 28% of the piece's colour, which is 1.28:1 for J and 2.02:1 at best for I.
+J at full strength is only 3.62:1, so a fill reaching 3:1 would keep about 88%
+of the piece and read as a second one. So each shadow cell is a two-pixel
+outline in the piece's own full-strength colour around an inside that keeps
+28%. The edges come out at 3.62:1 (J), 4.00 (T), 4.76 (Z), 8.46 (L), 9.33 (S),
+12.63 (O) and 13.54 (I). The faint inside, a fill alpha below 1, is what keeps
+it distinct from the opaque live piece of the same kind.
+
+`palette.h` owns the well colour and both shadow colours, and
+`tests/linesweeper/palette_tests.cpp` checks every kind's edge against the well
+through the premultiplied blend equation. A palette edit that drops a kind
+below 3:1 fails `LineSweeperViewTests`, which matters for the colour-vision
+palettes still to come. The test checks constants, not drawing:
+`board_view.cpp` draws the outline, and the captures are where it was looked
+at. Two limits remain. The one-pixel grid line just outside each cell is
+slightly lighter than the well, and J's edge measures about 3.3:1 against it.
+A phone's scaled-down board draws the two-pixel edge at about one pixel.
+Nobody has yet tested the shadow with low-vision players.
 
 ### Input is read as held, never as pressed
 

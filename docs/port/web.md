@@ -786,7 +786,8 @@ no Android support claim.
 **On mattharding.dev a phone gets the poster and a recording**: the site's
 page offers an on-demand recording of the game, `linesweeper.mp4` beside the
 page, with `preload="none"` and playback controls. The owner accepted the
-existing 4.3 MB recording on 2026-10-27 (`BDP-20`); no smaller encode is needed.
+recording's size on 2026-10-27 (`BDP-20`, then 4.3 MB; the regeneration for
+`BDP-21` is 2.5 MB); no smaller encode is needed.
 It is `LineSweeperCapture`'s footage that the site copies in with
 `sync-demo --video` rather than the bundle carrying it, and the Worker answers
 byte ranges on it, which Safari needs to play a video. It still fetches no
