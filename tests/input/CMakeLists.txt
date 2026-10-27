@@ -6,6 +6,7 @@ labrador_add_test_suite(InputTests
         keyboard_tests.cpp
         mouse_tests.cpp
         touch_tests.cpp
+        vibration_tests.cpp
     LINKS LabradorEngine
 )
 

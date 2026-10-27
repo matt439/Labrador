@@ -99,4 +99,23 @@ namespace labrador
 		return labrador::just_disconnected(this->state(slot),
 			this->previous_state(slot));
 	}
+
+	VibrationResult Gamepads::vibrate(int slot, const Vibration& vibration)
+	{
+		const GamepadState& now = this->state(slot);
+		check_vibration(vibration);
+		if (!now.connected)
+		{
+			return VibrationResult::unavailable;
+		}
+		return this->reader_->vibrate(slot, vibration) ?
+			VibrationResult::submitted : VibrationResult::unavailable;
+	}
+
+	void Gamepads::stop_vibration(int slot)
+	{
+		// For its check: an out-of-range slot throws here, as state() does.
+		static_cast<void>(this->state(slot));
+		this->reader_->stop_vibration(slot);
+	}
 }

@@ -81,6 +81,53 @@ namespace labrador
 		float trigger(GamepadTrigger trigger) const;
 	};
 
+	// One request for a pad's two rumble motors, held for a bounded time.
+	//
+	// THE TWO MOTORS ARE NAMED FOR WHAT THEY FEEL LIKE. low_frequency is the
+	// heavy motor, XInput's left and the Gamepad API's strongMagnitude;
+	// high_frequency is the light one, XInput's right and weakMagnitude. Each
+	// is a strength in [0, 1].
+	//
+	// BOUNDED, BECAUSE A BROWSER CANNOT HOLD A LEVEL. The Gamepad API plays a
+	// rumble as one effect with a duration and has no "until told otherwise",
+	// so a request the engine could keep only on Windows would not be a
+	// portable one. `seconds` is in (0, max_vibration_seconds], and when it
+	// has passed the engine stops the motors itself, on every backend. A game
+	// that wants a longer effect asks again before the last one ends; a new
+	// request on a slot replaces the one before it.
+	//
+	// What to feel when, how strong, an envelope, mixing two effects on one
+	// pad, and whether the player wants any of it are the game's (T1). The
+	// engine sends a request to a slot and stops it.
+	struct Vibration
+	{
+		float low_frequency = 0.0f;
+		float high_frequency = 0.0f;
+		float seconds = 0.0f;
+	};
+
+	// The longest single request. Chromium plays no effect longer than this,
+	// and one bound on every backend keeps a request meaning the same thing.
+	inline constexpr float max_vibration_seconds = 5.0f;
+
+	// What became of a request. submitted means the engine passed it to the
+	// pad API and the API took it, not that a motor turned: no pad API reports
+	// that, and nothing in this engine claims it. unavailable is the expected
+	// absence T6 distinguishes from a broken call - no pad in the slot, a pad
+	// with no rumble the API can reach, a backgrounded game, or an API that
+	// refused - and nothing is waiting to be sent later.
+	enum class VibrationResult
+	{
+		submitted,
+		unavailable,
+	};
+
+	// Throws std::invalid_argument naming the field if a strength is not a
+	// finite number in [0, 1] or `seconds` is not a finite number in
+	// (0, max_vibration_seconds]. Out of range is a bug in the caller, so it
+	// is refused rather than clamped into a request the caller did not make.
+	void check_vibration(const Vibration& vibration);
+
 	// The edges between two frames of one pad.
 	//
 	// Free functions over two values, and Gamepads' methods of the same names

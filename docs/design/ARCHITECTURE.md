@@ -170,8 +170,10 @@ being load-bearing.
 │   ├── scene/              Scene: the object list, the view list, the tick
 │   │                       phases, the per-view draw fan-out and the cull
 │   ├── input/              devices: polling, deadzones, press edges, typed
-│   │                       text, and the direction a stick or a d-pad is
-│   │                       pushed. Four devices, one API shape, two ways
+│   │                       text, the direction a stick or a d-pad is
+│   │                       pushed, and a pad's two rumble motors, sent a
+│   │                       bounded request through the same backend that
+│   │                       reads it. Four devices, one API shape, two ways
 │   │                       in — the pads are read from a backend, the
 │   │                       keyboard, mouse and touch are fed from the
 │   │                       window (see below). The action map is deliberately not built

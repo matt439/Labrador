@@ -101,6 +101,32 @@ them with none ([Test your game](/docs/guides/testing/)).
 Triggers are read as numbers from 0 to 1, or as buttons with `trigger_held`, `trigger_pressed`
 and `trigger_released`, each taking the threshold that counts as pulled.
 
+### Vibration
+
+`vibrate(slot, Vibration{ low_frequency, high_frequency, seconds })` sends one request to a pad's
+two rumble motors. `low_frequency` is the heavy motor and `high_frequency` the light one, each a
+strength from 0 to 1. A request lasts `seconds`, at most `max_vibration_seconds` (five), because
+a browser plays rumble as an effect with a duration and cannot hold a level until told otherwise;
+the engine stops the motors itself when the time passes, on Windows too. A new request on a slot
+replaces the one running there, so a longer effect is asked for again before the last one ends.
+`stop_vibration(slot)` stops it early.
+
+A strength outside 0 to 1, a duration outside its range or a slot outside 0 to 3 throws, rather
+than being clamped into something you did not ask for. An empty slot, a pad with no rumble the
+platform can reach, or a game in the background is not an error: `vibrate` answers
+`VibrationResult::unavailable`, and nothing waits to be sent later. `submitted` means the pad API
+took the request, not that the player felt it.
+
+The engine stops a slot's request when its pad leaves the slot, so a different pad arriving there
+never inherits it, and stops every request when the game goes into the background. Coming back
+replays nothing. When to stop for your own reasons, such as opening the pause menu, is your
+game's call, as are the strengths, the timing and whether the player wants vibration at all.
+
+On Windows the request goes to XInput's two motors; XInput reaches no trigger motors. In a browser
+it is the Gamepad API's `dual-rumble` effect, which Chrome offers and which Firefox does not, so
+there `vibrate` answers `unavailable`. **No controller has been felt vibrating through either
+path yet**; the headless tests check what reaches each backend's call, not the motors.
+
 ## Binding tables
 
 Labrador has no action-mapping layer: what each key does is your game's, written in your game.

@@ -1,6 +1,8 @@
 #include "engine/input/gamepad.h"
 
 #include <cmath>
+#include <stdexcept>
+#include <string>
 
 using namespace labrador;
 
@@ -17,6 +19,32 @@ namespace labrador
 	{
 		return trigger == GamepadTrigger::left ?
 			this->left_trigger : this->right_trigger;
+	}
+
+	namespace
+	{
+		void check_strength(float strength, const char* field)
+		{
+			if (!std::isfinite(strength) || strength < 0.0f || strength > 1.0f)
+			{
+				throw std::invalid_argument(std::string("Vibration: ") + field +
+					" is " + std::to_string(strength) +
+					", not a strength in [0, 1]");
+			}
+		}
+	}
+
+	void check_vibration(const Vibration& vibration)
+	{
+		check_strength(vibration.low_frequency, "low_frequency");
+		check_strength(vibration.high_frequency, "high_frequency");
+		if (!std::isfinite(vibration.seconds) || vibration.seconds <= 0.0f ||
+			vibration.seconds > max_vibration_seconds)
+		{
+			throw std::invalid_argument("Vibration: seconds is " +
+				std::to_string(vibration.seconds) + ", not in (0, " +
+				std::to_string(max_vibration_seconds) + "]");
+		}
 	}
 
 	bool pressed(const GamepadState& now, const GamepadState& before,
