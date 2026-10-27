@@ -2,6 +2,7 @@
 title: Why Labrador?
 description: What Labrador is for, how it differs from Godot, Unreal, raylib and SDL, and what each of its choices costs.
 template: splash
+editUrl: false
 ---
 
 import SourceFile from '~/components/SourceFile.astro';
@@ -29,10 +30,10 @@ small project, with no asset store and no years of answered questions.
 ## Ordinary C++ and standard tools
 
 A Labrador game is an ordinary C++20 program. It links the engine's static libraries, its
-dependencies come from vcpkg, and its build file is plain CMake. This is the whole build file of
+dependencies come from vcpkg, and its build file is plain CMake. Here is the whole build file of
 the minimal sample, comments included:
 
-<SourceFile path="samples/minimal/CMakeLists.txt" />
+<SourceFile path="samples/minimal/CMakeLists.txt" collapsed />
 
 It covers building the game, testing it, running it while you work on it and shipping it: the Windows half
 names the sources, puts the rules in a library with a test, links the engine and its settings,

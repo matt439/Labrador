@@ -1,0 +1,47 @@
+---
+// Starlight's hero, with a frame of LineSweeper beside it where there is room
+// for the frame to be legible. Only the home page has a hero. The frame is
+// served as Capture.astro serves one, the PNG as written and at its own
+// aspect ratio; Starlight's hero image would re-encode it and fit it to a
+// square. On a phone the video follows the hero closely, so the frame is left
+// out rather than shrunk to a thumbnail.
+import Default from '@astrojs/starlight/components/Hero.astro';
+import frame from '../../assets/captures/linesweeper-top-out.png';
+---
+
+<div class="hero-with-frame">
+	<Default />
+	<img
+		class="hero-frame"
+		src={frame.src}
+		width={frame.width}
+		height={frame.height}
+		alt="LineSweeper at the end of a match: the well topped out under a TOPPED OUT banner, with thousands of coloured particles drifting across it."
+		decoding="async"
+	/>
+</div>
+
+<style>
+	.hero-frame {
+		display: none;
+	}
+	@media (min-width: 50rem) {
+		.hero-with-frame {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 3%;
+			align-items: center;
+		}
+		.hero-with-frame :global(.hero) {
+			grid-template-columns: 100%;
+		}
+		.hero-frame {
+			display: block;
+			width: 100%;
+			height: auto;
+			border: 1px solid var(--sl-color-gray-5);
+			border-radius: var(--labrador-radius);
+			background-color: #000;
+		}
+	}
+</style>

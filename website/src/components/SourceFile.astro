@@ -3,7 +3,9 @@
 // it on GitHub at the revision the site was built from.
 //
 // `from` and `to` are the beginnings of the first and last lines wanted, not
-// line numbers; see src/lib/excerpt.ts for why.
+// line numbers; see src/lib/excerpt.ts for why. `collapsed` puts a long
+// passage behind a disclosure that names its length, so it does not stand
+// between a skimming reader and the rest of the page.
 import { Code } from '@astrojs/starlight/components';
 import { excerpt, sourceLanguage } from '../lib/excerpt';
 import { REVISION, sourceUrl } from '../lib/repository';
@@ -15,17 +17,28 @@ interface Props {
 	lang?: string;
 	title?: string;
 	mark?: string | string[];
+	collapsed?: boolean;
 }
 
-const { path, from, to, lang, title, mark } = Astro.props;
+const { path, from, to, lang, title, mark, collapsed = false } = Astro.props;
 const passage = excerpt(path, from, to);
 
 const where = passage.whole ? undefined : { start: passage.start, end: passage.end };
+const count = passage.end - passage.start + 1;
 const lines = !where ? '' : where.start === where.end ? `, line ${where.start}` : `, lines ${where.start}–${where.end}`;
 ---
 
 <div class="source-file">
-	<Code code={passage.code} lang={lang ?? sourceLanguage(path)} title={title ?? path} mark={mark} />
+	{
+		collapsed ? (
+			<details class="source-disclosure">
+				<summary>Show <code>{path}</code>, {count} lines</summary>
+				<Code code={passage.code} lang={lang ?? sourceLanguage(path)} title={title ?? path} mark={mark} />
+			</details>
+		) : (
+			<Code code={passage.code} lang={lang ?? sourceLanguage(path)} title={title ?? path} mark={mark} />
+		)
+	}
 	<p class="source-link">
 		<a href={sourceUrl(path, where)}>{path}{lines}</a>{' '}at <code>{REVISION.short}</code>
 	</p>
