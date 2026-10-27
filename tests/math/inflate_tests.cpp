@@ -57,8 +57,7 @@ TEST_SUITE("Inflate")
 
 		SUBCASE("a straight-through vertex still takes the parallel push")
 		{
-			// The case the old guard was written for, and the one it got
-			// right: a quad with three collinear points along one side.
+			// A quad with three collinear points along one side.
 			// Its determinant is also near zero, but the normals agree in
 			// direction, so the straight push is the correct limit.
 			Quad q(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
@@ -94,8 +93,7 @@ TEST_SUITE("Inflate")
 			return std::abs(Vector2F::dot(from - a, normal));
 		};
 
-		// A deliberately sharp triangle - the case the old form was worst
-		// on.
+		// A deliberately sharp triangle, where a naive push is worst.
 		Triangle t(Point2F(0.0f, 0.0f), Point2F(100.0f, 0.0f),
 			Point2F(90.0f, 20.0f));
 

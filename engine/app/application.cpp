@@ -494,14 +494,13 @@ namespace labrador
 
 	void Application::on_window_size_changed(int width, int height)
 	{
-		// THE LAYOUT SIZE FIRST, AND THIS LINE IS THE WHOLE FIX. Every way a
-		// window can change size arrives here - set_resolution, set_fullscreen,
-		// and a user dragging an edge, which no game asked for at all - and
-		// until now the only thing told about it was the renderer. The back
-		// buffer became 2560x1440 while ResolutionManager went on reporting the
-		// last requested preset, so ViewportManager laid out every viewport and
-		// divider for 1280x720 and the game drew into the top-left corner of its
-		// own window with the rest cleared black.
+		// THE LAYOUT SIZE FIRST. Every way a window can change size arrives
+		// here - set_resolution, set_fullscreen, and a user dragging an edge,
+		// which no game asked for at all - and the layout has to hear it as
+		// well as the renderer. A ResolutionManager still reporting the last
+		// requested preset would have ViewportManager lay out every viewport
+		// and divider for that size while the game draws into a larger back
+		// buffer, leaving the rest of the window cleared black.
 		//
 		// `width` and `height` are CLIENT pixels: WM_SIZE's lParam is the client
 		// area, and the WM_EXITSIZEMOVE path uses GetClientRect. So no frame

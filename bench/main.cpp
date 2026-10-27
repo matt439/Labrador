@@ -140,8 +140,8 @@ int main()
 	// a cosine per sprite for an angle of zero is a real cost in a frame that
 	// draws thousands". Reported rather than asserted on - the ratio is a
 	// property of this machine's transcendentals, and the branch stays worth
-	// having at any ratio above one - but printed, because until it was
-	// printed the claim was an assertion in a comment.
+	// having at any ratio above one - but printed, so the claim is measured
+	// rather than only asserted in a comment.
 	const std::vector<bench::Result> upright = for_case("build_sprite_quad");
 	const std::vector<bench::Result> turned =
 		for_case("build_sprite_quad (rotated)");

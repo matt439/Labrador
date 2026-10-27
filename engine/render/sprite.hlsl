@@ -70,8 +70,8 @@
 // (2/width, -2/height, -1, 1): the y term is negative because the seam's y runs
 // down the screen and Direct3D's and GL's clip space runs up.
 //
-// AND THAT IS NO LONGER THE ONLY LINE WHERE IT IS DECIDED, which it used to
-// claim. Vulkan's clip space runs y DOWN, so this term and that one would
+// AND THIS IS NOT THE ONLY LINE WHERE IT IS DECIDED. Vulkan's clip space runs
+// y DOWN, so this term and that one would
 // cancel and every frame would be upside down - the Vulkan backend answers it
 // by handing the rasteriser a negative viewport height, which flips y a second
 // time (engine/render/vulkan/renderer.cpp, submit). Where a pane sits in the

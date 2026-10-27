@@ -1,8 +1,7 @@
 # MattMath — the math static library. Depends on nothing
-# (docs/design/ARCHITECTURE.md, the module table), which as of the conversion
-# strip is literally true: no DirectXTK, no D3D11, no Windows headers. The
-# conversions that used to require them live at the backend's edge, in
-# engine/render/d3d11/renderer.cpp.
+# (docs/design/ARCHITECTURE.md, the module table), and literally: no DirectXTK,
+# no D3D11, no Windows headers. Conversions to API types live at each
+# backend's edge.
 
 add_library(MattMath STATIC
     circle.cpp

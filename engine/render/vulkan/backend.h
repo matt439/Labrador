@@ -21,31 +21,24 @@
 // This is that include, and EVERY CLIENT OF IT IS IN THIS FOLDER - which is the
 // rule rather than a count. cmake/check_engine_includes.cmake fails the build
 // for any file outside engine/render/<backend>/ that names any header inside
-// it: the folder, not one filename in it, which is why a fifth backend needed
-// no edit to that script.
+// it: the folder, not one filename in it.
 //
-// WHY A FIFTH BACKEND EXISTED TO BE WRITTEN, given that CLAUDE.md said one
-// "would need a reason of its own". docs/port/android.md is the reason and it
-// is not "Vulkan is modern": it is the one API in that list which reaches
-// Android, Linux and - through MoltenVK - the Apple platforms, so an engine
-// that has it has stopped needing a backend per platform. That document also
-// names the two things this port was expected to cost, and both are now
-// measured rather than estimated: SPIR-V at build time is a toolchain the tree
-// did not have
-// (cmake/compile_shaders.cmake says what that took), and there is no in-box
-// software rasteriser the way Direct3D has WARP, so this preset skips
-// RenderPixelTests in CI exactly as the OpenGL one does.
+// WHY THIS BACKEND EXISTS. docs/port/android.md is the reason and it is not
+// "Vulkan is modern": it is the one API which reaches Android, Linux and -
+// through MoltenVK - the Apple platforms, so an engine that has it does not
+// need a backend per platform. It costs two things: SPIR-V at build time, a
+// toolchain of its own (cmake/compile_shaders.cmake), and no in-box software
+// rasteriser the way Direct3D has WARP, so this preset skips RenderPixelTests
+// in CI exactly as the OpenGL one does.
 //
 // WHAT THIS BACKEND ANSWERS THAT NONE OF THE OTHER FOUR COULD. Every one of
 // them learns about a resize from Win32 and from nowhere else; renderer.h's
 // window_size_changed is written entirely in terms of a caller who already
 // knows the size changed. Vulkan is the first API behind this seam where the
 // PRESENTATION ENGINE says so instead - VK_ERROR_OUT_OF_DATE_KHR comes back
-// from an acquire or a present, on a frame no window message touched. That was
-// the open question docs/port/android.md left for the fifth backend, and the
-// answer is in device_resources.h: the seam's contract has the right shape,
-// because what goes stale is a swapchain and what the seam calls the back
-// buffer is not one here. Not a line of renderer.h moved.
+// from an acquire or a present, on a frame no window message touched. The seam's
+// contract has the right shape for that (device_resources.h), because what goes
+// stale is a swapchain and what the seam calls the back buffer is not one here.
 //
 // THE RECORDING SHAPE IS OPENGL'S AND THE NULL BACKEND'S, NOT D3D11'S. A view
 // records into plain memory - vertices, and a list of what to draw them with -

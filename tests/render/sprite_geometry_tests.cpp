@@ -257,17 +257,16 @@ TEST_CASE("a source rectangle with no area does not divide by nothing")
 
 // --- the glyph form ---------------------------------------------------------
 //
-// THE TERM BELOW WAS PINNED BY NOTHING UNTIL THIS BLOCK EXISTED, and it was
-// pinned by nothing in a way worth writing down, because the obvious reading of
-// the test suite says otherwise. RenderPixelTests draws nine strings; every one
+// THE TERM BELOW IS PINNED ONLY HERE, though the obvious reading of the test
+// suite says otherwise. RenderPixelTests draws nine strings; every one
 // of them compares two ink boxes drawn by the same code, so a term added
 // equally to every glyph in both cancels out of the comparison. The one case
 // that measures against an absolute rectangle cannot fail either, because a
 // line is at least line_spacing tall and RectangleI::contains is inclusive, so
 // the ink has room to move inside its own promised box. The null backend's
 // record test compares 'A' against 'B', which in a real font carry the SAME
-// bearing. Deleting glyph.y_offset from any one backend therefore left every
-// configuration green - which is what put the arithmetic here.
+// bearing. Deleting glyph.y_offset from any one backend would leave every
+// other configuration green.
 
 TEST_CASE("CONTRACT: a glyph's bearing lowers it, and scales with the text")
 {
@@ -418,8 +417,7 @@ TEST_CASE("BOUNDS: a half turn about the top left lands the sprite up and left o
 
 TEST_CASE("BOUNDS: without an origin or a turn, the box is the truncated rectangle")
 {
-	// The one case the old answer got right, kept right - except for the
-	// truncation, which the old answer did not apply: x=10.9 draws from 10.
+	// The unturned case, truncated: x=10.9 draws from 10.
 	const RectangleF box = sprite_quad_bounds(
 		RectangleF(10.9f, 5.0f, 8.0f, 8.0f), whole(), 0.0f, Vector2F::ZERO);
 

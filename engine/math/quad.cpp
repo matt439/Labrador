@@ -87,8 +87,8 @@ namespace mattmath
 		// decision procedure for convex shapes, and triangles() splits on a
 		// diagonal that lies outside a concave quad. A dart - four points with
 		// one pushed back through the opposite diagonal - has no two edges
-		// crossing, so it passed the old test and then received a confident
-		// wrong manifold.
+		// crossing, so an edge-crossing test would accept it and the narrow
+		// phase would give it a confident wrong manifold.
 		//
 		// A quad is convex exactly when its diagonals properly cross
 		// (Ericson, 3.7.1): each diagonal must have the other's endpoints
@@ -99,11 +99,9 @@ namespace mattmath
 		// points, or a repeated vertex, put a zero on one side and a zero is
 		// not strictly opposite anything.
 		//
-		// This also removes a trap. The old test asked whether any two edges
-		// intersect, and adjacent edges share a vertex; it only passed at all
-		// because segments_intersect excludes its endpoints. Closing that
-		// boundary - which is an open item against segments_intersect - would
-		// have made every Quad in the tree throw on construction.
+		// It also does not depend on segments_intersect excluding its
+		// endpoints: adjacent edges share a vertex, so an edge-crossing test
+		// would make every Quad throw if that boundary were ever closed.
 		const Point2F& a = this->points_[0];
 		const Point2F& b = this->points_[1];
 		const Point2F& c = this->points_[2];
@@ -142,14 +140,11 @@ namespace mattmath
 	}
 
 	// Each setter puts the point back if the result is not a valid quad, so a
-	// rejected argument leaves the shape exactly as it was.
-	//
-	// RectangleRotated's setters carry the same note and were fixed for the
-	// same reason: assigning to the member and throwing afterwards left the
-	// object holding the value it had just refused. Here it was worse than
-	// there, because is_valid() is a convexity test over all four points - so
-	// a rejected set_point_1 left a quad that every subsequent setter would
-	// also reject, and the shape could not be repaired through its own API.
+	// rejected argument leaves the shape exactly as it was, as
+	// RectangleRotated's setters do. Assigning and throwing afterwards would be
+	// worse here than there, because is_valid() is a convexity test over all
+	// four points: a quad left holding a refused point would be rejected by
+	// every later setter too, and could not be repaired through its own API.
 	void Quad::set_point_0(const Point2F& point)
 	{
 		const Point2F previous = this->points_[0];

@@ -181,10 +181,10 @@ TEST_SUITE("EricsonMath")
 	TEST_CASE("a zero-length segment is its own closest point, not a NaN")
 	{
 		// Reachable: circle_segment_intersect forwards straight into this,
-		// with edges pulled from a shape. The old form divided by the
-		// segment's zero length first, and NaN fails every comparison, so
-		// both clamps declined to catch it and the caller compared
-		// NaN <= radius - false - and reported no intersection.
+		// with edges pulled from a shape. Dividing by the segment's zero
+		// length would give NaN, which fails every comparison, so both clamps
+		// would decline to catch it and the caller would compare
+		// NaN <= radius - false - and report no intersection.
 		const Point2F point(3.0f, 4.0f);
 		const Point2F degenerate(10.0f, 10.0f);
 

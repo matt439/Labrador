@@ -25,9 +25,8 @@ using mattmath::Vector2F;
 
 namespace
 {
-	// The property every caller depends on and no unit test of the old
-	// resolver could have written, because the old resolver's answer was a
-	// direction rather than a distance: applying the manifold ends the
+	// The property every caller depends on, which needs the answer to be a
+	// distance rather than a direction: applying the manifold ends the
 	// overlap. Once, exactly, and in one move.
 	bool separating(const RectangleF& moving, const RectangleF& fixed)
 	{

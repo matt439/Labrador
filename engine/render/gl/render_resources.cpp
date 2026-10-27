@@ -68,8 +68,7 @@ namespace labrador
 	// --- RenderResources -----------------------------------------------------
 	//
 	// The same short list engine/render/d3d11/render_resources.cpp keeps, for
-	// the same reason, and that is now the whole of the overlap between the two
-	// files rather than a page of it: each of these either touches the texture
+	// the same reason: each of these either touches the texture
 	// table or needs Impl complete to make or destroy one. Everything else the
 	// class declares is compiled once, in engine/render/render_resources.cpp.
 

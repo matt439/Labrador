@@ -220,11 +220,10 @@ namespace mattmath
 	// Written out rather than derived. unit_vector(DIRECTION_UP +
 	// DIRECTION_RIGHT) is a function call and a square root, and neither is
 	// a constant expression - std::sqrt is not constexpr here - so a diagonal
-	// spelt that way would not pass constinit. Before constinit it was worse
-	// than a compile error: it read the four cardinal constants during
-	// dynamic initialisation, which is ordered within this file and
-	// unordered across any other, and the engine had already been bitten by
-	// exactly that shape once, with ViewportManager::DIVIDER_COLOUR.
+	// spelt that way would not pass constinit. Without constinit it would be
+	// worse than a compile error: it would read the four cardinal constants
+	// during dynamic initialisation, which is ordered within this file and
+	// unordered across any other.
 	//
 	// The literal is the float nearest 1/sqrt(2), which is the value the
 	// square root produced.

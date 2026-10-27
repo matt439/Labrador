@@ -247,9 +247,8 @@ namespace DirectionTests
 			REQUIRE(repeat.update(Direction::up, 0.3f) == Direction::none);
 
 			// What a freshly constructed repeat does, for one reused across
-			// pages. This case used to say it was what a menu opening over a
-			// held stick wanted; the line below is the cursor moving on the
-			// first frame, which is the opposite. That case is start_held.
+			// pages: the cursor moves on the first frame. A menu opening over
+			// a held stick wants the opposite, which is start_held.
 			repeat.reset();
 
 			CHECK(repeat.update(Direction::up, 0.0f) == Direction::up);

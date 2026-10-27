@@ -25,13 +25,11 @@
 // engine folder naming a header inside this one. The wall covers the folder,
 // not a list of filenames, so a new backend header is covered automatically.
 //
-// WHAT THIS BACKEND DOES DIFFERENTLY, AND WHY IT WAS WORTH WRITING AT ALL. It
-// reaches less hardware than the D3D11 backend, not more: feature level 11_0
-// against that one's 10.0 (device_resources.cpp says so where
-// the floor is set). It is here for two things none of the other backends
-// could give when it was written - there were three then and there are four
-// now, the fifth being the Vulkan one, which answers the first of the two the
-// same way and is the second answer to it rather than a repeat.
+// WHAT THIS BACKEND DOES DIFFERENTLY, AND WHY IT IS WORTH HAVING. It reaches
+// less hardware than the D3D11 backend, not more: feature level 11_0 against
+// that one's 10.0 (device_resources.cpp says so where the floor is set). It is
+// here for two things. The Vulkan backend shares the first; the second is this
+// backend's alone.
 //
 //  - THE ENGINE OWNS SYNCHRONISATION HERE, AS IT DOES IN THE VULKAN BACKEND.
 //    D3D11 renames a mapped buffer for you and tracks what is still in flight;

@@ -82,9 +82,6 @@ namespace labrador
 	// convert to because it does not know the source. Setting both would make
 	// this the one setter with two effects and would be wrong for every caller
 	// whose origin is deliberate.
-	//
-	// It was an empty body with a TODO in it: a setter that took an argument
-	// and discarded it, which is the one shape of wrong a caller cannot see.
 	void DrawObject::set_draw_rotation_by_rectangle_rotated(
 		const RectangleRotated& rect)
 	{

@@ -177,11 +177,8 @@ namespace linesweeper
 	//
 	// PLUS ONE VALUE THE DIFFERENCE CANNOT HOLD. A tick locks and clears in
 	// one step, so no World ever shows the piece as it locked or the rows
-	// that went - and the field used to reconstruct both from where a hard
-	// drop would have put last frame's piece, which is wrong on the tick a
-	// piece rotates or moves before it locks. tick() now hands back the
-	// piece as it locked (world.h, TickResult), the state keeps the latest
-	// one beside its World, and this reads it through a second borrowed
+	// that went. tick() hands back the piece as it locked (world.h,
+	// TickResult), the state keeps the latest one beside its World, and this reads it through a second borrowed
 	// pointer. Still a reader, still no bus: a return value the caller kept
 	// is not an event, and the rules still do not know this file exists.
 	//

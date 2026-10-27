@@ -11,9 +11,6 @@ TEST_SUITE("RectangleF")
 {
 	TEST_CASE("bounding_box_of is the one extremal fold")
 	{
-		// It was written three times - Triangle, Quad and
-		// RectangleRotated - and the last two were character for
-		// character identical.
 		const Point2F points[4] = { Point2F(3.0f, -2.0f),
 			Point2F(-1.0f, 5.0f), Point2F(7.0f, 1.0f),
 			Point2F(2.0f, 4.0f) };

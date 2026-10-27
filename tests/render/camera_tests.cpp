@@ -19,12 +19,8 @@ namespace
 	// What `viewport` actually shows of the world, under `camera` - the
 	// inverse of Camera::calculate_view_rectangle, and what the caller of
 	// frame() cares about: not the numbers in the camera, but the region they
-	// put on screen.
-	//
-	// This was the only correct inverse in the tree, and it was private to
-	// this file while three production sites wrote their own and multiplied
-	// where they should divide. It is Camera::visible_rectangle now, and this
-	// forwards so the cases below keep reading as they did.
+	// put on screen. It forwards to Camera::visible_rectangle so the cases
+	// below read as questions about the screen.
 	RectangleF shown(const Camera& camera, const Viewport& viewport)
 	{
 		return camera.visible_rectangle(viewport);

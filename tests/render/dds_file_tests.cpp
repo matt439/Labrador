@@ -13,10 +13,9 @@
 
 // Reading a .dds, with no device.
 //
-// WHAT THIS REPLACED HAS NO TESTS ANYWHERE, and could not have any: it was one
-// call into DirectXTK that read the file and made the texture together, so the
-// only way to check what it thought a file said was to draw the result. The
-// split makes the first half assertable and the second half three lines.
+// READING IS SEPARATE FROM MAKING THE TEXTURE, so what the reader thinks a file
+// says is assertable without drawing the result, and the device half is three
+// lines.
 //
 // AGAINST THE REAL FILE FOR THE HAPPY PATH, and against files built here for
 // the unhappy ones. tests/render/content/quad.dds is the four-colour texture

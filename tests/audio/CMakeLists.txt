@@ -6,18 +6,10 @@ add_executable(AudioTests
     test_main.cpp
     xwb_file_tests.cpp
 )
-# No find_package for DirectXTK here, and what that sentence means has
-# changed. It used to say: this target gets <Audio.h> whether it wants it or
-# not, because LabradorEngine carries Microsoft::DirectXTK forward as a PUBLIC
-# dependency - and it wants it, because DirectX::SoundState is the return type
-# of one of the methods below, so a headless test of an engine module has to
-# compile a platform header in order to name what it was told. That was
-# docs/survey/2026-08-26.md 3.4's finding stated as a build file.
-#
-# It is now the finding's absence. The seam took the last DirectX:: type out of
-# the engine's public headers, DirectXTK is PRIVATE on LabradorEngine, and
-# nothing in this folder includes an audio API's header. There is nothing to ask
-# for here because there is nothing left to name.
+# No find_package for DirectXTK here. No public engine header names a
+# DirectX:: type, DirectXTK is PRIVATE on LabradorEngine, and nothing in this
+# folder includes an audio API's header, so a headless test of the audio
+# module compiles no platform header.
 target_link_libraries(AudioTests PRIVATE
     LabradorEngine
     doctest::doctest

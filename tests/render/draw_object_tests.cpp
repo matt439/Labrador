@@ -9,19 +9,12 @@
 
 // The per-draw state every drawable carries, with no device and no table.
 //
-// WHY THIS FILE EXISTS AT ALL. DrawObject is accessor-and-composition code -
-// six members, six pairs of virtual accessors and setters - and it had no test
-// of any kind, which docs/review/backend-equivalence-2/ counted as one of ten
-// .cpp under engine/render/ in that state. Most of it needs no assertion: a
-// setter that stores is checked by the compiler. One of them did not store,
-// and that is the reason the rest are here too - a file with one case in it
-// reads as a bug report, where a file that states the whole surface reads as
-// the surface.
-//
-// set_draw_rotation_by_rectangle_rotated was an empty body with a TODO. It
-// took a RectangleRotated and discarded it, so a caller turning a sprite to
-// match a collision shape got a sprite that never turned and no diagnostic of
-// any kind. GAPS.md raised it; this is the assertion that keeps it answered.
+// DrawObject is accessor-and-composition code - six members, six pairs of
+// virtual accessors and setters. Most of it needs no assertion beyond what the
+// compiler checks, but a file that states the whole surface reads as the
+// surface. set_draw_rotation_by_rectangle_rotated is the one setter that does
+// arithmetic: a caller turning a sprite to match a collision shape must get a
+// sprite that turns.
 
 namespace
 {
