@@ -467,6 +467,18 @@ namespace labrador
 		std::vector<const char*> layers;
 
 #if defined(_DEBUG)
+		VkDebugUtilsMessengerCreateInfoEXT messenger = {};
+		messenger.sType =
+			VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		messenger.messageSeverity =
+			VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+			VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		messenger.messageType =
+			VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+			VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+			VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		messenger.pfnUserCallback = report;
+
 		// The validation layers are an optional install (they ship with the
 		// Vulkan SDK), so this asks and carries on - the same shape the D3D12
 		// file's debug-layer probe has, and for the same reason: a machine
@@ -495,6 +507,14 @@ namespace labrador
 		description.enabledLayerCount = static_cast<uint32_t>(layers.size());
 		description.ppEnabledLayerNames = layers.data();
 
+#if defined(_DEBUG)
+		// pNext covers only instance creation/destruction; the persistent
+		// messenger covers calls between them. report borrows no owner data,
+		// so the final texture can release the instance after this renderer.
+		if (validation)
+			description.pNext = &messenger;
+#endif
+
 		const VkResult created = vkCreateInstance(&description, nullptr,
 			&this->owner_->instance);
 		check_vk(created, "The Vulkan instance could not be created");
@@ -509,18 +529,6 @@ namespace labrador
 
 			if (create != nullptr)
 			{
-				VkDebugUtilsMessengerCreateInfoEXT messenger = {};
-				messenger.sType =
-					VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-				messenger.messageSeverity =
-					VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-					VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-				messenger.messageType =
-					VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-					VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-					VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-				messenger.pfnUserCallback = report;
-
 				std::ignore = create(this->owner_->instance, &messenger,
 					nullptr, &this->owner_->messenger);
 			}

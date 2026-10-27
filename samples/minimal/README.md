@@ -36,6 +36,11 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-27.** Quitting during update skips the tick's render after its
+  remaining fixed updates. The smoke test draws its requested 30 completed
+  frames and closes without another present against a destroyed Vulkan
+  surface. A copy relying on a final draw after `Application::quit()` moves
+  that work before quitting; `frame_timings()` keeps the last completed frame.
 - **2026-10-26.** XAudio2 retries unavailable default output while active.
   A copy adding sound keeps its bank and voice handles after recovery but
   explicitly plays persistent sounds again; lost one-shots are dropped.
