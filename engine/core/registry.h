@@ -18,7 +18,12 @@ namespace labrador
 	template <typename Storage>
 	struct RegistryStorage
 	{
-		static auto pointer(const Storage& storage) { return storage.get(); }
+		using pointer_type = decltype(std::declval<const Storage&>().get());
+
+		static pointer_type pointer(const Storage& storage)
+		{
+			return storage.get();
+		}
 	};
 
 	// A store of named resources, and one lookup contract for every kind of
@@ -63,7 +68,8 @@ namespace labrador
 		// If storing a new entry throws, its name is not retained.
 		void add(const std::string& name, Storage resource)
 		{
-			const auto it = this->indices_.find(name);
+			const std::map<std::string, int>::const_iterator it =
+				this->indices_.find(name);
 			if (it != this->indices_.end())
 			{
 				this->entries_[static_cast<size_t>(it->second)].resource =
@@ -93,7 +99,8 @@ namespace labrador
 		// into a handle once and the handle kept for the object's lifetime.
 		handle resolve(const std::string& name) const
 		{
-			const auto it = this->indices_.find(name);
+			const std::map<std::string, int>::const_iterator it =
+				this->indices_.find(name);
 			if (it == this->indices_.end())
 			{
 				throw std::out_of_range(
@@ -134,7 +141,8 @@ namespace labrador
 		// loaded one at every call site that only checks for presence.
 		bool contains(const std::string& name) const
 		{
-			const auto it = this->indices_.find(name);
+			const std::map<std::string, int>::const_iterator it =
+				this->indices_.find(name);
 			return it != this->indices_.end() &&
 				RegistryStorage<Storage>::pointer(
 					this->entries_[static_cast<size_t>(it->second)].resource) !=

@@ -9,6 +9,8 @@
 #include "engine/math/shape.h"
 #include "engine/math/ericson_math.h"
 
+#include <array>
+
 namespace labrador
 {
 
@@ -49,7 +51,7 @@ namespace labrador
 		}
 
 		// check if any of the triangle's edges intersect the rectangle
-		const auto edges = triangle.edges();
+		const std::array<Segment, 3> edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
 			if (rectangle_segment_intersect(rectangle, edge))
@@ -64,7 +66,7 @@ namespace labrador
 	bool rectangle_quad_intersect(const RectangleF& rectangle, const Quad& quad)
 	{
 		// get the triangles of the quad
-		const auto triangles = quad.triangles();
+		const std::array<Triangle, 2> triangles = quad.triangles();
 
 		// check each triangle against the rectangle
 		for (const Triangle& triangle : triangles)
@@ -118,7 +120,7 @@ namespace labrador
 		}
 
 		// check if any of the rotated rectangle's edges intersect the rectangle
-		const auto edges = rotated_rect.edges();
+		const std::array<Segment, 4> edges = rotated_rect.edges();
 		for (const Segment& edge : edges)
 		{
 			if (rectangle_segment_intersect(rect, edge))
@@ -159,7 +161,7 @@ namespace labrador
 
 	bool circle_quad_intersect(const Circle& circle, const Quad& quad)
 	{
-		const auto triangles = quad.triangles();
+		const std::array<Triangle, 2> triangles = quad.triangles();
 
 		for (const Triangle& triangle : triangles)
 		{
@@ -212,7 +214,7 @@ namespace labrador
 		}
 
 		// check if the circle intersects any of the rectangle's edges
-		const auto edges = rect_rotated.edges();
+		const std::array<Segment, 4> edges = rect_rotated.edges();
 		for (const Segment& edge : edges)
 		{
 			if (circle_segment_intersect(circle, edge))
@@ -237,8 +239,8 @@ namespace labrador
 		}
 
 		// get edges of each triangle
-		const auto a_edges = a.edges();
-		const auto b_edges = b.edges();
+		const std::array<Segment, 3> a_edges = a.edges();
+		const std::array<Segment, 3> b_edges = b.edges();
 
 		// All nine edge pairs.
 		//
@@ -282,7 +284,7 @@ namespace labrador
 	bool triangle_quad_intersect(const Triangle& triangle, const Quad& quad)
 	{
 		// get the triangles of the quad
-		const auto triangles = quad.triangles();
+		const std::array<Triangle, 2> triangles = quad.triangles();
 
 		// check each triangle against the quad's triangles
 		for (const Triangle& quad_triangle : triangles)
@@ -340,7 +342,7 @@ namespace labrador
 		}
 
 		// check if any of the triangle's edges intersect the rectangle
-		const auto edges = triangle.edges();
+		const std::array<Segment, 3> edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
 			if (segment_rectangle_rotated_intersect(edge, rect_rotated))
@@ -355,8 +357,8 @@ namespace labrador
 	bool quads_intersect(const Quad& a, const Quad& b)
 	{
 		// get the triangles of each quad
-		const auto a_triangles = a.triangles();
-		const auto b_triangles = b.triangles();
+		const std::array<Triangle, 2> a_triangles = a.triangles();
+		const std::array<Triangle, 2> b_triangles = b.triangles();
 
 		// check each triangle of one quad against the other
 		for (const Triangle& a_triangle : a_triangles)
@@ -389,7 +391,7 @@ namespace labrador
 	bool quad_point_intersect(const Quad& quad, const Point2F& point)
 	{
 		// check if the point is contained within any of the quad's triangles
-		const auto triangles = quad.triangles();
+		const std::array<Triangle, 2> triangles = quad.triangles();
 		for (const Triangle& triangle : triangles)
 		{
 			if (triangle_point_intersect(triangle, point))
@@ -405,7 +407,7 @@ namespace labrador
 		const RectangleRotated& rect_rotated)
 	{
 		// get the triangles of the quad
-		const auto triangles = quad.triangles();
+		const std::array<Triangle, 2> triangles = quad.triangles();
 
 		// check each triangle against the rotated rectangle
 		for (const Triangle& triangle : triangles)
@@ -513,8 +515,8 @@ namespace labrador
 		}
 
 		// check if any of the edges of one rectangle intersect the other
-		const auto a_edges = a.edges();
-		const auto b_edges = b.edges();
+		const std::array<Segment, 4> a_edges = a.edges();
+		const std::array<Segment, 4> b_edges = b.edges();
 
 		for (const Segment& edge : a_edges)
 		{

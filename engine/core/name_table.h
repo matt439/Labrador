@@ -35,7 +35,8 @@ namespace labrador
 		// If storing a new element throws, its name is not retained.
 		void add(const std::string& name, Element element)
 		{
-			const auto it = this->indices_.find(name);
+			const std::map<std::string, int>::const_iterator it =
+				this->indices_.find(name);
 			if (it != this->indices_.end())
 			{
 				this->elements_[static_cast<size_t>(it->second)] =
@@ -62,7 +63,8 @@ namespace labrador
 		// content bug, and it should say so at load rather than draw nothing.
 		Handle<Element> resolve(const std::string& name) const
 		{
-			const auto it = this->indices_.find(name);
+			const std::map<std::string, int>::const_iterator it =
+				this->indices_.find(name);
 			if (it == this->indices_.end())
 			{
 				throw std::out_of_range(std::string("no ") + this->kind_ +

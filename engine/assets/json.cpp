@@ -132,7 +132,8 @@ namespace labrador
 			this->fail("is not an object");
 		}
 
-		const auto member = value.FindMember(key);
+		const rapidjson::Value::ConstMemberIterator member =
+			value.FindMember(key);
 		if (member == value.MemberEnd())
 		{
 			this->fail(std::string("has no '") + key + "'");

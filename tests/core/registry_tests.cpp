@@ -129,8 +129,8 @@ namespace RegistryTests
 			registry.add("first", make(1));
 			registry.add("second", make(2));
 
-			const auto first = registry.resolve("first");
-			const auto second = registry.resolve("second");
+			const Handle<Resource> first = registry.resolve("first");
+			const Handle<Resource> second = registry.resolve("second");
 
 			registry.release_all();
 
@@ -155,7 +155,7 @@ namespace RegistryTests
 			registry.add("first", make(1));
 			registry.add("second", make(2));
 
-			const auto first = registry.resolve("first");
+			const Handle<Resource> first = registry.resolve("first");
 
 			registry.release_all();
 
@@ -172,7 +172,7 @@ namespace RegistryTests
 			Registry<Resource> registry("Resource");
 			registry.add("first", make(1));
 
-			const auto first = registry.resolve("first");
+			const Handle<Resource> first = registry.resolve("first");
 			registry.add("first", make(99));
 
 			CHECK(registry.resolve("first") == first);
@@ -195,7 +195,7 @@ namespace RegistryTests
 		{
 			Registry<Resource> registry("Texture");
 			registry.add("player_sheet", make(1));
-			const auto handle = registry.resolve("player_sheet");
+			const Handle<Resource> handle = registry.resolve("player_sheet");
 			registry.release_all();
 
 			// The whole point of the name kept beside the slot: the error says

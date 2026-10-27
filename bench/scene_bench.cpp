@@ -120,7 +120,7 @@ namespace
 	// measures the filter and nothing else.
 	std::unique_ptr<Scene> build_scene(int collider_count, int object_count)
 	{
-		auto scene = std::make_unique<Scene>(nullptr, nullptr);
+		std::unique_ptr<Scene> scene = std::make_unique<Scene>(nullptr, nullptr);
 
 		const int side = side_of(collider_count);
 		for (int i = 0; i < collider_count; i++)

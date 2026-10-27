@@ -137,8 +137,10 @@ namespace
 	bool ran_before(const std::vector<std::string>& log,
 		const std::string& first, const std::string& second)
 	{
-		const auto a = std::find(log.begin(), log.end(), first);
-		const auto b = std::find(log.begin(), log.end(), second);
+		const std::vector<std::string>::const_iterator a =
+			std::find(log.begin(), log.end(), first);
+		const std::vector<std::string>::const_iterator b =
+			std::find(log.begin(), log.end(), second);
 		return a != log.end() && b != log.end() && a < b;
 	}
 
@@ -211,7 +213,7 @@ TEST_CASE("a state transitioning from its own update survives the call")
 	// is the first thing in the tree to depend on it.
 	Renderer renderer;
 
-	auto outgoing = std::make_unique<RecordingState>("a", &log);
+	std::unique_ptr<RecordingState> outgoing = std::make_unique<RecordingState>("a", &log);
 	RecordingState* outgoing_raw = outgoing.get();
 	context.transition_to(std::move(outgoing));
 
@@ -242,7 +244,7 @@ TEST_CASE("the last transition in one update wins")
 	// is the first thing in the tree to depend on it.
 	Renderer renderer;
 
-	auto outgoing = std::make_unique<RecordingState>("a", &log);
+	std::unique_ptr<RecordingState> outgoing = std::make_unique<RecordingState>("a", &log);
 	RecordingState* outgoing_raw = outgoing.get();
 	context.transition_to(std::move(outgoing));
 
@@ -272,7 +274,7 @@ TEST_CASE("a state transitioning from its own init survives the call")
 	// is the first thing in the tree to depend on it.
 	Renderer renderer;
 
-	auto first = std::make_unique<RecordingState>("a", &log);
+	std::unique_ptr<RecordingState> first = std::make_unique<RecordingState>("a", &log);
 	RecordingState* first_raw = first.get();
 	first_raw->on_init([&]()
 		{
@@ -309,7 +311,7 @@ TEST_CASE("a push suspends what is below it and only the top updates")
 
 	context.transition_to(std::make_unique<RecordingState>("level", &log));
 
-	auto menu = std::make_unique<RecordingState>("menu", &log);
+	std::unique_ptr<RecordingState> menu = std::make_unique<RecordingState>("menu", &log);
 	// A pause menu is a box over a running match, so the match under it keeps
 	// drawing.
 	menu->set_covers_screen(false);
@@ -372,7 +374,7 @@ TEST_CASE("a state popping from its own update survives the call")
 
 	context.transition_to(std::make_unique<RecordingState>("level", &log));
 
-	auto menu = std::make_unique<RecordingState>("menu", &log);
+	std::unique_ptr<RecordingState> menu = std::make_unique<RecordingState>("menu", &log);
 	RecordingState* menu_raw = menu.get();
 
 	std::vector<Answer> answers;
@@ -440,7 +442,7 @@ TEST_CASE("activation reaches every frame, from the top down")
 
 	context.transition_to(std::make_unique<RecordingState>("menu", &log));
 	context.push(std::make_unique<RecordingState>("match", &log));
-	auto pause = std::make_unique<RecordingState>("pause", &log);
+	std::unique_ptr<RecordingState> pause = std::make_unique<RecordingState>("pause", &log);
 	pause->set_covers_screen(false);
 	context.push(std::move(pause));
 	REQUIRE(context.depth() == 3);
@@ -503,7 +505,7 @@ TEST_CASE("a state that arrives after the edge asks for the level instead")
 	CHECK(context.active() == false);
 
 	bool active_at_init = true;
-	auto level = std::make_unique<RecordingState>("level", &log);
+	std::unique_ptr<RecordingState> level = std::make_unique<RecordingState>("level", &log);
 	level->on_init([&]() { active_at_init = context.active(); });
 	context.transition_to(std::move(level));
 
@@ -521,7 +523,7 @@ TEST_CASE("what a deactivated state asks for applies after the walk")
 
 	context.transition_to(std::make_unique<RecordingState>("level", &log));
 
-	auto menu = std::make_unique<RecordingState>("menu", &log);
+	std::unique_ptr<RecordingState> menu = std::make_unique<RecordingState>("menu", &log);
 	RecordingState* menu_raw = menu.get();
 	context.push(std::move(menu));
 
@@ -656,13 +658,13 @@ TEST_CASE("clear drops a queued state that never became live")
 	std::vector<std::string> log;
 	StateContext context;
 
-	auto level = std::make_unique<RecordingState>("level", &log);
+	std::unique_ptr<RecordingState> level = std::make_unique<RecordingState>("level", &log);
 	RecordingState* level_raw = level.get();
 	context.transition_to(std::move(level));
 
 	level_raw->on_update([&]()
 		{
-			auto bad = std::make_unique<RecordingState>("bad", &log);
+			std::unique_ptr<RecordingState> bad = std::make_unique<RecordingState>("bad", &log);
 			bad->on_init([]() { throw std::runtime_error("init failed"); });
 			context.push(std::move(bad));
 			context.push(std::make_unique<RecordingState>("never", &log));
@@ -697,7 +699,7 @@ TEST_CASE("the shape the game is built out of")
 	Renderer renderer;
 
 	// The menu, at the bottom for the whole session.
-	auto menu = std::make_unique<RecordingState>("menu", &log);
+	std::unique_ptr<RecordingState> menu = std::make_unique<RecordingState>("menu", &log);
 	RecordingState* menu_raw = menu.get();
 	context.transition_to(std::move(menu));
 
@@ -707,7 +709,7 @@ TEST_CASE("the shape the game is built out of")
 	// The menu starts a match, from its own update().
 	menu_raw->on_update([&]()
 		{
-			auto match = std::make_unique<RecordingState>("match", &log);
+			std::unique_ptr<RecordingState> match = std::make_unique<RecordingState>("match", &log);
 			match_raw = match.get();
 			context.push<Answer>(std::move(match),
 				[&](const Answer& answer) { match_results.push_back(answer); });
@@ -730,7 +732,7 @@ TEST_CASE("the shape the game is built out of")
 	std::vector<Colour> pause_results;
 	match_raw->on_update([&]()
 		{
-			auto pause = std::make_unique<RecordingState>("pause", &log);
+			std::unique_ptr<RecordingState> pause = std::make_unique<RecordingState>("pause", &log);
 			pause->set_covers_screen(false);
 			pause_raw = pause.get();
 			context.push<Colour>(std::move(pause),
@@ -753,7 +755,7 @@ TEST_CASE("the shape the game is built out of")
 	RecordingState* confirm_raw = nullptr;
 	pause_raw->on_update([&]()
 		{
-			auto confirm = std::make_unique<RecordingState>("confirm", &log);
+			std::unique_ptr<RecordingState> confirm = std::make_unique<RecordingState>("confirm", &log);
 			confirm->set_covers_screen(false);
 			confirm_raw = confirm.get();
 			context.transition_to(std::move(confirm));
