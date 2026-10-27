@@ -64,9 +64,11 @@ every frame had its tail's state: `not_locked` also admits split cadence,
 and a candidate remains an inference about CPU-observed durations. Inspect
 the raw samples and onset before attributing a cause or comparing processes.
 
-The owner decision `SM-03`, which p99 column judges the pipeline-depth claim,
-remains open. This change selects no column, changes no pacing policy and
-replaces no low-tier hardware acceptance.
+This analyzer change selects no measurement column, changes no pacing policy
+and replaces no low-tier hardware acceptance. The subsequent owner decision
+of 2026-10-27 closes `SM-03` by separating CPU phase, cadence, GPU and latency
+evidence in [the ratchet record, section 5](2026-09-19-g6f-ratchet.md#measurement-decision-sm-03).
+The analyzer grouping itself supplies no GPU or latency measurement.
 
 ## 3. Verification
 
