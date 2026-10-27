@@ -105,3 +105,27 @@ drawn after the match's, so it draws on top. See
 `FocusGroup` takes a number of **slots**, one per player, and every call names the slot it is
 for. Each player has their own cursor in the same group, which is what a character-select screen
 needs. The pause menu is single-player and uses slot 0 throughout.
+
+## Accessibility
+
+Labrador provides [keyboard, controller, mouse and touch input](/docs/guides/input/), UI focus
+and directional navigation. The default focus style distinguishes rows by brightness, and your
+game can supply its own colours. In the browser, Tab remains available to move focus away from
+the canvas. The drawn widgets and game state are not exposed to screen readers by the engine.
+
+Your game owns layout, styling, contrast, accessibility options, and its actions and bindings,
+including any rebinding. Labrador has no engine action map; games can implement remappable
+controls through their own [binding tables](/docs/guides/input/#binding-tables).
+
+LineSweeper aims for keyboard and controller play, clear focus, readable contrast,
+reduced-motion options and selectable colour-vision-deficiency palettes. Its documentation
+states what has been verified and any remaining limitations. The sample owns these choices;
+other games decide their own accessibility aims.
+
+Physical controller play still awaits the
+<RepoLink path="docs/port/web-to-be-tested.md" hash="needs-a-gamepad-m4">recorded hardware checks</RepoLink>.
+Landing-shadow contrast work, reduced-motion options and the selectable palette groups remain
+planned: **Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and
+**Tritanomaly / Tritanopia**. These names describe the intended palette groups; their colours
+and player validation remain open in the
+<RepoLink path="docs/product/BACKLOG.md" hash="bdp-25">palette plan</RepoLink>.
