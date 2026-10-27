@@ -9,6 +9,7 @@
 #include "engine/render/sprite_vertex.h"
 
 #include <string>
+#include <vector>
 
 // Where a sprite's four corners go, and what they sample.
 //
@@ -227,4 +228,105 @@ namespace labrador
 				view.draw(atlas.texture, corners);
 			});
 	}
+
+	// One view's recording for a backend that draws the frame from memory at
+	// submit: the corners of every sprite, and the runs that say what to draw
+	// them with. A draw touches no driver, which is what lets several workers
+	// record at once into an API that is single-threaded, or whose command
+	// pools are. The GL and Vulkan backends' DrawList::View is one of these;
+	// the Direct3D backends record into a deferred context and a command
+	// list instead. `TextureKey` is what a run compares to decide whether the
+	// next sprite joins it: a GL texture name, or a pointer to a Vulkan
+	// texture.
+	template <typename TextureKey>
+	struct RunRecorder
+	{
+		// A run of sprites that share everything a draw call fixes. Closed
+		// and pushed when any of the three changes, or at the end of the view.
+		struct Run
+		{
+			Viewport viewport;
+			TextureKey texture{};
+			TextureFilter filter = TextureFilter::point;
+			int first_sprite = 0;
+			int sprites = 0;
+		};
+
+		// How many sprites one run may hold. The backend builds its index
+		// buffer once for this many and draws each run from its first
+		// vertex, so a longer run is split rather than growing anything.
+		// 16-bit indices would allow 16384; 2048 is 256KB of vertices.
+		static constexpr int max_run_sprites = 2048;
+
+		std::vector<SpriteVertex> vertices;
+		std::vector<Run> runs;
+
+		// The run being built. Not in `runs` until something closes it.
+		Run open;
+		bool open_valid = false;
+
+		// Reset at the top of every frame, not carried across one.
+		Camera camera = Camera::default_camera;
+		TextureFilter filter = TextureFilter::point;
+		Viewport viewport;
+
+		// Whether anything has been recorded into this view this frame. It
+		// is what makes a dropped view detectable - see
+		// Renderer::set_view_count.
+		bool touched = false;
+
+		// Appends one sprite's four corners, joining the open run when the
+		// texture, filter and viewport all match it and it has room.
+		//
+		// The viewport term never answers false today: DrawList::set_viewport
+		// closes the run before it writes the new pane, and the other writes
+		// follow a reset(). It is kept so that the join is the whole
+		// predicate, not one that relies on its callers.
+		void record(TextureKey texture, const SpriteVertex* corners)
+		{
+			const int first = static_cast<int>(this->vertices.size()) / 4;
+
+			const bool joins = this->open_valid &&
+				this->open.texture == texture &&
+				this->open.filter == this->filter &&
+				this->open.viewport == this->viewport &&
+				this->open.sprites < max_run_sprites;
+
+			if (!joins)
+			{
+				this->close_run();
+				this->open.viewport = this->viewport;
+				this->open.texture = texture;
+				this->open.filter = this->filter;
+				this->open.first_sprite = first;
+				this->open.sprites = 0;
+				this->open_valid = true;
+			}
+
+			this->vertices.insert(this->vertices.end(), corners, corners + 4);
+			this->open.sprites++;
+			this->touched = true;
+		}
+
+		// Pushes the open run if it holds anything.
+		void close_run()
+		{
+			if (this->open_valid && this->open.sprites != 0)
+			{
+				this->runs.push_back(this->open);
+			}
+			this->open_valid = false;
+		}
+
+		// Forgets the frame: every sprite and run, the camera and the filter.
+		void reset()
+		{
+			this->camera = Camera::default_camera;
+			this->filter = TextureFilter::point;
+			this->vertices.clear();
+			this->runs.clear();
+			this->open_valid = false;
+			this->touched = false;
+		}
+	};
 }

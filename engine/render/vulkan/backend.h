@@ -6,6 +6,7 @@
 #include "engine/render/font.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
+#include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 #include "engine/render/viewport.h"
 #include "engine/render/vulkan/device_resources.h"
@@ -120,49 +121,14 @@ namespace labrador
 		Registry<VulkanTexture> textures{ "Texture" };
 	};
 
-	// One view's recording, which is memory and nothing else.
-	class DrawList::View
+	// One view's recording, which is memory and nothing else
+	// (engine/render/sprite_geometry.h).
+	class DrawList::View : public RunRecorder<const VulkanTexture*>
 	{
 	public:
-		// A run of sprites that share everything a draw call fixes. Closed and
-		// pushed when any of the three changes, or at the end of the view.
-		struct Run
-		{
-			Viewport viewport;
-			const VulkanTexture* texture = nullptr;
-			TextureFilter filter = TextureFilter::point;
-			int first_sprite = 0;
-			int sprites = 0;
-		};
-
-		// How many sprites one run may hold. The index buffer is built once for
-		// this many and reused with a vertex offset, so a longer run is split
-		// rather than growing anything. The same 2048 the other three drawing
-		// backends use, arrived at the same way: 16-bit indices cap a run at
-		// 16384 sprites and 2048 of them is 256KB of vertices.
-		static const int max_run_sprites = 2048;
-
 		Renderer::Impl* owner = nullptr;
 
-		std::vector<SpriteVertex> vertices;
-		std::vector<Run> runs;
-
-		// The run being built. Not in `runs` until something closes it.
-		Run open;
-		bool open_valid = false;
-
-		// Reset at the top of every frame, not carried across one.
-		Camera camera = Camera::default_camera;
-		TextureFilter filter = TextureFilter::point;
-		Viewport viewport;
-
-		// Whether anything has been recorded into this view this frame. It is
-		// what makes a dropped view detectable - see Renderer::set_view_count.
-		bool touched = false;
-
 		void draw(const VulkanTexture& texture, const SpriteVertex* corners);
-		void close_run();
-		void reset();
 	};
 
 	// The device, the swapchain, the views, and everything a draw call needs

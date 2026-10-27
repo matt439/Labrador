@@ -117,22 +117,6 @@ namespace labrador
 					base + offsetof(SpriteVertex, texcoord)));
 		}
 
-		// Whether two viewports are the same pane. A run cannot span a viewport
-		// change - and this is not what closes one.
-		// DrawList::set_viewport closes the run itself before it
-		// writes the new pane, and the only other two writes of View::viewport
-		// follow a reset(); every one of the three leaves open_valid false, and
-		// the join predicate below tests that first. So this term has never
-		// once answered false. It is kept because the predicate it belongs to
-		// is the same predicate on four backends and a term missing from one
-		// copy is how those four drift apart - not because anything here needs
-		// it today.
-		bool same_viewport(const Viewport& left, const Viewport& right)
-		{
-			return left.x == right.x && left.y == right.y &&
-				left.width == right.width && left.height == right.height;
-		}
-
 		std::string shader_log(GLuint shader)
 		{
 			GLint length = 0;
@@ -195,59 +179,10 @@ namespace labrador
 
 	// --- DrawList::View ------------------------------------------------------
 
-	// A DRAW TOUCHES NO DRIVER. Everything a view records is memory: the four
-	// corners the engine's geometry produced, and a run saying what to draw them
-	// with. That is what lets several workers record at once into a single-
-	// threaded API. It is not this backend's alone: null/ and vulkan/ record a frame into vectors the same way, where the two
-	// Direct3D backends record into a deferred context and a command list.
 	void DrawList::View::draw(const GlTexture& texture,
 		const SpriteVertex* corners)
 	{
-		const int first =
-			static_cast<int>(this->vertices.size()) / vertices_per_sprite;
-
-		const bool joins = this->open_valid &&
-			this->open.texture == texture.name() &&
-			this->open.filter == this->filter &&
-			same_viewport(this->open.viewport, this->viewport) &&
-			this->open.sprites < max_run_sprites;
-
-		if (!joins)
-		{
-			this->close_run();
-			this->open.viewport = this->viewport;
-			this->open.texture = texture.name();
-			this->open.filter = this->filter;
-			this->open.first_sprite = first;
-			this->open.sprites = 0;
-			this->open_valid = true;
-		}
-
-		this->vertices.insert(this->vertices.end(), corners,
-			corners + vertices_per_sprite);
-		this->open.sprites++;
-		this->touched = true;
-	}
-
-	void DrawList::View::close_run()
-	{
-		if (!this->open_valid || this->open.sprites == 0)
-		{
-			this->open_valid = false;
-			return;
-		}
-		this->runs.push_back(this->open);
-		this->open_valid = false;
-	}
-
-	void DrawList::View::reset()
-	{
-		this->camera = Camera::default_camera;
-		this->filter = TextureFilter::point;
-		this->vertices.clear();
-		this->runs.clear();
-		this->open_valid = false;
-		this->touched = false;
+		this->record(texture.name(), corners);
 	}
 
 	// --- DrawList ------------------------------------------------------------
