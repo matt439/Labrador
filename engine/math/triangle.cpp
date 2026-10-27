@@ -117,7 +117,7 @@ namespace labrador
 	{
 		return (this->points[0] + this->points[1] + this->points[2]) / 3.0f;
 	}
-	
+
 	float Triangle::calculate_gradient(int edge) const
 	{
 		if (edge < 0 || edge > 2)

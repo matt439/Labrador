@@ -112,6 +112,9 @@ jobs:
       - name: Check source revision and archive metadata without a compiler
         run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_source_revision.cmake
 
+      - name: Check indentation and trailing whitespace against .editorconfig
+        run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_whitespace.cmake
+
       - name: Check the flash definitions against synthetic frames
         run: node --test tools/flash_check/flash_check.test.mjs
 

@@ -36,16 +36,16 @@ namespace labrador
 	bool rectangle_circle_intersect(const RectangleF& rectangle,
 		const Circle& circle);
 
-	bool rectangle_triangle_intersect(const RectangleF& rectangle, 
+	bool rectangle_triangle_intersect(const RectangleF& rectangle,
 		const Triangle& triangle);
 
 	bool rectangle_quad_intersect(const RectangleF& rectangle,
 		const Quad& quad);
 
-	bool rectangle_segment_intersect(const RectangleF& rectangle, 
+	bool rectangle_segment_intersect(const RectangleF& rectangle,
 		const Segment& segment);
 
-	bool rectangle_point_intersect(const RectangleF& rectangle, 
+	bool rectangle_point_intersect(const RectangleF& rectangle,
 		const Point2F& point);
 
 	bool rectangle_rotated_rectangle_intersect(const RectangleF& rect,
@@ -69,19 +69,19 @@ namespace labrador
 	bool circle_segment_intersect(const Circle& circle,
 		const Segment& segment);
 
-	bool circle_point_intersect(const Circle& circle, 
+	bool circle_point_intersect(const Circle& circle,
 		const Point2F& point);
 
 	bool circle_rectangle_rotated_intersect(const Circle& circle,
 		const RectangleRotated& rect_rotated);
 
-	bool triangles_intersect(const Triangle& a, 
+	bool triangles_intersect(const Triangle& a,
 		const Triangle& b);
 
-	bool triangle_quad_intersect(const Triangle& triangle, 
+	bool triangle_quad_intersect(const Triangle& triangle,
 		const Quad& quad);
 
-	bool triangle_segment_intersect(const Triangle& triangle, 
+	bool triangle_segment_intersect(const Triangle& triangle,
 		const Segment& segment);
 
 	bool triangle_point_intersect(const Triangle& triangle,
@@ -95,10 +95,10 @@ namespace labrador
 	bool quad_segment_intersect(const Quad& quad,
 		const Segment& segment);
 
-	bool quad_point_intersect(const Quad& quad, 
+	bool quad_point_intersect(const Quad& quad,
 		const Point2F& point);
 
-	bool quad_rectangle_rotated_intersect(const Quad& quad, 
+	bool quad_rectangle_rotated_intersect(const Quad& quad,
 		const RectangleRotated& rect_rotated);
 
 	bool segments_intersect(const Segment& a, const Segment& b,

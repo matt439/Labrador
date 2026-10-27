@@ -231,7 +231,7 @@ TEST_SUITE("ShapeIntersect")
 
 		r = RectangleF(10.0f, 10.0f, 10.0f, 10.0f);
 		CHECK_FALSE(rectangle_rotated_rectangle_intersect(r, rr));
-		
+
 		// second test with axes not aligned
 		rr = RectangleRotated(Vector2F::zero,
 			Vector2F::direction_up_right,
