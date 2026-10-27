@@ -44,8 +44,13 @@ example replaces the file in place; a progress save that must survive a crash du
 needs your game's recovery scheme, such as a second generation and a checked replacement. Keep
 save writes out of the per-frame update path.
 
-The standard library has no JSON parser. Read bytes with `std::ifstream`, then parse and validate
-them using the JSON reader your game chooses. Check the version, required fields, types and
+The standard library has no JSON parser. The engine reads JSON and writes none:
+`engine/assets/json.h`'s `read_json_file` and `parse_json` return a document whose `JsonValue`
+accessors check every kind and key, and that covers reading a save. Its parser, rapidjson, is
+linked `PRIVATE` to `LabradorEngine` and no engine header names it, so your game cannot include
+it through the engine. A game that writes JSON brings a writer of its own, from vcpkg or
+vendored, on its own account. Read bytes with `std::ifstream`, then parse and validate them
+with the reader your game chooses. Check the version, required fields, types and
 ranges before applying anything. A missing settings file means defaults; malformed or unsupported
 data is a reported load failure, rather than permission to silently overwrite the only copy.
 The check below reads the JSON bytes in C++ and parses that tiny record in its host page;
