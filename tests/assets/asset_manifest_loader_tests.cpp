@@ -1,55 +1,19 @@
 #include <doctest/doctest.h>
 #include "engine/assets/asset_manifest_loader.h"
-#include <filesystem>
-#include <fstream>
+#include "tests/scratch_file.h"
 #include <stdexcept>
 #include <string>
 using namespace labrador;
+using labrador_tests::ScratchFile;
 
 namespace
 {
-	// A manifest on disk, deleted when the test leaves. The loader takes a
-	// path, so testing it means writing files - there is no in-memory door in,
-	// and adding one for the tests would be a second parse path to keep honest.
-	class TempManifest
-	{
-	public:
-		explicit TempManifest(const std::string& contents)
-		{
-			this->path_ = std::filesystem::temp_directory_path() /
-				("labrador_manifest_test_" + std::to_string(next_id()) +
-					".json");
-
-			std::ofstream file(this->path_, std::ios::binary);
-			file << contents;
-		}
-
-		~TempManifest()
-		{
-			std::error_code ignored;
-			std::filesystem::remove(this->path_, ignored);
-		}
-
-		TempManifest(const TempManifest&) = delete;
-		TempManifest& operator=(const TempManifest&) = delete;
-
-		std::string path() const { return this->path_.string(); }
-
-	private:
-		// Every case gets its own file, so a leftover from a crashed run cannot
-		// be read as this run's input.
-		static int next_id()
-		{
-			static int id = 0;
-			return ++id;
-		}
-
-		std::filesystem::path path_;
-	};
-
+	// The loader takes a path, so every case writes a file: there is no
+	// in-memory door in, and adding one for the tests would be a second parse
+	// path to keep honest.
 	AssetManifest load(const std::string& contents)
 	{
-		const TempManifest manifest(contents);
+		const ScratchFile manifest("manifest.json", contents);
 		return read_asset_manifest(manifest.path().c_str());
 	}
 }
@@ -103,7 +67,7 @@ namespace AssetManifestLoaderTests
 
 		TEST_CASE("the manifest remembers where it was read from")
 		{
-			const TempManifest file(R"({ "assets": [] })");
+			const ScratchFile file("manifest.json", R"({ "assets": [] })");
 
 			const AssetManifest manifest =
 				read_asset_manifest(file.path().c_str());
@@ -197,7 +161,7 @@ namespace AssetManifestLoaderTests
 
 		TEST_CASE("a failure names the file it came out of")
 		{
-			const TempManifest file(R"({ "assets": [ { "kind": "font" } ] })");
+			const ScratchFile file("manifest.json", R"({ "assets": [ { "kind": "font" } ] })");
 
 			try
 			{

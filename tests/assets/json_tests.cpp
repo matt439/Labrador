@@ -1,54 +1,16 @@
 #include <doctest/doctest.h>
 #include "engine/assets/json.h"
-#include <filesystem>
-#include <fstream>
+#include "tests/scratch_file.h"
 #include <functional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
 using namespace labrador;
+using labrador_tests::ScratchFile;
 
 namespace
 {
-	// A JSON file on disk, deleted when the test leaves. read_json_file takes a
-	// path, so testing it means writing files. parse_json is the in-memory door
-	// and makes read_json_file's own parse, so the cases that pin what a file
-	// does - a missing one, a null path - stay on files, and the parse_json
-	// cases check that both doors make the same document from the same bytes.
-	class TempJson
-	{
-	public:
-		explicit TempJson(const std::string& contents)
-		{
-			this->path_ = std::filesystem::temp_directory_path() /
-				("labrador_json_test_" + std::to_string(next_id()) + ".json");
-
-			std::ofstream file(this->path_, std::ios::binary);
-			file << contents;
-		}
-
-		~TempJson()
-		{
-			std::error_code ignored;
-			std::filesystem::remove(this->path_, ignored);
-		}
-
-		TempJson(const TempJson&) = delete;
-		TempJson& operator=(const TempJson&) = delete;
-
-		std::string path() const { return this->path_.string(); }
-
-	private:
-		static int next_id()
-		{
-			static int id = 0;
-			return ++id;
-		}
-
-		std::filesystem::path path_;
-	};
-
 	// What a caller sees when a read fails. Every case below asserts on the
 	// message rather than only on the type, because the message is the whole
 	// point: an assert would have said nothing at all, and would have said it
@@ -56,7 +18,7 @@ namespace
 	std::string message_from(const std::string& contents,
 		const std::function<void(const JsonValue&)>& read)
 	{
-		const TempJson file(contents);
+		const ScratchFile file("document.json", contents);
 		try
 		{
 			const JsonDocument document = read_json_file(file.path().c_str());
@@ -124,7 +86,7 @@ namespace JsonTests
 		{
 			// A zero-byte content file is what a truncated write or a failed
 			// copy leaves behind, and it is not the same thing as `{}`.
-			const TempJson file("");
+			const ScratchFile file("document.json", "");
 
 			CHECK_THROWS_AS(read_json_file(file.path().c_str()),
 				std::runtime_error);
@@ -132,7 +94,7 @@ namespace JsonTests
 
 		TEST_CASE("a parse error names the file and where in it")
 		{
-			const TempJson file(R"({ "a": 1, )");
+			const ScratchFile file("document.json", R"({ "a": 1, )");
 			try
 			{
 				read_json_file(file.path().c_str());
@@ -148,7 +110,7 @@ namespace JsonTests
 
 		TEST_CASE("every scalar comes back as itself")
 		{
-			const TempJson file(R"({
+			const ScratchFile file("document.json", R"({
 				"name": "turbulence",
 				"count": 7,
 				"time": 0.05,
@@ -168,7 +130,7 @@ namespace JsonTests
 		{
 			// `0` and `0.0` mean the same thing to a person writing a level
 			// file, and rapidjson's IsFloat() is false for the first of them.
-			const TempJson file(R"({ "x": 0, "y": -3 })");
+			const ScratchFile file("document.json", R"({ "x": 0, "y": -3 })");
 
 			const JsonDocument document = read_json_file(file.path().c_str());
 
@@ -185,7 +147,7 @@ namespace JsonTests
 
 		TEST_CASE("arrays are walked by index")
 		{
-			const TempJson file(R"({ "names": [ "a", "b", "c" ] })");
+			const ScratchFile file("document.json", R"({ "names": [ "a", "b", "c" ] })");
 
 			const JsonDocument document = read_json_file(file.path().c_str());
 			const JsonValue names = document.root().array("names");
@@ -197,7 +159,7 @@ namespace JsonTests
 
 		TEST_CASE("has() is the only door to a field a file may leave out")
 		{
-			const TempJson file(R"({ "rotated": false })");
+			const ScratchFile file("document.json", R"({ "rotated": false })");
 
 			const JsonDocument document = read_json_file(file.path().c_str());
 			const JsonValue root = document.root();
@@ -302,7 +264,7 @@ namespace JsonTests
 			// The game's own object builders reject values this module has no
 			// opinion about - an unknown colour name, an unknown object type -
 			// and this is what lets their messages point at the same place.
-			const TempJson file(R"({ "objects": [ { "type": "Nope" } ] })");
+			const ScratchFile file("document.json", R"({ "objects": [ { "type": "Nope" } ] })");
 
 			const JsonDocument document = read_json_file(file.path().c_str());
 			const JsonValue object = document.root().array("objects").at(0);
@@ -312,7 +274,7 @@ namespace JsonTests
 
 		TEST_CASE("a document remembers the path it was read from")
 		{
-			const TempJson file(R"({})");
+			const ScratchFile file("document.json", R"({})");
 
 			const JsonDocument document = read_json_file(file.path().c_str());
 
@@ -324,7 +286,7 @@ namespace JsonTests
 			// JsonValue points into the document, and the loaders all take one
 			// by value out of read_json_file, so the move had better not be the
 			// thing that dangles them.
-			const TempJson file(R"({ "name": "kept" })");
+			const ScratchFile file("document.json", R"({ "name": "kept" })");
 
 			JsonDocument document = read_json_file(file.path().c_str());
 			const JsonValue root = document.root();
@@ -346,7 +308,7 @@ namespace JsonTests
 				"looping": true,
 				"names": [ "a", "b" ]
 			})";
-			const TempJson file(text);
+			const ScratchFile file("document.json", text);
 
 			const JsonDocument from_file = read_json_file(file.path().c_str());
 			const JsonDocument from_text = parse_json(text, "levels/forest.json");
@@ -424,7 +386,7 @@ namespace JsonTests
 
 		TEST_CASE("read_json_file keeps its own name in its messages")
 		{
-			const TempJson file(R"({ "a": 1, )");
+			const ScratchFile file("document.json", R"({ "a": 1, )");
 			try
 			{
 				read_json_file(file.path().c_str());
@@ -476,7 +438,7 @@ namespace JsonTests
 			for (const std::string& text : cases)
 			{
 				CAPTURE(text);
-				const TempJson file(text);
+				const ScratchFile file("document.json", text);
 				const std::string from_file = outcome_of(
 					[&file] { return read_json_file(file.path().c_str()); });
 				const std::string from_text = outcome_of(
@@ -491,7 +453,7 @@ namespace JsonTests
 
 TEST_CASE("JSON strings retain embedded NUL while identifier access rejects it")
 {
-	const TempJson file(R"({"name":"asset\u0000other","names":["asset\u0000other"]})");
+	const ScratchFile file("document.json", R"({"name":"asset\u0000other","names":["asset\u0000other"]})");
 	const JsonDocument document = read_json_file(file.path().c_str());
 	CHECK(document.root().string("name") == std::string("asset\0other", 11));
 	CHECK(document.root().array("names").at(0).as_string() == std::string("asset\0other", 11));
