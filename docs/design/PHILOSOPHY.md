@@ -713,14 +713,22 @@ engine API to depend on.
   a fast desktop — sized *against* this configuration rather than proven *on*
   it. The four claims above do not all need the same evidence: a 256 KB vertex
   page is a memory budget and is checkable against a written spec, while the
-  two about pipeline depth are latency and need a measured p99. Until that
-  exists no number here is a floor, and `samples/linesweeper/README.md` says so
-  again where the claim is actually made.
+  two about pipeline depth need latency evidence with stated endpoints. CPU
+  update, CPU recording/submission, frame-start cadence, GPU execution and
+  pipeline latency are separate measurements, each with its own p99 where
+  measured. CPU phase times cannot establish GPU completion or presentation
+  latency. The measurement decision in
+  `docs/performance/2026-09-19-g6f-ratchet.md`, section 5, assigns each claim
+  its evidence. Until that evidence exists no number here is a floor, and
+  `samples/linesweeper/README.md` says so again where the claim is actually made.
 - **Absolute frame timing is a declared hardware experiment, not an ordinary
   benchmark assertion.** `LineSweeperFrameBench` runs one fixed top-out frame,
-  retains the software-paced start intervals and the separate update, begin,
-  record-and-submit and present phases, and records the device the renderer
-  actually selected. It calls none of that display scan-out. It is deliberately
+  retains frame-start intervals with their pacing mode and the separate CPU
+  update, begin, record-and-submit and present phases, and records the device
+  the renderer actually selected. The low-tier measurement uses presentation
+  pacing with synchronised presentation; begin and present remain diagnostics
+  that can include waits. These CPU observations measure neither GPU execution
+  nor display scan-out. It is deliberately
   outside CTest: the complexity gates above are portable, while a millisecond
   threshold belongs to one named machine, driver, build and display session.
   `tools/cloud_performance/` freezes those inputs for a disposable EC2 reference

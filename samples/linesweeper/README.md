@@ -749,19 +749,21 @@ need their actual browser run before SM-08 can close.
 ## Still open
 
 - **The reference machine — named now, and still unmeasured.** The
-  hardware-floor claim this sample is eventually meant to prove needs a named
-  part, a named resolution and a measured p99. Two of the three have landed:
-  `PHILOSOPHY.md`, Performance names the configuration, and the resolution is
-  the 1280x720 `main.cpp` already asks for. The p99 has not been taken, and it
-  is the half that carries the claim. So what changed is the shape of this gap
-  rather than its size — until that measurement exists, no number in this
-  repository should be described as a floor. `LineSweeperFrameBench` is now the
-  vehicle for taking it: the actual board, banner and 9,600-particle top-out at
-  this resolution, through one selected backend, with every software-paced
-  frame-start interval and renderer phase retained. That interval is not
-  claimed as display scan-out. The EC2 runner beside it is a reproducible
-  reference profile, not the missing Radeon result; neither tool is itself a
-  measurement.
+  hardware-floor claims this sample is eventually meant to prove need the
+  configuration named by `PHILOSOPHY.md`, Performance, at the 1280x720
+  `main.cpp` already asks for, with separate measurements for each claim.
+  [The measurement decision (SM-03)](../../docs/performance/2026-09-19-g6f-ratchet.md#measurement-decision-sm-03)
+  assigns separate p99s to CPU update, CPU recording/submission and frame-start
+  cadence. Those measurements have not been taken on the Radeon configuration,
+  so no number here is a floor. `LineSweeperFrameBench` is the vehicle for
+  taking them: the actual board, banner and 9,600-particle top-out through one
+  selected backend, with raw intervals and renderer phases retained. New
+  low-tier runs use `--pacing presentation` with synchronised presentation;
+  their frame-start interval measures cadence rather than display scan-out.
+  GPU execution, presentation and input-to-display latency need their own
+  stated measurement endpoints. The pipeline-depth latency claim remains
+  unverified by the benchmark's CPU phases. The EC2 runner beside it supplies
+  reproducible reference profiles; the Radeon measurements remain open.
 - **WCAG 2.2's saturated-red measure.** *The bursts against WCAG 2.3.1* counts
   red flashes by the Understanding document's working definition, and both
   runs count none by the pixel bound. WCAG 2.2's own note measures a red

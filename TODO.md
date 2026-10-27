@@ -15,7 +15,7 @@ An index of open work, one row per item; each row points to the document that ow
 3. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `SM-03` (which p99 column) · `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling).
+- Next: `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
 
 ## Input, menus, settings and saves
@@ -52,12 +52,12 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 ## Performance
 
-**Owner:** [docs/review/backend-equivalence-2/STATUS.md](docs/review/backend-equivalence-2/STATUS.md)'s low-tier box. [The workload/cadence record](docs/performance/2026-10-26-workload-and-cadence.md) owns the completed PERF#1 to PERF#3 corrections; read the ratchet document before the hardware tables.
+**Owner:** [docs/review/backend-equivalence-2/STATUS.md](docs/review/backend-equivalence-2/STATUS.md)'s low-tier box; [the measurement decision](docs/performance/2026-09-19-g6f-ratchet.md#measurement-decision-sm-03) assigns each claim its evidence. [The workload/cadence record](docs/performance/2026-10-26-workload-and-cadence.md) owns the completed PERF#1 to PERF#3 corrections; read the ratchet document before the hardware tables.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-03` | DECISION | should | XS | The owner decides which p99 column the pipeline-depth claims are judged by, and whether that lands in PHILOSOPHY (amendment D) or the ratchet document's section 5. It unblocks `SM-01`, `SM-02` and `SM-07`. |
-| `SM-07` | BLOCKED | should | M | Take and publish the low-tier p99 on the Radeon iGPU under the four-core hold, D3D12 and Vulkan, and tick STATUS.md's box. Needs `SM-03`, `SM-01` (AMD's driver, per-app GPU preference), `SM-02`, `SM-04`, `SM-05`; EC2 runs do not count. |
+| `SM-01` | DECISION | should | S | Select the Radeon iGPU using AMD's driver and Windows' per-app GPU preference, then verify the adapter chosen by the bench. |
+| `SM-07` | BLOCKED | should | M | Record Radeon CPU-phase and cadence p99s plus separate pipeline-latency evidence under the four-core hold (D3D12/Vulkan). Needs `SM-01`, `SM-02`, `SM-04`, `SM-05`; EC2 runs do not count. |
 
 ## Browsers, phones and hardware
 
@@ -137,7 +137,7 @@ A new row for one of these gets its section back.
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |
 | web.md's milestones M1, M2, M5, M6 and its decisions | [docs/port/web.md](docs/port/web.md) sections 8 and 9 | a regression, or a change the port meets that a decision must settle |
 | macOS and iOS | [docs/port/android.md](docs/port/android.md) sections 5 and 6 | a plan document; none is in the tree |
-| The EC2 performance lane | [tools/cloud_performance/README.md](tools/cloud_performance/README.md) | a new reference run after `SM-03`, or a regression question |
+| The EC2 performance lane | [tools/cloud_performance/README.md](tools/cloud_performance/README.md) | a new declared reference run, or a regression question |
 | round-2 plan, the RTCD list, the first review, backend-equivalence | [docs/review/round-2/PLAN.md](docs/review/round-2/PLAN.md), [docs/review/rtcd/](docs/review/rtcd/), [docs/review/IMPLEMENTED.md](docs/review/IMPLEMENTED.md) | nothing: all landed or superseded; the game-side rows live in ColourWars |
 | The 2026-09-26 review's numbered findings and hardening candidates | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and [the review index](docs/review/INDEX.md#hardening-verification) | nothing: all 23 implemented and four hardening candidates addressed; `REV#12` and `SM-19` remain |
 | The repository split, file-length tripwire and survey decisions | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md), [docs/survey/2026-08-26-status.md](docs/survey/2026-08-26-status.md) | nothing: StateContext's responsibility was revisited; markers and the XWB reader were already decided |

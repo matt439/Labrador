@@ -6,7 +6,7 @@ Each line reads: id, MoSCoW, size, the persona it serves, title, and what it wai
 
 ## How the order was decided
 
-Built from the ranked backlog after three corrections to its inputs. (a) Duplicates were merged before ranking: 23 groups fold 27 stories into their leads, so each piece of work appears once and capacity is not double-counted. (b) Every t_ref was checked against the cited text; 105 were corrected, and where a merge joined two incompatible readings (OCA-48/SM-39 on a backgrounded pad) the reading that matches the header's stated contract was taken. (c) The critique's 16 corrections and the owner's 2026-10-13 facts were applied: a physical XInput pad and an iPhone are owned, no Android phone; the MacBook Air stops at Big Sur; the iGPU needs AMD's driver before any adapter choice; ColourWars' math-split migration is done, so its next pin move is an ordinary bump. Horizons were then set by the earlier tests, in order: (1) does delay compound (change list, consumer CI, security route, agent brief); (2) does it serve the primary outside-cpp-adopter's evaluate-adopt-ship-keep path; (3) can one person with agents finish it on owned hardware. Now holds 35 stories in 20 commit batches, each one self-contained PR under the branch, PR, rebase-merge-on-green rule; only two are larger than S (OCA-68 L, OCA-11 M), and every owner-only step in Now is a sign-off or a repository setting rather than hardware. PHILOSOPHY.md is amended in a fixed order of separate PRs, each rebased on the last, so parallel agent branches never conflict on it: A (Now) OCA-05 + FES-03 + NMS-02, facts and permanence, no owner decision; B (Now, last) OCA-69 + OCA-67, the deletion rule, the settle criterion and the first 0.x tag, owner-worded; C (Next) OCA-08, the accessibility position in the UI section, owner-worded; D (Next) SM-03, the p99 column in Performance, only if the owner's decision lands in PHILOSOPHY rather than the ratchet document; E (Later) SM-02, the four-core hold sentence at :691-693, after D; F (Later) SRL-14, T10 and The public face, only if the series is withdrawn. Dependency rules were checked mechanically: no dependency sits in a later horizon than its dependant or carries a weaker MoSCoW, so SM-02, SM-04, SM-05, SM-08, SM-14, BDP-04 and BDP-23 were promoted where a stronger story waits on them. Engine mechanism is added only where a present caller is recorded (PI-05, PI-11 after PI-10). No item adds an editor, scripting, 3D, online play or action mapping.
+Built from the ranked backlog after three corrections to its inputs. (a) Duplicates were merged before ranking: 23 groups fold 27 stories into their leads, so each piece of work appears once and capacity is not double-counted. (b) Every t_ref was checked against the cited text; 105 were corrected, and where a merge joined two incompatible readings (OCA-48/SM-39 on a backgrounded pad) the reading that matches the header's stated contract was taken. (c) The critique's 16 corrections and the owner's 2026-10-13 facts were applied: a physical XInput pad and an iPhone are owned, no Android phone; the MacBook Air stops at Big Sur; the iGPU needs AMD's driver before any adapter choice; ColourWars' math-split migration is done, so its next pin move is an ordinary bump. Horizons were then set by the earlier tests, in order: (1) does delay compound (change list, consumer CI, security route, agent brief); (2) does it serve the primary outside-cpp-adopter's evaluate-adopt-ship-keep path; (3) can one person with agents finish it on owned hardware. Now holds 35 stories in 20 commit batches, each one self-contained PR under the branch, PR, rebase-merge-on-green rule; only two are larger than S (OCA-68 L, OCA-11 M), and every owner-only step in Now is a sign-off or a repository setting rather than hardware. PHILOSOPHY.md amendments use separate PRs, each rebased on the last, so parallel agent branches never conflict on it. The planned order was: A (Now) OCA-05 + FES-03 + NMS-02, facts and permanence, no owner decision; B (Now, last) OCA-69 + OCA-67, the deletion rule, the settle criterion and the first 0.x tag, owner-worded; C (Next) OCA-08, the accessibility position in the UI section, owner-worded; D (Next) SM-03, the per-claim measurement decision in Performance and ratchet section 5, resolved independently of C on 2026-10-27; E (Later) SM-02, the four-core hold sentence at :691-693, after D; F (Later) SRL-14, T10 and The public face, only if the series is withdrawn. Dependency rules were checked mechanically: no dependency sits in a later horizon than its dependant or carries a weaker MoSCoW, so SM-02, SM-04, SM-05, SM-08, SM-14, BDP-04 and BDP-23 were promoted where a stronger story waits on them. Engine mechanism is added only where a present caller is recorded (PI-05, PI-11 after PI-10). No item adds an editor, scripting, 3D, online play or action mapping.
 
 ## Decisions only the owner can make
 
@@ -14,7 +14,7 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 |---|---|
 | Record the accessibility position: what the engine provides, whether the hosted demo has an aim, and who owns the colour-blind palette | OCA-08, BDP-24, BDP-21 |
 | Decided 2026-10-26: ColourWars' pin reaches each Labrador minor tag within a week of it being cut; its gameplay check is ColourWars' own, outside this repository | SM-36, PI-14 |
-| Decide which p99 column the pipeline-depth claims are judged by, and whether it lands in PHILOSOPHY or the ratchet document | SM-03, SM-01, SM-07, SM-02 |
+| Decided 2026-10-27: separate CPU phase and cadence p99s from GPU execution and pipeline latency; the ratchet document's section 5 owns the mapping and PHILOSOPHY cites it | SM-03, SM-01, SM-07, SM-02 |
 | What private ColourWars detail may be published when the seven drafts and the packaging gap are filed, then accept, decline or split each report | PI-09, PI-10, PI-11 |
 | Whether one phone platform's evidence (the iPhone) is enough to lift the phone gate, or the Android run is required | BDP-10 |
 | The 'Introduction to C++' series: not started, planned with an outline, or withdrawn | SRL-14, SRL-15, SRL-17, SRL-16 |
@@ -187,7 +187,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 22. X22 Demo accessibility note: BDP-24
 23. X23 Bundle page in ctest, with its failure paths: BDP-03, BDP-04
 24. X24 Engine revision for consumers: PI-05
-25. X25 p99 column decision (PHILOSOPHY amendment D if it lands there): SM-03
+25. X25 Per-claim measurement decision (PHILOSOPHY amendment D and ratchet section 5): SM-03
 26. X26 iGPU first step: AMD driver and per-app preference: SM-01
 27. X27 File the ColourWars drafts upstream: PI-09
 28. X28 Reviews index and CI guards: SM-16, SM-19, SM-25
@@ -240,7 +240,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[BDP-03](STORIES.md#bdp-03)** Should · M · The Browser and Phone Demo Player: ctest loads and plays the bundle page a visitor gets
 - [x] **[BDP-04](STORIES.md#bdp-04)** Should · M · The Browser and Phone Demo Player: The bundle page's failure paths are tested — after BDP-03
 - [x] **[PI-05](STORIES.md#pi-05)** Could · S · The Pinned Submodule Integrator: The engine tells my build which revision of it I am shipping — after OCA-67
-- [ ] **[SM-03](STORIES.md#sm-03)** Should · XS · The Sole Owner-Maintainer · **Owner**: Decide which p99 the pipeline-depth claims are judged by
+- [x] **[SM-03](STORIES.md#sm-03)** Should · XS · The Sole Owner-Maintainer · **Owner**: Assign separate measurements to CPU phases, cadence, GPU execution and pipeline latency
 - [ ] **[SM-01](STORIES.md#sm-01)** Should · S · The Sole Owner-Maintainer · **Owner**: Run the frame bench on the integrated Radeon, not the RTX 5080 — after SM-03
 - [ ] **[PI-09](STORIES.md#pi-09)** Should · S · The Pinned Submodule Integrator · **Owner**: File the seven live drafts and the packaging gap upstream — after OCA-72
 - [x] **[SM-16](STORIES.md#sm-16)** Should · S · The Sole Owner-Maintainer: One index of reviews and which ledger is live — after SM-06
@@ -297,7 +297,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | BDP-03 | G33 (major): the page hosts serve had no automated test. Closed 2026-10-27: following the initial GPU startup denial, all 31 `wasm-release` entries pass locally in Chrome 156.0.8078.48 on the RTX 5080. The [PR #59 wasm job](https://github.com/matt439/Labrador/actions/runs/40419996949/job/121911813526), at initial head `0fffdf1`, also passes and reports `LineSweeperBundlePageTests` passed in 6.62 seconds on Chrome 156 with SwiftShader. [Evidence and limits](../port/web.md#packaged-page-verification-2026-10-27). |
 | BDP-04 | G33: the bundle page's failure paths. Closed 2026-10-27: `LineSweeperBundlePageTests` passes locally in Chrome 156.0.8078.48 within the 31-entry `wasm-release` run, including context loss/restore, truncated-wasm failure and captured-config `onError` recovery UI. [Evidence](../port/web.md#packaged-page-verification-2026-10-27). The earlier GPU startup denial is superseded for this local check; no hosted or physical-device acceptance is added. |
 | PI-05 | G53: no engine revision a consumer can stamp; two present callers (the web bundle and a client). The first tag (Now) gives the fallback value. Closed 2026-10-26: LABRADOR_SOURCE_REVISION exports a configure-time hash/dirty or unknown identity, with an own-root guard for archives. Offline checkout/consumer/dirty-refresh/worktree/unborn/archive/missing-Git and bundle fixtures pass; the existing CI lint job runs them. README documents reconfigure-before-packaging and the bundle build-time distinction. |
-| SM-03 | G26: which p99 the pipeline-depth claims are judged by. An owner decision; PHILOSOPHY amendment D only if it lands there. |
+| SM-03 | G26. Closed 2026-10-27 by the owner's decision to split the measurements: [ratchet section 5](../performance/2026-09-19-g6f-ratchet.md#measurement-decision-sm-03) owns the field mapping; PHILOSOPHY's Performance section cites it. CPU update, recording/submission and frame-start cadence have separate p99s. GPU execution and pipeline latency require separate evidence with stated endpoints. The low-tier capture uses the existing presentation pacing and synchronised present; an unsynchronised seam option is not adopted (T5, T8). This Performance amendment is independent of OCA-08's still-open UI position. SM-07 and the low-tier acceptance box remain open; no hardware result is added. |
 | SM-01 | G01 (major): the bench cannot reach the iGPU. The XS first step (AMD driver, per-app preference, no code) moves it to Next beside SM-03 (critique, owner facts); a code option is argued only if that fails. |
 | PI-09 | G74: seven live drafts and the packaging gap in ColourWars' private ledger, filed into the route OCA-72 opens. What private detail is published is the owner's. |
 | SM-16 | G29: one index of reviews and which ledger is live. Follows SM-06 (Now). Closed 2026-10-26: docs/review/INDEX.md maps every review entry to its live ledger or frozen disposition, owns remaining D3D12/Vulkan candidate tracking and links the verification limits. AGENTS points there; historical review README.md is unchanged. Local paths and anchors were checked. |
@@ -314,7 +314,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
 - The demo's failure messages are written for players, it probes support before downloading, pauses on focus loss, honours reduced motion, and every landing shadow meets 3:1 contrast
-- A low-tier p99 on the integrated Radeon is published with its pacing rule and lock verdict, or the reason it could not be taken is recorded
+- Separate low-tier CPU phase and cadence p99s on the integrated Radeon are published with their pacing rule and cadence verdicts, and pipeline latency has its own evidence with stated endpoints; a blocked measurement records its reason and keeps the acceptance item open
 - A real iPhone has played the development page and the live demo, with the LAN-serve procedure written in that session; a pacing method exists and runs on the owner's displays are recorded
 - PI-10 has decided each filed report, and only then is the engine staging helper built or declined
 - Golden regenerations leave a review trace, the five-backend-plus-wasm sweep is one command per area, and site preview and rollback are written down
@@ -334,7 +334,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 11. L11 Play again stays fast: BDP-18
 12. L12 Host page fits a phone held upright: BDP-09
 13. L13 Local bench procedure, lock verdict and four-core hold (PHILOSOPHY amendment E): SM-04, SM-05, SM-02
-14. L14 Take and publish the low-tier p99: SM-07
+14. L14 Take and publish the low-tier per-claim measurements: SM-07
 15. L15 Headless XInput translation test: SM-40
 16. L16 Browser pacing and phone top-out method: SM-08
 17. L17 Real iPhone run with the LAN-serve procedure: SM-14, SM-13
@@ -380,7 +380,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[SM-04](STORIES.md#sm-04)** Should · S · The Sole Owner-Maintainer: A local run procedure for LineSweeperFrameBench
 - [ ] **[SM-05](STORIES.md#sm-05)** Should · S · The Sole Owner-Maintainer: Apply the ratchet's lock verdict to a non-NVIDIA local run — after SM-04
 - [ ] **[SM-02](STORIES.md#sm-02)** Should · S · The Sole Owner-Maintainer: Reproduce the four-core hold, and say what the bench's fan-out measures — after SM-03
-- [ ] **[SM-07](STORIES.md#sm-07)** Should · M · The Sole Owner-Maintainer · **Owner**: Take and publish the low-tier p99 — after SM-04, SM-05, SM-02, SM-01, SM-03
+- [ ] **[SM-07](STORIES.md#sm-07)** Should · M · The Sole Owner-Maintainer · **Owner**: Take and publish low-tier CPU phase/cadence p99s and separate pipeline-latency evidence — after SM-04, SM-05, SM-02, SM-01, SM-03
 - [ ] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
 - [ ] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
 - [ ] **[SM-14](STORIES.md#sm-14)** Should · S · The Sole Owner-Maintainer · **Owner**: Serve a development page to a phone on my network
@@ -454,7 +454,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | SM-04 | G63: a local run procedure for the frame bench. Promoted to Should because SM-07 depends on it. |
 | SM-05 | G62: the lock verdict on a non-NVIDIA run. Promoted to Should because SM-07 depends on it (critique). |
 | SM-02 | G25: what the bench's fan-out measures; PHILOSOPHY amendment E at :691-693, after SM-03's amendment D (Next). Promoted to Should (critique). |
-| SM-07 | G24 (major): the low-tier p99 the performance identity rests on. Also follows SM-01 and SM-03 (Next); owner-run on the iGPU. |
+| SM-07 | G24 (major): the low-tier measurements the performance identity rests on. Follows SM-03's per-claim mapping and SM-01's adapter selection; owner-run on the iGPU. CPU update, recording/submission and cadence p99s complete only their part. The pipeline-latency claims and the low-tier acceptance box remain open until separate evidence with stated endpoints exists. |
 | SM-40 | G125: a headless test of the XInput translation, a regression guard needing no hardware. |
 | SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. Procedure, reducer and development-only fixture/export source implemented; generated-output and browser acceptance remain in [the method](../port/pacing-method.md). |
 | SM-14 | G71: serve a development page to a phone. Out of deferred: the owner has an iPhone; written and tried in SM-13's session. |

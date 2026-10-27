@@ -525,7 +525,7 @@ long enough that the sweep found it twice.
       and amending `renderer.h:490-502` to declare markers advisory (T6), and says
       the amendment has to answer TEST-GAP **A2** in the same commit — neither half
       of that 2026-08-19 either/or was ever done. See [LEDGER.md](LEDGER.md) M1–M8.
-- [ ] **What is the low tier's CPU half, and what is its p99?** `c8176ef` named
+- [ ] **What is the low tier's CPU half, and what are its per-claim measurements?** `c8176ef` named
       the machine and said which half is measured. The GPU half is named; the CPU
       half is neither named nor measured, and **no p99 has been taken on the
       named configuration**. Nothing in the tree contradicts itself about it any
@@ -534,17 +534,23 @@ long enough that the sweep found it twice.
       excludes against the named configuration, and the two passages
       in `samples/linesweeper/README.md` agree that the machine is named and the
       measurement is not. What is open is the measurement alone, and it is the
-      one item here that needs hardware. Taking it waits on five instruments,
+      one item here that needs hardware. Taking it waits on four instruments,
       each a story in [STORIES.md](../../product/STORIES.md):
       [SM-01](../../product/STORIES.md#sm-01) puts the bench on the integrated
       Radeon rather than the discrete GPU,
       [SM-02](../../product/STORIES.md#sm-02) reproduces the four-core hold,
-      [SM-03](../../product/STORIES.md#sm-03) decides which p99 column the
-      pipeline-depth claims are judged by,
       [SM-04](../../product/STORIES.md#sm-04) writes the local run procedure,
       and [SM-05](../../product/STORIES.md#sm-05) applies the ratchet's lock
       verdict to a local run. [SM-07](../../product/STORIES.md#sm-07) is the
-      measurement, and ticks this box. See [LEDGER.md](LEDGER.md) R1–R11.
+      measurement. The owner's `SM-03` decision separates CPU `update_ns`
+      and `record_submit_ns` p99s, frame-start `scheduled_interval_ns` p99,
+      GPU execution and pipeline latency; the
+      [ratchet record's measurement decision](../../performance/2026-09-19-g6f-ratchet.md#measurement-decision-sm-03)
+      owns their scopes. The low-tier capture uses `--pacing presentation`
+      with synchronised presentation. CPU phase and cadence results complete
+      only their part; this box stays open until the pipeline-latency claims
+      also have separately correlated GPU-completion/presentation evidence
+      with stated endpoints. See [LEDGER.md](LEDGER.md) R1–R11.
 - [x] **B13 — does a minified draw sample level 0 or the chain?** TEST-GAP called
       it blocked on a decision in 2026-08-19 and proposed declaring level 0. The
       ledger records what the five backends answer now. Decide it, then the test.
@@ -561,14 +567,15 @@ long enough that the sweep found it twice.
       its floor actually excludes now that the low tier is named, and
       `samples/linesweeper/README.md` says the machine is named and the
       measurement is not. What is left is the measurement itself - a CPU half to
-      name and a p99 to take on the named configuration, four cores at 1280x720
+      name and per-claim measurements on the named configuration, four cores at 1280x720
       - and it is the one item in this file that needs hardware rather than
       reading. **The measurement vehicle now exists without closing the item:**
       `LineSweeperFrameBench` retains the raw cadence of a fixed 9,600-particle
       top-out, and `tools/cloud_performance/` binds one run to its binaries,
       source, AMI, instance profile and deadline. An EC2 result is a reference
-      profile; this box stays open until the CPU half is named and the declared
-      p99 is actually taken on the Radeon configuration above. **The vehicle has
+      profile; this box stays open until the CPU half is named and the CPU
+      phase/cadence p99s and separate pipeline-latency evidence are recorded
+      on the Radeon configuration above. **The vehicle has
       now run** — `docs/performance/2026-09-19-g6f-reference.md`, four EPYC cores
       and a quarter L4 at 1280x720, which is the shape of the measurement this
       box wants on hardware that is not the machine it names — and the box
@@ -578,8 +585,10 @@ long enough that the sweep found it twice.
       `docs/performance/2026-09-19-g6f-ratchet.md` finds the runs' 17–32 ms
       whole-frame tails to be the bench's own 60 Hz software pacer locked
       behind a synchronised present at the same rate, so until the bench keeps
-      one clock its whole-frame p99 is not the number this box wants even on
-      the right hardware; its `record + submit` column is sound.
+      one clock its whole-frame p99 cannot establish the processing cost even
+      on the right hardware. Its `record + submit` column describes CPU
+      recording/submission duration; it does not establish GPU execution or
+      the latency of the two-frame pipeline.
 
 ---
 

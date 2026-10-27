@@ -281,6 +281,17 @@ not establish that a repetition was wait-free. Missing legacy pacing phases
 remain absent. The existing all-repetition `summary` and counts stay intact;
 no p99 column is selected by this grouping.
 
+Interpret each column using [the measurement decision (SM-03)](../../docs/performance/2026-09-19-g6f-ratchet.md#measurement-decision-sm-03):
+`update_ns`, `record_submit_ns` and `scheduled_interval_ns` have separate p99s
+for CPU update, CPU recording/submission and frame-start cadence. The elapsed
+CPU phases can include driver waits; `begin_ns`, `present_ns` and
+`whole_frame_ns` remain diagnostics. GPU execution, presentation and
+input-to-display latency need separately defined endpoints, which these CPU
+timings do not establish. New low-tier runs use the benchmark's existing
+`--pacing presentation` with synchronised presentation. The cloud example and
+runner keep their software-paced reference default, and older captures retain
+their recorded pacing policy.
+
 Per-repetition diagnostics show mean cadence, counts over the frame budget,
 short/long intervals, and long begin/present calls including alternation. They
 also retain the first and last affected sample and the longest consecutive and
