@@ -615,6 +615,19 @@ engine API to depend on.
   (T4, T10).
 - Widgets draw through the renderer interface like everything else, so
   menus are headlessly testable. Styling and content belong to the game.
+- Accessibility follows that boundary (T1). The engine supplies keyboard,
+  mouse, touch and pad input, focus and directional navigation. The default
+  focus style distinguishes states by brightness; the game chooses its colours
+  and any additional focus cues. The browser keeps Tab so keyboard focus can
+  leave the canvas. Games own readability, contrast, palettes, actions,
+  bindings and any rebinding. There is no engine action map or screen-reader
+  narration of rendered game state.
+- LineSweeper aims for keyboard and controller play, clear focus, readable
+  contrast, reduced-motion options and selectable colour-vision-deficiency
+  palettes for Protanomaly / Protanopia, Deuteranomaly / Deuteranopia and
+  Tritanomaly / Tritanopia. The sample owns these presentation choices.
+  Its documentation states what has been verified and any remaining
+  limitations, and identifies features still to be implemented.
 - Menus are C++ against the widget API (T10), with their text, assets and
   tuning in data where it is data (T7).
 - Compounds more than one game wants — an option row, a slider — are
