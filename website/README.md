@@ -18,6 +18,7 @@ npm run check     # types
 npm test          # API indexing and rendered code-link regressions
 npm run build     # the site, into dist/ - fails on any broken internal link
 npm run preview   # serve dist/
+npm run --silent snapshot:source -- v0.3.0  # verify candidate release source; no build or publication
 ```
 
 ## It reads the rest of the repository
@@ -196,6 +197,14 @@ commit-bound snapshots. The owner chose `v0.3.0` as the first snapshot;
 `v0.1.0` and `v0.2.0` are not backfilled. Implement and verify versioning before
 `v0.3.0` is cut, while keeping the current site as development documentation.
 No release date is set. There are no release snapshots or version selector yet.
+
+The first versioning gate is `npm run --silent snapshot:source -- <tag>`.
+It verifies a clean Git checkout at the exact annotated release tag, checks
+the package version and tracked lockfile, and emits candidate source metadata
+as JSON. It requires `v0.3.0` or later and refuses archive commit overrides.
+It does not build a snapshot or add a published release; the
+[source-verification policy](../docs/website-versioning.md#release-source-verification)
+owns its checks and the remaining work.
 
 ## Hosting and deployment
 
