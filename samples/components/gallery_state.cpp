@@ -1,8 +1,10 @@
 #include "samples/components/gallery_state.h"
+#include "samples/components/nine_slice.h"
 
 #include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
 #include "engine/math/rectanglef.h"
+#include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
@@ -63,6 +65,14 @@ namespace components
 
 		this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 		this->refresh_view();
+
+		// The panel behind the rows, added first because a scene draws in
+		// the order things were added. One 16-texel frame, its 6-texel
+		// corners drawn two units a texel and the rest stretched to fit.
+		this->scene_->add(std::make_unique<NineSlice>("panel",
+			resources->resolve_texture("panel"), RectangleI(0, 0, 16, 16),
+			SliceBorder{ 6, 6, 6, 6 }, RectangleF(120.0f, 90.0f, 1040.0f, 490.0f),
+			Colour::white, 2.0f));
 
 		this->scene_->add(std::make_unique<UiText>("heading",
 			L"COMPONENTS / copy one into your game", font_name,

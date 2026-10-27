@@ -4,6 +4,11 @@
             "kind": "font",
             "directory": "./fonts/",
             "names": ["jetbrains_mono_bold_16"]
+        },
+        {
+            "kind": "texture",
+            "directory": "./textures/",
+            "names": ["panel"]
         }
     ]
 }

@@ -121,7 +121,7 @@ checks of the behavior it teaches.
 
 ## Components: the pieces you copy
 
-`samples/components` holds settings-menu pieces that most games need and each one styles
+`samples/components` holds menu pieces that most games need and each one styles
 differently. Each is a header and a source file with its own tests, which you copy into your game
 and change as you like. They are not a library, so nothing promises to keep your copy compatible,
 and the engine does not know they exist. A gallery shows them all on one screen.
@@ -130,6 +130,7 @@ and the engine does not know they exist. A gallery shows them all on one screen.
 | --- | --- |
 | <RepoLink path="samples/components/option_row.h">Option row</RepoLink> | A label and a value picked from a fixed list with left and right, such as a difficulty or a window mode. It wraps or stops at the ends. |
 | <RepoLink path="samples/components/slider.h">Slider</RepoLink> | A label, a bar and a number for an integer in a range, such as a volume. It clamps at the ends and never wraps. |
+| <RepoLink path="samples/components/nine_slice.h">Nine-slice</RepoLink> | One small image drawn at any size with its corners kept, such as a panel or a button background. |
 
 A component reads no input, because which keys mean left is your game's decision. Your page moves
 the cursor with a `FocusGroup` and passes left and right to whichever component is focused. The
