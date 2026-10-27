@@ -72,10 +72,18 @@ must-fix, should-fix and minor findings have their follow-up commits; the
 later G9 closure is `6168700`. Those repairs do not turn unverified candidates
 into verified findings.
 
-- [ ] **6.1 / REV#4: minimize severity.** Run a sample under the Vulkan
-  validation layers and record whether acquire or present returns
-  `OUT_OF_DATE` while minimized, and the resulting behavior. This needs the
-  actual interactive sequence; a source reading does not supply the result.
+- [x] **6.1 / REV#4: minimize severity, 2026-10-27.** `MinimalSample` on
+  `x64-debug-vulkan` at `a26e889`, on the RTX 5080 with NVIDIA 616.92, ran
+  under the validation layer (core and synchronization validation, errors and
+  warnings logged to a file) and the API dump layer. `ShowWindow` minimized and
+  restored it once, then three more times in a second run. Each minimize got
+  `VK_ERROR_OUT_OF_DATE_KHR` from `vkQueuePresentKHR`, never from acquire.
+  The rebuild then found a zero extent and released the swapchain, and every
+  minimized frame submitted and probed surface capabilities without acquiring.
+  Each restore created a swapchain, after which acquire and present returned
+  `VK_SUCCESS`. Validation reported nothing, and the sample quit with exit
+  code 0. The throw no longer happens. With no present to wait on, though, the
+  minimized loop was unthrottled: 8,429 frames in about 3.3 seconds.
 - [ ] **6.2 / REV#5: surface-platform questions, deferred.** Reopen with the
   Android port: check the format fallback's copy-versus-blit argument,
   `compositeAlpha` against supported modes, and whether `preTransform` must
