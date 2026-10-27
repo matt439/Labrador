@@ -397,7 +397,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[SM-05](STORIES.md#sm-05)** Should · S · The Sole Owner-Maintainer: Apply the ratchet's lock verdict to a non-NVIDIA local run — after SM-04
 - [ ] **[SM-02](STORIES.md#sm-02)** Should · S · The Sole Owner-Maintainer: Reproduce the four-core hold, and say what the bench's fan-out measures — after SM-03
 - [ ] **[SM-07](STORIES.md#sm-07)** Should · M · The Sole Owner-Maintainer · **Owner**: Take and publish low-tier CPU phase/cadence p99s and separate pipeline-latency evidence — after SM-04, SM-05, SM-02, SM-01, SM-03
-- [ ] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
+- [x] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
 - [ ] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
 - [ ] **[SM-14](STORIES.md#sm-14)** Should · S · The Sole Owner-Maintainer · **Owner**: Serve a development page to a phone on my network
 - [ ] **[SM-13](STORIES.md#sm-13)** Should · M · The Sole Owner-Maintainer · **Owner**: Record a real iPhone run of the development page and the live demo — after SM-14, SM-08
@@ -474,7 +474,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | SM-05 | G62: the lock verdict on a non-NVIDIA run. Promoted to Should because SM-07 depends on it (critique). |
 | SM-02 | G25: what the bench's fan-out measures; PHILOSOPHY amendment E at :691-693, after SM-03's amendment D (Next). Promoted to Should (critique). |
 | SM-07 | G24 (major): the low-tier measurements the performance identity rests on. Follows SM-03's per-claim mapping and SM-01's adapter selection; owner-run on the iGPU. CPU update, recording/submission and cadence p99s complete only their part. The pipeline-latency claims and the low-tier acceptance box remain open until separate evidence with stated endpoints exists. |
-| SM-40 | G125: a headless test of the XInput translation, a regression guard needing no hardware. |
+| SM-40 | G125. Closed 2026-10-27: the translation is `engine/input/xinput/xinput_gamepad.h`'s `gamepad_state_from_xinput`, and InputTests under the XInput backend fills DirectXTK's state by hand to assert each of the fourteen button bits alone and together, both sticks' y negation, the analogue triggers, a disconnected pad's neutral state and `DEAD_ZONE_NONE`. |
 | SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. Procedure, reducer and development-only fixture/export source implemented; generated-output and browser acceptance remain in [the method](../port/pacing-method.md). |
 | SM-14 | G71: serve a development page to a phone. Out of deferred: the owner has an iPhone; written and tried in SM-13's session. |
 | SM-13 | G34, G05 (merged with BDP-08): a real iPhone run. Split from the Android half (SM-44, deferred) per the owner facts. |
