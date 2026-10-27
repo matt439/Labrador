@@ -5,6 +5,8 @@
 #include "engine/collision/contacts.h"
 #include "engine/core/game_object.h"
 #include "engine/math/rectanglef.h"
+#include "engine/render/camera.h"
+#include "engine/render/viewport.h"
 
 #include <functional>
 #include <memory>
@@ -13,8 +15,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include "engine/render/camera.h"
-#include "engine/render/viewport.h"
 
 namespace labrador
 {

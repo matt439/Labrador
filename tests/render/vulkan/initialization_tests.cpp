@@ -1,8 +1,8 @@
+#include <doctest/doctest.h>
 #include "tests/render/test_window.h"
 
 #include "engine/render/renderer.h"
 
-#include <doctest/doctest.h>
 #include <vulkan/vulkan.h>
 #include <windows.h>
 

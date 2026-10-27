@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/registry.h"
+#include "engine/render/camera.h"
 #include "engine/render/font.h"
 #include "engine/render/null/recording.h"
 #include "engine/render/renderer.h"
@@ -10,7 +11,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "engine/render/camera.h"
 
 // The null backend: everything the seam requires, and no graphics API at all.
 //

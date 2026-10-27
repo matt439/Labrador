@@ -1,6 +1,5 @@
-#include "bench/frame_statistics.h"
-
 #include <doctest/doctest.h>
+#include "bench/frame_statistics.h"
 
 #include <cstdint>
 #include <stdexcept>

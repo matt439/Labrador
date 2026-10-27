@@ -4,15 +4,15 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/camera.h"
+#include "engine/render/colour.h"
+#include "engine/render/viewport.h"
 
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
-#include "engine/render/colour.h"
-#include "engine/render/camera.h"
-#include "engine/render/viewport.h"
 
 // The renderer seam: one header, several backends, one of them chosen at
 // build time (T5).

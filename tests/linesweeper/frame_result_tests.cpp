@@ -1,6 +1,6 @@
+#include <doctest/doctest.h>
 #include "bench/linesweeper_frame_result.h"
 
-#include <doctest/doctest.h>
 #include <rapidjson/document.h>
 
 #include <Windows.h>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/registry.h"
+#include "engine/render/camera.h"
 #include "engine/render/d3d11/device_resources.h"
 #include "engine/render/font.h"
 #include "engine/render/renderer.h"
@@ -12,7 +13,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "engine/render/camera.h"
 
 // The D3D11 backend, for the files that have to name a device.
 //

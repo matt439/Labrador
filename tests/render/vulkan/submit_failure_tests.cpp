@@ -1,3 +1,4 @@
+#include <doctest/doctest.h>
 #include "tests/render/device_fixture.h"
 
 #include "engine/math/rectanglef.h"
@@ -8,7 +9,6 @@
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
 
-#include <doctest/doctest.h>
 #include <vulkan/vulkan.h>
 #include <windows.h>
 

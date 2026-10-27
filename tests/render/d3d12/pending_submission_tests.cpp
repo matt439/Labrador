@@ -1,3 +1,4 @@
+#include <doctest/doctest.h>
 #include "tests/render/d3d12/wait_observer.h"
 
 #include "engine/render/d3d12/backend.h"
@@ -5,8 +6,6 @@
 #include "engine/render/texture_data.h"
 #include "engine/render/throw_if_failed.h"
 #include "tests/render/test_window.h"
-
-#include <doctest/doctest.h>
 
 #include <chrono>
 #include <condition_variable>

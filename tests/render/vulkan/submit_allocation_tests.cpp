@@ -1,3 +1,4 @@
+#include <doctest/doctest.h>
 #include "tests/render/test_window.h"
 
 #include "engine/math/rectanglef.h"
@@ -10,8 +11,6 @@
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
 #include "engine/render/viewport.h"
-
-#include <doctest/doctest.h>
 
 #if defined(_MSC_VER) && defined(_DEBUG) && defined(_DLL)
 #include <crtdbg.h>

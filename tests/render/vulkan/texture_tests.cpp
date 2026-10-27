@@ -1,8 +1,8 @@
+#include <doctest/doctest.h>
 #include "tests/render/device_fixture.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 
-#include <doctest/doctest.h>
 #include <vulkan/vulkan.h>
 
 #include <string>

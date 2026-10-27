@@ -1,6 +1,5 @@
-#include "bench/frame_pacer.h"
-
 #include <doctest/doctest.h>
+#include "bench/frame_pacer.h"
 
 #include <chrono>
 

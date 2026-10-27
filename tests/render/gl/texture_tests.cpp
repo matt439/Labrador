@@ -1,8 +1,7 @@
+#include <doctest/doctest.h>
 #include "tests/render/device_fixture.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
-
-#include <doctest/doctest.h>
 
 // The GL a test may call directly, which is the context's own header: GLES 3.0
 // in a browser and the Windows SDK's 1.1 on the desktop, where it needs
