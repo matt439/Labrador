@@ -141,7 +141,8 @@ being load-bearing.
 │   ├── math/               LabradorMath — depends on nothing, and links
 │   │                       nothing: no DirectXTK, no D3D11, no Windows
 │   ├── core/               game loop, fixed-step timing, states, services,
-│   │                       registries, reading numbers out of a file
+│   │                       registries, reading numbers out of a file,
+│   │                       random numbers that match across platforms
 │   ├── render/             the Renderer, cameras, viewports, colours, fonts,
 │   │   │                   the file readers and the quad arithmetic — every
 │   │   │                   decision that shows on screen
