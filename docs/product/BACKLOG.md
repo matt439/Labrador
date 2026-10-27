@@ -423,7 +423,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[PI-15](STORIES.md#pi-15)** Could · S · The Pinned Submodule Integrator: Launching my game hidden through STARTUPINFO is tested upstream
 - [ ] **[PI-16](STORIES.md#pi-16)** Could · S · The Pinned Submodule Integrator: Drive my game past its title screen with injected input in a smoke run — after OCA-30
 - [ ] **[PI-17](STORIES.md#pi-17)** Could · XS · The Pinned Submodule Integrator: Know what JSON the engine reads for me and when my game must bring its own parser
-- [ ] **[PI-18](STORIES.md#pi-18)** Could · XS · The Pinned Submodule Integrator: The include wall says exactly what it protects in my build
+- [x] **[PI-18](STORIES.md#pi-18)** Could · XS · The Pinned Submodule Integrator: The include wall says exactly what it protects in my build
 - [ ] **[PI-20](../review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans)** Could · S · The Pinned Submodule Integrator: A misspelt key in a manifest or sprite sheet is refused, not read as its default
 - [ ] **[PI-21](#pi-21)** Should · M · The Pinned Submodule Integrator: Send controller vibration through the engine's input seam — [scope and acceptance](../review/colourwars-reports/vibration.md)
 - [ ] **[SRL-09](STORIES.md#srl-09)** Could · S · The Sample-Reading Learner: Game-facing reference pages keep backend rationale out of my way — after SRL-08
@@ -499,7 +499,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | PI-15 | G78: hidden launch through STARTUPINFO tested upstream. |
 | PI-16 | G79: drive a game past its title screen in a smoke run. Follows OCA-30 (Next). |
 | PI-17 | G75: what JSON the engine reads for a game. |
-| PI-18 | G76: the include wall says exactly what it protects. |
+| PI-18 | G76. Closed 2026-10-27: `cmake/check_engine_includes.cmake` states that its pattern matches only a folder named `game/`, quoted, angle-bracketed or reached through `../`, and that a client folder with another name is not covered. The check stays the one name (T5). |
 | PI-20 | Split out of report 12 on 2026-10-22 and argued in its decision record, which stands in for a STORIES.md entry: a `JsonValue` accessor for an object's member names, and unknown-key rejection in `asset_manifest_loader.cpp` and `sprite_sheet_loader.cpp`, whose optional keys (`optional`, `origin`, `rotated`) take their default when misspelt (T6). Decide first whether rejection is per loader or one shared helper, because that decides the accessor's shape. A silent behaviour change, so it needs a CHANGES.md entry. |
 | <a id="pi-21"></a>PI-21 | Split out of report 25 on 2026-10-27: slot-addressed, two-motor vibration transport and explicit stop, with game-owned timing, effects, preferences and routing. The [decision record](../review/colourwars-reports/vibration.md) stands in for a STORIES.md entry and owns acceptance. Settle portable lifetime/result semantics before publishing an API; validate requests, report unavailable output, cancel on suspend/teardown without stale replay, and test observable native/browser transport. Physical output evidence stays separate. Added to L26 after PI-20; the current Next order is unchanged. |
 | SRL-09 | G94: backend rationale out of a game reader's way. Follows SRL-08 (Next). |

@@ -14,6 +14,13 @@
 # which is the property that matters: the rule is enforced, not merely written
 # down.
 #
+# WHAT IT CATCHES. The pattern is the folder name game/, spelled
+# "#include \"game/...\"", "#include <game/...>" or with any number of
+# leading "../". A client whose folder has another name - yourgame/, src/ - is
+# not covered: an engine file edited inside that client's submodule could
+# include its headers and this check would pass. It is deliberately the one
+# name, not a guess at every client's layout (T5).
+#
 # Run with: cmake -DENGINE_DIR=<path> -P cmake/check_engine_includes.cmake
 
 if(NOT DEFINED ENGINE_DIR)
