@@ -13,8 +13,22 @@ labrador_add_test_suite(AppTests
 )
 if(NOT EMSCRIPTEN)
     target_sources(AppTests PRIVATE
+        startup_info_tests.cpp
         window_tests.cpp
         ../../engine/app/web/dom_events.cpp
+    )
+
+    # The child startup_info_tests.cpp launches with a STARTUPINFO of its own,
+    # to see whether the engine's first ShowWindow honours it. A Windows
+    # program, as a game is, so the show command reaches it as it reaches one.
+    add_executable(StartupInfoChild WIN32 startup_child.cpp)
+    target_link_libraries(StartupInfoChild PRIVATE
+        LabradorEngine
+        labrador_settings
+    )
+    add_dependencies(AppTests StartupInfoChild)
+    target_compile_definitions(AppTests PRIVATE
+        LABRADOR_STARTUP_CHILD="$<TARGET_FILE:StartupInfoChild>"
     )
 endif()
 
