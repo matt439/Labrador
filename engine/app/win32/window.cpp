@@ -256,6 +256,72 @@ namespace labrador
 			}
 			return info.rcMonitor;
 		}
+
+		// WM_PAINT with nothing to draw: validating the update region is what
+		// stops Windows sending the message again.
+		LRESULT paint_nothing(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param)
+		{
+			PAINTSTRUCT paint;
+			std::ignore = BeginPaint(window, &paint);
+			EndPaint(window, &paint);
+			return DefWindowProc(window, message, w_param, l_param);
+		}
+
+		// The X button messages are documented as returning TRUE; the other
+		// mouse messages go to DefWindowProc as usual.
+		LRESULT mouse_default(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param)
+		{
+			if (message == WM_XBUTTONDOWN || message == WM_XBUTTONUP)
+			{
+				return TRUE;
+			}
+			return DefWindowProc(window, message, w_param, l_param);
+		}
+
+		// WM_GETDPISCALEDSIZE: the outer size at the new DPI that keeps the
+		// client's pixels. window_proc gives the reason.
+		LRESULT dpi_scaled_size(HWND window, WPARAM w_param, LPARAM l_param)
+		{
+			if (!l_param || IsIconic(window))
+			{
+				return FALSE;
+			}
+
+			RECT client;
+			GetClientRect(window, &client);
+			const mattmath::Vector2I outer = outer_size_for_client(
+				mattmath::Vector2I(client.right - client.left,
+					client.bottom - client.top),
+				static_cast<DWORD>(GetWindowLongPtrW(window, GWL_STYLE)),
+				static_cast<DWORD>(GetWindowLongPtrW(window, GWL_EXSTYLE)),
+				LOWORD(w_param));
+			SIZE* const size = reinterpret_cast<SIZE*>(l_param);
+			size->cx = outer.x;
+			size->cy = outer.y;
+			return TRUE;
+		}
+
+		// WM_DPICHANGED: apply the suggested rect under per-monitor v2 only.
+		// window_proc gives the reason.
+		LRESULT dpi_changed(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param)
+		{
+			if (!is_per_monitor_v2(window))
+			{
+				return DefWindowProc(window, message, w_param, l_param);
+			}
+			if (l_param)
+			{
+				const RECT* const suggested = reinterpret_cast<const RECT*>(l_param);
+				SetWindowPos(window, nullptr, suggested->left, suggested->top,
+					suggested->right - suggested->left,
+					suggested->bottom - suggested->top,
+					SWP_NOZORDER | SWP_NOACTIVATE);
+			}
+			return 0;
+		}
 	}
 
 	// The Win32 window. Everything a message needs to find is here, and the
@@ -277,6 +343,21 @@ namespace labrador
 
 		static LRESULT CALLBACK window_proc(HWND window, UINT message,
 			WPARAM w_param, LPARAM l_param);
+
+		// window_proc's owned-window messages, one group each.
+		LRESULT on_size_message(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param);
+		LRESULT on_activation_message(HWND window, UINT message,
+			WPARAM w_param, LPARAM l_param);
+		LRESULT on_key_message(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param);
+		LRESULT on_char_message(HWND window, WPARAM w_param, LPARAM l_param);
+		LRESULT on_mouse_message(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param);
+		LRESULT on_pointer_message(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param);
+		LRESULT on_destroy_message(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param);
 
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE, for the reason
 		// the constructor gives: messages arrive while it is still running, so
@@ -628,6 +709,418 @@ namespace labrador
 		return (this->held_modifiers & (3u << first)) == 0;
 	}
 
+	// THE OWNED WINDOW'S MESSAGES, GROUPED BY WHAT THEY ARE ABOUT. Each
+	// handler either answers its message or hands it on to DefWindowProc, so a
+	// message reaches Windows exactly when its handler does not consume it.
+
+	LRESULT Window::Impl::on_size_message(HWND window, UINT message,
+		WPARAM w_param, LPARAM l_param)
+	{
+		switch (message)
+		{
+		case WM_PAINT:
+			// While the user drags the window Windows owns the loop, so the only
+			// way to keep drawing is from inside the paint message.
+			if (this->in_sizemove)
+			{
+				this->notify->tick();
+				break;
+			}
+			return paint_nothing(window, message, w_param, l_param);
+
+		case WM_MOVE:
+			// GATED ON !in_sizemove, THE SAME WAY WM_SIZE BELOW IS, and the
+			// two have to be gated together. Dragging the LEFT or TOP edge
+			// moves the origin as well as the size, so Windows sends WM_MOVE
+			// per step of the drag - and this handler asks the renderer for a
+			// size, which is exactly the term the drag is allowed to be out of
+			// date about. Two of the backends answer it from a swap chain and
+			// so answer the size they were last told, making the call a
+			// self-comparison that changes nothing; the GL backend answers it
+			// from the window (renderer.h, back_buffer_size), so ungated, every
+			// step hands it the already-current client rect. That costs a
+			// viewport, a clear and a per-view reset per mouse-move step, and
+			// then has gl answer "nothing changed" to the WM_EXITSIZEMOVE
+			// below - the one message that ends a resize, which the other
+			// backends answer true to.
+			if (!this->in_sizemove)
+			{
+				this->notify->on_window_moved();
+			}
+			break;
+
+		case WM_SIZE:
+			if (w_param == SIZE_MINIMIZED)
+			{
+				this->minimized = true;
+				this->update_suspension();
+			}
+			else if (this->minimized)
+			{
+				this->minimized = false;
+
+				// THE SIZE GOES OUT TOO, and before the resume. A window does
+				// not always come back the size it left: one restored from the
+				// taskbar into the maximised state it held before, or restored
+				// after the monitor changed under it, arrives as one WM_SIZE,
+				// the first this branch has seen since the minimise. What it
+				// does not deliver is never delivered, and the layout and back
+				// buffer would stay at the pre-minimise size.
+				//
+				// Size first because of what the two mean to the owner. The
+				// size re-points the layout and resizes the swap chain; the
+				// resume is the one that reaches the state stack, and
+				// application.cpp's rule for that is that a state hears the
+				// news last of all, into a shell that has already finished
+				// becoming what the news describes.
+				//
+				// Gated on in_sizemove exactly as the ordinary branch below
+				// is, for the reason given at WM_MOVE.
+				if (!this->in_sizemove)
+				{
+					this->notify->on_window_size_changed(
+						LOWORD(l_param), HIWORD(l_param));
+				}
+				this->update_suspension();
+			}
+			else if (!this->in_sizemove)
+			{
+				this->notify->on_window_size_changed(
+					LOWORD(l_param), HIWORD(l_param));
+			}
+			break;
+
+		case WM_ENTERSIZEMOVE:
+			this->in_sizemove = true;
+			break;
+
+		case WM_EXITSIZEMOVE:
+		{
+			this->in_sizemove = false;
+
+			RECT client;
+			GetClientRect(window, &client);
+			this->notify->on_window_size_changed(
+				client.right - client.left, client.bottom - client.top);
+			break;
+		}
+
+		case WM_GETMINMAXINFO:
+			if (l_param)
+			{
+				auto info = reinterpret_cast<MINMAXINFO*>(l_param);
+				info->ptMinTrackSize.x = this->min_width;
+				info->ptMinTrackSize.y = this->min_height;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		return DefWindowProc(window, message, w_param, l_param);
+	}
+
+	LRESULT Window::Impl::on_activation_message(HWND window, UINT message,
+		WPARAM w_param, LPARAM l_param)
+	{
+		switch (message)
+		{
+		case WM_KILLFOCUS:
+			this->held_modifiers = 0;
+			break;
+
+		case WM_ACTIVATEAPP:
+			if (w_param)
+			{
+				this->notify->on_activated();
+			}
+			else
+			{
+				this->held_modifiers = 0;
+				this->notify->on_deactivated();
+			}
+			break;
+
+		case WM_POWERBROADCAST:
+			switch (w_param)
+			{
+			case PBT_APMSUSPEND:
+				this->power_suspended = true;
+				this->update_suspension();
+				return TRUE;
+			case PBT_APMRESUMEAUTOMATIC:
+			case PBT_APMRESUMESUSPEND:
+				this->power_suspended = false;
+				this->update_suspension();
+				return TRUE;
+			default:
+				break;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		return DefWindowProc(window, message, w_param, l_param);
+	}
+
+	// THE SYS VARIANTS ARE HERE TOO, and then fall through to
+	// DefWindowProc rather than being swallowed. Alt is a key like any
+	// other and a game may bind it, but Alt+F4, Alt+Space and Alt+Tab are
+	// the system's and stay the system's - handling the message is not the
+	// same as consuming it. F10 and Alt pressed alone are keys and nothing
+	// else: what they would otherwise open is the menu bar, this window has
+	// none, and the menu loop would only stall the pump. WM_SYSCOMMAND
+	// below is where that is decided.
+	//
+	// Key repeat needs no filtering. Windows resends WM_KEYDOWN while a
+	// key is held; Keyboard::on_key_down sets a bit that is already set,
+	// and because the edges are derived from two polled frames rather than
+	// from these messages, a repeat cannot manufacture a second press.
+	LRESULT Window::Impl::on_key_message(HWND window, UINT message,
+		WPARAM w_param, LPARAM l_param)
+	{
+		const bool down = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
+		const Key key = key_from_message(w_param, l_param);
+		if (this->update_modifier(key, l_param, down))
+		{
+			if (down)
+			{
+				this->notify->on_key_down(key);
+			}
+			else
+			{
+				this->notify->on_key_up(key);
+			}
+		}
+		return DefWindowProc(window, message, w_param, l_param);
+	}
+
+	// TYPED TEXT, which is the one channel polling cannot rebuild - the
+	// shift resolution, the key repeat, the dead keys and the IME have all
+	// already happened by the time a character arrives here.
+	//
+	// WM_SYSCHAR is deliberately NOT handled. It is what Alt+F produces,
+	// and treating it as text types an "f" into whatever field is open
+	// every time a player reaches for a menu.
+	LRESULT Window::Impl::on_char_message(HWND window, WPARAM w_param,
+		LPARAM l_param)
+	{
+		const wchar_t unit = static_cast<wchar_t>(w_param);
+
+		// A high surrogate is half a character. Hold it and wait; the
+		// low half is the very next message.
+		if (unit >= 0xD800 && unit <= 0xDBFF)
+		{
+			this->pending_high_surrogate = unit;
+			return DefWindowProc(window, WM_CHAR, w_param, l_param);
+		}
+
+		char32_t codepoint = static_cast<char32_t>(unit);
+
+		if (unit >= 0xDC00 && unit <= 0xDFFF &&
+			this->pending_high_surrogate != 0)
+		{
+			codepoint = 0x10000u +
+				((static_cast<char32_t>(
+					this->pending_high_surrogate) - 0xD800u) << 10) +
+				(static_cast<char32_t>(unit) - 0xDC00u);
+		}
+
+		// Cleared whatever happened, including the case where a low
+		// half never came: a stale high surrogate joined to the next
+		// unrelated character would corrupt a good one as well as the
+		// lost one. An unpaired half passed on as-is becomes U+FFFD
+		// inside Keyboard::on_text, which is where that rule lives.
+		this->pending_high_surrogate = 0;
+
+		this->notify->on_text(codepoint);
+		return DefWindowProc(window, WM_CHAR, w_param, l_param);
+	}
+
+	// NO DOUBLE-CLICK MESSAGES ARRIVE, and that is deliberate rather than
+	// missing. The window class above is registered without CS_DBLCLKS, so
+	// Windows never substitutes WM_LBUTTONDBLCLK for the second press of a
+	// pair - every press is an ordinary button-down and none is lost. What
+	// counts as a double click is a policy the game owns, and two presses
+	// with their timing is what it needs to decide.
+	LRESULT Window::Impl::on_mouse_message(HWND window, UINT message,
+		WPARAM w_param, LPARAM l_param)
+	{
+		switch (message)
+		{
+		case WM_MOUSEMOVE:
+			this->notify->on_mouse_move(low_word_signed(l_param),
+				high_word_signed(l_param));
+			break;
+
+		case WM_LBUTTONDOWN:
+		case WM_RBUTTONDOWN:
+		case WM_MBUTTONDOWN:
+		case WM_XBUTTONDOWN:
+		{
+			const MouseButton button =
+				message == WM_LBUTTONDOWN ? MouseButton::left :
+				message == WM_RBUTTONDOWN ? MouseButton::right :
+				message == WM_MBUTTONDOWN ? MouseButton::middle :
+				x_button(w_param);
+
+			if (button != MouseButton::none)
+			{
+				// Capture on the way out of zero. See held_buttons above
+				// for why this counts rather than flags.
+				if (this->held_buttons == 0)
+				{
+					SetCapture(window);
+				}
+				++this->held_buttons;
+
+				this->notify->on_mouse_button_down(button);
+			}
+			break;
+		}
+
+		case WM_LBUTTONUP:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONUP:
+		case WM_XBUTTONUP:
+		{
+			const MouseButton button =
+				message == WM_LBUTTONUP ? MouseButton::left :
+				message == WM_RBUTTONUP ? MouseButton::right :
+				message == WM_MBUTTONUP ? MouseButton::middle :
+				x_button(w_param);
+
+			if (button != MouseButton::none)
+			{
+				if (this->held_buttons > 0)
+				{
+					--this->held_buttons;
+					if (this->held_buttons == 0)
+					{
+						ReleaseCapture();
+					}
+				}
+
+				this->notify->on_mouse_button_up(button);
+			}
+			break;
+		}
+
+		case WM_CAPTURECHANGED:
+			// Normal last-button release has already reduced the count to zero.
+			// Transfer/cancellation can happen while the application keeps focus.
+			if (this->held_buttons > 0)
+			{
+				this->held_buttons = 0;
+				this->notify->on_mouse_capture_lost();
+			}
+			break;
+
+		case WM_MOUSEWHEEL:
+			this->notify->on_mouse_wheel(
+				static_cast<float>(static_cast<short>(HIWORD(w_param))) /
+				static_cast<float>(WHEEL_DELTA));
+			break;
+
+		case WM_MOUSEHWHEEL:
+			this->notify->on_mouse_wheel_horizontal(
+				static_cast<float>(static_cast<short>(HIWORD(w_param))) /
+				static_cast<float>(WHEEL_DELTA));
+			break;
+
+		default:
+			break;
+		}
+
+		return mouse_default(window, message, w_param, l_param);
+	}
+
+	// TOUCH, AND ONLY TOUCH. A pen and the mouse fall through to
+	// DefWindowProc, which turns them into the mouse messages above - a pen
+	// is the mouse in this engine (pointer_input.h says why). A touch
+	// contact is handled here and not passed on, so Windows makes no
+	// mouse messages of it, and none of its gestures either: a press and
+	// hold is a point held, not a right click.
+	//
+	// The position is in screen pixels and is turned into client pixels
+	// here, signed for the reason low_word_signed gives: a touch that
+	// started in the window is captured to it and followed off the edge.
+	//
+	// WM_POINTERCAPTURECHANGED is answered whatever the pointer is,
+	// because by then it may be no kind Windows will still name, and a
+	// cancel for a point the touch device does not hold does nothing.
+	LRESULT Window::Impl::on_pointer_message(HWND window, UINT message,
+		WPARAM w_param, LPARAM l_param)
+	{
+		const UINT32 pointer = GET_POINTERID_WPARAM(w_param);
+		if (message == WM_POINTERCAPTURECHANGED)
+		{
+			this->notify->on_touch_cancel(pointer);
+			return DefWindowProc(window, message, w_param, l_param);
+		}
+
+		POINTER_INPUT_TYPE type = PT_POINTER;
+		if (GetPointerType(pointer, &type) == 0 || type != PT_TOUCH)
+		{
+			return DefWindowProc(window, message, w_param, l_param);
+		}
+
+		POINT position = { low_word_signed(l_param),
+			high_word_signed(l_param) };
+		ScreenToClient(window, &position);
+
+		switch (touch_message(message, static_cast<uint64_t>(w_param)))
+		{
+		case TouchMessage::down:
+			this->notify->on_touch_down(pointer, position.x, position.y);
+			break;
+		case TouchMessage::move:
+			this->notify->on_touch_move(pointer, position.x, position.y);
+			break;
+		case TouchMessage::up:
+			this->notify->on_touch_up(pointer, position.x, position.y);
+			break;
+		case TouchMessage::cancel:
+			this->notify->on_touch_cancel(pointer);
+			break;
+		case TouchMessage::none:
+			break;
+		}
+		return 0;
+	}
+
+	LRESULT Window::Impl::on_destroy_message(HWND window, UINT message,
+		WPARAM w_param, LPARAM l_param)
+	{
+		switch (message)
+		{
+		// ONLY WHILE OWNED. The user data is zero for a window the destructor
+		// is taking down, and that destructor says why the quit must not be
+		// posted then. For close() and for the user's own X it is set, and
+		// this is the quit the pump is waiting for.
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			break;
+
+		// The last message a window receives. The handle is invalid the
+		// moment this returns, so the object stops naming it here - which is
+		// what lets the destructor tell an ordinary exit from an unwind, and
+		// makes a second close() a no-op rather than a call on a stale HWND.
+		case WM_NCDESTROY:
+			this->handle = nullptr;
+			SetWindowLongPtr(window, GWLP_USERDATA, 0);
+			break;
+
+		default:
+			break;
+		}
+
+		return DefWindowProc(window, message, w_param, l_param);
+	}
+
 	// Every message either forwards through WindowNotify or is Windows
 	// housekeeping. There is nothing game-specific here, which is the reason
 	// it is in the engine and not copied into every project's main.cpp.
@@ -649,6 +1142,9 @@ namespace labrador
 			return DefWindowProc(window, message, w_param, l_param);
 		}
 
+		// Messages that need no Impl: they arrive before WM_CREATE has stored
+		// it, or after WM_NCDESTROY or the destructor has cleared it, as well
+		// as while it is set.
 		switch (message)
 		{
 		case WM_CREATE:
@@ -658,103 +1154,7 @@ namespace labrador
 				SetWindowLongPtr(window, GWLP_USERDATA,
 					reinterpret_cast<LONG_PTR>(params->lpCreateParams));
 			}
-			break;
-
-		case WM_PAINT:
-			// While the user drags the window Windows owns the loop, so the only
-			// way to keep drawing is from inside the paint message.
-			if (self && self->in_sizemove)
-			{
-				self->notify->tick();
-			}
-			else
-			{
-				PAINTSTRUCT paint;
-				std::ignore = BeginPaint(window, &paint);
-				EndPaint(window, &paint);
-			}
-			break;
-
-		case WM_MOVE:
-			// GATED ON !in_sizemove, THE SAME WAY WM_SIZE BELOW IS, and the
-			// two have to be gated together. Dragging the LEFT or TOP edge
-			// moves the origin as well as the size, so Windows sends WM_MOVE
-			// per step of the drag - and this handler asks the renderer for a
-			// size, which is exactly the term the drag is allowed to be out of
-			// date about. Two of the backends answer it from a swap chain and
-			// so answer the size they were last told, making the call a
-			// self-comparison that changes nothing; the GL backend answers it
-			// from the window (renderer.h, back_buffer_size), so ungated, every
-			// step hands it the already-current client rect. That costs a
-			// viewport, a clear and a per-view reset per mouse-move step, and
-			// then has gl answer "nothing changed" to the WM_EXITSIZEMOVE
-			// below - the one message that ends a resize, which the other
-			// backends answer true to.
-			if (self && !self->in_sizemove)
-			{
-				self->notify->on_window_moved();
-			}
-			break;
-
-		case WM_SIZE:
-			if (self && w_param == SIZE_MINIMIZED)
-			{
-				self->minimized = true;
-				self->update_suspension();
-			}
-			else if (self && self->minimized)
-			{
-				self->minimized = false;
-
-				// THE SIZE GOES OUT TOO, and before the resume. A window does
-				// not always come back the size it left: one restored from the
-				// taskbar into the maximised state it held before, or restored
-				// after the monitor changed under it, arrives as one WM_SIZE,
-				// the first this branch has seen since the minimise. What it
-				// does not deliver is never delivered, and the layout and back
-				// buffer would stay at the pre-minimise size.
-				//
-				// Size first because of what the two mean to the owner. The
-				// size re-points the layout and resizes the swap chain; the
-				// resume is the one that reaches the state stack, and
-				// application.cpp's rule for that is that a state hears the
-				// news last of all, into a shell that has already finished
-				// becoming what the news describes.
-				//
-				// Gated on in_sizemove exactly as the ordinary branch below
-				// is, for the reason given at WM_MOVE.
-				if (!self->in_sizemove)
-				{
-					self->notify->on_window_size_changed(
-						LOWORD(l_param), HIWORD(l_param));
-				}
-				self->update_suspension();
-			}
-			else if (self && !self->in_sizemove)
-			{
-				self->notify->on_window_size_changed(
-					LOWORD(l_param), HIWORD(l_param));
-			}
-			break;
-
-		case WM_ENTERSIZEMOVE:
-			if (self)
-			{
-				self->in_sizemove = true;
-			}
-			break;
-
-		case WM_EXITSIZEMOVE:
-			if (self)
-			{
-				self->in_sizemove = false;
-
-				RECT client;
-				GetClientRect(window, &client);
-				self->notify->on_window_size_changed(
-					client.right - client.left, client.bottom - client.top);
-			}
-			break;
+			return DefWindowProc(window, message, w_param, l_param);
 
 		// A DPI CHANGE KEEPS THE CLIENT PIXELS. The resolution is the game's,
 		// in physical pixels (Application::set_resolution), so a window moved
@@ -768,22 +1168,7 @@ namespace labrador
 		// A minimised window has no client to keep, and is left to the system.
 		// Neither message is sent to a window that is not per-monitor aware.
 		case WM_GETDPISCALEDSIZE:
-			if (self && l_param && !IsIconic(window))
-			{
-				RECT client;
-				GetClientRect(window, &client);
-				const mattmath::Vector2I outer = outer_size_for_client(
-					mattmath::Vector2I(client.right - client.left,
-						client.bottom - client.top),
-					static_cast<DWORD>(GetWindowLongPtrW(window, GWL_STYLE)),
-					static_cast<DWORD>(GetWindowLongPtrW(window, GWL_EXSTYLE)),
-					LOWORD(w_param));
-				SIZE* const size = reinterpret_cast<SIZE*>(l_param);
-				size->cx = outer.x;
-				size->cy = outer.y;
-				return TRUE;
-			}
-			return FALSE;
+			return self ? dpi_scaled_size(window, w_param, l_param) : FALSE;
 
 		// Under v2 the rect is applied as the system suggests it. The WM_SIZE
 		// that produces reports the client as every other resize does; during
@@ -793,335 +1178,7 @@ namespace labrador
 		// the client; the message is left to DefWindowProc, which does not
 		// resize a top-level window, and the client keeps its pixels.
 		case WM_DPICHANGED:
-			if (!is_per_monitor_v2(window)) { break; }
-			if (l_param)
-			{
-				const RECT* const suggested = reinterpret_cast<const RECT*>(l_param);
-				SetWindowPos(window, nullptr, suggested->left, suggested->top,
-					suggested->right - suggested->left,
-					suggested->bottom - suggested->top,
-					SWP_NOZORDER | SWP_NOACTIVATE);
-			}
-			return 0;
-
-		case WM_GETMINMAXINFO:
-			if (l_param && self)
-			{
-				auto info = reinterpret_cast<MINMAXINFO*>(l_param);
-				info->ptMinTrackSize.x = self->min_width;
-				info->ptMinTrackSize.y = self->min_height;
-			}
-			break;
-
-		case WM_KILLFOCUS:
-			if (self) { self->held_modifiers = 0; }
-			break;
-
-		case WM_ACTIVATEAPP:
-			if (self)
-			{
-				if (w_param)
-				{
-					self->notify->on_activated();
-				}
-				else
-				{
-					self->held_modifiers = 0;
-					self->notify->on_deactivated();
-				}
-			}
-			break;
-
-		case WM_POWERBROADCAST:
-			if (self)
-			{
-				switch (w_param)
-				{
-				case PBT_APMSUSPEND:
-					self->power_suspended = true;
-					self->update_suspension();
-					return TRUE;
-				case PBT_APMRESUMEAUTOMATIC:
-				case PBT_APMRESUMESUSPEND:
-					self->power_suspended = false;
-					self->update_suspension();
-					return TRUE;
-				default:
-					break;
-				}
-			}
-			break;
-
-		// THE SYS VARIANTS ARE HERE TOO, and then fall through to
-		// DefWindowProc rather than being swallowed. Alt is a key like any
-		// other and a game may bind it, but Alt+F4, Alt+Space and Alt+Tab are
-		// the system's and stay the system's - handling the message is not the
-		// same as consuming it. F10 and Alt pressed alone are keys and nothing
-		// else: what they would otherwise open is the menu bar, this window has
-		// none, and the menu loop would only stall the pump. WM_SYSCOMMAND
-		// below is where that is decided.
-		//
-		// Key repeat needs no filtering. Windows resends WM_KEYDOWN while a
-		// key is held; Keyboard::on_key_down sets a bit that is already set,
-		// and because the edges are derived from two polled frames rather than
-		// from these messages, a repeat cannot manufacture a second press.
-		case WM_KEYDOWN:
-		case WM_SYSKEYDOWN:
-			if (self)
-			{
-				const Key key = key_from_message(w_param, l_param);
-				if (self->update_modifier(key, l_param, true))
-				{
-					self->notify->on_key_down(key);
-				}
-			}
-			break;
-
-		case WM_KEYUP:
-		case WM_SYSKEYUP:
-			if (self)
-			{
-				const Key key = key_from_message(w_param, l_param);
-				if (self->update_modifier(key, l_param, false))
-				{
-					self->notify->on_key_up(key);
-				}
-			}
-			break;
-
-		// TYPED TEXT, which is the one channel polling cannot rebuild - the
-		// shift resolution, the key repeat, the dead keys and the IME have all
-		// already happened by the time a character arrives here.
-		//
-		// WM_SYSCHAR is deliberately NOT handled. It is what Alt+F produces,
-		// and treating it as text types an "f" into whatever field is open
-		// every time a player reaches for a menu.
-		case WM_CHAR:
-			if (self)
-			{
-				const wchar_t unit = static_cast<wchar_t>(w_param);
-
-				// A high surrogate is half a character. Hold it and wait; the
-				// low half is the very next message.
-				if (unit >= 0xD800 && unit <= 0xDBFF)
-				{
-					self->pending_high_surrogate = unit;
-					break;
-				}
-
-				char32_t codepoint = static_cast<char32_t>(unit);
-
-				if (unit >= 0xDC00 && unit <= 0xDFFF &&
-					self->pending_high_surrogate != 0)
-				{
-					codepoint = 0x10000u +
-						((static_cast<char32_t>(
-							self->pending_high_surrogate) - 0xD800u) << 10) +
-						(static_cast<char32_t>(unit) - 0xDC00u);
-				}
-
-				// Cleared whatever happened, including the case where a low
-				// half never came: a stale high surrogate joined to the next
-				// unrelated character would corrupt a good one as well as the
-				// lost one. An unpaired half passed on as-is becomes U+FFFD
-				// inside Keyboard::on_text, which is where that rule lives.
-				self->pending_high_surrogate = 0;
-
-				self->notify->on_text(codepoint);
-			}
-			break;
-
-		case WM_MOUSEMOVE:
-			if (self)
-			{
-				self->notify->on_mouse_move(low_word_signed(l_param),
-					high_word_signed(l_param));
-			}
-			break;
-
-		// NO DOUBLE-CLICK MESSAGES ARRIVE, and that is deliberate rather than
-		// missing. The window class above is registered without CS_DBLCLKS, so
-		// Windows never substitutes WM_LBUTTONDBLCLK for the second press of a
-		// pair - every press is an ordinary button-down and none is lost. What
-		// counts as a double click is a policy the game owns, and two presses
-		// with their timing is what it needs to decide.
-		case WM_LBUTTONDOWN:
-		case WM_RBUTTONDOWN:
-		case WM_MBUTTONDOWN:
-		case WM_XBUTTONDOWN:
-			if (self)
-			{
-				const MouseButton button =
-					message == WM_LBUTTONDOWN ? MouseButton::left :
-					message == WM_RBUTTONDOWN ? MouseButton::right :
-					message == WM_MBUTTONDOWN ? MouseButton::middle :
-					x_button(w_param);
-
-				if (button != MouseButton::none)
-				{
-					// Capture on the way out of zero. See held_buttons above
-					// for why this counts rather than flags.
-					if (self->held_buttons == 0)
-					{
-						SetCapture(window);
-					}
-					++self->held_buttons;
-
-					self->notify->on_mouse_button_down(button);
-				}
-			}
-			// The X button messages are documented as returning TRUE; the
-			// other three fall through to DefWindowProc as usual.
-			if (message == WM_XBUTTONDOWN)
-			{
-				return TRUE;
-			}
-			break;
-
-		case WM_LBUTTONUP:
-		case WM_RBUTTONUP:
-		case WM_MBUTTONUP:
-		case WM_XBUTTONUP:
-			if (self)
-			{
-				const MouseButton button =
-					message == WM_LBUTTONUP ? MouseButton::left :
-					message == WM_RBUTTONUP ? MouseButton::right :
-					message == WM_MBUTTONUP ? MouseButton::middle :
-					x_button(w_param);
-
-				if (button != MouseButton::none)
-				{
-					if (self->held_buttons > 0)
-					{
-						--self->held_buttons;
-						if (self->held_buttons == 0)
-						{
-							ReleaseCapture();
-						}
-					}
-
-					self->notify->on_mouse_button_up(button);
-				}
-			}
-			if (message == WM_XBUTTONUP)
-			{
-				return TRUE;
-			}
-			break;
-
-		case WM_CAPTURECHANGED:
-			// Normal last-button release has already reduced the count to zero.
-			// Transfer/cancellation can happen while the application keeps focus.
-			if (self && self->held_buttons > 0)
-			{
-				self->held_buttons = 0;
-				self->notify->on_mouse_capture_lost();
-			}
-			break;
-
-		// TOUCH, AND ONLY TOUCH. A pen and the mouse fall through to
-		// DefWindowProc, which turns them into the mouse messages above - a pen
-		// is the mouse in this engine (pointer_input.h says why). A touch
-		// contact is handled here and not passed on, so Windows makes no
-		// mouse messages of it, and none of its gestures either: a press and
-		// hold is a point held, not a right click.
-		//
-		// The position is in screen pixels and is turned into client pixels
-		// here, signed for the reason low_word_signed gives: a touch that
-		// started in the window is captured to it and followed off the edge.
-		//
-		// WM_POINTERCAPTURECHANGED is answered whatever the pointer is,
-		// because by then it may be no kind Windows will still name, and a
-		// cancel for a point the touch device does not hold does nothing.
-		case WM_POINTERDOWN:
-		case WM_POINTERUPDATE:
-		case WM_POINTERUP:
-		case WM_POINTERCAPTURECHANGED:
-			if (self)
-			{
-				const UINT32 pointer = GET_POINTERID_WPARAM(w_param);
-				if (message == WM_POINTERCAPTURECHANGED)
-				{
-					self->notify->on_touch_cancel(pointer);
-					break;
-				}
-
-				POINTER_INPUT_TYPE type = PT_POINTER;
-				if (GetPointerType(pointer, &type) == 0 || type != PT_TOUCH)
-				{
-					break;
-				}
-
-				POINT position = { low_word_signed(l_param),
-					high_word_signed(l_param) };
-				ScreenToClient(window, &position);
-
-				switch (touch_message(message, static_cast<uint64_t>(w_param)))
-				{
-				case TouchMessage::down:
-					self->notify->on_touch_down(pointer, position.x,
-						position.y);
-					break;
-				case TouchMessage::move:
-					self->notify->on_touch_move(pointer, position.x,
-						position.y);
-					break;
-				case TouchMessage::up:
-					self->notify->on_touch_up(pointer, position.x, position.y);
-					break;
-				case TouchMessage::cancel:
-					self->notify->on_touch_cancel(pointer);
-					break;
-				case TouchMessage::none:
-					break;
-				}
-				return 0;
-			}
-			break;
-
-		case WM_MOUSEWHEEL:
-			if (self)
-			{
-				self->notify->on_mouse_wheel(
-					static_cast<float>(
-						static_cast<short>(HIWORD(w_param))) /
-					static_cast<float>(WHEEL_DELTA));
-			}
-			break;
-
-		case WM_MOUSEHWHEEL:
-			if (self)
-			{
-				self->notify->on_mouse_wheel_horizontal(
-					static_cast<float>(
-						static_cast<short>(HIWORD(w_param))) /
-					static_cast<float>(WHEEL_DELTA));
-			}
-			break;
-
-		// ONLY WHILE OWNED. The user data is zero for a window the destructor
-		// is taking down, and that destructor says why the quit must not be
-		// posted then. For close() and for the user's own X it is set, and
-		// this is the quit the pump is waiting for.
-		case WM_DESTROY:
-			if (self)
-			{
-				PostQuitMessage(0);
-			}
-			break;
-
-		// The last message a window receives. The handle is invalid the
-		// moment this returns, so the object stops naming it here - which is
-		// what lets the destructor tell an ordinary exit from an unwind, and
-		// makes a second close() a no-op rather than a call on a stale HWND.
-		case WM_NCDESTROY:
-			if (self)
-			{
-				self->handle = nullptr;
-				SetWindowLongPtr(window, GWLP_USERDATA, 0);
-			}
-			break;
+			return dpi_changed(window, message, w_param, l_param);
 
 		// F10, or Alt pressed and released alone. Passed on, DefWindowProc
 		// enters a modal loop on the system menu: PeekMessage stops returning
@@ -1135,7 +1192,7 @@ namespace labrador
 			{
 				return 0;
 			}
-			break;
+			return DefWindowProc(window, message, w_param, l_param);
 
 		case WM_MENUCHAR:
 			// A menu is active and the key pressed matches no mnemonic. Swallow it
@@ -1146,6 +1203,71 @@ namespace labrador
 			break;
 		}
 
-		return DefWindowProc(window, message, w_param, l_param);
+		if (self == nullptr)
+		{
+			switch (message)
+			{
+			case WM_PAINT:
+				return paint_nothing(window, message, w_param, l_param);
+			case WM_XBUTTONDOWN:
+			case WM_XBUTTONUP:
+				return mouse_default(window, message, w_param, l_param);
+			default:
+				return DefWindowProc(window, message, w_param, l_param);
+			}
+		}
+
+		switch (message)
+		{
+		case WM_PAINT:
+		case WM_MOVE:
+		case WM_SIZE:
+		case WM_ENTERSIZEMOVE:
+		case WM_EXITSIZEMOVE:
+		case WM_GETMINMAXINFO:
+			return self->on_size_message(window, message, w_param, l_param);
+
+		case WM_KILLFOCUS:
+		case WM_ACTIVATEAPP:
+		case WM_POWERBROADCAST:
+			return self->on_activation_message(window, message, w_param,
+				l_param);
+
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			return self->on_key_message(window, message, w_param, l_param);
+
+		case WM_CHAR:
+			return self->on_char_message(window, w_param, l_param);
+
+		case WM_MOUSEMOVE:
+		case WM_LBUTTONDOWN:
+		case WM_RBUTTONDOWN:
+		case WM_MBUTTONDOWN:
+		case WM_XBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONUP:
+		case WM_XBUTTONUP:
+		case WM_CAPTURECHANGED:
+		case WM_MOUSEWHEEL:
+		case WM_MOUSEHWHEEL:
+			return self->on_mouse_message(window, message, w_param, l_param);
+
+		case WM_POINTERDOWN:
+		case WM_POINTERUPDATE:
+		case WM_POINTERUP:
+		case WM_POINTERCAPTURECHANGED:
+			return self->on_pointer_message(window, message, w_param, l_param);
+
+		case WM_DESTROY:
+		case WM_NCDESTROY:
+			return self->on_destroy_message(window, message, w_param, l_param);
+
+		default:
+			return DefWindowProc(window, message, w_param, l_param);
+		}
 	}
 }
