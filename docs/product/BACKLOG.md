@@ -31,9 +31,10 @@ implemented and checked offline with fixtures;
 [the policy's evidence](../website-versioning.md#candidate-build-evidence-2026-10-27)
 distinguishes that fixture from an actual engine release. The selector, index
 page and notice were qualified on assembled real snapshot output
-[in headless Chrome](../website-versioning.md#headless-chrome-qualification-2026-10-27),
-as emulation. What remains is acceptance in Safari and Firefox, on a real phone
-with touch and with a screen reader; then `v0.3.0`'s snapshot is published
+[in headless Chrome](../website-versioning.md#headless-chrome-qualification-2026-10-27)
+and [again in Chrome and Firefox](../website-versioning.md#rebuilt-fixture-qualification-2026-10-27),
+as emulation. What remains is acceptance in Safari, on a real phone with touch
+and with a screen reader; then `v0.3.0`'s snapshot is published
 and its deploy checked. Immutable releases were enabled on 2026-10-27.
 
 ## Now

@@ -466,9 +466,41 @@ pixels in either theme. The run also showed that from `/versions/`, which is
 in no version, the selector reported the list page missing from every release;
 it now opens each release's overview from there with no notice.
 
-Not established: how screen readers announce the notice, which is filled in
-after load; real phones and touch; Safari; Firefox; and the host's own 404
-handling under `/versions/<tag>/`, unverified until the first publication.
+Not established: how screen readers announce the notice; real phones and
+touch; Safari; Firefox; and the host's own 404 handling under
+`/versions/<tag>/`, unverified until the first publication.
+
+### Rebuilt-fixture qualification: 2026-10-27
+
+A fresh clone of `master` at `f05ec6c` produced `v0.3.0` and `v0.4.0`
+fixtures as above (146 and 147 pages) through `snapshot:build` and
+`snapshot:pack`, and a development build with one synthetic erratum assembled
+both: 1,319 files. This is emulation, not device or host acceptance.
+
+- **Chrome 156, headless:** axe-core 4.10.3 found no violation in 20 runs: the
+  page absent from `v0.3.0` and a shared page with the selector open,
+  `/versions/`, the arrival notice and the home page, at 1440 and 360 pixels
+  in both themes. The dark desktop note now measures 8.56:1. Keyboard
+  switching of shared and absent pages passed again.
+- **Firefox 158, headless,** driven by the repository's WebDriver BiDi client
+  (`tests/render/web/firefox_protocol.mjs`): 67 of 67 checks passed, covering
+  the same switching, the arrival notice, keyboard use, 360 and 1440 pixels in
+  both themes, JavaScript disabled, per-version search, and axe on the
+  selector pages. axe reported one `scrollable-region-focusable` violation
+  on a code block in the CI guide's content at 1440 pixels, outside the
+  selector.
+- **Chrome's accessibility tree:** the summary reports its expanded state,
+  the absent-page note is part of its link's name, the current version is
+  plain text marked `aria-current`, and the loading list reports busy. The
+  arrival notice was then inserted already filled during page load, which
+  screen readers commonly do not announce. It is now an empty `role=status`
+  region from the start, filled after load. The `/versions/` page's repeated
+  "Documentation" and "Home page" links now carry their version in hidden
+  text.
+
+Not established: real screen-reader speech (Narrator cannot be scripted here),
+Safari, real phones and touch, and the host's 404 handling under
+`/versions/<tag>/`.
 
 ## Work required for v0.3.0
 
@@ -482,10 +514,9 @@ snapshot with these checks:
    retained and each version's search index is isolated. *Implemented, as
    above.*
 3. The release index and selector keep release labels and archived-page source
-   links. *Implemented, and qualified in headless Chrome as above; acceptance
-   open.* Acceptance repeats those checks on an assembled build in Safari and
-   Firefox and on a real phone with touch, and checks with a screen reader that
-   the arrival notice is announced.
+   links. *Implemented; qualified in headless Chrome and Firefox as above.*
+   Acceptance still repeats those checks in Safari and on a real phone with
+   touch, and checks with a screen reader that the arrival notice is announced.
 4. Run `npm ci`, `npm run check`, `npm test` and `npm run build` in the release checkout.
    Retain the matching engine qualification and the built site together. Check
    that API anchors and sample quotations resolve within this release, and
