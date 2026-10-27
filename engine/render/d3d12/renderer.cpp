@@ -462,15 +462,13 @@ namespace labrador
 		// seam is what a client writes against.
 		std::ignore = layer_depth;
 
-		const D3d12Texture& resolved =
+		const D3d12Texture& device_texture =
 			*this->view_->owner->resources->impl()->texture(texture);
 
-		SpriteVertex corners[4];
-		build_sprite_quad(
-			this->view_->camera.calculate_view_rectangle(destination),
-			source, resolved.size(), tint, rotation, origin, flip, corners);
-
-		this->view_->draw(resolved, corners);
+		const ResolvedTexture<const D3d12Texture&> resolved{
+			device_texture, device_texture.size() };
+		record_sprite(*this->view_, resolved, source, destination, tint,
+			rotation, origin, flip);
 	}
 
 	void DrawList::draw_text(FontHandle font,
@@ -484,34 +482,18 @@ namespace labrador
 	{
 		std::ignore = layer_depth;
 
-		// Two tables and two lookups, and which side of the seam each comes
-		// from is the rule rather than a habit: a Font is engine data, so its
-		// table is the seam's own; a texture is not, so its table is this
-		// folder's.
+		// The font table is the seam's own and the texture table is this
+		// folder's, which is the rule about which half lives where reading as
+		// two lines of code (engine/render/render_resources.h).
 		const RenderResources& resources = *this->view_->owner->resources;
 		const Font& the_font = *resources.font(font);
-
-		// A GLYPH IS A SPRITE, AND THAT IS THE WHOLE OF THIS FUNCTION. The walk
-		// is the engine's (font.h) and so is the quad (sprite_geometry.h).
 		const D3d12Texture& atlas =
 			*resources.impl()->texture(the_font.atlas());
-		const Vector2F atlas_size = atlas.size();
 
-		const Vector2F screen_position =
-			this->view_->camera.calculate_view_position(position);
-		const float screen_scale =
-			this->view_->camera.calculate_view_scale(scale);
-
-		DrawList::View& view = *this->view_;
-		the_font.for_each_glyph(text,
-			[&](const Glyph& glyph, const Vector2F& pen)
-			{
-				SpriteVertex corners[4];
-				build_glyph_quad(screen_position, screen_scale, glyph, pen,
-					atlas_size, tint, rotation, origin, corners);
-
-				view.draw(atlas, corners);
-			});
+		const ResolvedTexture<const D3d12Texture&> resolved{
+			atlas, atlas.size() };
+		record_text(*this->view_, the_font, resolved, text, position, tint,
+			scale, rotation, origin);
 	}
 
 	// --- Renderer::Impl ------------------------------------------------------

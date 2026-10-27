@@ -86,20 +86,15 @@ namespace labrador
 	{
 		std::ignore = layer_depth;
 
-		const NullTexture& null_texture =
-			*this->view_->owner->resources->impl()->texture(texture);
-
 		// THE SAME GEOMETRY THE REAL BACKENDS RUN, which is what makes a
-		// recording worth asserting on. If this backend built its own idea of
-		// where a sprite goes, a test passing here would say nothing about what
-		// a device would have drawn.
-		SpriteVertex corners[4];
-		build_sprite_quad(
-			this->view_->camera.calculate_view_rectangle(destination),
-			source, null_texture.size(), tint, rotation, origin, flip,
-			corners);
+		// recording worth asserting on. The recording keeps the handle, and
+		// the size comes from the texture it names.
+		const Vector2F size =
+			this->view_->owner->resources->impl()->texture(texture)->size();
 
-		this->view_->draw(texture, corners);
+		const ResolvedTexture<TextureHandle> resolved{ texture, size };
+		record_sprite(*this->view_, resolved, source, destination, tint,
+			rotation, origin, flip);
 	}
 
 	void DrawList::draw_text(FontHandle font,
@@ -121,21 +116,9 @@ namespace labrador
 		const TextureHandle atlas = the_font.atlas();
 		const Vector2F atlas_size = resources.impl()->texture(atlas)->size();
 
-		const Vector2F screen_position =
-			this->view_->camera.calculate_view_position(position);
-		const float screen_scale =
-			this->view_->camera.calculate_view_scale(scale);
-
-		DrawList::View& view = *this->view_;
-		the_font.for_each_glyph(text,
-			[&](const Glyph& glyph, const Vector2F& pen)
-			{
-				SpriteVertex corners[4];
-				build_glyph_quad(screen_position, screen_scale, glyph, pen,
-					atlas_size, tint, rotation, origin, corners);
-
-				view.draw(atlas, corners);
-			});
+		const ResolvedTexture<TextureHandle> resolved{ atlas, atlas_size };
+		record_text(*this->view_, the_font, resolved, text, position, tint,
+			scale, rotation, origin);
 	}
 
 	// --- Renderer ------------------------------------------------------------
