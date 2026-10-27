@@ -7,6 +7,7 @@
 #include "engine/render/gl/gl_functions.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
+#include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 
 #include <memory>
@@ -117,48 +118,14 @@ namespace labrador
 		Registry<GlTexture> textures{ "Texture" };
 	};
 
-	// One view's recording, which is memory and nothing else.
-	class DrawList::View
+	// One view's recording, which is memory and nothing else
+	// (engine/render/sprite_geometry.h).
+	class DrawList::View : public RunRecorder<GLuint>
 	{
 	public:
-		// A run of sprites that share everything a draw call fixes. Closed and
-		// pushed when any of the three changes, or at the end of the view.
-		struct Run
-		{
-			Viewport viewport;
-			GLuint texture = 0;
-			TextureFilter filter = TextureFilter::point;
-			int first_sprite = 0;
-			int sprites = 0;
-		};
-
-		// How many sprites one run may hold. The index buffer is built once for
-		// this many and reused from each run's first vertex (renderer.cpp,
-		// point_attributes), so a longer run is split rather than growing
-		// anything.
-		static const int max_run_sprites = 2048;
-
 		Renderer::Impl* owner = nullptr;
 
-		std::vector<SpriteVertex> vertices;
-		std::vector<Run> runs;
-
-		// The run being built. Not in `runs` until something closes it.
-		Run open;
-		bool open_valid = false;
-
-		// Reset at the top of every frame, not carried across one.
-		Camera camera = Camera::default_camera;
-		TextureFilter filter = TextureFilter::point;
-		Viewport viewport;
-
-		// Whether anything has been recorded into this view this frame. It is
-		// what makes a dropped view detectable - see Renderer::set_view_count.
-		bool touched = false;
-
 		void draw(const GlTexture& texture, const SpriteVertex* corners);
-		void close_run();
-		void reset();
 	};
 
 	// The context, the window or canvas it draws into, and every GL object
