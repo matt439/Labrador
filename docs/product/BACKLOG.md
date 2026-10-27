@@ -1,8 +1,8 @@
 # Backlog
 
-The order of work: 164 stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
+The order of work: stories in four horizons, each with the exit criteria that end it. **This is the one file in `docs/product/` that is kept current**: tick a box in the same commit as the change that closes the story, and amend a horizon here rather than letting the work drift away from it. The other files are the design record of 2026-10-13 and are read as of that date.
 
-Each line reads: id, MoSCoW, size, the persona it serves, title, and what it waits on. The reasoning for every placement is in the *why* under each horizon; stories are in [STORIES.md](STORIES.md).
+Each line reads: id, MoSCoW, size, the persona it serves, title, and what it waits on. The reasoning for every placement is in the *why* under each horizon. The original stories are in [STORIES.md](STORIES.md); later additions have their scope and acceptance here.
 
 ## How the order was decided
 
@@ -12,7 +12,7 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 
 | Decision | Blocks |
 |---|---|
-| Record the accessibility position: what the engine provides, whether the hosted demo has an aim, and who owns the colour-blind palette | OCA-08, BDP-24, BDP-21 |
+| Record the engine/game accessibility boundary and remaining demo aims; sample-owned colour-vision-deficiency palettes are agreed on 2026-10-27 and tracked as BDP-25 | OCA-08, BDP-24, BDP-21 |
 | Decided 2026-10-26: ColourWars' pin reaches each Labrador minor tag within a week of it being cut; its gameplay check is ColourWars' own, outside this repository | SM-36, PI-14 |
 | Decided 2026-10-27: separate CPU phase and cadence p99s from GPU execution and pipeline latency; the ratchet document's section 5 owns the mapping and PHILOSOPHY cites it | SM-03, SM-01, SM-07, SM-02 |
 | What private ColourWars detail may be published when the seven drafts and the packaging gap are filed, then accept, decline or split each report | PI-09, PI-10, PI-11 |
@@ -292,7 +292,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | OCA-19 | G39: what to do with the browser files a template copy brings. |
 | OCA-23 | G51, G52: hosting requirements only in an internal plan, and a wrong claim about the MIME type. |
 | OCA-28 | G23: which browsers can be promised. After SM-09 so Safari reads 'checked on X' or 'out of reach', and after SM-10 (Now). Two pages wait on it: the website's guides/browser.mdx and guides/web-host.mdx link Platform support in place of this statement, and are repointed to it in the commit that closes this story. |
-| OCA-08 | G119 (merged with SM-38): the accessibility position. PHILOSOPHY amendment C, owner-worded, after A and B. |
+| OCA-08 | G119 (merged with SM-38): the accessibility position. Partly decided 2026-10-27: the owner wants colour-vision-deficiency palettes covering Protanomaly / Protanopia, Deuteranomaly / Deuteranopia and Tritanomaly / Tritanopia. LineSweeper owns this sample presentation work (BDP-25); other games own their palettes. These are planned targets, with implementation and validation still open. The remaining engine/game accessibility statement and broader demo aims keep OCA-08 open for PHILOSOPHY amendment C and the public documentation. |
 | BDP-24 | G119: the demo states what it offers players with access needs, following the recorded position. |
 | BDP-03 | G33 (major): the page hosts serve had no automated test. Closed 2026-10-27: following the initial GPU startup denial, all 31 `wasm-release` entries pass locally in Chrome 156.0.8078.48 on the RTX 5080. The [PR #59 wasm job](https://github.com/matt439/Labrador/actions/runs/40419996949/job/121911813526), at initial head `0fffdf1`, also passes and reports `LineSweeperBundlePageTests` passed in 6.62 seconds on Chrome 156 with SwiftShader. [Evidence and limits](../port/web.md#packaged-page-verification-2026-10-27). |
 | BDP-04 | G33: the bundle page's failure paths. Closed 2026-10-27: `LineSweeperBundlePageTests` passes locally in Chrome 156.0.8078.48 within the 31-entry `wasm-release` run, including context loss/restore, truncated-wasm failure and captured-config `onError` recovery UI. [Evidence](../port/web.md#packaged-page-verification-2026-10-27). The earlier GPU startup denial is superseded for this local check; no hosted or physical-device acceptance is added. |
@@ -313,7 +313,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
-- The demo's failure messages are written for players, it probes support before downloading, pauses on focus loss, honours reduced motion, and every landing shadow meets 3:1 contrast
+- The demo's failure messages are written for players, it probes support before downloading, pauses on focus loss, honours reduced motion, offers the three agreed colour-vision-deficiency palette groups with their verification status stated, and every landing shadow meets 3:1 contrast
 - Separate low-tier CPU phase and cadence p99s on the integrated Radeon are published with their pacing rule and cadence verdicts, and pipeline latency has its own evidence with stated endpoints; a blocked measurement records its reason and keeps the acceptance item open
 - A real iPhone has played the development page and the live demo, with the LAN-serve procedure written in that session; a pacing method exists and runs on the owner's displays are recorded
 - PI-10 has decided each filed report, and only then is the engine staging helper built or declined
@@ -329,7 +329,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 6. L6 Verify a web bundle before deploying: SM-27
 7. L7 Demo failure paths a player can act on: BDP-15, BDP-16, BDP-17
 8. L8 Demo controls, focus and phone instructions: BDP-11, BDP-12, BDP-13, BDP-14
-9. L9 Demo contrast and reduced motion: BDP-21, BDP-22
+9. L9 Demo contrast, reduced motion and colour-vision-deficiency palettes: BDP-21, BDP-22, BDP-25
 10. L10 Phone fallback data use (PersonalWebsite repository): BDP-20
 11. L11 Play again stays fast: BDP-18
 12. L12 Host page fits a phone held upright: BDP-09
@@ -374,6 +374,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[BDP-14](STORIES.md#bdp-14)** Could · XS · The Browser and Phone Demo Player: A controller lifts the phone gate, as the page says it will
 - [ ] **[BDP-21](STORIES.md#bdp-21)** Could · S · The Browser and Phone Demo Player: A landing shadow I can see for every piece — after OCA-08
 - [ ] **[BDP-22](STORIES.md#bdp-22)** Could · S · The Browser and Phone Demo Player: Fewer sparks when I have asked my system for reduced motion — after BDP-23
+- [ ] **[BDP-25](#bdp-25)** Could · M · The Browser and Phone Demo Player: Select palettes intended for Protanomaly / Protanopia, Deuteranomaly / Deuteranopia and Tritanomaly / Tritanopia
 - [ ] **[BDP-20](STORIES.md#bdp-20)** Could · XS · The Browser and Phone Demo Player · **Owner**: The phone fallback does not spend my data without asking
 - [ ] **[BDP-18](STORIES.md#bdp-18)** Could · S · The Browser and Phone Demo Player: Playing again many times stays fast and keeps the graphics — after BDP-03
 - [ ] **[BDP-09](STORIES.md#bdp-09)** Could · S · The Browser and Phone Demo Player: The host page fits a phone held upright — after BDP-03
@@ -448,6 +449,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | BDP-14 | G81: a controller lifts the phone gate as the page says; moot if BDP-10 lands soon. |
 | BDP-21 | G117: a landing shadow every player can see. Follows OCA-08's position (Next). |
 | BDP-22 | G118: fewer sparks under reduced motion. Follows BDP-23 (Now). The default is already calm: N3b passes the top-out on the strict, pixel-by-pixel reading of WCAG 2.3.1 for every player, so reduced motion goes further for those who ask rather than being what makes the demo safe. |
+| <a id="bdp-25"></a>BDP-25 | Added 2026-10-27 from the owner's palette decision under OCA-08. LineSweeper owns three selectable palette groups, named in full: Protanomaly / Protanopia, Deuteranomaly / Deuteranopia and Tritanomaly / Tritanopia, alongside its existing palette. This approved slice can proceed independently of OCA-08's remaining decisions. Acceptance: selection consistently changes all seven piece presentations without changing rules; each palette is checked with the landing-shadow contrast and flash criteria, and every changed capture is reviewed as the sample README requires. Record the chosen colours, review method and limits; simulation is a development aid, while player validation remains separately identified ([XAG 103](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/103)). No particular colour values, persistence, automatic detection or engine palette API is selected by this decision. |
 | BDP-20 | G86: the phone fallback plays footage without asking. In the owner's PersonalWebsite repository. |
 | BDP-18 | G114: repeated plays; measure before fixing. |
 | BDP-09 | G34: the host page fits a phone held upright; needed before BDP-10. |

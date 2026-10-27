@@ -15,7 +15,7 @@ An index of open work, one row per item; each row points to the document that ow
 3. **`REV#3`, `REV#6`: remaining backend review questions.** Bounded presentation lifecycle verification is recorded; the real display-change session and instance-callback contract question remain in the review queue.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `OCA-08` (accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
+- Next: `OCA-08` (remaining accessibility position, amendment C) · `PI-09` (what ColourWars detail may be published) · `OCA-48` + `BDP-06` (the physical pad session) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
 - Later: `BDP-20` (the phone fallback video) · `BDP-10` (whether the iPhone alone lifts the phone gate) · `SITE#3` (versioning at the first tag) · `SRL-14` (the C++ series) · `SRL-07` (constants naming) · `OCA-66` (DPI awareness) · `WEB#3` (listen to the audio sample).
 
 ## Input, menus, settings and saves
@@ -110,7 +110,8 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-08` | DECISION | should | S | The owner records the accessibility position for PHILOSOPHY amendment C, after B: what the engine provides, whether the hosted demo has an aim, who owns the colour-blind palette. The flash reading is decided. Unblocks `BDP-24`, `BDP-21`. |
+| `OCA-08` | DECISION | should | S | Record the engine/game accessibility boundary and remaining demo aims in PHILOSOPHY and public docs. Sample-owned colour-vision-deficiency palettes are agreed (`BDP-25`); the flash policy is settled. |
+| `BDP-25` | OPEN | could | M | Implement the three agreed colour-vision-deficiency palette groups in LineSweeper; [BACKLOG](docs/product/BACKLOG.md#bdp-25) owns their full names, scope and acceptance. |
 | `SRL-14` | DECISION | could | S | The owner says whether the "Introduction to C++" series is not started, planned with an outline, or withdrawn. |
 | `SRL-07` | DECISION | could | S | The owner chooses between amending CONVENTIONS to accept the 26 SCREAMING constants and renaming them in both repositories. |
 | `OCA-66` | DECISION | could | S | The owner decides whether the default DPI awareness stays unaware or becomes per-monitor aware. |
