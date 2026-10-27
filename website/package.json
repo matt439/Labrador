@@ -8,7 +8,8 @@
     "preview": "astro preview",
     "check": "astro check",
     "test": "node --test tests/*.test.mjs",
-    "snapshot:source": "node scripts/snapshot-source.mjs"
+    "snapshot:source": "node scripts/snapshot-source.mjs",
+    "snapshot:build": "node scripts/build-snapshot.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.2",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@types/node": "^26.6.4",
+    "parse5": "7.3.0",
     "starlight-links-validator": "^0.26.0",
     "typescript": "^6.0.3"
   },

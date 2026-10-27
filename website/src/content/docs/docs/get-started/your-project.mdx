@@ -6,6 +6,7 @@ description: A repository of your own, with Labrador as a submodule and the mini
 import { Code, FileTree, Steps, Aside } from '@astrojs/starlight/components';
 import ConsumerManifest from '~/components/ConsumerManifest.astro';
 import IncludeChanges from '~/components/IncludeChanges.astro';
+import RepoLink from '~/components/RepoLink.astro';
 import rootCMake from '~/walkthrough/root-CMakeLists.txt?raw';
 import gameCMake from '~/walkthrough/game-CMakeLists.txt?raw';
 import presets from '~/walkthrough/CMakePresets.json?raw';
@@ -70,7 +71,7 @@ preset in `CMakePresets.json` with them.
    `git -C external/labrador tag --list "v*" --sort=-v:refname` lists newest first, if there is a newer one. Your repository
    now records exactly which commit of Labrador it builds against, and moving to a newer tag
    is a change you make deliberately and commit, after reading what
-   [CHANGES.md](https://github.com/matt439/Labrador/blob/master/CHANGES.md) says changed
+   <RepoLink path="CHANGES.md">CHANGES.md</RepoLink> says changed
    between the two; [Move your engine pin](/docs/guides/move-pin/) is the procedure. This site documents `master`, which can be ahead of the newest tag, and
    CHANGES.md's *Unreleased* heading, when it has one, lists what `master` has that the tag
    does not.

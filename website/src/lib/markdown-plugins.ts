@@ -10,6 +10,7 @@ import { defineMdastPlugin, type MdastPluginEntry, type MdastVisitorContext } fr
 import { DESIGN_DOCUMENTS, publishedPages } from './published.ts';
 import { codeLink } from './reference.ts';
 import { REPOSITORY_ROOT, absolutePath, sourceUrl, toRepositoryPath } from './repository.ts';
+import { sitePath } from './site-path.ts';
 
 // Where the site's own pages live, from the repository root. A document read
 // from elsewhere in the checkout is rendered *as if* it were here - at the path
@@ -59,32 +60,49 @@ function resolveRelative(url: string, fromSource: string): string {
 	return (page ?? sourceUrl(repositoryPath)) + anchor;
 }
 
-// Applies only to documents that come from outside website/. A page written for
-// the site links with site paths, and starlight-links-validator checks those.
+// Repository-relative links are resolved only for published checkout documents.
+// Every rendered root link then stays inside the selected documentation version.
 export const checkoutLinks: MdastPluginEntry = ({ fileURL }) => {
 	const source = fileURL ? sourceOf(fileURL) : undefined;
-	if (!source || source.startsWith('website/')) {
-		return undefined;
-	}
+	const fromCheckout = source !== undefined && !source.startsWith('website/');
+	const resolve = (url: string) => sitePath(fromCheckout && !NOT_RELATIVE.test(url)
+		? resolveRelative(url, source!) : url);
 
 	return defineMdastPlugin({
 		name: 'labrador-checkout-links',
 		link(node, ctx) {
-			if (!NOT_RELATIVE.test(node.url)) {
-				ctx.setProperty(node, 'url', resolveRelative(node.url, source));
-			}
+			ctx.setProperty(node, 'url', resolve(node.url));
 		},
 		definition(node, ctx) {
-			if (!NOT_RELATIVE.test(node.url)) {
-				ctx.setProperty(node, 'url', resolveRelative(node.url, source));
-			}
+			ctx.setProperty(node, 'url', resolve(node.url));
 		},
-		image(node) {
-			if (!NOT_RELATIVE.test(node.url)) {
+		image(node, ctx) {
+			if (fromCheckout && !NOT_RELATIVE.test(node.url)) {
 				throw new Error(
 					`'${source}' has a relative image, '${node.url}', and the site does not copy ` +
 						`images out of the checkout yet. Add that before publishing this document.`
 				);
+			}
+			ctx.setProperty(node, 'url', sitePath(node.url));
+		},
+		mdxJsxFlowElement(node, ctx) {
+			const attributes = node.attributes.map((attribute) =>
+				attribute.type === 'mdxJsxAttribute' && ['href', 'src'].includes(attribute.name)
+					&& typeof attribute.value === 'string'
+					&& sitePath(attribute.value) !== attribute.value
+					? { ...attribute, value: sitePath(attribute.value) } : attribute);
+			if (attributes.some((attribute, index) => attribute !== node.attributes[index])) {
+				ctx.replaceNode(node, { ...node, attributes });
+			}
+		},
+		mdxJsxTextElement(node, ctx) {
+			const attributes = node.attributes.map((attribute) =>
+				attribute.type === 'mdxJsxAttribute' && ['href', 'src'].includes(attribute.name)
+					&& typeof attribute.value === 'string'
+					&& sitePath(attribute.value) !== attribute.value
+					? { ...attribute, value: sitePath(attribute.value) } : attribute);
+			if (attributes.some((attribute, index) => attribute !== node.attributes[index])) {
+				ctx.replaceNode(node, { ...node, attributes });
 			}
 		},
 	});
@@ -139,7 +157,7 @@ export const referenceLinks: MdastPluginEntry = ({ fileURL }) => {
 				return;
 			}
 			linked.add(url);
-			ctx.wrapNode(node, { type: 'link', url, children: [] });
+			ctx.wrapNode(node, { type: 'link', url: sitePath(url), children: [] });
 		},
 	});
 };

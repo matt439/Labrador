@@ -15,7 +15,7 @@ const inputPaths = [
 	':(top,glob)website/*',
 ];
 
-function releaseVersion(tag) {
+export function releaseVersion(tag) {
 	const match = /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.exec(tag);
 	if (!match || match[0] !== tag) {
 		throw new Error('Use a stable release tag of the form vMAJOR.MINOR.PATCH.');

@@ -9,6 +9,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { verifySnapshotSource } from '../../scripts/snapshot-source.mjs';
 
 export const GITHUB_REPOSITORY = 'https://github.com/matt439/Labrador';
 
@@ -33,6 +34,12 @@ function findRepositoryRoot(): string {
 
 export const REPOSITORY_ROOT = findRepositoryRoot();
 
+// A release mode must prove its own source before any pages are generated.
+// The ordinary development build keeps its existing archive override.
+export const RELEASE_SOURCE = process.env.LABRADOR_DOCS_TAG === undefined
+	? undefined
+	: verifySnapshotSource(REPOSITORY_ROOT, process.env.LABRADOR_DOCS_TAG);
+
 export interface Revision {
 	commit: string;
 	short: string;
@@ -49,6 +56,14 @@ function git(...args: string[]): string {
 }
 
 function readRevision(): Revision {
+	if (RELEASE_SOURCE) {
+		return {
+			commit: RELEASE_SOURCE.commit,
+			short: RELEASE_SOURCE.commit.slice(0, 7),
+			date: RELEASE_SOURCE.sourceDate,
+			modified: false,
+		};
+	}
 	// A host that builds from an archive rather than a clone can supply the
 	// commit itself.
 	const supplied = process.env.LABRADOR_COMMIT;
@@ -116,6 +131,7 @@ export function sourceUrl(repositoryPath: string, lines?: { start: number; end: 
 }
 
 export function editUrl(repositoryPath: string): string {
+	if (RELEASE_SOURCE) return sourceUrl(repositoryPath);
 	return `${GITHUB_REPOSITORY}/edit/${EDIT_BRANCH}/${repositoryPath}`;
 }
 

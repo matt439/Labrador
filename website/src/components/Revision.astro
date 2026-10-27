@@ -1,10 +1,10 @@
 ---
-// The development documentation names its checkout commit and flags local edits.
-import { REVISION, commitUrl } from '../lib/repository';
+// Every page names the source it describes, including frozen release builds.
+import { RELEASE_SOURCE, REVISION, commitUrl } from '../lib/repository';
 ---
 
 <span class="revision">
-	Development documentation (unreleased).
+	{RELEASE_SOURCE ? `Documentation for Labrador ${RELEASE_SOURCE.tag}.` : 'Development documentation (unreleased).'}{' '}
 	Built from Labrador <a href={commitUrl()}><code>{REVISION.short}</code></a> of {REVISION.date}{
 		REVISION.modified && <strong> with uncommitted changes</strong>
 	}.

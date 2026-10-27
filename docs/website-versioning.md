@@ -1,6 +1,6 @@
 # Website documentation versions
 
-The website currently describes development Labrador. The footer says
+The default website build describes development Labrador. The footer says
 **Development documentation (unreleased)** and links to the checkout commit.
 Local edits, including changes to the website itself, add an uncommitted-changes
 notice. Source links keep that commit rather than following a moving branch.
@@ -74,24 +74,91 @@ must be unset; this first gate requires Git and refuses source archives.
 
 The source checks and command-line behavior have offline fixtures in
 [snapshot-source.test.mjs](../website/tests/snapshot-source.test.mjs), run by
-`npm test`. Routing, independent snapshot builds, the published-release
-manifest, selector, preservation and publication qualification below remain
-open. No release snapshot or version selector exists yet.
+`npm test`. Candidate snapshot builds and routing are implemented below. The
+published-release manifest, selector, preservation and publication qualification
+remain open. No release snapshot is published and no version selector exists yet.
+
+## Candidate snapshot builds
+
+From `website/` in the release's clean checkout, with dependencies installed
+using its tracked lockfile, run:
+
+```text
+npm ci
+npm run snapshot:build -- v0.3.0
+```
+
+[build-snapshot.mjs](../website/scripts/build-snapshot.mjs) verifies the release
+source, runs that checkout's Astro build in release mode, checks the output,
+and verifies the source again before writing `dist/snapshot/snapshot-build.json`.
+It fails if the source changes during the build or checks. The output is a flat
+candidate site to be mounted at `/versions/<tag>/`; it does not include a second
+copy of that prefix as a directory. The JSON contains the source record and
+page/link/search counts. It is candidate build evidence, not a published-release
+manifest or engine qualification.
+
+The build sets `LABRADOR_DOCS_TAG` for its child process. Configuring Astro with
+that variable also invokes the source gate, so running Astro directly cannot
+substitute an unverified tag or the development archive override. Each release
+build reads the guides, API, design documents, samples, media and lockfile from
+its own checkout. Its pages show the release tag and full commit link, and
+**View source** replaces the edit link. Development retains its existing label
+and edit links.
+
+Astro's base path handles bundled assets, sidebar routes and search loading.
+The site's Markdown, MDX, reference and code-link renderers route their links
+through the same prefix; route middleware covers hero and pagination links
+outside Markdown. [snapshot-output.mjs](../website/scripts/snapshot-output.mjs)
+then parses every emitted HTML page, checks its label and full source commit,
+requires its canonical URL, and checks internal links, images, video posters
+and `srcset` targets against the isolated output. Current-source links must use
+the full release commit. A guide's deliberate historical comparison uses an
+explicit `data-release-example` link to a stable release tag; it cannot point
+at a branch or an edit page.
+
+The output check also runs the emitted Pagefind JavaScript/Wasm API in an
+isolated worker whose fetches can read only this snapshot. It retrieves all
+indexed pages, performs an indexed-term query, and checks every returned URL.
+The existing build validator checks internal anchors and sample quotations.
+These checks do not establish browser search-UI, keyboard, theme or phone
+acceptance, or verify that a fixture commit exists on GitHub.
+
+`dist/snapshot/` is disposable candidate output. A development `npm run build`
+replaces `dist/`, so retain reviewed candidates elsewhere before building
+development documentation. Publication still needs the preservation mechanism
+below; neither command deploys or changes a published index.
+
+### Candidate build evidence: 2026-10-27
+
+A separate local Git fixture copied this change's complete source, set a
+synthetic `0.3.0` package version and annotated tag, and installed its exact
+lockfile with `npm ci`. `snapshot:build` passed: 146 HTML pages, 26,997 checked
+internal references and 145 searchable pages. Its full internal link/anchor
+validation passed. The fixture exposed and corrected hero frontmatter routing
+and authored links that had followed `master`. The development build and the
+release-to-development transition were also checked, together with the website
+type check and offline source/routing/output suites.
+
+This is qualification of the candidate-build mechanism with synthetic source,
+not an engine release, a published snapshot or real-device UI acceptance.
+The attempted visual preview stopped because this Windows browser does not
+support Computer Use URL-policy enforcement; visual acceptance remains open.
+The real release's own clean checkout and source links must still pass the
+release procedure.
 
 ## Work required for v0.3.0
 
 Implement and qualify the versioned build before cutting `v0.3.0`. Prepare and
 publish the first snapshot with these checks:
 
-1. Add a release manifest binding each published tag to its full commit and
-   snapshot path. Reject a dirty checkout, a tag/commit mismatch, or an archive
-   whose source identity cannot be verified. The existing `LABRADOR_COMMIT`
-   override identifies an archive build; it does not prove release provenance.
-2. Make generated API links, authored absolute links, sidebar links, assets,
-   search results and canonical URLs respect the snapshot prefix. Build and
-   validate each snapshot independently. Search within the selected version.
-3. Add the release label, release index, selector and archived-page source
-   links. Check switching both a shared page and a page absent from an older
+1. Add a release manifest binding each successfully published tag to its full
+   commit and snapshot path. Candidate source/build records do not establish
+   publication. Keep the existing source and output gates in the pipeline.
+2. Preserve and assemble independently built snapshots with development
+   documentation. Refuse a changed replacement at an existing published path;
+   retain older releases and isolate each version's search index.
+3. Add the release index and selector, retaining release labels and archived-page
+   source links. Check switching both a shared page and a page absent from an older
    version, by keyboard and at phone width in both themes.
 4. Run `npm ci`, `npm run check`, `npm test` and `npm run build` in the release checkout.
    Retain the matching engine qualification and the built site together. Check

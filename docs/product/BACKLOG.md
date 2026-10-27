@@ -25,8 +25,11 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 
 `SITE#3` remains open for implementation and verification under
 [the versioning policy](../website-versioning.md). It is a prerequisite for
-cutting `v0.3.0`; the release choice is settled, while the snapshot pipeline,
-versioned links/search and selector still need their checks.
+cutting `v0.3.0`; verified candidate builds and versioned links/search are
+implemented and checked with an isolated release fixture. The published-release
+index/selector, snapshot preservation and publication qualification remain;
+[the policy's evidence](../website-versioning.md#candidate-build-evidence-2026-10-27)
+distinguishes that fixture from an actual engine release.
 
 ## Now
 

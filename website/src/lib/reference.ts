@@ -19,6 +19,7 @@ import { REFERENCE_AUDIENCES, REFERENCE_HEADERS, UNPUBLISHED_HEADERS, publishedP
 import { REPOSITORY_ROOT, REVISION, absolutePath, commitUrl, readRepositoryFile, sourceUrl } from './repository.ts';
 import { excerpt } from './excerpt.ts';
 import { referenceMentions } from './reference-mentions.ts';
+import { sitePath } from './site-path.ts';
 
 // ------------------------------------------------------------------ the index
 
@@ -281,7 +282,7 @@ function escapeHtml(text: string): string {
 }
 
 function link(url: string, html: string): string {
-	return `<a href="${url}">${html}</a>`;
+	return `<a href="${sitePath(url)}">${html}</a>`;
 }
 
 // A qualified member, function or header path is unambiguous in prose. Bare
@@ -642,11 +643,11 @@ function layout(header: ReferenceHeader): Layout {
 		() =>
 			`<p class="ref-source">Generated from <a href="${sourceUrl(header.source)}"><code>${escapeHtml(header.source)}</code></a> ` +
 			`at <a href="${commitUrl()}"><code>${REVISION.short}</code></a>. The text under each declaration is the ` +
-			`header's own comment, word for word. <a href="/docs/reference/">About the reference</a> says how these ` +
+			`header's own comment, word for word. <a href="${sitePath('/docs/reference/')}">About the reference</a> says how these ` +
 			`pages are made.</p>`
 	);
 	blocks.push(
-		() => `<p><a href="/docs/reference/${header.module}/">Browse the ${header.module} module</a></p>`
+		() => `<p><a href="${sitePath(`/docs/reference/${header.module}/`)}">Browse the ${header.module} module</a></p>`
 	);
 	blocks.push(() => `<p class="ref-audience"><strong>Audience: ${header.audience}.</strong>` +
 		(header.source === 'engine/render/resource_factory.h'

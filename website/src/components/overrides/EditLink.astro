@@ -1,0 +1,29 @@
+---
+import Default from '@astrojs/starlight/components/EditLink.astro';
+import { Icon } from '@astrojs/starlight/components';
+import { RELEASE_SOURCE } from '../../lib/repository';
+
+const { editUrl } = Astro.locals.starlightRoute;
+---
+
+{
+	RELEASE_SOURCE ? editUrl && (
+		<a href={editUrl} class="sl-flex print:hidden">
+			<Icon name="github" size="1.2em" />
+			View source
+		</a>
+	) : <Default />
+}
+
+<style>
+
+	a {
+		gap: 0.5rem;
+		align-items: center;
+		text-decoration: none;
+		color: var(--sl-color-gray-3);
+	}
+	a:hover {
+		color: var(--sl-color-white);
+	}
+</style>

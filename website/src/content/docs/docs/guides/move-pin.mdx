@@ -37,7 +37,7 @@ move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
    ```
 
    or the same file on GitHub at the new tag, for example
-   [CHANGES.md at v0.2.0](https://github.com/matt439/Labrador/blob/v0.2.0/CHANGES.md). Before
+   <a href="https://github.com/matt439/Labrador/blob/v0.2.0/CHANGES.md" data-release-example>CHANGES.md at v0.2.0</a>. Before
    1.0 a release can break your code, and when it does, the entry says how: the old spelling,
    the new one, and the change to the samples that made the same move.
 
@@ -54,7 +54,7 @@ move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
    `doctest` if your tests use it, and the baseline is the engine's, exactly. Until step 5 the
    file in `external/labrador` is still your old pin's, so read the new one with
    `git -C external/labrador show v0.2.0:vcpkg.json`. The `vcpkg.json`
-   [Start your own project](/docs/get-started/your-project/) shows is derived from `master`,
+   [Start your own project](/docs/get-started/your-project/) shows is derived from this site's revision,
    not from your pin, so compare with the engine's file at the tag, not with that page.
    A diff that shows only `version-string` changing has nothing for you to copy.
 
@@ -113,7 +113,7 @@ move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
 
 ## The reference at your pin
 
-This site documents Labrador's `master`, and its [API reference](/docs/reference/) is generated
+This site's [API reference](/docs/reference/) is generated
 from the headers at the revision named at the foot of each page. When your pin is older, the
 headers under `external/labrador/engine` are the reference for the engine you build. Their
 comments are the same text the reference publishes.
