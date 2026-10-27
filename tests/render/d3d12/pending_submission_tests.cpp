@@ -1,4 +1,4 @@
-#include "tests/render/d3d12_wait_observer.h"
+#include "tests/render/d3d12/wait_observer.h"
 
 #include "engine/render/d3d12/backend.h"
 #include "engine/render/resource_factory.h"

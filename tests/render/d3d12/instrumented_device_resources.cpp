@@ -1,4 +1,4 @@
-#include "tests/render/d3d12_wait_observer.h"
+#include "tests/render/d3d12/wait_observer.h"
 
 // Include every production dependency before introducing the one-call macro,
 // so SDK declarations and standard-library headers are never rewritten.

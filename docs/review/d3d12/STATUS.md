@@ -77,7 +77,7 @@ golden suite continues to exercise the profiles the engine actually builds.
 
 ## Submission allocation verification, 2026-10-26
 
-[d3d12_submit_allocation_tests.cpp](../../../tests/render/d3d12_submit_allocation_tests.cpp)
+[d3d12/submit_allocation_tests.cpp](../../../tests/render/d3d12/submit_allocation_tests.cpp)
 calibrates a scoped MSVC Debug DLL CRT allocation hook, warms four frames,
 then measures only `submit()` with declared view counts 4, 3, 1 and 4. The
 baseline made two normal-block allocation attempts totaling 48 requested
@@ -89,7 +89,7 @@ Analytic images independently check ascending view order and empty views.
 
 ## Multi-mip byte verification, 2026-10-26
 
-[d3d12_texture_upload_tests.cpp](../../../tests/render/d3d12_texture_upload_tests.cpp)
+[d3d12/texture_upload_tests.cpp](../../../tests/render/d3d12/texture_upload_tests.cpp)
 uploads patterned RGBA 17x9 and BC1/2/3 20x12 textures through the actual
 factory. Each has five levels through 1x1, including 2x1 BC tails. A narrow
 backend-private borrowed-resource accessor permits GPU subresource read-back
