@@ -323,7 +323,7 @@ count before walking its runs, including skipped geometry and empty views.
 Candidate 16's pass-unwind guard is unchanged.
 
 Follow-up on 2026-10-26:
-[vulkan_submit_allocation_tests.cpp](../../../tests/render/vulkan_submit_allocation_tests.cpp)
+[vulkan_submit_allocation_tests.cpp](../../../tests/render/vulkan/submit_allocation_tests.cpp)
 calibrates a scoped MSVC Debug DLL CRT allocation hook, warms four presented
 frames with identical capacities, and measures only three subsequent
 `submit()` calls. Each baseline call reports two normal-block allocation

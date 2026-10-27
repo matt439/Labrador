@@ -129,12 +129,12 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     endif()
 
     if(LABRADOR_RENDER_BACKEND STREQUAL "gl")
-        target_sources(RenderPixelTests PRIVATE gl_texture_tests.cpp)
+        target_sources(RenderPixelTests PRIVATE gl/texture_tests.cpp)
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         target_sources(RenderPixelTests PRIVATE
-            d3d12_submit_allocation_tests.cpp
-            d3d12_texture_upload_tests.cpp
-            "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d12_presentation_diagnostics_tests.cpp>"
+            d3d12/submit_allocation_tests.cpp
+            d3d12/texture_upload_tests.cpp
+            "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d12/presentation_diagnostics_tests.cpp>"
         )
 
         # One isolated executable supplies the actual DeviceResources object
@@ -142,9 +142,9 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         # Normal static linking leaves the original archive member unextracted;
         # do not use whole-archive or duplicate-definition suppression here.
         add_executable(D3D12SynchronizationTests
-            d3d12_pending_submission_tests.cpp
-            d3d12_instrumented_device_resources.cpp
-            d3d12_wait_observer.h
+            d3d12/pending_submission_tests.cpp
+            d3d12/instrumented_device_resources.cpp
+            d3d12/wait_observer.h
             win32/test_window.cpp
             test_main.cpp
         )
@@ -159,7 +159,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         # Opt-in runtime capability probe; InfoQueue1 is newer than the normal
         # Debug diagnostic interface. It neither builds by default nor joins CTest.
         add_executable(D3D12DestructionProbe EXCLUDE_FROM_ALL
-            d3d12_destruction_probe.cpp
+            d3d12/destruction_probe.cpp
             win32/test_window.cpp
         )
         target_link_libraries(D3D12DestructionProbe PRIVATE
@@ -170,8 +170,8 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         # Hidden Present may block before two slots can remain queued. Keep
         # this bounded capability probe opt-in, outside the required tests.
         add_executable(D3D12PresentedSlotsProbe EXCLUDE_FROM_ALL
-            d3d12_presented_slots_probe.cpp
-            d3d12_instrumented_device_resources.cpp
+            d3d12/presented_slots_probe.cpp
+            d3d12/instrumented_device_resources.cpp
             win32/test_window.cpp
         )
         target_link_libraries(D3D12PresentedSlotsProbe PRIVATE
@@ -181,18 +181,18 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         find_package(Vulkan REQUIRED)
         target_sources(RenderPixelTests PRIVATE
-            vulkan_texture_tests.cpp
-            vulkan_submit_failure_tests.cpp
-            vulkan_submit_allocation_tests.cpp
-            vulkan_initialization_tests.cpp
-            vulkan_pending_submission_tests.cpp
+            vulkan/texture_tests.cpp
+            vulkan/submit_failure_tests.cpp
+            vulkan/submit_allocation_tests.cpp
+            vulkan/initialization_tests.cpp
+            vulkan/pending_submission_tests.cpp
         )
         target_link_libraries(RenderPixelTests PRIVATE Vulkan::Vulkan)
 
         # Opt-in validation snapshot through actual device destruction. Its
         # executable owns only an extra instance messenger, not the device.
         add_executable(VulkanDestructionProbe EXCLUDE_FROM_ALL
-            vulkan_destruction_probe.cpp
+            vulkan/destruction_probe.cpp
             win32/test_window.cpp
         )
         target_link_libraries(VulkanDestructionProbe PRIVATE
@@ -204,7 +204,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         # Ordinary presentation plus an exact timeline oracle. Already-retired
         # work is unverified, so this observation is outside default CTest.
         add_executable(VulkanPresentedSlotsProbe EXCLUDE_FROM_ALL
-            vulkan_presented_slots_probe.cpp
+            vulkan/presented_slots_probe.cpp
             win32/test_window.cpp
         )
         target_link_libraries(VulkanPresentedSlotsProbe PRIVATE

@@ -222,7 +222,7 @@ The D3D12 debug interface was available (`D3D12GetDebugInterface` returned
 its device diagnostic queue as a test assertion.
 
 **Debug D3D12 diagnostic follow-up, 2026-10-26.**
-[d3d12_presentation_diagnostics_tests.cpp](../../tests/render/d3d12_presentation_diagnostics_tests.cpp)
+[d3d12/presentation_diagnostics_tests.cpp](../../tests/render/d3d12/presentation_diagnostics_tests.cpp)
 requires a real `ID3D12InfoQueue` and first retrieves an exact application INFO
 message as a calibration control. Missing Debug diagnostics fail the case;
 Release omits these two cases. Scoped empty storage/retrieval filters expose
@@ -255,7 +255,7 @@ test shape or clean captured diagnostics.
 **Instrumented D3D12 pending-work waits, 2026-10-26.**
 The isolated `D3D12SynchronizationTests` executable compiles the actual
 [DeviceResources translation unit](../../engine/render/d3d12/device_resources.cpp)
-through [a test wrapper](../../tests/render/d3d12_instrumented_device_resources.cpp).
+through [a test wrapper](../../tests/render/d3d12/instrumented_device_resources.cpp).
 Only its `WaitForSingleObjectEx` call is redirected; production sources,
 class layout and the normal engine binary are unchanged. Normal static linking
 selects that object without whole-archive or duplicate-definition suppression.
@@ -263,7 +263,7 @@ The wrapper's defined `wait_for_frame` and external bounded-wait reference,
 the recorded link command and successful runtime observations establish that
 the isolated executable used the instrumented object.
 
-[Three cases](../../tests/render/d3d12_pending_submission_tests.cpp) enqueue an
+[Three cases](../../tests/render/d3d12/pending_submission_tests.cpp) enqueue an
 external queue fence wait, a witness signal and real renderer drawing without
 presenting. The witness remains exactly zero immediately before the operation
 and at its observed production wait, whose event is also unsignaled. The test
@@ -288,7 +288,7 @@ behavior. Retained test fences/queue also exclude final device destruction.
 Those are this probe's limits; the later observations below extend its scope.
 
 **Instrumented Vulkan pending-work waits, 2026-10-26.**
-[Three Vulkan cases](../../tests/render/vulkan_pending_submission_tests.cpp)
+[Three Vulkan cases](../../tests/render/vulkan/pending_submission_tests.cpp)
 record real drawing, then hold its actual execute submission behind a test
 timeline witness. A scoped `vkQueueSubmit` adapter adds only that timeline
 wait at `ALL_COMMANDS`, retaining the command buffer, engine timeline signal
@@ -321,7 +321,7 @@ pending presentation at device idle or final device destruction. The later
 observations below extend this evidence without changing those limits.
 
 **D3D12 destruction callback observation, 2026-10-26.**
-The opt-in [D3D12DestructionProbe](../../tests/render/d3d12_destruction_probe.cpp)
+The opt-in [D3D12DestructionProbe](../../tests/render/d3d12/destruction_probe.cpp)
 links the ordinary engine. It requires Debug, queries `ID3D12InfoQueue1` and
 `ID3DDestructionNotifier` on the actual device, and registers separate message
 and destruction callbacks. Both diagnostic interfaces are released before
@@ -387,7 +387,7 @@ is 1. Updated source SHA-256 is
 receipts use `d3d12-destruction-final-*` in the same local directory.
 
 **D3D12 presented-slot pending-work observation, 2026-10-26.**
-The optional [D3D12PresentedSlotsProbe](../../tests/render/d3d12_presented_slots_probe.cpp)
+The optional [D3D12PresentedSlotsProbe](../../tests/render/d3d12/presented_slots_probe.cpp)
 uses the existing instrumented DeviceResources translation unit and its own
 bounded wait observer. It warms six ordinary presents, requires both actual
 swapchain indices and drains before holding the queue on a CPU-owned fence.
@@ -436,7 +436,7 @@ out\build\x64-debug-d3d12\tests\render\D3D12PresentedSlotsProbe.exe
 ```
 
 **Vulkan device-destruction callback observation, 2026-10-26.**
-The optional [VulkanDestructionProbe](../../tests/render/vulkan_destruction_probe.cpp)
+The optional [VulkanDestructionProbe](../../tests/render/vulkan/destruction_probe.cpp)
 links the ordinary engine, borrows raw instance/device identities without a
 shared owner, and requires the actual Debug validation messenger. It adds one
 independent instance messenger with process-lifetime, preallocated callback
@@ -494,7 +494,7 @@ out\build\x64-debug-vulkan\tests\render\VulkanDestructionProbe.exe
 ```
 
 **Vulkan presented-slot pending observation and REV#7 closure, 2026-10-26.**
-The optional [VulkanPresentedSlotsProbe](../../tests/render/vulkan_presented_slots_probe.cpp)
+The optional [VulkanPresentedSlotsProbe](../../tests/render/vulkan/presented_slots_probe.cpp)
 uses ordinary renderer calls and no artificial hold. After warming and
 draining, it tries at most four pairs with 1, 64, 256 or 1,024 full-viewport
 sprites per frame in a requested 1280-by-720 hidden fixture. It borrows the

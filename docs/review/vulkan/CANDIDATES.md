@@ -131,7 +131,7 @@ Original, copied verbatim:
 [texture_factory.cpp](../../../engine/render/vulkan/texture_factory.cpp)
 compares the requested extent with queried `limits.maxExtent` before
 `vkCreateImage`, and also refuses zero extents.
-[vulkan_texture_tests.cpp](../../../tests/render/vulkan_texture_tests.cpp)
+[vulkan_texture_tests.cpp](../../../tests/render/vulkan/texture_tests.cpp)
 contains `Vulkan refuses queried image extent overflow before creating an
 image`, covering width/height overflow and the named error. Its source was
 inspected here; no new test execution is claimed.
@@ -191,7 +191,7 @@ result without assigning an unsupported cause. The separate no-device
 enumeration diagnostic is unchanged.
 
 Follow-up on 2026-10-26:
-[vulkan_initialization_tests.cpp](../../../tests/render/vulkan_initialization_tests.cpp)
+[vulkan_initialization_tests.cpp](../../../tests/render/vulkan/initialization_tests.cpp)
 uses executable-local forwarding to the installed DLL export. A successful
 initialization proves one forwarded instance call. Each injected subcase
 observes one call, one synthetic failure, no forwarding and an initially
@@ -258,7 +258,7 @@ Original, copied verbatim:
 At baseline `0e0934a`, the unchanged production `Renderer::submit` began a
 render pass, then returned the original descriptor-allocation exception with
 one begin and zero ends when the first or second allocation was made to fail.
-[vulkan_submit_failure_tests.cpp](../../../tests/render/vulkan_submit_failure_tests.cpp)
+[vulkan_submit_failure_tests.cpp](../../../tests/render/vulkan/submit_failure_tests.cpp)
 observes the actual renderer calls through executable-local Vulkan forwarding
 symbols. Its cleanup closes the defective baseline pass only after measuring
 the failed assertions; it does not present unbalanced commands or force real
@@ -342,7 +342,7 @@ available. Its callback is a static function with null user data, so neither
 registration borrows the descriptor's stack storage or renderer state through
 the callback. The persistent messenger is still destroyed before the instance.
 
-[Initialization regressions](../../../tests/render/vulkan_initialization_tests.cpp)
+[Initialization regressions](../../../tests/render/vulkan/initialization_tests.cpp)
 inspect the actual instance description and invoke the registered callback
 with synthetic markers at intercepted creation and destruction boundaries,
 while successful instances use the real loader. Three injected creation
