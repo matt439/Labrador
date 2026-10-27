@@ -101,3 +101,41 @@ TEST_CASE("a live Application keeps fullscreen viewport and back buffer in step 
 	// Destruction closes this hidden window without queuing WM_QUIT for the
 	// next case; quit() is for a running pump and is deliberately not called.
 }
+
+TEST_CASE("a live Application hands the pointer's options and calls to its window")
+{
+	ApplicationOptions options;
+	options.window_class_name = L"ApplicationCursorTestWindow";
+	options.visible = false;
+	options.view_capacity = 1;
+	options.max_threads = 1;
+	options.cursor_visible = false;
+	options.cursor_confined = true;
+	Application app(std::move(options));
+
+	// Before the window exists a call is the option it would have been.
+	app.set_cursor_confined(false);
+	CHECK_FALSE(app.cursor_confined());
+
+	app.initialize();
+	const HWND window = static_cast<HWND>(app.window());
+	REQUIRE(window != nullptr);
+	CHECK_FALSE(app.cursor_visible());
+
+	const HCURSOR arrow = LoadCursorW(nullptr, IDC_ARROW);
+	const WPARAM over = reinterpret_cast<WPARAM>(window);
+	const LPARAM client = MAKELPARAM(HTCLIENT, WM_MOUSEMOVE);
+
+	SetCursor(arrow);
+	SendMessageW(window, WM_SETCURSOR, over, client);
+	CHECK(GetCursor() == nullptr);
+
+	app.set_cursor_visible(true);
+	CHECK(app.cursor_visible());
+	SetCursor(nullptr);
+	SendMessageW(window, WM_SETCURSOR, over, client);
+	CHECK(GetCursor() == arrow);
+
+	app.set_cursor_confined(true);
+	CHECK(app.cursor_confined());
+}

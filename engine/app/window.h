@@ -147,6 +147,11 @@ namespace labrador
 		// is not read there.
 		bool visible = true;
 
+		// The pointer over the client area: whether it is drawn, and whether
+		// it is kept inside (Window::set_cursor_visible, set_cursor_confined).
+		bool cursor_visible = true;
+		bool cursor_confined = false;
+
 		int min_window_width = 320;
 		int min_window_height = 200;
 	};
@@ -285,6 +290,29 @@ namespace labrador
 		// with Escape - and on_fullscreen_changed reports what it decided.
 		void enter_fullscreen() const;
 		void leave_fullscreen(const Vector2I& client_size) const;
+
+		// Whether the pointer is drawn while it is over the client area. A
+		// game played with a pad hides it. The mouse is read either way: a
+		// hidden pointer still moves, clicks and reports where it is.
+		//
+		// Over anything else - the frame, the caption, the rest of a page -
+		// the pointer is the platform's. On Windows a change shows at once if
+		// the pointer is over the client area; in a browser it is the
+		// canvas's CSS cursor.
+		void set_cursor_visible(bool visible) const;
+
+		// Whether the pointer is kept inside the client area.
+		//
+		// On Windows the pointer is clipped to the client area while the
+		// window is active, shown and not minimised, and released while it is
+		// not and while the player moves or sizes it, so the frame and
+		// Alt+Tab are never trapped. The clip follows the client area through
+		// a move, a resize and full screen.
+		//
+		// A BROWSER CANNOT CONFINE A POINTER, only lock it, which hides it and
+		// reports motion rather than a position. That is another mode with
+		// another contract, so this does nothing there.
+		void set_cursor_confined(bool confined) const;
 
 	private:
 		// Declared here and defined once per platform, so the platform's
