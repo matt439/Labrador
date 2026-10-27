@@ -919,6 +919,28 @@ TEST_CASE("CONTRACT: the blend equation is premultiplied alpha")
 	CHECK(harness.at(4, 4) == white_pixel);
 }
 
+TEST_CASE("CONTRACT: a tint with zero alpha adds its colour")
+{
+	Harness harness;
+
+	DrawList list = harness.begin();
+	list.draw_sprite(harness.quad, Harness::red_texel(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour(1.0f, 1.0f, 1.0f, 1.0f),
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
+	list.draw_sprite(harness.quad, Harness::white_texel(),
+		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour(0.0f, 1.0f, 0.0f, 0.0f),
+		0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
+	harness.end();
+
+	// ADDITIVE BLENDING IS THIS, not a mode. Under the premultiplied equation
+	// a source with zero alpha keeps all of the destination and adds all of
+	// itself: 1*(0,1,0) + (1-0)*(1,0,0) is yellow. A glow or a spark drawn
+	// with a zero-alpha tint brightens what is under it, and the guide to
+	// sprites promises it. Straight alpha would leave the red untouched.
+	CHECK(harness.at(4, 4) == Pixel{ 255, 255, 0, 255 });
+	CHECK(harness.at(9, 9) == black_pixel);
+}
+
 TEST_CASE("CONTRACT: a fractional destination truncates, it does not round")
 {
 	Harness harness;
