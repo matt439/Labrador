@@ -113,12 +113,9 @@ namespace labrador
 		int height_ = 0;
 	};
 
-	// Where a named texture lives, and only a texture. This class held all
-	// three tables once and the sentence here still said so after two of them
-	// left: fonts and sheets are engine data and are members of RenderResources
-	// itself now (engine/render/render_resources.h says why, and what it
-	// saved), so what is behind the pimpl is the one table whose resource type
-	// this folder owns.
+	// Where a named texture lives, and only a texture. The font and sheet
+	// tables are RenderResources' own members; engine/render/render_resources.h
+	// says why, and what it saved.
 	class RenderResources::Impl
 	{
 	public:

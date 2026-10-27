@@ -524,10 +524,10 @@ namespace labrador
 		// Never negative: it is the squared length of ab. Zero exactly when
 		// the segment is a point, and that case has already returned above,
 		// because dot(c - a, (0, 0)) is zero and zero is not greater than
-		// zero. That is the whole fix - the previous form divided first and
-		// handed back (NaN, NaN) for a degenerate segment, and since NaN
-		// fails every comparison, both clamps declined to catch it and the
-		// caller read the result as "no intersection".
+		// zero. Dividing before that test would hand back (NaN, NaN) for a
+		// degenerate segment, and since NaN fails every comparison, both
+		// clamps would decline to catch it and the caller would read the
+		// result as "no intersection".
 		const float length_squared = Vector2F::dot(ab, ab);
 		if (projection >= length_squared)
 		{
