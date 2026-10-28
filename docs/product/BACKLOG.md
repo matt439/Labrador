@@ -421,6 +421,7 @@ written.
 45. L45 Refuse negative authored animation counts before container sizing: SM-63
 46. L46 Keep a valid StepPosition fraction below one after rounding: SM-64
 47. L47 Keep sound-bank lookup and volume notifications consistent on failure: SM-65
+48. L48 Keep effect-group assignment and notification membership consistent on failure: SM-66
 
 **Stories**
 
@@ -779,6 +780,81 @@ written.
 - [x] **[SM-63](#sm-63)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Name a negative authored animation count before constructing its strip
 - [x] **[SM-64](#sm-64)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Preserve the stated StepPosition fraction range across valid periods
 - [x] **[SM-65](#sm-65)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed first sound-bank registration absent and retryable
+- [x] **[SM-66](#sm-66)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Preserve an effect's previous group when first notification registration fails
+
+<a id="sm-66"></a>
+### SM-66. Publish an effect's group after notification membership
+
+Selected 2026-10-29 after SM-65 from its fresh source shortlist:
+
+1. **Effect-group membership:** set_effect_group stores the group before its
+   first notification-list insertion can throw. Playback can then multiply
+   by a failed assignment that live group updates cannot reach. A small
+   ordering fix and prepared null-content failure fixture give a concrete
+   public regression: take first.
+2. **Navigation exact ties:** equal geometric scores retain the first supplied
+   candidate despite the public order-independence claim. Pinning and stating
+   the current tie rule is bounded and independent: take separately.
+3. **Audio loader teaching prose:** the effect-only wave union and checked-in
+   sample content contradict old comments. Correct only verified statements
+   in a later bounded audit; do not change accepted content to fit the prose.
+
+The defect is source-derived until reproduced. T2/T6 favor keeping the
+observable assignment and its notification membership together. Existing
+deferred product decisions, JSON numeric policy and hardware work remain
+outside this slice; no new engine abstraction is needed.
+
+**Acceptance**
+
+- Reuse the current native Debug DLL CRT scope without changing its helper,
+  optional filter, calibration or existing cases. Preconstruct the null
+  device, content bank, stopped voices, handles and group levels before
+  arming. Only set_effect_group executes under the hook; no playback,
+  recording, separate lookup, assertion or cleanup does. Sweep observed allocation
+  points through uninjected success without assuming an ordinal or real OOM.
+- With original SoundBank bytes, a failed first assignment must be shown to
+  affect later play/setter levels incorrectly. Restore/disarm before those
+  observations. Then finish notification insertion before writing the group,
+  so a refused assignment keeps its previous group and can be retried.
+- Preserve validation, silent-bank behavior and successful reassignment.
+  Check retry, duplicate assignment, effect-handle notification order and
+  one update each to playing/paused members and the reassigned group.
+- Select the null-only case with a PRIVATE AudioTests definition inside its
+  existing null-backend block. Add no public macro, production test seam,
+  allocator API or test entry. Keep default Debug headless and API-free.
+- Publish the narrow failure contract and CHANGES correction, check excerpt
+  coupling and review all changed source/test bytes. Run complete native
+  Debug null, default Debug and ordinary Release null AudioTests, eight
+  standalone checks and the website check/tests/build. New injection is
+  native MSVC Debug DLL CRT plus null audio only. Wasm/Node remains unrun at
+  the standing activation stop; full CI remains required before landing.
+  Recorded null calls establish no endpoint or listening acceptance.
+
+**Closed 2026-10-29.** `set_effect_group` now writes the group only after the
+existing sorted notification insertion succeeds. Its validation, silent-bank
+path, de-duplication and handle order are unchanged; the header and CHANGES
+state preservation of the previous group on a refused first assignment.
+
+With original production bytes, the new null-content regression completes
+67 assertions with two actual failures: after refused insertion, play records
+0.4 instead of the ungrouped 0.8 and the setter records 0.3 instead of 0.6.
+The observed first eligible allocation is evidence, not a fixed test ordinal.
+The original 17-assertion and filter 12-assertion calibrations pass. Exact
+reverse reconstruction preserves the complete prior test file, including its
+helper, filter and four existing cases. The new case arms only the stopped
+effect's handle-list insertion and checks retry, no immediate push, duplicate
+assignment, playing/paused fan-out and reassignment after restoration.
+
+Complete native AudioTests pass with zero skips: Debug null 43 cases/684
+assertions, default Debug 33/544 and Release null 38/309. Eight standalone
+checks and website verification pass: zero type diagnostics, 160 tests, 145
+pages, 435 files and no release snapshots. The published reference includes
+the previous-group guarantee. The null selector is PRIVATE to AudioTests;
+no engine macro, test entry or production seam was added. Controlled failure
+qualifies native MSVC Debug DLL CRT plus null audio only; default Debug and
+Release retain their ordinary headless coverage. Wasm/Node remains unrun at
+the standing activation stop and full CI remains required before landing.
+No platform audio API device, endpoint or listening result is claimed.
 
 <a id="sm-65"></a>
 ### SM-65. Keep sound-bank publication and notification registration together

@@ -10,8 +10,8 @@ labrador_add_test_suite(AudioTests
     LINKS LabradorEngine
 )
 
-# Allocation-failure injection uses the native Debug DLL CRT only. This
-# adds cases to the existing suite, not another test entry or audio device.
+# Allocation-failure injection uses the native Debug DLL CRT only and adds
+# cases to this suite. Its null fixture creates no platform audio API device.
 if(MSVC AND NOT EMSCRIPTEN)
     target_sources(AudioTests PRIVATE
         "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/audio_resources_failure_tests.cpp>"
@@ -45,8 +45,8 @@ add_dependencies(AudioTests audio_test_content)
 #
 # The same rule tests/render/CMakeLists.txt states for its own null_tests.cpp,
 # and for the same reason: a backend is chosen at build time, so a test that
-# names one only compiles when that one is built. Everything above is identical
-# in every configuration.
+# names one only compiles when that one is built. The private definition also
+# gates the null fixture in the Debug allocation-failure cases above.
 #
 # THIS IS THE FILE docs/survey/2026-08-26.md 3.4b EXISTS TO PRODUCE. It is
 # where the eight methods 3.4a found to have no observable behaviour say what
@@ -54,6 +54,7 @@ add_dependencies(AudioTests audio_test_content)
 # back off the numbers that reached the device.
 if(LABRADOR_AUDIO_BACKEND STREQUAL "null")
     target_sources(AudioTests PRIVATE null_tests.cpp)
+    target_compile_definitions(AudioTests PRIVATE LABRADOR_TEST_NULL_AUDIO)
 endif()
 
 # Deterministic retry policy; no endpoint or DirectXTK graph is created.
