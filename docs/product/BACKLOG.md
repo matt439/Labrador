@@ -462,7 +462,20 @@ written.
   Website check, 160 tests and the 143-page build pass; the built heading/link
   and memory/preload text were checked. No backend or browser run is claimed.
 - [ ] **[OCA-18](STORIES.md#oca-18)** Could · S · The Outside C++ Adopter: Debug my game in Visual Studio from the presets
-- [ ] **[OCA-32](STORIES.md#oca-32)** Could · S · The Outside C++ Adopter: Use the recording renderer in my own tests — after OCA-29
+- [x] **[OCA-32](STORIES.md#oca-32)** Could · S · The Outside C++ Adopter: Use the recording renderer in my own tests — after OCA-29
+  Closed 2026-10-29. The [testing guide](../../website/src/content/docs/docs/guides/testing.mdx)
+  adds a second consumer null-render/audio configure, matching build/test
+  presets and a guarded draw-test target with the game include root. The
+  inspector remains backend-internal/test-only at an engine pin; published.ts
+  records that exclusion and Why links the narrowed claim to the guide.
+  Its literal presets, CMake block and 79-line C++ example were extracted into
+  a copied consumer. The regular configure has its original two tests and no
+  draw target; null has three passing tests, including the new windowless draw
+  case's 21 assertions of order, state, geometry and copied-record lifetime.
+  Local dependencies were preinstalled and manifest installation disabled.
+  Independent source review, standalone checks, website check/160 tests and
+  the 143-page build pass; built API/source links were checked. This qualifies
+  the native consumer example, not rasterization, browser or device output.
 - [ ] **[OCA-66](STORIES.md#oca-66)** Could · S · The Outside C++ Adopter: Declare per-monitor DPI awareness and review the template at 150% scaling
 - [ ] **[PI-10](STORIES.md#pi-10)** Could · M · The Pinned Submodule Integrator · **Owner**: An upstream answer for each filed report — after PI-09
   - Each report's decision and the commit that answered it: [the reports table](../review/colourwars-reports/README.md#the-decisions).
