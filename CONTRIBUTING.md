@@ -282,6 +282,13 @@ results describe available local objects and their actual commit messages.
 
 ## Before opening a pull request
 
+For a render change, review the matrix with
+`python tools/verify_changes.py --area render`, or select render paths with
+`--path`. The [planner contract](docs/verification.md) explains its JSON output
+and optional read-only tooling/cache preflight. This first version emits a
+plan; it does not run the configure/build/test sweep. Record actual checks and
+unrun qualifications separately from that plan.
+
 - Build and test locally on the preset closest to what you changed
   (`cmake --preset x64-debug`, `cmake --build --preset x64-debug`,
   `ctest --preset x64-debug`). A change under `engine/render/` should be

@@ -81,6 +81,24 @@ CI's full matrix remains required. Match focused local checks to the change.
 
 ## Verification boundaries
 
+`python tools/verify_changes.py --area render` prints the render verification
+plan; `--path engine/render/gl/renderer.cpp --format json` selects it by path.
+The optional `--preflight` inspects tooling and caches without running phases.
+[Verification planning](docs/verification.md) owns the command contract and
+remaining execution work. The current planner covers render paths only:
+
+| Changed area | Planned selections and additional obligations |
+|---|---|
+| `engine/render/`, including backend folders | Five native Debug render presets below, `wasm-debug` GL and CI's `wasm-release-null` override; Release and device evidence stay explicit. |
+| `engine/render/gl/` | The same matrix; wasm compiles `web_context.cpp` and shared GL under clang, with pixel/no-S3TC/context page acceptance. |
+| `engine/render/vulkan/` | The same matrix plus the synchronization review's `validate_sync` procedure below. |
+| Other engine folders, samples, website and tooling | Not modeled by the render planner; follow their current owners and affected-configuration checks, including the independent audio rules below. |
+
+The five native selections are `x64-debug`, `x64-debug-d3d12`, `x64-debug-gl`,
+`x64-debug-vulkan` and `x64-debug-null`. CI's wasm-null selection is an explicit
+override build directory, not a named preset. Emitted commands and detected
+paths are planning information; they do not establish a build or test result.
+
 - A change in `engine/render/` is checked against all five backends; a change
   in `gl/` also under a wasm preset, which alone compiles `web_context.cpp` and
   compiles GL with clang. Re-run the Vulkan review's §2 synchronization check
