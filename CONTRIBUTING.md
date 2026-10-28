@@ -237,6 +237,49 @@ An imperative subject with no full stop, then a prose body that gives the
 reason for the change rather than a list of what it touched. The history is
 read as the record of why the tree is the shape it is.
 
+## Golden image review records
+
+Review every changed PNG under `tests/render/golden/` before committing it.
+After looking at an image, put one exact repo-relative path on its own line
+in that commit's message:
+
+```text
+Golden-Reviewed: tests/render/golden/a-frame-nobody-drew-into-is-cleared-to-opaque-black.png
+```
+
+Use the path you reviewed. Incidental filenames, partial paths and globs do
+not count. Each commit that changes an image needs its own declaration;
+a later commit's list does not cover earlier changes. Renaming between golden
+PNG paths is checked as removal plus addition and needs both paths. Movement
+into or out of that set is an addition or deletion. For a deletion, review the old
+image in its parent and the decision to remove that reference, then name the
+old path. This records the review declaration; the checker cannot establish
+what somebody saw or whether their judgment was sound.
+
+From the repository root, check every introduced commit in a local range:
+
+```text
+python tools/check_golden_reviews.py --base BASE_SHA --head HEAD
+```
+
+Replace `BASE_SHA` with the actual comparison commit. Each commit is compared
+with its own parent. Missing objects, shallow history and merge commits fail
+explicitly; the command does not fetch history. To inspect just one commit:
+
+```text
+python tools/check_golden_reviews.py --commit HEAD
+```
+
+That second form does not check ancestors. The existing CI lint job uses full
+history and the pull request's actual base/head SHAs, rather than its synthetic
+merge checkout. Ordinary pushes check before/head. A first push with no before
+commit, a manual run or a scheduled run explicitly checks only the event head;
+those limited runs do not stand for a pull request range. Missing declarations
+return exit 1; incomplete history or unsupported scope returns exit 2.
+Git must support `--no-lazy-fetch`; an older Git fails before reading objects.
+The checker disables implicit promisor fetches and replacement refs so its
+results describe available local objects and their actual commit messages.
+
 ## Before opening a pull request
 
 - Build and test locally on the preset closest to what you changed

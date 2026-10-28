@@ -94,6 +94,14 @@ CI's full matrix remains required. Match focused local checks to the change.
   `renderer_seam_tests.cpp` is headless and runs with every render backend.
 - Pixel tests compare read-back with the shared PNGs in `tests/render/golden/`.
   Regenerate with `LABRADOR_GOLDEN_DUMP=1` and **review every changed image**.
+  After looking at each image, add an exact `Golden-Reviewed: <repo-relative-path>`
+  line for it to the message of the commit that changes it. No globs or aggregate
+  declaration in a later commit: the CI checker requires every changed PNG's
+  own commit to carry its line. Renaming between golden PNG paths requires both
+  paths; deletion or movement out requires the old path after reviewing removal.
+  The checker verifies declarations, not visual judgment.
+  [The procedure](CONTRIBUTING.md#golden-image-review-records)
+  defines the local command and range coverage.
   `Harness::end_not_comparable` names the three backend/resize-specific frames;
   `allowed_channel_drift` in `golden_image.cpp` states the measured allowance.
   Text cases decode their BC2 atlas on the CPU to avoid device rounding; a
