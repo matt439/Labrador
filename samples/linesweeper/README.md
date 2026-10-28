@@ -94,6 +94,14 @@ from the game to a page link. These automated checks do not establish physical
 controller, real-phone or screen-reader acceptance; the
 [hardware checklist](../../docs/port/web-to-be-tested.md) owns those limits.
 
+The example host page probes legacy WebAssembly exceptions and WebGL2 only
+after Play, before importing the module. Unsupported browsers get advice
+without a retry button; download, startup and runtime failures get distinct
+player messages, with the original reason in the console. Source-policy
+tests cover those paths without a browser. The updated packaged-page checks
+still need runtime acceptance; [the source verification record](../../docs/port/2026-10-28-demo-host.md)
+keeps that boundary explicit.
+
 ## The decisions
 
 ### It is a second sample, not a replacement for `samples/minimal`

@@ -116,6 +116,7 @@ if(PROJECT_IS_TOP_LEVEL)
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/devtools.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/firefox_protocol.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/sample_key.test.mjs"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_host.test.mjs"
         )
 
         # AND THE ONES NODE CANNOT RUN ARE PAGES, run in a headless Chromium

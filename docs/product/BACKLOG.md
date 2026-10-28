@@ -548,9 +548,9 @@ time, looping and restart policy in sample code (T1).
 | OCA-31 | G11. Closed 2026-10-28: the public browser guide documents the repository runner against a consumer's built page, the quit protocol and pass/fail diagnostics. A copied minimal page outside the checkout passed in headless Chrome; injecting the documented `console.error` failed with exit 1. |
 | OCA-74 | G142, G51. Closed 2026-10-28: the public LineSweeper bundle guide states the default factory, canvas, callbacks, quit/replay lifetime, files, BUILD fields and hosting rules. Its literal host example outside the checkout drew, quit through `onQuit` and replayed on a fresh canvas in headless Chrome without complaints. The bundle example and web.md section 7 point to it. |
 | SM-27 | G144. Closed 2026-10-28: `bundle.mjs --verify` checks a copied LineSweeper bundle read-only, refusing dirty/unknown provenance, non-Release builds, missing or unrecorded files and mismatched hashes/sizes. web.md section 7.1 states every rule. Offline fixtures pass, and the existing Debug bundle is rejected for its build type. |
-| BDP-15 | G82: failure messages a player can act on. Follows BDP-04 (Next). |
+| BDP-15 | G82. Source and offline cases implemented 2026-10-28: separate download, startup and runtime advice; raw diagnostics remain in the console. Updated bundle-page assertions await generated-module/browser acceptance. [Evidence and limits](../port/2026-10-28-demo-host.md). |
 | BDP-16 | G83: a context that never returns offers a way forward. |
-| BDP-17 | G84: know before downloading that a browser cannot run the game. |
+| BDP-17 | G84. Source and offline cases implemented 2026-10-28: click-only legacy wasm-exception and scratch-WebGL2 probes stop unsupported browsers before import; scratch contexts are released. Updated bundle-page cases await browser acceptance. [Evidence and limits](../port/2026-10-28-demo-host.md). |
 | BDP-11 | G35: pause when the keys are lost. Since BDP-25 the pause menu has four rows, QUIT last, so the page case the story's acceptance describes leaves by Down, Down, Down, Enter rather than Down, Down, Enter. |
 | BDP-12 | G80: one consistent controls list; bindings stay fixed. |
 | BDP-13 | G80: phones see phone instructions. |

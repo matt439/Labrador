@@ -117,6 +117,40 @@
     play.focus();
   }
 
+  function fail(text, diagnostic) {
+    console.error("LineSweeper failure:", diagnostic);
+    setStatus(text, true);
+    showStart("Try again");
+  }
+
+  // -fwasm-exceptions in cmake/settings.cmake emits legacy try/catch_all,
+  // not the newer exnref encoding. This is (func (try (do) (catch_all))).
+  const exceptionProbe = new Uint8Array([
+    0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+    0x01, 0x04, 0x01, 0x60, 0x00, 0x00,
+    0x03, 0x02, 0x01, 0x00,
+    0x0a, 0x08, 0x01, 0x06, 0x00, 0x06, 0x40, 0x19, 0x0b, 0x0b,
+  ]);
+
+  function supportFailure() {
+    if (typeof WebAssembly !== "object" || typeof WebAssembly.validate !== "function" ||
+        !WebAssembly.validate(exceptionProbe)) {
+      return "This browser cannot run the game. Try an up-to-date browser with WebAssembly exception support.";
+    }
+    let graphics = null;
+    try {
+      graphics = document.createElement("canvas").getContext("webgl2");
+    } catch (error) {
+      console.error("LineSweeper graphics probe:", error);
+    }
+    if (graphics === null) {
+      return "This browser cannot start the game's graphics. Try an up-to-date browser with hardware acceleration enabled.";
+    }
+    // The scratch context owns no game resources and must not accumulate on replay.
+    graphics.getExtension("WEBGL_lose_context")?.loseContext();
+    return null;
+  }
+
   // Before anything is fetched: a touchscreen with nothing to type on gets a
   // sentence rather than a download no phone has been seen to play.
   if (matchMedia("(pointer: coarse)").matches) {
@@ -131,10 +165,20 @@
   async function mount() {
     play.disabled = true;
     setStatus("Loading...", false);
+    let loading = true;
+    let ended = false;
     try {
+      const unsupported = supportFailure();
+      if (unsupported !== null) {
+        setStatus(unsupported, true);
+        start.hidden = true;
+        play.hidden = true;
+        return;
+      }
       if (factory === null) {
         factory = (await import("./linesweeper.js")).default;
       }
+      loading = false;
       if (canvas !== null) {
         canvas.remove();
       }
@@ -152,35 +196,47 @@
       // main runs inside the factory call, so a game can end - a startup
       // failure reaches onError - before the promise below settles.
       const ownCanvas = canvas;
-      let ended = false;
+      let started = false;
       await factory({
         canvas: ownCanvas,
         onQuit: () => {
+          if (ended || canvas !== ownCanvas) { return; }
           ended = true;
           setStatus("Thanks for playing.", false);
           showStart("Play again");
         },
         onError: (message) => {
+          if (ended || canvas !== ownCanvas) { return; }
           ended = true;
-          setStatus("LineSweeper stopped: " + message, true);
-          showStart("Try again");
+          fail(started ? "The game stopped unexpectedly. Try again, or reload the page if it keeps happening." :
+            "The game could not start. Try again, or try an up-to-date browser with hardware acceleration enabled.", message);
         },
         onContextLost: () => {
+          if (ended || canvas !== ownCanvas) { return; }
           setStatus("The browser took the graphics away; waiting for them to come back.", false);
         },
         onContextRestored: () => {
+          if (ended || canvas !== ownCanvas) { return; }
           setStatus(instructions, false);
         },
       });
       if (!ended) {
         setStatus(instructions, false);
         ownCanvas.focus();
+        // The engine has scheduled its loop before the factory resolves. Let
+        // that first browser frame report a failure before calling it play.
+        requestAnimationFrame(() => {
+          if (!ended && canvas === ownCanvas) { started = true; }
+        });
       }
     } catch (error) {
       // The loader or the module could not be fetched or compiled, which the
       // engine never hears of.
-      setStatus("LineSweeper could not start: " + (error && error.message ? error.message : error), true);
-      showStart("Try again");
+      if (!ended) {
+        ended = true;
+        fail(loading ? "The game could not download. Check your connection and try again." :
+          "The game could not start. Try again, or try an up-to-date browser with hardware acceleration enabled.", error);
+      }
     }
   }
 
