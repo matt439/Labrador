@@ -174,9 +174,12 @@ export class FirefoxProtocol {
 		if (this.socket.readyState === 0 || this.socket.readyState === 1) this.socket.close();
 	}
 
-	async evaluate(context, expression, timeout_ms = this.timeout_ms) {
+	// user_activation runs the expression as if the user had just interacted
+	// with the page, which is what a full-screen request needs.
+	async evaluate(context, expression, timeout_ms = this.timeout_ms, { user_activation = false } = {}) {
 		const result = await this.command('script.evaluate', {
 			expression, target: { context }, awaitPromise: true, resultOwnership: 'none',
+			...(user_activation ? { userActivation: true } : {}),
 		}, timeout_ms);
 		if (result.type === 'exception') {
 			throw new Error(`script.evaluate: ${result.exceptionDetails?.text ?? 'JavaScript exception'}`);

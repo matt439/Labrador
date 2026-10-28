@@ -3,8 +3,8 @@ import { EventEmitter } from 'node:events';
 import test from 'node:test';
 import vm from 'node:vm';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
-import { SAMPLES, SAMPLE_HOOK, bidi_endpoint, drive_sample, firefox_arguments,
-	key_actions, launch_firefox, parse_options } from './run_firefox.mjs';
+import { SAMPLES, SAMPLE_HOOK, WINDOW_HOOK, bidi_endpoint, drive_sample, drive_window_page,
+	firefox_arguments, key_actions, launch_firefox, parse_options, window_input } from './run_firefox.mjs';
 
 class FixtureSocket extends EventTarget {
 	constructor(url) {
@@ -82,6 +82,21 @@ test('evaluation awaits promises and accepts only primitive remote values', asyn
 		protocol.socket.reply({ type: 'success', id: protocol.socket.sent.at(-1).id,
 			result: { type: 'success', realm: 'realm', result: remote } });
 		await rejected;
+	}
+	protocol.close();
+});
+
+test('evaluation asks for user activation only when told to', async () => {
+	const protocol = connected();
+	for (const [options, expected] of [[undefined, undefined], [{ user_activation: false }, undefined],
+		[{ user_activation: true }, true]]) {
+		const evaluated = protocol.evaluate('tab', 'document.body.requestFullscreen()', 1000, options);
+		const sent = protocol.socket.sent.at(-1);
+		assert.equal(sent.params.userActivation, expected);
+		assert.equal(Object.hasOwn(sent.params, 'userActivation'), expected !== undefined);
+		protocol.socket.reply({ type: 'success', id: sent.id,
+			result: { type: 'success', realm: 'realm', result: { type: 'boolean', value: true } } });
+		assert.equal(await evaluated, true);
 	}
 	protocol.close();
 });
@@ -209,7 +224,7 @@ test('synchronous send failures remove their waiter and closing rejects pending 
 	assert.equal(protocol.socket.readyState, 3);
 });
 
-test('Firefox CLI is restricted to five samples and uses a fresh-profile launch without security overrides', () => {
+test('Firefox CLI accepts five samples or WebWindowTests and uses a fresh-profile launch without security overrides', () => {
 	const options = parse_options(['--browser', 'firefox.exe', '--build-dir', 'out/build/wasm-release', '--sample', 'audio']);
 	assert.equal(options.frames, 60);
 	assert.equal(options.timeout_ms, 60000);
@@ -217,6 +232,13 @@ test('Firefox CLI is restricted to five samples and uses a fresh-profile launch 
 		assert.throws(() => parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', '--sample', sample]));
 	}
 	assert.throws(() => parse_options(['--browser', 'firefox.exe', '--page', 'other.html']));
+	const window_options = parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', '--test', 'WebWindowTests']);
+	assert.equal(window_options.test, 'WebWindowTests');
+	assert.equal(window_options.sample, undefined);
+	for (const extra of [['--test', 'RenderPixelTests'], ['--test', 'WebWindowTests', '--sample', 'minimal'],
+		['--test', 'WebWindowTests', '--frames', '10'], ['--test', '__proto__']]) {
+		assert.throws(() => parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', ...extra]));
+	}
 	assert.deepEqual(firefox_arguments('synthetic-owned-profile'), [
 		'--headless', '--profile', 'synthetic-owned-profile', '--remote-debugging-port=0', 'about:blank',
 	]);
@@ -367,4 +389,174 @@ test('owned process exit refuses active protocol work immediately and preserves 
 	assert.match(launched.diagnostics(), /pid=123, exit=9/);
 	assert.doesNotThrow(() => protocol.socket.reply({ type: 'success', id: 1, result: {} }));
 	protocol.close();
+});
+
+class CommandRecorder {
+	constructor() { this.calls = []; }
+	async send(method, params) { this.calls.push({ method, params }); return {}; }
+	taken() { return this.calls.splice(0); }
+}
+
+const webdriver_key = (code) => String.fromCodePoint(code);
+
+test('window input sends the mouse, wheel, keys and device pixel ratio as BiDi commands', async () => {
+	const protocol = new CommandRecorder();
+	const input = window_input(protocol, 'synthetic-tab');
+	assert.equal(input.presses_modifiers, true);
+	assert.equal(input.cancels_touch, false);
+	assert.equal(input.touch_slack, 1);
+	const mouse = (actions) => [{ method: 'input.performActions', params: { context: 'synthetic-tab',
+		actions: [{ type: 'pointer', id: 'mouse', parameters: { pointerType: 'mouse' }, actions }] } }];
+	await input.prepare();
+	assert.deepEqual(protocol.taken(), []);
+	await input.move({ x: 120, y: 70 }, true);
+	assert.deepEqual(protocol.taken(), mouse([{ type: 'pointerMove', x: 120, y: 70 }]));
+	await input.press({ x: 650, y: 400 });
+	assert.deepEqual(protocol.taken(), mouse([{ type: 'pointerMove', x: 650, y: 400 },
+		{ type: 'pointerDown', button: 0 }]));
+	await input.release({ x: 650, y: 400 });
+	assert.deepEqual(protocol.taken(), mouse([{ type: 'pointerMove', x: 650, y: 400 },
+		{ type: 'pointerUp', button: 0 }]));
+	await input.wheel({ x: 120, y: 70 }, 50, -100);
+	assert.deepEqual(protocol.taken(), [{ method: 'input.performActions', params: { context: 'synthetic-tab',
+		actions: [{ type: 'wheel', id: 'wheel', actions: [{ type: 'scroll', x: 120, y: 70, deltaX: 50, deltaY: -100 }] }] } }]);
+	const keys = (actions) => [{ method: 'input.performActions', params: { context: 'synthetic-tab',
+		actions: [{ type: 'key', id: 'keyboard', actions }] } }];
+	await input.key('ArrowLeft');
+	assert.deepEqual(protocol.taken(), keys([{ type: 'keyDown', value: webdriver_key(0xE012) },
+		{ type: 'keyUp', value: webdriver_key(0xE012) }]));
+	await input.key('Tab');
+	assert.deepEqual(protocol.taken(), keys([{ type: 'keyDown', value: webdriver_key(0xE004) },
+		{ type: 'keyUp', value: webdriver_key(0xE004) }]));
+	await input.key('KeyA', { control: true });
+	assert.deepEqual(protocol.taken(), keys([{ type: 'keyDown', value: webdriver_key(0xE009) },
+		{ type: 'keyDown', value: 'a' }, { type: 'keyUp', value: 'a' }, { type: 'keyUp', value: webdriver_key(0xE009) }]));
+	await input.key('Space');
+	assert.deepEqual(protocol.taken(), keys([{ type: 'keyDown', value: ' ' }, { type: 'keyUp', value: ' ' }]));
+	assert.throws(() => input.key('Escape'), /Unsupported window key Escape/);
+	await input.device_pixel_ratio(2);
+	await input.device_pixel_ratio(null);
+	assert.deepEqual(protocol.taken(), [
+		{ method: 'browsingContext.setViewport', params: { context: 'synthetic-tab', devicePixelRatio: 2 } },
+		{ method: 'browsingContext.setViewport', params: { context: 'synthetic-tab', devicePixelRatio: 1 } },
+	]);
+});
+
+test('window input keeps fingers as touch sources, one finger per tick, and refuses a cancel', async () => {
+	const protocol = new CommandRecorder();
+	const input = window_input(protocol, 'synthetic-tab');
+	const performed = () => protocol.taken().map((call) => {
+		assert.equal(call.method, 'input.performActions');
+		assert.equal(call.params.context, 'synthetic-tab');
+		for (const source of call.params.actions) {
+			assert.equal(source.type, 'pointer');
+			assert.deepEqual(source.parameters, { pointerType: 'touch' });
+		}
+		return call.params.actions.map((source) => [source.id, source.actions]);
+	});
+	const pause = { type: 'pause', duration: 0 };
+	await input.touch_begin();
+	await input.touch('touchStart', [[120, 70, 0]]);
+	await input.touch('touchStart', [[120, 70, 0], [220, 120, 1]]);
+	await input.touch('touchMove', [[130, 70, 0], [220, 130, 1]]);
+	await input.touch('touchEnd', [[130, 70, 0]]);
+	await input.touch('touchEnd', [[220, 130, 1]]);
+	await input.touch('touchStart', [[120, 70, 2]]);
+	await input.touch('touchEnd', []);
+	await input.touch_end();
+	assert.deepEqual(performed(), [
+		[['finger0', [{ type: 'pointerMove', x: 120, y: 70 }, { type: 'pointerDown', button: 0 }]]],
+		[['finger1', [{ type: 'pointerMove', x: 220, y: 120 }, { type: 'pointerDown', button: 0 }]]],
+		[['finger0', [{ type: 'pointerMove', x: 130, y: 70 }]], ['finger1', [pause, { type: 'pointerMove', x: 220, y: 130 }]]],
+		[['finger0', [{ type: 'pointerUp', button: 0 }]]],
+		[['finger1', [{ type: 'pointerUp', button: 0 }]]],
+		[['finger2', [{ type: 'pointerMove', x: 120, y: 70 }, { type: 'pointerDown', button: 0 }]]],
+		[['finger2', [{ type: 'pointerUp', button: 0 }]]],
+	]);
+	await input.touch('touchStart', [[1, 1, 3]]);
+	await input.touch('touchStart', [[2, 2, 4]]);
+	await input.touch('touchEnd', []);
+	assert.deepEqual(performed().at(-1), [['finger3', [{ type: 'pointerUp', button: 0 }]],
+		['finger4', [pause, { type: 'pointerUp', button: 0 }]]]);
+	assert.throws(() => input.touch('touchMove', [[1, 1, 5]]), /finger 5, which is not down/);
+	assert.throws(() => input.touch('touchEnd', [[1, 1, 5]]), /finger 5, which is not down/);
+	assert.throws(() => input.touch('touchCancel', []), /WebDriver BiDi has no touchCancel/);
+	assert.deepEqual(protocol.taken(), []);
+});
+
+test('the window hook keeps what the shell settles its exit with', async () => {
+	const context = vm.createContext({ Promise, JSON, String });
+	context.window = context;
+	vm.runInContext(`(${WINDOW_HOOK})()`, context);
+	let settle;
+	context.labradorExit = new Promise((done) => { settle = done; });
+	assert.equal(typeof context.labradorExit.then, 'function');
+	assert.equal(context.labradorFirefoxWindow.exit, null);
+	settle({ abort: 'synthetic abort' });
+	await new Promise((done) => setImmediate(done));
+	assert.equal(context.labradorFirefoxWindow.exit, '{"abort":"synthetic abort"}');
+});
+
+class WindowControl {
+	constructor(options = {}) {
+		this.options = options;
+		this.calls = [];
+		this.evaluations = [];
+		this.removed = false;
+	}
+	on(listener) { this.listener = listener; return () => { this.removed = true; this.listener = null; }; }
+	fail(reason) { this.failed = reason; }
+	async send(method, params) { this.calls.push({ method, params }); return {}; }
+	async evaluate(context, expression, timeout_ms, options) {
+		assert.equal(context, 'synthetic-tab');
+		assert.ok(timeout_ms > 0 && timeout_ms <= 10000);
+		this.evaluations.push({ expression, options });
+		if (expression.includes('labradorFirefoxWindow')) return this.options.exit ?? null;
+		return true;
+	}
+}
+
+test('window control loads the page at a ratio of one, drives it and releases its input', async () => {
+	const protocol = new WindowControl();
+	let handed;
+	await drive_window_page(protocol, 'synthetic-tab', 'http://127.0.0.1:1/WebWindowTests.html',
+		async (page, input) => {
+			handed = input;
+			assert.equal(await page.evaluate('step()', { user_gesture: true }), true);
+			await page.wait(1);
+		}, { pause: async () => {}, log: () => {} });
+	assert.deepEqual(protocol.calls.map((call) => call.method), ['session.subscribe', 'script.addPreloadScript',
+		'browsingContext.activate', 'browsingContext.setViewport', 'browsingContext.navigate', 'input.releaseActions']);
+	assert.deepEqual(protocol.calls[3].params, { context: 'synthetic-tab', devicePixelRatio: 1 });
+	assert.equal(protocol.calls[1].params.functionDeclaration, WINDOW_HOOK);
+	assert.equal(typeof handed.touch, 'function');
+	assert.deepEqual(protocol.evaluations.find((each) => each.expression === 'step()').options, { user_activation: true });
+	assert.equal(protocol.removed, true);
+});
+
+test('window control fails on the page ending, a complaint the tab logs, or a failed sequence', async () => {
+	const ended = new WindowControl({ exit: '{"abort":"synthetic abort"}' });
+	await assert.rejects(drive_window_page(ended, 'synthetic-tab', 'http://127.0.0.1:1/WebWindowTests.html',
+		() => new Promise(() => {}), { pause: async () => {}, log: () => {} }), /page ended.*synthetic abort/);
+	assert.equal(ended.removed, true);
+	assert.equal(ended.calls.some((call) => call.method === 'input.releaseActions'), false);
+
+	const complained = new WindowControl();
+	await assert.rejects(drive_window_page(complained, 'synthetic-tab', 'http://127.0.0.1:1/WebWindowTests.html',
+		async () => {
+			complained.listener({ method: 'log.entryAdded', params: { level: 'warn', text: 'synthetic warning' } });
+		}, { pause: async () => {}, log: () => {} }), /Firefox complaints: warn: synthetic warning/);
+	assert.equal(complained.removed, true);
+
+	const refused = new WindowControl();
+	await assert.rejects(drive_window_page(refused, 'synthetic-tab', 'http://127.0.0.1:1/WebWindowTests.html',
+		async () => { throw new Error('step 7, synthetic mismatch'); }, { pause: async () => {}, log: () => {} }),
+	/step 7, synthetic mismatch/);
+	assert.equal(refused.removed, true);
+
+	const destroyed = new WindowControl();
+	await drive_window_page(destroyed, 'synthetic-tab', 'http://127.0.0.1:1/WebWindowTests.html', async () => {
+		destroyed.listener({ method: 'browsingContext.contextDestroyed', params: { context: 'synthetic-tab' } });
+	}, { pause: async () => {}, log: () => {} });
+	assert.equal(destroyed.failed, 'the tested Firefox context was destroyed');
 });

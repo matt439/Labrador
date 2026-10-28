@@ -1,17 +1,25 @@
 // What the web window must tell its owner for each thing a browser delivers
 // to it: the input half of WebWindowTests, run by
-// tests/render/web/run_page.mjs --input against window_page.cpp's page.
+// tests/render/web/run_page.mjs --input against window_page.cpp's page in
+// Chromium, and by tests/render/web/run_firefox.mjs --test WebWindowTests in
+// Firefox.
 //
-// Every input but one is real. The DevTools protocol's Input and Emulation
-// domains put it through the browser's own event dispatch, so focus moves
-// because a click moved it, a default is prevented or kept because the
-// canvas's listener said so, and a touch makes - or does not make - the mouse
-// events a browser makes of a touch. THE ONE THAT IS NOT is visibilitychange:
-// a headless browser has no tab strip and no desktop to minimise to, and
-// neither creating and activating another tab, nor the lifecycle states, nor
-// minimising its window changes document.visibilityState. So the page's
-// document is told it is hidden and the event is dispatched at it, which
-// tests what the window does with the event and not that a browser sends it.
+// ONE SEQUENCE, TWO PROTOCOLS. drive_window holds every step and what it
+// must produce; an input object puts each step through one browser's own
+// event dispatch. The default export hands it devtools_input, the DevTools
+// protocol's Input and Emulation domains; the Firefox runner hands it its
+// WebDriver BiDi input. Either way focus moves because a click moved it, a
+// default is prevented or kept because the canvas's listener said so, and a
+// touch makes - or does not make - the mouse events a browser makes of a
+// touch. Where a protocol cannot produce an input, its input object says so
+// and the step that needs it states what was done instead.
+//
+// THE ONE INPUT THAT IS NOT REAL is visibilitychange: a headless browser has
+// no tab strip and no desktop to minimise to, and neither creating and
+// activating another tab, nor the lifecycle states, nor minimising its window
+// changes document.visibilityState. So the page's document is told it is
+// hidden and the event is dispatched at it, which tests what the window does
+// with the event and not that a browser sends it.
 //
 // Each step does one thing and then reads and empties the page's log, which
 // window_page.cpp writes one entry per WindowNotify call, and compares it
@@ -21,6 +29,29 @@
 // Positions are CSS pixels of the page. The canvas's box starts at (20, 20)
 // (shell.html), so (120, 70) is client pixel (100, 50) at a device pixel
 // ratio of one.
+//
+// THE INPUT OBJECT. Every member returns a promise.
+//
+// - prepare(): makes the page a focused window, without which an element in
+//   it is never sent focus or blur, at a device pixel ratio of one.
+// - move(at, held), press(at), release(at): the left mouse button and the
+//   pointer, at a CSS position; held says the button is down during the move.
+// - wheel(at, delta_x, delta_y): a wheel turned by CSS pixels over a position.
+// - key(name, { control }): a key from KEYS pressed and released, with
+//   Control held if asked. presses_modifiers is true where Control can only
+//   be held by pressing it as a key, so its own key_down and key_up reach the
+//   page around the chord.
+// - device_pixel_ratio(ratio): sets the page's device pixel ratio, and null
+//   returns it to the ratio of one that prepare() started from.
+// - touch(type, points): touchStart, touchMove, touchEnd or touchCancel in
+//   the DevTools protocol's shape - points as [x, y, id]; touchStart and
+//   touchMove name every finger on the glass, touchEnd the fingers that lift,
+//   or none for all of them, and touchCancel takes every finger away.
+//   touch_begin() and touch_end() bracket the touch steps.
+//   cancels_touch is false where the protocol has no way to make the browser
+//   cancel a touch. touch_slack is how many client pixels a touch's reported
+//   position may be from the one sent, which is none where the browser
+//   delivers a touch where it was sent.
 
 const CANVAS = { x: 120, y: 70 };
 const OUTSIDE = { x: 650, y: 400 };
@@ -34,7 +65,59 @@ const KEYS = {
 const CONTROL = 2;
 
 export default async function drive(page) {
-	const { evaluate, send } = page;
+	await drive_window(page, devtools_input(page.send));
+}
+
+// The DevTools protocol's input: Input.dispatch* for the mouse, the wheel,
+// keys and touches, and Emulation for focus, the device pixel ratio and a
+// touch screen. Headless Chromium's own device pixel ratio is one, so
+// clearing the override returns to it.
+export function devtools_input(send) {
+	const mouse = (type, at, buttons, extra = {}) => send('Input.dispatchMouseEvent', {
+		type, x: at.x, y: at.y, button: 'left', buttons, clickCount: 1, ...extra,
+	});
+	const key = async (name, { control = false } = {}) => {
+		const k = KEYS[name];
+		const modifiers = control ? CONTROL : 0;
+		const typed = k.text !== undefined && modifiers === 0;
+		const common = {
+			code: name, key: k.key, modifiers,
+			windowsVirtualKeyCode: k.code, nativeVirtualKeyCode: k.code,
+		};
+		await send('Input.dispatchKeyEvent', {
+			...common, type: typed ? 'keyDown' : 'rawKeyDown',
+			...(typed ? { text: k.text, unmodifiedText: k.text } : {}),
+		});
+		await send('Input.dispatchKeyEvent', { ...common, type: 'keyUp' });
+	};
+	return {
+		presses_modifiers: false,
+		cancels_touch: true,
+		touch_slack: 0,
+		prepare: () => send('Emulation.setFocusEmulationEnabled', { enabled: true }),
+		move: (at, held = false) => mouse('mouseMoved', at, held ? 1 : 0,
+			held ? {} : { button: 'none' }),
+		press: (at) => mouse('mousePressed', at, 1),
+		release: (at) => mouse('mouseReleased', at, 0),
+		wheel: (at, delta_x, delta_y) => send('Input.dispatchMouseEvent', {
+			type: 'mouseWheel', x: at.x, y: at.y, deltaX: delta_x, deltaY: delta_y,
+		}),
+		key,
+		device_pixel_ratio: (ratio) => (ratio === null ?
+			send('Emulation.clearDeviceMetricsOverride') :
+			send('Emulation.setDeviceMetricsOverride',
+				{ width: 800, height: 600, deviceScaleFactor: ratio, mobile: false })),
+		touch_begin: () => send('Emulation.setTouchEmulationEnabled',
+			{ enabled: true, maxTouchPoints: 5 }),
+		touch: (type, points) => send('Input.dispatchTouchEvent', {
+			type, touchPoints: points.map(([x, y, id]) => ({ x, y, id })),
+		}),
+		touch_end: () => send('Emulation.setTouchEmulationEnabled', { enabled: false }),
+	};
+}
+
+export async function drive_window(page, input) {
+	const { evaluate } = page;
 	let step = 0;
 
 	const until = async (expression) => {
@@ -48,7 +131,8 @@ export default async function drive(page) {
 		requestAnimationFrame(next);
 	})`);
 
-	const raw = () => evaluate('Module.labradorWindowLog.splice(0)');
+	const raw = () => evaluate('JSON.stringify(Module.labradorWindowLog.splice(0))')
+		.then((text) => JSON.parse(text));
 	const take = async () => {
 		const log = await raw();
 		const unreported = log.filter((entry) => entry.startsWith('tick-unreported'));
@@ -57,7 +141,8 @@ export default async function drive(page) {
 		}
 		return log.filter((entry) => entry !== 'tick');
 	};
-	const defaults = () => evaluate('Module.labradorDefaults.splice(0)');
+	const defaults = () => evaluate('JSON.stringify(Module.labradorDefaults.splice(0))')
+		.then((text) => JSON.parse(text));
 
 	const expect = (what, actual, expected) => {
 		if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -74,34 +159,7 @@ export default async function drive(page) {
 		console.log(`ok ${step} - ${what}`);
 	};
 
-	const mouse = (type, at, buttons, extra = {}) => send('Input.dispatchMouseEvent', {
-		type, x: at.x, y: at.y, button: 'left', buttons, clickCount: 1, ...extra,
-	});
-	const move = (at, held = false) => mouse('mouseMoved', at, held ? 1 : 0,
-		held ? {} : { button: 'none' });
-	const press = (at) => mouse('mousePressed', at, 1);
-	const release = (at) => mouse('mouseReleased', at, 0);
-	const wheel = (at, delta_x, delta_y) => send('Input.dispatchMouseEvent', {
-		type: 'mouseWheel', x: at.x, y: at.y, deltaX: delta_x, deltaY: delta_y,
-	});
-
-	const key = async (name, modifiers = 0) => {
-		const k = KEYS[name];
-		const typed = k.text !== undefined && modifiers === 0;
-		const common = {
-			code: name, key: k.key, modifiers,
-			windowsVirtualKeyCode: k.code, nativeVirtualKeyCode: k.code,
-		};
-		await send('Input.dispatchKeyEvent', {
-			...common, type: typed ? 'keyDown' : 'rawKeyDown',
-			...(typed ? { text: k.text, unmodifiedText: k.text } : {}),
-		});
-		await send('Input.dispatchKeyEvent', { ...common, type: 'keyUp' });
-	};
-
-	const touch = (type, points) => send('Input.dispatchTouchEvent', {
-		type, touchPoints: points.map(([x, y, id]) => ({ x, y, id })),
-	});
+	const { move, press, release, wheel, key, touch } = input;
 
 	const set_hidden = (hidden) => evaluate(`(() => {
 		Object.defineProperty(document, 'hidden', { configurable: true, get: () => ${hidden} });
@@ -113,7 +171,7 @@ export default async function drive(page) {
 
 	// A headless page is not a focused window unless it is told to be, and an
 	// element in a page without focus is never sent focus or blur.
-	await send('Emulation.setFocusEmulationEnabled', { enabled: true });
+	await input.prepare();
 	await until(`typeof Module === 'object' && Module.labradorWindowReady === true`);
 	await frames(2);
 
@@ -159,9 +217,17 @@ export default async function drive(page) {
 	await key('KeyA');
 	await check('a letter is a key and text',
 		['key_down a', 'text 97', 'key_up a'], ['keydown KeyA prevented']);
-	await key('KeyA', CONTROL);
-	await check('a chord is a key, not text, and is the browser\'s',
-		['key_down a', 'key_up a'], ['keydown KeyA kept']);
+	await key('KeyA', { control: true });
+	if (input.presses_modifiers) {
+		// Control held with Control's own key: a key the browser keeps, as a
+		// chord is, since the modifier it sets is its own.
+		await check('a chord is a key, not text, and is the browser\'s',
+			['key_down control', 'key_down a', 'key_up a', 'key_up control'],
+			['keydown ControlLeft kept', 'keydown KeyA kept']);
+	} else {
+		await check('a chord is a key, not text, and is the browser\'s',
+			['key_down a', 'key_up a'], ['keydown KeyA kept']);
+	}
 
 	await move(CANVAS);
 	await take();
@@ -188,7 +254,11 @@ export default async function drive(page) {
 	await check('a press and release beside the canvas reach nothing', []);
 
 	// Tab is how a keyboard leaves the canvas: the browser keeps it, so focus
-	// moves on, and the key that left is released with the keyboard.
+	// moves on, and the key that left is released with the keyboard. The
+	// pointer comes back first, as a mouse's does: a WebDriver press is a move
+	// to the position and then the button, and the move is reported too.
+	await move(CANVAS);
+	await take();
 	await press(CANVAS);
 	await release(CANVAS);
 	await check('a click gives the canvas the keyboard back',
@@ -216,39 +286,63 @@ export default async function drive(page) {
 	await frames(3);
 	await check('a CSS resize above the minimum is the box', ['size 480 250']);
 
-	await send('Emulation.setDeviceMetricsOverride',
-		{ width: 800, height: 600, deviceScaleFactor: 2, mobile: false });
+	await input.device_pixel_ratio(2);
 	await frames(3);
 	await check('a device pixel ratio of two doubles the buffer', ['size 960 500']);
+	// From beside the canvas, so that there is a move to report: WebDriver
+	// sends none to where the pointer already is.
+	await move(OUTSIDE);
 	await move(CANVAS);
 	await check('and a CSS position is scaled into it', ['mouse_move 200 100']);
-	await send('Emulation.clearDeviceMetricsOverride');
+	await input.device_pixel_ratio(null);
 	await frames(3);
 	await check('and back', ['size 480 250']);
 
 	// TOUCH: pointer events with ids, focusing the canvas as a click does,
 	// and never the mouse as well.
-	await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+	// A touch's entry is compared as a call, a point - any point for null,
+	// and the one captured from an earlier step otherwise - and a position
+	// within input.touch_slack client pixels of the one given.
+	const touch_point = (entry, call, point, x, y) => {
+		const found = /^(touch_[a-z]+) (\d+)(?: (-?\d+) (-?\d+))?$/.exec(entry ?? '');
+		if (!found || found[1] !== call || (point !== null && found[2] !== point)) return undefined;
+		if (x !== undefined && (found[3] === undefined ||
+			Math.abs(Number(found[3]) - x) > input.touch_slack ||
+			Math.abs(Number(found[4]) - y) > input.touch_slack)) return undefined;
+		return found[2];
+	};
+	const touches = (what, log, expected) => {
+		const points = [];
+		const matched = log.length === expected.length && expected.every((want, index) => {
+			if (typeof want === 'string') return log[index] === want;
+			const point = touch_point(log[index], ...want);
+			points.push(point);
+			return point !== undefined;
+		});
+		if (!matched) {
+			const described = expected.map((want) => (typeof want === 'string' ? want :
+				[want[0], want[1] ?? '<any>', ...want.slice(2)].join(' ')));
+			throw new Error(`step ${step}, ${what}\n  expected ${JSON.stringify(described)}` +
+				` (positions within ${input.touch_slack})\n  received ${JSON.stringify(log)}`);
+		}
+		return points;
+	};
+	const by_point = (point) => (a, b) => Number(point(a)) - Number(point(b));
+
+	await input.touch_begin();
 	await touch('touchStart', [[120, 70, 0]]);
 	step++;
-	const first = await take();
-	const down = /^touch_down (\d+) 100 50$/.exec(first[0] ?? '');
-	if (!down) {
-		throw new Error(`step ${step}: expected a touch_down at 100 50, received ${JSON.stringify(first)}`);
-	}
-	const one = down[1];
-	expect(`step ${step}, a touch goes down and focuses the canvas`, first,
-		[`touch_down ${one} 100 50`, 'keyboard_gained']);
+	const [one] = touches('a touch goes down and focuses the canvas', await take(),
+		[['touch_down', null, 100, 50], 'keyboard_gained']);
 	console.log(`ok ${step} - a touch goes down and focuses the canvas`);
 
 	await touch('touchStart', [[120, 70, 0], [220, 120, 1]]);
 	step++;
-	const second = await take();
-	const down_two = /^touch_down (\d+) 200 100$/.exec(second[0] ?? '');
-	if (!down_two || down_two[1] === one || second.length !== 1) {
-		throw new Error(`step ${step}: expected one touch_down of a second id at 200 100, received ${JSON.stringify(second)}`);
+	const [two] = touches('a second finger is a second point', await take(),
+		[['touch_down', null, 200, 100]]);
+	if (two === one) {
+		throw new Error(`step ${step}: the second finger has the first's point, ${one}`);
 	}
-	const two = down_two[1];
 	console.log(`ok ${step} - a second finger is a second point`);
 
 	// A browser delivers pointer moves with the next frame rather than as
@@ -256,31 +350,40 @@ export default async function drive(page) {
 	await touch('touchMove', [[130, 70, 0], [220, 130, 1]]);
 	await frames(2);
 	step++;
-	expect(`step ${step}, both move, in whichever order the browser sends them`,
-		(await take()).sort(),
-		[`touch_move ${one} 110 50`, `touch_move ${two} 200 110`].sort());
+	touches('both move, in whichever order the browser sends them',
+		(await take()).sort(by_point((entry) => entry.split(' ')[1])),
+		[['touch_move', one, 110, 50], ['touch_move', two, 200, 110]]
+			.sort(by_point((want) => want[1])));
 	console.log(`ok ${step} - both move`);
-	// The protocol's touchEnd names the points that lift.
 	await touch('touchEnd', [[130, 70, 0]]);
-	await check('the first lifts, keeping its id',
-		[`touch_up ${one} 110 50`, `touch_cancel ${one}`]);
-	await touch('touchCancel', []);
-	// Twice: pointercancel, then the capture it lost, which Touch ignores
-	// for a point already gone (dom_events.h).
-	await check('the browser taking the second is a cancel',
-		[`touch_cancel ${two}`, `touch_cancel ${two}`]);
+	step++;
+	touches('the first lifts, keeping its point', await take(),
+		[['touch_up', one, 110, 50], ['touch_cancel', one]]);
+	console.log(`ok ${step} - the first lifts, keeping its point`);
+	if (input.cancels_touch) {
+		await touch('touchCancel', []);
+		// Twice: pointercancel, then the capture it lost, which Touch ignores
+		// for a point already gone (dom_events.h).
+		await check('the browser taking the second is a cancel',
+			[`touch_cancel ${two}`, `touch_cancel ${two}`]);
+	} else {
+		// No cancel to send: the second lifts as the first did, so that the
+		// tap below starts with no finger down.
+		await touch('touchEnd', [[220, 130, 1]]);
+		step++;
+		touches('the second lifts, keeping its point (no browser cancel to send)', await take(),
+			[['touch_up', two, 200, 110], ['touch_cancel', two]]);
+		console.log(`ok ${step} - the second lifts, keeping its point (no browser cancel to send)`);
+	}
 
 	await touch('touchStart', [[120, 70, 2]]);
 	await touch('touchEnd', []);
 	await frames(3);
 	step++;
-	const tap = await take();
-	if (tap.length !== 3 || !/^touch_down \d+ 100 50$/.test(tap[0]) ||
-		!/^touch_up \d+ 100 50$/.test(tap[1]) || !/^touch_cancel \d+$/.test(tap[2])) {
-		throw new Error(`step ${step}: expected a tap's down, up and the capture it lost, and no mouse, received ${JSON.stringify(tap)}`);
-	}
+	touches('a tap is a touch and nothing the mouse hears', await take(),
+		[['touch_down', null, 100, 50], ['touch_up', null, 100, 50], ['touch_cancel', null]]);
 	console.log(`ok ${step} - a tap is a touch and nothing the mouse hears`);
-	await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+	await input.touch_end();
 
 	// FULL SCREEN, as the browser decides it.
 	const without_sizes = (log) => log.filter((entry) => !entry.startsWith('size '));
