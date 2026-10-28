@@ -429,6 +429,16 @@ be an edge. A held R would otherwise restart sixty times a second.
 
 ### There is a pause screen, and the game did not need one
 
+The same screen protects a match when its controls disappear. Keyboard focus
+loss pauses before the next rules tick; deactivation also pauses immediately,
+so hiding and returning to a browser tab without an intervening frame cannot
+resume a falling piece. Returning focus leaves the menu open until the player
+chooses to resume. A covered match cannot stack another pause menu, and the
+top-out screen stays a finished match. Pads still follow page visibility,
+not canvas focus. Native null-render/null-audio tests exercise these state
+transitions with a hidden window and synthetic input; the updated packaged
+browser cases remain to be run.
+
 **The objection first, because it is the real one.** T1 points the other way:
 LineSweeper does not need a pause screen. Its README argues restart-as-one-
 assignment as a virtue and the match is already interruptible by closing the
