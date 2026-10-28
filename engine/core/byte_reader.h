@@ -15,12 +15,12 @@ namespace labrador
 	// allocation. It is also the difference between a struct layout this
 	// compiler happens to produce and the layout the file actually has.
 	//
-	// LITTLE-ENDIAN, SPELT OUT. Both file formats this engine reads are, and
+	// LITTLE-ENDIAN, SPELT OUT. Binary readers use this cursor for that order;
 	// assembling the value a byte at a time says so - where a memcpy of four
 	// bytes would only say "whatever this machine is".
 	//
-	// IN core/ RATHER THAN render/, which is where both of its callers are,
-	// because nothing about it is a picture: it reads numbers out of a file.
+	// IN core/ RATHER THAN render/, because the cursor belongs to no particular
+	// content type: it reads numbers and bytes from a buffer.
 	class ByteReader
 	{
 	public:
