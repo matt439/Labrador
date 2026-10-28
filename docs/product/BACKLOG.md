@@ -656,7 +656,17 @@ written.
   link and copied-project condition/wasm entries were inspected. Final
   independent source review found no issues.
 - [x] **[SRL-14](STORIES.md#srl-14)** Could · S · The Sample-Reading Learner: State the C++ introduction's substantial pre-production progress and unfinished status
-- [ ] **[SRL-15](STORIES.md#srl-15)** Could · XS · The Sample-Reading Learner: Get Started tells me where to go if I do not know C++ yet — after SRL-14
+- [x] **[SRL-15](STORIES.md#srl-15)** Could · XS · The Sample-Reading Learner: Get Started tells me where to go if I do not know C++ yet — after SRL-14
+  Closed 2026-10-29. Get Started gives a small console-program preparation
+  exercise, names pointers/references and object lifetime, and tells the reader
+  when to return. It links the preserved companion-introduction status under
+  its own heading. No external resource was selected. The adjacent CI claim
+  now states the full sweep's scope rather than promising builds on docs-only
+  changes. This is a preparation route, not evidence from a beginner session
+  or completion of the companion series.
+  All seven standalone checks and the website check, 160 tests and
+  144-page/433-file build pass. The emitted preparation text, return route,
+  status link/anchor and unfinished-status wording were inspected.
 - [ ] **[SRL-17](STORIES.md#srl-17)** Could · M · The Sample-Reading Learner: A recorded check that the game-facing API is teachable to a beginner — after SRL-14
 - [ ] **[SRL-16](STORIES.md#srl-16)** Could · M · The Sample-Reading Learner: A guide to the C++ and engine terms the minimal sample uses — after SRL-17
 - [ ] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
