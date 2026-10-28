@@ -85,7 +85,6 @@ if(WIN32 AND LABRADOR_RENDER_BACKEND STREQUAL "null" AND
         LABRADOR_AUDIO_BACKEND STREQUAL "null")
     target_sources(LineSweeperViewTests PRIVATE
         focus_pause_tests.cpp
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/top_out_banner.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/states/play_state.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/states/pause_state.cpp"
     )
@@ -101,7 +100,9 @@ if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(LineSweeperViewTests PRIVATE
         board_view_tests.cpp
         particle_draw_tests.cpp
+        top_out_banner_tests.cpp
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/board_view.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/top_out_banner.cpp"
     )
     target_compile_definitions(LineSweeperViewTests PRIVATE
         LINESWEEPER_FONT_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/content/fonts/"

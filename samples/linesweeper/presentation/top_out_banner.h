@@ -24,9 +24,9 @@ namespace linesweeper
 		TopOutBanner(const World* world,
 			labrador::RenderResources* render_resources);
 
-		// Refreshes the cached message and its measured size when topped_out
-		// or the chosen touch wording changes. Construction primes the cache;
-		// concurrent draw() calls only read it.
+		// Refreshes the cached message, layout size and glyph extent when
+		// topped_out or the chosen touch wording changes. Construction primes
+		// the cache; concurrent draw() calls only read it.
 		void update(float dt) override;
 
 		// Chooses touch restart wording. The next update reads this choice;
@@ -35,11 +35,15 @@ namespace linesweeper
 
 		void draw(labrador::DrawList& draw_list) const override;
 
-		// Current Scene culling uses the background quad's board-space band.
-		// The centered text can extend beyond that band's horizontal edges.
+		// The background panel and the centered text's layout and glyph cells,
+		// including bearings outside the layout rectangle.
 		labrador::RectangleF bounds() const override;
+		// Adds the panel's view-pixel quantization allowance at this zoom.
+		labrador::RectangleF cull_bounds(float units_per_pixel) const override;
 
 	private:
+		labrador::RectangleF panel_bounds() const;
+
 		const World* world_ = nullptr;
 		labrador::RenderResources* render_resources_ = nullptr;
 
@@ -48,6 +52,7 @@ namespace linesweeper
 
 		std::wstring text_;
 		labrador::Vector2F text_size_;
+		labrador::RectangleF text_bounds_;
 
 		// What text_ was built from, and whether it has been built at all -
 		// which a flag that starts at zero cannot say on its own.
