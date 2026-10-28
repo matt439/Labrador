@@ -213,6 +213,71 @@ class PlanTests(unittest.TestCase):
                     self.plan()
                 (self.root / "CMakePresets.json").write_bytes(original)
 
+    def test_native_host_condition_is_inherited_without_filtering_default_planning(self):
+        document = json.loads((self.root / "CMakePresets.json").read_text(encoding="utf-8"))
+        index = planner.preset_index(document, "configurePresets")
+        self.assertEqual({name for name in index if name.startswith("x64-")}, set(planner.NATIVE_PRESETS))
+        self.assertEqual(len(planner.NATIVE_PRESETS), 10)
+        for name in planner.NATIVE_PRESETS:
+            self.assertEqual(planner.configure_preset(index, name)["condition"], planner.NATIVE_HOST_CONDITION)
+        for name in ("wasm-debug", "wasm-release"):
+            self.assertNotIn("condition", planner.configure_preset(index, name))
+        with mock.patch.object(planner.sys, "platform", "linux"):
+            plan = self.plan()
+        self.assertEqual([item["id"] for item in plan["configurations"]], list(planner.CONFIGURATIONS))
+        self.assertEqual(len([step for item in plan["configurations"] for step in item["steps"]]), 21)
+        self.assertEqual({step["result"] for item in plan["configurations"] for step in item["steps"]}, {"not-run"})
+
+    def test_copied_project_presets_share_the_native_gate_without_restricting_wasm(self):
+        document = json.loads((REPOSITORY / "website/src/walkthrough/CMakePresets.json").read_text(encoding="utf-8"))
+        index = planner.preset_index(document, "configurePresets")
+        self.assertEqual({name for name in index if name.startswith("x64-")}, {"x64-debug", "x64-release"})
+        for name in ("x64-debug", "x64-release"):
+            self.assertEqual(planner.configure_preset(index, name)["condition"], planner.NATIVE_HOST_CONDITION)
+        for name in ("wasm-debug", "wasm-release"):
+            self.assertNotIn("condition", planner.configure_preset(index, name))
+
+    def test_missing_native_gate_and_release_overrides_fail_before_forming_a_plan(self):
+        original = (self.root / "CMakePresets.json").read_bytes()
+        mutations = [lambda data: data["configurePresets"][0].pop("condition"),
+                     lambda data: data["configurePresets"].remove(next(
+                         item for item in data["configurePresets"] if item["name"] == "x64-release-vulkan"))]
+        for change in mutations:
+            with self.subTest(change=change):
+                self.change_presets(change)
+                with self.assertRaises(planner.PlanError):
+                    self.plan()
+                (self.root / "CMakePresets.json").write_bytes(original)
+        for condition in (None, False, True, "Windows",
+                          {"type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux"},
+                          {"type": "allOf", "conditions": [planner.NATIVE_HOST_CONDITION]},
+                          {**planner.NATIVE_HOST_CONDITION, "extra": True}):
+            with self.subTest(condition=condition):
+                self.change_presets(lambda data: next(
+                    item for item in data["configurePresets"] if item["name"] == "x64-release-vulkan"
+                ).update(condition=condition))
+                with self.assertRaisesRegex(planner.PlanError, "exact Windows host condition"):
+                    self.plan()
+                (self.root / "CMakePresets.json").write_bytes(original)
+
+    def test_wasm_cannot_inherit_or_add_the_native_host_gate(self):
+        original = (self.root / "CMakePresets.json").read_bytes()
+        mutations = [lambda data: next(
+                         item for item in data["configurePresets"] if item["name"] == "wasm-base"
+                     ).update(inherits="base"),
+                     lambda data: next(
+                         item for item in data["configurePresets"] if item["name"] == "wasm-debug"
+                     ).update(condition=dict(planner.NATIVE_HOST_CONDITION)),
+                     lambda data: next(
+                         item for item in data["configurePresets"] if item["name"] == "wasm-release"
+                     ).update(condition=dict(planner.NATIVE_HOST_CONDITION))]
+        for change in mutations:
+            with self.subTest(change=change):
+                self.change_presets(change)
+                with self.assertRaisesRegex(planner.PlanError, "must have no host condition"):
+                    self.plan()
+                (self.root / "CMakePresets.json").write_bytes(original)
+
     def test_preset_axes_and_build_test_links_cannot_silently_drift(self):
         self.change_presets(lambda data: data["configurePresets"][1]["cacheVariables"].update(LABRADOR_RENDER_BACKEND="gl"))
         with self.assertRaisesRegex(planner.PlanError, "expected LABRADOR_RENDER_BACKEND=d3d11"):

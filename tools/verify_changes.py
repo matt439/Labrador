@@ -20,6 +20,8 @@ import sys
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 NATIVE = ("x64-debug", "x64-debug-d3d12", "x64-debug-gl", "x64-debug-vulkan", "x64-debug-null")
+NATIVE_PRESETS = (*NATIVE, *(name.replace("-debug", "-release") for name in NATIVE))
+NATIVE_HOST_CONDITION = {"type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows"}
 CONFIGURATIONS = (*NATIVE, "wasm-debug", "wasm-release-null")
 BACKENDS = ("d3d11", "d3d12", "gl", "vulkan", "null", "gl", "null")
 ENVIRONMENT_KEYS = ("PATH", "PATHEXT", "VCPKG_ROOT", "VULKAN_SDK", "EMSDK", "EMSDK_NODE")
@@ -76,11 +78,13 @@ def configure_preset(index: dict[str, dict], name: str, parents: tuple[str, ...]
         raise PlanError(f"missing configure preset: {name}")
     entry = index[name]
     allowed = {"name", "displayName", "description", "hidden", "inherits", "generator", "binaryDir",
-               "installDir", "toolchainFile", "cacheVariables", "architecture"}
+               "installDir", "toolchainFile", "cacheVariables", "architecture", "condition"}
     if set(entry) - allowed:
         raise PlanError(f"unsupported configure preset fields in {name}: {sorted(set(entry) - allowed)}")
     if "hidden" in entry and not isinstance(entry["hidden"], bool):
         raise PlanError(f"hidden must be a boolean in {name}")
+    if "condition" in entry and entry["condition"] != NATIVE_HOST_CONDITION:
+        raise PlanError(f"only the exact Windows host condition is modeled: {name}")
     parent = entry.get("inherits")
     if parent is not None and not isinstance(parent, str):
         raise PlanError(f"only single-parent preset inheritance is modeled: {name}")
@@ -110,6 +114,12 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
     if not isinstance(document, dict) or document.get("version") != 6 or "include" in document:
         raise PlanError("only the repository's version-6, local CMakePresets.json is modeled")
     index = preset_index(document, "configurePresets")
+    for name in NATIVE_PRESETS:
+        if configure_preset(index, name).get("condition") != NATIVE_HOST_CONDITION:
+            raise PlanError(f"{name} must inherit the Windows host condition")
+    for name in ("wasm-debug", "wasm-release"):
+        if "condition" in configure_preset(index, name):
+            raise PlanError(f"{name} must have no host condition")
     for section in ("buildPresets", "testPresets"):
         linked = preset_index(document, section)
         for name in (*NATIVE, "wasm-debug", "wasm-release"):

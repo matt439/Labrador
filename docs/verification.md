@@ -66,9 +66,15 @@ into a full local sweep.
 
 The restricted rule reader validates the current version-6 local preset shapes,
 matching build/test links, single-parent inheritance, backend defaults,
-SDK-only dxc lookup and CI override. Future includes, conditions, inheritance
-shapes or changed source rules can require updating the model. It is not a
-general CMake interpreter and does not activate user toolchain wrappers.
+SDK-only dxc lookup and CI override. It models only the exact native-base
+condition `${hostSystemName}` equals `Windows`: all ten native Debug/Release
+presets inherit it, and both wasm presets have no host condition. Booleans,
+null, compound predicates and other condition shapes fail explicitly.
+Default planning validates that condition without inspecting the host and
+still prints all seven tracks; preflight continues to require Windows for the
+whole sweep. Future includes, condition or inheritance shapes and changed
+source rules can require updating the model. It is not a general CMake
+interpreter and does not activate user toolchain wrappers.
 
 ## Optional read-only preflight
 

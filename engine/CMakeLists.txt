@@ -98,8 +98,9 @@ elseif(WIN32)
     )
 else()
     message(FATAL_ERROR
-        "There is no window for this platform. engine/app/ has a Win32 "
-        "window and a browser one, and a third is a folder beside them.")
+        "Labrador supports Windows (Win32) and the browser (Emscripten). "
+        "No window is implemented for this target. See "
+        "https://labradorengine.com/why/#platform-support")
 endif()
 
 # The backend, chosen at build time.

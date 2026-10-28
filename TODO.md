@@ -103,6 +103,7 @@ the two new stories have their detail in BACKLOG.md.
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `allowed_channel_drift` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
 | `SM-17` | OPEN | could | M | Render planner, preflight and explicit first-failure executor are implemented with fake-command checks; complete real CTest/report compatibility and the sweep after stopped runtime/toolchain gates. [Scope](docs/verification.md). |
 | `SM-18` | BLOCKED | could | S | Record device checks CI cannot run for each change; after SM-17. |
+| `NMS-04` | BLOCKED | could | S | Native engine/copied-game presets have the Windows host gate, with planner, diagnostic and Windows listing checks. Record the required real Ubuntu/WSL listing; non-Windows wasm remains unverified. [Evidence](docs/product/BACKLOG.md#later). |
 
 `SM-15` and `SM-24` remain in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
