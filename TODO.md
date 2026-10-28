@@ -26,7 +26,7 @@ an open hardware gate does not block unrelated work.
 **Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns the
 remaining backend failure regressions and qualification; `SRL-21` awaits its
 capture review and both test splits await their stopped runtime checks.
-BACKLOG's L36 to L48 let it run alongside product work.
+BACKLOG's L36 to L49 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
@@ -43,7 +43,7 @@ required by this plan.
 
 **Owner:** [Code hygiene](docs/code-hygiene.md) holds the original review
 targets and acceptance; new bounded repairs have their owners linked below.
-[BACKLOG.md, Later](docs/product/BACKLOG.md#later), L36 to L48, orders the
+[BACKLOG.md, Later](docs/product/BACKLOG.md#later), L36 to L49, orders the
 maintenance lane. Counts prompt review, not automatic splitting.
 
 | id | status | pri | size | item |

@@ -433,3 +433,32 @@ TEST_CASE("copying a button retains independent mutable action state")
 	CHECK(original.activate());
 	CHECK(observed == 3);
 }
+
+TEST_CASE("focus ties follow enabled registration order")
+{
+	StubWidget from(0.0f, 0.0f, 10.0f, 10.0f);
+	StubWidget left(-20.0f, 20.0f, 10.0f, 10.0f);
+	StubWidget right(20.0f, 20.0f, 10.0f, 10.0f);
+	FocusGroup group;
+	group.add(&from);
+	group.add(&left);
+	group.add(&right);
+	REQUIRE(group.move(0, Direction::down, false));
+	CHECK(group.focused(0) == &left);
+
+	group.clear();
+	group.add(&from);
+	group.add(&right);
+	group.add(&left);
+	REQUIRE(group.move(0, Direction::down, false));
+	CHECK(group.focused(0) == &right);
+
+	REQUIRE(group.set_enabled(&right, false));
+	REQUIRE(group.set_focused(0, &from));
+	REQUIRE(group.move(0, Direction::down, false));
+	CHECK(group.focused(0) == &left);
+	REQUIRE(group.set_enabled(&right, true));
+	REQUIRE(group.set_focused(0, &from));
+	REQUIRE(group.move(0, Direction::down, false));
+	CHECK(group.focused(0) == &right);
+}
