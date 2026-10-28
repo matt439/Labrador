@@ -1,0 +1,197 @@
+---
+title: Reading the C++ in minimal
+description: A reading companion for the language features, ownership and rendering terms used by the minimal sample.
+sidebar:
+  order: 6
+  label: Reading the C++
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+
+Keep this page beside the minimal sample when a language feature or rendering term interrupts
+your reading. The excerpts come from the sample at the revision in this page's footer. In the
+project copied by Get Started, the same state files live under `game/states/` instead of
+`samples/minimal/states/`.
+
+This page assumes you can already write small C++ functions and classes. If you are learning
+the language for the first time, follow the [preparation route in Get Started](/docs/get-started/#what-you-need-to-know-already)
+first. [What a game is to the engine](/docs/concepts/game/) explains how these pieces fit together.
+
+## Inheritance and `override`
+
+<SourceFile
+	path="samples/minimal/states/hello_state.h"
+	from="class HelloState : public labrador::State"
+	to="void draw(labrador::Renderer& renderer) const override;"
+/>
+
+`HelloState` is a class of your game. `: public labrador::State` says that it implements the
+engine's `State` interface, so the engine can call it through a `State` pointer without knowing
+the game's concrete type. `public:` makes the following constructor and functions accessible
+to callers.
+
+`override` asks the compiler to check that each function matches a virtual function in the base
+class. A misspelt name or mismatched parameter type becomes a compiler error. The `const` after
+`draw` is part of that match and prevents ordinary writes to this object's members through that
+call. It does not make objects reached through pointers automatically immutable: the engine's
+read-only drawing contract applies to them too. Changes belong in `update`.
+The [drawing model](/docs/concepts/drawing/) explains why several views must be able to read the
+same object at once.
+
+## `unique_ptr` owns; a raw pointer can borrow
+
+The sample records both kinds of relationship:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.h"
+	from="std::unique_ptr<labrador::Scene> scene_ = nullptr;"
+	to="labrador::Label* greeting_ = nullptr;"
+/>
+
+`std::unique_ptr<Scene>` owns its scene. When the pointer is destroyed, it destroys that scene;
+copying the unique pointer is forbidden, and moving it transfers ownership. `nullptr` means
+there is no object yet. `std::make_unique<Scene>(...)` constructs the owned scene in `init()`.
+
+`Label* greeting_` borrows a label that the scene owns. `Scene::add` takes a unique pointer and
+returns this ordinary pointer so the state can speak to the label later. It does not give the
+state a second owner. Do not delete that pointer or keep using it after the label leaves the
+scene or the scene is destroyed.
+
+The confirmation state makes the same distinction with different owners:
+
+<SourceFile
+	path="samples/minimal/states/confirm_state.h"
+	from="labrador::Application* app_ = nullptr;"
+	to="std::unique_ptr<labrador::Text> prompt_ = nullptr;"
+/>
+
+`ConfirmState` owns its prompt and borrows the application. The application outlives the states
+on its stack; the state releases its prompt when it is destroyed. `pointer->member` accesses
+the pointed-to object, while `object.member` accesses an object directly.
+[Ownership is explicit](/docs/concepts/game/#ownership-is-explicit) gives the engine's rules for
+the application, scene and state stack.
+
+## A lambda capturing `this`
+
+This is the callback passed to `push<bool>` when the greeting asks whether to quit:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="[this](const bool& quit)"
+	to="});"
+/>
+
+A lambda is a function written at the place it is needed. `[this]` captures the pointer to this
+`HelloState`, so the body can read `this->app_`. It does not copy the state or keep it alive.
+`const bool& quit` is the result supplied by the question, borrowed for this callback invocation.
+
+The state below the question remains on the stack while suspended. When the question pops,
+the stack destroys it, resumes the state below and then delivers the result. Clearing the stack
+does not deliver result callbacks. Those are the lifetime rules that make this particular
+capture useful; a captured pointer in arbitrary C++ still needs its object to outlive its use.
+[States and the stack](/docs/concepts/states/#asking-a-question-and-getting-an-answer) shows the
+whole push/pop exchange.
+
+## `std::span` is a borrowed range
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="const std::span<const TouchPoint> points = this->app_->touch()->points();"
+	to="const std::span<const TouchPoint> points = this->app_->touch()->points();"
+/>
+
+A `std::span<T>` describes a contiguous range: where its elements begin and how many there are.
+It owns none of those elements and copying the span does not copy them. The `const` inside
+`span<const TouchPoint>` means this view cannot change the touch points. The first `const`
+means this local span will not be reassigned.
+
+`points.size()` is the number of active touch points, and `points[i]` selects one. The sample
+checks `i < points.size()` before indexing. Use this view while reading the current update;
+polling the touch device again changes the state it views. To keep a snapshot, copy the values
+you need into storage your game owns. The [touch input guide](/docs/guides/input/#touch) explains
+point ids and coordinates.
+
+## The Windows entry point and SAL annotations
+
+<SourceFile
+	path="samples/minimal/main.cpp"
+	from="int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,"
+	to="_In_ LPWSTR command_line, _In_ int)"
+/>
+
+`wWinMain` is the Windows desktop entry point used by this executable. `WINAPI` is Windows'
+calling-convention macro. The `w` form receives a wide-character command line: `LPWSTR` is a
+pointer to wide characters, and the sample names that parameter `command_line`. The unnamed
+instance-handle and show-command parameters are accepted but not used. The function returns
+an integer exit status.
+
+`_In_` and `_In_opt_` are SAL annotations supplied by the Windows headers. They describe inputs
+to analysis tools; `opt` marks an optional input. They are not extra C++ parameter types and
+do not add a runtime check. The browser entry point is the separate `main_web.cpp`; you do not
+put the Windows signature into a browser build.
+
+## A `using namespace` directive in a `.cpp`
+
+<SourceFile path="samples/minimal/main.cpp" from="using namespace labrador;" to="using namespace labrador;" />
+
+This directive lets unqualified names in this source file find names from `labrador`, so
+`Application` can mean `labrador::Application`. It does not move a declaration into another
+namespace. The sample's headers spell engine names in full: a directive at namespace scope in
+a header would affect every source file that includes it. Keeping it in the `.cpp` limits
+that effect to this translation unit, the source file together with its includes.
+
+## A deferred context records graphics commands
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="// Nothing below names a graphics type. There is no deferred context to"
+	to="// caller obligations stated nowhere in the tree."
+/>
+
+In Direct3D 11, the default Windows renderer, a deferred context records drawing commands for
+later execution. It lets workers record separate views before the renderer submits their
+work. It is unrelated to the state stack deferring a push or pop until `update` returns.
+
+The game receives the backend-neutral `Renderer` and `DrawList` interface. The renderer owns
+the graphics contexts and command-list lifetime. Other backends supply their own recording
+machinery behind that same interface; the game does not allocate a deferred context itself.
+See [the frame from the engine's side](/docs/concepts/drawing/#the-frame-from-the-engines-side).
+
+## A dynamic vertex buffer holds changing sprite geometry
+
+<SourceFile
+	path="samples/minimal/main.cpp"
+	from="// and a dynamic vertex buffer created at startup and never used."
+	to="options.view_capacity = 1;"
+/>
+
+A vertex is one corner's drawing data, such as position, texture coordinate and tint. A vertex
+buffer holds those vertices for the graphics device. `Dynamic` here is Direct3D 11 terminology
+for a buffer the CPU updates with this frame's sprite geometry, rather than immutable geometry
+loaded once. The backend owns the upload and reuse rules.
+
+The comment explains the cost of reserving more views than this sample uses. `view_capacity`
+is the maximum view count the renderer prepares for; this game asks for one. It does not need
+to size, map or synchronize a graphics buffer. The [split-screen explanation](/docs/concepts/drawing/#split-screen)
+connects that capacity to a game's actual views.
+
+## Fan-out divides the views, not the objects
+
+<SourceFile
+	path="samples/minimal/states/hello_state.h"
+	from="// thread pool - a fan-out over a single pane is a fan-out over nothing."
+	to="std::unique_ptr<labrador::Scene> scene_ = nullptr;"
+/>
+
+Fan-out means splitting one scene draw into work for its several views. Each view looks at
+the same objects through its own camera and viewport. When workers are enabled, different
+workers can call `draw` on the same object concurrently; one worker is not assigned ownership
+of one game object. That is why changing object state belongs in `update` and `draw` is `const`.
+
+The minimal sample has one view, so it gives the scene no worker pool or partitioner:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="this->scene_ = std::make_unique<Scene>(nullptr, nullptr);" to="this->scene_ = std::make_unique<Scene>(nullptr, nullptr);" />
+
+With that choice, its drawing runs on the calling thread. The [local multiplayer guide](/docs/guides/local-multiplayer/)
+shows why a game would need several views. Return to [Make a first change](/docs/get-started/first-change/)
+to edit the sample, or continue with [States and the stack](/docs/concepts/states/).
