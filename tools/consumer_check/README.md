@@ -85,11 +85,12 @@ game with `--smoke-test` and writes `exit-code.txt`, `stderr.txt` and
 installed in the sandbox's `System32`, and its display adapters) to the
 results folder, then shuts the sandbox down. If it stays open, the screen
 shows why: a loader message about a missing DLL stops the script there. The
-sandbox's graphics are a virtual GPU, or with `--vgpu Disable` only Windows'
-software adapter, which a release build refuses with
+sandbox's default virtual GPU presents the host's own adapter through a
+paravirtual driver, so a release build draws on it; with `--vgpu Disable`
+only Windows' software adapter remains, which a release build refuses with
 `No Direct3D hardware device found`. So a run proves that the folder loads
 and its runtime is complete on a clean Windows; whether it draws on a player's
-GPU needs a real machine. `run.cmd` takes a release folder as its argument
+GPU and driver needs a real machine. `run.cmd` takes a release folder as its argument
 to try it on the host first. Windows Sandbox needs Windows Pro or Enterprise,
 and an administrator to enable the *Windows Sandbox* optional feature.
 
