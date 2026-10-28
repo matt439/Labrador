@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "engine/assets/sprite_sheet_loader.h"
+#include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/animation_strip.h"
 #include "engine/render/renderer.h"
@@ -7,6 +8,7 @@
 #include "engine/render/sprite_sheet.h"
 #include "tests/scratch_file.h"
 #include <array>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -241,4 +243,68 @@ TEST_CASE("sprite sheet strict fields preserve complete authored frames and anim
 	CHECK(strip.frame_rect(0).height == 32);
 	CHECK(strip.frame_rect(1).x == 20);
 	CHECK(strip.frame_rect(2).x == 36);
+}
+
+TEST_CASE("negative authored strip counts name their source and field")
+{
+	const std::array<int, 2> counts = { -1, (std::numeric_limits<int>::min)() };
+	for (const int count : counts)
+	{
+		CAPTURE(count);
+		const std::string broken =
+			R"({"name":"broken","first_frame":{"x":4,"y":8,"w":16,"h":32},"frame_count":)" +
+			std::to_string(count) + R"(,"frame_time":0.25,"looping":false})";
+		const ScratchFile file("negative-count.json",
+			sheet_with_strip(strip_of("", "") + "," + broken));
+		bool rejected = false;
+		try
+		{
+			read_sprite_sheet(file.path().c_str(), TextureHandle());
+		}
+		catch (const std::runtime_error& error)
+		{
+			rejected = true;
+			const std::string message = error.what();
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find("animation_strips[1]") != std::string::npos);
+			CHECK(message.find("'broken'") != std::string::npos);
+			CHECK(message.find("frame_count") != std::string::npos);
+			CHECK(message.find(std::to_string(count)) != std::string::npos);
+			CHECK(message.find("'walk'") == std::string::npos);
+		}
+		CHECK(rejected);
+	}
+}
+
+TEST_CASE("a zero-count authored strip remains empty")
+{
+	const std::unique_ptr<SpriteSheet> sheet = load(sheet_with_strip(
+		R"({"name":"empty","first_frame":{"x":4,"y":8,"w":16,"h":32},)"
+		R"("frame_count":0,"frame_time":0.5,"looping":true})"));
+	const SpriteSheet::strip_handle handle = sheet->resolve_animation_strip("empty");
+	CHECK(handle.valid());
+	const AnimationStrip& strip = sheet->animation_strip(handle);
+
+	CHECK(strip.frame_count() == 0);
+	CHECK(strip.frame_time() == 0.5f);
+	CHECK(strip.looping());
+	CHECK_THROWS_AS(strip.frame_rect(0), std::out_of_range);
+	CHECK_THROWS_AS(strip.frame_rect(-1), std::out_of_range);
+}
+
+TEST_CASE("positive authored strips preserve rectangles timing and looping")
+{
+	const std::unique_ptr<SpriteSheet> sheet = load(sheet_with_strip(
+		R"({"name":"once","first_frame":{"x":-4,"y":7,"w":12,"h":18},)"
+		R"("frame_count":3,"frame_time":0.375,"looping":false})"));
+	const AnimationStrip& strip =
+		sheet->animation_strip(sheet->resolve_animation_strip("once"));
+
+	CHECK(strip.frame_count() == 3);
+	CHECK(strip.frame_time() == 0.375f);
+	CHECK_FALSE(strip.looping());
+	CHECK(strip.frame_rect(0) == RectangleI(-4, 7, 12, 18));
+	CHECK(strip.frame_rect(1) == RectangleI(8, 7, 12, 18));
+	CHECK(strip.frame_rect(2) == RectangleI(20, 7, 12, 18));
+	CHECK_THROWS_AS(strip.frame_rect(3), std::out_of_range);
 }

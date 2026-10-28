@@ -15,6 +15,8 @@ namespace labrador
 	// document is the wrong shape or has an unknown key (T6). This includes
 	// nested position, size, origin and first-frame objects; unsupported fields
 	// must be removed or corrected instead of being silently ignored.
+	// A negative animation-strip `frame_count` throws std::runtime_error naming
+	// the path, strip and field. Zero frames define an empty strip.
 	//
 	// AND FOR ONE THING THE DOCUMENT CAN SAY THAT IS WELL FORMED AND STILL NOT
 	// DRAWABLE: a frame with `"rotated": true` is refused here, by name, rather
