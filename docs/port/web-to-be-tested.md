@@ -2,7 +2,7 @@
 
 Everything in `web.md`'s milestones that can be written and checked on this
 desktop has been, in headless Chrome (and headless Firefox for LineSweeper's
-drawing), under every preset, with the pixel tests on the RTX 5080, WARP and
+drawing, the other five sample pages and `WebWindowTests`), under every preset, with the pixel tests on the RTX 5080, WARP and
 SwiftShader. What follows needs a person, hardware this machine does not have,
 a browser it does not run, or a push. Tick a box in the commit that checks it,
 and amend `web.md` §9 with the result.
@@ -74,8 +74,10 @@ access is needed before this hosted-page acceptance can proceed.
       with its own id; a tap never also clicks; losing the foreground mid-gesture
       cancels every point. LineSweeper's touch buttons work through `WM_POINTER`.
 - [ ] A pen still drives the mouse.
-- [ ] Firefox and Safari touch on the web path (only Chrome's emulation has
-      driven it).
+- [ ] Firefox and Safari touch on the web path. Chrome's emulation and
+      Firefox's synthetic BiDi touches (the
+      [Firefox section](#firefox-sample-checks-web4)) have driven it; a real
+      finger, a cancel the browser makes and Safari have not.
 
 ## Needs real phones (M7b)
 
@@ -234,52 +236,115 @@ again.
 
 ## Firefox sample checks (WEB#4)
 
-- [ ] Run minimal, collision, audio, local_multiplayer and components against
+- [x] Run minimal, collision, audio, local_multiplayer and components against
       current Release outputs with the separate
       [Firefox BiDi runner](../../tests/render/web/run_firefox.mjs).
-- [ ] Port and run `WebWindowTests`' input and shell-CSS checks. Chromium's
-      CDP-specific DPR, touch cancellation and fullscreen activation checks
-      have not been translated to Firefox BiDi by this increment.
+      **2026-10-28, commit `0fcf3a7`, clean checkout; all five passed.** The
+      `wasm-release` build of the five targets had nothing to relink, so its
+      outputs are this commit's. Headless Firefox 158.0.1 (build
+      20261019185856) under Node 24.14.0, one runner process per page, each
+      exiting 0 with Firefox exiting 0 and its temporary profile removed.
+      Every page initialised, kept clearing and submitting `drawElements`
+      across 60 more animation frames, took its trusted keys, reached
+      `Module.onQuit`, and logged nothing to the tab's console and nothing to
+      `Module.onError`. The runner's own totals at quit:
+
+      | Page | `.wasm` bytes, SHA-256 prefix | Clears | `drawElements` | Elements |
+      |---|---|---:|---:|---:|
+      | minimal | 381,074, `f11355f5e79e` | 73 | 73 | 40,260 |
+      | collision | 399,062, `4efec4d78381` | 61 | 122 | 66,246 |
+      | audio | 458,489, `706a9cac15dd` | 73 | 73 | 131,400 |
+      | local_multiplayer | 374,275, `4db15e0bbe34` | 61 | 366 | 81,984 |
+      | components | 404,847, `9cbbc5016e76` | 130 | 780 | 152,832 |
+
+      What these runs do not prove: pixels (nothing was read back or looked
+      at), the adapter (`RENDERER` read Firefox's sanitised bucket,
+      `ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or
+      similar`, on a machine with an RTX 5080), sound (the audio page's S key
+      went through the page, and nothing listened, which is `WEB#3`'s), and
+      WebWindow input or shell CSS (the next box). Firefox's stderr carried,
+      for every page, the legacy wasm exception handling warning that `try` is
+      deprecated in favour of `try_table`. It is not a console entry of the
+      tested tab, so the runner does not fail on it; it is the same warning
+      [web.md](web.md) §9 records for LineSweeper, and it lasts as long as
+      the build emits legacy exceptions.
+- [x] Port and run `WebWindowTests`' input and shell-CSS checks.
+      **2026-10-28, commit `0fcf3a7` with the port uncommitted; four
+      consecutive runs passed all 39 steps.** The `wasm-release` page
+      (`.wasm` 48,059 bytes, SHA-256 prefix `e5752ef68d16`) relinks to the
+      same bytes with the port's comment change to its source. Headless Firefox 158.0.1 under Node 24.14.0; each run
+      exited 0 with Firefox exiting 0 and its profile removed, and the tab
+      logged nothing. `run_firefox.mjs --test WebWindowTests` runs the same
+      sequence and expected logs as Chromium's `WebWindowTests` entry
+      ([window_input.mjs](../../tests/app/web/window_input.mjs)), through
+      BiDi: `input.performActions` for the mouse, the wheel, keys and touches,
+      `browsingContext.setViewport` for the device pixel ratio, and
+      `script.evaluate` with `userActivation` for the granted full-screen
+      request. Focus, the capture analogue, the defaults the canvas takes,
+      wheel notches, the measured box under the shell CSS and its CSS
+      resizes, a ratio of two, touch ids and focus, full screen granted, left
+      and refused, and the closed window all hold in Firefox. Where the two
+      runs differ, and why:
+
+      - **Touch cancellation is not translated.** BiDi has no action that
+        makes the browser cancel a pointer, so the second finger lifts
+        instead (its up, then its lost capture). A cancel on real glass is
+        `WEB#5`'s.
+      - **Control is a key.** BiDi holds Control by pressing it, so the chord
+        step also expects Control's own `key_down` and `key_up`, and its
+        keydown kept.
+      - **The starting ratio is set.** This machine's Windows text size is
+        110%, and headless Firefox starts at a device pixel ratio of 12/11
+        (the 400x250 box measured 436x273). The runner sets a ratio of one
+        before the page loads, and returns to one after the ratio-two step.
+      - **Touch positions are compared within one client pixel.** Firefox
+        puts a synthesised touch on a device pixel of its own window, which
+        that text scaling still sizes, and the pointer event keeps the
+        fraction: a touch sent at (120, 70) arrived at (120.083, 69.667) and
+        floors to row 49. Mouse positions are whole and stay exact.
+      - **Fingers move one per tick.** Two fingers moved in one BiDi tick gave
+        one `touchmove` naming both and a `pointermove` for the first only;
+        the window listens to pointer events.
+      - Two steps changed for both browsers, because a WebDriver press is a
+        move and then the button, and no move is sent to where the pointer
+        already is: the click after Tab moves to the canvas first, and the
+        position scaled at a ratio of two is reached from beside the canvas.
+        Chromium's entry passed with both.
+
+      What these runs do not prove: a browser hiding the page (visibility is
+      synthetic in both browsers), a touch the browser cancels, a real
+      touchscreen, pad or display, or pixels. Firefox's stderr carried the
+      legacy wasm exception warning above and, in some runs, a
+      `UrlClassifierListManager` error from Firefox's own modules; neither is
+      a console entry of the tested tab.
 
 The runner uses an owned temporary profile, loopback-only serving and default
-Firefox security settings. It requires continuing real WebGL clear/draw
-submissions, trusted key actions and the page's existing `Module.onQuit`;
-warnings, errors and `Module.onError` fail it. Artifact byte lengths/hashes,
-session/browser capabilities and raw WebGL strings are logged. Submission
-counts do not prove pixel correctness, audible audio or a physical adapter.
-No browser run is claimed by the 18 offline transport/control fixtures; with
-Chromium's six existing fixtures, `BrowserProtocolTests` passes 24 cases under
-Node without a browser or device.
+Firefox security settings. For a sample it requires continuing real WebGL
+clear/draw submissions, trusted key actions and the page's existing
+`Module.onQuit`; for `WebWindowTests` it requires every step's whole log, and
+fails if the shell settles its failure promise. Warnings and errors logged to
+the tested tab, and `Module.onError`, fail either. Artifact byte
+lengths/hashes, session/browser capabilities, for a sample raw WebGL strings, and Firefox's
+last 16 KiB of stderr are logged. Submission counts do not prove pixel
+correctness, audible audio or a physical adapter. No browser run is claimed by
+the 24 offline BiDi transport, control and input-translation fixtures;
+`BrowserProtocolTests` runs them under Node, without a browser or device,
+with Chromium's six transport fixtures and three sample-key fixtures, 33 cases
+in all.
 
-**Current runtime gate, 2026-10-26.** Fresh `wasm-release` linking failed while
-replacing `out/build/wasm-release/samples/minimal/MinimalSample.js` with
-`PermissionError: [Errno 13] Permission denied`. That write is stopped. The
-failed link left a 379,758-byte wasm dated October 26 beside the older
-118,834-byte JS and 1,177-byte HTML dated October 24. That mismatched output
-set was not run. Firefox has not launched for this increment, and all five
-current-page runs remain unverified. The minimal output's denial is
-established by that sample build. The temporary console-link diagnostic setting
-was removed after the failure. No SDK source or configuration was edited.
-
-A separate, original `WebWindowTests` target build then exited 1 while
-replacing `out/build/wasm-release/tests/app/WebWindowTests.js`, also with
-`PermissionError: [Errno 13] Permission denied`. Its task-owned process 17320
-completed at `2026-10-26T21:49:57.9424754Z`; stdout, stderr and the process
-receipt are retained under `out/overnight-2026-10-26/firefox-webwindow-build*`.
-The failed link left a 48,038-byte wasm dated October 26 beside the older
-36,559-byte JS and 1,193-byte HTML dated October 24. This mismatched set was
-not run, and this output action is stopped. No Firefox launch, alternate
-output, file deletion, permission change or SDK change followed the denial.
-The separate input/CSS port and its trusted cancellation question remain
-unverified; source planning alone does not complete those browser checks.
-
-After building the five current pages, run each sample name through the same
-command (`minimal`, `collision`, `audio`, `local_multiplayer`, `components`):
+After building the five current pages and `WebWindowTests`, run each sample
+name through the same command (`minimal`, `collision`, `audio`,
+`local_multiplayer`, `components`), and the window's page through `--test`:
 
 ```text
-cmake --build --preset wasm-release --target MinimalSample CollisionSample AudioSample LocalMultiplayerSample ComponentsGallery --parallel 1
+cmake --build --preset wasm-release --target MinimalSample CollisionSample AudioSample LocalMultiplayerSample ComponentsGallery WebWindowTests --parallel 1
 node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --sample minimal
+node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --test WebWindowTests
 ```
+
+Firefox is not in CI and these runs are not ctest entries; Chromium's
+`WebWindowTests` entry runs the same sequence wherever configure finds a
+Chromium.
 
 Record the build's source identity and each actual outcome before ticking a
 box. Old generated outputs are not evidence of the current checkout.

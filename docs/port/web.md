@@ -868,11 +868,14 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 
 **Every milestone's code has landed, the demo is live, and what is left is
 hardware and browsers.** [web-to-be-tested.md](web-to-be-tested.md) is that list as
-boxes to tick. M1 and M2 are done. M3 is met in Chrome. In Firefox only
-LineSweeper's development page has been checked, in headless Firefox 157 -
-its drawing, its keys and its way out (M3, below) - and the other five
-samples' pages and `WebWindowTests` have not, which is that list's Firefox section. M3 owes Safari and R5's pacing on
-real displays. M4's pad path has been driven by a
+boxes to tick. M1 and M2 are done. M3 is met in Chrome. In Firefox,
+LineSweeper's development page has been checked in headless Firefox 157 -
+its drawing, its keys and its way out (M3, below) - and headless Firefox 158
+has run the other five samples' pages (draw calls submitted, trusted keys,
+quit) and `WebWindowTests`' 39 steps over WebDriver BiDi, with no pixel read
+back and nothing listened to; that list's
+[Firefox section](web-to-be-tested.md#firefox-sample-checks-web4) has the
+runs. M3 owes Safari and R5's pacing on real displays. M4's pad path has been driven by a
 page script's fake pad and owes a physical one. M5 is done: the module, the
 bundle, its page and CI's upload are built here, and the owner has deployed
 the demo to <https://mattharding.dev/demo/linesweeper/>, from a bundle built
@@ -1104,16 +1107,16 @@ and the vendor and renderer names. What it met and where it departed:
   4 KB to the module and 5 KB to the loader under Brotli. The module is below
   §7.1's estimate and the loader inside it.
 
-**WEB#4 follow-up, 2026-10-26:** a separate Firefox BiDi runner now handles
-minimal, collision, audio, local_multiplayer and components, with 18 offline
-transport/control cases passing alongside Chromium's six in the existing
-`BrowserProtocolTests` entry. The
-[current method and remaining checks](web-to-be-tested.md#firefox-sample-checks-web4)
-keep actual current-page runs and WebWindow's input/CSS parity open. This is
-runner verification, not a new Firefox rendering, listening or device result.
-Fresh minimal-page linking subsequently hit a denied JS replacement, leaving
-mixed-date outputs; the same owner records that access gate and the absence
-of a Firefox launch.
+**WEB#4 follow-up, 2026-10-28:** a separate Firefox BiDi runner now handles
+minimal, collision, audio, local_multiplayer and components, and
+`WebWindowTests`' input sequence, with its offline transport, control and
+input-translation cases in the existing `BrowserProtocolTests` entry. The
+[method and results](web-to-be-tested.md#firefox-sample-checks-web4) own
+what the runs prove. The offline cases are runner verification, not a Firefox
+rendering, listening or device result. On 2026-10-28 all five pages, built at
+commit `0fcf3a7`, passed that runner in headless Firefox 158.0.1, and so did
+`WebWindowTests`' 39 steps, with BiDi's own input in place of the DevTools
+protocol's. Touch cancellation is the one step BiDi cannot send.
 
 **M6's first item is done: `RenderPixelTests` runs in headless Chrome
 against the same golden set, and on this machine it is byte-identical to
@@ -1254,8 +1257,10 @@ frames. Arrow keys did not scroll the page. A `WEBGL_lose_context` loss and
 restore came back drawing. A resize of the CSS box changed the drawing
 buffer, and unlike LineSweeper this sample also re-laid out both panes,
 because it rebuilds its views every tick. Escape reached `Module.onQuit`.
-Firefox and Safari have not been checked for this sample. Neither has a
-physical pad, for the same reason M4 is open.
+Headless Firefox has driven this page through the
+[BiDi runner](web-to-be-tested.md#firefox-sample-checks-web4) (draw calls,
+keys, quit; no pixels looked at). Safari has not been checked for this
+sample. Neither has a physical pad, for the same reason M4 is open.
 
 **M7b's texture item is done: a context without S3TC decodes the blocks on
 the CPU instead of refusing them.** `engine/render/block_decode.h` turns BC1,
@@ -1347,8 +1352,9 @@ paused; a pitch of +1 moving it to 440 Hz; a pan of -1 lowering the level by
 the square root of two; a non-immediate stop letting the pass finish about
 0.7 s later and the state then reading stopped; a paused chime resuming on the
 note it was paused in, at half rate; a one-shot audible after the gesture; and
-the context suspended and resumed with the device. Nobody has listened to it,
-and Firefox, Safari and a phone have not run it.
+the context suspended and resumed with the device. Nobody has listened to it.
+Firefox has run it only under the audio sample's page, where nothing measured
+its output (below), and Safari and a phone have not run it.
 
 **`samples/audio` is the third sample in a browser**, on `audio/webaudio/`,
 and it needed no engine change either. It has a `main_web.cpp` and a
@@ -1371,8 +1377,10 @@ the gesture that allows sound is not spent on it. Both one-shots peaked, the
 drone sounded while playing and was silent while paused and after S, and the
 screen read playing, paused and stopped in turn. Escape reached
 `Module.onQuit`. The console logged nothing but the scratch server's missing
-favicon. Nobody has listened to it, and
-Firefox, Safari and a phone have not run it.
+favicon. Nobody has listened to it. Headless Firefox has driven the page
+through the [BiDi runner](web-to-be-tested.md#firefox-sample-checks-web4)
+(draw calls, keys, quit; no pixels, no listening), and Safari and a phone
+have not run it.
 
 **M7a's code has landed: touch is the third fed device, and no glass has
 touched it.** `input/touch.h` holds up to ten points, each with an engine id
@@ -1457,9 +1465,9 @@ is hidden and the event is dispatched. The browser lookup moved to the root
 `CMakeLists.txt`, because this page is built in `tests/app` and under the null
 render backend too, where the render pages are not. Breaking the wheel's
 focus rule, reporting a size after the tick and dropping a touch's
-`preventDefault` each failed it, at the step that names the rule. It runs in
-Chrome only; Firefox, which speaks WebDriver BiDi rather than CDP, has not
-run it.
+`preventDefault` each failed it, at the step that names the rule. Under ctest it
+runs in Chrome only; Firefox, which speaks WebDriver BiDi rather than CDP,
+runs the same sequence by hand (the WEB#4 follow-up above).
 
 **`collision` runs in a browser too**, so every sample now has a browser
 build. It has a `main_web.cpp` and a development page in the shape of the
@@ -1476,8 +1484,9 @@ and `wasm-release`, and the frames were looked at. The collision player
 walked through the zero-mask rectangle, stopped at the solid wall, and went
 around it into the trigger, which counted one entry and turned the player
 green. Escape reached `Module.onQuit`. The only console error was the scratch
-server's missing favicon. Firefox, Safari and a pad have not been tried on
-it.
+server's missing favicon. Headless Firefox has driven the page through the
+[BiDi runner](web-to-be-tested.md#firefox-sample-checks-web4) (draw calls,
+keys, quit; no pixels looked at). Safari and a pad have not been tried on it.
 
 **Each sample's page is a ctest entry**, because until then nothing loaded
 what a browser build ships, and a content path the module could not find

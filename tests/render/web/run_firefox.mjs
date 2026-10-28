@@ -1,14 +1,21 @@
-// Five development sample pages in Firefox BiDi, separate from Chromium's
-// runner and from WebWindowTests' unported input/emulation assertions.
-// No geckodriver, browser preferences, shared profile or GPU/security flags.
+// Five development sample pages, and WebWindowTests' page, in Firefox over
+// WebDriver BiDi, separate from Chromium's runner (run_page.mjs). No
+// geckodriver, browser preferences, shared profile or GPU/security flags.
 //
 // node tests/render/web/run_firefox.mjs --browser <firefox.exe>
 //   --build-dir out/build/wasm-release --sample minimal [--timeout 60] [--frames 60]
+// node tests/render/web/run_firefox.mjs --browser <firefox.exe>
+//   --build-dir out/build/wasm-release --test WebWindowTests [--timeout 60]
+//
+// --test WebWindowTests runs tests/app/web/window_input.mjs's sequence against
+// tests/app/web/window_page.cpp's page with window_input below: the same
+// steps and expected logs Chromium's run has, through BiDi's trusted input.
 //
 // Protocol/bootstrap sources (Mozilla's current WebDriver documentation):
 // https://developer.mozilla.org/en-US/docs/Web/WebDriver/How_to/Create_BiDi_connection
 // https://developer.mozilla.org/en-US/docs/Web/WebDriver/Reference/BiDi/Modules/session/new
 // https://developer.mozilla.org/en-US/docs/Web/WebDriver/Reference/BiDi/Modules/input/performActions
+// https://w3c.github.io/webdriver-bidi/#command-browsingContext-setViewport
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
@@ -16,6 +23,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { drive_window } from '../../app/web/window_input.mjs';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
 
 export const SAMPLES = Object.freeze({
@@ -31,7 +39,7 @@ const KEY_VALUES = Object.freeze({ Escape: '\uE00C', Enter: '\uE007', KeyS: 's',
 
 export function parse_options(arguments_) {
 	const options = {};
-	const allowed = new Set(['browser', 'build-dir', 'sample', 'timeout', 'frames']);
+	const allowed = new Set(['browser', 'build-dir', 'sample', 'test', 'timeout', 'frames']);
 	for (let index = 0; index < arguments_.length; index += 2) {
 		const name = arguments_[index].replace(/^--/, '');
 		if (!arguments_[index].startsWith('--') || !allowed.has(name) ||
@@ -40,8 +48,11 @@ export function parse_options(arguments_) {
 		}
 		options[name] = arguments_[index + 1];
 	}
-	if (!options.browser || !options['build-dir'] || !Object.hasOwn(SAMPLES, options.sample ?? '')) {
-		throw new Error('--browser, --build-dir and --sample (minimal/collision/audio/local_multiplayer/components) are required.');
+	const page_named = options.test === undefined ? Object.hasOwn(SAMPLES, options.sample ?? '') :
+		options.test === 'WebWindowTests' && options.sample === undefined && options.frames === undefined;
+	if (!options.browser || !options['build-dir'] || !page_named) {
+		throw new Error('--browser, --build-dir and either --sample (minimal/collision/audio/local_multiplayer/components) ' +
+			'or --test WebWindowTests (without --frames) are required.');
 	}
 	options.timeout_ms = Number(options.timeout ?? 60) * 1000;
 	options.frames = Number(options.frames ?? 60);
@@ -200,10 +211,165 @@ export async function drive_sample(protocol, context, url, sample,
 	}
 }
 
-function artifact_files(build_directory, sample_name) {
-	const sample = SAMPLES[sample_name];
-	const directory = resolve(build_directory, 'samples', sample_name);
-	return ['html', 'js', 'wasm'].map((extension) => join(directory, `${sample.target}.${extension}`));
+// WebWindowTests' input over BiDi, in the shape window_input.mjs documents.
+// The mouse, the wheel, each finger and the keyboard are input sources of
+// input.performActions, whose state - a held button, a finger down - lasts
+// between calls until it is released, as a DevTools session's does.
+const WINDOW_KEYS = Object.freeze({ ArrowLeft: '\uE012', Space: ' ', KeyA: 'a', Tab: '\uE004' });
+const CONTROL_KEY = '\uE009';
+
+export function window_input(protocol, context) {
+	const perform = (actions) => protocol.send('input.performActions', { context, actions });
+	const mouse = (actions) => perform([{ type: 'pointer', id: 'mouse',
+		parameters: { pointerType: 'mouse' }, actions }]);
+	const finger = (id, actions) => ({ type: 'pointer', id: `finger${id}`,
+		parameters: { pointerType: 'touch' }, actions });
+	const fingers = new Set();
+	// One finger per tick. Firefox 158 makes one touchmove naming every
+	// finger that moved in a tick but a pointermove for only the first of
+	// them, and the window listens to pointer events.
+	const staggered = (id, index, action) => finger(id,
+		[...Array.from({ length: index }, () => ({ type: 'pause', duration: 0 })), action]);
+	const key = (name, { control = false } = {}) => {
+		if (!Object.hasOwn(WINDOW_KEYS, name)) throw new Error(`Unsupported window key ${name}.`);
+		const value = WINDOW_KEYS[name];
+		const pressed = [{ type: 'keyDown', value }, { type: 'keyUp', value }];
+		return perform([{ type: 'key', id: 'keyboard', actions: control ?
+			[{ type: 'keyDown', value: CONTROL_KEY }, ...pressed, { type: 'keyUp', value: CONTROL_KEY }] : pressed }]);
+	};
+	const touch = (type, points) => {
+		let sources;
+		if (type === 'touchStart') {
+			sources = points.filter(([, , id]) => !fingers.has(id)).map(([x, y, id]) => {
+				fingers.add(id);
+				return finger(id, [{ type: 'pointerMove', x, y }, { type: 'pointerDown', button: 0 }]);
+			});
+		} else if (type === 'touchMove') {
+			sources = points.map(([x, y, id], index) => {
+				if (!fingers.has(id)) throw new Error(`touchMove of finger ${id}, which is not down.`);
+				return staggered(id, index, { type: 'pointerMove', x, y });
+			});
+		} else if (type === 'touchEnd') {
+			const lifting = points.length > 0 ? points.map(([, , id]) => id) : [...fingers];
+			sources = lifting.map((id, index) => {
+				if (!fingers.delete(id)) throw new Error(`touchEnd of finger ${id}, which is not down.`);
+				return staggered(id, index, { type: 'pointerUp', button: 0 });
+			});
+		} else {
+			throw new Error(`WebDriver BiDi has no ${type}.`);
+		}
+		return perform(sources);
+	};
+	return {
+		// BiDi holds Control by pressing it as a key, and has no action that
+		// makes the browser cancel a pointer.
+		presses_modifiers: true,
+		cancels_touch: false,
+		// Firefox puts a synthesised touch on the nearest device pixel of its
+		// window, whose scale includes the desktop's text scaling rather than
+		// the ratio the page was given, and a touch's pointer event keeps the
+		// fraction that leaves: within half a pixel, which can floor to the
+		// next one. A mouse event's position is whole and needs no slack.
+		touch_slack: 1,
+		// drive_window_page has already activated the tab, which makes it the
+		// focused one, and set its ratio before the page measured anything.
+		prepare: async () => {},
+		move: (at) => mouse([{ type: 'pointerMove', x: at.x, y: at.y }]),
+		press: (at) => mouse([{ type: 'pointerMove', x: at.x, y: at.y }, { type: 'pointerDown', button: 0 }]),
+		release: (at) => mouse([{ type: 'pointerMove', x: at.x, y: at.y }, { type: 'pointerUp', button: 0 }]),
+		wheel: (at, delta_x, delta_y) => perform([{ type: 'wheel', id: 'wheel',
+			actions: [{ type: 'scroll', x: at.x, y: at.y, deltaX: delta_x, deltaY: delta_y }] }]),
+		key,
+		device_pixel_ratio: (ratio) => protocol.send('browsingContext.setViewport',
+			{ context, devicePixelRatio: ratio ?? 1 }),
+		touch_begin: async () => {},
+		touch,
+		touch_end: async () => {},
+	};
+}
+
+// Executed by script.addPreloadScript before the shell's own script. The
+// shell settles window.labradorExit only when the page fails
+// (tests/app/web/shell.html); the settled value is kept where an evaluation
+// can read it.
+export const WINDOW_HOOK = `() => {
+	const heard = { exit: null };
+	window.labradorFirefoxWindow = heard;
+	let exit;
+	Object.defineProperty(window, 'labradorExit', {
+		configurable: true, enumerable: true,
+		get() { return exit; },
+		set(value) {
+			exit = value;
+			Promise.resolve(value).then((settled) => { heard.exit = JSON.stringify(settled ?? null); },
+				(error) => { heard.exit = JSON.stringify({ abort: String(error) }); });
+		},
+	});
+}`;
+
+// Exported for offline control fixtures; `drive` is window_input.mjs's
+// drive_window in a real run. A page that ends, a warning or error the tab
+// logs, or a destroyed context fails the run while the sequence goes on.
+export async function drive_window_page(protocol, context, url, drive,
+	{ timeout_ms = 60000, pause = wait, log = console.log } = {}) {
+	const deadline = Date.now() + timeout_ms;
+	const remaining = () => {
+		const duration = deadline - Date.now();
+		if (duration <= 0) throw new Error('Firefox page deadline expired.');
+		return Math.min(duration, 10000);
+	};
+	const complaints = [];
+	const unsubscribe = protocol.on((message) => {
+		if (message.method === 'log.entryAdded') {
+			const entry = message.params;
+			log(`Firefox ${entry.level}: ${entry.text ?? '(no text)'}`);
+			if (entry.level === 'warn' || entry.level === 'error') complaints.push(`${entry.level}: ${entry.text}`);
+		} else if (message.method === 'browsingContext.contextDestroyed' && message.params.context === context) {
+			protocol.fail('the tested Firefox context was destroyed');
+		}
+	});
+	const evaluate = (expression, { user_gesture = false } = {}) =>
+		protocol.evaluate(context, expression, remaining(), { user_activation: user_gesture });
+	const healthy = async () => {
+		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
+		const exit = await evaluate('window.labradorFirefoxWindow?.exit ?? null');
+		if (exit !== null) throw new Error(`The page ended before its input sequence did: ${exit}`);
+		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
+	};
+	let stopped = false;
+	try {
+		await protocol.send('session.subscribe', { events: ['log.entryAdded', 'browsingContext.contextDestroyed'], contexts: [context] });
+		await protocol.send('script.addPreloadScript', { functionDeclaration: WINDOW_HOOK, contexts: [context] });
+		await protocol.send('browsingContext.activate', { context });
+		// Headless Firefox takes its device pixel ratio from the desktop's
+		// scale, which need not be one.
+		await protocol.send('browsingContext.setViewport', { context, devicePixelRatio: 1 });
+		await protocol.send('browsingContext.navigate', { context, url, wait: 'complete' });
+		const watched = (async () => {
+			while (!stopped) {
+				await healthy();
+				await pause(100);
+			}
+		})();
+		watched.catch(() => {});
+		try {
+			await Promise.race([drive({ evaluate, wait: pause }, window_input(protocol, context)), watched]);
+		} finally {
+			stopped = true;
+		}
+		await protocol.send('input.releaseActions', { context });
+		await healthy();
+	} finally {
+		stopped = true;
+		unsubscribe();
+	}
+}
+
+function artifact_files(options) {
+	const [directory, target] = options.test !== undefined ?
+		[resolve(options['build-dir'], 'tests', 'app'), options.test] :
+		[resolve(options['build-dir'], 'samples', options.sample), SAMPLES[options.sample].target];
+	return ['html', 'js', 'wasm'].map((extension) => join(directory, `${target}.${extension}`));
 }
 
 async function serve(files) {
@@ -294,7 +460,7 @@ async function exited(child, milliseconds) {
 }
 
 export async function main(options) {
-	const files = artifact_files(options['build-dir'], options.sample);
+	const files = artifact_files(options);
 	// These reads occur only on an explicit CLI run, never on module import.
 	// Any denied artifact read stops before launching; there is no alternate path.
 	for (const file of files) {
@@ -323,10 +489,14 @@ export async function main(options) {
 		console.log(`Firefox session ${session.sessionId}: ${JSON.stringify(session.capabilities)}`);
 		const { context } = await protocol.send('browsingContext.create', { type: 'tab', background: false });
 		if (typeof context !== 'string') throw new Error('Firefox created no browsing context.');
-		await bounded(Promise.race([service.failed,
-			drive_sample(protocol, context, service.url, SAMPLES[options.sample], options)]),
-		options.timeout_ms, 'Firefox sample timed out.', () => protocol.fail('Firefox sample deadline expired'));
-		console.log(`Firefox ${options.sample}: page protocol passed. No WebWindow, listening or physical-device acceptance.`);
+		const driven = options.test !== undefined ?
+			drive_window_page(protocol, context, service.url, drive_window, options) :
+			drive_sample(protocol, context, service.url, SAMPLES[options.sample], options);
+		await bounded(Promise.race([service.failed, driven]),
+			options.timeout_ms, 'Firefox page timed out.', () => protocol.fail('Firefox page deadline expired'));
+		console.log(options.test !== undefined ?
+			'Firefox WebWindowTests: input sequence passed. No real visibility change, touch cancellation or physical-device acceptance.' :
+			`Firefox ${options.sample}: page protocol passed. No WebWindow, listening or physical-device acceptance.`);
 	} catch (error) {
 		failure = error;
 	} finally {

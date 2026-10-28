@@ -53,7 +53,9 @@ endif()
 # protocol and says what each must have produced. The render tests' runner
 # runs it, with --input, and the same rule holds as for their pages: absent
 # rather than skipped where configure found no Chromium (the root
-# CMakeLists).
+# CMakeLists). The same sequence runs in Firefox, over WebDriver BiDi, by
+# hand and not as an entry: tests/render/web/run_firefox.mjs --test
+# WebWindowTests.
 #
 # Not built against any one render backend: a window draws nothing.
 if(EMSCRIPTEN)

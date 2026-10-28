@@ -14,11 +14,12 @@
 // THE WEB WINDOW, DRIVEN BY A BROWSER. The page half of WebWindowTests: it
 // takes the page's canvas with a real labrador::Window and writes down, in
 // order, every call that window makes into its WindowNotify. It asserts
-// nothing. The runner (tests/render/web/run_page.mjs) dispatches real input
-// at the page over the DevTools protocol, and window_input.mjs beside this
-// file says what each input must have produced - so the input and what it
-// means are read side by side, in one file, rather than split between a
-// script that presses keys and a module that guesses when they arrived.
+// nothing. A runner dispatches real input at the page: in Chromium,
+// tests/render/web/run_page.mjs over the DevTools protocol, and in Firefox,
+// tests/render/web/run_firefox.mjs over WebDriver BiDi. window_input.mjs
+// beside this file says what each input must have produced - so the input and
+// what it means are read side by side, in one file, rather than split between
+// a script that presses keys and a module that guesses when they arrived.
 //
 // It is the browser's counterpart to window_tests.cpp, which drives a hidden
 // Win32 window through its message procedure. AppTests under Node reaches the
