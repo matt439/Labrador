@@ -16,24 +16,15 @@ namespace linesweeper
 {
 	namespace
 	{
-		// Asset names, spelt once and resolved to handles once (T7, T8).
-		//
-		// ONE WHITE TEXEL IS THE WHOLE ATLAS. Every block, every panel and
-		// every rule on this screen is that one texture with a tint on it,
-		// because a solid rectangle is a sprite and this engine draws sprites
-		// - there is no draw_rect on the seam and there should not be one. It
-		// is 132 bytes on disk, which is what keeps README's "this sample's
-		// content is a font and a JSON file" nearly true and well clear of the
-		// megabytes that would be the signal to move the samples out.
+		// Asset names resolve once (T7, T8). Solid rectangles use the white
+		// texture with a tint; text uses the font's atlas through the same seam.
 		const std::string block_texture_name = "white";
 		const std::string font_name = "jetbrains_mono_bold_16";
 
 		// The layout, in board space: the 1280x720 main.cpp asks for, which the
 		// camera fits to whatever buffer there is (arrangement.h).
-		// Constants next to the one thing they configure, which is this file
-		// (CONVENTIONS, Constants) - except for the well itself, which moved
-		// to presentation/layout.h the day particles.cpp needed to know where
-		// column three is. Everything below configures only this file.
+		// Shared well coordinates live in layout.h so blocks and particle births
+		// agree. Panel-specific dimensions stay here (CONVENTIONS, Constants).
 		constexpr float frame_thickness = 3.0f;
 
 		constexpr float preview_cell_size = 18.0f;
@@ -44,32 +35,23 @@ namespace linesweeper
 
 		constexpr float hud_line_height = 26.0f;
 
-		// Vector2F's constructor is not constexpr, so these are dynamically
-		// initialised - which is safe here and worth saying why: each depends
-		// on two float literals and on nothing in another translation unit, so
-		// there is no initialisation order to get wrong. It is also why
-		// layout.h publishes the well's origin as two floats and not as one of
-		// these: a header included by two units cannot make that promise.
+		// Vector2F construction is not constexpr. These values depend only on
+		// literals and constexpr layout fields, with no cross-unit initialization.
 		const Vector2F well_origin(well_origin_x, well_origin_y);
 		const Vector2F hold_origin(344.0f, 104.0f);
 		const Vector2F next_origin(816.0f, 104.0f);
 		const Vector2F label_offset(0.0f, -26.0f);
 		const Vector2F hud_origin(344.0f, 236.0f);
 
-		// Spelt out rather than taken from Colour's palette, which is a set of
-		// `static const` objects in another translation unit: a namespace-scope
-		// copy of one of those is a cross-unit initialisation order the
-		// standard does not fix. Inside a function it would be fine; here it
-		// is a black rectangle on some builds and not others.
-		// The well's own colour and the grid line's are palette.h's, because
-		// the shadow's contrast is measured against both.
+		// Literal colours avoid initialization dependencies on Colour's
+		// namespace-scope palette objects. palette.h owns well/grid colours
+		// because the landing-shadow contrast is checked against them.
 		constexpr Colour frame_colour(60, 66, 78);
 		constexpr Colour label_colour(150, 158, 172);
 		constexpr Colour value_colour(255, 255, 255);
 
-		// How wide the landing shadow's full-strength edge is, inside each
-		// cell. Two board pixels stay at least one on a phone's scaled-down
-		// board.
+		// Full-strength edge width in board units. Its physical pixel width
+		// follows the arrangement's camera scale.
 		constexpr float shadow_edge_width = 2.0f;
 	}
 
@@ -80,16 +62,14 @@ namespace linesweeper
 		block_(render_resources->resolve_texture(block_texture_name)),
 		font_(render_resources->resolve_sprite_font(font_name))
 	{
-		// The first frame is a real frame and is drawn before the first
-		// update(), so the strings have to be right now rather than in a tick.
+		// Populate the cache for a first draw that precedes any scene update.
 		this->update(0.0f);
 	}
 
 	void BoardView::update(float /*dt*/)
 	{
-		// The first pass writes all four whatever the numbers say, because
-		// "unchanged" and "never built" look identical from a counter that
-		// starts at zero and a match that starts at zero.
+		// Zero-valued counters need their initial strings as well as later
+		// changes; the source values alone do not distinguish an empty cache.
 		const bool first = !this->built_;
 		this->built_ = true;
 
@@ -158,8 +138,8 @@ namespace linesweeper
 			RectangleF(well_origin.x, well_origin.y, well_width, well_height),
 			well_colour);
 
-		// A grid, so an empty well still reads as ten columns. Thirty-two
-		// quads, once, rather than two hundred empty cells.
+		// Grid lines show the cell boundaries without drawing an empty-cell
+		// sprite at every position.
 		for (int column = 1; column < well_columns; ++column)
 		{
 			this->fill(draw_list,
@@ -181,14 +161,10 @@ namespace linesweeper
 
 	void BoardView::draw_stack(DrawList& draw_list) const
 	{
-		// A TOPPED-OUT MATCH DRAWS NO STACK, because the particle field has
-		// just thrown every cell of it as sparks (particles.cpp, shatter):
-		// the stack is the sparks now. A stack left standing under them makes
-		// the top-out flash - sparks crossing a bright block change its
-		// luminance far more than the same sparks crossing the dark well -
-		// and README, The bursts against WCAG 2.3.1, is the measurement.
-		// The cells are still in the World; a restart assigns an empty one,
-		// whose topped_out is zero, and the well draws as before.
+		// Top-out keeps cells in World but draws their burst over the dark
+		// well. A bright stack beneath the sparks raises their luminance
+		// changes; samples/linesweeper/README.md, The bursts against WCAG 2.3.1,
+		// records the flash check. Restart replaces World and clears this flag.
 		if (this->world_->topped_out != 0)
 		{
 			return;
@@ -360,8 +336,8 @@ namespace linesweeper
 		draw_list.draw_text(this->font_, L"NEXT", next_origin + label_offset,
 			label_colour, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 
-		// The queue always holds at least nine, so five is never a read past
-		// what has been dealt (tick.cpp, refill_queue).
+		// take_next refills before consuming a piece, leaving enough dealt
+		// entries for this preview once play starts (rules/tick.cpp).
 		for (int index = 0; index < next_shown; ++index)
 		{
 			const int slot =

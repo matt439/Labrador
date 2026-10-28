@@ -37,14 +37,8 @@ namespace linesweeper
 		const wchar_t* const pad_hint_text =
 			L"pad        d-pad moves   A B rotate   Y drops       X holds";
 
-		// The bindings, and the whole of the input layer.
-		//
-		// A table of pairs rather than a chain of ifs, because it is data and
-		// reads as data - and it is in this file because bindings and any
-		// rebinding are the game's (PHILOSOPHY, The boundary; T1), not the
-		// engine's. Key positions, not characters: Key::z is
-		// the key a US layout calls Z whatever a French one prints on it,
-		// which is what a movement binding wants (keyboard.h).
+		// Game-owned bindings (T1). Key::z names the physical position a US
+		// layout calls Z, independent of the character another layout prints.
 		struct Binding
 		{
 			Key key;
@@ -63,20 +57,10 @@ namespace linesweeper
 			{ Key::shift, button_hold },
 		};
 
-		// The pad's half, and TWO TABLES RATHER THAN ONE ROW PER ACTION.
-		//
-		// The obvious shape is a single row naming both devices, and it does
-		// not fit: `up` and `x` both rotate clockwise and `c` and `shift` both
-		// hold, so a combined row would need a "no button on this device"
-		// enumerator - and GamepadButton has none, deliberately (gamepad.h).
-		// Adding one to an engine header so a sample's table lines up is the
-		// tail wagging the dog. Two tables cost a loop each, ask the engine
-		// for nothing, and a third device would be a third table rather than
-		// an edit to every row above.
-		//
-		// The d-pad and not the stick, because tick() takes a byte of held
-		// buttons: an axis would need a threshold here to become one, on top
-		// of the repeat rate the rules already own (tables.h).
+		// Separate device tables allow several bindings per action without a
+		// sentinel for missing keys or pad buttons. Gameplay reads the d-pad:
+		// tick() takes held button bits and owns their repeat timing. The menu
+		// separately accepts the stick through pad_direction().
 		struct PadBinding
 		{
 			GamepadButton pad;
@@ -95,12 +79,8 @@ namespace linesweeper
 			{ GamepadButton::left_shoulder, button_hold },
 		};
 
-		// The glass's half: the third table, and the third device the pad's
-		// pricing said would cost a table and a loop rather than an edit to
-		// the first two (README, Still open). The controls are named for what
-		// they are on the screen because presentation/ cannot see these bits
-		// (touch_controls.h), and pause has no row because it is not an input
-		// to tick() - update() reads it as an edge, as it reads Escape.
+		// Translate presentation's named touch controls into rules bits here.
+		// Pause has no rules bit: update() handles its press as state policy.
 		struct ControlBinding
 		{
 			Control control;
@@ -130,8 +110,7 @@ namespace linesweeper
 	{
 		RenderResources* resources = this->app_->render_resources();
 
-		// One view, so no thread pool and no partitioner - the scene's fan-out
-		// is over views, and a fan-out over one is a fan-out over nothing.
+		// One view needs neither a draw worker pool nor a partitioner.
 		this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 
 		// The board reads the World this state owns. It never writes one, and
@@ -139,27 +118,16 @@ namespace linesweeper
 		this->board_ = this->scene_->add(std::make_unique<BoardView>(
 			&this->world_, resources, &this->palette_));
 
-		// AFTER THE BOARD, AND THAT IS THE WHOLE DEPTH SYSTEM. Every draw in
-		// this sample is at layer_depth 0, so the order the scene was filled
-		// in is the order the quads are submitted in and sparks are drawn over
-		// the stack they came out of.
-		//
-		// It is handed the same const World* the board holds, and a pointer
-		// to what the latest tick() returned. The state never tells it a line
-		// was cleared: it works that out by keeping last frame's match and
-		// comparing, which is a thing only a 276-byte trivially copyable
-		// value makes cheap enough to do every frame - and the second pointer
-		// is the one fact that comparison cannot recover, the piece as it
-		// locked (particles.h). The third is the shell's step, which carries
-		// the sparks on between steps on a display faster than one.
+		// Register after the board so sparks draw over its cells. The field
+		// compares successive Worlds to find events and reads last_tick_ for
+		// the locked piece that compaction can hide. StepPosition supports
+		// const extrapolation between updates, including suspension detection.
 		this->particles_ = this->scene_->add(std::make_unique<ParticleField>(
 			&this->world_, &this->last_tick_,
 			resources->resolve_texture(block_texture_name),
 			&this->app_->step_position(), this->motion_, &this->palette_));
 
-		// LAST, AND OVER THE SPARKS. The top-out banner appears on the exact
-		// frame the field throws its largest burst, so the one screen a player
-		// has to read is the one the effect would bury.
+		// The top-out message must draw over the burst on its first frame.
 		this->banner_ = this->scene_->add(
 			std::make_unique<TopOutBanner>(&this->world_, resources));
 
@@ -180,14 +148,11 @@ namespace linesweeper
 			Vector2F(344.0f, landscape_height - 36.0f), resources,
 			Colour::dark_gray));
 
-		// LAST, over everything, because a button under a spark is a button
-		// a thumb cannot find. Hidden until a finger touches the screen.
+		// Touch controls draw over the other objects once a finger is seen.
 		this->controls_ = this->scene_->add(
 			std::make_unique<TouchControls>(resources));
 
-		// Adds are pending until a tick ends, and the frame drawn before the
-		// first update() is a real frame - so whoever fills a scene ends its
-		// first tick by hand.
+		// Commit pending objects before any draw, including one before update().
 		this->scene_->end_tick();
 
 		this->arrange_screen();
@@ -209,9 +174,8 @@ namespace linesweeper
 
 	void PlayState::show_hints()
 	{
-		// The hints name keys, so they go when the screen has none - and in
-		// portrait, where the line is wider than the board block the camera
-		// frames and would run off the side.
+		// Hide key hints after the first touch and in portrait, where these
+		// landscape lines extend outside the framed board.
 		const bool hints = !this->touch_seen_ &&
 			this->arrangement_.orientation == Orientation::landscape;
 
@@ -233,19 +197,9 @@ namespace linesweeper
 			this->arrangement_.camera);
 	}
 
-	// held(), NEVER pressed(), and the choice is not arbitrary.
-	//
-	// The engine's Keyboard computes edges of its own - down now, up last
-	// frame - and using them here would work exactly once. It would also move
-	// the edge out of the recording: tick() derives every press from `input`
-	// against `previous_input`, so a replay carries its own edges and a
-	// recorded hard drop stays one hard drop. Reading edges here would make
-	// the byte handed to the simulation depend on which frames the window had
-	// the keyboard, and a match would stop being a function of its inputs.
-	//
-	// The engine's rule that a key pressed and released between two polls is
-	// not seen at all (keyboard.h) still holds, and is right: at sixty ticks a
-	// second no human produces one.
+	// Read held controls: tick() derives edges by comparing this byte with
+	// World's previous_input, so a recording includes its own press history.
+	// A key pressed and released between polls is absent from the sampled byte.
 	std::uint8_t PlayState::read_input() const
 	{
 		const Keyboard& keyboard = *this->app_->keyboard();
@@ -261,17 +215,9 @@ namespace linesweeper
 			}
 		}
 
-		// OR, AND NO connected() AROUND IT. The byte tick() gets does not say
-		// which device set a bit and must not - a player holding left on the
-		// d-pad while tapping Z on the keyboard is one input, and the
-		// recording of it is one byte either way. An empty slot reads as a
-		// neutral state rather than a stale one (gamepad.h), so this loop
-		// contributes nothing when there is no pad and needs no guard to.
-		//
-		// Slot 0, spelt here rather than tracked, because this is a
-		// one-player game. Which pad is which player is a decision the engine
-		// deliberately leaves to a game (gamepads.h), and this is the whole of
-		// this game's.
+		// OR sources into one byte: the rules do not distinguish devices.
+		// This one-player sample reads slot zero; an empty slot contributes
+		// neutral input without a separate connected() test.
 		for (const PadBinding& binding : pad_bindings)
 		{
 			if (pads.held(0, binding.pad))
@@ -297,13 +243,8 @@ namespace linesweeper
 		return input;
 	}
 
-	// PAUSING IS NOT AN INPUT TO tick(), which is the same distinction the
-	// restart below turns on. It suspends the match rather than stepping it, so
-	// it reads an edge and falls outside anything a recording would carry.
-	//
-	// Escape and Start, and not P alone: P is a letter the pause screen also
-	// accepts as a way out, and a player who opened the menu with a key expects
-	// that key to close it.
+	// Pause suspends the match rather than stepping it, so neither the menu nor
+	// its typed result belongs to the byte recorded for tick().
 	void PlayState::open_pause_menu()
 	{
 		this->context()->push<PauseChoice>(
@@ -324,9 +265,7 @@ namespace linesweeper
 				switch (choice)
 				{
 				case PauseChoice::restart:
-					// The same one line the top-out restart is, reached from a
-					// menu instead of from a key. There is no reset() here
-					// either - README, The match is one value.
+					// Assignment preserves all presentation loans into world_.
 					this->world_ = World{};
 					break;
 
@@ -348,8 +287,8 @@ namespace linesweeper
 		// below reads the touch controls where they are now.
 		this->arrange_screen();
 
-		// Before on_result runs, which is the order state_context.h fixes -
-		// so this covers RESTART's fresh World as well as RESUME's.
+		// StateContext invokes this before the result callback, so the same
+		// held-input gate also protects a World replaced by RESTART.
 		this->gate_.close_over(this->read_input());
 	}
 
@@ -374,8 +313,7 @@ namespace linesweeper
 
 		const Touch& touch = *this->app_->touch();
 
-		// THE FIRST FINGER SHOWS THE CONTROLS, and nothing before it does: a
-		// player at a keyboard never sees eight buttons over the screen.
+		// Remember the first observed finger for this state's lifetime.
 		if (!this->touch_seen_ && !touch.points().empty())
 		{
 			this->touch_seen_ = true;
@@ -427,21 +365,9 @@ namespace linesweeper
 			return;
 		}
 
-		// RESTARTING IS AN ASSIGNMENT, and this is the line README's "The
-		// match is one value" is arguing for. There is no reset(), nothing to
-		// notify, no scene to rebuild and no allocation - the board holds a
-		// pointer to this member and the pointer stays good.
-		//
-		// pressed() here where read_input() above insists on held(), and the
-		// difference is which side of the recording the edge falls on.
-		// Restarting is not an input to tick() - it replaces the value tick()
-		// runs on - so it is free to be an edge, and wants to be: a held R
-		// would restart sixty times a second.
-		//
-		// On the glass it is a tap anywhere that is not a button, which is
-		// what the banner says once a finger has been seen. Not a tap on one:
-		// a player hammering DROP as the stack reaches the top would restart
-		// the match they had not finished looking at.
+		// Restart is an edge outside the rules byte and assigns World{} in
+		// place. A touch must begin off the controls: repeated DROP taps must
+		// not also restart a match as it tops out.
 		if (this->world_.topped_out != 0 &&
 			(this->app_->keyboard()->pressed(Key::r) ||
 				this->app_->gamepads()->pressed(0, GamepadButton::start) ||
@@ -450,21 +376,11 @@ namespace linesweeper
 			this->world_ = World{};
 		}
 
-		// ONE STEP, ONE FRAME, AND dt IS NOT PASSED IN. Every duration in the
-		// rules is counted in fixed ticks, so the match is a function of its
-		// starting value and the bytes handed to tick() - which is what makes
-		// a recording replayable and what makes main.cpp's target_fps = 60
-		// load-bearing rather than decorative. dt belongs to the presentation,
-		// which is the half allowed to be smooth.
-		//
-		// A frame that took too long therefore runs the simulation slow rather
-		// than dropping a piece through the floor, which is the trade every
-		// fixed-step game makes and the right one for a game where a tick is
-		// a rule.
-		// Through the gate, which is a no-op on every frame but the ones
-		// after a pause menu closed with a key the match also reads. What
-		// comes back is kept for the field, which reads it on this frame's
-		// update below.
+		// One rules tick per fixed update; Application may run several updates
+		// before a rendered frame. Rules durations are tick counts, so the
+		// entry point's 60 Hz remains part of this game's timing. dt advances
+		// presentation only. The gate masks held input until released after
+		// resume; the resulting byte is sufficient for deterministic replay.
 		this->last_tick_ = tick(this->world_, this->gate_.pass(this->read_input()));
 
 		this->controls_->set(this->arrangement_,

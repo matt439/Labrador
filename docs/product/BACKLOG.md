@@ -395,7 +395,7 @@ written.
 33. L33 LineSweeper design notes and the constants rule: SRL-18, SRL-06, SRL-07
 34. L34 A per-user data directory from the engine, once a second caller asks: OCA-76
 35. L35 Enforce the sample's layers and exercise sprite-strip animation: SRL-19, SRL-20
-36. L36 Comment audits: public contracts, backend rules, implementation/build prose and sample teaching: SM-45, SM-46, SM-47, SM-48
+36. L36 Comment audits and their bounded correctness follow-up: public contracts, backend rules, implementation/build prose and sample teaching: SM-45, SM-46, SM-47, SM-48, SRL-21
 37. L37 Split independent render and cloud-tool test responsibilities: SM-49, SM-51
 38. L38 Extract Win32 input translation from window lifetime: SM-50
 39. L39 Separate website reference indexing, links and page assembly: SM-52
@@ -480,7 +480,8 @@ written.
 - [x] **[SM-45](../code-hygiene.md#sm-45-public-header-contracts-and-rationale)** Should · M · The Sole Owner-Maintainer: Audit public-header contracts and oversized rationale
 - [x] **[SM-46](../code-hygiene.md#sm-46-backend-recording-and-synchronization-comments)** Should · S · The Sole Owner-Maintainer: Audit backend recording and synchronization comments
 - [x] **[SM-47](../code-hygiene.md#sm-47-implementation-and-build-comment-archaeology)** Should · S · The Sole Owner-Maintainer: Remove stale implementation and build-comment history
-- [ ] **[SM-48](../code-hygiene.md#sm-48-sample-teaching-comments)** Could · S · The Sole Owner-Maintainer: Refresh sample teaching comments against current code
+- [x] **[SM-48](../code-hygiene.md#sm-48-sample-teaching-comments)** Could · S · The Sole Owner-Maintainer: Refresh sample teaching comments against current code
+- [ ] **[SRL-21](#srl-21)** Should · S · The Sample-Reading Learner: Make the top-out banner's culling extent enclose its drawn text
 - [ ] **[SM-49](../code-hygiene.md#sm-49-pixel-test-organisation)** Should · M · The Sole Owner-Maintainer: Separate the pixel-test harness and independent contract cases
 - [ ] **[SM-51](../code-hygiene.md#sm-51-cloud-tooling-test-organisation)** Could · S · The Sole Owner-Maintainer: Split cloud tooling tests by production module
 - [ ] **[SM-50](../code-hygiene.md#sm-50-win32-input-translation)** Should · S · The Sole Owner-Maintainer: Extract backend-private Win32 input translation
@@ -536,6 +537,29 @@ time, looping and restart policy in sample code (T1).
   and page checks plus the website checks, and review its rendered frames.
   Review is separate from the headless timing tests. No renderer change is
   needed; any later expansion of that scope follows the five-backend rule.
+
+<a id="srl-21"></a>
+### SRL-21. Enclose every banner draw in its culling extent
+
+Added 2026-10-28 from [SM-48's source audit](../code-hygiene-sample-comments.md#separate-behaviour-gap-banner-culling-extent).
+The background spans x = 500 to 780; the keyboard and touch messages extend
+beyond it. Scene culls every object, so a partial view through only protruding
+text can omit the banner. This is a bounded correction to the existing
+GameObject contract and runs with the maintenance lane; it selects no new
+presentation policy. Normal full-board or hardware failure is not claimed.
+
+**Acceptance**
+
+- Cache a conservative text envelope during update, including glyph bearings,
+  and union it with the existing panel for bounds. Include the panel's existing
+  view-pixel quantization allowance in scale-aware cull bounds. Keep strings,
+  layout, tint, draw order and the panel rectangle unchanged.
+- Native-null behavioural cases exercise partial views on both text overhangs,
+  keyboard/touch cache changes and live/top-out transitions. Bounds enclose
+  recorded geometry and normal full-board recordings preserve geometry/order.
+- Regenerate `LineSweeperCapture` on `x64-release` and review every changed
+  image as AGENTS requires. Keep that qualification explicit if GPU startup
+  remains denied; headless recordings do not replace it.
 
 <details><summary>Why each is placed here</summary>
 

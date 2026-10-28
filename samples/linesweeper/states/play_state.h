@@ -17,28 +17,22 @@
 #include <cstdint>
 #include <memory>
 
-// The falling-block sample's one live state, and the whole of the game loop.
-//
-// THIS IS ONE OF THE ONLY TWO PLACES ALLOWED TO INCLUDE BOTH engine/ AND
-// rules/, and the only one that includes rules/tick.h. The layering is that
-// rules/ knows nothing of the engine, presentation/ reads a World and draws
-// it, and states/ is where the two meet - which in practice means the three
-// tables and three loops below that turn a keyboard, a pad and the touch
-// controls into one byte. It
-// is enforced by review today and by a build check once presentation/ has
-// enough files to make one worth writing (README, Still open).
+// Game-owned input, match updates and pause policy. rules/ has no engine
+// dependency; presentation/ reads a World; states/ turns device input into
+// rules verbs. The layer rule is enforced by review. SRL-19 in
+// docs/product/BACKLOG.md tracks the standalone include check.
 namespace linesweeper
 {
 	class PlayState : public labrador::State
 	{
 	public:
-		// `motion` is how much the particle field throws (particles.h): the
-		// browser build passes what the page's reduced-motion query said.
+		// `app` is borrowed and must outlive this state; initialize it and load
+		// the sample's content before init(). `motion` selects the particle
+		// count; the browser entry supplies the system preference.
 		//
 		// `report_palette`, if given, is called with the palette the match
-		// starts in and again each time the pause menu closes on a different
-		// one. The browser build logs it to the console, which is how a page
-		// test knows the selection reached the match.
+		// starts in and when the pause menu closes on a different one,
+		// including when QUIT is chosen. The browser entry logs the report.
 		explicit PlayState(labrador::Application* app,
 			Motion motion = Motion::full,
 			void (*report_palette)(Palette) = nullptr);
@@ -58,43 +52,29 @@ namespace linesweeper
 		void on_deactivated() override;
 
 	private:
-		// Every device as one of tick.h's button masks. A method on the state
-		// rather than a class, because it is three tables and three loops over
-		// them, and the engine deliberately has no action-mapping layer to put
-		// it in (AGENTS.md, Known-absent). What that costs is measured rather
-		// than asserted - README, Still open, has the number.
+		// OR the held keyboard, slot-zero pad and touch controls into tick.h's
+		// button mask. Bindings and pause policy belong to the game (T1).
 		std::uint8_t read_input() const;
 
-		// Pushes the pause screen and acts on what it decided.
-		//
-		// The answer comes back through StateContext::push<PauseChoice>, which
-		// carries it on the stack frame rather than on either state - so
-		// neither this class nor PauseState holds a result member, and there
-		// is nothing to reset when the menu is opened a second time
-		// (state_context.h).
+		// Push a typed pause screen. StateContext delivers its result after
+		// on_resume(), when the resumed state and its input gate are ready.
 		void open_pause_menu();
 
-		// Works out the arrangement for the buffer as it is now and points
-		// the scene's one view through it (arrangement.h). Every tick, so a
-		// resize or a phone turned on its side is followed on the next frame;
-		// it is a handful of divisions.
+		// Refresh the scene's view and touch hit-test geometry from the current
+		// buffer before each play update and when the pause menu closes.
 		void arrange_screen();
 
 		// Shows the two keyboard and pad hint lines in landscape until a
 		// finger has been seen, and hides them otherwise.
 		void show_hints();
 
-		// Borrowed. The shell built every service before this existed and
-		// outlives it (PHILOSOPHY, Services and lifetimes).
+		// Borrowed application and services; see the constructor's lifetime rule.
 		labrador::Application* app_ = nullptr;
 		Motion motion_ = Motion::full;
 
-		// Which colours the pieces are drawn in. The board and the particle
-		// field borrow it const and read it every draw, including under the
-		// pause menu's scrim; the menu borrows it to write, from its update()
-		// and only while it is open. Every draw runs after update() returns,
-		// so no draw sees a write in progress (palette.h). RESTART keeps it:
-		// a palette is the player's, not the match's.
+		// Board and particles borrow the palette for const draws. The pause
+		// menu writes it during update(), before drawing, so a selection is
+		// visible under its scrim. RESTART preserves the player's selection.
 		Palette palette_ = standard_palette;
 
 		// The palette report_palette was last called with, so it is called
@@ -102,10 +82,8 @@ namespace linesweeper
 		void (*report_palette_)(Palette) = nullptr;
 		Palette reported_palette_ = standard_palette;
 
-		// The match, by value, as a member. Not a unique_ptr, not a handle,
-		// not registered with anything - 276 bytes that die when this state
-		// does, and restarting is `this->world_ = World{};` on one line of
-		// update() below.
+		// The match is a value. Both restart paths assign World{} in place,
+		// preserving the addresses borrowed by presentation objects.
 		World world_;
 
 		// What the latest tick() said, beside the World it said it about. The
@@ -120,23 +98,16 @@ namespace linesweeper
 		// this lets through replays without it.
 		ResumeGate gate_;
 
-		// The scene owns what it is given; these are the pointers add() hands
-		// back for the things the state still has something to say to. The
-		// board holds a `const World*` into the member above, which is legal
-		// because the state outlives its own scene.
+		// Scene owns its objects; the pointers here are borrowed. It is declared
+		// after their World, TickResult and palette loans, so it dies first.
 		std::unique_ptr<labrador::Scene> scene_ = nullptr;
 		BoardView* board_ = nullptr;
 
-		// One object, ten thousand particles. It reads the same World the
-		// board does and is registered after it, which is the whole of the
-		// ordering: the scene draws in the order it was given, so sparks land
-		// over the stack without a depth or a sort (particles.h).
+		// One object holds the particle field. Scene registration puts its
+		// sprites over the board without sorting by layer_depth.
 		ParticleField* particles_ = nullptr;
 
-		// Registered after the field, and that is the whole reason it is not
-		// part of the board: object order is this sample's only depth, and the
-		// words a player has to read are thrown over by the loudest burst the
-		// field owns (top_out_banner.h).
+		// Registered after the particles so the top-out message draws over them.
 		TopOutBanner* banner_ = nullptr;
 		labrador::Label* hint_ = nullptr;
 		labrador::Label* pad_hint_ = nullptr;
