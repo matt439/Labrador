@@ -278,11 +278,84 @@ it as static files and use the generated 404 page for missing routes. Running
 only the deploy command in a fresh checkout does not build the site. Once a
 release is listed, the build downloads its snapshot from GitHub; a failed
 download or verification fails the build, so nothing deploys and the previous
-deployment stays live. Cloudflare's deployment history is the rollback.
+deployment stays live. This preserves production after a failed build; recovering
+from a regression that already deployed is a separate action in the
+[preview and recovery procedure](#preview-and-recovery).
 
 These build settings live in Cloudflare's dashboard. The separate
 `.github/workflows/website.yml` continues to check, build and retain an artifact;
 Cloudflare performs production deployment.
+
+## Preview and recovery
+
+This procedure is for **labradorengine.com**, the `labrador` Worker and this
+repository's `website/dist/`. The playable LineSweeper demo on
+`mattharding.dev/demo/linesweeper/` belongs to the separate personal-site
+repository; its bundle and deployment procedure are not this site's artifact.
+
+### Review the CI artifact before merging
+
+1. Choose the successful `website` workflow run for the proposed change and
+   download its `website` artifact. The workflow retains it for **14 days**.
+   Record the run and the source revision it built. If the artifact has expired,
+   obtain a new successful build and review that artifact before merging.
+2. Use a separate review checkout with the source and configuration for that
+   run, keeping the whole repository available. Install that checkout's website
+   dependencies from its lockfile if needed. Extract the artifact separately,
+   find the directory containing its `index.html`, and place only those built
+   contents in a fresh, empty `website/dist/` in the review checkout. Use a new
+   review folder instead of overlaying an existing dist, preserving existing
+   work and build output in the working checkout.
+3. From the review checkout's `website/`, run `npm run preview` and open the
+   local URL it prints. This serves the downloaded built files. `npm run dev`
+   serves a source preview instead; running `npm run build` here would replace
+   the artifact being reviewed. Confirm the footer's source revision and
+   investigate an unexpected revision or uncommitted-changes marker. A pull
+   request artifact describes its workflow checkout, which need not be the
+   branch tip alone.
+4. Review the changed pages and representative Home, Why, Get Started and API
+   reference pages. Follow navigation, internal links and heading anchors, and
+   use search. Check light and dark themes, narrow layouts, keyboard navigation
+   and visible focus. Review changed images, video playback and download links
+   where relevant. Record the artifact/run, revision, pages and observations
+   before merging; a successful build alone does not establish these checks.
+
+Cloudflare preview builds and preview URLs remain off. The local artifact review
+is the preview before production. The GitHub workflow uploads the artifact;
+Cloudflare independently builds and deploys `master` after merging. Keep the
+identity and source revision of a known working production deployment before a
+new deployment.
+
+### Check production after deployment
+
+Check `https://labradorengine.com/` and the affected routes over HTTPS. Confirm
+the footer identifies the intended source revision, then check navigation,
+links/anchors, search, changed content and assets. Check an unknown route reaches
+the site's 404 page. Confirm canonical links and `sitemap-index.xml` name
+`labradorengine.com`; check themes, narrow layouts, keyboard/focus and media when
+the change affects them. Check `/versions/` and the version selector, including
+listed release snapshots when any are published. Record the actual production
+deployment/revision and observations; a local artifact or a successful build is
+not that live check.
+
+### Recover from an already deployed regression
+
+**The current-provider rollback steps are incomplete and unverified here.**
+The recorded recovery route is Cloudflare's deployment history for the existing
+`labrador` Worker. Identify the bad deployment and source revision, and the
+previous known working deployment and its source revision. Before using that
+route, confirm the current official rollback procedure for this Workers Static
+Assets setup, including how it restores the corresponding assets. Exact dashboard
+navigation, confirmations and Wrangler rollback arguments have not yet been
+recorded and verified; do not infer them from `npx wrangler deploy` above.
+
+The owner restores the selected known working deployment only after that provider
+procedure is confirmed. Then repeat the production checks above against the
+restored revision and record the result. An older footer is expected after a
+rollback; record which revision is intentionally live. A failed build that leaves
+the previous deployment serving requests has prevented replacement, but has not
+performed this recovery action. Keep the rollback procedure's remaining
+qualification explicit until the provider steps are verified.
 
 ## One host
 
