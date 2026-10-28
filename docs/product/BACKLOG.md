@@ -688,7 +688,17 @@ written.
   audit link, scope and qualification were inspected. All 84 ledger paths,
   source hashes and 93 local Markdown targets reconcile.
 - [x] **[SRL-22](#srl-22)** Should · S · The Outside C++ Adopter, The Sample-Reading Learner: Complete the unit and retained-loan contracts found by the source audit — after SRL-17
-- [ ] **[SRL-16](STORIES.md#srl-16)** Could · M · The Sample-Reading Learner: A guide to the C++ and engine terms the minimal sample uses — after SRL-17
+- [x] **[SRL-16](STORIES.md#srl-16)** Could · M · The Sample-Reading Learner: A guide to the C++ and engine terms the minimal sample uses — after SRL-17
+  Closed 2026-10-29. [Reading the C++ in minimal](../../website/src/content/docs/docs/concepts/reading-minimal.mdx)
+  explains all nine requested language/rendering topics through 11 live
+  SourceFile excerpts, linked from first-change and the game concept page.
+  It distinguishes ownership/loans, shallow const, capture/result/view lifetimes
+  and Windows/D3D11 terms from neutral engine interfaces. The sample was not
+  simplified or changed. Independent source review found no issues. All seven
+  standalone checks and the website's zero-diagnostic check, 160 tests and
+  145-page/435-file build pass. Nine emitted sections, 11 revision-pinned
+  source links and both editorial incoming links were inspected. No beginner
+  session, compiler, device, browser or SDK qualification is claimed.
 - [ ] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
 - [ ] **[SRL-06](STORIES.md#srl-06)** Could · S · The Sample-Reading Learner: LineSweeper's design notes give their reasons without sending me to internal records
 - [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
