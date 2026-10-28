@@ -404,8 +404,8 @@ written.
 **Stories**
 
 - [x] **[OCA-26](STORIES.md#oca-26)** Should · S · The Outside C++ Adopter: One public statement of what my page owes the engine module — after OCA-20
-- [ ] **[OCA-24](STORIES.md#oca-24)** Should · S · The Outside C++ Adopter: Troubleshoot my browser build — after OCA-20
-- [ ] **[OCA-25](STORIES.md#oca-25)** Could · XS · The Outside C++ Adopter: Know that a one-shot sound before the first gesture is dropped in a browser
+- [x] **[OCA-24](STORIES.md#oca-24)** Should · S · The Outside C++ Adopter: Troubleshoot my browser build — after OCA-20
+- [x] **[OCA-25](STORIES.md#oca-25)** Could · XS · The Outside C++ Adopter: Know that a one-shot sound before the first gesture is dropped in a browser
 - [ ] **[OCA-63](STORIES.md#oca-63)** Could · S · The Outside C++ Adopter: Know the notices my browser build must ship — after OCA-62
 - [ ] **[OCA-31](STORIES.md#oca-31)** Could · S · The Outside C++ Adopter: Check my game's page loads and quits — after OCA-20
 - [ ] **[OCA-74](STORIES.md#oca-74)** Could · S · The Outside C++ Adopter: Embed the LineSweeper bundle on my own site from a published contract — after OCA-26, OCA-23
@@ -542,8 +542,8 @@ time, looping and restart policy in sample code (T1).
 | Story | Why |
 |---|---|
 | OCA-26 | G142, G143. Closed 2026-10-28: [Build for the browser](https://labradorengine.com/docs/guides/browser/#the-page-and-what-it-owes-the-module) is the public canvas/four-callback contract, including exact names, startup versus runtime errors, frame-boundary context notifications and quit before DOM removal. `window.h`, the minimal shell and web.md section 7.3 point there. Semantics checked against the window, sample entry point and renderer; the running-canvas removal consequence is established by code inspection, not a new device observation. |
-| OCA-24 | G112: browser-build troubleshooting. Follows OCA-20 (Next). |
-| OCA-25 | G132: a one-shot sound before the first gesture is dropped, silently. |
+| OCA-24 | G112. Closed 2026-10-28: Troubleshooting publishes all five browser cases from local reproductions. The dated story's 17/27 test-count comparison is superseded by 19 without Chromium, 32 Debug and 33 Release with it; copied adopter projects have their own rules test. [Verification](../port/2026-10-28-browser-troubleshooting.md) records the actual messages, configure-only count checks and runtime failures. |
+| OCA-25 | G132. Closed 2026-10-28: the audio guide, sample README and SoundBank method contracts state dropped one-shots, waiting retained effects and the Escape exception. [Verification](../port/2026-10-28-browser-troubleshooting.md#browser-audio-before-activation) observes the running sample's source starts before and after activation: no stale one-shot replay, loop starts, fresh ping works, Escape does not unlock. This is scheduling evidence; physical listening remains WEB#3. |
 | OCA-63 | G16: the browser build's notices. Follows OCA-62 (Next). |
 | OCA-31 | G11: check a game's page loads and quits by hand. Follows OCA-20 (Next). |
 | OCA-74 | G142, G51: the LineSweeper bundle's factory contract for a host other than mattharding.dev (new; critique's unstoried list). Links OCA-26 and OCA-23 rather than repeating them. |

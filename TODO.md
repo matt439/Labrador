@@ -12,11 +12,10 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **`OCA-24` + `OCA-25` (L2): browser troubleshooting and audio unlock.**
-   Useful failure messages and the dropped-before-first-gesture rule.
-2. **`OCA-63` (L3): publish browser release notices.**
-3. **`OCA-31` (L4): check a game's page loads and quits.** Then L5 and L6
-   cover embedding the bundle and verifying it before deploy.
+1. **`OCA-63` (L3): publish browser release notices.**
+2. **`OCA-31` (L4): check a game's page loads and quits.**
+3. **`OCA-74` (L5): publish the bundle factory contract for another host.**
+   Then L6 verifies the bundle before deploy.
 
 **Available after those batches:** couch joining, working settings, pointer
 menus, text examples, strict asset keys, recording-renderer guidance and
@@ -46,8 +45,6 @@ acceptance in [STORIES.md](docs/product/STORIES.md).
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-24` | OPEN | should | S | Add browser-build troubleshooting grounded in actual errors. |
-| `OCA-25` | OPEN | could | XS | State the first-gesture rule and that earlier one-shot sounds are dropped. |
 | `OCA-63` | OPEN | could | S | Document the notices a browser release must carry. |
 | `OCA-31` | OPEN | could | S | Show an adopter how to run their own page's load-and-quit check. |
 | `OCA-74` | OPEN | could | S | Publish the LineSweeper bundle factory contract and verify another host. |

@@ -26,12 +26,24 @@ shows the current values and loop state. An active Windows audio output is
 required to hear the normal XAudio2 build; `-null` presets record calls without
 sound and label that mode on screen.
 
+## Browser audio and the first gesture
+
 The same sample builds for a browser with the `wasm-debug` and `wasm-release`
 presets, as `AudioSample.html`, and plays through Web Audio. A browser plays
-nothing until the page's first key press, click or touch; the engine waits for
-that event itself, and the key that allows sound is still read by the sample.
-The <RepoLink path="samples/audio/README.md">sample's README</RepoLink> has the
+nothing until the page receives a key press, click or touch that grants user
+activation. **Escape does not count.** The backend waits for that gesture
+itself, and the key that allows sound is still read by the sample: a first
+press of **1** plays the ping. The
+<RepoLink path="samples/audio/README.md">sample's README</RepoLink> has the
 commands to build and serve it.
+
+This also applies to your game's own sounds. A one-shot requested through
+`SoundBank::play_wave` before that gesture is **dropped** and will never play
+later. An effect instance requested through `play_effect`, including a looping
+effect, reports playing but waits to start until audio is allowed. Pausing it
+or calling `stop_effect(effect, true)` cancels its pending start. If a
+title-screen jingle must be heard, play it after the player starts the game, or use a persistent
+effect instance that can wait for the gesture.
 
 ## Declare a required bank
 
