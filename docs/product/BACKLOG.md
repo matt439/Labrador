@@ -399,7 +399,7 @@ written.
 37. L37 Split independent render and cloud-tool test responsibilities: SM-49, SM-51
 38. L38 Extract Win32 input translation from window lifetime: SM-50
 39. L39 Separate website reference indexing, links and page assembly: SM-52
-40. L40 Review backend device, pipeline and audio-transport ownership before choosing further splits: SM-53, SM-54, SM-55
+40. L40 Review backend ownership, repair confirmed exceptional paths, then take the selected pipeline cut: SM-53, SM-54, SM-55, SM-56, SM-57, SM-58
 
 **Stories**
 
@@ -486,9 +486,12 @@ written.
 - [ ] **[SM-51](../code-hygiene.md#sm-51-cloud-tooling-test-organisation)** Could · S · The Sole Owner-Maintainer: Split cloud tooling tests by production module
 - [x] **[SM-50](../code-hygiene.md#sm-50-win32-input-translation)** Should · S · The Sole Owner-Maintainer: Extract backend-private Win32 input translation
 - [x] **[SM-52](../code-hygiene.md#sm-52-website-reference-organisation)** Could · M · The Sole Owner-Maintainer: Separate reference indexing, prose linking and page assembly
-- [ ] **[SM-53](../code-hygiene.md#sm-53-vulkan-devicebuffer-ownership-review)** Could · M · The Sole Owner-Maintainer: Review Vulkan device/buffer ownership for a justified split
-- [ ] **[SM-54](../code-hygiene.md#sm-54-renderer-construction-review)** Could · M · The Sole Owner-Maintainer: Review D3D12/Vulkan pipeline construction ownership
-- [ ] **[SM-55](../code-hygiene.md#sm-55-web-audio-transport-review)** Could · S · The Sole Owner-Maintainer: Review the Web Audio transport and C++ lifetime boundary
+- [x] **[SM-53](../code-hygiene.md#sm-53-vulkan-devicebuffer-ownership-review)** Could · M · The Sole Owner-Maintainer: Review Vulkan device/buffer ownership for a justified split
+- [x] **[SM-54](../code-hygiene.md#sm-54-renderer-construction-review)** Could · M · The Sole Owner-Maintainer: Review D3D12/Vulkan pipeline construction ownership
+- [x] **[SM-55](../code-hygiene.md#sm-55-web-audio-transport-review)** Could · S · The Sole Owner-Maintainer: Review the Web Audio transport and C++ lifetime boundary
+- [ ] **[SM-56](../code-hygiene.md#sm-56-vulkan-exceptional-cleanup)** Should · S · The Sole Owner-Maintainer: Preserve Vulkan temporary ownership through publication and recovery failures
+- [ ] **[SM-57](../code-hygiene.md#sm-57-d3d12-replacement-texture-publication)** Should · S · The Sole Owner-Maintainer: Keep a replacement texture's descriptor consistent if publication fails
+- [ ] **[SM-58](../code-hygiene.md#sm-58-d3d12-sprite-pipeline-value-owner)** Could · M · The Sole Owner-Maintainer: Extract the reviewed D3D12 root-signature/PSO value owner — after SM-57
 
 <a id="srl-19"></a>
 ### SRL-19. Make LineSweeper's layer boundary a build check

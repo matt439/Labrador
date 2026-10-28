@@ -71,6 +71,9 @@ separate bounded story before implementation.
 | `SM-53` | Vulkan device/buffer ownership review | M |
 | `SM-54` | D3D12/Vulkan renderer construction review | M |
 | `SM-55` | Web Audio transport and C++ lifetime review | S |
+| `SM-56` | Vulkan exceptional cleanup at publication and recovery | S |
+| `SM-57` | D3D12 replacement texture publication | S |
+| `SM-58` | D3D12 root-signature/PSO value owner, after SM-57 | M |
 
 ## SM-45. Public-header contracts and rationale
 
@@ -299,6 +302,14 @@ preserve allocation/lifetime behavior and require the five-backend checks,
 Vulkan upload/pending-submission tests and the review's `validate_sync` run.
 The review itself makes no device-validation claim.
 
+**Closed 2026-10-28.** The [dated source review](review/vulkan/2026-10-28-device-ownership.md)
+records the device/buffer ownership graph, destruction and recovery order,
+partial-allocation cleanup and caller-held waits. Keep the existing file
+placement: moving buffer helpers would not simplify the coordinated frame and
+generation lifetime. Two independently confirmed exception paths need SM-56:
+texture-wrapper allocation outside raw-handle cleanup and read-back cleanup
+using a replacement device if recovery throws. No runtime check was run.
+
 ## SM-54. Renderer construction review
 
 Review `engine/render/d3d12/renderer.cpp` and
@@ -314,6 +325,14 @@ class's member bodies into arbitrary files or expand the public seam. A chosen
 implementation gets its own story and render-matrix, pixel, allocation,
 device-loss and synchronization checks. Preserve vendor-derived bodies.
 
+**Closed 2026-10-28.** The [construction review](review/2026-10-28-renderer-construction.md)
+selects a narrow D3D12 root-signature/PSO value owner (SM-58), with descriptors,
+index upload, waits, frames and loss callbacks retained by the renderer. Vulkan
+keeps its existing cohort. The separate confirmed vertex-shader cleanup gap is
+in SM-56; the D3D12 replacement-descriptor publication gap is SM-57. Ownership,
+partial-construction behavior and reset ordering are recorded separately from
+each implementation's device qualification. The source review ran no device.
+
 ## SM-55. Web Audio transport review
 
 `engine/audio/webaudio/audio_device.cpp` installs/bridges
@@ -328,3 +347,74 @@ must include browser audio lifecycle/unlock and observable transport behavior:
 Node AudioTests create no AudioContext and cannot prove the moved graph works.
 Native/null and Node state/handle checks still apply. Listening remains WEB#3;
 this review neither closes it nor adds a new playback feature.
+
+**Closed 2026-10-28.** The [transport review](review/2026-10-28-webaudio-transport.md)
+records context, bank, node, gesture-listener, playhead and callback ownership;
+the C++ handle/state and JS index protocol; suspension, close and failure
+boundaries. Keep the current file: the named bridge already separates the
+transport, and another translation unit adds declarations without simplifying
+lifetime. No extraction or new feature is selected. Browser graph, unlock,
+teardown and WEB#3 listening acceptance remain separate and unexecuted here.
+
+## SM-56. Vulkan exceptional cleanup
+
+The source-confirmed gaps in the [device review](review/vulkan/2026-10-28-device-ownership.md)
+and [construction review](review/2026-10-28-renderer-construction.md) justify
+three bounded fixes, separate from any file move:
+
+- Keep raw texture image/memory/view cleanup active through successful
+  `VulkanTexture` wrapper allocation, then transfer ownership exactly once.
+  Registry publication already receives unique ownership; do not double-free
+  on its insertion errors.
+- Retain the read-back buffer's original shared device generation. Cleanup
+  must use that device on success, normal recovered loss and a recovery
+  exception after a replacement device exists. Never read lost-frame pixels,
+  and preserve the original exception.
+- If pixel-shader creation throws after vertex-shader creation succeeds,
+  release the vertex module through its creating device and rethrow. Keep
+  the existing pipeline API-result cleanup ordering.
+
+**Done when:** each failure path has focused deterministic coverage of its
+ownership/cleanup ordering, ordinary texture reload/read-back behavior remains
+covered, and all five native render backends build and pass their applicable
+checks. Repeat Vulkan upload/pending-submission regressions and shell-visible
+`validate_sync` using the review's layer settings. Add a consumer-visible
+behavior entry. Source implementation may land with qualification explicitly
+open if a required operation remains stopped; that does not tick this story.
+Do not add a general owner framework, alter the renderer seam or retry stopped
+device operations as part of this scope.
+
+## SM-57. D3D12 replacement texture publication
+
+The [construction review](review/2026-10-28-renderer-construction.md#separate-confirmed-issue-d3d12-replacement-descriptor-publication)
+shows that reloading a name overwrites its shader-visible slot before the
+replacement wrapper is allocated. Allocation failure retains the old registry
+object but leaves its descriptor naming the new resource that unwinds.
+
+**Done when:** complete throwing preparation/publication before overwriting the
+existing descriptor; a failed replacement retains the old object and descriptor.
+Preserve the existing wait before shader-visible writes and descriptor-slot
+reuse/limit behavior. A deterministic allocation/publication-failure regression
+and same-name reload cases pin that ordering. Run the native render matrix,
+D3D12 pixel/resource and applicable device-loss/descriptor-lifetime checks, and
+add a behavior entry. Keep stopped device checks open rather than implying
+source inspection or a null backend exercised a D3D12 descriptor. This is not
+a general new-name allocator rollback guarantee or the SM-58 extraction.
+
+## SM-58. D3D12 sprite-pipeline value owner
+
+After SM-57, implement the [reviewed cut](review/2026-10-28-renderer-construction.md#bounded-implementation-story-to-file):
+one backend-private `SpritePipeline` value owns the root signature and PSO,
+with borrowed device/target-format inputs. Move their description and shader
+array includes together. Preserve direct member `ComPtr` assignments, partial
+construction and diagnostics; reset PSO before root at the existing place in
+the renderer's loss callback. No heap allocation or public interface is added.
+
+**Done when:** frame/view lists, heaps/slots, index upload, waits and callbacks
+remain with their coordinating owners; source enumeration and architecture/seam
+file-shape prose match the cut; descriptor/shader/diagnostic and release-order
+comparison demonstrates mechanical movement. Preserve test names and golden
+bytes, and run five-backend builds/checks, D3D12 pixel/resource, warmed
+submission-allocation and applicable resize/loss/pending-slot regressions. Keep
+vendor-derived helpers untouched. Device qualification is separate from source
+movement; actual stopped actions remain stopped.

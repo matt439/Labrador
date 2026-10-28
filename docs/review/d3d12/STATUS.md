@@ -11,6 +11,15 @@ section 6: items 1-6 and 9. Its count-only items 7 and 8 are already resolved.
 Source inspection can confirm duplication or a call site without establishing
 a performance problem, a driver failure or a need to change the implementation.
 
+The separate [2026-10-28 construction review](../2026-10-28-renderer-construction.md)
+selects the root-signature/PSO value owner as **SM-58**, preserving partial
+construction and release order. It also confirms **SM-57**: replacement wrapper
+allocation can fail after overwriting an existing texture descriptor, retaining
+the old registry object with a changed slot. [Code hygiene](../../code-hygiene.md)
+owns those implementation stories and their error-path/device qualification.
+The source review adds no runtime evidence and changes none of this ledger's
+historical section-6 dispositions.
+
 ## Section 6 adjudication, 2026-10-26
 
 | Item | Disposition | Current evidence and remaining limit |

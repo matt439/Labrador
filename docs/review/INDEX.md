@@ -28,6 +28,9 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 | [gpt6/](gpt6/README.md) | Review at `9dea4516` on 2026-09-17 | The eleven numbered findings are closed in [the resolution map below](#gpt-6-resolution-map). REV#7's bounded lifecycle observations are below; other opportunities remain in TODO.md as REV#8 to REV#10 and the low-tier record. |
 | [2026-09-26/](2026-09-26/README.md) | September 26 review, supplement and reproduction evidence | [STATUS.md](2026-09-26/STATUS.md) is live and [FIXES.md](2026-09-26/FIXES.md) records all 23 numbered resolutions. The four hardening candidates, manual limits and tooling CI follow-up remain separately tracked; see below. |
 | [colourwars-reports/](colourwars-reports/README.md) | Engine decisions on private client reports, assessed at `0c15f34` | Its README's decision table is live: all fifteen originals are answered and withdrawn from filing. Report 19's first-frame evidence is still absent; newer reports 23 and 25 remain. PI-09's approved disclosure boundary excludes private client detail. |
+| [Vulkan device ownership](vulkan/2026-10-28-device-ownership.md) | Source-only SM-53 review at `15c6979`, 2026-10-28 | [Code hygiene](../code-hygiene.md#sm-53-vulkan-devicebuffer-ownership-review) closes the keep verdict; SM-56 owns the separate texture-publication and read-back-generation fixes/qualification. |
+| [Renderer construction](2026-10-28-renderer-construction.md) | Source-only SM-54 review at `8048e24`, 2026-10-28 | [Code hygiene](../code-hygiene.md#sm-54-renderer-construction-review) closes the per-backend verdicts; SM-56/57 own confirmed exception gaps and SM-58 the selected D3D12 pipeline cut. |
+| [Web Audio transport](2026-10-28-webaudio-transport.md) | Source-only SM-55 review at `8048e24`, 2026-10-28 | [Code hygiene](../code-hygiene.md#sm-55-web-audio-transport-review) closes the keep verdict. No extraction is selected; browser graph/unlock and WEB#3 listening acceptance remain separate. |
 | INDEX.md | This map | Live. Maintain this roster when adding or retiring a review, and the tracking below when resolving an item it owns. |
 
 ## D3D12 tracking
@@ -65,6 +68,16 @@ Work index: **REV#3** in TODO.md.
   API padding. The ledger states the tested formats, dimensions and limits.
 
 ## Vulkan tracking
+
+The 2026-10-28 [device ownership](vulkan/2026-10-28-device-ownership.md) and
+[construction](2026-10-28-renderer-construction.md) source reviews add three
+confirmed exception-cleanup gaps, independent of the historical candidates:
+wrapper allocation after texture raw-handle cleanup ends, read-back cleanup
+against a replaced device when recovery throws, and a vertex module left
+without cleanup if pixel-module creation throws. **SM-56** in
+[Code hygiene](../code-hygiene.md#sm-56-vulkan-exceptional-cleanup) owns source
+fixes, deterministic error-path coverage and render/synchronization qualification.
+These source reviews ran no device or injected failure.
 
 Source: [Vulkan review](vulkan/README.md), sections 6 and 7, and its
 [all-findings.md](vulkan/all-findings.md) final candidate list. The verified
