@@ -331,8 +331,16 @@ the bucket's reviewed lifecycle policy.
 The tests create no AWS resource and make no network call:
 
 ```powershell
-python -m unittest tools.tests.test_cloud_performance
+python -m unittest discover -s tools/tests -p "test_cloud_performance_*.py"
 ```
+
+Config, Infrastructure, Release, Analysis and Dispatch each have a subject
+module under `tools/tests/`. For one subject, for example, run
+`python -m unittest tools.tests.test_cloud_performance_analysis`. Shared
+synthetic declarations live in `cloud_performance_fixtures.py`; no production
+module imports fixtures through a test. Infrastructure includes a Windows
+PowerShell worker fixture, which must be permitted before that module's full
+standalone run. A source/discovery comparison is separate from executing it.
 
 When `cfn-lint` and AWS credentials are available, also validate a rendered
 template with those tools before the first real launch. The first real
