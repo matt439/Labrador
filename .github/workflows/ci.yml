@@ -128,8 +128,11 @@ jobs:
       - name: Check that CLAUDE.md imports AGENTS.md
         run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_agent_brief.cmake
 
-      - name: Check that no engine file includes a game header
-        run: cmake "-DENGINE_DIR=${{ github.workspace }}/engine" -P cmake/check_engine_includes.cmake
+      - name: Check engine include boundaries and failing fixtures
+        run: |
+          cmake "-DENGINE_DIR=${{ github.workspace }}/engine" -P cmake/check_engine_includes.cmake
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_engine_include_fixtures.cmake
 
       - name: Check LineSweeper include layers and failing fixtures
         run: |
