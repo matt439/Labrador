@@ -36,6 +36,11 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-28.** Before uploading a browser release, gather its notices as
+  [Build for the browser](https://labradorengine.com/docs/guides/browser/#gather-the-browser-release-and-its-notices)
+  shows. The command stages the page, script, module, full licence texts and
+  build record into `out/web-release`; copies use their own game's paths and
+  add the notices for any libraries or content they introduce.
 - **2026-10-27.** Constants are snake_case: `Vector2F::zero` where the
   sources spelt `Vector2F::ZERO`. CHANGES.md lists every renamed constant.
 - **2026-10-27.** The math library is `LabradorMath` and its types live in

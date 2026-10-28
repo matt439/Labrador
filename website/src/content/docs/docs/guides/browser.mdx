@@ -202,9 +202,86 @@ greeting as the Windows build, and the same keys work. Press Ctrl+C in the promp
 server.
 
 For a page to put on a site, build `wasm-release` the same way. Its page is
-`out\build\wasm-release\game\MyGame.html`, and the three files beside each other are all you
-upload. [Put your game on a web host](/docs/guides/web-host/) says what the host must send with
+`out\build\wasm-release\game\MyGame.html`. Gather its release files and notices as below before
+uploading. [Put your game on a web host](/docs/guides/web-host/) says what the host must send with
 them.
+
+## Gather the browser release and its notices
+
+The template's build writes the page, script and module; it does not gather their notices.
+After building `wasm-release`, run this from your project's root in the same Native Tools prompt
+where you ran `emsdk_env.bat`. It uses Labrador's existing bundler and Node from Emscripten;
+there is nothing else to install.
+
+First put Microsoft's sample-code licence in your game's `web` folder, unchanged. Windows'
+`curl.exe` can fetch this fixed upstream revision:
+
+```bat
+curl.exe --fail --location https://raw.githubusercontent.com/microsoft/DirectXTK/a0a1ab67d9d8f1a41b76c0950eb37f27d6bf355d/LICENSE --output game\web\Microsoft-LICENSE.txt
+```
+
+Check that the command succeeds before continuing. Keep the file with your game and reuse it
+for later releases. This also works with the `v0.2.0` engine pin from Get Started; newer engine
+trees carry the same file at `tools/web_bundle/Microsoft-LICENSE.txt`, which you can copy instead.
+
+**The bundler empties `out\web-release` first.** Keep that folder for generated release files
+only; do not point `--out` at your project, source or build folder.
+
+```bat
+set "engine=external\labrador"
+set "emscripten=%EMSDK%\upstream\emscripten"
+"%EMSDK_NODE%" "%engine%\tools\web_bundle\bundle.mjs" ^
+  --out out\web-release ^
+  --repository . ^
+  --emscripten "%emscripten%" ^
+  --build-type Release ^
+  --file "MyGame.html=out\build\wasm-release\game\MyGame.html" ^
+  --file "MyGame.js=out\build\wasm-release\game\MyGame.js" ^
+  --file "MyGame.wasm=out\build\wasm-release\game\MyGame.wasm" ^
+  --notice "%engine%\NOTICE" ^
+  --licence "Labrador=%engine%\LICENSE" ^
+  --licence "Microsoft sample code=game\web\Microsoft-LICENSE.txt" ^
+  --licence "RapidJSON=%engine%\external\rapidjson\license.txt" ^
+  --licence "JetBrains Mono=game\content\fonts\OFL.txt" ^
+  --licence "Emscripten=%emscripten%\LICENSE" ^
+  --licence "libc++=%emscripten%\system\lib\libcxx\LICENSE.TXT" ^
+  --licence "libc++abi=%emscripten%\system\lib\libcxxabi\LICENSE.TXT" ^
+  --licence "libunwind=%emscripten%\system\lib\libunwind\LICENSE.TXT" ^
+  --licence "compiler-rt=%emscripten%\system\lib\compiler-rt\LICENSE.TXT" ^
+  --licence "musl=%emscripten%\system\lib\libc\musl\COPYRIGHT"
+```
+
+Upload all five files in `out\web-release`: `MyGame.html`, `MyGame.js`, `MyGame.wasm`,
+`NOTICE.txt` and `BUILD.json`. Keep a link to `NOTICE.txt` on your hosting page so players can
+read it. The notices cover the template's default WebGL2/Web Audio build:
+
+| Component | Where the notice comes from |
+| --- | --- |
+| Labrador, Microsoft's shared timer code and the collision routines adapted from *Real-Time Collision Detection* | The engine's `NOTICE` attribution record, its MIT `LICENSE`, and the preserved Microsoft MIT text |
+| RapidJSON | The vendored `license.txt` |
+| The template's JetBrains Mono atlas | The game's `content/fonts/OFL.txt`, in full even though it is also embedded with the atlas |
+| Emscripten's JavaScript runtime and system libraries | `LICENSE` in the same Emscripten install that built the module |
+| libc++, libc++abi, libunwind and compiler-rt | Their licence texts in that install's `system/lib`, including the LLVM Exceptions |
+| The musl-derived C library and dlmalloc | musl's `COPYRIGHT`; the engine's `NOTICE` also records dlmalloc's public-domain dedication |
+
+The generated `NOTICE.txt` starts with Labrador's third-party record and appends the full licence
+texts. Identical texts are written once, with each later component pointing to the first.
+`BUILD.json` records the project's Git commit and tracked dirty state, the supplied build type,
+the installed Emscripten version, and the files' sizes and hashes. A failed Git lookup is
+recorded as `unknown`; it still packages. Run this immediately after the release build:
+the record describes the checkout when packaging, and does not prove which
+sources or flags an older module used.
+
+Windows DLLs, DirectXTK, DirectXMath, XAudio2Redist and the MSVC runtime are absent from this
+browser release. The rules-test framework, doctest, is used only by the test program, and
+lodepng only by the engine's render tests. Neither test program is in the folder you upload.
+
+Your game's own code and content have their own terms. Add a `--licence "Your game=LICENSE"`
+argument if you have a licence file to include, and add the notices of any libraries or content
+you introduce. If you replace the font, change its licence argument too. If you change the
+allocator or toolchain, recheck its notice inputs against that build. Read the licence texts
+for their terms; the command assembles the template's inputs and does not choose your game's
+licence. Rebuild and rerun it when the engine pin, toolchain or content changes.
 
 ## What has and has not been checked
 
@@ -214,6 +291,11 @@ the project from Get Started configured with it, built under both presets, its t
 which drew the greeting, took Escape and Enter, and quit with nothing in the console. Installing
 Python first, on a machine or account without it, has not been followed. CI's `wasm-consumer` job builds that
 project's `wasm-release` page and loads it the same way on every pull request to Labrador.
+
+On 28 October 2026 the release command above was followed from a fresh copy of that project,
+built with Emscripten {EMSDK_VERSION}. The staged page drew and quit on Escape and Enter in
+headless Chrome. Its five-file release set, licence texts and recorded file hashes were checked;
+this was a local packaging check, with no upload.
 
 The browser build has been checked in desktop Chrome and, for LineSweeper's page, Firefox. It has
 not been checked in Safari, on a phone, with a real touchscreen or with a physical gamepad.

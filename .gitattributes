@@ -6,6 +6,9 @@
 # images whose exact bytes a test compares against.
 *.png binary
 
+# Preserve the upstream licence byte for byte.
+tools/web_bundle/Microsoft-LICENSE.txt -text
+
 # Canonical text with LF line endings, which the website build requires, so a
 # Windows checkout must not convert it.
 website/published-versions.json text eol=lf

@@ -7,8 +7,9 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 
-A `wasm-release` build from [Build for the browser](/docs/guides/browser/) is three files, and
-any web server that serves static files can host them. This page says what the server has to
+A `wasm-release` build from [Build for the browser](/docs/guides/browser/) has three runtime
+files plus its notices and build record, and any web server that serves static files can host
+them. This page says what the server has to
 send with them, and what goes wrong if it does not. Labrador's own demo,
 [LineSweeper on mattharding.dev](https://mattharding.dev/demo/linesweeper/), is on such a host.
 
@@ -19,9 +20,13 @@ send with them, and what goes wrong if it does not. Labrador's own demo,
 | `MyGame.html` | The page, made from your `web/shell.html` | 1.2 KB | 0.5 KB |
 | `MyGame.js` | The script that loads and starts the module | 119 KB | 27 KB |
 | `MyGame.wasm` | The engine and your game, with your content packed into it | 376 KB | 117 KB |
+| `NOTICE.txt` | The engine, content and toolchain notices, with full licence texts | Depends on the notice inputs | |
+| `BUILD.json` | Source identity, build type, toolchain version, file sizes and hashes | Depends on the files | |
 
-Upload all three to one folder. The page names the other two by relative path, so the folder can
-be anywhere on the site. There is no separate content file to upload, because
+Use the [browser release command](/docs/guides/browser/#gather-the-browser-release-and-its-notices)
+to gather all five in `out\web-release`, then upload that folder's contents together. Link
+`NOTICE.txt` from your hosting page. The game page names the script and module by relative path,
+so the folder can be anywhere on the site. There is no separate content file to upload, because
 `--embed-file` packs the content into `MyGame.wasm`; a game with more content has a larger
 module rather than more files. The sizes were measured on 25 October 2026 from the project Get
 Started builds, with Emscripten's release settings and Brotli at its highest quality; your game's

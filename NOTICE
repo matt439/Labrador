@@ -140,7 +140,13 @@ carries its licence there.
 
 LineSweeper's web bundle carries these notices with it: the build writes a
 `NOTICE.txt` beside the module, from `samples/linesweeper/web/NOTICE.txt` and
-the full licence texts in the Emscripten install that linked it.
+the full licence texts in the Emscripten install that linked it. It also
+includes this record and Microsoft's MIT text for the shared timer code,
+preserved byte for byte as `tools/web_bundle/Microsoft-LICENSE.txt` from
+https://github.com/microsoft/DirectXTK/blob/a0a1ab67d9d8f1a41b76c0950eb37f27d6bf355d/LICENSE.
+The website's *Build for the browser* guide
+(`website/src/content/docs/docs/guides/browser.mdx`, *Gather the browser
+release and its notices*) gives the same bundling step for a copied template.
 
 ### Toolchains, not code
 

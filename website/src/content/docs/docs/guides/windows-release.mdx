@@ -161,8 +161,9 @@ redistributable it loads, whichever audio backend it uses. A browser build carri
 its `NOTICE`, the collision routines, `step_timer.h` of Microsoft's sample code, rapidjson and the
 font, none of the Windows rows, and the Emscripten runtime and system libraries
 that <RepoLink path="NOTICE">NOTICE</RepoLink> lists under *Linked into a
-browser build by its toolchain*; the template's browser build does not yet gather those into a
-file for you.
+browser build by its toolchain*. The
+[browser release command](/docs/guides/browser/#gather-the-browser-release-and-its-notices)
+gathers their licence texts into `NOTICE.txt` beside the page and module.
 
 **Kept current.** This list is changed in the same commit as any change to the dependencies in
 Labrador's `vcpkg.json`. The site does not build if `vcpkg.json` names a package that the list

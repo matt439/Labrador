@@ -150,6 +150,8 @@ if(EMSCRIPTEN)
             --file "poster.png=${PROJECT_SOURCE_DIR}/website/src/assets/captures/linesweeper-play.png"
             --notice "${CMAKE_CURRENT_SOURCE_DIR}/web/NOTICE.txt"
             --licence "Labrador=${PROJECT_SOURCE_DIR}/LICENSE"
+            --licence "Labrador third-party record=${PROJECT_SOURCE_DIR}/NOTICE"
+            --licence "Microsoft sample code=${PROJECT_SOURCE_DIR}/tools/web_bundle/Microsoft-LICENSE.txt"
             --licence "RapidJSON=${PROJECT_SOURCE_DIR}/external/rapidjson/license.txt"
             --licence "JetBrains Mono=${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/OFL.txt"
             --licence "Emscripten=${EMSCRIPTEN_ROOT_PATH}/LICENSE"
