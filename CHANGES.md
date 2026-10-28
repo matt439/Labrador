@@ -72,6 +72,16 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Select UTF-8 source and narrow literals under MSVC
+
+**Compile-option change.** `labrador_settings` now passes `/utf-8` to MSVC.
+Source files and ordinary narrow literals use UTF-8 instead of the machine's
+ambient code page. Save game source as UTF-8; convert files saved in another
+encoding before rebuilding, and review boundaries that expected legacy
+narrow-literal bytes. ASCII source needs no conversion. The minimal template's
+change list records this for copied projects. Font coverage and the existing
+text-language limits are unchanged.
+
 ### 2026-10-29 - Preserve an effect's group after failed assignment
 
 **Behaviour change.** If `SoundBank::set_effect_group` cannot store an effect's
