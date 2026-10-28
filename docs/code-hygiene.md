@@ -93,9 +93,8 @@ contract needing a behavioural decision is filed separately with evidence.
 
 Targets: `engine/render/null/recording.h`, `engine/audio/null/recording.h`,
 `engine/render/d3d12/device_resources.h` and `engine/render/d3d12/backend.h`.
-The render recording header narrates earlier include leaks and half-completed
-conversions; the audio header uses a brittle count of SoundBank methods.
-The D3D12 device header narrates a previous comment's incorrect proof.
+Keep the backend include boundary, recording limitations and resource-lifetime
+rules at their declarations; remove prior-code narratives and method counts.
 
 **Done when:** surviving comments accurately state recording contents and
 limits, handle lifetime, submit/readback/present ordering and synchronization.
@@ -104,6 +103,34 @@ and the distinction between recorded commands and pixels, sound or listening.
 Route evidence gaps to existing review ledgers without declaring them fixed.
 Confirm a comments-only diff and run citation/whitespace and affected website
 checks; no new GPU or listening claim comes from this audit.
+
+**Source audit, 2026-10-28:** the four headers describe the current code without
+the include-leak history, partial-conversion narrative, SoundBank method census
+or previous synchronization comment's incorrect proof. Reviewed inventory:
+
+| Header | Current implementation evidence and retained constraints |
+|---|---|
+| `engine/render/null/recording.h` | `null/renderer.cpp` gathers declared views in ascending order and preserves each view's sprite order in `submit()`. `begin_frame()` clears the recording; `end_frame()` leaves it intact. The renderer owns the vector. Corners come through shared sprite geometry, and read-back throws instead of producing pixels. `tests/render/CMakeLists.txt` omits null's pixel suite. |
+| `engine/audio/null/recording.h` | `null/audio_device.cpp` records bank/wave identity on every call, including voice calls, plus their applicable parameters. The comments now include those populated fields. Calls append to a device-owned vector; bank names are stored in a vector of vectors, so opening another bank may invalidate a borrowed name-list reference. Voice state changes follow explicit calls without a clock, natural completion or audible output. Bank opening stores names without reading the container. |
+| `engine/render/d3d12/device_resources.h` | `device_resources.cpp` records monotonically increasing queue signals against frame indices and waits for those targets before slot reuse. `present()` obtains the next index from the swap chain. The throwing and non-throwing waits share signal/completion operations; absent queue/fence/event resources make the non-throwing form return true without waiting. `renderer.cpp` restores the prior back-buffer state after read-back and transitions to PRESENT at frame end. |
+| `engine/render/d3d12/backend.h` | `renderer.cpp` queues finished view lists in view order, signals after execution, waits before allocator reuse, and retains vertex pages until device recreation or destruction. Renderer-owned clear, transitions, read-back and index-upload commands use the frame list. `texture_factory.cpp` uploads on that list, waits before staging-buffer release and reuses an existing texture name's descriptor slot. Heap recreation resets slot allocation. |
+
+The include restriction is checked against
+`cmake/check_engine_includes.cmake`: it scans engine sources, while null tests
+and benchmarks may deliberately inspect their configured backend. The website
+reference excludes backend folders (`website/src/lib/published.ts` and
+`reference.ts`); no source excerpt in `website/src/` names these four headers.
+
+**Closed 2026-10-28:** comparison against the parent revision, stripping comments
+and whitespace, preserves every executable token in all four headers. All five
+standalone CMake checks pass. Website check reports zero errors or warnings,
+all 157 website tests pass, and the 143-page build completes with valid internal
+links; Vite reports upstream `astro:head-inject` directive warnings. These
+backend headers have no generated reference page or direct website excerpt.
+This source audit runs no device, browser, audio or performance experiment. Existing runtime
+evidence and its limits remain in [the review index](review/INDEX.md) and
+[the D3D12 status](review/d3d12/STATUS.md); low-tier pipeline-latency qualification
+remains with [the ratchet decision](performance/2026-09-19-g6f-ratchet.md#5-what-to-change-and-what-not-to).
 
 ## SM-47. Implementation and build-comment archaeology
 

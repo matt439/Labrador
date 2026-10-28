@@ -22,8 +22,8 @@ validation tools are indexed below. `SRL-19` and `SRL-20` add a sample-layer
 build check and a working animation example. Follow Later's order and each
 story's prerequisites; an open hardware gate does not block unrelated work.
 **Hygiene is also ready:** [Code hygiene](docs/code-hygiene.md) owns a separate
-maintenance lane, starting with `SM-45` (public-header comments) and `SM-46`
-(backend comments), then the remaining audits and concrete test/source splits.
+maintenance lane, starting with `SM-45` (public-header comments), then the
+remaining audits and concrete test/source splits. `SM-46`'s backend audit is complete.
 BACKLOG's L36 to L40 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
@@ -46,7 +46,6 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-45` | OPEN | should | M | Audit public-header contracts and move oversized rationale; preserve caller rules and published reference text's meaning. |
-| `SM-46` | OPEN | should | S | Remove history and stale counts from backend recording/synchronization comments; verify surviving claims. |
 | `SM-47` | OPEN | should | S | Audit Scene, rotated-rectangle, XInput and build comments against the current implementation. |
 | `SM-48` | OPEN | could | S | Refresh LineSweeper's pause, play, board and banner teaching comments; coordinate with SRL-19. |
 | `SM-49` | OPEN | should | M | Split the pixel-test harness and independent contract cases; preserve test names, assertions and golden bytes. |
