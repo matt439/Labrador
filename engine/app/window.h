@@ -238,6 +238,14 @@ namespace labrador
 		// Runs the frame loop until the window closes, calling notify->tick()
 		// once per frame.
 		//
+		// Browser hosts supply Module.canvas before starting the game and
+		// keep it attached until the game quits. Removing it does not stop
+		// frames, release the WebGL2 context or unregister window listeners.
+		// Optional page callbacks are Module.onQuit(), Module.onError(message),
+		// Module.onContextLost() and Module.onContextRestored(). See the
+		// [page contract](https://labradorengine.com/docs/guides/browser/#the-page-and-what-it-owes-the-module)
+		// for their arguments, timing and the canvas's lifetime.
+		//
 		// On Windows: one message if one is waiting, and otherwise tick().
 		// Ticking only on an empty queue is the loop, not an implementation
 		// detail of it - draining the queue first is a defensible design and

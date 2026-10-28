@@ -6,10 +6,12 @@
   HTTP, because a browser will not compile a module read from file://, and
   open it.
 
-  What the page owes the module is what LineSweeper's page owes it, and
-  samples/linesweeper/web/shell.html gives the reason for each: Module.canvas
-  is the canvas, sized by CSS, focusable and with touch-action: none, and
-  Module.onQuit and Module.onError are the module's two calls to the page.
+  The page contract is published at
+  https://labradorengine.com/docs/guides/browser/#the-page-and-what-it-owes-the-module:
+  Module.canvas is sized by CSS, focusable and with touch-action: none.
+  This page supplies Module.onQuit and Module.onError; the optional graphics
+  hooks are Module.onContextLost and Module.onContextRestored. Keep the canvas
+  attached until the game quits.
   Escape asks before it quits, and a finger on the canvas shows a marker with
   the point's id.
 -->

@@ -1,6 +1,6 @@
 ---
 title: Build for the browser
-description: Install the Emscripten Labrador is built with, add a wasm preset to your own project, and build, test and serve your game as a web page.
+description: Build, test and serve your game with Emscripten, and give its browser module a canvas and the four page callbacks.
 sidebar:
   order: 11
 ---
@@ -141,17 +141,52 @@ browser build needs, so this is quick. ctest runs `MyGameTests` and reports `100
 ## The page, and what it owes the module
 
 `web/shell.html` is yours to change. Its title, its status line and its styles are the minimal
-sample's, and you replace them with your own. Keep the parts the module depends on:
+sample's, and you replace them with your own. Set `Module` before Emscripten's generated script
+starts the game. The template supplies a canvas and two of the four optional page callbacks:
 
 <SourceFile path="samples/minimal/web/shell.html" from="var Module = {" to="};" lang="js" />
 
-- **`Module.canvas`** is the canvas the game draws on and reads input from. The page sets its
-  size with CSS, and the engine follows it. Keep `tabindex="0"` on the canvas, so that it can
-  take the keyboard, and `touch-action: none`, so that a finger on it does not scroll the page.
-- **`Module.onQuit`** is called when the game quits, because closing a page is not the game's to
-  do. The page says the game has ended.
-- **`Module.onError`** is called with the message when the game fails to start, such as when a
-  content file is missing. The same message goes to the browser's console.
+**`Module.canvas` must be the actual canvas element**, present before the game starts. The page
+owns its place in the DOM and its size in CSS; the engine follows that size and the device pixel
+ratio when setting the drawing buffer. Keep `tabindex="0"` on the canvas so it can take keyboard
+focus, and `touch-action: none` so a finger on it does not scroll the page. Call `canvas.focus()`
+when the player starts playing, as the template does.
+
+The four callbacks below are optional. **Names are exact and case sensitive.** A misspelled name
+is silently ignored, with no warning; a value that is not a function is ignored too. The engine
+reads each callback from `Module` when it is due.
+
+| Callback | When it is called | What the page can show |
+| --- | --- | --- |
+| `Module.onQuit()` | The game calls `Application::quit()` (or closes its `Window`), after the frame loop has been cancelled and the window's input and page listeners have been removed. It has no arguments. | The game has ended; offer a reload or another game. |
+| `Module.onError(message)` | The template's `main_web.cpp` forwards a startup exception, or the browser window catches an exception from a frame or input handler. `message` is a string, also written to the console. A caught frame or input failure stops the loop and window listeners before this call. | The reason the game could not start or continue. |
+| `Module.onContextLost()` | The renderer observes a lost WebGL2 context, once per loss, at the next `begin_frame`. It has no arguments. | Graphics are unavailable and restoration is awaited. |
+| `Module.onContextRestored()` | At `begin_frame`, after the renderer and the game's device resources have been rebuilt. It has no arguments; that frame can now draw again. | Remove the graphics-loss message. |
+
+Keep the startup error forwarding in `main_web.cpp` when you change the entry point. A script,
+fetch or WebAssembly compilation failure can happen before the engine runs, so the page must
+handle loader failures separately; `onError` cannot report every failure to load the module.
+
+The context callbacks run from a frame, rather than directly from the browser's context events.
+Loss is reported before restoration, even if both happen between two frames. Restoration has no
+deadline: if the browser never restores the context, `onContextRestored` never arrives and the
+canvas stays blank. Keep the loss message visible until restoration or a new page load.
+
+### Quit before removing the canvas
+
+**Keep the same canvas attached while the game is running.** Removing it from the DOM does not
+stop the frame loop, release the WebGL2 context or unregister the window's listeners. It leaves
+a hidden running game. Changing `Module.canvas` is not a way to stop or move that game either.
+
+Before replacing or removing the canvas, arrange for the game to call `Application::quit()` and
+wait for `onQuit`. The template's Escape/Enter confirmation is one way to reach it. There is no
+built-in JavaScript stop function; a host that needs a stop button must connect it to its own
+game's quit path.
+
+Quit cancels the loop and removes the window's listeners, but the static `Application` and its
+WebGL2 context remain in that module instance. Reload the template's page to play again. An
+ES-module host such as LineSweeper's creates a fresh module instance and a fresh canvas for each
+game, then drops the old canvas after quit.
 
 ## Serve it and open it
 
