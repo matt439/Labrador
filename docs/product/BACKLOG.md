@@ -334,7 +334,7 @@ work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
 
-**Maintenance lane, added 2026-10-28:** L36 to L41 may run alongside the
+**Maintenance lane, added 2026-10-28:** L36 to L42 may run alongside the
 product batches above, in their own order and with their own prerequisites.
 They cover comment audits, source/test organisation and backend responsibility
 reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
@@ -342,6 +342,7 @@ without waiting for all feature stories. A long cohesive file may receive a
 keep verdict; an unproven backend split is reviewed before implementation.
 L41 adds the bounded shared-table exception repair selected from the source
 audit on 2026-10-29, with its acceptance below.
+L42 follows it with direct regression coverage of the shared byte cursor.
 
 **Contract follow-up, 2026-10-29:** SRL-17's source audit files SRL-22 within
 L32, after the audit and before the glossary. Correcting a false bank-pointer
@@ -409,6 +410,7 @@ written.
 39. L39 Separate website reference indexing, links and page assembly: SM-52
 40. L40 Review backend ownership, repair confirmed exceptional paths, then take the selected pipeline cut: SM-53, SM-54, SM-55, SM-56, SM-57, SM-58
 41. L41 Preserve sound-group registration after allocation failure: SM-59
+42. L42 Pin the shared byte reader's boundary and byte-order contract: SM-60
 
 **Stories**
 
@@ -761,6 +763,51 @@ written.
 - [ ] **[SM-57](../code-hygiene.md#sm-57-d3d12-replacement-texture-publication)** Should · S · The Sole Owner-Maintainer: Keep a replacement texture's descriptor consistent if publication fails
 - [ ] **[SM-58](../code-hygiene.md#sm-58-d3d12-sprite-pipeline-value-owner)** Could · M · The Sole Owner-Maintainer: Extract the reviewed D3D12 root-signature/PSO value owner — after SM-57
 - [x] **[SM-59](#sm-59)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed new sound-group registration absent and retryable
+- [x] **[SM-60](#sm-60)** Could · S · The Sole Owner-Maintainer: Pin ByteReader's boundary, cursor and byte-order behavior directly
+
+<a id="sm-60"></a>
+### SM-60. Exercise the shared byte reader's public contract directly
+
+Selected 2026-10-29 after SM-59 from the second item in its ranked source
+shortlist. DDS, sprite-font and XWB readers use ByteReader, but CoreTests has
+no direct cases for its cursor and refusal contract. Its public comment also
+still describes two formats and two render-only callers. T2/T6 favor small
+in-memory boundary cases that protect all three readers; correcting the
+stale counts needs no API or parser abstraction.
+
+**Acceptance**
+
+- Add the test source explicitly to CoreTests. Exercise known little-endian
+  unsigned, signed and float bit patterns, mixed reads/skips and non-consuming
+  require calls through public results, position and remaining counts.
+- Cover each truncated read/skip/require, unchanged cursor after boundary
+  refusal and a subsequent valid read; zero-byte operations on empty buffers
+  and at EOF; maximum size_t requests after advancing the cursor, without a
+  large allocation. Protect the subtraction-based guard's behavior without
+  asserting implementation spelling.
+- Prove read_bytes returns owned storage; keep the borrowed source alive and
+  unchanged throughout reader use. Check source and useful boundary detail
+  in an error without pinning the entire sentence. Make no allocation-failure
+  guarantee for read_bytes, which advances before constructing its result.
+- Replace stale caller counts with the byte cursor's role. Keep production
+  declarations and implementation unchanged unless a test demonstrates an
+  actual defect, which needs its own reviewed scope and consumer record.
+- Review and run native Debug null, default Debug and Release null CoreTests,
+  standalone checks and website verification. Record the stopped wasm/Node
+  axis explicitly; full CI remains required before landing. These cases need
+  no file mutation, browser or graphics/audio device.
+
+**Closed 2026-10-29, direct contract coverage.** Eleven new cases include
+six independent truncated-operation subcases, stored integer/float bit
+patterns, mixed cursor movement, zero-byte empty/EOF boundaries, oversized
+requests, result ownership and diagnostic context. Independent source review
+found no issues. CoreTests passes in native Debug null, default Debug and
+Release null: 82 cases and 4,955 assertions in each, with no skipped cases.
+All seven standalone checks and the website type check, 160 tests and
+145-page build pass. The published reference includes the corrected role
+comment and new test include site. Header declarations and production
+implementation are unchanged. Wasm/Node remains unrun at the existing
+Emscripten activation access stop; full CI is required before landing.
 
 <a id="sm-59"></a>
 ### SM-59. Preserve sound-group names and volume slots on allocation failure
