@@ -327,17 +327,20 @@ namespace labrador
 		const int slot = existing >= 0
 			? existing
 			: impl.allocate_texture_slot(name);
+		const D3D12_CPU_DESCRIPTOR_HANDLE descriptor = impl.texture_slot_cpu(slot);
+
+		// Wrapper allocation and registry publication may throw. Keep the
+		// existing descriptor until both succeed; the local ComPtr keeps the
+		// replacement resource alive through the following descriptor write.
+		resources.impl()->add_texture(name,
+			std::make_unique<D3d12Texture>(resource, slot, texture.width,
+				texture.height));
 
 		// A null description means "the whole resource as it was created",
 		// which is what every texture this engine loads wants - all of its
 		// levels, in its own format. Whether a minified draw ever reads a
 		// second level is the sampler's business and the answer is no
 		// (renderer.cpp, MaxLOD).
-		device->CreateShaderResourceView(resource.Get(), nullptr,
-			impl.texture_slot_cpu(slot));
-
-		resources.impl()->add_texture(name,
-			std::make_unique<D3d12Texture>(resource, slot, texture.width,
-				texture.height));
+		device->CreateShaderResourceView(resource.Get(), nullptr, descriptor);
 	}
 }

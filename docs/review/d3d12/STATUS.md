@@ -20,6 +20,11 @@ owns those implementation stories and their error-path/device qualification.
 The source review adds no runtime evidence and changes none of this ledger's
 historical section-6 dispositions.
 
+SM-57's [source progress](../../code-hygiene.md#sm-57-d3d12-replacement-texture-publication)
+now places wrapper/registry publication before the descriptor write. Native
+builds and headless checks pass; failure injection and GPU reload/lifetime
+qualification remain open. No new device observation is added to this ledger.
+
 ## Section 6 adjudication, 2026-10-26
 
 | Item | Disposition | Current evidence and remaining limit |
