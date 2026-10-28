@@ -329,7 +329,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 waits on hardware, a scheduled run or an owner session. Keep their order below,
 skip only the items whose own prerequisites are unmet, and return to an earlier
 item when its gate clears. This does not complete Next or relax its acceptance.
-The first ready batches are L1 to L6; TODO's NOW names the first three. Later
+The browser adopter batches are L1 to L6; TODO's NOW names the remaining actions. Later
 work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
@@ -407,7 +407,7 @@ written.
 - [x] **[OCA-24](STORIES.md#oca-24)** Should · S · The Outside C++ Adopter: Troubleshoot my browser build — after OCA-20
 - [x] **[OCA-25](STORIES.md#oca-25)** Could · XS · The Outside C++ Adopter: Know that a one-shot sound before the first gesture is dropped in a browser
 - [x] **[OCA-63](STORIES.md#oca-63)** Could · S · The Outside C++ Adopter: Know the notices my browser build must ship — after OCA-62
-- [ ] **[OCA-31](STORIES.md#oca-31)** Could · S · The Outside C++ Adopter: Check my game's page loads and quits — after OCA-20
+- [x] **[OCA-31](STORIES.md#oca-31)** Could · S · The Outside C++ Adopter: Check my game's page loads and quits — after OCA-20
 - [ ] **[OCA-74](STORIES.md#oca-74)** Could · S · The Outside C++ Adopter: Embed the LineSweeper bundle on my own site from a published contract — after OCA-26, OCA-23
 - [ ] **[SM-27](STORIES.md#sm-27)** Could · S · The Sole Owner-Maintainer: Verify a web bundle before deploying it, from this repository — after PI-05
 - [ ] **[BDP-15](STORIES.md#bdp-15)** Should · S · The Browser and Phone Demo Player: Failure messages a player can act on — after BDP-04
@@ -545,7 +545,7 @@ time, looping and restart policy in sample code (T1).
 | OCA-24 | G112. Closed 2026-10-28: Troubleshooting publishes all five browser cases from local reproductions. The dated story's 17/27 test-count comparison is superseded by 19 without Chromium, 32 Debug and 33 Release with it; copied adopter projects have their own rules test. [Verification](../port/2026-10-28-browser-troubleshooting.md) records the actual messages, configure-only count checks and runtime failures. |
 | OCA-25 | G132. Closed 2026-10-28: the audio guide, sample README and SoundBank method contracts state dropped one-shots, waiting retained effects and the Escape exception. [Verification](../port/2026-10-28-browser-troubleshooting.md#browser-audio-before-activation) observes the running sample's source starts before and after activation: no stale one-shot replay, loop starts, fresh ping works, Escape does not unlock. This is scheduling evidence; physical listening remains WEB#3. |
 | OCA-63 | G16. Closed 2026-10-28: [Build for the browser](https://labradorengine.com/docs/guides/browser/#gather-the-browser-release-and-its-notices) publishes the existing bundler's release command and full notice inputs. A fresh copied current project built in Release, passed its rules test, packaged exactly five files and drew/quit in Chrome. All licence texts, byte counts, hashes and Brotli sizes were verified. The literal command also passed with v0.2.0's packaging inputs and current runtime fixtures; this does not claim a legacy game build. LineSweeper now carries the engine's attribution record and preserved Microsoft timer-code MIT text, and its rebuilt BundlePageTests passed. |
-| OCA-31 | G11: check a game's page loads and quits by hand. Follows OCA-20 (Next). |
+| OCA-31 | G11. Closed 2026-10-28: the public browser guide documents the repository runner against a consumer's built page, the quit protocol and pass/fail diagnostics. A copied minimal page outside the checkout passed in headless Chrome; injecting the documented `console.error` failed with exit 1. |
 | OCA-74 | G142, G51: the LineSweeper bundle's factory contract for a host other than mattharding.dev (new; critique's unstoried list). Links OCA-26 and OCA-23 rather than repeating them. |
 | SM-27 | G144: verify a web bundle before deploying, from this repository. Follows PI-05 (Next). |
 | BDP-15 | G82: failure messages a player can act on. Follows BDP-04 (Next). |

@@ -188,6 +188,48 @@ WebGL2 context remain in that module instance. Reload the template's page to pla
 ES-module host such as LineSweeper's creates a fresh module instance and a fresh canvas for each
 game, then drops the old canvas after quit.
 
+## Check the page loads and quits
+
+Run Labrador's page runner by hand against your built page. From your project's root, in the
+prompt where you ran `emsdk_env.bat`, use Node from Emscripten and an installed Chrome or Edge:
+
+```bat
+set "browser=C:\Program Files\Google\Chrome\Application\chrome.exe"
+"%EMSDK_NODE%" "external\labrador\tests\render\web\run_page.mjs" ^
+  --browser "%browser%" ^
+  --page out\build\wasm-debug\game\MyGame.html ^
+  --quit-keys Escape,Enter --timeout 60
+echo %errorlevel%
+```
+
+Replace `browser` with your Chromium executable's path if it is elsewhere. The runner starts
+its own loopback HTTP server and a headless browser with a temporary profile, then closes both
+when it finishes. You do not need to start the Python server from the next section. The page,
+script, module and any other files the page fetches must be in the page's folder or below it.
+
+For the copied template, the runner waits for `Module.onRuntimeInitialized`, allows 60 animation
+frames, presses Escape and then Enter, and waits for the page's own `Module.onQuit` callback.
+**A pass prints `run_page: Module.onQuit was called` and exits 0.** It also waits a few frames
+after quit so a failure on the way out is caught. The command has a 60-second deadline for the
+whole run.
+
+**A console error or warning, a failed assertion, an uncaught exception, a browser warning or
+error, or a call to `Module.onError` fails the run**, even if the page also quits. A missing
+`Module.onQuit` callback fails, and a page that never initializes or quits times out. Read the
+diagnostic and check the exit code; seeing the quit message alone does not prove a pass.
+
+To check that you can detect a failure, temporarily add
+`console.error("deliberate page-check failure");` just after the opening `<script>` tag in the
+built `MyGame.html` and run the same command. It must print that message and exit with a nonzero
+code. Remove the line afterwards; rebuilding the page also replaces that generated HTML.
+
+The template exposes a global `Module` object with the callbacks the runner observes. Keep that
+shape for this command, and change `--quit-keys` to your own game's keyboard quit sequence if you
+change it. The supported codes are `Escape`, `Enter`, `Space`, the four `Arrow` directions, and
+`KeyA` through `KeyZ`. This checks startup and the quit path; it does not compare rendered pixels
+or replace playing the game. The runner remains Labrador's repository tool and is not added to
+your project's CMake or ctest entries.
+
 ## Serve it and open it
 
 A browser will not run a WebAssembly module opened from `file://`, so serve the folder over HTTP.
@@ -296,6 +338,12 @@ On 28 October 2026 the release command above was followed from a fresh copy of t
 built with Emscripten {EMSDK_VERSION}. The staged page drew and quit on Escape and Enter in
 headless Chrome. Its five-file release set, licence texts and recorded file hashes were checked;
 this was a local packaging check, with no upload.
+
+On 28 October 2026 the page-runner command was checked against a copy of that project's built
+minimal page in a separate temporary folder, using Emscripten's Node and headless Chrome. The
+unchanged page reached `Module.onQuit` and exited 0. With the deliberate `console.error` line
+above added to the copied HTML, the same command reported the diagnostic and exited 1. The
+original project's page was unchanged.
 
 The browser build has been checked in desktop Chrome and, for LineSweeper's page, Firefox. It has
 not been checked in Safari, on a phone, with a real touchscreen or with a physical gamepad.
