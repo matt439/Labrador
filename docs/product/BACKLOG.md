@@ -699,8 +699,27 @@ written.
   145-page/435-file build pass. Nine emitted sections, 11 revision-pinned
   source links and both editorial incoming links were inspected. No beginner
   session, compiler, device, browser or SDK qualification is claimed.
-- [ ] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
-- [ ] **[SRL-06](STORIES.md#srl-06)** Could · S · The Sample-Reading Learner: LineSweeper's design notes give their reasons without sending me to internal records
+- [x] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
+  Closed 2026-10-29. The sample README owns the root configure, targeted
+  LineSweeperTests build and anchored one-entry CTest recipe; Examples links
+  there. It states the root engine/vcpkg configure prerequisites, wasm
+  chainload and dated host/preset evidence without claiming other hosts.
+  Windows Debug-null reconfigure reused installed dependencies with manifest
+  installation off; the rules target and exact CTest pass on Debug-null and
+  default Debug at ae82fc0. No engine/sample target, device, wasm activation
+  or fresh dependency install was qualified by that check.
+- [x] **[SRL-06](STORIES.md#srl-06)** Could · S · The Sample-Reading Learner: LineSweeper's design notes give their reasons without sending me to internal records
+  Verified 2026-10-29 in current source. No README rewrite was needed: zero
+  CLAUDE.md citations remain; all five survey/review citations already state
+  the UI-client, data-layout, wrong-row, arithmetic-budget or predeclared-
+  threshold reason locally. The action-map paragraph names ARCHITECTURE's
+  input entry and the public boundary/source-combination rationale, matching
+  report 21's current disposition. Independent source review and root's
+  paragraph reads agree; frozen review records were preserved.
+  Both LineSweeper documentation closures pass all seven standalone checks
+  and the website's zero-diagnostic check, 160 tests and 145-page/435-file
+  build. The emitted revision-pinned rules-test link, unique README anchor,
+  exact recipe and both one-entry native results were inspected.
 - [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
 - [x] **[SRL-19](#srl-19)** Should · S · The Sample-Reading Learner: Make LineSweeper's layer boundary a build check
 - [ ] **[SRL-20](#srl-20)** Could · M · The Sample-Reading Learner: Copy a working sprite-strip animation example
