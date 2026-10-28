@@ -403,7 +403,7 @@ written.
 
 **Stories**
 
-- [ ] **[OCA-26](STORIES.md#oca-26)** Should · S · The Outside C++ Adopter: One public statement of what my page owes the engine module — after OCA-20
+- [x] **[OCA-26](STORIES.md#oca-26)** Should · S · The Outside C++ Adopter: One public statement of what my page owes the engine module — after OCA-20
 - [ ] **[OCA-24](STORIES.md#oca-24)** Should · S · The Outside C++ Adopter: Troubleshoot my browser build — after OCA-20
 - [ ] **[OCA-25](STORIES.md#oca-25)** Could · XS · The Outside C++ Adopter: Know that a one-shot sound before the first gesture is dropped in a browser
 - [ ] **[OCA-63](STORIES.md#oca-63)** Could · S · The Outside C++ Adopter: Know the notices my browser build must ship — after OCA-62
@@ -541,7 +541,7 @@ time, looping and restart policy in sample code (T1).
 
 | Story | Why |
 |---|---|
-| OCA-26 | G142, G143: no public page contract; a misspelled callback gives a blank canvas. Follows OCA-20 (Next). |
+| OCA-26 | G142, G143. Closed 2026-10-28: [Build for the browser](https://labradorengine.com/docs/guides/browser/#the-page-and-what-it-owes-the-module) is the public canvas/four-callback contract, including exact names, startup versus runtime errors, frame-boundary context notifications and quit before DOM removal. `window.h`, the minimal shell and web.md section 7.3 point there. Semantics checked against the window, sample entry point and renderer; the running-canvas removal consequence is established by code inspection, not a new device observation. |
 | OCA-24 | G112: browser-build troubleshooting. Follows OCA-20 (Next). |
 | OCA-25 | G132: a one-shot sound before the first gesture is dropped, silently. |
 | OCA-63 | G16: the browser build's notices. Follows OCA-62 (Next). |

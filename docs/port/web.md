@@ -711,6 +711,12 @@ embed on the same page unless each one opts in.
 
 ### 7.3 Mounting it, start-on-click
 
+The public [browser page contract](https://labradorengine.com/docs/guides/browser/#the-page-and-what-it-owes-the-module)
+owns `Module.canvas`, the four optional callbacks and quit-before-removal.
+Removing a running game's canvas does not stop its loop, WebGL2 context or
+window listeners. The mounting example below applies that contract to the
+LineSweeper bundle.
+
 The page shows a poster and a button, and **nothing is downloaded until the
 click**: the page's own load is the HTML and one 15 KB image. The click gives
 `AudioContext` the user gesture it needs when audio arrives, and it is when

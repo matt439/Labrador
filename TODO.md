@@ -12,12 +12,11 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **`OCA-26` (L1): publish the browser module contract.** Canvas ownership,
-   all four callbacks, exact names and quit-before-removal lifetime.
-2. **`OCA-24` + `OCA-25` (L2): browser troubleshooting and audio unlock.**
+1. **`OCA-24` + `OCA-25` (L2): browser troubleshooting and audio unlock.**
    Useful failure messages and the dropped-before-first-gesture rule.
-3. **`OCA-63` (L3): publish browser release notices.** Then L4 to L6 cover
-   testing a game's page, embedding the bundle and verifying it before deploy.
+2. **`OCA-63` (L3): publish browser release notices.**
+3. **`OCA-31` (L4): check a game's page loads and quits.** Then L5 and L6
+   cover embedding the bundle and verifying it before deploy.
 
 **Available after those batches:** couch joining, working settings, pointer
 menus, text examples, strict asset keys, recording-renderer guidance and
@@ -47,12 +46,11 @@ acceptance in [STORIES.md](docs/product/STORIES.md).
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-26` | OPEN | should | S | Publish the canvas/callback/lifetime contract for an adopter's page. |
 | `OCA-24` | OPEN | should | S | Add browser-build troubleshooting grounded in actual errors. |
 | `OCA-25` | OPEN | could | XS | State the first-gesture rule and that earlier one-shot sounds are dropped. |
 | `OCA-63` | OPEN | could | S | Document the notices a browser release must carry. |
 | `OCA-31` | OPEN | could | S | Show an adopter how to run their own page's load-and-quit check. |
-| `OCA-74` | BLOCKED | could | S | Publish the LineSweeper bundle factory contract and verify another host; after OCA-26. |
+| `OCA-74` | OPEN | could | S | Publish the LineSweeper bundle factory contract and verify another host. |
 | `SM-27` | OPEN | could | S | Verify bundle revision, build mode and contents before deploy, with offline fixtures. |
 
 ## Code hygiene
