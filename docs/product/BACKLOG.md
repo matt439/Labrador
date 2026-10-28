@@ -477,7 +477,7 @@ written.
 - [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
 - [ ] **[SRL-19](#srl-19)** Should · S · The Sample-Reading Learner: Make LineSweeper's layer boundary a build check
 - [ ] **[SRL-20](#srl-20)** Could · M · The Sample-Reading Learner: Copy a working sprite-strip animation example
-- [ ] **[SM-45](../code-hygiene.md#sm-45-public-header-contracts-and-rationale)** Should · M · The Sole Owner-Maintainer: Audit public-header contracts and oversized rationale
+- [x] **[SM-45](../code-hygiene.md#sm-45-public-header-contracts-and-rationale)** Should · M · The Sole Owner-Maintainer: Audit public-header contracts and oversized rationale
 - [x] **[SM-46](../code-hygiene.md#sm-46-backend-recording-and-synchronization-comments)** Should · S · The Sole Owner-Maintainer: Audit backend recording and synchronization comments
 - [ ] **[SM-47](../code-hygiene.md#sm-47-implementation-and-build-comment-archaeology)** Should · S · The Sole Owner-Maintainer: Remove stale implementation and build-comment history
 - [ ] **[SM-48](../code-hygiene.md#sm-48-sample-teaching-comments)** Could · S · The Sole Owner-Maintainer: Refresh sample teaching comments against current code
