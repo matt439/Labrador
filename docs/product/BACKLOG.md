@@ -441,7 +441,15 @@ written.
 - [x] **[OCA-43](STORIES.md#oca-43)** Could · S · The Outside C++ Adopter: Know which languages the text path can draw
 - [ ] **[OCA-42](STORIES.md#oca-42)** Could · M · The Outside C++ Adopter: Get my game's language from a string table to the screen — after OCA-41, OCA-43, OCA-34
 - [ ] **[OCA-77](STORIES.md#oca-77)** Could · S · The Outside C++ Adopter: Wrap a translated string to a width — after OCA-43, OCA-42
-- [ ] **[OCA-40](STORIES.md#oca-40)** Could · S · The Outside C++ Adopter: Know what background music costs and how to keep it out of the page download — after OCA-38
+- [x] **[OCA-40](STORIES.md#oca-40)** Could · S · The Outside C++ Adopter: Know what background music costs and how to keep it out of the page download — after OCA-38
+  Closed 2026-10-28. The [music section](../../website/src/content/docs/docs/guides/audio.mdx)
+  states whole-bank memory on both platforms, a PCM/float size example and
+  load-time overhead, embed versus preload at the existing roughly 1 MB
+  content threshold, the `.data` release file and pre-startup fetch timing.
+  It keeps streaming/async loading out of scope with T3; separating the download
+  is not represented as on-demand playback. The sample README links the section.
+  Website check, 160 tests and the 143-page build pass; the built heading/link
+  and memory/preload text were checked. No backend or browser run is claimed.
 - [ ] **[OCA-18](STORIES.md#oca-18)** Could · S · The Outside C++ Adopter: Debug my game in Visual Studio from the presets
 - [ ] **[OCA-32](STORIES.md#oca-32)** Could · S · The Outside C++ Adopter: Use the recording renderer in my own tests — after OCA-29
 - [ ] **[OCA-66](STORIES.md#oca-66)** Could · S · The Outside C++ Adopter: Declare per-monitor DPI awareness and review the template at 150% scaling

@@ -91,6 +91,13 @@ right, and nothing about a speaker.
 bank. Under null audio it also asserts which waves the sample plays, the loop
 lifecycle, the levels sent to both kinds of voice and the stop on teardown.
 
+## Longer music tracks
+
+Banks are held in memory, and this sample embeds its content in the browser
+module. The [audio guide's music section](https://labradorengine.com/docs/guides/audio/#music-bank-memory-and-the-page-download)
+explains stored versus decoded memory costs, the roughly 1 MB content threshold
+for a separate preloaded `.data` file, and why that still loads before startup.
+
 ## Content and provenance
 
 All three sounds are newly synthesized mathematical tones, with no recorded or

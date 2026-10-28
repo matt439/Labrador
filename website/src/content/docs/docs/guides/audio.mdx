@@ -226,9 +226,39 @@ sound a multiple of 128 samples long, or XWBTool's `reading` line will show a
 rate a little off the one exported and the sound will play that much sharp or
 flat.
 
-What a sound costs in memory differs by platform. On Windows, XAudio2 plays the
-bank as it is stored. In a browser the reader decodes every wave to 16-bit
-samples at load, and the browser then holds each wave as a buffer of 32-bit
-floats: twice the size of 16-bit PCM in the bank, four times 8-bit PCM, and
-about eight times MS-ADPCM, which decodes to about four times its size before
-the floats double it.
+## Music, bank memory and the page download
+
+Labrador loads wave banks into memory on both platforms, including every music
+track in the bank. Looping a long track keeps its full wave available throughout
+playback. On Windows, XAudio2 plays the bank in its stored format. In a browser
+the reader decodes every wave to 16-bit samples at load, and Web Audio keeps
+each wave in 32-bit float channel buffers: twice the size of 16-bit PCM, four
+times 8-bit PCM, and about eight times MS-ADPCM.
+
+For scale, three minutes of stereo, 44,100 Hz, 16-bit PCM is about **30.3 MiB**
+of wave data. Its browser float buffers use about **60.6 MiB**, in addition to
+the bank file in Emscripten's in-memory filesystem and temporary data during
+loading. Those figures exclude container overhead and are not a peak-memory
+budget. Compression reduces the download; the browser still needs the decoded
+buffers. Load only the banks the game needs and budget their combined size.
+
+The minimal template and audio sample use **`--embed-file`**, so their content
+travels inside the wasm module even when a player never starts a particular
+track. The <RepoLink path="docs/port/web.md">browser asset policy</RepoLink>
+recommends switching to **`--preload-file`** when total content passes about
+**1 MB**. Replace the existing embed options in your game's browser target
+while keeping the same source-to-filesystem mappings. Ship the generated
+`.data` file beside the page, JavaScript and wasm and keep its URL resolvable
+by the generated loader.
+
+Preloading separates the content download from the wasm module. The generated
+loader still fetches that data before startup, and `load_manifest` still reads
+whole banks from the same filesystem paths. It does not wait until the track's
+first play or reduce its decoded memory cost. Changing that loading policy
+requires game-specific work beyond replacing the linker option.
+
+This API uses in-memory banks; streaming banks and an asynchronous streaming
+loader are outside its scope. The current synchronous path keeps ownership
+and failure handling simple ([T3](/docs/design/philosophy/#t3-simplicity-over-accuracy)).
+A concrete game's content and memory needs must justify that extra lifecycle
+before the engine adds it.
