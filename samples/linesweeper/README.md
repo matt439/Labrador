@@ -144,6 +144,51 @@ A static library rather than a folder for the same reason ARCHITECTURE gives
 for LabradorMath being one: when a wall has to be load-bearing rather than a
 convention, the escalation is cheap and this is it.
 
+### Running the rules tests
+
+From the repository root, in Visual Studio's x64 Native Tools Command Prompt:
+
+```text
+cmake --preset x64-debug-null
+cmake --build --preset x64-debug-null --target LineSweeperTests
+ctest --preset x64-debug-null -R "^LineSweeperTests$" --output-on-failure --no-tests=error
+```
+
+The [build prerequisites](../../README.md#prerequisites) still apply: CMake,
+Ninja, the C++20 compiler and `VCPKG_ROOT`. This native null-render/null-audio
+preset needs no graphics device or audio endpoint. The targeted build produces
+the rules and their test binary, with the repository's include/citation and
+LineSweeper layer checks; it does not build the engine library or game sample.
+The anchored ctest selection runs only `LineSweeperTests`, not the separate
+`LineSweeperViewTests`, and fails rather than passing an empty selection.
+
+**A headless binary is not a separate configure entry point.**
+`LineSweeperTests` links `LineSweeperRules`, doctest and `labrador_settings`;
+neither it nor the rules links `LabradorEngine`. The
+[root CMakeLists.txt](../../CMakeLists.txt) nevertheless always adds `engine/`,
+and a fresh configure processes the engine's dependencies from `vcpkg.json`
+before a build target is selected. Both the native and wasm bases in
+[CMakePresets.json](../../CMakePresets.json) use the vcpkg toolchain through
+`VCPKG_ROOT`. The wasm base additionally chainloads Emscripten's toolchain
+through `EMSDK`. Limiting the build target does not remove those configure
+requirements.
+
+Known host/preset evidence is dated. The
+[port record](../../docs/port/web.md#9-milestones-and-what-to-spike-first)
+records passing Windows `x64-debug`, `x64-debug-null`, `x64-debug-gl`,
+`x64-debug-d3d12`, `x64-debug-vulkan` and `x64-release` runs, and
+`wasm-debug`/`wasm-release` tests under Node from a Windows host. Those are
+historical results, not a fresh qualification of every current configuration.
+The native presets are Windows-only. Building the wasm presets on Linux or
+macOS remains unverified; having no wasm host restriction is not evidence of
+a passing run there. Node runs the rules binary without a browser or WebGL.
+
+On 29 October 2026, the Windows rules-only build and exact one-entry ctest
+selection passed at `ae82fc0` with both `x64-debug-null` and `x64-debug`.
+The null configure reused installed dependencies with
+`VCPKG_MANIFEST_INSTALL=OFF`; it did not test a fresh dependency installation.
+No wasm toolchain activation or Node rerun was performed in that check.
+
 ### Three layers, and the middle one may not see the rules' verbs
 
 - `rules/` — the simulation. Includes nothing from `engine/`.
