@@ -254,13 +254,10 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     find_package(Vulkan 1.2 REQUIRED)
     target_link_libraries(LabradorEngine PRIVATE Vulkan::Vulkan)
 
-    # The same source as the two backends above that compile it, through a
-    # second compiler - gl is between them and compiles none of it.
-    # cmake/compile_shaders.cmake carries the whole argument - why dxc and not
-    # glslc, which of the two dxc.exe on a Windows machine has a SPIR-V backend
-    # compiled into it, and what the three register shifts are for. Shader model
-    # 6.0 because that is where dxc starts; there is no lower profile to ask
-    # for, exactly as there was none below 5_1 for D3D12.
+    # Compile the same sprite.hlsl used by Direct3D to SPIR-V. The helper in
+    # cmake/compile_shaders.cmake restricts dxc lookup to the Vulkan SDK and
+    # sets the descriptor binding shifts. The selected profiles here are 6_0;
+    # this is a build choice, not a measured minimum for the rendering contract.
     compile_hlsl_to_spirv(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
         vs_6_0 vertex_main sprite_vertex_shader

@@ -1,28 +1,12 @@
-# A citation from code to a document has to resolve.
+# Check source citations against document names, numbered sections and
+# PHILOSOPHY trade-off headings (docs/design/CONVENTIONS.md, Comments).
+# Renaming a document or section must not leave an authoritative-looking
+# pointer to nothing.
 #
-# CONVENTIONS' Comments section splits a comment three ways and sends one of
-# them - the rationale that outgrew its declaration - to a document beside the
-# code, cited rather than restated. engine/render/SEAM.md is the first. That
-# trade buys a shorter header and costs a second place for the same claim to
-# live, so the citation between them is load-bearing in a way a paragraph in
-# one file never was: renumber a section, rename a document, and the pointer
-# still reads as authoritative while naming nothing.
-#
-# WHAT THIS PROVES AND WHAT IT DOES NOT, stated here because the distinction is
-# the whole reason to be careful with it. It proves NAME CLOSURE: every
-# document a comment names exists, every section it names is there, every
-# trade-off number it cites is one PHILOSOPHY defines. It proves NOTHING about
-# whether the prose is true. ApogeeVGC ran this experiment at scale - 105 docs
-# and 2,479 keys relocated out of headers behind a linter that checks exactly
-# this, green today - and its 2026-08-02 review then measured the prose: of 212
-# findings, 79 false and 57 stale against 9 where the document was right and
-# the code was wrong. That linter's own docstring calls itself "a total
-# NAME-closure proof and a total TRUTH blind spot", and this file is the same
-# instrument. A green build says the pointers resolve. Only the amendment rule
-# at the top of SEAM.md says the prose is true, and only a reader keeps it.
-#
-# So this is cheap insurance on the mechanical half, not a reason to trust the
-# document half more than a reader would.
+# This checks name closure for the recognized spellings, not whether a cited
+# passage supports the source comment or describes current behavior. Bare
+# filenames with multiple matches are reported without failing or checking
+# their section. The amendment rule in engine/render/SEAM.md still needs review.
 #
 # Run with: cmake -DREPO_DIR=<path> -P cmake/check_doc_citations.cmake
 
@@ -37,14 +21,9 @@ file(GLOB_RECURSE sources
     "${REPO_DIR}/bench/*.h" "${REPO_DIR}/bench/*.cpp"
     "${REPO_DIR}/tools/*.h" "${REPO_DIR}/tools/*.cpp")
 
-# Every document in the tree, for resolving a citation that gives a bare
-# filename. out/ is build output and external/ is vendored; neither is ours to
-# cite and both would make a basename ambiguous for no reason. website/ is the
-# same twice over: a separate build that installs its dependencies inside
-# itself - website/node_modules/ holds hundreds of .md files, one of them a
-# CLAUDE.md - and whose pages cite this tree rather than being cited by it.
-# .claude/ is ignored by git and can hold whole checkouts of this repository,
-# as worktrees an agent works in, each with a copy of every document here.
+# Documents available for bare-filename lookup. Exclude build output, vendored
+# files, the separate website tree and .claude/ worktrees, whose duplicate
+# basenames are not repository citation targets.
 file(GLOB_RECURSE all_docs "${REPO_DIR}/*.md")
 set(docs "")
 foreach(doc IN LISTS all_docs)
@@ -64,12 +43,8 @@ set(ambiguous_docs "")
 foreach(source IN LISTS sources)
     file(READ "${source}" text)
 
-    # A citation is prose and prose wraps. A path broken across two comment
-    # lines ends the first in a hyphen - "docs/port/content-" then "probe.md" -
-    # and is one token to a reader and two to a regex. Rejoin those before
-    # matching anything, or the check reports a dangling document that is
-    # merely hyphenated. There is exactly one such citation in the tree and it
-    # is the reason this line exists.
+    # Rejoin a hyphenated path wrapped across // comment lines, such as
+    # "docs/port/content-" followed by "probe.md", before matching citations.
     string(REGEX REPLACE "-[ \t]*\r?\n[ \t]*//[ \t]*" "-" text "${text}")
 
     # ---------------------------------------------------------- documents
@@ -87,11 +62,8 @@ foreach(source IN LISTS sources)
             set(document "${citation}")
         endif()
 
-        # A citation that spells a path is resolved as a path, from the
-        # repository root exactly as an #include is (CONVENTIONS, Files). One
-        # that gives a bare filename is resolved by name, and then what matters
-        # is that the name is unique - the same rule a bare filename gets
-        # anywhere else, because a reader who is given one has to find it too.
+        # Paths resolve from the repository root (CONVENTIONS, Files). Bare
+        # filenames need a unique match before a numbered section can be checked.
         set(resolved "")
         set(candidates "")
         if(document MATCHES "/")
@@ -108,11 +80,8 @@ foreach(source IN LISTS sources)
             if(candidate_count EQUAL 1)
                 set(resolved "${candidates}")
             elseif(candidate_count GREATER 1)
-                # Reported, not failed. A citation that resolves to three
-                # GAPS.md is READABLE - a reader lands on one of them and the
-                # neighbouring sentence says which - where a citation that
-                # resolves to none is not. Only the second is a defect, and
-                # keeping them apart is what lets the first stay a hard check.
+                # Ambiguity is reported for a reader to resolve from context.
+                # A missing document is fatal; ambiguity alone is not.
                 list(JOIN candidates ", " candidate_list)
                 list(APPEND ambiguous_docs
                     "${source}\n      ${citation} -> ${candidate_count}: ${candidate_list}")
@@ -127,9 +96,8 @@ foreach(source IN LISTS sources)
         endif()
 
         # ------------------------------------------------------- sections
-        # SEAM.md#6 names "## 6. Terms renderer.h defers here". The number is
-        # what a renumbering moves, which is exactly why the citation carries
-        # it and exactly why it is checked.
+        # The recognized section form is SEAM.md#6, checked against a level-two
+        # heading beginning "## 6. ". Textual anchors are not validated here.
         if(section)
             file(STRINGS "${resolved}" headings REGEX "^## ${section}\\. ")
             if(NOT headings)
@@ -140,12 +108,9 @@ foreach(source IN LISTS sources)
     endforeach()
 
     # --------------------------------------------------------- trade-offs
-    # "T3: take the simpler model" is a complete comment (PHILOSOPHY.md), which
-    # is only true while T3 is the one PHILOSOPHY defines. 158 sites cite one.
-    #
-    # Whole words, tested one at a time, because a substring match reads INT32
-    # as a citation of T32. The line has to carry a comment marker: a citation
-    # lives in prose, and this is what keeps a template parameter out.
+    # Check standalone T-number tokens on lines containing // against the
+    # PHILOSOPHY headings. Whole words avoid treating INT32 as a citation of
+    # T32; the comment marker keeps an ordinary template parameter out.
     file(STRINGS "${source}" comment_lines REGEX "//")
     foreach(line IN LISTS comment_lines)
         string(REGEX REPLACE "[^A-Za-z0-9_]+" ";" words "${line}")
