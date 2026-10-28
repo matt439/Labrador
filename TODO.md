@@ -48,7 +48,6 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 | `SRL-21` | OPEN | should | S | Enclose the banner's text in its culling extent; headless partial-view cases and unchanged normal-layout capture review. [Scope](docs/product/BACKLOG.md#srl-21). |
 | `SM-49` | OPEN | should | M | Split the pixel-test harness and independent contract cases; preserve test names, assertions and golden bytes. |
 | `SM-51` | OPEN | could | S | Split cloud tooling tests by Config, Infrastructure, Release, Analysis and Dispatch responsibilities. |
-| `SM-50` | OPEN | should | S | Extract Win32 key/UTF-16 translation while keeping dispatch and window lifetime together. |
 | `SM-52` | OPEN | could | M | Separate website reference indexing, prose links and page assembly; preserve output and cache invalidation. |
 | `SM-53` | OPEN | could | M | Review Vulkan device/buffer ownership; record a keep/split verdict before an extraction story. |
 | `SM-54` | OPEN | could | M | Review D3D12/Vulkan pipeline construction boundaries while keeping frame lifetime coordinated. |

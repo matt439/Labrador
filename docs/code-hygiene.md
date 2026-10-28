@@ -201,10 +201,11 @@ unrun device checks. This is movement, not a golden-regeneration exercise.
 
 ## SM-50. Win32 input translation
 
-`engine/app/win32/window.cpp` mixes scan-position translation and UTF-16
-assembly with HWND creation, DPI, sizing, capture and dispatch. Extract only
-the translation responsibilities into backend-private helpers. Keep dispatch,
-focus/suspension cleanup, modifier ownership and HWND lifetime together.
+`engine/app/win32/window.cpp` owns HWND creation, DPI, sizing, capture and
+dispatch. Scan-position translation and UTF-16 assembly belong to the private
+`keyboard_input.h/.cpp` helper, with assembly state owned by each window.
+Keep dispatch, focus/suspension cleanup, modifier ownership and HWND lifetime
+together.
 
 **Done when:** the neutral window API and observable input stay unchanged.
 Preserve the existing hidden-window AppTests for physical keys, modifiers,
@@ -213,6 +214,23 @@ existing replacement policy; moving code must not silently change that policy.
 Use focused headless cases where the extraction exposes a translation seam,
 plus native builds and AppTests. List the new sources and run the include wall.
 Physical keyboard-layout acceptance remains separately identified.
+
+**Closed 2026-10-28:** the window retains dispatch, modifier ownership, focus
+cleanup and `DefWindowProc` ordering. The key table's executable body is
+unchanged after parameter-type normalization; the helper uses full-width
+virtual-key/message values.
+
+Malformed UTF-16 keeps its existing policy: a high surrogate waits and a new
+high replaces it; a following low combines; another BMP unit discards the
+pending high and emits that unit. An unpaired low reaches Keyboard's U+FFFD
+replacement. Focus/suspension does not implicitly flush pending assembly.
+This extraction adds no new IME or physical-layout support claim.
+
+Nine helper cases and two hidden-window integration cases join the existing
+AppTests entry. Debug-null AppTests builds and passes, including the prior
+window, modifier, text, focus and application cases. A separate read-only
+review found no behavior or registration change. Standalone checks pass;
+the helper header is private to the Win32 folder and is not a public API.
 
 ## SM-51. Cloud tooling test organisation
 

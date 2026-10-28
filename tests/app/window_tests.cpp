@@ -354,6 +354,45 @@ TEST_CASE("keyboard messages map physical positions independently of their chara
 	CHECK(notify.last_text == U'z');
 }
 
+TEST_CASE("UTF-16 character assembly belongs to each hidden window")
+{
+	RecordingNotify first_notify;
+	Window first(hidden_options(), &first_notify);
+	RecordingNotify second_notify;
+	WindowOptions second_options = hidden_options();
+	second_options.window_class_name += L"Second";
+	Window second(second_options, &second_notify);
+
+	SendMessageW(hwnd(first), WM_CHAR, 0xD83D, 1);
+	CHECK(first_notify.last_text == 0);
+	SendMessageW(hwnd(second), WM_CHAR, 0xDE00, 1);
+	CHECK(second_notify.last_text == char32_t(0xDE00));
+	SendMessageW(hwnd(first), WM_CHAR, 0xDE00, 1);
+	CHECK(first_notify.last_text == char32_t(0x1F600));
+}
+
+TEST_CASE("pending UTF-16 assembly survives unrelated focus and suspension messages")
+{
+	struct Loss { UINT message; WPARAM parameter; };
+	const Loss losses[] = {
+		{ WM_KILLFOCUS, 0 },
+		{ WM_ACTIVATEAPP, FALSE },
+		{ WM_POWERBROADCAST, PBT_APMSUSPEND },
+		{ WM_SIZE, SIZE_MINIMIZED },
+	};
+	for (const Loss& loss : losses)
+	{
+		RecordingNotify notify;
+		Window window(hidden_options(), &notify);
+		SendMessageW(hwnd(window), WM_CHAR, 0xD83D, 1);
+		SendMessageW(hwnd(window), loss.message, loss.parameter, 0);
+		CHECK(notify.last_text == 0);
+		SendMessageW(hwnd(window), WM_CHAR, 0xDE00, 1);
+		CAPTURE(loss.message);
+		CHECK(notify.last_text == char32_t(0x1F600));
+	}
+}
+
 TEST_CASE("modifier keys stay held until both physical sides are released")
 {
 	RecordingNotify notify;

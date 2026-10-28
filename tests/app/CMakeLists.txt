@@ -13,6 +13,7 @@ labrador_add_test_suite(AppTests
 )
 if(NOT EMSCRIPTEN)
     target_sources(AppTests PRIVATE
+        keyboard_input_tests.cpp
         startup_info_tests.cpp
         window_tests.cpp
         ../../engine/app/web/dom_events.cpp
