@@ -74,9 +74,9 @@ teardown to fake WebSockets under Node, with no browser or device.
 
 The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 Changes confined to `.md` files or `docs/` run the five standalone CMake lint
-checks below plus the offline Python tooling and Node flash/pacing suites;
-build jobs report without building. The website still runs its type check,
-tests and build. Code changes use the affected configurations;
+checks below plus the offline Python tooling and Node flash, pacing and
+bundle-verification suites; build jobs report without building. The website
+still runs its type check, tests and build. Code changes use the affected configurations;
 CI's full matrix remains required. Match focused local checks to the change.
 
 ## Verification boundaries

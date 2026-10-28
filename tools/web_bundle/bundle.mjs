@@ -6,9 +6,12 @@
 //                   --build-type <type>
 //                   --file <name>=<path> ...
 //                   --notice <preamble> --licence <title>=<path> ...
+//   node bundle.mjs --verify <linesweeper bundle folder>
 //
 // samples/linesweeper/CMakeLists.txt is the caller, as the build's
 // linesweeper_web_dist target, and runs it on every build.
+// --verify reads a copied LineSweeper bundle without changing it; its rules
+// and provenance limits are documented in docs/port/web.md, section 7.1.
 //
 // WHAT IT WRITES, into --out, which it empties first so that a file dropped
 // from the list is dropped from the bundle:
@@ -39,13 +42,28 @@
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { brotliCompressSync, constants } from 'node:zlib';
 
 const options = parse_arguments(process.argv.slice(2));
 
+if (options.verify !== undefined) {
+	try {
+		verify_bundle(options.verify);
+	} catch (error) {
+		fail(`verification failed: ${error.message}`);
+	}
+	process.exit(0);
+}
+
 function parse_arguments(argv) {
+	if (argv[0] === '--verify') {
+		if (argv.length !== 2) {
+			fail('--verify takes only a LineSweeper bundle folder');
+		}
+		return { verify: argv[1] };
+	}
 	const parsed = { file: [], licence: [] };
 	for (let i = 0; i < argv.length; i += 2) {
 		const name = argv[i];
@@ -96,6 +114,70 @@ function brotli_size(bytes) {
 			[constants.BROTLI_PARAM_SIZE_HINT]: bytes.length,
 		},
 	}).length;
+}
+
+// Verification reads only the supplied bundle. It checks the packaging
+// record and bytes, not which compiler flags or sources produced the module.
+function verify_bundle(folder) {
+	const required = ['index.html', 'linesweeper.js', 'linesweeper.wasm', 'poster.png', 'NOTICE.txt'];
+	const manifest = join(folder, 'BUILD.json');
+	if (!lstatSync(manifest).isFile()) {
+		throw new Error('BUILD.json must be a regular file');
+	}
+	const build = JSON.parse(readFileSync(manifest, 'utf8'));
+	if (build === null || typeof build !== 'object' || Array.isArray(build)) {
+		throw new Error('BUILD.json must hold an object');
+	}
+	if (build.build_type !== 'Release') {
+		throw new Error('build_type must be Release');
+	}
+	if (build.dirty !== false) {
+		throw new Error('dirty must be false');
+	}
+	if (typeof build.commit !== 'string' || !/^[0-9a-f]{40}$/.test(build.commit)) {
+		throw new Error('commit must be a full Git revision, not unknown');
+	}
+	if (typeof build.emscripten !== 'string' ||
+		!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(build.emscripten)) {
+		throw new Error('emscripten must name the toolchain version');
+	}
+	if (build.files === null || typeof build.files !== 'object' || Array.isArray(build.files)) {
+		throw new Error('files must be an object');
+	}
+	for (const name of required) {
+		if (!Object.hasOwn(build.files, name)) {
+			throw new Error(`files is missing ${name}`);
+		}
+	}
+	for (const [name, record] of Object.entries(build.files)) {
+		if (name === '.' || name === '..' || name === 'BUILD.json' ||
+			/[\\/:]/.test(name) || name.length === 0 || basename(name) !== name) {
+			throw new Error(`invalid bundle file name: ${name}`);
+		}
+		if (record === null || typeof record !== 'object' || Array.isArray(record) ||
+			!Number.isSafeInteger(record.bytes) || record.bytes < 0 ||
+			!Number.isSafeInteger(record.brotli) || record.brotli < 0 ||
+			typeof record.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(record.sha256)) {
+			throw new Error(`invalid file record: ${name}`);
+		}
+		const path = join(folder, name);
+		if (!lstatSync(path).isFile()) {
+			throw new Error(`${name} must be a regular file`);
+		}
+		const bytes = readFileSync(path);
+		if (createHash('sha256').update(bytes).digest('hex') !== record.sha256) {
+			throw new Error(`${name}: SHA-256 does not match BUILD.json`);
+		}
+		if (bytes.length !== record.bytes) {
+			throw new Error(`${name}: byte count does not match BUILD.json`);
+		}
+	}
+	for (const name of readdirSync(folder)) {
+		if (name !== 'BUILD.json' && !Object.hasOwn(build.files, name)) {
+			throw new Error(`unrecorded bundle entry: ${name}`);
+		}
+	}
+	process.stdout.write(`Verified clean Release LineSweeper bundle from ${build.commit}\n`);
 }
 
 function notice_text() {

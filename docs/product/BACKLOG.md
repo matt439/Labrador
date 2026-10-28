@@ -329,7 +329,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 waits on hardware, a scheduled run or an owner session. Keep their order below,
 skip only the items whose own prerequisites are unmet, and return to an earlier
 item when its gate clears. This does not complete Next or relax its acceptance.
-The browser adopter batches are L1 to L6; TODO's NOW names the remaining actions. Later
+TODO's NOW names the next ready batches. Later
 work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
@@ -409,7 +409,7 @@ written.
 - [x] **[OCA-63](STORIES.md#oca-63)** Could · S · The Outside C++ Adopter: Know the notices my browser build must ship — after OCA-62
 - [x] **[OCA-31](STORIES.md#oca-31)** Could · S · The Outside C++ Adopter: Check my game's page loads and quits — after OCA-20
 - [x] **[OCA-74](STORIES.md#oca-74)** Could · S · The Outside C++ Adopter: Embed the LineSweeper bundle on my own site from a published contract — after OCA-26, OCA-23
-- [ ] **[SM-27](STORIES.md#sm-27)** Could · S · The Sole Owner-Maintainer: Verify a web bundle before deploying it, from this repository — after PI-05
+- [x] **[SM-27](STORIES.md#sm-27)** Could · S · The Sole Owner-Maintainer: Verify a web bundle before deploying it, from this repository — after PI-05
 - [ ] **[BDP-15](STORIES.md#bdp-15)** Should · S · The Browser and Phone Demo Player: Failure messages a player can act on — after BDP-04
 - [ ] **[BDP-16](STORIES.md#bdp-16)** Could · S · The Browser and Phone Demo Player: A graphics context that never comes back offers a way forward — after BDP-04
 - [ ] **[BDP-17](STORIES.md#bdp-17)** Could · S · The Browser and Phone Demo Player: Know before downloading that my browser cannot run the game — after BDP-04
@@ -547,7 +547,7 @@ time, looping and restart policy in sample code (T1).
 | OCA-63 | G16. Closed 2026-10-28: [Build for the browser](https://labradorengine.com/docs/guides/browser/#gather-the-browser-release-and-its-notices) publishes the existing bundler's release command and full notice inputs. A fresh copied current project built in Release, passed its rules test, packaged exactly five files and drew/quit in Chrome. All licence texts, byte counts, hashes and Brotli sizes were verified. The literal command also passed with v0.2.0's packaging inputs and current runtime fixtures; this does not claim a legacy game build. LineSweeper now carries the engine's attribution record and preserved Microsoft timer-code MIT text, and its rebuilt BundlePageTests passed. |
 | OCA-31 | G11. Closed 2026-10-28: the public browser guide documents the repository runner against a consumer's built page, the quit protocol and pass/fail diagnostics. A copied minimal page outside the checkout passed in headless Chrome; injecting the documented `console.error` failed with exit 1. |
 | OCA-74 | G142, G51. Closed 2026-10-28: the public LineSweeper bundle guide states the default factory, canvas, callbacks, quit/replay lifetime, files, BUILD fields and hosting rules. Its literal host example outside the checkout drew, quit through `onQuit` and replayed on a fresh canvas in headless Chrome without complaints. The bundle example and web.md section 7 point to it. |
-| SM-27 | G144: verify a web bundle before deploying, from this repository. Follows PI-05 (Next). |
+| SM-27 | G144. Closed 2026-10-28: `bundle.mjs --verify` checks a copied LineSweeper bundle read-only, refusing dirty/unknown provenance, non-Release builds, missing or unrecorded files and mismatched hashes/sizes. web.md section 7.1 states every rule. Offline fixtures pass, and the existing Debug bundle is rejected for its build type. |
 | BDP-15 | G82: failure messages a player can act on. Follows BDP-04 (Next). |
 | BDP-16 | G83: a context that never returns offers a way forward. |
 | BDP-17 | G84: know before downloading that a browser cannot run the game. |

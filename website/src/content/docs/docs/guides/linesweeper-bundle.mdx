@@ -149,6 +149,19 @@ This record describes the checkout when packaging runs; it cannot prove the sour
 used by an older module. Build immediately before packaging, check the record and preserve it
 with the release. A dirty or Debug bundle is for development.
 
+Before copying a LineSweeper bundle to a host, run this from the Labrador checkout's root,
+in the prompt where you loaded Emscripten's environment:
+
+```bat
+"%EMSDK_NODE%" tools\web_bundle\bundle.mjs --verify out\build\wasm-release\web-dist\linesweeper
+```
+
+The check reads the folder without changing it. It rejects dirty, Debug or unknown source
+metadata, missing required files, mismatched hashes or raw sizes, and unrecorded entries.
+Exit 0 prints the verified revision; compare it with the one you intend to deploy. The
+<RepoLink path="docs/port/web.md">port record, section 7.1</RepoLink>
+states every verification rule and its provenance limits. Verification does not upload the bundle.
+
 ## What the host sends
 
 Follow [Put your game on a web host](/docs/guides/web-host/) for MIME types, compression, CSP and

@@ -670,6 +670,36 @@ For a game's copied template, the public
 [browser guide](https://labradorengine.com/docs/guides/browser/#gather-the-browser-release-and-its-notices)
 gives the corresponding release command using the same bundler.
 
+**Verify before deploying.** From this repository's root, with Emscripten's
+environment loaded, run:
+
+```bat
+"%EMSDK_NODE%" tools\web_bundle\bundle.mjs --verify out\build\wasm-release\web-dist\linesweeper
+```
+
+This read-only check exits 0 only when `BUILD.json` names a full Git commit,
+`dirty` is exactly `false`, `build_type` is `Release`, and `emscripten` names
+a numeric three-part version (with an optional suffix). It requires records
+and regular files for `index.html`,
+`linesweeper.js`, `linesweeper.wasm`, `poster.png` and `NOTICE.txt`. Every
+recorded file must be directly in the bundle folder, with a matching SHA-256
+and raw byte count, and a nonnegative integer Brotli byte count. The Brotli
+size is a packaging estimate, not recomputed by another Node/Brotli version.
+Every folder entry except `BUILD.json` must be recorded; stale files, subfolders
+and symbolic links fail. Additional recorded files receive the same checks.
+Missing or malformed metadata, unknown provenance and any failed rule
+produce a diagnostic and a nonzero exit. The Debug
+bundle fails the build-type rule. No Git checkout, compiler, browser or
+network access is needed to verify a copied bundle.
+
+The check verifies the packaging record and its bytes. The commit and build
+type are recorded when bundling; they do not prove the sources or flags used
+to compile an older module. Rebuild from the intended clean revision before
+packaging, check the printed revision against the one intended for deploy,
+and run the check on the folder that will actually be copied to the host.
+The command verifies LineSweeper's file set; it is not a deploy command or
+a verifier for an adopter's differently named game.
+
 ### 7.2 Headers the host must send
 
 **Single-threaded, as built, so the list is short:**
