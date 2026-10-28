@@ -204,12 +204,19 @@ cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_whitespace.cmake
 
 ## Changes and landing
 
-[CONTRIBUTING.md](CONTRIBUTING.md) owns the procedure: branch from `master`,
-one self-contained commit with source, tests and every document it makes false,
-then a PR and rebase-merge on green. Master is protected, merges are linear,
-and required checks are strict. Adding, removing or renaming a CI job or matrix
-entry requires the owner to update branch protection and its required-check list.
-Commit, push or open a PR only when the owner asks.
+[CONTRIBUTING.md](CONTRIBUTING.md) owns the contribution and landing procedure:
+branch from `master`, one self-contained commit with source, tests and every
+document it makes false, then a PR and rebase-merge on green. Master is protected,
+merges are linear, and required checks are strict. Adding, removing or renaming
+a CI job or matrix entry requires the owner to update branch protection and its
+required-check list.
+
+For the owner's work with agents, accumulate self-contained commits on a local
+work branch across tasks. Create the branch from `master` when no work branch
+is already in use, then keep using it. Commit completed, validated work without
+waiting for a separate commit request. The owner will request a PR when ready;
+open one PR for the accumulated work when asked. Do not create a branch or PR
+per commit. Push or open a PR only when the owner asks.
 
 A consumer-visible change goes in [CHANGES.md](CHANGES.md), newest first under
 `## Unreleased`. Touching `engine/**/*.h`, `engine/CMakeLists.txt`,
