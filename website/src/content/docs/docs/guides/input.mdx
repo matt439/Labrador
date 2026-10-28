@@ -41,6 +41,10 @@ UTF-8, with the keyboard layout, dead keys and input methods already applied by 
 valid until the next step, so copy it to keep it. Use it for a name-entry box, never for
 movement.
 
+Before displaying typed text, follow the [wide conversion and font check](/docs/guides/sprites-and-text/#from-a-string-table-to-text).
+Do them when the text changes, outside `draw()`; the game's editing and
+name-entry rules remain its own.
+
 When the window loses focus, every held key is treated as released, so a character does not walk
 on by itself after an alt-tab.
 

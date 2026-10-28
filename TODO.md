@@ -75,7 +75,7 @@ the two new stories have their detail in BACKLOG.md.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-41` | BLOCKED | could | S | UTF-8 settings and the permitted native scratch consumer pass; complete wasm/Node and full-CI acceptance. The committed-literal reservation is retained. [Record](docs/2026-10-29-literal-encoding.md). |
-| `OCA-42` | BLOCKED | could | M | Add a string-table-to-screen example within the documented font limits; after OCA-41. |
+| `OCA-42` | BLOCKED | could | M | Compiled JSON-to-owned-text guide, glyph checks and null submissions pass; finish authored matching-atlas and browser acceptance. [Record](docs/2026-10-29-string-table-text.md). |
 | `OCA-77` | BLOCKED | could | S | Wrap a translated string to a measured width; after OCA-42. |
 | `PI-20` | BLOCKED | could | S | Key enumeration and strict manifest/sprite-sheet fields pass native Debug/null/Release cases; wasm/Node qualification remains at stopped Emscripten gates. [Evidence](docs/2026-10-29-strict-asset-keys.md). |
 | `SRL-20` | BLOCKED | could | M | Copyable strip player, gallery overlay, original content and native timing/loader/recording/state checks are implemented. Wasm/page checks and rendered-frame review remain at stopped gates. [Evidence](docs/product/BACKLOG.md#srl-20). |
