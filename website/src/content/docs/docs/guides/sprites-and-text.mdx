@@ -129,6 +129,86 @@ as it would on the nearest whole pixel, under the point filter.
 
 The engine has no layout system: positions are numbers your game works out, as here.
 
+### From a string table to text
+
+Your game owns its string table and chooses its keys and language. For one
+menu title, put this in `content/strings/fr.json`, saved as UTF-8:
+
+```json
+{ "title": "Caf\u00e9" }
+```
+
+The JSON escape is precomposed U+00E9; the decoded string is the same as a
+UTF-8 file spelling that character directly. The template atlas holds only
+U+0020-U+007E, so it does not include this title's last character.
+
+Make an atlas that includes printable ASCII and U+00E9, using
+MakeSpriteFont's `/CharacterRegion` option to select the required code points.
+The font you choose must contain those glyphs. One `.spritefont` holds one
+fixed rasterized size; `/FontSize` is specified in points, and scaling the
+result resamples its pixels. Build another atlas when you need a different
+rasterized size rather than expecting new glyph detail from scaling.
+
+Name that font `menu_bold_16` in your manifest and load it before building the
+text. Copy the source folder `content/strings/` to `strings/` beside the native
+executable using the [Assets guide](/docs/guides/assets/#getting-content-beside-the-executable).
+Include that folder in the Release install list beside `content/fonts` too.
+The JSON file is read directly by your game; it needs no new manifest kind.
+The template's browser build embeds the whole content folder at link time.
+Add `content/strings/fr.json` and the new font file to its existing
+`LINK_DEPENDS` list beside the manifest, so editing either relinks and
+repackages it too.
+
+Read and convert at initialization or when the language changes:
+
+```cpp
+#include "engine/app/content_root.h"
+#include "engine/assets/json.h"
+#include "engine/math/vector2f.h"
+#include "engine/render/render_resources.h"
+#include "engine/render/text.h"
+#include "engine/render/text_encoding.h"
+
+#include <stdexcept>
+#include <string>
+```
+
+<SourceFile
+	path="tests/assets/string_table_text_tests.cpp"
+	from="labrador::Text load_menu_title(labrador::RenderResources& resources,"
+	to="}"
+/>
+
+
+`JsonValue` views borrow their document, while `string("title")` returns an
+owned UTF-8 copy. `widen` creates the wide string once, and `Text` keeps its own
+copy, so the JSON document can be destroyed on return. The render-resource
+table is borrowed and must outlive the text. Keep the returned `Text` as a
+state member instead of reading the file again each frame:
+
+```cpp
+// In init(), after the manifest has loaded the font; title_ is a Text member.
+const std::string strings_path = labrador::resolved_under(
+    labrador::executable_directory(), "strings/fr.json");
+this->title_ = load_menu_title(*this->app_->render_resources(),
+    strings_path.c_str());
+
+// In the existing draw code, with the current view's DrawList.
+this->title_.draw(draw_list);
+```
+
+The draw list is a loan for the current view; do not store it. The same wide
+storage can be drawn by several views without converting it again.
+`read_json_file` uses the path it is given, so the initialization code resolves
+the table under the executable directory rather than the process's working
+directory. In the browser, that directory is the packaged file system's `/`.
+
+`can_render` checks that each required glyph is in this atlas. A stand-in
+does not turn missing coverage into success: for an atlas containing only
+ASCII and U+00E9, `can_render(font, L"\u03A9")` must report false. It does not
+establish shaping or visual quality; the [language limits](#which-languages-the-text-path-can-draw)
+still apply, and the chosen font must be checked on screen.
+
 ### Which languages the text path can draw
 
 Text is drawn one glyph per code unit, left to right, with each glyph's own advance. There is no

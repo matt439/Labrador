@@ -8,5 +8,12 @@ labrador_add_test_suite(AssetsTests
         resource_loader_tests.cpp
         sound_bank_loader_tests.cpp
         sprite_sheet_loader_tests.cpp
+        string_table_text_tests.cpp
     LINKS LabradorEngine
 )
+
+# The recipe's drawing check is a recording only, selected with null render.
+# The other cases use metadata and create no renderer on any backend.
+if(LABRADOR_RENDER_BACKEND STREQUAL "null")
+    target_compile_definitions(AssetsTests PRIVATE LABRADOR_TEST_RENDER_NULL)
+endif()
