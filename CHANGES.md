@@ -72,6 +72,16 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Keep sound-group insertion retryable after allocation failure
+
+**Behaviour change.** If storing a newly added sound group's volume throws,
+`AudioResources::add_sound_group` now removes that group's just-inserted name.
+Previously the name could remain mapped to a slot that did not exist, reject
+a retry as a duplicate and later alias another group's volume. Failed additions
+now leave the name absent and retryable, with existing groups and volumes
+unchanged. Successful additions and mixing behavior are unchanged. No caller
+migration is needed.
+
 ### 2026-10-29 - Reject unknown manifest and sprite-sheet keys
 
 **Behaviour change.** The manifest and sprite-sheet loaders previously ignored

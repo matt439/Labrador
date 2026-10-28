@@ -58,8 +58,17 @@ namespace labrador
 		}
 
 		const int index = static_cast<int>(this->group_volumes_->size());
-		this->group_indices_.emplace(group_name, index);
-		this->group_volumes_->push_back(1.0f);
+		const std::map<std::string, int>::iterator inserted =
+			this->group_indices_.emplace(group_name, index).first;
+		try
+		{
+			this->group_volumes_->push_back(1.0f);
+		}
+		catch (...)
+		{
+			this->group_indices_.erase(inserted);
+			throw;
+		}
 		return SoundGroupHandle(index);
 	}
 
