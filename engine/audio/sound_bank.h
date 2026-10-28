@@ -137,6 +137,8 @@ namespace labrador
 		// (audio_resources.h). Assigning again moves it; nothing takes one out.
 		// An effect takes its group's volume at its next play_effect,
 		// set_effect_volume or group volume change.
+		// If storing an effect's first group assignment throws, its previous
+		// group is unchanged and the call can be retried.
 		//
 		// Each throws std::out_of_range through an unresolved wave, effect or
 		// group handle, std::logic_error if this bank was never added to an

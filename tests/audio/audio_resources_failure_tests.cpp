@@ -3,6 +3,11 @@
 #include <doctest/doctest.h>
 
 #include "engine/audio/audio_resources.h"
+#if defined(LABRADOR_TEST_NULL_AUDIO)
+#include "engine/assets/sound_bank_loader.h"
+#include "engine/audio/audio_device.h"
+#include "engine/audio/null/recording.h"
+#endif
 
 #include <crtdbg.h>
 
@@ -429,6 +434,130 @@ TEST_SUITE("AudioResourcesFailureTests")
 			CHECK(failures >= 2);
 		}
 	}
+
+#if defined(LABRADOR_TEST_NULL_AUDIO)
+	TEST_CASE("failed first effect-group assignments remain ungrouped and retryable")
+	{
+		REQUIRE(std::get_new_handler() == nullptr);
+		constexpr std::size_t failpoint_limit = 16;
+		std::size_t failures = 0;
+		bool reached_success = false;
+		for (std::size_t fail_on = 1; fail_on <= failpoint_limit; ++fail_on)
+		{
+			labrador::AudioDevice device;
+			labrador::AudioResources resources;
+			labrador::SoundBankDefinition definition;
+			definition.source_path = "effect_group_failure.json";
+			definition.waves = { "tone" };
+			definition.effects = {
+				labrador::SoundBankDefinition::Effect{ "low", "tone" },
+				labrador::SoundBankDefinition::Effect{ "high", "tone" }
+			};
+			const labrador::AudioDevice::WaveBankHandle waves =
+				device.open_wave_bank("content/", "groups", definition.waves);
+			resources.add_sound_bank("groups", labrador::build_sound_bank(
+				&device, waves, definition));
+			labrador::SoundBank* bank = resources.sound_bank("groups");
+			const labrador::SoundBank::EffectHandle low = bank->resolve_effect("low");
+			const labrador::SoundBank::EffectHandle high = bank->resolve_effect("high");
+			const labrador::SoundGroupHandle music = resources.add_sound_group("music");
+			const labrador::SoundGroupHandle other = resources.add_sound_group("other");
+			resources.set_group_volume(music, 0.5f);
+			resources.set_group_volume(other, 0.25f);
+			const std::vector<labrador::RecordedSound>& calls = labrador::recorded_sounds(device);
+			REQUIRE(calls.empty());
+			REQUIRE(bank->effect_state(low) == labrador::SoundState::stopped);
+			REQUIRE(bank->effect_state(high) == labrador::SoundState::stopped);
+			const _CRT_ALLOC_HOOK initial_hook = _CrtGetAllocHook();
+			const int initial_mode = _CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE);
+			AllocationFailureSample sample;
+			sample.fail_on = fail_on;
+			bool refused = false;
+			try
+			{
+				AllocationFailureScope scope(sample);
+				bank->set_effect_group(high, music);
+			}
+			catch (const std::bad_alloc&)
+			{
+				refused = true;
+			}
+
+			CAPTURE(fail_on);
+			CAPTURE(sample.attempts);
+			REQUIRE_FALSE(sample.hook_conflict);
+			REQUIRE(_CrtGetAllocHook() == initial_hook);
+			REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+			CHECK(calls.empty());
+			CHECK(bank->effect_state(high) == labrador::SoundState::stopped);
+			if (refused)
+			{
+				REQUIRE(sample.injected);
+				CHECK(sample.attempts == fail_on);
+				++failures;
+				bank->play_effect(high, true, 0.8f);
+				bank->set_effect_volume(high, 0.6f);
+				REQUIRE(calls.size() == 2);
+				CHECK(calls[0].call == labrador::SoundCall::play_voice);
+				CHECK(calls[0].volume == doctest::Approx(0.8f));
+				CHECK(calls[1].call == labrador::SoundCall::set_voice_volume);
+				CHECK(calls[1].volume == doctest::Approx(0.6f));
+				resources.set_group_volume(music, 0.25f);
+				CHECK(calls.size() == 2);
+				bank->stop_effect(high, true);
+				const std::size_t before_retry = calls.size();
+				REQUIRE_NOTHROW(bank->set_effect_group(high, music));
+				CHECK(calls.size() == before_retry);
+			}
+			else
+			{
+				REQUIRE_FALSE(sample.injected);
+				CHECK(sample.attempts < fail_on);
+				reached_success = true;
+			}
+
+			const std::size_t before_repeat = calls.size();
+			bank->set_effect_group(low, music);
+			bank->set_effect_group(high, music);
+			CHECK(calls.size() == before_repeat);
+			const std::size_t low_play = calls.size();
+			bank->play_effect(low, true, 0.4f);
+			const std::size_t high_play = calls.size();
+			bank->play_effect(high, true, 0.8f);
+			bank->pause_effect(high);
+			const std::size_t before = calls.size();
+			resources.set_group_volume(music, 0.625f);
+			REQUIRE(calls.size() == before + 2);
+			CHECK(calls[before].call == labrador::SoundCall::set_voice_volume);
+			CHECK(calls[before].voice == calls[low_play].voice);
+			CHECK(calls[before].volume == doctest::Approx(0.25f));
+			CHECK(calls[before + 1].call == labrador::SoundCall::set_voice_volume);
+			CHECK(calls[before + 1].voice == calls[high_play].voice);
+			CHECK(calls[before + 1].volume == doctest::Approx(0.5f));
+			CHECK(bank->effect_state(high) == labrador::SoundState::paused);
+
+			const std::size_t before_move = calls.size();
+			bank->set_effect_group(high, other);
+			CHECK(calls.size() == before_move);
+			resources.set_group_volume(music, 0.75f);
+			resources.set_group_volume(other, 0.5f);
+			REQUIRE(calls.size() == before_move + 2);
+			CHECK(calls[before_move].call == labrador::SoundCall::set_voice_volume);
+			CHECK(calls[before_move].voice == calls[low_play].voice);
+			CHECK(calls[before_move].volume == doctest::Approx(0.3f));
+			CHECK(calls[before_move + 1].call == labrador::SoundCall::set_voice_volume);
+			CHECK(calls[before_move + 1].voice == calls[high_play].voice);
+			CHECK(calls[before_move + 1].volume == doctest::Approx(0.4f));
+			CHECK(bank->effect_state(high) == labrador::SoundState::paused);
+			if (reached_success)
+			{
+				break;
+			}
+		}
+		REQUIRE(reached_success);
+		CHECK(failures >= 1);
+	}
+#endif
 }
 
 #endif

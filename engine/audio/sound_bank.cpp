@@ -106,8 +106,6 @@ namespace labrador
 			return;
 		}
 
-		this->effects_.get(effect)->group = group;
-
 		// Kept in handle order and once each, so a group change walks the
 		// effects in the order they were defined in.
 		const std::vector<EffectHandle>::iterator at = std::lower_bound(
@@ -120,6 +118,7 @@ namespace labrador
 		{
 			this->grouped_effects_.insert(at, effect);
 		}
+		this->effects_.get(effect)->group = group;
 	}
 
 	void SoundBank::play_wave(WaveHandle wave, float volume, float pitch,

@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Preserve an effect's group after failed assignment
+
+**Behaviour change.** If `SoundBank::set_effect_group` cannot store an effect's
+first notification membership, its previous group remains unchanged and the
+call can be retried. Previously playback could use the failed assignment
+while later group-volume updates missed the effect. Successful assignment,
+reassignment and notification order are preserved. Valid caller code needs
+no migration.
+
 ### 2026-10-29 - Keep failed first sound-bank registration retryable
 
 **Behaviour change.** If registering a new bank name through
