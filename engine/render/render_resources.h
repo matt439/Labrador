@@ -18,6 +18,8 @@ namespace labrador
 	// in, handles out - the loader that fills it decides what a name means and
 	// where the bytes came from.
 	//
+	// For renderer writers:
+	//
 	// BEHIND THE SEAM, and this is why the pimpl: the storage of a texture is
 	// whatever the backend calls one, and a translation unit that resolved a
 	// name would otherwise compile a graphics API to do it. Without it a
@@ -66,10 +68,19 @@ namespace labrador
 		void add_font(const std::string& font_name,
 			std::unique_ptr<Font> font);
 
+		// A game does not call this; the shell's device-loss callback does.
+		//
 		// Drops everything the device owns, leaving the names - and therefore
 		// every handle resolved from them - in place, so that a drawable holding
 		// one before the loss draws the right thing after the reload refills its
 		// slot.
+		//
+		// PRECONDITION: IT IS THE FIRST HALF OF A DEVICE LOSS, NOT A WAY TO DROP
+		// TEXTURES. What may follow it is a device being remade and the names
+		// being reloaded into it, which is what DeviceNotify guarantees and what
+		// Application::on_device_lost/on_device_restored do.
+		//
+		// For renderer writers:
 		//
 		// TEXTURES, AND THAT IS THE WHOLE LIST. The sheets are not device
 		// resources: a sheet's device half is its texture, which is a handle. A
@@ -83,15 +94,12 @@ namespace labrador
 		// heard of has gone away. Making the shell say which *kinds* of resource a
 		// loss takes would be the seam telling it what a texture is.
 		//
-		// PRECONDITION: IT IS THE FIRST HALF OF A DEVICE LOSS, NOT A WAY TO DROP
-		// TEXTURES. What may follow it is a device being remade and the names
-		// being reloaded into it, which is what DeviceNotify guarantees and what
-		// Application::on_device_lost/on_device_restored do. Calling it on a live
-		// device and reloading without one costs a descriptor-heap slot per name
-		// on the D3D12 backend, out of a fixed 256: the slot allocator there is a
-		// bump counter with no free list, reset by device creation and by nothing
-		// else, because a slot the GPU may still be reading cannot be handed out
-		// again and a device loss is the one moment nothing is reading. A
+		// Calling it on a live device and reloading without recreating the device
+		// costs a descriptor-heap slot per name on the D3D12 backend, out of a fixed
+		// 256: its bump counter has no free list. Renderer device-loss teardown and
+		// device-resource creation reset it; this method only releases texture
+		// payloads. A slot the GPU may still be reading cannot be handed out again,
+		// and a device loss is the one moment nothing is reading. A
 		// PRECONDITION RATHER THAN A FREE LIST (T1, T3): a free list would buy
 		// back 256 slots for a call nothing in this repository makes, and would
 		// have to be told when the GPU had finished with each one - which is the
@@ -102,8 +110,17 @@ namespace labrador
 		void release_device_resources();
 
 		// CONSTRAINT: A RenderResources OUTLIVES THE Renderer IT WAS FILLED
-		// AGAINST. This class holds whatever a backend calls a texture, and on
-		// some backends that is a resource the GPU may still be reading - an
+		// AGAINST. Members destruct in reverse declaration order, so keeping it
+		// means declaring the table BEFORE the renderer - which is the opposite
+		// of the order they are CREATED in, and the paragraph on set_resources in
+		// renderer.h says why that order is forced the other way. Everything in
+		// this repository that holds both keeps it: engine/app/application.h, and
+		// every test and benchmark harness that stands in for a shell.
+		//
+		// For renderer writers:
+		//
+		// This class holds whatever a backend calls a texture, and on some
+		// backends that is a resource the GPU may still be reading - an
 		// ID3D12Resource on d3d12, a VkImage on vulkan - whose only wait is
 		// ~Renderer::Impl, so a shell that declares its table after its renderer
 		// releases every texture ahead of the one wait on the whole shutdown path.
@@ -113,13 +130,7 @@ namespace labrador
 		//
 		// It is stated here rather than only kept, because breaking it costs
 		// nothing on any other backend, so a shell built against one of those
-		// never finds out. Members destruct in reverse declaration order, so
-		// keeping it means declaring the table BEFORE the renderer - which is
-		// the opposite of the order they are CREATED in, and the paragraph on
-		// set_resources in renderer.h says why that order is forced the other
-		// way. Everything in this repository that holds both keeps it:
-		// engine/app/application.h, and every test and benchmark harness that
-		// stands in for a shell.
+		// never finds out.
 		//
 		// Nothing here needs the renderer to still be alive, and on the Vulkan
 		// backend that is true by construction rather than by luck: a VkImage is a

@@ -518,7 +518,19 @@ written.
 - [x] **[PI-18](STORIES.md#pi-18)** Could · XS · The Pinned Submodule Integrator: The include wall says exactly what it protects in my build
 - [ ] **[PI-20](../review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans)** Could · S · The Pinned Submodule Integrator: A misspelt key in a manifest or sprite sheet is refused, not read as its default
 - [ ] **[PI-21](#pi-21)** Should · M · The Pinned Submodule Integrator: Send controller vibration through the engine's input seam — [scope and acceptance](../review/colourwars-reports/vibration.md)
-- [ ] **[SRL-09](STORIES.md#srl-09)** Could · S · The Sample-Reading Learner: Game-facing reference pages keep backend rationale out of my way — after SRL-08
+- [x] **[SRL-09](STORIES.md#srl-09)** Could · S · The Sample-Reading Learner: Game-facing reference pages keep backend rationale out of my way — after SRL-08
+  Closed 2026-10-29. RenderResources' device-release comment first says a game
+  does not call it and identifies the shell callback. Its effects and actual
+  device-loss precondition stay before an explicit renderer-writer marker;
+  pimpl and lifetime rationale are also marked in place. The outlives and
+  declaration-order contract remains visible. The allocator explanation now
+  names both current reset sites instead of claiming creation is the only one.
+  All 518 noncomment tokens are identical. All five native Debug RenderTests
+  targets build and their headless tests pass, as do the seven standalone
+  checks, website check, 160 website tests and 144-page/433-file build. The built
+  reference's exact first method sentence, three markers, lifetime/precondition
+  text and corrected rationale were inspected. No pixel, wasm, browser or device
+  run is implied; existing qualification stops remain in force.
 - [x] **[SM-23](STORIES.md#sm-23)** Should · S · The Sole Owner-Maintainer: Leave a trace that regenerated goldens were looked at
   Implemented 2026-10-29. AGENTS and its CLAUDE import require one exact
   `Golden-Reviewed: <path>` line per changed golden PNG in that commit's own
