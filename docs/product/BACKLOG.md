@@ -507,7 +507,23 @@ written.
 - [ ] **[PI-20](../review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans)** Could · S · The Pinned Submodule Integrator: A misspelt key in a manifest or sprite sheet is refused, not read as its default
 - [ ] **[PI-21](#pi-21)** Should · M · The Pinned Submodule Integrator: Send controller vibration through the engine's input seam — [scope and acceptance](../review/colourwars-reports/vibration.md)
 - [ ] **[SRL-09](STORIES.md#srl-09)** Could · S · The Sample-Reading Learner: Game-facing reference pages keep backend rationale out of my way — after SRL-08
-- [ ] **[SM-23](STORIES.md#sm-23)** Should · S · The Sole Owner-Maintainer: Leave a trace that regenerated goldens were looked at
+- [x] **[SM-23](STORIES.md#sm-23)** Should · S · The Sole Owner-Maintainer: Leave a trace that regenerated goldens were looked at
+  Implemented 2026-10-29. AGENTS and its CLAUDE import require one exact
+  `Golden-Reviewed: <path>` line per changed golden PNG in that commit's own
+  message. The standard-library checker reads each introduced commit's actual
+  parent diff/message, including root commits, deletion and rename paths;
+  later aggregate declarations cannot cover earlier omissions. Missing/shallow
+  history and merges fail explicitly. Nested invocation resolves the Git root,
+  and Git reads disable implicit fetches, replacement refs, external diff and
+  text conversion. The existing lint job gains full-history checkout and the
+  check without changing jobs, matrix names or permissions. PRs use actual
+  base/head SHAs; manual/scheduled/first-push single-head coverage is labeled.
+  All 27 focused offline tests pass, including a replacement-ref regression.
+  The cached comparison base `4d2f27f` through `c34e566` checks 30 commits with
+  no changed goldens. All seven standalone checks, website check, 160 website
+  tests and the 143-page build pass. Real golden files are unchanged.
+  Hosted CI execution remains part of the owner's later PR; the
+  checker establishes declarations, not visual judgment.
 - [ ] **[SM-24](STORIES.md#sm-24)** Could · S · The Sole Owner-Maintainer: A written procedure for moving dependency and toolchain pins — after SM-25
 - [ ] **[SM-17](STORIES.md#sm-17)** Could · M · The Sole Owner-Maintainer: One command per area that runs every configuration a change must pass
 - [ ] **[SM-18](STORIES.md#sm-18)** Could · S · The Sole Owner-Maintainer: A record of the configurations CI cannot run, per merged change — after SM-17

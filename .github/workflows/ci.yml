@@ -98,6 +98,29 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check per-commit golden review declarations
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_BEFORE: ${{ github.event.before }}
+          EVENT_HEAD: ${{ github.sha }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if ($env:EVENT_NAME -eq 'pull_request') {
+            python tools/check_golden_reviews.py --base "$env:PR_BASE" --head "$env:PR_HEAD"
+          } elseif ($env:EVENT_NAME -eq 'push' -and $env:EVENT_BEFORE -and $env:EVENT_BEFORE -notmatch '^0+$') {
+            python tools/check_golden_reviews.py --base "$env:EVENT_BEFORE" --head "$env:EVENT_HEAD"
+          } elseif ($env:EVENT_NAME -in @('schedule', 'workflow_dispatch') -or
+                    ($env:EVENT_NAME -eq 'push' -and $env:EVENT_BEFORE -match '^0+$')) {
+            Write-Output 'No PR/push comparison base: checking only the event head commit, not ancestor/new-branch history.'
+            python tools/check_golden_reviews.py --commit "$env:EVENT_HEAD"
+          } else {
+            throw 'No supported golden-review scope; refusing to guess a comparison range.'
+          }
+          exit $LASTEXITCODE
 
       - name: Check every document a comment cites resolves
         run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_doc_citations.cmake

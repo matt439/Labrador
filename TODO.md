@@ -97,7 +97,6 @@ The rest of the site's operations stories (`SM-26`, `SM-29`, `SM-30`) are in [BA
 |---|---|---|---|---|
 | `SM-25` | WAITING | should | S | Observe the next scheduled Actions run; repaired SDK download and tests passed PR CI. [Evidence](docs/product/BACKLOG.md#next). |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `allowed_channel_drift` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
-| `SM-23` | OPEN | should | S | Make golden regeneration leave a trace of which changed images were reviewed. |
 | `SM-17` | OPEN | could | M | Add an area-to-preset verification command covering required native and wasm configurations. |
 | `SM-18` | BLOCKED | could | S | Record device checks CI cannot run for each change; after SM-17. |
 
