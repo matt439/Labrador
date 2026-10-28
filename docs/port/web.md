@@ -662,7 +662,13 @@ libc++abi, libunwind, compiler-rt's builtins, Emscripten's musl-derived C
 library and its JavaScript runtime, besides RapidJSON, and the page links to
 the file. The licence texts are read from the Emscripten install that linked
 the module, so they are the versions in it. The repository's `NOTICE` lists
-the same set.
+the same set. The bundle also carries that attribution record and the full
+Microsoft MIT text for the shared timer code, preserved in
+`tools/web_bundle/Microsoft-LICENSE.txt`; the table's older measurement
+predates these additional notice inputs.
+For a game's copied template, the public
+[browser guide](https://labradorengine.com/docs/guides/browser/#gather-the-browser-release-and-its-notices)
+gives the corresponding release command using the same bundler.
 
 ### 7.2 Headers the host must send
 

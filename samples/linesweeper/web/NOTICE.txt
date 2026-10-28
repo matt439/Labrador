@@ -10,6 +10,10 @@ module was built from.
 
 Linked into linesweeper.wasm and linesweeper.js:
 
+- Microsoft's shared StepTimer sample code (MIT), Copyright (c) Microsoft
+  Corporation, and collision routines adapted from Christer Ericson's
+  Real-Time Collision Detection. Labrador's third-party record below gives
+  their sources and terms, followed by Microsoft's full MIT licence text.
 - RapidJSON (MIT), Copyright (c) 2015 THL A29 Limited, a Tencent company,
   and Milo Yip. It reads the game's content manifest.
 - Emscripten's runtime: the JavaScript loader and glue in linesweeper.js and
