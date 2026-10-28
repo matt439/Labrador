@@ -480,6 +480,18 @@ written.
   Website check, 160 tests and the 143-page build pass; the built heading/link
   and memory/preload text were checked. No backend or browser run is claimed.
 - [ ] **[OCA-18](STORIES.md#oca-18)** Could · S · The Outside C++ Adopter: Debug my game in Visual Studio from the presets
+  Source guide added 2026-10-29 under [Get Started](../../website/src/content/docs/docs/get-started/debug-your-game.mdx),
+  with sidebar and follow-on links. It selects the copied project's x64-debug
+  preset/MyGame target, quotes the actual init/update/manifest statements,
+  follows executable-relative content and explains Graphics Tools and matching
+  symbols. Stock Release does not request a game PDB; no new build flags or
+  IDE configuration are added. The clean copied-project IDE walkthrough,
+  breakpoint/content observation and date/exact Visual Studio version remain
+  unrun at the existing device/process stops. The story stays unchecked.
+  Source review, all seven standalone checks, website check (zero diagnostics),
+  160 website tests and the 144-page/433-file build pass. The generated page's
+  three live excerpts, key instructions and sidebar/follow-on links were
+  inspected with eight content and two navigation checks. No IDE or game ran.
 - [x] **[OCA-32](STORIES.md#oca-32)** Could · S · The Outside C++ Adopter: Use the recording renderer in my own tests — after OCA-29
   Closed 2026-10-29. The [testing guide](../../website/src/content/docs/docs/guides/testing.mdx)
   adds a second consumer null-render/audio configure, matching build/test

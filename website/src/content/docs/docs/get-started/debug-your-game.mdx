@@ -1,0 +1,124 @@
+---
+title: Debug your game in Visual Studio
+description: Open the project from Get Started, select its debug preset, stop at a source breakpoint and inspect an update.
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+
+Once [Start your own project](/docs/get-started/your-project/) builds, you can debug it as an
+ordinary C++ program. This optional follow-on uses that page's `mygame` project and its
+`MyGame` executable. The source excerpts come from the minimal sample you copied into `game`.
+
+## Open the project and select the program
+
+Open the `mygame` folder in Visual Studio: the folder containing your top-level
+`CMakeLists.txt` and `CMakePresets.json`. Opening `game` or `external/labrador` selects a
+different build. Use Visual Studio's CMake preset support and select **x64-debug**. Wait for
+configuration to finish, then choose **MyGame** as the startup program to debug. The preset
+and startup selectors can look different between Visual Studio versions; the names to
+select are the ones in your project's presets and CMake targets.
+
+`MyGameTests` is the rules test program. Select `MyGame` to debug the game itself. Its output
+is `out\build\x64-debug\game\MyGame.exe`. Build that target before starting the debugger;
+the equivalent commands, from the `mygame` folder in the x64 Native Tools Command Prompt, are:
+
+```bat
+cmake --preset x64-debug
+cmake --build --preset x64-debug --target MyGame
+```
+
+Visual Studio's configure also needs `VCPKG_ROOT` to name the vcpkg installation, as
+[Install the tools](/docs/get-started/prerequisites/) describes. If configuration fails, read
+its output first: a missing toolchain or compiler can prevent the program from appearing in
+the startup choices. [Troubleshooting](/docs/troubleshooting/) explains those errors.
+
+## Stop at a source breakpoint
+
+Open `game\states\hello_state.cpp` and find `HelloState::init()`. Put the cursor on its first
+statement, beginning `const Vector2F resolution =`, and press **F9** to toggle a breakpoint:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="void HelloState::init()"
+	to="RenderResources* resources = this->app_->render_resources();"
+/>
+
+Press **F5** to start debugging. Execution should stop at the breakpoint before that statement
+runs. Use **F10** until the next statement, beginning `this->motion_.centre =`, is highlighted,
+then inspect `resolution.x` and `resolution.y` in the debugger's locals or watch view.
+They come from the resolution selected in `game\main.cpp`;
+the unmodified template selects 1280 by 720.
+
+F9, F5 and F10 are the default shortcuts for toggling a breakpoint, starting or continuing
+debugging, and stepping over a statement. Use the corresponding debugger commands if your
+keyboard profile changes those bindings.
+
+The window, renderer and content are initialized before `HelloState::init()` is called. If
+startup fails before the breakpoint, read the startup error before investigating the state.
+If the breakpoint does not bind, check that the selected preset is `x64-debug`, the startup
+program is `MyGame`, and the open source belongs to this copy of the project; then rebuild.
+
+## Follow one update
+
+Remove the initialization breakpoint with F9 on the same statement. In `HelloState::update`,
+put a breakpoint on the assignment that calls `step_motion`:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="this->motion_ = step_motion(this->motion_,"
+	to="keyboard_direction(keyboard), dt);"
+/>
+
+Continue with F5. When stopped here, inspect `dt` and `this->motion_.spin`. Use F10 until the
+complete assignment has executed, then inspect spin again: the rules advance it by `spin_speed * dt`.
+`this->motion_.centre` changes with the combined stick and keyboard direction. You can step
+into `step_motion` if you want to follow those calculations in `game\rules\motion.cpp`.
+
+The game is paused while the debugger is stopped. An update breakpoint will stop again on
+later frames, so disable it with F9 before continuing normal play with F5. Escape followed by
+Enter quits the sample through its confirmation screen.
+
+## Where content comes from
+
+The copied `main.cpp` loads the manifest before starting the first state:
+
+<SourceFile
+	path="samples/minimal/main.cpp"
+	from={'app.load_manifest("./manifest.json");'}
+	to={'app.load_manifest("./manifest.json");'}
+/>
+
+That relative path is resolved under the executable's directory. The manifest's relative
+asset directories are resolved under the manifest's own directory. The debugger's working
+directory does not change either rule; an absolute path is kept as given.
+
+The `game_content` target copies `manifest.json` and the `fonts` folder beside `MyGame.exe`,
+and building `MyGame` builds that dependency too. If an error names a missing manifest or
+font, check the path in the message and the selected executable's folder. For this preset,
+expect `out\build\x64-debug\game\manifest.json` and
+`out\build\x64-debug\game\fonts\jetbrains_mono_bold_16.spritefont`. Rebuild the target and
+check the copy rules in `game\CMakeLists.txt` if they are absent. The
+[content guide](/docs/guides/assets/#getting-content-beside-the-executable) explains those rules.
+
+## Direct3D diagnostics
+
+Windows' optional **Graphics Tools** feature supplies the Direct3D debug layers. Install it
+when you want graphics validation, then read the debugger's output for messages about API
+use. Labrador's Debug Direct3D backends enable the layer when available and report a warning
+when it is unavailable. Ordinary C++ breakpoints work independently of that feature.
+
+The copied project uses Direct3D 11 by default. Selecting `x64-release` does not enable the
+Debug layer and can make stepping harder because the compiler optimizes the code.
+
+## Keep matching symbols
+
+For a shipped build that produces PDB symbol files, retain those exact PDBs with the matching
+executable, DLLs and source revision in your release archive. A later rebuild or a Debug PDB
+does not supply matching symbols for the original Release program. Keep this developer
+archive separately from the [folder you give players](/docs/guides/windows-release/), whose
+install rules omit PDBs.
+
+The stock `x64-release` preset does not request a game PDB. Producing symbols for an optimized
+release is an explicit build choice to make before shipping; keep the resulting matching
+files when you make that choice. The `x64-debug` build used above supplies the debug
+information for this walkthrough.

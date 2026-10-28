@@ -86,6 +86,7 @@ the two new stories have their detail in BACKLOG.md.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
+| `OCA-18` | BLOCKED | could | S | Visual Studio guide and live breakpoint/content excerpts are implemented; follow it in a clean copied project, hit the breakpoint and load content, recording date and exact IDE version. [Evidence](docs/product/BACKLOG.md#later). |
 
 The rest of the site's operations stories (`SM-26`, `SM-29`, `SM-30`) are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
