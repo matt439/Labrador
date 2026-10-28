@@ -9,6 +9,11 @@
             "kind": "texture",
             "directory": "./textures/",
             "names": ["panel"]
+        },
+        {
+            "kind": "sprite_sheet",
+            "directory": "./textures/",
+            "names": ["animation_preview"]
         }
     ]
 }

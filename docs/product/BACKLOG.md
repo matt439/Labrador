@@ -591,11 +591,11 @@ Local logs and fixture receipts are under `out/loop-2026-10-28-2114/`.
 <a id="srl-20"></a>
 ### SRL-20. Copy a working sprite-strip animation example
 
-Added 2026-10-28. The [sprites guide](../../website/src/content/docs/docs/guides/sprites-and-text.mdx)
-instructs callers to use `AnimationStrip::calculate_frame`, which is private;
-the public accessor is `frame_rect`. No sample currently demonstrates the
-strip path. Use the existing components gallery as the client; keep elapsed
-time, looping and restart policy in sample code (T1).
+Filed 2026-10-28 after the [sprites guide](../../website/src/content/docs/docs/guides/sprites-and-text.mdx)
+pointed callers at the private `AnimationStrip::calculate_frame` and no sample
+demonstrated the strip path. The public accessor is `frame_rect`; the existing
+components gallery is the client, with elapsed time, looping and restart
+policy kept in sample code (T1).
 
 **Acceptance**
 
@@ -612,6 +612,37 @@ time, looping and restart policy in sample code (T1).
   and page checks plus the website checks, and review its rendered frames.
   Review is separate from the headless timing tests. No renderer change is
   needed; any later expansion of that scope follows the five-backend rule.
+
+**Source/native progress, 2026-10-29:** the copyable AnimationPreview retains a
+paired SheetStrip and game-owned bounded time. Negative/nonfinite steps fail
+before mutation; zero is accepted; looping, full-duration one-shot completion,
+large steps and restart have deterministic tests. Const drawing calls the
+public `frame_rect` and SpriteSheet source-rectangle overload. The gallery
+owns loop/once values, draws through the existing Scene overlay with point
+filtering, and restarts on R/gamepad X without changing the settings rows.
+Original MIT four-frame DDS/JSON content has a standard-library generator and
+licence/provenance; its output reproduces exactly. Source excerpts replace the
+private-method instruction and the no-sample-sheet claim.
+
+Default Debug builds and all 38 ComponentsTests/369 assertions pass.
+Debug-null builds and all 42 cases/447 assertions pass, covering pure timing,
+delivered-file readers, repeated/two-view recordings, the actual manifest's
+selected sprite-sheet entry and a deliberate texture-table reload. A hidden
+native-null render/audio fixture additionally exercises the real GalleryState
+overlay and R press/hold snapshots with no Application loop or API device.
+The two real-file path cases also pass from an unrelated working directory.
+These are separate from physical recovery, concurrent execution and rendered
+appearance. A separate source review has no remaining findings.
+Release-null gallery/tests builds and the same 42 cases/447 assertions also
+pass, including finite/NaN boundary behavior under the release settings.
+All seven standalone checks, website check, 160 website tests and the 143-page
+build pass. The built guide/example excerpts and removal of the stale private
+method/no-sample instructions were checked in the generated HTML.
+
+Native rendered-frame review, browser compilation, ComponentsPageTests and
+real input/visual acceptance remain unrun at the stopped GPU/Emscripten/browser
+gates. The page driver's added KeyR is supported by its existing decoder, but
+the key sequence alone makes no animation or fullscreen acceptance claim.
 
 <a id="srl-21"></a>
 ### SRL-21. Enclose every banner draw in its culling extent

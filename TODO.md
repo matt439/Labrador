@@ -17,8 +17,8 @@ allows. Next's hardware and release gates remain open. The immediate queue is:
 3. **L11 (`BDP-18`): check repeated play stays fast.**
 
 **Available after those batches:** text examples and validation tools are
-indexed below. `SRL-20` adds a working animation example. Gallery settings have
-source/native checks and await fullscreen/browser acceptance.
+indexed below. The animation example and gallery settings have source/native
+checks and await rendered/browser acceptance.
 Pointer-menu and recording-renderer guides and LineSweeper's include-layer
 check are complete; strict asset keys have source/native coverage and await
 wasm qualification. Follow Later's order and each story's prerequisites;
@@ -77,7 +77,7 @@ the two new stories have their detail in BACKLOG.md.
 | `OCA-42` | BLOCKED | could | M | Add a string-table-to-screen example within the documented font limits; after OCA-41. |
 | `OCA-77` | BLOCKED | could | S | Wrap a translated string to a measured width; after OCA-42. |
 | `PI-20` | BLOCKED | could | S | Key enumeration and strict manifest/sprite-sheet fields pass native Debug/null/Release cases; wasm/Node qualification remains at stopped Emscripten gates. [Evidence](docs/2026-10-29-strict-asset-keys.md). |
-| `SRL-20` | OPEN | could | M | Add a copyable animation-strip gallery example and replace the guide's private-method call. [Acceptance](docs/product/BACKLOG.md#srl-20). |
+| `SRL-20` | BLOCKED | could | M | Copyable strip player, gallery overlay, original content and native timing/loader/recording/state checks are implemented. Wasm/page checks and rendered-frame review remain at stopped gates. [Evidence](docs/product/BACKLOG.md#srl-20). |
 
 ## Website and the hosted demo
 

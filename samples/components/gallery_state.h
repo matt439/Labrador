@@ -1,5 +1,6 @@
 #pragma once
 
+#include "samples/components/animation_preview.h"
 #include "samples/components/option_row.h"
 #include "samples/components/slider.h"
 
@@ -11,12 +12,13 @@
 #include "engine/ui/widget.h"
 
 #include <memory>
+#include <optional>
 
 namespace components
 {
 	// Every component on one settings screen, so each can be seen and played
-	// with: two option rows, two sliders and a way out. main.cpp and
-	// main_web.cpp both run it.
+	// with: two option rows, two sliders, two animations and a way out.
+	// main.cpp and main_web.cpp both run it.
 	//
 	// It is also the page half a component leaves to its game. A component
 	// reads no input, so this is where up and down move the cursor, where left
@@ -51,10 +53,14 @@ namespace components
 		// outlives it.
 		labrador::Application* app_ = nullptr;
 
-		// Owns everything drawn. The pointers below are loans into it, and so
-		// is every widget the focus group holds; both die with this object,
-		// and the scene, declared first, dies last.
+		// Owns the panel, labels and rows. The widget pointers and focus targets
+		// below are loans into it; the scene, declared first, dies last.
 		std::unique_ptr<labrador::Scene> scene_ = nullptr;
+
+		// Values borrowing Application's resource table. The scene's const
+		// overlay draws them through each view without advancing their clocks.
+		std::optional<AnimationPreview> loop_preview_;
+		std::optional<AnimationPreview> once_preview_;
 
 		OptionRow* difficulty_ = nullptr;
 		OptionRow* window_mode_ = nullptr;
