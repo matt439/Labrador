@@ -153,10 +153,8 @@ namespace labrador
 		// before any participant can be destroyed, even when none retires.
 		this->contacts_.clear();
 
-		// The bounds sweep. Flagging rather than erasing, so an object that has
-		// left the world is retired by the same line as an object that asked to
-		// be - and so a game that wants to hear about it first can look at the
-		// flags before this returns.
+		// Mark out-of-bounds objects for the same retirement pass as explicit
+		// requests. Each collision object decides whether it records the flag.
 		if (this->bounds_.has_value())
 		{
 			for (const std::unique_ptr<CollisionObject>& object :
@@ -169,11 +167,9 @@ namespace labrador
 			}
 		}
 
-		// Retirement, keeping the survivors in the order they were added. That
-		// order is what draws over what among the collision objects (scene.h,
-		// draw()), and a swap-and-pop here would let one retirement move a
-		// player under the structures it was added after. The pass walks every
-		// collision object either way, so stability costs moves, not a class.
+		// Keep survivors in insertion order: Scene::draw uses that order for
+		// layering, so a removal must not reorder later draws. Stable erasure
+		// preserves the pass's linear complexity.
 		std::erase_if(this->collision_objects_,
 			[](const std::unique_ptr<CollisionObject>& object)
 			{
@@ -211,10 +207,8 @@ namespace labrador
 		}
 		this->pending_collision_objects_.clear();
 
-		// The bare-pointer mirror the sweep and collision_objects() speak in.
-		// Rebuilt here because this is the only phase that can change the list;
-		// what it replaces rebuilt it every frame, from two lists, inside the
-		// tick.
+		// Rebuild the sweep's borrowed pointers after the owning list changes.
+		// end_tick() is the only phase that inserts or removes those objects.
 		this->collidables_.clear();
 		this->collidables_.reserve(this->collision_objects_.size());
 		for (const std::unique_ptr<CollisionObject>& object :
@@ -231,18 +225,11 @@ namespace labrador
 		if (count == 0) return;
 		renderer.set_view_count(offset + count);
 
-		// One view is not worth a fan-out, and neither is a scene with no pool:
-		// a menu, a sample and a headless test all draw one pane, and the pool
-		// is a constructor parameter they should be able to leave null.
-		//
-		// Leaving it null is also how a scene with several views declines the
-		// fan-out, and below roughly 250 objects declining is the faster path:
-		// bench/fanout_bench_null.cpp measures 0.45x against one thread at 64
-		// objects and 2.77x at 4,096, in a release build. There is deliberately
-		// no object-count test in this branch. The crossing moves with the
-		// build and with the part, so a threshold here would be a policy number
-		// baked into mechanism (T1) - PHILOSOPHY, Performance, makes that the
-		// decision rather than the omission it looks like.
+		// One view needs no fan-out. Either null dependency selects the calling
+		// thread for every view. The game chooses this dial: a useful parallel
+		// crossover depends on the workload and machine, so an object-count
+		// threshold would embed policy here (T1; docs/design/PHILOSOPHY.md,
+		// Performance). bench/fanout_bench_null.cpp owns the measurement.
 		if (count <= 1 || this->thread_pool_ == nullptr ||
 			this->partitioner_ == nullptr)
 		{
@@ -295,26 +282,14 @@ namespace labrador
 			list.set_viewport(view.viewport);
 			list.set_camera(view.camera);
 
-			// What this view can see, in world space, and computed here rather
-			// than asked of ViewportManager: the arithmetic is the camera's
-			// translation and the pane's size divided by its zoom, so asking the
-			// layout means asking it for a viewport this loop was just handed.
-			//
-			// It then wrote that arithmetic out inline and MULTIPLIED by the
-			// zoom, which the comment above it had already described
-			// correctly. Camera::visible_rectangle is the inverse transform,
-			// stated once where the forward one lives, and the ViewportManager
-			// member is deleted rather than left forwarding to it: a second copy
-			// of one inverse is how the wrong copy survived this long.
+			// Invert this view's camera transform to find its world-space region:
+			// camera translation plus pane dimensions divided by scale.
 			const RectangleF visible =
 				view.camera.visible_rectangle(view.viewport);
 
-			// The cull. "Objects expose bounds; the scene culls" (PHILOSOPHY,
-			// Rendering) - and this is the line that makes it true for every
-			// view rather than for the ones somebody remembered. The overview
-			// pass had no cull while the player panes twenty lines above it
-			// did, so the whole post-match menu flow drew 5,230 paint tiles per
-			// frame, single-threaded, behind an opaque results box.
+			// Cull both object lists for every view. Drawables provide conservative
+			// extents for this camera's world units per pixel, including any
+			// zoom-dependent growth (docs/design/PHILOSOPHY.md, Simulation and rendering).
 			for (const std::unique_ptr<GameObject>& object : this->objects_)
 			{
 				if (object->cull_bounds(1.0f / view.camera.scale).intersects(visible))

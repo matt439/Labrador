@@ -21,9 +21,8 @@ namespace labrador
 		this->x_axis_.normalize();
 		this->y_axis_.normalize();
 
-		// Points first: is_valid() -> edges_valid() reads points_, so
-		// validating before this line would check four zero corners and
-		// never reject anything.
+		// edges_valid() reads the corner cache, so populate it before checking
+		// the rectangle's geometry.
 		this->points_ = this->calculate_points();
 
 		if (!this->is_valid())
@@ -41,9 +40,7 @@ namespace labrador
 		}
 
 		this->center_ = center_line.center();
-		// Segment::direction() returns point_1 - point_0 un-normalised,
-		// but axes_valid() requires a unit axis - without this the constructor
-		// threw for every segment whose length was not 1.
+		// Segment::direction() is unnormalised; axes_valid() requires unit axes.
 		this->x_axis_ = center_line.direction();
 		this->x_axis_.normalize();
 		this->y_axis_ = Vector2F::normal(this->x_axis_);
@@ -88,8 +85,7 @@ namespace labrador
 	}
 	void RectangleRotated::inflate(float amount)
 	{
-		// Validate the candidate before committing it. Assigning first and
-		// throwing afterwards left the object holding the rejected value.
+		// Reject nonpositive extents before changing the defining values or cache.
 		const Vector2F inflated = this->hw_extents_ + Vector2F(amount, amount);
 		if (inflated.x <= 0.0f || inflated.y <= 0.0f)
 		{
@@ -152,20 +148,15 @@ namespace labrador
 
 		this->points_ = this->calculate_points();
 	}
-	// Each setter validates the candidate value before committing it, so a
-	// rejected argument leaves the rectangle exactly as it was. Assigning to
-	// the member first and throwing afterwards would leave the object
-	// corrupt: holding the bad value and a stale points_ cache.
+	// Validate candidates before committing them so rejection preserves both
+	// the defining members and the corner cache.
 	void RectangleRotated::set_axes(const Point2F& x_axis, const Point2F& y_axis)
 	{
 		const Vector2F new_x = x_axis.normalized();
 		const Vector2F new_y = y_axis.normalized();
 
-		// Against each other, not against what the rectangle currently holds.
-		// That is the whole point of this function: the single-axis setters
-		// each validate a candidate against the partner they are not changing,
-		// so a rotation is rejected in either order and the rectangle could
-		// not be turned at all through its own API.
+		// Validate the candidate axes together. A single-axis setter requires
+		// perpendicularity to the unchanged partner and cannot turn the pair.
 		if (!are_equal(new_x.length(), 1.0f, default_epsilon) ||
 			!are_equal(new_y.length(), 1.0f, default_epsilon) ||
 			!are_equal(Vector2F::dot(new_x, new_y), 0.0f, default_epsilon))
@@ -271,9 +262,7 @@ namespace labrador
 	}
 	Quad RectangleRotated::quad() const
 	{
-		// Straight off the corner cache, and NOT by recomputing the four points
-		// into a fresh vector for a validating constructor: that allocates and
-		// re-proves the convexity of a shape that is convex by construction.
+		// Pass the cached corners directly to Quad's fixed-storage constructor.
 		return Quad(this->points_[0], this->points_[1],
 			this->points_[2], this->points_[3]);
 	}
@@ -283,10 +272,8 @@ namespace labrador
 	}
 	float RectangleRotated::angle() const
 	{
-		// atan2 through Vector2F::angle(), not angle_between. angle_between is
-		// an acos, so its range is [0, pi] and it cannot tell +30 degrees from
-		// -30: a rectangle and its mirror image reported the same rotation,
-		// and nothing could reconstruct the orientation from the number.
+		// atan2 preserves the signed orientation; an acos angle between axes
+		// cannot distinguish positive and negative turns.
 		return this->x_axis_.angle();
 	}
 	bool RectangleRotated::is_valid() const
@@ -307,16 +294,8 @@ namespace labrador
 		return true;
 	}
 
-	// Declared in the header since the type was written, and never defined -
-	// the one shape of the ten in this file whose comparison was a promise
-	// only. Nothing had used it, so nothing had failed to link, and it read
-	// from the header as though it worked.
-	//
-	// Compares the four members that DEFINE the rectangle, not points_, which
-	// is a cache derived from them: two rectangles with equal centre, axes and
-	// extents have equal corners by construction, and comparing the cache as
-	// well would only add four ways to disagree with the thing that produced
-	// it. Exact float equality, as every other shape here uses.
+	// Exact comparison of the defining centre, axes and extents. points_ is a
+	// derived cache, so it does not contribute an independent equality rule.
 	bool RectangleRotated::operator==(const RectangleRotated& other) const
 	{
 		return this->center_ == other.center_ &&
@@ -349,7 +328,6 @@ namespace labrador
 
 	bool RectangleRotated::half_widths_valid() const
 	{
-		// check that half width and half height are positive
 		if (hw_extents_.x <= 0.0f || hw_extents_.y <= 0.0f)
 		{
 			return false;
@@ -359,14 +337,12 @@ namespace labrador
 	}
 	bool RectangleRotated::axes_valid() const
 	{
-		// check if x_axis and y_axis are unit vectors
 		if (!are_equal(x_axis_.length(), 1.0f, default_epsilon) ||
 			!are_equal(y_axis_.length(), 1.0f, default_epsilon))
 		{
 			return false;
 		}
 
-		// check if x_axis and y_axis are perpendicular
 		if (!are_equal(Vector2F::dot(x_axis_, y_axis_), 0.0f, default_epsilon))
 		{
 			return false;
@@ -378,11 +354,8 @@ namespace labrador
 	{
 		const std::array<Segment, 4> edges = this->edges();
 
-		// One pass, one square root per edge - against the twelve a loop that
-		// normalises two edges per iteration and then re-measures all four with
-		// length() takes, every edge normalised twice and every root computed
-		// and thrown away once. No check on edges.size() either: edges() returns
-		// a std::array<Segment, 4> and cannot answer anything else.
+		// Reuse each edge's length for its unit direction and opposite-edge
+		// comparison. edges() returns fixed storage for the four edges.
 		Vector2F directions[4];
 		float lengths[4];
 		for (size_t i = 0; i < 4; i++)
@@ -390,19 +363,16 @@ namespace labrador
 			const Vector2F edge = edges[i].direction();
 			lengths[i] = edge.length();
 
-			// Zero-length in, zero out - normalized()'s contract, kept
-			// deliberately: a degenerate edge has always passed the
-			// perpendicularity test below, because the dot product of two zero
-			// vectors is zero.
+			// Preserve normalized()'s zero-vector result without dividing by zero.
+			// Perpendicularity below does not reject a zero direction: its dot
+			// product with a finite adjacent direction is zero.
 			directions[i] = lengths[i] == 0.0f
 				? Vector2F::zero
 				: Vector2F(edge.x / lengths[i], edge.y / lengths[i]);
 		}
 
-		// Compare unit directions rather than the raw edge vectors. The dot
-		// product of two un-normalised edges scales with the square of the
-		// rectangle's size, so an absolute epsilon rejected large rectangles
-		// that were perfectly square.
+		// Unit-direction dot products test perpendicularity independently of
+		// edge length; raw-edge products scale with rectangle size squared.
 		for (size_t i = 0; i < 4; i++)
 		{
 			if (!are_equal(Vector2F::dot(directions[i], directions[(i + 1) % 4]),

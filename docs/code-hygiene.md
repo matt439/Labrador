@@ -145,10 +145,8 @@ remains with [the ratchet decision](performance/2026-09-19-g6f-ratchet.md#5-what
 
 Targets: `engine/scene/scene.cpp`, `engine/math/rectangle_rotated.cpp`,
 `engine/input/xinput/xinput_gamepad.h`, `cmake/check_doc_citations.cmake` and
-`cmake/compile_shaders.cmake`. Concrete examples include Scene's deleted
-ViewportManager arithmetic, rotated-rectangle equality's former missing
-definition and reference to ten shapes in one file, and another project's
-dated review statistics in the citation checker.
+`cmake/compile_shaders.cmake`. Retain current culling and comparison rules,
+deadzone policy, citation-checker limits and backend compiler lookup constraints.
 
 **Done when:** comments describe current culling transforms, authoritative
 comparison fields, deadzone policy and tool constraints. Preserve the reason
@@ -156,6 +154,13 @@ for non-obvious choices and the citation check's name-closure limit. Remove
 former-code narratives and fragile census claims; leave diagnostic strings and
 vendor text intact. Review a comments-only diff, run the standalone lints and
 offline tooling, and check website excerpts that consume touched code.
+
+**Closed 2026-10-28:** the [implementation/build inventory](code-hygiene-implementation-comments.md)
+records the checked call paths and constraints. Executable tokens and
+diagnostic strings are unchanged. All five standalone CMake checks and 64
+permitted offline Python cases pass; previously stopped PowerShell worker and
+trace fixtures were not invoked. Website check, all 157 website tests and the
+143-page build pass. No runtime or hardware evidence is added.
 
 ## SM-48. Sample teaching comments
 

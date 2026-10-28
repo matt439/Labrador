@@ -479,7 +479,7 @@ written.
 - [ ] **[SRL-20](#srl-20)** Could · M · The Sample-Reading Learner: Copy a working sprite-strip animation example
 - [x] **[SM-45](../code-hygiene.md#sm-45-public-header-contracts-and-rationale)** Should · M · The Sole Owner-Maintainer: Audit public-header contracts and oversized rationale
 - [x] **[SM-46](../code-hygiene.md#sm-46-backend-recording-and-synchronization-comments)** Should · S · The Sole Owner-Maintainer: Audit backend recording and synchronization comments
-- [ ] **[SM-47](../code-hygiene.md#sm-47-implementation-and-build-comment-archaeology)** Should · S · The Sole Owner-Maintainer: Remove stale implementation and build-comment history
+- [x] **[SM-47](../code-hygiene.md#sm-47-implementation-and-build-comment-archaeology)** Should · S · The Sole Owner-Maintainer: Remove stale implementation and build-comment history
 - [ ] **[SM-48](../code-hygiene.md#sm-48-sample-teaching-comments)** Could · S · The Sole Owner-Maintainer: Refresh sample teaching comments against current code
 - [ ] **[SM-49](../code-hygiene.md#sm-49-pixel-test-organisation)** Should · M · The Sole Owner-Maintainer: Separate the pixel-test harness and independent contract cases
 - [ ] **[SM-51](../code-hygiene.md#sm-51-cloud-tooling-test-organisation)** Could · S · The Sole Owner-Maintainer: Split cloud tooling tests by production module
