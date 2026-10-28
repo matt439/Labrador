@@ -1,0 +1,198 @@
+// Host policy against synthetic DOM, graphics and factory boundaries. This
+// runs the source page's script; it creates no browser, GPU or generated module.
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+import vm from 'node:vm';
+
+const html = readFileSync(new URL('../../../samples/linesweeper/web/index.html', import.meta.url), 'utf8');
+const script = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
+const import_expression = 'import("./linesweeper.js")';
+assert.equal(script.split(import_expression).length, 2, 'one module import is the factory I/O boundary');
+
+function host(options = {}) {
+	const elements = new Map();
+	const frames = [];
+	const diagnostics = [];
+	const runs = [];
+	let imports = 0;
+	let probes = 0;
+	let releases = 0;
+	let active = null;
+	class Element {
+		constructor() {
+			this.hidden = false;
+			this.disabled = false;
+			this.textContent = '';
+			this.classes = new Set();
+			this.children = [];
+			this.events = new Map();
+			this.classList = {
+				toggle: (name, enabled) => enabled ? this.classes.add(name) : this.classes.delete(name),
+				contains: (name) => this.classes.has(name),
+			};
+		}
+		addEventListener(name, callback) { this.events.set(name, callback); }
+		setAttribute() {}
+		append(child) { this.children.push(child); child.parent = this; }
+		remove() { this.parent.children = this.parent.children.filter((child) => child !== this); }
+		focus() { active = this; }
+		getContext(name) {
+			assert.equal(name, 'webgl2');
+			probes++;
+			if (options.graphicsThrows) { throw new Error('synthetic graphics refusal'); }
+			if (options.graphics === false) { return null; }
+			return { getExtension: (name) => {
+				assert.equal(name, 'WEBGL_lose_context');
+				return { loseContext: () => releases++ };
+			} };
+		}
+	}
+	for (const id of ['stage', 'start', 'play', 'needs-keyboard', 'status']) {
+		elements.set(id, new Element());
+	}
+	elements.get('needs-keyboard').hidden = true;
+	elements.get('status').textContent = html.match(/id="status"[^>]*>([^<]*)<\/p>/)[1];
+	const context = vm.createContext({
+		document: {
+			getElementById: (id) => elements.get(id),
+			createElement: (name) => { assert.equal(name, 'canvas'); return new Element(); },
+		},
+		console: { error: (...args) => diagnostics.push(args) },
+		matchMedia: () => ({ matches: false }),
+		Uint8Array,
+		WebAssembly: options.wasmMissing ? undefined : {
+			validate: (bytes) => options.exceptions === false ? false : WebAssembly.validate(bytes),
+		},
+		requestAnimationFrame: (callback) => frames.push(callback),
+		loadModule: async () => {
+			imports++;
+			if (options.importFailure) { throw new Error('synthetic download failure'); }
+			return { default: async (config) => {
+				runs.push(config);
+				await options.factory?.(config);
+			} };
+		},
+	});
+	// Substitute only the dynamic import, keeping the host's lifecycle and
+	// support-probe code verbatim. The browser case owns actual module loading.
+	vm.runInContext(script.replace(import_expression, 'loadModule()'), context, { filename: 'bundle index.html' });
+	return {
+		elements, runs, diagnostics,
+		click: () => elements.get('play').events.get('click')(),
+		frame: () => frames.splice(0).forEach((callback) => callback()),
+		get status() { return elements.get('status').textContent; },
+		get active() { return active; },
+		get imports() { return imports; },
+		get probes() { return probes; },
+		get releases() { return releases; },
+	};
+}
+
+const startup = 'The game could not start. Try again, or try an up-to-date browser with hardware acceleration enabled.';
+const stopped = 'The game stopped unexpectedly. Try again, or reload the page if it keeps happening.';
+
+function retry_visible(page, message) {
+	assert.equal(page.status, message);
+	assert.equal(page.elements.get('status').classList.contains('error'), true);
+	assert.equal(page.elements.get('start').hidden, false);
+	assert.equal(page.elements.get('play').disabled, false);
+	assert.equal(page.elements.get('play').textContent, 'Try again');
+	assert.equal(page.active, page.elements.get('play'));
+}
+
+test('page load does not import a module or create a graphics probe; each click releases its scratch context', async () => {
+	const page = host();
+	assert.equal(page.imports, 0);
+	assert.equal(page.probes, 0);
+	await page.click();
+	assert.equal(page.imports, 1);
+	assert.equal(page.probes, 1);
+	assert.equal(page.releases, 1);
+	assert.equal(page.runs.length, 1, 'the legacy exception probe is accepted by the real Node validator');
+	page.runs[0].onQuit();
+	await page.click();
+	assert.equal(page.imports, 1, 'replay reuses the imported factory');
+	assert.equal(page.probes, 2);
+	assert.equal(page.releases, 2);
+	assert.equal(page.runs.length, 2);
+});
+
+for (const options of [{ exceptions: false }, { wasmMissing: true }, { graphics: false }, { graphicsThrows: true }]) {
+	test(`unsupported browser ${JSON.stringify(options)} downloads nothing and offers no retry`, async () => {
+		const page = host(options);
+		await page.click();
+		assert.equal(page.imports, 0);
+		assert.equal(page.runs.length, 0);
+		assert.equal(page.elements.get('status').classList.contains('error'), true);
+		assert.equal(page.elements.get('play').hidden, true);
+		assert.equal(page.elements.get('start').hidden, true);
+		assert.match(page.status, options.graphics === false || options.graphicsThrows ? /hardware acceleration/ : /WebAssembly exception support/);
+	});
+}
+
+test('a failed download gives connection advice, preserves diagnostics and can retry', async () => {
+	const options = { importFailure: true };
+	const page = host(options);
+	await page.click();
+	retry_visible(page, 'The game could not download. Check your connection and try again.');
+	assert.match(String(page.diagnostics[0][1]), /synthetic download failure/);
+	options.importFailure = false;
+	await page.click();
+	assert.equal(page.runs.length, 1);
+	assert.equal(page.elements.get('status').classList.contains('error'), false);
+});
+
+test('factory rejection gives startup advice without exposing the raw reason in the status', async () => {
+	const page = host({ factory: () => { throw new Error('Aborted(synthetic compile failure)'); } });
+	await page.click();
+	retry_visible(page, startup);
+	assert.match(String(page.diagnostics[0][1]), /Aborted\(synthetic compile failure\)/);
+});
+
+test('onError during initialization survives a later promise rejection with its original diagnostic', async () => {
+	const page = host({ factory: (config) => {
+		config.onError('synthetic initialization failure');
+		throw new Error('later promise rejection');
+	} });
+	await page.click();
+	page.frame();
+	retry_visible(page, startup);
+	assert.equal(page.diagnostics.length, 1);
+	assert.equal(page.diagnostics[0][1], 'synthetic initialization failure');
+});
+
+test('an error before the first scheduled frame still says the game could not start', async () => {
+	const page = host();
+	await page.click();
+	page.runs[0].onError('synthetic first frame failure');
+	page.frame();
+	retry_visible(page, startup);
+});
+
+test('an error after the loop gets its first frame offers runtime recovery and logs the reason', async () => {
+	const page = host();
+	await page.click();
+	page.frame();
+	page.runs[0].onError('synthetic runtime failure');
+	retry_visible(page, stopped);
+	assert.equal(page.diagnostics[0][1], 'synthetic runtime failure');
+});
+
+test('callbacks and a pending frame from an ended instance cannot overwrite replay status', async () => {
+	const page = host();
+	await page.click();
+	const first = page.runs[0];
+	first.onQuit();
+	await page.click();
+	const instructions = page.status;
+	first.onError('obsolete error');
+	first.onContextLost();
+	first.onContextRestored();
+	first.onQuit();
+	page.frame();
+	assert.equal(page.status, instructions);
+	assert.equal(page.elements.get('start').hidden, true);
+	assert.equal(page.elements.get('stage').children.length, 1);
+	assert.equal(page.diagnostics.length, 0);
+});

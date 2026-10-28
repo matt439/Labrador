@@ -12,17 +12,28 @@ const interception_errors = [];
 const expected_diagnostics = [];
 
 // Emscripten reports the compile failure before rejecting its factory promise.
-// These diagnostics are expected only while deliberately serving truncated
-// wasm. Any warning, unrelated error or uncaught exception still fails the run.
+// Compile diagnostics are expected only while deliberately serving truncated
+// wasm; the injected onError also retains its exact console reason. Any warning,
+// unrelated error or uncaught exception still fails the run.
 export function expected_complaint({ source, level, text }) {
-	const expected = phase === 'truncated wasm' && source === 'console' && level === 'error' &&
-		/^(wasm streaming compile failed:|falling back to ArrayBuffer instantiation$|failed to asynchronously prepare wasm:|Aborted\()/.test(text);
+	const expected = source === 'console' && level === 'error' &&
+		((phase === 'truncated wasm' &&
+			/^(wasm streaming compile failed:|falling back to ArrayBuffer instantiation$|failed to asynchronously prepare wasm:|Aborted\(|LineSweeper failure:)/.test(text)) ||
+		(phase === 'runtime onError' && /^LineSweeper failure: bundle test failure$/.test(text)));
 	if (expected) { expected_diagnostics.push(text); }
 	return expected;
 }
 
 const PRELUDE = `(() => {
 	window.labradorBundle = { runs: [] };
+	const getContext = HTMLCanvasElement.prototype.getContext;
+	HTMLCanvasElement.prototype.getContext = function (name, ...args) {
+		if (name === 'webgl2' && location.search.includes('no-webgl2')) { return null; }
+		return getContext.call(this, name, ...args);
+	};
+	if (location.search.includes('no-exceptions')) {
+		WebAssembly.validate = () => false;
+	}
 	const clear = WebGL2RenderingContext.prototype.clear;
 	WebGL2RenderingContext.prototype.clear = function (...args) {
 		this.canvas.labradorFrames = (this.canvas.labradorFrames ?? 0) + 1;
@@ -208,8 +219,22 @@ export default async function drive(page) {
 	assert(await evaluate(button_visible), 'a key did not lift the touch gate');
 	console.log('ok - touch gate hides Play and fetches no wasm until a keyboard is seen');
 
-	phase = 'play and replay';
 	await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+	for (const [name, advice] of [['no-webgl2', 'hardware acceleration'],
+		['no-exceptions', 'WebAssembly exception support']]) {
+		phase = name;
+		const before = requests.length;
+		await navigate(name);
+		await click_play();
+		await until("document.getElementById('status').classList.contains('error') && " +
+			"document.getElementById('play').hidden", 'unsupported browser offered no explanation');
+		assert((await evaluate("document.getElementById('status').textContent")).includes(advice),
+			'the support failure did not give player advice');
+		assert(!requests.slice(before).some((url) => /\/linesweeper\.(js|wasm)$/.test(new URL(url).pathname)),
+			'an unsupported browser downloaded the module');
+	}
+	console.log('ok - unsupported graphics or exceptions show advice without downloading the module');
+	phase = 'play and replay';
 	await navigate('desktop');
 	await click_play();
 	await loaded(0);
@@ -259,7 +284,7 @@ export default async function drive(page) {
 	await click_play();
 	await until("document.getElementById('status').classList.contains('error') && " + button_visible,
 		'a truncated wasm did not show an error with a recovery button');
-	assert(await evaluate("document.getElementById('status').textContent.startsWith('LineSweeper could not start: ') && " +
+	assert(await evaluate("document.getElementById('status').textContent === 'The game could not start. Try again, or try an up-to-date browser with hardware acceleration enabled.' && " +
 		"document.getElementById('play').textContent === 'Try again'"), 'startup failure message or Try again is missing');
 	assert(await evaluate(button_exposed), 'a failed startup canvas overlays Try again');
 	assert(expected_diagnostics.some((text) => text.startsWith('failed to asynchronously prepare wasm:')),
@@ -273,7 +298,7 @@ export default async function drive(page) {
 	await clean_runs();
 	await evaluate("window.labradorBundle.runs[0].config.onError('bundle test failure')");
 	assert(await evaluate("document.getElementById('status').classList.contains('error') && " +
-		"document.getElementById('status').textContent === 'LineSweeper stopped: bundle test failure' && " +
+		"document.getElementById('status').textContent === 'The game stopped unexpectedly. Try again, or reload the page if it keeps happening.' && " +
 		"document.getElementById('play').textContent === 'Try again' && " + button_visible),
 		'onError did not show its failure state and recovery button');
 	assert(await evaluate(button_exposed), 'a runtime failure canvas overlays Try again');
