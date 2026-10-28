@@ -73,6 +73,25 @@ ctest --preset x64-debug -R "^ComponentsTests$"
 | Enter, Space or gamepad A on Quit | Quit |
 | Escape or gamepad B | Quit |
 
+The Window row offers **Windowed** and **Full screen**, the two modes
+Application can request. On Windows, full screen is already borderless; it is
+not a third mode. Its callback calls `Application::set_fullscreen`, and both
+initialization and every update use `fullscreen()` and `set_index()` to follow
+the current report without firing the callback again. A browser can defer or
+refuse the request, or leave full screen externally, so the status line says
+which mode was requested rather than claiming it has been entered.
+
+Difficulty and the two volume sliders demonstrate callbacks. The gallery
+loads no sound bank and their status text does not change playback. The
+[Settings and saves guide](https://labradorengine.com/docs/guides/settings-and-saves/#apply-settings-to-the-running-game)
+shows the compiling window callback and how a game's copied slider scales a
+percentage into the existing sound groups, with wave/effect assignments on its
+SoundBank. No settings are saved by this gallery.
+
+`ComponentsTests` includes a real two-choice row following external fullscreen
+snapshots without calling its callback. It tests that synchronization recipe,
+not GalleryState's polling or a platform fullscreen transition.
+
 It draws its bars from the engine's own white texture, `white_texture_name`,
 its panel from `content/textures/panel.dds`, a 16-texel premultiplied frame
 with 6-texel corners, and its text from the minimal sample's font, which the
@@ -82,8 +101,10 @@ gallery puts the `.spritefont` in its own `content/fonts/` and points the
 three lines of `CMakeLists.txt` that reach into it there. Under a `wasm-*`
 preset it is a page, `ComponentsGallery.html`, with the same content packed
 into the module.
-`ComponentsPageTests` loads it in headless Chrome, moves a slider and an
-option row, and quits.
+`ComponentsPageTests` is configured to load the browser build, move a slider
+and an option row, and quit. Its window-row adjustment now requests full screen;
+that changed page path and external exit/re-sync still need a recorded browser
+run. The key sequence alone does not establish fullscreen acceptance.
 
 ## What a component is not
 

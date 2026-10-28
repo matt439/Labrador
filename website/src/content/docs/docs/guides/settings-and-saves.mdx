@@ -1,6 +1,6 @@
 ---
 title: Settings and saves
-description: Write your game's JSON to a per-user Windows folder, and mount and sync persistent storage before starting the browser build.
+description: Apply window and volume settings, write JSON to a per-user Windows folder, and mount and sync browser storage before startup.
 sidebar:
   order: 4
 ---
@@ -12,6 +12,87 @@ Settings and progress are your game's data. Labrador's asset loaders read conten
 choose a save location or write a save format. Keep that code in your game, alongside the values
 it understands. This example writes a small JSON settings file with a version and a volume from
 0 to 100. The same file-writing code works on Windows and in Emscripten's virtual filesystem.
+
+## Apply settings to the running game
+
+A setting's stored value and the platform's current state can differ. The
+<RepoLink path="samples/components/gallery_state.cpp">components gallery</RepoLink>
+requests only **Windowed** or **Full screen**: Windows full screen is already a
+borderless window, so there is no separate third mode.
+
+### Window mode
+
+The row's callback calls `Application::set_fullscreen`. Initialization then
+seeds the row from `fullscreen()`:
+
+<SourceFile
+	path="samples/components/gallery_state.cpp"
+	from="const std::vector<std::wstring> window_modes = {"
+	to="this->app_->fullscreen() ? 1 : 0);"
+/>
+
+`fullscreen()` reports the requested mode until the platform says otherwise.
+A browser request can be deferred to an activating input event or refused,
+and the player can leave full screen externally. The status line therefore
+describes a request. The gallery reads the current report every tick:
+
+<SourceFile
+	path="samples/components/gallery_state.cpp"
+	from="void GalleryState::update(float dt)"
+	to="this->app_->fullscreen() ? 1 : 0);"
+/>
+
+`OptionRow::set_index` changes the displayed choice without calling its
+callback, so re-sync does not issue another request. The gallery keeps its
+Escape/B quit binding; your game chooses how leaving full screen and quitting
+fit its own controls.
+
+### Volume slider callbacks
+
+The gallery's volume sliders illustrate callbacks and load no audio. In a
+game with the [audio sample's required `tones` bank](/docs/guides/audio/#declare-a-required-bank)
+already loaded, create music/effects groups in the Application's
+`AudioResources` and assign sounds through its `SoundBank` at load time:
+
+```cpp
+labrador::AudioResources* audio = app->audio_resources();
+const labrador::SoundGroupHandle music = audio->add_sound_group("music");
+const labrador::SoundGroupHandle effects = audio->add_sound_group("effects");
+labrador::SoundBank* bank = audio->sound_bank("tones");
+bank->set_effect_group(bank->resolve_effect("drone_loop"), music);
+bank->set_wave_group(bank->resolve_wave("ping"), effects);
+bank->set_wave_group(bank->resolve_wave("chime"), effects);
+audio->set_group_volume(music, 0.7f);
+audio->set_group_volume(effects, 1.0f);
+```
+
+Include `engine/audio/audio_resources.h` and `engine/audio/sound_bank.h`;
+`app` here points to the Application. Create each group once, then keep its
+handle or resolve it by name. A group spans banks, so assign any other banks'
+music/effects to those same handles.
+
+For a copied slider ranging from 0 to 100, pass this as its `on_change`
+callback, in place of the gallery's status-only callback:
+
+```cpp
+const components::Slider::Changed effects_changed = [audio, effects](int value)
+{
+	audio->set_group_volume(effects, static_cast<float>(value) / 100.0f);
+};
+```
+
+Use the copied slider's namespace and include path in your game
+(`samples/components/slider.h` in this checkout). The music slider uses the
+same scaling with the music handle. Set the initial group levels to match the
+sliders too: `Slider::set_value` also updates silently.
+
+A play level of `0.8f` in an effects group set to `0.5f` reaches the device
+as `0.4f`; no second volume bus is needed. A playing or paused retained effect
+takes a group change immediately, a stopped effect takes it at its next play,
+and a one-shot already playing keeps its old level while the next one takes
+the new level. A sound assigned to no group remains at full group volume.
+Keep the AudioResources and its bank alive longer than callbacks borrowing
+them, as the gallery does for its Application services.
 
 ## Choose a per-user folder on Windows
 

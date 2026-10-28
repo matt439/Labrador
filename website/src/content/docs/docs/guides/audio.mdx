@@ -136,7 +136,10 @@ launched with, and the next one takes the new volume, while a playing or paused
 effect in the group takes it at once. A sound in no group is at full group
 volume. Which sounds are music, fades and ducking stay the game's; a fade or a
 duck is the game's own factor multiplied into `set_effect_volume`, which
-combines with the group's.
+combines with the group's. The
+[Settings and saves guide](/docs/guides/settings-and-saves/#volume-slider-callbacks)
+shows the bank assignments and a copied slider's 0-to-100 callback scaled into
+`set_group_volume`.
 
 `Application` updates the audio device every tick and owns its lifetime. A
 client that uses `AudioDevice` directly must update it and keep it alive longer

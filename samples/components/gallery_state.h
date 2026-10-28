@@ -20,8 +20,9 @@ namespace components
 	//
 	// It is also the page half a component leaves to its game. A component
 	// reads no input, so this is where up and down move the cursor, where left
-	// and right reach the focused row, and where a change is turned into
-	// something the player can see - here a status line, in a game a setting.
+	// and right reach the focused row, and where changes reach the game.
+	// The window row requests Application's mode and follows its reports;
+	// difficulty and volume changes illustrate callbacks through a status line.
 	class GalleryState final : public labrador::State
 	{
 	public:
