@@ -75,7 +75,6 @@ the two new stories have their detail in BACKLOG.md.
 | `OCA-41` | OPEN | could | S | Make non-English literals consistent between Windows and browser builds. |
 | `OCA-42` | BLOCKED | could | M | Add a string-table-to-screen example within the documented font limits; after OCA-41. |
 | `OCA-77` | BLOCKED | could | S | Wrap a translated string to a measured width; after OCA-42. |
-| `OCA-40` | OPEN | could | S | Explain in-memory music costs and embed versus preload choices; informs GAP#2. |
 | `OCA-32` | OPEN | could | S | Show a consumer test using the recording renderer without a device. |
 | `PI-20` | OPEN | could | S | Refuse unknown manifest/sprite-sheet keys with useful errors. [Scope](docs/review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans). |
 | `SRL-20` | OPEN | could | M | Add a copyable animation-strip gallery example and replace the guide's private-method call. [Acceptance](docs/product/BACKLOG.md#srl-20). |
