@@ -10,18 +10,20 @@ namespace labrador
 {
 	class JsonDocument;
 
-	// Reads the UTF-8 file path in full and parses it as JSON.
+	// Reads the UTF-8 file path in full and parses it as JSON. Raw NUL bytes
+	// are rejected at their byte offset; JSON `\u0000` string escapes are valid.
 	//
 	// Throws std::runtime_error naming the path if the file cannot be opened,
 	// cannot be read, or does not parse. The returned document is therefore
 	// always valid - callers never have to test for a parse error.
 	JsonDocument read_json_file(const char* path);
 
-	// Parses `text` as JSON. `source_name` is what every diagnostic from the
-	// document names in place of a path - a content filename, say. The
-	// document copies what it needs; neither argument is borrowed. The parse
-	// is the one read_json_file makes, so the same bytes give the same
-	// document either way.
+	// Parses the bytes in `text` as JSON; the view need not end at a NUL.
+	// Raw NUL bytes within the view are rejected at their byte offset; JSON
+	// `\u0000` string escapes are valid. `source_name` names the source in every
+	// diagnostic in place of a path - a content filename, say. The document
+	// copies what it needs; neither argument is borrowed. The parse is the one
+	// read_json_file makes, so the same bytes give the same document either way.
 	//
 	// Throws std::invalid_argument for an empty source_name, and
 	// std::runtime_error naming source_name if the text does not parse.

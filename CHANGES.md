@@ -72,6 +72,17 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Reject raw NUL bytes throughout JSON input
+
+**Behaviour change.** `read_json_file` and `parse_json` reject a literal NUL byte
+anywhere in the input with `std::runtime_error` naming the caller, source and
+byte offset. Previously, a valid JSON root followed by NUL could load while
+ignoring that byte and the remaining input. Valid JSON needs no migration:
+escaped `\u0000` inside strings and member names is still decoded, trailing
+whitespace is still accepted, and `parse_json` reads only the supplied view.
+Remove raw zero bytes from malformed content, or encode intended string NULs
+with the JSON `\u0000` escape.
+
 ### 2026-10-29 - Keep sound-group insertion retryable after allocation failure
 
 **Behaviour change.** If storing a newly added sound group's volume throws,

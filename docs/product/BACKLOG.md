@@ -334,7 +334,7 @@ work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
 
-**Maintenance lane, added 2026-10-28:** L36 to L43 may run alongside the
+**Maintenance lane, added 2026-10-28:** L36 to L44 may run alongside the
 product batches above, in their own order and with their own prerequisites.
 They cover comment audits, source/test organisation and backend responsibility
 reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
@@ -344,6 +344,7 @@ L41 adds the bounded shared-table exception repair selected from the source
 audit on 2026-10-29, with its acceptance below.
 L42 follows it with direct regression coverage of the shared byte cursor.
 L43 closes confirmed path-spelling gaps in the existing engine include wall.
+L44 follows the next source audit's malformed-JSON boundary repair.
 
 **Contract follow-up, 2026-10-29:** SRL-17's source audit files SRL-22 within
 L32, after the audit and before the glossary. Correcting a false bank-pointer
@@ -413,6 +414,7 @@ written.
 41. L41 Preserve sound-group registration after allocation failure: SM-59
 42. L42 Pin the shared byte reader's boundary and byte-order contract: SM-60
 43. L43 Normalize the engine include wall and pin its boundaries: SM-61
+44. L44 Reject a raw NUL instead of accepting only a JSON prefix: SM-62
 
 **Stories**
 
@@ -767,6 +769,70 @@ written.
 - [x] **[SM-59](#sm-59)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed new sound-group registration absent and retryable
 - [x] **[SM-60](#sm-60)** Could · S · The Sole Owner-Maintainer: Pin ByteReader's boundary, cursor and byte-order behavior directly
 - [x] **[SM-61](#sm-61)** Should · S · The Sole Owner-Maintainer: Enforce the existing include wall across normalized paths and backend subtrees
+- [x] **[SM-62](#sm-62)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse raw NUL bytes throughout a JSON input span
+
+<a id="sm-62"></a>
+### SM-62. Reject malformed JSON bytes after an otherwise valid root
+
+Selected 2026-10-29 after SM-61 from a fresh ranked internal-source audit:
+
+1. **Raw NUL JSON input:** the shared parser's bounded RapidJSON stream uses
+   the same sentinel for an input NUL and EOF. A completed root followed by
+   a raw NUL can therefore hide a suffix. The existing edge test pins only
+   file/text parity. This conflicts with reading the full input as valid JSON,
+   benefits all content readers, and has a small shared repair: select first.
+2. **Negative authored animation count:** the sheet loader forwards a negative
+   integer into a size_t reserve request, losing source/strip/field context.
+   A bounded decoder check can preserve current zero/positive behavior.
+3. **JSON float range:** number() narrows finite doubles without a float-range
+   check. This needs an explicit selected range contract and compatibility
+   review; it is smaller in code than in contract impact.
+
+A large-period StepPosition float-rounding edge was also screened. The
+standalone helper can round to one despite its stated fraction contract, but
+ordinary Application's integer target_fps keeps periods at or below one
+second, where this conversion is safe; do not call it a default pacing fault.
+These are source-derived exhibits until individually reproduced or qualified,
+with no competitor or deferred-feature claim. T2/T6 favor rejecting damaged
+authored input at its source rather than quietly ignoring bytes.
+
+**Acceptance**
+
+- First add an explicit raw-NUL regression through both parse_json and
+  read_json_file and observe the valid-root suffix/terminal-NUL acceptance
+  against unchanged production source. Distinguish those cases from quoted
+  NUL/whitespace inputs that already fail but lack the new diagnostic.
+- Reject literal zero bytes anywhere in the shared parser's supplied span,
+  naming caller, source and byte offset. Keep the check bounded by the view,
+  including a nonterminated subspan with NUL/junk outside it.
+- Preserve valid escaped U+0000 strings and member names, trailing JSON
+  whitespace and existing BOM behavior. Do not edit the vendor parser or
+  bundle numeric-range, animation-count or Unicode-policy changes.
+- Update the public contract and consumer change record. Use existing owned
+  scratch files for generated test content, no live user data or new fixture
+  framework. Run headless native Debug null, default Debug and Release null
+  AssetsTests, all eight standalone checks and website verification. Record
+  wasm/Node unrun at the existing SDK activation stop; full CI before landing.
+
+**Closed 2026-10-29, shared input validation.** With production source still
+unchanged, four valid-input controls passed (4 cases, 15 assertions), while
+the explicit refusal case failed (1 case, 48 assertions, 12 failures).
+Completed-root NUL variants lacked both text and file refusals; already
+invalid quoted/whitespace variants lacked the raw-NUL description. Fixture
+labels were corrected to owned strings so logs name each variant; inputs and
+assertions stayed unchanged. A bounded raw-byte check in the shared parser
+now refuses the first zero at its byte offset. No vendor code or other
+numeric/loader policy changed.
+
+Full headless AssetsTests pass in native Debug null, default Debug and
+Release null: 70 cases and 522 assertions in each, with no skipped cases.
+All eight standalone checks and the website type check, 160 tests and
+145-page build pass. Independent source review found no remaining issues;
+the published JSON reference carries the raw-NUL and bounded-view contract,
+and CHANGES explains the malformed-input correction. Valid JSON and template
+code need no migration. Wasm/Node remains unrun at the existing Emscripten
+activation access stop, and full CI remains required before landing. The
+tests use their own temporary files and establish no device/browser result.
 
 <a id="sm-61"></a>
 ### SM-61. Hold the include boundary across equivalent path spellings
