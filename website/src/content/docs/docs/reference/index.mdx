@@ -48,6 +48,12 @@ If you are starting out, the pages you will use most are
 [`Keyboard`](/docs/reference/input/keyboard/) and [`Gamepads`](/docs/reference/input/gamepads/).
 The [Concepts](/docs/concepts/) and [Guides](/docs/guides/) pages explain how they fit together.
 
+The <RepoLink path="docs/api-teachability.md">interim teachability audit</RepoLink>
+records a source review of all 84 game-facing headers at its named revision:
+the C++ features and engine terms callers need, long argument lists and
+contract gaps. It records source evidence; the companion introduction and
+beginner teaching acceptance remain unfinished.
+
 Some headers in `render` are there for whoever writes a renderer rather than for game code: the
 file readers, the sprite geometry, the vertex layout and the texture formats. They are published
 because they are public, and because the engine decides where every pixel goes in them, not in

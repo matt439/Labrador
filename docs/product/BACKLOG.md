@@ -341,6 +341,12 @@ reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
 without waiting for all feature stories. A long cohesive file may receive a
 keep verdict; an unproven backend split is reviewed before implementation.
 
+**Contract follow-up, 2026-10-29:** SRL-17's source audit files SRL-22 within
+L32, after the audit and before the glossary. Correcting a false bank-pointer
+lifetime promise and missing unit/loan contracts gives callers firmer rules
+for that explanation; this bounded documentation repair takes priority over
+adding more tutorial prose. It selects no API redesign or runtime change.
+
 The [feature candidates](../feature-candidates.md) add six proposals beyond
 the existing `GAP#` comparison. They need selection before implementation and
 are not counted as ready stories. A selected proposal gets a story here, with
@@ -391,7 +397,7 @@ written.
 29. L29 Pin procedures and configuration sweeps: SM-24, SM-17, SM-18, SM-15
 30. L30 Hosted demo lag and site operations: SM-26, SM-29, SM-30, SM-32
 31. L31 Platform support links and the non-Windows configure refusal: NMS-03, NMS-04
-32. L32 C++ introduction status (documented; no withdrawal) and the learner path: SRL-14, SRL-15, SRL-17, SRL-16
+32. L32 C++ introduction status (documented; no withdrawal), the learner audit, contract fixes and glossary: SRL-14, SRL-15, SRL-17, SRL-22, SRL-16
 33. L33 LineSweeper design notes and the constants rule: SRL-18, SRL-06, SRL-07
 34. L34 A per-user data directory from the engine, once a second caller asks: OCA-76
 35. L35 Enforce the sample's layers and exercise sprite-strip animation: SRL-19, SRL-20
@@ -667,7 +673,21 @@ written.
   All seven standalone checks and the website check, 160 tests and
   144-page/433-file build pass. The emitted preparation text, return route,
   status link/anchor and unfinished-status wording were inspected.
-- [ ] **[SRL-17](STORIES.md#srl-17)** Could · M · The Sample-Reading Learner: A recorded check that the game-facing API is teachable to a beginner — after SRL-14
+- [x] **[SRL-17](STORIES.md#srl-17)** Could · M · The Sample-Reading Learner: A recorded check that the game-facing API is teachable to a beginner — after SRL-14
+  Closed 2026-10-29. The [interim source audit](../api-teachability.md) states
+  a repeatable method and dated run over all 84 published game-code headers,
+  with 29 screened declarations, language/term/loan evidence and the explicit
+  eight-position draw_sprite verdict. A separate source review reconciles the
+  inventory and signatures. All three failed contract facets are filed in
+  SRL-22; positional API redesigns were declined for this audit with T1/T4
+  reasons, rather than inferred from a count. The reference introduction links
+  the run. This closes the source-audit story, not T10's unfinished series or
+  acceptance with actual beginners.
+  All seven standalone checks and the website's zero-diagnostic check,
+  160 tests and 144-page/433-file build pass. The emitted revision-pinned
+  audit link, scope and qualification were inspected. All 84 ledger paths,
+  source hashes and 93 local Markdown targets reconcile.
+- [ ] **[SRL-22](#srl-22)** Should · S · The Outside C++ Adopter, The Sample-Reading Learner: Complete the unit and retained-loan contracts found by the source audit — after SRL-17
 - [ ] **[SRL-16](STORIES.md#srl-16)** Could · M · The Sample-Reading Learner: A guide to the C++ and engine terms the minimal sample uses — after SRL-17
 - [ ] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
 - [ ] **[SRL-06](STORIES.md#srl-06)** Could · S · The Sample-Reading Learner: LineSweeper's design notes give their reasons without sending me to internal records
@@ -694,6 +714,36 @@ written.
 - [ ] **[SM-56](../code-hygiene.md#sm-56-vulkan-exceptional-cleanup)** Should · S · The Sole Owner-Maintainer: Preserve Vulkan temporary ownership through publication and recovery failures
 - [ ] **[SM-57](../code-hygiene.md#sm-57-d3d12-replacement-texture-publication)** Should · S · The Sole Owner-Maintainer: Keep a replacement texture's descriptor consistent if publication fails
 - [ ] **[SM-58](../code-hygiene.md#sm-58-d3d12-sprite-pipeline-value-owner)** Could · M · The Sole Owner-Maintainer: Extract the reviewed D3D12 root-signature/PSO value owner — after SM-57
+
+<a id="srl-22"></a>
+### SRL-22. Complete the source audit's unit and retained-loan contracts
+
+Filed 2026-10-29 from [SRL-17](../api-teachability.md#failed-criteria-and-disposition).
+T4/T10 require a caller to learn units and lifetimes from the public contract;
+T1 does not call for a new wrapper or ownership framework to supply missing
+words. Scope is the three confirmed documentation facets, with unchanged
+implementation and declarations.
+
+**Acceptance**
+
+- Verify shared sprite geometry and backend calls, then state source-rectangle
+  units, rotation units/direction and origin/pivot/scaling rules beside
+  DrawList::draw_sprite. Keep its established world-space, tint and ordering
+  rules consistent; do not infer semantics from a similarly named text API.
+- State the retained RenderResources loan in DrawObject and the public
+  SpriteSheetObject/TextureObject/TextObject constructor path, so Visual and
+  UiTexture inherit an explicit contract. Preserve valid placeholders and the
+  Text/UiText rule already present. State ViewportManager's retained
+  ResolutionManager loan and its required lifetime.
+- Correct AudioResources getter/add wording to describe owned banks,
+  same-name replacement and null-add invalidation of raw pointers/references,
+  distinct from stable slot handles. Remove the contradicted
+  no-release-until-destructor claim; do not change playback or add restrictions
+  unsupported by the implementation.
+- Independently compare comments with implementations and relevant existing
+  fixtures. Prove non-comment C++ tokens unchanged, run affected headless
+  checks, all standalone checks and the website check/tests/build. Record
+  stopped device/wasm checks explicitly rather than claiming them.
 
 <a id="srl-19"></a>
 ### SRL-19. Make LineSweeper's layer boundary a build check

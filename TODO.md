@@ -48,6 +48,7 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SRL-21` | BLOCKED | should | S | Bounds fix and native-null regressions pass; regenerate and review Release captures after GPU access is restored. [Evidence](docs/product/BACKLOG.md#srl-21). |
+| `SRL-22` | OPEN | should | S | State sprite units/pivot, retained drawable/viewport service loans and sound-bank replacement invalidation. The source audit filed these contract gaps; no API redesign. [Acceptance](docs/product/BACKLOG.md#srl-22). |
 | `SM-49` | BLOCKED | should | M | Harness and five case groups preserve source/asset inventories; all native builds/headless checks pass. Pixel execution and wasm GL/S3TC qualification remain at stopped device/Emscripten gates. [Evidence](docs/code-hygiene.md#sm-49-pixel-test-organisation). |
 | `SM-51` | BLOCKED | could | S | Subject split preserves 41 methods; 71 permitted cases pass. Full suite/Infrastructure qualification waits on stopped PowerShell fixtures. [Evidence](docs/code-hygiene.md#sm-51-cloud-tooling-test-organisation). |
 | `SM-56` | OPEN | should | S | Three Vulkan cleanup fixes compile on all native backends; finish wrapper/recovery failure regressions and stopped device qualification. Shader-failure case compiles but is unrun. |
