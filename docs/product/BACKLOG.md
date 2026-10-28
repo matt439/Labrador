@@ -636,6 +636,25 @@ written.
   source target/URL and absence of schedule text were inspected, along with
   the three overview corrections. No HTTP, browser or device check ran.
 - [ ] **[NMS-04](STORIES.md#nms-04)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): Configuring on a non-Windows host refuses early and points at the platform statement — after OCA-01
+  Source implemented 2026-10-29. The native base in the engine presets and
+  copied-game walkthrough now requires hostSystemName Windows; all ten engine
+  and two copied-game native choices inherit it. Wasm bases/choices stay
+  unrestricted, with Linux/macOS-hosted wasm explicitly unverified. The existing
+  post-toolchain fallback names Windows (Win32) and the browser (Emscripten)
+  and links the platform statement. No platform implementation or pre-project
+  EMSCRIPTEN guard was added. Copied projects have a minimal README migration
+  note. Supported APIs, dependencies, compile options and runtime are unchanged.
+  The planner models only this exact condition and validates all ten native
+  and both wasm selections; default planning still emits seven tracks/21 unrun
+  phases. All 63 focused planner/fake-runner tests pass. Actual Windows CMake
+  listing shows all 12 engine and four copied-game presets; an isolated
+  unsupported-target branch fixture checks the diagnostic. Neither is an Ubuntu
+  observation. The required real Ubuntu/WSL listing remains unrun, no Linux
+  wasm configure was attempted, and the story stays unchecked.
+  All seven standalone checks and the website's zero-diagnostic check,
+  160 tests and 144-page/433-file build pass. The built host note, platform
+  link and copied-project condition/wasm entries were inspected. Final
+  independent source review found no issues.
 - [x] **[SRL-14](STORIES.md#srl-14)** Could · S · The Sample-Reading Learner: State the C++ introduction's substantial pre-production progress and unfinished status
 - [ ] **[SRL-15](STORIES.md#srl-15)** Could · XS · The Sample-Reading Learner: Get Started tells me where to go if I do not know C++ yet — after SRL-14
 - [ ] **[SRL-17](STORIES.md#srl-17)** Could · M · The Sample-Reading Learner: A recorded check that the game-facing API is teachable to a beginner — after SRL-14

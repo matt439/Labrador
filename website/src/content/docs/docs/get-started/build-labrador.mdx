@@ -61,6 +61,12 @@ anything, and it builds the samples you will look at next.
 
 ## Other configurations
 
+The `x64-*` presets are available only when CMake runs on Windows. The `wasm-*`
+presets have no host restriction, but building them on Linux or macOS is unverified.
+They still require the [browser toolchain](/docs/guides/browser/). There is no native
+Linux or macOS window implementation; [Platform support](/why/#platform-support)
+states the supported targets and the port plans.
+
 The repository has a debug and a release preset for each renderer. Swap the preset name in all
 three commands to use one:
 

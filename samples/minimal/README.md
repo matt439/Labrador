@@ -36,6 +36,13 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-29.** The Get Started project's native `base` preset now has the
+  condition `${hostSystemName}` equals `Windows`, inherited by `x64-debug`
+  and `x64-release`. A copied project's presets can take that same condition
+  from the walkthrough's `CMakePresets.json`; keep `wasm-base` separate and
+  unrestricted. Non-Windows wasm builds remain unverified. The engine's
+  unsupported-target diagnostic names its supported platforms and links their
+  scope statement.
 - **2026-10-29.** Manifest and sprite-sheet objects reject unknown keys,
   including optional-field typos. Correct or remove unsupported fields when
   moving the engine pin; this template's manifest needs no change. Custom
