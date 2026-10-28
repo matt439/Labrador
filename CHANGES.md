@@ -72,6 +72,16 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-28 - Preserve Vulkan temporary ownership during failures
+
+**Behaviour change, Vulkan only.** A failed texture-wrapper allocation now
+releases the prepared image, memory and view. Pixel-shader creation failure
+releases the already-created vertex module. Back-buffer read-back retains the
+device that allocated its temporary buffer, so recovery and recovery exceptions
+clean up through that original device; a lost frame still throws instead of
+returning pixels. No caller migration is needed. GPU failure-path and
+synchronization qualification remains open in SM-56.
+
 Controller vibration (`Gamepads::vibrate` and `stop_vibration`, with
 `Vibration`, `VibrationResult` and `check_vibration` in `gamepad.h`) adds names
 only, so it is a note rather than an entry. A request is bounded to

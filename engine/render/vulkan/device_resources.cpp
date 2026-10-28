@@ -237,11 +237,10 @@ namespace labrador
 		// with the instance that made it still alive, and a debug messenger is
 		// an instance object that has to go before the instance it reports for.
 		//
-		// NOTHING WAITS HERE, because whoever gets to this point has already
-		// waited. This object outlives DeviceResources by exactly as long as
-		// some texture still names it, and DeviceResources' own destructor is
-		// what waits for the GPU - so by the time the last shared_ptr goes, the
-		// only thing left to do is free handles.
+		// Completion belongs to DeviceResources and its coordinating callers.
+		// Textures and read-back operations can retain this generation after
+		// DeviceResources releases it. Dropping the last shared owner only
+		// frees handles; it does not perform another wait.
 		if (this->device != VK_NULL_HANDLE)
 		{
 			vkDestroyDevice(this->device, nullptr);

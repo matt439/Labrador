@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace labrador
@@ -228,6 +229,7 @@ namespace labrador
 		// failure has to put everything back - with five throwing calls between
 		// its creation and its release.
 		VulkanBuffer staging;
+		std::unique_ptr<VulkanTexture> owned_texture;
 
 		// FROM HERE THE IMAGE IS OWNED BY NOBODY UNTIL THE LAST LINE, so every
 		// failure between the two has to put it back. There is no ComPtr in
@@ -340,6 +342,12 @@ namespace labrador
 
 			check_vk(vkCreateImageView(device, &view_description, nullptr,
 				&view), "A texture's image view could not be created");
+
+			// Keep raw-handle cleanup active until allocation gives the wrapper
+			// ownership. Nothing after this handoff in the try may throw.
+			owned_texture = std::make_unique<VulkanTexture>(
+				device_resources.shared_device(), image, memory, view,
+				texture.width, texture.height);
 		}
 		catch (...)
 		{
@@ -386,9 +394,6 @@ namespace labrador
 		// frees, there being no descriptor slot to give back
 		// (render_resources.cpp says why that absence is the interesting
 		// difference from the D3D12 file).
-		resources.impl()->add_texture(name,
-			std::make_unique<VulkanTexture>(
-				device_resources.shared_device(), image, memory, view,
-				texture.width, texture.height));
+		resources.impl()->add_texture(name, std::move(owned_texture));
 	}
 }

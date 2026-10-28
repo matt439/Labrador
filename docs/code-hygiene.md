@@ -384,6 +384,31 @@ open if a required operation remains stopped; that does not tick this story.
 Do not add a general owner framework, alter the renderer seam or retry stopped
 device operations as part of this scope.
 
+**Source progress 2026-10-28.** Texture wrapper allocation is now the final
+operation inside the raw-handle cleanup block; registry publication receives
+its completed unique owner outside that catch. Read-back retains the original
+`shared_ptr<VulkanDevice>` and uses its device for every local-buffer release,
+without reading a lost frame. Pixel-shader creation now has a narrow catch
+that releases the successful vertex module and rethrows.
+
+All five native Debug render targets build, including all four pixel binaries,
+with manifest installation disabled and existing local dependencies; each
+backend's headless `RenderTests` passes. The new pixel case in
+`tests/render/vulkan/shader_failure_tests.cpp` forwards ordinary loader calls,
+injects a second-module API failure and checks the original error and vertex
+destruction device/count. It compiles but has **not run**: its construction
+creates a real device. It neither simulates genuine device loss nor exhausts
+memory. All standalone lint/fixture checks pass. Independent read-only review
+finds no ownership/exception or test-forwarding issue. The website check,
+160 tests and 143-page build pass.
+
+**Still open:** deterministic wrapper-allocation and recovery-exception
+regressions are not yet implemented. The new shader case, pixel/resource,
+upload/pending-submission and `validate_sync` runs remain at the existing
+stopped GPU gate, which was not retried. Builds/headless arithmetic do not
+qualify those error paths. Keep this story unchecked. Local build logs use
+the `sm56-` prefix under `out/loop-2026-10-28-2114/`.
+
 ## SM-57. D3D12 replacement texture publication
 
 The [construction review](review/2026-10-28-renderer-construction.md#separate-confirmed-issue-d3d12-replacement-descriptor-publication)

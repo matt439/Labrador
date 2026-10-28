@@ -327,9 +327,18 @@ namespace labrador
 		VkShaderModule vertex_shader = create_shader(device,
 			sprite_vertex_shader, sizeof(sprite_vertex_shader),
 			"The sprite vertex shader could not be created");
-		VkShaderModule pixel_shader = create_shader(device,
-			sprite_pixel_shader, sizeof(sprite_pixel_shader),
-			"The sprite pixel shader could not be created");
+		VkShaderModule pixel_shader = VK_NULL_HANDLE;
+		try
+		{
+			pixel_shader = create_shader(device,
+				sprite_pixel_shader, sizeof(sprite_pixel_shader),
+				"The sprite pixel shader could not be created");
+		}
+		catch (...)
+		{
+			vkDestroyShaderModule(device, vertex_shader, nullptr);
+			throw;
+		}
 
 		VkPipelineShaderStageCreateInfo stages[2] = {};
 		stages[0].sType =
@@ -1237,23 +1246,25 @@ namespace labrador
 		// Made per call and thrown away: this is not a frame-path function and
 		// a cached read-back buffer would be one more thing to remake on a
 		// device loss.
-		VulkanBuffer readback = create_vulkan_buffer(device_resources.owner(),
+		// Recovery can replace the coordinating device before returning or
+		// throwing. This local buffer must keep its creating generation alive
+		// and use that device for every cleanup path.
+		const std::shared_ptr<VulkanDevice> readback_owner =
+			device_resources.shared_device();
+		const VkDevice readback_device = readback_owner->device;
+		VulkanBuffer readback = create_vulkan_buffer(*readback_owner,
 			static_cast<VkDeviceSize>(pixels.size()),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			"The read-back buffer");
 
-		// WHETHER THE DEVICE WENT AWAY UNDER THIS READ, decided inside the try
-		// below and answered after it. It cannot be answered inside, because
-		// the answer is precisely that nothing may touch `readback` again.
+		// A lost frame must not be read, even though the retained device still
+		// permits this buffer's cleanup.
 		bool lost = false;
 
-		// A VulkanBuffer HAS NO DESTRUCTOR AND THERE ARE SIX THROWING CALLS
-		// BELOW IT, which is the whole of why this block is here. The same
-		// sentence texture_factory.cpp writes over its staging copy: there is
-		// no ComPtr in this API, so every failure between a handle being taken
-		// and being released has to put it back by hand.
+		// VulkanBuffer has no destructor. Every path after allocation releases
+		// it explicitly through the retained creating device.
 		try
 		{
 			const VkImageLayout previous = device_resources.colour_layout();
@@ -1311,12 +1322,8 @@ namespace labrador
 				device_resources.transition_colour(previous);
 			}
 
-			// THE ANSWER IS NOT A COURTESY, AND device_resources.h SAYS SO ON
-			// execute() ITSELF: false means the device was lost and everything
-			// has been rebuilt on the way out - the VkDevice these two handles
-			// came from included. Discarding it left `readback.mapped` pointing
-			// into freed memory and handed a destroyed device's VkBuffer and
-			// VkDeviceMemory to its replacement to free.
+			// False means recovery rebuilt the renderer. Its old frame cannot
+			// supply pixels, and a recovery exception must keep its own error.
 			lost = !device_resources.execute();
 
 			if (!lost)
@@ -1342,30 +1349,20 @@ namespace labrador
 		}
 		catch (...)
 		{
-			// The device is still the one that made it, so this is the ordinary
-			// release. The lost case below is the one that is not.
-			destroy_vulkan_buffer(device_resources.device(), readback);
+			destroy_vulkan_buffer(readback_device, readback);
 			throw;
 		}
 
+		destroy_vulkan_buffer(readback_device, readback);
+
 		if (lost)
 		{
-			// DELIBERATELY NOT DESTROYED. Both handles belong to a VkDevice
-			// that no longer exists, and the only device to free them against
-			// is a different one - which is a call into a driver with another
-			// object's handles, the one shape of undefined behaviour this API
-			// gives no diagnostic for. Their memory went with the device.
-			//
-			// AND IT SAYS SO RATHER THAN HANDING BACK A BLACK FRAME (T6). A
-			// read that silently answers zeroes fails a golden comparison with
-			// a message about pixels instead of about the device.
+			// Report the loss instead of returning a black frame (T6).
 			throw std::runtime_error("The device was lost while reading the "
 				"back buffer, so there is nothing to read: everything the "
 				"renderer holds has been rebuilt and the frame that was being "
 				"read no longer exists.");
 		}
-
-		destroy_vulkan_buffer(device_resources.device(), readback);
 	}
 
 	// THE THREE MARKERS DO NOTHING, AND THAT IS THE HONEST ANSWER RATHER THAN A
