@@ -600,6 +600,21 @@ written.
   All seven standalone checks, website check (zero diagnostics), 160 website
   tests and the 144-page/433-file build pass. No live request or deploy ran.
 - [ ] **[SM-29](STORIES.md#sm-29)** Could · S · The Sole Owner-Maintainer: A procedure for previewing and rolling back the site — after SM-31
+  Source procedure added 2026-10-29 in [website/README.md](../../website/README.md#preview-and-recovery):
+  select the matching successful workflow artifact, preserve its revision in
+  a separate review checkout, serve its existing dist and record affected-page
+  review, then check the intended production revision/routes/assets/search
+  after deploy. The plan links that procedure and distinguishes a failed build
+  preserving production from recovery after a regression has deployed.
+  Current-provider rollback navigation, arguments and corresponding asset
+  restoration still require primary-source verification under the existing
+  network stop. No provider steps were invented. Artifact-preview service,
+  live-site and actual recovery checks remain unrun; the story stays unchecked.
+  Independent source review, seven standalone checks, 90 offline Node tests,
+  website check (zero diagnostics), 160 website tests and the 144-page/433-file
+  build pass. Across two runs, all 182 permitted Python cases pass: the seven
+  CMake fixtures received explicit installed tool paths after initially skipping.
+  The exact ten stopped PowerShell worker/trace cases were never executed.
 - [ ] **[SM-30](STORIES.md#sm-30)** Could · S · The Sole Owner-Maintainer · **Owner**: Change the website gate in one place — after SM-29
 - [x] **[SM-32](STORIES.md#sm-32)** Could · S · The Sole Owner-Maintainer: Keep the site's LineSweeper footage in step with the sample
 - [ ] **[NMS-03](STORIES.md#nms-03)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): The Why page's Platform support section links the plans, their scope, and what would change the answer — after OCA-01

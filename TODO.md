@@ -88,8 +88,9 @@ the two new stories have their detail in BACKLOG.md.
 | `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 | `OCA-18` | BLOCKED | could | S | Visual Studio guide and live breakpoint/content excerpts are implemented; follow it in a clean copied project, hit the breakpoint and load content, recording date and exact IDE version. [Evidence](docs/product/BACKLOG.md#later). |
 | `SM-26` | BLOCKED | could | S | Committed-host lag checker and re-sync trigger are implemented with 25 passing focused tests. Actual check stopped at Labrador's Git ownership gate before reading the host; owner-context qualification remains. [Contract](docs/port/web.md#7-what-the-host-page-gets). |
+| `SM-29` | BLOCKED | could | S | Artifact-preview and production-check steps are documented; the plan distinguishes failed-build preservation from rollback. Current-provider rollback steps and live acceptance remain unverified. [Procedure](website/README.md#preview-and-recovery). |
 
-The rest of the site's operations stories (`SM-29`, `SM-30`) are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
+`SM-30` remains the owner-only gate follow-up after `SM-29` in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
 ## CI
 
