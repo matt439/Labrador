@@ -435,7 +435,18 @@ written.
 - [ ] **[BDP-07](STORIES.md#bdp-07)** Could · M · The Browser and Phone Demo Player · **Owner**: Smooth play on the displays visitors actually use — after SM-08
 - [ ] **[OCA-46](STORIES.md#oca-46)** Could · M · The Outside C++ Adopter: See a join screen for couch play I can copy
 - [ ] **[OCA-51](STORIES.md#oca-51)** Could · M · The Outside C++ Adopter: Wire a settings screen to what the engine can actually set — after OCA-53
-- [ ] **[OCA-50](STORIES.md#oca-50)** Could · S · The Outside C++ Adopter: Make a menu work with a click or a tap
+- [x] **[OCA-50](STORIES.md#oca-50)** Could · S · The Outside C++ Adopter: Make a menu work with a click or a tap
+  Closed 2026-10-29. The [pointer-menu section](../../website/src/content/docs/docs/guides/menus.mdx)
+  quotes `tapped_row()` and its focus-before-activation branch with live
+  SourceFile anchors. It explains pressed edges, matching camera/viewport
+  coordinates, target geometry, input priority and disabled activation, and
+  gives the mouse route using the actual integer-to-world API. T1 keeps
+  pointer policy in the game; the quoted LineSweeper helper remains touch-only.
+  Missing/ambiguous start selectors were checked to fail; body edits refresh
+  the live quote rather than claiming a frozen semantic checksum. Standalone
+  checks, website check/160 tests and the final corrected 143-page build pass.
+  The built excerpts, mouse recipe and T1 link were checked. No engine or
+  gallery pointer feature or device acceptance is added.
 - [ ] **[OCA-76](STORIES.md#oca-76)** Could · S · The Outside C++ Adopter: Ask the engine where my game may write, on Windows and in the browser — after OCA-53
 - [ ] **[OCA-41](STORIES.md#oca-41)** Could · S · The Outside C++ Adopter: My non-English literals draw the same on Windows and in the browser
 - [x] **[OCA-43](STORIES.md#oca-43)** Could · S · The Outside C++ Adopter: Know which languages the text path can draw

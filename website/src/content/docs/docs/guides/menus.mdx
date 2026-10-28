@@ -89,6 +89,49 @@ held stick or key into one move at once and then repeated moves, the way menus i
 behave. The pause menu handles cancel first, so the button that opened the menu always closes it,
 whatever the cursor is on.
 
+## Choosing a row with a click or tap
+
+`engine/ui` has no pointer-input or coordinate-selection entry point. Your
+game reads mouse/touch input, decides which view and row it belongs to, then
+uses the existing focus and activation operations. This keeps target sizes,
+input priority and pointer behavior with the game
+([T1](/docs/design/philosophy/#t1-mechanism-over-policy)).
+
+LineSweeper's touch helper, `tapped_row()`, shows that hit test:
+
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="UiText* PauseState::tapped_row() const" to="}" />
+
+It considers only a touch's **pressed edge**, so holding a finger does not
+activate a row every tick. `Camera::world_position` maps the point from client
+pixels into the same space as the rows, using the camera and viewport used to
+draw this menu. Refresh that arrangement before testing input after a resize.
+Comparing client pixels directly with world-space bounds would choose the
+wrong row when the camera fits or scales the view.
+
+The game expands each text's `bounds()` into a row target. Its half-width is
+the larger of a minimum and the text's half-width plus a margin; its height
+extends half the row spacing above and below the centre. Left/top tests include
+the edge; right/bottom exclude it. The
+first hit returns one row, so several newly pressed points still produce at
+most one choice in this call. Those sizes and that priority are sample policy.
+
+The update then focuses the touched row **before** activating it:
+
+<SourceFile path="samples/linesweeper/states/pause_state.cpp" from="else if (UiText* row = this->tapped_row(); row != nullptr)" to="}" />
+
+`set_focused(slot, row)` accepts a widget already in that group and returns
+false for an unknown widget. A disabled row can receive focus; `activate`
+refuses its action. Your game can also exclude disabled rows from its hit test.
+The sample checks cancel first and gives keyboard/pad confirm priority over
+touch, so its input paths cannot activate twice in one update.
+
+For a mouse, use the borrowed `Application::mouse()` and the left-button edge,
+`mouse.pressed(MouseButton::left)`. Its `mouse.position()` is an integer
+position in client pixels: pass it directly to the same view's
+`Camera::world_position`, which returns `Vector2F`, and test the same row targets. Choose that view,
+hover behavior and click/drag policy in game code. LineSweeper's quoted helper
+reads touch; the mouse route is how to reuse that pattern in your own menu.
+
 ## A menu that answers
 
 The pause menu returns its choice the way any pushed state does, as a typed result:
