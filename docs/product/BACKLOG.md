@@ -334,7 +334,7 @@ work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
 
-**Maintenance lane, added 2026-10-28:** L36 to L42 may run alongside the
+**Maintenance lane, added 2026-10-28:** L36 to L43 may run alongside the
 product batches above, in their own order and with their own prerequisites.
 They cover comment audits, source/test organisation and backend responsibility
 reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
@@ -343,6 +343,7 @@ keep verdict; an unproven backend split is reviewed before implementation.
 L41 adds the bounded shared-table exception repair selected from the source
 audit on 2026-10-29, with its acceptance below.
 L42 follows it with direct regression coverage of the shared byte cursor.
+L43 closes confirmed path-spelling gaps in the existing engine include wall.
 
 **Contract follow-up, 2026-10-29:** SRL-17's source audit files SRL-22 within
 L32, after the audit and before the glossary. Correcting a false bank-pointer
@@ -411,6 +412,7 @@ written.
 40. L40 Review backend ownership, repair confirmed exceptional paths, then take the selected pipeline cut: SM-53, SM-54, SM-55, SM-56, SM-57, SM-58
 41. L41 Preserve sound-group registration after allocation failure: SM-59
 42. L42 Pin the shared byte reader's boundary and byte-order contract: SM-60
+43. L43 Normalize the engine include wall and pin its boundaries: SM-61
 
 **Stories**
 
@@ -764,6 +766,69 @@ written.
 - [ ] **[SM-58](../code-hygiene.md#sm-58-d3d12-sprite-pipeline-value-owner)** Could · M · The Sole Owner-Maintainer: Extract the reviewed D3D12 root-signature/PSO value owner — after SM-57
 - [x] **[SM-59](#sm-59)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed new sound-group registration absent and retryable
 - [x] **[SM-60](#sm-60)** Could · S · The Sole Owner-Maintainer: Pin ByteReader's boundary, cursor and byte-order behavior directly
+- [x] **[SM-61](#sm-61)** Should · S · The Sole Owner-Maintainer: Enforce the existing include wall across normalized paths and backend subtrees
+
+<a id="sm-61"></a>
+### SM-61. Hold the include boundary across equivalent path spellings
+
+Selected 2026-10-29 after SM-60 from the third item in SM-59's ranked source
+shortlist. The engine checker matches only a narrow literal path shape.
+Dot segments and headers nested inside a backend can evade it; a real sibling
+spelling such as ../d3d12/backend.h is missed from a d3d11 source. Conversely,
+a nested source inside its own backend would be refused because ownership
+is compared with the immediate directory rather than the subtree. T4/T5
+favor making the existing promised boundary consistent, without changing
+which modules depend on which or emulating a compiler.
+
+**Acceptance**
+
+- Add compiler-free fixtures and first demonstrate the current gaps and false
+  refusal against the unchanged checker. Include existing passing controls
+  for vendor paths and generated same-backend headers.
+- Normalize literal, single-line forward-slash operands. Preserve the named
+  game-tree rule, including its existing leading ../ forms. For backend .h
+  paths, resolve repository-root engine spellings and explicit dot-relative
+  forms; compare source ownership by module/backend path segments and allow
+  any nested source/header within that same subtree.
+- Give normalized engine-root spellings precedence over source-relative
+  fallback. For that fallback, require the backend owner directory to exist,
+  not the included header: this avoids inventing an owner from a dotted
+  vendor path while retaining generated headers in actual backend folders.
+- Cover quote/angle forms, whitespace, .h/.cpp sources, game and backend dot
+  paths, nested headers, sibling-relative paths, all four platform-bearing
+  modules and a synthetic new module. Keep unrelated names, comments,
+  vendor includes and generated same-owner headers allowed. Do not invent
+  a backend by concatenating arbitrary vendor tokens with the source path.
+- Keep original source/include diagnostics. Document literal-lint limits:
+  no macro/continuation/block-comment preprocessing, symlink resolution,
+  arbitrary compiler include roots or guessing other client folder names.
+  Preserve the repository-root include convention.
+- Add the fixture command to the existing CI lint step and standalone brief;
+  do not change job/matrix identities or branch protection. Run the complete
+  fixtures, actual repository check, standalone lints, a targeted build that
+  depends on the checker and website verification. No compiler is needed by
+  the fixtures and no device/browser/network acceptance is claimed.
+
+**Closed 2026-10-29, source-boundary enforcement.** With the original checker
+unchanged, focused fixtures reproduced three missed forbidden includes
+(dot-game, nested backend and sibling-relative forms) and the false refusal
+of a nested source in its own backend. Vendor, generated-header and legacy
+game-parent controls passed. The reviewed fix normalizes operands, compares
+whole ownership subtrees, gives engine-root spellings precedence and limits
+source-relative backend detection to actual owner directories. Included
+headers may remain generated and absent.
+
+All 49 compiler-free fixtures and the actual repository scan pass, including
+dotted shared/vendor paths, missing generated headers and synthetic new
+modules. All eight standalone checks and a native Debug CoreTests build
+through its checker dependency pass; the latter ran the three build checks
+without recompiling or rerunning unchanged C++ tests. Website type checking,
+160 tests and the 145-page build pass, with the scope/limits present in the
+published architecture page. Independent source review found no remaining
+issues. The existing lint step now runs the fixtures; all other workflow text,
+job identities and matrices are unchanged. Full CI remains required before
+landing. These are literal-source checks, with no device, browser or network
+qualification.
 
 <a id="sm-60"></a>
 ### SM-60. Exercise the shared byte reader's public contract directly

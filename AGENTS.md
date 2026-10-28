@@ -207,6 +207,10 @@ The website workflow runs on every pull request and on pushes to master and
   includes of game headers and **any** cross-folder include into a backend,
   including from headers and the shell. The wall covers render, audio, input
   and app platform folders. A consumer's include roots do not weaken it.
+  Literal forward-slash includes normalize dot components, and a backend owns
+  its whole subtree. The [fixture script](cmake/check_engine_include_fixtures.cmake)
+  tests permitted and refused spellings without a compiler; ARCHITECTURE states
+  the lexical scope and limits.
 - [check_linesweeper_layers.cmake](cmake/check_linesweeper_layers.cmake) refuses
   literal engine includes in LineSweeper's rules and its tick declaration in
   presentation. It runs only where the sample is added; the companion fixture
@@ -234,6 +238,7 @@ Standalone lint commands (no configure required):
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_doc_citations.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_agent_brief.cmake
 cmake -DENGINE_DIR=C:/Projects/Labrador/engine -P cmake/check_engine_includes.cmake
+cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_engine_include_fixtures.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_linesweeper_layers.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_linesweeper_layer_fixtures.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_source_revision.cmake

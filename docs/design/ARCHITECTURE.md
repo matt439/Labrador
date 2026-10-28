@@ -521,11 +521,34 @@ beside it as the way through. `assets/` declares which manifest entries become
 textures and fonts and calls `render/resource_factory.h`, whose declarations
 name nothing a backend owns.
 
-**No file outside `render/<backend>/` includes the backend header, and
+**No engine file outside `render/<backend>/` includes the backend header, and
 `cmake/check_engine_includes.cmake` fails the build for one that does.** The
 shell is not an exception to that: it passes its window handle to
 `Renderer::create_device` as a `void*`, because a window handle is not a
 graphics type — it is this platform's window, and the backend casts it back.
+
+The check reads literal, single-line, forward-slash includes in engine `.h`
+and `.cpp` files. Backend targets are `.h` files anywhere below the owning
+`engine/<module>/<backend>/` subtree; a nested source in that same subtree
+may include them too. Dot components are normalized first. A spelling that
+normalizes to `engine/...` uses the repository root alone. Other explicit
+`./` or `../` relative operands are checked against the repository root and
+the including file's directory. The source-directory interpretation identifies
+a backend only when its owning module/backend directory exists; the header
+itself need not exist. This avoids inventing a backend from a dotted vendor
+path. Arbitrary vendor tokens such as `<rapidjson/error/en.h>` are not treated
+as paths below the including file. A generated header in an
+owning backend's build tree follows the same root spelling without having to
+exist in the source tree. The game wall retains the named `game/` rule,
+including leading parent components, and normalized paths that reach that
+known tree; it does not guess other client folder names.
+
+This is a source lint: macro includes, line continuations, block-comment
+preprocessing, symlink resolution, arbitrary compiler search paths and
+transitive includes are outside it. Inactive conditional branches are still
+read. Tests are outside its engine source scan and may include the null
+recording headers. `cmake/check_engine_include_fixtures.cmake` checks allowed
+and refused forms without a compiler and retains its synthetic trees in `out/`.
 
 The rule is about *any* file, and it is worth saying because it was once
 written as a count of implementation files. Counted that way it missed the
