@@ -622,6 +622,37 @@ deploy` from its `main` branch. The demo is live, at
 2026-10-13 ([web-to-be-tested.md](web-to-be-tested.md) has the headers it
 serves).
 
+**When to re-sync.** After a change to LineSweeper's source or content, engine
+code included in its browser build, the browser shell/mount, bundle/notices
+inputs or wasm/toolchain/build settings, prepare and verify a fresh clean
+Release bundle before asking the owner to re-sync the host. Until that sync,
+the public demo does not represent those changes. Review the relevant diff:
+a documentation-only commit can increase the revision distance without
+changing the game bytes. A positive count alone is not a deploy instruction.
+
+From this checkout's root, compare the host's committed bundle record with
+the existing local Labrador `refs/heads/master`:
+
+```text
+python tools/check_demo_lag.py --host-repository C:/Projects/PersonalWebsite
+```
+
+Supply the path to the host checkout on the current machine. The command
+pins its HEAD and reads only that commit's
+`public/demo/linesweeper/BUILD.json`, ignoring an edited working-tree copy.
+It names the checkout, host commit and blob path, the recorded bundle commit,
+the resolved local comparison commit and the number of commits between them.
+It does not fetch: local master can lag upstream. The count includes all
+commits, rather than only changes relevant to wasm.
+
+This is a committed-metadata check, not a request to the live site or proof
+that production serves the same bytes. It requires a full 40-character commit,
+`dirty` exactly `false` and complete local ancestor history; dirty/malformed metadata,
+unknown revisions, shallow history and a non-ancestor fail explicitly.
+A valid comparison, including a positive lag, exits 0; an invalid or unknown
+comparison exits nonzero. Packaging verification in 7.1 remains separate.
+No host checkout, bundle or deployment is changed.
+
 ### 7.1 Files
 
 The build writes the bundle on every `wasm-*` build, as the
