@@ -325,6 +325,28 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 
 The browser in depth for adopters, a kinder hosted demo, the measured low tier and phones, couch and text depth, and the maintainer's guards against drift
 
+**Scheduling amendment, 2026-10-28.** Ready Later batches may run while Next
+waits on hardware, a scheduled run or an owner session. Keep their order below,
+skip only the items whose own prerequisites are unmet, and return to an earlier
+item when its gate clears. This does not complete Next or relax its acceptance.
+The first ready batches are L1 to L6; TODO's NOW names the first three. Later
+work includes code and tools as well as guides: the join screen (L19), working
+settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
+verification tooling (L28/L29) and the new sample checks/examples (L35).
+
+**Maintenance lane, added 2026-10-28:** L36 to L40 may run alongside the
+product batches above, in their own order and with their own prerequisites.
+They cover comment audits, source/test organisation and backend responsibility
+reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
+without waiting for all feature stories. A long cohesive file may receive a
+keep verdict; an unproven backend split is reviewed before implementation.
+
+The [feature candidates](../feature-candidates.md) add six proposals beyond
+the existing `GAP#` comparison. They need selection before implementation and
+are not counted as ready stories. A selected proposal gets a story here, with
+its acceptance and dependencies; the dated STORIES.md and comparison stay as
+written.
+
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
@@ -333,6 +355,8 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - A real iPhone has played the development page and the live demo, with the LAN-serve procedure written in that session; a pacing method exists and runs on the owner's displays are recorded
 - PI-10 has decided each filed report, and only then is the engine staging helper built or declined
 - Golden regenerations leave a review trace, the five-backend-plus-wasm sweep is one command per area, and site preview and rollback are written down
+- LineSweeper's documented layer boundary fails the build when crossed, and a copyable animation example uses the public sprite-sheet API
+- The hygiene batches remove verified comment debt, organise independent test/tool responsibilities and record ownership-based keep/split decisions for backend candidates
 
 **Lands as**
 
@@ -370,6 +394,12 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 32. L32 C++ introduction status (documented; no withdrawal) and the learner path: SRL-14, SRL-15, SRL-17, SRL-16
 33. L33 LineSweeper design notes and the constants rule: SRL-18, SRL-06, SRL-07
 34. L34 A per-user data directory from the engine, once a second caller asks: OCA-76
+35. L35 Enforce the sample's layers and exercise sprite-strip animation: SRL-19, SRL-20
+36. L36 Comment audits: public contracts, backend rules, implementation/build prose and sample teaching: SM-45, SM-46, SM-47, SM-48
+37. L37 Split independent render and cloud-tool test responsibilities: SM-49, SM-51
+38. L38 Extract Win32 input translation from window lifetime: SM-50
+39. L39 Separate website reference indexing, links and page assembly: SM-52
+40. L40 Review backend device, pipeline and audio-transport ownership before choosing further splits: SM-53, SM-54, SM-55
 
 **Stories**
 
@@ -445,6 +475,67 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 - [ ] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
 - [ ] **[SRL-06](STORIES.md#srl-06)** Could · S · The Sample-Reading Learner: LineSweeper's design notes give their reasons without sending me to internal records
 - [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
+- [ ] **[SRL-19](#srl-19)** Should · S · The Sample-Reading Learner: Make LineSweeper's layer boundary a build check
+- [ ] **[SRL-20](#srl-20)** Could · M · The Sample-Reading Learner: Copy a working sprite-strip animation example
+- [ ] **[SM-45](../code-hygiene.md#sm-45-public-header-contracts-and-rationale)** Should · M · The Sole Owner-Maintainer: Audit public-header contracts and oversized rationale
+- [ ] **[SM-46](../code-hygiene.md#sm-46-backend-recording-and-synchronization-comments)** Should · S · The Sole Owner-Maintainer: Audit backend recording and synchronization comments
+- [ ] **[SM-47](../code-hygiene.md#sm-47-implementation-and-build-comment-archaeology)** Should · S · The Sole Owner-Maintainer: Remove stale implementation and build-comment history
+- [ ] **[SM-48](../code-hygiene.md#sm-48-sample-teaching-comments)** Could · S · The Sole Owner-Maintainer: Refresh sample teaching comments against current code
+- [ ] **[SM-49](../code-hygiene.md#sm-49-pixel-test-organisation)** Should · M · The Sole Owner-Maintainer: Separate the pixel-test harness and independent contract cases
+- [ ] **[SM-51](../code-hygiene.md#sm-51-cloud-tooling-test-organisation)** Could · S · The Sole Owner-Maintainer: Split cloud tooling tests by production module
+- [ ] **[SM-50](../code-hygiene.md#sm-50-win32-input-translation)** Should · S · The Sole Owner-Maintainer: Extract backend-private Win32 input translation
+- [ ] **[SM-52](../code-hygiene.md#sm-52-website-reference-organisation)** Could · M · The Sole Owner-Maintainer: Separate reference indexing, prose linking and page assembly
+- [ ] **[SM-53](../code-hygiene.md#sm-53-vulkan-devicebuffer-ownership-review)** Could · M · The Sole Owner-Maintainer: Review Vulkan device/buffer ownership for a justified split
+- [ ] **[SM-54](../code-hygiene.md#sm-54-renderer-construction-review)** Could · M · The Sole Owner-Maintainer: Review D3D12/Vulkan pipeline construction ownership
+- [ ] **[SM-55](../code-hygiene.md#sm-55-web-audio-transport-review)** Could · S · The Sole Owner-Maintainer: Review the Web Audio transport and C++ lifetime boundary
+
+<a id="srl-19"></a>
+### SRL-19. Make LineSweeper's layer boundary a build check
+
+Added 2026-10-28. The sample's [open question](../../samples/linesweeper/README.md#still-open)
+and [PlayState](../../samples/linesweeper/states/play_state.h) describe a
+checkable boundary enforced only by review. This is ready without hardware
+or a design decision; it changes enforcement, not the layering rule.
+
+**Acceptance**
+
+- A standalone CMake check rejects includes of `engine/` from `rules/` and
+  `rules/tick.h` from `presentation/`, in headers and sources, with the file
+  and offending include in its error. Define the accepted include spellings
+  and cover quoted, angle-bracketed and relative attempts as appropriate to
+  the existing include wall; do not imply a complete C++ dependency analyser.
+- The current sample passes. Synthetic fixtures demonstrate both prohibited
+  directions fail and allowed includes pass, with no graphics or compiler.
+- Wire it into builds that actually include LineSweeper and the existing lint
+  path, without adding a required CI job or making a minimal consumer build
+  depend on sample sources. Check the copied-consumer shape.
+- Update the sample README and PlayState's comment to state the enforced
+  boundary and its limits. Run the standalone checks and offline tooling tests.
+
+<a id="srl-20"></a>
+### SRL-20. Copy a working sprite-strip animation example
+
+Added 2026-10-28. The [sprites guide](../../website/src/content/docs/docs/guides/sprites-and-text.mdx)
+instructs callers to use `AnimationStrip::calculate_frame`, which is private;
+the public accessor is `frame_rect`. No sample currently demonstrates the
+strip path. Use the existing components gallery as the client; keep elapsed
+time, looping and restart policy in sample code (T1).
+
+**Acceptance**
+
+- A copyable gallery example resolves a named animation strip and draws the
+  public `frame_rect` through SpriteSheet. Include redistributable content and
+  the loader data needed to reproduce it; add no engine animation manager.
+- Headless tests cover frame boundaries, looping, one-shot completion, restart
+  and a step crossing several frames. Define the example's treatment of
+  invalid time inputs and prove drawing does not advance the animation.
+- Replace the private-method instruction with the public accessor and quote
+  the compiling example from the guide. Update the components README and any
+  other page whose claim that no sample uses a sprite sheet becomes false.
+- Build and exercise the gallery natively and in the browser, run its headless
+  and page checks plus the website checks, and review its rendered frames.
+  Review is separate from the headless timing tests. No renderer change is
+  needed; any later expansion of that scope follows the five-backend rule.
 
 <details><summary>Why each is placed here</summary>
 
@@ -481,7 +572,7 @@ The browser in depth for adopters, a kinder hosted demo, the measured low tier a
 | BDP-10 | Moved from Deferred to Later on 2026-10-27: the owner has no Android access and accepts iPhone-only evidence for lifting the phone gate. The gate stays closed until SM-13 and BDP-09 pass, then its implementation and public support wording are updated together. SM-44 is optional future evidence; this decision verifies no device and makes no Android support claim. |
 | BDP-07 | G23: pacing on the displays visitors use; may need a borrowed high-refresh display. |
 | OCA-46 | G123: a join screen for couch play, as a sample piece first. |
-| OCA-51 | G128: a settings screen wired to what the engine can set. Follows OCA-53 (Next). |
+| OCA-51 | G128: a settings screen wired to what the engine can set. Follows OCA-53 (Next). Implementation note 2026-10-28: the dated story predates sound groups; use the existing SoundBank group controls where appropriate rather than adding another volume bus. Keep fullscreen re-sync and callback behavior in the sample. |
 | OCA-50 | G127: a menu that works with a click or a tap, in game code. An engine hit test over `bounds()` was weighed on 2026-10-24 and declined: the one caller, LineSweeper's pause menu (`tapped_row`), sizes each tap target from the row's centre, the row spacing and a minimum width rather than from its bounds alone, because a finger needs more than the text's extent. The target is policy, so the hit test stays the game's (T1; PHILOSOPHY, UI). |
 | OCA-76 | G108: the engine half of OCA-53, split out on 2026-10-24. ColourWars is the recorded caller (`game/directory_consts.cpp` reads `%LOCALAPPDATA%` and falls back beside the executable), Windows-only; it waits for a second caller, or a browser one, before it is built. |
 | OCA-41 | G145: non-English literals differ between Windows and the browser without /utf-8. |

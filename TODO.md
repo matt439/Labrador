@@ -8,26 +8,101 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Now is finished**: every batch of [BACKLOG.md, Now](docs/product/BACKLOG.md#now), N1 to N21, has landed, and `v0.1.0` and `v0.2.0` are cut.
 
-**Aim:** the backlog's Next horizon, *Pin, test, ship*: "an adopter moves a pin by procedure, tests their game, makes content, ships a Windows release with its runtime and notices, starts a browser build and reads a reference that gives the contract". [BACKLOG.md, Next](docs/product/BACKLOG.md#next) owns its *Done when* list and its batches, X1 to X28; this block names the first ones the owner does not gate, in that order (X3, X5 and X6 are the owner's and are listed below).
+**Aim:** finish Next's remaining acceptance while taking ready Later work in
+parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
+allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **`SM-25` (X28): observe a scheduled Actions run.** The repaired SDK download passed PR CI; hardware sessions and owner decisions are listed below.
-2. **`REV#3`: verify factory refresh in a real display-change session.** Bounded backend verification is recorded in [the review index](docs/review/INDEX.md); the display-change session remains.
+1. **`OCA-26` (L1): publish the browser module contract.** Canvas ownership,
+   all four callbacks, exact names and quit-before-removal lifetime.
+2. **`OCA-24` + `OCA-25` (L2): browser troubleshooting and audio unlock.**
+   Useful failure messages and the dropped-before-first-gesture rule.
+3. **`OCA-63` (L3): publish browser release notices.** Then L4 to L6 cover
+   testing a game's page, embedding the bundle and verifying it before deploy.
+
+**Available after those batches:** couch joining, working settings, pointer
+menus, text examples, strict asset keys, recording-renderer guidance and
+validation tools are indexed below. `SRL-19` and `SRL-20` add a sample-layer
+build check and a working animation example. Follow Later's order and each
+story's prerequisites; an open hardware gate does not block unrelated work.
+**Hygiene is also ready:** [Code hygiene](docs/code-hygiene.md) owns a separate
+maintenance lane, starting with `SM-45` (public-header comments) and `SM-46`
+(backend comments), then the remaining audits and concrete test/source splits.
+BACKLOG's L36 to L40 let it run alongside product work.
+`SM-25` still needs observation of a scheduled run; no manual dispatch is
+required by this plan.
 
 **Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
-- Later: `WEB#3` (listen to the audio sample).
+- Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling).
+- Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
+- New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction.
+
+## Browser adopter work
+
+**Owner:** [BACKLOG.md, Later](docs/product/BACKLOG.md#later), L1 to L6;
+acceptance in [STORIES.md](docs/product/STORIES.md).
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `OCA-26` | OPEN | should | S | Publish the canvas/callback/lifetime contract for an adopter's page. |
+| `OCA-24` | OPEN | should | S | Add browser-build troubleshooting grounded in actual errors. |
+| `OCA-25` | OPEN | could | XS | State the first-gesture rule and that earlier one-shot sounds are dropped. |
+| `OCA-63` | OPEN | could | S | Document the notices a browser release must carry. |
+| `OCA-31` | OPEN | could | S | Show an adopter how to run their own page's load-and-quit check. |
+| `OCA-74` | BLOCKED | could | S | Publish the LineSweeper bundle factory contract and verify another host; after OCA-26. |
+| `SM-27` | OPEN | could | S | Verify bundle revision, build mode and contents before deploy, with offline fixtures. |
+
+## Code hygiene
+
+**Owner:** [Code hygiene](docs/code-hygiene.md) holds current evidence, targets
+and acceptance; [BACKLOG.md, Later](docs/product/BACKLOG.md#later), L36 to L40,
+orders the maintenance lane. Counts prompt review, not automatic splitting.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `SM-45` | OPEN | should | M | Audit public-header contracts and move oversized rationale; preserve caller rules and published reference text's meaning. |
+| `SM-46` | OPEN | should | S | Remove history and stale counts from backend recording/synchronization comments; verify surviving claims. |
+| `SM-47` | OPEN | should | S | Audit Scene, rotated-rectangle, XInput and build comments against the current implementation. |
+| `SM-48` | OPEN | could | S | Refresh LineSweeper's pause, play, board and banner teaching comments; coordinate with SRL-19. |
+| `SM-49` | OPEN | should | M | Split the pixel-test harness and independent contract cases; preserve test names, assertions and golden bytes. |
+| `SM-51` | OPEN | could | S | Split cloud tooling tests by Config, Infrastructure, Release, Analysis and Dispatch responsibilities. |
+| `SM-50` | OPEN | should | S | Extract Win32 key/UTF-16 translation while keeping dispatch and window lifetime together. |
+| `SM-52` | OPEN | could | M | Separate website reference indexing, prose links and page assembly; preserve output and cache invalidation. |
+| `SM-53` | OPEN | could | M | Review Vulkan device/buffer ownership; record a keep/split verdict before an extraction story. |
+| `SM-54` | OPEN | could | M | Review D3D12/Vulkan pipeline construction boundaries while keeping frame lifetime coordinated. |
+| `SM-55` | OPEN | could | S | Review Web Audio's JS transport versus C++ handles/banks; define browser validation for any extraction. |
 
 ## Input, menus, settings and saves
 
-**Owner:** [STORIES.md](docs/product/STORIES.md); order in [BACKLOG.md, Next](docs/product/BACKLOG.md#next), X13 and X14.
+**Owner:** [STORIES.md](docs/product/STORIES.md); order in [BACKLOG.md](docs/product/BACKLOG.md), Next X13/X14 and Later L19/L20.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
 | `PI-21` | DECISION | should | S | Vibration implemented and headlessly tested; record each motor, stop, background, disconnect, reconnect and shutdown on a physical pad, natively and in Chrome. Can ride `OCA-48`'s session. [Acceptance](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
+| `OCA-46` | OPEN | could | M | Add a copyable couch join screen with independent players and disconnect handling. |
+| `OCA-51` | OPEN | could | M | Wire gallery settings to actual fullscreen/audio state and re-sync external changes. |
+| `OCA-50` | OPEN | could | S | Teach game-owned click/tap menus from LineSweeper's hit-test pattern; gallery extension is IDEA#6. |
+
+## Content, text and sample examples
+
+**Owner:** [BACKLOG.md, Later](docs/product/BACKLOG.md#later), L21 to L23,
+L26 and L35. Existing story acceptance is in [STORIES.md](docs/product/STORIES.md);
+the two new stories have their detail in BACKLOG.md.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `OCA-41` | OPEN | could | S | Make non-English literals consistent between Windows and browser builds. |
+| `OCA-42` | BLOCKED | could | M | Add a string-table-to-screen example within the documented font limits; after OCA-41. |
+| `OCA-77` | BLOCKED | could | S | Wrap a translated string to a measured width; after OCA-42. |
+| `OCA-40` | OPEN | could | S | Explain in-memory music costs and embed versus preload choices; informs GAP#2. |
+| `OCA-32` | OPEN | could | S | Show a consumer test using the recording renderer without a device. |
+| `PI-20` | OPEN | could | S | Refuse unknown manifest/sprite-sheet keys with useful errors. [Scope](docs/review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans). |
+| `SRL-19` | OPEN | should | S | Enforce LineSweeper's include layers with standalone checks and failing fixtures. [Acceptance](docs/product/BACKLOG.md#srl-19). |
+| `SRL-20` | OPEN | could | M | Add a copyable animation-strip gallery example and replace the guide's private-method call. [Acceptance](docs/product/BACKLOG.md#srl-20). |
 
 ## Website and the hosted demo
 
@@ -35,9 +110,9 @@ An index of open work, one row per item; each row points to the document that ow
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SITE#3` | OPEN | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
+| `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 
-The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
+The rest of the site's operations stories (`SM-26`, `SM-29`, `SM-30`) are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
 ## CI
 
@@ -45,10 +120,13 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-25` | OPEN | should | S | Observe a scheduled Actions run. The repaired SDK download, checksum, install and Vulkan tests pass in PR #59; [evidence](docs/product/BACKLOG.md#next). |
+| `SM-25` | WAITING | should | S | Observe the next scheduled Actions run; repaired SDK download and tests passed PR CI. [Evidence](docs/product/BACKLOG.md#next). |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `allowed_channel_drift` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
+| `SM-23` | OPEN | should | S | Make golden regeneration leave a trace of which changed images were reviewed. |
+| `SM-17` | OPEN | could | M | Add an area-to-preset verification command covering required native and wasm configurations. |
+| `SM-18` | BLOCKED | could | S | Record device checks CI cannot run for each change; after SM-17. |
 
-`SM-15`, `SM-17`, `SM-18`, `SM-23` and `SM-24` are in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
+`SM-15` and `SM-24` remain in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
 ## Performance
 
@@ -84,8 +162,8 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#8` | OPEN | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
-| `REV#3` | OPEN | could | M | Check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records bounded descriptor-query measurements, profile evidence, allocation reuse and full patterned mip read-back. |
+| `REV#8` | DECISION | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
+| `REV#3` | DECISION | could | M | Check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records bounded descriptor-query measurements, profile evidence, allocation reuse and full patterned mip read-back. |
 | `REV#12` | BLOCKED | could | M | The 2026-09-26 review's manual checks: real device removal, interactive minimise, restore and drag, physical keyboard layouts and device changes, real sleep and wake. Needs a person at the machine. |
 | `REV#5` | DEFERRED | could | S | Whether the Vulkan surface-format fallback, a fixed `compositeAlpha` and an unapplied `preTransform` are defects (Vulkan review 6.2). Live only on Android; reopens with that port. |
 | `REV#9` | DEFERRED | could | M | Input recording and replay for LineSweeper, with a rules and file version (gpt6 opportunity 3). T1: waits for a client that needs it. |
@@ -107,7 +185,7 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SRL-07` | BLOCKED | could | S | This tree's constants are renamed and CHANGES.md lists the public spellings; migrate the ColourWars callers at its next pin move and record the counted caller repositories. Needs the private repository. [Scope](docs/product/BACKLOG.md#later). |
-| `OCA-66` | OPEN | could | S | The samples/template declare per-monitor DPI awareness and the release guide states it; review and record the template at 150% scaling. [Scope](docs/product/BACKLOG.md#later). |
+| `OCA-66` | DECISION | could | S | The samples/template declare per-monitor DPI awareness and the release guide states it; review and record the template at 150% scaling. [Scope](docs/product/BACKLOG.md#later). |
 
 ## Features other engines have
 
@@ -129,6 +207,22 @@ The rest of the site's operations stories (`SM-26`, `SM-27`, `SM-29`, `SM-30`) a
 | `GAP#12` | DECISION | could | L | TrueType and OpenType fonts; likely folded into `OCA-43` rather than a story of its own. |
 | `GAP#13` | DECISION | could | M | Relative mouse motion: Win32 raw input, and a browser pointer lock granted only inside an input event. |
 
+## New feature proposals
+
+**Owner:** [Feature candidates](docs/feature-candidates.md), with current-code
+evidence, bounded scope and proposed acceptance. Selection creates or amends
+a story in BACKLOG.md before implementation; these are separate from the
+ready queue above.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `IDEA#1` | DECISION | could | M | A copyable single-line typed-text field using Keyboard::typed and documented font limits. |
+| `IDEA#2` | DECISION | could | M | A game-owned keyboard rebinding screen with capture, cancel, reset and duplicate handling. |
+| `IDEA#3` | DECISION | could | M | A versioned save/recovery example that preserves prior data on write or migration failure. |
+| `IDEA#4` | DECISION | could | S | A dead-zone/bounded camera-follow component in the local-multiplayer sample. |
+| `IDEA#5` | DECISION | could | S | A deterministic grid-sheet JSON authoring command using the current asset schema. |
+| `IDEA#6` | DECISION | could | S | Extend OCA-50 with gallery click/tap rows and slider dragging; keep capture policy in the page. |
+
 ## Ports
 
 **Owner:** [docs/port/android.md](docs/port/android.md), section 4.
@@ -144,16 +238,15 @@ A new row for one of these gets its section back.
 
 | area | owner | a row returns with |
 |---|---|---|
-| The public face and the adopter path | [STORIES.md](docs/product/STORIES.md); order in [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | an adopter-path story the owner gates, or NOW naming one |
 | The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front; the rows above are the batches NOW names, and the Next stories that the owner or an outside event gates, or that a row here pairs with |
-| Later (L1 to L33) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | Next finishing |
+| The rest of Later (L1 to L40) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | its next ready batch reaching the front under the scheduling amendment; the hygiene lane runs alongside product work |
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |
 | web.md's milestones M1, M2, M5, M6 and its decisions | [docs/port/web.md](docs/port/web.md) sections 8 and 9 | a regression, or a change the port meets that a decision must settle |
 | macOS and iOS | [docs/port/android.md](docs/port/android.md) sections 5 and 6 | a plan document; none is in the tree |
 | The EC2 performance lane | [tools/cloud_performance/README.md](tools/cloud_performance/README.md) | a new declared reference run, or a regression question |
 | round-2 plan, the RTCD list, the first review, backend-equivalence | [docs/review/round-2/PLAN.md](docs/review/round-2/PLAN.md), [docs/review/rtcd/](docs/review/rtcd/), [docs/review/IMPLEMENTED.md](docs/review/IMPLEMENTED.md) | nothing: all landed or superseded; the game-side rows live in ColourWars |
 | The 2026-09-26 review's numbered findings and hardening candidates | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and [the review index](docs/review/INDEX.md#hardening-verification) | nothing: all 23 implemented and four hardening candidates addressed; `REV#12` remains |
-| The repository split, file-length tripwire and survey decisions | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md), [docs/survey/2026-08-26-status.md](docs/survey/2026-08-26-status.md) | nothing: StateContext's responsibility was revisited; markers and the XWB reader were already decided |
+| The historical repository split, file-length tripwire and survey decisions | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md), [docs/survey/2026-08-26-status.md](docs/survey/2026-08-26-status.md) | nothing: original work and StateContext's keep verdict stand; current hygiene work is indexed above |
 
 ---
 
@@ -175,6 +268,7 @@ Rules for writing it: read them before editing a row, not before picking one.
    - `PORT#`: [docs/port/android.md](docs/port/android.md).
    - `DOC#`: the record the row names.
    - `GAP#`: [the engine comparison of 2026-10-27](docs/survey/2026-10-27.md).
+   - `IDEA#`: [Feature candidates](docs/feature-candidates.md), selected into BACKLOG.md before implementation.
 5. **NOW changes only when its items finish or the owner reorders them.**
 
 **`id`:** a stable handle, not an order. A story's id where one owns the item (`OCA-03`), else a prefixed one from rule 4; a retired id is never reused. Other ids an item covers are named in its clause.
