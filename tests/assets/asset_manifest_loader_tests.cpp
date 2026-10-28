@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 #include "engine/assets/asset_manifest_loader.h"
 #include "tests/scratch_file.h"
+#include <array>
 #include <stdexcept>
 #include <string>
 using namespace labrador;
@@ -191,4 +192,69 @@ TEST_CASE("manifest identifiers and directories reject embedded NULs with field 
 		doctest::Contains("assets[0].directory contains an embedded NUL"), std::runtime_error);
 	CHECK_THROWS_WITH_AS(load(R"({"assets":[{"kind":"texture","directory":"./","names":["tile\u0000other"]}]})"),
 		doctest::Contains("assets[0].names[0] contains an embedded NUL"), std::runtime_error);
+}
+
+TEST_CASE("manifest unknown keys name the file object and complete unexpected spelling")
+{
+	struct Refusal
+	{
+		const char* contents;
+		const char* context;
+		const char* key;
+	};
+	const std::array<Refusal, 5> cases = { {
+		{ R"({"assets":[],"assetz":[]})", "the document", "assetz" },
+		{ R"({"assets":[],"metadata":{"anything":1}})", "the document", "metadata" },
+		{ R"({"assets":[{"kind":"level","directory":"./","names":["x"],"optionl":true}]})",
+			"assets[0]", "optionl" },
+		{ R"({"assets":[{"kind":"level","directory":"./","names":[]},{"kind":"level","directory":"./","names":["x"],"extra":0}]})",
+			"assets[1]", "extra" },
+		{ R"({"assets":[{"kind":"level","directory":"./","names":["x"],"optional\u0000tail":true}]})",
+			"assets[0]", "optional\\u0000tail" },
+	} };
+	for (const Refusal& test : cases)
+	{
+		CAPTURE(test.contents);
+		const ScratchFile file("manifest.json", test.contents);
+		try
+		{
+			read_asset_manifest(file.path().c_str());
+			FAIL("unknown manifest member was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message(error.what());
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find(test.context) != std::string::npos);
+			CHECK(message.find("has unknown key '") != std::string::npos);
+			CHECK(message.find(test.key) != std::string::npos);
+		}
+	}
+}
+
+TEST_CASE("manifest unknown control and empty keys remain visible in diagnostics")
+{
+	CHECK_THROWS_WITH_AS(load(R"({"assets":[],"\u000a":1})"),
+		doctest::Contains("has unknown key '\\u000a'"), std::runtime_error);
+	CHECK_THROWS_WITH_AS(load(R"({"assets":[],"":1})"),
+		doctest::Contains("has unknown key ''"), std::runtime_error);
+}
+
+TEST_CASE("manifest strict fields preserve optional defaults custom kinds and resource names")
+{
+	const AssetManifest manifest = load(R"({"assets":[
+		{"kind":"level","directory":"./custom/","names":["metadata","optional"]},
+		{"kind":"level","directory":"./custom/","names":["sprite_frames"],"optional":true},
+		{"kind":"level","directory":"./custom/","names":["anything"],"optional":false}
+	]})");
+	REQUIRE(manifest.entries.size() == 4);
+	CHECK(manifest.entries[0].kind == "level");
+	CHECK(manifest.entries[0].name == "metadata");
+	CHECK_FALSE(manifest.entries[0].optional);
+	CHECK(manifest.entries[1].name == "optional");
+	CHECK_FALSE(manifest.entries[1].optional);
+	CHECK(manifest.entries[2].name == "sprite_frames");
+	CHECK(manifest.entries[2].optional);
+	CHECK(manifest.entries[3].name == "anything");
+	CHECK_FALSE(manifest.entries[3].optional);
 }

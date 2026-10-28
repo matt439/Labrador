@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace labrador
 {
@@ -242,6 +243,25 @@ namespace labrador
 			this->fail("is not an object");
 		}
 		return value.FindMember(key) != value.MemberEnd();
+	}
+
+	std::vector<std::string> JsonValue::keys() const
+	{
+		const rapidjson::Value& value = value_of(this->value_);
+		if (!value.IsObject())
+		{
+			this->fail("is not an object");
+		}
+
+		std::vector<std::string> names;
+		names.reserve(value.MemberCount());
+		for (rapidjson::Value::ConstMemberIterator member = value.MemberBegin();
+			member != value.MemberEnd(); ++member)
+		{
+			names.emplace_back(member->name.GetString(),
+				member->name.GetStringLength());
+		}
+		return names;
 	}
 
 	size_t JsonValue::size() const

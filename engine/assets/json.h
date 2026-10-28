@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace labrador
 {
@@ -52,9 +53,15 @@ namespace labrador
 		float number(const char* key) const;
 		bool boolean(const char* key) const;
 
-		// True if `key` is present, whatever its type. The one door to a field
-		// a file is allowed to leave out.
+		// True if `key` is present, whatever its type, so callers can check a
+		// field a file is allowed to leave out. Throws unless this is an object.
 		bool has(const char* key) const;
+
+		// Copies this object's member names in stored order, including duplicate
+		// names and the full decoded bytes of empty or NUL-containing names.
+		// Throws unless this is an object. The copies survive the document's
+		// destruction; this JsonValue remains a borrowed view.
+		std::vector<std::string> keys() const;
 
 		// Arrays. Both throw unless this node is one.
 		size_t size() const;

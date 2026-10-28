@@ -36,6 +36,10 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-29.** Manifest and sprite-sheet objects reject unknown keys,
+  including optional-field typos. Correct or remove unsupported fields when
+  moving the engine pin; this template's manifest needs no change. Custom
+  asset kinds and resource names remain game-owned values.
 - **2026-10-28.** D3D12 replacement texture publication completes before its
   descriptor write, preserving the old pair if C++ preparation fails. No
   template migration is needed; SM-57 keeps failure/device qualification open.

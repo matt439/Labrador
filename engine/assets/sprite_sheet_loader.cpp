@@ -1,5 +1,6 @@
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/assets/json.h"
+#include "engine/assets/json_object_keys.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
@@ -25,9 +26,12 @@ namespace labrador
 				// needs one - so hoisting it adds no failure, it only decides
 				// which of two complaints a doubly-broken frame gets.
 				const std::string name = frame.identifier("name");
+				asset_details::reject_unknown_keys(frame, { "name", "position", "size", "origin", "rotated" });
 
 				const JsonValue position = frame.object("position");
 				const JsonValue size = frame.object("size");
+				asset_details::reject_unknown_keys(position, { "x", "y" });
+				asset_details::reject_unknown_keys(size, { "w", "h" });
 
 				const RectangleI source_rectangle(
 					position.integer("x"),
@@ -45,6 +49,7 @@ namespace labrador
 				if (frame.has("origin"))
 				{
 					const JsonValue origin_json = frame.object("origin");
+					asset_details::reject_unknown_keys(origin_json, { "x", "y" });
 					origin.x = origin_json.number("x");
 					origin.y = origin_json.number("y");
 				}
@@ -88,7 +93,9 @@ namespace labrador
 			for (size_t index = 0; index < json.size(); ++index)
 			{
 				const JsonValue strip = json.at(index);
+				asset_details::reject_unknown_keys(strip, { "name", "first_frame", "frame_count", "frame_time", "looping" });
 				const JsonValue first_frame_json = strip.object("first_frame");
+				asset_details::reject_unknown_keys(first_frame_json, { "x", "y", "w", "h" });
 
 				const RectangleI first_frame(
 					first_frame_json.integer("x"),
@@ -111,6 +118,7 @@ namespace labrador
 	{
 		const JsonDocument document = read_json_file(json_path);
 		const JsonValue root = document.root();
+		asset_details::reject_unknown_keys(root, { "sprite_frames", "animation_strips" });
 
 		return std::make_unique<SpriteSheet>(texture,
 			decode_sprite_frames(root.array("sprite_frames")),

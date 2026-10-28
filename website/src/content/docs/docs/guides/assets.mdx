@@ -28,6 +28,13 @@ content the engine has never heard of.
 If the name in code does not match the manifest, the game stops with an error naming the asset
 when it resolves the name. If the file is missing, it stops at load, naming the file.
 
+The manifest document accepts only `assets`. Each group accepts `kind`,
+`directory`, `names` and `optional`, which defaults to `false`. Unknown fields
+are refused with the file, group index and unexpected spelling, so `optionl`
+cannot silently make a bank required. Correct a typo or remove an unsupported
+field. Kinds and resource names are values your game chooses, including kinds
+you register yourself.
+
 ## Getting content beside the executable
 
 The game reads its manifest from the folder the executable is in, wherever it was started from,
@@ -81,8 +88,9 @@ it stands, so a deleted file is gone from the next link.
 ## Reading JSON
 
 Content is the one input a person types by hand, so the engine reads JSON through a checked
-wrapper, `engine/assets/json.h`. Every accessor checks that the key is there and has the right
-type, and if not, throws an error that names the file, where in it, and the key:
+wrapper, `engine/assets/json.h`. Its accessors check the node's type and any
+requested key or element before reading it. Failures name the source and
+position, plus the key when one was requested:
 
 ```cpp
 JsonDocument read_json_file(const char* path);   // throws naming the path if it cannot be read or parsed
@@ -95,7 +103,8 @@ std::string string(const char* key) const;
 int integer(const char* key) const;
 float number(const char* key) const;
 bool boolean(const char* key) const;
-bool has(const char* key) const;                 // the one way to make a key optional
+bool has(const char* key) const;                 // presence, including a false value
+std::vector<std::string> keys() const;           // copied object names in stored order
 size_t size() const;                             // for an array
 JsonValue at(size_t index) const;                // for an array
 std::string where() const;                       // e.g. 'levels/forest.json': spawns[2]
@@ -105,6 +114,13 @@ A `JsonValue` is a view into its `JsonDocument`, valid only while the document i
 what you need into your own types before the document goes out of scope. Use `where()` in your
 own errors when a value is the right type but not an acceptable one, such as an unknown enemy
 name.
+
+`keys()` requires an object and copies its member names, including duplicate,
+empty, Unicode and NUL-containing names. The copies outlive the document; the
+`JsonValue` still borrows it. Your own readers can compare those names with
+their own schema and use `where()` to report an unknown field. The general JSON
+reader permits arbitrary dictionaries and metadata. Strict field lists belong
+to the engine's manifest and sprite-sheet loaders, not to every JSON document.
 
 ## A kind of asset of your own
 
