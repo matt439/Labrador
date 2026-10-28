@@ -561,6 +561,17 @@ presentation policy. Normal full-board or hardware failure is not claimed.
   image as AGENTS requires. Keep that qualification explicit if GPU startup
   remains denied; headless recordings do not replace it.
 
+**Source implemented 2026-10-28:** update caches the full text layout/glyph-cell
+union, including bearings, and bounds combines it with the existing panel.
+Scale-aware culling adds only the panel's existing quantization allowance.
+The draw method, text, positions, panel rectangle and ordering are unchanged.
+Five new native-null cases pass in Debug-null LineSweeperViewTests: overhang
+views at several zooms, recorded-corner containment, negative glyph bearings,
+cache refresh and full-view geometry/order. Standalone checks pass.
+The story stays open for required Release captures and image review. Prior GPU
+startup denial remains stopped; no capture or rasterized appearance result is
+claimed by these recordings.
+
 <details><summary>Why each is placed here</summary>
 
 | Story | Why |
