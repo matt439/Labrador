@@ -108,6 +108,12 @@ jobs:
       - name: Check that no engine file includes a game header
         run: cmake "-DENGINE_DIR=${{ github.workspace }}/engine" -P cmake/check_engine_includes.cmake
 
+      - name: Check LineSweeper include layers and failing fixtures
+        run: |
+          cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_linesweeper_layers.cmake
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_linesweeper_layer_fixtures.cmake
+
       - name: Check source revision and archive metadata without a compiler
         run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_source_revision.cmake
 

@@ -1,18 +1,29 @@
 # --- LineSweeperRules — the simulation, and it links nothing ---
 #
 # labrador_settings is an INTERFACE target carrying compiler flags and no
-# libraries, so this target has no way to reach an engine symbol: an include of
-# engine/ that resolves still fails at link. That is the wall, and it is why
-# the whole game is playable from tests/ with no window and no device.
+# libraries. The include check also refuses header-only engine dependencies,
+# which linking nothing cannot catch. The rules stay playable from tests/
+# with no window and no device.
 #
 # It is a static library rather than a folder for exactly the reason
 # ARCHITECTURE gives for LabradorMath being one: when a wall has to be load-bearing
 # rather than a convention, the escalation is cheap and it is this.
+add_custom_target(check_linesweeper_layers ALL
+    COMMAND "${CMAKE_COMMAND}"
+        "-DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../.."
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/check_linesweeper_layers.cmake"
+    COMMENT "Checking LineSweeper's rules and presentation include boundaries"
+    VERBATIM
+)
+
 add_library(LineSweeperRules STATIC
     rules/tables.cpp
     rules/tick.cpp
     rules/world.cpp
 )
+# The sample and both rules/view tests link this library, so targeted builds
+# run the check too. A minimal consumer never adds this sample directory.
+add_dependencies(LineSweeperRules check_linesweeper_layers)
 target_link_libraries(LineSweeperRules PUBLIC
     labrador_settings
 )

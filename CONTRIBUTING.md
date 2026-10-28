@@ -97,7 +97,8 @@ and the last is the job in
 **A change that touches only documentation is linted, not built**: when
 every path it changes is a `.md` file or under `docs/`, the `changes` job
 says so, the build jobs report without building, and `lint` runs the
-citation check, the agent brief check, the include wall, offline source
+citation check, the agent brief check, the engine and LineSweeper include walls
+with their offline layer fixtures, offline source
 revision fixtures, the whitespace check, the flash-definition, pacing-analysis
 and bundle-verification tests, and the Python tooling suite.
 

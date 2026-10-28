@@ -19,8 +19,9 @@
 
 // Game-owned input, match updates and pause policy. rules/ has no engine
 // dependency; presentation/ reads a World; states/ turns device input into
-// rules verbs. The layer rule is enforced by review. SRL-19 in
-// docs/product/BACKLOG.md tracks the standalone include check.
+// rules verbs. cmake/check_linesweeper_layers.cmake enforces literal includes:
+// no engine/ from rules/, and no rules/tick.h from presentation/. It does not
+// analyse transitive dependencies or macro includes (README, Three layers).
 namespace linesweeper
 {
 	class PlayState : public labrador::State

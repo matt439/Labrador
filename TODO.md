@@ -18,8 +18,8 @@ allows. Next's hardware and release gates remain open. The immediate queue is:
 
 **Available after those batches:** working settings, pointer
 menus, text examples, strict asset keys, recording-renderer guidance and
-validation tools are indexed below. `SRL-19` and `SRL-20` add a sample-layer
-build check and a working animation example. Follow Later's order and each
+validation tools are indexed below. `SRL-20` adds a working animation example;
+LineSweeper's include-layer build check is complete. Follow Later's order and each
 story's prerequisites; an open hardware gate does not block unrelated work.
 **Hygiene is also ready:** [Code hygiene](docs/code-hygiene.md) owns a separate
 maintenance lane: `SRL-21` awaits its capture review, and the concrete test/source
@@ -78,7 +78,6 @@ the two new stories have their detail in BACKLOG.md.
 | `OCA-40` | OPEN | could | S | Explain in-memory music costs and embed versus preload choices; informs GAP#2. |
 | `OCA-32` | OPEN | could | S | Show a consumer test using the recording renderer without a device. |
 | `PI-20` | OPEN | could | S | Refuse unknown manifest/sprite-sheet keys with useful errors. [Scope](docs/review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans). |
-| `SRL-19` | OPEN | should | S | Enforce LineSweeper's include layers with standalone checks and failing fixtures. [Acceptance](docs/product/BACKLOG.md#srl-19). |
 | `SRL-20` | OPEN | could | M | Add a copyable animation-strip gallery example and replace the guide's private-method call. [Acceptance](docs/product/BACKLOG.md#srl-20). |
 
 ## Website and the hosted demo
