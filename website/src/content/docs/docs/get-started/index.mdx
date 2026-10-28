@@ -31,6 +31,16 @@ anything.
 Some C++, and how to use a command prompt. The guide explains every command it asks you to
 type, but it does not teach the language.
 
+If you do not know C++ yet, start with a language introduction before this guide. Practise
+with a small console program: use variables, a loop, a function and a class, then change and
+rebuild it. Learn what pointers and references refer to and when an object is destroyed. If
+you have not programmed before, choose an introduction that teaches programming fundamentals
+too. Return to [Install the tools](/docs/get-started/prerequisites/) when you can make and
+rebuild that program yourself and explain those ideas. The
+[companion introduction's status](#companion-introduction-status) is below.
+
+### Companion introduction status
+
 The companion C++ introduction is in pre-production, with its storyboard, demo code and
 shooting plans prepared; rehearsal and recording remain. It covers memory, pointers,
 lifetime and ownership for people who already program, and is not yet available to watch.
@@ -57,7 +67,7 @@ six minutes, not counting installing Visual Studio and Git, which was not timed.
 <RepoLink path="website/src/walkthrough/README.md">walkthrough's record</RepoLink>
 has every figure. The template's tests came after that run.
 
-One part is checked on every change to Labrador. Its CI assembles the project in step 4 from the
+The full CI sweep checks one part of this path. It assembles the project in step 4 from the
 files and edits that page gives, with the engine taken from the change itself rather than from
 GitHub, builds it, checks that its ctest holds the game's two tests and none of the engine's, and
 runs them, the start-up check included. That check does not use Git or do steps 1 to 3 and 5.
