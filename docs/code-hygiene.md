@@ -189,9 +189,8 @@ are unchanged. A separate conservative-banner-extent defect is filed as
 
 ## SM-49. Pixel-test organisation
 
-`tests/render/pixel_tests.cpp` holds a device/readback harness plus 50 cases
-covering sprites, text, views, resource lifetime and readback. Extract a
-test-only harness, then group cases by the contracts they exercise. Keep
+The pixel contract covers sprites, text, views, resource lifetime and
+readback. Keep its test-only harness separate from the contract groups and
 device setup and teardown owned in one place; avoid mutable global fixtures.
 
 **Done when:** compare the before/after inventory of cases, subcases and
@@ -201,6 +200,35 @@ every moved source explicitly. Run the applicable rasterising backend tests
 and wasm GL, including the no-S3TC run; retain null's deliberate omission of
 RenderPixelTests. Use the required render verification matrix and report any
 unrun device checks. This is movement, not a golden-regeneration exercise.
+
+**Source organisation, 2026-10-29:** `pixel_test_harness.h/.cpp` owns the
+per-case window, resource table, renderer and readback, with the same member
+order and fresh content/device setup. Immutable pixel values are shared;
+mutable golden naming stays solely in `golden_image.cpp`. The case groups are
+frame/device lifecycle (`pixel_tests.cpp`), sprites (`sprite_pixel_tests.cpp`),
+text (`text_pixel_tests.cpp`), views/composition (`view_pixel_tests.cpp`) and
+resource upload/reload (`resource_pixel_tests.cpp`). The existing
+RenderPixelTests target enumerates these sources; platform windows, backend
+additions and the null backend's deliberate omission remain separate.
+
+The source audit at `cbb2b23` and after the movement preserves all 50 complete
+case blocks byte for byte, 12 subcase calls, 238 assertion sites, three CAPTURE
+diagnostics and 26 helper/member executable bodies. Harness declarations,
+field order/initializers and the Emscripten branch are unchanged after namespace
+qualification. All 73 protected golden/content/platform-fixture files retain
+their bytes. Case-source order can change doctest's default listing order and
+diagnostic file/line locations; golden identity still uses case/subcase names
+and each context's readback ordinal.
+
+All five native Debug RenderTests targets build and their headless CTest entry
+passes; all four rasterising RenderPixelTests targets compile. CTest names and
+commands remain identical: 20/21/20/20/19 entries for D3D11/D3D12/GL/Vulkan/null.
+A separate source review found no ownership or registration defect. All seven
+standalone checks pass, as do the website check, 160 tests and 143-page build.
+Native pixel execution and wasm GL with/without S3TC remain unrun at the stopped
+device and Emscripten gates. No pixel executable was invoked, including for a
+case listing, and no golden was regenerated. SM-49 remains open for those
+runtime qualifications.
 
 ## SM-50. Win32 input translation
 

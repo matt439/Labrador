@@ -99,7 +99,13 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
 
     add_executable(RenderPixelTests
         golden_image.cpp
+        pixel_test_harness.cpp
+        pixel_test_harness.h
         pixel_tests.cpp
+        sprite_pixel_tests.cpp
+        text_pixel_tests.cpp
+        view_pixel_tests.cpp
+        resource_pixel_tests.cpp
         ../test_main.cpp
     )
     target_link_libraries(RenderPixelTests PRIVATE
