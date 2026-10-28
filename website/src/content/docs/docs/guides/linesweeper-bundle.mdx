@@ -1,0 +1,173 @@
+---
+title: Embed the LineSweeper bundle
+description: The createLineSweeper factory, its canvas and callbacks, the bundle files and build record, and the contract for hosting a game on another site.
+sidebar:
+  order: 13
+---
+
+import RepoLink from '~/components/RepoLink.astro';
+
+LineSweeper can run inside a page you own. Build Labrador with `wasm-release`, then take the
+folder `out/build/wasm-release/web-dist/linesweeper/`. Its `index.html` is a working host you
+can serve as it is, or replace with your own page. This guide is the public contract of that
+bundle; [Build for the browser](/docs/guides/browser/#the-page-and-what-it-owes-the-module)
+describes the same canvas and callbacks for your own game's module.
+
+## The factory
+
+**`createLineSweeper` is the default ES-module export of `linesweeper.js`.** Import that default,
+then call it with the instance's `Module` options. The call creates a fresh game instance and
+returns a promise for its initialized module. It does not wait for the game to quit. The loader
+fetches `linesweeper.wasm` from beside `linesweeper.js`, so keep the two together.
+
+**`Module.canvas` is required:** pass the actual canvas element, already attached to the page.
+Give it a CSS size, `tabindex="0"` so it can take keyboard focus, and `touch-action: none` so
+touching the game does not scroll the page. The engine sizes the drawing buffer to that CSS box
+and the device pixel ratio. Focus the canvas when play starts.
+
+The four callbacks are optional. Their names are exact and case sensitive: **a misspelling
+produces no warning**, and a value that is not a function is ignored. They are read from the
+instance's `Module` when due.
+
+| Callback | When the instance calls it |
+| --- | --- |
+| `onQuit()` | The game quits, after its frame loop is cancelled and its window's input and page listeners are removed. LineSweeper reaches this through the pause menu's QUIT row. |
+| `onError(message)` | The entry point reports a startup exception, or a frame or input handler fails. `message` is a string also written to the console. A caught frame or input failure stops the loop and window listeners before the callback. |
+| `onContextLost()` | At the first `begin_frame` that observes a lost WebGL2 context, once per loss. The canvas is blank while graphics are unavailable. |
+| `onContextRestored()` | At `begin_frame`, after the renderer and game resources are rebuilt, so that frame can draw again. Loss is reported first even if both browser events arrive between frames. |
+
+Catch import and factory-promise failures as well: a missing script, failed fetch or WebAssembly
+compilation failure can happen before the engine can call `onError`. A startup callback can run
+before the factory promise settles. Context restoration has no deadline; keep a loss message
+visible until restoration or a new page load.
+
+## A host page to copy
+
+Save this as `host.html` beside the bundle's files and
+[serve it over HTTP](/docs/guides/browser/#serve-it-and-open-it). Play imports the loader on the
+first click and starts each game on a fresh canvas. Escape opens the pause menu; choose QUIT to
+return to the page. The example is for desktop keyboard play; the bundle's supplied `index.html`
+also has a poster, controls, accessibility information and the current phone gate.
+
+```html
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My LineSweeper host</title>
+<style>
+  #stage { width: min(100%, 1280px); aspect-ratio: 16 / 9; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+</style>
+<button id="play">Play LineSweeper</button>
+<p id="status" role="status">Escape opens the pause menu; choose QUIT to finish.</p>
+<div id="stage"></div>
+<p><a href="./NOTICE.txt">Third-party notices</a></p>
+<script type="module">
+  const play = document.getElementById('play');
+  const status = document.getElementById('status');
+  const stage = document.getElementById('stage');
+  let createLineSweeper;
+
+  play.addEventListener('click', async () => {
+    play.disabled = true;
+    status.textContent = 'Loading LineSweeper…';
+    let canvas;
+    let ended = false;
+    const finish = (message) => {
+      ended = true;
+      canvas?.remove();
+      status.textContent = message;
+      play.disabled = false;
+      play.textContent = 'Play again';
+      play.focus();
+    };
+    try {
+      createLineSweeper ??= (await import('./linesweeper.js')).default;
+      canvas = document.createElement('canvas');
+      canvas.tabIndex = 0;
+      canvas.setAttribute('aria-label', 'LineSweeper');
+      canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+      stage.append(canvas);
+      canvas.focus();
+      await createLineSweeper({
+        canvas,
+        onQuit: () => finish('Thanks for playing.'),
+        onError: (message) => finish('LineSweeper stopped: ' + message),
+        onContextLost: () => {
+          status.textContent = 'Graphics are unavailable; waiting for restoration.';
+        },
+        onContextRestored: () => {
+          status.textContent = 'Escape opens the pause menu; choose QUIT to finish.';
+        },
+      });
+      if (!ended) {
+        status.textContent = 'Escape opens the pause menu; choose QUIT to finish.';
+        canvas.focus();
+      }
+    } catch (error) {
+      finish('LineSweeper could not start: ' + String(error));
+    }
+  });
+</script>
+</html>
+```
+
+**A running instance cannot be stopped from the page.** There is no JavaScript stop method:
+quit must come from inside the game. Removing its canvas or changing `Module.canvas` leaves its
+loop and listeners running. Keep that canvas attached until `onQuit`, or the stopped game's
+`onError`, then remove it. Quit stops the loop and listeners but does not destroy the static
+`Application` or release the instance's WebGL2 context; play again uses a new factory call and a
+new canvas. Importing the loader can be reused. See the
+<RepoLink path="samples/linesweeper/web/index.html">complete example host</RepoLink>
+for the bundle's presentation and failure UI.
+
+## Files and build record
+
+The bundle contains these six files. Copy them together, including the full notices.
+
+| File | Purpose |
+| --- | --- |
+| `linesweeper.js` | The ES-module loader and default factory export. |
+| `linesweeper.wasm` | The engine, game and embedded content. |
+| `index.html` | The example host page, with Play and Play again. |
+| `poster.png` | The example page's game poster. |
+| `NOTICE.txt` | Attribution and full licence texts for the engine, content and linked toolchain libraries. Keep its link on your host page. |
+| `BUILD.json` | The bundle's source identity, supplied build type, toolchain version and file measurements. |
+
+`BUILD.json` has the following fields:
+
+| Field | Meaning |
+| --- | --- |
+| `commit` | The full Git revision at packaging time, or `unknown` if the source checkout cannot be identified. |
+| `dirty` | `true` for tracked local changes, `false` for a clean checkout, or `null` if Git identity is unavailable. Untracked and ignored files do not affect it. |
+| `build_type` | The build type CMake supplied, such as `Release` or `Debug`. |
+| `emscripten` | The version read from the Emscripten install that bundles the game. |
+| `files` | An object keyed by each bundled file's name, excluding `BUILD.json` itself. Each entry has `bytes` (raw size), `brotli` (size compressed at Brotli quality 11) and `sha256` (the file's SHA-256). These are measurements; no compressed copies are included. |
+
+This record describes the checkout when packaging runs; it cannot prove the sources or flags
+used by an older module. Build immediately before packaging, check the record and preserve it
+with the release. A dirty or Debug bundle is for development.
+
+## What the host sends
+
+Follow [Put your game on a web host](/docs/guides/web-host/) for MIME types, compression, CSP and
+caching. LineSweeper has the same requirements: serve `.wasm` as `application/wasm`, use HTTP or
+HTTPS, and include `'wasm-unsafe-eval'` if you set a `script-src` Content Security Policy. This
+single-threaded bundle needs no COOP or COEP headers. The example's inline module also needs the
+policy's allowance for that script.
+
+For long caching, put `linesweeper.js` and `linesweeper.wasm` together in a folder named for
+their content hash, change the import to that folder, and serve them with
+`Cache-Control: public, max-age=31536000, immutable`. Serve the host page with `no-cache`, so a
+new build points to a new folder. Keep the notices and build record with the release. The
+[hosting guide's caching rules](/docs/guides/web-host/#caching) explain the revalidation alternative.
+
+## What has been checked
+
+On 28 October 2026 the HTML example above was saved outside the engine checkout, beside a
+locally built Release loader and module. Headless Chrome loaded it over HTTP, drew the game,
+quit through the pause menu to `onQuit`, and started and quit a second instance on a fresh
+canvas, with no console errors or warnings. This verifies the host example locally; it is not
+a deployment, Safari, physical-controller or real-phone check. The bundle's phone gate remains
+in place until the recorded iPhone and host-layout acceptance is complete.

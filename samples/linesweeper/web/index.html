@@ -3,8 +3,10 @@
   LineSweeper's page for a host site: the index.html of the bundle the build
   writes to web-dist/linesweeper/, served from the same folder as
   linesweeper.js, linesweeper.wasm and poster.png. Copy the folder to where
-  the site serves the demo and it is the demo's page; docs/port/web.md,
-  section 7, says what the host has to send with it.
+  the site serves the demo and it is the demo's page. The public factory,
+  file and hosting contract is
+  https://labradorengine.com/docs/guides/linesweeper-bundle/;
+  docs/port/web.md, section 7, owns this repository's integration record.
 
   NOTHING IS DOWNLOADED UNTIL A CLICK. The page is a poster and a button, and
   the button imports linesweeper.js, whose default export is the factory
