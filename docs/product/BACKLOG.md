@@ -526,6 +526,24 @@ written.
   checker establishes declarations, not visual judgment.
 - [ ] **[SM-24](STORIES.md#sm-24)** Could · S · The Sole Owner-Maintainer: A written procedure for moving dependency and toolchain pins — after SM-25
 - [ ] **[SM-17](STORIES.md#sm-17)** Could · M · The Sole Owner-Maintainer: One command per area that runs every configuration a change must pass
+  Planning slice implemented 2026-10-29. `tools/verify_changes.py` models the
+  five native Debug selections, wasm-debug GL and CI's explicit wasm-release-null
+  override without executing commands. Text/JSON output carries cwd/argv,
+  runtime effects, required/forbidden registrations and unrun manual obligations.
+  Optional preflight reads whitelisted tooling/environment/cache data, detects
+  stale axes/compilers/emulators/browser selections, and leaves every phase
+  `not-run`. Unsupported source/preset shapes and selectors fail explicitly.
+  The [contract](../verification.md) limits this version to render planning;
+  the executing first-failure sweep and SM-18 remain open.
+  All 31 focused synthetic tests pass and independent source review has no
+  remaining findings. The actual checkout emits seven configurations/21 unrun
+  phases. Read-only preflight exits 1 with eight missing current-shell tooling
+  prerequisites; hashes of all seven existing caches remain unchanged. No
+  compiler, SDK activation, CMake/CTest, generated module or browser was run
+  by these CLI checks. This is planning evidence, not sweep qualification.
+  All seven standalone checks, website check, 160 website tests and the
+  143-page build pass. The complete first-failure runner and real sweep
+  acceptance remain open.
 - [ ] **[SM-18](STORIES.md#sm-18)** Could · S · The Sole Owner-Maintainer: A record of the configurations CI cannot run, per merged change — after SM-17
 - [ ] **[SM-15](STORIES.md#sm-15)** Could · XS · The Sole Owner-Maintainer: Observe the null-backend wasm step running after a failed page step, and the job going red
 - [ ] **[SM-26](STORIES.md#sm-26)** Could · S · The Sole Owner-Maintainer: Notice when the hosted demo lags the engine — after PI-05
