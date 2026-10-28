@@ -15,19 +15,9 @@ namespace labrador
 {
 	// A named, hideable thing in a user interface.
 	//
-	// NO RESCALE. A scale_size_and_position() on every widget, with a
-	// container walking the tree to apply it, is a layout policy - and an
-	// engine base class is not where a game's answer to "what happens at
-	// 1280x720" belongs (T1). It is also destructive: the factor is recorded
-	// nowhere, so after the walk no authoritative geometry is left to write
-	// against, and any later absolute setter writes design-space units into a
-	// rescaled widget. A screen mixing the two gets bars 1.5x too wide for the
-	// box they sit in, because the box was shrunk and the bars were not.
-	//
-	// A widget holds one geometry, in whatever space the game authored it
-	// in, and nothing ever rewrites it. The mapping to the screen is a Camera,
-	// and it is set on the draw list once for the whole menu rather than passed
-	// to every widget in turn (renderer.h, DrawList::set_camera).
+	// Geometry stays in the game's authored space. The game owns layout (T1)
+	// and maps the menu to screen space through DrawList::set_camera in
+	// engine/render/renderer.h; widgets do not recursively rescale themselves.
 	class UiObject : public GameObject
 	{
 	public:
@@ -42,24 +32,15 @@ namespace labrador
 		void draw(DrawList& draw_list) const override = 0;
 		RectangleF bounds() const override = 0;
 
-		// Painting a thing that has no colour is nothing, not an error, which
-		// is why this is a no-op here and pure one level down.
-		//
-		// It is on this class at all so that a container can forward it to
-		// children it knows only as UiObjects. The two alternatives are both
-		// worse: a container that asked at runtime which of its children were
-		// colourable would be putting a cast on the path, and a container that
-		// could only hold colourable children would be a narrower container
-		// than anyone asked for.
+		// No-op for an object without colour. Containers can forward colour to
+		// all their children without testing each child's type.
 		virtual void set_colour(const Colour& colour);
 	private:
 		std::string name_ = "error_name";
 		bool hidden_ = false;
 	};
 
-	// A UiObject that has a colour, which is what the focus machinery
-	// traffics in: FocusGroup::add takes one of these, because paint is how a
-	// menu shows where the cursor is (focus.h).
+	// A colourable UiObject accepted by FocusGroup in engine/ui/focus.h.
 	class UiWidget : public UiObject
 	{
 	public:
@@ -71,74 +52,50 @@ namespace labrador
 		void draw(DrawList& draw_list) const override = 0;
 		RectangleF bounds() const override = 0;
 
-		// Pure again. UiObject's no-op is for a thing that is drawn and not
-		// coloured; a widget is the other kind, and being the other kind is
-		// the whole of what this class adds.
+		// Widgets implement colouring rather than inheriting UiObject's no-op.
 		void set_colour(const Colour& colour) override = 0;
 	};
 
-	// A widget that is its children.
+	// A compound widget that updates, draws and colours its children in insertion
+	// order. It can be focused as one row and derived from to own its parts
+	// (docs/design/PHILOSOPHY.md, UI).
 	//
-	// IT IS A UiWidget AND NOT A UiObject, which is the difference
-	// between a compound widget being writable and not. FocusGroup::add takes
-	// a UiWidget*, so a container that was only a UiObject could not be
-	// focused - and a row that is a label and a value side by side, which is
-	// what every options screen is made of, is exactly a container the cursor
-	// lands on. A client without this recovers the label-to-value relationship
-	// by comparing the focused pointer against each label in turn, and cannot
-	// write a slider at all.
-	//
-	// SO IT IS NOT final EITHER, and deriving from it is how a compound
-	// widget is written: build the parts in the constructor, hand them to
-	// add_child, and inherit update, draw, bounds and set_colour already
-	// written. set_colour reaches every child, so a focus group holding one of
-	// these paints the whole row.
-	//
-	// Children are loans, and the container outlives nothing. A deriving
-	// class that owns its children holds them as members and calls
-	// add_child from its constructor body: members are built after the base,
-	// so there is nothing to add during the initialiser list, and destruction
-	// runs the other way - the members go first, and the container destroyed
-	// after them drops their pointers without reading any of them.
+	// Child pointers are borrowed and must remain alive while operations can
+	// reach them. A derived class can own child members and add them from its
+	// constructor body; container destruction drops pointers without reading
+	// children, so those members may be destroyed before the base container.
 	class UiContainer : public UiWidget
 	{
 	public:
 		UiContainer() = default;
 		explicit UiContainer(const std::string& name);
+		// child must be non-null. Stores its name and borrows the pointer.
 		void add_child(UiObject* child);
+		// Remove the first matching child, without destroying it. No-op if absent.
 		void remove_child(const std::string& name);
 		void remove_child(const UiObject* child);
 		size_t child_count() const;
+		// A copy of the list; its pointers remain borrowed.
 		std::vector<std::pair<std::string, UiObject*>> children();
 
+		// Hidden children still update; hiding a container suppresses its draw.
 		void update(float dt) override;
 		void draw(DrawList& draw_list) const override;
+		// Union of child bounds, skipping width or height <= 0. Returns
+		// RectangleF::zero when no child contributes.
 		RectangleF bounds() const override;
 		RectangleF cull_bounds(float units_per_pixel) const override;
 
-		// Every child, in the order they were added, and whatever a child
-		// makes of it - a nested container passes it down, and a child with no
-		// colour ignores it.
+		// Forwarded to every child, including hidden ones, in insertion order.
+		// Nested containers forward it; children without colour ignore it.
 		void set_colour(const Colour& colour) override;
 	private:
 		std::vector<std::pair<std::string, UiObject*>> children_;
 	};
 
-	// THE THREE LEAVES ARE NOT final, deliberately: PHILOSOPHY (UI) has every
-	// leaf open to derivation. A client wanting a text object with one extra
-	// behaviour - a line that builds itself from a list of parts, say -
-	// derives from UiText, where composing one would mean forwarding update,
-	// draw, bounds and set_colour to it by hand: four functions of boilerplate
-	// to add one.
-	//
-	// Deriving costs nothing structural. The destructor is virtual from
-	// GameObject down, so these are safe to hold and delete as UiWidget*, and
-	// each leaf is that plus a render-side base that already does the drawing.
-	//
-	// WHAT A DERIVING CLASS OWES: if it overrides draw(), it early-outs on
-	// hidden() itself. That check is written into each leaf's draw rather than
-	// into a wrapper around it, so an override replaces it rather than
-	// running after it.
+	// Leaf widgets are open to derivation (docs/design/PHILOSOPHY.md, UI) and
+	// safe to delete through UiWidget*. An overriding draw() must check hidden()
+	// itself: it replaces the leaf's check rather than running after it.
 	class UiTexture : public UiWidget, public TextureObject
 	{
 	public:
@@ -172,11 +129,8 @@ namespace labrador
 	private:
 		RectangleF rectangle_ = RectangleF::zero;
 
-		// TextureObject's two positioned draws, kept out of reach: draw()
-		// above hides them by name, because a widget draws where its own
-		// rectangle says, and clang asks for the hiding to be stated rather
-		// than inferred. A deriving class that wants one names
-		// TextureObject:: to get it.
+		// Hide TextureObject's positioned draws: widgets draw at rectangle().
+		// A deriving class may call them with TextureObject:: qualification.
 		using TextureObject::draw;
 	};
 

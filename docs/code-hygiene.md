@@ -89,6 +89,15 @@ run citation/whitespace checks and website check/tests/build, and confirm the
 diff changes no declarations, executable tokens or contract meaning. A false
 contract needing a behavioural decision is filed separately with evidence.
 
+**Closed 2026-10-28:** the [six-header contract inventory](code-hygiene-public-headers.md)
+records preconditions, lifetime, threading, errors, limits and checked citation
+support. The comments preserve caller obligations and clarify inaccurate
+descriptions of existing behavior; no declaration or executable token changes.
+All five standalone CMake checks, website check, 157 website tests and the
+143-page website build pass. The six rendered reference pages were inspected
+for the retained contracts and declaration/member structure. No new behavior
+or platform qualification is claimed.
+
 ## SM-46. Backend recording and synchronization comments
 
 Targets: `engine/render/null/recording.h`, `engine/audio/null/recording.h`,

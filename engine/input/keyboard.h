@@ -7,31 +7,9 @@
 
 namespace labrador
 {
-	// WHY THIS DEVICE IS FED AND THE PADS ARE READ.
-	//
-	// gamepads.h owns a GamepadReader and asks it for a complete snapshot of
-	// every slot whenever it likes. There is no equivalent here. A keyboard
-	// reaches a Win32 program as messages in the window's queue, and the one
-	// channel below that genuinely needs them - typed text - cannot be
-	// reconstructed from key state at all: key repeat, shift and caps
-	// resolution, dead keys and IME composition are all performed by the OS
-	// between WM_KEYDOWN and WM_CHAR, and none of it is visible in a bitmask.
-	//
-	// So the flow is app -> input rather than input -> backend. Window
-	// translates the messages, Application forwards them here, and this class
-	// accumulates. That direction is what keeps the module table intact:
-	// `input` may depend on core and math, never on `app`, and it does not -
-	// nothing in this file knows a window exists. It is also why there is no
-	// input/win32/ folder for this device: the platform edge is the window,
-	// which already exists and is already named as platform code in
-	// ARCHITECTURE. Inventing a second one for a device that has no backend to
-	// select would be the speculative framework T1 rules out.
-	//
-	// WHAT A GAME SEES IS STILL A POLL. Messages land continuously; poll()
-	// latches them into a frame. Everything below reads exactly like
-	// gamepads.h - state, previous_state, held, pressed, released - because an
-	// edge is "down now, up last frame" whichever way the bits arrived, and a
-	// client should not have to learn two shapes to ask one question.
+	// The shell feeds key and decoded-text events; poll() latches them into
+	// frame snapshots. Typed characters are a separate channel because key
+	// state cannot reconstruct the platform's text input.
 
 	// Every key this engine names, one bit each in KeyboardState.
 	//
@@ -40,27 +18,17 @@ namespace labrador
 	// movement binding wants. What was typed is typed(), which is the other
 	// question and has the other answer.
 	//
-	// LEFT AND RIGHT MODIFIERS ARE NOT DISTINGUISHED, deliberately (T3). A
-	// message carries VK_SHIFT and the side lives in the scan code, so telling
-	// them apart is a second lookup that no client has asked for; `shift`,
-	// `control` and `alt` each mean "either one". Numpad Enter reports as
-	// `enter` for the same reason. Both are documented limits of a simple
-	// model rather than oversights, and both are additive to fix: a split adds
-	// keys (`left_shift` and so on) and `shift` keeps meaning either one,
-	// because its name is a token a game may have saved (key_name, below).
+	// Left and right modifiers are combined: `shift`, `control` and `alt` each
+	// mean either side (T3). Numpad Enter also reports as `enter`.
 	enum class Key : uint8_t
 	{
-		// Not a key. What an unmapped platform code translates to, so a
-		// keyboard nobody anticipated cannot index a bit that means something
-		// else.
+		// Not a key; the result of an unmapped platform code.
 		none = 0,
 
 		a, b, c, d, e, f, g, h, i, j, k, l, m,
 		n, o, p, q, r, s, t, u, v, w, x, y, z,
 
-		// The number row. Named for what they are rather than what shift makes
-		// them, and separate from the numpad below because a game binding one
-		// almost never means the other.
+		// Number-row positions, separate from the numpad.
 		digit_0, digit_1, digit_2, digit_3, digit_4,
 		digit_5, digit_6, digit_7, digit_8, digit_9,
 
@@ -115,8 +83,7 @@ namespace labrador
 		numpad_divide,
 		numpad_decimal,
 
-		// Not a key either. The bound every loop over the set stops at, and
-		// the number the storage below is sized against.
+		// Exclusive bound, not a key.
 		count,
 	};
 
@@ -126,8 +93,8 @@ namespace labrador
 	// Key::none, Key::count and any value outside the set. A name, not a label:
 	// what a player is shown is the game's. Read at load, not per frame (T7).
 	//
-	// The spelling is a file format. A key renamed here changes what every saved
-	// file means, and a key added keeps every existing token's meaning.
+	// Saved bindings use these spellings as file-format tokens; additions
+	// preserve existing tokens and their meaning.
 	std::string_view key_name(Key key);
 
 	// The key a token names. Exact and case-sensitive: no trimming, no aliases,
@@ -136,71 +103,36 @@ namespace labrador
 	// does.
 	std::optional<Key> key_from_name(std::string_view name);
 
-	// The keyboard, one frame. A value, because an edge detector needs two of
-	// them and a test needs to be able to write one by hand.
+	// One frame's keyboard snapshot. Values may be constructed for edge queries.
 	struct KeyboardState
 	{
-		// False means the window did not have the keyboard this frame, and
-		// every key below is then up rather than whatever was last held.
-		//
-		// It is `connected` under another name, and it carries the same rule
-		// (see pressed, below). A pad can be unplugged; a keyboard cannot, but
-		// the window can lose the foreground, which produces exactly the same
-		// hazard - the key-up for a key held while alt-tabbing away is
-		// delivered to whatever took the focus, never to this window, so a
-		// game that kept the bit set would walk left forever.
+		// False means the window did not have the keyboard this frame. The
+		// shell clears held keys on focus loss so snapshots do not retain them.
 		bool focused = false;
 
-		// One bit per Key, indexed by the enumerator. Two words because the
-		// set is over sixty-four keys and under a hundred and twenty-eight;
-		// the static_assert below is what keeps that true as keys are added.
+		// One bit per Key, indexed by the enumerator; capacity is checked below.
 		uint64_t keys[2] = {};
 
-		// False for Key::none and Key::count, which are bounds rather than
-		// keys - so a caller that forwards an unmapped translation straight in
-		// gets a clean `no` rather than an out-of-range read.
+		// Tests the bit without consulting focused. False for Key::none,
+		// Key::count and values outside the key set.
 		bool is_down(Key key) const;
 	};
 
 	static_assert(static_cast<unsigned int>(Key::count) <= 128,
 		"KeyboardState::keys is two words. A key set past 128 needs a third.");
 
-	// The edges between two frames.
+	// Edges between two snapshots. pressed and released require focused on both
+	// frames, suppressing key edges on initial focus, focus return and focus
+	// loss. A hand-written snapshot must set focused to participate in edges.
 	//
-	// Free functions over two values, and Keyboard's methods of the same names
-	// are forwarders to them - the same arrangement gamepad.h has, for the
-	// same reason: it is what makes the whole of the edge logic testable
-	// without a window, a message pump or a keyboard attached to the machine
-	// running the test.
-	//
-	// AN EDGE REQUIRES THE WINDOW TO HAVE BEEN FOCUSED ON BOTH FRAMES, and
-	// that conjunction is part of the contract rather than an implementation
-	// detail. It is gamepad.h's rule transplanted, and it closes the same
-	// three doors:
-	//
-	//  - The first poll of the process compares against a default-constructed
-	//    previous, so a key already down at launch would read as pressed.
-	//  - Focus returns and the window is told nothing about what is still
-	//    held, so the first key-down after an alt-tab back would be a press
-	//    for a key the player never released.
-	//  - Losing focus clears every key at once (Keyboard::set_focused), so a
-	//    whole chord would fire released() on the frame the window went away.
-	//
-	// None of it is a client's to guard, for the reason gamepad.h gives: the
-	// obvious test is true on precisely the frame that is wrong.
-	//
-	// THE FOCUS-LOSS SIDE LOSES NOTHING BUT CHANGES SPELLING. A key held when
-	// the window goes away does not produce released() - held() is false
-	// there too - so a client keying "stop firing" off a release asks for the
-	// focus change instead:
+	// A key held when focus is lost produces neither released() nor held().
+	// To stop an action on that transition, query the focus change:
 	//
 	//     just_unfocused(now, before) && before.is_down(Key::space)
 	//
-	// AN EDGE IS ONE KEY'S. pressed(now, before, a) || pressed(now, before, b)
-	// combines two independent edges and fires once for each key that goes
-	// down; a game that wants one edge of the combined level computes held()
-	// for both frames first. Which of the two an action wants is the game's
-	// choice, and gamepad.h's note on combining sources says why.
+	// Edges belong to individual keys. OR-ing their pressed() values can fire
+	// again while another key remains held. A game wanting one combined edge
+	// compares the combined held levels across frames (T1).
 	bool pressed(const KeyboardState& now, const KeyboardState& before,
 		Key key);
 	bool released(const KeyboardState& now, const KeyboardState& before,
@@ -209,77 +141,40 @@ namespace labrador
 	bool just_focused(const KeyboardState& now, const KeyboardState& before);
 	bool just_unfocused(const KeyboardState& now, const KeyboardState& before);
 
-	// The keyboard as it was this frame and last, the edges between them, and
-	// what was typed in between.
-	//
-	// A game reads the borrowed instance from Application::keyboard().
-	// Construction, feeding and poll() belong to the shell; a game reads the
-	// snapshots rather than advancing them.
-	//
-	// Application owns one, feeds it from the window's messages and polls it
-	// once per frame before any state updates - which is what makes "down now,
-	// up last frame" true for every reader, and what stops two states keeping
-	// two edge detectors that advance on different frames (gamepads.h says
-	// what goes wrong with that shape).
+	// Current and previous keyboard snapshots, their edges and accumulated text.
+	// A game borrows Application::keyboard(); the shell owns it, feeds events and
+	// polls once per frame before state updates. Games read those snapshots
+	// without advancing them.
 	class Keyboard
 	{
 	public:
-		// THE FEEDING SIDE. Whoever owns the platform's messages calls these;
-		// on Windows that is Application, forwarding what Window translated.
-		//
-		// They are public rather than friended because the alternative is a
-		// friend declaration naming a class in `app`, which is the module
-		// `input` is forbidden to know about. It is also the seam a test
-		// double or a replay source drives, and both want it reachable - the
-		// tests in tests/input/ construct a Keyboard and type into it with no
-		// window anywhere.
-		//
-		// Nothing here is visible to a reader until the next poll(). A key
-		// pressed and released between two polls is not seen at all, exactly
-		// as it is not on a pad, and at sixty frames a second no human
-		// produces one. Typed text is the exception and is accumulated rather
-		// than sampled, because a fast typist genuinely does produce two
-		// characters inside one frame.
+		// For the shell or an input fixture. Changes become visible at poll().
+		// A key pressed and released between polls has no sampled edge. Repeated
+		// key-down events do not add presses; text accumulates separately.
+		// Key::none, Key::count and values outside the key set are ignored.
 		void on_key_down(Key key);
 		void on_key_up(Key key);
 
-		// One typed character, already decoded from whatever the platform's
-		// encoding was. UTF-32 in, UTF-8 out: the assembly of surrogate pairs
-		// is the message translator's job, so nothing here has to know that
-		// Windows speaks UTF-16.
+		// Appends one decoded Unicode code point for the next poll(), encoded
+		// as UTF-8. The platform translator assembles UTF-16 surrogate pairs.
+		// Isolated surrogates and values above U+10FFFF become U+FFFD, matching
+		// engine/render/text_encoding.h's replacement rule.
 		//
-		// Surrogates and anything past U+10FFFF are replaced with U+FFFD
-		// rather than dropped, which is render/text_encoding.h's rule for the
-		// same decision: text about to be drawn should show mojibake, not
-		// vanish.
-		//
-		// CONTROL CHARACTERS ARE DROPPED - everything below U+0020, and U+007F.
-		// The platform reports Enter, Tab, Escape and Backspace as characters
-		// as well as keys, and a name field that appended them would collect a
-		// 0x08 byte every time the player tried to delete one. Those are key
-		// presses, and Key::backspace is where a text field asks about them;
-		// typed() is printable text and nothing else.
-		//
-		// The filter is here rather than in the message translator so that it
-		// holds for every feeder - a test, a replay, a second platform - and
-		// not only for the one that happens to exist.
+		// C0 controls below U+0020 and U+007F are dropped. Query Enter, Tab,
+		// Escape and Backspace as keys rather than appending them to text.
 		void on_text(char32_t codepoint);
 
-		// The window gained or lost the keyboard. Losing it clears every key,
-		// which is the whole point: the key-up for anything held goes to the
-		// window that took the focus and never arrives here.
-		//
-		// Regaining it does NOT restore what was held, because the platform
-		// does not say and guessing would invent input. The both-frames rule
-		// above is what makes that safe rather than merely honest.
+		// Updates focus for the next poll(). Losing focus clears held keys and
+		// pending text; regaining it does not restore prior keys. Published
+		// snapshots and typed() remain unchanged until poll().
 		void set_focused(bool focused);
 
-		// THE FRAME BOUNDARY, called by the shell. What was current becomes
-		// previous, what the messages have been building becomes current, and
-		// the text typed since the last call becomes readable. Called once per
-		// frame, before anything reads it.
+		// Called by the shell once per frame before readers. Current becomes
+		// previous, fed key/focus state becomes current, and accumulated text
+		// replaces the prior frame's text.
 		void poll();
 
+		// Borrowed snapshots owned by this Keyboard; poll() replaces their values.
 		const KeyboardState& state() const;
 		const KeyboardState& previous_state() const;
 
@@ -291,26 +186,14 @@ namespace labrador
 		bool just_focused() const;
 		bool just_unfocused() const;
 
-		// What was typed during the frame this state describes, in order, as
-		// UTF-8. Empty on most frames.
-		//
-		// THIS IS THE CHANNEL POLLING CANNOT REBUILD, and the reason the class
-		// is fed instead of read. It is not derivable from the key bits above:
-		// the shift that makes `a` into `A`, the repeat that turns one held
-		// key into a run of characters, the dead key that combines with the
-		// next one, and the IME that turns a dozen keystrokes into one
-		// ideograph are all resolved by the OS before the character arrives.
-		//
-		// It is a view into storage this object owns and reuses, so it is
-		// valid until the next poll() and a caller that needs it longer copies
-		// it. Reusing the buffer is also what keeps a frame of typing
-		// allocation-free once the first one has grown it.
+		// Text published by the last poll(), in arrival order as UTF-8. The
+		// returned view borrows this object's storage until the next poll() or
+		// destruction; copy it to retain text longer. This is fed text, not a
+		// reconstruction from key bits or a promise of platform IME support.
 		std::string_view typed() const;
 
 	private:
-		// What the messages have been building since the last poll. Not
-		// readable: a frame's worth of input is a snapshot, and handing out a
-		// half-built one is how "down now, up last frame" stops being true.
+		// Fed state is separate from the snapshots readers observe.
 		KeyboardState live_;
 
 		KeyboardState current_;
