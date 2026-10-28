@@ -102,6 +102,13 @@ tests cover those paths without a browser. The updated packaged-page checks
 still need runtime acceptance; [the source verification record](../../docs/port/2026-10-28-demo-host.md)
 keeps that boundary explicit.
 
+When graphics are lost, the host styles its waiting message as a warning. If
+they have not returned after ten seconds, it offers a full page reload. Early
+or late restoration clears the warning; quit and failure cancel the wait.
+Reload replaces the whole document because detaching a live module's canvas
+does not stop its loop. An in-page restart still needs a sample-owned stop
+bridge and its browser acceptance (`BDP-16`).
+
 ## The decisions
 
 ### It is a second sample, not a replacement for `samples/minimal`

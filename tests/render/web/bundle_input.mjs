@@ -125,8 +125,8 @@ export default async function drive(page) {
 	const assert = (condition, message) => {
 		if (!condition) { throw new Error(`${phase}: ${message}`); }
 	};
-	const until = async (expression, message, navigating = false) => {
-		for (let attempt = 0; attempt < 500; attempt++) {
+	const until = async (expression, message, navigating = false, attempts = 500) => {
+		for (let attempt = 0; attempt < attempts; attempt++) {
 			assert(interception_errors.length === 0, interception_errors.join('\n'));
 			try {
 				if (await evaluate(expression) === true) { return; }
@@ -279,6 +279,8 @@ export default async function drive(page) {
 		'the host never heard context loss');
 	assert(await evaluate("document.getElementById('status').textContent === 'The browser took the graphics away; waiting for them to come back.'"),
 		'the loss status is missing');
+	assert(await evaluate("document.getElementById('status').classList.contains('error')"),
+		'context loss did not receive warning styling');
 	await frames(5);
 	const before_restore = await evaluate('window.labradorBundle.runs[0].canvas.labradorFrames');
 	await evaluate('window.labradorBundle.loss.restoreContext()');
@@ -313,6 +315,24 @@ export default async function drive(page) {
 	})()`);
 	await quit(1, true);
 	console.log('ok - packaged module draws, restores its context, quits and draws a fresh replay');
+	phase = 'context timeout';
+	await navigate('context-timeout');
+	await click_play();
+	await loaded(0);
+	await evaluate(`window.labradorBundle.runs[0].canvas.getContext('webgl2')
+		.getExtension('WEBGL_lose_context').loseContext()`);
+	await until(button_visible, 'an unreturned context never offered reload', false, 750);
+	assert(await evaluate("document.getElementById('play').textContent === 'Reload page' && " +
+		"document.getElementById('status').textContent.includes('graphics have not returned') && " +
+		"window.labradorBundle.runs[0].canvas.isConnected"),
+		'context timeout did not retain the live canvas and offer a document reload');
+	await click_play();
+	await until(`(${ready}) && window.labradorBundle.runs.length === 0 && ${button_visible}`,
+		'the reload did not produce a fresh host page', true);
+	await click_play();
+	await loaded(0);
+	await quit(0);
+	console.log('ok - unreturned graphics offer reload, then the fresh document plays and quits');
 
 	phase = 'truncated wasm';
 	await navigate('truncated');

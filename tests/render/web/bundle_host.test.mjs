@@ -17,10 +17,12 @@ function host(options = {}) {
 	const runs = [];
 	const events = new Map();
 	const intervals = new Map();
+	const timeouts = new Map();
 	let imports = 0;
 	let probes = 0;
 	let releases = 0;
 	let active = null;
+	let reloads = 0;
 	class Element {
 		constructor() {
 			this.hidden = false;
@@ -72,6 +74,14 @@ function host(options = {}) {
 		},
 		setInterval: (callback) => { const id = intervals.size + 1; intervals.set(id, callback); return id; },
 		clearInterval: (id) => intervals.delete(id),
+		setTimeout: (callback, delay) => {
+			assert.equal(delay, 10000);
+			const id = timeouts.size + 1;
+			timeouts.set(id, callback);
+			return id;
+		},
+		clearTimeout: (id) => timeouts.delete(id),
+		location: { reload: () => reloads++ },
 		Uint8Array,
 		WebAssembly: options.wasmMissing ? undefined : {
 			validate: (bytes) => options.exceptions === false ? false : WebAssembly.validate(bytes),
@@ -96,6 +106,9 @@ function host(options = {}) {
 		event: (name) => events.get(name)?.(),
 		poll: () => intervals.forEach((callback) => callback()),
 		get polling() { return intervals.size; },
+		expire: () => { const pending = [...timeouts.values()]; timeouts.clear(); pending.forEach((callback) => callback()); },
+		get waiting() { return timeouts.size; },
+		get reloads() { return reloads; },
 		get status() { return elements.get('status').textContent; },
 		get active() { return active; },
 		get imports() { return imports; },
@@ -260,3 +273,107 @@ test('a page that forbids controller access still opens the gate with a keyboard
 	assert.equal(page.elements.get('play').hidden, false);
 	assert.equal(page.diagnostics.length, 0);
 });
+
+test('context loss is visibly warned and an early restore cancels its bounded wait', async () => {
+	const page = host();
+	await page.click();
+	const instructions = page.status;
+	page.runs[0].onContextLost();
+	page.runs[0].onContextLost();
+	assert.equal(page.elements.get('status').classList.contains('error'), true);
+	assert.equal(page.elements.get('start').hidden, true);
+	assert.equal(page.waiting, 1);
+	page.runs[0].onContextRestored();
+	assert.equal(page.waiting, 0);
+	assert.equal(page.elements.get('status').classList.contains('error'), false);
+	page.expire();
+	assert.equal(page.status, instructions);
+	assert.equal(page.elements.get('start').hidden, true);
+});
+
+test('factory resolution cannot erase a context warning reported during initialization', async () => {
+	const page = host({ factory: (config) => config.onContextLost() });
+	await page.click();
+	assert.match(page.status, /waiting for them to come back/);
+	assert.equal(page.elements.get('status').classList.contains('error'), true);
+	assert.equal(page.waiting, 1);
+});
+
+test('factory rejection after a context timeout restores ordinary startup retry', async () => {
+	let refuse;
+	const options = { factory: (config) => {
+		config.onContextLost();
+		return new Promise((resolve, reject) => { refuse = reject; });
+	} };
+	const page = host(options);
+	const mounting = page.click();
+	await new Promise((resolve) => setImmediate(resolve));
+	page.expire();
+	assert.equal(page.elements.get('play').textContent, 'Reload page');
+	refuse(new Error('synthetic late initialization failure'));
+	await mounting;
+	retry_visible(page, startup);
+	options.factory = () => {};
+	await page.click();
+	assert.equal(page.reloads, 0);
+	assert.equal(page.runs.length, 2);
+});
+
+test('late factory resolution keeps focus on an already offered reload button', async () => {
+	let finish;
+	const page = host({ factory: (config) => {
+		config.onContextLost();
+		return new Promise((resolve) => { finish = resolve; });
+	} });
+	const mounting = page.click();
+	await new Promise((resolve) => setImmediate(resolve));
+	page.expire();
+	assert.equal(page.active, page.elements.get('play'));
+	finish();
+	await mounting;
+	assert.equal(page.active, page.elements.get('play'));
+	assert.equal(page.elements.get('start').hidden, false);
+});
+
+test('an unreturned context offers a document reload instead of abandoning a live instance', async () => {
+	const page = host();
+	await page.click();
+	page.runs[0].onContextLost();
+	page.expire();
+	assert.match(page.status, /graphics have not returned.*Reload/);
+	assert.equal(page.elements.get('play').textContent, 'Reload page');
+	assert.equal(page.elements.get('play').disabled, false);
+	assert.equal(page.elements.get('start').hidden, false);
+	await page.click();
+	assert.equal(page.reloads, 1);
+	assert.equal(page.runs.length, 1);
+	assert.equal(page.elements.get('stage').children.length, 1);
+});
+
+test('a late restore hides the reload offer and keeps the original instance', async () => {
+	const page = host();
+	await page.click();
+	const instructions = page.status;
+	page.runs[0].onContextLost();
+	page.expire();
+	page.runs[0].onContextRestored();
+	assert.equal(page.status, instructions);
+	assert.equal(page.elements.get('status').classList.contains('error'), false);
+	assert.equal(page.elements.get('start').hidden, true);
+	assert.equal(page.runs.length, 1);
+	assert.equal(page.active, page.runs[0].canvas);
+});
+
+for (const ending of ['onQuit', 'onError']) {
+	test(`${ending} cancels context recovery so an old timeout cannot overwrite the end state`, async () => {
+		const page = host();
+		await page.click();
+		page.runs[0].onContextLost();
+		page.runs[0][ending]('synthetic end');
+		const status = page.status;
+		assert.equal(page.waiting, 0);
+		page.expire();
+		assert.equal(page.status, status);
+		assert.notEqual(page.elements.get('play').textContent, 'Reload page');
+	});
+}

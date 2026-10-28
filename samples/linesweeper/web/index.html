@@ -107,6 +107,7 @@
   // The loader is imported once and the factory called once per game.
   let factory = null;
   let canvas = null;
+  let reloadRequired = false;
 
   function setStatus(text, isError) {
     statusLine.textContent = text;
@@ -192,6 +193,12 @@
     setStatus("Loading...", false);
     let loading = true;
     let ended = false;
+    let contextLost = false;
+    let contextWait = null;
+    function clearContextWait() {
+      clearTimeout(contextWait);
+      contextWait = null;
+    }
     try {
       const unsupported = supportFailure();
       if (unsupported !== null) {
@@ -227,27 +234,51 @@
         onQuit: () => {
           if (ended || canvas !== ownCanvas) { return; }
           ended = true;
+          clearContextWait();
+          reloadRequired = false;
           setStatus("Thanks for playing.", false);
           showStart("Play again");
         },
         onError: (message) => {
           if (ended || canvas !== ownCanvas) { return; }
           ended = true;
+          clearContextWait();
+          reloadRequired = false;
           fail(started ? "The game stopped unexpectedly. Try again, or reload the page if it keeps happening." :
             "The game could not start. Try again, or try an up-to-date browser with hardware acceleration enabled.", message);
         },
         onContextLost: () => {
-          if (ended || canvas !== ownCanvas) { return; }
-          setStatus("The browser took the graphics away; waiting for them to come back.", false);
+          if (ended || canvas !== ownCanvas || contextLost) { return; }
+          contextLost = true;
+          setStatus("The browser took the graphics away; waiting for them to come back.", true);
+          // Ten seconds bounds the silent wait. Reload replaces the whole
+          // document; removing a live module's canvas would not stop its loop.
+          contextWait = setTimeout(() => {
+            contextWait = null;
+            if (!ended && canvas === ownCanvas && contextLost) {
+              reloadRequired = true;
+              setStatus("The graphics have not returned. Reload the page to start a new game.", true);
+              showStart("Reload page");
+            }
+          }, 10000);
         },
         onContextRestored: () => {
           if (ended || canvas !== ownCanvas) { return; }
+          contextLost = false;
+          clearContextWait();
+          if (reloadRequired) {
+            reloadRequired = false;
+            start.hidden = true;
+            ownCanvas.focus();
+          }
           setStatus(instructions, false);
         },
       });
       if (!ended) {
-        setStatus(instructions, false);
-        ownCanvas.focus();
+        if (!contextLost) {
+          setStatus(instructions, false);
+          ownCanvas.focus();
+        }
         // The engine has scheduled its loop before the factory resolves. Let
         // that first browser frame report a failure before calling it play.
         requestAnimationFrame(() => {
@@ -259,13 +290,15 @@
       // engine never hears of.
       if (!ended) {
         ended = true;
+        clearContextWait();
+        reloadRequired = false;
         fail(loading ? "The game could not download. Check your connection and try again." :
           "The game could not start. Try again, or try an up-to-date browser with hardware acceleration enabled.", error);
       }
     }
   }
 
-  play.addEventListener("click", mount);
+  play.addEventListener("click", () => reloadRequired ? location.reload() : mount());
 </script>
 </body>
 </html>
