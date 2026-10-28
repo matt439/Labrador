@@ -334,12 +334,14 @@ work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
 
-**Maintenance lane, added 2026-10-28:** L36 to L40 may run alongside the
+**Maintenance lane, added 2026-10-28:** L36 to L41 may run alongside the
 product batches above, in their own order and with their own prerequisites.
 They cover comment audits, source/test organisation and backend responsibility
 reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
 without waiting for all feature stories. A long cohesive file may receive a
 keep verdict; an unproven backend split is reviewed before implementation.
+L41 adds the bounded shared-table exception repair selected from the source
+audit on 2026-10-29, with its acceptance below.
 
 **Contract follow-up, 2026-10-29:** SRL-17's source audit files SRL-22 within
 L32, after the audit and before the glossary. Correcting a false bank-pointer
@@ -406,6 +408,7 @@ written.
 38. L38 Extract Win32 input translation from window lifetime: SM-50
 39. L39 Separate website reference indexing, links and page assembly: SM-52
 40. L40 Review backend ownership, repair confirmed exceptional paths, then take the selected pipeline cut: SM-53, SM-54, SM-55, SM-56, SM-57, SM-58
+41. L41 Preserve sound-group registration after allocation failure: SM-59
 
 **Stories**
 
@@ -757,6 +760,73 @@ written.
 - [ ] **[SM-56](../code-hygiene.md#sm-56-vulkan-exceptional-cleanup)** Should · S · The Sole Owner-Maintainer: Preserve Vulkan temporary ownership through publication and recovery failures
 - [ ] **[SM-57](../code-hygiene.md#sm-57-d3d12-replacement-texture-publication)** Should · S · The Sole Owner-Maintainer: Keep a replacement texture's descriptor consistent if publication fails
 - [ ] **[SM-58](../code-hygiene.md#sm-58-d3d12-sprite-pipeline-value-owner)** Could · M · The Sole Owner-Maintainer: Extract the reviewed D3D12 root-signature/PSO value owner — after SM-57
+- [x] **[SM-59](#sm-59)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed new sound-group registration absent and retryable
+
+<a id="sm-59"></a>
+### SM-59. Preserve sound-group names and volume slots on allocation failure
+
+Selected 2026-10-29 after ready source slices were completed and the remaining
+acceptance depended on runtime, network, owner or private-client gates. The
+ranked internal-source shortlist was:
+
+1. **Sound-group insertion rollback:** add_sound_group inserts a name before
+   growing its volume vector. A failed growth leaves a reserved name whose
+   index can alias the next successful group. This is a concrete caller-state
+   defect, with the settings guide as a client and Registry's rollback as an
+   existing pattern. Select it first, subject to qualifying fault injection.
+2. **Direct ByteReader contract cases:** three format readers share it, but
+   no direct suite pins refusal/cursor/EOF/huge-count behavior; its two-render-
+   callers comment is stale. Low risk and the preferred fallback if the first
+   item's test instrumentation cannot be qualified.
+3. **Normalized engine-include fixtures:** strengthen the existing literal
+   include wall against equivalent path spellings and nested backend paths,
+   with compiler-free refusal fixtures. Valuable, but broader tooling-policy
+   review than the directly observed table invariant.
+
+No competitor claim or deferred feature decision is used. T4/T6 favor a name
+table whose failed mutation leaves an honest, reusable state; T1 needs no
+production allocator option or transaction framework for this repair.
+
+**Acceptance**
+
+- First qualify a small AudioTests-local native Debug CRT failure scope:
+  current thread only, one selected ordinary allocation refused, no assertions
+  or allocation inside the hook, previous-hook restoration/conflict checks
+  and a control proving refusal. Do not provoke real memory exhaustion.
+- Demonstrate the current bug through public AudioResources state, then keep
+  the inserted map iterator and erase that new entry if volume insertion
+  throws. Preserve existing groups/volumes, successful indexes, defaults,
+  clamping and bank behavior. No production test seam or new abstraction.
+- After injected failure, the attempted name is absent, an old group's
+  handle/volume is intact, another group is distinct, and retry succeeds
+  independently. Sweep observed allocation points rather than assuming one
+  library's allocation ordinal is portable. Disarm before checks/cleanup.
+- State the failure contract and consumer-visible correction with no caller
+  migration. Run default/null native headless AudioTests and Release ordinary
+  cases, standalone checks and website verification. Record the stopped wasm
+  axis and Debug-only injection scope explicitly; claim no device/listening
+  qualification. If injection cannot be qualified, retain that precise gate
+  and take the second shortlisted item independently.
+
+**Closed 2026-10-29, bounded source repair.** The AudioTests-local failure
+scope first passed its one-shot/restoration control (1 case, 17 assertions).
+With the production implementation unchanged, the public-state regression
+then failed at an observed vector-growth allocation: the attempted name
+remained resolvable and its retry was rejected. Keeping the inserted map
+iterator and erasing it on failed volume insertion makes both new cases pass
+(2 cases, 87 assertions), without changing the successful path or adding a
+production allocation seam. Independent source review found no remaining
+issues. The public header states the failure guarantee and CHANGES records
+the correction with no migration.
+
+Full headless AudioTests pass in native Debug null (39 cases, 379 assertions),
+default Debug XAudio2 (31 cases, 323 assertions) and Release null (37 cases,
+292 assertions), with no skipped cases. All seven standalone checks and the
+website type check, 160 tests and 145-page build pass. Failure injection is
+qualified only for the native MSVC Debug DLL CRT; Release runs ordinary
+cases. Wasm/Node was not run because the existing Emscripten activation access
+stop remains in force. Full CI remains required before landing; these results
+make no audio-device, playback or listening claim.
 
 <a id="srl-22"></a>
 ### SRL-22. Complete the source audit's unit and retained-loan contracts

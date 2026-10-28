@@ -10,6 +10,14 @@ labrador_add_test_suite(AudioTests
     LINKS LabradorEngine
 )
 
+# Allocation-failure injection uses the native Debug DLL CRT only. This
+# adds cases to the existing suite, not another test entry or audio device.
+if(MSVC AND NOT EMSCRIPTEN)
+    target_sources(AudioTests PRIVATE
+        "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/audio_resources_failure_tests.cpp>"
+    )
+endif()
+
 # The banks xwb_file_tests.cpp reads, beside the executable, and the WAVs it
 # holds their samples to. ctest runs from this directory and the cases load
 # "./content/" relative to it, which under Node is the same directory through

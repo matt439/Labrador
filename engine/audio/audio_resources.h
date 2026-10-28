@@ -67,7 +67,9 @@ namespace labrador
 		// spans banks, which is why it lives here rather than in one of them.
 
 		// Load-time. Starts at volume 1. Throws std::invalid_argument naming the
-		// group if one of that name was already added.
+		// group if one of that name was already added. If storing a new group
+		// throws, its name remains absent and can be retried; existing groups
+		// and their volumes are unchanged.
 		SoundGroupHandle add_sound_group(const std::string& group_name);
 
 		// Load-time. Throws std::out_of_range naming the group if none of that
