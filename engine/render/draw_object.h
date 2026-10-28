@@ -11,7 +11,13 @@ namespace labrador
 	{
 	public:
 		virtual ~DrawObject() = default;
+		// Holds no resource table and performs no resource lookup.
 		DrawObject() = default;
+
+		// Stores render_resources as a loan; this base never deletes it. The
+		// table must outlive the resource-dependent operations of any drawable
+		// using it. A null pointer still permits this base's appearance state
+		// to be read and changed; it does not supply resources to a subclass.
 		DrawObject(RenderResources* render_resources,
 			const Colour& color = Colour::white,
 			float rotation = 0.0f,

@@ -23,7 +23,11 @@ namespace labrador
 	class SpriteSheetObject : public DrawObject
 	{
 	public:
+		// Resolves nothing and holds no resource table.
 		SpriteSheetObject() = default;
+
+		// render_resources is borrowed and must outlive this drawable. The
+		// sheet handle is resolved and subsequently read in that same table.
 		SpriteSheetObject(const std::string& sheet_name,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
@@ -34,7 +38,8 @@ namespace labrador
 	protected:
 		// A sheet already resolved, for a subclass constructor that takes a
 		// paired handle (RenderResources::SheetFrame, SheetStrip) and so has
-		// no name to resolve. The handle must come from `render_resources`.
+		// no name to resolve. The handle must come from `render_resources`,
+		// whose borrowed-table lifetime is the same as above.
 		SpriteSheetObject(RenderResources::SpriteSheetHandle sheet,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,

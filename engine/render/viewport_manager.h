@@ -16,6 +16,8 @@ namespace labrador
 		// Takes no device, and no member of this class touches one: a
 		// ResolutionManager needs none, and every member here hands out a
 		// rectangle. That is what makes it constructible in a test.
+		// resolution_manager is borrowed and must outlive this manager;
+		// viewport queries read its current resolution rather than a stored size.
 		explicit ViewportManager(ResolutionManager* resolution_manager);
 
 		void set_layout(ScreenLayout layout);
