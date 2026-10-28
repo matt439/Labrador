@@ -97,7 +97,7 @@ The rest of the site's operations stories (`SM-26`, `SM-29`, `SM-30`) are in [BA
 |---|---|---|---|---|
 | `SM-25` | WAITING | should | S | Observe the next scheduled Actions run; repaired SDK download and tests passed PR CI. [Evidence](docs/product/BACKLOG.md#next). |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `allowed_channel_drift` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
-| `SM-17` | OPEN | could | M | Render planner/JSON and read-only tooling/cache preflight are implemented; add the first-failure runner/registration checks and complete the real sweep after stopped runtime/toolchain gates. [Scope](docs/verification.md). |
+| `SM-17` | OPEN | could | M | Render planner, preflight and explicit first-failure executor are implemented with fake-command checks; complete real CTest/report compatibility and the sweep after stopped runtime/toolchain gates. [Scope](docs/verification.md). |
 | `SM-18` | BLOCKED | could | S | Record device checks CI cannot run for each change; after SM-17. |
 
 `SM-15` and `SM-24` remain in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).

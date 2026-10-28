@@ -1,9 +1,11 @@
-# Planning a render verification sweep
+# Running a render verification sweep
 
-`tools/verify_changes.py` prints the current render verification plan. It runs
-no command in any mode. Every configure/build/test phase remains `not-run`.
-This first SM-17 slice helps review a sweep; the story's executing command and
-real sweep acceptance remain open. SM-18's per-change evidence record follows it.
+`tools/verify_changes.py` prints the current render verification plan by default.
+Every configure/build/test phase remains `not-run` unless `--execute` is explicit.
+The executor stops at the first failed command or validation and names it.
+SM-17's real sweep acceptance remains open; fake-command tests qualify the
+control flow, not the local toolchains, devices or CTest report emitter.
+SM-18's per-change evidence record follows it.
 
 These examples run from the repository root:
 
@@ -53,12 +55,12 @@ override instead of adding another preset:
 ```text
 cmake --preset wasm-release -B out/build/wasm-release-null -DLABRADOR_RENDER_BACKEND=null -DLABRADOR_AUDIO_BACKEND=null
 cmake --build out/build/wasm-release-null --parallel 2
-ctest --test-dir out/build/wasm-release-null --parallel 1 --output-on-failure --no-tests=error
+ctest --test-dir out/build/wasm-release-null --parallel 1 --output-on-failure --no-tests=error --stop-on-failure
 ```
 
 Its build/test commands use the override directory, never the GL wasm-release
 build/test preset. An explicit `--browser` adds a FILEPATH cache argument to
-both planned wasm configure commands; the tool neither writes that cache nor
+both planned wasm configure commands; planning neither writes that cache nor
 launches the browser. It does not copy CI's GL/Vulkan pixel/smoke exclusions
 into a full local sweep.
 
@@ -106,7 +108,7 @@ values and credentials are not included. `detected`, `missing`, `mismatch`,
 `unsupported-host` and `not-checked` describe inspection; phase results remain
 `not-run`. Non-Windows host setups are outside this Windows sweep preflight.
 
-Exit codes:
+Planning/preflight exit codes:
 
 - **0:** a valid plan was printed; when requested, no blocking static-preflight
   issue was found. No configure/build/test passed as a consequence.
@@ -130,8 +132,8 @@ Node AudioTests and audio listening remain separate evidence.
 Even wasm-null can register WebWindowTests and development sample pages when a
 browser is found. It is not a Node-only or browser-free command. The plan names
 required GL browser registrations, conditional null pages and forbidden null
-pixel/context entries. A future runner must inspect actual registrations, reject
-zero selected tests and absent required pages, then report the actual selection.
+pixel/context/bundle/pacing entries. The executor inspects actual registrations,
+rejects zero selected tests and absent required pages, then reports the selection.
 `--no-tests=error` cannot detect a missing page while unrelated tests still exist.
 
 Five native Release configurations and wasm-release GL remain separate unrun
@@ -143,11 +145,74 @@ probe builds and capture review keep their existing owners and remain unrun.
 Source/recording tests do not establish rasterization, listening, physical pads,
 touchscreens, Safari, real-phone memory/layout or display pacing. File detection
 and a printed plan provide none of that evidence. Existing denials/stops remain
-in force; this tool has no execution flag that could override them.
+in force; selecting execution does not authorize a stopped action.
+
+## Explicit execution
+
+Run this only in an already prepared toolchain environment and when the complete
+mixed runtime sweep is authorized:
+
+```text
+python tools/verify_changes.py --area render --execute
+python tools/verify_changes.py --path engine/render/gl/renderer.cpp --execute --format json --output-dir out/verification/render-change
+```
+
+Execution uses the same seven configurations and argv selections as the plan.
+It inspects prerequisites for every configuration before running the first
+configure. A late missing SDK therefore prevents an earlier build from starting.
+It does not activate vcvars/emsdk, fix caches, change environment values, probe
+versions, download tools or retry commands. CMake and build tools can still
+reconfigure and fetch dependencies themselves, as the plan's effects state.
+
+For each configuration, in order, it:
+
+1. Configures and requires the resulting cache to exist and agree with the
+   planned axes, directories, shader compilers, toolchains and emulator/browser paths.
+2. Builds with parallelism 2 and revalidates the cache because the build can
+   reconfigure. It then asks CTest for its `--show-only=json-v1` inventory using
+   the same preset or explicit null override directory.
+3. Rejects malformed/empty inventories, duplicate names, missing executable argv,
+   missing required registrations, forbidden null-render registrations and
+   disabled selected tests. A selected wasm-null browser requires all its
+   conditional page tests; any actually registered pages remain in the full run.
+4. Runs the full CTest selection with parallelism 1, `--stop-on-failure` and a
+   fresh JUnit path. Exit zero is insufficient: the report must cover every registered name
+   exactly once, with no failed, errored, disabled or skipped suite. Missing,
+   malformed or unsupported reports fail validation.
+
+The first failure stops the sweep. Later phases remain `not-run`; no automatic
+fallback, exclusion or retry can turn a partial run into a successful sweep.
+Logs and the structured report go into a fresh output directory. By default
+this is a unique directory under ignored `out/verification/`; `--output-dir`
+selects a new directory and refuses an existing one. A failed initial preflight
+creates no output directory; `--format json` still prints its complete report
+to stdout. Command output goes to logs so JSON stdout remains usable. The report
+records argv/cwd, exit codes, validation results and actual test names. It does
+not collect a source revision,
+driver or hardware identity and does not establish SM-18's per-change evidence.
+
+Execution exits **0** only when all modeled commands and result checks pass,
+**1** on a prerequisite, command, validation or output failure, and **130** on
+an interrupt. An interrupt does not establish descendant-process teardown;
+inspect any remaining jobs before retrying. Invalid arguments/rules still exit
+**2** before execution. `--preflight` and `--execute` cannot be combined.
+
+Registration JSON must have kind `ctestInfo`, integer version 1.0, a nonempty
+test list, command argv and property lists without duplicate names. JUnit must
+have one `testsuite`, optionally inside a single `testsuites` container. Case
+status can be `run`, `passed` or absent; failure/error/skipped children and
+contradictory aggregate counts fail. Unknown report shapes fail explicitly.
+The synthetic
+fixtures exercise failure and success paths without invoking a configured tool.
+Compatibility with this machine's real CTest emitter, the full sweep, Release
+configurations and all manual acceptance remain unrun. In particular, command
+success does not complete Vulkan synchronization validation or any visual,
+listening, physical-input, phone or display-pacing check.
 
 The focused tooling tests use synthetic repository/cache/tool paths. They do
 not run a configured build or test binary:
 
 ```text
 python -m unittest discover -s tools/tests -p test_verify_changes.py
+python -m unittest discover -s tools/tests -p test_verification_runner.py
 ```

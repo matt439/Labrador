@@ -1,7 +1,9 @@
-"""Print a render verification plan; no mode executes its commands.
+"""Plan render verification, or explicitly execute its first-failure sweep.
 
 Default planning reads repository rules without tooling discovery. --preflight
 explicitly adds read-only tooling-environment, tool-path and cache inspection.
+--execute runs the modeled commands in the existing environment; see
+docs/verification.md for runtime effects and separate acceptance obligations.
 """
 
 from __future__ import annotations
@@ -141,6 +143,23 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
     pages = list(dict.fromkeys(re.findall(r"\blabrador_sample_page_test\(\s*([A-Z]\w+)", sources["CMakeLists.txt"])))
     if not pages or "ComponentsPageTests" not in pages or "LineSweeperBundlePageTests" not in sources["CMakeLists.txt"]:
         raise PlanError("browser page source rules changed; review required registrations")
+    guards = []
+    guarded = set()
+    for command in re.finditer(r"\b(if|elseif|else|endif|add_test)\s*\(([^)]*)\)",
+                               re.sub(r"(?m)#.*$", "", sources["CMakeLists.txt"])):
+        kind, arguments = command[1], command[2].strip()
+        if kind == "if":
+            guards.append(arguments)
+        elif kind in {"else", "elseif"} and guards:
+            guards[-1] = "alternative branch"
+        elif kind == "endif" and guards:
+            guards.pop()
+        elif kind == "add_test" and 'NOT LABRADOR_RENDER_BACKEND STREQUAL "null"' in guards:
+            match = re.match(r"NAME\s+(LineSweeper(?:Bundle|Pacing)PageTests)\b", arguments)
+            if match:
+                guarded.add(match[1])
+    if guarded != {"LineSweeperBundlePageTests", "LineSweeperPacingPageTests"}:
+        raise PlanError("null bundle/pacing exclusions changed; review forbidden registrations")
     return document, index, pages
 
 
@@ -190,7 +209,7 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
         build = ["cmake", "--build", binary_dir] if name == "wasm-release-null" else ["cmake", "--build", "--preset", name]
         test = ["ctest", "--test-dir", binary_dir] if name == "wasm-release-null" else ["ctest", "--preset", name]
         build += ["--parallel", "2"]
-        test += ["--parallel", "1", "--output-on-failure", "--no-tests=error"]
+        test += ["--parallel", "1", "--stop-on-failure", "--output-on-failure", "--no-tests=error"]
         runtime = (["generated-modules", "browser-pages-when-registered"] if wasm else
                    ["native-processes", "hidden-windows"] + ([] if render == "null" else ["graphics-device", "sample-drawing"]))
         if not wasm and expected["audio"] == "xaudio2":
@@ -217,7 +236,8 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
                                "required_test_names": required,
                                "required_browser_test_names": browser_tests,
                                "conditional_browser_test_names": ["WebWindowTests", *pages] if wasm and render == "null" else [],
-                               "forbidden_test_names": ["RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests"] if render == "null" else []})
+                               "forbidden_test_names": ["RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests",
+                                                        "LineSweeperBundlePageTests", "LineSweeperPacingPageTests"] if render == "null" else []})
     sync = "required" if any(path == "engine/render/vulkan" or path.startswith("engine/render/vulkan/") for path in selected) else "conditional"
     manual = [
         {"id": "release-configurations", "condition": "supplemental per-change evidence", "status": "not-run",
@@ -232,7 +252,7 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
     return {"schema_version": 1, "mode": "plan", "scope": {"area": "render", "paths": selected},
             "source_rules": ["AGENTS.md", "docs/product/STORIES.md#sm-17", "docs/product/STORIES.md#sm-18", *SOURCE_FILES],
             "configurations": configurations, "manual_obligations": manual,
-            "not_modeled": ["other areas", "execution/first-failure runner", "Release sweep execution", "physical acceptance"],
+            "not_modeled": ["other areas", "Release sweep execution", "physical acceptance"],
             "preflight": {"enabled": False, "checks": [{"id": "tooling-and-caches", "configurations": list(CONFIGURATIONS),
                          "category": "tooling", "status": "not-checked", "detail": "Use --preflight for read-only inspection; no commands execute.", "blocking": False}]}}
 
@@ -254,7 +274,7 @@ def normalized_path(value: str, windows: bool) -> str:
 
 
 def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None, host: str | None = None,
-                        find=None, is_file=None, read_text=None) -> list[dict]:
+                        find=None, is_file=None, read_text=None, required_cache_ids=()) -> list[dict]:
     if environment is None:
         environment = {key: os.environ.get(key, "") for key in ENVIRONMENT_KEYS}
     host = sys.platform if host is None else host
@@ -310,6 +330,8 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
                     expected["CMAKE_TOOLCHAIN_FILE"] = str(Path(environment[variable]) / suffix)
             if wasm:
                 expected["VCPKG_TARGET_TRIPLET"] = "wasm32-emscripten"
+                if configuration["browser_override"]:
+                    expected["LABRADOR_TEST_BROWSER"] = configuration["browser_override"]
                 if environment.get("EMSDK"):
                     expected["VCPKG_CHAINLOAD_TOOLCHAIN_FILE"] = str(Path(environment["EMSDK"]) / "upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
             elif values.get("VCPKG_CHAINLOAD_TOOLCHAIN_FILE"):
@@ -320,7 +342,7 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
                                  "Vulkan_INCLUDE_DIR": str(sdk / "Include"), "Vulkan_LIBRARY": str(sdk / "Lib/vulkan-1.lib")})
             for key, wanted in expected.items():
                 actual = values.get(key)
-                path_axis = key.endswith(("DIRECTORY", "DIR", "FILE")) or key in {"DXC_SPIRV_EXECUTABLE", "Vulkan_INCLUDE_DIR", "Vulkan_LIBRARY"}
+                path_axis = key.endswith(("DIRECTORY", "DIR", "FILE")) or key in {"DXC_SPIRV_EXECUTABLE", "Vulkan_INCLUDE_DIR", "Vulkan_LIBRARY", "LABRADOR_TEST_BROWSER"}
                 equal = actual is not None and (normalized_path(actual, windows) == normalized_path(wanted, windows) if path_axis else actual == wanted)
                 add(name + ":" + key, ids, "cache", "detected" if equal else "mismatch",
                     f"{key} agrees with plan" if equal else f"{key} does not match plan: actual={actual!r}, expected={wanted!r}; cache left unchanged")
@@ -331,7 +353,9 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
                 file_check(name + ":cached-FXC_EXECUTABLE", ids,
                            selected_fxc if selected_fxc and not selected_fxc.endswith("-NOTFOUND") else None)
         else:
-            add(name + ":cache", ids, "cache", "not-checked", "No existing cache; configuration has not run.", False)
+            required = name in required_cache_ids
+            add(name + ":cache", ids, "cache", "missing" if required else "not-checked",
+                "Configured cache is missing." if required else "No existing cache; configuration has not run.", required)
         if not wasm:
             continue
         cached_selection = values.get("CMAKE_CROSSCOMPILING_EMULATOR", "").split(";", 1)[0].strip('"')
@@ -378,20 +402,42 @@ def format_text(plan: dict) -> str:
     return "\n".join(lines)
 
 
-def main(arguments: list[str] | None = None, *, root: Path | None = None, inspector=None) -> int:
+def main(arguments: list[str] | None = None, *, root: Path | None = None, inspector=None, executor=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=lambda prog: argparse.HelpFormatter(prog, width=88))
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--area", choices=["render"])
     selection.add_argument("--path", action="append", help="repo-relative logical render selector; repeat for a union")
     parser.add_argument("--format", choices=["text", "json"], default="text")
-    parser.add_argument("--preflight", action="store_true", help="inspect tooling environment/paths/caches without running tools")
+    behavior = parser.add_mutually_exclusive_group()
+    behavior.add_argument("--preflight", action="store_true", help="inspect tooling environment/paths/caches without running tools")
     parser.add_argument("--browser", help="absolute Chromium path to include in planned wasm configure argv")
+    behavior.add_argument("--execute", action="store_true", help="explicitly run the seven-track sweep; stops on first failure")
+    parser.add_argument("--output-dir", help="new directory for execution logs/report; valid only with --execute")
     try:
         options = parser.parse_args(arguments)
     except SystemExit as error:
         return int(error.code)
     try:
+        if options.output_dir is not None and (not options.execute or not options.output_dir.strip()):
+            raise PlanError("--output-dir requires --execute and a nonempty new directory")
         plan = build_plan(root if root is not None else REPOSITORY, paths=options.path, browser=options.browser)
+        if options.execute:
+            if executor is None:
+                from verification_runner import execute_plan
+                executor = execute_plan
+            report = executor(plan, inspector=inspector or inspect_environment,
+                              cache_reader=cache_values, output_dir=options.output_dir)
+            if options.format == "json":
+                print(json.dumps(report, indent=2, sort_keys=True))
+            else:
+                print(f"Command sweep: {report['result']}; manual acceptance remains separate.")
+                if report["failure"]:
+                    failure = report["failure"]
+                    print(f"{failure['configuration'] or 'sweep'}/{failure['phase']}: {failure['detail']}")
+                print("Report: " + str(report.get("report_path") or "not written"))
+                if report.get("report_write_error"):
+                    print("Report write failed: " + report["report_write_error"])
+            return report["exit_code"]
         if options.preflight:
             checks = (inspector or inspect_environment)(plan)
             plan["preflight"] = {"enabled": True, "checks": checks}

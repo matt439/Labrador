@@ -533,8 +533,8 @@ written.
   Optional preflight reads whitelisted tooling/environment/cache data, detects
   stale axes/compilers/emulators/browser selections, and leaves every phase
   `not-run`. Unsupported source/preset shapes and selectors fail explicitly.
-  The [contract](../verification.md) limits this version to render planning;
-  the executing first-failure sweep and SM-18 remain open.
+  The [contract](../verification.md) limits this mapping to render paths;
+  the real sweep and SM-18 remain open.
   All 31 focused synthetic tests pass and independent source review has no
   remaining findings. The actual checkout emits seven configurations/21 unrun
   phases. Read-only preflight exits 1 with eight missing current-shell tooling
@@ -542,8 +542,19 @@ written.
   compiler, SDK activation, CMake/CTest, generated module or browser was run
   by these CLI checks. This is planning evidence, not sweep qualification.
   All seven standalone checks, website check, 160 website tests and the
-  143-page build pass. The complete first-failure runner and real sweep
-  acceptance remain open.
+  143-page build pass.
+  Executor source added 2026-10-29: explicit `--execute`, all-configuration
+  preflight, required cache checks after configure and build, actual CTest JSON
+  registrations, fresh logs/JUnit/report files and first-failure stopping.
+  Disabled, skipped, missing, duplicate and failed suite results cannot become
+  pass evidence from a zero exit code. The default remains a nonexecuting plan.
+  All 59 focused tests pass (31 planner and 28 fake-command runner tests),
+  including stale caches, interrupted commands and report-write failure.
+  Independent review has no remaining findings. The actual default CLI still
+  emits seven configurations/21 `not-run` phases. Real CTest/JUnit emitter
+  compatibility, the seven-track sweep and manual device acceptance remain
+  unrun at the existing runtime/toolchain stops; the story stays unchecked.
+  All seven standalone checks and website check/tests/143-page build pass.
 - [ ] **[SM-18](STORIES.md#sm-18)** Could · S · The Sole Owner-Maintainer: A record of the configurations CI cannot run, per merged change — after SM-17
 - [ ] **[SM-15](STORIES.md#sm-15)** Could · XS · The Sole Owner-Maintainer: Observe the null-backend wasm step running after a failed page step, and the job going red
 - [ ] **[SM-26](STORIES.md#sm-26)** Could · S · The Sole Owner-Maintainer: Notice when the hosted demo lags the engine — after PI-05
