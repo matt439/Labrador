@@ -5,17 +5,18 @@
 // The pixel contract's third statement, and the only one that can be held
 // across backends.
 //
-// pixel_tests.cpp asserts RELATIONSHIPS - where the ink landed, how far the
+// text_pixel_tests.cpp asserts RELATIONSHIPS - where the ink landed, how far the
 // next character is from it, that the box measure_text promised is the box
-// that was filled - and says why in its own header: a glyph's edges are
-// anti-aliased and its atlas is block-compressed, so the coverage value at any
-// one pixel is a fact about the compressor rather than about the engine.
+// that was filled - and pixel_tests.cpp's suite introduction says why: a
+// glyph's edges are anti-aliased and its atlas is block-compressed, so the
+// coverage value at any one pixel is a fact about the compressor rather than
+// about the engine.
 // Relationships survive a different rasteriser, which is exactly what makes
 // them portable and exactly what makes them blind. Every term the four
 // rasterising backends hand-copied from each other - the pixels-to-clip
 // constant, the index loop, the HLSL at three profiles and its GLSL
 // transliteration, draw_text's camera prologue - is a term every copy can get
-// wrong in the same direction while every relationship in that file still
+// wrong in the same direction while every relationship in those cases still
 // holds.
 //
 // The only thing that sees a drift like that is the frame itself. So every

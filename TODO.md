@@ -16,11 +16,12 @@ allows. Next's hardware and release gates remain open. The immediate queue is:
 2. **L8 (`BDP-11` to `BDP-14`): run packaged-browser acceptance for focus, controls and phone instructions.** [Source checks](docs/port/2026-10-28-demo-host.md#focus-controls-and-the-phone-gate-l8) cover the state transitions and host policy.
 3. **L11 (`BDP-18`): check repeated play stays fast.**
 
-**Available after those batches:** working settings, pointer
-menus, text examples, strict asset keys, recording-renderer guidance and
-validation tools are indexed below. `SRL-20` adds a working animation example;
-LineSweeper's include-layer build check is complete. Follow Later's order and each
-story's prerequisites; an open hardware gate does not block unrelated work.
+**Available after those batches:** working settings, text examples and
+validation tools are indexed below. `SRL-20` adds a working animation example.
+Pointer-menu and recording-renderer guides and LineSweeper's include-layer
+check are complete; strict asset keys have source/native coverage and await
+wasm qualification. Follow Later's order and each story's prerequisites;
+an open hardware gate does not block unrelated work.
 **Hygiene is also ready:** [Code hygiene](docs/code-hygiene.md) owns a separate
 maintenance lane: `SRL-21` awaits its capture review, and the concrete test/source
 splits below supply independent work.
@@ -46,7 +47,7 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SRL-21` | BLOCKED | should | S | Bounds fix and native-null regressions pass; regenerate and review Release captures after GPU access is restored. [Evidence](docs/product/BACKLOG.md#srl-21). |
-| `SM-49` | OPEN | should | M | Split the pixel-test harness and independent contract cases; preserve test names, assertions and golden bytes. |
+| `SM-49` | BLOCKED | should | M | Harness and five case groups preserve source/asset inventories; all native builds/headless checks pass. Pixel execution and wasm GL/S3TC qualification remain at stopped device/Emscripten gates. [Evidence](docs/code-hygiene.md#sm-49-pixel-test-organisation). |
 | `SM-51` | BLOCKED | could | S | Subject split preserves 41 methods; 71 permitted cases pass. Full suite/Infrastructure qualification waits on stopped PowerShell fixtures. [Evidence](docs/code-hygiene.md#sm-51-cloud-tooling-test-organisation). |
 | `SM-56` | OPEN | should | S | Three Vulkan cleanup fixes compile on all native backends; finish wrapper/recovery failure regressions and stopped device qualification. Shader-failure case compiles but is unrun. |
 | `SM-57` | OPEN | should | S | D3D12 replacement publication now precedes its descriptor write; finish failure regression and stopped reload/descriptor/device qualification. Native builds/headless checks pass. |

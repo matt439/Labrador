@@ -515,6 +515,11 @@ written.
 - [x] **[SM-48](../code-hygiene.md#sm-48-sample-teaching-comments)** Could · S · The Sole Owner-Maintainer: Refresh sample teaching comments against current code
 - [ ] **[SRL-21](#srl-21)** Should · S · The Sample-Reading Learner: Make the top-out banner's culling extent enclose its drawn text
 - [ ] **[SM-49](../code-hygiene.md#sm-49-pixel-test-organisation)** Should · M · The Sole Owner-Maintainer: Separate the pixel-test harness and independent contract cases
+  Source grouping implemented 2026-10-29: the sole harness owner and five case
+  groups preserve 50 complete cases, 12 subcases, 238 assertion sites and
+  golden/content bytes. Native compilation/headless checks and unchanged CTest
+  registration are recorded in the owner. Rasterising pixel runs and wasm
+  GL/S3TC qualification remain at the stopped device/Emscripten gates.
 - [ ] **[SM-51](../code-hygiene.md#sm-51-cloud-tooling-test-organisation)** Could · S · The Sole Owner-Maintainer: Split cloud tooling tests by production module
 - [x] **[SM-50](../code-hygiene.md#sm-50-win32-input-translation)** Should · S · The Sole Owner-Maintainer: Extract backend-private Win32 input translation
 - [x] **[SM-52](../code-hygiene.md#sm-52-website-reference-organisation)** Could · M · The Sole Owner-Maintainer: Separate reference indexing, prose linking and page assembly
