@@ -555,6 +555,20 @@ written.
   Hosted CI execution remains part of the owner's later PR; the
   checker establishes declarations, not visual judgment.
 - [ ] **[SM-24](STORIES.md#sm-24)** Could · S · The Sole Owner-Maintainer: A written procedure for moving dependency and toolchain pins — after SM-25
+  Source implemented 2026-10-29 in the
+  [dependency/toolchain procedure](../dependency-updates.md), linked from
+  CONTRIBUTING. It inventories exact pins versus moving selectors, names
+  the coupled manifest/notice/migration changes and all native/golden/wasm/
+  consumer/website qualification, with provider/runtime evidence kept distinct.
+  SM-25's scheduled-run observation remains unfulfilled, so this story stays
+  unchecked/BLOCKED on that dependency. No pin, installed toolchain, runner,
+  action, provider setting or deployment changed.
+  Independent source review found no issues. All 186 permitted Python cases
+  pass without skips; the exact ten stopped PowerShell cases were excluded
+  before execution from the 196-case inventory. Ninety offline Node cases,
+  all seven standalone checks and the website's zero-diagnostic check,
+  160 tests and 145-page/435-file build pass. The procedure's 31 local targets
+  and CONTRIBUTING link were checked; no remote/provider response was tested.
 - [ ] **[SM-17](STORIES.md#sm-17)** Could · M · The Sole Owner-Maintainer: One command per area that runs every configuration a change must pass
   Planning slice implemented 2026-10-29. `tools/verify_changes.py` models the
   five native Debug selections, wasm-debug GL and CI's explicit wasm-release-null

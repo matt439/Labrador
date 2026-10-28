@@ -116,6 +116,12 @@ Manual dispatches of the CI workflow and its weekly Monday 03:17 UTC schedule
 always run the full build matrix, so runner/browser drift gets a run without
 a source edit.
 
+For a deliberate dependency or toolchain bump, follow
+[Moving dependency and toolchain pins](docs/dependency-updates.md). It lists
+fixed inputs and moving selectors, the derived consumer manifest, coupled
+changes and the qualification each bump needs. A scheduled drift run does
+not replace that verification.
+
 A pull request's run is meant to finish in about five minutes, and it does
 so on caches: the windows jobs' vcpkg binaries, and ccache for the three
 browser builds. A run after a `vcpkg.json` change, or after a cache has been
