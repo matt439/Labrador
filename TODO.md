@@ -47,7 +47,7 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 |---|---|---|---|---|
 | `SRL-21` | BLOCKED | should | S | Bounds fix and native-null regressions pass; regenerate and review Release captures after GPU access is restored. [Evidence](docs/product/BACKLOG.md#srl-21). |
 | `SM-49` | OPEN | should | M | Split the pixel-test harness and independent contract cases; preserve test names, assertions and golden bytes. |
-| `SM-51` | OPEN | could | S | Split cloud tooling tests by Config, Infrastructure, Release, Analysis and Dispatch responsibilities. |
+| `SM-51` | BLOCKED | could | S | Subject split preserves 41 methods; 71 permitted cases pass. Full suite/Infrastructure qualification waits on stopped PowerShell fixtures. [Evidence](docs/code-hygiene.md#sm-51-cloud-tooling-test-organisation). |
 | `SM-52` | OPEN | could | M | Separate website reference indexing, prose links and page assembly; preserve output and cache invalidation. |
 | `SM-53` | OPEN | could | M | Review Vulkan device/buffer ownership; record a keep/split verdict before an extraction story. |
 | `SM-54` | OPEN | could | M | Review D3D12/Vulkan pipeline construction boundaries while keeping frame lifetime coordinated. |

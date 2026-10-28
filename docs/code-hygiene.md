@@ -234,17 +234,30 @@ the helper header is private to the Win32 folder and is not a public API.
 
 ## SM-51. Cloud tooling test organisation
 
-`tools/tests/test_cloud_performance.py` contains Config, Infrastructure,
-Release, Analysis and Dispatch test classes for separate production modules.
-Split on those existing subjects. Put genuinely shared fixture helpers in a
-small test-only module with no discovery side effects or production imports
-through a test file.
+`tools/tests/test_cloud_performance_{config,infrastructure,release,analysis,dispatch}.py`
+groups cases by the production responsibility each exercises. Shared
+`config()` and `write_json()` fixtures live in `cloud_performance_fixtures.py`,
+with no discovery side effects or production imports through a test file.
 
 **Done when:** unittest discovery lists the same test methods and expected
 skips before and after, the full offline suite passes, and each new module can
 run on its own. Preserve temporary-directory isolation, mocked cloud calls,
 terminal error assertions and cleanup. Do not launch cloud work or change the
 tool's CLI, schedule or infrastructure as part of moving tests.
+
+**Source implemented 2026-10-28:** AST comparison preserves all 41 methods,
+complete class/helper bodies and skip decorators: Config 7, Infrastructure 8,
+Release 3, Analysis 21 and Dispatch 2. Discovery finds each once. The monolith
+is removed; subject modules import only the helpers/globals they need.
+Historical review probes and evidence retain their recorded module paths and
+are reproduced at their recorded revisions, rather than rewritten as fixes land.
+
+All 71 permitted offline tooling cases pass. Config, Release, Analysis and
+Dispatch also pass as separate module invocations. The worker case and nine
+trace-process cases remain unexecuted under the existing PowerShell stop;
+their skip metadata is unchanged, not altered to turn a refusal into a pass.
+The full suite and Infrastructure's full standalone run therefore remain
+open, and the story is not closed. No cloud work or network call was made.
 
 ## SM-52. Website reference organisation
 
