@@ -72,6 +72,16 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Name negative authored animation counts before sizing a strip
+
+**Behaviour change.** `read_sprite_sheet` rejects a negative animation-strip
+`frame_count` before construction with `std::runtime_error` naming the source,
+indexed strip, name and field value. Previously the signed value became an
+oversized container-capacity request whose error lacked that content context.
+Use zero for an empty strip or a positive authored count. Nonnegative strips
+keep their rectangles, timing and looping; the direct `AnimationStrip` API is
+unchanged. Valid content and caller code need no migration.
+
 ### 2026-10-29 - Reject raw NUL bytes throughout JSON input
 
 **Behaviour change.** `read_json_file` and `parse_json` reject a literal NUL byte

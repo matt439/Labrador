@@ -334,7 +334,7 @@ work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
 
-**Maintenance lane, added 2026-10-28:** L36 to L44 may run alongside the
+**Maintenance lane, added 2026-10-28:** L36 to L45 may run alongside the
 product batches above, in their own order and with their own prerequisites.
 They cover comment audits, source/test organisation and backend responsibility
 reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
@@ -345,6 +345,7 @@ audit on 2026-10-29, with its acceptance below.
 L42 follows it with direct regression coverage of the shared byte cursor.
 L43 closes confirmed path-spelling gaps in the existing engine include wall.
 L44 follows the next source audit's malformed-JSON boundary repair.
+L45 takes its negative authored animation-count diagnostic next.
 
 **Contract follow-up, 2026-10-29:** SRL-17's source audit files SRL-22 within
 L32, after the audit and before the glossary. Correcting a false bank-pointer
@@ -415,6 +416,7 @@ written.
 42. L42 Pin the shared byte reader's boundary and byte-order contract: SM-60
 43. L43 Normalize the engine include wall and pin its boundaries: SM-61
 44. L44 Reject a raw NUL instead of accepting only a JSON prefix: SM-62
+45. L45 Refuse negative authored animation counts before container sizing: SM-63
 
 **Stories**
 
@@ -770,6 +772,56 @@ written.
 - [x] **[SM-60](#sm-60)** Could · S · The Sole Owner-Maintainer: Pin ByteReader's boundary, cursor and byte-order behavior directly
 - [x] **[SM-61](#sm-61)** Should · S · The Sole Owner-Maintainer: Enforce the existing include wall across normalized paths and backend subtrees
 - [x] **[SM-62](#sm-62)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse raw NUL bytes throughout a JSON input span
+- [x] **[SM-63](#sm-63)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Name a negative authored animation count before constructing its strip
+
+<a id="sm-63"></a>
+### SM-63. Reject a negative authored animation count at the loader boundary
+
+Selected 2026-10-29 after SM-62 from its second ranked source exhibit. The
+sheet decoder forwards an authored int frame_count to AnimationStrip, whose
+vector reserve converts it to size_t. A negative value loses the authored
+source/strip/field context in a container-capacity failure. T6 favors a small
+decoder check before that conversion; no render abstraction or general
+allocation policy is needed.
+
+**Acceptance**
+
+- Inspect the original path without invoking its enormous-capacity request.
+  Apply and compile the reviewed decoder guard before running the new
+  negative case or full AssetsTests; no original-source runtime reproduction
+  or memory-exhaustion claim is required.
+- Reject negative authored counts with std::runtime_error naming source,
+  animation_strips index, strip name, frame_count and signed value. Place
+  the check before AnimationStrip construction. Cover -1 and INT_MIN after
+  a preceding valid strip, without naming that earlier strip as the offender.
+- Preserve zero as an empty authored strip and positive frame rectangles,
+  timing and looping. Do not change the direct render API, positive-count
+  limits, geometry arithmetic or timing policy; test without drawing.
+- State the public failure/zero contract and consumer correction. Use the
+  existing owned scratch-file fixture and default TextureHandle, with no
+  device creation. Check excerpt coupling, review and run full native Debug
+  null, default Debug and Release null AssetsTests, eight standalone checks
+  and website verification. Keep wasm/Node unrun at its existing activation
+  gate and full CI required before landing.
+
+**Closed 2026-10-29, authored-input diagnostic.** The decoder now checks the
+signed count before constructing AnimationStrip and reports its source,
+indexed strip, name, field and value. Source review covered the original
+conversion path without executing that oversized request. Each native build
+recorded the guarded decoder compilation before the negative cases ran.
+The -1/INT_MIN cases and zero/positive controls pass, preserving all tested
+rectangles, timing and looping. Direct render implementation/header hashes
+remain unchanged. Independent source review found no issues.
+
+Full headless AssetsTests pass in native Debug null, default Debug and
+Release null: 73 cases and 557 assertions in each, with no skipped cases.
+All eight standalone checks and the website type check, 160 tests and
+145-page build pass. No affected CPP/test excerpts require a page edit;
+the published loader reference includes negative-count refusal and zero as
+an empty strip. CHANGES records the correction; valid content and caller code
+need no migration. Wasm/Node remains unrun at the standing Emscripten
+activation stop, and full CI is required before landing. No strip is drawn
+and no graphics device is created by these new cases.
 
 <a id="sm-62"></a>
 ### SM-62. Reject malformed JSON bytes after an otherwise valid root

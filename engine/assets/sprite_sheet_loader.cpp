@@ -103,9 +103,19 @@ namespace labrador
 					first_frame_json.integer("w"),
 					first_frame_json.integer("h"));
 
-				animation_strips.add(strip.identifier("name"), AnimationStrip(
+				const std::string name = strip.identifier("name");
+				const int frame_count = strip.integer("frame_count");
+				// Refuse before the signed count becomes a vector capacity.
+				if (frame_count < 0)
+				{
+					throw std::runtime_error(strip.where() + " ('" + name +
+						"') has negative 'frame_count' " +
+						std::to_string(frame_count) + ".");
+				}
+
+				animation_strips.add(name, AnimationStrip(
 					first_frame,
-					strip.integer("frame_count"),
+					frame_count,
 					strip.number("frame_time"),
 					strip.boolean("looping")));
 			}
