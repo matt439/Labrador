@@ -29,10 +29,8 @@ namespace linesweeper
 		const std::string font_name = "jetbrains_mono_bold_16";
 		const std::string block_texture_name = "white";
 
-		// The rows, in the order they are read rather than the order they are
-		// navigated - `FocusGroup::add` says declaration order decides nothing
-		// and `bounds()` decides everything, so this list is free to read the
-		// way a player would say it.
+		// Explicit board-space row positions. FocusGroup initially focuses
+		// the first added row, then uses measured bounds for navigation.
 		constexpr float title_y = 236.0f;
 		constexpr float first_row_y = 312.0f;
 		constexpr float row_spacing = 44.0f;
@@ -48,16 +46,11 @@ namespace linesweeper
 
 		constexpr Colour title_colour(200, 208, 222);
 
-		// How much of the screen a row answers a finger over: the full gap
-		// between rows, and this far either side of the middle. A row's own
-		// bounds are the text the font measured, sixteen units tall, which is
-		// a target a thumb misses on a phone.
+		// Touch targets use the full row gap and at least this half-width,
+		// extending beyond the font's measured text bounds.
 		constexpr float row_tap_half_width = 160.0f;
 
-		// A row wider than the band above - the COLOURS row naming a palette
-		// is nearly five hundred units - answers its whole measured width and
-		// this much more either side, so a finger on its last word is still
-		// on it.
+		// Wider text, including palette names, retains a margin on either side.
 		constexpr float row_tap_margin = 16.0f;
 
 		// What the COLOURS row says for `palette`.
@@ -66,26 +59,11 @@ namespace linesweeper
 			return std::wstring(L"COLOURS: ") + palette_name(palette);
 		}
 
-		// CENTRED BY MEASURING, NOT BY COUNTING CHARACTERS. The HUD in
-		// board_view.cpp columnises by hand and says it only works because the
-		// font is monospaced; that is true and it is a property of this one
-		// font. A menu whose rows are different lengths should not inherit it,
-		// and `measure_text` is on the seam for exactly this
-		// (render_resources.h). Measured when a row's text is set, never in
-		// draw().
-		//
-		// Centred on the landscape screen, which in portrait is the middle of
-		// the well: both arrangements put that column in the middle of the
-		// buffer.
-		//
-		// AND PUT ON A WHOLE UNIT OF BOARD SPACE. Half of an odd width is half
-		// a unit, and at 1280x720, where the arrangement's camera is the
-		// identity (presentation/arrangement.h), a unit is a pixel:
-		// point-sampled text there is a tie each backend breaks its own way
-		// (renderer.h, draw_text). RESTART is one such row. At any other
-		// buffer the camera scales the text, which is outside draw_text's
-		// contract at a scale of one, and no rounding of the position puts
-		// every glyph's texels on whole pixels.
+		// Measure when text is set, then centre on the shared board-space
+		// column. Floor the x-position to a whole unit: at the identity camera
+		// a unit is a pixel and avoids half-pixel point-sampling ties for odd
+		// text widths. Other buffer sizes scale through the camera; this
+		// rounding alone cannot align every glyph texel at those scales.
 		Vector2F centred(const RenderResources& resources, FontHandle font,
 			const std::wstring& text, float y)
 		{
@@ -99,26 +77,9 @@ namespace linesweeper
 		// pause rather than as a screen that replaced one (palette.h).
 		constexpr float scrim_alpha = 0.75f;
 
-		// The dimming quad, and the one thing on this screen that is not a
-		// widget.
-		//
-		// It has no focus, no name, no colour a cursor changes and nothing to
-		// navigate to, so making it a `UiWidget` would be claiming three
-		// properties it has none of - and `nearest_in_direction` skips
-		// zero-area boxes precisely so that things which are not destinations
-		// stay out of the walk. A full-screen box is the opposite problem: it
-		// would be a destination that swallows every press.
-		//
-		// It is not a `UiTexture` either, which is the leaf that would
-		// otherwise fit. That one takes a sheet name and a frame name, and this
-		// sample has no sprite sheet - one white texel and a font is the whole
-		// of its content, which is the sentence the in-tree-samples argument
-		// rests on (README). Fifteen lines here is cheaper than a sheet in the
-		// manifest.
-		//
-		// It covers what the screen shows, which the state works out every
-		// tick, so it borrows that rectangle rather than keeping a copy that a
-		// resize would leave behind.
+		// A non-focusable dimming quad drawn from the sample's white texel.
+		// Borrow the visible rectangle so resize updates both drawing and
+		// culling. arrangement_ must outlive the scene holding this object.
 		class Scrim final : public GameObject
 		{
 		public:
@@ -179,21 +140,10 @@ namespace linesweeper
 			font_name, centred(*resources, this->font_, L"PAUSED", title_y),
 			resources, title_colour));
 
-		// THE FOUR ROWS, AND THE ACTIONS ARE THE GAME'S HALF OF button.h's
-		// split: the engine knows which row the cursor is on and when the
-		// player pressed A, and knows nothing about what pressing it does.
-		//
-		// Three of the actions pop this state with their answer. That is safe
-		// from inside `update()` - which is where `FocusGroup::activate` is
-		// called from - because `StateContext::pop` is queued while the
-		// context has something of its own on the stack, and applied after
-		// update() returns. Without that it would be a use-after-free of the
-		// most literal kind: the pop destroys this object, and the
-		// `std::function` being executed is a member of a member of it.
-		//
-		// COLOURS sits above QUIT, so the way out stays the last row. Its
-		// action steps the palette and leaves the menu open, so the choice
-		// beside it is never given.
+		// The game reads input and asks FocusGroup to invoke the focused row's
+		// action. A result pop is deferred until update() returns, preserving
+		// this object and its callback while it runs. COLOURS instead changes
+		// the borrowed palette and never submits its placeholder choice.
 		struct Row
 		{
 			std::wstring text;
@@ -236,17 +186,11 @@ namespace linesweeper
 			this->rows_[index] = row;
 		}
 
-		// Adds are pending until a tick ends, and the frame drawn before the
-		// first update() is a real frame - so whoever fills a scene ends its
-		// first tick by hand (play_state.cpp says the same).
+		// Commit pending objects before any draw, including one before update().
 		this->scene_->end_tick();
 
-		// The menu can open while a stick is already pushed - Start is on the
-		// pad, and a thumb does not leave the stick to press it - and what is
-		// pushed now is not a press. reset() would forget it and make the next
-		// frame's push a fresh one, moving the cursor off the top row before
-		// the screen is visible (docs/review/gpt6/README.md, G6-08). The push
-		// has to be let go before this menu reads it.
+		// A direction held when the menu opens must return to neutral before
+		// it can move the initial cursor; reset() would treat it as a new push.
 		this->repeat_.start_held(this->held_direction());
 	}
 
@@ -309,10 +253,8 @@ namespace linesweeper
 	{
 		const Keyboard& keyboard = *this->app_->keyboard();
 
-		// The keyboard first and held, not pressed: the repeat is
-		// DirectionRepeat's job now, so every source below reports what is
-		// being pushed and nothing computes an edge of its own. Two devices
-		// disagreeing is not a case - a hand is on one of them.
+		// Arrow priority is up, down, left, right, then the pad. Read held
+		// levels here; DirectionRepeat owns the navigation event timing.
 		if (keyboard.held(Key::up))
 		{
 			return Direction::up;
@@ -396,16 +338,12 @@ namespace linesweeper
 		}
 		else if (UiText* row = this->tapped_row(); row != nullptr)
 		{
-			// A tap is a cursor move and a confirm at once: the row goes
-			// under the cursor first, so the menu shows what was chosen on
-			// the frame it closes, and the action that runs is that row's.
+			// Focus before activation so the action belongs to the touched row.
 			this->focus_.set_focused(0, row);
 			this->focus_.activate(0);
 		}
 
-		// The scene still ticks: nothing here animates today, and a menu that
-		// stopped updating its own widgets would be the shape a later one has
-		// to undo.
+		// Update this overlay's objects; the covered match is not updated.
 		this->scene_->update(dt);
 		this->scene_->end_tick();
 	}

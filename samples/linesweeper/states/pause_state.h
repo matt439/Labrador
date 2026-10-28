@@ -13,50 +13,18 @@
 #include <array>
 #include <memory>
 
-// A box over a running match, and the first client `engine/ui/` has ever had.
+// A pause overlay built from measured UiText bounds, game-owned input and
+// FocusGroup actions. covers_screen() leaves the match visible but suspended.
+// StateContext defers pop() until the active callback returns, then delivers
+// its typed result to PlayState after that state's on_resume().
 //
-// THAT IS THE POINT OF THIS FILE, and it is worth being blunt about it.
-// `grep -rn "engine/ui/" samples/` was empty: roughly 1,350 lines across
-// eight files with no consumer anywhere in this repository, because the
-// module's only client left with the split. `PHILOSOPHY.md` calls the samples
-// "the permanent second client that keeps the boundary honest (T1)", and on
-// this one module that client did not exist. The only exercise the widget set
-// got was four `StubWidget`s in `tests/ui/`. `docs/survey/2026-08-26.md`
-// section 3.3 is the finding.
-//
-// A STUB IS NOT A CLIENT, and the difference showed up immediately. A stub
-// reports whatever bounds the test wants; a `UiText` reports the box the font
-// measured, and a menu only navigates because those boxes are real. Nothing
-// here needed the engine to change, which is the outcome the survey predicted
-// and is worth recording as a pass rather than assuming.
-//
-// WHAT THE ENGINE ALREADY HAD. `State::covers_screen()` returning false is the
-// whole of "draw the match underneath" - `state_context.h` names a pause menu
-// as its worked example, twice, and this is the first one to exist.
-// `StateContext::push<Result>` carries the answer back to `PlayState` on the
-// stack frame rather than on a state object, and `pop()` is queued rather than
-// immediate, which is what makes it safe to call from inside a button's action
-// - the action, the `FocusGroup` holding it and this whole object are all
-// destroyed by that pop, and would be destroyed mid-call if it were not
-// deferred.
-//
-// The layout is manual (`PHILOSOPHY.md`, UI: "the game positions widgets
-// explicitly"), and no autolayout crept in: four rows and a title, centred by
-// measuring each string in `init()`, and the COLOURS row again each time it
-// changes.
-//
-// THE COLOURS ROW IS THE ONE THAT DOES NOT CLOSE THE MENU. It steps through
-// palette.h's palettes - forward on a confirm or a tap, either way on left and
-// right - and writes the choice straight into the palette PlayState lent it,
-// so the match under the scrim is redrawn in it on the next frame and the
-// player sees what they picked before going back to it.
+// Layout is explicit: a title and four centred rows, with text measured when
+// set. COLOURS changes PlayState's borrowed palette and stays open, so the
+// board beneath the scrim shows the selection before the player resumes.
 namespace linesweeper
 {
 	// What the pause screen decided, carried back to `PlayState` by
 	// `StateContext::push<PauseChoice>`.
-	//
-	// An enum and not a bool, for the reason `focus.h` gives for `Activation`
-	// being one: there are three answers and two of them are not "closed".
 	enum class PauseChoice
 	{
 		resume,
@@ -67,8 +35,9 @@ namespace linesweeper
 	class PauseState : public labrador::State
 	{
 	public:
-		// `palette` is PlayState's, borrowed to write for as long as this
-		// menu is open: the COLOURS row shows it and changes it.
+		// `app` and `palette` are borrowed and must outlive this overlay. The
+		// application's services and sample content must be ready before init().
+		// COLOURS writes the palette during update(), before the const draw.
 		PauseState(labrador::Application* app, Palette* palette);
 
 		void init() override;
@@ -83,33 +52,18 @@ namespace linesweeper
 		}
 
 	private:
-		// Which way the player is pushing, from the stick, the d-pad and the
-		// arrow keys at once.
-		//
-		// ONE held(), NOT NINE LINES OF TRANSLATION. `pad_direction` in
-		// `engine/input/direction.h` is the producer, so the deadzone and the
-		// quadrant test are behind it and adding the stick costs nothing here.
-		// `DirectionRepeat` below is the third piece.
-		//
-		// The keyboard is folded in here rather than in the engine, and that
-		// is the right split: which keys mean up is a binding, and this sample
-		// deliberately has no binding table beyond the two it already carries
-		// (README, Still open).
+		// Held arrows take priority in up/down/left/right order. Without one,
+		// pad_direction supplies slot zero's d-pad/stick direction; repeat_
+		// turns the held direction into navigation events.
 		labrador::Direction held_direction() const;
 
 		// Whether the confirm or the cancel button went down this frame.
 		bool confirm_pressed() const;
 		bool cancel_pressed() const;
 
-		// The row a finger went down on this frame, or null.
-		//
-		// THE GAME'S HALF, NOT THE WIDGETS'. `engine/ui/` does not depend on
-		// `input`, so a touch reaches a menu the way the mouse would: the
-		// page asks the device where the finger is, finds the row, and tells
-		// the focus group. A row answers a band the width of the menu, or its
-		// measured width and a margin when that is wider, and the height of
-		// the gap between rows rather than its measured text, which is a
-		// target sixteen units tall.
+		// First row hit by a newly pressed finger, or null. Hit-test in board
+		// space, using the row gap as height and at least the measured text's
+		// width plus a margin. Input and hit-test policy stay outside engine/ui/.
 		labrador::UiText* tapped_row() const;
 
 		// The same arrangement PlayState draws the match through, worked out
@@ -120,8 +74,7 @@ namespace linesweeper
 		// COLOURS row to name it, centred again on its new width.
 		void select_palette(Palette palette);
 
-		// Borrowed. The shell built every service before this existed and
-		// outlives it (PHILOSOPHY, Services and lifetimes).
+		// Borrowed application/services and PlayState palette.
 		labrador::Application* app_ = nullptr;
 		Palette* palette_ = nullptr;
 
@@ -145,9 +98,7 @@ namespace linesweeper
 		std::array<labrador::UiText*, 4> rows_ = {};
 		labrador::UiText* colours_row_ = nullptr;
 
-		// One slot. Split-screen is why `FocusGroup` has them at all
-		// (focus.h), and a one-player falling-block game is the case that
-		// passes 0 and never thinks about it again.
+		// One focus slot for this one-player menu.
 		labrador::FocusGroup focus_;
 
 		// Turns "the stick is pushed up" into "move the cursor now", with the

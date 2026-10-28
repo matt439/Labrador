@@ -165,8 +165,8 @@ trace fixtures were not invoked. Website check, all 157 website tests and the
 ## SM-48. Sample teaching comments
 
 Targets: LineSweeper's `states/pause_state.h`, `states/play_state.h`,
-`presentation/board_view.h` and `presentation/top_out_banner.h`. Examples are
-the pause screen's obsolete first-UI-client claim and banner-extraction history.
+`presentation/board_view.h` and `presentation/top_out_banner.h`, together with
+their implementation comments.
 Read the sample README first and retain its rules/presentation/state boundary.
 
 **Done when:** prose teaches current suspension, result delivery, layout,
@@ -176,6 +176,13 @@ Coordinate PlayState's enforcement wording with SRL-19; do not claim its build
 check exists before it lands. Review a comments-only diff, check citations and
 build the website so its source excerpts stay valid. No captures are required
 for comments-only work.
+
+**Closed 2026-10-28:** the [sample teaching inventory](code-hygiene-sample-comments.md)
+records the reviewed suspension, lifetime, result, layout, ordering and culling
+paths. All eight files preserve executable tokens; citation/whitespace checks,
+website check, 157 website tests and the 143-page build pass. Excerpt delimiters
+are unchanged. A separate conservative-banner-extent defect is filed as
+[SRL-21](product/BACKLOG.md#srl-21); no behavior or pixels changed in this audit.
 
 ## SM-49. Pixel-test organisation
 

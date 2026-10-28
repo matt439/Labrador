@@ -14,9 +14,7 @@ namespace linesweeper
 {
 	namespace
 	{
-		// The same two assets everything else in this folder draws from. A
-		// name is spelt where the object that resolves it lives, which is the
-		// pattern board_view.cpp and play_state.cpp already follow.
+		// Each object resolves its own asset names during construction (T7).
 		const std::string block_texture_name = "white";
 		const std::string font_name = "jetbrains_mono_bold_16";
 
@@ -33,8 +31,7 @@ namespace linesweeper
 		block_(render_resources->resolve_texture(block_texture_name)),
 		font_(render_resources->resolve_sprite_font(font_name))
 	{
-		// The first frame is a real frame and is drawn before the first
-		// update(), so the string has to be right now rather than in a tick.
+		// Populate the cache for a first draw that precedes any scene update.
 		this->update(0.0f);
 	}
 
@@ -79,27 +76,18 @@ namespace linesweeper
 
 		const float middle = well_origin_y + well_height * 0.5f;
 
-		// A SOFT QUAD BEHIND THE TEXT, which is the workaround README names
-		// for text this engine cannot make glow: draw_text puts its glyphs in
-		// the same batch as everything else, and the tool that builds a
-		// .spritefont will not write the transparent-black glyphs additive
-		// blending would need. Here it earns its place twice over - red words
-		// over an orange block are unreadable whatever they are blended with,
-		// and the particle field puts ten thousand sparks over them as well.
-		//
-		// The quad is premultiplied black at 88%, so it does not darken to
-		// black: it leaves an eighth of what is behind it showing through,
-		// which is what makes it read as a banner over the well rather than a
-		// hole in it. One blend state, three jobs (README, Additive blending).
+		// Premultiplied black attenuates the board and sparks behind the text
+		// while leaving some background visible. The shared sprite blend state
+		// handles this panel and its glyphs; samples/linesweeper/README.md,
+		// Additive blending, describes the compositing choice.
 		draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1),
 			RectangleF(well_origin_x, middle - banner_padding, well_width,
 				this->text_size_.y + banner_padding * 2.0f),
 			faded(Colour(0.0f, 0.0f, 0.0f), 0.88f), 0.0f, Vector2F::zero,
 			SpriteFlip::none, 0.0f);
 
-		// Centred on a whole unit of board space, for the reason the pause
-		// menu's rows are (states/pause_state.cpp): this string measures an odd
-		// width too.
+		// Floor the centered board-space origin so an odd measured width does
+		// not place it on a half unit at the sample's capture resolution.
 		draw_list.draw_text(this->font_, this->text_,
 			Vector2F(
 				std::floor(
