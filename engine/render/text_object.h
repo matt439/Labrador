@@ -26,7 +26,12 @@ namespace labrador
 	class TextObject : public DrawObject
 	{
 	public:
+		// Resolves and measures nothing and holds no resource table.
 		TextObject() = default;
+
+		// render_resources is borrowed and must outlive this drawable. The
+		// constructor resolves and measures through it; later text/font
+		// changes measure through the same table.
 		TextObject(const std::wstring& text,
 			const std::string& font_name,
 			const Vector2F& position,

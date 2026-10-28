@@ -181,6 +181,18 @@ namespace labrador
 		//
 		// destination is in world space; the list's current camera maps it.
 		//
+		// source selects a rectangle in texture texels. rotation is in radians,
+		// positive clockwise on screen, where y increases downward. origin is
+		// an offset from the source rectangle's top-left in unscaled source
+		// texels. The camera maps destination to view pixels and each edge
+		// truncates to a whole pixel. For nonzero source dimensions, origin
+		// scales by the resulting destination-to-source size ratio in each
+		// axis. That offset is subtracted from the quad's local corners before
+		// rotation about the mapped, truncated destination top-left.
+		// This point is the pivot position: zero origin anchors the
+		// source corner there, and half the source size anchors its centre.
+		// Flip mirrors the sampled texels without moving the quad or its pivot.
+		//
 		// tint multiplies the sampled texel as given. Nothing premultiplies it
 		// for the caller, and the blend is premultiplied (SEAM.md#5), so a tint
 		// with zero alpha still adds its colour channels: the tint that draws

@@ -687,7 +687,7 @@ written.
   160 tests and 144-page/433-file build pass. The emitted revision-pinned
   audit link, scope and qualification were inspected. All 84 ledger paths,
   source hashes and 93 local Markdown targets reconcile.
-- [ ] **[SRL-22](#srl-22)** Should · S · The Outside C++ Adopter, The Sample-Reading Learner: Complete the unit and retained-loan contracts found by the source audit — after SRL-17
+- [x] **[SRL-22](#srl-22)** Should · S · The Outside C++ Adopter, The Sample-Reading Learner: Complete the unit and retained-loan contracts found by the source audit — after SRL-17
 - [ ] **[SRL-16](STORIES.md#srl-16)** Could · M · The Sample-Reading Learner: A guide to the C++ and engine terms the minimal sample uses — after SRL-17
 - [ ] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
 - [ ] **[SRL-06](STORIES.md#srl-06)** Could · S · The Sample-Reading Learner: LineSweeper's design notes give their reasons without sending me to internal records
@@ -744,6 +744,27 @@ implementation and declarations.
   fixtures. Prove non-comment C++ tokens unchanged, run affected headless
   checks, all standalone checks and the website check/tests/build. Record
   stopped device/wasm checks explicitly rather than claiming them.
+
+**Closed 2026-10-29.** Seven header contracts now state the sprite's source
+units, clockwise radians and mapped/truncated pivot; retained drawable/viewport
+service loans; and bank replacement/null-add invalidation distinct from stable
+slot handles. The source-ratio formula is explicitly qualified to nonzero
+source dimensions, preserving the existing zero-axis guard. Default/null
+appearance-only placeholders remain valid. Independent source review found no
+remaining issue after that qualification; root also checked all five backend
+forwarders and shared camera/quad arithmetic.
+
+All nonblank, non-full-line-comment bytes compare identically after line-ending
+normalisation across the seven headers; declarations and implementations are
+unchanged. RenderTests and AudioTests build and pass on all five native Debug
+backends and Release-null (12 headless CTest entries). Existing tests cover
+geometry, defaults and bank replacement; null-add wording is source-verified,
+not claimed as a dedicated passing audio case. All seven standalone checks
+pass. No graphics/audio API device, pixel run, browser, wasm activation or
+listening acceptance was performed; their previous stops remain.
+The website's zero-diagnostic check, 160 tests and 144-page/433-file build
+pass; 17 contract-text assertions across all seven generated reference pages
+confirm that the corrected rules are published.
 
 <a id="srl-19"></a>
 ### SRL-19. Make LineSweeper's layer boundary a build check

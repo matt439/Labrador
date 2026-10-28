@@ -30,9 +30,17 @@ namespace labrador
 
 		// Const and non-mutating, like every other registry getter: throws
 		// std::out_of_range naming the bank if it is absent or released.
+		// The returned pointer is borrowed until this table is destroyed or
+		// add_sound_bank replaces or empties that name's slot. Keep a handle,
+		// not this pointer, across such a change and read the slot again.
 		SoundBank* sound_bank(SoundBankHandle sound_bank) const;
 		SoundBank* sound_bank(const std::string& sound_bank_name) const;
 
+		// Takes ownership. Re-adding a name destroys its previous bank and
+		// refills the same slot; a null bank empties it. Existing handles keep
+		// naming that slot, and sound_bank throws while it is empty. Pointers
+		// returned before replacement or emptying must no longer be used.
+		//
 		// Also lends the bank this object's group volumes, which is what lets
 		// its set_wave_group and set_effect_group accept a group. The bank and
 		// the volumes are both owned here, and the banks are destroyed first,
@@ -40,11 +48,10 @@ namespace labrador
 		void add_sound_bank(const std::string& sound_bank_name,
 			std::unique_ptr<SoundBank> sound_bank);
 
-		// Deliberately nothing releases a bank short of the destructor. Banks
-		// are not device resources, so a device loss leaves them alone, and
-		// releasing one would leave every live object holding a freed
-		// SoundBank*. A bank holds only handles: the voices and the wave bank
-		// behind them belong to the AudioDevice, which releases them itself.
+		// Banks are not device resources, so a device loss leaves them alone.
+		// A bank holds only handles: the voices and the wave bank behind them
+		// belong to the AudioDevice, which releases them itself. This does not
+		// preserve a bank pointer across add_sound_bank replacing its name.
 
 		// SOUND GROUPS. A group is a volume a game sets once for many sounds -
 		// the music slider and the effects slider of a settings screen. A bank

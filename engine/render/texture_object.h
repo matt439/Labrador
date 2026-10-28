@@ -30,7 +30,11 @@ namespace labrador
 	class TextureObject : public SpriteSheetObject
 	{
 	public:
+		// Resolves nothing and holds no resource table.
 		TextureObject() = default;
+
+		// render_resources is borrowed and must outlive this drawable. Frame
+		// resolution and later draws read that same table, never a copy of it.
 		TextureObject(const std::string& sheet_name,
 			const std::string& frame_name,
 			RenderResources* render_resources,
@@ -41,7 +45,7 @@ namespace labrador
 			float layer_depth = 0.0f);
 
 		// The same, from a pair resolved at load. Throws std::out_of_range if
-		// the pair is unresolved.
+		// the pair is unresolved. The same borrowed-table lifetime applies.
 		TextureObject(RenderResources::SheetFrame frame,
 			RenderResources* render_resources,
 			const Colour& color = Colour::white,
