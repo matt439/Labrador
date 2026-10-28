@@ -111,6 +111,11 @@ never converts or allocates. A font can only draw the characters it was made wit
 text that came from outside the game, such as a player's name, check it with
 `RenderResources::can_render(font, text)`.
 
+Save C++ source files as UTF-8. Linking `labrador_settings` selects UTF-8 for
+MSVC's source and ordinary narrow-literal encoding, matching the browser build.
+The [language limits](#which-languages-the-text-path-can-draw) and the glyphs in
+your atlas still determine which text can draw.
+
 **Centring text means measuring it.** `RenderResources::measure_text(font, text)` returns its
 size. LineSweeper's pause menu centres each row this way when the menu is built, and the COLOURS
 row again each time it names a different palette:

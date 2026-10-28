@@ -18,6 +18,10 @@ if(MSVC)
         /permissive- # standards conformance mode
         /sdl         # additional security checks
 
+        # UTF-8 source on every machine, matching the browser build. This sets
+        # the execution encoding too: ordinary narrow string literals are UTF-8.
+        /utf-8
+
         # IEEE-754 semantics, stated rather than inherited. This is already the
         # compiler default, and that is the reason to write it down: a great deal
         # of this tree is only correct under exactly-rounded arithmetic that does

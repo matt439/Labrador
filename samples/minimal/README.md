@@ -36,6 +36,10 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-29.** `labrador_settings` selects UTF-8 source and ordinary narrow
+  literal encoding for MSVC. Keep linking that target, and save game source as
+  UTF-8. Convert files saved in another encoding before rebuilding; the
+  template's ASCII sources need no encoding conversion.
 - **2026-10-29.** The Get Started project's native `base` preset now has the
   condition `${hostSystemName}` equals `Windows`, inherited by `x64-debug`
   and `x64-release`. A copied project's presets can take that same condition
