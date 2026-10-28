@@ -16,6 +16,14 @@ namespace multiplayer
 	PlayState::PlayState(Application* app, bool smoke_test) :
 		app_(app), smoke_test_(smoke_test) {}
 
+	PlayState::PlayState(Application* app,
+		const std::array<InputSource, Arena::player_count>& sources) :
+		PlayState(app)
+	{
+		this->bound_sources_ = true;
+		this->sources_ = sources;
+	}
+
 	void PlayState::init()
 	{
 		this->white_ = this->app_->render_resources()->resolve_texture(white_texture_name);
@@ -31,8 +39,21 @@ namespace multiplayer
 	{
 		const Keyboard& keyboard = *this->app_->keyboard();
 		const Gamepads& pads = *this->app_->gamepads();
-		if (!this->smoke_test_ && (keyboard.pressed(Key::escape) ||
-			pads.pressed(0, GamepadButton::b) || pads.pressed(1, GamepadButton::b)))
+		bool quit = keyboard.pressed(Key::escape);
+		if (this->bound_sources_)
+		{
+			for (const InputSource source : this->sources_)
+			{
+				const int slot = pad_slot(source);
+				quit = quit || (slot >= 0 && pads.pressed(slot, GamepadButton::b));
+			}
+		}
+		else
+		{
+			quit = quit || pads.pressed(0, GamepadButton::b) ||
+				pads.pressed(1, GamepadButton::b);
+		}
+		if (!this->smoke_test_ && quit)
 		{
 			this->app_->quit();
 			return;
@@ -42,6 +63,15 @@ namespace multiplayer
 			pads.state(0).left_stick, pads.state(1).left_stick
 		};
 		std::array<Vector2F, Arena::player_count> directions = read_directions(keyboard, sticks);
+		if (this->bound_sources_)
+		{
+			std::array<Vector2F, Gamepads::max_count> all_sticks;
+			for (int slot = 0; slot < Gamepads::max_count; ++slot)
+			{
+				all_sticks[static_cast<std::size_t>(slot)] = pads.state(slot).left_stick;
+			}
+			directions = read_bound_directions(keyboard, all_sticks, this->sources_);
+		}
 		if (this->smoke_test_)
 		{
 			directions = { Vector2F(1.0f, 0.0f), Vector2F(0.0f, -1.0f) };
@@ -73,8 +103,13 @@ namespace multiplayer
 			list.draw_sprite(this->white_, RectangleI(0, 0, 1, 1),
 				RectangleF(0.0f, 0.0f, viewport.width, 68.0f), Colour(12, 18, 27),
 				0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
-			const std::wstring title = player == 0 ?
+			std::wstring title = player == 0 ?
 				L"PLAYER 1  |  WASD / pad slot 0" : L"PLAYER 2  |  Arrows / pad slot 1";
+			if (this->bound_sources_)
+			{
+				title = L"PLAYER " + std::to_wstring(player + 1) + L"  |  " +
+					source_name(this->sources_[player]);
+			}
 			list.draw_text(this->font_, title, Vector2F(18.0f, 12.0f),
 				Arena::player_colour(player), 1.0f, 0.0f, Vector2F::zero, 0.0f);
 			list.draw_text(this->font_, L"One world, two cameras. Meet at the purple cross.  Esc / B: quit",

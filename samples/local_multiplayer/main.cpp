@@ -1,4 +1,5 @@
 #include "engine/app/application.h"
+#include "samples/local_multiplayer/join_state.h"
 #include "samples/local_multiplayer/play_state.h"
 #ifdef LOCAL_MULTIPLAYER_CAPTURE
 #include "tools/linesweeper_capture/png_file.h"
@@ -96,7 +97,7 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 			state.verify_smoke_test();
 			return 0;
 		}
-		return app.run(std::make_unique<multiplayer::PlayState>(&app));
+		return app.run(std::make_unique<multiplayer::JoinState>(&app));
 	}
 	catch (const std::exception& error)
 	{

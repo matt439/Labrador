@@ -11,7 +11,7 @@
 // browser run() does not return (Application::run says why).
 
 #include "engine/app/application.h"
-#include "samples/local_multiplayer/play_state.h"
+#include "samples/local_multiplayer/join_state.h"
 
 #include <emscripten/emscripten.h>
 
@@ -57,7 +57,7 @@ int main()
 		// (engine/app/content_root.h).
 		app.load_manifest("./manifest.json");
 
-		return app.run(std::make_unique<multiplayer::PlayState>(&app));
+		return app.run(std::make_unique<multiplayer::JoinState>(&app));
 	}
 	catch (const std::exception& e)
 	{
