@@ -72,6 +72,16 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-28 - Publish D3D12 replacement textures before their descriptors
+
+**Behaviour change, Direct3D 12 only.** Reloading a texture now completes
+wrapper allocation and registry publication before writing its reused
+shader-visible descriptor. If that preparation throws, an existing texture
+keeps its object and descriptor together. Upload waits and slot reuse are
+unchanged, and no caller migration is needed. This adds no general rollback
+guarantee for allocating a new name. Failure-injection and device qualification
+remains open in SM-57.
+
 ### 2026-10-28 - Preserve Vulkan temporary ownership during failures
 
 **Behaviour change, Vulkan only.** A failed texture-wrapper allocation now

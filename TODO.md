@@ -49,7 +49,7 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 | `SM-49` | OPEN | should | M | Split the pixel-test harness and independent contract cases; preserve test names, assertions and golden bytes. |
 | `SM-51` | BLOCKED | could | S | Subject split preserves 41 methods; 71 permitted cases pass. Full suite/Infrastructure qualification waits on stopped PowerShell fixtures. [Evidence](docs/code-hygiene.md#sm-51-cloud-tooling-test-organisation). |
 | `SM-56` | OPEN | should | S | Three Vulkan cleanup fixes compile on all native backends; finish wrapper/recovery failure regressions and stopped device qualification. Shader-failure case compiles but is unrun. |
-| `SM-57` | OPEN | should | S | Prepare/publish a replacement D3D12 texture before overwriting its live descriptor; preserve slot reuse. |
+| `SM-57` | OPEN | should | S | D3D12 replacement publication now precedes its descriptor write; finish failure regression and stopped reload/descriptor/device qualification. Native builds/headless checks pass. |
 | `SM-58` | OPEN | could | M | Extract the reviewed D3D12 root-signature/PSO value owner after SM-57; keep frame lifetime coordinated. |
 
 ## Input, menus, settings and saves

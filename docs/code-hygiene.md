@@ -426,6 +426,25 @@ add a behavior entry. Keep stopped device checks open rather than implying
 source inspection or a null backend exercised a D3D12 descriptor. This is not
 a general new-name allocator rollback guarantee or the SM-58 extraction.
 
+**Source progress 2026-10-28.** The loader obtains the existing/new slot and
+CPU descriptor address, completes wrapper allocation and registry publication,
+then performs the descriptor write. The local resource `ComPtr` remains alive
+through that write. A replacement allocation failure cannot overwrite its old
+descriptor; existing-name registry replacement is the non-allocating unique
+owner assignment. The upload wait, reused slot and new-name allocation policy
+are unchanged.
+
+All five native Debug render targets and all four pixel binaries build; all
+five headless `RenderTests` pass. These checks do not exercise a D3D12 descriptor.
+Independent source review finds no ownership or exception-ordering issue. All
+standalone checks, the website check, 160 website tests and the 143-page build
+pass.
+The deterministic allocation/publication-failure regression is **not yet
+implemented**, and same-name reload/limit, pixel and device-loss/descriptor
+lifetime runs remain at the stopped GPU gate. No stopped operation was retried.
+Keep SM-57 unchecked; logs use the `sm57-` prefix under
+`out/loop-2026-10-28-2114/`.
+
 ## SM-58. D3D12 sprite-pipeline value owner
 
 After SM-57, implement the [reviewed cut](review/2026-10-28-renderer-construction.md#bounded-implementation-story-to-file):
