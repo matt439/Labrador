@@ -48,9 +48,9 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 | `SRL-21` | BLOCKED | should | S | Bounds fix and native-null regressions pass; regenerate and review Release captures after GPU access is restored. [Evidence](docs/product/BACKLOG.md#srl-21). |
 | `SM-49` | OPEN | should | M | Split the pixel-test harness and independent contract cases; preserve test names, assertions and golden bytes. |
 | `SM-51` | BLOCKED | could | S | Subject split preserves 41 methods; 71 permitted cases pass. Full suite/Infrastructure qualification waits on stopped PowerShell fixtures. [Evidence](docs/code-hygiene.md#sm-51-cloud-tooling-test-organisation). |
-| `SM-53` | OPEN | could | M | Review Vulkan device/buffer ownership; record a keep/split verdict before an extraction story. |
-| `SM-54` | OPEN | could | M | Review D3D12/Vulkan pipeline construction boundaries while keeping frame lifetime coordinated. |
-| `SM-55` | OPEN | could | S | Review Web Audio's JS transport versus C++ handles/banks; define browser validation for any extraction. |
+| `SM-56` | OPEN | should | S | Fix three source-confirmed Vulkan cleanup gaps at texture publication, read-back recovery and second-shader creation. |
+| `SM-57` | OPEN | should | S | Prepare/publish a replacement D3D12 texture before overwriting its live descriptor; preserve slot reuse. |
+| `SM-58` | OPEN | could | M | Extract the reviewed D3D12 root-signature/PSO value owner after SM-57; keep frame lifetime coordinated. |
 
 ## Input, menus, settings and saves
 
