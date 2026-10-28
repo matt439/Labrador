@@ -334,7 +334,7 @@ work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
 
-**Maintenance lane, added 2026-10-28:** L36 to L45 may run alongside the
+**Maintenance lane, added 2026-10-28:** L36 to L46 may run alongside the
 product batches above, in their own order and with their own prerequisites.
 They cover comment audits, source/test organisation and backend responsibility
 reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
@@ -346,6 +346,7 @@ L42 follows it with direct regression coverage of the shared byte cursor.
 L43 closes confirmed path-spelling gaps in the existing engine include wall.
 L44 follows the next source audit's malformed-JSON boundary repair.
 L45 takes its negative authored animation-count diagnostic next.
+L46 repairs the existing StepPosition range guarantee for large periods.
 
 **Contract follow-up, 2026-10-29:** SRL-17's source audit files SRL-22 within
 L32, after the audit and before the glossary. Correcting a false bank-pointer
@@ -417,6 +418,7 @@ written.
 43. L43 Normalize the engine include wall and pin its boundaries: SM-61
 44. L44 Reject a raw NUL instead of accepting only a JSON prefix: SM-62
 45. L45 Refuse negative authored animation counts before container sizing: SM-63
+46. L46 Keep a valid StepPosition fraction below one after rounding: SM-64
 
 **Stories**
 
@@ -773,6 +775,61 @@ written.
 - [x] **[SM-61](#sm-61)** Should · S · The Sole Owner-Maintainer: Enforce the existing include wall across normalized paths and backend subtrees
 - [x] **[SM-62](#sm-62)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse raw NUL bytes throughout a JSON input span
 - [x] **[SM-63](#sm-63)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Name a negative authored animation count before constructing its strip
+- [x] **[SM-64](#sm-64)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Preserve the stated StepPosition fraction range across valid periods
+
+<a id="sm-64"></a>
+### SM-64. Keep the published step fraction below one after rounding
+
+Selected 2026-10-29 after SM-63 from the screened core exhibit in SM-62's
+audit. The remaining JSON float-range candidate introduces a new numeric
+acceptance contract and compatibility questions. This item instead repairs
+an existing explicit guarantee with a safe arithmetic reproduction and a
+small boundary correction, so T2/T4 favor taking it first.
+
+StepPosition promises a fraction in [0,1), but the ratio narrowed to float
+can round to one for a period of 2^25 and a remainder one tick smaller.
+Beyond double's exact-integer range, converted tick counts can also coincide.
+StepTimer accepts any positive uint64 tick period. Ordinary Application
+uses an integer target_fps of at least one, so its periods stay at or below
+one second, where the existing narrowing is safe. This is a public helper's
+large-period range repair, with no default Application pacing claim.
+
+**Acceptance**
+
+- Add safe scalar-arithmetic regressions for 2^25, periods around 2^53 and
+  UINT64_MAX with period-1 remainder, preserving the maximum step count.
+  Observe their failure with the original header before applying the fix.
+  Do not call Tick, sleep, advance a clock, allocate a huge buffer or create
+  a device to reproduce the edge.
+- Keep the current ratio for results below one; if narrowing reaches one,
+  answer the nearest float below one. Preserve ordinary quarter/half shares,
+  tiny positive shares, invalid-input zeros and the step count. Test against
+  an independent expected boundary value, not the same library operation.
+- Correct false period/exact-integer comments and state the rounded-boundary
+  rule. Leave StepTimer acceptance, Application source/FPS validation,
+  CoreTests registration and all render paths unchanged.
+- Record the consumer-visible correction; check source/excerpt coupling,
+  review and run full native Debug null, default Debug and Release null
+  CoreTests, eight standalone checks and website verification. Wasm/Node
+  stays unrun at the existing activation gate; full CI before landing.
+
+**Closed 2026-10-29, existing range guarantee.** With the original header
+unchanged, ordinary/invalid-input controls passed (2 cases, 17 assertions)
+and the boundary regression failed at all five periods (1 case, 20 assertions,
+10 failures). The helper now preserves its ratio below one and uses the
+nearest float below one only at the rounded boundary. The expected value
+is pinned independently by an exact float literal. The false one-second and
+exact-double assumptions are corrected; timer/Application/registration hashes
+remain unchanged. Independent source review found no issues.
+
+Full headless CoreTests pass in native Debug null, default Debug and Release
+null: 84 cases and 4,989 assertions in each, with no skipped cases. All eight
+standalone checks and the website type check, 160 tests and 145-page build
+pass. The published StepPosition reference states both the fraction range
+and the rounded-boundary result; CHANGES records the correction without a
+caller migration. Wasm/Node remains unrun at the existing activation stop;
+full CI is required before landing. No clock advancement, sleep, device,
+Application pacing or display measurement was used to qualify this edge.
 
 <a id="sm-63"></a>
 ### SM-63. Reject a negative authored animation count at the loader boundary

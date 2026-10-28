@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Keep large-period step fractions below one after rounding
+
+**Behaviour change.** `step_position` now answers the nearest float below one
+when a valid large-period ratio rounds to one. Its stated fraction range is
+preserved across valid uint64 tick periods, including values above double's
+exact-integer range. Ordinary Application periods, ratios already below one,
+invalid-input zeros and step counts are unchanged. No caller migration or
+timer/FPS policy change is required.
+
 ### 2026-10-29 - Name negative authored animation counts before sizing a strip
 
 **Behaviour change.** `read_sprite_sheet` rejects a negative animation-strip

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 
 namespace labrador
@@ -36,7 +37,7 @@ namespace labrador
 	// each and holds `left_over_ticks` toward the next. left_over_ticks below
 	// step_ticks is the clock's own invariant; one at or above it, or a
 	// step_ticks of zero, answers a fraction of 0 rather than one outside the
-	// contract.
+	// contract. A valid ratio that rounds to 1 answers the nearest float below 1.
 	inline StepPosition step_position(std::uint64_t step,
 		std::uint64_t left_over_ticks, std::uint64_t step_ticks)
 	{
@@ -45,12 +46,15 @@ namespace labrador
 
 		if (step_ticks != 0 && left_over_ticks < step_ticks)
 		{
-			// In double, where both tick counts are exact: a step is at most
-			// ten million ticks, so the largest quotient is 1 - 1e-7, and the
-			// float nearest that is still below 1.
+			// Rounding the ratio to float can reach 1 even with ticks left
+			// before the next step. Keep the published fraction below it.
 			position.fraction = static_cast<float>(
 				static_cast<double>(left_over_ticks) /
 				static_cast<double>(step_ticks));
+			if (position.fraction >= 1.0f)
+			{
+				position.fraction = std::nextafter(1.0f, 0.0f);
+			}
 		}
 
 		return position;
