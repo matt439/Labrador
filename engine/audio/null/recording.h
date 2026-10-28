@@ -5,62 +5,27 @@
 #include <string>
 #include <vector>
 
-// What the null backend was asked to play.
+// The null backend's audio calls, for headless tests.
 //
-// THIS HEADER IS MEANT TO BE INCLUDED FROM OUTSIDE ITS FOLDER, exactly as
-// engine/render/null/recording.h is, and for the same reason and under the same
-// wall. cmake/check_engine_includes.cmake fails the build for any file outside
-// engine/<module>/<backend>/ that names a header inside it, and this file is
-// inside that folder rather than outside it. What keeps it legal is narrow:
-// every includer is a test, the check scans engine/ only, and anything in
-// engine/ that reached for this would fail the build and correctly - a
-// recording is for a test to read. Nothing here names an audio API. A
-// RecordedSound is two handles, an index, two flags and three floats, every one
-// of them a type engine/audio/ already hands out.
+// Tests built with null audio may include this header.
+// cmake/check_engine_includes.cmake scans engine/ and forbids includes from
+// outside engine/audio/null/; this recording interface grants no exception to
+// engine code. Its fields name no platform audio API.
 //
-// WHY THIS BACKEND EXISTS. PHILOSOPHY.md:632-637 requires a seam to ship with
-// a headless implementation, "because a seam with only the platform's own
-// implementation behind it still requires the platform in order to construct
-// anything".
+// Records expose call order, bank and wave identity, voice handles and levels
+// passed through the seam. SoundBank's level clamping can be checked here;
+// SoundBank::silent() declines playback instead of recording it.
 //
-// SoundBank::silent() is not that implementation, and the difference is what
-// this file is for. A bank with no content can DECLINE to play a sound; it
-// cannot RECORD one. Without a device that records, eight of SoundBank's
-// thirteen instance methods have no observable behaviour anywhere in this
-// repository and "it did not throw" is the whole of what a test can assert
-// about them, while the five sites of level clamping - engine arithmetic,
-// sitting below the check for the platform - never execute at all. With one,
-// those eight say what they did and the clamped levels are readable in the
-// numbers below.
+// There is no mixer or clock, so this backend cannot establish audible output,
+// overlap, relative loudness or natural completion. voice_state() follows calls:
+// a non-looping voice does not finish by itself, and stop_voice(false) does not
+// stop its tail. A looping voice's non-immediate stop clears its loop flag;
+// an immediate stop changes the state to stopped. This models explicit state
+// transitions without the asynchronous buffer completion XAudio2 reports.
 //
-// IT RECORDS WHAT WAS ASKED FOR, NOT WHAT IT SOUNDED LIKE, and that is a floor
-// rather than a first version. There is no mixer here, no sample rate and no
-// clock - so nothing in this backend can tell you that two sounds overlapped,
-// that one was louder than the other in any physical sense, or that a wave
-// finished. What a test can assert is that an object asked for the right wave,
-// out of the right bank, with the levels the engine's own arithmetic produced,
-// in the order it asked - which is the audio half of what
-// engine/render/null/recording.h says about quads.
-//
-// THE ONE PLACE THE MODEL IS WEAKER THAN THE REAL ONE, SAID OUT LOUD.
-// voice_state() is answered from the transitions below and there is no time in
-// them, where XAudio2's state is partly asynchronous: DirectXTK's
-// SoundEffectInstance::GetState auto-stops a voice whose buffer has drained,
-// and Stop(immediate = false) on a voice that is not looping asks XAudio2 to
-// play the tail and leaves the state PLAYING until it does. A voice this
-// backend was asked to play therefore stays playing for ever unless something
-// stops it, and a test that expects a sound to have finished on its own is
-// asserting something no backend here can answer. That difference is
-// transcribed from DirectXTK's SoundCommon.h rather than guessed at, and it is
-// the reason this file states it instead of leaving the two to drift.
-//
-// WHAT IT STILL CANNOT EXERCISE. The substitution a missing container triggers:
-// there is no container here, so open_wave_bank cannot fail, and
-// ResourceLoader's optional-bank path - the one that reports "no audio" and
-// installs SoundBank::silent() - has no way to run in this configuration. That
-// is deliberate. A backend that could be asked to fail on purpose is test
-// machinery on the platform side of a seam, and engine/render/null/ does not
-// have any either.
+// open_wave_bank stores the supplied wave names without opening a container.
+// Missing-container failures and ResourceLoader's optional-bank fallback to
+// SoundBank::silent() therefore cannot be exercised through this backend.
 
 namespace labrador
 {
@@ -81,11 +46,10 @@ namespace labrador
 
 	// One call, exactly as the seam received it.
 	//
-	// Only the fields the call carries are filled in; the rest keep the
-	// defaults below. play_wave fills bank, wave and the three levels;
-	// play_voice fills voice, loop and the three levels; the three level
-	// setters fill voice and the one level they set; stop_voice fills voice and
-	// immediate; pause_voice and resume_voice fill voice alone.
+	// Every call fills bank and wave; voice calls also fill voice. play_wave
+	// and play_voice fill the three levels, and play_voice also fills loop.
+	// Level setters fill the level they set, and stop_voice fills immediate.
+	// Fields unused by the call retain the defaults below.
 	struct RecordedSound
 	{
 		SoundCall call = SoundCall::play_wave;
@@ -104,15 +68,15 @@ namespace labrador
 
 	// Everything asked of `device` since it was constructed, in call order.
 	//
-	// There is no clearing verb and no frame boundary to hang one on: a device
-	// is cheap here - it opens no hardware - so a case that wants an empty
-	// recording constructs one rather than emptying one.
+	// The device owns the vector; adding a call may invalidate references to
+	// its entries. There is no clearing verb or frame boundary: construct a new
+	// device for an empty recording.
 	const std::vector<RecordedSound>& recorded_sounds(const AudioDevice& device);
 
-	// The wave names `device` was told a bank holds, in the order the
-	// definition listed them - which on this backend IS the bank, because there
-	// is no container to read one out of. Its indices are what wave_index
-	// answers with.
+	// The supplied wave names, in definition order; these indices are the
+	// answers wave_index returns. The bank handle must resolve on this device.
+	// The device owns the vector; opening another bank may invalidate this
+	// reference. Copy names needed across that operation or device destruction.
 	const std::vector<std::string>& recorded_wave_names(
 		const AudioDevice& device, AudioDevice::WaveBankHandle bank);
 }
