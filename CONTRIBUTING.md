@@ -284,10 +284,12 @@ results describe available local objects and their actual commit messages.
 
 For a render change, review the matrix with
 `python tools/verify_changes.py --area render`, or select render paths with
-`--path`. The [planner contract](docs/verification.md) explains its JSON output
-and optional read-only tooling/cache preflight. This first version emits a
-plan; it does not run the configure/build/test sweep. Record actual checks and
-unrun qualifications separately from that plan.
+`--path`. The [verification contract](docs/verification.md) explains its JSON
+output, optional read-only tooling/cache preflight and explicit `--execute`
+sweep. Execution includes device and browser tests, stops at the first failure,
+and requires complete registrations/results. Review its effects and existing
+runtime authorization before running it. Record actual checks and unrun
+qualifications separately from a printed plan or fake-command test result.
 
 - Build and test locally on the preset closest to what you changed
   (`cmake --preset x64-debug`, `cmake --build --preset x64-debug`,

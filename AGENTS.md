@@ -84,8 +84,11 @@ CI's full matrix remains required. Match focused local checks to the change.
 `python tools/verify_changes.py --area render` prints the render verification
 plan; `--path engine/render/gl/renderer.cpp --format json` selects it by path.
 The optional `--preflight` inspects tooling and caches without running phases.
-[Verification planning](docs/verification.md) owns the command contract and
-remaining execution work. The current planner covers render paths only:
+Explicit `--execute` runs the sweep only when its mixed runtime is authorized;
+it checks all prerequisites first, validates caches and test registrations,
+and stops at the first command or result failure. [Verification](docs/verification.md)
+owns the command contract, logs and remaining real-sweep qualification.
+The current mapping covers render paths only:
 
 | Changed area | Planned selections and additional obligations |
 |---|---|
