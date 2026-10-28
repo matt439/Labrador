@@ -136,10 +136,12 @@ A project started from the minimal sample begins with the same split in miniatur
 a library that links only the engine's maths, a test of them, and a start-up check, all in its
 `ctest` from the first build. [Test your game](/docs/guides/testing/) shows how they work.
 
-The engine is held to the same standard. Each platform interface ships with an implementation
-that needs no hardware: a renderer that records what it was asked to draw, and an audio device
-that records what it was asked to play. Tests can therefore check drawing and sound on a machine
-with no graphics driver and no sound card.
+The engine's own tests use hardware-free implementations: a renderer that
+records draw requests and an audio device that records playback requests.
+A consumer can inspect draws through the null renderer's test-only internal
+interface at its engine pin. [The draw-test guide](/docs/guides/testing/#inspect-draws-with-the-null-backend)
+shows the separate configure and a complete example. These recordings check
+requests and geometry; actual pixels and audible output have separate checks.
 
 **The cost.** This separation is a design you choose and maintain. The engine makes it possible;
 it does not make it automatic, and a game that mixes its rules into its drawing code gets no

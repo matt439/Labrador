@@ -237,8 +237,12 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 	},
 ];
 
-// Public headers left out of the reference on purpose, each with its reason.
+// Headers intentionally excluded from the public reference, each with its reason.
 export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
+	[
+		'engine/render/null/recording.h',
+		'Backend-internal inspector for null-only tests and benchmarks at an engine pin; the testing guide shows consumer use without publishing a portable render contract.',
+	],
 	[
 		'engine/assets/json_object_keys.h',
 		'Fixed-schema validation private to the manifest and sprite-sheet loaders; game code uses JsonValue::keys() for its own dictionaries.',
