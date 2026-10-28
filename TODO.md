@@ -16,15 +16,16 @@ allows. Next's hardware and release gates remain open. The immediate queue is:
 2. **L8 (`BDP-11` to `BDP-14`): run packaged-browser acceptance for focus, controls and phone instructions.** [Source checks](docs/port/2026-10-28-demo-host.md#focus-controls-and-the-phone-gate-l8) cover the state transitions and host policy.
 3. **L11 (`BDP-18`): check repeated play stays fast.**
 
-**Available after those batches:** working settings, text examples and
-validation tools are indexed below. `SRL-20` adds a working animation example.
+**Available after those batches:** text examples and validation tools are
+indexed below. `SRL-20` adds a working animation example. Gallery settings have
+source/native checks and await fullscreen/browser acceptance.
 Pointer-menu and recording-renderer guides and LineSweeper's include-layer
 check are complete; strict asset keys have source/native coverage and await
 wasm qualification. Follow Later's order and each story's prerequisites;
 an open hardware gate does not block unrelated work.
-**Hygiene is also ready:** [Code hygiene](docs/code-hygiene.md) owns a separate
-maintenance lane: `SRL-21` awaits its capture review, and the concrete test/source
-splits below supply independent work.
+**Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns the
+remaining backend failure regressions and qualification; `SRL-21` awaits its
+capture review and both test splits await their stopped runtime checks.
 BACKLOG's L36 to L40 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
@@ -62,7 +63,7 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 | `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
 | `PI-21` | DECISION | should | S | Vibration implemented and headlessly tested; record each motor, stop, background, disconnect, reconnect and shutdown on a physical pad, natively and in Chrome. Can ride `OCA-48`'s session. [Acceptance](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
 | `OCA-46` | BLOCKED | could | M | Join screen, routing and native-null cases pass; desktop visual review and browser build/runtime acceptance remain at the stopped GPU/Emscripten gates. [Evidence](docs/product/BACKLOG.md#later). |
-| `OCA-51` | OPEN | could | M | Wire gallery settings to actual fullscreen/audio state and re-sync external changes. |
+| `OCA-51` | BLOCKED | could | M | Two-mode fullscreen request/re-sync and the sound-group guide are implemented; native builds, headless row tests and guide compilation pass. Actual fullscreen/browser acceptance remains at stopped gates. [Evidence](docs/product/BACKLOG.md#later). |
 
 ## Content, text and sample examples
 

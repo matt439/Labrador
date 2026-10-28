@@ -75,6 +75,37 @@ TEST_CASE("a wrapping row goes round at both ends")
 	CHECK(row.value().text() == L"Full screen");
 }
 
+TEST_CASE("a two-choice window row follows external fullscreen snapshots without callbacks")
+{
+	TestContent content;
+	std::vector<bool> requests;
+	OptionRow row("window", L"Window", { L"Windowed", L"Full screen" }, 0,
+		Vector2F(100.0f, 50.0f), 300.0f, "font", &content.resources,
+		[&requests](size_t index) { requests.push_back(index == 1); });
+
+	REQUIRE(row.choice_count() == 2);
+	// The page's synchronization recipe, using external snapshots rather
+	// than a window or Application. These changes issue no new request.
+	for (const bool fullscreen : { true, false, true, false })
+	{
+		row.set_index(fullscreen ? 1 : 0);
+		CHECK(row.index() == (fullscreen ? 1u : 0u));
+		CHECK(row.value().text() == (fullscreen ? L"Full screen" : L"Windowed"));
+		CHECK(requests.empty());
+	}
+
+	CHECK(row.adjust(Direction::right));
+	CHECK(row.index() == 1);
+	CHECK(requests == std::vector<bool>{ true });
+
+	// A later refusal or external exit corrects the requested choice.
+	row.set_index(0);
+	CHECK(row.index() == 0);
+	CHECK(row.value().text() == L"Windowed");
+	row.set_index(0);
+	CHECK(requests == std::vector<bool>{ true });
+}
+
 TEST_CASE("a row that does not wrap stops at its ends, says so and stays quiet")
 {
 	TestContent content;

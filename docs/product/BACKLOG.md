@@ -435,6 +435,24 @@ written.
 - [ ] **[BDP-07](STORIES.md#bdp-07)** Could · M · The Browser and Phone Demo Player · **Owner**: Smooth play on the displays visitors actually use — after SM-08
 - [ ] **[OCA-46](STORIES.md#oca-46)** Could · M · The Outside C++ Adopter: See a join screen for couch play I can copy
 - [ ] **[OCA-51](STORIES.md#oca-51)** Could · M · The Outside C++ Adopter: Wire a settings screen to what the engine can actually set — after OCA-53
+  Source implemented 2026-10-29. The gallery offers Windowed/Full screen,
+  requests the mode through Application and silently re-syncs from its report
+  at initialization and before input each tick. Status text describes a
+  request; difficulty/volume labels remain explicit callback examples with no
+  sound bank. The settings guide quotes the compiling window code and takes
+  the story's audio-guide alternative: existing SoundBank assignments,
+  AudioResources groups and a percent-to-level slider callback, including
+  retained-effect and one-shot behavior. Its two literal C++ fences compile
+  together without executing them. Default/null native gallery/tests builds
+  and all 25 ComponentsTests/262 assertions pass; the new case proves the real
+  OptionRow's external-snapshot recipe, not GalleryState polling or a window.
+  A separate source/API review found no defects. All seven standalone checks,
+  website check, 160 website tests and the 143-page build pass; the built
+  request/polling excerpts, audio snippets and section anchors were checked.
+  Actual fullscreen entry/exit/refusal, external re-sync, the existing
+  Escape-to-quit interaction and the changed ComponentsPageTests key route
+  remain unrun at the stopped device/Emscripten/browser gates. No fullscreen
+  operation, application loop, audio playback or user settings write was run.
 - [x] **[OCA-50](STORIES.md#oca-50)** Could · S · The Outside C++ Adopter: Make a menu work with a click or a tap
   Closed 2026-10-29. The [pointer-menu section](../../website/src/content/docs/docs/guides/menus.mdx)
   quotes `tapped_row()` and its focus-before-activation branch with live

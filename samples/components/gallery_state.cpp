@@ -83,7 +83,7 @@ namespace components
 
 		// Built before the rows, because every row's callback writes to it.
 		this->status_ = this->scene_->add(std::make_unique<UiText>("status",
-			L"Change a value and its callback reports it here.", font_name,
+			L"Window mode applies; difficulty and volume sliders are examples.", font_name,
 			Vector2F(label_x, row_y(6)), resources, help_colour));
 
 		// An ordered list does not wrap; an unordered one does
@@ -101,15 +101,18 @@ namespace components
 			false));
 
 		const std::vector<std::wstring> window_modes = {
-			L"Windowed", L"Full screen", L"Borderless" };
+			L"Windowed", L"Full screen" };
 		this->window_mode_ = this->scene_->add(std::make_unique<OptionRow>(
 			"window", L"Window", window_modes, 0,
 			Vector2F(label_x, row_y(1)), value_x, font_name, resources,
 			[this, window_modes](size_t index)
 			{
-				this->status_->set_text(L"Window is now " +
-					window_modes[index] + L" (this row wraps)");
+				this->app_->set_fullscreen(index == 1);
+				this->status_->set_text(L"Window mode requested: " +
+					window_modes[index]);
 			}));
+		this->window_mode_->set_index(
+			this->app_->fullscreen() ? 1 : 0);
 
 		this->music_ = this->scene_->add(std::make_unique<Slider>(
 			"music", L"Music volume", 0, 100, 10, 70,
@@ -117,8 +120,8 @@ namespace components
 			resources,
 			[this](int value)
 			{
-				this->status_->set_text(L"Music volume is now " +
-					std::to_wstring(value));
+				this->status_->set_text(L"Music slider example: " +
+					std::to_wstring(value) + L"% (no audio loaded)");
 			}));
 
 		this->effects_ = this->scene_->add(std::make_unique<Slider>(
@@ -127,8 +130,8 @@ namespace components
 			resources,
 			[this](int value)
 			{
-				this->status_->set_text(L"Effects volume is now " +
-					std::to_wstring(value));
+				this->status_->set_text(L"Effects slider example: " +
+					std::to_wstring(value) + L"% (no audio loaded)");
 			}));
 
 		UiText* quit = this->scene_->add(std::make_unique<UiText>("quit",
@@ -206,6 +209,11 @@ namespace components
 
 	void GalleryState::update(float dt)
 	{
+		// A browser can refuse a request or leave full screen externally.
+		// set_index follows that report without calling the request callback.
+		this->window_mode_->set_index(
+			this->app_->fullscreen() ? 1 : 0);
+
 		const Keyboard& keyboard = *this->app_->keyboard();
 		const Gamepads& pads = *this->app_->gamepads();
 
