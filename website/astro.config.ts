@@ -62,6 +62,7 @@ export default defineConfig({
 						{ label: 'Run the minimal sample', link: '/docs/get-started/run-minimal/' },
 						{ label: 'Start your own project', link: '/docs/get-started/your-project/' },
 						{ label: 'Make a first change', link: '/docs/get-started/first-change/' },
+						{ label: 'Debug your game', link: '/docs/get-started/debug-your-game/' },
 					],
 				},
 				{ label: 'Concepts', collapsed: true, items: [{ autogenerate: { directory: 'docs/concepts' } }] },
