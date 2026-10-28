@@ -334,7 +334,7 @@ work includes code and tools as well as guides: the join screen (L19), working
 settings and pointer menus (L20), text examples (L21), strict asset keys (L26),
 verification tooling (L28/L29) and the new sample checks/examples (L35).
 
-**Maintenance lane, added 2026-10-28:** L36 to L46 may run alongside the
+**Maintenance lane, added 2026-10-28:** L36 to L47 may run alongside the
 product batches above, in their own order and with their own prerequisites.
 They cover comment audits, source/test organisation and backend responsibility
 reviews under [Code hygiene](../code-hygiene.md). This makes hygiene available
@@ -347,6 +347,7 @@ L43 closes confirmed path-spelling gaps in the existing engine include wall.
 L44 follows the next source audit's malformed-JSON boundary repair.
 L45 takes its negative authored animation-count diagnostic next.
 L46 repairs the existing StepPosition range guarantee for large periods.
+L47 follows the next audit's sound-bank publication invariant.
 
 **Contract follow-up, 2026-10-29:** SRL-17's source audit files SRL-22 within
 L32, after the audit and before the glossary. Correcting a false bank-pointer
@@ -419,6 +420,7 @@ written.
 44. L44 Reject a raw NUL instead of accepting only a JSON prefix: SM-62
 45. L45 Refuse negative authored animation counts before container sizing: SM-63
 46. L46 Keep a valid StepPosition fraction below one after rounding: SM-64
+47. L47 Keep sound-bank lookup and volume notifications consistent on failure: SM-65
 
 **Stories**
 
@@ -776,6 +778,85 @@ written.
 - [x] **[SM-62](#sm-62)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse raw NUL bytes throughout a JSON input span
 - [x] **[SM-63](#sm-63)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Name a negative authored animation count before constructing its strip
 - [x] **[SM-64](#sm-64)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Preserve the stated StepPosition fraction range across valid periods
+- [x] **[SM-65](#sm-65)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed first sound-bank registration absent and retryable
+
+<a id="sm-65"></a>
+### SM-65. Keep sound-bank publication and notification registration together
+
+Selected 2026-10-29 after SM-64 from a fresh ranked source audit:
+
+1. **Bank publication:** add_sound_bank publishes the Registry entry before
+   bank_order can allocate and throw. A recovered failure can leave a bank
+   readable but absent from the every-bank group-volume walk, violating the
+   ledger's stated invariant. Reuse the calibrated native failure scope and
+   silent banks for a bounded public-state reproduction: take first.
+2. **Effect group membership:** set_effect_group assigns the record's group
+   before notification-list insertion can throw. Subsequent play and live
+   group updates can disagree. Its meaningful regression needs a prepared
+   null-audio content/voice fixture, so take separately after the first repair.
+3. **Navigation exact ties:** public prose claims declaration order is
+   irrelevant, but equal geometric scores keep the first supplied candidate.
+   Correcting and pinning that existing rule needs no navigation redesign.
+
+These failures are source-derived until separately qualified. JSON numeric
+acceptance, deferred feature decisions, rendering and physical hardware
+remain outside this shortlist. T2/T6 favor an honest post-failure registry
+and complete notification membership; no allocator or transaction framework
+is needed.
+
+**Acceptance**
+
+- Retain the qualified AudioTests-local Debug CRT scope and original
+  calibration. Exclude MSVC's allocating debug iterator proxies from the
+  bank probe: its noexcept string move terminates on proxy refusal, including
+  moves into a fresh Registry. Calibrate the optional allocation-size filter
+  separately; its default preserves the earlier group probe. Preconstruct
+  silent-bank ownership and short/long names before arming; sweep eligible
+  allocation points through uninjected success, restoring/disarming before
+  checks and cleanup. Reproduce actual
+  late-publication failure on the original implementation, not just early
+  Registry refusals; do not provoke memory exhaustion.
+- Prepare a new first-add ledger name before Registry publication and remove
+  it if Registry::add throws. A failed new name remains absent and retryable;
+  old bank handles/pointers and ownership remain valid. Preserve successful
+  first-add order, replacement/null slots and group-volume behavior.
+- State the narrow failed-new-registration contract and consumer correction.
+  Add no iteration/allocator API, production test seam or general framework.
+  Check excerpt coupling and review all changed source/test bytes.
+- Run default Debug and Debug null headless AudioTests, ordinary Release null
+  cases, eight standalone checks and website verification. Retain the initial
+  fan-out/order cases and add a null regression for skipped empty slots and
+  first-add order after refilling a bank, without duplicate pushes. Keep injection
+  limited to native MSVC Debug DLL CRT and wasm/Node unrun at its existing
+  activation stop; full CI before landing. No endpoint/listening result.
+
+**Closed 2026-10-29.** `add_sound_bank` finishes the vector growth and full
+notification-name copy before Registry publication, then removes only that
+new ledger entry if Registry insertion throws. Existing bank ownership,
+handles/pointers, replacement/null semantics and first-add order are retained;
+the public contract and CHANGES describe the failed-new-name guarantee.
+
+The first unfiltered probe terminated in MSVC's allocating Debug string-move
+proxy and is not accepted as a reproduction. Installed-STL source review
+established the proxy-size exclusion; the original calibration still passes
+17 assertions and the separate filter calibration passes 12. With original
+production bytes, the revised short/long-name regression completes 209
+assertions with nine actual missing-refusal failures: resolve/get still find
+the failed name, including after another distinct registration. The observed
+eligible failure points are evidence, not hardcoded allocation ordinals.
+The ordinary empty/refill control passes 17 assertions and checks skipped
+empty slots, retained handles and exactly one update per live bank in the
+original first-add order.
+
+After the fix, complete native AudioTests pass with zero skips: Debug null
+42 cases/617 assertions, default Debug 33/544 and Release null 38/309. All
+eight standalone checks and website verification pass: zero type diagnostics,
+160 tests, 145 pages and 435 generated files, with no release snapshots. The
+published header includes the failure guarantee. Test registration, Registry
+and SoundBank source remain unchanged. Injection qualifies eligible native
+MSVC Debug DLL CRT allocations, excluding debug proxies; Release checks
+ordinary behavior. Wasm/Node remains unrun at the existing activation stop,
+and full CI remains required before landing. No endpoint or listening claim.
 
 <a id="sm-64"></a>
 ### SM-64. Keep the published step fraction below one after rounding

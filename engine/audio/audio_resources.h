@@ -40,6 +40,8 @@ namespace labrador
 		// refills the same slot; a null bank empties it. Existing handles keep
 		// naming that slot, and sound_bank throws while it is empty. Pointers
 		// returned before replacement or emptying must no longer be used.
+		// If adding a new name throws, it remains absent and can be retried;
+		// previously registered banks and their pointers/handles are unchanged.
 		//
 		// Also lends the bank this object's group volumes, which is what lets
 		// its set_wave_group and set_effect_group accept a group. The bank and
