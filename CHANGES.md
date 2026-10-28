@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Keep failed first sound-bank registration retryable
+
+**Behaviour change.** If registering a new bank name through
+`AudioResources::add_sound_bank` throws, the name remains absent and can be
+retried. Previously a failure storing its notification name could leave the
+bank readable while later group-volume changes skipped it. Existing banks
+and successful first-add order are preserved, as are replacement and null
+emptying through stable handles. Valid caller code needs no migration.
+
 ### 2026-10-29 - Keep large-period step fractions below one after rounding
 
 **Behaviour change.** `step_position` now answers the nearest float below one

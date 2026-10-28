@@ -6,12 +6,15 @@
 
 #include <crtdbg.h>
 
+#include <array>
 #include <atomic>
 #include <cstddef>
+#include <memory>
 #include <new>
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace
@@ -19,6 +22,9 @@ namespace
 	struct AllocationFailureSample
 	{
 		std::size_t fail_on = 1;
+		// Zero keeps every ordinary allocation eligible. A caller may exclude
+		// smaller implementation bookkeeping requests from its own probe.
+		std::size_t minimum_bytes = 0;
 		std::size_t attempts = 0;
 		bool injected = false;
 		bool hook_conflict = false;
@@ -40,7 +46,8 @@ namespace
 		}
 
 		if (active_sample != nullptr && _BLOCK_TYPE(block_type) == _NORMAL_BLOCK &&
-			(operation == _HOOK_ALLOC || operation == _HOOK_REALLOC))
+			(operation == _HOOK_ALLOC || operation == _HOOK_REALLOC) &&
+			bytes >= active_sample->minimum_bytes)
 		{
 			++active_sample->attempts;
 			if (active_sample->attempts == active_sample->fail_on)
@@ -281,6 +288,146 @@ TEST_SUITE("AudioResourcesFailureTests")
 		// The fixture must reach more than one allocation boundary, including
 		// storage growth, instead of passing by refusing only map publication.
 		CHECK(failures >= 2);
+	}
+
+	TEST_CASE("sound-bank allocation filter excludes small requests and restores the hook")
+	{
+		REQUIRE(std::get_new_handler() == nullptr);
+		// MSVC's Debug string move allocates one iterator proxy inside noexcept.
+		// Refusing that request terminates instead of testing recoverable failure.
+		static_assert(sizeof(std::_Container_proxy) == 2 * sizeof(void*));
+		static_assert(alignof(std::_Container_proxy) <= __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+		constexpr std::size_t minimum_bytes = sizeof(std::_Container_proxy) + 1;
+		std::vector<unsigned char> ignored;
+		std::vector<unsigned char> target;
+		std::vector<unsigned char> after_refusal;
+		const _CRT_ALLOC_HOOK initial_hook = _CrtGetAllocHook();
+		const int initial_mode = _CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE);
+		AllocationFailureSample sample;
+		sample.minimum_bytes = minimum_bytes;
+		bool refused = false;
+		{
+			AllocationFailureScope scope(sample);
+			ignored.resize(minimum_bytes - 1, 7);
+			try
+			{
+				target.resize(minimum_bytes + 8, 9);
+			}
+			catch (const std::bad_alloc&)
+			{
+				refused = true;
+			}
+			after_refusal.resize(minimum_bytes + 8, 5);
+		}
+		REQUIRE_FALSE(sample.hook_conflict);
+		REQUIRE(_CrtGetAllocHook() == initial_hook);
+		REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+		REQUIRE(sample.injected);
+		REQUIRE(refused);
+		CHECK(sample.attempts == 1);
+		REQUIRE(ignored.size() == minimum_bytes - 1);
+		CHECK(ignored[0] == 7);
+		CHECK(target.empty());
+		REQUIRE(after_refusal.size() == minimum_bytes + 8);
+		CHECK(after_refusal[0] == 5);
+	}
+
+	TEST_CASE("failed new sound-bank registrations stay absent and retryable")
+	{
+		REQUIRE(std::get_new_handler() == nullptr);
+		const std::string kept_name = "kept";
+		const std::string later_name = "later";
+		const std::array<std::string, 2> attempted_names = {
+			"retry", "retry_" + std::string(64, 'r')
+		};
+		constexpr std::size_t failpoint_limit = 64;
+		for (const std::string& attempted_name : attempted_names)
+		{
+			std::size_t failures = 0;
+			bool reached_success = false;
+			for (std::size_t fail_on = 1; fail_on <= failpoint_limit; ++fail_on)
+			{
+				labrador::AudioResources resources;
+				resources.add_sound_bank(kept_name, labrador::SoundBank::silent());
+				const labrador::AudioResources::SoundBankHandle kept =
+					resources.resolve_sound_bank(kept_name);
+				const labrador::SoundBank* kept_bank = resources.sound_bank(kept);
+				std::unique_ptr<labrador::SoundBank> attempted_bank =
+					labrador::SoundBank::silent();
+				const labrador::SoundBank* attempted_pointer = attempted_bank.get();
+				const _CRT_ALLOC_HOOK initial_hook = _CrtGetAllocHook();
+				const int initial_mode =
+					_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE);
+				AllocationFailureSample sample;
+				sample.fail_on = fail_on;
+				// Skip allocating Debug iterator proxies in noexcept string moves.
+				sample.minimum_bytes = sizeof(std::_Container_proxy) + 1;
+				bool refused = false;
+				try
+				{
+					AllocationFailureScope scope(sample);
+					resources.add_sound_bank(attempted_name, std::move(attempted_bank));
+				}
+				catch (const std::bad_alloc&)
+				{
+					refused = true;
+				}
+
+				CAPTURE(attempted_name);
+				CAPTURE(fail_on);
+				CAPTURE(sample.attempts);
+				REQUIRE_FALSE(sample.hook_conflict);
+				REQUIRE(_CrtGetAllocHook() == initial_hook);
+				REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+				CHECK(attempted_bank == nullptr);
+				CHECK(resources.resolve_sound_bank(kept_name) == kept);
+				CHECK(resources.sound_bank(kept) == kept_bank);
+				CHECK(resources.sound_bank(kept_name) == kept_bank);
+				if (!refused)
+				{
+					REQUIRE_FALSE(sample.injected);
+					CHECK(sample.attempts < fail_on);
+					const labrador::AudioResources::SoundBankHandle added =
+						resources.resolve_sound_bank(attempted_name);
+					CHECK(added != kept);
+					CHECK(resources.sound_bank(added) == attempted_pointer);
+					CHECK(resources.sound_bank(attempted_name) == attempted_pointer);
+					reached_success = true;
+					break;
+				}
+
+				REQUIRE(sample.injected);
+				CHECK(sample.attempts == fail_on);
+				++failures;
+				CHECK_THROWS_AS(std::ignore =
+					resources.resolve_sound_bank(attempted_name), std::out_of_range);
+				CHECK_THROWS_AS(std::ignore =
+					resources.sound_bank(attempted_name), std::out_of_range);
+
+				resources.add_sound_bank(later_name, labrador::SoundBank::silent());
+				const labrador::AudioResources::SoundBankHandle later =
+					resources.resolve_sound_bank(later_name);
+				CHECK(later != kept);
+				CHECK_THROWS_AS(std::ignore =
+					resources.resolve_sound_bank(attempted_name), std::out_of_range);
+
+				std::unique_ptr<labrador::SoundBank> retry_bank =
+					labrador::SoundBank::silent();
+				const labrador::SoundBank* retry_pointer = retry_bank.get();
+				REQUIRE_NOTHROW(resources.add_sound_bank(attempted_name,
+					std::move(retry_bank)));
+				const labrador::AudioResources::SoundBankHandle retried =
+					resources.resolve_sound_bank(attempted_name);
+				CHECK(retried != kept);
+				CHECK(retried != later);
+				CHECK(resources.sound_bank(retried) == retry_pointer);
+				CHECK(resources.sound_bank(kept) == kept_bank);
+				CHECK(resources.resolve_sound_bank(kept_name) == kept);
+				CHECK(resources.resolve_sound_bank(later_name) == later);
+			}
+			REQUIRE(reached_success);
+			CHECK(failures >= 2);
+		}
 	}
 }
 

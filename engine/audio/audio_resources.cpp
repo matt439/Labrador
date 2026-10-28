@@ -37,13 +37,25 @@ namespace labrador
 		{
 			sound_bank->group_volumes_ = this->group_volumes_.get();
 		}
-		this->sound_banks_.add(sound_bank_name, std::move(sound_bank));
-
-		// Re-adding a name refills its slot, so it is already listed.
-		if (std::find(this->bank_order_.begin(), this->bank_order_.end(),
-			sound_bank_name) == this->bank_order_.end())
+		// Finish both vector growth and the name copy before publishing a bank.
+		// Re-adding a name refills its existing slot and order entry.
+		const bool append_order = std::find(this->bank_order_.begin(),
+			this->bank_order_.end(), sound_bank_name) == this->bank_order_.end();
+		if (append_order)
 		{
 			this->bank_order_.push_back(sound_bank_name);
+		}
+		try
+		{
+			this->sound_banks_.add(sound_bank_name, std::move(sound_bank));
+		}
+		catch (...)
+		{
+			if (append_order)
+			{
+				this->bank_order_.pop_back();
+			}
+			throw;
 		}
 	}
 

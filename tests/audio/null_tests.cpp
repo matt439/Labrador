@@ -416,6 +416,68 @@ TEST_CASE("a group change pushes to its playing and paused effects in every bank
 	CHECK(fixture.second->effect_state(second_theme) == SoundState::paused);
 }
 
+TEST_CASE("empty and refilled banks preserve group notification order")
+{
+	GroupFixture fixture;
+	const AudioResources::SoundBankHandle first =
+		fixture.resources.resolve_sound_bank("first");
+	const SoundBank::EffectHandle second_theme =
+		fixture.second->resolve_effect("theme_loop");
+	fixture.second->set_effect_group(second_theme, fixture.music);
+	const size_t second_play = fixture.played().size();
+	fixture.second->play_effect(second_theme, true, 0.4f);
+
+	fixture.resources.add_sound_bank("first", nullptr);
+	fixture.first = nullptr;
+	fixture.resources.add_sound_bank("empty", nullptr);
+	const AudioResources::SoundBankHandle empty =
+		fixture.resources.resolve_sound_bank("empty");
+	CHECK(fixture.resources.resolve_sound_bank("first") == first);
+	CHECK_THROWS_AS(std::ignore = fixture.resources.sound_bank(first),
+		std::out_of_range);
+	CHECK_THROWS_AS(std::ignore = fixture.resources.sound_bank(empty),
+		std::out_of_range);
+
+	const size_t before_empty = fixture.played().size();
+	fixture.resources.set_group_volume(fixture.music, 0.25f);
+	const std::vector<RecordedSound>& played = fixture.played();
+	REQUIRE(played.size() == before_empty + 1);
+	CHECK(played[before_empty].call == SoundCall::set_voice_volume);
+	CHECK(played[before_empty].voice == played[second_play].voice);
+	CHECK(played[before_empty].volume == doctest::Approx(0.1f));
+
+	SoundBankDefinition definition;
+	definition.source_path = "replacement.json";
+	definition.waves = { "theme" };
+	definition.effects = {
+		SoundBankDefinition::Effect{ "theme_loop", "theme" }
+	};
+	const AudioDevice::WaveBankHandle waves = fixture.device.open_wave_bank(
+		"content/", "replacement", definition.waves);
+	fixture.resources.add_sound_bank("first", build_sound_bank(
+		&fixture.device, waves, definition));
+	fixture.first = fixture.resources.sound_bank(first);
+	CHECK(fixture.resources.resolve_sound_bank("first") == first);
+	const SoundBank::EffectHandle first_theme =
+		fixture.first->resolve_effect("theme_loop");
+	fixture.first->set_effect_group(first_theme, fixture.music);
+	const size_t first_play = fixture.played().size();
+	fixture.first->play_effect(first_theme, true, 0.8f);
+
+	const size_t before_refill = played.size();
+	fixture.resources.set_group_volume(fixture.music, 0.5f);
+	REQUIRE(played.size() == before_refill + 2);
+	CHECK(played[before_refill].call == SoundCall::set_voice_volume);
+	CHECK(played[before_refill].voice == played[first_play].voice);
+	CHECK(played[before_refill].volume == doctest::Approx(0.4f));
+	CHECK(played[before_refill + 1].call == SoundCall::set_voice_volume);
+	CHECK(played[before_refill + 1].voice == played[second_play].voice);
+	CHECK(played[before_refill + 1].volume == doctest::Approx(0.2f));
+	CHECK(fixture.resources.resolve_sound_bank("empty") == empty);
+	CHECK_THROWS_AS(std::ignore = fixture.resources.sound_bank(empty),
+		std::out_of_range);
+}
+
 TEST_CASE("a stopped effect takes its group's volume at its next play")
 {
 	GroupFixture fixture;
