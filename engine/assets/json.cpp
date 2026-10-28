@@ -42,6 +42,17 @@ namespace labrador
 		void parse_into(rapidjson::Document& document, const char* text,
 			size_t length, const std::string& source, const char* caller)
 		{
+			// The parser treats a raw NUL as end-of-input even in a bounded
+			// buffer, so refuse it before it can hide a valid root's suffix.
+			const size_t nul_offset = std::string_view(text, length).find('\0');
+			if (nul_offset != std::string_view::npos)
+			{
+				throw std::runtime_error(
+					std::string(caller) + " - '" + source +
+					"' is not valid JSON: raw NUL byte (offset " +
+					std::to_string(nul_offset) + ")");
+			}
+
 			document.Parse(text, length);
 			if (document.HasParseError())
 			{

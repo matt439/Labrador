@@ -548,28 +548,117 @@ namespace JsonTests
 				"'assigned.json': c[0] is not a string", std::runtime_error);
 		}
 
-		TEST_CASE("both doors agree on a BOM and on NULs")
+		TEST_CASE("raw NUL input is refused through both JSON entry points")
 		{
-			// Not a pin on what rapidjson makes of these bytes - only that
-			// read_json_file and parse_json make the same of them, because
-			// they share one parse.
-			const std::string cases[] = {
-				std::string("\xEF\xBB\xBF{ \"a\": 1 }"),
-				std::string("{ \"a\": 1 }\0junk", 15),
-				std::string("{ \"a\": \"x\0y\" }", 14),
+			struct RawNulCase
+			{
+				std::string name;
+				std::string text;
+				size_t offset;
+			};
+			const RawNulCase cases[] = {
+				{ "root then NUL and suffix",
+					std::string(R"({"a":1})") + '\0' + "junk", 7 },
+				{ "root then physical terminal NUL",
+					std::string(R"({"a":1})") + '\0', 7 },
+				{ "whitespace then NUL", std::string(" \t\r\n") + '\0', 4 },
+				{ "raw NUL inside a quoted value",
+					std::string(R"({"a":"x)") + '\0' + R"(y"})", 7 },
+				{ "raw NUL inside a member name",
+					std::string(R"({"x)") + '\0' + R"(y":1})", 3 },
+				{ "first of several NULs",
+					std::string("{}") + '\0' + "tail" + '\0', 2 }
 			};
 
-			for (const std::string& text : cases)
+			for (const RawNulCase& sample : cases)
 			{
-				CAPTURE(text);
-				const ScratchFile file("document.json", text);
-				const std::string from_file = outcome_of(
-					[&file] { return read_json_file(file.path().c_str()); });
-				const std::string from_text = outcome_of(
-					[&text] { return parse_json(text, "edge.json"); });
+				CAPTURE(sample.name);
+				const std::string offset = "offset " + std::to_string(sample.offset);
+				bool text_rejected = false;
+				try
+				{
+					parse_json(sample.text, "raw-nul.json");
+				}
+				catch (const std::runtime_error& error)
+				{
+					text_rejected = true;
+					const std::string message = error.what();
+					CHECK(message.find("parse_json") != std::string::npos);
+					CHECK(message.find("raw-nul.json") != std::string::npos);
+					CHECK(message.find("NUL") != std::string::npos);
+					CHECK(message.find(offset) != std::string::npos);
+				}
+				CHECK(text_rejected);
 
-				CHECK(from_file == from_text);
+				const ScratchFile file("raw-nul.json", sample.text);
+				bool file_rejected = false;
+				try
+				{
+					read_json_file(file.path().c_str());
+				}
+				catch (const std::runtime_error& error)
+				{
+					file_rejected = true;
+					const std::string message = error.what();
+					CHECK(message.find("read_json_file") != std::string::npos);
+					CHECK(message.find(file.path()) != std::string::npos);
+					CHECK(message.find("NUL") != std::string::npos);
+					CHECK(message.find(offset) != std::string::npos);
+				}
+				CHECK(file_rejected);
 			}
+		}
+
+		TEST_CASE("escaped NUL strings and member names remain valid JSON")
+		{
+			const std::string text = R"({"a":"x\u0000y","x\u0000y":"kept"})";
+			const std::string decoded("x\0y", 3);
+			const std::vector<std::string> expected_keys = { "a", decoded };
+			const ScratchFile file("escaped-nul.json", text);
+			const JsonDocument from_text = parse_json(text, "escaped-nul.json");
+			const JsonDocument from_file = read_json_file(file.path().c_str());
+
+			CHECK(from_text.root().string("a") == decoded);
+			CHECK(from_file.root().string("a") == decoded);
+			CHECK(from_text.root().keys() == expected_keys);
+			CHECK(from_file.root().keys() == expected_keys);
+		}
+
+		TEST_CASE("trailing JSON whitespace remains valid through both entry points")
+		{
+			const std::string text = std::string(R"({"a":7})") + " \t\r\n";
+			const ScratchFile file("whitespace.json", text);
+			const JsonDocument from_text = parse_json(text, "whitespace.json");
+			const JsonDocument from_file = read_json_file(file.path().c_str());
+
+			CHECK(from_text.root().integer("a") == 7);
+			CHECK(from_file.root().integer("a") == 7);
+		}
+
+		TEST_CASE("parse_json checks only the supplied nonterminated view")
+		{
+			const std::string record = R"({"a":7})";
+			const std::string prefix = std::string("outside") + '\0';
+			const std::string storage = prefix + record + "junk" + '\0' + "after";
+			const std::string_view view(storage.data() + prefix.size(), record.size());
+			const JsonDocument document = parse_json(view, "subspan.json");
+
+			CHECK(document.root().integer("a") == 7);
+			CHECK(document.source_path() == "subspan.json");
+		}
+
+		TEST_CASE("both doors agree on their BOM parsing behavior")
+		{
+			// Keep the parser's existing BOM behavior: this comparison does not
+			// select a different acceptance policy for either entry point.
+			const std::string text("\xEF\xBB\xBF{ \"a\": 1 }");
+			const ScratchFile file("document.json", text);
+			const std::string from_file = outcome_of(
+				[&file] { return read_json_file(file.path().c_str()); });
+			const std::string from_text = outcome_of(
+				[&text] { return parse_json(text, "edge.json"); });
+
+			CHECK(from_file == from_text);
 		}
 	}
 }
