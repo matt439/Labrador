@@ -120,6 +120,9 @@ jobs:
       - name: Check browser pacing reduction against synthetic runs
         run: node --test tools/web_pacing/analyse.test.mjs tools/web_pacing/page.test.mjs tools/web_pacing/page_input.test.mjs
 
+      - name: Check web bundle verification against offline fixtures
+        run: node --test tools/web_bundle/bundle.test.mjs
+
       - name: Run the offline tooling tests
         run: python -m unittest discover tools/tests
 
