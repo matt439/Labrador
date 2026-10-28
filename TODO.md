@@ -62,7 +62,6 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 | `PI-21` | DECISION | should | S | Vibration implemented and headlessly tested; record each motor, stop, background, disconnect, reconnect and shutdown on a physical pad, natively and in Chrome. Can ride `OCA-48`'s session. [Acceptance](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
 | `OCA-46` | BLOCKED | could | M | Join screen, routing and native-null cases pass; desktop visual review and browser build/runtime acceptance remain at the stopped GPU/Emscripten gates. [Evidence](docs/product/BACKLOG.md#later). |
 | `OCA-51` | OPEN | could | M | Wire gallery settings to actual fullscreen/audio state and re-sync external changes. |
-| `OCA-50` | OPEN | could | S | Teach game-owned click/tap menus from LineSweeper's hit-test pattern; gallery extension is IDEA#6. |
 
 ## Content, text and sample examples
 
