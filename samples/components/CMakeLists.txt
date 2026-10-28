@@ -4,15 +4,22 @@
 # the tests compile them once. A game that takes one copies its .h and .cpp
 # into its own tree and lists them there; nothing outside this folder links
 # ComponentsExample.
-add_library(ComponentsExample STATIC nine_slice.cpp option_row.cpp slider.cpp)
+add_library(ComponentsExample STATIC
+    animation_preview.cpp nine_slice.cpp option_row.cpp slider.cpp)
 target_link_libraries(ComponentsExample PUBLIC LabradorEngine labrador_settings)
+
+set(components_texture_files
+    "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/panel.dds"
+    "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/animation_preview.dds"
+    "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/animation_preview.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/animation_preview.LICENSE.txt"
+)
 
 if(EMSCRIPTEN)
     add_executable(ComponentsGallery main_web.cpp gallery_state.cpp)
     target_link_libraries(ComponentsGallery PRIVATE ComponentsExample labrador_settings)
 
-    # A page, its loader and the module, as the collision sample's are, with
-    # the same two things packed at the same relative paths.
+    # The gallery and tests use the same texture-folder paths in the module.
     set_target_properties(ComponentsGallery PROPERTIES SUFFIX ".html")
     target_link_options(ComponentsGallery PRIVATE
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json@/manifest.json"
@@ -24,7 +31,7 @@ if(EMSCRIPTEN)
     set_property(TARGET ComponentsGallery APPEND PROPERTY LINK_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
-        "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/panel.dds"
+        ${components_texture_files}
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
     )
 elseif(WIN32)
@@ -34,8 +41,8 @@ elseif(WIN32)
     target_link_libraries(ComponentsGallery PRIVATE ComponentsExample labrador_settings)
 
     # Reuse the minimal sample's font. The white texel the bars are drawn from
-    # is the engine's own (white_texture_name); the panel's frame is this
-    # sample's one texture.
+    # is the engine's own (white_texture_name); the panel and animation atlas
+    # belong to this sample. This is the single copy owner for gallery/tests.
     add_custom_target(components_content ALL
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
@@ -51,10 +58,13 @@ elseif(WIN32)
     add_dependencies(ComponentsGallery components_content)
 endif()
 
-# Every component's behaviour, with no window, no device and no content on
-# disk: test_content.h builds a font from glyphs in memory.
+# Widget/timing cases use in-memory content. Reader cases use the delivered
+# DDS/JSON. Null recorder cases use no window; the native-null gallery case
+# uses a hidden window, with neither an Application loop nor an API device.
 find_package(doctest CONFIG REQUIRED)
 add_executable(ComponentsTests
+    animation_preview_tests.cpp
+    animation_preview_content_tests.cpp
     nine_slice_tests.cpp
     option_row_tests.cpp
     slider_tests.cpp
@@ -62,9 +72,24 @@ add_executable(ComponentsTests
 )
 target_link_libraries(ComponentsTests PRIVATE
     ComponentsExample doctest::doctest labrador_settings)
-# Under Node, as every other browser-build test runs, and for the collision
-# sample's reason this names its own environment: it reads no files.
+if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null")
+    target_sources(ComponentsTests PRIVATE animation_preview_null_tests.cpp)
+endif()
+if(NOT EMSCRIPTEN
+    AND LABRADOR_RENDER_BACKEND STREQUAL "null"
+    AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
+    target_sources(ComponentsTests PRIVATE gallery_animation_tests.cpp gallery_state.cpp)
+endif()
+if(TARGET components_content)
+    add_dependencies(ComponentsTests components_content)
+endif()
+# Node runs the shared readers against the same texture-folder contents.
 if(EMSCRIPTEN)
-    target_link_options(ComponentsTests PRIVATE -sENVIRONMENT=node)
+    target_link_options(ComponentsTests PRIVATE
+        -sENVIRONMENT=node
+        "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/textures@/textures"
+    )
+    set_property(TARGET ComponentsTests APPEND PROPERTY LINK_DEPENDS
+        ${components_texture_files})
 endif()
 add_test(NAME ComponentsTests COMMAND ComponentsTests)

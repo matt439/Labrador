@@ -186,13 +186,56 @@ takes the sheet name and the frame name. It has `draw(draw_list, destination_rec
 `draw(draw_list, position, scale)`, and a `draw_with` that takes the colour or flip as a
 parameter instead.
 
-The engine has no animation player. To play a strip, resolve it with
-`SpriteSheet::resolve_animation_strip`, keep the elapsed time in your own `update()`, and pass
-`AnimationStrip::calculate_frame(index)` to the `SpriteSheet::draw` overloads that take a source
-rectangle. Because several views can draw
-the same object at once, a tint or flip that varies from draw to draw is passed through
-`draw_with` rather than set on the object first. None of the six samples uses a sprite sheet
-yet; the engine's tests do.
+Because several views can draw the same `TextureObject` at once, a tint or flip
+that varies from draw to draw is passed through `draw_with` rather than set on
+the object first.
+
+The engine has no animation player. The
+<RepoLink path="samples/components/animation_preview.h">components gallery's copyable `AnimationPreview`</RepoLink>
+keeps elapsed time, looping, one-shot completion and restart in game code. The
+gallery resolves a named sheet and strip together, once at initialization:
+
+<SourceFile
+	path="samples/components/gallery_state.cpp"
+	from="const RenderResources::SheetStrip loop_strip ="
+	to="this->once_preview_.emplace(*resources, once_strip);"
+/>
+
+`RenderResources::SheetStrip` keeps the sheet and the strip handle paired;
+it belongs to the resource table that resolved it. That table must outlive the
+preview, and the sheet/strip definition must stay unchanged. A texture reload
+preserves the pair, so drawing looks up the sheet again instead of keeping a
+device texture pointer.
+
+The original `animation_preview` DDS/JSON pair offers `pulse_loop` and
+`pulse_once`, each four 16x16 frames at 0.25 seconds per frame. The loop wraps
+after one second, while the one-shot holds its last frame after that frame's
+full duration. The sample rejects negative or nonfinite time steps before
+mutation, treats zero as a no-op, and crosses several frames without a loop
+per frame. The gallery advances its clocks during `update()`:
+
+<SourceFile
+	path="samples/components/animation_preview.cpp"
+	from="void AnimationPreview::update(float dt)"
+	to="}"
+	collapsed
+/>
+
+Drawing uses the public `AnimationStrip::frame_rect(index)` accessor and passes
+that source rectangle to `SpriteSheet::draw`. It does not advance time, so
+several views can read the same preview:
+
+<SourceFile
+	path="samples/components/animation_preview.cpp"
+	from="void AnimationPreview::draw(DrawList& draw_list,"
+	to="}"
+/>
+
+R or gamepad X in the gallery restarts both previews. The
+<RepoLink path="samples/components/README.md" hash="playing-an-animation-strip">sample README</RepoLink>
+describes the controls, paired loader data and MIT artwork provenance. Its
+tests separate timing, real asset reads and null-render draw recordings from
+actual rendered-frame review.
 
 ## Solid rectangles
 

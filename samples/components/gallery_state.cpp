@@ -8,6 +8,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
+#include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/viewport.h"
@@ -41,6 +42,9 @@ namespace components
 		constexpr Colour heading_colour(200, 208, 222);
 		constexpr Colour help_colour(150, 160, 180);
 
+		const RectangleF loop_preview_bounds(960.0f, 260.0f, 64.0f, 64.0f);
+		const RectangleF once_preview_bounds(960.0f, 410.0f, 64.0f, 64.0f);
+
 		float row_y(int row)
 		{
 			return first_row_y + static_cast<float>(row) * row_spacing;
@@ -62,6 +66,12 @@ namespace components
 	{
 		RenderResources* resources = this->app_->render_resources();
 		const TextureHandle block = resources->resolve_texture(white_texture_name);
+		const RenderResources::SheetStrip loop_strip =
+			resources->resolve_sheet_strip("animation_preview", "pulse_loop");
+		const RenderResources::SheetStrip once_strip =
+			resources->resolve_sheet_strip("animation_preview", "pulse_once");
+		this->loop_preview_.emplace(*resources, loop_strip);
+		this->once_preview_.emplace(*resources, once_strip);
 
 		this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 		this->refresh_view();
@@ -80,6 +90,15 @@ namespace components
 		this->scene_->add(std::make_unique<UiText>("help",
 			L"Up/Down: choose   Left/Right: change   Enter/A: select   Esc/B: quit",
 			font_name, Vector2F(label_x, 150.0f), resources, help_colour));
+		this->scene_->add(std::make_unique<UiText>("animation_help",
+			L"R / gamepad X: restart both animations", font_name,
+			Vector2F(label_x, 180.0f), resources, help_colour));
+		this->scene_->add(std::make_unique<UiText>("loop_label",
+			L"Loop", font_name, Vector2F(900.0f, 230.0f), resources,
+			help_colour));
+		this->scene_->add(std::make_unique<UiText>("once_label",
+			L"Once / holds last", font_name, Vector2F(900.0f, 380.0f), resources,
+			help_colour));
 
 		// Built before the rows, because every row's callback writes to it.
 		this->status_ = this->scene_->add(std::make_unique<UiText>("status",
@@ -243,6 +262,16 @@ namespace components
 			this->focus_.activate(0);
 		}
 
+		this->loop_preview_->update(dt);
+		this->once_preview_->update(dt);
+		if (keyboard.pressed(Key::r) || pads.pressed(0, GamepadButton::x))
+		{
+			// Reset after the tick's step so the next draw shows frame zero.
+			this->loop_preview_->restart();
+			this->once_preview_->restart();
+			this->status_->set_text(L"Both animation previews restarted.");
+		}
+
 		this->refresh_view();
 		this->scene_->update(dt);
 		this->scene_->end_tick();
@@ -250,7 +279,12 @@ namespace components
 
 	void GalleryState::draw(Renderer& renderer) const
 	{
-		this->scene_->draw(renderer);
+		this->scene_->draw(renderer, [this](int, DrawList& list)
+			{
+				list.set_filter(TextureFilter::point);
+				this->loop_preview_->draw(list, loop_preview_bounds);
+				this->once_preview_->draw(list, once_preview_bounds);
+			});
 	}
 
 	void GalleryState::refresh_view()

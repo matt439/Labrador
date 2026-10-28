@@ -40,10 +40,10 @@ focused examples for the website's guides: a collision arena, a playable
 sound bank and two players sharing a world through separate views. Each has
 its own README with controls and build commands.
 
-`samples/components` is the answer to "do I have to write a settings menu
-from scratch": an option row and a slider, each a header, a source file and
-its tests, which a game copies into its own tree rather than links, and a
-gallery that shows them running. [Its README](samples/components/README.md)
+`samples/components` has an option row, a slider, a nine-slice panel and a
+sprite-strip animation preview, each a header, a source file and its tests.
+A game copies these pieces into its own tree rather than links them; a
+gallery shows them running. [Its README](samples/components/README.md)
 says why they are copied, and when one would move into the engine.
 
 ```

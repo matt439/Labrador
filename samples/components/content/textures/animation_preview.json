@@ -1,0 +1,29 @@
+{
+    "sprite_frames": [],
+    "animation_strips": [
+        {
+            "name": "pulse_loop",
+            "first_frame": {
+                "x": 0,
+                "y": 0,
+                "w": 16,
+                "h": 16
+            },
+            "frame_count": 4,
+            "frame_time": 0.25,
+            "looping": true
+        },
+        {
+            "name": "pulse_once",
+            "first_frame": {
+                "x": 0,
+                "y": 0,
+                "w": 16,
+                "h": 16
+            },
+            "frame_count": 4,
+            "frame_time": 0.25,
+            "looping": false
+        }
+    ]
+}
