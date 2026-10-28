@@ -70,10 +70,15 @@ python -m http.server --directory out\build\wasm-debug\samples\audio
 
 Then open `AudioSample.html` from that server, because a browser will not
 compile a module read from `file://`. The controls are the table above.
-**Nothing sounds until the page's first key press, click or touch**, which is
-the browser's rule: the backend makes its audio context inside that event, and
-the key that does it is still read by the sample, so a first press of 1 plays
-the ping. Escape ends the module and says so under the canvas.
+**Nothing sounds until the page receives a key press, click or touch that
+grants user activation; Escape does not count.** The backend unlocks audio
+inside that event, and the key that does it is still read by the sample, so a
+first press of 1 plays the ping. A `SoundBank::play_wave` one-shot requested
+before the gesture is dropped and never replayed. An effect instance requested
+through `play_effect`, including a loop, reports playing but waits to start
+until audio is allowed; pausing it or stopping it immediately with
+`stop_effect(effect, true)` cancels the pending start.
+Escape ends the module and says so under the canvas.
 
 There is no `--smoke-test` in a browser, because a page has no command line.
 Its lifecycle is an `AudioSampleTests` case in this build instead, run under

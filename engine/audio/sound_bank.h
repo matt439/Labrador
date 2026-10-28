@@ -150,12 +150,19 @@ namespace labrador
 		// afterwards. This is the one for a jump, a hit, a menu click. It
 		// launches at `volume` times its group's volume, and keeps that level
 		// while it plays: a group volume change reaches the next one.
+		// In a browser, a call before the page's first activating key press,
+		// click or touch is dropped and never replayed. Escape alone does not
+		// count as that gesture.
 		void play_wave(WaveHandle wave, float volume = 1.0f,
 			float pitch = 0.0f, float pan = 0.0f) const;
 
 		// An effect instance is a voice that persists, so it can be looped,
 		// stopped, and adjusted while it plays - music, a weapon's firing loop.
 		// Each throws std::out_of_range through an unresolved handle.
+		// In a browser, an instance started with play_effect before audio is
+		// unlocked reports playing through effect_state but waits to start,
+		// including when loop is true. Pausing it or calling
+		// stop_effect(effect, true) cancels that pending start.
 		//
 		// play_effect and set_effect_volume send `volume` times the effect's
 		// group volume, and keep `volume` in the effect's record through the

@@ -132,6 +132,85 @@ and a replug can change its slot; the input guide's
 The release build does not fall back to Microsoft's software renderer, WARP; the debug build does.
 Update the graphics driver, or use a debug build on a machine without a usable graphics adapter.
 
+## Browser builds
+
+### `include could not find requested file: /upstream/emscripten/...`
+
+With `EMSDK` unset, configuring a `wasm-*` preset prints:
+
+```text
+include could not find requested file:
+
+  /upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+```
+
+`EMSDK` should be the part before `/upstream`. Run `emsdk_env.bat` in the same x64 Native Tools
+Command Prompt as CMake, check `echo %EMSDK%` and `emcc --version`, then delete the incomplete
+browser build folder and configure again. [Set EMSDK in your build prompt](/docs/guides/browser/#set-emsdk-in-your-build-prompt)
+has the commands. Address the missing toolchain before investigating the Ninja and compiler
+errors that follow it.
+
+### The page stays at `Loading...` when opened from `file://`
+
+Double-clicking the generated HTML file is not enough. In Chrome, the minimal sample stays at
+`Loading...`, and the developer console includes:
+
+```text
+Aborted(Assertion failed: readAsync does not work with file:// URLs)
+Aborted(both async and sync fetching of the wasm failed)
+```
+
+The browser refused to fetch the `.wasm` file from a local-file URL. Serve the build folder over
+HTTP and open its `http://127.0.0.1:...` address instead, as in
+[Serve it and open it](/docs/guides/browser/#serve-it-and-open-it). Keep the generated HTML,
+JavaScript and WebAssembly files together.
+
+### ctest lists fewer tests, with no page tests
+
+When configuring the engine checkout without a Chromium, CMake prints:
+
+```text
+No Chromium found, so RenderPixelTests, RenderPixelTestsWithoutS3tc, RenderContextLossTests, WebWindowTests and the samples' pages are built and not registered with ctest. Set LABRADOR_TEST_BROWSER to run them.
+```
+
+For the engine's default browser configurations, `ctest --preset wasm-debug -N` then lists
+**19 tests instead of 32**; Release lists **19 instead of 33**. These are absent entries,
+not skipped or passing page tests. The remaining tests run under Node, which cannot check
+drawing or page input. The counts describe the engine checkout; the copied Get Started
+project has one rules test and does not register these engine tests.
+
+Install Chrome or point configure at a Chromium executable, such as Edge, then build and test
+again. For example:
+
+```bat
+cmake --preset wasm-debug -DLABRADOR_TEST_BROWSER="C:/Program Files/Google/Chrome/Application/chrome.exe"
+cmake --build --preset wasm-debug
+ctest --preset wasm-debug
+```
+
+`LABRADOR_TEST_BROWSER` is a CMake cache variable, not an environment variable. Check the
+configure message and test names as well as the total, because new tests can change the count.
+
+### `This browser would not give the canvas a WebGL2 context.`
+
+The minimal sample displays this message in its page and writes it to the console when WebGL2
+is disabled. The full error says WebGL2 may be turned off or the browser may have blocked the
+GPU. Check the browser's graphics settings and driver, then reload. The browser build needs
+WebGL2; WebGL1 is not a fallback. If it still fails, report the browser version and its graphics
+diagnostics with the error. A successful CMake build does not prove that the browser can make
+a graphics context.
+
+### A title-screen sound is silent, and does not play after the first key
+
+Before the page has a qualifying key, click or touch, Web Audio has no context to play through.
+`SoundBank::play_wave` drops a one-shot requested then; it does not save it for the first
+gesture, and the engine does not log an error. A persistent `play_effect` waits, including a
+loop, unless it is paused or stopped immediately with `stop_effect(effect, true)` first.
+Escape alone does not unlock sound. Start a title jingle after the player's start gesture,
+or use a persistent effect when waiting is intended.
+[Browser audio and the first gesture](/docs/guides/audio/#browser-audio-and-the-first-gesture)
+states the contract and how it applies to the game's sounds.
+
 ## Content
 
 ### A sprite has a fringe or halo round its soft edges
