@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 using namespace labrador;
 using labrador_tests::ScratchFile;
 
@@ -157,7 +158,7 @@ namespace JsonTests
 			CHECK(names.at(2).as_string() == "c");
 		}
 
-		TEST_CASE("has() is the only door to a field a file may leave out")
+		TEST_CASE("has() distinguishes an absent field from a false one")
 		{
 			const ScratchFile file("document.json", R"({ "rotated": false })");
 
@@ -170,6 +171,129 @@ namespace JsonTests
 			// Present and false is not the same as absent, and a reader that
 			// conflated them would rotate nothing that asked not to be.
 			CHECK_FALSE(root.boolean("rotated"));
+		}
+
+		TEST_CASE("keys() lists nested object names in stored order and permits empty objects")
+		{
+			const JsonDocument document = parse_json(R"({
+				"later": 1,
+				"group": { "second": 2, "first": 1 },
+				"empty": {}
+			})", "keys.json");
+			const std::vector<std::string> root_names{ "later", "group", "empty" };
+			const std::vector<std::string> group_names{ "second", "first" };
+
+			CHECK(document.root().keys() == root_names);
+			CHECK(document.root().object("group").keys() == group_names);
+			CHECK(document.root().object("empty").keys().empty());
+			CHECK(parse_json("{}", "empty.json").root().keys().empty());
+		}
+
+		TEST_CASE("keys() preserves decoded Unicode and the lengths of empty and NUL names")
+		{
+			const JsonDocument document = parse_json(R"({
+				"\u00e9": 1,
+				"\ud83d\ude80": 2,
+				"": 3,
+				"part\u0000tail": 4
+			})", "decoded-keys.json");
+			const std::vector<std::string> names = document.root().keys();
+
+			REQUIRE(names.size() == 4);
+			CHECK(names[0] == "\xC3\xA9");
+			CHECK(names[1] == "\xF0\x9F\x9A\x80");
+			CHECK(names[2].empty());
+			CHECK(names[3] == std::string("part\0tail", 9));
+		}
+
+		TEST_CASE("keys() retains duplicate decoded member names without deduplicating")
+		{
+			const JsonDocument document = parse_json(R"({
+				"repeat": 1, "other": 2, "repeat": 3, "\u0072epeat": 4
+			})", "duplicate-keys.json");
+			const std::vector<std::string> expected{
+				"repeat", "other", "repeat", "repeat"
+			};
+
+			CHECK(document.root().keys() == expected);
+		}
+
+		TEST_CASE("keys() returns independent names that outlive the document")
+		{
+			std::vector<std::string> root_names;
+			std::vector<std::string> nested_names;
+			{
+				const JsonDocument document = parse_json(R"({
+					"long_key_whose_storage_must_not_be_borrowed": 1,
+					"nested": { "part\u0000tail": 2 }
+				})", "owned-keys.json");
+				root_names = document.root().keys();
+				nested_names = document.root().object("nested").keys();
+
+				std::vector<std::string> changed = document.root().keys();
+				REQUIRE_FALSE(changed.empty());
+				changed[0] = "changed";
+				CHECK(document.root().keys() == root_names);
+			}
+
+			REQUIRE(root_names.size() == 2);
+			CHECK(root_names[0] == "long_key_whose_storage_must_not_be_borrowed");
+			CHECK(root_names[1] == "nested");
+			REQUIRE(nested_names.size() == 1);
+			CHECK(nested_names[0] == std::string("part\0tail", 9));
+		}
+
+		TEST_CASE("keys() rejects non-object roots with their source context")
+		{
+			const char* contents[] = { "3", "1.5", "true", "\"text\"", "[]", "null" };
+			for (const char* text : contents)
+			{
+				CAPTURE(text);
+				const JsonDocument document = parse_json(text, "root-keys.json");
+				CHECK_THROWS_WITH_AS(document.root().keys(),
+					"'root-keys.json': the document is not an object",
+					std::runtime_error);
+			}
+		}
+
+		TEST_CASE("keys() rejects nested non-objects with the member path and array index")
+		{
+			const JsonDocument document = parse_json(R"({
+				"container": { "items": [ 3, 1.5, true, "text", [], null ] }
+			})", "nested-keys.json");
+			const JsonValue items = document.root().object("container").array("items");
+
+			for (size_t index = 0; index < items.size(); ++index)
+			{
+				CAPTURE(index);
+				const std::string expected = "'nested-keys.json': container.items[" +
+					std::to_string(index) + "] is not an object";
+				CHECK_THROWS_WITH_AS(items.at(index).keys(), expected.c_str(),
+					std::runtime_error);
+			}
+		}
+
+		TEST_CASE("keys() leaves game-owned named dictionaries and metadata unrestricted")
+		{
+			const JsonDocument document = parse_json(R"({
+				"resources": {
+					"level:one": { "metadata": { "tool": "packer", "arbitrary": true } },
+					"new kind": {}
+				},
+				"metadata": { "anything": [ null ], "vendor": { "revision": 17 } }
+			})", "game-content.json");
+			const JsonValue root = document.root();
+			const JsonValue resources = root.object("resources");
+			const std::vector<std::string> resource_names{ "level:one", "new kind" };
+			const std::vector<std::string> metadata_names{ "anything", "vendor" };
+
+			CHECK(resources.keys() == resource_names);
+			CHECK(resources.object("new kind").keys().empty());
+			CHECK(resources.object("level:one").object("metadata").string("tool") == "packer");
+			CHECK(resources.object("level:one").object("metadata").boolean("arbitrary"));
+			CHECK(root.object("metadata").keys() == metadata_names);
+			CHECK(root.object("metadata").array("anything").size() == 1);
+			CHECK(root.object("metadata").object("vendor").integer("revision") == 17);
 		}
 
 		TEST_CASE("a missing member names the file, the position and the key")

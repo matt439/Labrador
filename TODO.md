@@ -76,7 +76,7 @@ the two new stories have their detail in BACKLOG.md.
 | `OCA-42` | BLOCKED | could | M | Add a string-table-to-screen example within the documented font limits; after OCA-41. |
 | `OCA-77` | BLOCKED | could | S | Wrap a translated string to a measured width; after OCA-42. |
 | `OCA-32` | OPEN | could | S | Show a consumer test using the recording renderer without a device. |
-| `PI-20` | OPEN | could | S | Refuse unknown manifest/sprite-sheet keys with useful errors. [Scope](docs/review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans). |
+| `PI-20` | BLOCKED | could | S | Key enumeration and strict manifest/sprite-sheet fields pass native Debug/null/Release cases; wasm/Node qualification remains at stopped Emscripten gates. [Evidence](docs/2026-10-29-strict-asset-keys.md). |
 | `SRL-20` | OPEN | could | M | Add a copyable animation-strip gallery example and replace the guide's private-method call. [Acceptance](docs/product/BACKLOG.md#srl-20). |
 
 ## Website and the hosted demo

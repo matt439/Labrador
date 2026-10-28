@@ -72,6 +72,19 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Reject unknown manifest and sprite-sheet keys
+
+**Behaviour change.** The manifest and sprite-sheet loaders previously ignored
+extra object members, including misspelt optional fields such as `optionl` and
+`orgin`. They now reject unsupported keys at their fixed document, group,
+frame, geometry, origin, animation-strip and first-frame objects, naming the
+file, object path/index and complete unexpected key. Correct the spelling or
+remove the unsupported field when moving a pin; the checked-in minimal
+manifest already uses the supported schema. Game-registered kinds and resource
+names remain unrestricted values. The generic JSON reader still permits
+game-owned dictionaries/metadata; `JsonValue::keys()` adds copied member-name
+enumeration without changing its parse or duplicate-member behavior.
+
 ### 2026-10-28 - Publish D3D12 replacement textures before their descriptors
 
 **Behaviour change, Direct3D 12 only.** Reloading a texture now completes

@@ -240,6 +240,10 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 // Public headers left out of the reference on purpose, each with its reason.
 export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 	[
+		'engine/assets/json_object_keys.h',
+		'Fixed-schema validation private to the manifest and sprite-sheet loaders; game code uses JsonValue::keys() for its own dictionaries.',
+	],
+	[
 		'engine/core/step_timer.h',
 		"Microsoft's timer from the DirectX templates, carried as written (NOTICE) and private to Application.",
 	],

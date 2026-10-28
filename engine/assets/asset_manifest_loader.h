@@ -25,7 +25,9 @@ namespace labrador
 	//
 	// Throws std::runtime_error naming the path if the file cannot be read or
 	// parsed, and naming the path and the offending group if the document is
-	// the wrong shape. A manifest is hand-edited data, so every read here is
-	// checked rather than assumed (T6).
+	// the wrong shape or has an unknown key. The document accepts only `assets`;
+	// each group accepts `kind`, `directory`, `names` and `optional` (default false).
+	// Asset kinds and names remain game-defined values. A manifest is hand-edited
+	// data, so every read here is checked rather than assumed (T6).
 	AssetManifest read_asset_manifest(const char* json_path);
 }

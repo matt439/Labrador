@@ -1,10 +1,12 @@
 #include <doctest/doctest.h>
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/animation_strip.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
 #include "tests/scratch_file.h"
+#include <array>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -44,6 +46,17 @@ namespace
 		return R"({ "name": ")" + name + R"(", )"
 			R"("position": { "x": 4, "y": 8 }, )"
 			R"("size": { "w": 16, "h": 32 })" + extra + " }";
+	}
+
+	std::string strip_of(const std::string& extra, const std::string& first_frame_extra)
+	{
+		return R"({"name":"walk","first_frame":{"x":4,"y":8,"w":16,"h":32)" +
+			first_frame_extra + R"(},"frame_count":3,"frame_time":0.125,"looping":true)" + extra + "}";
+	}
+
+	std::string sheet_with_strip(const std::string& strip)
+	{
+		return R"({"sprite_frames":[],"animation_strips":[)" + strip + "]}";
 	}
 
 	std::unique_ptr<SpriteSheet> load(const std::string& contents)
@@ -165,4 +178,67 @@ TEST_CASE("'rotated' is still checked for being a boolean at all")
 		frame_of("odd", R"(, "rotated": "yes")")));
 
 	CHECK(message.find("is not true or false") != std::string::npos);
+}
+
+TEST_CASE("sprite sheet unknown keys name the file and exact nested object")
+{
+	struct Refusal
+	{
+		std::string contents;
+		const char* context;
+		const char* key;
+	};
+	const std::array<Refusal, 9> cases = { {
+		{ R"({"sprite_frames":[],"animation_strips":[],"metadata":{}})", "the document", "metadata" },
+		{ sheet_of(frame_of("box", R"(,"extra":0)")), "sprite_frames[0]", "extra" },
+		{ R"({"sprite_frames":[{"name":"box","position":{"x":4,"y":8,"z":0},"size":{"w":16,"h":32}}],"animation_strips":[]})",
+			"sprite_frames[0].position", "z" },
+		{ R"({"sprite_frames":[{"name":"box","position":{"x":4,"y":8},"size":{"w":16,"h":32,"depth":1}}],"animation_strips":[]})",
+			"sprite_frames[0].size", "depth" },
+		{ sheet_of(frame_of("box", R"(,"origin":{"x":1,"y":2,"z":3})")),
+			"sprite_frames[0].origin", "z" },
+		{ sheet_with_strip(strip_of(R"(,"frame_counts":3)", "")),
+			"animation_strips[0]", "frame_counts" },
+		{ sheet_with_strip(strip_of("", R"(,"extra":0)")),
+			"animation_strips[0].first_frame", "extra" },
+		{ sheet_of(frame_of("box", R"(,"orgin":{"x":1,"y":2})")), "sprite_frames[0]", "orgin" },
+		{ sheet_of(frame_of("box", R"(,"rotatd":false)")), "sprite_frames[0]", "rotatd" },
+	} };
+	for (const Refusal& test : cases)
+	{
+		CAPTURE(test.contents);
+		const ScratchFile file("sheet.json", test.contents);
+		try
+		{
+			read_sprite_sheet(file.path().c_str(), TextureHandle());
+			FAIL("unknown sprite-sheet member was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message(error.what());
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find(test.context) != std::string::npos);
+			CHECK(message.find("has unknown key '") != std::string::npos);
+			CHECK(message.find(test.key) != std::string::npos);
+		}
+	}
+}
+
+TEST_CASE("sprite sheet strict fields preserve complete authored frames and animation strips")
+{
+	const std::unique_ptr<SpriteSheet> sheet = load(
+		R"({"sprite_frames":[)" + frame_of("metadata", R"(,"origin":{"x":1.5,"y":2.5},"rotated":false)") +
+		R"(],"animation_strips":[)" + strip_of("", "") + "]}");
+	const SpriteFrame& frame = sheet->sprite_frame(sheet->resolve_sprite_frame("metadata"));
+	CHECK(frame.origin() == Vector2F(1.5f, 2.5f));
+	const AnimationStrip& strip = sheet->animation_strip(sheet->resolve_animation_strip("walk"));
+	CHECK(strip.frame_count() == 3);
+	CHECK(strip.frame_time() == doctest::Approx(0.125f));
+	CHECK(strip.looping());
+	CHECK(strip.frame_rect(0).x == 4);
+	CHECK(strip.frame_rect(0).y == 8);
+	CHECK(strip.frame_rect(0).width == 16);
+	CHECK(strip.frame_rect(0).height == 32);
+	CHECK(strip.frame_rect(1).x == 20);
+	CHECK(strip.frame_rect(2).x == 36);
 }

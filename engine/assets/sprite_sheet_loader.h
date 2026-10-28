@@ -12,7 +12,9 @@ namespace labrador
 	//
 	// Throws std::runtime_error naming the path if the file cannot be read or
 	// parsed, and naming the path and the offending frame or strip if the
-	// document is the wrong shape (T6).
+	// document is the wrong shape or has an unknown key (T6). This includes
+	// nested position, size, origin and first-frame objects; unsupported fields
+	// must be removed or corrected instead of being silently ignored.
 	//
 	// AND FOR ONE THING THE DOCUMENT CAN SAY THAT IS WELL FORMED AND STILL NOT
 	// DRAWABLE: a frame with `"rotated": true` is refused here, by name, rather

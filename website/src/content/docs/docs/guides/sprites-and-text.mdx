@@ -172,8 +172,13 @@ from a first frame:
 
 `origin` is optional, in texels from the frame's top-left; it is the point a sprite is placed and
 rotated by, such as the middle of a character's feet. A sheet whose packer rotated frames to fit
-them is refused, because the engine draws frames as they are stored. Every key is checked when the
-sheet loads, and a missing or mistyped one names the file and the key.
+them is refused, because the engine draws frames as they are stored. `rotated: false`
+is accepted. Both top-level arrays are required and may be empty. Every field
+is checked when the sheet loads: missing, mistyped and unknown fields name the
+file, object/index and key. This includes position, size, origin and first-frame
+objects, so `orgin` is an error instead of silently choosing a zero origin.
+Correct misspellings and remove unsupported fields from these fixed definitions;
+your game's own metadata can use its own JSON reader.
 
 `TextureObject` draws one named frame from a sheet, and is designed to be **inherited alongside
 `GameObject`**, so your own class gets its drawing and keeps its own update. Its constructor
