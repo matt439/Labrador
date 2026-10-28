@@ -1,7 +1,8 @@
 # Local multiplayer sample
 
-Two players explore one shared arena through two following cameras. Player 1
-is cyan in the top pane; player 2 is orange in the bottom pane. Both players
+Two players join with their own input sources, choose READY independently,
+then explore one shared arena through two following cameras. The first free
+player slot is cyan in the top pane; the second is orange in the bottom pane. Both players
 appear in both panes whenever the camera can see them. Move toward the purple
 cross to meet, or apart to watch each camera follow its own player.
 
@@ -15,17 +16,31 @@ ctest --preset x64-debug -R LocalMultiplayerTests --output-on-failure
 out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe
 ```
 
-| Player | Keyboard | Optional controller | View |
-| --- | --- | --- | --- |
-| 1 | WASD | XInput slot 0, left stick | Top |
-| 2 | Arrow keys | XInput slot 1, left stick | Bottom |
+| Source | Join | Move / menu direction | Select | Leave menu |
+| --- | --- | --- | --- | --- |
+| WASD half | F | WASD / W and S | F | G |
+| Arrow half | Enter | Arrows / Up and Down | Enter | Backspace |
+| Any of four pad slots | Start | Left stick / stick or d-pad up and down | A | B |
 
-Escape or B on either controller quits. Missing controllers contribute neutral
-input. Keyboard and stick input add, then the movement magnitude is capped, so
-diagonals and using two devices together do not increase speed. Keys refer to
+Joining consumes its press; press Select again to choose READY, or move to
+LEAVE. Both players must be ready before the arena starts. Each has a separate
+FocusGroup slot, cursor marker and DirectionRepeat clock. Leaving or a
+disconnect in the menu frees only that player's assignment and readiness.
+Reconnect requires a fresh Start press. Simultaneous joins use the order
+WASD, arrows, then pad slots 0 through 3, taking the first free player slot.
+
+In the arena, Escape or B on an assigned controller quits. A player reads only
+its assigned keyboard half or pad slot; unassigned devices do not steer it.
+An absent assigned pad contributes neutral input. The movement magnitude is
+capped, so diagonals do not increase speed. Keys refer to
 physical positions. Some keyboards cannot report every simultaneous key
-combination; a controller provides an alternative in that case. Slots are
-fixed for this demonstration; there is no joining or controller reassignment.
+combination; a controller provides an alternative in that case.
+
+Bindings remain attached to their observable pad slots during arena play.
+A returning or replacement pad in that slot can control the player; the
+engine does not establish physical identity between polls. The lobby handles
+observed disconnects by removing the assignment. This sample adds no engine
+player manager, rebinding layer or persistent controller identity.
 
 `Arena` is the one `GameObject` holding both players. `Scene::update` runs once
 per tick; drawing the same arena twice never steps it twice. The state rebuilds
@@ -77,9 +92,21 @@ a null preset it also draws the actual arena through both serial and parallel
 scenes, compares their recordings and checks that each player appears in both
 views without changing positions.
 
-`--smoke-test` opens a hidden window, renders 120 fixed ticks of independent
+The join reducer has 12 device-free cases covering source ownership, competing
+joins, per-player choices and disconnects. Three more cases check joined
+movement routing. Native null render/audio adds four real-menu cases with a
+hidden Application and synthetic keyboard input: independent focus slots,
+held-direction gating, resized recordings and the READY-to-arena transition.
+These cases poll no physical pad and run no application loop or graphics/audio
+API device. The Debug-null test and sample targets build, the test entry passes,
+and the existing null smoke run exits 0. Desktop visual review and the updated
+browser entry's build/runtime acceptance remain open in OCA-46; these recordings
+do not establish them.
+
+`--smoke-test` bypasses the join menu, opens a hidden window and renders 120 fixed ticks of independent
 scripted movement and checks final positions and the view count before exiting.
-It needs the selected renderer's device. It does not exercise physical input.
+Rasterising presets need their selected renderer's device; null records the
+draws without pixels. This check does not exercise the menu or physical input.
 On rasterising presets it can capture the fifteenth frame for visual review:
 
 ```bat

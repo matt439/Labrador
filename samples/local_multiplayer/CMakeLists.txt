@@ -1,10 +1,12 @@
 # One sample and two entry points: main.cpp is wWinMain, with the smoke test
 # and the capture, and main_web.cpp is a browser's main. Everything else is
-# the same files, and LocalMultiplayerTests links arena.cpp and controls.cpp in
-# every build.
+# the same files. LocalMultiplayerTests links the arena, controls and pure join
+# rules in every build; native null adds the real menu routing cases.
 set(local_multiplayer_sources
     arena.cpp
     controls.cpp
+    join_rules.cpp
+    join_state.cpp
     play_state.cpp
 )
 

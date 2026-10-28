@@ -16,14 +16,14 @@ allows. Next's hardware and release gates remain open. The immediate queue is:
 2. **L8 (`BDP-11` to `BDP-14`): run packaged-browser acceptance for focus, controls and phone instructions.** [Source checks](docs/port/2026-10-28-demo-host.md#focus-controls-and-the-phone-gate-l8) cover the state transitions and host policy.
 3. **L11 (`BDP-18`): check repeated play stays fast.**
 
-**Available after those batches:** couch joining, working settings, pointer
+**Available after those batches:** working settings, pointer
 menus, text examples, strict asset keys, recording-renderer guidance and
 validation tools are indexed below. `SRL-19` and `SRL-20` add a sample-layer
 build check and a working animation example. Follow Later's order and each
 story's prerequisites; an open hardware gate does not block unrelated work.
 **Hygiene is also ready:** [Code hygiene](docs/code-hygiene.md) owns a separate
-maintenance lane, starting with `SRL-21` (the banner extent found by the sample
-audit), then the concrete test/source splits.
+maintenance lane: `SRL-21` awaits its capture review, and the concrete test/source
+splits below supply independent work.
 BACKLOG's L36 to L40 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
@@ -61,7 +61,7 @@ orders the maintenance lane. Counts prompt review, not automatic splitting.
 |---|---|---|---|---|
 | `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
 | `PI-21` | DECISION | should | S | Vibration implemented and headlessly tested; record each motor, stop, background, disconnect, reconnect and shutdown on a physical pad, natively and in Chrome. Can ride `OCA-48`'s session. [Acceptance](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
-| `OCA-46` | OPEN | could | M | Add a copyable couch join screen with independent players and disconnect handling. |
+| `OCA-46` | BLOCKED | could | M | Join screen, routing and native-null cases pass; desktop visual review and browser build/runtime acceptance remain at the stopped GPU/Emscripten gates. [Evidence](docs/product/BACKLOG.md#later). |
 | `OCA-51` | OPEN | could | M | Wire gallery settings to actual fullscreen/audio state and re-sync external changes. |
 | `OCA-50` | OPEN | could | S | Teach game-owned click/tap menus from LineSweeper's hit-test pattern; gallery extension is IDEA#6. |
 

@@ -116,6 +116,18 @@ drawn after the match's, so it draws on top. See
 for. Each player has their own cursor in the same group, which is what a character-select screen
 needs. The pause menu is single-player and uses slot 0 throughout.
 
+The <RepoLink path="samples/local_multiplayer/join_state.cpp">local-multiplayer join screen</RepoLink>
+is a copyable two-player example. Each keyboard half or pad slot joins one player, then each
+player moves and selects READY or LEAVE independently. Its group and repeat clocks are separate:
+
+<SourceFile path="samples/local_multiplayer/join_state.h" from="labrador::FocusGroup focus_;" to="std::array<labrador::DirectionRepeat, Arena::player_count> repeats_;" />
+
+The screen uses `just_connected` and `just_disconnected` to explain pad changes and remove an
+observed disconnected assignment. Joining consumes that press; it cannot also select READY.
+The sample's <RepoLink path="samples/local_multiplayer/join_rules.cpp">value-based rules</RepoLink>
+keep player binding and readiness outside the engine. [Local multiplayer](/docs/guides/local-multiplayer/)
+explains the source-to-player mapping, controls and identity limits.
+
 ## Accessibility
 
 Labrador provides [keyboard, controller, mouse and touch input](/docs/guides/input/), UI focus

@@ -8,8 +8,8 @@ sidebar:
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
 
-The <RepoLink path="samples/local_multiplayer">local multiplayer sample</RepoLink> puts two
-players in one arena. The top pane follows the cyan player and the bottom pane follows the
+The <RepoLink path="samples/local_multiplayer">local multiplayer sample</RepoLink> starts with a
+two-player join screen, then puts both players in one arena. The top pane follows the cyan player and the bottom pane follows the
 orange player. Both panes show the same world: head toward the purple cross to meet, or move
 apart to see each camera follow its own player.
 
@@ -25,12 +25,16 @@ ctest --preset x64-debug -R LocalMultiplayerTests --output-on-failure
 out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe
 ```
 
-| Player | Keyboard | Optional gamepad | Pane |
-| --- | --- | --- | --- |
-| 1, cyan | WASD | Slot 0, left stick | Top |
-| 2, orange | Arrow keys | Slot 1, left stick | Bottom |
+| Source | Join | Menu direction | Select | Leave |
+| --- | --- | --- | --- | --- |
+| WASD half | F | W / S | F | G |
+| Arrow half | Enter | Up / Down | Enter | Backspace |
+| Any of four gamepad slots | Start | Stick or d-pad up / down | A | B |
 
-Escape, or B on either gamepad, exits. No controllers are required. Some keyboards cannot
+The first source takes the first free player slot, cyan/top or orange/bottom. A join press
+cannot also select READY: press Select again. Both players choose READY to start the arena.
+WASD and arrows then move their assigned players; a bound gamepad uses its left stick.
+Escape, or B on an assigned gamepad during arena play, exits. No controllers are required. Some keyboards cannot
 report every combination of simultaneously held keys; use a controller if a combination fails
 to register. Keys are physical positions, as described in [Input](/docs/guides/input/).
 
@@ -40,21 +44,34 @@ their usual device prerequisites. A null preset records draws without showing a 
 
 ## Give each player their own input
 
-Player identity belongs to the sample. The same index selects a keyboard binding, a gamepad
-slot, a position and a view. The state reads both slots without checking `connected`: an absent
-slot contributes a neutral stick, leaving keyboard input available.
+Player identity belongs to the sample. Its
+<RepoLink path="samples/local_multiplayer/join_rules.h">Lobby</RepoLink> maps two player slots
+to sources: WASD, arrows, or any of the four pad slots. Simultaneous joins are resolved in that
+source order, taking the first free player slot. Each player gets a separate `FocusGroup` slot
+and `DirectionRepeat`; the [menus guide](/docs/guides/menus/#split-screen-menus) follows that screen.
 
-<SourceFile path="samples/local_multiplayer/play_state.cpp" from="const std::array<Vector2F, Arena::player_count> sticks" to="std::array<Vector2F, Arena::player_count> directions" />
+An observed disconnect in the menu removes only that assignment and its readiness. Reconnect
+requires a fresh Start press; a connection edge never joins automatically. Leaving also makes
+that player slot available to another source. These decisions are pure value-based rules in
+<RepoLink path="samples/local_multiplayer/join_rules.cpp">update_lobby and choose_lobby</RepoLink>,
+tested without a controller.
 
-The input helper keeps the two sets of keys separate and adds each player's stick after a
-deadzone:
+Once both players are ready, the arena keeps those source assignments. Player indices select
+positions and views; pad slot indices select input and can differ from the player index:
 
-<SourceFile path="samples/local_multiplayer/controls.cpp" from="std::array<Vector2F, Arena::player_count> read_directions" to="}" />
+<SourceFile path="samples/local_multiplayer/play_state.cpp" from="std::array<Vector2F, Gamepads::max_count> all_sticks;" to="directions = read_bound_directions(keyboard, all_sticks, this->sources_);" />
 
-`Arena::set_directions` caps each resulting vector to unit length before movement. A diagonal,
-or holding the keyboard and stick together, therefore cannot exceed the player's movement
-speed. Controller slots are fixed here; joining, choosing a slot and reassignment on reconnect
-are game policy rather than an engine player-management service.
+The helper reads only the assigned keyboard half or pad stick. Other sources cannot steer
+that player:
+
+<SourceFile path="samples/local_multiplayer/controls.cpp" from="std::array<Vector2F, Arena::player_count> read_bound_directions" to="}" />
+
+`Arena::set_directions` caps each resulting vector to unit length before movement, so a diagonal
+cannot increase movement speed. An absent assigned pad contributes neutral input during play;
+the assignment remains attached to that slot. A returning or replacement pad in the slot can
+control the player. Slots are observable input positions, not persistent physical identities,
+and an undetected replacement between polls cannot be identified. The lobby's disconnect policy
+and the arena's retained binding are choices in the sample, rather than an engine player manager.
 
 ## Update one world once
 
@@ -113,9 +130,12 @@ See [Drawing, views and cameras](/docs/concepts/drawing/) for the rendering mode
 
 ## Verify the example
 
-`LocalMultiplayerTests` drives input routing, player movement and following cameras without a
-window or device. With `x64-debug-null`, it additionally draws the real arena into the recording
+`LocalMultiplayerTests` drives the join reducer, source routing, player movement and following
+cameras without a window or device. With `x64-debug-null`, it additionally draws the real arena into the recording
 backend and compares serial and parallel output, including both players in both views.
+Native null render/audio also runs four real-menu cases using a hidden Application and synthetic
+keyboard input: independent focus, held-direction gating, resized recordings and READY-to-arena
+transition. Those cases open no graphics/audio API device and poll no physical pad.
 
 For a finite check of the selected renderer and the sample's actual state:
 
@@ -123,9 +143,14 @@ For a finite check of the selected renderer and the sample's actual state:
 out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe --smoke-test
 ```
 
-This renders 120 scripted ticks in a hidden window, checks the two independent final positions
+This bypasses the join screen, renders 120 scripted ticks in a hidden window, checks the two independent final positions
 and view count, and exits with a nonzero status on failure. It does not test physical input.
 Add `--capture out\multiplayer.png` to save an early frame on a rasterising backend; the
 destination's parent directory must exist. The sample's
 <RepoLink path="samples/local_multiplayer/README.md">README</RepoLink> describes its scope
 and verification in full.
+
+The updated sample builds and its tests and smoke path pass under Debug-null. Desktop visual
+review of the join screen and its updated browser build/runtime acceptance remain open in
+OCA-46. Headless recordings establish routing and geometry; they do not qualify appearance or
+physical controllers.
