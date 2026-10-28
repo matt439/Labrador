@@ -193,3 +193,79 @@ TEST_CASE("null entries in the widget list are skipped, not dereferenced")
 
 	CHECK(nearest_in_direction(top, Direction::down, widgets) == &bottom);
 }
+
+namespace
+{
+	struct NavigationTie
+	{
+		Direction direction;
+		Direction reverse;
+		RectangleF first;
+		RectangleF second;
+	};
+
+	// Each pair has the same edge gap and the same centre distance across
+	// travel, on opposite sides of the origin's line of travel.
+	std::vector<NavigationTie> symmetric_ties()
+	{
+		return {
+			{ Direction::down, Direction::up,
+				RectangleF(-20.0f, 20.0f, 10.0f, 10.0f),
+				RectangleF(20.0f, 20.0f, 10.0f, 10.0f) },
+			{ Direction::up, Direction::down,
+				RectangleF(-20.0f, -20.0f, 10.0f, 10.0f),
+				RectangleF(20.0f, -20.0f, 10.0f, 10.0f) },
+			{ Direction::right, Direction::left,
+				RectangleF(20.0f, -20.0f, 10.0f, 10.0f),
+				RectangleF(20.0f, 20.0f, 10.0f, 10.0f) },
+			{ Direction::left, Direction::right,
+				RectangleF(-20.0f, -20.0f, 10.0f, 10.0f),
+				RectangleF(-20.0f, 20.0f, 10.0f, 10.0f) },
+		};
+	}
+}
+
+TEST_CASE("exact directional ties keep the first candidate")
+{
+	const RectangleF from(0.0f, 0.0f, 10.0f, 10.0f);
+	const std::vector<NavigationTie> ties = symmetric_ties();
+	for (const NavigationTie& tie : ties)
+	{
+		CAPTURE(static_cast<int>(tie.direction));
+		const std::vector<RectangleF> first_then_second = { tie.first, tie.second };
+		const std::vector<RectangleF> second_then_first = { tie.second, tie.first };
+		CHECK(nearest_in_direction(from, tie.direction, first_then_second, false) == 0);
+		CHECK(nearest_in_direction(from, tie.direction, second_then_first, false) == 0);
+	}
+}
+
+TEST_CASE("exact wrap ties keep the first candidate")
+{
+	const RectangleF from(0.0f, 0.0f, 10.0f, 10.0f);
+	const std::vector<NavigationTie> ties = symmetric_ties();
+	for (const NavigationTie& tie : ties)
+	{
+		CAPTURE(static_cast<int>(tie.reverse));
+		const std::vector<RectangleF> first_then_second = { tie.first, tie.second };
+		const std::vector<RectangleF> second_then_first = { tie.second, tie.first };
+		CHECK(nearest_in_direction(from, tie.reverse, first_then_second, false) == -1);
+		CHECK(nearest_in_direction(from, tie.reverse, first_then_second, true) == 0);
+		CHECK(nearest_in_direction(from, tie.reverse, second_then_first, true) == 0);
+	}
+}
+
+TEST_CASE("widget ties preserve supplied order past null and self entries")
+{
+	StubWidget from(0.0f, 0.0f, 10.0f, 10.0f);
+	StubWidget left(-20.0f, 20.0f, 10.0f, 10.0f);
+	StubWidget right(20.0f, 20.0f, 10.0f, 10.0f);
+	const std::vector<labrador::UiWidget*> left_first = { nullptr, &from, &left, &right };
+	const std::vector<labrador::UiWidget*> right_first = { &from, &right, nullptr, &left };
+
+	CHECK(nearest_in_direction(from, Direction::down, left_first, false) == &left);
+	CHECK(nearest_in_direction(from, Direction::down, right_first, false) == &right);
+	CHECK(nearest_in_direction(from, Direction::up, left_first, true) == &left);
+	CHECK(nearest_in_direction(from, Direction::up, right_first, true) == &right);
+	CHECK(nearest_in_direction(from, Direction::up, left_first, false) == nullptr);
+	CHECK(nearest_in_direction(from, Direction::up, right_first, false) == nullptr);
+}

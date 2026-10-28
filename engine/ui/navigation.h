@@ -23,8 +23,8 @@ namespace labrador
 	// nowhere to go.
 	//
 	// This is the whole of controller navigation, and it is arithmetic over
-	// bounds(). Nothing else about a widget matters: not its type, not its
-	// name, not the order it was declared in. That is the point: a per-screen
+	// bounds(). Widget type and name do not affect the ranking. Geometry
+	// decides the answer, with candidate order breaking exact ties. A per-screen
 	// adjacency table written by hand - four if-chains per page, keyed by
 	// std::string and compared every frame - is derivable from where the
 	// widgets are, so no page has to keep one.
@@ -44,10 +44,11 @@ namespace labrador
 	//  2. Among those ahead, the winner minimises the gap, tie-broken by how
 	//     far off the line of travel it sits. Down a column that is the next
 	//     row; in a grid it is the cell below rather than the one below and
-	//     across.
+	//     across. If both distances are equal, the first candidate wins.
 	//  3. If nothing lies that way and `wrap` is true, the walk continues from
 	//     the far edge: among the candidates *behind* you - the same test with
-	//     the direction reversed - the furthest one wins, so a column cycles.
+	//     the direction reversed - the furthest one wins, with the same
+	//     cross-axis and candidate-order tie-breaks. A column therefore cycles.
 	//     A menu that wraps is the common case, which is why it is the
 	//     default. Defining "behind" that way, rather than as "everything
 	//     not ahead", is what stops a wrap on one axis from answering a press

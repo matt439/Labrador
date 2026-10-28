@@ -83,9 +83,9 @@ namespace labrador
 		explicit FocusGroup(int slot_count = 1,
 			FocusStyle style = FocusStyle());
 
-		// Registers a focusable widget. Declaration order does not decide
-		// navigation - bounds() does - so this may be called in whatever order
-		// reads best. Returns the widget back for convenience at call sites
+		// Registers a focusable widget. Navigation follows bounds(); exact
+		// geometric ties choose the earliest registered enabled candidate
+		// (navigation.h). Returns the widget back for convenience at call sites
 		// that are building it in the same expression.
 		//
 		// The first widget added receives focus in every slot, so a page is

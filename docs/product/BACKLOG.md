@@ -422,6 +422,7 @@ written.
 46. L46 Keep a valid StepPosition fraction below one after rounding: SM-64
 47. L47 Keep sound-bank lookup and volume notifications consistent on failure: SM-65
 48. L48 Keep effect-group assignment and notification membership consistent on failure: SM-66
+49. L49 State the existing geometric navigation tie rule: SM-67
 
 **Stories**
 
@@ -781,6 +782,63 @@ written.
 - [x] **[SM-64](#sm-64)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Preserve the stated StepPosition fraction range across valid periods
 - [x] **[SM-65](#sm-65)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed first sound-bank registration absent and retryable
 - [x] **[SM-66](#sm-66)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Preserve an effect's previous group when first notification registration fails
+- [x] **[SM-67](#sm-67)** Could · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Know which candidate wins an exact navigation tie
+
+<a id="sm-67"></a>
+### SM-67. State navigation's existing exact-tie rule
+
+Selected 2026-10-29 after SM-66 from its second-ranked source finding. Both
+navigation.h and FocusGroup::add claim ordering does not matter, but the
+current walk retains the first candidate when both directional gap and
+cross-axis distance tie. Enabled focus candidates retain registration order.
+The wrap rule also minimizes cross-axis distance when the furthest gaps tie,
+which its full-semantics prose omits. Correcting these confirmed statements
+has bounded scope and no new navigation policy. The next audit returns to
+OCA-41's existing literal-encoding story; lower-value loader prose remains
+separate. Deferred input/product decisions and geometry redesign stay out.
+
+**Acceptance**
+
+- Pin the existing walk with distinct symmetric rectangles in all four
+  directions, both ahead and on wrap, and reverse supplied candidates.
+  Check the widget overload's null/self filtering preserves first-candidate
+  pointer mapping. Check FocusGroup's enabled registration order after clear
+  and reverse registration, and disabling/re-enabling a tied candidate.
+- First run the new cases with original public headers and unchanged
+  implementation. They should pass the existing behavior; no failing old
+  implementation result is expected or claimed. Then replace both false
+  order-independence statements with the first-candidate exact-tie rule and
+  document wrap's existing cross-axis tie-break.
+- Keep declarations, implementation, CMake and all existing tests unchanged
+  apart from the added cases. Publish both corrected header contracts. This
+  changes documentation and coverage only: record `not consumer-visible`
+  in the commit message, with no CHANGES behavior entry.
+- Run complete native default Debug, Debug null and Release null UiTests,
+  eight standalone checks and website verification. Default UI cases use
+  stubs; the null suites also exercise recording-renderer/font-texture APIs
+  under the null-backend gate, without a window or graphics API device.
+  Keep wasm/Node unrun at the standing activation stop and full CI separate.
+  These cases establish no rendered presentation, hardware or pad acceptance.
+
+**Closed 2026-10-29.** Both public headers now state that the first candidate
+wins when geometric scores tie exactly; FocusGroup explains enabled
+registration order and the wrap prose includes the existing cross-axis
+tie-break. Four added cases pass against the original headers with 38
+assertions, pinning existing behavior rather than claiming an old-code
+failure. They cover all four directions, wrap and reversed lists, widget
+pointer mapping past null/self entries, clear/reverse registration and
+disable/re-enable filtering. Exact reverse reconstruction preserves every
+original file byte outside the comment replacements and appended tests;
+both implementation files and the six registration/fixture paths are unchanged.
+
+Complete native UiTests pass with zero skips: Debug null and Release null
+each 46 cases/218 assertions, default Debug 44/207. Eight standalone checks
+and website verification pass: zero type diagnostics, 160 tests, 145 pages,
+435 files and no snapshots. Both corrected contracts are present in the
+published reference. Null recording/font cases create no window or graphics
+API device; new cases use only geometry/stubs. Declarations and behavior are
+unchanged. Wasm/Node remains unrun at the existing activation stop, and full
+CI remains required before landing; no visual, hardware or pad claim.
 
 <a id="sm-66"></a>
 ### SM-66. Publish an effect's group after notification membership
