@@ -475,7 +475,7 @@ written.
 - [ ] **[SRL-18](STORIES.md#srl-18)** Could · S · The Sample-Reading Learner: Run LineSweeper's rules tests knowing what I need and where it works
 - [ ] **[SRL-06](STORIES.md#srl-06)** Could · S · The Sample-Reading Learner: LineSweeper's design notes give their reasons without sending me to internal records
 - [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
-- [ ] **[SRL-19](#srl-19)** Should · S · The Sample-Reading Learner: Make LineSweeper's layer boundary a build check
+- [x] **[SRL-19](#srl-19)** Should · S · The Sample-Reading Learner: Make LineSweeper's layer boundary a build check
 - [ ] **[SRL-20](#srl-20)** Could · M · The Sample-Reading Learner: Copy a working sprite-strip animation example
 - [x] **[SM-45](../code-hygiene.md#sm-45-public-header-contracts-and-rationale)** Should · M · The Sole Owner-Maintainer: Audit public-header contracts and oversized rationale
 - [x] **[SM-46](../code-hygiene.md#sm-46-backend-recording-and-synchronization-comments)** Should · S · The Sole Owner-Maintainer: Audit backend recording and synchronization comments
@@ -493,10 +493,10 @@ written.
 <a id="srl-19"></a>
 ### SRL-19. Make LineSweeper's layer boundary a build check
 
-Added 2026-10-28. The sample's [open question](../../samples/linesweeper/README.md#still-open)
-and [PlayState](../../samples/linesweeper/states/play_state.h) describe a
-checkable boundary enforced only by review. This is ready without hardware
-or a design decision; it changes enforcement, not the layering rule.
+Added 2026-10-28. The sample's [layer rules](../../samples/linesweeper/README.md#three-layers-and-the-middle-one-may-not-see-the-rules-verbs)
+and [PlayState](../../samples/linesweeper/states/play_state.h) define the
+boundary. This changes enforcement of that existing rule and needs neither
+hardware nor a design decision.
 
 **Acceptance**
 
@@ -512,6 +512,23 @@ or a design decision; it changes enforcement, not the layering rule.
   depend on sample sources. Check the copied-consumer shape.
 - Update the sample README and PlayState's comment to state the enforced
   boundary and its limits. Run the standalone checks and offline tooling tests.
+
+**Closed 2026-10-28.** The standalone checker rejects literal engine includes
+from rules and tick includes from presentation, normalising root and relative
+paths. Fourteen compiler-free fixtures prove prohibited and allowed directions
+and error details. The rules library owns the build dependency, so targeted
+sample/tests run it; the existing lint job runs it and its fixtures without
+adding a job or test entry. The README names lexical limits.
+
+All standalone checks, Debug-null rules/view builds and both LineSweeper test
+entries pass. The copied minimal consumer has no LineSweeper/check target,
+builds with preinstalled dependencies and null render/audio, registers exactly
+its two tests and passes both. That is consumer-shape and headless evidence,
+not the separate Release/device/Sandbox qualification. The website check,
+160 tests and 143-page build pass, as do 90 offline Node cases. All 71 permitted
+Python tooling cases pass across the main run and the seven installed-path
+follow-ups; ten previously stopped PowerShell process cases remain unexecuted.
+Local logs and fixture receipts are under `out/loop-2026-10-28-2114/`.
 
 <a id="srl-20"></a>
 ### SRL-20. Copy a working sprite-strip animation example

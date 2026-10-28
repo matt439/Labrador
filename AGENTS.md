@@ -73,7 +73,7 @@ pacing claim and does not run in the null-render browser configuration.
 teardown to fake WebSockets under Node, with no browser or device.
 
 The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
-Changes confined to `.md` files or `docs/` run the five standalone CMake lint
+Changes confined to `.md` files or `docs/` run the standalone CMake lint
 checks below plus the offline Python tooling and Node flash, pacing and
 bundle-verification suites; build jobs report without building. The website
 still runs its type check, tests and build. Code changes use the affected configurations;
@@ -178,6 +178,10 @@ The website workflow runs on every pull request and on pushes to master and
   includes of game headers and **any** cross-folder include into a backend,
   including from headers and the shell. The wall covers render, audio, input
   and app platform folders. A consumer's include roots do not weaken it.
+- [check_linesweeper_layers.cmake](cmake/check_linesweeper_layers.cmake) refuses
+  literal engine includes in LineSweeper's rules and its tick declaration in
+  presentation. It runs only where the sample is added; the companion fixture
+  script proves failures without a compiler. The sample README states its limits.
 - [check_doc_citations.cmake](cmake/check_doc_citations.cmake) checks document,
   numbered-section and T-number existence in comments on top-level builds.
   It proves name closure, not that a citation supports its claim.
@@ -201,6 +205,8 @@ Standalone lint commands (no configure required):
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_doc_citations.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_agent_brief.cmake
 cmake -DENGINE_DIR=C:/Projects/Labrador/engine -P cmake/check_engine_includes.cmake
+cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_linesweeper_layers.cmake
+cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_linesweeper_layer_fixtures.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_source_revision.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_whitespace.cmake
 ```

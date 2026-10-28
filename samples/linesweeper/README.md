@@ -131,8 +131,9 @@ revisit, and it is the only such signal in the field.
 ### The rules are a static library that links nothing
 
 `LineSweeperRules` links `labrador_settings` — an INTERFACE target carrying
-compiler flags and no libraries — so there is no way for it to reach an engine
-symbol. An `#include "engine/..."` that resolves still fails at link.
+compiler flags and no libraries - so an out-of-line engine call cannot link.
+Header-only engine code would still compile and link, so the include check
+below enforces the stronger rule that the simulation includes no engine code.
 
 That wall buys one property, and it is the one worth having: **the whole game
 is playable inside the test suite**, with no window, no device and no renderer.
@@ -154,6 +155,30 @@ convention, the escalation is cheap and this is it.
 The second rule is what makes "read the presentation without learning the
 rules" true rather than aspirational, and it maps exactly onto the engine's own
 `update()` writes / `draw()` reads split.
+
+`cmake/check_linesweeper_layers.cmake` checks both boundaries whenever a target
+that links `LineSweeperRules` builds, including the rules and view tests. The
+existing CI lint job also checks the sample and synthetic failing fixtures.
+Run both without a compiler or device, from the repository root:
+
+```text
+cmake -DREPO_DIR=. -P cmake/check_linesweeper_layers.cmake
+cmake -DREPO_DIR=. -P cmake/check_linesweeper_layer_fixtures.cmake
+```
+
+The checker reads `.h` and `.cpp` files recursively in `rules/` and
+`presentation/`. It accepts single-line literal `#include` directives with
+quotes or angle brackets and forward slashes. Paths are normalised against
+the repository include root and the including file's directory, so root
+spellings and relative `.`/`..` attempts meet the same wall. Errors name the
+source and its offending directive. Standard headers, `rules/world.h` and
+`rules/tables.h` remain allowed; `states/` can include the tick declaration.
+
+This is a lexical check, not a C++ dependency analyser: it checks inactive
+preprocessor branches and does not preprocess block comments. It does not
+resolve macro includes, line continuations, generated files or transitive
+dependencies. Review still holds those boundaries. A minimal consumer does
+not add the LineSweeper directory and has no dependency on its sources or check.
 
 Price, stated plainly: this is a wall in *this* repository. Someone who copies
 the tree and deletes the check gets folders and no discipline. It teaches by
@@ -994,18 +1019,6 @@ need their actual browser run before SM-08 can close.
   deficiency has played them, and that validation
   ([XAG 103](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/103))
   has no story yet.
-- **Whether the layer rule gets a build check.** It is now checkable and
-  unchecked, which is the worst of the three states, and `presentation/`
-  has grown well past the three files it held when the rule was written: every
-  view, layout and control the sample has added since is in it, so each new
-  file there widens what review alone is holding.
-  `cmake/check_engine_includes.cmake` is the model and the rule is two greps:
-  nothing in `rules/` may include `engine/`, and nothing in `presentation/` may
-  include `rules/tick.h`. Both hold today by review. The argument against
-  writing it is that a sample's build check is a sample's build check — someone
-  who copies the tree and deletes it gets folders and no discipline, which the
-  layer decision above already says out loud.
-
 - **Whether the input map belongs in the sample or the engine — now priced,
   and still open.** `states/` has two tables, `{Key, button}` and
   `{GamepadButton, button}`, nine entries each, and that is the whole input
