@@ -582,6 +582,23 @@ written.
 - [ ] **[SM-18](STORIES.md#sm-18)** Could · S · The Sole Owner-Maintainer: A record of the configurations CI cannot run, per merged change — after SM-17
 - [ ] **[SM-15](STORIES.md#sm-15)** Could · XS · The Sole Owner-Maintainer: Observe the null-backend wasm step running after a failed page step, and the job going red
 - [ ] **[SM-26](STORIES.md#sm-26)** Could · S · The Sole Owner-Maintainer: Notice when the hosted demo lags the engine — after PI-05
+  Source implemented 2026-10-29. `tools/check_demo_lag.py` pins an explicit
+  host checkout's HEAD and reads its committed BUILD.json, compares its clean
+  full revision with local master (or an explicitly labeled ref), and counts
+  only known ancestor history. Unknown/shallow/diverged history and malformed
+  metadata fail explicitly. It performs no fetch, host write or deployment.
+  [web.md section 7](../port/web.md#7-what-the-host-page-gets) states the re-sync
+  trigger, committed-source command and distance/provenance limits.
+  All 25 focused offline tests pass, including committed-versus-working data,
+  real isolated histories, worktrees and Git routing/replacement isolation.
+  Independent source review has no remaining findings. The actual command
+  against C:/Projects/PersonalWebsite exited 2 at its initial Labrador Git
+  identity read: Git refused the checkout's ownership under CodexSandboxOffline.
+  It never read the host record. That read remains stopped; no trust setting or
+  alternative execution context was used. Actual committed-host qualification
+  remains open and the story stays unchecked.
+  All seven standalone checks, website check (zero diagnostics), 160 website
+  tests and the 144-page/433-file build pass. No live request or deploy ran.
 - [ ] **[SM-29](STORIES.md#sm-29)** Could · S · The Sole Owner-Maintainer: A procedure for previewing and rolling back the site — after SM-31
 - [ ] **[SM-30](STORIES.md#sm-30)** Could · S · The Sole Owner-Maintainer · **Owner**: Change the website gate in one place — after SM-29
 - [x] **[SM-32](STORIES.md#sm-32)** Could · S · The Sole Owner-Maintainer: Keep the site's LineSweeper footage in step with the sample
