@@ -274,6 +274,15 @@ revision stamps rather than rewriting fixtures to conceal differences. Run
 the website type check, tests and build. Preserve `forgetIndexes` behavior and
 validate fresh and reused caches through the existing reference tests.
 
+**Closed 2026-10-28.** The exported facade now composes a sole index/reset
+owner, a cache-free prose formatter and a page/layout assembler. Shared types
+and a lazy layout callback keep imports acyclic and page bodies deferred.
+[The dated parity record](2026-10-28-reference-organisation.md) preserves the
+frozen source revision, unchanged output and proof-scaffold cleanup: all 93
+reference pages, 10 module pages and 431 built files match exactly. The website
+check, 160 tests and final 143-page build pass. Three cache regression tests
+cover cold/warm/reset output, call order, borrowed maps and inventory changes.
+
 ## SM-53. Vulkan device/buffer ownership review
 
 Review `engine/render/vulkan/device_resources.{h,cpp}`. The existing
