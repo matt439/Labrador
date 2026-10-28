@@ -106,9 +106,10 @@ focus shows up in three places.
 - **Interface.** A small widget set with focus and directional navigation, so menus work with a
   controller without a mouse.
 
-`samples/local_multiplayer` is the split-screen sample: two players in one world, each with a
-fixed controller slot and keys of their own, and a view each with a camera that follows them.
-Joining, choosing a slot and more than two players are left to the game. The
+`samples/local_multiplayer` starts with a two-player join screen: either keyboard half or any
+connected pad can claim a free player slot and choose READY. The sample owns those assignments
+and readiness. In the arena, each player reads its assigned input source and has a view with
+a following camera. Extending it beyond two players is game code. The
 [local multiplayer guide](/docs/guides/local-multiplayer/) walks through it, and the engine's
 tests hold split-screen frames to reference images.
 
@@ -197,7 +198,7 @@ C++ only, with no bindings for other languages.
   both Direct3D renderers; OpenGL and Vulkan are checked on a machine with a graphics driver.
 - **Warnings are errors**, with no exceptions, and your game is compiled with the same settings
   as the engine.
-- **Continuous integration builds all five renderers** on every change.
+- **The full CI sweep builds all five renderers.**
 - **Benchmarks check scaling, not stopwatch times**: a step that is linear in the number of
   objects has to stay linear when the count quadruples, on any machine.
 
@@ -208,9 +209,10 @@ was measured.
 
 ## Platform support
 
-Labrador runs on **Windows** and in a **desktop browser**. It builds on Windows, with Visual
-Studio 2022 or newer, and its OpenGL renderer reaches the browser as WebGL2, through Emscripten.
-All six samples run there today. Every change loads each sample's page in headless Chrome and
+Labrador runs on **Windows** and in a **desktop browser**. The Windows build uses the
+[tools in Get Started](/docs/get-started/prerequisites/); its OpenGL renderer reaches the
+browser as WebGL2, through Emscripten.
+All six samples run there today. The full CI sweep loads each sample's page in headless Chrome and
 quits it the sample's own way, and LineSweeper has also been checked in Firefox. Safari has not
 yet been checked.
 
@@ -223,3 +225,16 @@ phone layout pass. Android remains unverified.
 The Vulkan renderer exists because Vulkan is the graphics interface that reaches Android, Linux
 and, through MoltenVK, Apple's platforms, but none of those are supported or built today. Treat
 Vulkan as the route to them, not as support for them.
+
+The <RepoLink path="docs/port/android.md">Android port plan</RepoLink> is scoping:
+no Android port has been built. It places iOS after Android and ends at "the engine runs",
+with packaging and store work outside its scope. There is no Linux or macOS port plan in
+this repository.
+
+An additional native platform is called supported when all five conditions hold:
+
+- A game needs that platform.
+- A maintained build preset runs in CI.
+- A run on a real device is recorded.
+- A performance p99 is measured with its workload, device and configuration stated.
+- There is a path to package the game for players.

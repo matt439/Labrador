@@ -618,6 +618,23 @@ written.
 - [ ] **[SM-30](STORIES.md#sm-30)** Could · S · The Sole Owner-Maintainer · **Owner**: Change the website gate in one place — after SM-29
 - [x] **[SM-32](STORIES.md#sm-32)** Could · S · The Sole Owner-Maintainer: Keep the site's LineSweeper footage in step with the sample
 - [ ] **[NMS-03](STORIES.md#nms-03)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): The Why page's Platform support section links the plans, their scope, and what would change the answer — after OCA-01
+  Source added 2026-10-29. Why links the existing Android scoping record and
+  states no Android build, iOS after Android, the engine-only endpoint without
+  packaging/store work, and no Linux/macOS plan. Five future support conditions
+  name client demand, CI preset, real-device run, measured p99 and packaging.
+  Existing browser/Safari/phone qualifications remain. Tool-version advice
+  links Get Started instead of repeating a year in the platform section.
+  The same overview now describes the implemented multiplayer join/ready
+  assignments and the full CI sweep, correcting its stale fixed-slot and
+  every-change claims. No platform, support promise or schedule was added.
+  The generated source link's remote GitHub response remains unrun under the
+  network stop; local path/URL validation cannot establish that response.
+  The story stays unchecked pending that acceptance.
+  Independent source review, all seven standalone checks, website check
+  (zero diagnostics), 160 website tests and the 144-page/433-file build pass.
+  The emitted section's five gates, six facts/qualification checks, local
+  source target/URL and absence of schedule text were inspected, along with
+  the three overview corrections. No HTTP, browser or device check ran.
 - [ ] **[NMS-04](STORIES.md#nms-04)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): Configuring on a non-Windows host refuses early and points at the platform statement — after OCA-01
 - [x] **[SRL-14](STORIES.md#srl-14)** Could · S · The Sample-Reading Learner: State the C++ introduction's substantial pre-production progress and unfinished status
 - [ ] **[SRL-15](STORIES.md#srl-15)** Could · XS · The Sample-Reading Learner: Get Started tells me where to go if I do not know C++ yet — after SRL-14
