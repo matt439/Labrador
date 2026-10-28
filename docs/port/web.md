@@ -717,8 +717,10 @@ embed on the same page unless each one opts in.
 
 ### 7.3 Mounting it, start-on-click
 
-The public [browser page contract](https://labradorengine.com/docs/guides/browser/#the-page-and-what-it-owes-the-module)
-owns `Module.canvas`, the four optional callbacks and quit-before-removal.
+The public [LineSweeper bundle contract](https://labradorengine.com/docs/guides/linesweeper-bundle/)
+owns the factory, distributed files and mounting example for another host.
+The [browser page contract](https://labradorengine.com/docs/guides/browser/#the-page-and-what-it-owes-the-module)
+owns the generic `Module.canvas`, four optional callbacks and quit-before-removal rules.
 Removing a running game's canvas does not stop its loop, WebGL2 context or
 window listeners. The mounting example below applies that contract to the
 LineSweeper bundle.
