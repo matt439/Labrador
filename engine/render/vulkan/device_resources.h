@@ -121,6 +121,8 @@ namespace labrador
 	// VulkanTexture holds a shared_ptr to this, and the device and the instance
 	// outlive the last thing that names them. It costs one atomic per texture
 	// per load and nothing at all per draw.
+	// Read-back also retains its creating generation until its local buffer
+	// is released, including when recovery replaces DeviceResources' owner.
 	class VulkanDevice
 	{
 	public:

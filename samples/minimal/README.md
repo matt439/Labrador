@@ -36,6 +36,10 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-28.** Vulkan releases temporary texture/shader resources on the
+  corrected failure paths and retains the creating device during read-back
+  recovery cleanup. No template source migration is needed; SM-56 keeps
+  the outstanding device qualification separate from the source fix.
 - **2026-10-28.** Before uploading a browser release, gather its notices as
   [Build for the browser](https://labradorengine.com/docs/guides/browser/#gather-the-browser-release-and-its-notices)
   shows. The command stages the page, script, module, full licence texts and
