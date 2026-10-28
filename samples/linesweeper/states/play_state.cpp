@@ -198,6 +198,13 @@ namespace linesweeper
 		{
 			this->report_palette_(this->palette_);
 		}
+
+		// Loading may finish after the page was hidden. That state missed the
+		// deactivation edge, so it reads the context's retained fact instead.
+		if (!this->context()->active())
+		{
+			this->on_deactivated();
+		}
 	}
 
 	void PlayState::show_hints()
@@ -336,6 +343,7 @@ namespace linesweeper
 
 	void PlayState::on_resume()
 	{
+		this->covered_ = false;
 		// The buffer may have changed shape under the menu, and the gate
 		// below reads the touch controls where they are now.
 		this->arrange_screen();
@@ -343,6 +351,21 @@ namespace linesweeper
 		// Before on_result runs, which is the order state_context.h fixes -
 		// so this covers RESTART's fresh World as well as RESUME's.
 		this->gate_.close_over(this->read_input());
+	}
+
+	void PlayState::on_suspend()
+	{
+		this->covered_ = true;
+	}
+
+	void PlayState::on_deactivated()
+	{
+		// A hidden browser tab need not get another update before it returns.
+		// Queue the pause on this edge, rather than waiting for an input poll.
+		if (!this->covered_ && this->world_.topped_out == 0)
+		{
+			this->open_pause_menu();
+		}
 	}
 
 	void PlayState::update(float dt)
@@ -394,7 +417,8 @@ namespace linesweeper
 		// to press, and a pause menu offering RESUME over a finished match is
 		// offering something that does not exist.
 		if (this->world_.topped_out == 0 &&
-			(this->app_->keyboard()->pressed(Key::escape) ||
+			(this->app_->keyboard()->just_unfocused() ||
+				this->app_->keyboard()->pressed(Key::escape) ||
 				this->app_->keyboard()->pressed(Key::p) ||
 				this->app_->gamepads()->pressed(0, GamepadButton::start) ||
 				pause_tapped))

@@ -105,10 +105,13 @@ CI's full matrix remains required. Match focused local checks to the change.
   paths under clang. `application_loop_tests.cpp` runs only on native null:
   browser `Application::run()` never returns, including under wasm-null.
 - `LineSweeperTests` links only the rules library and `labrador_settings`;
-  `LineSweeperViewTests` links the engine but creates no device. Particles,
+  `LineSweeperViewTests` links the engine; its portable cases create no device. Particles,
   compaction, event reconstruction, layouts and touch hit tests run headlessly.
   Null render also loads the sample font and records BoardView's sprites, so
   palette colours are asserted there; how the presentation looks is looked at.
+  Native null render/audio also exercise the real play/pause states with a
+  hidden window, synthetic input and activation, and no application loop or
+  graphics/audio API device.
 - Check `engine/audio/` changes beyond the default preset. `AudioTests` is
   always headless: XAudio2 presets use `SoundBank::silent()` and bank-reader
   tests; native null adds recorded wave/level/order assertions; wasm uses

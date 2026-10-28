@@ -26,10 +26,10 @@ target_include_directories(LineSweeperTests PRIVATE
 #
 # TWO BINARIES BECAUSE THE SAMPLE HAS TWO WALLS, and they are different walls.
 # The target above links no engine, which is what proves the game is playable
-# with nothing underneath it. This one links the engine and still creates no
-# window, no adapter and no device, which is the other half of the same
-# discipline: PHILOSOPHY, Tests and toolchain, asks that everything below the
-# platform edge be testable headlessly, and a sample is below it too.
+# with nothing underneath it. This one links the engine; its portable cases
+# create no window, adapter or device. Native null configurations also exercise
+# the states with a hidden window, as specified below. PHILOSOPHY, Tests and
+# toolchain, asks that code below the platform edge be testable headlessly.
 #
 # Three presentation files are in it everywhere. The board view needs the
 # resource table to measure text, and measuring walks a loaded font atlas, so a
@@ -38,7 +38,8 @@ target_include_directories(LineSweeperTests PRIVATE
 # nothing in update() reads - so the ten thousand particles, the compaction and
 # the event reconstruction all run. The screen's arrangement and the touch
 # controls' hit test are arithmetic on a buffer size, and run as well; the
-# TouchControls object beside them measures its labels and is not constructed.
+# TouchControls object beside them is constructed by the native-null state
+# cases, where the sample font can be loaded without a graphics device.
 #
 # The sample's own sources are compiled into this target rather than linked,
 # because LineSweeperSample is a WIN32 executable and presentation/ is not a
@@ -74,6 +75,22 @@ if(WIN32)
         "${CMAKE_CURRENT_SOURCE_DIR}/../../bench/linesweeper_frame_result.cpp"
         frame_pacer_tests.cpp
         frame_result_tests.cpp
+    )
+endif()
+
+# The native null backends also exercise the real play/pause states against
+# synthetic input and activation. A hidden window supplies Application's
+# services; no graphics device, audio endpoint or application loop is used.
+if(WIN32 AND LABRADOR_RENDER_BACKEND STREQUAL "null" AND
+        LABRADOR_AUDIO_BACKEND STREQUAL "null")
+    target_sources(LineSweeperViewTests PRIVATE
+        focus_pause_tests.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/top_out_banner.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/states/play_state.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/states/pause_state.cpp"
+    )
+    target_compile_definitions(LineSweeperViewTests PRIVATE
+        LINESWEEPER_CONTENT_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/content/"
     )
 endif()
 

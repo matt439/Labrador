@@ -26,6 +26,10 @@ export function expected_complaint({ source, level, text }) {
 
 const PRELUDE = `(() => {
 	window.labradorBundle = { runs: [] };
+	if (location.search.includes('controller-gate')) {
+		window.labradorBundle.pad = { connected: true, buttons: [{ pressed: false }] };
+		navigator.getGamepads = () => [window.labradorBundle.pad];
+	}
 	const getContext = HTMLCanvasElement.prototype.getContext;
 	HTMLCanvasElement.prototype.getContext = function (name, ...args) {
 		if (name === 'webgl2' && location.search.includes('no-webgl2')) { return null; }
@@ -186,8 +190,9 @@ export default async function drive(page) {
 		const errors = await evaluate('window.labradorBundle.runs.flatMap((run) => run.errors)');
 		assert(errors.length === 0, `unexpected onError: ${errors.join(' | ')}`);
 	};
-	const quit = async (index) => {
-		for (const [code, vk] of [['Escape', 27], ['ArrowDown', 40], ['ArrowDown', 40],
+	const quit = async (index, already_paused = false) => {
+		if (!already_paused) { await key('Escape', 27); }
+		for (const [code, vk] of [['ArrowDown', 40], ['ArrowDown', 40],
 			['ArrowDown', 40], ['Enter', 13]]) {
 			await key(code, vk);
 		}
@@ -211,6 +216,8 @@ export default async function drive(page) {
 	assert(await evaluate("matchMedia('(pointer: coarse)').matches"), 'touch emulation did not produce a coarse pointer');
 	assert(await evaluate("document.getElementById('play').hidden && !document.getElementById('needs-keyboard').hidden"),
 		'a touch-only visitor was offered Play');
+	assert(await evaluate("!(/Space|Escape|arrow/i).test(document.getElementById('status').textContent)"),
+		'the touch gate gave keyboard play instructions');
 	await accessibility_note('#play');
 	await frames(10);
 	assert(!requests.some((url) => new URL(url).pathname.endsWith('/linesweeper.wasm')),
@@ -218,6 +225,16 @@ export default async function drive(page) {
 	await key('KeyA', 65);
 	assert(await evaluate(button_visible), 'a key did not lift the touch gate');
 	console.log('ok - touch gate hides Play and fetches no wasm until a keyboard is seen');
+	phase = 'controller gate';
+	const before_controller = requests.length;
+	await navigate('controller-gate');
+	await frames(20);
+	assert(await evaluate("document.getElementById('play').hidden"), 'a connected but unused pad lifted the gate');
+	await evaluate('window.labradorBundle.pad.buttons[0].pressed = true');
+	await until(button_visible, 'a controller button did not lift the touch gate');
+	assert(!requests.slice(before_controller).some((url) => /\/linesweeper\.(js|wasm)$/.test(new URL(url).pathname)),
+		'the controller gate downloaded the module before Play');
+	console.log('ok - a controller button opens Play without fetching the module');
 
 	await send('Emulation.setTouchEmulationEnabled', { enabled: false });
 	for (const [name, advice] of [['no-webgl2', 'hardware acceleration'],
@@ -236,6 +253,10 @@ export default async function drive(page) {
 	console.log('ok - unsupported graphics or exceptions show advice without downloading the module');
 	phase = 'play and replay';
 	await navigate('desktop');
+	assert(await evaluate("document.getElementById('status').textContent.includes('Controller:') && " +
+		"document.getElementById('status').textContent.includes('Down soft-drops') && " +
+		"document.getElementById('status').textContent.includes('Start pauses')"),
+		'the desktop page omitted controller or soft-drop instructions');
 	await click_play();
 	await loaded(0);
 	await clean_runs();
@@ -269,14 +290,28 @@ export default async function drive(page) {
 	assert(context.length === 2 && context[0].name === 'onContextLost' &&
 		context[1].name === 'onContextRestored' && context[1].text === instructions,
 		'context callbacks or their status texts were out of order');
-	await quit(0);
+	// Tab already blurred the canvas. Quitting without Escape demonstrates
+	// that returning focus and restoring graphics did not resume the match.
+	await quit(0, true);
 	await click_play();
 	await loaded(1);
 	await accessibility_note('canvas');
 	assert(await evaluate('window.labradorBundle.runs[0].canvas !== window.labradorBundle.runs[1].canvas && ' +
 		'!window.labradorBundle.runs[0].canvas.isConnected && document.querySelectorAll("canvas").length === 1'),
 		'replay did not replace the first instance canvas');
-	await quit(1);
+	// Synthetic visibility, as in WebWindowTests: this checks the response,
+	// not a physical tab switch. No update is required between hide and show.
+	await evaluate(`(() => {
+		for (const hidden of [true, false]) {
+			Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+			Object.defineProperty(document, 'visibilityState', { configurable: true,
+				get: () => hidden ? 'hidden' : 'visible' });
+			document.dispatchEvent(new Event('visibilitychange'));
+		}
+		delete document.hidden;
+		delete document.visibilityState;
+	})()`);
+	await quit(1, true);
 	console.log('ok - packaged module draws, restores its context, quits and draws a fresh replay');
 
 	phase = 'truncated wasm';

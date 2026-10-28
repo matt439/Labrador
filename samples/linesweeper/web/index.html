@@ -76,8 +76,11 @@
         has played it yet, so for now this page asks for a keyboard or a controller.</p>
     </div>
   </div>
-  <p class="status" id="status" role="status">Arrows move, Up or X rotates, Space drops,
-    C holds, Escape pauses.</p>
+  <p class="status" id="status" role="status">Keyboard: Left/Right move, Down soft-drops,
+    Up/X rotates clockwise, Z anticlockwise, Space hard-drops, C/Shift holds,
+    Escape/P pauses. Controller: D-pad Left/Right moves, Down soft-drops,
+    Up/A rotates clockwise, B anticlockwise, Y hard-drops, X/Left shoulder holds,
+    Start pauses.</p>
   <p class="accessibility" id="accessibility"><strong>Accessibility:</strong>
     Keyboard play is supported; controller input is implemented but physical-controller
     checks are pending. Tab moves focus out of the game. Controls are fixed, and
@@ -156,10 +159,32 @@
   if (matchMedia("(pointer: coarse)").matches) {
     play.hidden = true;
     needsKeyboard.hidden = false;
-    addEventListener("keydown", () => {
+    setStatus("Touch play is awaiting real iPhone and phone-layout checks. Press a keyboard key or controller button to show Play.", false);
+    function unlock() {
       play.hidden = false;
       needsKeyboard.hidden = true;
-    }, { once: true });
+      setStatus(instructions, false);
+      removeEventListener("keydown", unlock);
+      removeEventListener("gamepadconnected", checkController);
+      clearInterval(controllerPoll);
+    }
+    function checkController() {
+      // Browsers can hide pads until a button is pressed. Connection alone
+      // does not prove that the visitor has chosen this input route.
+      try {
+        const pads = navigator.getGamepads?.() ?? [];
+        if (Array.from(pads).some((pad) => pad?.connected &&
+            pad.buttons.some((button) => button.pressed))) {
+          unlock();
+        }
+      } catch {
+        // A page policy can forbid pads; the keyboard route remains available.
+      }
+    }
+    // Poll only while the gate is closed, with no module or graphics context.
+    const controllerPoll = setInterval(checkController, 250);
+    addEventListener("keydown", unlock);
+    addEventListener("gamepadconnected", checkController);
   }
 
   async function mount() {

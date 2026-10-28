@@ -15,6 +15,8 @@ function host(options = {}) {
 	const frames = [];
 	const diagnostics = [];
 	const runs = [];
+	const events = new Map();
+	const intervals = new Map();
 	let imports = 0;
 	let probes = 0;
 	let releases = 0;
@@ -59,7 +61,17 @@ function host(options = {}) {
 			createElement: (name) => { assert.equal(name, 'canvas'); return new Element(); },
 		},
 		console: { error: (...args) => diagnostics.push(args) },
-		matchMedia: () => ({ matches: false }),
+		matchMedia: () => ({ matches: options.coarse === true }),
+		navigator: { getGamepads: () => {
+			if (options.padsForbidden) { throw new Error('synthetic pad policy'); }
+			return options.pads ?? [];
+		} },
+		addEventListener: (name, callback) => events.set(name, callback),
+		removeEventListener: (name, callback) => {
+			if (events.get(name) === callback) { events.delete(name); }
+		},
+		setInterval: (callback) => { const id = intervals.size + 1; intervals.set(id, callback); return id; },
+		clearInterval: (id) => intervals.delete(id),
 		Uint8Array,
 		WebAssembly: options.wasmMissing ? undefined : {
 			validate: (bytes) => options.exceptions === false ? false : WebAssembly.validate(bytes),
@@ -81,6 +93,9 @@ function host(options = {}) {
 		elements, runs, diagnostics,
 		click: () => elements.get('play').events.get('click')(),
 		frame: () => frames.splice(0).forEach((callback) => callback()),
+		event: (name) => events.get(name)?.(),
+		poll: () => intervals.forEach((callback) => callback()),
+		get polling() { return intervals.size; },
 		get status() { return elements.get('status').textContent; },
 		get active() { return active; },
 		get imports() { return imports; },
@@ -194,5 +209,54 @@ test('callbacks and a pending frame from an ended instance cannot overwrite repl
 	assert.equal(page.status, instructions);
 	assert.equal(page.elements.get('start').hidden, true);
 	assert.equal(page.elements.get('stage').children.length, 1);
+	assert.equal(page.diagnostics.length, 0);
+});
+
+test('desktop instructions cover fixed keyboard and controller actions without changing bindings', () => {
+	const page = host();
+	for (const instruction of ['Down soft-drops', 'Z anticlockwise', 'C/Shift holds',
+		'Escape/P pauses', 'Controller:', 'B anticlockwise', 'X/Left shoulder holds', 'Start pauses']) {
+		assert.ok(page.status.includes(instruction), instruction);
+	}
+});
+
+test('the coarse-pointer gate shows device instructions, and a keyboard restores the full list', () => {
+	const page = host({ coarse: true });
+	assert.doesNotMatch(page.status, /Space|Escape|arrow/i);
+	assert.match(page.status, /Touch play.*keyboard key or controller button/);
+	assert.equal(page.elements.get('play').hidden, true);
+	assert.equal(page.polling, 1);
+	page.event('keydown');
+	assert.equal(page.elements.get('play').hidden, false);
+	assert.equal(page.elements.get('needs-keyboard').hidden, true);
+	assert.equal(page.polling, 0);
+	assert.match(page.status, /Keyboard:.*Left\/Right/s);
+	assert.equal(page.probes, 0);
+	assert.equal(page.imports, 0);
+});
+
+test('a controller button lifts the gate without a download, then disconnect cannot re-close it', () => {
+	const pad = { connected: true, buttons: [{ pressed: false }] };
+	const page = host({ coarse: true, pads: [null, pad] });
+	page.event('gamepadconnected');
+	page.poll();
+	assert.equal(page.elements.get('play').hidden, true, 'connection without a button keeps the gate');
+	pad.buttons[0].pressed = true;
+	page.poll();
+	assert.equal(page.elements.get('play').hidden, false);
+	assert.equal(page.polling, 0);
+	pad.connected = false;
+	page.event('gamepadconnected');
+	assert.equal(page.elements.get('play').hidden, false);
+	assert.equal(page.imports, 0);
+	assert.equal(page.probes, 0);
+});
+
+test('a page that forbids controller access still opens the gate with a keyboard', () => {
+	const page = host({ coarse: true, padsForbidden: true });
+	page.poll();
+	assert.equal(page.elements.get('play').hidden, true);
+	page.event('keydown');
+	assert.equal(page.elements.get('play').hidden, false);
 	assert.equal(page.diagnostics.length, 0);
 });

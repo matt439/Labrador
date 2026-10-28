@@ -52,6 +52,11 @@ namespace linesweeper
 		// none of it is the match's until it is let go (resume_gate.h).
 		void on_resume() override;
 
+		// Focus loss opens the same pause menu as an explicit pause. A covered
+		// match is already paused, so activation changes must not stack menus.
+		void on_suspend() override;
+		void on_deactivated() override;
+
 	private:
 		// Every device as one of tick.h's button masks. A method on the state
 		// rather than a class, because it is three tables and three loops over
@@ -156,5 +161,6 @@ namespace linesweeper
 		// Whether the two hint lines are showing, so they are rewritten only
 		// on the tick that changes it.
 		bool hints_shown_ = true;
+		bool covered_ = false;
 	};
 }
