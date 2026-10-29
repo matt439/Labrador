@@ -44,7 +44,7 @@ and amend `web.md` §9 with the result.
       record visible irregular holds/jumps during comparable motion. Callback
       bins alone are not visible-judder or scan-out evidence. The console
       procedure has run in headless Chrome; no display result is added.
-- [ ] The mattharding.dev stage at 1x, 1.25x, 1.5x and 2x and with browser
+- [x] The mattharding.dev stage at 1x, 1.25x, 1.5x and 2x and with browser
       zoom: the HUD text is readable when the game is drawn smaller than
       1280x720.
 
@@ -66,9 +66,10 @@ buffer follows device pixels.
 | Zoom 67% | 536x302 | Readable with effort; letters lose strokes (NEXT nearly reads WEXT) and the queued O piece draws as two bars |
 | Zoom 50% | 400x225 | Not reliably readable: NEXT reads MEXT, the score digits deform and the controls line breaks up |
 
-The page logged no console message, warning or exception. A person still
-checks one real non-integer display scale and Ctrl+minus zoom in a desktop
-browser; whether 50% zoom needs a fix is the owner's call.
+The page logged no console message, warning or exception. On 2026-10-29 the
+owner checked the live demo at a real Windows display scale, and it reads
+fine. The owner judged 50% browser zoom too small a setting to support, so
+its illegible HUD needs no fix. Zoom down to 67% stays readable.
 
 ## Needs a gamepad (M4)
 
