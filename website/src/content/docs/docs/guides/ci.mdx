@@ -12,7 +12,9 @@ Your project's `ctest` is worth most when it runs on every push. This workflow b
 project from [Start your own project](/docs/get-started/your-project/) on a GitHub-hosted Windows
 runner and runs its tests, the rules test and the start-up check from
 [Test your game](/docs/guides/testing/). Save it in your repository as
-`.github/workflows/ci.yml`:
+`.github/workflows/ci.yml`. A [starter project](/docs/get-started/starter/) has it there
+already; it runs once the project is a Git repository on GitHub with the engine as a
+submodule, which [Put your project in Git](/docs/guides/starter-to-git/) makes it:
 
 <Code code={workflow} lang="yaml" title=".github/workflows/ci.yml" />
 

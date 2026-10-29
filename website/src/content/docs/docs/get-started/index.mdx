@@ -5,10 +5,18 @@ description: From an empty Windows machine to a game of your own that builds aga
 
 import { LinkCard } from '@astrojs/starlight/components';
 import RepoLink from '~/components/RepoLink.astro';
+import StarterGate from '~/components/StarterGate.astro';
 
 This path takes you from a Windows machine with nothing installed to a project of your own that
-builds against Labrador, runs, and shows a change you made. It has five steps, and each page
+builds against Labrador, runs, and shows a change you made. It has three steps, and each page
 ends where the next begins.
+<StarterGate when="available">You do not need Git: the project comes as a ZIP file.</StarterGate>
+<StarterGate when="missing">The project comes as a ZIP file that needs no Git, attached to each
+release from `v0.3.0`. No release these pages know of has one yet: if
+[the newest release](https://github.com/matt439/Labrador/releases/latest) has no file whose
+name begins `labrador-starter-`, take [the Git route](#if-you-use-git) in place of step 2.
+It needs Git, which [Install the tools](/docs/get-started/prerequisites/) then asks you to
+install.</StarterGate>
 
 Labrador builds on Windows, and the game it builds runs on Windows and in a desktop browser
 through WebGL2. This path builds for Windows; [Build for the browser](/docs/guides/browser/)
@@ -20,11 +28,21 @@ text editor, and the tools that convert images and fonts run from the command li
 looking for an editor, read [what Labrador is not](/#what-labrador-is-not) before installing
 anything.
 
-<LinkCard title="1. Install the tools" description="Visual Studio with the C++ workload, and Git." href="/docs/get-started/prerequisites/" />
-<LinkCard title="2. Build Labrador" description="Clone the engine, build it, and run its tests." href="/docs/get-started/build-labrador/" />
-<LinkCard title="3. Run the minimal sample" description="See the smallest game on the engine, and know what you are looking at." href="/docs/get-started/run-minimal/" />
-<LinkCard title="4. Start your own project" description="A repository of your own, with Labrador as a submodule and the minimal sample as its starting point." href="/docs/get-started/your-project/" />
-<LinkCard title="5. Make a first change" description="Change what the game says and how it moves, rebuild, and see it." href="/docs/get-started/first-change/" />
+<LinkCard title="1. Install the tools" description="Visual Studio with the C++ workload, and the command prompt every later step runs in." href="/docs/get-started/prerequisites/" />
+<LinkCard title="2. Get the starter project" description="Download a game project with Labrador inside it, extract it, build it and play it." href="/docs/get-started/starter/" />
+<LinkCard title="3. Make a first change" description="Change what the game says and how it moves, rebuild, and see it." href="/docs/get-started/first-change/" />
+
+### If you use Git
+
+The starter project is the same project the Git route builds by hand. If you already use Git,
+or want to see each step, take this route in place of step 2. It clones Labrador and builds it
+on its own first, then makes your project as a repository with Labrador as a submodule. Both
+routes end at [Make a first change](/docs/get-started/first-change/), and a starter project can
+be [put in Git](/docs/guides/starter-to-git/) at any time.
+
+<LinkCard title="Build Labrador" description="Clone the engine, build it, and run its tests." href="/docs/get-started/build-labrador/" />
+<LinkCard title="Run the minimal sample" description="See the smallest game on the engine, and know what you are looking at." href="/docs/get-started/run-minimal/" />
+<LinkCard title="Start your own project" description="A repository of your own, with Labrador as a submodule and the minimal sample as its starting point." href="/docs/get-started/your-project/" />
 
 ## What you need to know already
 
@@ -54,22 +72,23 @@ The [design philosophy](/docs/design/philosophy/) describes the engine API's tea
 
 ## What it was checked against
 
-These pages were followed by hand on Windows 11 with Visual Studio's x64 Native Tools Command
-Prompt on 4 October 2026, a run recorded in Labrador's commit `68b392d`: every command was run,
-and the project in step 4 was built from the public repository as its page then described, with
-four include edits where it now lists eight. Some steps have changed since, and the folder advice
-in step 1, its `subst` drive included, and the build in step 2 were checked by hand again on
-13 October. The revision at the bottom of each page is the one the page
-was built from, which can be later than any of these.
+The Git route's pages were followed by hand on Windows 11 with Visual Studio's x64 Native Tools
+Command Prompt on 4 October 2026, a run recorded in Labrador's commit `68b392d`: every command
+was run, and the project of Start your own project was built from the public repository as its
+page then described, with four include edits where it now lists eight. Some steps have changed
+since, and the folder advice in Install the tools, its `subst` drive included, and the build on
+Build Labrador were checked by hand again on 13 October. The revision at the bottom of each page
+is the one the page was built from, which can be later than any of these.
 
-On 25 October 2026 steps 2 to 5 were followed again on a fast desktop that already had Visual
-Studio 2026 and Git, from a fresh clone of the public repository and with vcpkg's caches empty,
-with steps 2 and 3 built at commit `6be26c9` and step 4 at the `v0.1.0` tag: every command worked
-as written and no package failed to build. The first configure took 2 minutes 17 seconds, most
-of it vcpkg building seven packages, and downloaded about 330 MB; the build took 21 seconds and
-the tests 24. Labrador's build folder was 1.3 GB afterwards. Your own project's first configure
-reused vcpkg's work and took 13 seconds. From the clone to the project's own window took about
-six minutes, not counting installing Visual Studio and Git, which was not timed. The
+On 25 October 2026 the Git route was followed again, to the first change, on a fast desktop that
+already had Visual Studio 2026 and Git, from a fresh clone of the public repository and with
+vcpkg's caches empty, with Labrador built at commit `6be26c9` and the project at the `v0.1.0`
+tag: every command worked as written and no package failed to build. The first configure took
+2 minutes 17 seconds, most of it vcpkg building seven packages, and downloaded about 330 MB; the
+build took 21 seconds and the tests 24. Labrador's build folder was 1.3 GB afterwards. Your own
+project's first configure reused vcpkg's work and took 13 seconds. From the clone to the
+project's own window took about six minutes, not counting installing Visual Studio and Git,
+which was not timed. The
 <RepoLink path="website/src/walkthrough/README.md">walkthrough's record</RepoLink>
 has every figure. The template's tests came after that run.
 
@@ -82,10 +101,17 @@ that day. The `setx` line,
 the Notepad steps, `devenv .` and the submodule repair were not run, and no one new to the
 command prompt has yet followed the pages through.
 
-The full CI sweep checks one part of this path. It assembles the project in step 4 from the
-files and edits that page gives, with the engine taken from the change itself rather than from
-GitHub, builds it, checks that its ctest holds the game's two tests and none of the engine's, and
-runs them, the start-up check included. That check does not use Git or do steps 1 to 3 and 5.
+The starter ZIP came the same day. One made from the development tree was extracted, configured,
+built and tested with Git hidden from vcpkg and vcpkg's caches empty: vcpkg downloaded a copy of
+Git for itself, the configure took 2 minutes 8 seconds and downloaded about 400 MB, and both of
+the game's tests passed. [Get the starter project](/docs/get-started/starter/#what-was-checked)
+says what else was and was not checked. No release has carried a starter ZIP yet.
+
+The full CI sweep checks part of this path on every change. It makes a starter ZIP from the
+change itself, extracts it with Windows' `tar`, builds the project in it, checks that its ctest
+holds the game's two tests and none of the engine's, and runs them, the start-up check included.
+It does not download anything from a release, use Git, or do Install the tools and the first
+change.
 
 If a step does not do what the page says, that is a bug in the page:
 [report it](https://github.com/matt439/Labrador/issues).

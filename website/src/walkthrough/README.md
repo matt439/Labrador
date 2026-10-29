@@ -2,7 +2,10 @@
 
 The files a reader creates in *Start your own project*
 (`src/content/docs/docs/get-started/your-project.mdx`), kept as files rather
-than typed into the page so that the page shows exactly what was built. *Build
+than typed into the page so that the page shows exactly what was built. The
+starter ZIP each release carries, which *Get the starter project*
+(`src/content/docs/docs/get-started/starter.mdx`) builds, holds the same
+files in the same places, made by `tools/consumer_check/starter_zip.py`. *Build
 for the browser* (`src/content/docs/docs/guides/browser.mdx`) quotes the same
 files: the `wasm` presets in `CMakePresets.json` and the `if(EMSCRIPTEN)`
 block in `game-CMakeLists.txt`.
@@ -27,12 +30,14 @@ listed here because the page reads them from the sample
 `.cpp` files that starts `#include "samples/minimal/`, `main_web.cpp`'s
 included, which only the `wasm` presets compile.
 
-**What checks them.** CI's `consumer` job assembles the project from these
-files on every pull request and every push CI runs on, with
-`tools/consumer_check/assemble.py`: Labrador at `external/labrador` from that
-run's own checkout, `samples/minimal` copied to `game/`, every include the
-page lists edited, these files put in place and the derived `vcpkg.json`
-written. It then builds the `x64-debug` preset, checks that the project's
+**What checks them.** CI's `consumer` job makes a starter ZIP of the project
+from these files on every pull request and every push CI runs on, with
+`tools/consumer_check/starter_zip.py`, which takes the project from
+`assemble.py`'s rules: Labrador at `external/labrador` from that run's own
+checkout, `samples/minimal` copied to `game/`, every include the page lists
+edited, these files put in place and the derived `vcpkg.json` written. It
+extracts the ZIP with Windows' `tar` to `C:\dev\mygame`, keeps it as the run's
+`labrador-starter` artifact, and then builds the `x64-debug` preset, checks that the project's
 ctest lists exactly the game's two tests, `MyGameTests` and
 `MyGameSmokeTests`, and so none of the engine's, and runs them. Then it builds
 the `x64-release` preset, installs it into an empty folder, checks that the
@@ -43,7 +48,7 @@ are the job's own, which is what the guide says. `ci.yml` itself ran
 unchanged on 26 October 2026 in
 [matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), the
 walkthrough project at `v0.2.0`, twice and green, the second run restoring the
-first's vcpkg cache; *Check your game in CI* links both runs. CI's `wasm-consumer` job assembles the
+first's vcpkg cache; *Check your game in CI* links both runs. CI's `wasm-consumer` job extracts a ZIP of the
 same project and builds its `wasm-release` preset with Emscripten, runs
 `MyGameTests` under Node, and loads `MyGame.html` in headless Chrome with
 `tests/render/web/run_page.mjs`, which presses Escape and Enter and passes when
@@ -115,6 +120,26 @@ the same 20 files. The configuration `tools/consumer_check/sandbox.py` wrote
 ran it in Windows Sandbox, Windows 10.0.26100 with none of the three runtime
 DLLs in its `System32` and a virtual GPU in front of the desktop's: the
 smoke test exited 0 with nothing on standard error.
+
+**The starter ZIP, without Git.** On 30 October 2026 a ZIP that
+`starter_zip.py` made from the tree with that change was 8.8 MB,
+1,102 files, three quarters of the compressed size being the engine's `docs/`
+and `website/` folders, which a submodule checkout at a tag holds too. Made
+twice, it was the same bytes. Windows' `tar` and its shell ZIP handling,
+which **Extract All** uses, each extracted it to one `mygame` folder. In the
+x64 Native Tools Command Prompt of Visual Studio 2026, with Git for Windows
+taken off `PATH` and `ProgramFiles` pointed at an empty folder, since vcpkg
+also looks for `Program Files\Git\cmd\git.exe` directly, and with vcpkg's
+download, binary and registry caches empty, the extracted project configured
+in 2 minutes 8 seconds: vcpkg said `A suitable version of git was not
+found`, downloaded PortableGit 2.54.0 (59 MB) and used it to fetch its
+registry, and about 400 MB was downloaded in all. The build took 7 seconds
+and both tests passed. In Windows Sandbox, where Git was never installed,
+Visual Studio's own vcpkg, mapped in, downloaded the same PortableGit and
+fetched the registry, then stopped only for want of Visual Studio. The
+commands of *Get the starter project*'s second project, *Move a starter
+project to a newer Labrador* and *Put your project in Git* (with `v0.2.0`)
+were run as those pages give them, between two projects from the same ZIP.
 
 Change one, and the `consumer` job builds it on the pull request; follow the
 page by hand again when a change touches a step the job does not do.

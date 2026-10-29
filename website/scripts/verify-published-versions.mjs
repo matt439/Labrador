@@ -1,8 +1,9 @@
 // CI's check of a change to published-versions.json. It needs full Git history
 // and the network, so it is never part of npm test or of the host's build.
 // Before the site is built: the manifest may only grow by appending, each
-// appended release must be an immutable GitHub release whose one asset is the
-// pinned bytes of its tag's snapshot, and the live site's index must agree
+// appended release must be an immutable GitHub release whose assets are the
+// pinned bytes of its tag's snapshot and the release's starter ZIP, which Get
+// Started links for that release, and the live site's index must agree
 // with this manifest wherever both list a release. After the build (--dist):
 // each erratum this change appends must link to something that exists.
 import { execFileSync } from 'node:child_process';
@@ -143,7 +144,11 @@ async function readJson(response, url) {
 	}
 }
 
-/** The GitHub release for entry must be published, immutable and carry exactly the pinned asset. */
+/**
+ * The GitHub release for entry must be published and immutable, and carry
+ * exactly two assets: the pinned documentation asset and the release's
+ * starter ZIP, which is uploaded but not pinned.
+ */
 export async function checkGitHubRelease(entry, { fetch = globalThis.fetch, token } = {}) {
 	if (!token) throw new Error('expected GITHUB_TOKEN for the GitHub releases API, found none');
 	const url = `${RELEASES_API}${encodeURIComponent(entry.tag)}`;
@@ -163,15 +168,29 @@ export async function checkGitHubRelease(entry, { fetch = globalThis.fetch, toke
 		}
 	}
 	const assets = Array.isArray(release.assets) ? release.assets : [];
-	if (assets.length !== 1) {
-		throw new Error(`expected exactly one asset, ${entry.asset}, found ${assets.length}: ${assets.map((asset) => asset?.name).join(', ')}`);
+	const names = assets.map((asset) => asset?.name);
+	const starter = starterAsset(entry.tag);
+	if (assets.length !== 2 || !names.includes(entry.asset) || !names.includes(starter)) {
+		throw new Error(`expected exactly two assets, ${entry.asset} and ${starter}, found ${assets.length}: ${names.join(', ')}`);
 	}
-	const [asset] = assets;
-	for (const [key, expected] of [['name', entry.asset], ['state', 'uploaded'], ['size', entry.bytes], ['digest', `sha256:${entry.sha256}`]]) {
-		if (asset?.[key] !== expected) {
-			throw new Error(`expected the asset's ${key} to be ${JSON.stringify(expected)}, found ${JSON.stringify(asset?.[key])}`);
+	const asset = assets.find((candidate) => candidate.name === entry.asset);
+	for (const [key, expected] of [['state', 'uploaded'], ['size', entry.bytes], ['digest', `sha256:${entry.sha256}`]]) {
+		if (asset[key] !== expected) {
+			throw new Error(`expected the asset's ${key} to be ${JSON.stringify(expected)}, found ${JSON.stringify(asset[key])}`);
 		}
 	}
+	const zip = assets.find((candidate) => candidate.name === starter);
+	if (zip.state !== 'uploaded') {
+		throw new Error(`expected the starter ZIP's state to be "uploaded", found ${JSON.stringify(zip.state)}`);
+	}
+}
+
+/**
+ * The starter ZIP Get Started sends readers to for a listed release: the name
+ * tools/consumer_check/starter_zip.py writes and src/lib/starter.ts links.
+ */
+export function starterAsset(tag) {
+	return `labrador-starter-${tag}.zip`;
 }
 
 /** The commit origin's annotated tag peels to must be the entry's commit. */

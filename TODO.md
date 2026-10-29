@@ -10,11 +10,9 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** finish Next's remaining acceptance while taking ready Later work in
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
-allows. Next's hardware and release gates remain open. **Next ready story:
-`OCA-78`**, the starter ZIP that needs no Git, which the owner required on
-2026-10-30 when lowering the adopter's floor ([BACKLOG.md, L55](docs/product/BACKLOG.md#oca-78)).
-Apart from it, what remains in Later waits on the owner, on another story or
-on an outside event.
+allows. Next's hardware and release gates remain open. No ready story is
+queued: what remains in Later waits on the owner, on another story or on an
+outside event.
 
 Otherwise follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
@@ -23,7 +21,7 @@ BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
-**Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
+**Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which with a green CI run of the changed consumer jobs closes `OCA-78`. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
@@ -47,7 +45,7 @@ required by this plan.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-78` | OPEN | must | M | A starter ZIP per release that builds and plays with no Git; Get Started leads with it. [Acceptance](docs/product/BACKLOG.md#oca-78). |
+| `OCA-78` | BLOCKED | must | M | Starter ZIP implemented. Left: a CI run of the changed `consumer` and `wasm-consumer` jobs passing at a pushed commit, and `v0.3.0` carrying the ZIP with Get the starter project's download followed against it. [Acceptance](docs/product/BACKLOG.md#oca-78). |
 | `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 | `OCA-18` | DECISION | could | S | Visual Studio guide is implemented. A person follows it in a clean copied project in Visual Studio Community 2026 18.9.2, hits the breakpoint, sees content load and records the date. [Evidence](docs/product/BACKLOG.md#later). |
 

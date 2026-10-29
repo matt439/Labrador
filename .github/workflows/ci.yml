@@ -623,7 +623,7 @@ jobs:
           ctest --test-dir out/build/wasm-release-null -j 3 --output-on-failure
 
   # THE PROJECT GET STARTED TEACHES, AS A PAGE: the consumer job's project,
-  # assembled by the same script, built under the browser preset the website's
+  # from a starter ZIP made the same way, built under the browser preset the website's
   # Build for the browser guide adds to it, its rules test run under Node, and
   # its page loaded and quit in headless Chrome by the runner the samples'
   # pages use. It catches what the wasm job cannot: a browser build that needs
@@ -679,8 +679,12 @@ jobs:
         run: |
           for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
-      - name: Assemble the Get Started project
-        run: python tools\consumer_check\assemble.py C:\dev\mygame
+      # The consumer job's ZIP, made again here from the same checkout rather
+      # than passed between the jobs, which run side by side.
+      - name: Make the starter ZIP and extract it
+        run: |
+          python tools\consumer_check\starter_zip.py C:\dev || exit /b 1
+          cd /d C:\dev && "%SystemRoot%\System32\tar.exe" -xf labrador-starter-dev.zip
 
       - name: Configure
         working-directory: C:\dev\mygame
@@ -738,14 +742,19 @@ jobs:
   # include root and LabradorMath's are the same directory, so spelling the first
   # from CMAKE_SOURCE_DIR still builds as a consumer.
   #
-  # tools/consumer_check/assemble.py does the page's steps 3 to 6 into the
-  # page's own C:\dev\mygame, with step 2's engine copied from this checkout
-  # rather than added as a submodule - a pull request's own tree, not a clone
-  # of master - and its README is how a person runs the same thing. The
-  # folder is short on purpose: the compiler stops at 260 characters, and the
-  # object files of a build sit far below the project's root, which is why
-  # Get Started's prerequisites page asks for a short folder. The steps after
-  # it are the page's step 7, then the PROJECT_IS_TOP_LEVEL guard in the root
+  # IT BUILDS THE STARTER ZIP A RELEASE CARRIES, made from this checkout - a
+  # pull request's own tree, not a clone of master - by
+  # tools/consumer_check/starter_zip.py: the project of the page's steps 3 to
+  # 6, which assemble.py makes, with the engine inside it at external/labrador,
+  # where step 2 adds a submodule. Windows' own tar extracts it to
+  # C:\dev\mygame, as Get the starter project has a reader do, and the
+  # project is built as it came out, engine and all; the ZIP is kept as the
+  # run's labrador-starter artifact. tools/consumer_check/README.md is how a
+  # person runs the same thing. The folder is short on purpose: the compiler
+  # stops at 260 characters, and the object files of a build sit far below the
+  # project's root, which is why Get Started's prerequisites page asks for a
+  # short folder. The steps after it are the page's step 7, then the
+  # PROJECT_IS_TOP_LEVEL guard in the root
   # CMakeLists.txt - the engine's tests are not in a consumer's ctest, and the
   # game's are - and then the game's tests run: the rules test, and the
   # start-up check, which opens the game hidden, draws a few frames and quits.
@@ -793,8 +802,17 @@ jobs:
         run: |
           for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
-      - name: Assemble the Get Started project
-        run: python tools\consumer_check\assemble.py C:\dev\mygame
+      - name: Make the starter ZIP and extract it
+        run: |
+          python tools\consumer_check\starter_zip.py C:\dev || exit /b 1
+          cd /d C:\dev && "%SystemRoot%\System32\tar.exe" -xf labrador-starter-dev.zip
+
+      - name: Keep the starter ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: labrador-starter
+          path: C:\dev\labrador-starter-dev.zip
+          if-no-files-found: error
 
       - name: Configure
         working-directory: C:\dev\mygame

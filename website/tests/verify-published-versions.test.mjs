@@ -58,7 +58,10 @@ function checkout(t, { baseManifest } = {}) {
 function githubRelease(entry, change = (release) => release) {
 	return change({
 		tag_name: entry.tag, draft: false, prerelease: false, immutable: true,
-		assets: [{ name: entry.asset, state: 'uploaded', size: entry.bytes, digest: `sha256:${entry.sha256}` }],
+		assets: [
+			{ name: entry.asset, state: 'uploaded', size: entry.bytes, digest: `sha256:${entry.sha256}` },
+			{ name: `labrador-starter-${entry.tag}.zip`, state: 'uploaded', size: 9_000_000, digest: `sha256:${'1'.repeat(64)}` },
+		],
 	});
 }
 
@@ -184,7 +187,7 @@ test('an edited or removed base entry fails', async (t) => {
 	await assert.rejects(verifyPublishedVersions(options(fixture, { fetch: site().fetch })), /releases: expected at least the 1 published item/);
 });
 
-test('a GitHub release that is not exactly the pinned immutable asset is refused', async (t) => {
+test('a GitHub release that is not exactly the pinned immutable asset and its starter ZIP is refused', async (t) => {
 	const fixture = checkout(t);
 	const { entry, archives } = await published(t, fixture);
 	write(fixture.website, 'published-versions.json', manifest([entry]));
@@ -194,10 +197,15 @@ test('a GitHub release that is not exactly the pinned immutable asset is refused
 		[(release) => ({ ...release, prerelease: true }), /expected the release's prerelease to be false, found true/],
 		[(release) => ({ ...release, immutable: false }), /expected the release's immutable to be true, found false/],
 		[({ immutable, ...release }) => release, /expected the release's immutable to be true, found undefined/],
-		[(release) => ({ ...release, assets: [{ ...release.assets[0], digest: `sha256:${'f'.repeat(64)}` }] }), /expected the asset's digest to be "sha256:[0-9a-f]{64}", found "sha256:f{64}"/],
-		[(release) => ({ ...release, assets: [{ ...release.assets[0], size: entry.bytes + 1 }] }), new RegExp(`expected the asset's size to be ${entry.bytes}, found ${entry.bytes + 1}`)],
-		[(release) => ({ ...release, assets: [...release.assets, extra] }), /expected exactly one asset, labrador-docs-v0\.3\.0\.tar\.gz, found 2/],
-		[(release) => ({ ...release, assets: [{ ...release.assets[0], name: 'other.tar.gz' }] }), /expected the asset's name to be "labrador-docs-v0\.3\.0\.tar\.gz", found "other\.tar\.gz"/],
+		[(release) => ({ ...release, assets: [{ ...release.assets[0], digest: `sha256:${'f'.repeat(64)}` }, release.assets[1]] }), /expected the asset's digest to be "sha256:[0-9a-f]{64}", found "sha256:f{64}"/],
+		[(release) => ({ ...release, assets: [{ ...release.assets[0], size: entry.bytes + 1 }, release.assets[1]] }), new RegExp(`expected the asset's size to be ${entry.bytes}, found ${entry.bytes + 1}`)],
+		[(release) => ({ ...release, assets: [...release.assets, extra] }), /expected exactly two assets, labrador-docs-v0\.3\.0\.tar\.gz and labrador-starter-v0\.3\.0\.zip, found 3: labrador-docs-v0\.3\.0\.tar\.gz, labrador-starter-v0\.3\.0\.zip, notes\.txt/],
+		[(release) => ({ ...release, assets: [release.assets[0]] }), /expected exactly two assets, labrador-docs-v0\.3\.0\.tar\.gz and labrador-starter-v0\.3\.0\.zip, found 1: labrador-docs-v0\.3\.0\.tar\.gz$/],
+		[(release) => ({ ...release, assets: [{ ...release.assets[0], name: 'other.tar.gz' }, release.assets[1]] }), /found 2: other\.tar\.gz, labrador-starter-v0\.3\.0\.zip$/],
+		[(release) => ({ ...release, assets: [release.assets[0], { ...release.assets[1], name: 'labrador-starter-v0.2.0.zip' }] }), /found 2: labrador-docs-v0\.3\.0\.tar\.gz, labrador-starter-v0\.2\.0\.zip$/],
+		[(release) => ({ ...release, assets: [release.assets[0], extra] }), /found 2: labrador-docs-v0\.3\.0\.tar\.gz, notes\.txt$/],
+		[(release) => ({ ...release, assets: [release.assets[0], { ...release.assets[1], state: 'open' }] }), /expected the starter ZIP's state to be "uploaded", found "open"/],
+		[(release) => ({ ...release, assets: [release.assets[1], { ...release.assets[0], state: 'open' }] }), /expected the asset's state to be "uploaded", found "open"/],
 	]) {
 		const { fetch, calls } = site({ releases: { 'v0.3.0': githubRelease(entry, change) }, archives });
 		await assert.rejects(verifyPublishedVersions(options(fixture, { fetch })), expected);

@@ -1,0 +1,117 @@
+---
+title: Put your project in Git
+description: Turn a project made from the starter ZIP into a Git repository with the engine as a submodule, the same shape Start your own project makes.
+sidebar:
+  order: 15
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+A project made from the [starter ZIP](/docs/get-started/starter/) works without Git, and you
+can keep it that way. Git becomes worth learning when you want a history of your changes to go
+back to, a copy on GitHub, or [CI that checks every push](/docs/guides/ci/). This page makes
+your project a Git repository with the engine as a *submodule*: a pointer to one release of
+Labrador's own repository, rather than a copy of its files. That is the shape
+[Start your own project](/docs/get-started/your-project/) makes, so from then on every page
+written for that shape applies, [Move your engine pin](/docs/guides/move-pin/) among them.
+
+Nothing here changes your game. The engine folder is replaced by the same release of the
+engine, fetched by Git, and the build carries on as before.
+
+<Steps>
+
+1. **Install Git and tell it who you are**, if you have not already: steps 2 and 5 of
+   [Install the tools](/docs/get-started/prerequisites/). Install Git before you open the
+   prompt you use for the next steps, then check it with:
+
+   ```bat
+   git --version
+   ```
+
+   It prints a version, such as `git version 2.54.0.windows.1`. If it says
+   `'git' is not recognized`, open a new x64 Native Tools Command Prompt and try again.
+
+2. **See which release your engine folder is.** In the x64 Native Tools Command Prompt:
+
+   ```bat
+   cd /d C:\dev\mygame
+   type README.txt
+   ```
+
+   The line `Labrador version:` names it, for example `v0.3.0`. Step 5 uses it.
+
+3. **Make the folder a repository:**
+
+   ```bat
+   git init
+   ```
+
+   Git answers `Initialized empty Git repository in C:/dev/mygame/.git/`. It may also print a
+   few lines of hints about the name of the first branch, which you can ignore.
+
+4. **Replace the engine folder with a submodule.** The first line deletes the copy of the
+   engine the ZIP gave you; the second downloads the engine's repository into the same place:
+
+   ```bat
+   rmdir /s /q external\labrador
+   git submodule add https://github.com/matt439/Labrador.git external/labrador
+   ```
+
+   Check that the prompt ends `mygame>` before you run them. The second prints
+   `Cloning into 'C:/dev/mygame/external/labrador'...` and, after a moment, the prompt. It may
+   also warn that `LF will be replaced by CRLF` in `.gitmodules`, which is harmless.
+
+5. **Choose the same release.** Replace `v0.3.0` with the version from step 2:
+
+   ```bat
+   git -C external/labrador checkout v0.3.0
+   ```
+
+   It prints a long note that begins `Note: switching to` and mentions `'detached HEAD'
+   state`, and ends `HEAD is now at` followed by a commit. That is expected: the engine folder
+   is now fixed at that release, which is what you want.
+   [Start your own project](/docs/get-started/your-project/), step 2, says more about it.
+
+6. **Make the first commit:**
+
+   ```bat
+   git add .
+   git commit -m "Start from Labrador's starter project"
+   ```
+
+   Git may warn that `LF will be replaced by CRLF` for some files, which is harmless. It then
+   prints a line beginning `[master (root-commit)` or `[main (root-commit)` and how many files
+   it recorded. Your build folder, `out`, is not among them: the project's `.gitignore` leaves
+   it out. If Git says `Author identity unknown`, do
+   [Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are) and run the
+   `git commit` line again.
+
+7. **Check the build still works:**
+
+   ```bat
+   cmake --build --preset x64-debug
+   ctest --preset x64-debug
+   ```
+
+   The engine's files are new copies, so the build may compile the engine again before your game.
+   Both tests pass as before.
+
+</Steps>
+
+`git status` now prints `nothing to commit, working tree clean`, and
+`git submodule status` names the engine's commit with your release beside it in brackets. To put
+the repository on GitHub, create an empty repository there and follow the commands GitHub shows
+under *push an existing repository from the command line*. Anyone who clones it, you included
+on another machine, needs `--recurse-submodules`, as
+[Start your own project](/docs/get-started/your-project/) explains.
+
+From here, move to a newer Labrador with [Move your engine pin](/docs/guides/move-pin/), not
+with the starter ZIP.
+
+## What was checked
+
+On 30 October 2026 these commands were run as written on a project extracted from a starter ZIP
+of a development revision, with `v0.2.0`, the newest release then, in step 5: the submodule was
+added from GitHub, the commit recorded 24 files, and `git status` was clean afterwards. Because
+that ZIP's engine was not `v0.2.0`, step 7 was not run there; with a release's own ZIP the
+engine is the same in both.

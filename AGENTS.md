@@ -229,7 +229,9 @@ The website workflow runs on every pull request and on pushes to master and
   first line to be `@AGENTS.md`. Amend only this brief; CLAUDE imports it.
 - Sources are enumerated explicitly in engine/test/sample CMakeLists.txt;
   add each new `.cpp`, or it is silently absent from the build.
-- CI's `consumer` assembles Get Started against this checkout, verifies only
+- CI's `consumer` makes Get Started's starter ZIP from this checkout
+  (`starter_zip.py`, the release asset), extracts it with Windows' `tar`,
+  builds it, verifies only
   the game's two tests are registered, runs them, installs a Release folder,
   checks `website/src/walkthrough/release-files.txt` and starts the installed
   game. `wasm-consumer` builds the same project as a browser page and quits it

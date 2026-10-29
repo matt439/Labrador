@@ -233,8 +233,8 @@ cut once PHILOSOPHY's settle criterion has run.
 5. **Create the release as a draft:**
    `gh release create vX.Y.Z --verify-tag --draft --title "Labrador X.Y.Z" --notes-file <notes>`.
    Publish it with `gh release edit vX.Y.Z --draft=false` only after the
-   documentation asset below is uploaded: an immutable release takes no asset
-   after publication. The notes hold:
+   starter ZIP and the documentation asset below are uploaded: an immutable
+   release takes no asset after publication. The notes hold:
    - two sentences from *The public face*, word for word: the bold lead,
      "Releases are versioned, and before 1.0 a release promises a record, not
      compatibility.", and the one after it that begins "A 0.x tag promises one
@@ -248,7 +248,50 @@ cut once PHILOSOPHY's settle criterion has run.
    - the settle criterion, and what of it is unmet: the date of CHANGES.md's
      newest entry, and the 0.x tags cut since it;
    - the supported revisions, as [SECURITY.md](SECURITY.md) states them;
-   - a link to PHILOSOPHY at the tag.
+   - a link to PHILOSOPHY at the tag;
+   - one line saying that `labrador-starter-vX.Y.Z.zip` is the Get Started
+     project with this release inside it, built without Git, and linking
+     `https://labradorengine.com/docs/get-started/starter/`.
+
+   **Attach the starter ZIP**, which Get Started's *Get the starter project*
+   sends readers to download, from `v0.3.0` on. Make it on Windows, in an x64
+   Native Tools Command Prompt, from a clean checkout of the tag; the script
+   refuses a tree that is not exactly the tag, or whose `version-string` is
+   not the release's. From the checkout's root:
+
+   ```text
+   git fetch origin --tags
+   git checkout vX.Y.Z
+   python tools\consumer_check\starter_zip.py out\release-assets --release vX.Y.Z
+   ```
+
+   It prints the ZIP's path, size and SHA-256. Check it the way a reader
+   will use it, in a folder that does not exist yet, then delete the folder:
+
+   ```text
+   mkdir C:\dev\starter-check
+   tar -xf out\release-assets\labrador-starter-vX.Y.Z.zip -C C:\dev\starter-check
+   pushd C:\dev\starter-check\mygame
+   type README.txt
+   cmake --preset x64-debug
+   cmake --build --preset x64-debug
+   ctest --preset x64-debug
+   ```
+
+   `README.txt` must say `Labrador version: vX.Y.Z`, and ctest must pass
+   both tests. Then return to the checkout's root, which `pushd` remembered,
+   attach the ZIP to the draft and leave the checkout on `master`:
+
+   ```text
+   popd
+   gh release upload vX.Y.Z out\release-assets\labrador-starter-vX.Y.Z.zip
+   git checkout master
+   rmdir /s /q C:\dev\starter-check
+   ```
+
+   Never replace it (`--clobber`). CI's `consumer` job has already built the
+   same project from a ZIP of the tagged commit, made the same way, so this
+   check is for the file itself.
 
    From `v0.3.0`, publish the release's documentation snapshot with it, by
    [the versioning policy's procedure](docs/website-versioning.md#publishing-a-releases-documentation):

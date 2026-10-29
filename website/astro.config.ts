@@ -58,11 +58,19 @@ export default defineConfig({
 					items: [
 						{ label: 'Introduction', link: '/docs/get-started/' },
 						{ label: 'Install the tools', link: '/docs/get-started/prerequisites/' },
-						{ label: 'Build Labrador', link: '/docs/get-started/build-labrador/' },
-						{ label: 'Run the minimal sample', link: '/docs/get-started/run-minimal/' },
-						{ label: 'Start your own project', link: '/docs/get-started/your-project/' },
+						{ label: 'Get the starter project', link: '/docs/get-started/starter/' },
 						{ label: 'Make a first change', link: '/docs/get-started/first-change/' },
 						{ label: 'Debug your game', link: '/docs/get-started/debug-your-game/' },
+						// The route for readers who use Git, which makes the same project.
+						{
+							label: 'With Git instead',
+							collapsed: true,
+							items: [
+								{ label: 'Build Labrador', link: '/docs/get-started/build-labrador/' },
+								{ label: 'Run the minimal sample', link: '/docs/get-started/run-minimal/' },
+								{ label: 'Start your own project', link: '/docs/get-started/your-project/' },
+							],
+						},
 					],
 				},
 				{ label: 'Concepts', collapsed: true, items: [{ autogenerate: { directory: 'docs/concepts' } }] },

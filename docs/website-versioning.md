@@ -289,8 +289,10 @@ or zero base, or one that does not resolve in the checkout, falls back to
 `git merge-base HEAD origin/master` with a message saying so, and a base with
 no manifest counts as empty. The change must be append-only. For each
 appended release, the GitHub release for its tag must be published, not a
-prerelease and immutable, with exactly one uploaded asset of that name whose
-size and SHA-256 digest match the entry; origin's annotated tag must peel to
+prerelease and immutable, with exactly two uploaded assets: one of the
+entry's asset name whose size and SHA-256 digest match the entry, and the
+release's starter ZIP, `labrador-starter-vX.Y.Z.zip`, whose bytes are not
+pinned because Get Started links it rather than the site serving it; origin's annotated tag must peel to
 the entry's commit; and the asset is downloaded and staged through the same
 reader, extraction and output check as assembly. Finally, it reads the live
 `https://labradorengine.com/versions/index.json`, retrying network errors,
@@ -390,9 +392,14 @@ enabled them on 27 October 2026.
 3. Create the GitHub release as a draft with its notes,
    `gh release create vX.Y.Z --verify-tag --draft ...`, then attach the asset,
    `gh release upload vX.Y.Z release-assets/labrador-docs-vX.Y.Z.tar.gz`.
+   Attach the starter ZIP to the same draft, made and checked by
+   [CONTRIBUTING's *Attach the starter ZIP*](../CONTRIBUTING.md#cutting-a-release).
    An immutable release accepts no asset after publication, and an asset is
-   never replaced: never use `--clobber`.
-4. Publish the release: `gh release edit vX.Y.Z --draft=false`.
+   never replaced: never use `--clobber`. `versions:verify` refuses a release
+   with any asset but these two, so attach nothing else.
+4. Check that the draft lists exactly those two assets,
+   `gh release view vX.Y.Z --json assets --jq ".assets[].name"`, then publish
+   the release: `gh release edit vX.Y.Z --draft=false`.
 5. On a branch from `master`, append the printed entry to
    `website/published-versions.json`, with `published` set to the release's
    publication date in UTC, and open a pull request. CI runs

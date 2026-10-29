@@ -24,8 +24,9 @@
 # downloading each one's snapshot from its GitHub release. Before building,
 # versions:verify checks what only this job can check: that the manifest only
 # grew by appending since the base commit, that each appended release is a
-# published, immutable GitHub release whose one asset has the pinned size and
-# digest and whose tag peels to the pinned commit, and that the live site's
+# published, immutable GitHub release whose two assets are the release's starter
+# ZIP and the documentation asset with the pinned size and digest, and whose tag
+# peels to the pinned commit, and that the live site's
 # index agrees with this manifest wherever both list a release. The live
 # comparison fails the job only when the change appends a release; otherwise
 # a disagreement or an unreachable site is a warning, so a live-site outage or

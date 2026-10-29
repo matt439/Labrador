@@ -910,6 +910,30 @@ tree and without Git.
 - Moving a ZIP project to a newer release, and making it a Git repository
   later, each have a written procedure.
 
+**Implemented 2026-10-30** by *Ship a starter ZIP with each release*.
+tools/consumer_check/starter_zip.py writes labrador-starter-vX.Y.Z.zip
+(assemble.py's project under one mygame/ folder, the engine tree included,
+and a README.txt), deterministically; CONTRIBUTING.md's Cutting a release
+attaches it to each release from v0.3.0. Configure needs no Git for
+Windows: with Git hidden and vcpkg's caches empty, VS's vcpkg downloaded its
+own PortableGit, and the extracted project configured, built and passed its
+tests; in Windows Sandbox, with no Git ever installed, vcpkg did the same up
+to the missing Visual Studio. Install the tools now marks Git as the Git
+route's. Get Started leads with Get the starter project; the Git route's
+three pages stay under *With Git instead*. CI's consumer and wasm-consumer
+jobs build the extracted ZIP, and consumer keeps it as an artifact. The
+guides Move a starter project to a newer Labrador and Put your project in
+Git hold the two procedures, run as written between two projects from one
+ZIP. `versions:verify` requires each listed release to carry its starter
+ZIP beside the documentation asset. Until the site lists such a release,
+Get Started sends the reader to the Git route, unless the newest release
+has a ZIP, which the reader then downloads with the browser.
+
+The story stays open. CI has not yet run the changed consumer and
+wasm-consumer jobs, since the change is not pushed, and no release carries
+a ZIP yet, so the download step is first followed when v0.3.0 is cut. It
+closes when both have happened.
+
 <a id="sm-72"></a>
 ### SM-72. Require finite metrics in sprite-font files
 

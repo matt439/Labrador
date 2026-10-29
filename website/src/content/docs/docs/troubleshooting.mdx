@@ -15,6 +15,62 @@ it has forms for a bug or build problem, a question, and an engine request, and
 says how a request is weighed. A security vulnerability is reported privately, as
 <RepoLink path="SECURITY.md">SECURITY.md</RepoLink> describes.
 
+## Downloading and extracting the starter project
+
+### `curl: (22) The requested URL returned error: 404`
+
+There is no file at the address in the `curl` line of
+[Get the starter project](/docs/get-started/starter/). Check that the whole line was pasted, as
+it is one long line, and run the box again. If it still fails, download the ZIP with your
+browser instead, as the same step says, from the release page it links.
+
+### `Error opening archive: Failed to open`
+
+`tar` cannot find the ZIP you named. The prompt must be in the folder that holds it, `C:\dev`
+on these pages, and the name must match exactly. `dir /b *.zip` lists the ZIP files in the
+current folder. A ZIP your browser saved is in your **Downloads** folder until you move it.
+
+### `This does not look like a tar archive`
+
+A different `tar` ran, not the one that comes with Windows. Git for Windows can add its own
+Unix tools to the command prompt, and their `tar` does not read ZIP files. This line makes the
+window look in Windows' own folder of programs first, so that `tar` is Windows' own until you
+close the window:
+
+```bat
+set "PATH=%SystemRoot%\System32;%PATH%"
+```
+
+It prints nothing. Then run the box that failed again, in the same window.
+
+### The project is in a folder named after the ZIP
+
+**Extract All** in File Explorer suggests a new folder named after the ZIP, such as
+`C:\dev\labrador-starter-v0.3.0`, and the ZIP's own `mygame` folder goes inside it. A project
+in a long path fails to build
+([Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder)), so move it
+to `C:\dev\mygame`. This box does that whether you extracted it beside the ZIP in `C:\dev` or
+in your **Downloads** folder, then removes the folder named after the ZIP if it is left empty,
+and lists the project's files:
+
+```bat
+for /d %d in ("%USERPROFILE%\Downloads\labrador-starter-*" C:\dev\labrador-starter-*) do if exist "%d\mygame" move "%d\mygame" C:\dev\
+for /d %d in ("%USERPROFILE%\Downloads\labrador-starter-*" C:\dev\labrador-starter-*) do rmdir "%d"
+dir /b C:\dev\mygame
+```
+
+The prompt shows each command as it runs it. `move` prints `1 dir(s) moved.`, and the list
+ends with `vcpkg.json`, as in step 3 of
+[Get the starter project](/docs/get-started/starter/). If `move` says
+`Access is denied.` or `A duplicate file name exists, or the file cannot be found.`,
+`C:\dev\mygame` is there already: see step 1 of that page.
+
+### `A suitable version of git was not found`
+
+Not an error. vcpkg, which fetches the engine's libraries when you configure, reads its list of
+package versions with Git. When Git is not installed it says this, downloads a private copy of
+Git of about 60 MB, and carries on. You do not need to install Git for the starter project.
+
 ## Setting up and cloning
 
 ### `Filename too long` while cloning
@@ -79,7 +135,9 @@ cmake --build --preset x64-debug
 ### `'git' is not recognized`, or `INFO: Could not find "git".`
 
 Git for Windows is not installed, or was installed after this command prompt was opened, and a
-prompt does not see programs installed after it started. Install it as in
+prompt does not see programs installed after it started. Only the Git route and
+[Put your project in Git](/docs/guides/starter-to-git/) run `git`; the starter project does
+not need it. Install it as in
 [Install the tools](/docs/get-started/prerequisites/) if you have not, then close the prompt and
 open a new x64 Native Tools Command Prompt.
 
