@@ -462,16 +462,29 @@ descriptor; existing-name registry replacement is the non-allocating unique
 owner assignment. The upload wait, reused slot and new-name allocation policy
 are unchanged.
 
-All five native Debug render targets and all four pixel binaries build; all
-five headless `RenderTests` pass. These checks do not exercise a D3D12 descriptor.
-Independent source review finds no ownership or exception-ordering issue. All
-standalone checks, the website check, 160 website tests and the 143-page build
-pass.
-The deterministic allocation/publication-failure regression is **not yet
-implemented**, and same-name reload/limit, pixel and device-loss/descriptor
-lifetime runs remain at the stopped GPU gate. No stopped operation was retried.
-Keep SM-57 unchecked; logs use the `sm57-` prefix under
-`out/loop-2026-10-28-2114/`.
+**Closed 2026-10-29.** `tests/render/d3d12/texture_replacement_tests.cpp`
+adds "D3D12 failed same-name replacement wrapper keeps the old texture and
+descriptor" to D3D12 `RenderPixelTests`. It locates the `D3d12Texture`
+allocation in an identical successful same-name reload through the Debug CRT
+hook in `tests/render/allocation_scope.h` (one attempt of that size), then
+refuses exactly that attempt in a differently coloured reload. The load throws
+`std::bad_alloc`; the registry still holds the same object, resource and slot,
+and a full-target draw reads the old texels through the shader-visible
+descriptor. A following successful reload reuses the slot and draws the new
+texels. Reintroducing the descriptor write before wrapper allocation makes the
+case crash in its post-failure draw. The refusal hook exists only in Debug
+builds against the DLL CRT; Release compiles the case out.
+
+At `b96bad6` with this and SM-56's regressions, on the RTX 5080 (NVIDIA
+616.92), all five native Debug presets built and `ctest --preset <preset>
+--output-on-failure` passed: `x64-debug` 20/20, `x64-debug-d3d12` 21/21, `x64-debug-gl` 20/20,
+`x64-debug-vulkan` 20/20 and `x64-debug-null` 19/19. D3D12 `RenderPixelTests`
+ran 58 cases and 50,242 assertions, including the 300-load slot-reuse contract,
+format/BC uploads, presentation diagnostics and pending-slot regressions;
+`D3D12SynchronizationTests` ran 3 cases. No existing case induces genuine
+D3D12 device removal, so none was run; this story's descriptor-lifetime checks
+are the slot-reuse contract and the new case. All standalone lint and fixture
+checks pass. Logs are `out/ctest-<preset>.log` in the working tree.
 
 ## SM-58. D3D12 sprite-pipeline value owner
 

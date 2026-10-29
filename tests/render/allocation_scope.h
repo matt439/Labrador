@@ -1,9 +1,10 @@
 #pragma once
 
 // Counts the Debug CRT's normal-block allocation attempts on one thread, for
-// the backends' warmed-submit tests. Only a Debug build against the DLL CRT
-// has the hook; elsewhere this header declares nothing, and the tests that
-// use it compile out with it.
+// the backends' warmed-submit tests, and can refuse one chosen attempt for
+// their allocation-failure regressions. Only a Debug build against the DLL
+// CRT has the hook; elsewhere this header declares nothing, and the tests
+// that use it compile out with it.
 //
 // It cannot observe every driver or system heap, and it says nothing about
 // time.
@@ -26,6 +27,19 @@ namespace render_tests
 		size_t attempts = 0;
 		size_t bytes = 0;
 		bool hook_conflict = false;
+
+		// Optional. Attempts of exactly `watched_bytes` are counted, and the
+		// last one's 1-based ordinal among all attempts is kept, so a
+		// successful run can locate one allocation in a repeatable sequence.
+		size_t watched_bytes = 0;
+		size_t watched_attempts = 0;
+		size_t watched_attempt = 0;
+
+		// Optional. The attempt with this 1-based ordinal is refused, so its
+		// operator new throws std::bad_alloc; zero refuses nothing.
+		size_t refused_attempt = 0;
+		size_t refused = 0;
+		size_t refused_bytes = 0;
 	};
 
 	inline thread_local AllocationSample* active_sample = nullptr;
@@ -39,8 +53,20 @@ namespace render_tests
 		if (active_sample != nullptr && _BLOCK_TYPE(block_type) == _NORMAL_BLOCK &&
 			(operation == _HOOK_ALLOC || operation == _HOOK_REALLOC))
 		{
-			++active_sample->attempts;
-			active_sample->bytes += bytes;
+			AllocationSample& sample = *active_sample;
+			++sample.attempts;
+			sample.bytes += bytes;
+			if (sample.watched_bytes != 0 && bytes == sample.watched_bytes)
+			{
+				++sample.watched_attempts;
+				sample.watched_attempt = sample.attempts;
+			}
+			if (sample.attempts == sample.refused_attempt)
+			{
+				++sample.refused;
+				sample.refused_bytes = bytes;
+				return 0;
+			}
 		}
 		const _CRT_ALLOC_HOOK previous = previous_hook.load(std::memory_order_relaxed);
 		return previous == nullptr ? 1 : previous(operation, data, bytes,

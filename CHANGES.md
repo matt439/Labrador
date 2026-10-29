@@ -209,8 +209,8 @@ wrapper allocation and registry publication before writing its reused
 shader-visible descriptor. If that preparation throws, an existing texture
 keeps its object and descriptor together. Upload waits and slot reuse are
 unchanged, and no caller migration is needed. This adds no general rollback
-guarantee for allocating a new name. Failure-injection and device qualification
-remains open in SM-57.
+guarantee for allocating a new name. A refused wrapper allocation is
+regression-tested on a real D3D12 device.
 
 ### 2026-10-28 - Preserve Vulkan temporary ownership during failures
 

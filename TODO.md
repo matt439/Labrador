@@ -54,8 +54,7 @@ maintenance lane. Counts prompt review, not automatic splitting.
 | `SM-71` | BLOCKED | should | S | Whole-origin arithmetic and nine new direct/authored cases pass RenderTests and AssetsTests on all five native Debug backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-71). |
 | `SM-69` | BLOCKED | should | S | Glyph-extent overflow guard and native regressions pass all five Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-69). |
 | `SM-56` | OPEN | should | S | Three Vulkan cleanup fixes compile on all native backends; finish wrapper/recovery failure regressions and stopped device qualification. Shader-failure case compiles but is unrun. |
-| `SM-57` | OPEN | should | S | D3D12 replacement publication now precedes its descriptor write; finish failure regression and stopped reload/descriptor/device qualification. Native builds/headless checks pass. |
-| `SM-58` | OPEN | could | M | Extract the reviewed D3D12 root-signature/PSO value owner after SM-57; keep frame lifetime coordinated. |
+| `SM-58` | OPEN | could | M | Extract the reviewed D3D12 root-signature/PSO value owner now that SM-57 is closed; keep frame lifetime coordinated. |
 
 ## Input, menus, settings and saves
 
