@@ -516,11 +516,16 @@ namespace labrador
 	// visible. Whether the window is shown is read from the window at call
 	// time rather than kept: a window shown by other means then goes full
 	// screen as a shown one does, and no flag can disagree with the screen.
+	//
+	// WS_VISIBLE IS PART OF THE STYLE, so each replacement below carries it
+	// over. Replacing the style without it leaves a window on screen that
+	// Windows counts as hidden: nothing it presents is shown, and the next
+	// visibility read is wrong.
 	void Window::enter_fullscreen() const
 	{
 		const HWND handle = this->impl_->handle;
 		const bool shown = IsWindowVisible(handle) != FALSE;
-		SetWindowLongPtr(handle, GWL_STYLE, WS_POPUP);
+		SetWindowLongPtr(handle, GWL_STYLE, WS_POPUP | (shown ? WS_VISIBLE : 0));
 		SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_TOPMOST);
 		if (shown)
 		{
@@ -542,16 +547,18 @@ namespace labrador
 	void Window::leave_fullscreen(const Vector2I& client_size) const
 	{
 		const HWND handle = this->impl_->handle;
+		const bool shown = IsWindowVisible(handle) != FALSE;
 
 		// The style is restored BEFORE the frame arithmetic below, so that
 		// arithmetic reads the ordinary window's frame and not WS_POPUP's
 		// nothing.
-		SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+		SetWindowLongPtr(handle, GWL_STYLE,
+			WS_OVERLAPPEDWINDOW | (shown ? WS_VISIBLE : 0));
 		SetWindowLongPtr(handle, GWL_EXSTYLE, 0);
 
 		const Vector2I outer = this->impl_->outer_size(client_size);
 
-		if (IsWindowVisible(handle) != FALSE)
+		if (shown)
 		{
 			ShowWindow(handle, SW_SHOWNORMAL);
 			SetWindowPos(handle, HWND_TOP, 0, 0, outer.x, outer.y,

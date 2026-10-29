@@ -72,6 +72,17 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Keep a Win32 window shown through full screen
+
+**Behaviour change, Windows only.** `Window::enter_fullscreen` and
+`leave_fullscreen` replaced the window style without `WS_VISIBLE`, so a
+shown window counted as hidden afterwards. Leaving full screen then skipped
+its show: the window stayed on screen at the monitor's corner with a white
+client, and GL drew white in full screen. Both calls now keep the window's
+visibility, so `Application::set_fullscreen(false)` returns a framed window
+at the requested client size that draws. Hidden windows still stay hidden.
+No migration is needed.
+
 ### 2026-10-29 - Release a browser game's services after it quits
 
 **Behaviour change, browser builds only.** After `Application::quit()`, or an
