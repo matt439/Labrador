@@ -14,8 +14,19 @@ and amend `web.md` §9 with the result.
       `*PageTests`. Run 38130728123, PR #1, every step passed, with the five
       there were then; run 38339603954, on master at `fbb753d`, passed all six,
       `ComponentsPageTests` among them.
-- [ ] The null-backends step runs even when a page step fails, and the job
-      still goes red. Not yet seen: nothing has failed since the change.
+- [x] The null backends run even when a page step fails, and the jobs go
+      red. They are now a separate `wasm-null` job rather than a step after
+      the pages. Procedure: on a throwaway `review-*` branch from `master`
+      (pushes there run CI without a pull request), add
+      `console.error('...')` as the first line of the `<script>` in
+      `samples/minimal/web/shell.html`, push, read the run, then delete the
+      branch; nothing merges. [Run 40868195679](https://github.com/matt439/Labrador/actions/runs/40868195679), 2026-10-29: in
+      `wasm`, the sample-pages step failed on `MinimalPageTests` alone (9 of
+      10 passed), the bundle upload was skipped and the job failed;
+      `wasm-null` configured, built and ran all 28 tests, 27 passing and
+      `MinimalPageTests` failing on the same error, since it registers the
+      pages too; `wasm-consumer` failed on it as well, its project copying
+      the template's page; every other job passed and the run failed.
 - [x] The x64 jobs' `RenderPixelTests` pass against the 17 regenerated text
       goldens and the three new frames on the runner's Direct3D adapter
       (`x64-release` and `x64-debug-d3d12`, same run).

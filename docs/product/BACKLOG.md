@@ -672,7 +672,13 @@ written.
   2026-10-29: PR #86, which touched `engine/render/` (SM-58), merged with the
   section from a clean run at its head: all seven configurations passed on
   the RTX 5080, with the device line naming the driver and fallbacks.
-- [ ] **[SM-15](STORIES.md#sm-15)** Could · XS · The Sole Owner-Maintainer: Observe the null-backend wasm step running after a failed page step, and the job going red
+- [x] **[SM-15](STORIES.md#sm-15)** Could · XS · The Sole Owner-Maintainer: Observe the null-backend wasm step running after a failed page step, and the job going red
+  Closed 2026-10-29: the null backends are now the separate `wasm-null` job.
+  A throwaway `review-sm15-failing-page` branch logged a console error in the
+  minimal page; [run 40868195679](https://github.com/matt439/Labrador/actions/runs/40868195679) failed the `wasm` page step on
+  `MinimalPageTests` alone, `wasm-null` still ran all 28 tests (27 passing,
+  the same page failing) and the run went red. The branch was deleted;
+  [web-to-be-tested.md](../port/web-to-be-tested.md) holds the procedure.
 - [x] **[SM-26](STORIES.md#sm-26)** Could · S · The Sole Owner-Maintainer: Notice when the hosted demo lags the engine — after PI-05
   Source implemented 2026-10-29. `tools/check_demo_lag.py` pins an explicit
   host checkout's HEAD and reads its committed BUILD.json, compares its clean
