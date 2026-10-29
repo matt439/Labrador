@@ -571,7 +571,13 @@ written.
   its request. Left: the owner creates the two labels with the commands
   CONTRIBUTING gives.
 - [x] **[PI-15](STORIES.md#pi-15)** Could · S · The Pinned Submodule Integrator: Launching my game hidden through STARTUPINFO is tested upstream
-- [ ] **[PI-16](STORIES.md#pi-16)** Could · S · The Pinned Submodule Integrator: Drive my game past its title screen with injected input in a smoke run — after OCA-30
+- [x] **[PI-16](STORIES.md#pi-16)** Could · S · The Pinned Submodule Integrator: Drive my game past its title screen with injected input in a smoke run — after OCA-30
+  Closed 2026-10-29: the testing guide's "Drive the game with injected keys" states
+  the once-per-frame poll, the hold-across-a-poll rule and the foreground/focus
+  conditions, quotes `tools/input_drive/hold_key.ps1` (SendInput scan codes), and
+  shows its before/after captures from the Release minimal sample, whose greeting
+  moved about 200 pixels on a 500 ms right-arrow hold. It points at
+  `tests/app/web/window_input.mjs` as the browser counterpart.
 - [x] **[PI-17](STORIES.md#pi-17)** Could · XS · The Pinned Submodule Integrator: Know what JSON the engine reads for me and when my game must bring its own parser
 - [x] **[PI-18](STORIES.md#pi-18)** Could · XS · The Pinned Submodule Integrator: The include wall says exactly what it protects in my build
 - [x] **[PI-20](../review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans)** Could · S · The Pinned Submodule Integrator: A misspelt key in a manifest or sprite sheet is refused, not read as its default

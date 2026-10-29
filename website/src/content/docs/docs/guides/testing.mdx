@@ -7,6 +7,9 @@ sidebar:
 
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import Capture from '~/components/Capture.astro';
+import holdBefore from '~/assets/captures/minimal-hold-before.png';
+import holdAfter from '~/assets/captures/minimal-hold-after.png';
 
 A project started from [Start your own project](/docs/get-started/your-project/) is tested from
 its first commit. It has two tests, and ctest runs them:
@@ -269,6 +272,52 @@ instead checks startup with its recording renderer.
 
 It presses no keys, so it checks that the game starts, not that it plays. The
 separate draw test above inspects requests without proving device output.
+
+## Drive the game with injected keys
+
+To get past a title screen in a smoke run after moving your pin, inject keys into the running
+game. **The engine reads the keyboard once per frame**, before your state's update: each key
+event the window receives is held until that poll, which makes it visible to `held()` and,
+for one frame, `pressed()`. A key pressed and released between two polls is never seen, so a
+tap sent faster than a frame does nothing. Hold the key across at least one poll and release
+it in a later one; at 60 frames a second, a hold of 100 ms spans several polls.
+
+<SourceFile path="engine/input/keyboard.h" from="// For the shell or an input fixture." to="void on_key_up(Key key);" />
+
+Two more things decide whether a key arrives. Injected keys go to the foreground window only,
+so bring the game forward first. And losing focus releases every held key, so a key held while
+another window takes focus is released at the next poll.
+
+This script starts a game, brings its window forward, holds one key and saves the window
+before and after. It sends set-1 scan codes through `SendInput`, which is how the Windows
+window reads keys, so it presses the same physical key whatever the keyboard layout:
+
+<SourceFile path="tools/input_drive/hold_key.ps1" collapsed />
+
+Run against the Release minimal sample, holding the right arrow for half a second moves its
+greeting about 200 pixels, its speed of 400 pixels a second for 0.5 seconds:
+
+```bat
+powershell -ExecutionPolicy Bypass -File tools\input_drive\hold_key.ps1 -Exe out\build\x64-release\samples\minimal\MinimalSample.exe -Key Right
+```
+
+<Capture
+	src={holdBefore}
+	alt="The minimal sample's window before the key: the words Hello from the engine. in the middle of a black window, with the controls line along the bottom."
+	caption="Before: the greeting where the sample starts it."
+/>
+
+<Capture
+	src={holdAfter}
+	alt="The same window after the right arrow was held for half a second: the greeting has moved about 200 pixels to the right."
+	caption="After holding the right arrow for 500 ms."
+/>
+
+For a title screen that waits for Enter, pass `-Key Enter`. The script is yours to change;
+the engine has no replay or input-injection mechanism of its own. Labrador's browser pages are
+driven the same way through Chrome's DevTools protocol, with real key events dispatched
+through the page's shell:
+<RepoLink path="tests/app/web/window_input.mjs">`tests/app/web/window_input.mjs`</RepoLink>.
 
 ## In CI
 
