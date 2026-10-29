@@ -97,7 +97,24 @@ namespace labrador
 			const int32_t top = reader.read_i32();
 			const int32_t right = reader.read_i32();
 			const int32_t bottom = reader.read_i32();
-			glyph.subrect = RectangleI(left, top, right - left, bottom - top);
+			// Representable edges can still have an unrepresentable difference.
+			// Widen the operands before subtracting, then narrow only checked sizes.
+			const int64_t glyph_width =
+				static_cast<int64_t>(right) - static_cast<int64_t>(left);
+			const int64_t glyph_height =
+				static_cast<int64_t>(bottom) - static_cast<int64_t>(top);
+			const int64_t minimum_extent = (std::numeric_limits<int>::min)();
+			const int64_t maximum_extent = (std::numeric_limits<int>::max)();
+			if (glyph_width < minimum_extent || glyph_width > maximum_extent ||
+				glyph_height < minimum_extent || glyph_height > maximum_extent)
+			{
+				throw std::runtime_error(path + ": glyph " + std::to_string(i) +
+					" rectangle extent is outside int range (" +
+					std::to_string(glyph_width) + "x" +
+					std::to_string(glyph_height) + ").");
+			}
+			glyph.subrect = RectangleI(left, top, static_cast<int>(glyph_width),
+				static_cast<int>(glyph_height));
 
 			glyph.x_offset = reader.read_f32();
 			glyph.y_offset = reader.read_f32();

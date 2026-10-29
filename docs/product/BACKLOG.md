@@ -424,6 +424,7 @@ written.
 48. L48 Keep effect-group assignment and notification membership consistent on failure: SM-66
 49. L49 State the existing geometric navigation tie rule: SM-67
 50. L50 Align audio loader and test documentation with current content: SM-68
+51. L51 Refuse unrepresentable sprite-font glyph extents before narrowing: SM-69
 
 **Stories**
 
@@ -786,6 +787,100 @@ written.
 - [x] **[SM-67](#sm-67)** Could · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Know which candidate wins an exact navigation tie
 
 - [x] **[SM-68](#sm-68)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Read accurate audio content, loader and recording contracts
+
+- [ ] **[SM-69](#sm-69)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Receive a file-named error for an unrepresentable font glyph extent
+
+<a id="sm-69"></a>
+### SM-69. Refuse unrepresentable sprite-font glyph extents
+
+Selected 2026-10-29 after SM-68 from a bounded DDS/sprite-font source audit.
+The existing file reader constructs RectangleI with `right - left` and
+`bottom - top` evaluated in signed 32-bit arithmetic on the supported
+targets. Valid signed edge fields can have an unrepresentable difference.
+The count and atlas guards cannot prevent this later arithmetic overflow.
+
+| Rank | Source evidence and value | Decision |
+|---|---|---|
+| 1 | Opposite int32 endpoints produce plus or minus 4,294,967,295 for either width or height. A complete 76-byte, one-glyph, 1x1 RGBA font reaches the subtraction after reserving one entry. The RectangleI constructor only stores ints. | Select the narrow arithmetic repair and fixed-code regressions. |
+| 2 | Registry presence and obsolete font device-loss prose have a separately reviewed two-file correction. | Keep for an independent follow-up after this correctness repair. |
+
+Two independent source reviews agree on all four width/height overflow
+examples and the complete small-file layout. No malformed fixture was run
+against the original overflowing expression, and no old-code failure is
+claimed. The DDS layout guards were source-consistent in the bounded audit;
+no additional format defect or arbitrary parser limit is inferred.
+
+**Acceptance**
+
+- Promote the signed edge operands before subtraction, compare both
+  differences with RectangleI's int representation bounds, then narrow and
+  construct. A rejected extent throws runtime_error naming the file and
+  glyph/rectangle problem before the overflowing expression can occur.
+- Preserve every representable difference, including negative and zero
+  extents. Add no atlas-coordinate, Unicode, positive-glyph-area, metric or
+  line-spacing policy, dependency, public API or general parser framework.
+- Use the existing ScratchFile fixture and a complete 76-byte synthetic
+  font to check the four overflow directions only against the fixed reader.
+  Require useful extent/glyph diagnostics as well as the path, so a fixture
+  that failed for some unrelated truncation would not pass. Verify ordinary,
+  zero and exact signed-limit controls by reading stored metadata only.
+  Preserve the existing real-font and malformed-file test bodies.
+- Run complete headless RenderTests on all five native Debug render
+  backends and Release null, after current source/cache/generated-object
+  boundary checks. Use two build workers and one test worker, serially.
+  Run eight standalone checks and website check/tests/build; keep the
+  required wasm/CI and device/browser qualifications explicit and stopped.
+- Record the malformed-input behavior change in CHANGES.md. Valid font
+  content needs no migration; do not regenerate or claim rasterized images.
+
+**Qualification**
+
+Implemented 2026-10-29 with checked int64 operand promotion, int bounds
+before narrowing and file/glyph/extent diagnostics. The two frozen CPP/test
+candidates passed independent source review; a separate reversal reproduces
+the original reader outside the conversion and every existing test body.
+Both candidates are ASCII/CRLF, with no new header, translation unit, API,
+dependency or registration. CHANGES records the malformed-input behavior
+change and unchanged representable geometry; valid fonts need no migration.
+
+The two added cases use complete 76-byte files. Four rows reject width and
+height overflow in both directions after the guard is compiled. Four safe
+controls retain ordinary geometry, zero area and both signed-limit extent
+combinations. Stored coordinates/sizes, line spacing and the complete 1x1
+atlas/pixel payload are checked without measuring, drawing or deriving
+extreme geometry. The real-font and existing malformed-file cases remain.
+No original overflowing expression was run and no old-code red is claimed.
+
+Complete native RenderTests pass with zero skipped cases:
+
+| Configuration | Cases | Assertions |
+|---|---|---|
+| Debug D3D11 | 156 | 3942 |
+| Debug D3D12 | 156 | 3942 |
+| Debug GL | 156 | 3942 |
+| Debug Vulkan | 156 | 3942 |
+| Debug null | 182 | 4073 |
+| Release null | 182 | 4073 |
+
+Builds used two workers and tests one, serially across the six selections.
+Installed dependencies, backend selections, 68 named source hashes and the
+two candidate hashes were guarded. Before each runtime the generated test
+object inventory matched twenty CPPs, or twenty-one with null recording;
+no additional fixture tests were selected. Other boundary sources held.
+These are headless metadata/refusal and CPU-recording results, not graphics
+API device, rasterized output or hardware acceptance.
+
+All eight standalone checks pass, including 49 include-wall fixtures.
+Website check reports zero type diagnostics, 160 tests pass and the build
+produces 145 pages and 436 files with no release snapshot. Each website phase
+and the full runner record success; the final process return was zero.
+The existing public reader/error contract is present in generated HTML.
+
+The story remains unchecked for the required wasm render selections and
+full-CI qualification. Stopped Emscripten activation/runtime routes are not
+retried; other native Release, device and browser evidence remains separate.
+This does not block the independent Registry prose follow-up or reopen any
+deferred owner/product decision.
 
 <a id="sm-68"></a>
 ### SM-68. Align audio content and test documentation with current behavior
