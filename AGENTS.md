@@ -97,6 +97,10 @@ The current mapping covers render paths only:
 | `engine/render/vulkan/` | The same matrix plus the synchronization review's `validate_sync` procedure below. |
 | Other engine folders, samples, website and tooling | Not modeled by the render planner; follow their current owners and affected-configuration checks, including the independent audio rules below. |
 
+`python tools/ci_gap_report.py --execute` builds and tests what CI cannot
+(GL/Vulkan pixel and smoke tests, four release presets, `wasm-debug`) and prints
+the PR template's section; its test fails if `ci.yml` drifts from its list.
+
 The five native selections are `x64-debug`, `x64-debug-d3d12`, `x64-debug-gl`,
 `x64-debug-vulkan` and `x64-debug-null`. CI's wasm-null selection is an explicit
 override build directory, not a named preset. Emitted commands and detected

@@ -4,8 +4,8 @@
 Every configure/build/test phase remains `not-run` unless `--execute` is explicit.
 The executor stops at the first failed command or validation and names it.
 The real sweep ran on 2026-10-29 ([qualification](#real-sweep-qualification-2026-10-29));
-fake-command tests qualify the control flow. SM-18's per-change evidence
-record follows it.
+fake-command tests qualify the control flow. The per-change record of what
+CI cannot run is [below](#configurations-ci-cannot-run).
 
 These examples run from the repository root:
 
@@ -238,3 +238,54 @@ not run a configured build or test binary:
 python -m unittest discover -s tools/tests -p test_verify_changes.py
 python -m unittest discover -s tools/tests -p test_verification_runner.py
 ```
+
+## Configurations CI cannot run
+
+CI's matrix leaves out `RenderPixelTests` and `MinimalSmokeTests` on
+`x64-debug-gl` and `x64-debug-vulkan` (no driver on the runner), the four
+release presets other than `x64-release` (CI's `wasm-release` is the browser
+one), and `wasm-debug`.
+`tools/ci_gap_report.py` holds that list; its test derives the same list from
+`ci.yml` and `CMakePresets.json` and fails when they drift apart.
+
+```text
+python tools/ci_gap_report.py
+python tools/ci_gap_report.py --execute
+python tools/ci_gap_report.py --execute --preset wasm-debug --output-dir out/ci-gap/mine
+```
+
+The default prints the plan and runs nothing. `--execute` runs configure,
+build and `ctest --output-junit` for each selected preset in turn, writing a
+log and JUnit per preset to a new directory under ignored `out/ci-gap/`. A
+failed configure or build marks that preset failed and moves on to the next,
+so the record covers every selected preset. Results come from JUnit, because
+`LastTest.log` writes "Test Passed." for a test whose executable is missing
+and `LastTestsFailed.log` survives later runs. Any failed, skipped or disabled
+case, a nonzero ctest exit, or a required test that was never registered makes
+the preset fail. The required tests are the GL/Vulkan pixel and smoke tests and
+`wasm-debug`'s 13 browser tests, which configure registers only when it finds a
+Chromium: without one, its 19 headless tests would otherwise pass alone. A
+tool missing from the shell fails its preset and the run moves on. With
+`--execute` the exit code is 0 when every selected preset passed and 1 when any
+failed. It is 2, with no section printed, when the checkout state cannot be
+read, HEAD moved during the run, or the output directory exists or cannot be
+made; argument errors also exit 2. The plan exits 0.
+
+Its standard output is the body of the pull request template's
+"Configurations CI cannot run" section. It names the commit and how many
+uncommitted changes the tree had; it does not record a device, so the person
+pasting it names the adapter and driver. It activates no toolchain. Run it
+from a cmd shell with vcvars, and with `emsdk_env.bat` for `wasm-debug`. A
+cmd started from Git Bash inherits `MSYSTEM`, which makes `emsdk_env.bat`
+print bash exports and leave the environment unset; clear it with
+`set MSYSTEM=` first. Passing the record does not complete the manual checks
+listed above: those still go in the template's own section.
+
+The first run, on 2026-10-29 at `33975df` with the tool's own files
+uncommitted, on the RTX 5080 (NVIDIA 616.92), passed `x64-debug-gl` and
+`x64-debug-vulkan` 20/20 each with their pixel and smoke tests,
+`x64-release-d3d12` 21/21, `x64-release-gl` 20/20, `x64-release-vulkan` 20/20
+and `x64-release-null` 19/19. `wasm-debug` failed at configure, because the
+shell had inherited `MSYSTEM` and `emcc` was not on PATH; the report named the
+failing step and its log. Rerun with `MSYSTEM` cleared, it passed 32/32
+including the Chromium page tests.

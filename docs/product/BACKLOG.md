@@ -636,6 +636,15 @@ written.
   device acceptance stays separate (SM-18).
   All seven standalone checks and website check/tests/143-page build pass.
 - [ ] **[SM-18](STORIES.md#sm-18)** Could · S · The Sole Owner-Maintainer: A record of the configurations CI cannot run, per merged change — after SM-17
+  Source landed 2026-10-29: `.github/pull_request_template.md` prompts for
+  the section, and `tools/ci_gap_report.py --execute` configures, builds and
+  tests the GL/Vulkan pixel and smoke tests, the four release presets CI does
+  not build and `wasm-debug`, then prints that section from ctest's JUnit.
+  Its 12 offline tests include drift against `ci.yml` and `CMakePresets.json`
+  and refuse a `wasm-debug` run whose browser tests were never registered.
+  The first real run passed all seven after an environment fix
+  ([record](../verification.md#configurations-ci-cannot-run)). Left: the
+  first merged PR touching `engine/render/` carrying the section.
 - [ ] **[SM-15](STORIES.md#sm-15)** Could · XS · The Sole Owner-Maintainer: Observe the null-backend wasm step running after a failed page step, and the job going red
 - [x] **[SM-26](STORIES.md#sm-26)** Could · S · The Sole Owner-Maintainer: Notice when the hosted demo lags the engine — after PI-05
   Source implemented 2026-10-29. `tools/check_demo_lag.py` pins an explicit

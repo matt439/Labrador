@@ -302,6 +302,13 @@ qualifications separately from a printed plan or fake-command test result.
   `ctest --preset x64-debug`). A change under `engine/render/` should be
   checked against every backend, and one in `gl/` under a `wasm-*` preset too;
   CI builds all of them, but it is slower than finding out first.
+- For a code change, run `python tools/ci_gap_report.py --execute` on the
+  branch head and paste its output under the pull request template's
+  "Configurations CI cannot run". It builds and tests what CI does not: the
+  GL and Vulkan pixel and smoke tests, the release presets CI skips and
+  `wasm-debug`. Name the device it ran on;
+  [the procedure](docs/verification.md#configurations-ci-cannot-run) says
+  what the record does and does not show.
 - If you edited a public engine header, a line a website page quotes, or a
   file a design document links to, build the website (`npm ci` then
   `npm run build` inside `website/`).
