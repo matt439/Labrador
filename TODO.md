@@ -12,7 +12,8 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **`SM-17`: run the render verification sweep for real.** The toolchain, GPU and Chromium are available again; [the contract](docs/verification.md) says what the sweep must show.
+1. **`SM-58`: extract the reviewed D3D12 root-signature/PSO value owner.** [Code hygiene](docs/code-hygiene.md#sm-58-d3d12-sprite-pipeline-value-owner) owns its design and checks.
+2. **`SM-18`: record the device checks CI cannot run for each change.** The [render sweep](docs/verification.md) now runs for real.
 
 Then follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
@@ -71,8 +72,7 @@ maintenance lane. Counts prompt review, not automatic splitting.
 |---|---|---|---|---|
 | `SM-25` | WAITING | should | S | Observe the next scheduled Actions run; repaired SDK download and tests passed PR CI. [Evidence](docs/product/BACKLOG.md#next). |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `allowed_channel_drift` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
-| `SM-17` | OPEN | could | M | Render planner, preflight and explicit first-failure executor are implemented with fake-command checks; complete real CTest/report compatibility and the sweep after stopped runtime/toolchain gates. [Scope](docs/verification.md). |
-| `SM-18` | BLOCKED | could | S | Record device checks CI cannot run for each change; after SM-17. |
+| `SM-18` | OPEN | could | S | Record device checks CI cannot run for each change, on top of the [render sweep](docs/verification.md). |
 | `SM-24` | BLOCKED | could | S | Pin/selector inventory, coupled consumer updates and full qualification procedure are documented. Preserve the after-SM-25 scheduled-run observation gate. [Procedure](docs/dependency-updates.md). |
 
 `SM-15` remains in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).

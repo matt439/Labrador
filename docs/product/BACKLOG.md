@@ -602,7 +602,7 @@ written.
   all seven standalone checks and the website's zero-diagnostic check,
   160 tests and 145-page/435-file build pass. The procedure's 31 local targets
   and CONTRIBUTING link were checked; no remote/provider response was tested.
-- [ ] **[SM-17](STORIES.md#sm-17)** Could · M · The Sole Owner-Maintainer: One command per area that runs every configuration a change must pass
+- [x] **[SM-17](STORIES.md#sm-17)** Could · M · The Sole Owner-Maintainer: One command per area that runs every configuration a change must pass
   Planning slice implemented 2026-10-29. `tools/verify_changes.py` models the
   five native Debug selections, wasm-debug GL and CI's explicit wasm-release-null
   override without executing commands. Text/JSON output carries cwd/argv,
@@ -628,9 +628,12 @@ written.
   All 59 focused tests pass (31 planner and 28 fake-command runner tests),
   including stale caches, interrupted commands and report-write failure.
   Independent review has no remaining findings. The actual default CLI still
-  emits seven configurations/21 `not-run` phases. Real CTest/JUnit emitter
-  compatibility, the seven-track sweep and manual device acceptance remain
-  unrun at the existing runtime/toolchain stops; the story stays unchecked.
+  emits seven configurations/21 `not-run` phases. Closed 2026-10-29: the real
+  `--execute` sweep passed all seven tracks (configure, build, test) with this
+  machine's CTest JSON and JUnit accepted, and a shell without Emscripten
+  failed at preflight naming the missing path before any build
+  ([record](../verification.md#real-sweep-qualification-2026-10-29)). Manual
+  device acceptance stays separate (SM-18).
   All seven standalone checks and website check/tests/143-page build pass.
 - [ ] **[SM-18](STORIES.md#sm-18)** Could · S · The Sole Owner-Maintainer: A record of the configurations CI cannot run, per merged change — after SM-17
 - [ ] **[SM-15](STORIES.md#sm-15)** Could · XS · The Sole Owner-Maintainer: Observe the null-backend wasm step running after a failed page step, and the job going red
