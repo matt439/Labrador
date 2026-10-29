@@ -12,8 +12,8 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **L7 (`BDP-15`, `BDP-16`, `BDP-17`): finish context recovery and browser acceptance.** Failure wording and support probes have [source and offline coverage](docs/port/2026-10-28-demo-host.md); generated-module/browser checks remain open.
-2. **L8 (`BDP-11` to `BDP-14`): run packaged-browser acceptance for focus, controls and phone instructions.** [Source checks](docs/port/2026-10-28-demo-host.md#focus-controls-and-the-phone-gate-l8) cover the state transitions and host policy.
+1. **L12 (`BDP-09`): fit the host page to a phone held upright.** Its acceptance runs under emulated viewports in `LineSweeperBundlePageTests`; real-phone layout stays `SM-13`'s.
+2. **Qualify rows whose device, Emscripten and browser gates are open again.** The toolchain, GPU and Chromium run on this desktop again; each BLOCKED row below names what its owner still asks for.
 
 **Available after those batches:** text examples and validation tools are
 indexed below. The animation example and gallery settings have source/native

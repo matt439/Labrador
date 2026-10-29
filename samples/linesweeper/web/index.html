@@ -108,6 +108,10 @@
   let factory = null;
   let canvas = null;
   let reloadRequired = false;
+  // A game whose graphics never came back, and how to end it: the module's
+  // quit bridge, called before a fresh game is mounted in its place.
+  let restartGame = null;
+  let restarting = false;
   // The canvas of a game that ended, whose context the browser counts until
   // it is collected even after the engine has let it go. A failure is included:
   // asking a canvas without a context for one makes one only to lose it.
@@ -217,7 +221,10 @@
       loading = false;
       if (canvas !== null) {
         if (canvas === ranCanvas) {
-          canvas.getContext("webgl2")?.getExtension("WEBGL_lose_context")?.loseContext();
+          const graphics = canvas.getContext("webgl2");
+          if (graphics !== null && !graphics.isContextLost()) {
+            graphics.getExtension("WEBGL_lose_context")?.loseContext();
+          }
           ranCanvas = null;
         }
         canvas.remove();
@@ -237,7 +244,8 @@
       // failure reaches onError - before the promise below settles.
       const ownCanvas = canvas;
       let started = false;
-      await factory({
+      let instance = null;
+      instance = await factory({
         canvas: ownCanvas,
         onQuit: () => {
           if (ended || canvas !== ownCanvas) { return; }
@@ -245,6 +253,7 @@
           ranCanvas = ownCanvas;
           clearContextWait();
           reloadRequired = false;
+          if (restarting) { return; }
           setStatus("Thanks for playing.", false);
           showStart("Play again");
         },
@@ -261,14 +270,22 @@
           if (ended || canvas !== ownCanvas || contextLost) { return; }
           contextLost = true;
           setStatus("The browser took the graphics away; waiting for them to come back.", true);
-          // Ten seconds bounds the silent wait. Reload replaces the whole
-          // document; removing a live module's canvas would not stop its loop.
+          // Ten seconds bounds the silent wait. Try again quits this game
+          // through the module's bridge and mounts a fresh one; without the
+          // bridge, reload replaces the whole document, since removing a
+          // live module's canvas would not stop its loop.
           contextWait = setTimeout(() => {
             contextWait = null;
             if (!ended && canvas === ownCanvas && contextLost) {
               reloadRequired = true;
-              setStatus("The graphics have not returned. Reload the page to start a new game.", true);
-              showStart("Reload page");
+              if (typeof instance?._linesweeper_quit === "function") {
+                restartGame = () => instance._linesweeper_quit();
+                setStatus("The graphics have not returned. Try again to start a new game.", true);
+                showStart("Try again");
+              } else {
+                setStatus("The graphics have not returned. Reload the page to start a new game.", true);
+                showStart("Reload page");
+              }
             }
           }, 10000);
         },
@@ -278,6 +295,7 @@
           clearContextWait();
           if (reloadRequired) {
             reloadRequired = false;
+            restartGame = null;
             start.hidden = true;
             ownCanvas.focus();
           }
@@ -308,7 +326,29 @@
     }
   }
 
-  play.addEventListener("click", () => reloadRequired ? location.reload() : mount());
+  // Try again after lost graphics ends the old game first. A bridge that
+  // throws, or a quit that never arrives, leaves the reload route.
+  function restart() {
+    const quit = restartGame;
+    restartGame = null;
+    reloadRequired = false;
+    restarting = true;
+    try {
+      quit();
+    } catch (error) {
+      console.error("LineSweeper restart:", error);
+    } finally {
+      restarting = false;
+    }
+    if (ranCanvas === canvas) {
+      mount();
+    } else {
+      location.reload();
+    }
+  }
+
+  play.addEventListener("click", () => restartGame !== null ? restart() :
+    reloadRequired ? location.reload() : mount());
 </script>
 </body>
 </html>

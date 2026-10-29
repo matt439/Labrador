@@ -834,7 +834,16 @@ read from `Module` when it is due, and the second pair is called once per
 loss, in that order, each from a frame rather than from the browser's event.
 Between them the canvas is blank, and a context that never comes back leaves
 it blank for good, so what the page says in `onContextLost` is the only word
-a visitor gets.
+a visitor gets until the page acts.
+
+**The instance the factory resolves has one function of LineSweeper's own,
+`_linesweeper_quit()`.** It makes the quit the pause menu's QUIT row makes,
+so `onQuit` follows synchronously and the instance releases itself. Before
+the game is running it does nothing. The packaged page uses it when the
+context has not returned after ten seconds: **Try again** quits the old game
+and mounts a fresh one. A page without it, or a call that does not reach
+`onQuit`, falls back to reloading the document. Removing a running canvas
+never stops its game.
 
 ### 7.4 What a phone sees on the host page
 
