@@ -423,6 +423,7 @@ written.
 47. L47 Keep sound-bank lookup and volume notifications consistent on failure: SM-65
 48. L48 Keep effect-group assignment and notification membership consistent on failure: SM-66
 49. L49 State the existing geometric navigation tie rule: SM-67
+50. L50 Align audio loader and test documentation with current content: SM-68
 
 **Stories**
 
@@ -783,6 +784,87 @@ written.
 - [x] **[SM-65](#sm-65)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed first sound-bank registration absent and retryable
 - [x] **[SM-66](#sm-66)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Preserve an effect's previous group when first notification registration fails
 - [x] **[SM-67](#sm-67)** Could · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Know which candidate wins an exact navigation tie
+
+- [x] **[SM-68](#sm-68)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Read accurate audio content, loader and recording contracts
+
+<a id="sm-68"></a>
+### SM-68. Align audio content and test documentation with current behavior
+
+Selected 2026-10-29 after OCA-77's native/source checkpoint. Current TODO
+acceptance still needs the stopped browser, device and SDK routes, actual
+owner sessions or external events; SM-58 retains its SM-57 prerequisite.
+This bounded maintenance item uses the owner's autonomous-work permission
+and does not reopen any IDEA/GAP product decision.
+
+The source audit ranked these concrete opportunities:
+
+| Rank | Finding and value | Decision |
+|---|---|---|
+| 1 | The audio parser says an effect may not name a wave omitted from the array, while its implementation, public definition contract and existing effect-only-wave test deliberately use their first-seen union. Correcting the false restriction protects accepted content. | Select. |
+| 2 | Registry presence wording confuses released slots with loaded resources, despite existing release/refill tests. | Keep as an independent follow-up. |
+| 3 | Audio teaching prose says the repository cannot contain an XWB or build a content-backed bank, calls one test file the only observable audio coverage and overstates what null recordings prove. The sample ships original PCM/XWB and suite selection has changed. | Combine with rank 1 as one coherent audio documentation repair. |
+
+The related public definition and builtin manifest-loader comments repeat
+the false clone/container premise. Source inspection of the actual handler,
+loader and all three backend open functions establishes the narrow contract:
+the builtin loader parses the definition before opening a bank, including
+optional content; only open-time runtime errors are in its optional-content
+catch. Missing, unreadable or unplayable containers can use that optional
+fallback; a declared-wave mismatch is a logic error that propagates. Manual
+callers choose their own order. Null does not read a container and supplies
+no missing-container error or physical listening evidence.
+
+**Acceptance**
+
+- Correct the evidenced comments in seven source/header/test files while
+  preserving executable tokens, declarations, includes, preprocessor
+  directives, test bodies, registration and accepted content. Preserve each
+  file's existing line endings. Add no mirrored behavioral test or new API.
+- Guard original and candidate bytes before applying. Reverse only the
+  complete line-comment replacements to reproduce every original exactly,
+  with no line splices. Keep the original five-file preparation frozen;
+  account explicitly for the two-file supplement and its intentional public
+  header replacement in the combined guards.
+- Keep pure definition parsing, container reading, recorded commands and
+  state, and actual listening distinct. Retain existing no-mixer/no-clock
+  limits and qualify error ordering to the builtin manifest loader.
+- Run eight standalone checks and website check/tests/build. Verify the
+  corrected public definition contract in generated HTML and source/excerpt
+  coupling. Existing implementation and test bodies are unchanged, so no
+  old-code failure or new engine-runtime result is expected or claimed.
+- Classify `not consumer-visible`: documentation matches existing behavior;
+  no source migration or CHANGES behavior entry is required. Preserve all
+  current device, browser, wasm, network and owner qualification gates.
+
+**Qualification**
+
+Implemented 2026-10-29 in seven files and ten complete line-comment
+replacements. The original five-file preparation and earlier supplement are
+preserved; the final two-file supplement is accounted for explicitly.
+Original/candidate guards and exact forward/reverse reconstruction pass,
+including no line splices, unchanged logging and the original line endings.
+The three test files retain their complete test bodies: seven definition,
+seven silent-bank and fifteen null cases. Those are source inventories,
+not newly executed test totals.
+
+The actual builtin handler/loader and three backend open paths support the
+qualified ordering and failure statements. This is source evidence; no
+audio device, container playback or listening session was run. The parser's
+union, clamping, optional-bank substitution and configuration-specific test
+registration are unchanged. No behavior entry or caller migration is needed.
+
+All eight standalone checks report exit zero, including 49 engine include
+fixtures. Preserved website logs report zero type diagnostics, 160 passing
+tests and a completed 145-page build with 436 files and no release snapshot.
+Artifact inspection verifies the corrected public definition contract.
+The final process poll returned Unknown process id, so the wrapper exit
+code is unavailable; its complete phase-success logs and generated artifact were
+reconciled without rerunning checks. This receipt limitation supplies no
+new engine-runtime, wasm, device, browser or physical-audio qualification.
+
+A later source audit found an actual glyph-extent overflow in the font
+reader. That bounded correctness repair takes priority over the independent
+Registry prose follow-up; the owner's deferred product decisions remain out.
 
 <a id="sm-67"></a>
 ### SM-67. State navigation's existing exact-tie rule

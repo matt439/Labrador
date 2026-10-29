@@ -13,14 +13,11 @@ using labrador_tests::ScratchFile;
 
 // What a bank definition is allowed to say, and what comes out of it.
 //
-// NO DEVICE, IN EVERY CONFIGURATION, WHICH IS NEW AND IS THE POINT.
-// read_sound_bank_definition is a parse and nothing else: it produces the
-// struct sound_bank_loader.h describes and touches no audio API, so the whole
-// of the content half of this module is assertable on a machine with no sound
-// card and no XAudio2. Folding the parse into read_sound_bank, against a
-// DirectX::WaveBank that has to be constructed first, is what makes that
-// impossible: testing what the JSON means then requires an .xwb this
-// repository cannot contain.
+// NO DEVICE, IN EVERY CONFIGURATION. The parser produces the definition
+// described in sound_bank_loader.h without opening a wave bank or creating
+// voices. These cases require neither an audio API nor an output endpoint.
+// The audio sample's original PCM and XWB are checked in; parsing a definition
+// is tested separately from reading that container or playing its content.
 //
 // WHERE THE OTHER HALF IS. build_sound_bank needs a device to create voices
 // against, so it is pinned in tests/audio/null_tests.cpp, which compiles in the

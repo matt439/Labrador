@@ -142,11 +142,9 @@ namespace labrador
 		// THE DEFINITION IS READ FIRST, AND THE ORDER IS LOAD-BEARING. A backend
 		// with no container answers wave_index out of the wave list this parse
 		// produces, so the list has to exist before open_wave_bank is called.
-		// sound_bank_loader.h states what it costs: a bank whose container is
-		// missing and whose definition is also broken reports the broken
-		// definition rather than the missing file. The definition is in every
-		// clone and the container is not, so that is the better of the two
-		// answers (T6).
+		// Malformed definitions fail before any bank-open attempt, including
+		// for optional banks. Only open-time std::runtime_error can reach
+		// the optional-bank substitution below (T6).
 		const SoundBankDefinition definition =
 			read_sound_bank_definition((directory + name + ".json").c_str());
 
@@ -158,22 +156,18 @@ namespace labrador
 		}
 		catch (const std::runtime_error& missing)
 		{
-			// std::runtime_error AND NOT std::exception, WHICH IS THE WHOLE
-			// DISTINCTION. The seam throws a runtime_error when the container
-			// is not there and a std::out_of_range - a logic_error - when it is
-			// there and does not hold a wave the definition names. The first is
-			// a file a clone was never going to have; the second is a content
-			// bug, and catching both here would turn it into silence.
+			// Only std::runtime_error from open_wave_bank permits the optional
+			// substitute: a missing, unreadable or unplayable container. A
+			// declared wave missing from a container is std::out_of_range,
+			// a logic_error, so that content error must propagate.
 			if (!optional)
 			{
 				throw;
 			}
 
-			// A bank the manifest marked optional is allowed not to be there,
-			// and this is the one substitution the engine makes for a missing
-			// file: a bank that resolves everything and plays nothing, so the
-			// game runs in silence instead of dying on a file it was never
-			// going to have (SoundBank::silent).
+			// SoundBank::silent substitutes for an unavailable optional bank.
+			// It resolves every name; playback through those handles does nothing,
+			// so the game can continue without content for that bank.
 			//
 			// It is reported rather than swallowed. T6's rule is that a broken
 			// contract stops the game with the reason on screen and never
