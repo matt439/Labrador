@@ -9,6 +9,7 @@
 //   node run_page.mjs --browser <chrome> --page <dir/Name.html>
 //                     --quit-keys <code,code,...> [--frames <n>]
 //                     [--timeout <seconds>]
+//                     [--sample-input fixed-step]
 //
 // Either form also takes [--emulate-media <feature>=<value>] and
 // [--expect-console <text>].
@@ -34,6 +35,11 @@
 // page's own Module object is used, not a test double, so what passes is the
 // page as it is built; the run only wraps the three callbacks it hands the
 // module, to hear them, before the module's loader can read them.
+// LineSweeper's development-only --sample-input fixed-step protocol also waits
+// for each real key level to be sampled by one UI update. The state gate keeps
+// catch-up updates from repeating that phase while a DevTools reply is delayed;
+// a neutral release is sampled before the next down. It does not qualify normal
+// gameplay timing or key repeat. The palette, error and onQuit checks remain.
 //
 // --input runs a script against the page while it runs, for a page whose
 // subject is what the browser delivers to it rather than what it computes.
@@ -106,7 +112,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { DevTools, browser_version } from './devtools.mjs';
-import { press_sample_key } from './sample_key.mjs';
+import { press_sample_key, SAMPLE_INPUT_HOOK } from './sample_key.mjs';
 
 const options = parse_arguments(process.argv.slice(2));
 const page_path = resolve(options.page);
@@ -159,6 +165,11 @@ function parse_arguments(argv) {
 	} else if (parsed.frames !== undefined) {
 		fail_usage('--frames is for a sample\'s page, with --quit-keys');
 	}
+	if (parsed['sample-input'] !== undefined &&
+		(parsed['sample-input'] !== 'fixed-step' || !parsed.keys)) {
+		fail_usage('--sample-input fixed-step requires --quit-keys and a development-page input hook');
+	}
+	parsed.sampled_input = parsed['sample-input'] === 'fixed-step';
 	return parsed;
 }
 
@@ -169,7 +180,8 @@ function fail_usage(why) {
 		'[--browser-warnings fail] [--hide-extension <name>] ' +
 		'[--input <script.mjs>]\n' +
 		'       node run_page.mjs --browser <chrome> --page <file.html> ' +
-		'--quit-keys <code,...> [--frames <n>] [--timeout <seconds>]\n');
+		'--quit-keys <code,...> [--frames <n>] [--timeout <seconds>] ' +
+		'[--sample-input fixed-step]\n');
 	process.exit(2);
 }
 
@@ -375,6 +387,7 @@ const RENDERER_EXPRESSION = `(() => {
 // wrappers hear is in window.labradorRun.
 const SAMPLE_HOOK = `(() => {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false };
+	heard.input = ${options.sampled_input ? SAMPLE_INPUT_HOOK : 'undefined'};
 	window.labradorRun = heard;
 	let module;
 	const hook = (value) => {
@@ -382,6 +395,7 @@ const SAMPLE_HOOK = `(() => {
 			return;
 		}
 		Object.defineProperty(value, 'labradorRunHooked', { value: true });
+		if (heard.input) { value.labradorTestInput = heard.input; }
 		const initialized = value.onRuntimeInitialized;
 		value.onRuntimeInitialized = function () {
 			heard.initialized = true;
@@ -430,6 +444,9 @@ async function run_sample(devtools, session, complaints) {
 		if (state && state.errors.length > 0) {
 			reasons.push(`Module.onError was called: ${state.errors.join(' | ')}`);
 		}
+		if (state?.input?.error) {
+			reasons.push(`sample input failed: ${state.input.error}`);
+		}
 		if (complaints.count > 0) {
 			reasons.push(`the page or the browser logged ${complaints.count} error(s) or warning(s)`);
 		}
@@ -468,8 +485,12 @@ async function run_sample(devtools, session, complaints) {
 			windowsVirtualKeyCode: key.vk,
 			nativeVirtualKeyCode: key.vk,
 		};
-		await press_sample_key(input_page, event);
+		const result = await press_sample_key(input_page, event, { sampled: options.sampled_input });
+		for (const phase of result?.phases ?? []) {
+			process.stdout.write(`run_page: sampled ${code}: ${JSON.stringify(phase)}\n`);
+		}
 		process.stdout.write(`run_page: pressed ${code}\n`);
+		if (result?.quit) { break; }
 	}
 
 	state = await heard();

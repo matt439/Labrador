@@ -116,6 +116,7 @@ if(PROJECT_IS_TOP_LEVEL)
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/devtools.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/firefox_protocol.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/sample_key.test.mjs"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/sample_input_bridge.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_host.test.mjs"
         )
 
@@ -181,10 +182,12 @@ if(PROJECT_IS_TOP_LEVEL)
         # each value emulated, since a CI runner's own setting may be either.
         labrador_sample_page_test(LineSweeperPageTests LineSweeperSample
             "Escape,ArrowDown,ArrowDown,ArrowDown,Enter"
+            --sample-input fixed-step
             --emulate-media "prefers-reduced-motion=no-preference"
             --expect-console "LineSweeper: motion full")
         labrador_sample_page_test(LineSweeperReducedMotionPageTests
             LineSweeperSample "Escape,ArrowDown,ArrowDown,ArrowDown,Enter"
+            --sample-input fixed-step
             --emulate-media "prefers-reduced-motion=reduce"
             --expect-console "LineSweeper: motion reduced")
         # On COLOURS, left steps back (wrapping from STANDARD to tritan),
@@ -196,6 +199,7 @@ if(PROJECT_IS_TOP_LEVEL)
         labrador_sample_page_test(LineSweeperPalettePageTests
             LineSweeperSample
             "Escape,ArrowDown,ArrowDown,ArrowLeft,ArrowLeft,ArrowRight,Enter,Enter,ArrowDown,Enter"
+            --sample-input fixed-step
             --expect-console "LineSweeper: palette Protanomaly / Protanopia")
         labrador_sample_page_test(LocalMultiplayerPageTests
             LocalMultiplayerSample "Escape")

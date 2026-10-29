@@ -7,6 +7,9 @@
 #include "engine/math/vector2f.h"
 #include "samples/linesweeper/rules/tick.h"
 #include "samples/linesweeper/states/pause_state.h"
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+#include "samples/linesweeper/web/test_input.h"
+#endif
 
 #include <memory>
 #include <optional>
@@ -309,6 +312,15 @@ namespace linesweeper
 
 	void PlayState::update(float dt)
 	{
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+		TestInputStep test_step(*this->app_->keyboard(), "play", this,
+			[](const void* source)
+			{
+				const PlayState& state = *static_cast<const PlayState*>(source);
+				return TestInputSnapshot{ -1, static_cast<int>(state.palette_) };
+			});
+		if (!test_step.allowed()) return;
+#endif
 		this->arrange_screen();
 
 		const Touch& touch = *this->app_->touch();
@@ -361,6 +373,9 @@ namespace linesweeper
 				this->app_->gamepads()->pressed(0, GamepadButton::start) ||
 				pause_tapped))
 		{
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+			test_step.result("pause");
+#endif
 			this->open_pause_menu();
 			return;
 		}

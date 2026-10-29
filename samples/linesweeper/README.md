@@ -1005,6 +1005,27 @@ frames from headless Chrome at a 390x844 portrait viewport and an 844x390
 landscape one with touch emulated. **No real phone has played it**, and the
 9,600-particle top-out has not been timed on one.
 
+## Development-page input checks
+
+The three development-page keyboard checks use `run_page.mjs --sample-input
+fixed-step`. The runner still sends genuine DevTools key-down and key-up events.
+An opt-in gate in the development states lets each sampled phase execute one
+real UI update, acknowledges its state and focused row, and waits for the next
+phase. A neutral release update resets menu repeat before the next press. This
+keeps slow browser/DevTools replies from turning one scripted arrow press into
+several menu moves during catch-up updates.
+
+The checks retain their full control sequences, palette and motion reports,
+real `Module.onQuit`, error policy and timeout. Genuine quit ends the sequence
+without waiting for another game update. They qualify sampled UI actions, not
+ordinary gameplay timing or held-key repeat. The gate is compiled only into
+the development executable, stays inactive unless the runner requests it, and
+is absent from the packaged module and native game. Pacing checks use the
+development executable without enabling this protocol. Offline
+protocol regressions run with `node --test tests/render/web/sample_key.test.mjs
+tests/render/web/sample_input_bridge.test.mjs`
+from the repository root; hosted wasm checks exercise the real state hooks.
+
 ## Development-page pacing instrument
 
 The Release development page accepts `?pacing=play` for completed-frame CPU
