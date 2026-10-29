@@ -108,6 +108,10 @@
   let factory = null;
   let canvas = null;
   let reloadRequired = false;
+  // The canvas of a game that ended, whose context the browser counts until
+  // it is collected even after the engine has let it go. A failure is included:
+  // asking a canvas without a context for one makes one only to lose it.
+  let ranCanvas = null;
 
   function setStatus(text, isError) {
     statusLine.textContent = text;
@@ -212,6 +216,10 @@
       }
       loading = false;
       if (canvas !== null) {
+        if (canvas === ranCanvas) {
+          canvas.getContext("webgl2")?.getExtension("WEBGL_lose_context")?.loseContext();
+          ranCanvas = null;
+        }
         canvas.remove();
       }
       canvas = document.createElement("canvas");
@@ -234,6 +242,7 @@
         onQuit: () => {
           if (ended || canvas !== ownCanvas) { return; }
           ended = true;
+          ranCanvas = ownCanvas;
           clearContextWait();
           reloadRequired = false;
           setStatus("Thanks for playing.", false);
@@ -242,6 +251,7 @@
         onError: (message) => {
           if (ended || canvas !== ownCanvas) { return; }
           ended = true;
+          ranCanvas = ownCanvas;
           clearContextWait();
           reloadRequired = false;
           fail(started ? "The game stopped unexpectedly. Try again, or reload the page if it keeps happening." :

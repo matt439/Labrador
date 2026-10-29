@@ -445,7 +445,9 @@ here.*
 The consequences:
 
 - **`run()` never returns on the web, and no destructor runs.** That matters to
-  a state that saves on exit. LineSweeper has none.
+  a state that saves on exit. LineSweeper has none. On a task after the
+  window closes, `Application` releases its states and services as its
+  destructor would ([APPLICATION.md §7](../../engine/app/APPLICATION.md)).
 - **`quit()` cancels the main loop** and tells the page through a
   JavaScript callback. LineSweeper's pause menu has a QUIT choice
   ([`play_state.cpp:227`](../../samples/linesweeper/states/play_state.cpp#L227)).
@@ -813,9 +815,11 @@ which lives in a static whose destructor never runs (§9). The engine's
 JavaScript reads `Module.canvas` and the page's four callbacks from `Module`, and
 the html5 target `"!canvas"` lives in the instance's own table, so all of it
 resolves inside the instance the factory made. QUIT stops that instance's
-loop and takes its listeners off its canvas, but the instance keeps the
-WebGL2 context it made there, so "Play again" makes a fresh canvas, calls the
-factory again and drops the old canvas from the page. The module is fetched
+loop and takes its listeners off its canvas, and on the next task the
+instance releases its states, audio and renderer, the WebGL2 context
+included. "Play again" makes a fresh canvas, calls the factory again, loses
+the old canvas's context if the browser still counts it, and drops that
+canvas from the page. The module is fetched
 once more for the second instance, which the browser's cache answers.
 
 The page sizes the canvas in CSS, at 16:9 and the column's width, and the

@@ -72,6 +72,24 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Release a browser game's services after it quits
+
+**Behaviour change, browser builds only.** After `Application::quit()`, or an
+exception the web window catches from a frame or input handler and reports
+through `Module.onError`, the web window calls the new
+`WindowNotify::on_closed()` on a later browser task. `Application` then
+destroys its states and every service except the closed window, in the order
+its destructor uses. Previously a finished browser game kept its states, its
+Web Audio listeners and `AudioContext`, its WebGL context and its whole module
+heap for the life of the page. A page that offered another game leaked one
+instance per game. The page's `onQuit` and `onError` are still called
+synchronously, before the release. State destructors now run in the browser
+after a quit, as they do on Windows. A game whose state destructor assumed it
+never runs there should check that it only releases what it owns. Nothing may
+call into the `Application` or its services after `onQuit`. A Win32 window
+never calls the hook, and a `WindowNotify` that does not override it is
+unaffected.
+
 ### 2026-10-29 - Refuse non-finite sprite-font file metrics
 
 **Behaviour change.** `read_sprite_font_file` requires stored glyph

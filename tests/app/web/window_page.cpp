@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <exception>
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 // THE WEB WINDOW, DRIVEN BY A BROWSER. The page half of WebWindowTests: it
@@ -103,6 +104,8 @@ namespace
 			this->note(fullscreen ? "fullscreen 1" : "fullscreen 0");
 		}
 
+		void on_closed() override { this->note("closed"); }
+
 		void on_window_moved() const override { this->note("moved"); }
 
 		void on_window_size_changed(int width, int height) override
@@ -115,8 +118,16 @@ namespace
 
 		void on_key_down(labrador::Key key) const override
 		{
+			if (this->throw_on_key_)
+			{
+				throw std::runtime_error("web window test failure");
+			}
 			this->note("key_down " + std::string(labrador::key_name(key)));
 		}
+
+		// The next key down throws, as an owner's exception would, so the
+		// window's failure path can be shown to release like a quit.
+		void throw_on_key() { this->throw_on_key_ = true; }
 
 		void on_key_up(labrador::Key key) const override
 		{
@@ -195,12 +206,22 @@ namespace
 		int width_ = 0;
 		int height_ = 0;
 		mutable bool ticked_ = false;
+		bool throw_on_key_ = false;
 	};
 
 	// Static, because in a browser pump_until_quit unwinds main's stack
 	// before the first frame (window.h), and both are called from frames.
 	Recorder recorder;
 	std::unique_ptr<labrador::Window> window;
+
+	labrador::WindowOptions window_options()
+	{
+		labrador::WindowOptions options;
+		// Smaller than the box the page gives the canvas, so the first report
+		// is visibly the measured box rather than the size asked for.
+		options.client_size = labrador::Vector2I(320, 200);
+		return options;
+	}
 }
 
 // Closes the window from the page, as a game's quit would, so that the input
@@ -213,15 +234,19 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_close()
 	}
 }
 
+// A second window on the same canvas, after the first has closed, whose owner
+// throws on the next key: the failure path, which closes it as quit does.
+extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_reopen_throwing()
+{
+	recorder.throw_on_key();
+	window = std::make_unique<labrador::Window>(window_options(), &recorder);
+}
+
 int main()
 {
 	try
 	{
-		labrador::WindowOptions options;
-		// Smaller than the box the page gives the canvas, so the first report
-		// is visibly the measured box rather than the size asked for.
-		options.client_size = labrador::Vector2I(320, 200);
-		window = std::make_unique<labrador::Window>(options, &recorder);
+		window = std::make_unique<labrador::Window>(window_options(), &recorder);
 	}
 	catch (const std::exception& error)
 	{

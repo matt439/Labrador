@@ -234,6 +234,41 @@ again.
       fetched none of it. A tap on the video under emulation did not start it
       in headless Chrome, so real-phone playback remains part of **SM-13**.
 
+## Repeated play (BDP-18), measured 2026-10-29
+
+The packaged page (`web-dist/linesweeper/index.html`, `wasm-release`) was
+driven in headless Chrome 156 by `run_page.mjs` with a scratch input script.
+The renderer was ANGLE on Direct3D 11 on this desktop's RTX 5080. Each of
+twenty rounds clicked Play, waited for five drawn frames, quit through the
+pause menu, forced a collection (`HeapProfiler.collectGarbage`) and read
+`Runtime.getHeapUsage`, `Memory.getDOMCounters`, the WebGL2 contexts the page
+made (held through `WeakRef`, so counting did not keep them) and each
+instance's `WebAssembly.Memory`.
+
+| Round | Before: live contexts | Before: module heaps alive | After: live contexts | After: module heaps alive |
+|---|---|---|---|---|
+| 1 | 1 | 1 (17.1 MB) | 1 | 1 (17.1 MB) |
+| 5 | 5 | 5 (85.6 MB) | 1 | 1 |
+| 16 | 16 | 16 | 1 | 1 |
+| 17 | 16, and Chrome warned "Too many active WebGL contexts. Oldest context will be lost." | 17 | 1 | 1 |
+| 20 | 16 | 20 | 1 | 1 |
+
+Before the change, the JS heap grew by about 0.1 MB a round and event
+listeners grew by nine a round. Every finished instance stayed reachable
+through the Web Audio device's capture-phase gesture listeners on `window`.
+The first warning was at round 17, and no round had an unprompted loss of the
+running game's context. After the change, the JS heap stayed between 1.14 and
+1.43 MB and listeners stayed at three. Play to the fifth drawn frame took
+109 to 228 ms in both runs (median about 120 ms), with no upward trend. The
+first round pays the module compile.
+
+The fix is in two parts. `Application` releases a quit browser game's
+services ([APPLICATION.md §7](../../engine/app/APPLICATION.md)), and the page
+loses the previous game's context on Play again, so the browser's count does
+not wait for a collection. `LineSweeperBundlePageTests` asserts five rounds
+with at most one live context and one module heap after each. This is one
+desktop Chrome. Phone memory remains `SM-13`'s.
+
 ## Firefox sample checks (WEB#4)
 
 - [x] Run minimal, collision, audio, local_multiplayer and components against

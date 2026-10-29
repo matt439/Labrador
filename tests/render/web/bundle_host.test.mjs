@@ -21,6 +21,7 @@ function host(options = {}) {
 	let imports = 0;
 	let probes = 0;
 	let releases = 0;
+	let retired = 0;
 	let active = null;
 	let reloads = 0;
 	class Element {
@@ -43,6 +44,14 @@ function host(options = {}) {
 		focus() { active = this; }
 		getContext(name) {
 			assert.equal(name, 'webgl2');
+			// A canvas on the stage is a game's, asked for again only to lose
+			// the context of one that ran.
+			if (this.parent) {
+				return { getExtension: (name) => {
+					assert.equal(name, 'WEBGL_lose_context');
+					return { loseContext: () => retired++ };
+				} };
+			}
 			probes++;
 			if (options.graphicsThrows) { throw new Error('synthetic graphics refusal'); }
 			if (options.graphics === false) { return null; }
@@ -114,6 +123,7 @@ function host(options = {}) {
 		get imports() { return imports; },
 		get probes() { return probes; },
 		get releases() { return releases; },
+		get retired() { return retired; },
 	};
 }
 
@@ -143,6 +153,7 @@ test('page load does not import a module or create a graphics probe; each click 
 	assert.equal(page.imports, 1, 'replay reuses the imported factory');
 	assert.equal(page.probes, 2);
 	assert.equal(page.releases, 2);
+	assert.equal(page.retired, 1, 'replay loses the context of the quit game');
 	assert.equal(page.runs.length, 2);
 });
 
@@ -196,6 +207,8 @@ test('an error before the first scheduled frame still says the game could not st
 	page.runs[0].onError('synthetic first frame failure');
 	page.frame();
 	retry_visible(page, startup);
+	await page.click();
+	assert.equal(page.retired, 1, 'retry loses the context of a game that failed at startup');
 });
 
 test('an error after the loop gets its first frame offers runtime recovery and logs the reason', async () => {
@@ -205,6 +218,8 @@ test('an error after the loop gets its first frame offers runtime recovery and l
 	page.runs[0].onError('synthetic runtime failure');
 	retry_visible(page, stopped);
 	assert.equal(page.diagnostics[0][1], 'synthetic runtime failure');
+	await page.click();
+	assert.equal(page.retired, 1, 'retry loses the context of a game that ran');
 });
 
 test('callbacks and a pending frame from an ended instance cannot overwrite replay status', async () => {

@@ -51,6 +51,16 @@ namespace labrador
 		// never calls this.
 		virtual void on_fullscreen_changed([[maybe_unused]] bool fullscreen) {}
 
+		// AFTER A BROWSER WINDOW HAS CLOSED, by a quit or an exception it caught,
+		// on a later task of the page's, once the update or handler that closed
+		// it has unwound. An
+		// owner in a browser outlives main and nothing destroys it, so this is
+		// where it lets go of what its destructor would: until it does, every
+		// listener and context it holds keeps the whole module alive. The page
+		// has already been told. A Win32 window's owner is destroyed after its
+		// pump returns, and that window never calls this.
+		virtual void on_closed() {}
+
 		virtual void on_window_moved() const = 0;
 		virtual void on_window_size_changed(int width, int height) = 0;
 

@@ -334,3 +334,75 @@ TEST_CASE("the shell puts the white texture in the table, with no manifest loade
 	CHECK_NOTHROW(std::ignore =
 		app.render_resources()->resolve_texture(white_texture_name));
 }
+
+namespace
+{
+	// Writes down, from its destructor, whether the services it borrows were
+	// still there: on_closed must release the states before them.
+	class ReleaseWitness : public State
+	{
+	public:
+		ReleaseWitness(Application* app, bool* destroyed, bool* services_alive) :
+			app_(app), destroyed_(destroyed), services_alive_(services_alive)
+		{
+		}
+
+		~ReleaseWitness() override
+		{
+			*this->destroyed_ = true;
+			*this->services_alive_ = this->app_->renderer() != nullptr &&
+				this->app_->audio_resources() != nullptr &&
+				this->app_->keyboard() != nullptr;
+		}
+
+		ReleaseWitness(const ReleaseWitness&) = delete;
+		ReleaseWitness& operator=(const ReleaseWitness&) = delete;
+
+		void init() override {}
+		void update(float /*dt*/) override {}
+		void draw(Renderer& /*renderer*/) const override {}
+
+	private:
+		Application* app_;
+		bool* destroyed_;
+		bool* services_alive_;
+	};
+}
+
+TEST_CASE("on_closed releases the states, then every service but the window")
+{
+	ApplicationOptions options;
+	options.window_class_name = L"OnClosedTestWindow";
+	options.visible = false;
+	options.view_capacity = 1;
+	options.max_threads = 1;
+	Application app(std::move(options));
+	app.initialize();
+
+	bool destroyed = false;
+	bool services_alive = false;
+	app.transition_to(std::make_unique<ReleaseWitness>(&app, &destroyed,
+		&services_alive));
+	REQUIRE(app.depth() == 1);
+
+	// What a browser window calls after it closes; a Win32 window never does.
+	WindowNotify& notify = app;
+	notify.on_closed();
+
+	CHECK(destroyed);
+	CHECK(services_alive);
+	CHECK(app.depth() == 0);
+	CHECK(app.renderer() == nullptr);
+	CHECK(app.render_resources() == nullptr);
+	CHECK(app.audio_resources() == nullptr);
+	CHECK(app.resource_loader() == nullptr);
+	CHECK(app.resolution_manager() == nullptr);
+	CHECK(app.viewport_manager() == nullptr);
+	CHECK(app.thread_pool() == nullptr);
+	CHECK(app.partitioner() == nullptr);
+	CHECK(app.gamepads() == nullptr);
+	CHECK(app.keyboard() == nullptr);
+	CHECK(app.mouse() == nullptr);
+	CHECK(app.touch() == nullptr);
+	CHECK(app.window() != nullptr);
+}

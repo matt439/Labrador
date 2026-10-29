@@ -158,7 +158,7 @@ reads each callback from `Module` when it is due.
 
 | Callback | When it is called | What the page can show |
 | --- | --- | --- |
-| `Module.onQuit()` | The game calls `Application::quit()` (or closes its `Window`), after the frame loop has been cancelled and the window's input and page listeners have been removed. It has no arguments. | The game has ended; offer a reload or another game. |
+| `Module.onQuit()` | The game calls `Application::quit()` (or closes its `Window`), after the frame loop has been cancelled and the window's input and page listeners have been removed. The `Application` releases its states and services on a later task. It has no arguments. | The game has ended; offer a reload or another game. |
 | `Module.onError(message)` | The template's `main_web.cpp` forwards a startup exception, or the browser window catches an exception from a frame or input handler. `message` is a string, also written to the console. A caught frame or input failure stops the loop and window listeners before this call. | The reason the game could not start or continue. |
 | `Module.onContextLost()` | The renderer observes a lost WebGL2 context, once per loss, at the next `begin_frame`. It has no arguments. | Graphics are unavailable and restoration is awaited. |
 | `Module.onContextRestored()` | At `begin_frame`, after the renderer and the game's device resources have been rebuilt. It has no arguments; that frame can now draw again. | Remove the graphics-loss message. |
@@ -183,10 +183,12 @@ wait for `onQuit`. The template's Escape/Enter confirmation is one way to reach 
 built-in JavaScript stop function; a host that needs a stop button must connect it to its own
 game's quit path.
 
-Quit cancels the loop and removes the window's listeners, but the static `Application` and its
-WebGL2 context remain in that module instance. Reload the template's page to play again. An
-ES-module host such as LineSweeper's creates a fresh module instance and a fresh canvas for each
-game, then drops the old canvas after quit.
+Quit cancels the loop and removes the window's listeners. On the next browser task the static
+`Application` destroys its states and releases its services, the WebGL2 context and Web Audio
+included, as its destructor would on Windows. Nothing may call into the game after `onQuit`.
+Reload the template's page to play again. An ES-module host such as LineSweeper's creates a fresh
+module instance and a fresh canvas for each game, then drops the old canvas after quit, so a
+finished instance can be collected.
 
 ## Check the page loads and quits
 

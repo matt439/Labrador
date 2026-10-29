@@ -14,7 +14,6 @@ allows. Next's hardware and release gates remain open. The immediate queue is:
 
 1. **L7 (`BDP-15`, `BDP-16`, `BDP-17`): finish context recovery and browser acceptance.** Failure wording and support probes have [source and offline coverage](docs/port/2026-10-28-demo-host.md); generated-module/browser checks remain open.
 2. **L8 (`BDP-11` to `BDP-14`): run packaged-browser acceptance for focus, controls and phone instructions.** [Source checks](docs/port/2026-10-28-demo-host.md#focus-controls-and-the-phone-gate-l8) cover the state transitions and host policy.
-3. **L11 (`BDP-18`): check repeated play stays fast.**
 
 **Available after those batches:** text examples and validation tools are
 indexed below. The animation example and gallery settings have source/native

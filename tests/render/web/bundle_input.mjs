@@ -30,11 +30,31 @@ const PRELUDE = `(() => {
 		window.labradorBundle.pad = { connected: true, buttons: [{ pressed: false }] };
 		navigator.getGamepads = () => [window.labradorBundle.pad];
 	}
+	// Weak, so that counting what is still alive does not keep it alive.
+	window.labradorBundle.contexts = [];
+	window.labradorBundle.memories = [];
 	const getContext = HTMLCanvasElement.prototype.getContext;
 	HTMLCanvasElement.prototype.getContext = function (name, ...args) {
 		if (name === 'webgl2' && location.search.includes('no-webgl2')) { return null; }
-		return getContext.call(this, name, ...args);
+		const context = getContext.call(this, name, ...args);
+		if (name === 'webgl2' && context && !this.labradorCounted) {
+			this.labradorCounted = true;
+			window.labradorBundle.contexts.push(new WeakRef(context));
+		}
+		return context;
 	};
+	for (const name of ['instantiate', 'instantiateStreaming']) {
+		const original = WebAssembly[name];
+		WebAssembly[name] = async function (...args) {
+			const result = await original.apply(this, args);
+			for (const value of Object.values((result.instance ?? result).exports)) {
+				if (value instanceof WebAssembly.Memory) {
+					window.labradorBundle.memories.push(new WeakRef(value));
+				}
+			}
+			return result;
+		};
+	}
 	if (location.search.includes('no-exceptions')) {
 		WebAssembly.validate = () => false;
 	}
@@ -48,8 +68,10 @@ const PRELUDE = `(() => {
 const FACTORY_WRAPPER = `
 import factory from './linesweeper.js?labrador-bundle-source';
 export default function createLineSweeper(config) {
-	const heard = { config, canvas: config.canvas, initialized: false, quit: false,
-		errors: [], context: [] };
+	// The config becomes the instance's Module, so it is held weakly: a strong
+	// reference here would keep every finished instance alive.
+	const heard = { config: new WeakRef(config), canvas: config.canvas,
+		initialized: false, quit: false, errors: [], context: [] };
 	window.labradorBundle.runs.push(heard);
 	for (const name of ['onRuntimeInitialized', 'onQuit', 'onError',
 		'onContextLost', 'onContextRestored']) {
@@ -315,6 +337,33 @@ export default async function drive(page) {
 	})()`);
 	await quit(1, true);
 	console.log('ok - packaged module draws, restores its context, quits and draws a fresh replay');
+
+	// BDP-18: a finished game is released, so repeated play keeps at most one
+	// live context and one module heap however many games are played.
+	phase = 'repeated play';
+	await navigate('replays');
+	for (let round = 0; round < 5; round++) {
+		await click_play();
+		await loaded(round);
+		await quit(round);
+		await frames(2);
+		// Emscripten replaces the canvas's getContext with a closure over its
+		// instance, so this record's canvas would keep the instance alive. The
+		// page drops it on the next Play; the record drops it here.
+		await evaluate(`window.labradorBundle.runs[${round}].canvas = null`);
+		await send('HeapProfiler.collectGarbage');
+		const alive = await evaluate(`(() => ({
+			contexts: window.labradorBundle.contexts.map((c) => c.deref())
+				.filter((c) => c && !c.isContextLost()).length,
+			memories: window.labradorBundle.memories.filter((m) => m.deref()).length,
+			canvases: document.querySelectorAll('canvas').length,
+		}))()`);
+		const made = await evaluate('window.labradorBundle.memories.length');
+		assert(made === round + 1, `round ${round + 1} saw ${made} module instantiations`);
+		assert(alive.contexts === 1 && alive.memories === 1 && alive.canvases === 1,
+			`round ${round + 1} kept ${JSON.stringify(alive)}`);
+	}
+	console.log('ok - five games in a row keep exactly one live context and one module heap');
 	phase = 'context timeout';
 	await navigate('context-timeout');
 	await click_play();
@@ -351,7 +400,7 @@ export default async function drive(page) {
 	await click_play();
 	await loaded(0);
 	await clean_runs();
-	await evaluate("window.labradorBundle.runs[0].config.onError('bundle test failure')");
+	await evaluate("window.labradorBundle.runs[0].config.deref().onError('bundle test failure')");
 	assert(await evaluate("document.getElementById('status').classList.contains('error') && " +
 		"document.getElementById('status').textContent === 'The game stopped unexpectedly. Try again, or reload the page if it keeps happening.' && " +
 		"document.getElementById('play').textContent === 'Try again' && " + button_visible),
