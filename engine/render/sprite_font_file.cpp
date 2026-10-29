@@ -3,6 +3,7 @@
 #include "engine/core/byte_reader.h"
 #include "engine/math/rectanglei.h"
 
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -119,11 +120,23 @@ namespace labrador
 			glyph.x_offset = reader.read_f32();
 			glyph.y_offset = reader.read_f32();
 			glyph.x_advance = reader.read_f32();
+			if (!std::isfinite(glyph.x_offset) || !std::isfinite(glyph.y_offset) ||
+				!std::isfinite(glyph.x_advance))
+			{
+				const char* field = !std::isfinite(glyph.x_offset) ? "x_offset" :
+					(!std::isfinite(glyph.y_offset) ? "y_offset" : "x_advance");
+				throw std::runtime_error(path + ": glyph " + std::to_string(i) +
+					" " + field + " must be finite.");
+			}
 
 			font.glyphs.push_back(glyph);
 		}
 
 		font.line_spacing = reader.read_f32();
+		if (!std::isfinite(font.line_spacing))
+		{
+			throw std::runtime_error(path + ": line_spacing must be finite.");
+		}
 		font.stand_in = static_cast<char32_t>(reader.read_u32());
 
 		const auto positive_field = [&reader, &path]()

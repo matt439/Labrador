@@ -5,6 +5,9 @@
 #include "engine/render/texture_format.h"
 #include "tests/scratch_file.h"
 
+#include <array>
+#include <bit>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <limits>
@@ -314,6 +317,109 @@ TEST_CASE("spritefont preserves representable signed and zero glyph extents")
 		CHECK(glyph.subrect.width == control.width);
 		CHECK(glyph.subrect.height == control.height);
 		CHECK(font.line_spacing == 1.0f);
+		CHECK(font.atlas.width == 1);
+		CHECK(font.atlas.height == 1);
+		CHECK(font.atlas.pixels == std::vector<unsigned char>(4, 0xff));
+	}
+}
+
+namespace
+{
+	struct FontMetricField
+	{
+		const char* name;
+		std::size_t byte_offset;
+		bool glyph_metric;
+	};
+
+	const std::array<FontMetricField, 4> font_metric_fields = { {
+		{ "x_offset", 32, true },
+		{ "y_offset", 36, true },
+		{ "x_advance", 40, true },
+		{ "line_spacing", 44, false }
+	} };
+
+	void overwrite_font_word(std::vector<unsigned char>& bytes,
+		std::size_t byte_offset, uint32_t bits)
+	{
+		REQUIRE(bytes.size() >= 4);
+		REQUIRE(byte_offset <= bytes.size() - 4);
+		for (std::size_t index = 0; index < 4; ++index)
+		{
+			bytes[byte_offset + index] =
+				static_cast<unsigned char>((bits >> (8 * index)) & 0xffu);
+		}
+	}
+}
+
+TEST_CASE("spritefont refuses non-finite file metrics by field")
+{
+	const std::array<uint32_t, 3> nonfinite_bits = {
+		0x7fc00000u, 0x7f800000u, 0xff800000u
+	};
+	for (const FontMetricField& field : font_metric_fields)
+	{
+		for (const uint32_t bits : nonfinite_bits)
+		{
+			CAPTURE(field.name);
+			CAPTURE(bits);
+			std::vector<unsigned char> bytes =
+				one_glyph_font(GlyphRectangleEdges{ 0, 0, 1, 1 });
+			REQUIRE(bytes.size() == 76);
+			overwrite_font_word(bytes, field.byte_offset, bits);
+			const ScratchFile file("nonfinite-font-metric.spritefont", bytes);
+			bool rejected = false;
+			try
+			{
+				static_cast<void>(read_sprite_font_file(file.path()));
+			}
+			catch (const std::runtime_error& error)
+			{
+				rejected = true;
+				const std::string message = error.what();
+				CHECK(message.find(file.path()) != std::string::npos);
+				CHECK(message.find(field.name) != std::string::npos);
+				CHECK(message.find("must be finite") != std::string::npos);
+				if (field.glyph_metric)
+				{
+					CHECK(message.find("glyph 0") != std::string::npos);
+				}
+			}
+			CHECK(rejected);
+		}
+	}
+}
+
+TEST_CASE("spritefont preserves finite metric bit patterns without layout policy")
+{
+	const std::array<uint32_t, 12> finite_bits = {
+		0x00000000u, 0x80000000u, 0x3fc00000u, 0xbfa00000u,
+		0x7f7fffffu, 0xff7fffffu, 0x00800000u, 0x80800000u,
+		0x00000001u, 0x80000001u, 0x3f800000u, 0xbf800000u
+	};
+	for (std::size_t row = 0; row < finite_bits.size(); ++row)
+	{
+		CAPTURE(row);
+		std::vector<unsigned char> bytes =
+			one_glyph_font(GlyphRectangleEdges{ 0, 0, 1, 1 });
+		REQUIRE(bytes.size() == 76);
+		std::array<uint32_t, 4> expected{};
+		for (std::size_t field = 0; field < font_metric_fields.size(); ++field)
+		{
+			expected[field] = finite_bits[(row + field) % finite_bits.size()];
+			overwrite_font_word(bytes, font_metric_fields[field].byte_offset,
+				expected[field]);
+		}
+		const ScratchFile file("finite-font-metrics.spritefont", bytes);
+		const SpriteFontFile font = read_sprite_font_file(file.path());
+		REQUIRE(font.glyphs.size() == 1);
+		const Glyph& glyph = font.glyphs[0];
+		CHECK(glyph.character == U'A');
+		CHECK(glyph.subrect == labrador::RectangleI(0, 0, 1, 1));
+		CHECK(std::bit_cast<uint32_t>(glyph.x_offset) == expected[0]);
+		CHECK(std::bit_cast<uint32_t>(glyph.y_offset) == expected[1]);
+		CHECK(std::bit_cast<uint32_t>(glyph.x_advance) == expected[2]);
+		CHECK(std::bit_cast<uint32_t>(font.line_spacing) == expected[3]);
 		CHECK(font.atlas.width == 1);
 		CHECK(font.atlas.height == 1);
 		CHECK(font.atlas.pixels == std::vector<unsigned char>(4, 0xff));
