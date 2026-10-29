@@ -308,3 +308,124 @@ TEST_CASE("positive authored strips preserve rectangles timing and looping")
 	CHECK(strip.frame_rect(2) == RectangleI(20, 7, 12, 18));
 	CHECK_THROWS_AS(strip.frame_rect(3), std::out_of_range);
 }
+
+namespace
+{
+	std::string horizontal_strip_definition(const std::string& name,
+		int first_x, int width, int count, bool looping)
+	{
+		return R"({"name":")" + name +
+			R"(","first_frame":{"x":)" + std::to_string(first_x) +
+			R"(,"y":7,"w":)" + std::to_string(width) +
+			R"(,"h":18},"frame_count":)" + std::to_string(count) +
+			R"(,"frame_time":0.125,"looping":)" + (looping ? "true" : "false") + "}";
+	}
+}
+
+TEST_CASE("authored strips preserve wide products with representable final coordinates")
+{
+	struct Control
+	{
+		const char* name;
+		int first_x;
+		int width;
+		std::array<int, 3> expected_x;
+		bool looping;
+	};
+	const int minimum = (std::numeric_limits<int>::min)();
+	const int maximum = (std::numeric_limits<int>::max)();
+	const std::array<Control, 2> controls = { {
+		{ "wide", minimum, 1073741824, { minimum, -1073741824, 0 }, false },
+		{ "backwards", maximum, -1073741825, { maximum, 1073741822, -3 }, true }
+	} };
+	for (const Control& control : controls)
+	{
+		CAPTURE(control.name);
+		const std::unique_ptr<SpriteSheet> sheet = load(sheet_with_strip(
+			strip_of("", "") + "," + horizontal_strip_definition(
+				control.name, control.first_x, control.width, 3, control.looping)));
+		const AnimationStrip& strip =
+			sheet->animation_strip(sheet->resolve_animation_strip(control.name));
+
+		CHECK(strip.frame_count() == 3);
+		CHECK(strip.frame_time() == 0.125f);
+		CHECK(strip.looping() == control.looping);
+		for (int index = 0; index < 3; ++index)
+		{
+			CHECK(strip.frame_rect(index) == RectangleI(
+				control.expected_x[static_cast<size_t>(index)],
+				7, control.width, 18));
+		}
+	}
+}
+
+TEST_CASE("authored strip coordinate failures identify their file and offending strip")
+{
+	struct Refusal
+	{
+		int first_x;
+		int width;
+		const char* coordinate;
+	};
+	const int minimum = (std::numeric_limits<int>::min)();
+	const int maximum = (std::numeric_limits<int>::max)();
+	const std::array<Refusal, 2> cases = { {
+		{ maximum - 1, 1, "2147483648" },
+		{ minimum + 1, -1, "-2147483649" }
+	} };
+	for (const Refusal& test : cases)
+	{
+		CAPTURE(test.first_x);
+		CAPTURE(test.width);
+		const ScratchFile file("strip-coordinate.json", sheet_with_strip(
+			strip_of("", "") + "," +
+			horizontal_strip_definition("broken", test.first_x, test.width, 3, false)));
+		bool rejected = false;
+		try
+		{
+			read_sprite_sheet(file.path().c_str(), TextureHandle());
+		}
+		catch (const std::runtime_error& error)
+		{
+			rejected = true;
+			const std::string message = error.what();
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find("animation_strips[1]") != std::string::npos);
+			CHECK(message.find("'broken'") != std::string::npos);
+			CHECK(message.find("frame 2") != std::string::npos);
+			CHECK(message.find("x coordinate") != std::string::npos);
+			CHECK(message.find(test.coordinate) != std::string::npos);
+			CHECK(message.find("int range") != std::string::npos);
+			CHECK(message.find("'walk'") == std::string::npos);
+		}
+		CHECK(rejected);
+	}
+}
+
+TEST_CASE("zero-count authored strips ignore unused extreme horizontal geometry")
+{
+	struct Control
+	{
+		int first_x;
+		int width;
+	};
+	const int minimum = (std::numeric_limits<int>::min)();
+	const int maximum = (std::numeric_limits<int>::max)();
+	const std::array<Control, 2> controls = { {
+		{ maximum, minimum },
+		{ minimum, maximum }
+	} };
+	for (const Control& control : controls)
+	{
+		const std::unique_ptr<SpriteSheet> sheet = load(sheet_with_strip(
+			strip_of("", "") + "," + horizontal_strip_definition(
+				"empty", control.first_x, control.width, 0, true)));
+		const AnimationStrip& strip =
+			sheet->animation_strip(sheet->resolve_animation_strip("empty"));
+		CHECK(strip.frame_count() == 0);
+		CHECK(strip.frame_time() == 0.125f);
+		CHECK(strip.looping());
+		CHECK_THROWS_AS(strip.frame_rect(0), std::out_of_range);
+		CHECK_THROWS_AS(strip.frame_rect(-1), std::out_of_range);
+	}
+}

@@ -113,11 +113,19 @@ namespace labrador
 						std::to_string(frame_count) + ".");
 				}
 
-				animation_strips.add(name, AnimationStrip(
-					first_frame,
-					frame_count,
-					strip.number("frame_time"),
-					strip.boolean("looping")));
+				try
+				{
+					animation_strips.add(name, AnimationStrip(
+						first_frame,
+						frame_count,
+						strip.number("frame_time"),
+						strip.boolean("looping")));
+				}
+				catch (const std::out_of_range& error)
+				{
+					throw std::runtime_error(strip.where() + " ('" + name +
+						"'): " + error.what());
+				}
 			}
 			return animation_strips;
 		}

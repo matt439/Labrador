@@ -72,6 +72,17 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Compute animation-strip origins before narrowing
+
+**Behaviour change.** `AnimationStrip` computes the complete horizontal
+frame origin in wide arithmetic, preserving representable results even
+when an intermediate index-times-width product exceeds int. A cached x
+outside int range throws `std::out_of_range` during construction; authored
+sheet loading reports that failure with its file and strip context.
+Previously the multiplication or addition could overflow before caching.
+Ordinary strips, timing, zero-count behavior and representable signed
+geometry are unchanged; no content migration is required.
+
 ### 2026-10-29 - Refuse unrepresentable sprite-font glyph extents
 
 **Behaviour change.** `read_sprite_font_file` rejects glyph rectangle edge
