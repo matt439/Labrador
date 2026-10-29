@@ -133,6 +133,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         target_sources(RenderPixelTests PRIVATE
             d3d12/submit_allocation_tests.cpp
             d3d12/texture_upload_tests.cpp
+            d3d12/texture_replacement_tests.cpp
             "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d12/presentation_diagnostics_tests.cpp>"
         )
 
