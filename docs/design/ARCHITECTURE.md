@@ -425,8 +425,11 @@ A backend supplies `renderer.cpp`, `render_resources.cpp` and
 `texture_factory.cpp`, plus the part of its API that is not about drawing: one
 file, or for `render/gl/` one per platform it reaches (`wgl_context.cpp` for a
 Win32 window, `web_context.cpp` for a WebGL2 canvas), of which a build compiles
-exactly one, plus whatever it needs to build its shader. `render/gl/` is one
-backend with two contexts rather than two backends because everything that
+exactly one, plus whatever it needs to build its shader. A backend may add a
+private owner of API objects whose lifetime its renderer still coordinates:
+`render/d3d12/sprite_pipeline.cpp` owns the root signature and pipeline state
+while `renderer.cpp` keeps heaps, lists, uploads and device-loss order.
+`render/gl/` is one backend with two contexts rather than two backends because everything that
 draws is the same on both, which `docs/port/web.md` argues as D1.
 `texture_factory.cpp` is there because exactly one step of loading content names a graphics
 type — turning already-decoded bytes into a texture. Working out the path and

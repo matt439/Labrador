@@ -2,7 +2,8 @@
 
 This is the current owner for source organisation and comment-audit work.
 [BACKLOG.md](product/BACKLOG.md#later) owns the stories and their order;
-[TODO.md](../TODO.md#code-hygiene) indexes the open work. The older
+[TODO.md](../TODO.md#areas-with-no-open-rows) indexes the open work, and
+lists this lane there while it has no open row. The older
 [file-length audit](file-length-audit.md) remains its dated record, including
 the 2026-10-26 decision to keep StateContext together.
 
@@ -538,3 +539,32 @@ bytes, and run five-backend builds/checks, D3D12 pixel/resource, warmed
 submission-allocation and applicable resize/loss/pending-slot regressions. Keep
 vendor-derived helpers untouched. Device qualification is separate from source
 movement; actual stopped actions remain stopped.
+
+**Closed 2026-10-29.** `engine/render/d3d12/sprite_pipeline.h/.cpp` hold
+`SpritePipeline`, embedded by value in `Renderer::Impl` where the two `ComPtr`
+members were, root signature declared first. `create(device, target_format)`
+is called at the old position in `create_device_dependent_resources()` with
+`back_buffer_format()`; `reset()` releases PSO then root at the old place in
+`on_device_lost()`. The 166-line description body moved with the shader-array
+includes and their comment; against `f7dd4de` it differs in exactly four lines:
+the two member names in their `ReleaseAndGetAddressOf` calls, the PSO's
+`pRootSignature`, and `RTVFormats[0]` reading the borrowed format. The
+serialisation diagnostic, descriptors, blend, rasteriser and input layout are
+byte-identical. View recording, the frame list, heaps/slots, samplers, index
+upload, waits and loss/restore orchestration stay in `renderer.cpp`.
+`sprite.hlsl`'s binding note still holds: the root-constant and table calls
+remain in `renderer.cpp`.
+
+At that base plus this change, on the RTX 5080 (NVIDIA 616.92), all five
+native Debug presets built and `ctest --preset <preset> --output-on-failure`
+passed: `x64-debug` 20/20, `x64-debug-d3d12` 21/21, `x64-debug-gl` 20/20,
+`x64-debug-vulkan` 20/20 and `x64-debug-null` 19/19. D3D12 `RenderPixelTests`
+ran 58 cases and 50,242 assertions, the same inventory as SM-57's run,
+including warmed-submit allocation, mid-frame and pre-view resize, presented
+frames across resize and slot reuse; `D3D12SynchronizationTests` ran 3 cases.
+No golden changed. The optional `D3D12DestructionProbe` again recorded 81
+complete INFO records, none warning or worse, and one device destruction during
+retained-texture release; `D3D12PresentedSlotsProbe` again verified two
+queued, unretired presented slots at the reuse wait. No case induces genuine
+device removal, so none was run. All standalone lint and fixture checks pass.
+Logs are `out/ctest-<preset>.log` and `out/sm58-probes.log` in the working tree.

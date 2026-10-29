@@ -12,13 +12,11 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **`SM-58`: extract the reviewed D3D12 root-signature/PSO value owner.** [Code hygiene](docs/code-hygiene.md#sm-58-d3d12-sprite-pipeline-value-owner) owns its design and checks.
-2. **`SM-18`: record the device checks CI cannot run for each change.** The [render sweep](docs/verification.md) now runs for real.
+1. **`SM-18`: record the device checks CI cannot run for each change.** The [render sweep](docs/verification.md) now runs for real.
 
 Then follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
-**Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns the
-D3D12 pipeline-owner extraction (`SM-58`).
+**Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns it;
 BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
@@ -31,17 +29,6 @@ required by this plan.
 - Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `OCA-18` (the Visual Studio breakpoint session).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction.
-
-## Code hygiene
-
-**Owner:** [Code hygiene](docs/code-hygiene.md) holds the original review
-targets and acceptance; new bounded repairs have their owners linked below.
-[BACKLOG.md, Later](docs/product/BACKLOG.md#later), L36 to L54, orders the
-maintenance lane. Counts prompt review, not automatic splitting.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `SM-58` | OPEN | could | M | Extract the reviewed D3D12 root-signature/PSO value owner now that SM-57 is closed; keep frame lifetime coordinated. |
 
 ## Input, menus, settings and saves
 
@@ -186,6 +173,7 @@ A new row for one of these gets its section back.
 |---|---|---|
 | The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front; the rows above are the batches NOW names, and the Next stories that the owner or an outside event gates, or that a row here pairs with |
 | Content, text and sample examples (L21 to L23, L26, L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new text, content or sample-example story reaching the front |
+| Code hygiene (L36 to L54) | [Code hygiene](docs/code-hygiene.md) and [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new bounded repair or review story reaching the front |
 | The rest of Later (L1 to L40) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | its next ready batch reaching the front under the scheduling amendment; the hygiene lane runs alongside product work |
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |
 | web.md's milestones M1, M2, M5, M6 and its decisions | [docs/port/web.md](docs/port/web.md) sections 8 and 9 | a regression, or a change the port meets that a decision must settle |

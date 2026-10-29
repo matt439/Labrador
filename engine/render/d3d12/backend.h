@@ -4,6 +4,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/d3d12/device_resources.h"
+#include "engine/render/d3d12/sprite_pipeline.h"
 #include "engine/render/font.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
@@ -230,8 +231,7 @@ namespace labrador
 		// SHARED BY EVERY VIEW, because nothing writes to any of them once they
 		// are made. The index buffer is the same two triangles per sprite for
 		// every sprite there will ever be, uploaded once at device creation.
-		Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature;
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state;
+		SpritePipeline sprite_pipeline;
 		Microsoft::WRL::ComPtr<ID3D12Resource> indices;
 		D3D12_INDEX_BUFFER_VIEW index_view = {};
 

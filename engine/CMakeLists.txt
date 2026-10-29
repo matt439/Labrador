@@ -173,6 +173,7 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         render/d3d12/device_resources.cpp
         render/d3d12/render_resources.cpp
         render/d3d12/renderer.cpp
+        render/d3d12/sprite_pipeline.cpp
         render/d3d12/texture_factory.cpp
     )
     target_link_libraries(LabradorEngine PUBLIC d3d12 dxgi dxguid)

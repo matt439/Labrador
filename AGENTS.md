@@ -293,7 +293,8 @@ copy of the minimal template would want adds a line to
   the window implementation; `app/window.h` stays neutral. Renderer is concrete
   with one build-selected implementation, not a virtual call per sprite (T8).
   Backend translation units are `renderer.cpp`, `render_resources.cpp`,
-  `texture_factory.cpp`, plus device resources where needed. GL alone selects
+  `texture_factory.cpp`, plus device resources where needed; D3D12's
+  `sprite_pipeline.cpp` owns root signature and PSO only. GL alone selects
   one of `wgl_context.cpp`/`web_context.cpp` for its shared drawing path (web D1).
   Shared `engine/render/render_resources.cpp` owns engine data and text queries;
   backend resource code touches textures. All backend-owned data stays inside

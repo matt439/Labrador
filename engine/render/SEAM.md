@@ -117,6 +117,13 @@ build its shader, plus the part of its API that is not about drawing. Only
 compiles exactly one of them (docs/port/web.md, D1). All of them are the same
 kind of file — the part of an API that is not about drawing.
 
+A backend may also split out a private owner of API objects whose lifetime its
+renderer still coordinates. `d3d12/sprite_pipeline.cpp` holds the root
+signature and pipeline state, built from a borrowed device and target format
+and released pipeline first; `renderer.cpp` keeps the heaps, command lists,
+index upload, waits and device-loss order around it. Such an owner is a file of
+the backend, behind the same include wall, and changes nothing at this seam.
+
 **The third file is where they diverge most**, and is the honest measure of what
 a port owes for content. It turns already-decoded bytes into a texture, and how
 much code that takes is **inversely proportional to how much the API will accept

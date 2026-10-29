@@ -13,7 +13,7 @@ a performance problem, a driver failure or a need to change the implementation.
 
 The separate [2026-10-28 construction review](../2026-10-28-renderer-construction.md)
 selects the root-signature/PSO value owner as **SM-58**, preserving partial
-construction and release order. It also confirms **SM-57**: replacement wrapper
+construction and release order; it is now `d3d12/sprite_pipeline.cpp`. It also confirms **SM-57**: replacement wrapper
 allocation can fail after overwriting an existing texture descriptor, retaining
 the old registry object with a changed slot. [Code hygiene](../../code-hygiene.md)
 owns those implementation stories and their error-path/device qualification.
