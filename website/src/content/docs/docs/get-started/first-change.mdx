@@ -9,10 +9,27 @@ import SourceFile from '~/components/SourceFile.astro';
 Everything in `game\` is yours now. This page changes three things you can see, so you know the
 whole loop works: edit, build, test, run.
 
+The commands run in the x64 Native Tools Command Prompt, in your project's folder. If you opened
+a new prompt, go there first:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+The edits use Notepad, which every copy of Windows has; any text editor or IDE does as well.
+In Notepad, **Ctrl+F** finds a piece of text and **Ctrl+S** saves. Close Notepad after saving
+each file.
+
 <Steps>
 
-1. **Change the greeting.** In `game\states\hello_state.cpp`, find where the greeting is
-   created:
+1. **Change the greeting.** Open the file that draws it:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Press **Ctrl+F**, search for `Hello from the engine.`, and you are at the line that creates
+   the greeting:
 
    <SourceFile
    	path="samples/minimal/states/hello_state.cpp"
@@ -27,10 +44,18 @@ whole loop works: edit, build, test, run.
    L"Hello from my game.", font_name, this->motion_.centre, resources,
    ```
 
-   The `L` makes it a wide string, which is what the engine's text drawing takes.
+   Change only the words between the quotation marks, and keep the quotation marks, the `L`
+   before them and the comma after them. The `L` makes it a wide string, which is what the
+   engine's text drawing takes. Save and close Notepad.
 
 2. **Make it spin faster.** How the greeting moves is your game's rules, in
    `game\rules\motion.h`, and the speed is a constant beside the rules it configures:
+
+   ```bat
+   notepad game\rules\motion.h
+   ```
+
+   Search for `spin_speed` with **Ctrl+F**:
 
    <SourceFile
    	path="samples/minimal/rules/motion.h"
@@ -38,11 +63,22 @@ whole loop works: edit, build, test, run.
    	to="inline constexpr float spin_speed"
    />
 
-   Change `1.2f` to `3.0f`. The unit is radians per second.
+   Change `1.2f` to `3.0f`, keeping the `f` and the semicolon after it. The unit is radians per
+   second. Save and close Notepad.
 
 3. **Name the window.** In `game\main.cpp`, change the window's class name and title:
 
+   ```bat
+   notepad game\main.cpp
+   ```
+
+   Search for `window_class_name` with **Ctrl+F**. These are the lines:
+
    <SourceFile path="samples/minimal/main.cpp" from="options.window_class_name" to="options.window_title" />
+
+   Change the text between the quotation marks in the first and last of them, so that they read
+   as below, then save and close Notepad. The comment lines between them stay as they are, and
+   as they say, the title is safest in plain English letters, digits and punctuation.
 
    ```cpp
    options.window_class_name = L"MyGameWindowClass";
@@ -62,6 +98,10 @@ whole loop works: edit, build, test, run.
    still pass: the rules test reads `spin_speed` rather than repeating `1.2f`, and the start-up
    check opens the game hidden, runs it for a moment and quits. The window has your title, and your
    greeting circles faster.
+
+   If the build stops with `error` and a file name and line number, the edit in that file has a
+   typing slip: a quotation mark, `L`, `f`, comma or semicolon missing or doubled. Open the file
+   again, compare the line with this page, save, and run the three lines again.
 
 </Steps>
 

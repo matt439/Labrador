@@ -28,15 +28,21 @@ anything.
 
 ## What you need to know already
 
-Some C++, and how to use a command prompt. The guide explains every command it asks you to
-type, but it does not teach the language.
+Very little. These pages are written so that someone who has hardly programmed can follow them
+to a game of their own that runs, and then play around with it. Every command is in a box with
+a copy button, nothing has to be worked out, and each step says what you should see and what to
+do when you see something else.
+[Typing the commands](/docs/get-started/prerequisites/#typing-the-commands) says how to run
+them. If you already use Visual Studio, Git and a command prompt, skim the explanations and run
+the boxes.
 
-If you do not know C++ yet, start with a language introduction before this guide. Practise
-with a small console program: use variables, a loop, a function and a class, then change and
-rebuild it. Learn what pointers and references refer to and when an object is destroyed. If
-you have not programmed before, choose an introduction that teaches programming fundamentals
-too. Return to [Install the tools](/docs/get-started/prerequisites/) when you can make and
-rebuild that program yourself and explain those ideas. The
+Going further than the [first change](/docs/get-started/first-change/) means writing C++, and
+these pages do not teach the language.
+[Reading the C++ in minimal](/docs/concepts/reading-minimal/) explains what the copied sample
+uses. To learn C++ itself, use a language introduction alongside your project. Practise with a
+small console program: use variables, a loop, a function and a class, then change and rebuild
+it. Learn what pointers and references refer to and when an object is destroyed. If you have
+not programmed before, choose an introduction that teaches programming fundamentals too. The
 [companion introduction's status](#companion-introduction-status) is below.
 
 ### Companion introduction status
@@ -66,6 +72,15 @@ reused vcpkg's work and took 13 seconds. From the clone to the project's own win
 six minutes, not counting installing Visual Studio and Git, which was not timed. The
 <RepoLink path="website/src/walkthrough/README.md">walkthrough's record</RepoLink>
 has every figure. The template's tests came after that run.
+
+On 30 October 2026 the pages gained the detail a reader new to the command prompt needs: what
+each step prints, the messages of the usual mistakes, and commands for what earlier versions
+left to the reader. The new folder, Visual Studio lookup and include-rewrite commands, and
+the messages quoted for the wrong prompt, a 32-bit prompt, a missing Git identity, a detached
+engine checkout and an empty engine folder, were run in a command prompt on Visual Studio 2026
+that day. The `setx` line,
+the Notepad steps, `devenv .` and the submodule repair were not run, and no one new to the
+command prompt has yet followed the pages through.
 
 The full CI sweep checks one part of this path. It assembles the project in step 4 from the
 files and edits that page gives, with the engine taken from the change itself rather than from

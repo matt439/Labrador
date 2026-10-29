@@ -10,9 +10,11 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** finish Next's remaining acceptance while taking ready Later work in
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
-allows. Next's hardware and release gates remain open. No ready story is
-queued: what remains in Later waits on the owner, on another story or on an
-outside event.
+allows. Next's hardware and release gates remain open. **Next ready story:
+`OCA-78`**, the starter ZIP that needs no Git, which the owner required on
+2026-10-30 when lowering the adopter's floor ([BACKLOG.md, L55](docs/product/BACKLOG.md#oca-78)).
+Apart from it, what remains in Later waits on the owner, on another story or
+on an outside event.
 
 Otherwise follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
@@ -45,6 +47,7 @@ required by this plan.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
+| `OCA-78` | OPEN | must | M | A starter ZIP per release that builds and plays with no Git; Get Started leads with it. [Acceptance](docs/product/BACKLOG.md#oca-78). |
 | `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 | `OCA-18` | DECISION | could | S | Visual Studio guide is implemented. A person follows it in a clean copied project in Visual Studio Community 2026 18.9.2, hits the breakpoint, sees content load and records the date. [Evidence](docs/product/BACKLOG.md#later). |
 

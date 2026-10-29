@@ -1822,6 +1822,8 @@ The site publishes PHILOSOPHY's beginner yardstick, and a Get Started page that 
 
 **Scope check.** No conflict. The fix belongs on Get Started or a status note, not a rewrite of T10, since design docs are target-tense.
 
+**Direction settled 2026-10-30.** The owner's decision on the adopter floor (BACKLOG.md, Decisions only the owner can make) settles which way this gap closes: Get Started no longer assumes C++ before its first page. It takes a reader with very little programming experience as far as a running copy of the template and a first change, with every procedure guided, and says that going further means learning C++, which the site still does not teach. T10 is not rewritten, and no C++ tutorial is added.
+
 <a id="g97"></a>
 ### G97. The copy-me sample uses intermediate C++ and engine-internal vocabulary with no guide to either
 

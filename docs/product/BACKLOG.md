@@ -22,6 +22,7 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-10-27: rename non-macro uppercase constants to snake_case across both repositories; retain CONVENTIONS and record the source migration | SRL-07 |
 | Decided 2026-10-27: v0.3.0 gets the first complete immutable documentation snapshot; no earlier-release backfill; implement and verify versioning before cutting it, with no release date promised | SITE#3 |
 | Decided 2026-10-27: the Windows samples/template default to per-monitor DPI awareness; implemented, and the reviewed 150% scaling run remains | OCA-66 |
+| Decided 2026-10-30: the outside adopter's floor is someone with very little programming experience who wants to play around, not 'some C++'. Terminal commands and manual setup are acceptable, but every procedure has an exhaustive guide (every command in a copyable block, nothing to infer), which experienced users skip. Python is an acceptable tool prerequisite; no bundled installer. Many such readers will not clone with Git, so each release has a starter ZIP needing no Git: download, extract, build, play; Git stays the experienced route. This settles G96's direction without a C++ tutorial or a T10 rewrite | OCA-78, SRL-15 |
 
 `SITE#3` remains open under [the versioning policy](../website-versioning.md)
 and is a prerequisite for cutting `v0.3.0`. Verified candidate builds,
@@ -355,6 +356,12 @@ lifetime promise and missing unit/loan contracts gives callers firmer rules
 for that explanation; this bounded documentation repair takes priority over
 adding more tutorial prose. It selects no API redesign or runtime change.
 
+**Onboarding amendment, 2026-10-30:** the owner lowered the adopter's floor
+(Decisions only the owner can make) and required a starter ZIP that needs no
+Git. L55 takes OCA-78 next, ahead of the ready-work order above; it waits on
+no hardware or outside event. The Get Started pages were made exhaustive for
+that reader first, in the commit that added this story.
+
 The [feature candidates](../feature-candidates.md) add six proposals beyond
 the existing `GAP#` comparison. They need selection before implementation and
 are not counted as ready stories. A selected proposal gets a story here, with
@@ -428,6 +435,7 @@ written.
 52. L52 Clarify resource presence and retained handle contracts: SM-70
 53. L53 Preserve representable animation-strip origins through intermediate arithmetic: SM-71
 54. L54 Refuse non-finite stored font metrics before layout: SM-72
+55. L55 Start a project from a release ZIP without Git: OCA-78
 
 **Stories**
 
@@ -871,6 +879,36 @@ written.
 - [x] **[SM-70](#sm-70)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Distinguish resource presence from retained names and handles
 
 - [x] **[SM-72](#sm-72)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse non-finite stored font metrics before layout
+
+- [ ] **[OCA-78](#oca-78)** Must - M - The Outside C++ Adopter: Start my own game from a release download, without Git
+
+<a id="oca-78"></a>
+### OCA-78. Start a project from a release ZIP without Git
+
+Selected 2026-10-30 by the owner's decision on the adopter floor. The reader
+has very little programming experience and wants to play around; many such
+readers stop when the first step is cloning with Git. Get Started's only
+routes today are Git ones: Build Labrador clones the engine, and Start your
+own project makes a repository, adds the engine as a submodule at a tag,
+copies the template and edits it by hand. tools/consumer_check/assemble.py
+already makes that project's files for CI's consumer jobs, from one engine
+tree and without Git.
+
+**Acceptance**
+
+- Each release offers a starter ZIP. Extracted, it is the project Start your
+  own project produces, with the engine at that release inside it, so the
+  reader downloads, extracts, configures, builds, tests and plays without
+  running a Git command.
+- Whether configure needs Git for Windows installed is found by a run with
+  Git absent, and Install the tools states the result.
+- Get Started leads with the ZIP route. Every step is a copyable block with
+  what it prints and what to do when it prints something else. The Git routes
+  stay, signposted for readers who use Git.
+- CI makes the ZIP from the change under test, then configures, builds and
+  tests the extracted project.
+- Moving a ZIP project to a newer release, and making it a Git repository
+  later, each have a written procedure.
 
 <a id="sm-72"></a>
 ### SM-72. Require finite metrics in sprite-font files
@@ -2143,6 +2181,7 @@ The top-out frame was looked at: the banner text draws in full beyond its panel.
 | SRL-16 | G97: a glossary of the terms minimal uses. |
 | SRL-18 | G88: run LineSweeper's rules tests knowing what is needed. |
 | SRL-06 | G91: LineSweeper's design notes give reasons without internal records. |
+| OCA-78 | No registered gap: the 2026-10-13 record took a C++ developer with Git as the floor. The owner's 2026-10-30 decision lowered it and required a Git-free start; the Get Started pages were made exhaustive for that reader in the commit that added this story. |
 | SRL-07 | G92. Decided 2026-10-27: rename non-macro uppercase constants to snake_case, preserving CONVENTIONS' distinction between values and macros. Inventory current declarations rather than assuming the historical count of 26, migrate engine/sample/test/website uses and the ColourWars callers, and record every old/new spelling and the counted caller repositories. The source break needs CHANGES.md and the public sample migration. Keep this story open for implementation and its affected build, test and website checks. Implemented in this tree 2026-10-27 by *Spell constants in snake_case*: engine, samples, tests and benches, with platform-API restatements kept as CONVENTIONS now allows and the public renames in CHANGES.md. The ColourWars migration and the counted caller record remain. |
 
 </details>

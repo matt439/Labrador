@@ -5,11 +5,19 @@ description: Start the smallest game on Labrador, and see which code makes each 
 
 import SourceFile from '~/components/SourceFile.astro';
 
-The build you just ran also built the minimal sample. Start it from the `Labrador` folder:
+The build you just ran also built the minimal sample. Start it from the `Labrador` folder, in the
+same x64 Native Tools Command Prompt. If you closed that window, open a new one and run the
+`cd` line first; otherwise the second line is enough:
 
 ```bat
+cd /d C:\dev\Labrador
 out\build\x64-debug\samples\minimal\MinimalSample.exe
 ```
+
+The prompt is ready for the next command as soon as the window opens; the sample keeps running
+until you quit it. If the prompt answers `The system cannot find the path specified.` or says
+the program `is not recognized as an internal or external command`, the build in the previous
+step did not finish: run `cmake --build --preset x64-debug` again and read its last lines.
 
 A 1280×720 window opens with the line *Hello from the engine.* circling a point, and a hint
 along the bottom. Move the point with the left stick of a gamepad, the arrow keys or WASD. Press
@@ -45,7 +53,7 @@ and because the question does not cover the whole screen, the greeting stays vis
 
 ## The other sample
 
-LineSweeper, the falling-block game, was built too:
+LineSweeper, the falling-block game, was built too. From the same `Labrador` folder:
 
 ```bat
 out\build\x64-debug\samples\linesweeper\LineSweeperSample.exe
