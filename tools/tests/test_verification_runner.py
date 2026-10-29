@@ -156,7 +156,7 @@ class RunnerTests(unittest.TestCase):
         reports = [sweep.execute_plan(self.plan, inspector=self.inspect, cache_reader=planner.cache_values,
                                       runner=self.fake_runner) for _ in range(2)]
         self.assertNotEqual(reports[0]["output_dir"], reports[1]["output_dir"])
-        self.assertTrue(all(Path(item["output_dir"]).parent == self.root / "out/verification" for item in reports))
+        self.assertTrue(all(Path(item["output_dir"]).parent == (self.root / "out/verification").resolve() for item in reports))
 
     def test_first_command_failure_stops_each_phase_at_early_and_late_tracks(self):
         for target in ("x64-debug", "wasm-release-null"):
@@ -392,7 +392,7 @@ class RunnerTests(unittest.TestCase):
             report = self.execute(runner=run)
         self.assert_failure(report, "configure", commands=1)
         self.assertIsNone(report["report_path"])
-        self.assertEqual(report["intended_report_path"], str(self.output / "report.json"))
+        self.assertEqual(report["intended_report_path"], str((self.output / "report.json").resolve()))
         self.assertIn("fixture report write denied", report["report_write_error"])
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
