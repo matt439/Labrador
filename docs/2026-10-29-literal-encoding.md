@@ -97,13 +97,33 @@ Website verification reports zero type diagnostics, 160 passing tests,
 guide contains the encoding paragraph and its existing language-limit link.
 Text conversion, font contracts and existing conversion tests are unchanged.
 
-## Remaining acceptance
+## Wasm/Node and CI acceptance
 
-OCA-41 remains unchecked: wasm/Node is at the standing Emscripten activation
-stop and full all-presets CI remains required. Native Release configurations
-other than Release null were not locally built. The explicit scratch
-fallback leaves the owner's reservation on committed literal source intact;
-it does not require resolving that choice to make this source progress.
-No browser, generated game module, graphics/audio API device, endpoint,
-listening or rendered-font acceptance is claimed. The compiler check covers
-the stated BMP sequence, not supplementary-plane or script rendering.
+On 2026-10-29 the same scratch source, with the same SHA-256 and CMake, is
+configured with `emcmake cmake -G Ninja` (emcc 6.0.12) in Debug and in
+Release. Both compile commands inherit `labrador_settings`' clang options
+(`-Wall -Wextra -Wpedantic -Werror -ffp-contract=off -fwasm-exceptions`) and
+build without compiler diagnostics. Both run under emsdk's Node 24.19.0 and
+exit 0:
+
+```text
+wide_length=6
+wide_units=0063 0061 0066 00E9 0020 3042
+narrow_length=9
+narrow_bytes=63 61 66 C3 A9 20 E3 81 82
+utf8_literal_match=1
+```
+
+Windows and the browser therefore produce the same code units and bytes from
+one source. CI run 40836037123 on `b96bad6`, which contains the option,
+passes all 12 jobs, including its six Windows entries (five Debug render
+backends and `x64-release`), wasm, wasm-null and both consumers, under `/WX`
+and `-Werror`. The Release D3D12, GL and Vulkan presets are in neither CI nor
+this record. OCA-41 is complete.
+
+The story's checked-in non-ASCII test is replaced by this scratch consumer,
+as its notes allow, so the owner's reservation on committed non-ASCII literal
+source stays intact. No browser, generated game module, graphics/audio API
+device, endpoint, listening or rendered-font acceptance is claimed. The
+compiler check covers the stated BMP sequence, not supplementary-plane or
+script rendering.

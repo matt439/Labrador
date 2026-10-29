@@ -25,6 +25,6 @@ byte counts and SHA-256 hashes. It uses the standard library and does not
 need an image application, network, graphics device or build tool. All source
 and JSON text is ASCII; Unicode-source policy remains untouched.
 
-The asset's arithmetic provenance does not prove that the eventual gallery
-layout looks correct. Review the native and browser rendered previews after
-the existing runtime gates permit those checks.
+The asset's arithmetic provenance does not prove that the gallery layout looks
+correct. A change to the asset or the layout is reviewed in the native and
+browser rendered previews.

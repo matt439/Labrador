@@ -1051,11 +1051,10 @@ requires an operator. [The method](../../docs/port/pacing-method.md) and
 [tool instructions](../../tools/web_pacing/README.md) own capture/export and
 results templates.
 
-Browser runtime acceptance is still open under the recorded Chrome GPU
-access denial. Headless ParticleField counts and Node protocol tests prove
-neither rendered browser counts nor real display/phone performance. The
-ordinary `LineSweeperPageTests` and the instrumented Release driver still
-need their actual browser run before SM-08 can close.
+`LineSweeperPacingPageTests` runs the instrumented Release page in headless
+Chrome and checks the marked frame's 9,600 live particles through WebGL.
+Neither it, headless ParticleField counts nor Node protocol tests measure a
+real display or phone.
 
 ## Still open
 

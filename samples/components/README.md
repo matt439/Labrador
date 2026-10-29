@@ -153,10 +153,9 @@ into the module.
 and an option row, restart the previews with R, and quit. Its window-row
 adjustment requests full screen. The sequence sends Escape twice because the
 browser can consume the first press to leave full screen before the gallery
-receives its quit key. The changed page path, fullscreen external
-exit/re-sync, animated frames and restart still need a recorded browser run;
-native gallery appearance also needs review. The key sequence alone does not
-establish fullscreen or animation acceptance.
+receives its quit key. The key sequence alone does not establish fullscreen
+or animation acceptance; the animated frames, the restart and the window row
+are looked at on screen, natively and in a browser.
 
 ## What a component is not
 

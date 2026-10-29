@@ -225,10 +225,19 @@ passes; all four rasterising RenderPixelTests targets compile. CTest names and
 commands remain identical: 20/21/20/20/19 entries for D3D11/D3D12/GL/Vulkan/null.
 A separate source review found no ownership or registration defect. All seven
 standalone checks pass, as do the website check, 160 tests and 143-page build.
-Native pixel execution and wasm GL with/without S3TC remain unrun at the stopped
-device and Emscripten gates. No pixel executable was invoked, including for a
-case listing, and no golden was regenerated. SM-49 remains open for those
-runtime qualifications.
+**Runtime qualification, 2026-10-29:** at `1b5ecee` on the RTX 5080,
+RenderPixelTests passes on the four rasterising Debug presets: D3D11 52
+cases/49,534 assertions, D3D12 58/50,242, GL 53/49,544 and Vulkan 65/49,767.
+Each total is the five groups' 50 cases plus that build's platform and backend
+sources, which reconciles the case counts with the source inventory. No
+RenderPixelTests run before the move was recorded, so the runtime assertion
+totals have no pre-move baseline; the moved assertion sites are the source
+audit's. On wasm-debug and wasm-release, RenderPixelTests and
+RenderPixelTestsWithoutS3tc each pass in Chrome over ANGLE D3D11 with 51
+cases/49,536 assertions: the 50 plus GL's texture case. x64-debug-null still
+registers 19 entries without RenderPixelTests. No golden was regenerated, and
+the tree has no golden change. CI run 40836037123 on `b96bad6`, which contains
+the movement, passed all twelve jobs.
 
 ## SM-50. Win32 input translation
 

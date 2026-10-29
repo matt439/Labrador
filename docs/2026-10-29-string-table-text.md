@@ -18,8 +18,8 @@ to it. Keep editing, language selection and key choice in the game.
 Explain the existing ASCII-only template atlas, required character coverage,
 MakeSpriteFont's existing `/CharacterRegion` option and one fixed rasterized
 size per atlas. `FontSize` is in points, not a promise of identical pixel
-height. Exact new numeric character-region command syntax has not been
-checked against a local authoring tool and is not introduced here.
+height. The guide gives no numeric character-region command; the command
+used for acceptance is recorded below.
 
 Keep source and runtime paths distinct: source `content/strings/fr.json`
 is staged as `strings/fr.json` beside the executable or `/strings/fr.json`
@@ -89,10 +89,48 @@ installed-game or packaged-browser execution result. Engine rendering and
 conversion source, font assets and existing language limits are unchanged;
 no typing component or wrapping policy was introduced.
 
-## Remaining acceptance
+## Matching-atlas and browser acceptance
 
-The story stays unchecked until its actual non-ASCII matching-atlas drawing
-and remaining browser/wasm acceptance are recorded. Current device/browser
-and Emscripten stops remain in force. No numeric authoring-command result,
-real glyph artwork, graphics API device or browser qualification is claimed
-by a metadata or null-recording check.
+Recorded 2026-10-29 at `1b5ecee`; the recipe is `7fe2068`. MakeSpriteFont.exe
+from DirectX Tool Kit's `may2026` release (Microsoft-signed, SHA-256
+`7c1127265365a4d7ded5d01381607491308cc9f429fe5cf90f68c33bc8d2b4f0`) was used
+from a scratch folder and is not in the repository. JetBrains Mono is not
+installed on the machine, so the atlas is the installed Courier New Bold:
+
+```bat
+MakeSpriteFont "Courier New" menu_bold_16.spritefont /FontSize:16 /FontStyle:Bold /CharacterRegion:0x20-0x7e /CharacterRegion:0xe9
+```
+
+It captures 96 glyphs, printable ASCII plus U+00E9, into a BC2
+(CompressedMono) atlas, SHA-256
+`017b1596e3b5ab7da107b1c75d23184b0564abae6eac1534a800ffcbb024277c`. Its
+debug sprite sheet was inspected visually and contains U+00E9.
+
+`tools/consumer_check/assemble.py` assembled the Get Started project in
+scratch. Following the guide, the project adds `content/strings/fr.json`
+with the JSON-escaped title, the atlas as `menu_bold_16`, and the strings
+copy, install and `LINK_DEPENDS` lines. It copies the helper verbatim from
+the compiled test. Initialization resolves the table under
+`executable_directory()`, draws the returned `Text` in the scene overlay and
+shows the coverage results in a label.
+
+- Native `x64-debug`, D3D11 on an RTX 5080: the build passes and so do
+  exactly the project's two tests. The window capture shows `Café` with its
+  accent. Standard error and the label report four units,
+  `can_render(title)` true and `can_render(U+03A9)` false at unit 0. The
+  table was then rewritten with the raw UTF-8 bytes `C3 A9` instead of the
+  `é` escape, rebuilt and run again: the same four units and coverage
+  results.
+- Browser `wasm-release`, Chrome 156 WebGL2 through ANGLE D3D11: the clang
+  build and the Node rules test pass. A `run_page.mjs` input run with strict
+  complaints captured the same title and status line. A
+  `--quit-keys Escape,Enter` run drew 60 frames and reached `Module.onQuit`
+  with no console or browser complaint.
+- Under Node, `StringTableTextRecipeTests` passes 3 cases and 28 assertions
+  in wasm-release and wasm-debug, and 4 and 38 in wasm-release-null. Complete
+  AssetsTests pass 79/637, 79/637 and 80/647 with zero skips.
+- CI run 40836037123 on `b96bad6`, which contains the recipe, passed all
+  12 jobs.
+
+This shows one precomposed Latin accent drawing from an authored atlas. The
+language limits are unchanged. Safari, phones and other GPUs were not run.

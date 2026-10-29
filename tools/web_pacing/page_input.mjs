@@ -1,6 +1,6 @@
-// Draft runtime acceptance driver for the wasm-release development page.
-// It has not run while Chrome GPU startup is access-denied. Node protocol
-// tests and C++ headless counts do not substitute for this actual page run.
+// Runtime acceptance driver for the wasm-release development page.
+// Node protocol tests and C++ headless counts do not substitute for this
+// actual page run.
 export const ready = "window.labradorPacingInitialized === true";
 export const strict_complaints = true;
 

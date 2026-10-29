@@ -1,14 +1,11 @@
 # Browser pacing and phone top-out measurement method
 
-This is SM-08's method and source preparation for R5/R6. It contains no new
-display or phone result. R5 has a console procedure and an offline reducer;
-the opt-in development-page engine-frame exporter and exact R6 fixture are
-implemented in source, with browser runtime acceptance still open.
-SM-08's code-instrument acceptance also requires the `wasm-release` flag run
-and `LineSweeperPageTests`. Those browser checks have not run for this method:
-Chrome's GPU process was denied access (`0xC0000022`) in this work session.
-Neither headless cadence nor the native frame bench closes the real-device
-boxes in [web-to-be-tested.md](web-to-be-tested.md).
+This is SM-08's method for R5/R6. It contains no display or phone result.
+R5 has a console procedure and an offline reducer; R6 has an opt-in
+development-page engine-frame exporter and an exact 9,600-particle fixture.
+§4 records their headless Chrome acceptance. Neither headless cadence nor the
+native frame bench closes the real-device boxes in
+[web-to-be-tested.md](web-to-be-tested.md).
 
 ## 1. Record the run before collecting
 
@@ -118,9 +115,10 @@ page. Do not include console prompts or truncated previews in the file.
 This observer measures rAF delivery timestamps, not the engine's completion
 time or display scan-out. Its buffering has overhead, so record that the
 instrument was enabled and compare an otherwise identical uninstrumented
-visual play-through. No browser execution of this snippet is claimed here.
-It is a manually started console procedure; no development-page query flag
-has been implemented by this document.
+visual play-through. It is a manually started console procedure, separate
+from the development page's query flags in §3. Start it after the first
+frame: it reads the canvas size once, and before the first frame that is the
+browser's default 300x150.
 
 Run the [offline reducer](../../tools/web_pacing/README.md), retaining its
 report and the input. It uses nearest-rank p50/p99, retains every excluded
@@ -192,12 +190,14 @@ Module.labradorPacingSetIdentity({
 
 Those example values are instructions to replace, not a run record. The
 instrument supplies the configure-time source revision/dirty stamp and build
-type; unknown stamps remain unknown. Match the stamp to the built artifact,
-and retain its hash. At startup `app.renderer()->device_info()` stamps the
+type; unknown stamps remain unknown. The stamp is taken at configure time:
+an incremental build after a later commit keeps the earlier commit, so
+reconfigure before building a measured artifact, match the stamp to it and
+retain its hash. At startup `app.renderer()->device_info()` stamps the
 raw `render_backend`, `render_api` and `render_device_name` once; operator
 fields cannot replace these. Null, unknown or masked strings remain raw
-descriptions, with no physical-hardware or display inference. The draft
-browser driver requires `gl` rather than accepting any Release preset.
+descriptions, with no physical-hardware or display inference. The browser
+driver requires `gl` rather than accepting any Release preset.
 Physical device/display/refresh fields remain explicitly
 unrecorded until an operator supplies them. Geometry is sampled after the
 first completed frame and on changes, with initial/final geometry and
@@ -269,16 +269,14 @@ frozen sustained 9,600-particle capture is also used, retain it separately.
 Use at least five fresh triggers per device/orientation, not five samples
 from one frozen frame. Retain warmup and every interrupted run with reasons.
 
-Before taking phone results, the opt-in `wasm-release` development page must
-log those per-frame intervals and the marked top-out CPU time in headless
-Chrome, and `LineSweeperPageTests` must still pass (SM-08 acceptance). The
-draft [page driver](../../tools/web_pacing/page_input.mjs) checks both fixture
+The opt-in `wasm-release` development page logs those per-frame intervals
+and the marked top-out CPU time in headless Chrome, and
+`LineSweeperPageTests` passes beside it (SM-08 acceptance, §4). The
+[page driver](../../tools/web_pacing/page_input.mjs) checks both fixture
 flags, WebGL frames, exact counts, CPU phase rows and correct completed-frame
-association. It has not run; source compilation and synthetic protocol tests
-cannot establish its browser assertions. Browser execution remains blocked by the recorded GPU
-access denial. Real iPhone Safari data, remote-inspector access and a real
-Android run are further independent gates; none is implied by a later
-headless pass.
+association. Real iPhone Safari data, remote-inspector access and a real
+Android run are further independent gates; none is implied by a headless
+pass.
 
 For the eventual real-phone session, use the same run identity and observed
 judder definition as R5, document portrait/landscape, thermal/power state,
@@ -290,7 +288,7 @@ limits required by SM-13/SM-44.
 
 | Run/trigger id and raw files | Source/fixture id and evolving/frozen mode | Phone/OS/browser/orientation/power | Buffer/CSS/DPR | Frame id / updates / live / dropped | Update / begin / draw / submit / end / draw+submit / sum ms | This / next interval ms | Observed judder / trace | Outcome/limits |
 |---|---|---|---|---|---|---|---|---|
-| Pending browser acceptance and real run | | | | | | | | |
+| Pending real run | | | | | | | | |
 
 ## 4. Verification boundary
 
@@ -304,26 +302,38 @@ without a browser. The draft driver's initialization hook is also tested
 under Node without generated JS or a WebGL context.
 `LineSweeperViewTests` exercises the actual ParticleField
 against the shared 200-cell fixture with no device; a headless count is not
-evidence that the browser rendered it. The console snippet and query-flag
-instrument have not run in a browser, and no real display/phone result is
-recorded here. This preparation does not close SM-08, BDP-07, R5 or R6.
+evidence that the browser rendered it. Release rasterizing browser builds
+register `LineSweeperPacingPageTests` for the driver above when Chromium is
+found; Debug and the null-render browser configuration omit it. No real
+display or phone result is recorded here, and this method does not close
+BDP-07, R5 or R6.
 
-Source verification on 2026-10-26: native-null `LineSweeperViewTests` passes,
-including the three real-field fixture cases; all 23 offline Node cases pass.
-The Release wasm objects compile for both entry variants, the fixture,
-observer, state and fixture tests. The module entry has zero undefined pacing
-references, while the development entry has three; the profiler sources and
-pre-js are listed only on the development target. These are object/source
-checks, not linked-page acceptance. A supporting read of the existing
-`out/build/wasm-release/samples/linesweeper/LineSweeperSample.js` was access
-denied and stopped. No generated-output link or browser run is claimed.
+Headless Chrome acceptance on 2026-10-29, Chrome 156.0.8078.48 through ANGLE
+D3D11 on an RTX 5080, `wasm-release` built at 1b5ecee (configure stamp
+b96bad6): `LineSweeperPacingPageTests` passed in 11.5 s. Each of `topout`
+and `topout-frozen` logged one `labrador-pacing` line with 315 contiguous
+completed frames, no gaps and marked frame 300 drawn with 9,600 live and zero
+dropped particles: CPU total 1.6 ms (update 0.3, draw 0.8, submit 0.5) and
+1.5 ms (0.2, 0.9, 0.4), between engine intervals of about 16.7 ms.
+`LineSweeperPageTests` passed in 2.0 s. A separate
+`?pacing=topout&pacing_id=` run at the default 3,000 ms, with
+`labradorPacingSetIdentity` called during warmup, exported a `complete`
+object of 481 rows (300 warmup, 181 measured over 3,002.6 ms) with marked
+frame 301 at 9,600/0 and CPU total 1.9 ms. Operator fields reached `run`,
+the build stamp stayed fixed, and clock coarsening shows as 0.1 ms steps with
+zero begin and end phases. Engine intervals of 29.5, 3.8, 39.7, 2.9 and
+7.4 ms with 2, 0, 3, 0 and 0 updates at frames 336 to 344 sat beside rAF
+intervals that all stayed within one period: the uneven case §2 names, here
+in a headless page. The reducer refuses the nested capture until `refresh_hz`
+is recorded; with 60 declared for a protocol check it found 180 eligible
+intervals, p50 16.7 and p99 16.8 ms. The §2 snippet, its FILL fields filled
+and stopped after eight seconds, saved a `truncated` capture of 481 rows that
+the reducer read (180 eligible, p50 16.7, p99 16.8, max 16.9 ms). All 23
+offline Node cases pass.
 
-Release rasterizing browser builds now register `LineSweeperPacingPageTests`
-for the driver above when Chromium is found. Registration was checked with
-`ctest --preset wasm-release -N` (31 entries, 32 since
-`LineSweeperReducedMotionPageTests` and 33 since `LineSweeperPalettePageTests`);
-the new test has not run here.
-Run it and the ordinary `LineSweeperPageTests` once the recorded access gates
-are resolved. Debug retains 32 entries with Chromium, and configurations with
-no Chromium retain 19; the null-render browser configuration omits this
-WebGL acceptance entry.
+In the generated output, the development page's `LineSweeperSample.js`
+carries the pre-js hooks and its wasm has seven more imports than the
+module's. The packaged `linesweeper.js`, in the build and in `web-dist/`, has
+none of them, and its wasm is byte-identical in both. None of these numbers
+is a display, pacing or phone result: headless Chrome has no physical refresh
+or scan-out.

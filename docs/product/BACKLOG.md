@@ -456,12 +456,12 @@ written.
 - [ ] **[SM-02](STORIES.md#sm-02)** Should · S · The Sole Owner-Maintainer: Reproduce the four-core hold, and say what the bench's fan-out measures — after SM-03
 - [ ] **[SM-07](STORIES.md#sm-07)** Should · M · The Sole Owner-Maintainer · **Owner**: Take and publish low-tier CPU phase/cadence p99s and separate pipeline-latency evidence — after SM-04, SM-05, SM-02, SM-01, SM-03
 - [x] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
-- [ ] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
+- [x] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
 - [ ] **[SM-14](STORIES.md#sm-14)** Should · S · The Sole Owner-Maintainer · **Owner**: Serve a development page to a phone on my network
 - [ ] **[SM-13](STORIES.md#sm-13)** Should · M · The Sole Owner-Maintainer · **Owner**: Record a real iPhone run of the development page and the live demo — after SM-14, SM-08
 - [ ] **[BDP-10](STORIES.md#bdp-10)** Could · XS · The Browser and Phone Demo Player: Lift the phone gate after the real iPhone and host layout pass — after SM-13, BDP-09
 - [ ] **[BDP-07](STORIES.md#bdp-07)** Could · M · The Browser and Phone Demo Player · **Owner**: Smooth play on the displays visitors actually use — after SM-08
-- [ ] **[OCA-46](STORIES.md#oca-46)** Could · M · The Outside C++ Adopter: See a join screen for couch play I can copy
+- [x] **[OCA-46](STORIES.md#oca-46)** Could · M · The Outside C++ Adopter: See a join screen for couch play I can copy
 - [ ] **[OCA-51](STORIES.md#oca-51)** Could · M · The Outside C++ Adopter: Wire a settings screen to what the engine can actually set — after OCA-53
   Source implemented 2026-10-29. The gallery offers Windowed/Full screen,
   requests the mode through Application and silently re-syncs from its report
@@ -477,10 +477,16 @@ written.
   A separate source/API review found no defects. All seven standalone checks,
   website check, 160 website tests and the 143-page build pass; the built
   request/polling excerpts, audio snippets and section anchors were checked.
-  Actual fullscreen entry/exit/refusal, external re-sync, the existing
-  Escape-to-quit interaction and the changed ComponentsPageTests key route
-  remain unrun at the stopped device/Emscripten/browser gates. No fullscreen
-  operation, application loop, audio playback or user settings write was run.
+  Qualified 2026-10-29 at 1b5ecee. In headless Chrome 156 the wasm-release
+  row entered canvas full screen. An external exitFullscreen re-synced it to
+  Windowed while the status line kept the request, so no callback fired. The
+  row's own Left left full screen, and Escape quit. ComponentsPageTests passes
+  in wasm-release, wasm-debug and wasm-release-null. An untrusted request
+  stayed deferred, so browser refusal is unobserved. Natively, full screen
+  draws on D3D11, D3D12 and Vulkan; GL shows a white client. Leaving full
+  screen moves the window to 0,0 and leaves its client white on all four
+  rasterizing backends, even after a resize, though input and Escape still
+  work. The story stays open for that defect and a refusal observation.
 - [x] **[OCA-50](STORIES.md#oca-50)** Could · S · The Outside C++ Adopter: Make a menu work with a click or a tap
   Closed 2026-10-29. The [pointer-menu section](../../website/src/content/docs/docs/guides/menus.mdx)
   quotes `tapped_row()` and its focus-before-activation branch with live
@@ -494,10 +500,10 @@ written.
   The built excerpts, mouse recipe and T1 link were checked. No engine or
   gallery pointer feature or device acceptance is added.
 - [ ] **[OCA-76](STORIES.md#oca-76)** Could · S · The Outside C++ Adopter: Ask the engine where my game may write, on Windows and in the browser — after OCA-53
-- [ ] **[OCA-41](STORIES.md#oca-41)** Could · S · The Outside C++ Adopter: My non-English literals draw the same on Windows and in the browser
+- [x] **[OCA-41](STORIES.md#oca-41)** Could · S · The Outside C++ Adopter: My non-English literals draw the same on Windows and in the browser
 - [x] **[OCA-43](STORIES.md#oca-43)** Could · S · The Outside C++ Adopter: Know which languages the text path can draw
-- [ ] **[OCA-42](STORIES.md#oca-42)** Could · M · The Outside C++ Adopter: Get my game's language from a string table to the screen — after OCA-41, OCA-43, OCA-34
-- [ ] **[OCA-77](STORIES.md#oca-77)** Could · S · The Outside C++ Adopter: Wrap a translated string to a width — after OCA-43, OCA-42
+- [x] **[OCA-42](STORIES.md#oca-42)** Could · M · The Outside C++ Adopter: Get my game's language from a string table to the screen — after OCA-41, OCA-43, OCA-34
+- [x] **[OCA-77](STORIES.md#oca-77)** Could · S · The Outside C++ Adopter: Wrap a translated string to a width — after OCA-43, OCA-42
 - [x] **[OCA-40](STORIES.md#oca-40)** Could · S · The Outside C++ Adopter: Know what background music costs and how to keep it out of the page download — after OCA-38
   Closed 2026-10-28. The [music section](../../website/src/content/docs/docs/guides/audio.mdx)
   states whole-bank memory on both platforms, a PCM/float size example and
@@ -513,9 +519,10 @@ written.
   preset/MyGame target, quotes the actual init/update/manifest statements,
   follows executable-relative content and explains Graphics Tools and matching
   symbols. Stock Release does not request a game PDB; no new build flags or
-  IDE configuration are added. The clean copied-project IDE walkthrough,
-  breakpoint/content observation and date/exact Visual Studio version remain
-  unrun at the existing device/process stops. The story stays unchecked.
+  IDE configuration are added. The clean copied-project IDE walkthrough and
+  breakpoint/content observation remain unrun; they need a person at the IDE.
+  The IDE to record is Visual Studio Community 2026 18.9.2 (installation
+  18.9.12120.119), read with vswhere on 2026-10-29. The story stays unchecked.
   Source review, all seven standalone checks, website check (zero diagnostics),
   160 website tests and the 144-page/433-file build pass. The generated page's
   three live excerpts, key instructions and sidebar/follow-on links were
@@ -544,7 +551,7 @@ written.
 - [ ] **[PI-16](STORIES.md#pi-16)** Could · S · The Pinned Submodule Integrator: Drive my game past its title screen with injected input in a smoke run — after OCA-30
 - [x] **[PI-17](STORIES.md#pi-17)** Could · XS · The Pinned Submodule Integrator: Know what JSON the engine reads for me and when my game must bring its own parser
 - [x] **[PI-18](STORIES.md#pi-18)** Could · XS · The Pinned Submodule Integrator: The include wall says exactly what it protects in my build
-- [ ] **[PI-20](../review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans)** Could · S · The Pinned Submodule Integrator: A misspelt key in a manifest or sprite sheet is refused, not read as its default
+- [x] **[PI-20](../review/colourwars-reports/content.md#12-json-from-memory-key-enumeration-source-spans)** Could · S · The Pinned Submodule Integrator: A misspelt key in a manifest or sprite sheet is refused, not read as its default
 - [ ] **[PI-21](#pi-21)** Should · M · The Pinned Submodule Integrator: Send controller vibration through the engine's input seam — [scope and acceptance](../review/colourwars-reports/vibration.md)
 - [x] **[SRL-09](STORIES.md#srl-09)** Could · S · The Sample-Reading Learner: Game-facing reference pages keep backend rationale out of my way — after SRL-08
   Closed 2026-10-29. RenderResources' device-release comment first says a game
@@ -648,10 +655,12 @@ written.
   review, then check the intended production revision/routes/assets/search
   after deploy. The plan links that procedure and distinguishes a failed build
   preserving production from recovery after a regression has deployed.
-  Current-provider rollback navigation, arguments and corresponding asset
-  restoration still require primary-source verification under the existing
-  network stop. No provider steps were invented. Artifact-preview service,
-  live-site and actual recovery checks remain unrun; the story stays unchecked.
+  Cloudflare rollback steps were added 2026-10-29 from Cloudflare's versions,
+  rollbacks and Wrangler command documentation: the dashboard Deployments
+  route, `wrangler rollback <VERSION_ID> --message`, the 100-version limit and
+  a version carrying its static assets. No rollback or dashboard visit was
+  made; artifact-preview service, live-site and actual recovery checks remain
+  unrun, so the story stays unchecked until the owner confirms the route.
   Independent source review, seven standalone checks, 90 offline Node tests,
   website check (zero diagnostics), 160 website tests and the 144-page/433-file
   build pass. Across two runs, all 182 permitted Python cases pass: the seven
@@ -765,18 +774,17 @@ written.
   exact recipe and both one-entry native results were inspected.
 - [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
 - [x] **[SRL-19](#srl-19)** Should · S · The Sample-Reading Learner: Make LineSweeper's layer boundary a build check
-- [ ] **[SRL-20](#srl-20)** Could · M · The Sample-Reading Learner: Copy a working sprite-strip animation example
+- [x] **[SRL-20](#srl-20)** Could · M · The Sample-Reading Learner: Copy a working sprite-strip animation example
 - [x] **[SM-45](../code-hygiene.md#sm-45-public-header-contracts-and-rationale)** Should · M · The Sole Owner-Maintainer: Audit public-header contracts and oversized rationale
 - [x] **[SM-46](../code-hygiene.md#sm-46-backend-recording-and-synchronization-comments)** Should · S · The Sole Owner-Maintainer: Audit backend recording and synchronization comments
 - [x] **[SM-47](../code-hygiene.md#sm-47-implementation-and-build-comment-archaeology)** Should · S · The Sole Owner-Maintainer: Remove stale implementation and build-comment history
 - [x] **[SM-48](../code-hygiene.md#sm-48-sample-teaching-comments)** Could · S · The Sole Owner-Maintainer: Refresh sample teaching comments against current code
-- [ ] **[SRL-21](#srl-21)** Should · S · The Sample-Reading Learner: Make the top-out banner's culling extent enclose its drawn text
-- [ ] **[SM-49](../code-hygiene.md#sm-49-pixel-test-organisation)** Should · M · The Sole Owner-Maintainer: Separate the pixel-test harness and independent contract cases
-  Source grouping implemented 2026-10-29: the sole harness owner and five case
-  groups preserve 50 complete cases, 12 subcases, 238 assertion sites and
-  golden/content bytes. Native compilation/headless checks and unchanged CTest
-  registration are recorded in the owner. Rasterising pixel runs and wasm
-  GL/S3TC qualification remain at the stopped device/Emscripten gates.
+- [x] **[SRL-21](#srl-21)** Should · S · The Sample-Reading Learner: Make the top-out banner's culling extent enclose its drawn text
+- [x] **[SM-49](../code-hygiene.md#sm-49-pixel-test-organisation)** Should · M · The Sole Owner-Maintainer: Separate the pixel-test harness and independent contract cases
+  Closed 2026-10-29: the sole harness owner and five case groups preserve 50
+  complete cases, 12 subcases, 238 assertion sites and golden/content bytes.
+  RenderPixelTests passes on the four rasterising Debug presets, and with and
+  without S3TC on wasm-debug and wasm-release. The owner records the counts.
 - [x] **[SM-51](../code-hygiene.md#sm-51-cloud-tooling-test-organisation)** Could · S · The Sole Owner-Maintainer: Split cloud tooling tests by production module
 - [x] **[SM-50](../code-hygiene.md#sm-50-win32-input-translation)** Should · S · The Sole Owner-Maintainer: Extract backend-private Win32 input translation
 - [x] **[SM-52](../code-hygiene.md#sm-52-website-reference-organisation)** Could · M · The Sole Owner-Maintainer: Separate reference indexing, prose linking and page assembly
@@ -798,11 +806,11 @@ written.
 
 - [x] **[SM-68](#sm-68)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Read accurate audio content, loader and recording contracts
 
-- [ ] **[SM-69](#sm-69)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Receive a file-named error for an unrepresentable font glyph extent
+- [x] **[SM-69](#sm-69)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Receive a file-named error for an unrepresentable font glyph extent
 
 - [x] **[SM-70](#sm-70)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Distinguish resource presence from retained names and handles
 
-- [ ] **[SM-72](#sm-72)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse non-finite stored font metrics before layout
+- [x] **[SM-72](#sm-72)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse non-finite stored font metrics before layout
 
 <a id="sm-72"></a>
 ### SM-72. Require finite metrics in sprite-font files
@@ -902,12 +910,17 @@ are zero and its runner completed. Generated reference HTML contains the
 finite-metric requirement and glyph-index diagnostic contract. All other
 named source hashes still match after verification.
 
-The story remains unchecked for required wasm selections and full CI.
-Stopped Emscripten/runtime routes were not retried; other native Release,
-device and browser qualification remains separate. No general finite-output
-guarantee, authoring-tool specification claim or magnitude cap is introduced.
+Wasm and full-CI qualification passed on 2026-10-29. Complete RenderTests
+pass under Node with zero failures or skips: wasm-release and wasm-debug
+161 cases/4375 assertions, CI's wasm-release-null override 187/4506. The
+three cases fewer than native are the native-only HRESULT cases. Both new
+cases ran in all three. CI run 40836037123 on b96bad6, which contains this
+change, passed all twelve jobs, including RenderTests in every native Debug,
+x64-release, wasm and wasm-null job. No device or browser acceptance is
+claimed. No general finite-output guarantee, authoring-tool specification
+claim or magnitude cap is introduced.
 
-- [ ] **[SM-71](#sm-71)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Cache representable strip frames without intermediate overflow
+- [x] **[SM-71](#sm-71)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Cache representable strip frames without intermediate overflow
 
 <a id="sm-71"></a>
 ### SM-71. Compute the complete strip frame origin before narrowing
@@ -1012,10 +1025,15 @@ the runner completed and the final process return is zero. Generated HTML contai
 new constructor and authored-loader contracts. Full source/candidate
 identity and other boundary hashes remain verified afterward.
 
-The story stays unchecked for required wasm selections and full CI. Stopped
-Emscripten/runtime routes are not retried; other native Release, device and
-browser qualification remains separate. There is no allocation cap, general
-RectangleI refactor, atlas/positivity policy or new graphics feature.
+Wasm and full-CI qualification passed on 2026-10-29. Under Node, RenderTests
+passes 161 cases/4375 assertions in wasm-release and wasm-debug and 187/4506
+in CI's wasm-release-null override. AssetsTests passes 79/637 and 80/647, with
+zero failures or skips. All nine new cases ran in each configuration. CI run
+40836037123 on b96bad6, which contains this change, passed all twelve jobs,
+including both suites in every native Debug, x64-release, wasm and wasm-null
+job. No device, rasterized-output or browser acceptance is claimed. There is
+no allocation cap, general RectangleI refactor, atlas/positivity policy or
+new graphics feature.
 
 <a id="sm-70"></a>
 ### SM-70. Clarify Registry presence and resource lifetime
@@ -1165,11 +1183,16 @@ produces 145 pages and 436 files with no release snapshot. Each website phase
 and the full runner record success; the final process return was zero.
 The existing public reader/error contract is present in generated HTML.
 
-The story remains unchecked for the required wasm render selections and
-full-CI qualification. Stopped Emscripten activation/runtime routes are not
-retried; other native Release, device and browser evidence remains separate.
-This does not block the independent Registry prose follow-up or reopen any
-deferred owner/product decision.
+Wasm and full-CI qualification passed on 2026-10-29. Complete RenderTests
+pass under Node with zero failures or skips: wasm-release and wasm-debug
+161 cases/4375 assertions, CI's wasm-release-null override 187/4506. The
+three cases fewer than native are the native-only HRESULT cases. Both new
+cases ran in all three. CI run 40836037123 on b96bad6, which contains this
+change, passed all twelve jobs, including RenderTests in every native Debug,
+x64-release, wasm and wasm-null job. These remain headless results; no
+device, rasterized-output or browser acceptance is claimed. This does not
+block the independent Registry prose follow-up or reopen any deferred
+owner/product decision.
 
 <a id="sm-68"></a>
 ### SM-68. Align audio content and test documentation with current behavior
@@ -1938,10 +1961,18 @@ All seven standalone checks, website check, 160 website tests and the 143-page
 build pass. The built guide/example excerpts and removal of the stale private
 method/no-sample instructions were checked in the generated HTML.
 
-Native rendered-frame review, browser compilation, ComponentsPageTests and
-real input/visual acceptance remain unrun at the stopped GPU/Emscripten/browser
-gates. The page driver's added KeyR is supported by its existing decoder, but
-the key sequence alone makes no animation or fullscreen acceptance claim.
+**Closed 2026-10-29 at 1b5ecee.** The x64-release gallery and the Debug
+D3D11, D3D12, GL and Vulkan galleries draw both previews point-filtered inside
+the panel. Release frames about 130 ms apart show the loop stepping through
+radii 2, 4, 6 and 4 while the one-shot holds radius 4. R restarts both previews
+and reports it on the status line. In headless Chrome 156 (WebGL2, RTX 5080),
+the wasm-release page was driven with real key events and its frames reviewed:
+after R both previews show frame 0 together, then the loop wraps while the
+one-shot holds its last frame. ComponentsPageTests passes in wasm-release,
+wasm-debug and wasm-release-null. ComponentsTests passes 38 cases/369
+assertions in each wasm configuration and x64-release, and 42/447 in
+x64-debug-null. The website check, 160 tests and the 145-page build pass.
+Native fullscreen-exit painting belongs to OCA-51, not this story.
 
 <a id="srl-21"></a>
 ### SRL-21. Enclose every banner draw in its culling extent
@@ -1973,9 +2004,10 @@ The draw method, text, positions, panel rectangle and ordering are unchanged.
 Five new native-null cases pass in Debug-null LineSweeperViewTests: overhang
 views at several zooms, recorded-corner containment, negative glyph bearings,
 cache refresh and full-view geometry/order. Standalone checks pass.
-The story stays open for required Release captures and image review. Prior GPU
-startup denial remains stopped; no capture or rasterized appearance result is
-claimed by these recordings.
+**Closed 2026-10-29:** `LineSweeperCapture` on `x64-release` (D3D11, NVIDIA
+GeForce RTX 5080, hardware) regenerated the four website captures from
+`website.txt`. Each matches the committed PNG byte for byte, so no image changed.
+The top-out frame was looked at: the banner text draws in full beyond its panel.
 
 <details><summary>Why each is placed here</summary>
 
@@ -2006,19 +2038,19 @@ claimed by these recordings.
 | SM-02 | G25: what the bench's fan-out measures; PHILOSOPHY amendment E at :691-693, after SM-03's amendment D (Next). Promoted to Should (critique). |
 | SM-07 | G24 (major): the low-tier measurements the performance identity rests on. Follows SM-03's per-claim mapping and SM-01's adapter selection; owner-run on the iGPU. CPU update, recording/submission and cadence p99s complete only their part. The pipeline-latency claims and the low-tier acceptance box remain open until separate evidence with stated endpoints exists. |
 | SM-40 | G125. Closed 2026-10-27: the translation is `engine/input/xinput/xinput_gamepad.h`'s `gamepad_state_from_xinput`, and InputTests under the XInput backend fills DirectXTK's state by hand to assert each of the fourteen button bits alone and together, both sticks' y negation, the analogue triggers, a disconnected pad's neutral state and `DEAD_ZONE_NONE`. |
-| SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. Procedure, reducer and development-only fixture/export source implemented; generated-output and browser acceptance remain in [the method](../port/pacing-method.md). |
+| SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. Closed 2026-10-29. [The method](../port/pacing-method.md) names the console rAF procedure, the `?pacing=` engine-frame export, observed judder and both results templates. In headless Chrome 156 on `wasm-release`, `LineSweeperPacingPageTests` logged per-frame intervals and the marked top-out frame (9,600 live, 0 dropped, CPU 1.6 and 1.5 ms) for both fixture modes, and `LineSweeperPageTests` passed. No display or phone result: those are BDP-07's and SM-13's. |
 | SM-14 | G71: serve a development page to a phone. Out of deferred: the owner has an iPhone; written and tried in SM-13's session. |
 | SM-13 | G34, G05 (merged with BDP-08): a real iPhone run. Split from the Android half (SM-44, deferred) per the owner facts. |
 | BDP-10 | Moved from Deferred to Later on 2026-10-27: the owner has no Android access and accepts iPhone-only evidence for lifting the phone gate. The gate stays closed until SM-13 and BDP-09 pass, then its implementation and public support wording are updated together. SM-44 is optional future evidence; this decision verifies no device and makes no Android support claim. |
 | BDP-07 | G23: pacing on the displays visitors use; may need a borrowed high-refresh display. |
-| OCA-46 | G123. Source implemented 2026-10-28: a two-player JoinState uses source-owned assignments, separate FocusGroup slots and DirectionRepeat clocks, readiness and observed-disconnect handling. Twelve reducer, three routing and four native-null menu cases pass in Debug-null LocalMultiplayerTests; sample/test targets build and the unchanged arena smoke path exits 0. Menus and Local multiplayer guides link the copyable code and state the slot-identity limit. Desktop visual review remains; the changed browser entry is unbuilt/unrun because the existing Emscripten environment setup write denial remains stopped, as does GPU startup. Story remains open; no physical-pad or rasterized appearance acceptance is added. |
+| OCA-46 | G123. Closed 2026-10-29 at 1b5ecee: a two-player JoinState uses source-owned assignments, separate FocusGroup slots and DirectionRepeat clocks, readiness and observed-disconnect handling. The Menus and Local multiplayer guides link the copyable code and state the slot-identity limit. The x64-release D3D11 sample and the wasm-release page in headless Chrome 156 were driven with real key events through joining, separate cursors, leaving, rejoining, READY and the arena, and every frame was looked at. LocalMultiplayerPageTests passes in wasm-release, wasm-debug and wasm-release-null. LocalMultiplayerTests passes 20 cases/84 assertions in wasm-release, wasm-debug and x64-release, 21/831 in wasm-release-null and 25/21258 in x64-debug-null. No physical pad or Gamepad API source has driven the menu. |
 | OCA-51 | G128: a settings screen wired to what the engine can set. Follows OCA-53 (Next). Implementation note 2026-10-28: the dated story predates sound groups; use the existing SoundBank group controls where appropriate rather than adding another volume bus. Keep fullscreen re-sync and callback behavior in the sample. |
 | OCA-50 | G127: a menu that works with a click or a tap, in game code. An engine hit test over `bounds()` was weighed on 2026-10-24 and declined: the one caller, LineSweeper's pause menu (`tapped_row`), sizes each tap target from the row's centre, the row spacing and a minimum width rather than from its bounds alone, because a finger needs more than the text's extent. The target is policy, so the hit test stays the game's (T1; PHILOSOPHY, UI). |
 | OCA-76 | G108: the engine half of OCA-53, split out on 2026-10-24. ColourWars is the recorded caller (`game/directory_consts.cpp` reads `%LOCALAPPDATA%` and falls back beside the executable), Windows-only; it waits for a second caller, or a browser one, before it is built. |
-| OCA-41 | G145. Source implemented 2026-10-29 after SM-67: shared MSVC UTF-8 source/execution encoding, copied-template note and guide guidance. The permitted scratch consumer reproduces nine wrong wide units before the flag and six correct units afterward; narrow UTF-8 bytes and inherited-option propagation pass. Six bounded native builds, two headless Core suites, lints and website checks pass. [Scope and qualification](../2026-10-29-literal-encoding.md). Wasm/Node and full CI remain unqualified, so the story stays unchecked. No owner-reserved non-ASCII C++ test source was committed. |
+| OCA-41 | G145. Source implemented 2026-10-29 after SM-67: shared MSVC UTF-8 source/execution encoding, copied-template note and guide guidance. The permitted scratch consumer reproduces nine wrong wide units before the flag and six correct units afterward; narrow UTF-8 bytes and inherited-option propagation pass. Six bounded native builds, two headless Core suites, lints and website checks pass. The same scratch source built with emcmake in Debug and Release prints six correct wide units and nine UTF-8 bytes under Node 24.19.0 and exits 0. CI run 40836037123 on b96bad6 passes all 12 jobs. [Scope and qualification](../2026-10-29-literal-encoding.md). No owner-reserved non-ASCII C++ test source is committed. |
 | OCA-43 | G147. Closed 2026-10-27: the *Sprites and text* guide's *Which languages the text path can draw* and `engine/render/font.h`'s header state that the walk has no kerning, shaping, bidirectional ordering or placed combining marks, list the scripts in and out of reach, and say why a character beyond the basic plane draws as two stand-ins on Windows and one in the browser. No script beyond ASCII has been drawn. |
-| OCA-42 | G146. Source implemented 2026-10-29 after OCA-41: the text guide quotes a compiled JSON-to-owned-wide-Text helper, explains glyph checks, paths and packaging, and Input links it. Three portable cases plus a private null recording case pass in complete native AssetsTests: Debug 76/585, Debug null and Release null each 77/595, zero skips. Lints and website checks pass. [Scope and qualification](../2026-10-29-string-table-text.md). No engine string-table facility was added. Real authored-atlas drawing, numeric export-command and browser/wasm/full-CI acceptance remain unqualified, so the story stays unchecked. |
-| OCA-77 | G146, G147. Source implemented 2026-10-29 after the OCA-42 recipe: shared glyph placement, an owned measured wrap at U+0020 spaces, headless cases and a handle-based query. [Scope and qualification](../2026-10-29-word-wrap.md). Fifteen new cases pass complete RenderTests on all five native Debug backends and Release null, with zero skips; lints, website checks and both published query contracts pass. Stopped wasm/full-CI gates remain explicit and the story is unchecked. Original weighing: word wrap to a measured width, weighed on 2026-10-24 after a review asked for wrap and alignment helpers. Wrap is cheap - `Font::measure` already lays out line feeds, so a wrap only chooses where to insert them - but where a line may break depends on the script, which OCA-43 settles, and no caller in either client wraps by width yet: the one wrap there is a debug console cutting at a column count on purpose. It follows OCA-43 and lands with or after OCA-42, whose translated strings are the first caller. An alignment helper was declined in the same weighing: centring is one line at each of the half-dozen sites that do it, and `renderer.h` already says to `std::floor` a centred point-sampled position. |
+| OCA-42 | G146. Closed 2026-10-29: the text guide quotes a compiled JSON-to-owned-wide-Text helper, explains glyph checks, paths and packaging, and Input links it. Complete AssetsTests pass natively (Debug 76/585, Debug null and Release null 77/595) and under Node (wasm-release and wasm-debug 79/637, wasm-release-null 80/647), zero skips. A scratch Get Started consumer with a MakeSpriteFont `may2026` atlas of printable ASCII plus U+00E9 drew `Café` on D3D11 and in Chrome WebGL2, and `can_render` rejected U+03A9 at unit 0. CI run 40836037123 passed all 12 jobs. [Scope and qualification](../2026-10-29-string-table-text.md). No engine string-table facility was added. |
+| OCA-77 | G146, G147. Source implemented 2026-10-29 after the OCA-42 recipe: shared glyph placement, an owned measured wrap at U+0020 spaces, headless cases and a handle-based query. [Scope and qualification](../2026-10-29-word-wrap.md). Fifteen new cases pass complete RenderTests on all five native Debug backends and Release null, with zero skips; lints, website checks and both published query contracts pass. On 2026-10-29 all fifteen ran and passed under Node in wasm-release, wasm-debug and CI's wasm-release-null override. CI run 40836037123 passed all twelve jobs at a commit containing the change, so the story is closed. Original weighing: word wrap to a measured width, weighed on 2026-10-24 after a review asked for wrap and alignment helpers. Wrap is cheap - `Font::measure` already lays out line feeds, so a wrap only chooses where to insert them - but where a line may break depends on the script, which OCA-43 settles, and no caller in either client wraps by width yet: the one wrap there is a debug console cutting at a column count on purpose. It follows OCA-43 and lands with or after OCA-42, whose translated strings are the first caller. An alignment helper was declined in the same weighing: centring is one line at each of the half-dozen sites that do it, and `renderer.h` already says to `std::floor` a centred point-sampled position. |
 | OCA-40 | G131: what background music costs in the page download. Follows OCA-38 (Next). |
 | OCA-18 | G109: debugging in Visual Studio from the presets. |
 | OCA-32 | G48: the recording renderer in an adopter's tests. Follows OCA-29 (Next). |
@@ -2031,7 +2063,7 @@ claimed by these recordings.
 | PI-16 | G79: drive a game past its title screen in a smoke run. Follows OCA-30 (Next). |
 | PI-17 | G75. Closed 2026-10-27: README's *Using Labrador in a project* and the *Settings and saves* guide say that `read_json_file` and `parse_json` read JSON, that rapidjson is linked `PRIVATE` and named by no engine header, as `engine/CMakeLists.txt` links it, and that a game writing JSON brings its own writer. |
 | PI-18 | G76. Closed 2026-10-27: `cmake/check_engine_includes.cmake` states that its pattern matches only a folder named `game/`, quoted, angle-bracketed or reached through `../`, and that a client folder with another name is not covered. The check stays the one name (T5). |
-| <a id="pi-20"></a>PI-20 | Split out of report 12 on 2026-10-22 and argued in its decision record, which stands in for a STORIES.md entry: object-member enumeration and unknown-key refusal in manifest/sprite-sheet loaders (T6). Implemented 2026-10-29 with copied `JsonValue::keys()` names and one assets-private helper at nine fixed schemas; custom kinds/names and game-owned JSON remain unrestricted. CHANGES.md describes the migration. [Implementation and checks](../2026-10-29-strict-asset-keys.md) record 66 cases/444 assertions passing in native Debug, Debug-null and Release-null. Wasm/Node qualification remains at the existing stopped gates; the story stays unchecked. |
+| <a id="pi-20"></a>PI-20 | Split out of report 12 on 2026-10-22 and argued in its decision record, which stands in for a STORIES.md entry: object-member enumeration and unknown-key refusal in manifest/sprite-sheet loaders (T6). Implemented 2026-10-29 with copied `JsonValue::keys()` names and one assets-private helper at nine fixed schemas; custom kinds/names and game-owned JSON remain unrestricted. CHANGES.md describes the migration. [Implementation and checks](../2026-10-29-strict-asset-keys.md) record 66 cases/444 assertions passing in native Debug, Debug-null and Release-null. On 2026-10-29 the twelve new cases ran and passed under Node in wasm-release, wasm-debug and CI's wasm-release-null override. CI run 40836037123 passed all twelve jobs at a commit containing the change, so the story is closed. |
 | <a id="pi-21"></a>PI-21 | Split out of report 25 on 2026-10-27: slot-addressed, two-motor vibration transport and explicit stop, with game-owned timing, effects, preferences and routing. The [decision record](../review/colourwars-reports/vibration.md) stands in for a STORIES.md entry and owns acceptance. Settle portable lifetime/result semantics before publishing an API; validate requests, report unavailable output, cancel on suspend/teardown without stale replay, and test observable native/browser transport. Physical output evidence stays separate. Added to L26 after PI-20; the current Next order is unchanged. Implemented 2026-10-27: `Gamepads::vibrate(slot, Vibration)` sends both motors a request bounded to `max_vibration_seconds` and answers `submitted` or `unavailable`; `stop_vibration` stops it. `engine/input/vibration_output.h` holds the shared lifetime (expiry, a pad leaving, suspension, destruction, no replay) and InputTests holds it against a recording transport, with validation and the empty-slot answers on each backend's own reader. XInput sends `SetVibration`; the browser plays `dual-rumble` and resets it. The physical session, natively and in a browser, remains. |
 | SRL-09 | G94: backend rationale out of a game reader's way. Follows SRL-08 (Next). |
 | SM-23 | G67: regenerated goldens leave a review trace. |

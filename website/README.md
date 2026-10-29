@@ -340,22 +340,36 @@ not that live check.
 
 ### Recover from an already deployed regression
 
-**The current-provider rollback steps are incomplete and unverified here.**
-The recorded recovery route is Cloudflare's deployment history for the existing
-`labrador` Worker. Identify the bad deployment and source revision, and the
-previous known working deployment and its source revision. Before using that
-route, confirm the current official rollback procedure for this Workers Static
-Assets setup, including how it restores the corresponding assets. Exact dashboard
-navigation, confirmations and Wrangler rollback arguments have not yet been
-recorded and verified; do not infer them from `npx wrangler deploy` above.
+Cloudflare keeps the `labrador` Worker's versions. A version holds the Worker's
+code, static assets, bindings and compatibility settings, so rolling back to a
+version also serves that version's `dist/`. A rollback immediately creates a new
+deployment of the chosen version on every route and domain. Only the 100 most
+recently published versions can be chosen. Sources:
+[Versions and deployments](https://developers.cloudflare.com/workers/versions-and-deployments/),
+[Rollbacks](https://developers.cloudflare.com/workers/versions-and-deployments/rollbacks/)
+and the [Wrangler `rollback` command](https://developers.cloudflare.com/workers/wrangler/commands/workers/).
 
-The owner restores the selected known working deployment only after that provider
-procedure is confirmed. Then repeat the production checks above against the
-restored revision and record the result. An older footer is expected after a
-rollback; record which revision is intentionally live. A failed build that leaves
-the previous deployment serving requests has prevented replacement, but has not
-performed this recovery action. Keep the rollback procedure's remaining
-qualification explicit until the provider steps are verified.
+1. Identify the bad deployment and its source revision from the live footer,
+   and the previous known working version and its source revision. From
+   `website/`, `npx wrangler deployments list` and `npx wrangler versions list`
+   show the ten most recent of each, with version IDs, times and messages;
+   the dashboard's **Deployments** tab shows the same history.
+2. Roll back by one of two routes. In the dashboard, open **Workers & Pages**,
+   select `labrador`, then **Deployments**; on the known working version,
+   select the three-dot menu, then **Rollback**. With Wrangler, signed in by
+   `npx wrangler login`, run from `website/`:
+   `npx wrangler rollback <VERSION_ID> --message "<reason>"`. Without a version
+   ID it rolls back to the version uploaded before the latest; `--message`
+   skips the interactive confirmation; outside `website/`, add
+   `--name labrador`.
+3. Repeat the production checks above against the restored revision and record
+   the result. An older footer is expected after a rollback; record which
+   revision is intentionally live.
+4. Fix or revert the regression on `master`. Workers Builds deploys the next
+   `master` commit, which replaces the rolled-back version.
+
+A failed build that leaves the previous deployment serving requests has
+prevented replacement, but has not performed this recovery action.
 
 ## One host
 

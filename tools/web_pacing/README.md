@@ -146,25 +146,24 @@ Twelve `page.test.mjs` cases run the actual pre-js against synthetic
 snapshots/event targets under Node, without a browser or Application/device.
 They verify the protocol, not that any fixture was rendered. The three C++
 fixture cases in `LineSweeperViewTests` exercise real ParticleField emissions
-headlessly. Source compilation and these tests do not replace the required
+headlessly. Source compilation and these tests do not replace the
 Release query-flag runtime run and ordinary `LineSweeperPageTests`. One
 additional Node case checks the driver's preserved initialization callback
 and original-URL readiness without reading generated JS or using a context.
 
-When browser execution is permitted, the draft driver command is:
+The driver command is:
 
 ```text
 node tests/render/web/run_page.mjs --browser <chromium-path> --page out/build/wasm-release/samples/linesweeper/LineSweeperSample.html --input tools/web_pacing/page_input.mjs --timeout 40
 ```
 
 Release rasterizing builds also register `LineSweeperPacingPageTests` when
-configure finds Chromium. After building the permitted output, run
-`ctest --preset wasm-release -R '^(LineSweeperPacingPageTests|LineSweeperPageTests)$' --output-on-failure`.
-The registered entry is unexecuted in this session; object compilation and
-Node protocol checks do not establish linked-page acceptance.
+configure finds Chromium. Run it with
+`ctest --preset wasm-release -R '^(LineSweeperPacingPageTests|LineSweeperPageTests)$' --output-on-failure`;
+[the method](../../docs/port/pacing-method.md#4-verification-boundary) records
+its headless acceptance.
 
 The driver sets real query parameters before the module starts, runs evolving
 and frozen modes, and checks actual WebGL frames, completed ids, CPU phase
-rows and the exact marked counts. It has not run: Chrome GPU startup was
-access-denied (`0xC0000022`) in this session. Do not retry without new applicable
-approval. No real display or phone evidence is supplied by this tool.
+rows and the exact marked counts. No real display or phone evidence is
+supplied by this tool.
