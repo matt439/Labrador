@@ -5,6 +5,7 @@
 #include "engine/render/renderer.h"
 
 #include <cstddef>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -133,6 +134,20 @@ namespace labrador
 		// bottom of the lowest one.
 		Vector2F measure(std::wstring_view text) const;
 
+		// An owned copy with selected U+0020 spaces replaced by LF so each line
+		// fits width under measure(), except a word with no space that is wider
+		// by itself. Width is in unscaled font texels, finite and greater than
+		// zero; otherwise throws std::invalid_argument, even for empty text.
+		//
+		// Other units and unselected spaces are preserved. LF starts a new line;
+		// CR is ignored by the walk and preserved. Leading, trailing and repeated
+		// spaces can become empty lines at narrow widths. Tabs, other whitespace
+		// and hyphens are not break points. Unspaced scripts are left unbroken:
+		// the glyph walk supplies no language-aware line-breaking rules.
+		// Glyph lookup uses drawn()'s stand-in or throw behavior, as measure does.
+		// Recompute when text, font or width changes, rather than every frame.
+		std::wstring wrap(std::wstring_view text, float width) const;
+
 		// Where the first character with no glyph of its own is, or
 		// std::wstring_view::npos. Per UTF-16 unit, so a character outside the
 		// basic plane is two and reports at the first of them.
@@ -170,43 +185,51 @@ namespace labrador
 			{
 				const char32_t character =
 					static_cast<char32_t>(text[i]);
-
-				// Layout, not glyphs. Neither of the two is ever looked up,
-				// which is the fact first_unrenderable has to agree with -
-				// hence one definition of the set rather than two.
-				if (is_layout_control(character))
-				{
-					if (character == U'\n')
-					{
-						x = 0.0f;
-						y += this->line_spacing_;
-					}
-					continue;
-				}
-
-				const Glyph& glyph = this->drawn(character);
-
-				x += glyph.x_offset;
-				if (x < 0.0f)
-				{
-					x = 0.0f;
-				}
-
-				// A space steps the pen and marks nothing. The test is on the
-				// character asked for rather than on the glyph found, so a tab
-				// no font has draws the stand-in - a question mark is wider
-				// than a texel, and the stand-in is meant to be seen.
-				if (!is_blank(character) || glyph.subrect.width > 1 ||
-					glyph.subrect.height > 1)
-				{
-					action(glyph, Vector2F(x, y));
-				}
-
-				x += static_cast<float>(glyph.subrect.width) + glyph.x_advance;
+				this->walk_glyph(character, x, y, action);
 			}
 		}
 
 	private:
+		// Continue the same pen walk for one unit. Action is the public entry's
+		// existing copy, or wrap's local callback, and is never copied here.
+		template <typename Action>
+		void walk_glyph(char32_t character, float& x, float& y,
+			Action& action) const
+		{
+			// Layout, not glyphs. Neither of the two is ever looked up,
+			// which is the fact first_unrenderable has to agree with -
+			// hence one definition of the set rather than two.
+			if (is_layout_control(character))
+			{
+				if (character == U'\n')
+				{
+					x = 0.0f;
+					y += this->line_spacing_;
+				}
+				return;
+			}
+
+			const Glyph& glyph = this->drawn(character);
+
+			x += glyph.x_offset;
+			if (x < 0.0f)
+			{
+				x = 0.0f;
+			}
+
+			// A space steps the pen and marks nothing. The test is on the
+			// character asked for rather than on the glyph found, so a tab
+			// no font has draws the stand-in - a question mark is wider
+			// than a texel, and the stand-in is meant to be seen.
+			if (!is_blank(character) || glyph.subrect.width > 1 ||
+				glyph.subrect.height > 1)
+			{
+				action(glyph, Vector2F(x, y));
+			}
+
+			x += static_cast<float>(glyph.subrect.width) + glyph.x_advance;
+		}
+
 		// The characters that position text rather than being drawn in it.
 		// The walk consumes both without a lookup, so no font is ever asked
 		// for a glyph for either, and nothing that reports on the atlas may

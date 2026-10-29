@@ -96,7 +96,7 @@ namespace labrador
 		return this->fonts_.get(font);
 	}
 
-	// The three below forward to arithmetic in engine/render/font.cpp and
+	// The queries below forward to arithmetic in engine/render/font.cpp and
 	// perform none themselves, which is what made having three copies of them
 	// survivable and is not what makes one copy right. measure_text is a term
 	// of the pixel contract; a backend that answered it differently would move
@@ -106,6 +106,12 @@ namespace labrador
 		const std::wstring& text) const
 	{
 		return this->font(font)->measure(text);
+	}
+
+	std::wstring RenderResources::wrap_text(FontHandle font,
+		std::wstring_view text, float width) const
+	{
+		return this->font(font)->wrap(text, width);
 	}
 
 	bool RenderResources::can_render(FontHandle font,
