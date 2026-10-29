@@ -53,11 +53,14 @@ set(linesweeper_game_sources
 )
 
 if(EMSCRIPTEN)
-    # Game sources are compiled once and linked twice. The shared entry file
-    # is compiled per executable so only the development page can opt into
-    # pacing instrumentation; the host module excludes that code.
+    # Presentation is compiled once. States and the entry file are compiled
+    # per executable: only the development page contains the opt-in test-input
+    # gate and pacing instrument; the packaged module excludes those hooks.
+    set(linesweeper_web_shared_sources ${linesweeper_game_sources})
+    list(REMOVE_ITEM linesweeper_web_shared_sources
+        states/pause_state.cpp states/play_state.cpp)
     add_library(LineSweeperWeb OBJECT
-        ${linesweeper_game_sources}
+        ${linesweeper_web_shared_sources}
     )
     target_link_libraries(LineSweeperWeb PRIVATE
         LineSweeperRules
@@ -81,6 +84,9 @@ if(EMSCRIPTEN)
     # module its canvas; web/shell.html says what any page owes it.
     add_executable(LineSweeperSample
         main_web.cpp
+        states/pause_state.cpp
+        states/play_state.cpp
+        web/test_input.cpp
         web/pacing_fixture.cpp
         web/pacing_observer.cpp
         web/pacing_state.cpp
@@ -93,6 +99,7 @@ if(EMSCRIPTEN)
     )
     target_compile_definitions(LineSweeperSample PRIVATE
         LABRADOR_DEVELOPMENT_PACING=1
+        LABRADOR_DEVELOPMENT_TEST_INPUT=1
         LABRADOR_PACING_SOURCE_REVISION="${LABRADOR_SOURCE_REVISION}"
         LABRADOR_PACING_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     )
@@ -118,7 +125,9 @@ if(EMSCRIPTEN)
     # where the window finds the canvas and the page's callbacks - so a page that
     # wants a second game after QUIT calls it again with a fresh canvas
     # (web/index.html does).
-    add_executable(LineSweeperModule main_web.cpp $<TARGET_OBJECTS:LineSweeperWeb>)
+    add_executable(LineSweeperModule main_web.cpp
+        states/pause_state.cpp states/play_state.cpp
+        $<TARGET_OBJECTS:LineSweeperWeb>)
     target_link_libraries(LineSweeperModule PRIVATE
         LineSweeperRules
         LabradorEngine

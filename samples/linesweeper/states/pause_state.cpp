@@ -11,6 +11,9 @@
 #include "engine/render/renderer.h"
 #include "engine/render/viewport.h"
 #include "samples/linesweeper/presentation/palette.h"
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+#include "samples/linesweeper/web/test_input.h"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -171,6 +174,9 @@ namespace linesweeper
 				this->colours_row_ = row;
 				this->focus_.add(row, [this]()
 					{
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+						record_test_input_result("palette");
+#endif
 						this->select_palette(next_palette(*this->palette_));
 					});
 			}
@@ -179,6 +185,20 @@ namespace linesweeper
 				const PauseChoice choice = entry.choice;
 				this->focus_.add(row, [this, choice]()
 					{
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+						switch (choice)
+						{
+						case PauseChoice::resume:
+							record_test_input_result("resume");
+							break;
+						case PauseChoice::restart:
+							record_test_input_result("restart");
+							break;
+						case PauseChoice::quit:
+							record_test_input_result("quit");
+							break;
+						}
+#endif
 						this->context()->pop(choice);
 					});
 			}
@@ -298,6 +318,24 @@ namespace linesweeper
 
 	void PauseState::update(float dt)
 	{
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+		TestInputStep test_step(*this->app_->keyboard(), "pause", this,
+			[](const void* source)
+			{
+				const PauseState& state = *static_cast<const PauseState*>(source);
+				int row = -1;
+				for (std::size_t index = 0; index < state.rows_.size(); ++index)
+				{
+					if (state.focus_.focused(0) == state.rows_[index])
+					{
+						row = static_cast<int>(index);
+						break;
+					}
+				}
+				return TestInputSnapshot{ row, static_cast<int>(*state.palette_) };
+			});
+		if (!test_step.allowed()) return;
+#endif
 		this->arrange_screen();
 
 		// Cancel first, so that the key which opened the menu closes it
@@ -305,6 +343,9 @@ namespace linesweeper
 		// have to read four rows to get back.
 		if (this->cancel_pressed())
 		{
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+			test_step.result("resume");
+#endif
 			this->context()->pop(PauseChoice::resume);
 			return;
 		}
