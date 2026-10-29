@@ -72,6 +72,17 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Refuse non-finite sprite-font file metrics
+
+**Behaviour change.** `read_sprite_font_file` requires stored glyph
+`x_offset`, `y_offset`, `x_advance` and `line_spacing` to be finite. It now
+rejects NaN and either infinity with `std::runtime_error` naming the file
+and field, plus the glyph index for glyph metrics. Previously these bits
+were accepted and could reach layout. Replace non-finite values in affected
+content with the intended finite metrics; every finite value, including
+negative values and signed zero, retains its bits. Programmatically
+constructed fonts and the generic byte reader retain their existing behavior.
+
 ### 2026-10-29 - Compute animation-strip origins before narrowing
 
 **Behaviour change.** `AnimationStrip` computes the complete horizontal

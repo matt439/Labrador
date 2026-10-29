@@ -46,7 +46,10 @@ namespace labrador
 		TextureData atlas;
 	};
 
-	// Reads the .spritefont at `path`.
+	// Reads the .spritefont at `path`. Stored x_offset, y_offset,
+	// x_advance and line_spacing must be finite; finite values retain their
+	// signs and magnitudes. A non-finite metric reports its field and, for
+	// glyph metrics, its zero-based glyph index as std::runtime_error.
 	//
 	// Throws std::out_of_range naming the path if there is no file there, and
 	// std::runtime_error naming the path AND what is wrong with it if there is

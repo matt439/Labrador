@@ -26,7 +26,7 @@ an open hardware gate does not block unrelated work.
 **Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns the
 remaining backend failure regressions and qualification; `SRL-21` awaits its
 capture review and both test splits await their stopped runtime checks.
-BACKLOG's L36 to L53 let it run alongside product work.
+BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
@@ -43,7 +43,7 @@ required by this plan.
 
 **Owner:** [Code hygiene](docs/code-hygiene.md) holds the original review
 targets and acceptance; new bounded repairs have their owners linked below.
-[BACKLOG.md, Later](docs/product/BACKLOG.md#later), L36 to L53, orders the
+[BACKLOG.md, Later](docs/product/BACKLOG.md#later), L36 to L54, orders the
 maintenance lane. Counts prompt review, not automatic splitting.
 
 | id | status | pri | size | item |
@@ -51,6 +51,7 @@ maintenance lane. Counts prompt review, not automatic splitting.
 | `SRL-21` | BLOCKED | should | S | Bounds fix and native-null regressions pass; regenerate and review Release captures after GPU access is restored. [Evidence](docs/product/BACKLOG.md#srl-21). |
 | `SM-49` | BLOCKED | should | M | Harness and five case groups preserve source/asset inventories; all native builds/headless checks pass. Pixel execution and wasm GL/S3TC qualification remain at stopped device/Emscripten gates. [Evidence](docs/code-hygiene.md#sm-49-pixel-test-organisation). |
 | `SM-51` | BLOCKED | could | S | Subject split preserves 41 methods; 71 permitted cases pass. Full suite/Infrastructure qualification waits on stopped PowerShell fixtures. [Evidence](docs/code-hygiene.md#sm-51-cloud-tooling-test-organisation). |
+| `SM-72` | BLOCKED | should | S | Finite-file metric contract and two parser cases pass all five native Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-72). |
 | `SM-71` | BLOCKED | should | S | Whole-origin arithmetic and nine new direct/authored cases pass RenderTests and AssetsTests on all five native Debug backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-71). |
 | `SM-69` | BLOCKED | should | S | Glyph-extent overflow guard and native regressions pass all five Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-69). |
 | `SM-56` | OPEN | should | S | Three Vulkan cleanup fixes compile on all native backends; finish wrapper/recovery failure regressions and stopped device qualification. Shader-failure case compiles but is unrun. |

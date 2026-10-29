@@ -427,6 +427,7 @@ written.
 51. L51 Refuse unrepresentable sprite-font glyph extents before narrowing: SM-69
 52. L52 Clarify resource presence and retained handle contracts: SM-70
 53. L53 Preserve representable animation-strip origins through intermediate arithmetic: SM-71
+54. L54 Refuse non-finite stored font metrics before layout: SM-72
 
 **Stories**
 
@@ -793,6 +794,111 @@ written.
 - [ ] **[SM-69](#sm-69)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Receive a file-named error for an unrepresentable font glyph extent
 
 - [x] **[SM-70](#sm-70)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Distinguish resource presence from retained names and handles
+
+- [ ] **[SM-72](#sm-72)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse non-finite stored font metrics before layout
+
+<a id="sm-72"></a>
+### SM-72. Require finite metrics in sprite-font files
+
+Selected 2026-10-29 after SM-71, while hardware, wasm and external gates
+remain open. Two independent source reviews trace the file reader through
+resource publication and layout. A complete 76-byte, one-glyph RGBA file
+can carry a quiet NaN in any of four metric fields while satisfying the
+existing count, integer-extent, atlas and payload checks. Source arithmetic
+then admits non-finite glyph positions or silently misleading measurements.
+The audit executed no bad-value layout, device or floating-exception probe.
+
+| Rank | Current evidence and value | Decision |
+|---|---|---|
+| 1 | Stored x_offset, y_offset, x_advance and line_spacing pass directly into font layout without a finite check; missing-glyph membership does not validate them. | Select a bounded readable-file contract refinement and field-specific diagnostics before atlas upload in the resource-factory path. |
+| 2 | The preceding quad audit confirms separate float conversion of rectangle fields, so its suspected integer-intermediate problem is absent. | Leave that code unchanged; add no speculative regression or atlas constraint. |
+| 3 | Programmatic Font validation and arbitrary finite-value accumulation need separate API and arithmetic decisions. | Preserve those mechanisms, every finite bit pattern and the generic byte reader's intentional IEEE bit support. |
+
+This finite-file requirement is a new supported-content choice, motivated by
+T6's loud content failures. Neither the previous header nor a verified
+external MakeSpriteFont specification supplies an existing finite clause.
+The reader header and CHANGES must state the selected contract and behavior
+change. The canonical checked-in test font's 286 metric words were inspected
+with integer exponent masks and are finite; that says nothing about other
+assets, authoring tools or rendered output.
+
+**Acceptance**
+
+- Reject quiet NaN and either infinity in the three stored glyph metrics
+  and line_spacing with std::runtime_error naming the file and exact field,
+  and the zero-based glyph index for glyph fields.
+- Preserve all finite metric bits, including signed zero, negative values,
+  finite extremes and subnormals. Add no positivity, magnitude, normalization
+  or atlas policy. Finite source values do not guarantee finite arithmetic
+  for arbitrary strings or accumulated layout.
+- Leave ByteReader's bit contract, programmatic Font construction and all
+  layout/drawing code unchanged. Preserve the seven existing reader cases,
+  including the real font and SM-69 integer-extent controls.
+- Add two parser-only cases: twelve complete-file refusals and rotating
+  finite-bit controls over all four fields. Never construct or lay out a
+  Font from the non-finite fixtures. A safe old-parser characterization may
+  run only the refusal case; its expected twelve failures establish parser
+  acceptance, not a layout failure or floating-exception result.
+- Run full headless RenderTests on all five native Debug selections and
+  Release null after source/cache/object guards, with two build workers and
+  one test worker. Run eight standalone checks and website check/tests/build.
+  Keep the required wasm selections, full CI and device evidence explicit.
+
+**Qualification**
+
+Implemented 2026-10-29. The file reader checks all three glyph metrics
+and line_spacing with isfinite before returning parsed data. Refusal names
+the file and exact field, plus the zero-based glyph index for glyph metrics.
+The public reader contract and CHANGES describe this new supported-file
+restriction. Valid finite data is neither rewritten nor normalized. Generic
+ByteReader, programmatic Font construction, layout and drawing are unchanged.
+
+Two engine/header candidates and the single existing test-source candidate
+were reviewed independently. All three original hashes and 81 named source
+hashes passed fresh guards before any tracked source write. Exact reversal
+preserves previous engine code, header line endings and all seven existing
+reader cases; only three standard includes and two cases are added to that
+test source. No new CPP enumeration or test registration was required.
+
+The refusal case covers four fields by quiet NaN and both infinities in
+twelve complete 76-byte files, checking path, field and applicable glyph
+index. Twelve rotating controls inspect all four returned metric words,
+giving 48 exact bit observations across signed zero, ordinary positive and
+negative values, finite extremes, minimum normal values and subnormals.
+The existing real-font and integer-extent cases still pass. No non-finite
+Font construction/layout or floating-exception probe ran. The optional
+old-parser characterization was not run, so no old-code red is claimed.
+
+Full RenderTests pass with zero failures or skipped cases:
+
+| Configuration | Cases | Assertions |
+|---|---|---|
+| Debug D3D11 | 164 | 4381 |
+| Debug D3D12 | 164 | 4381 |
+| Debug GL | 164 | 4381 |
+| Debug Vulkan | 164 | 4381 |
+| Debug null | 190 | 4512 |
+| Release null | 190 | 4512 |
+
+Builds used two workers and tests one, serially. Installed dependency-cache,
+backend, frozen-source and generated-object guards passed before each run:
+21 render CPP objects, or 22 with null recording. Existing Assets object and
+null-only recipe macro inventories were also checked; AssetsTests was not
+rerun because no asset-loader source changed. No extra fixture tests ran.
+These results establish file metadata and existing headless/CPU-recording
+behavior, not rasterized output or hardware acceptance.
+
+All eight standalone checks pass, including 49 include-wall fixtures.
+Website verification reports zero type diagnostics, 160 passing tests,
+145 pages, 436 files and no release snapshot. All website phase exits
+are zero and its runner completed. Generated reference HTML contains the
+finite-metric requirement and glyph-index diagnostic contract. All other
+named source hashes still match after verification.
+
+The story remains unchecked for required wasm selections and full CI.
+Stopped Emscripten/runtime routes were not retried; other native Release,
+device and browser qualification remains separate. No general finite-output
+guarantee, authoring-tool specification claim or magnitude cap is introduced.
 
 - [ ] **[SM-71](#sm-71)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Cache representable strip frames without intermediate overflow
 
