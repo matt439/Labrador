@@ -23,7 +23,7 @@ check are complete; strict asset keys have source/native coverage and await
 wasm qualification. Follow Later's order and each story's prerequisites;
 an open hardware gate does not block unrelated work.
 **Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns the
-remaining backend failure regressions and qualification; `SRL-21` awaits its
+D3D12 pipeline-owner extraction (`SM-58`); `SRL-21` awaits its
 capture review and both test splits await their stopped runtime checks.
 BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
@@ -53,7 +53,6 @@ maintenance lane. Counts prompt review, not automatic splitting.
 | `SM-72` | BLOCKED | should | S | Finite-file metric contract and two parser cases pass all five native Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-72). |
 | `SM-71` | BLOCKED | should | S | Whole-origin arithmetic and nine new direct/authored cases pass RenderTests and AssetsTests on all five native Debug backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-71). |
 | `SM-69` | BLOCKED | should | S | Glyph-extent overflow guard and native regressions pass all five Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-69). |
-| `SM-56` | OPEN | should | S | Three Vulkan cleanup fixes compile on all native backends; finish wrapper/recovery failure regressions and stopped device qualification. Shader-failure case compiles but is unrun. |
 | `SM-58` | OPEN | could | M | Extract the reviewed D3D12 root-signature/PSO value owner now that SM-57 is closed; keep frame lifetime coordinated. |
 
 ## Input, menus, settings and saves

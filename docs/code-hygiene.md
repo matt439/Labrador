@@ -419,23 +419,48 @@ its completed unique owner outside that catch. Read-back retains the original
 without reading a lost frame. Pixel-shader creation now has a narrow catch
 that releases the successful vertex module and rethrows.
 
-All five native Debug render targets build, including all four pixel binaries,
-with manifest installation disabled and existing local dependencies; each
-backend's headless `RenderTests` passes. The new pixel case in
-`tests/render/vulkan/shader_failure_tests.cpp` forwards ordinary loader calls,
-injects a second-module API failure and checks the original error and vertex
-destruction device/count. It compiles but has **not run**: its construction
-creates a real device. It neither simulates genuine device loss nor exhausts
-memory. All standalone lint/fixture checks pass. Independent read-only review
-finds no ownership/exception or test-forwarding issue. The website check,
-160 tests and 143-page build pass.
+**Closed 2026-10-29.** `tests/render/vulkan/cleanup_failure_tests.cpp` adds
+two Vulkan `RenderPixelTests` cases. Executable-local loader forwards record
+the handles each path creates and every destruction with its device.
 
-**Still open:** deterministic wrapper-allocation and recovery-exception
-regressions are not yet implemented. The new shader case, pixel/resource,
-upload/pending-submission and `validate_sync` runs remain at the existing
-stopped GPU gate, which was not retried. Builds/headless arithmetic do not
-qualify those error paths. Keep this story unchecked. Local build logs use
-the `sm56-` prefix under `out/loop-2026-10-28-2114/`.
+- "Vulkan texture wrapper allocation failure destroys its image, memory and
+  view once" locates the `VulkanTexture` allocation in an identical new-name
+  load through the Debug CRT hook in `tests/render/allocation_scope.h`, then
+  refuses exactly that attempt. The load throws `std::bad_alloc`; the image,
+  its bound memory and its view are each destroyed once through their creating
+  device before the exception leaves, nothing is published, and fixture
+  teardown releases none of them again. The case is Debug/DLL-CRT only.
+- "Vulkan read-back releases its buffer through the original device after
+  reported loss" makes the read-back submit answer `VK_ERROR_DEVICE_LOST`
+  through `tests/render/vulkan/submit_loss.h`, which the executable's single
+  `vkQueueSubmit` forward in `pending_submission_tests.cpp` consults. In one
+  subcase recovery succeeds: the lost-frame error is thrown, the caller's
+  bytes are untouched and the next frame reads back. In the other, the
+  replacement device's timeline semaphore is refused: the recovery's own
+  `The frame timeline could not be created (VK_ERROR_OUT_OF_DEVICE_MEMORY).`
+  reaches the caller. In both, the read-back buffer and memory are released
+  once through the original device, before that device is destroyed. The loss
+  is reported, not a genuine device removal.
+
+Reintroducing wrapper allocation after the cleanup block, or read-back cleanup
+through the current device, fails these cases. The existing shader-failure
+case now runs and passes.
+
+At `b96bad6` with SM-57's and these regressions, on the RTX 5080 (NVIDIA
+616.92) with Vulkan SDK 1.4.357.0, all five native Debug presets built and
+`ctest --preset <preset> --output-on-failure` passed: `x64-debug` 20/20,
+`x64-debug-d3d12` 21/21, `x64-debug-gl` 20/20, `x64-debug-vulkan` 20/20 and
+`x64-debug-null` 19/19. Vulkan `RenderPixelTests` ran 65 cases and 49,753
+assertions, including the upload, submit-failure, submit-allocation and three
+pending-submission regressions. It was then run alone with the review's
+section 2 `vk_layer_settings.txt` (`validate_sync` and best practices, output
+to stdout) through `VK_LAYER_SETTINGS_PATH`, with
+`VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation` and a loader trace confirming
+layer insertion. All 65 cases passed with **zero validation errors and zero
+SYNC-HAZARD reports**. The only output was 829 best-practices performance
+warnings about small dedicated buffer/image allocations, the known
+no-suballocator cost. All standalone lint and fixture checks pass. Logs are
+`out/ctest-<preset>.log` and `out/sm56-validate-sync/` in the working tree.
 
 ## SM-57. D3D12 replacement texture publication
 

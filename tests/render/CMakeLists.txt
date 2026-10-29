@@ -187,6 +187,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             vulkan/initialization_tests.cpp
             vulkan/shader_failure_tests.cpp
             vulkan/pending_submission_tests.cpp
+            vulkan/cleanup_failure_tests.cpp
         )
         target_link_libraries(RenderPixelTests PRIVATE Vulkan::Vulkan)
 

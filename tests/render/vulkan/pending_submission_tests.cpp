@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "tests/render/test_window.h"
+#include "tests/render/vulkan/submit_loss.h"
 
 #include "engine/render/vulkan/backend.h"
 #include "engine/render/resource_factory.h"
@@ -386,6 +387,11 @@ namespace
 extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkQueueSubmit(VkQueue queue,
 	uint32_t count, const VkSubmitInfo* submissions, VkFence fence)
 {
+	if (render_tests::reported_submit_losses > 0)
+	{
+		--render_tests::reported_submit_losses;
+		return VK_ERROR_DEVICE_LOST;
+	}
 	const VulkanCalls& calls = real_calls();
 	SubmitRecord* record = active_submit;
 	if (record == nullptr)
