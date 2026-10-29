@@ -32,6 +32,39 @@ A request is weighed on the trade-offs in
 declined, and a decline gives its reason in those terms. One person maintains
 this project, and no answer time is promised for any issue.
 
+### How a request is closed
+
+The request form labels every request `enhancement`. Closing it adds one of
+two more labels and a closing comment that is the record:
+
+- **`answered`**: the comment names the commit on `master` that met the need.
+  If the answer is consumer-visible, its [CHANGES.md](CHANGES.md) entry links
+  the request, so a pin move across it shows which workaround it retires.
+- **`declined`**: closed as not planned. The comment names the PHILOSOPHY
+  trade-off it rests on (T1 to T12, or the section) and what would reopen it,
+  such as a second client asking or a measurement moving. A decline resting on
+  a measurement is re-taken when the measurement moves, not re-cited.
+
+Requests without either label are open. These searches separate the three:
+
+- [open](https://github.com/matt439/Labrador/issues?q=is%3Aissue+label%3Aenhancement+is%3Aopen):
+  `is:issue label:enhancement is:open`
+- [answered](https://github.com/matt439/Labrador/issues?q=is%3Aissue+label%3Aanswered):
+  `is:issue label:answered`
+- [declined](https://github.com/matt439/Labrador/issues?q=is%3Aissue+label%3Adeclined):
+  `is:issue label:declined`
+
+Before filing, the declined search shows whether a need was already turned
+down and on what terms. The engine's decisions on ColourWars' reports, made
+ahead of their filing, are in [the client reports table](docs/review/colourwars-reports/README.md).
+
+The two labels are repository settings the owner creates once:
+
+```text
+gh label create answered --color 0e8a16 --description "Request met; the closing comment names the commit"
+gh label create declined --color b60205 --description "Request declined; the closing comment names the trade-off and what would reopen it"
+```
+
 ## The procedure
 
 1. **Branch from `master`.** One short-lived branch per change.

@@ -8,7 +8,7 @@ body:
       value: |
         **A request leads with its exhibit.** The engine grows only from a real client game in hand (PHILOSOPHY T1), so the strongest request shows the code your game wrote to get around the gap, which the change would let you delete. A request with no exhibit can still be filed, and is answered as a question about whether a client needs the change.
 
-        Requests are weighed on the trade-offs in [PHILOSOPHY.md](https://github.com/matt439/Labrador/blob/master/docs/design/PHILOSOPHY.md), T1 to T12. One may be declined, and a decline says which trade-off it rests on. One person maintains this project and no answer time is promised.
+        Requests are weighed on the trade-offs in [PHILOSOPHY.md](https://github.com/matt439/Labrador/blob/master/docs/design/PHILOSOPHY.md), T1 to T12. One may be declined, and a decline says which trade-off it rests on. A closed request is labelled `answered`, with the commit that met it, or `declined`, with the trade-off and what would reopen it; [CONTRIBUTING.md](https://github.com/matt439/Labrador/blob/master/CONTRIBUTING.md#how-a-request-is-closed) has the searches. One person maintains this project and no answer time is promised.
   - type: textarea
     id: need
     attributes:

@@ -34,6 +34,11 @@ is headed by the date and the commit's subject; `git log --grep` with the
 subject finds the hash. The backfill below was written after the fact and is
 headed by hash.
 
+An entry that answers an engine request links the issue it answers, so a pin
+move across it shows which workaround it retires;
+[CONTRIBUTING.md](CONTRIBUTING.md#how-a-request-is-closed) says how the
+request is closed.
+
 The text of an entry stays in this file. A header comment states the contract
 as it is now and never what it used to be
 ([CONVENTIONS](docs/design/CONVENTIONS.md), *Comments*), so a change described
