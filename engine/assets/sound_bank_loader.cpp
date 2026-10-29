@@ -87,9 +87,9 @@ namespace labrador
 			definition.effects.push_back(
 				SoundBankDefinition::Effect{ name, wave });
 
-			// An effect may not name a wave the `waves` array did not list. The
-			// list is what a backend with no container answers wave_index out of,
-			// so a wave nothing declares is a wave nothing can find.
+			// An effect may name a wave omitted from `waves`. Add it to the
+			// union used by a backend without a container for wave_index,
+			// preserving first-seen order without duplicate waves.
 			if (!holds(definition.waves, wave))
 			{
 				definition.waves.push_back(wave);

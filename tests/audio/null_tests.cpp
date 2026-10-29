@@ -14,7 +14,7 @@
 
 using namespace labrador;
 
-// What an audible bank actually played, on a machine with no sound card.
+// Commands a content-backed bank sends through the null audio seam.
 //
 // THIS FILE IS docs/survey/2026-08-26.md 3.4b's PRODUCT, and 3.4a's list is
 // what it spends. That list said: eight of SoundBank's thirteen instance
@@ -32,7 +32,8 @@ using namespace labrador;
 // backend is chosen at build time, so a test that names one only compiles when
 // that one is built: tests/audio/CMakeLists.txt adds this file when
 // LABRADOR_AUDIO_BACKEND is null, exactly as tests/render/ adds its own
-// null_tests.cpp. The rest of AudioTests is identical in every configuration.
+// null_tests.cpp. Other AudioTests sources follow their own backend and
+// native Debug conditions in the same CMake file.
 //
 // WHAT IT DOES NOT ASSERT. Nothing here is about sound. There is no mixer, no
 // sample rate and no clock behind these calls, so a case cannot say that two

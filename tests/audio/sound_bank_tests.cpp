@@ -17,9 +17,11 @@ using namespace labrador;
 // So every case below runs against SoundBank::silent(), and what
 // they pin is the contract that survives missing content.
 //
-// tests/audio/null_tests.cpp is the other half and the only place in the tree
-// where a sound can be asserted to have happened. Read the two together before
-// concluding anything about audio coverage from this file alone.
+// tests/audio/null_tests.cpp covers content-backed bank calls through the
+// null backend's recording. The null-only allocation case in
+// audio_resources_failure_tests.cpp also records calls after restoring its
+// allocation probe. These checks establish command and state behavior;
+// listening remains separate.
 //
 // The audible bank's observable behaviour is pinned in the null configuration
 // (engine/audio/null/), where tests/audio/null_tests.cpp reads back what
