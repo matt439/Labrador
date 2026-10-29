@@ -13,8 +13,15 @@ import presets from '~/walkthrough/CMakePresets.json?raw';
 import gitignore from '~/walkthrough/gitignore.txt?raw';
 
 Starting a game on Labrador means copying the minimal sample and owning everything inside it.
-Your project is its own repository. Labrador sits inside it as a Git submodule, pinned to the
-commit you chose, and is built as part of your build.
+On this page your project is its own repository. Labrador sits inside it as a Git submodule,
+pinned to the commit you chose, and is built as part of your build.
+
+<Aside title="The starter ZIP is this page, done for you">
+Each release's [starter project](/docs/get-started/starter/) is the project this page makes,
+with the engine in it as a plain folder instead of a submodule, and it needs no Git. This page
+is for people who use Git, or who want to see each step. A starter project can become a
+repository like this one later: [Put your project in Git](/docs/guides/starter-to-git/).
+</Aside>
 
 This page calls the project `mygame`. Use your own name wherever that appears. The `name` in
 `vcpkg.json` takes only lowercase letters, digits and hyphens, so a project called `MyGame` is

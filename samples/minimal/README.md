@@ -3,7 +3,9 @@
 The new-project template: a greeting that moves and circles, a confirm-to-quit
 state, and a marker at every touch point. It is the folder a new game copies;
 [Start your own project](https://labradorengine.com/docs/get-started/your-project/)
-is the walkthrough.
+is the walkthrough, and each release's starter ZIP
+([Get the starter project](https://labradorengine.com/docs/get-started/starter/))
+is its result, ready-made.
 
 ## Making it your project
 

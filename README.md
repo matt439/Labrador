@@ -11,7 +11,8 @@ only: [why](https://labradorengine.com/why/), and
 **Website and documentation: [labradorengine.com](https://labradorengine.com/).**
 New here? [Get Started](https://labradorengine.com/docs/get-started/) takes an
 empty Windows machine to a game of your own that builds against Labrador, in
-five steps.
+three steps, from a release's starter ZIP and with no Git needed; the first
+release to carry one is the one after `v0.2.0`.
 
 The engine is the point, but an engine with no client is a library of guesses.
 Labrador has one: ColourWars, a split-screen paint-shooter that consumes this
@@ -200,7 +201,11 @@ The website's walkthrough,
 [Start your own project](https://labradorengine.com/docs/get-started/your-project/),
 builds a project of this shape from an empty folder: Labrador as a submodule,
 `samples/minimal` copied in as the game, and every file the project needs.
-Those files are in [website/src/walkthrough/](website/src/walkthrough/), whose
+Each release's `labrador-starter-vX.Y.Z.zip` is the same project ready-made,
+with the engine as a plain folder: it is made by
+[tools/consumer_check/starter_zip.py](tools/consumer_check/starter_zip.py),
+and [Get the starter project](https://labradorengine.com/docs/get-started/starter/)
+builds it. The walkthrough's files are in [website/src/walkthrough/](website/src/walkthrough/), whose
 README says how they were checked. `samples/minimal` is the starting point it
 copies, not a consumer: it is built inside this repository, so it uses this
 repository's `vcpkg.json` and presets and has no include root of its own. It

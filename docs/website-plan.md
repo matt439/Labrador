@@ -47,7 +47,7 @@ Docs should contain distinct routes for learning and reference:
 
 | Section | Reader need | Planned content |
 | --- | --- | --- |
-| Get Started | Build something successfully | Windows prerequisites, clone and configure, run `minimal`, create an independent project, and make a first visible change. |
+| Get Started | Build something successfully | Windows prerequisites, a release's starter project built without Git (or, for readers who use Git, clone and configure, run `minimal` and create an independent project), and a first visible change. |
 | Concepts | Understand the engine’s model | Ownership, objects and batches, state flow, update and draw, scenes, cameras, views, and resources. |
 | Guides | Complete a task | Sprites and text, input, collision, audio, assets, menus, and local multiplayer. |
 | API Reference | Find an exact contract | Public types and functions, parameters, lifetimes, errors, and relevant examples, tied to an engine revision. |

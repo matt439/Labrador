@@ -20,29 +20,52 @@ to make, from one engine tree:
 It does not run `git init` or `git submodule add`, so the engine is a copy
 rather than a submodule, and it builds nothing. It also puts the example
 workflow the *Check your game in CI* guide gives at `.github/workflows/ci.yml`,
-where nothing runs it. CI's `consumer` job (`.github/workflows/ci.yml`) runs
-the script on every pull request and every push CI runs on, with the engine
-taken from that run's own checkout. It then does the configure and build of
-the page's step 7 and checks that the project's tests are the game's and not
-the engine's: the project's root enables testing, so every `add_test` in the
-tree is in the list `ctest -N` prints, and that list must be exactly
-`MyGameTests` and `MyGameSmokeTests`. An engine test, or an engine sample's,
-makes the count wrong. Then it runs them: the rules test, and the start-up
-check, which opens the game hidden, draws a few frames and quits, and needs a
-graphics device.
+where nothing runs it.
+
+`starter_zip.py` writes the same project, engine included, to a ZIP: the
+starter ZIP each release carries as `labrador-starter-vX.Y.Z.zip`, which
+*Get the starter project*
+(`website/src/content/docs/docs/get-started/starter.mdx`) has a reader
+download, extract and build without Git. Every entry is under one top folder,
+`mygame/`, so extracting it makes one folder; beside the project it holds
+`README.txt`, which names the Labrador version and commit and points at Get
+Started. Entries are sorted, carry the time of the tree's last commit and
+nothing else of the machine, so the same tree gives the same bytes. With
+`--release vX.Y.Z` it is named for that release and refuses a tree that is not
+exactly the tag: `vcpkg.json`'s `version-string` must match, `HEAD` must be
+the tag's commit, and nothing may be modified or untracked. Without it, it is
+`labrador-starter-dev.zip` and its README says it is not a release.
+CONTRIBUTING.md's *Cutting a release* attaches one to each release.
+
+CI's `consumer` job (`.github/workflows/ci.yml`) makes that ZIP on every pull
+request and every push CI runs on, from that run's own checkout, extracts it
+to `C:\dev\mygame` with Windows' own `tar`, and keeps it as the run's
+`labrador-starter` artifact. It then does the configure and build of the
+page's step 7 in the project as it came out of the ZIP and checks that the
+project's tests are the game's and not the engine's: the project's root
+enables testing, so every `add_test` in the tree is in the list `ctest -N`
+prints, and that list must be exactly `MyGameTests` and `MyGameSmokeTests`.
+An engine test, or an engine sample's, makes the count wrong. Then it runs
+them: the rules test, and the start-up check, which opens the game hidden,
+draws a few frames and quits, and needs a graphics device.
 
 To run it as CI does, from an x64 Native Tools Command Prompt with `VCPKG_ROOT`
 set, into a folder whose path is short (CI uses `C:\dev\mygame`, the page's
 own; the prerequisites page says why a long one fails):
 
 ```bat
-python tools\consumer_check\assemble.py C:\dev\mygame
+python tools\consumer_check\starter_zip.py C:\dev
+cd /d C:\dev
+tar -xf labrador-starter-dev.zip
 cd /d C:\dev\mygame
 cmake --preset x64-debug
 cmake --build --preset x64-debug
 ctest -N --test-dir out\build\x64-debug
 ctest --preset x64-debug
 ```
+
+`python tools\consumer_check\assemble.py C:\dev\mygame` makes the same folder
+without the ZIP or its `README.txt`.
 
 The listing must end `Total Tests: 2` and name `MyGameTests` and
 `MyGameSmokeTests`, and the last command must pass both.
@@ -94,8 +117,8 @@ GPU and driver needs a real machine. `run.cmd` takes a release folder as its arg
 to try it on the host first. Windows Sandbox needs Windows Pro or Enterprise,
 and an administrator to enable the *Windows Sandbox* optional feature.
 
-CI's `wasm-consumer` job assembles the same project and builds the page's browser
-preset, from *Build for the browser*
+CI's `wasm-consumer` job makes and extracts the same starter ZIP and builds the
+page's browser preset, from *Build for the browser*
 (`website/src/content/docs/docs/guides/browser.mdx`). To run that as it does,
 from a prompt where Emscripten's `emsdk_env.bat` has also been run, so that
 `EMSDK` and `EMSDK_NODE` are set, and with the engine's own `wasm-release`
@@ -103,7 +126,9 @@ build present for the Chrome its configure found (or name any Chromium
 yourself):
 
 ```bat
-python tools\consumer_check\assemble.py C:\dev\mygame
+python tools\consumer_check\starter_zip.py C:\dev
+cd /d C:\dev
+tar -xf labrador-starter-dev.zip
 cd /d C:\dev\mygame
 cmake --preset wasm-release
 cmake --build --preset wasm-release
@@ -114,5 +139,7 @@ ctest --preset wasm-release
 ctest runs `MyGameTests` alone, under Node, and the last command must end
 `Module.onQuit was called` and exit 0.
 
-`--engine <path>` consumes another engine tree than the checkout the script is
-in. The folder must be new or empty; delete it to assemble again.
+`--engine <path>` consumes another engine tree than the checkout either script
+is in. `assemble.py`'s folder must be new or empty; delete it to assemble
+again. `tar` overwrites the files of a `C:\dev\mygame` that is there already
+but deletes none, so delete the folder before extracting a ZIP again.

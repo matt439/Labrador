@@ -1,0 +1,16 @@
+---
+// Shows its content only when the site knows of a release that carries a
+// starter ZIP (when="available"), or only when it knows of none
+// (when="missing"), so that Get Started does not send a reader past Git
+// before there is a ZIP to download.
+import { starterRelease } from '../lib/starter';
+
+interface Props {
+	when: 'available' | 'missing';
+}
+
+const known = starterRelease() !== undefined;
+const show = known === (Astro.props.when === 'available');
+---
+
+{show && <slot />}

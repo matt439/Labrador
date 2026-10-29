@@ -1,0 +1,257 @@
+---
+title: Get the starter project
+description: Download a game project with Labrador inside it, extract it, build it and play it, without Git.
+---
+
+import { FileTree, Steps } from '@astrojs/starlight/components';
+import StarterDownload from '~/components/StarterDownload.astro';
+
+Each Labrador release comes with a **starter ZIP**: a game project of your own, made from the
+engine's minimal sample, with the engine inside it. You download it, extract it, build it and
+play it. You do not need Git, and you do not build Labrador on its own first.
+
+The project is exactly the one [Start your own project](/docs/get-started/your-project/) makes
+by hand, so every later page applies to it in the same way. The only difference is that its
+engine folder is a plain copy rather than a Git submodule;
+[Put your project in Git](/docs/guides/starter-to-git/) changes that whenever you want to.
+
+Before you start, do [Install the tools](/docs/get-started/prerequisites/). Every command on
+this page runs in the x64 Native Tools Command Prompt, one box at a time, in order.
+
+<Steps>
+
+1. **Go to your projects folder.** Open the x64 Native Tools Command Prompt and run:
+
+   ```bat
+   cd /d C:\dev
+   dir /b
+   ```
+
+   The prompt now ends `C:\dev>`, and `dir /b` lists what is already in the folder, which may
+   be nothing, or `File Not Found`. If the list has `mygame` in it, you already have a project
+   called `mygame`: extracting another starter here would overwrite its files with the
+   starter's. Do step 2 to download the ZIP, then follow [A second project](#a-second-project)
+   below in place of steps 3 and 4.
+
+2. **Download the starter ZIP.**
+
+   <StarterDownload part="download" />
+
+3. **Extract it**, still in `C:\dev`:
+
+   <StarterDownload part="extract" />
+
+   `tar` comes with Windows 10 and later, and extracts ZIP files as well as its own kind. It
+   prints nothing when it works. The ZIP holds one folder, `mygame`, so you now have
+   `C:\dev\mygame`. Check it:
+
+   ```bat
+   dir /b mygame
+   ```
+
+   ```text title="Output"
+   .github
+   .gitignore
+   CMakeLists.txt
+   CMakePresets.json
+   external
+   game
+   README.txt
+   vcpkg.json
+   ```
+
+   If `tar` says `Error opening archive: Failed to open`, the ZIP is not in `C:\dev`, or has
+   another name: `dir /b C:\dev\*.zip` lists the ZIP files that are there.
+
+   To extract it with File Explorer instead, right-click the ZIP and choose **Extract All...**.
+   In the box under *Files will be extracted to this folder*, replace the folder shown with
+   `C:\dev`, then click **Extract**. If you kept the folder Explorer suggested, named after the
+   ZIP, the project is in a `mygame` folder inside that one and its path is longer than it
+   should be:
+   [The project is in a folder named after the ZIP](/docs/troubleshooting/#the-project-is-in-a-folder-named-after-the-zip)
+   has the box that moves it to `C:\dev\mygame`.
+
+4. **Go into the project:**
+
+   ```bat
+   cd /d C:\dev\mygame
+   ```
+
+   The prompt ends `C:\dev\mygame>`. Every later command runs in this folder.
+
+5. **Configure the build:**
+
+   ```bat
+   cmake --preset x64-debug
+   ```
+
+   A *preset* is a named configuration in the project's `CMakePresets.json`. `x64-debug` is a
+   64-bit debug build using the Direct3D 11 renderer, with its output in `out\build\x64-debug`.
+
+   The first time, vcpkg downloads and builds the libraries the engine uses: DirectX Tool Kit
+   and the DirectXMath library it uses, the XAudio2 redistributable, and the doctest test
+   framework. It also downloads a CMake and a PowerShell of its own if it finds Visual Studio's
+   unsuitable. If Git is not installed, it prints
+   `A suitable version of git was not found` and downloads a private copy of Git, about 60 MB,
+   which it uses only to read its list of package versions. That is expected, and you never run
+   Git yourself. With nothing cached, on a fast desktop, this configure took 2 minutes 8
+   seconds, a minute of it building DirectX Tool Kit, and downloaded about 400 MB. A slower
+   machine can take much longer; leave the window alone until the prompt comes back. vcpkg
+   keeps what it downloaded and built, so later configures are quick.
+
+   It has worked when the last lines are these:
+
+   ```text title="Output"
+   -- Configuring done
+   -- Generating done
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   ```
+
+   CMake also prints a time in brackets after each `done`. If it ends with `Configuring
+   incomplete, errors occurred!` instead, find the first line that says `Error` and look it up
+   in [Troubleshooting](/docs/troubleshooting/). The usual ones are
+   [the wrong command prompt](/docs/troubleshooting/#the-wrong-command-prompt) and
+   [`Could not find toolchain file`](/docs/troubleshooting/#could-not-find-toolchain-file-scriptsbuildsystemsvcpkgcmake).
+
+6. **Build it:**
+
+   ```bat
+   cmake --build --preset x64-debug
+   ```
+
+   This compiles the engine and your game, which took 7 seconds on the same desktop. Ninja
+   numbers each step as it goes, such as `[57/97]`, and a build that worked stops at the last
+   number with no line saying `FAILED`. Warnings are errors in this project, so a successful
+   build has none.
+
+7. **Run the tests:**
+
+   ```bat
+   ctest --preset x64-debug
+   ```
+
+   ctest lists the two tests as it runs them, each ending `Passed`, and then reports
+   `100% tests passed, 0 tests failed out of 2`. `MyGameTests` checks the game's rules with no window. `MyGameSmokeTests` starts the game
+   hidden, lets it draw a few frames and quits, so it also tells you the game can start on your
+   machine. [Test your game](/docs/guides/testing/) explains both.
+
+8. **Play it:**
+
+   ```bat
+   out\build\x64-debug\game\MyGame.exe
+   ```
+
+   A 1280×720 window opens with the line *Hello from the engine.* circling a point, and a hint
+   along the bottom. Move the point with the left stick of a gamepad, the arrow keys or WASD.
+   Press **B** or **Escape** and the game asks whether you really want to quit; **A** or
+   **Enter** quits, and **B** or **Escape** goes back. The prompt is ready for the next command
+   as soon as the window opens.
+
+   If the prompt answers `'out\build\x64-debug\game\MyGame.exe' is not recognized as an
+   internal or external command, operable program or batch file.` or
+   `The system cannot find the path specified.`, the build in step 6 did not finish: run it
+   again and read its last lines.
+
+</Steps>
+
+That is your game. [Make a first change](/docs/get-started/first-change/) changes what it says
+and how it moves. [Run the minimal sample](/docs/get-started/run-minimal/#what-you-are-looking-at)
+explains which code makes each thing on the screen; your `game` folder is a copy of that
+sample.
+
+## What is in the folder
+
+<FileTree>
+- mygame/
+  - README.txt which Labrador release this is, and where these pages are
+  - CMakeLists.txt your build, which builds Labrador first
+  - CMakePresets.json
+  - vcpkg.json the engine's dependencies, at the engine's versions
+  - .gitignore for when you put the project in Git
+  - .github/
+    - workflows/
+      - ci.yml a GitHub Actions workflow for when it is on GitHub
+  - external/
+    - labrador/ the engine, which you do not edit
+  - game/ yours: the code and content of your game
+    - main.cpp
+    - states/
+    - rules/
+    - content/
+    - tests/
+</FileTree>
+
+[Start your own project](/docs/get-started/your-project/) explains each of these files, since
+it makes them one at a time. Everything you change is in `game`. Leave `external\labrador` as
+it is: moving to a newer Labrador replaces it, and
+[Move a starter project to a newer Labrador](/docs/guides/starter-update/) says how.
+
+## Coming back later
+
+A new command prompt starts in its own folder. Each time you open the x64 Native Tools Command
+Prompt to carry on, go back to the project first:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+The build only recompiles what changed, so running the build, test and play lines again is
+always safe.
+
+## Starting the build again from nothing
+
+The build folder remembers how it was configured. After a configure failed, or after you change
+something it depends on, such as `VCPKG_ROOT`, the folder the project is in, or which prompt you
+use, delete the build folder and configure again. From the `mygame` folder:
+
+```bat
+rmdir /s /q out\build\x64-debug
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+```
+
+`rmdir /s /q` deletes the folder and everything in it without asking, so check that the prompt
+ends `mygame>` before you run it. It deletes only what the build made.
+
+## A second project
+
+Every starter ZIP holds a folder called `mygame`, so a second project is extracted somewhere
+else first and then moved to a name of its own. Download the ZIP into `C:\dev` first, as in
+step 2, if you have not already.
+
+Then choose the project's name. Paste this line, but **before you press Enter, change
+`secondgame` to the name you want**, short and without spaces, as
+[Typing the commands](/docs/get-started/prerequisites/#typing-the-commands) shows:
+
+<StarterDownload part="second-name" />
+
+It prints nothing. Then run this box. It extracts the ZIP into a new folder, `C:\dev\unpack`,
+moves the project to the name you chose, deletes what is left of `unpack`, and goes into the
+new project:
+
+<StarterDownload part="second" />
+
+`move` prints `1 dir(s) moved.`, and the prompt ends with the new project's folder. If it says
+`already exists. Choose another name.` instead, a folder of that name is there already and
+nothing was moved, and the prompt is now in that other folder: run the name line again with
+another name, then this box again. Then build the new project from step 5. The program in it is still called `MyGame.exe`; the names inside
+the project are explained on [Start your own project](/docs/get-started/your-project/).
+
+## What was checked
+
+On 30 October 2026, a starter ZIP made by the same tool from the change that added this page
+was extracted with Windows' `tar` into a new folder, then configured, built and tested in the
+x64 Native Tools Command Prompt of Visual Studio 2026, with Git hidden from vcpkg and vcpkg's
+download, package and registry caches empty. vcpkg downloaded its own Git and everything else,
+and the configure, build and tests all passed, with the times above. In Windows Sandbox, where
+Git has never been installed, Visual Studio's vcpkg also downloaded its own Git and read its
+package list. The same ZIP was extracted by Windows' own ZIP handling, the one **Extract All**
+uses, into the same single `mygame` folder. The boxes that move a ZIP from **Downloads**,
+extract it by the start of its name, make a second project, and move a project out of the
+folder **Extract All** suggests were run as written in a command prompt, with a drive letter
+standing in for `C:\dev`, the ZIP renamed as a release's would be, and the command prompt's
+`USERPROFILE` pointed at a stand-in for the Downloads folder's parent.
+
+No release has carried a starter ZIP yet, so the download step has not been run against a real
+release, and the **Extract All** dialog itself was not clicked through. CI makes a starter ZIP
+from every change, extracts it with `tar`, and builds and tests the project in it.

@@ -11,6 +11,10 @@ Your project pins Labrador: `external/labrador` is a submodule, and your reposit
 one commit of it you build against. Nothing moves that pin for you. To move the pin to a newer
 release, follow the steps below in order. Each one checks something before the next relies on it.
 
+This page is for a project in Git. If your project came from the
+[starter ZIP](/docs/get-started/starter/) and `external\labrador` is a plain folder, follow
+[Move a starter project to a newer Labrador](/docs/guides/starter-update/) instead.
+
 The commands are for the x64 Native Tools Command Prompt in your project's folder. The examples
 move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
 
@@ -90,7 +94,7 @@ move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
    ```
 
    A project started before v0.2.0 has no test presets and no tests, so `ctest --preset` stops
-   with `No such test preset`; run `ctest --test-dir outuildd-debug` instead, or take the
+   with `No such test preset`; run `ctest --test-dir out\build\x64-debug` instead, or take the
    template list's *Tests, from the start* entry, which adds both.
 
    Configure installs whatever a changed baseline or a new dependency needs. The build applies

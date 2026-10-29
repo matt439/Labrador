@@ -1,0 +1,110 @@
+---
+// The download and extract commands of Get the starter project, for the
+// release starterRelease() names. When the site knows of no release that
+// carries a starter ZIP, the reader downloads it with the browser and every
+// command finds it by the start of its name, so nothing has a version to fill
+// in.
+import { Code } from '@astrojs/starlight/components';
+import { REPOSITORY_URL, starterRelease } from '../lib/starter';
+import { sitePath } from '../lib/site-path';
+
+interface Props {
+	// download: into C:\dev; extract: tar in C:\dev; second-name: the name of a
+	// second project; second: extracted aside and moved to that name; update:
+	// extracted into C:\dev\new.
+	part: 'download' | 'extract' | 'second-name' | 'second' | 'update';
+}
+
+const { part } = Astro.props;
+const starter = starterRelease();
+// One line that extracts the starter ZIP in C:\dev into folder, or into the current folder.
+const extract = (folder?: string) => {
+	const into = folder ? ` -C ${folder}` : '';
+	return starter
+		? `tar -xf C:\\dev\\${starter.asset}${into}`
+		: `for %f in (C:\\dev\\labrador-starter-*.zip) do tar -xf "%f"${into}`;
+};
+const download = starter ? [`cd /d C:\\dev`, `curl -fL -o ${starter.asset} ${starter.downloadUrl}`].join('\n') : '';
+const fromDownloads = starter
+	? `move "%USERPROFILE%\\Downloads\\${starter.asset}" C:\\dev\\`
+	: [
+			`del C:\\dev\\labrador-starter-*.zip`,
+			`move "%USERPROFILE%\\Downloads\\labrador-starter-*.zip" C:\\dev\\`,
+			`dir /b C:\\dev\\labrador-starter-*.zip`,
+		].join('\n');
+const commands: Record<Exclude<Props['part'], 'download'>, string> = {
+	extract: [`cd /d C:\\dev`, extract()].join('\n'),
+	'second-name': `set "NAME=secondgame"`,
+	second: [
+		`mkdir C:\\dev\\unpack`,
+		extract('C:\\dev\\unpack'),
+		`if exist "C:\\dev\\%NAME%" (echo C:\\dev\\%NAME% already exists. Choose another name.) else (move C:\\dev\\unpack\\mygame "C:\\dev\\%NAME%")`,
+		`rmdir /s /q C:\\dev\\unpack`,
+		`cd /d "C:\\dev\\%NAME%"`,
+	].join('\n'),
+	update: [`mkdir C:\\dev\\new`, extract('C:\\dev\\new')].join('\n'),
+};
+const gitRoute = sitePath('/docs/get-started/build-labrador/');
+const installGit = sitePath('/docs/get-started/prerequisites/#install-git');
+const tellGit = sitePath('/docs/get-started/prerequisites/#tell-git-who-you-are');
+---
+
+{part === 'download' && starter && (
+	<>
+		<p>
+			The starter ZIP for Labrador <code>{starter.tag}</code> is <code>{starter.asset}</code>. This downloads it into{' '}
+			<code>C:\dev</code>, with the <code>curl</code> program that comes with Windows:
+		</p>
+		<Code code={download} lang="bat" />
+		<p>
+			<code>curl</code> draws a small table while it downloads, about 9 MB, and the prompt comes back when it has
+			finished. If it ends with <code>curl: (22) The requested URL returned error: 404</code> instead, there is no file
+			of that name at that address: open <a href={starter.releaseUrl}>Labrador {starter.tag}'s release page</a> and
+			download it with your browser, as below.
+		</p>
+		<p>
+			To download it with your browser instead, open <a href={starter.releaseUrl}>Labrador {starter.tag}'s release page</a>,
+			find <code>{starter.asset}</code> in its <strong>Assets</strong> list and click it. Your browser saves it in your{' '}
+			<strong>Downloads</strong> folder. This moves it to <code>C:\dev</code>:
+		</p>
+		<Code code={fromDownloads} lang="bat" />
+		<p>
+			<code>move</code> prints <code>1 file(s) moved.</code> If it says <code>The system cannot find the file
+			specified.</code>, your browser saved the file somewhere else: press <strong>Ctrl+J</strong> in the browser to see
+			where.
+		</p>
+	</>
+)}
+{part === 'download' && !starter && (
+	<>
+		<p>
+			Open <a href={`${REPOSITORY_URL}/releases/latest`}>Labrador's newest release</a> on GitHub and look in its{' '}
+			<strong>Assets</strong> list, near the bottom of the page, for a file whose name begins <code>labrador-starter-</code>,
+			such as <code>labrador-starter-v0.3.0.zip</code>. Releases up to <code>v0.2.0</code> have no starter ZIP.
+		</p>
+		<p>
+			<strong>If the newest release has none</strong>, the first release with one has not come out yet, and the way to
+			start is <a href={gitRoute}>the Git route</a>, which makes the same project but needs Git. Do steps{' '}
+			<a href={installGit}>2, Install Git</a>, and <a href={tellGit}>5, Tell Git who you are</a>, of Install the tools,
+			close this command prompt, open a new x64 Native Tools Command Prompt, so that it finds Git, and begin at{' '}
+			<a href={gitRoute}>Build Labrador</a>.
+		</p>
+		<p>
+			<strong>If it is there</strong>, click it. Your browser saves it in your <strong>Downloads</strong> folder. This box
+			moves it to <code>C:\dev</code>. Its first line deletes any starter ZIP already in <code>C:\dev</code> from an
+			earlier download, so that only the new one is there; it says <code>Could Not Find</code> when there is none, which
+			is fine. The last line lists the starter ZIP now in <code>C:\dev</code>:
+		</p>
+		<Code code={fromDownloads} lang="bat" />
+		<p>
+			<code>move</code> prints the file's path and <code>1 file(s) moved.</code>, and the last line prints the ZIP's
+			name, with its version after <code>labrador-starter-</code>. If <code>move</code> says <code>A duplicate file name
+			exists, or the file cannot be found.</code>, the ZIP is not in your <strong>Downloads</strong> folder: press{' '}
+			<strong>Ctrl+J</strong> in the browser to see where it went. If the last line lists more than one ZIP, your{' '}
+			<strong>Downloads</strong> folder held an older starter ZIP as well. Delete them all with
+		</p>
+		<Code code={`del C:\\dev\\labrador-starter-*.zip`} lang="bat" />
+		<p>then download the newest one again and run the box above again.</p>
+	</>
+)}
+{part !== 'download' && <Code code={commands[part]} lang="bat" />}
