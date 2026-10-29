@@ -655,7 +655,7 @@ written.
   says that it read committed metadata only: no live response or bundle bytes.
   All seven standalone checks, website check (zero diagnostics), 160 website
   tests and the 144-page/433-file build pass. No live request or deploy ran.
-- [ ] **[SM-29](STORIES.md#sm-29)** Could · S · The Sole Owner-Maintainer: A procedure for previewing and rolling back the site — after SM-31
+- [x] **[SM-29](STORIES.md#sm-29)** Could · S · The Sole Owner-Maintainer: A procedure for previewing and rolling back the site — after SM-31
   Source procedure added 2026-10-29 in [website/README.md](../../website/README.md#preview-and-recovery):
   select the matching successful workflow artifact, preserve its revision in
   a separate review checkout, serve its existing dist and record affected-page
@@ -665,9 +665,20 @@ written.
   Cloudflare rollback steps were added 2026-10-29 from Cloudflare's versions,
   rollbacks and Wrangler command documentation: the dashboard Deployments
   route, `wrangler rollback <VERSION_ID> --message`, the 100-version limit and
-  a version carrying its static assets. No rollback or dashboard visit was
-  made; artifact-preview service, live-site and actual recovery checks remain
-  unrun, so the story stays unchecked until the owner confirms the route.
+  a version carrying its static assets. Closed 2026-10-29 with the owner's
+  Cloudflare authorization. Wrangler 4.155.0 was signed in to the owner's
+  account. `deployments list` and `versions list --name labrador` returned
+  ten of each, and `deployments status` showed version `cedd5137` live from
+  07:33 UTC. `rollback --help` and Cloudflare's command page confirm the
+  documented syntax: `--message` skips the confirmation, and omitting the ID
+  rolls back to the previous upload. The live footer named `b96bad6`, the
+  master commit that deployment followed. An unknown route returned 404, and
+  `sitemap-index.xml` named `labradorengine.com`. Website run 40836037018's
+  artifact for `b96bad6` was downloaded into a fresh `b96bad6` review checkout
+  and served with `npm run preview`: its footer named `b96bad6`, Home, Why,
+  Docs and Versions answered 200, and an unknown route answered 404. No
+  rollback was performed and the dashboard was not opened. The wrangler route
+  and the version history it reads were confirmed against the real Worker.
   Independent source review, seven standalone checks, 90 offline Node tests,
   website check (zero diagnostics), 160 website tests and the 144-page/433-file
   build pass. Across two runs, all 182 permitted Python cases pass: the seven
