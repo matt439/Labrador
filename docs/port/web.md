@@ -1265,8 +1265,11 @@ their frames in `golden-actual/` beside the page, as on Windows. What it took:
   (`--use-angle=swiftshader`), Chrome on this machine now writes all 58
   frames byte for byte, as ANGLE over the RTX 5080 does; WARP
   (`--use-angle=d3d11-warp`) differs on two blend frames by 1.
-  `golden_image.cpp` holds the measurement, and the null-renderer step after
-  this one in `ci.yml` now runs whatever the pixel step says.
+  `golden_image.cpp` holds the measurement. The null backends now build and
+  test in CI's separate `wasm-null` job, which runs whatever the page steps
+  say: a deliberately failed sample page on a throwaway branch left
+  `wasm-null` running all 28 of its tests and turned both jobs red
+  ([web-to-be-tested.md](web-to-be-tested.md)).
 
 **M6's second item is done: a lost WebGL2 context is restored, and the shell
 hears it.** `RenderContextLossTests` pins it in headless Chrome, and
