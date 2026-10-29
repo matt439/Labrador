@@ -721,10 +721,13 @@ engine API to depend on.
   is not the alternative. A CPU rasteriser on a sixteen-core part is a fast CPU
   imitating a GPU, and it fails in a different shape from a slow GPU.
 - **It names a GPU, and nothing has been measured on it yet.** Holding the
-  process to four cores changes how many workers the fan-out gets, not how fast
-  one of them is, so every arithmetic figure in this tree remains a property of
-  a fast desktop — sized *against* this configuration rather than proven *on*
-  it. The four claims above do not all need the same evidence: a 256 KB vertex
+  process to four cores bounds how much CPU a frame may use, not how fast one
+  core is, so every arithmetic figure in this tree remains a property of a fast
+  desktop — sized *against* this configuration rather than proven *on* it.
+  `LineSweeperFrameBench` draws one view with no pool, so it measures the
+  single-view path; under the hold it bounds one serial frame, not the per-view
+  fan-out, which needs a pool and more than one view. The four claims above do
+  not all need the same evidence: a 256 KB vertex
   page is a memory budget and is checkable against a written spec, while the
   two about pipeline depth need latency evidence with stated endpoints. CPU
   update, CPU recording/submission, frame-start cadence, GPU execution and

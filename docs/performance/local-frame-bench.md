@@ -26,7 +26,12 @@ presentation pacing, so it is not passed. Its default still lands in the JSON
 as `workload.refresh_hz` 60 and `target_frame_ns`; under presentation pacing
 those are not the display's rate, which the machine file records. The presets
 are `x64-release-d3d12` and `x64-release-vulkan`, the pair SM-07's low-tier
-capture selects; `x64-release` (D3D11) and `x64-release-gl` take the same steps. The bench
+capture selects; `x64-release` (D3D11) and `x64-release-gl` take the same steps.
+
+The block launches each run held to four cores, as PHILOSOPHY defines the low
+tier. The bench draws one view through a `Scene` with no thread pool, so the
+hold bounds a single serial frame rather than a fan-out's worker count
+([PHILOSOPHY, Performance](../design/PHILOSOPHY.md#performance)). The bench
 refuses a Debug build.
 
 ## Before running
@@ -65,6 +70,14 @@ Get-CimInstance Win32_VideoController |
 Get-CimInstance Win32_OperatingSystem | Format-List Caption, Version |
     Out-File -Encoding utf8 -Append $machine
 
+# The four-core hold: the first four physical cores and their SMT siblings,
+# which Windows numbers next to each other.
+$cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+$threads = $cpu.NumberOfLogicalProcessors / $cpu.NumberOfCores
+$mask = [Int64][Math]::Pow(2, 4 * $threads) - 1
+$cpu | Format-List Name, NumberOfCores, NumberOfLogicalProcessors |
+    Out-File -Encoding utf8 -Append $machine
+
 foreach ($preset in 'x64-release-d3d12', 'x64-release-vulkan') {
     cmake --preset $preset
     if ($LASTEXITCODE) { throw "$preset configure failed" }
@@ -75,13 +88,32 @@ foreach ($preset in 'x64-release-d3d12', 'x64-release-vulkan') {
     $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $exe).Hash.ToLowerInvariant()
     $backend = $preset -replace '^x64-release-', ''
     $run = "local-$commit-$backend-$repetition"
-    & $exe --output "$out/$run.json" --run $run --release-hash $hash `
-        --warmup 1800 --sample 3600 --pacing presentation
-    if ($LASTEXITCODE) { throw "$preset run failed" }
+
+    # A child inherits its parent's affinity at creation, so the bench is held
+    # from its first instruction; the shell gets its own mask back afterwards.
+    $shell = [Diagnostics.Process]::GetCurrentProcess()
+    $saved = $shell.ProcessorAffinity
+    $shell.ProcessorAffinity = [IntPtr]$mask
+    try {
+        $bench = Start-Process -FilePath $exe -NoNewWindow -PassThru -ArgumentList `
+            '--output', "$out/$run.json", '--run', $run, '--release-hash', $hash,
+            '--warmup', '1800', '--sample', '3600', '--pacing', 'presentation'
+        $null = $bench.Handle
+        $held = '0x{0:X}' -f $bench.ProcessorAffinity.ToInt64()
+    } finally {
+        $shell.ProcessorAffinity = $saved
+    }
+    "$run held to affinity $held" | Out-File -Encoding utf8 -Append $machine
+    $bench.WaitForExit()
+    if ($bench.ExitCode) { throw "$preset run failed" }
 }
 ```
 
-Each backend takes its build time plus 5,400 frames, 90 seconds at 60 Hz.
+The hold is confirmed from the running process, not from the request: the
+machine file's `held to affinity` line is `ProcessorAffinity` read back from
+the bench a moment after it started, and should equal `0xFF` on a part with
+two threads per core (`0xF` with one). Each backend takes its build time plus
+5,400 frames, 90 seconds at 60 Hz.
 Each run prints `Wrote 3600 retained frames to <path> (<backend>, <class>)`.
 A refusal prints the usage line and the reason, exits 1 and writes nothing.
 Run the block again with `$repetition` raised for another repetition.
@@ -119,6 +151,32 @@ The D3D12 run has eight intervals over 20 ms: one of 101 ms at retained frame
 20 and 21.5 ms. In every one, `update_ns` and `record_submit_ns` stayed under
 0.8 ms; seven of the eight spent 10.9 to 15.8 ms in `begin_ns`, which includes
 the frame-slot wait, and frame 146 shows no wait in any phase. The desktop
-session was not otherwise controlled, and no cause is claimed. This run qualifies the
-procedure; it is not low-tier evidence and supplies no claim the measurement
-decision assigns to the Radeon configuration.
+session was not otherwise controlled, and no cause is claimed. That run used
+the block before the four-core hold was added. It qualifies the procedure; it is
+not low-tier evidence and supplies no claim the measurement decision assigns
+to the Radeon configuration.
+
+## Held run, 2026-10-29
+
+The block above, with the hold, followed verbatim at `fed37d1dc21e` on the same
+machine and display. The machine file records the Ryzen 9 9950X3D (16 cores,
+32 logical processors) and `held to affinity 0xFF` for both runs, read back
+from the running bench. Both results are `complete`, 3,600 frames on the RTX
+5080:
+
+| Backend | `update_ns` p50 / p99 | `record_submit_ns` p50 / p99 | `scheduled_interval_ns` p50 / p99 / max | mean interval |
+|---|---|---|---|---|
+| D3D12 | 0.129 / 0.254 | 0.580 / 1.046 | 16.670 / 17.400 / 33.740 | 16.725 |
+| Vulkan | 0.130 / 0.253 | 0.540 / 0.916 | 1.623 / 33.218 / 49.452 | 16.718 |
+
+**Vulkan's frame starts came in pairs under the hold.** Every one of its 3,599
+consecutive intervals alternates between short and long, and each pair of
+intervals sums to 33.3 ms (31.2 to 50.2), two refreshes. A frame starts a
+median 0.7 ms after its predecessor and then waits a median 31.7 ms in
+`begin_ns`; the frame after it starts with no wait. The rate held at one frame per refresh, and the
+cadence did not. The unheld Vulkan run above showed no such pattern (maximum
+18.1 ms). A frame-start p99 for Vulkan under the hold therefore measures the
+pairing, about 33 ms, and is read as two populations, as the ratchet document
+advises. One held run on one machine does not establish a cause or that it
+recurs; a low-tier run should look for it before quoting the column.
+D3D12 held showed 16 intervals over 20 ms and no pairing.

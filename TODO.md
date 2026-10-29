@@ -70,7 +70,7 @@ required by this plan.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-01` | DECISION | should | S | Select the Radeon iGPU using AMD's driver and Windows' per-app GPU preference, then verify the adapter chosen by the bench. |
-| `SM-07` | BLOCKED | should | M | Record Radeon CPU-phase and cadence p99s plus separate pipeline-latency evidence under the four-core hold (D3D12/Vulkan). Needs `SM-01`, `SM-02`, `SM-05`; EC2 runs do not count. |
+| `SM-07` | BLOCKED | should | M | Radeon CPU-phase and cadence p99s plus separate pipeline-latency evidence under the four-core hold (D3D12/Vulkan). Needs `SM-01`, `SM-05`; EC2 runs do not count. See the held Vulkan pairing in [the procedure](docs/performance/local-frame-bench.md). |
 
 ## Browsers, phones and hardware
 
