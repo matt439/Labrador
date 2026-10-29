@@ -3,9 +3,9 @@
 `tools/verify_changes.py` prints the current render verification plan by default.
 Every configure/build/test phase remains `not-run` unless `--execute` is explicit.
 The executor stops at the first failed command or validation and names it.
-SM-17's real sweep acceptance remains open; fake-command tests qualify the
-control flow, not the local toolchains, devices or CTest report emitter.
-SM-18's per-change evidence record follows it.
+The real sweep ran on 2026-10-29 ([qualification](#real-sweep-qualification-2026-10-29));
+fake-command tests qualify the control flow. SM-18's per-change evidence
+record follows it.
 
 These examples run from the repository root:
 
@@ -210,10 +210,26 @@ status can be `run`, `passed` or absent; failure/error/skipped children and
 contradictory aggregate counts fail. Unknown report shapes fail explicitly.
 The synthetic
 fixtures exercise failure and success paths without invoking a configured tool.
-Compatibility with this machine's real CTest emitter, the full sweep, Release
-configurations and all manual acceptance remain unrun. In particular, command
-success does not complete Vulkan synchronization validation or any visual,
-listening, physical-input, phone or display-pacing check.
+Release configurations and all manual acceptance remain outside the sweep.
+In particular, command success does not complete Vulkan synchronization
+validation or any visual, listening, physical-input, phone or display-pacing
+check.
+
+## Real sweep qualification (2026-10-29)
+
+In one shell with vcvars, the Emscripten environment and `VULKAN_SDK`,
+`--area render --preflight --browser <Chrome 156>` exited 0. Then
+`--area render --execute --browser <Chrome 156> --output-dir
+out/verify-2026-10-29` ran all seven tracks and reported `passed` with exit 0.
+Configure, build and test passed for `x64-debug`, `x64-debug-d3d12`,
+`x64-debug-gl`, `x64-debug-vulkan`, `x64-debug-null`, `wasm-debug` and the
+`wasm-release-null` override, on an RTX 5080. The runner accepted this
+machine's real CTest registration JSON and JUnit: 20, 21, 20, 20, 19, 32 and
+28 test cases. In a shell with vcvars but no Emscripten environment, the same
+`--execute` failed at preflight, naming the missing
+`EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake`, and
+wrote no build log. The report records the source revision and device
+identity as `uncollected`.
 
 The focused tooling tests use synthetic repository/cache/tool paths. They do
 not run a configured build or test binary:
