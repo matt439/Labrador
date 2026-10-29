@@ -2,6 +2,7 @@
 #include "engine/app/web/dom_events.h"
 
 #include <emscripten/emscripten.h>
+#include <emscripten/eventloop.h>
 #include <emscripten/html5.h>
 
 #include <algorithm>
@@ -199,6 +200,11 @@ namespace labrador
 		// Cancels the loop and stops listening. Idempotent.
 		void stop();
 
+		// Calls the owner's on_closed on a later task, after whatever closed
+		// the window - a state's update, a handler's exception - has unwound.
+		void schedule_closed();
+		static void closed_later(void* user_data);
+
 		// What an exception that reached the edge of the engine's code
 		// becomes. On Windows it would come out of pump_until_quit and
 		// main's catch would show it; here there is no caller left on the
@@ -285,6 +291,10 @@ namespace labrador
 
 		// Set by stop(), and never cleared: a closed window does not reopen.
 		bool closed = false;
+
+		// The pending on_closed call, cleared by the destructor if it is still
+		// pending: an owner destroyed first must not be called.
+		long closed_timeout = 0;
 	};
 
 	Window::Impl::Impl(const WindowOptions& options,
@@ -344,6 +354,12 @@ namespace labrador
 
 	Window::Impl::~Impl()
 	{
+		if (this->closed_timeout != 0)
+		{
+			emscripten_clear_timeout(this->closed_timeout);
+			this->closed_timeout = 0;
+		}
+
 		// A loop still running here means the owner is being destroyed while
 		// the browser goes on calling it, and the one way that happens is an
 		// owner that lived on the stack pump_until_quit unwound. That is a
@@ -507,11 +523,42 @@ namespace labrador
 		this->listen(false);
 	}
 
+	void Window::Impl::schedule_closed()
+	{
+		if (this->closed_timeout == 0)
+		{
+			this->closed_timeout = emscripten_set_timeout(closed_later, 0.0, this);
+		}
+	}
+
+	void Window::Impl::closed_later(void* user_data)
+	{
+		Impl* const self = static_cast<Impl*>(user_data);
+		self->closed_timeout = 0;
+		// The owner may destroy this window in the call, so nothing after it
+		// touches self. An exception has no page left to go to: the page was
+		// told when the window closed.
+		try
+		{
+			self->notify->on_closed();
+		}
+		catch (const std::exception& error)
+		{
+			std::fprintf(stderr, "%s\n", error.what());
+		}
+		catch (...)
+		{
+			std::fprintf(stderr, "An exception that is not a std::exception "
+				"left the owner's on_closed.\n");
+		}
+	}
+
 	void Window::Impl::fail(const char* message)
 	{
 		std::fprintf(stderr, "%s\n", message);
 		this->stop();
 		labrador_tell_page_error(message);
+		this->schedule_closed();
 	}
 
 	void Window::Impl::frame(void* user_data)
@@ -828,6 +875,7 @@ namespace labrador
 		}
 		this->impl_->stop();
 		labrador_tell_page_quit();
+		this->impl_->schedule_closed();
 	}
 
 	void Window::resize_client(const Vector2I&) const

@@ -31,7 +31,7 @@ instance's `Module` when due.
 
 | Callback | When the instance calls it |
 | --- | --- |
-| `onQuit()` | The game quits, after its frame loop is cancelled and its window's input and page listeners are removed. LineSweeper reaches this through the pause menu's QUIT row. |
+| `onQuit()` | The game quits, after its frame loop is cancelled and its window's input and page listeners are removed. The instance releases its states, audio and graphics on a later task. LineSweeper reaches this through the pause menu's QUIT row. |
 | `onError(message)` | The entry point reports a startup exception, or a frame or input handler fails. `message` is a string also written to the console. A caught frame or input failure stops the loop and window listeners before the callback. |
 | `onContextLost()` | At the first `begin_frame` that observes a lost WebGL2 context, once per loss. The canvas is blank while graphics are unavailable. |
 | `onContextRestored()` | At `begin_frame`, after the renderer and game resources are rebuilt, so that frame can draw again. Loss is reported first even if both browser events arrive between frames. |
@@ -116,9 +116,10 @@ also has a poster, controls, accessibility information and the current phone gat
 **A running instance cannot be stopped from the page.** There is no JavaScript stop method:
 quit must come from inside the game. Removing its canvas or changing `Module.canvas` leaves its
 loop and listeners running. Keep that canvas attached until `onQuit`, or the stopped game's
-`onError`, then remove it. Quit stops the loop and listeners but does not destroy the static
-`Application` or release the instance's WebGL2 context; play again uses a new factory call and a
-new canvas. Importing the loader can be reused. See the
+`onError`, then remove it. Quit stops the loop and listeners, and on a later task the static
+`Application` destroys its states and releases its services, Web Audio and the WebGL2 context
+included. Play again uses a new factory call and a new canvas; dropping the old canvas lets the
+finished instance be collected. Importing the loader can be reused. See the
 <RepoLink path="samples/linesweeper/web/index.html">complete example host</RepoLink>
 for the bundle's presentation and failure UI.
 

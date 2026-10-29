@@ -517,6 +517,35 @@ namespace labrador
 		this->options_.fullscreen = fullscreen;
 	}
 
+	void Application::on_closed()
+	{
+		// The destructor's work, which in a browser nothing else does: the
+		// states first, for the reason ~Application gives, then the services in
+		// reverse declaration order. The window stays: it called this, it is
+		// closed and it listens to nothing. The Application is left with no
+		// services, which nothing reaches, since its loop and every callback
+		// into it have stopped.
+		this->clear();
+		if (this->audio_device_)
+		{
+			this->audio_device_->suspend();
+		}
+		this->touch_.reset();
+		this->mouse_.reset();
+		this->keyboard_.reset();
+		this->gamepads_.reset();
+		this->gamepad_reader_.reset();
+		this->partitioner_.reset();
+		this->thread_pool_.reset();
+		this->viewport_manager_.reset();
+		this->resolution_manager_.reset();
+		this->resource_loader_.reset();
+		this->audio_resources_.reset();
+		this->renderer_.reset();
+		this->render_resources_.reset();
+		this->audio_device_.reset();
+	}
+
 	void Application::on_window_moved() const
 	{
 		const Vector2F size = this->renderer_->back_buffer_size();

@@ -41,7 +41,9 @@ int main()
 		// NOT A LOCAL. run() hands the loop to the browser and unwinds this
 		// stack before the first frame, destructors included, so the
 		// Application has to outlive main. A static does, and is never
-		// destroyed: closing the page takes the whole module with it.
+		// destroyed: after a quit it releases its states and services
+		// itself (engine/app/APPLICATION.md#7), and closing the page takes
+		// the whole module with it.
 		static Application app(std::move(options));
 		app.initialize();
 

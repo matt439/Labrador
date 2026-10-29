@@ -108,3 +108,30 @@ told it is active. The keyboard and the mouse need that and the keyboard as
 well. So a tab shown again while the canvas does not have the keyboard gives
 the pads back and not the keys, and a click beside a canvas takes the keys and
 not the pads.
+
+## 7. A browser quit releases what the destructor would
+
+On Windows, `run()` returns, `main` returns and `~Application` releases the
+states and every service. In a browser `run()` never returns and the
+Application is a static, so nothing runs its destructor. Stopping the loop is
+not enough. The Web Audio device's capture-phase gesture listeners on the
+page's `window` keep the whole module reachable, and with it the device's
+`AudioContext`, the WebGL context and the module's heap. A page that offers
+another game would hold one of each per finished game. Measured on
+LineSweeper's packaged page, that is 17 MB and one context per game, and Chrome
+starts losing the oldest context at the seventeenth.
+
+So the web window calls `WindowNotify::on_closed` on a task after it closes,
+once the update or handler that closed it has unwound, and `Application` does
+the destructor's work there: `clear()` first (§3), then the services in reverse
+declaration order (§4). The page is told first, synchronously, so its callbacks
+keep their timing. The window itself is kept. It made the call, it is closed
+and it listens to nothing.
+
+A Win32 window never calls the hook, because its owner is destroyed on the
+normal path. An exception the window catches from a frame or a handler
+releases the same way, as one leaving `main` does on Windows. A startup
+exception that the entry point catches itself and reports through
+`Module.onError` is not released. The window never closed, so the instance
+keeps what `initialize()` built until the page drops it, and a page offering
+another try loses that canvas's context itself.

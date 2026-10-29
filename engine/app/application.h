@@ -191,7 +191,8 @@ namespace labrador
 
 		// Closes the window, which ends run(). This is the whole of the quit path:
 		// a game asking to exit does not need to know which platform it is on.
-		// In a browser the page is told, and decides what comes next.
+		// In a browser the page is told, and decides what comes next; the
+		// states and services are released on a later task (APPLICATION.md#7).
 		// If called during update, the tick completes its remaining fixed steps
 		// but does not draw or publish another completed frame.
 		void quit() const;
@@ -297,6 +298,11 @@ namespace labrador
 		// After that they are created once and never reseated, so an object may
 		// hold one for its whole life - device loss recreates GPU objects in place
 		// and leaves service identity alone (PHILOSOPHY, Services and lifetimes).
+		// In a browser, which never destroys the Application, the task after the
+		// window closes - by quit, or by an exception the window caught - clears
+		// the states and destroys every service, and each accessor here answers
+		// null from then on (APPLICATION.md#7). Nothing holds a service past the
+		// page's onQuit or onError.
 		//
 		// Borrowed, every one: the Application owns them and outlives the states
 		// it runs.
@@ -402,6 +408,11 @@ namespace labrador
 		void on_keyboard_gained() override;
 		void on_keyboard_lost() override;
 		void on_fullscreen_changed(bool fullscreen) override;
+
+		// A browser's quit: the states, then every service but the closed
+		// window, in the order the destructor would release them
+		// (APPLICATION.md#7).
+		void on_closed() override;
 		void on_window_moved() const override;
 		void on_window_size_changed(int width, int height) override;
 

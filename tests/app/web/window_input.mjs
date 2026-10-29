@@ -64,6 +64,11 @@ const KEYS = {
 };
 const CONTROL = 2;
 
+// The failure step's exception, which the window writes to the console.
+export function expected_complaint({ level, text }) {
+	return level === 'error' && text === 'web window test failure';
+}
+
 export default async function drive(page) {
 	await drive_window(page, devtools_input(page.send));
 }
@@ -406,12 +411,18 @@ export async function drive_window(page, input) {
 	await frames(3);
 	await check('a refused request is reported on the next frame', ['fullscreen 0']);
 
-	// CLOSED: the page is told once, and nothing reaches the owner after it -
+	// CLOSED: the page is told once, synchronously; the owner hears on_closed
+	// once, on a later task; and nothing else reaches the owner after it -
 	// no input, and no frame.
-	await evaluate('Module._web_window_test_close(), true');
 	step++;
-	expect(`step ${step}, closing tells the page`, await raw(), ['page quit']);
-	console.log(`ok ${step} - closing tells the page`);
+	expect(`step ${step}, closing tells the page before the owner`,
+		await evaluate('Module._web_window_test_close(), JSON.stringify(Module.labradorWindowLog.splice(0))')
+			.then(JSON.parse), ['page quit']);
+	console.log(`ok ${step} - closing tells the page before the owner`);
+	await frames(2);
+	step++;
+	expect(`step ${step}, the owner hears on_closed once, after the page`, await raw(), ['closed']);
+	console.log(`ok ${step} - the owner hears on_closed once, after the page`);
 	await press(CANVAS);
 	await release(CANVAS);
 	await key('ArrowLeft');
@@ -421,4 +432,19 @@ export async function drive_window(page, input) {
 	expect(`step ${step}, a closed window says nothing more, and ticks no more`,
 		await raw(), []);
 	console.log(`ok ${step} - a closed window says nothing more, and ticks no more`);
+
+	// FAILED: a second window on the canvas whose owner throws on a key. The
+	// page hears the error, then the owner hears on_closed once; nothing more.
+	await evaluate(`(Module.onError = (message) =>
+		Module.labradorWindowLog.push('page error ' + message),
+		document.getElementById('canvas').focus(),
+		Module._web_window_test_reopen_throwing(), true)`);
+	await raw();
+	await key('ArrowLeft');
+	await frames(3);
+	step++;
+	expect(`step ${step}, a failure tells the page, then the owner hears on_closed`,
+		(await raw()).filter((entry) => entry !== 'tick'),
+		['page error web window test failure', 'closed']);
+	console.log(`ok ${step} - a failure tells the page, then the owner hears on_closed`);
 }
