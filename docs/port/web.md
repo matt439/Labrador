@@ -859,12 +859,14 @@ for the page and one image.
 **The gate stays although the module plays by touch.** The module the bundle
 ships links the touch controls and the portrait arrangement (M7b's sample
 half, §9), and the development page lets a phone play; the bundle's page
-holds them back until a recorded real iPhone pass (`SM-13`) and the host page's
-phone layout (`BDP-09`) are complete. Its stage is a fixed 16:9, so it always
-takes the landscape arrangement: lifting the gate means taking
-`web/shell.html`'s phone handling with it - no coarse-pointer gate,
-`viewport-fit=cover` with the safe-area insets as padding, and the portrait
-rule that drops the 16:9.
+holds them back until a recorded real iPhone pass (`SM-13`) is complete. The
+host page's phone layout (`BDP-09`) is in place: `viewport-fit=cover` with the
+safe-area insets as padding, a 16:9 stage limited by the viewport's height in
+landscape, a portrait stage that takes the height the screen leaves, and a
+full-screen button only where the element Fullscreen API exists. Under
+emulation, a 390x844 viewport draws a canvas taller than wide and a 1280x720
+one a 16:9 canvas, each wholly on screen. Lifting the gate (`BDP-10`) then
+removes only the coarse-pointer gate.
 
 **Owner decision, 2026-10-27 (`BDP-10`).** The iPhone's recorded evidence is
 sufficient to lift the phone gate after `SM-13` and `BDP-09`; the gate stays

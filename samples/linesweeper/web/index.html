@@ -15,11 +15,12 @@
   and the moment the canvas takes the keyboard.
 
   EACH GAME IS A NEW CANVAS. A factory call is a whole instance - its own
-  memory, its own Application, which lives in a static whose destructor never
-  runs, and its own Module object, where the window finds the canvas and the
-  two calls it makes to the page. Quitting stops that instance's loop and
-  leaves the instance holding its canvas, so "Play again" makes a fresh canvas
-  and calls the factory again, and the old canvas leaves the page.
+  memory, its own Application in a static, and its own Module object, where
+  the window finds the canvas and the calls it makes to the page. Quitting
+  stops that instance's loop, and on the next task the instance releases its
+  states and services (engine/app/APPLICATION.md, section 7). "Play again"
+  loses the old canvas's context, makes a fresh canvas and calls the factory
+  again, and the old canvas leaves the page.
 
   What the page owes the module is what the development page owes it
   (web/shell.html): the canvas, sized by CSS and focusable; onQuit, the pause
@@ -32,26 +33,55 @@
   pressed, the page asks for a keyboard or a controller and offers nothing to
   download; pressing a key, as a tablet with a keyboard does, brings the
   button back. The module has touch controls and a portrait layout, and this
-  page holds them back until recorded real iPhone checks and the host page's
-  phone layout pass (SM-13 and BDP-09; docs/port/web.md, section 7.4).
-  Android remains unverified. The stage is a fixed 16:9, so the game always
-  takes its landscape arrangement here; lifting the gate means taking
-  web/shell.html's phone handling with it.
+  page holds them back until recorded real iPhone checks pass (SM-13;
+  docs/port/web.md, section 7.4). Android remains unverified.
+
+  THE STAGE FOLLOWS THE SCREEN, as web/shell.html's does. In landscape it is
+  16:9, no taller than the viewport leaves below the heading. Held upright it
+  takes the height the screen leaves, and the game lays out for a tall buffer
+  with its touch controls under the board. viewport-fit=cover and the
+  safe-area insets keep it clear of a notch and a home indicator. A
+  full-screen button is offered only where the element Fullscreen API
+  exists, which is not iPhone Safari, and asks from its own click.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LineSweeper - a Labrador demo</title>
 <meta name="description" content="LineSweeper, a falling-block game built on the Labrador 2D engine, running in the browser through WebAssembly and WebGL2.">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: #111; color: #ddd; font: 16px/1.5 system-ui, sans-serif; }
+  body {
+    margin: 0; background: #111; color: #ddd; font: 16px/1.5 system-ui, sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
   main { max-width: 1280px; margin: 0 auto; padding: 16px; }
-  h1 { font-size: 1.4rem; margin: 0 0 12px; }
+  h1 { font-size: 1.4rem; line-height: 2.1rem; margin: 0 0 12px; }
   a { color: #f0a830; }
-  .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000 url(poster.png) center / cover no-repeat; }
+  .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 0 auto; background: #000 url(poster.png) center / cover no-repeat; }
+  .stage:fullscreen { width: 100%; height: 100%; aspect-ratio: auto; }
+  .bar { display: flex; gap: 12px; align-items: baseline; }
+  .bar .status { flex: 1; }
+  #fullscreen { margin: 12px 0 0; font: inherit; color: inherit; background: #222; border: 1px solid #444; border-radius: 4px; padding: 2px 10px; cursor: pointer; }
+
+  /* Landscape: 16:9, and no taller than the viewport below the heading, so
+     the whole stage is on screen on a desktop or a phone on its side. */
+  @media (orientation: landscape) {
+    .stage { width: min(100%, calc((100dvh - 64px - env(safe-area-inset-top)
+      - env(safe-area-inset-bottom)) * 16 / 9)); }
+  }
+
+  /* Upright: the stage is the height the screen leaves below the heading,
+     and the game lays out for that buffer. */
+  @media (orientation: portrait) {
+    main { padding: 8px; }
+    h1 { font-size: 1.1rem; line-height: 1.6rem; margin: 0 0 8px; }
+    .stage { aspect-ratio: auto; height: calc(100dvh - 3rem - env(safe-area-inset-top)
+      - env(safe-area-inset-bottom)); }
+  }
   .stage canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
   .stage canvas:focus-visible { outline: 2px solid #f09800; }
   .start { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); }
@@ -76,11 +106,14 @@
         has played it yet, so for now this page asks for a keyboard or a controller.</p>
     </div>
   </div>
+  <div class="bar">
   <p class="status" id="status" role="status">Keyboard: Left/Right move, Down soft-drops,
     Up/X rotates clockwise, Z anticlockwise, Space hard-drops, C/Shift holds,
     Escape/P pauses. Controller: D-pad Left/Right moves, Down soft-drops,
     Up/A rotates clockwise, B anticlockwise, Y hard-drops, X/Left shoulder holds,
     Start pauses.</p>
+  <button type="button" id="fullscreen" hidden>Full screen</button>
+  </div>
   <p class="accessibility" id="accessibility"><strong>Accessibility:</strong>
     Keyboard play is supported; controller input is implemented but physical-controller
     checks are pending. Tab moves focus out of the game. Controls are fixed, and
@@ -103,6 +136,17 @@
   const needsKeyboard = document.getElementById("needs-keyboard");
   const statusLine = document.getElementById("status");
   const instructions = statusLine.textContent;
+  const fullscreen = document.getElementById("fullscreen");
+
+  // Only where the element API exists. iPhone Safari has none, so there the
+  // button is not offered rather than offered and refused. The stage, not a
+  // canvas, goes full screen: each game makes a new canvas inside it.
+  if (document.fullscreenEnabled && typeof stage.requestFullscreen === "function") {
+    fullscreen.hidden = false;
+    fullscreen.addEventListener("click", () => {
+      stage.requestFullscreen().then(() => canvas?.focus(), () => {});
+    });
+  }
 
   // The loader is imported once and the factory called once per game.
   let factory = null;
