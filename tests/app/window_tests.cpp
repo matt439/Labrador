@@ -961,6 +961,35 @@ TEST_CASE("a hidden window stays hidden and inactive through enter_fullscreen")
 	}
 }
 
+TEST_CASE("a shown window stays shown through enter_fullscreen and leave_fullscreen")
+{
+	// Shown without activation, so the case takes no focus it does not need.
+	// Full screen itself activates, as ShowWindow's maximise does.
+	RecordingNotify notify;
+	Window window(unclamped_hidden_options(), &notify);
+	const HWND handle = hwnd(window);
+	ShowWindow(handle, SW_SHOWNOACTIVATE);
+	REQUIRE(IsWindowVisible(handle));
+
+	window.enter_fullscreen();
+	CHECK(IsWindowVisible(handle));
+	CHECK((GetWindowLongPtrW(handle, GWL_STYLE) & WS_VISIBLE) != 0);
+	CHECK((GetWindowLongPtrW(handle, GWL_STYLE) & WS_POPUP) != 0);
+
+	notify.log.clear();
+	window.leave_fullscreen(labrador::Vector2I(320, 240));
+	CHECK(IsWindowVisible(handle));
+	const LONG_PTR style = GetWindowLongPtrW(handle, GWL_STYLE);
+	CHECK((style & WS_VISIBLE) != 0);
+	CHECK((style & WS_OVERLAPPEDWINDOW) == WS_OVERLAPPEDWINDOW);
+	CHECK((style & WS_POPUP) == 0);
+	const RECT client = client_of(handle);
+	CHECK(client.right - client.left == 320);
+	CHECK(client.bottom - client.top == 240);
+	CHECK(last_size_report(notify.log) == "size 320x240");
+	ShowWindow(handle, SW_HIDE);
+}
+
 TEST_CASE("an already-windowed leave_fullscreen is a resize and nothing else")
 {
 	RecordingNotify notify;

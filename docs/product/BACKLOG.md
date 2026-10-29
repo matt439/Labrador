@@ -462,7 +462,7 @@ written.
 - [ ] **[BDP-10](STORIES.md#bdp-10)** Could · XS · The Browser and Phone Demo Player: Lift the phone gate after the real iPhone and host layout pass — after SM-13, BDP-09
 - [ ] **[BDP-07](STORIES.md#bdp-07)** Could · M · The Browser and Phone Demo Player · **Owner**: Smooth play on the displays visitors actually use — after SM-08
 - [x] **[OCA-46](STORIES.md#oca-46)** Could · M · The Outside C++ Adopter: See a join screen for couch play I can copy
-- [ ] **[OCA-51](STORIES.md#oca-51)** Could · M · The Outside C++ Adopter: Wire a settings screen to what the engine can actually set — after OCA-53
+- [x] **[OCA-51](STORIES.md#oca-51)** Could · M · The Outside C++ Adopter: Wire a settings screen to what the engine can actually set — after OCA-53
   Source implemented 2026-10-29. The gallery offers Windowed/Full screen,
   requests the mode through Application and silently re-syncs from its report
   at initialization and before input each tick. Status text describes a
@@ -482,11 +482,15 @@ written.
   Windowed while the status line kept the request, so no callback fired. The
   row's own Left left full screen, and Escape quit. ComponentsPageTests passes
   in wasm-release, wasm-debug and wasm-release-null. An untrusted request
-  stayed deferred, so browser refusal is unobserved. Natively, full screen
-  draws on D3D11, D3D12 and Vulkan; GL shows a white client. Leaving full
-  screen moves the window to 0,0 and leaves its client white on all four
-  rasterizing backends, even after a resize, though input and Escape still
-  work. The story stays open for that defect and a refusal observation.
+  stayed deferred, so browser refusal is unobserved; it is not an acceptance
+  term. Natively, the Win32 window replaced its style without `WS_VISIBLE`,
+  so a shown window counted as hidden: GL drew white in full screen, and
+  leaving full screen skipped the show and left a white client on every
+  backend. Closed 2026-10-29: both style changes keep `WS_VISIBLE`. A new
+  AppTests case takes a shown window through full screen and back and fails
+  without the fix. The gallery was driven through full screen and back on
+  x64-debug, -d3d12, -gl, -vulkan and x64-release, and every capture draws,
+  with no white pixel, at 2560x1440 and back at 1280x720 inside a frame.
 - [x] **[OCA-50](STORIES.md#oca-50)** Could · S · The Outside C++ Adopter: Make a menu work with a click or a tap
   Closed 2026-10-29. The [pointer-menu section](../../website/src/content/docs/docs/guides/menus.mdx)
   quotes `tapped_row()` and its focus-before-activation branch with live

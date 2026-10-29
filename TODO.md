@@ -12,8 +12,7 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **`OCA-51`: fix the native full-screen exit.** Leaving full screen leaves the gallery's client white on every rasterizing backend; the [evidence](docs/product/BACKLOG.md#later) has the reproduction.
-2. **`SM-17`: run the render verification sweep for real.** The toolchain, GPU and Chromium are available again; [the contract](docs/verification.md) says what the sweep must show.
+1. **`SM-17`: run the render verification sweep for real.** The toolchain, GPU and Chromium are available again; [the contract](docs/verification.md) says what the sweep must show.
 
 Then follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
@@ -51,7 +50,6 @@ maintenance lane. Counts prompt review, not automatic splitting.
 |---|---|---|---|---|
 | `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
 | `PI-21` | DECISION | should | S | Vibration implemented and headlessly tested; record each motor, stop, background, disconnect, reconnect and shutdown on a physical pad, natively and in Chrome. Can ride `OCA-48`'s session. [Acceptance](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
-| `OCA-51` | OPEN | could | M | Chrome entry, external-exit re-sync and row exit pass. Natively, leaving full screen leaves the window white on all four rasterizing backends (GL is also white in full screen); fix it, then observe a browser refusal. [Evidence](docs/product/BACKLOG.md#later). |
 
 ## Website and the hosted demo
 
