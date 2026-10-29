@@ -296,8 +296,8 @@ export default async function drive(page) {
 	assert(await evaluate("document.activeElement === document.querySelector('canvas')"),
 		'the running canvas did not receive focus');
 	await key('Tab', 9);
-	assert(await evaluate("document.activeElement !== document.querySelector('canvas') && document.activeElement.matches('a[href]')"),
-		'Tab did not move focus from the game to a page link');
+	assert(await evaluate("document.activeElement !== document.querySelector('canvas') && document.activeElement.matches('a[href], #fullscreen')"),
+		'Tab did not move focus from the game to a page control');
 	await evaluate("document.querySelector('canvas').focus()");
 	console.log('ok - the visible accessibility note describes Play and the canvas, and Tab leaves the game');
 	const instructions = await evaluate("document.getElementById('status').textContent");
@@ -347,6 +347,42 @@ export default async function drive(page) {
 	})()`);
 	await quit(1, true);
 	console.log('ok - packaged module draws, restores its context, quits and draws a fresh replay');
+
+	// BDP-09: the stage follows the screen. Upright on a phone-sized viewport
+	// the drawn canvas is taller than wide; on a desktop it is 16:9. Either
+	// way all of it is on screen.
+	const canvas_box = () => evaluate(`(() => {
+		const box = document.querySelector('canvas').getBoundingClientRect();
+		return { left: box.left, top: box.top, right: box.right, bottom: box.bottom,
+			width: box.width, height: box.height,
+			view_width: innerWidth, view_height: innerHeight };
+	})()`);
+	const on_screen = (box) => box.left >= 0 && box.top >= 0 &&
+		box.right <= box.view_width + 0.5 && box.bottom <= box.view_height + 0.5;
+	phase = 'portrait layout';
+	await send('Emulation.setDeviceMetricsOverride',
+		{ width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+	await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+	await navigate('portrait');
+	await key('KeyA', 65);
+	await click_play();
+	await loaded(0);
+	let box = await canvas_box();
+	assert(on_screen(box) && box.height > box.width, `portrait canvas ${JSON.stringify(box)}`);
+	await quit(0);
+	phase = 'desktop layout';
+	await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+	await send('Emulation.setDeviceMetricsOverride',
+		{ width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
+	await navigate('landscape');
+	await click_play();
+	await loaded(0);
+	box = await canvas_box();
+	assert(on_screen(box) && Math.abs(box.width * 9 / 16 - box.height) <= 1,
+		`desktop canvas ${JSON.stringify(box)}`);
+	await quit(0);
+	await send('Emulation.clearDeviceMetricsOverride');
+	console.log('ok - an upright phone viewport draws a tall canvas and a desktop one 16:9, each on screen');
 
 	// BDP-18: a finished game is released, so repeated play keeps at most one
 	// live context and one module heap however many games are played.

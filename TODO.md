@@ -12,8 +12,7 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **L12 (`BDP-09`): fit the host page to a phone held upright.** Its acceptance runs under emulated viewports in `LineSweeperBundlePageTests`; real-phone layout stays `SM-13`'s.
-2. **Qualify rows whose device, Emscripten and browser gates are open again.** The toolchain, GPU and Chromium run on this desktop again; each BLOCKED row below names what its owner still asks for.
+1. **Qualify rows whose device, Emscripten and browser gates are open again.** The toolchain, GPU and Chromium run on this desktop again; each BLOCKED row below names what its owner still asks for.
 
 **Available after those batches:** text examples and validation tools are
 indexed below. The animation example and gallery settings have source/native
@@ -128,7 +127,7 @@ the two new stories have their detail in BACKLOG.md.
 | `BDP-07` | BLOCKED | could | M | Measure the fixed 60 Hz step under `requestAnimationFrame` on a 60 Hz and a high-refresh display (R5), M3's second open term. After `SM-08`; may need a borrowed display. |
 | `WEB#6` | BLOCKED | could | XS | Record hosted-stage scaling, zoom and HUD legibility after local HTTPS access is restored. The read-only HEAD was socket-permission denied. [Evidence](docs/port/web-to-be-tested.md). |
 | `SM-13` | BLOCKED | should | M | Play the development page and the live demo on the owner's iPhone and record layout, rotation, touch, legibility, load time, memory (R4) and the top-out frame (R6). After `SM-14` (serving to a phone on the LAN) and `SM-08`. |
-| `BDP-10` | BLOCKED | could | XS | Lift the bundle page's phone gate after `SM-13` and `BDP-09`. The owner approved iPhone-only evidence; Android is not a prerequisite. [Decision](docs/product/BACKLOG.md#decisions-only-the-owner-can-make). |
+| `BDP-10` | BLOCKED | could | XS | Lift the bundle page's phone gate after `SM-13`; `BDP-09`'s layout is in place. The owner approved iPhone-only evidence; Android is not a prerequisite. [Decision](docs/product/BACKLOG.md#decisions-only-the-owner-can-make). |
 | `SM-44` | DEFERRED | could | S | Optional future real-phone record on a mid-range Android phone in Chrome. Waits on a borrowed phone; none is accessible. Does not gate iPhone acceptance. |
 | `WEB#2` | BLOCKED | could | S | A standard-mapping pad in Firefox and Safari (Chrome is `BDP-06`'s), and unplug and replug with more than four pads seen. Firefox can ride `OCA-48`'s session; Safari waits on `SM-09`, and five pads are not owned. |
 | `WEB#5` | BLOCKED | could | S | Touch on real glass: several fingers with distinct ids, no tap also a click, foreground loss cancelling every point, LineSweeper's buttons through `WM_POINTER`, a pen as the mouse, Firefox and Safari. Needs a touchscreen. |
