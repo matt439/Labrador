@@ -10,11 +10,12 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** finish Next's remaining acceptance while taking ready Later work in
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
-allows. Next's hardware and release gates remain open. The immediate queue is:
+allows. Next's hardware and release gates remain open. No ready story is
+queued: what remains in Later waits on the owner, on another story or on an
+outside event. `SM-15` is next once the owner authorises pushing a deliberately
+failing throwaway branch to CI.
 
-1. **`SM-18`: paste `tools/ci_gap_report.py --execute`'s section into the next PR touching `engine/render/`.** Its merge closes the story; [the procedure](docs/verification.md#configurations-ci-cannot-run) says how.
-
-Then follow Later's order and each story's prerequisites; an open hardware
+Otherwise follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
 **Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns it;
 BACKLOG's L36 to L54 let it run alongside product work.
@@ -58,7 +59,6 @@ required by this plan.
 |---|---|---|---|---|
 | `SM-25` | WAITING | should | S | Observe the next scheduled Actions run; repaired SDK download and tests passed PR CI. [Evidence](docs/product/BACKLOG.md#next). |
 | `WEB#8` | OPEN | could | XS | Optional: run CI once with `allowed_channel_drift` at 0 to measure the runner's adapter, so the allowance can come down from 8. |
-| `SM-18` | WAITING | could | S | Template and `tools/ci_gap_report.py` landed; the first merged `engine/render/` PR carrying its section closes it. [Procedure](docs/verification.md#configurations-ci-cannot-run). |
 | `SM-24` | BLOCKED | could | S | Pin/selector inventory, coupled consumer updates and full qualification procedure are documented. Preserve the after-SM-25 scheduled-run observation gate. [Procedure](docs/dependency-updates.md). |
 
 `SM-15` remains in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
