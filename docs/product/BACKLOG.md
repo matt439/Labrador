@@ -425,6 +425,7 @@ written.
 49. L49 State the existing geometric navigation tie rule: SM-67
 50. L50 Align audio loader and test documentation with current content: SM-68
 51. L51 Refuse unrepresentable sprite-font glyph extents before narrowing: SM-69
+52. L52 Clarify resource presence and retained handle contracts: SM-70
 
 **Stories**
 
@@ -789,6 +790,70 @@ written.
 - [x] **[SM-68](#sm-68)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Read accurate audio content, loader and recording contracts
 
 - [ ] **[SM-69](#sm-69)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Receive a file-named error for an unrepresentable font glyph extent
+
+- [x] **[SM-70](#sm-70)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Distinguish resource presence from retained names and handles
+
+<a id="sm-70"></a>
+### SM-70. Clarify Registry presence and resource lifetime
+
+Selected 2026-10-29 after SM-69's native/source checkpoint, from the
+independent follow-up already ranked by SM-68 and SM-69. Their remaining
+hardware, wasm and external qualification gates do not block this prose
+repair. Current source and eleven existing Registry cases already establish
+the behavior; no new resource API or failure policy is needed.
+
+| Rank | Evidence and value | Decision |
+|---|---|---|
+| 1 | The published contains comment says a released resource is indistinguishable from loaded, but the code returns false for empty slots and existing release/refill cases assert that. The introduction also overstates live-or-throw as applying to resolve rather than get. | Select the caller-contract correction. |
+| 2 | Header and test prose say device loss releases Font data. All five actual RenderResources release methods release textures while its header keeps font/sheet metadata. | Include the same-header lifetime example and generic test introduction in the bounded two-file repair. |
+| 3 | Custom-storage exception behavior and extremely large table indices need additional evidence and a separate contract decision. | Do not change implementation or add speculative test infrastructure. |
+
+**Acceptance**
+
+- State that get returns a live resource or throws, while resolve retains
+  the name-to-slot contract. Missing names and empty/released slots fail
+  contains; a released name still resolves and get throws until refill.
+- Use texture storage as the device-loss example. Describe the existing
+  test as generic release/refill coverage, without implying an actual
+  graphics-device session or that font metadata is released.
+- Apply only four whole-line comment replacements in registry.h and its
+  existing test introduction. Preserve declarations, directives, code,
+  every one of eleven complete test bodies, original line endings and ten
+  related source/fact hashes. Add no duplicate behavioral test or API.
+- Run eight standalone checks and website check/tests/build; verify the
+  corrected public Registry reference. Classify `not consumer-visible`
+  under the existing policy, with no behavior entry or caller migration.
+  Keep all actual device, browser, wasm and owner gates unchanged.
+
+**Qualification**
+
+Implemented 2026-10-29 as four complete line-comment replacements in
+the header and the comment preceding its existing release/refill case.
+Fresh original/candidate hashes and ten related source/fact hashes pass.
+Exact forward/reverse reconstruction preserves all declarations, includes,
+directives and executable code; all eleven complete test bodies and both
+files' original ASCII/CRLF form remain unchanged. Independent review agrees
+on the same candidate bytes and current contract evidence.
+
+The get/resolve/contains implementation and existing assertions establish
+the corrected presence behavior. Source checks of all five render resource
+release methods support the texture example; no new device-loss session is
+implied. No duplicated behavior test or new CoreTests run was needed for
+this comment-only change. The Assets inline example and publication entries
+are unchanged.
+
+All eight standalone checks pass, including 49 engine include fixtures.
+Website check reports zero type diagnostics, 160 tests pass and the build
+produces 145 pages and 436 files with no release snapshot. All phase exits,
+runner completion and the final process return are recorded as success.
+Generated Registry HTML contains the corrected lookup/presence/lifetime
+contracts and omits both obsolete claims. This is `not consumer-visible`
+under the existing policy: there is no source or behavior migration.
+
+The separate animation-strip source audit remains a candidate until its
+small-input arithmetic exhibit and contract are independently confirmed.
+No hardware, wasm, browser, network or owner gate is resumed or qualified
+by this documentation work.
 
 <a id="sm-69"></a>
 ### SM-69. Refuse unrepresentable sprite-font glyph extents

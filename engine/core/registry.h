@@ -26,11 +26,10 @@ namespace labrador
 		}
 	};
 
-	// A store of named resources, and one lookup contract for every kind of
-	// resource: whichever way you ask, you get something live or a throw naming
-	// what was missing. It never returns nullptr and never inserts on a miss, so a
-	// misspelt name fails where it is written rather than null-dereferencing a
-	// frame later somewhere else.
+	// A store of named resources. Reading through get() returns something live
+	// or throws rather than returning nullptr. Neither get() nor resolve()
+	// inserts a missing name, so a misspelt name fails where it is written
+	// rather than null-dereferencing a frame later somewhere else.
 	//
 	// There are two ways to ask, and the difference between them is the point:
 	//
@@ -42,11 +41,11 @@ namespace labrador
 	// one and want the resource immediately.
 	//
 	// A name owns its slot for the registry's lifetime. Releasing a resource -
-	// what a device loss does to textures and fonts - empties the slot but keeps
-	// the mapping, so a handle resolved before the loss still names the right
-	// resource once the reload refills it. That is the whole reason a handle is a
-	// slot index and not a pointer: the pointer changes across a device restore
-	// and the slot does not.
+	// for example, texture storage on device loss - empties the slot but keeps
+	// the mapping. A handle resolved before release still names that slot,
+	// and reads the replacement once a reload refills it. The handle is a slot
+	// index rather than a pointer: refilling can replace the resource without
+	// changing the slot.
 	//
 	// The registry holds names, not meanings. What a name refers to is the
 	// caller's business - which is what lets a game keep its own resource types
@@ -136,9 +135,9 @@ namespace labrador
 			return this->get(this->resolve(name));
 		}
 
-		// True only if the name is loaded now. A name whose slot has been released
-		// reads as absent, because a released resource is indistinguishable from a
-		// loaded one at every call site that only checks for presence.
+		// True only if the name currently holds a resource. Missing names and
+		// empty or released slots answer false. A released name keeps its slot
+		// and can still resolve to its handle; get() throws until it is refilled.
 		bool contains(const std::string& name) const
 		{
 			const std::map<std::string, int>::const_iterator it =

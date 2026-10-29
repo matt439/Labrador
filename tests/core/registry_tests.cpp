@@ -119,10 +119,10 @@ namespace RegistryTests
 			CHECK_THROWS_AS(registry.get(unresolved), std::out_of_range);
 		}
 
-		// The reason a handle is a slot index rather than a pointer. A device
-		// loss releases every texture and font and the reload builds new ones;
-		// everything already drawing is still holding the handles it resolved
-		// beforehand, and they have to keep working.
+		// A handle names a slot rather than its current object. Releasing and
+		// refilling resources must preserve previously resolved handles so their
+		// readers reach the replacements. Texture storage across device loss is
+		// one use of this contract; this case exercises the generic registry.
 		TEST_CASE("a handle survives release and reload, and sees the new resource")
 		{
 			Registry<Resource> registry("Resource");
