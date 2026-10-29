@@ -10,6 +10,10 @@ namespace labrador
 	{
 	public:
 		AnimationStrip() = default;
+
+		// Caches horizontal frames spaced by first_frame.width. Zero frames
+		// leave the cache empty without calculating an origin. Throws
+		// std::out_of_range if a cached x coordinate cannot fit in int.
 		AnimationStrip(const RectangleI& first_frame,
 			int frame_count, float frame_time, bool looping);
 

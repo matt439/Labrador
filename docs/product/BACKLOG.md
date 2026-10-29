@@ -426,6 +426,7 @@ written.
 50. L50 Align audio loader and test documentation with current content: SM-68
 51. L51 Refuse unrepresentable sprite-font glyph extents before narrowing: SM-69
 52. L52 Clarify resource presence and retained handle contracts: SM-70
+53. L53 Preserve representable animation-strip origins through intermediate arithmetic: SM-71
 
 **Stories**
 
@@ -792,6 +793,116 @@ written.
 - [ ] **[SM-69](#sm-69)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Receive a file-named error for an unrepresentable font glyph extent
 
 - [x] **[SM-70](#sm-70)** Could - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Distinguish resource presence from retained names and handles
+
+- [ ] **[SM-71](#sm-71)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Cache representable strip frames without intermediate overflow
+
+<a id="sm-71"></a>
+### SM-71. Compute the complete strip frame origin before narrowing
+
+Selected 2026-10-29 after SM-70. The bounded strip-reader audit confirmed
+that private calculate_frame multiplies index by width in int before adding
+the first origin through RectangleI::offset. Three frames suffice to overflow
+that intermediate even when every mathematical final rectangle fits.
+
+| Rank | Current source evidence and value | Decision |
+|---|---|---|
+| 1 | First x INT_MIN, width 1073741824 and count 3 yield origins INT_MIN, -1073741824 and 0, with all right edges representable. The last product is 2147483648, outside int. Existing JSON integer and strip contracts admit the fields and negative origins. | Select whole-expression wide arithmetic and successful cancellation regressions. |
+| 2 | Small products can also make a final origin unrepresentable: x INT_MAX-1, width 1, count 3 ends at INT_MAX+1; the lower analogue ends at INT_MIN-1. | Define the direct constructor's error and annotate authored failures in the same bounded repair. |
+| 3 | Generic RectangleI arithmetic, positive dimensions, atlas bounds and direct negative-count policy need separate decisions/evidence. | Keep out; preserve existing geometry and SM-63's authored count guard. |
+
+Two independent source reviews establish the constructor/cache call chain,
+actual integer fields, admitted schema and three-entry allocation. They also
+confirm negative-product cancellation with x INT_MAX and width -1073741825.
+Neither source review executed an extreme fixture or the original
+overflowing expression; no old-code red is claimed. The upper/lower refusal examples do not imply that
+all their derived right edges fit; only the computed origin field is in scope.
+
+**Acceptance**
+
+- Evaluate the complete origin-plus-index-times-width expression in int64
+  with casts before arithmetic. Check the final x against the field's int
+  range, then assign directly. Do not reject a wide intermediate product
+  that the origin cancels back into range, or narrow an offset first.
+- Cache unchanged y, width and height. Keep public frame_rect an indexed
+  const reference with its existing invalid-index behavior. Prevalidate the
+  last origin before capacity reservation for positive counts: the linear
+  sequence's endpoints bound all origins. Zero count computes no coordinate;
+  zero width and representable signed geometry remain supported. Leave the
+  existing direct negative-count path untouched and unexecuted.
+- Document std::out_of_range from direct construction for an unrepresentable
+  cached x, with frame/index/coordinate context. The authored sheet path
+  annotates that failure with file, strip location and name as runtime_error;
+  do not catch unrelated allocation failures or alter the existing count guard.
+- Add a focused, explicitly enumerated metadata-only RenderTests source and
+  authored AssetsTests cases. Check both cancellation directions, ordinary
+  and boundary/zero controls, upper/lower refusal, zero count and bad indices
+  only after compiling the repaired expression. Preserve existing test bodies.
+- Run complete native RenderTests and AssetsTests across all five Debug
+  render backends and Release null with fresh source/cache/object/macro
+  guards, two build workers and one test worker. Run eight standalone checks
+  and website check/tests/build; publish the constructor contract and record
+  the behavior change in CHANGES. Keep required wasm/full-CI and device
+  qualification explicit; source implementation is independent of those stops.
+
+**Qualification**
+
+Implemented 2026-10-29. The complete coordinate is evaluated in int64
+before an int-range check and direct x assignment. Positive counts validate
+their last origin before capacity reservation; zero count skips coordinate
+calculation. Cached y/width/height, timing, looping, public index checks and
+the existing direct negative-count behavior remain unchanged. The authored
+path annotates only out_of_range, leaving JSON, length_error and bad_alloc
+behavior outside that catch. Both public contracts and CHANGES describe the
+new behavior without a valid-content migration.
+
+Four engine/header candidates and three test/enumeration candidates passed
+independent source reviews. Fresh guards held all originals, the absent new
+test path and 76 named source hashes before application. Reversal preserves
+engine code outside the selected changes, the old Assets test prefix and
+every old CMake byte outside one alphabetical source entry. The new CPP and
+appended C++ are ASCII; existing CMake Unicode comments and line endings are
+preserved. A temporary transport interruption affected a known-unexecuted
+source-proof read only; state was reconciled after restoration, with no
+duplicate source application or test run.
+
+Six direct metadata cases cover both product-cancellation directions,
+ordinary/signed/zero-width/exact-origin controls, upper/lower refusals, zero
+count and invalid indices. Three authored cases check cancellation, a failure
+after a valid preceding strip with the correct file/strip/index/coordinate
+diagnostic, and zero-count unused geometry. All extremes run only against
+the repaired expression. No original UB path or old-code red was executed.
+These checks inspect stored rectangles, not unrelated derived edges or pixels.
+
+Complete native suites pass with zero skipped cases:
+
+| Configuration | Render cases/assertions | Assets cases/assertions |
+|---|---|---|
+| Debug D3D11 | 162 / 4012 | 79 / 637 |
+| Debug D3D12 | 162 / 4012 | 79 / 637 |
+| Debug GL | 162 / 4012 | 79 / 637 |
+| Debug Vulkan | 162 / 4012 | 79 / 637 |
+| Debug null | 188 / 4143 | 80 / 647 |
+| Release null | 188 / 4143 | 80 / 647 |
+
+Builds used two workers and tests one, serially across configurations and
+suites. Each runtime followed installed-cache/backend, candidate/source,
+generated-object and null-macro guards. RenderTests has 21 CPP objects or
+22 with null recording; AssetsTests has seven. The existing null-only text
+recipe remains absent from non-null builds. No extra fixture tests ran.
+These are headless metadata and CPU-recording results, not an API device,
+rasterized output or hardware acceptance.
+
+All eight standalone checks pass, including 49 include-wall fixtures.
+Website verification reports zero type diagnostics, 160 passing tests,
+145 pages, 436 files and no release snapshot. All phase exits are zero,
+the runner completed and the final process return is zero. Generated HTML contains the
+new constructor and authored-loader contracts. Full source/candidate
+identity and other boundary hashes remain verified afterward.
+
+The story stays unchecked for required wasm selections and full CI. Stopped
+Emscripten/runtime routes are not retried; other native Release, device and
+browser qualification remains separate. There is no allocation cap, general
+RectangleI refactor, atlas/positivity policy or new graphics feature.
 
 <a id="sm-70"></a>
 ### SM-70. Clarify Registry presence and resource lifetime

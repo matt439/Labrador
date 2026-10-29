@@ -1,5 +1,6 @@
 labrador_add_test_suite(RenderTests
     SOURCES
+        animation_strip_tests.cpp
         block_decode_tests.cpp
         camera_tests.cpp
         colour_tests.cpp

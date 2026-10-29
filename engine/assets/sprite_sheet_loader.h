@@ -17,6 +17,8 @@ namespace labrador
 	// must be removed or corrected instead of being silently ignored.
 	// A negative animation-strip `frame_count` throws std::runtime_error naming
 	// the path, strip and field. Zero frames define an empty strip.
+	// An unrepresentable cached strip x coordinate throws std::runtime_error
+	// naming the path, strip and frame coordinate.
 	//
 	// AND FOR ONE THING THE DOCUMENT CAN SAY THAT IS WELL FORMED AND STILL NOT
 	// DRAWABLE: a frame with `"rotated": true` is refused here, by name, rather
