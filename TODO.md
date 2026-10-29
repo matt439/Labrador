@@ -28,7 +28,7 @@ required by this plan.
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
 - Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling).
-- Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `SM-29` (confirm the dashboard rollback route), `OCA-18` (the Visual Studio breakpoint session).
+- Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `OCA-18` (the Visual Studio breakpoint session).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction.
 
@@ -60,9 +60,8 @@ maintenance lane. Counts prompt review, not automatic splitting.
 |---|---|---|---|---|
 | `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 | `OCA-18` | DECISION | could | S | Visual Studio guide is implemented. A person follows it in a clean copied project in Visual Studio Community 2026 18.9.2, hits the breakpoint, sees content load and records the date. [Evidence](docs/product/BACKLOG.md#later). |
-| `SM-29` | DECISION | could | S | Preview, production-check and Cloudflare rollback steps are documented from Cloudflare's docs. The owner confirms the dashboard rollback route once, or accepts the sourced text, and ticks the box. [Procedure](website/README.md#preview-and-recovery). |
 
-`SM-30` remains the owner-only gate follow-up after `SM-29` in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
+`SM-30`, the owner-only gate follow-up in [BACKLOG.md, Later](docs/product/BACKLOG.md#later), is ready now that `SM-29` is closed.
 
 ## CI
 
