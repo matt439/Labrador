@@ -459,7 +459,14 @@ written.
   at `71b6af3` on the RTX 5080, it wrote complete 3,600-frame results for both
   backends with no other step. Desktop evidence only; SM-07's Radeon run stays open.
 - [ ] **[SM-05](STORIES.md#sm-05)** Should · S · The Sole Owner-Maintainer: Apply the ratchet's lock verdict to a non-NVIDIA local run — after SM-04
-- [ ] **[SM-02](STORIES.md#sm-02)** Should · S · The Sole Owner-Maintainer: Reproduce the four-core hold, and say what the bench's fan-out measures — after SM-03
+- [x] **[SM-02](STORIES.md#sm-02)** Should · S · The Sole Owner-Maintainer: Reproduce the four-core hold, and say what the bench's fan-out measures — after SM-03
+  Closed 2026-10-29: [the local procedure](../performance/local-frame-bench.md)
+  launches each run held to the first four physical cores and their SMT
+  siblings, inherited at creation, and records the mask read back from the
+  running bench. PHILOSOPHY's Performance section now says the bench measures
+  the single-view path (one `Scene`, no pool). Followed verbatim at `fed37d1`,
+  both runs were held at `0xFF`; Vulkan's frame starts came in strict pairs
+  under the hold, recorded there without a claimed cause.
 - [ ] **[SM-07](STORIES.md#sm-07)** Should · M · The Sole Owner-Maintainer · **Owner**: Take and publish low-tier CPU phase/cadence p99s and separate pipeline-latency evidence — after SM-04, SM-05, SM-02, SM-01, SM-03
 - [x] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
 - [x] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
