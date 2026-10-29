@@ -451,7 +451,13 @@ written.
 - [x] **[BDP-20](STORIES.md#bdp-20)** Could · XS · The Browser and Phone Demo Player: Keep the existing 4.3 MB on-demand phone fallback video
 - [x] **[BDP-18](STORIES.md#bdp-18)** Could · S · The Browser and Phone Demo Player: Playing again many times stays fast and keeps the graphics — after BDP-03
 - [x] **[BDP-09](STORIES.md#bdp-09)** Could · S · The Browser and Phone Demo Player: The host page fits a phone held upright — after BDP-03
-- [ ] **[SM-04](STORIES.md#sm-04)** Should · S · The Sole Owner-Maintainer: A local run procedure for LineSweeperFrameBench
+- [x] **[SM-04](STORIES.md#sm-04)** Should · S · The Sole Owner-Maintainer: A local run procedure for LineSweeperFrameBench
+  Closed 2026-10-29: [the local procedure](../performance/local-frame-bench.md)
+  lists the required and chosen arguments, presentation pacing and the
+  `x64-release-d3d12`/`x64-release-vulkan` builds in one pasteable block that
+  also records the adapter, driver, display mode and commit. Followed verbatim
+  at `71b6af3` on the RTX 5080, it wrote complete 3,600-frame results for both
+  backends with no other step. Desktop evidence only; SM-07's Radeon run stays open.
 - [ ] **[SM-05](STORIES.md#sm-05)** Should · S · The Sole Owner-Maintainer: Apply the ratchet's lock verdict to a non-NVIDIA local run — after SM-04
 - [ ] **[SM-02](STORIES.md#sm-02)** Should · S · The Sole Owner-Maintainer: Reproduce the four-core hold, and say what the bench's fan-out measures — after SM-03
 - [ ] **[SM-07](STORIES.md#sm-07)** Should · M · The Sole Owner-Maintainer · **Owner**: Take and publish low-tier CPU phase/cadence p99s and separate pipeline-latency evidence — after SM-04, SM-05, SM-02, SM-01, SM-03

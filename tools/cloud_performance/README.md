@@ -3,7 +3,8 @@
 This package runs `LineSweeperFrameBench` on one declared Windows EC2 host and
 retains the raw evidence. It establishes a repeatable **EC2 reference lane**;
 it does not turn an NVIDIA datacentre GPU or Windows Server into Labrador's
-consumer minimum specification.
+consumer minimum specification. A run on a local machine follows
+[the local procedure](../../docs/performance/local-frame-bench.md) instead.
 
 **Compare source identities, not just the workload name.** The benchmark still
 calls its workload `full_well_top_out`, but the calmer top-out in `8c69272`
