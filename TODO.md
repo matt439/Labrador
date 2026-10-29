@@ -25,7 +25,7 @@ required by this plan.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
-- Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling), `PI-08` (create the `answered` and `declined` request labels).
+- Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling).
 - Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `OCA-18` (the Visual Studio breakpoint session).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction.
@@ -118,7 +118,6 @@ required by this plan.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SRL-07` | BLOCKED | could | S | This tree's constants are renamed and CHANGES.md lists the public spellings; migrate the ColourWars callers at its next pin move and record the counted caller repositories. Needs the private repository. [Scope](docs/product/BACKLOG.md#later). |
-| `PI-08` | DECISION | could | S | Closing procedure, form text and CHANGES rule landed; create the `answered` and `declined` labels with the two commands in [CONTRIBUTING](CONTRIBUTING.md#how-a-request-is-closed). |
 | `OCA-66` | DECISION | could | S | The samples/template declare per-monitor DPI awareness and the release guide states it; review and record the template at 150% scaling. [Scope](docs/product/BACKLOG.md#later). |
 
 ## Features other engines have
