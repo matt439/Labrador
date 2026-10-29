@@ -623,7 +623,7 @@ written.
   All seven standalone checks and website check/tests/143-page build pass.
 - [ ] **[SM-18](STORIES.md#sm-18)** Could · S · The Sole Owner-Maintainer: A record of the configurations CI cannot run, per merged change — after SM-17
 - [ ] **[SM-15](STORIES.md#sm-15)** Could · XS · The Sole Owner-Maintainer: Observe the null-backend wasm step running after a failed page step, and the job going red
-- [ ] **[SM-26](STORIES.md#sm-26)** Could · S · The Sole Owner-Maintainer: Notice when the hosted demo lags the engine — after PI-05
+- [x] **[SM-26](STORIES.md#sm-26)** Could · S · The Sole Owner-Maintainer: Notice when the hosted demo lags the engine — after PI-05
   Source implemented 2026-10-29. `tools/check_demo_lag.py` pins an explicit
   host checkout's HEAD and reads its committed BUILD.json, compares its clean
   full revision with local master (or an explicitly labeled ref), and counts
@@ -633,12 +633,12 @@ written.
   trigger, committed-source command and distance/provenance limits.
   All 25 focused offline tests pass, including committed-versus-working data,
   real isolated histories, worktrees and Git routing/replacement isolation.
-  Independent source review has no remaining findings. The actual command
-  against C:/Projects/PersonalWebsite exited 2 at its initial Labrador Git
-  identity read: Git refused the checkout's ownership under CodexSandboxOffline.
-  It never read the host record. That read remains stopped; no trust setting or
-  alternative execution context was used. Actual committed-host qualification
-  remains open and the story stays unchecked.
+  Independent source review has no remaining findings. Closed 2026-10-29:
+  `python tools/check_demo_lag.py --host-repository C:/Projects/PersonalWebsite`
+  exited 0. It read host HEAD `d433560`'s committed
+  `public/demo/linesweeper/BUILD.json` (clean bundle commit `1e60fb2`, v0.2.0),
+  compared it with local master `b96bad6` and reported 182 commits behind. It
+  says that it read committed metadata only: no live response or bundle bytes.
   All seven standalone checks, website check (zero diagnostics), 160 website
   tests and the 144-page/433-file build pass. No live request or deploy ran.
 - [ ] **[SM-29](STORIES.md#sm-29)** Could · S · The Sole Owner-Maintainer: A procedure for previewing and rolling back the site — after SM-31
@@ -659,7 +659,7 @@ written.
   The exact ten stopped PowerShell worker/trace cases were never executed.
 - [ ] **[SM-30](STORIES.md#sm-30)** Could · S · The Sole Owner-Maintainer · **Owner**: Change the website gate in one place — after SM-29
 - [x] **[SM-32](STORIES.md#sm-32)** Could · S · The Sole Owner-Maintainer: Keep the site's LineSweeper footage in step with the sample
-- [ ] **[NMS-03](STORIES.md#nms-03)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): The Why page's Platform support section links the plans, their scope, and what would change the answer — after OCA-01
+- [x] **[NMS-03](STORIES.md#nms-03)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): The Why page's Platform support section links the plans, their scope, and what would change the answer — after OCA-01
   Source added 2026-10-29. Why links the existing Android scoping record and
   states no Android build, iOS after Android, the engine-only endpoint without
   packaging/store work, and no Linux/macOS plan. Five future support conditions
@@ -669,15 +669,15 @@ written.
   The same overview now describes the implemented multiplayer join/ready
   assignments and the full CI sweep, correcting its stale fixed-slot and
   every-change claims. No platform, support promise or schedule was added.
-  The generated source link's remote GitHub response remains unrun under the
-  network stop; local path/URL validation cannot establish that response.
-  The story stays unchecked pending that acceptance.
+  Closed 2026-10-29: the built Why page links
+  `https://github.com/matt439/Labrador/blob/b96bad6d1c25e4fb3d74199c76de4612f725b915/docs/port/android.md`,
+  and an HTTPS HEAD request for it answered `200 OK`.
   Independent source review, all seven standalone checks, website check
   (zero diagnostics), 160 website tests and the 144-page/433-file build pass.
   The emitted section's five gates, six facts/qualification checks, local
   source target/URL and absence of schedule text were inspected, along with
   the three overview corrections. No HTTP, browser or device check ran.
-- [ ] **[NMS-04](STORIES.md#nms-04)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): Configuring on a non-Windows host refuses early and points at the platform statement — after OCA-01
+- [x] **[NMS-04](STORIES.md#nms-04)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): Configuring on a non-Windows host refuses early and points at the platform statement — after OCA-01
   Source implemented 2026-10-29. The native base in the engine presets and
   copied-game walkthrough now requires hostSystemName Windows; all ten engine
   and two copied-game native choices inherit it. Wasm bases/choices stay
@@ -691,8 +691,15 @@ written.
   phases. All 63 focused planner/fake-runner tests pass. Actual Windows CMake
   listing shows all 12 engine and four copied-game presets; an isolated
   unsupported-target branch fixture checks the diagnostic. Neither is an Ubuntu
-  observation. The required real Ubuntu/WSL listing remains unrun, no Linux
-  wasm configure was attempted, and the story stays unchecked.
+  observation. Closed 2026-10-29 on WSL 2 Ubuntu 26.04 LTS with CMake 4.2.3,
+  against this checkout at `/mnt/c/Projects/Labrador`. `cmake --list-presets`
+  lists only `wasm-debug` and `wasm-release`. The copied-game presets
+  (`website/src/walkthrough/CMakePresets.json`, copied alone into a temporary
+  folder) list the same two. `cmake --preset x64-debug` answers `Could not use
+  disabled preset "x64-debug"` in both. A plain `cmake -S . -B <temp>` stops at
+  `engine/CMakeLists.txt:100`, which names Windows (Win32) and the browser
+  (Emscripten) and links the platform-support section. No Linux wasm configure
+  was attempted, so Linux-hosted wasm stays unverified, as documented.
   All seven standalone checks and the website's zero-diagnostic check,
   160 tests and 144-page/433-file build pass. The built host note, platform
   link and copied-project condition/wasm entries were inspected. Final
@@ -770,7 +777,7 @@ written.
   golden/content bytes. Native compilation/headless checks and unchanged CTest
   registration are recorded in the owner. Rasterising pixel runs and wasm
   GL/S3TC qualification remain at the stopped device/Emscripten gates.
-- [ ] **[SM-51](../code-hygiene.md#sm-51-cloud-tooling-test-organisation)** Could · S · The Sole Owner-Maintainer: Split cloud tooling tests by production module
+- [x] **[SM-51](../code-hygiene.md#sm-51-cloud-tooling-test-organisation)** Could · S · The Sole Owner-Maintainer: Split cloud tooling tests by production module
 - [x] **[SM-50](../code-hygiene.md#sm-50-win32-input-translation)** Should · S · The Sole Owner-Maintainer: Extract backend-private Win32 input translation
 - [x] **[SM-52](../code-hygiene.md#sm-52-website-reference-organisation)** Could · M · The Sole Owner-Maintainer: Separate reference indexing, prose linking and page assembly
 - [x] **[SM-53](../code-hygiene.md#sm-53-vulkan-devicebuffer-ownership-review)** Could · M · The Sole Owner-Maintainer: Review Vulkan device/buffer ownership for a justified split

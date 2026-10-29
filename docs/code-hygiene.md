@@ -284,11 +284,12 @@ Historical review probes and evidence retain their recorded module paths and
 are reproduced at their recorded revisions, rather than rewritten as fixes land.
 
 All 71 permitted offline tooling cases pass. Config, Release, Analysis and
-Dispatch also pass as separate module invocations. The worker case and nine
-trace-process cases remain unexecuted under the existing PowerShell stop;
-their skip metadata is unchanged, not altered to turn a refusal into a pass.
-The full suite and Infrastructure's full standalone run therefore remain
-open, and the story is not closed. No cloud work or network call was made.
+Dispatch also pass as separate module invocations. Skip metadata is
+unchanged. **Closed 2026-10-29.** With CMake and Ninja on PATH (vcvars),
+`python -m unittest discover tools/tests` runs 196 tests with none skipped
+and passes, including the PowerShell worker case and all nine trace-process
+cases. `python -m unittest tools.tests.test_cloud_performance_infrastructure`
+passes its 8 cases on its own. No cloud work or network call was made.
 
 ## SM-52. Website reference organisation
 
