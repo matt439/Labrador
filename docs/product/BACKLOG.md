@@ -563,13 +563,13 @@ written.
   - Each report's decision and the commit that answered it: [the reports table](../review/colourwars-reports/README.md#the-decisions).
 - [x] **[PI-19](STORIES.md#pi-19)** Should · M · The Pinned Submodule Integrator: Read what the engine's last frame cost, phase by phase
 - [ ] **[PI-11](STORIES.md#pi-11)** Could · M · The Pinned Submodule Integrator: Stage the runtime files the engine makes my game need, without hand-keeping that list — after PI-10, OCA-60
-- [ ] **[PI-08](STORIES.md#pi-08)** Could · S · The Pinned Submodule Integrator: See what happened to each request and which commit answered it — after OCA-72
+- [x] **[PI-08](STORIES.md#pi-08)** Could · S · The Pinned Submodule Integrator: See what happened to each request and which commit answered it — after OCA-72
   Source landed 2026-10-29: [CONTRIBUTING](../../CONTRIBUTING.md#how-a-request-is-closed)
   says a closed request is labelled `answered` with its commit or `declined`
   with its trade-off and what would reopen it, and gives the three searches;
   the request form says so and CHANGES.md's rule links an answering entry to
-  its request. Left: the owner creates the two labels with the commands
-  CONTRIBUTING gives.
+  its request. Closed 2026-10-29: both labels were created on the repository
+  with the commands CONTRIBUTING gives.
 - [x] **[PI-15](STORIES.md#pi-15)** Could · S · The Pinned Submodule Integrator: Launching my game hidden through STARTUPINFO is tested upstream
 - [x] **[PI-16](STORIES.md#pi-16)** Could · S · The Pinned Submodule Integrator: Drive my game past its title screen with injected input in a smoke run — after OCA-30
   Closed 2026-10-29: the testing guide's "Drive the game with injected keys" states
