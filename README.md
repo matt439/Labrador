@@ -289,7 +289,8 @@ the count quadruples, whatever the machine. Run `LabradorBench` directly to see
 the table.
 
 `LineSweeperFrameBench` measures frame times on real hardware and is not a
-`ctest` entry. Its runs, and how to read them, are in
+`ctest` entry. [The local procedure](docs/performance/local-frame-bench.md)
+gives its exact desktop commands. Its runs, and how to read them, are in
 [docs/performance/](docs/performance/); read
 [`2026-09-19-g6f-ratchet.md`](docs/performance/2026-09-19-g6f-ratchet.md)
 before any of their tables.

@@ -173,6 +173,7 @@ paths are planning information; they do not establish a build or test result.
   interpreting either EC2 run: software pacing and synchronized present can
   relocate a whole refresh wait; `record + submit` measures work. EC2's L4 is
   not the unmeasured Radeon low tier. Cloud launch/stop verbs default to dry-run.
+  A local run follows [the local procedure](docs/performance/local-frame-bench.md).
 - `LineSweeperCapture` is also outside ctest. A presentation change requires
   regenerating its website images on `x64-release` and looking at every changed
   image before committing. Its README owns repeatability and whole-pixel text.
