@@ -79,10 +79,9 @@ without cleanup if pixel-module creation throws. **SM-56** in
 fixes, deterministic error-path coverage and render/synchronization qualification.
 These source reviews ran no device or injected failure.
 
-SM-56's source fixes and a compiled, unexecuted shader-failure case now have
-[separate progress and remaining checks](../code-hygiene.md#sm-56-vulkan-exceptional-cleanup).
-The native builds/headless runs there do not close the GPU error-path or
-synchronization requirements.
+SM-56 [closed 2026-10-29](../code-hygiene.md#sm-56-vulkan-exceptional-cleanup):
+all three fixes have deterministic failure-path cases that ran on a real
+device, and Vulkan `RenderPixelTests` ran clean under `validate_sync`.
 
 Source: [Vulkan review](vulkan/README.md), sections 6 and 7, and its
 [all-findings.md](vulkan/all-findings.md) final candidate list. The verified
