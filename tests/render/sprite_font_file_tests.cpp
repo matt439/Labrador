@@ -5,7 +5,9 @@
 #include "engine/render/texture_format.h"
 #include "tests/scratch_file.h"
 
+#include <cstdint>
 #include <fstream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -207,5 +209,113 @@ TEST_CASE("spritefont rejects a glyph count larger than the file, naming it")
 			CHECK(message.find(std::to_string(glyph_count) + " glyphs") !=
 				std::string::npos);
 		}
+	}
+}
+
+namespace
+{
+	struct GlyphRectangleEdges
+	{
+		int32_t left;
+		int32_t top;
+		int32_t right;
+		int32_t bottom;
+	};
+
+	std::vector<unsigned char> one_glyph_font(const GlyphRectangleEdges& edges)
+	{
+		std::vector<unsigned char> bytes{ 'D', 'X', 'T', 'K', 'f', 'o', 'n', 't' };
+		const auto append = [&bytes](uint32_t value)
+		{
+			for (int shift = 0; shift < 32; shift += 8)
+			{
+				bytes.push_back(static_cast<unsigned char>(value >> shift));
+			}
+		};
+		append(1); // glyph count
+		append(U'A');
+		append(static_cast<uint32_t>(edges.left));
+		append(static_cast<uint32_t>(edges.top));
+		append(static_cast<uint32_t>(edges.right));
+		append(static_cast<uint32_t>(edges.bottom));
+		append(0); // x offset
+		append(0); // y offset
+		append(0); // advance adjustment
+		append(0x3f800000u); // line spacing = 1
+		append(0); // default character
+		append(1); // atlas width
+		append(1); // atlas height
+		append(28); // RGBA
+		append(4); // stride
+		append(1); // rows
+		append(0xffffffffu); // one complete white pixel
+		return bytes;
+	}
+}
+
+TEST_CASE("spritefont refuses unrepresentable glyph rectangle extents")
+{
+	const int32_t minimum = (std::numeric_limits<int32_t>::min)();
+	const int32_t maximum = (std::numeric_limits<int32_t>::max)();
+	const GlyphRectangleEdges cases[] = {
+		{ minimum, 0, maximum, 1 },
+		{ maximum, 0, minimum, 1 },
+		{ 0, minimum, 1, maximum },
+		{ 0, maximum, 1, minimum }
+	};
+	for (const GlyphRectangleEdges& edges : cases)
+	{
+		const std::vector<unsigned char> bytes = one_glyph_font(edges);
+		REQUIRE(bytes.size() == 76);
+		const ScratchFile file("glyph_extent_overflow.spritefont", bytes);
+		try
+		{
+			static_cast<void>(read_sprite_font_file(file.path()));
+			FAIL("unrepresentable glyph rectangle was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message = error.what();
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find("glyph 0") != std::string::npos);
+			CHECK(message.find("rectangle extent") != std::string::npos);
+			CHECK(message.find("int range") != std::string::npos);
+		}
+	}
+}
+
+TEST_CASE("spritefont preserves representable signed and zero glyph extents")
+{
+	struct Control
+	{
+		GlyphRectangleEdges edges;
+		int width;
+		int height;
+	};
+	const int32_t minimum = (std::numeric_limits<int32_t>::min)();
+	const int32_t maximum = (std::numeric_limits<int32_t>::max)();
+	const Control controls[] = {
+		{ { 2, 3, 6, 8 }, 4, 5 },
+		{ { 0, 0, 0, 0 }, 0, 0 },
+		{ { minimum, maximum, -1, -1 }, maximum, minimum },
+		{ { maximum, minimum, -1, -1 }, minimum, maximum }
+	};
+	for (const Control& control : controls)
+	{
+		const std::vector<unsigned char> bytes = one_glyph_font(control.edges);
+		REQUIRE(bytes.size() == 76);
+		const ScratchFile file("glyph_extent_control.spritefont", bytes);
+		const SpriteFontFile font = read_sprite_font_file(file.path());
+		REQUIRE(font.glyphs.size() == 1);
+		const Glyph& glyph = font.glyphs[0];
+		CHECK(glyph.character == U'A');
+		CHECK(glyph.subrect.x == control.edges.left);
+		CHECK(glyph.subrect.y == control.edges.top);
+		CHECK(glyph.subrect.width == control.width);
+		CHECK(glyph.subrect.height == control.height);
+		CHECK(font.line_spacing == 1.0f);
+		CHECK(font.atlas.width == 1);
+		CHECK(font.atlas.height == 1);
+		CHECK(font.atlas.pixels == std::vector<unsigned char>(4, 0xff));
 	}
 }

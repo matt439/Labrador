@@ -72,6 +72,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-10-29 - Refuse unrepresentable sprite-font glyph extents
+
+**Behaviour change.** `read_sprite_font_file` rejects glyph rectangle edge
+differences outside the engine's int range with a file-named error before
+signed arithmetic can overflow. Previously opposite signed endpoints could
+overflow while converting the file's edges into a position and size.
+Representable geometry and valid fonts are unchanged; no content migration
+is required.
+
 ### 2026-10-29 - Select UTF-8 source and narrow literals under MSVC
 
 **Compile-option change.** `labrador_settings` now passes `/utf-8` to MSVC.
