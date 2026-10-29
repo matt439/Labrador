@@ -776,8 +776,8 @@ written.
 - [x] **[SM-53](../code-hygiene.md#sm-53-vulkan-devicebuffer-ownership-review)** Could · M · The Sole Owner-Maintainer: Review Vulkan device/buffer ownership for a justified split
 - [x] **[SM-54](../code-hygiene.md#sm-54-renderer-construction-review)** Could · M · The Sole Owner-Maintainer: Review D3D12/Vulkan pipeline construction ownership
 - [x] **[SM-55](../code-hygiene.md#sm-55-web-audio-transport-review)** Could · S · The Sole Owner-Maintainer: Review the Web Audio transport and C++ lifetime boundary
-- [ ] **[SM-56](../code-hygiene.md#sm-56-vulkan-exceptional-cleanup)** Should · S · The Sole Owner-Maintainer: Preserve Vulkan temporary ownership through publication and recovery failures
-- [ ] **[SM-57](../code-hygiene.md#sm-57-d3d12-replacement-texture-publication)** Should · S · The Sole Owner-Maintainer: Keep a replacement texture's descriptor consistent if publication fails
+- [x] **[SM-56](../code-hygiene.md#sm-56-vulkan-exceptional-cleanup)** Should · S · The Sole Owner-Maintainer: Preserve Vulkan temporary ownership through publication and recovery failures
+- [x] **[SM-57](../code-hygiene.md#sm-57-d3d12-replacement-texture-publication)** Should · S · The Sole Owner-Maintainer: Keep a replacement texture's descriptor consistent if publication fails
 - [ ] **[SM-58](../code-hygiene.md#sm-58-d3d12-sprite-pipeline-value-owner)** Could · M · The Sole Owner-Maintainer: Extract the reviewed D3D12 root-signature/PSO value owner — after SM-57
 - [x] **[SM-59](#sm-59)** Should · S · The Outside C++ Adopter, The Sole Owner-Maintainer: Leave a failed new sound-group registration absent and retryable
 - [x] **[SM-60](#sm-60)** Could · S · The Sole Owner-Maintainer: Pin ByteReader's boundary, cursor and byte-order behavior directly

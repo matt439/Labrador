@@ -12,6 +12,7 @@
 
 #include <bit>
 #include <new>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -68,7 +69,10 @@ namespace
 
 	// One captured handle: the device it was made on, and each destruction
 	// of it. A driver may hand the same value to a later object once this one
-	// is gone; from then on the value is not this object, so it stops counting.
+	// is gone, so the value's liveness is followed rather than its count: a
+	// destruction while the value is not live is a second release of an
+	// object already gone, whether or not the value was reused in between.
+	// destroys counts only the captured object's own life.
 	template<typename Handle>
 	struct Tracked
 	{
@@ -77,12 +81,15 @@ namespace
 		int destroys = 0;
 		VkDevice destroyed_on = VK_NULL_HANDLE;
 		int destroyed_at = 0;
+		bool live = false;
 		bool reused = false;
+		int released_while_dead = 0;
 
 		void capture(Handle value, VkDevice device)
 		{
 			this->handle = value;
 			this->created_on = device;
+			this->live = true;
 		}
 
 		void observe_creation(Handle value)
@@ -90,12 +97,23 @@ namespace
 			if (value != VK_NULL_HANDLE && value == this->handle && this->destroys > 0)
 			{
 				this->reused = true;
+				this->live = true;
 			}
 		}
 
 		void observe_destruction(Handle value, VkDevice device, int& clock)
 		{
-			if (value != VK_NULL_HANDLE && value == this->handle && !this->reused)
+			if (value == VK_NULL_HANDLE || value != this->handle)
+			{
+				return;
+			}
+			if (!this->live)
+			{
+				++this->released_while_dead;
+				return;
+			}
+			this->live = false;
+			if (!this->reused)
 			{
 				++this->destroys;
 				this->destroyed_on = device;
@@ -146,6 +164,19 @@ namespace
 		ProbeScope& operator=(const ProbeScope&) = delete;
 	};
 
+	// Arms the next submits to report device loss, and disarms on every way
+	// out, so a failed case cannot hand an unconsumed loss to the next one.
+	struct SubmitLossScope
+	{
+		explicit SubmitLossScope(int losses)
+		{
+			render_tests::reported_submit_losses = losses;
+		}
+		~SubmitLossScope() { render_tests::reported_submit_losses = 0; }
+		SubmitLossScope(const SubmitLossScope&) = delete;
+		SubmitLossScope& operator=(const SubmitLossScope&) = delete;
+	};
+
 	labrador::TextureData white_texture()
 	{
 		labrador::TextureData texture;
@@ -161,6 +192,7 @@ namespace
 	{
 		REQUIRE(tracked.handle != VK_NULL_HANDLE);
 		CHECK(tracked.destroys == 1);
+		CHECK(tracked.released_while_dead == 0);
 		CHECK(tracked.destroyed_on == tracked.created_on);
 	}
 }
@@ -389,6 +421,9 @@ TEST_CASE("Vulkan texture wrapper allocation failure destroys its image, memory 
 	CHECK(probe.image.destroys == 1);
 	CHECK(probe.image_memory.destroys == 1);
 	CHECK(probe.view.destroys == 1);
+	CHECK(probe.image.released_while_dead == 0);
+	CHECK(probe.image_memory.released_while_dead == 0);
+	CHECK(probe.view.released_while_dead == 0);
 }
 #endif
 
@@ -418,7 +453,7 @@ TEST_CASE("Vulkan read-back releases its buffer through the original device afte
 		{
 			probe.refuse_semaphore_off = original;
 		}
-		render_tests::reported_submit_losses = 1;
+		std::optional<SubmitLossScope> losses(std::in_place, 1);
 		std::vector<unsigned char> pixels = sentinel;
 		std::string message;
 		try
@@ -431,7 +466,7 @@ TEST_CASE("Vulkan read-back releases its buffer through the original device afte
 			message = error.what();
 		}
 		const int unconsumed_losses = render_tests::reported_submit_losses;
-		render_tests::reported_submit_losses = 0;
+		losses.reset();
 		probe.track_buffer = false;
 		probe.refuse_semaphore_off = VK_NULL_HANDLE;
 
@@ -478,6 +513,8 @@ TEST_CASE("Vulkan read-back releases its buffer through the original device afte
 
 	CHECK(probe.buffer.destroys == 1);
 	CHECK(probe.buffer_memory.destroys == 1);
+	CHECK(probe.buffer.released_while_dead == 0);
+	CHECK(probe.buffer_memory.released_while_dead == 0);
 	CHECK(probe.device.destroys == 1);
 	CHECK(probe.buffer.destroyed_at < probe.device.destroyed_at);
 	CHECK(probe.buffer_memory.destroyed_at < probe.device.destroyed_at);
