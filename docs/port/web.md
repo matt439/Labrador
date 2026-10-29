@@ -619,10 +619,11 @@ a page of its own in its own styles, built on the same mount (7.3), and its
 `npm run sync-demo` copies the rest of the bundle in beside it. **Putting it
 on the site and deploying is the owner's**, in that repository: `npm run
 deploy` from its `main` branch. The demo is live, at
-<https://mattharding.dev/demo/linesweeper/>, serving a bundle built at
-`c369e8b` (`v0.1.0`) from the module folder `m/cd7d8cfd9043/`, checked on
-2026-10-13 ([web-to-be-tested.md](web-to-be-tested.md) has the headers it
-serves).
+<https://mattharding.dev/demo/linesweeper/>. Its live checks of 2026-10-13
+were against a bundle built at `c369e8b` (`v0.1.0`)
+([web-to-be-tested.md](web-to-be-tested.md) has the headers it served). On
+2026-10-29 the host repository's committed `BUILD.json` (host commit
+`d433560`) names `1e60fb2` (`v0.2.0`); the live page was not re-checked.
 
 **When to re-sync.** After a change to LineSweeper's source or content, engine
 code included in its browser build, the browser shell/mount, bundle/notices

@@ -24,7 +24,7 @@ wasm qualification. Follow Later's order and each story's prerequisites;
 an open hardware gate does not block unrelated work.
 **Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns the
 D3D12 pipeline-owner extraction (`SM-58`); `SRL-21` awaits its
-capture review and both test splits await their stopped runtime checks.
+capture review and the pixel-test split (`SM-49`) awaits its device runs.
 BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
@@ -49,7 +49,6 @@ maintenance lane. Counts prompt review, not automatic splitting.
 |---|---|---|---|---|
 | `SRL-21` | BLOCKED | should | S | Bounds fix and native-null regressions pass; regenerate and review Release captures after GPU access is restored. [Evidence](docs/product/BACKLOG.md#srl-21). |
 | `SM-49` | BLOCKED | should | M | Harness and five case groups preserve source/asset inventories; all native builds/headless checks pass. Pixel execution and wasm GL/S3TC qualification remain at stopped device/Emscripten gates. [Evidence](docs/code-hygiene.md#sm-49-pixel-test-organisation). |
-| `SM-51` | BLOCKED | could | S | Subject split preserves 41 methods; 71 permitted cases pass. Full suite/Infrastructure qualification waits on stopped PowerShell fixtures. [Evidence](docs/code-hygiene.md#sm-51-cloud-tooling-test-organisation). |
 | `SM-72` | BLOCKED | should | S | Finite-file metric contract and two parser cases pass all five native Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-72). |
 | `SM-71` | BLOCKED | should | S | Whole-origin arithmetic and nine new direct/authored cases pass RenderTests and AssetsTests on all five native Debug backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-71). |
 | `SM-69` | BLOCKED | should | S | Glyph-extent overflow guard and native regressions pass all five Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-69). |
@@ -88,9 +87,7 @@ the two new stories have their detail in BACKLOG.md.
 |---|---|---|---|---|
 | `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 | `OCA-18` | BLOCKED | could | S | Visual Studio guide and live breakpoint/content excerpts are implemented; follow it in a clean copied project, hit the breakpoint and load content, recording date and exact IDE version. [Evidence](docs/product/BACKLOG.md#later). |
-| `SM-26` | BLOCKED | could | S | Committed-host lag checker and re-sync trigger are implemented with 25 passing focused tests. Actual check stopped at Labrador's Git ownership gate before reading the host; owner-context qualification remains. [Contract](docs/port/web.md#7-what-the-host-page-gets). |
 | `SM-29` | BLOCKED | could | S | Artifact-preview and production-check steps are documented; the plan distinguishes failed-build preservation from rollback. Current-provider rollback steps and live acceptance remain unverified. [Procedure](website/README.md#preview-and-recovery). |
-| `NMS-03` | BLOCKED | could | S | Why links the unbuilt Android plan and states its scope and five support gates; the remote GitHub response remains unverified under the network stop. [Evidence](docs/product/BACKLOG.md#later). |
 
 `SM-30` remains the owner-only gate follow-up after `SM-29` in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
@@ -105,7 +102,6 @@ the two new stories have their detail in BACKLOG.md.
 | `SM-17` | OPEN | could | M | Render planner, preflight and explicit first-failure executor are implemented with fake-command checks; complete real CTest/report compatibility and the sweep after stopped runtime/toolchain gates. [Scope](docs/verification.md). |
 | `SM-18` | BLOCKED | could | S | Record device checks CI cannot run for each change; after SM-17. |
 | `SM-24` | BLOCKED | could | S | Pin/selector inventory, coupled consumer updates and full qualification procedure are documented. Preserve the after-SM-25 scheduled-run observation gate. [Procedure](docs/dependency-updates.md). |
-| `NMS-04` | BLOCKED | could | S | Native engine/copied-game presets have the Windows host gate, with planner, diagnostic and Windows listing checks. Record the required real Ubuntu/WSL listing; non-Windows wasm remains unverified. [Evidence](docs/product/BACKLOG.md#later). |
 
 `SM-15` remains in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
