@@ -1,6 +1,7 @@
 #include "engine/render/font.h"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
@@ -133,6 +134,65 @@ namespace labrador
 			});
 
 		return extent;
+	}
+
+	std::wstring Font::wrap(std::wstring_view text, float width) const
+	{
+		if (!std::isfinite(width) || width <= 0.0f)
+		{
+			throw std::invalid_argument(
+				"Text wrap width must be finite and greater than zero.");
+		}
+
+		std::wstring wrapped(text);
+		float x = 0.0f;
+		float y = 0.0f;
+		float line_right = 0.0f;
+		size_t last_space = std::wstring_view::npos;
+		size_t index = 0;
+		auto measure_right = [&line_right](const Glyph& glyph,
+			const Vector2F& pen)
+			{
+				const float right = pen.x +
+					static_cast<float>(glyph.subrect.width);
+				if (right > line_right)
+				{
+					line_right = right;
+				}
+			};
+
+		while (index < wrapped.size())
+		{
+			const char32_t character = static_cast<char32_t>(wrapped[index]);
+			if (character == U' ')
+			{
+				last_space = index;
+			}
+			this->walk_glyph(character, x, y, measure_right);
+
+			if (character == U'\n')
+			{
+				x = 0.0f;
+				y = 0.0f;
+				line_right = 0.0f;
+				last_space = std::wstring_view::npos;
+			}
+			else if (line_right > width && last_space != std::wstring_view::npos)
+			{
+				wrapped[last_space] = L'\n';
+				index = last_space + 1;
+				x = 0.0f;
+				y = 0.0f;
+				line_right = 0.0f;
+				last_space = std::wstring_view::npos;
+				// Replay only the current word from its new origin: bearing
+				// clamps and float rounding cannot be rebased. The replay has
+				// no spaces, so each unit is visited at most twice overall.
+				continue;
+			}
+			index++;
+		}
+		return wrapped;
 	}
 
 	size_t Font::first_unrenderable(std::wstring_view text) const

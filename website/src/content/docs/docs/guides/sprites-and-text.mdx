@@ -209,6 +209,40 @@ ASCII and U+00E9, `can_render(font, L"\u03A9")` must report false. It does not
 establish shaping or visual quality; the [language limits](#which-languages-the-text-path-can-draw)
 still apply, and the chosen font must be checked on screen.
 
+### Wrap text when it changes
+
+After checking glyph coverage, `RenderResources::wrap_text(font, text, width)`
+returns an owned wide string with selected ordinary spaces (U+0020) replaced
+by line feeds. `Font::wrap(text, width)` is the same query when you already
+have a font. Use the font's unscaled units, as for `measure_text`, and a
+finite positive width. To wrap the helper's title above, replace its final
+return with:
+
+```cpp
+const std::wstring wrapped = resources.wrap_text(font, title, 240.0f);
+return labrador::Text(wrapped, font_name, labrador::Vector2F(32, 32),
+    &resources);
+```
+
+Here `title`, `font` and `resources` are the helper's existing locals and
+parameter; the returned `Text` owns the wrapped copy. Wrap when the title,
+font or available width changes, rather than inside `draw()`. At text scale
+one the width is in the same units as the panel; for a positive text scale,
+divide the panel's available width by that scale before wrapping.
+
+Exact fits stay together. Existing line feeds and carriage returns are
+preserved, as are all spaces not selected for replacement. Nothing is
+trimmed or collapsed: leading, trailing or repeated visible spaces can
+produce empty lines at a narrow width. Tabs, nonbreaking spaces and hyphens
+are not automatic break points. An unbroken word can remain wider than the
+limit. The result uses the existing glyph fallback and missing-glyph errors;
+wrapping does not replace the `can_render` coverage check.
+
+Scripts without spaces are left unbroken because the glyph walk supplies
+no language-specific line-breaking rules. Those rules remain the game's,
+along with whether to wrap, shrink or clip a string and where to place it.
+The [language limits](#which-languages-the-text-path-can-draw) still apply.
+
 ### Which languages the text path can draw
 
 Text is drawn one glyph per code unit, left to right, with each glyph's own advance. There is no

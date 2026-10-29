@@ -5,8 +5,13 @@
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
+#include <cmath>
+#include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 // The pen, with no device and no file.
@@ -350,4 +355,260 @@ TEST_CASE("a surrogate pair is two code units, and the walk sees two of them")
 	// meant to write. Sixteen and not twenty: the step is the stand-in's own
 	// eight-texel cell, not the ten of the glyphs that are there.
 	CHECK(font.measure(pair).x == doctest::Approx(16.0f));
+}
+
+namespace
+{
+	Font spaced_font()
+	{
+		Glyph space = cell(U' ', 1, 1);
+		space.x_advance = 4.0f;
+		return square_font({ space });
+	}
+
+	void check_wrap(const Font& font, std::wstring_view text, float width,
+		std::wstring_view expected)
+	{
+		const std::wstring wrapped = font.wrap(text, width);
+		CHECK(std::wstring_view(wrapped) == expected);
+		CHECK(wrapped.size() == text.size());
+		size_t start = 0;
+		while (start <= wrapped.size())
+		{
+			const size_t end = wrapped.find(L'\n', start);
+			const size_t length = end == std::wstring::npos
+				? wrapped.size() - start : end - start;
+			const std::wstring_view line(wrapped.data() + start, length);
+			INFO("line begins at unit ", start);
+			CHECK((font.measure(line).x <= width ||
+				line.find(L' ') == std::wstring_view::npos));
+			if (end == std::wstring::npos)
+			{
+				break;
+			}
+			start = end + 1;
+		}
+	}
+
+	struct CountedWalkAction
+	{
+		int& copies;
+		int& calls;
+		CountedWalkAction(int& copies, int& calls) : copies(copies), calls(calls) {}
+		CountedWalkAction(const CountedWalkAction& other)
+			: copies(other.copies), calls(other.calls)
+		{
+			this->copies++;
+		}
+		CountedWalkAction& operator=(const CountedWalkAction&) = delete;
+		void operator()(const Glyph&, Vector2F&&)
+		{
+			this->calls++;
+		}
+	};
+}
+
+TEST_SUITE("FontWrapTests")
+{
+	TEST_CASE("wrapping fits measured ink and keeps a single overlong word")
+	{
+		const Font font = spaced_font();
+		check_wrap(font, L"A B", 25.0f, L"A B");
+		check_wrap(font, L"A B", std::nextafter(25.0f, 0.0f), L"A\nB");
+		check_wrap(font, L"A B A", 25.0f, L"A B\nA");
+		check_wrap(font, L"A B A", 10.0f, L"A\nB\nA");
+		check_wrap(font, L"AAAA A B", 25.0f, L"AAAA\nA B");
+		check_wrap(font, L"AB", 1.0f, L"AB");
+		check_wrap(font, std::wstring_view(), 1.0f, L"");
+		// Tiny trailing whitespace advances the pen, but contributes no ink.
+		check_wrap(font, L"AA ", 20.0f, L"AA ");
+	}
+
+	TEST_CASE("invisible spaces carry bearing and advance across a word")
+	{
+		Glyph space = cell(U' ', 1, 1);
+		space.x_offset = 5.0f;
+		space.x_advance = 4.0f;
+		const Font font = square_font({ space });
+		REQUIRE(font.measure(L" ").x == 0.0f);
+		REQUIRE(font.measure(L"A A").x == 30.0f);
+		check_wrap(font, L"A A", 25.0f, L"A\nA");
+		check_wrap(font, L"  A", 20.0f, L" \nA");
+		check_wrap(font, L"A  B ", 25.0f, L"A \nB ");
+	}
+
+	TEST_CASE("visible spaces can break at an empty line or at the end")
+	{
+		const Font font = square_font({ cell(U' ', 6, 6) });
+		check_wrap(font, L"   ", 5.0f, L"\n\n\n");
+		check_wrap(font, L" A ", 5.0f, L"\nA\n");
+		check_wrap(font, L"  A  ", 16.0f, L" \nA \n");
+		check_wrap(font, L"A  B", 26.0f, L"A \nB");
+		check_wrap(font, L"A  B", 32.0f, L"A  B");
+		check_wrap(font, L"A B ", 26.0f, L"A B\n");
+	}
+
+	TEST_CASE("hard line breaks clear wrapping state while CR stays ignored")
+	{
+		const Font font = spaced_font();
+		check_wrap(font, L"A B\r\nA B\n\n", 10.0f, L"A\nB\r\nA\nB\n\n");
+		check_wrap(font, L"A\r B", 10.0f, L"A\r\nB");
+		check_wrap(font, L"A\nB\n", 10.0f, L"A\nB\n");
+		check_wrap(font, L" A\nB", 10.0f, L"\nA\nB");
+	}
+
+	TEST_CASE("tabs NBSP hyphens and unspaced BMP scripts are not break points")
+	{
+		Glyph space = cell(U' ', 1, 1);
+		space.x_advance = 4.0f;
+		const Font font = square_font({ space, cell(U'\t', 10, 10),
+			cell(U'\u00A0', 10, 10), cell(U'-', 10, 10),
+			cell(U'\u4E2D', 10, 10), cell(U'\u6587', 10, 10),
+			cell(U'\u00E9', 8, 10) });
+		check_wrap(font, L"A\tB A\u00A0B A-B", 25.0f, L"A\tB\nA\u00A0B\nA-B");
+		check_wrap(font, L"\u4E2D\u6587", 10.0f, L"\u4E2D\u6587");
+		check_wrap(font, L"\u00E9 \u00E9", 8.0f, L"\u00E9\n\u00E9");
+	}
+
+	TEST_CASE("replayed words use their new origin and bearing clamps")
+	{
+		Glyph space = cell(U' ', 1, 1);
+		space.x_advance = 4.0f;
+		Glyph inset = cell(U'C', 10, 10);
+		inset.x_offset = -8.0f;
+		const Font font = square_font({ space, inset });
+		REQUIRE(font.measure(L"CC").x == 12.0f);
+		check_wrap(font, L"A CC A", 18.0f, L"A\nCC\nA");
+		inset.x_offset = 4.0f;
+		const Font indented = square_font({ space, inset });
+		REQUIRE(indented.measure(L"C C").x == 33.0f);
+		check_wrap(indented, L"C C", 33.0f, L"C C");
+		check_wrap(indented, L"C C", 32.0f, L"C\nC");
+	}
+
+	TEST_CASE("overflow uses peak ink even when the ending pen moves backwards")
+	{
+		Glyph retreat = cell(U'X', 30, 10);
+		retreat.x_advance = -25.0f;
+		Glyph space = cell(U' ', 1, 1);
+		space.x_advance = 4.0f;
+		const Font font = square_font({ space, retreat });
+		check_wrap(font, L"X A", 20.0f, L"X\nA");
+		Glyph first = cell(U'A', 10, 10);
+		first.x_advance = -9.0f;
+		Glyph second = cell(U'B', 10, 10);
+		second.x_advance = -10.0f;
+		const Font peak(TextureHandle(), { first, second, cell(U' ', 1, 1) }, 20.0f);
+		REQUIRE(peak.measure(L"A B").x == 12.0f);
+		check_wrap(peak, L"A B", 11.0f, L"A\nB");
+	}
+
+	TEST_CASE("views are length aware and the wrapped result owns its units")
+	{
+		const Font font = spaced_font();
+		const wchar_t bounded[] = { L'A', L' ', L'B', L'Z' };
+		check_wrap(font, std::wstring_view(bounded, 3), 10.0f, L"A\nB");
+		std::wstring source = L"A B";
+		const std::wstring wrapped = font.wrap(source, 10.0f);
+		source.assign(L"BBB");
+		CHECK(wrapped == L"A\nB");
+		Glyph space = cell(U' ', 1, 1);
+		space.x_advance = 4.0f;
+		const Font zero = square_font({ space, cell(U'\0', 3, 10) });
+		const std::wstring embedded(L"A\0 B", 4);
+		const std::wstring expected(L"A\0\nB", 4);
+		check_wrap(zero, embedded, 13.0f, expected);
+	}
+
+	TEST_CASE("wrapping uses measurement fallback and reports missing glyphs")
+	{
+		Glyph space = cell(U' ', 1, 1);
+		space.x_advance = 4.0f;
+		Font font = square_font({ space, cell(U'?', 8, 8) });
+		CHECK_THROWS_WITH_AS(font.wrap(L"A Z", 10.0f),
+			doctest::Contains("U+005A"), std::runtime_error);
+		font.set_stand_in(U'?');
+		check_wrap(font, L"AZ Z", 18.0f, L"AZ\nZ");
+		CHECK(font.first_unrenderable(L"AZ Z") == 1);
+		const std::wstring pair = labrador::widen("\xF0\x9F\x8E\xAE");
+		check_wrap(font, pair, 1.0f, pair);
+		const Font no_space = square_font();
+		CHECK_THROWS_WITH_AS(no_space.wrap(L"A A", 10.0f),
+			doctest::Contains("U+0020"), std::runtime_error);
+	}
+
+	TEST_CASE("wrap width must be finite and positive even for empty input")
+	{
+		const Font font = square_font();
+		const float invalid[] = { 0.0f, -0.0f, -1.0f,
+			std::numeric_limits<float>::infinity(),
+			-std::numeric_limits<float>::infinity(),
+			std::numeric_limits<float>::quiet_NaN() };
+		for (const float width : invalid)
+		{
+			CHECK_THROWS_WITH_AS(font.wrap(L"", width),
+				doctest::Contains("width"), std::invalid_argument);
+			CHECK_THROWS_AS(font.wrap(L"Z", width), std::invalid_argument);
+		}
+		check_wrap(font, L"A", std::numeric_limits<float>::min(), L"A");
+	}
+
+	TEST_CASE("long words and repeated words make progress without changing ownership")
+	{
+		const Font font = spaced_font();
+		const std::wstring word(4096, L'A');
+		CHECK(font.wrap(word, 10.0f) == word);
+		std::wstring repeated;
+		std::wstring expected;
+		for (int index = 0; index < 256; index++)
+		{
+			if (index != 0)
+			{
+				repeated += L' ';
+				expected += L'\n';
+			}
+			repeated += L'A';
+			expected += L'A';
+		}
+		check_wrap(font, repeated, 10.0f, expected);
+	}
+
+	TEST_CASE("the shared glyph step keeps callback value and mutation semantics")
+	{
+		const Font font = square_font();
+		int calls = 0;
+		std::vector<Placement> placements;
+		auto action = [state = std::make_unique<int>(0), &calls, &placements]
+			(const Glyph& glyph, Vector2F&& pen) mutable
+			{
+				calls = ++*state;
+				placements.push_back({ glyph.character, pen.x, pen.y });
+				pen.x = 1000.0f;
+				pen.y = 1000.0f;
+			};
+		font.for_each_glyph(L"AB\nA", std::move(action));
+		REQUIRE(placements.size() == 3);
+		CHECK(calls == 3);
+		CHECK(placements[1].x == 10.0f);
+		CHECK(placements[2].x == 0.0f);
+		CHECK(placements[2].y == 20.0f);
+		int copies = 0;
+		calls = 0;
+		CountedWalkAction counted(copies, calls);
+		font.for_each_glyph(L"ABA", counted);
+		CHECK(copies == 1);
+		CHECK(calls == 3);
+	}
+
+	TEST_CASE("the shared glyph step preserves the grouped float advance")
+	{
+		Glyph distant = cell(U'C', 1, 1);
+		distant.x_offset = 16777216.0f;
+		distant.x_advance = 1.0f;
+		const Font font = square_font({ distant });
+		const std::vector<Placement> placements = walk(font, L"CB");
+		REQUIRE(placements.size() == 2);
+		CHECK(placements[0].x == 16777216.0f);
+		CHECK(placements[1].x == 16777218.0f);
+	}
 }

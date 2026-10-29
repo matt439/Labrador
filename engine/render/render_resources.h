@@ -232,8 +232,8 @@ namespace labrador
 		// The same, for a font, and it is the same because a Font is the same kind
 		// of thing a SpriteSheet is: engine data over a texture handle.
 		//
-		// IT DOES NOT MAKE THE THREE BELOW REDUNDANT. Those are what a caller
-		// wants - the extent of a string, whether the atlas can spell it - and
+		// IT DOES NOT MAKE THE QUERIES BELOW REDUNDANT. Those are what a caller
+		// wants - its extent, line breaks and glyph coverage - and
 		// measure_text is a pinned term of the pixel contract
 		// (tests/render/pixel_tests.cpp). This is what the engine's own draw path
 		// wants, because a glyph walk needs the Font itself.
@@ -253,17 +253,23 @@ namespace labrador
 		Vector2F measure_text(FontHandle font,
 			const std::wstring& text) const;
 
+		// Font::wrap through the current font in this handle's slot. Returns an
+		// owned string; width and break rules are Font::wrap's unscaled contract.
+		// Throws std::out_of_range for an unresolved handle, even for empty text,
+		// before the font validates width. Recompute when text/font/width changes.
+		std::wstring wrap_text(FontHandle font, std::wstring_view text,
+			float width) const;
+
 		// Whether `font` has a glyph for every character in `text`, and where the
 		// first character it has none for is - wstring_view::npos when there is
 		// none.
 		//
 		// ASKED OF THE ATLAS, NOT OF WHAT WOULD HAPPEN. The loader installs a
 		// stand-in glyph on every font that offers a candidate - the font's own
-		// default character, then '?', then ' ' - which is every font in this
-		// tree, so drawing an unrenderable string does not fail; it draws question
-		// marks. A font carrying none of the three gets no stand-in and drops the
-		// glyph. So the question this answers is "will the player read what I
-		// wrote", not "will this throw".
+		// default character, then '?', then ' '. A missing glyph uses the selected
+		// stand-in when drawn, measured or wrapped; without one, those operations
+		// throw std::runtime_error. This query asks "will the player read what I
+		// wrote", independently of substitution.
 		//
 		// WHY A CLIENT WANTS TO ASK. Without it a client can only guess, or convert
 		// every content string through a hand-written table of what it believes the

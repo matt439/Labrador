@@ -7,9 +7,13 @@
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
 
+#include <limits>
 #include <memory>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 using labrador::FontHandle;
 using labrador::RenderResources;
@@ -144,4 +148,60 @@ TEST_CASE("a default sheet pair is unresolved in both halves")
 	CHECK_FALSE(frame.frame().valid());
 	CHECK_FALSE(strip.sheet().valid());
 	CHECK_FALSE(strip.strip().valid());
+}
+
+TEST_SUITE("FontWrapResourceTests")
+{
+	TEST_CASE("wrap_text resolves a font handle before text or width validation")
+	{
+		RenderResources resources;
+		CHECK_THROWS_AS(resources.wrap_text(FontHandle(), L"A", 10.0f),
+			std::out_of_range);
+		CHECK_THROWS_AS(resources.wrap_text(FontHandle(), L"", 10.0f),
+			std::out_of_range);
+		CHECK_THROWS_AS(resources.wrap_text(FontHandle(), L"", 0.0f),
+			std::out_of_range);
+		CHECK_THROWS_AS(resources.wrap_text(FontHandle(), L"",
+			std::numeric_limits<float>::quiet_NaN()), std::out_of_range);
+	}
+
+	TEST_CASE("wrap_text forwards through the current font occupying its slot")
+	{
+		labrador::Glyph letter;
+		letter.character = U'A';
+		letter.subrect = labrador::RectangleI(0, 0, 10, 10);
+		labrador::Glyph space;
+		space.character = U' ';
+		space.subrect = labrador::RectangleI(0, 0, 1, 1);
+		space.x_advance = 4.0f;
+		RenderResources resources;
+		resources.add_font("menu", std::make_unique<labrador::Font>(
+			labrador::TextureHandle(), std::vector<labrador::Glyph>{ letter, space },
+			20.0f));
+		const FontHandle handle = resources.resolve_sprite_font("menu");
+		CHECK(resources.wrap_text(handle, L"A A", 25.0f) == L"A A");
+		CHECK(resources.wrap_text(handle, L"A A", 10.0f) == L"A\nA");
+		CHECK(resources.wrap_text(handle, L"A A", 10.0f) ==
+			resources.font(handle)->wrap(L"A A", 10.0f));
+		const wchar_t bounded[] = { L'A', L' ', L'A', L'Z' };
+		CHECK(resources.wrap_text(handle, std::wstring_view(bounded, 3), 10.0f)
+			== L"A\nA");
+		CHECK(resources.wrap_text(handle, L"", 10.0f).empty());
+		CHECK_THROWS_AS(resources.wrap_text(handle, L"", 0.0f),
+			std::invalid_argument);
+		CHECK_THROWS_AS(resources.wrap_text(handle, L"Z", -1.0f),
+			std::invalid_argument);
+		CHECK_THROWS_WITH_AS(resources.measure_text(handle, L"Z"),
+			doctest::Contains("U+005A"), std::runtime_error);
+		CHECK_THROWS_WITH_AS(resources.wrap_text(handle, L"Z", 10.0f),
+			doctest::Contains("U+005A"), std::runtime_error);
+		CHECK_FALSE(resources.can_render(handle, L"Z"));
+		letter.subrect.width = 4;
+		resources.add_font("menu", std::make_unique<labrador::Font>(
+			labrador::TextureHandle(), std::vector<labrador::Glyph>{ letter, space },
+			20.0f));
+		CHECK(resources.resolve_sprite_font("menu") == handle);
+		CHECK(resources.wrap_text(handle, L"A A", 13.0f) == L"A A");
+		CHECK(resources.wrap_text(handle, L"A A", 12.0f) == L"A\nA");
+	}
 }
