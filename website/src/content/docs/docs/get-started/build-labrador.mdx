@@ -8,15 +8,24 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 You build Labrador on its own first. That proves the tools work before your own project adds
 anything, and it builds the samples you will look at next.
 
+Every command on this page runs in the x64 Native Tools Command Prompt from
+[Install the tools](/docs/get-started/prerequisites/), one box at a time, in order.
+
 <Steps>
 
-1. **Clone the repository** into your projects folder:
+1. **Clone the repository** into your projects folder. This downloads Labrador into a new
+   folder, `C:\dev\Labrador`, and moves the prompt into it:
 
    ```bat
-   cd C:\dev
+   cd /d C:\dev
    git clone https://github.com/matt439/Labrador.git
    cd Labrador
    ```
+
+   Git prints a few lines counting objects and ends with `Resolving deltas: 100%` and `done.`;
+   the prompt then ends `C:\dev\Labrador>`. If Git says `destination path 'Labrador' already
+   exists and is not an empty directory`, you have cloned it before: run only the last line,
+   `cd Labrador`, and carry on.
 
 2. **Configure the build:**
 
@@ -34,7 +43,20 @@ anything, and it builds the samples you will look at next.
    about 330 MB in all.
    On a fast desktop with an empty cache that configure took 2 minutes 17 seconds, 1.2 minutes of
    it vcpkg building seven packages, and vcpkg keeps the results, so later configures are quick.
+   A slower machine can take much longer; leave the window alone until the prompt comes back.
    The whole build folder, `out`, comes to about 1.3 GB once the next two steps have run.
+
+   It has worked when the last lines are these, with your own folder in the last one:
+
+   ```text title="Output"
+   -- Configuring done
+   -- Generating done
+   -- Build files have been written to: C:/dev/Labrador/out/build/x64-debug
+   ```
+
+   CMake also prints a time in brackets after each `done`. If it ends with `Configuring
+   incomplete, errors occurred!` instead, find the first line that says `Error` and look it up
+   under [If something fails](#if-something-fails) below.
 
 3. **Build it:**
 
@@ -43,8 +65,9 @@ anything, and it builds the samples you will look at next.
    ```
 
    This builds the engine, all six samples, the tests and the benchmarks, which took 21 seconds
-   on the same desktop. Warnings are errors in every Labrador build, so a successful build has
-   none.
+   on the same desktop. Ninja numbers each step as it goes, such as `[57/326]`, and a build that
+   worked stops at the last number with no line saying `FAILED`; your total may differ. Warnings are errors in every
+   Labrador build, so a successful build has none.
 
 4. **Run the tests:**
 
@@ -58,6 +81,35 @@ anything, and it builds the samples you will look at next.
    tells you the renderer works on your machine.
 
 </Steps>
+
+## Coming back later
+
+A new command prompt starts in its own folder, not in `Labrador`. Each time you open the x64
+Native Tools Command Prompt to carry on, go back to the folder first:
+
+```bat
+cd /d C:\dev\Labrador
+```
+
+Then run the step you want. The build only recompiles what changed, so running the build and
+test lines again is always safe.
+
+## Starting the build again from nothing
+
+The build folder remembers how it was configured. After a configure failed, or after you change
+something it depends on, such as `VCPKG_ROOT`, the folder the project is in, or which prompt you
+use, delete the build folder and configure again. From the `Labrador` folder:
+
+```bat
+rmdir /s /q out\build\x64-debug
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+```
+
+`rmdir /s /q` deletes the folder and everything in it without asking, so check that the prompt
+ends `Labrador>` before you run it. It deletes only what the build made; vcpkg keeps what it
+downloaded elsewhere, so the configure after it is quicker than the first one was. For another
+preset, put its name in place of `x64-debug` in all three lines.
 
 ## Other configurations
 
@@ -99,14 +151,25 @@ Clone into a folder whose path is under 100 characters, or give your folder a dr
 [Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder), and build there.
 </Aside>
 
-<Aside type="caution" title="cmake, cl or fxc is not recognised">
-The command prompt is not the x64 Native Tools Command Prompt. Open that one and run the
-command again from the `Labrador` folder.
+<Aside type="caution" title="'cmake' is not recognized as an internal or external command">
+The command prompt is not the x64 Native Tools Command Prompt. Open that one as in
+[Install the tools](/docs/get-started/prerequisites/), go back to the folder with
+`cd /d C:\dev\Labrador`, and run the command again. The same goes for `cl`, `ninja` and `fxc`.
 </Aside>
 
 <Aside type="caution" title={'Could not find toolchain file: "/scripts/buildsystems/vcpkg.cmake"'}>
 `VCPKG_ROOT` is not set, so the preset's path to vcpkg starts with nothing. The errors about
 Ninja and the compiler that follow it are consequences of the first one. Set `VCPKG_ROOT` as in
-step 4 of [Install the tools](/docs/get-started/prerequisites/), delete the half-configured
-`out\build\x64-debug` folder, and configure again.
+[If VCPKG_ROOT is not set](/docs/get-started/prerequisites/#if-vcpkg_root-is-not-set), then
+start [from nothing](#starting-the-build-again-from-nothing).
 </Aside>
+
+<Aside type="caution" title="warning C4309: 'argument': truncation of constant value">
+The build stopped in `tests\app\window_tests.cpp` with this warning and `error C2220`, after
+building the samples. The prompt was a 32-bit one, such as the plain Developer Command Prompt,
+so everything was compiled for 32-bit Windows, which this guide does not set up. Open the x64
+Native Tools Command Prompt and start [from nothing](#starting-the-build-again-from-nothing).
+</Aside>
+
+[Troubleshooting](/docs/troubleshooting/) has more messages, each with what it means and how to
+get past it.

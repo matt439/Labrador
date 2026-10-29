@@ -26,20 +26,138 @@ finish, but not the build that follows it, because the compiler keeps the 260-ch
 even when long paths are enabled in Windows
 ([Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder)).
 
-### `cmake`, `cl` or `fxc` is not recognised
+### The wrong command prompt
 
-The command prompt does not have Visual Studio's tools on its path. Open the
-**x64 Native Tools Command Prompt** for your Visual Studio version and run the command again.
-An ordinary Command Prompt or PowerShell window does not have them.
+Every command in [Get Started](/docs/get-started/) runs in the **x64 Native Tools Command
+Prompt**, which [Install the tools](/docs/get-started/prerequisites/) says how to open. Other
+windows look much the same and fail in the ways below. To check the one you are in, run:
+
+```bat
+echo %VSCMD_ARG_TGT_ARCH%
+```
+
+The right prompt prints `x64`. Any other answer, including `%VSCMD_ARG_TGT_ARCH%` printed
+back, means the wrong prompt: close it, open the x64 Native Tools Command Prompt, go back to your
+folder with `cd /d` and the folder's path, such as `cd /d C:\dev\Labrador`, and run the command
+again.
+
+#### `'cmake' is not recognized as an internal or external command`
+
+An ordinary Command Prompt prints this, followed by `operable program or batch file.`, for
+`cmake`, `cl`, `ninja` or `fxc`. It has none of Visual Studio's tools on its path.
+
+#### `The term 'cmake' is not recognized as the name of a cmdlet, function, script file, or operable program`
+
+The same mistake in a PowerShell or Terminal window, which also has none of the tools. The
+commands in these pages are written for the command prompt, so open the x64 Native Tools
+Command Prompt rather than looking for a PowerShell equivalent.
+
+#### A 32-bit prompt: `x86-windows`, `Hostx86` or `warning C4309`
+
+The plain **Developer Command Prompt**, **Developer PowerShell** and the x86 prompts set up the
+32-bit compiler, and nothing refuses it at first. `cmake --preset x64-debug` configures without
+an error, but its output says vcpkg is `Detecting compiler hash for triplet x86-windows...` and names a compiler under
+`Hostx86/x86/cl.exe`, and vcpkg builds 32-bit copies of every dependency. Building Labrador
+itself then stops in the tests, after the samples have been built:
+
+```text
+C:\dev\Labrador\tests\app\window_tests.cpp(477): error C2220: the following warning is treated as an error
+C:\dev\Labrador\tests\app\window_tests.cpp(477): warning C4309: 'argument': truncation of constant value
+```
+
+Your own project builds no engine tests, so it may build a 32-bit game with no error at all.
+Either way the build folder is now a 32-bit one. Open the x64 Native Tools Command Prompt,
+check it prints `x64` as above, then delete the build folder and configure again from your
+project's folder:
+
+```bat
+rmdir /s /q out\build\x64-debug
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+```
+
+### `'git' is not recognized`, or `INFO: Could not find "git".`
+
+Git for Windows is not installed, or was installed after this command prompt was opened, and a
+prompt does not see programs installed after it started. Install it as in
+[Install the tools](/docs/get-started/prerequisites/) if you have not, then close the prompt and
+open a new x64 Native Tools Command Prompt.
+
+### `Author identity unknown`
+
+`git commit` stops with this the first time on a machine:
+
+```text
+Author identity unknown
+
+*** Please tell me who you are.
+```
+
+and ends `fatal: unable to auto-detect email address`. Git needs a name and an email address
+to put in the commit. Set them as in
+[Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are), with your own
+name and address in place of the examples, then run the same `git commit` line again.
+
+### `You are in 'detached HEAD' state`
+
+`git -C external/labrador checkout v0.2.0` in
+[Start your own project](/docs/get-started/your-project/) prints this. It is not an error: the
+engine's folder is on one fixed release rather than a branch, which is what a pinned engine
+should be. Nothing needs undoing, and the note's advice about `git switch` does not apply.
+
+### `external/labrador` is empty, or `does not contain a CMakeLists.txt file`
+
+Configuring a project whose engine folder is empty stops with:
+
+```text
+CMake Error at CMakeLists.txt:11 (add_subdirectory):
+  The source directory
+
+    C:/dev/mygame/external/labrador
+
+  does not contain a CMakeLists.txt file.
+```
+
+The project was cloned without `--recurse-submodules`, so Git made the submodule's folder but
+did not fill it. From the project's folder, fill it in, then configure again:
+
+```bat
+git submodule update --init --recursive
+cmake --preset x64-debug
+```
+
+The first line prints `Submodule path 'external/labrador': checked out` and the commit it
+checked out. Clone with `git clone --recurse-submodules` next time, and the engine comes with
+the project.
 
 ## Configuring
 
 ### `Could not find toolchain file: "/scripts/buildsystems/vcpkg.cmake"`
 
 `VCPKG_ROOT` is not set, so the path to vcpkg's toolchain starts with nothing. The errors about
-Ninja and the compiler that follow are consequences of this one. Set `VCPKG_ROOT` as in step 4 of
-[Install the tools](/docs/get-started/prerequisites/), delete the half-configured build folder
-under `out\build\`, and configure again.
+Ninja and the compiler that follow are consequences of this one. Check first that the window is
+the x64 Native Tools Command Prompt, which sets it when Visual Studio's vcpkg component is
+installed ([the wrong command prompt](#the-wrong-command-prompt)). If it is, follow
+[If VCPKG_ROOT is not set](/docs/get-started/prerequisites/#if-vcpkg_root-is-not-set). Then
+delete the half-configured build folder and configure again:
+
+```bat
+rmdir /s /q out\build\x64-debug
+cmake --preset x64-debug
+```
+
+In Visual Studio rather than the prompt, the fix is the same `setx` line in that section,
+followed by closing and reopening Visual Studio.
+
+### `No Direct3D shader compiler (fxc)`
+
+Configure stops with this when it cannot find `fxc.exe`, the Windows SDK's shader compiler,
+which the Direct3D 11 and Direct3D 12 renderers, and so the default `x64-debug` preset, need.
+The usual cause is the wrong window: only the x64 Native Tools Command Prompt puts the Windows
+SDK on the path ([the wrong command prompt](#the-wrong-command-prompt)). If `where fxc` finds
+nothing in that prompt either, the SDK is missing: add a Windows 11 SDK in the Visual Studio
+Installer, as step 1 of [Install the tools](/docs/get-started/prerequisites/) describes, open a
+new prompt and configure again.
 
 ### A warning that an object file path exceeds `CMAKE_OBJECT_PATH_MAX`
 

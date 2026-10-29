@@ -10,62 +10,224 @@ needs comes with two installs. The browser build needs a third, Emscripten, and 
 install it with, both of which [Build for the browser](/docs/guides/browser/#install-emscripten)
 covers when you get there; nothing in Get Started needs them.
 
+## Typing the commands
+
+Every command these pages ask you to run is in a box like the one below. Nothing in a box needs
+changing unless the text around it says so, and then the part to change is named.
+
+```bat
+echo This is a command.
+```
+
+To run one, point at the box and click the copy button that appears at its top right, click in
+the command prompt window, paste with **Ctrl+V** or a right-click, and press **Enter**. A box
+with several lines can be pasted all at once: each line runs in turn. If the last line is still
+sitting after the prompt when the others have finished, press **Enter** once more. Boxes
+labelled as output are what you should see, not something to type.
+
+On Windows 11 the command prompt usually opens in **Windows Terminal**, a window with tabs
+along its top. Pasting more than one line there first asks whether you really want to: a box
+says *You are about to paste text that contains multiple lines*. Click **Paste anyway**. It
+asks every time, and nothing is wrong.
+
+When the text around a box says to change part of a line, the box has that line alone, and
+pasting it does not run it: it waits after the prompt for you to press Enter. Before you do,
+change it there. Press the **Left arrow** key to move back along the line to the part to
+change, delete it with **Backspace**, type the new text in its place, then press **Enter**. If
+the line went wrong, press **Escape** to clear it and paste it again.
+
+If you already use Visual Studio, Git and a command prompt, skim the headings and the
+[check](#check-the-prompt) and carry on.
+
 <Steps>
 
 1. **Install Visual Studio 2022 or newer**, with the **Desktop development with C++**
    workload. The free Community edition is enough.
 
-   That workload brings the compiler, CMake, Ninja, vcpkg and the Windows SDK. In the installer,
-   check that **C++ CMake tools for Windows** and **vcpkg package manager** are ticked under the
-   workload; current versions tick both by default.
+   Download the installer from [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/),
+   run it, and on its **Workloads** tab tick **Desktop development with C++**. The
+   **Installation details** list on the right then shows what that workload includes. Check that
+   these three are ticked there, and tick any that are not:
+
+   - **C++ CMake tools for Windows**
+   - **vcpkg package manager**
+   - a **Windows 11 SDK** (any version)
+
+   Current versions tick all three by default. Click **Install** and wait; it downloads several
+   gigabytes. Restart Windows if the installer asks you to. That workload brings the compiler,
+   CMake, Ninja, vcpkg and the Windows SDK, whose shader compiler the build needs.
+
+   If Visual Studio is already installed, open **Visual Studio Installer** from the Start menu,
+   click **Modify** beside your Visual Studio, and check the same workload and the same three
+   items.
 
 2. **Install [Git for Windows](https://git-scm.com/download/win)**, if you do not have it.
+   Download the 64-bit installer and run it. Its default answer to every question is fine, so
+   click **Next** on each page and then **Install**.
 
-3. **Open the x64 Native Tools Command Prompt.** Type "x64 Native Tools" into the Start menu;
-   it is installed with Visual Studio. Every command in this guide runs in it.
+   Install Git *before* opening the command prompt in the next step. A prompt that was already
+   open does not see a program installed after it started, so close it and open a new one if you
+   install Git later.
 
-   It has to be the **x64** prompt. It puts the 64-bit compiler, CMake, Ninja and the shader
-   compiler on your `PATH` and points `VCPKG_ROOT` at the copy of vcpkg that Visual Studio
-   installed. The plain Developer Command Prompt sets up 32-bit tools, and an ordinary command
-   prompt sets up none.
+3. **Open the x64 Native Tools Command Prompt.** Click Start, type `x64 Native Tools`, and click
+   the result whose name begins **x64 Native Tools Command Prompt**. It is installed with Visual
+   Studio. Every command in this guide runs in it.
 
-4. **Check it.** Each of these should print a version or a path rather than an error:
+   The window it opens starts with lines like these, and the last of them must say `'x64'`:
+
+   ```text title="Output"
+   **********************************************************************
+   ** Visual Studio 2026 Developer Command Prompt v18.0
+   ** Copyright (c) 2026 Microsoft Corporation
+   **********************************************************************
+   [vcvarsall.bat] Environment initialized for: 'x64'
+   ```
+
+   The version numbers differ with your Visual Studio. It has to be the **x64** prompt. It puts
+   the 64-bit compiler, CMake, Ninja and the shader compiler on your `PATH` and points
+   `VCPKG_ROOT` at the copy of vcpkg that Visual Studio installed. Other windows look similar
+   and are wrong for this guide:
+
+   - **Developer Command Prompt** and **Developer PowerShell** set up 32-bit tools. They print
+     no `Environment initialized for: 'x64'` line.
+   - **x86 Native Tools**, **x64_x86 Cross Tools** and **x86_x64 Cross Tools** build for, or
+     run as, 32-bit Windows.
+   - An ordinary **Command Prompt**, **PowerShell** or **Terminal** window has none of the tools.
+
+   If you opened one of those, close it and open the x64 Native Tools Command Prompt instead.
+   [The wrong prompt](/docs/troubleshooting/#the-wrong-command-prompt) in Troubleshooting lists
+   what each one prints when you carry on regardless.
+
+4. <a id="check-the-prompt"></a>**Check it.** Run these in the prompt:
 
    ```bat
    cmake --version
    ninja --version
    where cl fxc git
+   echo %VSCMD_ARG_TGT_ARCH%
    echo %VCPKG_ROOT%
    ```
 
-   If `echo %VCPKG_ROOT%` prints `%VCPKG_ROOT%` back, your version of Visual Studio did not set
-   it. Set it to the `VC\vcpkg` folder inside your Visual Studio installation. The installation
-   is usually `C:\Program Files\Microsoft Visual Studio\<version>\<edition>`, where the version is
-   `2022` for Visual Studio 2022 and `18` for Visual Studio 2026, and the edition is `Community`,
-   `Professional` or `Enterprise`. This prints the installation folder, so you need not guess it:
+   Each should print a version or a path rather than an error. On a machine with Visual Studio
+   2026 Community the output looks like this; the numbers and versions on yours will differ:
 
-   ```bat
-   "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+   ```text title="Output"
+   cmake version 4.3.1-msvc1
+
+   CMake suite maintained and supported by Kitware (kitware.com/cmake).
+   1.13.2
+   C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64\cl.exe
+   C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe
+   C:\Program Files\Git\cmd\git.exe
+   x64
+   C:\Program Files\Microsoft Visual Studio\18\Community\VC\vcpkg
    ```
 
-   Then add `\VC\vcpkg` to what it printed. For the Community edition of Visual Studio 2026:
+   What to do if it does not:
+
+   - `'cmake' is not recognized as an internal or external command` means this is not the x64
+     Native Tools Command Prompt. Close it and go back to step 3.
+   - `INFO: Could not find "git".` means Git is not installed, or was installed after this
+     window opened. Do step 2, then open a new prompt.
+   - `INFO: Could not find "fxc".` means the Windows SDK is missing. Add it as in step 1.
+   - `x86` instead of `x64` means a 32-bit prompt. Go back to step 3.
+   - `%VCPKG_ROOT%` printed back means vcpkg is not set up: follow
+     [If VCPKG_ROOT is not set](#if-vcpkg_root-is-not-set) below.
+
+5. <a id="tell-git-who-you-are"></a>**Tell Git who you are.** Git writes a name and an email
+   address into every commit, and refuses to make the first commit in
+   [Start your own project](/docs/get-started/your-project/) until it has them. You only do this
+   once on a machine.
+
+   Paste this line, but **before you press Enter, change `Your Name` to your own name**,
+   keeping the quotation marks, as [Typing the commands](#typing-the-commands) shows:
 
    ```bat
-   set VCPKG_ROOT=C:\Program Files\Microsoft Visual Studio\18\Community\VC\vcpkg
+   git config --global user.name "Your Name"
+   ```
+
+   Then paste this one, and **before you press Enter, change `you@example.com` to your email
+   address**, again keeping the quotation marks:
+
+   ```bat
+   git config --global user.email "you@example.com"
+   ```
+
+   They print nothing when they work. The address is recorded in your project's history, and
+   anyone you share the repository with can read it; it does not have to be one you use for
+   anything else. Check what Git now has:
+
+   ```bat
+   git config --global --get user.name
+   git config --global --get user.email
    ```
 
 </Steps>
 
+## If VCPKG_ROOT is not set
+
+Skip this section if `echo %VCPKG_ROOT%` printed a folder.
+
+The x64 Native Tools Command Prompt sets `VCPKG_ROOT` itself, every time it opens, when Visual
+Studio's **vcpkg package manager** component is installed. If it printed `%VCPKG_ROOT%` back,
+the component is usually missing. Find out with these two lines. The first finds where Visual
+Studio is installed and keeps it as `VS_DIR`; the second looks for vcpkg inside it:
+
+```bat
+for /f "usebackq delims=" %i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do set "VS_DIR=%i"
+dir /b "%VS_DIR%\VC\vcpkg\vcpkg.exe"
+```
+
+**If the last line prints `File Not Found`**, add the component. Open **Visual Studio
+Installer** from the Start menu, click **Modify** beside your Visual Studio, open the
+**Individual components** tab, type `vcpkg` into its search box, tick **vcpkg package
+manager**, and click **Modify**. When it finishes, close the command prompt, open a new x64
+Native Tools Command Prompt, and run `echo %VCPKG_ROOT%` again. It should now print a folder.
+
+**If it prints `vcpkg.exe`**, vcpkg is installed but your version of Visual Studio did not set
+`VCPKG_ROOT`. Set it for this window, in the same window as the two lines above:
+
+```bat
+set "VCPKG_ROOT=%VS_DIR%\VC\vcpkg"
+echo %VCPKG_ROOT%
+```
+
+A `set` lasts only until the window closes. To keep it for every window you open from now on,
+and for Visual Studio itself, also run:
+
+```bat
+setx VCPKG_ROOT "%VS_DIR%\VC\vcpkg"
+```
+
+It prints `SUCCESS: Specified value was saved.` `setx` changes only windows and programs started
+*after* it, so it does not change the window you ran it in, which is why the `set` line comes
+first. Close Visual Studio if it is open, so that it reads the new value when you start it
+again. Visual Studio usually lives under `C:\Program Files\Microsoft Visual Studio\<version>\<edition>`,
+where the version is `2022` for Visual Studio 2022 and `18` for Visual Studio 2026, and the
+edition is `Community`, `Professional` or `Enterprise`; the `for` line above finds it so you need
+not guess.
+
 ## Choose a short folder
 
-Make a folder for your projects close to the root of a drive, such as `C:\dev`, and use it in
-the steps that follow.
+Make a folder for your projects close to the root of a drive, and use it in the steps that
+follow. These pages use `C:\dev`. Make it, and go into it:
+
+```bat
+mkdir C:\dev
+cd /d C:\dev
+```
+
+If `C:\dev` is already there, `mkdir` says `A subdirectory or file C:\dev already exists.`, which
+is harmless. The `/d` lets `cd` change drive as well as folder, so the line works whichever
+drive the prompt started on. The prompt now ends `C:\dev>`.
 
 Keep the path of the `Labrador` folder under 100 characters; `C:\dev\Labrador` is 15. The build
 writes files up to about 150 characters below that folder, and the compiler cannot open a path
 longer than 260 characters, even when long paths are enabled in Windows. A build in a deeper
 folder warns about `CMAKE_OBJECT_PATH_MAX` when it configures, then stops with
-`fatal error C1083: Cannot open compiler generated file: '': Invalid argument`.
+`fatal error C1083: Cannot open compiler generated file: '': Invalid argument`. Folders under
+`Documents`, `Desktop`, `Downloads` or OneDrive are usually too deep, and OneDrive also tries to
+upload the gigabyte of build files.
 
 `git config --global core.longpaths true` does not get round this. It lets Git clone into a
 deep folder, where a clone would otherwise fail with `Filename too long`, but the build in that
@@ -79,7 +241,18 @@ one, so it needs `core.longpaths` as well:
 
 ```bat
 git config --global core.longpaths true
+```
+
+Then paste this line, and **before you press Enter, change the folder after `P:` to your
+own**:
+
+```bat
 subst P: C:\Users\you\source\repos\clients\studio\projects
+```
+
+It prints nothing when it works. Then go to the new drive:
+
+```bat
 P:
 ```
 

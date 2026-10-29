@@ -55,11 +55,18 @@ preset in `CMakePresets.json` with them.
 1. **Make the repository.** In the x64 Native Tools Command Prompt:
 
    ```bat
-   cd C:\dev
+   cd /d C:\dev
    mkdir mygame
    cd mygame
    git init
    ```
+
+   Git answers `Initialized empty Git repository in C:/dev/mygame/.git/`, and the prompt ends
+   `C:\dev\mygame>`. Every later command on this page runs in this folder. If you open a new
+   prompt part way through, go back to it first with `cd /d C:\dev\mygame`.
+
+   Step 8 makes a commit, which needs Git to know your name and email address. If you skipped
+   [Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are), do it now.
 
 2. **Add Labrador as a submodule, and check out a release:**
 
@@ -68,15 +75,51 @@ preset in `CMakePresets.json` with them.
    git -C external/labrador checkout v0.2.0
    ```
 
-   `v0.2.0` was the newest release when this page was written. Check out the latest tag, which
-   `git -C external/labrador tag --list "v*" --sort=-v:refname` lists newest first, if there is a newer one. Your repository
+   The first line downloads Labrador into `external\labrador`, as the clone did on
+   [Build Labrador](/docs/get-started/build-labrador/). The second prints a long note that
+   begins:
+
+   ```text title="Output"
+   Note: switching to 'v0.2.0'.
+
+   You are in 'detached HEAD' state. You can look around, make experimental
+   ```
+
+   and ends `HEAD is now at` followed by a commit. That is expected, and nothing needs fixing.
+   *Detached HEAD* means the engine's folder is on one fixed release rather than on a branch
+   that moves, which is what you want for an engine you build against. Ignore the note's advice
+   about `git switch`.
+
+   `v0.2.0` was the newest release when this page was written. To see whether there is a newer
+   one, list the releases, newest first:
+
+   ```bat
+   git -C external/labrador tag --list "v*" --sort=-v:refname
+   ```
+
+   If the first line it prints is later than `v0.2.0`, run the checkout line again with that
+   name in place of `v0.2.0`. Your repository
    now records exactly which commit of Labrador it builds against, and moving to a newer tag
    is a change you make deliberately and commit, after reading what
    <RepoLink path="CHANGES.md">CHANGES.md</RepoLink> says changed
    between the two; [Move your engine pin](/docs/guides/move-pin/) is the procedure. This site documents `master`, which can be ahead of the newest tag, and
    CHANGES.md's *Unreleased* heading, when it has one, lists what `master` has that the tag
    does not.
-   Anyone cloning your project needs `git clone --recurse-submodules` to get the engine too.
+
+   Anyone cloning your project, you included on another machine, needs
+   `--recurse-submodules` to get the engine too. With your repository's address in place of the
+   one shown:
+
+   ```bat
+   git clone --recurse-submodules https://github.com/you/mygame.git
+   ```
+
+   A clone made without it has an empty `external\labrador` folder, and configure stops with
+   `does not contain a CMakeLists.txt file`. Inside that clone, this fills the folder in:
+
+   ```bat
+   git submodule update --init --recursive
+   ```
 
 3. **Copy the minimal sample** into a folder called `game`:
 
@@ -84,11 +127,25 @@ preset in `CMakePresets.json` with them.
    xcopy external\labrador\samples\minimal game /E /I
    ```
 
+   `xcopy` lists each file it copies and ends with a count, such as `15 File(s) copied`, that
+   depends on the release you checked out.
+
 4. **Point its includes at the new folder.** Includes in Labrador are written from the root of
    the repository, so the sample names its own headers as `samples/minimal/...`. In your project
    they are under `game/`. Change these lines:
 
    <IncludeChanges />
+
+   This one command makes every change in the table for you. Paste it as a single line:
+
+   ```bat
+   powershell -NoProfile -Command "$q = [char]34; Get-ChildItem game -Recurse -Include *.h,*.cpp | ForEach-Object { $t = [IO.File]::ReadAllText($_.FullName); $n = $t.Replace('#include ' + $q + 'samples/minimal/', '#include ' + $q + 'game/'); if ($n -ne $t) { [IO.File]::WriteAllText($_.FullName, $n); 'Changed ' + $_.FullName } }"
+   ```
+
+   It prints `Changed` and the path of each file it edited, one line per file in the table.
+   To make the changes by hand instead, open each file in the table with Notepad, for example
+   `notepad game\main.cpp`, use **Ctrl+H** to replace `samples/minimal/` with `game/`, and save
+   with **Ctrl+S**.
 
    `main_web.cpp` is only compiled by a browser build, so a mistake in its line shows only
    there. Change it with the rest unless you have deleted the file.
@@ -96,6 +153,16 @@ preset in `CMakePresets.json` with them.
 5. **Replace `game\CMakeLists.txt`** with this:
 
    <Code code={gameCMake} lang="cmake" title="game/CMakeLists.txt" />
+
+   To do that in Notepad, open the file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   In Notepad, press **Ctrl+A** to select everything in the file, then paste the block above
+   over it with **Ctrl+V** (copy it with its copy button first), save with **Ctrl+S** and close
+   Notepad. Any text editor does as well; what matters is that the file holds exactly the block.
 
    It is the sample's build file with its names changed: the program is `MyGame`, the rules
    library `MyGameRules`, the tests `MyGameTests` and `MyGameSmokeTests`, and the content target
@@ -112,7 +179,38 @@ preset in `CMakePresets.json` with them.
    your next launch. [Test your game](/docs/guides/testing/) says how both work and how to add
    your own.
 
-6. **Add the project's own build files** to the `mygame` folder.
+6. **Add the project's own build files** to the `mygame` folder. There are four, each shown
+   below in a box with its file name at the top. Make each file empty first, then open it in
+   Notepad, paste its box into it with the box's copy button and **Ctrl+V**, save with
+   **Ctrl+S** and close Notepad before the next. These lines make the four empty files:
+
+   ```bat
+   type nul > CMakeLists.txt
+   type nul > vcpkg.json
+   type nul > CMakePresets.json
+   type nul > .gitignore
+   ```
+
+   Then open them one at a time, after you have copied that file's box:
+
+   ```bat
+   notepad CMakeLists.txt
+   ```
+
+   ```bat
+   notepad vcpkg.json
+   ```
+
+   ```bat
+   notepad CMakePresets.json
+   ```
+
+   ```bat
+   notepad .gitignore
+   ```
+
+   Making the file first keeps Notepad from adding `.txt` to the name. Each name must match
+   exactly, the leading dot of `.gitignore` included.
 
    <Code code={rootCMake} lang="cmake" title="CMakeLists.txt" />
 
@@ -141,7 +239,7 @@ preset in `CMakePresets.json` with them.
 
    <Code code={gitignore} lang="text" title=".gitignore" />
 
-7. **Build, test and run it:**
+7. **Build, test and run it**, from the `mygame` folder:
 
    ```bat
    cmake --preset x64-debug
@@ -155,12 +253,29 @@ preset in `CMakePresets.json` with them.
    configure step installs the dependencies for this project; vcpkg reuses what it built for
    Labrador, so it is quicker than the first time.
 
+   If configure stops, the first line with `Error` in it says why, and
+   [Troubleshooting](/docs/troubleshooting/) lists the usual ones. A mistake in one of the
+   files from step 5 or 6 usually shows as an error naming that file and a line number: open
+   it again, select everything, paste its box again and save. Then delete the half-made build
+   and configure again:
+
+   ```bat
+   rmdir /s /q out\build\x64-debug
+   cmake --preset x64-debug
+   ```
+
 8. **Commit it:**
 
    ```bat
    git add .
    git commit -m "Start from Labrador's minimal sample"
    ```
+
+   Git prints a line beginning `[master (root-commit)` or `[main (root-commit)` and a list of
+   the files it recorded. If it says `Author identity unknown` instead, do
+   [Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are) and run the
+   `git commit` line again. Git may also print warnings that `LF will be replaced by CRLF`;
+   they are harmless.
 
 </Steps>
 

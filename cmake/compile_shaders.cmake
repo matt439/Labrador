@@ -15,11 +15,25 @@
 function(compile_hlsl target source profile entry symbol output)
     # Find the Windows SDK's fxc only when a backend requests Direct3D HLSL.
     # Including this module imposes no compiler requirement on other backends.
+    # A missing fxc stops configure with a message naming the prompt that
+    # supplies it, because the usual cause is the wrong shell, not a missing
+    # install (T6).
     find_program(FXC_EXECUTABLE
         NAMES fxc
         DOC "The Direct3D shader compiler, from the Windows SDK"
-        REQUIRED
     )
+    if(NOT FXC_EXECUTABLE)
+        message(FATAL_ERROR
+            "No Direct3D shader compiler (fxc). The Direct3D 11 and Direct3D "
+            "12 renderers, which the x64-debug, x64-release and *-d3d12 "
+            "presets build, compile ${source} with fxc.exe from the Windows "
+            "SDK, and it is looked for on PATH. Configure from the x64 Native "
+            "Tools Command Prompt, which puts the Windows SDK's tools on PATH; "
+            "an ordinary Command Prompt or PowerShell window does not. If "
+            "'where fxc' finds nothing in that prompt either, add the Windows "
+            "SDK in the Visual Studio Installer under Desktop development with "
+            "C++. Then configure again.")
+    endif()
 
     set(generated_root "${CMAKE_BINARY_DIR}/generated")
     set(generated_file "${generated_root}/${output}")
