@@ -208,11 +208,12 @@ if(PROJECT_IS_TOP_LEVEL)
         # lets Web Audio make its context. Escape grants none (the gesture note
         # in engine/audio/webaudio/audio_device.cpp) and is only the way out.
         labrador_sample_page_test(AudioPageTests AudioSample "KeyS,Escape")
-        # Navigate settings, request an animation restart, then quit. This
-        # checks page loading/drawing/exit, without reading the rows or frames.
+        # Navigate settings, request an animation restart, then quit. A browser can
+        # consume Escape to leave full screen, so send a second press for the gallery.
+        # This checks page loading/drawing/exit, without reading the rows or frames.
         # ComponentsTests covers widget/playback behavior, not these bindings.
         labrador_sample_page_test(ComponentsPageTests ComponentsGallery
-            "ArrowDown,ArrowDown,ArrowLeft,ArrowUp,ArrowRight,KeyR,Escape")
+            "ArrowDown,ArrowDown,ArrowLeft,ArrowUp,ArrowRight,KeyR,Escape,Escape")
 
         # The packaged host page mounts an ES-module factory on a click,
         # rather than exposing the development shell's Module. Its driver
