@@ -98,16 +98,16 @@ The example host page probes legacy WebAssembly exceptions and WebGL2 only
 after Play, before importing the module. Unsupported browsers get advice
 without a retry button; download, startup and runtime failures get distinct
 player messages, with the original reason in the console. Source-policy
-tests cover those paths without a browser. The updated packaged-page checks
-still need runtime acceptance; [the source verification record](../../docs/port/2026-10-28-demo-host.md)
-keeps that boundary explicit.
+tests cover those paths without a browser, and `LineSweeperBundlePageTests`
+covers them in the packaged page ([the record](../../docs/port/2026-10-28-demo-host.md)).
 
 When graphics are lost, the host styles its waiting message as a warning. If
-they have not returned after ten seconds, it offers a full page reload. Early
-or late restoration clears the warning; quit and failure cancel the wait.
-Reload replaces the whole document because detaching a live module's canvas
-does not stop its loop. An in-page restart still needs a sample-owned stop
-bridge and its browser acceptance (`BDP-16`).
+they have not returned after ten seconds, it offers Try again. That calls the
+instance's `_linesweeper_quit()`, a bridge in `main_web.cpp` to
+`Application::quit()`, then mounts a fresh game once `onQuit` has arrived.
+Detaching a live module's canvas would not stop its loop, so without a
+working bridge the offer is a full page reload instead. Early or late
+restoration clears the warning; quit and failure cancel the wait.
 
 ## The decisions
 

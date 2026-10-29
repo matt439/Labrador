@@ -64,6 +64,21 @@ namespace
 	{
 		linesweeper_log_palette(linesweeper::palette_label(palette));
 	}
+
+	// Set once the Application can quit, for the page's bridge below.
+	Application* running = nullptr;
+}
+
+// The packaged page's way to end a game it can no longer show - a graphics
+// context that never came back - before it mounts a fresh one: the quit the
+// pause menu's QUIT row makes, so onQuit follows and the instance releases
+// itself. Before the game is up there is nothing to quit.
+extern "C" EMSCRIPTEN_KEEPALIVE void linesweeper_quit()
+{
+	if (running != nullptr)
+	{
+		running->quit();
+	}
 }
 
 int main()
@@ -88,6 +103,7 @@ int main()
 		// the instance.
 		static Application app(std::move(options));
 		app.initialize();
+		running = &app;
 
 		// The content is packed into the root of the module's file system,
 		// which is what a relative path resolves against in a browser

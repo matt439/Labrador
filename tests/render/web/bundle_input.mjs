@@ -16,6 +16,9 @@ const expected_diagnostics = [];
 // wasm; the injected onError also retains its exact console reason. Any warning,
 // unrelated error or uncaught exception still fails the run.
 export function expected_complaint({ source, level, text }) {
+	const download = phase === 'download failure' && level === 'error' &&
+		/linesweeper\.js|Failed to load resource|LineSweeper failure: TypeError/.test(text);
+	if (download) { expected_diagnostics.push(text); return true; }
 	const expected = source === 'console' && level === 'error' &&
 		((phase === 'truncated wasm' &&
 			/^(wasm streaming compile failed:|falling back to ArrayBuffer instantiation$|failed to asynchronously prepare wasm:|Aborted\(|LineSweeper failure:)/.test(text)) ||
@@ -116,6 +119,13 @@ async function intercept(page, paused) {
 	const url = new URL(request.url);
 	let body;
 	let type;
+	if (url.pathname.endsWith('/linesweeper.js') && url.search === '' &&
+		phase === 'download failure') {
+		await page.send('Fetch.fulfillRequest', { requestId, responseCode: 404,
+			responseHeaders: [{ name: 'Content-Type', value: 'text/plain' }],
+			body: Buffer.from('not found').toString('base64') });
+		return;
+	}
 	if (url.pathname.endsWith('/linesweeper.js') && url.search === '') {
 		body = Buffer.from(FACTORY_WRAPPER);
 		type = 'text/javascript; charset=utf-8';
@@ -370,18 +380,31 @@ export default async function drive(page) {
 	await loaded(0);
 	await evaluate(`window.labradorBundle.runs[0].canvas.getContext('webgl2')
 		.getExtension('WEBGL_lose_context').loseContext()`);
-	await until(button_visible, 'an unreturned context never offered reload', false, 750);
-	assert(await evaluate("document.getElementById('play').textContent === 'Reload page' && " +
+	await until(button_visible, 'an unreturned context never offered a new game', false, 750);
+	assert(await evaluate("document.getElementById('play').textContent === 'Try again' && " +
 		"document.getElementById('status').textContent.includes('graphics have not returned') && " +
 		"window.labradorBundle.runs[0].canvas.isConnected"),
-		'context timeout did not retain the live canvas and offer a document reload');
+		'context timeout did not retain the live canvas and offer Try again');
 	await click_play();
-	await until(`(${ready}) && window.labradorBundle.runs.length === 0 && ${button_visible}`,
-		'the reload did not produce a fresh host page', true);
+	await loaded(1);
+	assert(await evaluate('window.labradorBundle.runs[0].quit === true && ' +
+		'!window.labradorBundle.runs[0].canvas.isConnected && document.querySelectorAll("canvas").length === 1'),
+		'Try again did not quit the old game and replace its canvas');
+	assert(await evaluate("!document.getElementById('status').classList.contains('error')"),
+		'the fresh game kept the graphics warning');
+	await quit(1);
+	console.log('ok - unreturned graphics offer Try again, which quits the old game and plays a fresh one');
+
+	phase = 'download failure';
+	await navigate('download-failure');
 	await click_play();
-	await loaded(0);
-	await quit(0);
-	console.log('ok - unreturned graphics offer reload, then the fresh document plays and quits');
+	await until("document.getElementById('status').classList.contains('error') && " + button_visible,
+		'a failed loader download did not show an error with a recovery button');
+	assert(await evaluate("document.getElementById('status').textContent === 'The game could not download. Check your connection and try again.' && " +
+		"document.getElementById('play').textContent === 'Try again'"), 'download failure message or Try again is missing');
+	assert(await evaluate(button_exposed), 'a failed download leaves Try again covered');
+	assert(await evaluate('window.labradorBundle.runs.length === 0'), 'a failed download still called the factory');
+	console.log('ok - a failed loader download gives connection advice and an exposed Try again button');
 
 	phase = 'truncated wasm';
 	await navigate('truncated');

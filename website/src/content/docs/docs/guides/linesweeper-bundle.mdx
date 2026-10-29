@@ -113,8 +113,9 @@ also has a poster, controls, accessibility information and the current phone gat
 </html>
 ```
 
-**A running instance cannot be stopped from the page.** There is no JavaScript stop method:
-quit must come from inside the game. Removing its canvas or changing `Module.canvas` leaves its
+**A running instance stops through its own quit.** The instance the factory resolves has
+`_linesweeper_quit()`, which makes the same quit as the pause menu's QUIT row: `onQuit` follows
+synchronously, before the call returns. Nothing else stops it. Removing its canvas or changing `Module.canvas` leaves its
 loop and listeners running. Keep that canvas attached until `onQuit`, or the stopped game's
 `onError`, then remove it. Quit stops the loop and listeners, and on a later task the static
 `Application` destroys its states and releases its services, Web Audio and the WebGL2 context

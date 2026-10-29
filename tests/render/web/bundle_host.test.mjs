@@ -47,7 +47,7 @@ function host(options = {}) {
 			// A canvas on the stage is a game's, asked for again only to lose
 			// the context of one that ran.
 			if (this.parent) {
-				return { getExtension: (name) => {
+				return { isContextLost: () => false, getExtension: (name) => {
 					assert.equal(name, 'WEBGL_lose_context');
 					return { loseContext: () => retired++ };
 				} };
@@ -102,6 +102,7 @@ function host(options = {}) {
 			return { default: async (config) => {
 				runs.push(config);
 				await options.factory?.(config);
+				return options.instance?.(config);
 			} };
 		},
 	});
@@ -364,6 +365,36 @@ test('an unreturned context offers a document reload instead of abandoning a liv
 	assert.equal(page.runs.length, 1);
 	assert.equal(page.elements.get('stage').children.length, 1);
 });
+
+test('with the quit bridge, an unreturned context offers Try again, which quits and remounts', async () => {
+	let quits = 0;
+	const page = host({ instance: (config) => ({ _linesweeper_quit: () => { quits++; config.onQuit(); } }) });
+	await page.click();
+	page.runs[0].onContextLost();
+	page.expire();
+	assert.match(page.status, /graphics have not returned.*Try again/);
+	assert.equal(page.elements.get('play').textContent, 'Try again');
+	await page.click();
+	assert.equal(quits, 1);
+	assert.equal(page.reloads, 0);
+	assert.equal(page.runs.length, 2);
+	assert.equal(page.elements.get('stage').children.length, 1);
+	assert.doesNotMatch(page.status, /Thanks for playing|graphics/);
+	assert.equal(page.elements.get('status').classList.contains('error'), false);
+});
+
+for (const [name, quit] of [['never quits', () => {}],
+	['throws', () => { throw new Error('synthetic bridge failure'); }]]) {
+	test(`a quit bridge that ${name} leaves the reload route`, async () => {
+		const page = host({ instance: () => ({ _linesweeper_quit: quit }) });
+		await page.click();
+		page.runs[0].onContextLost();
+		page.expire();
+		await page.click();
+		assert.equal(page.reloads, 1);
+		assert.equal(page.runs.length, 1);
+	});
+}
 
 test('a late restore hides the reload offer and keeps the original instance', async () => {
 	const page = host();
