@@ -99,9 +99,9 @@ hidden Application and synthetic keyboard input: independent focus slots,
 held-direction gating, resized recordings and the READY-to-arena transition.
 These cases poll no physical pad and run no application loop or graphics/audio
 API device. The Debug-null test and sample targets build, the test entry passes,
-and the existing null smoke run exits 0. Desktop visual review and the updated
-browser entry's build/runtime acceptance remain open in OCA-46; these recordings
-do not establish them.
+and the existing null smoke run exits 0. These recordings do not establish
+appearance: the join screen is looked at on a desktop build and in a browser.
+No physical pad has driven the menu.
 
 `--smoke-test` bypasses the join menu, opens a hidden window and renders 120 fixed ticks of independent
 scripted movement and checks final positions and the view count before exiting.

@@ -43,20 +43,32 @@ and amend `web.md` §9 with the result.
       console rAF timestamps, raw JSON and nearest-rank p50/p99; separately
       record visible irregular holds/jumps during comparable motion. Callback
       bins alone are not visible-judder or scan-out evidence. The console
-      procedure still needs its first browser run; no display result is added.
+      procedure has run in headless Chrome; no display result is added.
 - [ ] The mattharding.dev stage at 1x, 1.25x, 1.5x and 2x and with browser
       zoom: the HUD text is readable when the game is drawn smaller than
       1280x720.
 
-**WEB#6 local access gate, 2026-10-26.** A read-only HTTPS HEAD to
-`https://mattharding.dev/demo/linesweeper/` was denied at
-`2026-10-26T22:44:55.3087718Z` with `System.Net.Http.HttpRequestException`:
-"An attempt was made to access a socket in a way forbidden by its access
-permissions. (mattharding.dev:443)". The endpoint check is stopped. No hosted
-page was inspected or opened in a browser, and no scaling, zoom or HUD
-legibility result was obtained. The exact operation, target, reason and time
-are retained in `out/overnight-2026-10-26/web6-live-head.json`. Local HTTPS
-access is needed before this hosted-page acceptance can proceed.
+**WEB#6 emulated stage check, 2026-10-29.** Headless Chrome (ANGLE D3D11 on
+the RTX 5080) loaded `https://mattharding.dev/demo/linesweeper/` ("Built from
+Labrador 1e60fb2"), pressed Play, made eight hard drops and captured the stage
+at one image pixel per device pixel through DevTools. Device scale and browser
+zoom were emulated with `Emulation.setDeviceMetricsOverride`: zoom as device
+scale equal to the zoom and a CSS viewport of 1280x900 divided by it. No
+physical scaled display or real zoom control was used. The stage is the 52rem
+column at 16:9, 800x450 CSS pixels from a 1280-wide window, and the drawing
+buffer follows device pixels.
+
+| Case | Drawing buffer | HUD |
+|---|---|---|
+| Scale 1, 1.25, 1.5, 2 | 800x450, 1000x563, 1200x675, 1600x900 | Labels, values and the controls line read cleanly |
+| Zoom 150%, 200% | 1200x675, 1186x667 | Clean |
+| Zoom 80%; 640-pixel window at scale 1 | 640x360; 593x334 | Readable; board grid lines thin unevenly and adjacent cells merge |
+| Zoom 67% | 536x302 | Readable with effort; letters lose strokes (NEXT nearly reads WEXT) and the queued O piece draws as two bars |
+| Zoom 50% | 400x225 | Not reliably readable: NEXT reads MEXT, the score digits deform and the controls line breaks up |
+
+The page logged no console message, warning or exception. A person still
+checks one real non-integer display scale and Ctrl+minus zoom in a desktop
+browser; whether 50% zoom needs a fix is the owner's call.
 
 ## Needs a gamepad (M4)
 
@@ -96,8 +108,8 @@ gate. It stays closed until both are complete. No Android phone is available;
       [R6 fixture requirements and results template](pacing-method.md#3-r6-prerequisites-for-an-exact-9600-particle-browser-frame)
       name the instrument: completed-frame CPU phases from
       `Application::frame_timings()`, paired with rAF intervals and the same
-      observed-judder record as R5. The opt-in exact fixture/export is written;
-      browser runtime acceptance is blocked by Chrome GPU access denial.
+      observed-judder record as R5. The opt-in exact fixture/export passes
+      in headless Chrome on the desktop.
       Headless ParticleField counts, ordinary played top-out and native bench
       timings cannot supply this phone result. No phone measurement is added.
 - [ ] Rotating with the pause menu open re-arranges the match underneath only

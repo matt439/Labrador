@@ -12,18 +12,13 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. The immediate queue is:
 
-1. **Qualify rows whose device, Emscripten and browser gates are open again.** The toolchain, GPU and Chromium run on this desktop again; each BLOCKED row below names what its owner still asks for.
+1. **`OCA-51`: fix the native full-screen exit.** Leaving full screen leaves the gallery's client white on every rasterizing backend; the [evidence](docs/product/BACKLOG.md#later) has the reproduction.
+2. **`SM-17`: run the render verification sweep for real.** The toolchain, GPU and Chromium are available again; [the contract](docs/verification.md) says what the sweep must show.
 
-**Available after those batches:** text examples and validation tools are
-indexed below. The animation example and gallery settings have source/native
-checks and await rendered/browser acceptance.
-Pointer-menu and recording-renderer guides and LineSweeper's include-layer
-check are complete; strict asset keys have source/native coverage and await
-wasm qualification. Follow Later's order and each story's prerequisites;
-an open hardware gate does not block unrelated work.
+Then follow Later's order and each story's prerequisites; an open hardware
+gate does not block unrelated work.
 **Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns the
-D3D12 pipeline-owner extraction (`SM-58`); `SRL-21` awaits its
-capture review and the pixel-test split (`SM-49`) awaits its device runs.
+D3D12 pipeline-owner extraction (`SM-58`).
 BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
@@ -33,7 +28,7 @@ required by this plan.
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
 - Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling).
-- Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery).
+- Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#6` (a real display scale and browser zoom on the live demo), `SM-29` (confirm the dashboard rollback route), `OCA-18` (the Visual Studio breakpoint session).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction.
 
@@ -46,11 +41,6 @@ maintenance lane. Counts prompt review, not automatic splitting.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SRL-21` | BLOCKED | should | S | Bounds fix and native-null regressions pass; regenerate and review Release captures after GPU access is restored. [Evidence](docs/product/BACKLOG.md#srl-21). |
-| `SM-49` | BLOCKED | should | M | Harness and five case groups preserve source/asset inventories; all native builds/headless checks pass. Pixel execution and wasm GL/S3TC qualification remain at stopped device/Emscripten gates. [Evidence](docs/code-hygiene.md#sm-49-pixel-test-organisation). |
-| `SM-72` | BLOCKED | should | S | Finite-file metric contract and two parser cases pass all five native Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-72). |
-| `SM-71` | BLOCKED | should | S | Whole-origin arithmetic and nine new direct/authored cases pass RenderTests and AssetsTests on all five native Debug backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-71). |
-| `SM-69` | BLOCKED | should | S | Glyph-extent overflow guard and native regressions pass all five Debug render backends and Release null; wasm/full-CI qualification remains open. [Evidence](docs/product/BACKLOG.md#sm-69). |
 | `SM-58` | OPEN | could | M | Extract the reviewed D3D12 root-signature/PSO value owner now that SM-57 is closed; keep frame lifetime coordinated. |
 
 ## Input, menus, settings and saves
@@ -61,22 +51,7 @@ maintenance lane. Counts prompt review, not automatic splitting.
 |---|---|---|---|---|
 | `OCA-45` | BLOCKED | should | S | Any-slot sample and guide implemented; record a physical two-pad run after unplugging slot 0, with date and commit. |
 | `PI-21` | DECISION | should | S | Vibration implemented and headlessly tested; record each motor, stop, background, disconnect, reconnect and shutdown on a physical pad, natively and in Chrome. Can ride `OCA-48`'s session. [Acceptance](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
-| `OCA-46` | BLOCKED | could | M | Join screen, routing and native-null cases pass; desktop visual review and browser build/runtime acceptance remain at the stopped GPU/Emscripten gates. [Evidence](docs/product/BACKLOG.md#later). |
-| `OCA-51` | BLOCKED | could | M | Two-mode fullscreen request/re-sync and the sound-group guide are implemented; native builds, headless row tests and guide compilation pass. Actual fullscreen/browser acceptance remains at stopped gates. [Evidence](docs/product/BACKLOG.md#later). |
-
-## Content, text and sample examples
-
-**Owner:** [BACKLOG.md, Later](docs/product/BACKLOG.md#later), L21 to L23,
-L26 and L35. Existing story acceptance is in [STORIES.md](docs/product/STORIES.md);
-the two new stories have their detail in BACKLOG.md.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `OCA-41` | BLOCKED | could | S | UTF-8 settings and the permitted native scratch consumer pass; complete wasm/Node and full-CI acceptance. The committed-literal reservation is retained. [Record](docs/2026-10-29-literal-encoding.md). |
-| `OCA-42` | BLOCKED | could | M | Compiled JSON-to-owned-text guide, glyph checks and null submissions pass; finish authored matching-atlas and browser acceptance. [Record](docs/2026-10-29-string-table-text.md). |
-| `OCA-77` | BLOCKED | could | S | Measured word wrapping and fifteen new cases pass all five native Debug backends and Release null; wasm/full-CI qualification remains open. [Record](docs/2026-10-29-word-wrap.md). |
-| `PI-20` | BLOCKED | could | S | Key enumeration and strict manifest/sprite-sheet fields pass native Debug/null/Release cases; wasm/Node qualification remains at stopped Emscripten gates. [Evidence](docs/2026-10-29-strict-asset-keys.md). |
-| `SRL-20` | BLOCKED | could | M | Copyable strip player, gallery overlay, original content and native timing/loader/recording/state checks are implemented. Wasm/page checks and rendered-frame review remain at stopped gates. [Evidence](docs/product/BACKLOG.md#srl-20). |
+| `OCA-51` | OPEN | could | M | Chrome entry, external-exit re-sync and row exit pass. Natively, leaving full screen leaves the window white on all four rasterizing backends (GL is also white in full screen); fix it, then observe a browser refusal. [Evidence](docs/product/BACKLOG.md#later). |
 
 ## Website and the hosted demo
 
@@ -85,8 +60,8 @@ the two new stories have their detail in BACKLOG.md.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
-| `OCA-18` | BLOCKED | could | S | Visual Studio guide and live breakpoint/content excerpts are implemented; follow it in a clean copied project, hit the breakpoint and load content, recording date and exact IDE version. [Evidence](docs/product/BACKLOG.md#later). |
-| `SM-29` | BLOCKED | could | S | Artifact-preview and production-check steps are documented; the plan distinguishes failed-build preservation from rollback. Current-provider rollback steps and live acceptance remain unverified. [Procedure](website/README.md#preview-and-recovery). |
+| `OCA-18` | DECISION | could | S | Visual Studio guide is implemented. A person follows it in a clean copied project in Visual Studio Community 2026 18.9.2, hits the breakpoint, sees content load and records the date. [Evidence](docs/product/BACKLOG.md#later). |
+| `SM-29` | DECISION | could | S | Preview, production-check and Cloudflare rollback steps are documented from Cloudflare's docs. The owner confirms the dashboard rollback route once, or accepts the sourced text, and ticks the box. [Procedure](website/README.md#preview-and-recovery). |
 
 `SM-30` remains the owner-only gate follow-up after `SM-29` in [BACKLOG.md, Later](docs/product/BACKLOG.md#later).
 
@@ -123,10 +98,9 @@ the two new stories have their detail in BACKLOG.md.
 | `SM-09` | DECISION | should | S | The owner records the highest macOS and Safari the 2013 MacBook Air takes, and plays the live demo there if it meets the wasm-exceptions floor. |
 | `WEB#1` | BLOCKED | should | M | M3's Safari half: all six sample pages in desktop Safari (drawing, keys, quit, context loss and restore), and whether Safari masks `RENDERER`. Blocked on `SM-09`'s ceiling; R5 is `BDP-07`'s. |
 | `WEB#3` | DECISION | should | S | Hear the audio sample through speakers (each sound, pan, pitch, volume, held keys), the first-gesture unlock in each browser, resume after a hidden tab, and `ping_adpcm.xwb` on XAudio2. Nobody has listened yet. |
-| `SM-08` | BLOCKED | should | S | Instrument/fixture source and headless checks implemented; generated-output review and Release flag/PageTests runtime acceptance await access. [Method and limits](docs/port/pacing-method.md); `BDP-07`/`SM-13` wait on it. |
-| `BDP-07` | BLOCKED | could | M | Measure the fixed 60 Hz step under `requestAnimationFrame` on a 60 Hz and a high-refresh display (R5), M3's second open term. After `SM-08`; may need a borrowed display. |
-| `WEB#6` | BLOCKED | could | XS | Record hosted-stage scaling, zoom and HUD legibility after local HTTPS access is restored. The read-only HEAD was socket-permission denied. [Evidence](docs/port/web-to-be-tested.md). |
-| `SM-13` | BLOCKED | should | M | Play the development page and the live demo on the owner's iPhone and record layout, rotation, touch, legibility, load time, memory (R4) and the top-out frame (R6). After `SM-14` (serving to a phone on the LAN) and `SM-08`. |
+| `BDP-07` | BLOCKED | could | M | Measure the fixed 60 Hz step under `requestAnimationFrame` on a 60 Hz and a high-refresh display (R5), M3's second open term. May need a borrowed display; [method](docs/port/pacing-method.md). |
+| `WEB#6` | DECISION | could | XS | Emulated hosted-stage check is recorded: the HUD reads down to 67% zoom (536x302) and not at 50% (400x225). A person checks one real display scale and Ctrl+minus zoom; the owner decides on 50%. [Evidence](docs/port/web-to-be-tested.md). |
+| `SM-13` | BLOCKED | should | M | Play the development page and the live demo on the owner's iPhone and record layout, rotation, touch, legibility, load time, memory (R4) and the top-out frame (R6). After `SM-14` (serving to a phone on the LAN); R6 by [the method](docs/port/pacing-method.md). |
 | `BDP-10` | BLOCKED | could | XS | Lift the bundle page's phone gate after `SM-13`; `BDP-09`'s layout is in place. The owner approved iPhone-only evidence; Android is not a prerequisite. [Decision](docs/product/BACKLOG.md#decisions-only-the-owner-can-make). |
 | `SM-44` | DEFERRED | could | S | Optional future real-phone record on a mid-range Android phone in Chrome. Waits on a borrowed phone; none is accessible. Does not gate iPhone acceptance. |
 | `WEB#2` | BLOCKED | could | S | A standard-mapping pad in Firefox and Safari (Chrome is `BDP-06`'s), and unplug and replug with more than four pads seen. Firefox can ride `OCA-48`'s session; Safari waits on `SM-09`, and five pads are not owned. |
@@ -215,6 +189,7 @@ A new row for one of these gets its section back.
 | area | owner | a row returns with |
 |---|---|---|
 | The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front; the rows above are the batches NOW names, and the Next stories that the owner or an outside event gates, or that a row here pairs with |
+| Content, text and sample examples (L21 to L23, L26, L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new text, content or sample-example story reaching the front |
 | The rest of Later (L1 to L40) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | its next ready batch reaching the front under the scheduling amendment; the hygiene lane runs alongside product work |
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |
 | web.md's milestones M1, M2, M5, M6 and its decisions | [docs/port/web.md](docs/port/web.md) sections 8 and 9 | a regression, or a change the port meets that a decision must settle |

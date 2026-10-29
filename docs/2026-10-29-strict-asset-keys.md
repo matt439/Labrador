@@ -66,9 +66,11 @@ The website check reports zero diagnostics, all 160 tests pass, and the
 143-page/431-file build validates its internal links and new reference output.
 Logs use the `pi20-` prefix under ignored `out/loop-2026-10-28-2114/`.
 
-**Still open:** wasm compilation and Node execution remain at the existing
-Emscripten environment-write/generated-output stops; neither route was retried.
-Native checks do not establish clang/wasm qualification, and CI's required
-matrix remains outstanding. Keep PI-20's backlog box unchecked pending that
-qualification. No browser, GPU, listening, deployment or private-client result
-is implied by these checks.
+**Wasm and CI qualification:** on 2026-10-29 the complete `AssetsTests`
+suite passes under Node with zero failures or skips: `wasm-release` and
+`wasm-debug` 79 cases/637 assertions, and CI's `wasm-release-null` override
+80/647, the same as native at that revision. All twelve new cases ran in
+each. CI run 40836037123 on b96bad6, which contains the change, passed all
+twelve jobs, including `consumer` and `wasm-consumer`. PI-20's backlog box is
+ticked. No browser, GPU, listening, deployment or private-client result is
+implied by these checks.
