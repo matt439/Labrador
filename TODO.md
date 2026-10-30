@@ -21,10 +21,9 @@ BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
-**Beginner guides are ready work:** take `GUIDE#1` to `GUIDE#13` in their
+**Beginner guides are ready work:** take `GUIDE#2` to `GUIDE#13` in their
 order in [Beginner guides](docs/beginner-guides.md), which ranks them by
-impact on the owner's 2026-10-30 reader; `GUIDE#4` and `GUIDE#7` wait on
-`GUIDE#1`.
+impact on the owner's 2026-10-30 reader.
 
 **Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which with a green CI run of the changed consumer jobs closes `OCA-78`. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
@@ -62,13 +61,12 @@ impact on the owner's 2026-10-30 reader; `GUIDE#4` and `GUIDE#7` wait on
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `GUIDE#1` | OPEN | must | XS | Configure the engine inside an extracted starter's `external\labrador`, which has no `.git`, and record what works; `GUIDE#4` and `GUIDE#7` depend on it. |
 | `GUIDE#2` | OPEN | should | S | Get Started's edit, build and run loop: split first-change's one-box rebuild, quit the game first (LNK1168), link Troubleshooting, backup and restore without Git. |
 | `GUIDE#3` | OPEN | should | M | A "Reading a build error" guide and Troubleshooting section with the common MSVC, linker and `/WX` errors, linked from every guide that changes code. |
-| `GUIDE#4` | BLOCKED | must | M | Run the samples from a starter project: one "Where to run this" block linked from every sample guide and README. Needs `GUIDE#1`. |
+| `GUIDE#4` | OPEN | must | M | Run the samples from a starter project: one "Where to run this" block linked from every sample guide and README. |
 | `GUIDE#5` | OPEN | must | L | Install texconv, MakeSpriteFont and xwbtool; draw a plain texture with complete code; whole manifests; asset errors; sheets, animation, fonts and strings. |
 | `GUIDE#6` | OPEN | must | L | Add a source file, screen, level, menu, rules and tests, each naming both source lists in `game\CMakeLists.txt` and the LNK2019 of missing one. |
-| `GUIDE#7` | BLOCKED | should | M | Play a sound in your own game, first from the audio sample's tones with no tools. Needs `GUIDE#1`. |
+| `GUIDE#7` | OPEN | should | M | Play a sound in your own game, first from the audio sample's tones with no tools. |
 | `GUIDE#8` | OPEN | must | L | Share the game: one free web host end to end, GitHub account to push, reading a CI run, what a player sees from a Windows release. |
 | `GUIDE#9` | OPEN | should | M | Edit and debug in Visual Studio step by step: selectors, breakpoints, stepping, Error List; `OCA-18`'s session checks the same page. |
 | `GUIDE#10` | OPEN | should | M | The browser build for a beginner: emsdk's Git need against the starter's promise, Python, sizes and times, build output, serving and refreshing. |
