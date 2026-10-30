@@ -1,0 +1,684 @@
+---
+title: Add a screen to your game
+description: Write a title screen as a new state, list its source file in both of the game's build lists, start the game on it, and switch to the starter's screen with Enter, step by step, with what each failure means.
+sidebar:
+  order: 0.91
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+A game is made of screens: a title screen, the game itself, a pause menu, a "Really quit?" box.
+On this engine each screen is a **state**, a class of your own that the engine keeps on a stack,
+and the starter has two: `HelloState`, the circling greeting, and `ConfirmState`, the quit
+question. This page adds a third, a title screen that shows the game's name and waits for
+**Enter**. It goes through every file that changes: the two new files for the state, the build
+file that lists them, and the two files that choose the first state, one for Windows and one for
+the browser. It takes about 15 minutes.
+
+Before you start, do [Make a first change](/docs/get-started/first-change/), so that you know
+the edit, build and run loop and have a copy of your game to go back to. Make a fresh copy now
+with that page's step 1 line. This page does not depend on the picture, animation or font pages,
+and works whether or not you have done them.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Make the state's header.** A class in C++ is usually two files: a header, ending `.h`,
+   that says what the class has, and a `.cpp` file with the code. First make the empty header,
+   then open it:
+
+   ```bat
+   if not exist game\states\title_state.h type nul > game\states\title_state.h
+   notepad game\states\title_state.h
+   ```
+
+   The first line makes an empty file and prints nothing; it leaves the file alone if it is
+   already there. Notepad opens the empty file. Paste all of this into it, then save and close
+   Notepad:
+
+   ```cpp title="game\states\title_state.h"
+   #pragma once
+
+   #include "engine/app/application.h"
+   #include "engine/core/state.h"
+   #include "engine/scene/scene.h"
+
+   #include <memory>
+
+   // The title screen: the game's name, and how to start. Enter or A starts the
+   // game by replacing this screen with HelloState; Escape or B quits.
+   class TitleState : public labrador::State
+   {
+   public:
+   	explicit TitleState(labrador::Application* app);
+
+   	void init() override;
+   	void update(float dt) override;
+   	void draw(labrador::Renderer& renderer) const override;
+
+   private:
+   	labrador::Application* app_ = nullptr;
+
+   	// What is on screen: the title and the line under it.
+   	std::unique_ptr<labrador::Scene> scene_ = nullptr;
+   };
+   ```
+
+   `class TitleState : public labrador::State` says that a `TitleState` is one of the engine's
+   states. The three functions after `public:` are the ones every state has, and the engine calls
+   them: `init` once, when the screen starts, then `update` and `draw` on every frame. They must
+   be spelt exactly as here, including `const` at the end of `draw`; `override` asks the compiler
+   to check that they are. Under `private:` are the two things the state keeps: the application,
+   which gives it the keyboard, the pads and the fonts, and a **scene**, which holds what it draws.
+
+2. **Make the state's code.** Make the second file and open it:
+
+   ```bat
+   if not exist game\states\title_state.cpp type nul > game\states\title_state.cpp
+   notepad game\states\title_state.cpp
+   ```
+
+   Paste all of this into it, then save and close Notepad:
+
+   ```cpp title="game\states\title_state.cpp"
+   #include "game/states/title_state.h"
+
+   #include "engine/core/state_context.h"
+   #include "engine/input/keyboard.h"
+   #include "engine/math/rectanglef.h"
+   #include "engine/math/vector2f.h"
+   #include "engine/render/label.h"
+   #include "game/states/hello_state.h"
+
+   #include <memory>
+   #include <string>
+
+   using namespace labrador;
+
+   namespace
+   {
+   	// The fonts, as content/manifest.json names them, and how many times
+   	// bigger than its font the title is drawn.
+   	const std::string font_name = "jetbrains_mono_bold_16";
+   	const std::string title_font_name = "jetbrains_mono_bold_16";
+   	constexpr float title_scale = 3.0f;
+
+   	// Moves a label across so that its middle is at the middle of the
+   	// window, and down to y.
+   	void centre_across(Label& label, float window_width, float y)
+   	{
+   		label.set_position(
+   			Vector2F((window_width - label.bounds().width) * 0.5f, y));
+   	}
+   }
+
+   TitleState::TitleState(Application* app) : app_(app)
+   {
+   }
+
+   void TitleState::init()
+   {
+   	const Vector2F resolution =
+   		this->app_->resolution_manager()->resolution_vec();
+   	RenderResources* resources = this->app_->render_resources();
+
+   	this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
+
+   	Label* title = this->scene_->add(std::make_unique<Label>(
+   		L"My game", title_font_name, Vector2F::zero, resources,
+   		labrador::Colour::goldenrod, title_scale));
+   	centre_across(*title, resolution.x, resolution.y * 0.5f - 100.0f);
+
+   	Label* prompt = this->scene_->add(std::make_unique<Label>(
+   		L"Press Enter or A to start. Escape or B quits.", font_name,
+   		Vector2F::zero, resources, labrador::Colour::white));
+   	centre_across(*prompt, resolution.x, resolution.y * 0.5f + 40.0f);
+
+   	this->scene_->end_tick();
+   	this->scene_->add_view(Viewport(RectangleF(Vector2F::zero, resolution)));
+   }
+
+   void TitleState::update(float dt)
+   {
+   	const Gamepads& pads = *this->app_->gamepads();
+   	const Keyboard& keyboard = *this->app_->keyboard();
+
+   	// Every pad slot, as in HelloState: the only pad need not be in slot 0.
+   	bool start_requested = keyboard.pressed(Key::enter);
+   	bool quit_requested = keyboard.pressed(Key::escape);
+   	for (int slot = 0; slot < Gamepads::max_count; ++slot)
+   	{
+   		start_requested |= pads.pressed(slot, GamepadButton::a);
+   		quit_requested |= pads.pressed(slot, GamepadButton::b);
+   	}
+
+   	if (start_requested)
+   	{
+   		// Replaces this screen with the game. The title is destroyed once
+   		// this update() has returned.
+   		this->context()->transition_to(
+   			std::make_unique<HelloState>(this->app_));
+   		return;
+   	}
+   	if (quit_requested)
+   	{
+   		this->app_->quit();
+   		return;
+   	}
+
+   	this->scene_->update(dt);
+   	this->scene_->end_tick();
+   }
+
+   void TitleState::draw(Renderer& renderer) const
+   {
+   	this->scene_->draw(renderer);
+   }
+   ```
+
+   What each part does:
+
+   - **The `#include` lines** bring in what the code uses. The first is the state's own header.
+     Your game's files are written from the project's folder, `game/states/...`, with forward
+     slashes; the engine's start `engine/`.
+   - **`init`** makes the scene and adds two `Label`s, lines of text, to it: the title in
+     goldenrod at three times the font's size, and the line under it in white. Each starts at
+     `Vector2F::zero`, the window's top-left corner, and `centre_across` then moves it so that
+     its middle is at the middle of the window, 100 pixels above the window's middle for the
+     title and 40 below it for the line. The window is 1280 pixels wide and 720 high.
+     The last two lines of `init` are the same as in `HelloState`: they make what was added
+     visible and give the scene one view, the whole window.
+   - **`update`** reads the keyboard and every pad. `pressed` is true only on the frame a key
+     goes down, so holding Enter starts the game once.
+     **Enter** or **A** calls `transition_to` with a new `HelloState`: the title screen is
+     replaced by the starter's greeting. **Escape** or **B** quits the game at once, without
+     asking, because there is nothing on a title screen to lose.
+   - **`draw`** draws the scene.
+
+   The text uses the font the starter already has, so no content changes. Drawn three times its
+   size, its letters are blocky; [A smoother title](#a-smoother-title) below swaps in a
+   32-point font. To change the title, change `My game` between the quotation marks, keeping
+   the `L` before them; it stays centred.
+
+3. **List the new file in the build, twice.** Every `.cpp` file is listed by name in
+   `game\CMakeLists.txt`, and **the game's are listed twice**: once for the
+   [browser build](/docs/guides/browser/), inside the part that starts `if(EMSCRIPTEN)`, and
+   once for Windows, below it. A file missing from either list breaks that build only, with the
+   errors under [If something fails](#if-something-fails). The header does not need listing.
+   Open the build file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   Search with **Ctrl+F** for `states/hello_state.cpp`. The first match is in the browser's
+   list:
+
+   ```cmake
+       add_executable(MyGame
+           main_web.cpp
+           states/confirm_state.cpp
+           states/hello_state.cpp
+       )
+   ```
+
+   Click at the end of the `states/hello_state.cpp` line and press **Enter**. Notepad does not
+   indent the new line, so type spaces up to the start of the line above, eight of them in this
+   list, then `states/title_state.cpp`, so that the list reads:
+
+   ```cmake
+       add_executable(MyGame
+           main_web.cpp
+           states/confirm_state.cpp
+           states/hello_state.cpp
+           states/title_state.cpp
+       )
+   ```
+
+   Press **F3** to find the next `states/hello_state.cpp`, in the Windows list further down:
+
+   ```cmake
+   add_executable(MyGame WIN32
+       main.cpp
+       states/confirm_state.cpp
+       states/hello_state.cpp
+       dpi_aware.manifest
+   )
+   ```
+
+   Add the same name after it in the same way, with four spaces in this list, so that it reads:
+
+   ```cmake
+   add_executable(MyGame WIN32
+       main.cpp
+       states/confirm_state.cpp
+       states/hello_state.cpp
+       states/title_state.cpp
+       dpi_aware.manifest
+   )
+   ```
+
+   The spaces at the start of the lines do not matter to CMake; matching the lines around them
+   keeps the file readable. Save and close Notepad.
+
+4. **Start the Windows game on the title.** `game\main.cpp` chooses the first state:
+
+   ```bat
+   notepad game\main.cpp
+   ```
+
+   Search for `game/states/hello_state.h`. The line reads:
+
+   ```cpp
+   #include "game/states/hello_state.h"
+   ```
+
+   Change `hello` to `title`, so that it reads:
+
+   ```cpp
+   #include "game/states/title_state.h"
+   ```
+
+   Once the next change is made too, `main.cpp` no longer names `HelloState`; `title_state.cpp`
+   does, and includes its header itself. Now search for `first_state =`. These are the lines that start the game:
+
+   <SourceFile
+   	path="samples/minimal/main.cpp"
+   	from="std::unique_ptr<State> first_state"
+   	to="return app.run(std::move(first_state));"
+   	mark="std::make_unique<HelloState>(&app)"
+   />
+
+   In the first of them, change `HelloState` to `TitleState`, so that it reads:
+
+   ```cpp
+   		std::unique_ptr<State> first_state = std::make_unique<TitleState>(&app);
+   ```
+
+   Leave the lines after it as they are. They are the start-up test: when the game is started
+   with `--smoke-test`, as `ctest` does, `SmokeTest` wraps whichever state comes first, runs it
+   in a hidden window for 30 frames and quits. The start-up test now checks the title screen;
+   [What the start-up test checks now](#what-the-start-up-test-checks-now) says what that
+   leaves out. Save and close Notepad.
+
+5. **Start the browser game on the title too.** The browser build starts from its own file,
+   `game\main_web.cpp`, which needs the same two changes, or the page would still open on the
+   greeting:
+
+   ```bat
+   notepad game\main_web.cpp
+   ```
+
+   Search for `game/states/hello_state.h` and change `hello` to `title` as before, so that it
+   reads:
+
+   ```cpp
+   #include "game/states/title_state.h"
+   ```
+
+   Then search for `make_unique<HelloState>`. The line reads:
+
+   <SourceFile
+   	path="samples/minimal/main_web.cpp"
+   	from="return app.run(std::make_unique<HelloState>(&app));"
+   	to="return app.run(std::make_unique<HelloState>(&app));"
+   />
+
+   Change `HelloState` to `TitleState`, so that it reads:
+
+   ```cpp
+   		return app.run(std::make_unique<TitleState>(&app));
+   ```
+
+   Save and close Notepad. The Windows build never compiles this file, so a slip here shows
+   only when you [build for the browser](#in-the-browser-build).
+
+6. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The build first runs CMake again, because `game\CMakeLists.txt` changed. That prints
+   `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
+   packages and lines such as `find_package(doctest CONFIG REQUIRED)`; they are expected, not
+   errors. Then it compiles `title_state.cpp` and `main.cpp`. On a fast desktop the whole line
+   took between 9 and 17 seconds. It ends like this:
+
+   ```text title="Output"
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   [1/6] Running utility command for game_content
+   [2/6] Checking that no engine file includes a game header
+   [3/6] Building CXX object game\CMakeFiles\MyGame.dir\states\title_state.cpp.obj
+   [4/6] Building CXX object game\CMakeFiles\MyGame.dir\main.cpp.obj
+   [5/6] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.03 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.73 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   Then the game opens on the title: `My game` in large gold letters in the middle of the
+   window, and `Press Enter or A to start. Escape or B quits.` under it. Click the window, so
+   that the keys go to the game, and press **Enter**: the title is replaced by the circling
+   greeting, which works as before. **Escape** there still asks `Really quit?`, and **Enter**
+   says yes. Started again, **Escape** on the title quits at once.
+
+</Steps>
+
+## Push or transition
+
+`transition_to` replaces the screen on top of the stack with a new one, and the old one is
+destroyed: that is how the title gives way to the game. `push` puts a new screen on top and keeps
+the one underneath, paused, until the new one closes with `pop`: that is how `HelloState` asks
+its quit question and carries on afterwards. [States and the stack](/docs/concepts/states/)
+explains both, and how a pushed screen hands back an answer.
+
+## Going back to the title
+
+As it stands, saying yes to the quit question closes the game. It can go back to the title
+instead, with three changes in `HelloState`. Open its code:
+
+```bat
+notepad game\states\hello_state.cpp
+```
+
+Search for `game/states/confirm_state.h` and add a line after it, so the two read:
+
+```cpp
+#include "game/states/confirm_state.h"
+#include "game/states/title_state.h"
+```
+
+Then search for `Really quit?`. You are in the part of `update` that asks the question:
+
+<SourceFile
+	path="samples/minimal/states/hello_state.cpp"
+	from="this->context()->push<bool>("
+	to="return;"
+/>
+
+Change the question's text, `Really quit?`, to `Back to the title?`, and the line
+`this->app_->quit();` to the two lines below, so that the part reads:
+
+```cpp
+		this->context()->push<bool>(
+			std::make_unique<ConfirmState>(this->app_, L"Back to the title?"),
+			[this](const bool& quit)
+			{
+				if (quit)
+				{
+					this->context()->transition_to(
+						std::make_unique<TitleState>(this->app_));
+				}
+			});
+		return;
+```
+
+The lines between `[this]` and `}` run once, when the question closes, and `quit` is true when
+it was answered yes. They now replace the greeting with a new title screen, just as the title
+replaced itself with the greeting. Save and close Notepad, then build, test and run with the line
+from step 6. This time it compiles `hello_state.cpp` as well. **Escape** in the game now asks
+`Back to the title?`; **Enter** goes back to the title, and **Escape** there quits. No build list
+changes, because no file was added. The hint along the bottom of the greeting still says
+`B or Escape asks to quit`; it is in the same file, under `this->hint_`, if you want to change
+its words.
+
+## A smoother title
+
+If you have done [Fonts and text in your game](/docs/guides/your-font/), your manifest has a
+32-point atlas, `jetbrains_mono_bold_32`, made for titles. To use it, open
+`game\states\title_state.cpp`, search for `title_font_name =`, and change two lines so that they
+read:
+
+```cpp
+	const std::string title_font_name = "jetbrains_mono_bold_32";
+	constexpr float title_scale = 1.5f;
+```
+
+The title is then the same size, 48 pixels high, with smoother letters, because it is drawn from
+a bigger picture of each letter. A scale of `1.0f` draws it at its own 32 pixels. Without that
+atlas in the manifest, the start-up test fails with `startup failure: Font
+'jetbrains_mono_bold_32' was never loaded.`
+
+## What the start-up test checks now
+
+The start-up test runs only the first state, and nobody presses Enter in it, so it now checks the
+title screen and not the greeting. A mistake that stops `HelloState` from starting, such as a
+misspelt font name in `hello_state.cpp`, still passes `ctest`. It shows when you press Enter, as
+the box titled `Sample - startup failure`, here saying `Font 'jetbrains_mono_bold_61' was never
+loaded.`, and the game closes when you click **OK**. In one check, the same Enter press closed
+the box at once, so the game simply closed with no message. After a change to `HelloState`, play
+past the title before you rely on it.
+
+To run the start-up test by itself, as `ctest` does:
+
+```bat
+start /wait out\build\x64-debug\game\MyGame.exe --smoke-test
+echo %ERRORLEVEL%
+```
+
+It shows no window and prints `0` when the title screen starts and draws.
+
+## How errors show
+
+A mistake in this page's files shows in one of three places:
+
+- **The compiler stops** with an `error` line naming one of your files and a line number: a slip
+  in the C++ code. [Read a build error](/docs/get-started/build-errors/) shows how to find the
+  line that matters.
+- **The linker stops**, with an error starting `LNK` on Windows or `wasm-ld` in the browser build.
+  Every file compiled, but one was not in the build: almost always a `.cpp` missing from one of
+  the two lists in step 3. A name in a list that matches no file stops the build earlier still,
+  with a `CMake Error` before anything compiles.
+- **Only one of the two builds fails.** The Windows build reads only `main.cpp` and the Windows
+  list; the browser build reads only `main_web.cpp` and the browser list. Clang, the browser's
+  compiler, also warns about some things the Windows compiler does not. Build both before you
+  rely on either.
+
+Each message is below. The line numbers are those of the files as this page gives them.
+
+## If something fails
+
+<Aside type="caution" title='error LNK2019: unresolved external symbol "public: __cdecl TitleState::TitleState(class labrador::Application *)"'>
+`title_state.cpp` is not in the Windows list in `game\CMakeLists.txt`, so `TitleState`'s code was
+never compiled into the game. The build ends:
+
+```text title="Output"
+[3/4] Linking CXX executable game\MyGame.exe
+FAILED: [code=4294967295] game/MyGame.exe
+C:\WINDOWS\system32\cmd.exe /C "cd . && "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E vs_link_exe ...
+LINK Pass 1: command "C:\PROGRA~1\MICROS~1\18\COMMUN~1\VC\Tools\MSVC\1451~1.362\bin\Hostx64\x64\link.exe /nologo ..." failed (exit code 1120) with the following output:
+main.cpp.obj : error LNK2019: unresolved external symbol "public: __cdecl TitleState::TitleState(class labrador::Application *)" (??0TitleState@@QEAA@PEAVApplication@labrador@@@Z) referenced in function "class std::unique_ptr<class TitleState,struct std::default_delete<class TitleState> > __cdecl std::make_unique<class TitleState,class labrador::Application *,0>(class labrador::Application * &&)" (...)
+game\MyGame.exe : fatal error LNK1120: 1 unresolved externals
+ninja: build stopped: subcommand failed.
+```
+
+Add `states/title_state.cpp` to the list that starts `add_executable(MyGame WIN32`, as in step 3,
+save, and build again. The build reads the changed list by itself. After
+[Going back to the title](#going-back-to-the-title), a second line,
+`hello_state.cpp.obj : error LNK2001: unresolved external symbol` for the same `TitleState`,
+follows the first; the fix is the same.
+[Troubleshooting](/docs/troubleshooting/#lnk2019-unresolved-external-symbol) has the other causes
+of this error.
+</Aside>
+
+<Aside type="caution" title="wasm-ld: error: game/CMakeFiles/MyGame.dir/main_web.cpp.o: undefined symbol: TitleState::TitleState(labrador::Application*)">
+The browser build's form of the same thing: `title_state.cpp` is in the Windows list but not in
+the browser's, the `add_executable(MyGame` inside `if(EMSCRIPTEN)`. The Windows build works and
+this one does not. The line after it, starting `em++: error:` and the linker's command, can be
+skipped. Add the file to the browser's list, as in step 3, and build the browser preset again.
+[Troubleshooting](/docs/troubleshooting/#wasm-ld-error--undefined-symbol) has more.
+</Aside>
+
+<Aside type="caution" title="CMake Error at ... (_add_executable): Cannot find source file: states/titel_state.cpp">
+A name in one of the two lists in `game\CMakeLists.txt` does not match a file, here `titel` for
+`title`. The build stops before compiling anything, because it re-runs CMake first and CMake
+stops here:
+
+```text title="Output"
+CMake Error at C:/Program Files/Microsoft Visual Studio/18/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake:614 (_add_executable):
+  Cannot find source file:
+
+    states/titel_state.cpp
+Call Stack (most recent call first):
+  game/CMakeLists.txt:65 (add_executable)
+
+
+CMake Error at C:/Program Files/Microsoft Visual Studio/18/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake:614 (_add_executable):
+  No SOURCES given to target: MyGame
+Call Stack (most recent call first):
+  game/CMakeLists.txt:65 (add_executable)
+
+
+CMake Generate step failed.  Build files cannot be regenerated correctly.
+```
+
+The line after `Call Stack` says which list: `game/CMakeLists.txt:65` is the Windows one. A
+misspelling in the browser's list shows only in the browser build, as `game/CMakeLists.txt:36`.
+The second error, `No SOURCES given to target: MyGame`, follows from the first. Correct the name
+to match the file in `dir game\states`, save, and build again; the build re-reads the list by
+itself.
+</Aside>
+
+<Aside type="caution" title="main.cpp(138): error C2065: 'TitleState': undeclared identifier">
+`main.cpp` names `TitleState` but does not include its header: the `#include` line in step 4 still
+says `hello_state.h`. A second error, `C2672: 'std::make_unique': no matching overloaded function
+found`, follows from the first and goes when it is fixed. Change the line to
+`#include "game/states/title_state.h"`. The browser build says the same of `main_web.cpp` as
+`main_web.cpp:55:35: error: use of undeclared identifier 'TitleState'`; fix the line in step 5.
+After [Going back to the title](#going-back-to-the-title), the same pair at
+`hello_state.cpp(144)` means the `#include "game/states/title_state.h"` line added there is
+missing.
+</Aside>
+
+<Aside type="caution" title="main.cpp(138): error C2065: 'TitelState': undeclared identifier">
+The class's name is misspelt, here `TitelState`, with the same `C2672` after it. Names in C++
+must match exactly, capitals included: `Titlestate` is not `TitleState` either. Copy the name
+from `class TitleState` in `title_state.h`.
+</Aside>
+
+<Aside type="caution" title="title_state.cpp(36): error C2653: 'TitelState': is not a class or namespace name">
+The same slip in `title_state.cpp`, before a `::`: here `void TitelState::init()`. It is followed
+by a line of `C2355: 'this': can only be referenced inside non-static member functions` for each
+use of `this` in that function, which all go when the name is fixed.
+</Aside>
+
+<Aside type="caution" title="title_state.h(18): error C3668: 'TitleState::draw': method with override specifier 'override' did not override any base class methods">
+`draw` in `title_state.h` has lost its `const`, so it no longer matches the engine's `draw`, which
+`override` says it replaces. `title_state.cpp(90): error C2511: ... overloaded member function not
+found` follows, with a `C2671` on line 92, and the same `C3668` appears again under `main.cpp`
+(and `hello_state.cpp`, after [Going back to the title](#going-back-to-the-title)), which include
+the header. The line must read `void draw(labrador::Renderer& renderer) const override;`. If only
+the `.cpp` has lost it, the build shows `C2511: 'void TitleState::draw(labrador::Renderer &)':
+overloaded member function not found in 'TitleState'` and a `C2671: 'TitleState::draw': static
+member functions do not have 'this' pointers` that follows from it. That `C2511` names `draw`
+without `const`: the line in the `.cpp` must end `const` too.
+</Aside>
+
+<Aside type="caution" title="error C2259: 'TitleState': cannot instantiate abstract class">
+It comes with `title_state.cpp(90): error C2511: 'void TitleState::draw(labrador::Renderer &)
+const': overloaded member function not found in 'TitleState'` and a `C2671`, often printed first.
+That `C2511` names `draw` *with* `const`, so the `.cpp` is right and the header is wrong:
+`draw` in the header has lost both `const` and `override`. Without `override` nothing checks it,
+so the compiler takes it for a new function, and the engine's `draw` is left without a body. The
+notes under it say which: `'void labrador::State::draw(labrador::Renderer &) const': is abstract`.
+The line comes first from a file in Visual Studio's own folder, `memory(3666)`; the note naming
+`main.cpp(138)` is where it is used (after Going back to the title, a second note names
+`hello_state.cpp(145)`). Put back `const override` as in step 1.
+</Aside>
+
+<Aside type="caution" title="title_state.h:18:7: error: 'draw' overrides a member function but is not marked 'override' [-Werror,-Winconsistent-missing-override]">
+Only in the browser build: `draw` lost its `override` but kept its `const`. The Windows compiler
+accepts that, and the browser's stops, because the other functions in the class have `override`
+and this one does not. Put `override` back before the `;`.
+</Aside>
+
+<Aside type="caution" title="fatal error C1083: Cannot open include file: 'game/states/titlestate.h': No such file or directory">
+An `#include` names a file that is not there, here without the `_`. Compare it with the file's
+name in `dir game\states`.
+</Aside>
+
+## In the browser build
+
+Build the page as [Build for the browser](/docs/guides/browser/) shows, in a prompt where you have
+run `emsdk_env.bat`:
+
+```bat
+cmake --build --preset wasm-debug && ctest --preset wasm-debug
+```
+
+If you have not configured that preset before, run `cmake --preset wasm-debug` first. It
+compiles `title_state.cpp` with clang and links the page; a missing entry in the browser's list
+gives the `wasm-ld` error above. The page opens on the title, and the keys are the same. The
+browser page's check from that guide, with `--quit-keys Escape,Enter`, still passes: Escape now
+quits on the title, and the page calls `Module.onQuit`.
+
+The line under the game in the page, set in `game\web\shell.html`, still describes the greeting.
+To change it, open that file, search for `Escape asks to quit; Enter says yes.`, and change the
+words between the quotation marks on that line, for example to:
+
+```js
+        "Enter starts. Arrows, WASD or the left stick move the text. Escape quits from the title, and asks first during play; Enter says yes.";
+```
+
+If you made the change in [Going back to the title](#going-back-to-the-title), say so instead,
+for example `Escape goes back to the title, and quits there; Enter says yes.`
+
+## Where to go next
+
+- [States and the stack](/docs/concepts/states/) explains `push`, `pop` and `transition_to`, typed
+  answers, and what a covered screen is told.
+- [Menus](/docs/guides/menus/) builds a menu with several rows, which is what a title screen with
+  Start, Options and Quit needs.
+- [Input](/docs/guides/input/) lists the keys and buttons, and the difference between `pressed`
+  and `held`.
+- [Read a build error](/docs/get-started/build-errors/) has more on compiler and linker messages.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at `C:\dev\h1\mygame`,
+with Visual Studio 2026's compiler 19.51 and Emscripten 6.0.12, every step above was made as
+worded, by an agent editing the files with tools rather than Notepad, and the build and tests ran as shown, with `C:\dev\h1\mygame` in the quoted output
+changed to `C:\dev\mygame`. The game was started and driven with key presses, and screenshots
+showed the title, the greeting after Enter, the quit question, and the game closing on Enter there
+and on Escape at the title; the `--smoke-test` line printed `0`. The section going back to the
+title was made the same way, and the screenshots showed `Back to the title?` and the title again.
+The 32-point title was drawn with an atlas made by the command in Fonts and text. A misspelt font
+name in `hello_state.cpp` passed `ctest` and gave the `Sample - startup failure` box after Enter;
+in another run the same Enter closed the box and the game exited with code 1. Each message under
+[If something fails](#if-something-fails) was made on purpose, one at a time: the file left out of
+each list, the include not changed in `main.cpp` and in `main_web.cpp`, the class name misspelt in
+`main.cpp` and in `title_state.cpp`, `const` removed from the header and from the `.cpp`, `const`
+and `override` removed together, `override` alone removed, and a misspelt header name; removing
+`override` alone built on Windows and failed only in `wasm-debug`. The `wasm-debug` page was
+loaded in headless Chrome by the page runner from Build for the browser, with
+`--quit-keys Escape,Enter` and with Enter, Escape, Enter, and called `Module.onQuit` with no
+errors; a screenshot showed the title and, after Enter and Escape, the quit question. With the
+changes from Going back to the title, Enter, Escape, Enter, Escape reached the title again and
+quit there.
+
+A second agent then followed the page as worded in another fresh starter, at
+`C:\dev\h1v\mygame`. Its build output matched step 6 line for line, the screenshots matched what
+the page says is on screen, and every message above matched. It found what the first version of
+the page left out, and the page was corrected: a misspelt name in a build list gives the
+`CMake Error ... Cannot find source file` entry, not a link error; the `C2259` case prints a
+`C2511` and a `C2671` first, and the `.cpp`-only `C3668` case has a `C2671` after its `C2511`;
+after Going back to the title, the extra `LNK2001`, `C3668` and `C2259` lines under
+`hello_state.cpp` and the `C2065` at `hello_state.cpp(144)`; the spaces to type in step 3; and the
+`shell.html` line after Going back. Those messages were made in its starter, and the misspelt
+name was made again in each list in the first starter, with Windows reporting
+`game/CMakeLists.txt:65` and `wasm-debug` reporting line 36; each build recovered once the name
+was corrected. A gamepad was not used: A and B were read from the code, which reads them as
+`HelloState` and `ConfirmState` do. The **OK** button on the error box was not clicked; that the game then closes is read from
+`main.cpp`, which shows the box and then returns.

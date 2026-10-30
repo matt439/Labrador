@@ -1,0 +1,672 @@
+---
+title: Copy the components into your game
+description: Copy the option row and the slider from the engine's components sample into the starter project, list them in its build, and drive them from the keyboard, step by step, with what each failure means.
+sidebar:
+  order: 0.95
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+The engine comes with a components sample: small pieces of game code that are not part of the
+engine, which you copy into your game and then change as you like. This page copies two of them
+into the game from [Get the starter project](/docs/get-started/starter/): an **option row**, a
+label with a value picked from a list, and a **slider**, a label with a bar and a number. It
+puts both at the top of the starter's screen, one choosing the greeting's colour and the other
+how fast it moves, with keys to work them. It goes through every file that changes: four copied
+files, the first line of two of them, the build file, and the starter's `HelloState`. It takes
+about 20 minutes.
+
+Before you start:
+
+- Do [Make a first change](/docs/get-started/first-change/), so that you know the edit, build
+  and run loop and have a copy of your game to go back to. Make a fresh copy now with that
+  page's step 1 line.
+- [Read a build error](/docs/get-started/build-errors/) is worth a look first. This page adds
+  two source files, and a slip in the build file shows up as a linker error.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Copy the four files.** The components sample is inside the engine's folder in your project,
+   at `external\labrador\samples\components`. The option row is `option_row.h` and
+   `option_row.cpp`; the slider is `slider.h` and `slider.cpp`. Make a folder for them in your
+   game and copy them into it:
+
+   ```bat
+   mkdir game\components
+   copy external\labrador\samples\components\option_row.h game\components\
+   copy external\labrador\samples\components\option_row.cpp game\components\
+   copy external\labrador\samples\components\slider.h game\components\
+   copy external\labrador\samples\components\slider.cpp game\components\
+   ```
+
+   `mkdir` prints nothing, and each `copy` line prints:
+
+   ```text title="Output"
+           1 file(s) copied.
+   ```
+
+   These four are all you need. The two headers include only engine headers, such as
+   `engine/ui/widget.h`, which your game already reaches, and each `.cpp` includes only its own
+   header and engine headers. The slider's bar is a small class called `Bar`, and it is inside
+   `slider.h` and `slider.cpp`, so it comes with them. The rest of the folder is the sample's
+   own screen, its tests, and two other components, the nine-slice and the animation preview,
+   which this page does not use.
+
+   The `\` at the end of each `copy` line matters. With it, `copy` stops with an error if
+   `game\components` is not there. Without it, `copy` would make a *file* called `components`
+   and still print `1 file(s) copied.`
+
+   Leave the files in `external\labrador` as they are. That folder is the engine; the copies in
+   `game\components` are yours.
+
+2. **Point each copied `.cpp` at its new header.** The first line of each `.cpp` includes its
+   own header by its path in the engine's folder. Change it to the path of your copy. Open the
+   first:
+
+   ```bat
+   notepad game\components\option_row.cpp
+   ```
+
+   The first line is:
+
+   ```cpp
+   #include "samples/components/option_row.h"
+   ```
+
+   Change it to this, then save and close Notepad:
+
+   ```cpp
+   #include "game/components/option_row.h"
+   ```
+
+   Then the second:
+
+   ```bat
+   notepad game\components\slider.cpp
+   ```
+
+   Change its first line from:
+
+   ```cpp
+   #include "samples/components/slider.h"
+   ```
+
+   to this, then save and close Notepad:
+
+   ```cpp
+   #include "game/components/slider.h"
+   ```
+
+   **Do not skip this step because the game builds without it.** The engine's folder is on the
+   include path, so the old line still finds a file: the engine's copy of the header, not
+   yours. Nothing goes wrong until you change your header, and then the error points at the
+   wrong file; [If something fails](#if-something-fails) shows it. To check that no line still
+   names the engine's copy, run:
+
+   ```bat
+   findstr /s /n "samples/components" game\*.cpp game\*.h
+   ```
+
+   After the two edits it prints nothing. Before them it prints both lines, and if one was
+   missed it prints that one, with its file and line number:
+
+   ```text title="Output"
+   game\components\option_row.cpp:1:#include "samples/components/option_row.h"
+   game\components\slider.cpp:1:#include "samples/components/slider.h"
+   ```
+
+   The two headers need no change. Their classes are in a namespace called `components`, so in
+   your game they are `components::OptionRow` and `components::Slider`. You can rename the
+   namespace later if you like; this page keeps it.
+
+3. **List both `.cpp` files, twice, in the build file.** Every source file of your game is
+   listed by name in `game\CMakeLists.txt`, and the game's files are listed **twice**: once for
+   the [browser build](/docs/guides/browser/) and once for Windows. A file missing from the
+   Windows list stops the Windows build with `LNK2019`; one missing from the browser list stops
+   only the browser build, with `undefined symbol`. Open the build file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   Search with **Ctrl+F** for `states/confirm_state.cpp`. The first match is in the browser
+   list, near the top, inside `if(EMSCRIPTEN)`:
+
+   ```cmake
+       add_executable(MyGame
+           main_web.cpp
+           states/confirm_state.cpp
+           states/hello_state.cpp
+       )
+   ```
+
+   Add two lines after `main_web.cpp`, so the list reads:
+
+   ```cmake
+       add_executable(MyGame
+           main_web.cpp
+           components/option_row.cpp
+           components/slider.cpp
+           states/confirm_state.cpp
+           states/hello_state.cpp
+       )
+   ```
+
+   Then press **F3** to find the next `states/confirm_state.cpp`. This one is in the Windows
+   list, further down:
+
+   ```cmake
+   add_executable(MyGame WIN32
+       main.cpp
+       states/confirm_state.cpp
+       states/hello_state.cpp
+       dpi_aware.manifest
+   )
+   ```
+
+   Add the same two lines after `main.cpp`, so it reads:
+
+   ```cmake
+   add_executable(MyGame WIN32
+       main.cpp
+       components/option_row.cpp
+       components/slider.cpp
+       states/confirm_state.cpp
+       states/hello_state.cpp
+       dpi_aware.manifest
+   )
+   ```
+
+   The paths are written from the `game` folder, with forward slashes. Save and close Notepad.
+
+4. **Give `HelloState` the two rows.** Open the header of the state that runs the starter's
+   screen:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `game/rules/motion.h` and add three lines above it, so the four read:
+
+   ```cpp
+   #include "engine/ui/focus.h"
+   #include "game/components/option_row.h"
+   #include "game/components/slider.h"
+   #include "game/rules/motion.h"
+   ```
+
+   Then search for `hint_ = nullptr;` and add three lines after it, so the four read:
+
+   ```cpp
+   	labrador::Label* hint_ = nullptr;
+   	components::OptionRow* colour_row_ = nullptr;
+   	components::Slider* speed_row_ = nullptr;
+   	labrador::FocusGroup focus_;
+   ```
+
+   `colour_row_` and `speed_row_` are where `HelloState` keeps the two rows, so that it can
+   reach them later. The `FocusGroup` is the engine's cursor: it knows which row is chosen and
+   draws that row's label white and the others grey. Save and close Notepad.
+
+5. **Build the rows, and work them.** Open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   There are six changes, in the order they come in the file, from the top.
+
+   First, search for `#include "engine/math/vector2f.h"` and add a line after it, so the two
+   read:
+
+   ```cpp
+   #include "engine/math/vector2f.h"
+   #include "engine/render/resource_factory.h"
+   ```
+
+   Then search for `#include <string>` and add a line after it, so the two read:
+
+   ```cpp
+   #include <string>
+   #include <vector>
+   ```
+
+   Second, search for `constexpr float stick_deadzone = 0.2f;`. Click at the end of that line,
+   press **Enter**, and paste these lines:
+
+   ```cpp
+
+   	// The greeting's colour for each choice on the colour row, in the same
+   	// order as the row's list of names.
+   	Colour greeting_colour(size_t index)
+   	{
+   		const std::vector<Colour> colours = {
+   			labrador::Colour::white, labrador::Colour::gold,
+   			labrador::Colour::coral, labrador::Colour::light_green };
+   		return colours[index];
+   	}
+   ```
+
+   Third, search for `this->hint_ = this->scene_->add(`. This is the part of `init()` that adds
+   the controls hint at the bottom of the window:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->hint_ = this->scene_->add("
+   	to="labrador::Colour::dark_gray));"
+   	mark="labrador::Colour::dark_gray));"
+   />
+
+   Click at the end of its last line, `labrador::Colour::dark_gray));`, press **Enter**, and
+   paste these lines:
+
+   ```cpp
+
+   	// Two rows from game/components, at the top left: the greeting's colour
+   	// and its speed, in percent. The slider's bar is drawn with the engine's
+   	// own white texture.
+   	this->colour_row_ = this->scene_->add(
+   		std::make_unique<components::OptionRow>("colour", L"Colour",
+   			std::vector<std::wstring>{ L"White", L"Gold", L"Coral", L"Green" },
+   			0, Vector2F(24.0f, 24.0f), 160.0f, font_name, resources,
+   			[this](size_t index)
+   			{
+   				this->greeting_->set_colour(greeting_colour(index));
+   			}));
+
+   	this->speed_row_ = this->scene_->add(
+   		std::make_unique<components::Slider>("speed", L"Speed",
+   			0, 200, 25, 100, Vector2F(24.0f, 64.0f),
+   			RectangleF(160.0f, 68.0f, 200.0f, 10.0f), font_name,
+   			resources->resolve_texture(white_texture_name), resources));
+
+   	this->scene_->add(std::make_unique<Label>(
+   		L"I and K choose a row. J and L change it.", font_name,
+   		Vector2F(24.0f, 104.0f), resources, labrador::Colour::dark_gray));
+
+   	// The cursor starts on the first row added.
+   	this->focus_.add(this->colour_row_);
+   	this->focus_.add(this->speed_row_);
+   ```
+
+   This builds the two rows and adds them to the scene, which draws them with everything else,
+   then a line of help under them, and gives both rows to the cursor. The part in
+   `[this](size_t index) { ... }` is what the colour row runs each time its value changes: it
+   gives the greeting the colour for the new choice. [What the numbers mean](#what-the-numbers-mean)
+   below goes through the rest.
+
+   Fourth, search for `The stick is already in this engine's convention`. It is a comment in
+   `update()`, just after the part that asks whether to quit. Click at the start of that line
+   and paste these lines above it, with an empty line after them:
+
+   ```cpp
+   	// The rows read no keys themselves. I and K move the cursor between them,
+   	// and J and L go to whichever row the cursor is on.
+   	if (keyboard.pressed(Key::i))
+   	{
+   		this->focus_.move(0, Direction::up);
+   	}
+   	if (keyboard.pressed(Key::k))
+   	{
+   		this->focus_.move(0, Direction::down);
+   	}
+
+   	Direction change = Direction::none;
+   	if (keyboard.pressed(Key::j))
+   	{
+   		change = Direction::left;
+   	}
+   	if (keyboard.pressed(Key::l))
+   	{
+   		change = Direction::right;
+   	}
+
+   	if (this->focus_.focused(0) == this->colour_row_)
+   	{
+   		this->colour_row_->adjust(change);
+   	}
+   	else if (this->focus_.focused(0) == this->speed_row_)
+   	{
+   		this->speed_row_->adjust(change);
+   	}
+   ```
+
+   A component never reads the keyboard: which keys work it is your game's choice, so that the
+   same row works with any keys or a gamepad. Here I and K move the cursor up and down, through
+   `focus_.move`, and J and L are sent to the row the cursor is on, through its `adjust`. The
+   arrows and WASD still move the greeting, as before.
+
+   Fifth, a few lines further down is the line that moves the greeting on:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->motion_ = step_motion(this->motion_,"
+   	to="keyboard_direction(keyboard), dt);"
+   	mark="keyboard_direction(keyboard), dt);"
+   />
+
+   Search for `keyboard_direction(keyboard), dt);` and change that one line to these two:
+
+   ```cpp
+   		keyboard_direction(keyboard),
+   		dt * static_cast<float>(this->speed_row_->value()) / 100.0f);
+   ```
+
+   `dt` is the time since the last step, a sixtieth of a second. Multiplying it by the slider's
+   value over 100 makes the greeting move and spin at that percentage of its usual speed: half
+   as fast at 50, twice as fast at 200, and not at all at 0.
+
+   Sixth, search for `this->greeting_->set_colour(labrador::Colour::white);`. It is in
+   `on_resume()`, which puts the greeting's colour back after the *Really quit?* question
+   closes. Change that line to:
+
+   ```cpp
+   	this->greeting_->set_colour(greeting_colour(this->colour_row_->index()));
+   ```
+
+   so that it puts back the colour the row has chosen rather than white. Save and close Notepad.
+
+6. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The build first runs CMake again, because `game\CMakeLists.txt` changed. That prints
+   `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
+   packages; they are expected, not errors. Then it compiles the two new files and the files
+   that include `hello_state.h`. On a fast desktop the whole build took 8 seconds. It ends like
+   this:
+
+   ```text title="Output"
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   [1/8] Running utility command for game_content
+   [2/8] Checking that no engine file includes a game header
+   [3/8] Building CXX object game\CMakeFiles\MyGame.dir\components\option_row.cpp.obj
+   [4/8] Building CXX object game\CMakeFiles\MyGame.dir\components\slider.cpp.obj
+   [5/8] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   [6/8] Building CXX object game\CMakeFiles\MyGame.dir\main.cpp.obj
+   [7/8] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.01 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.74 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   Then the game opens. At the top left are two rows and a line of help:
+
+   - **Colour**, in white because the cursor is on it, with **White** beside it in amber.
+   - **Speed**, in grey, with a bar half filled and **100** beside it.
+   - `I and K choose a row. J and L change it.`
+
+   Press **L** and the colour row says **Gold** and the greeting turns gold. Pressing L again
+   goes on through **Coral** and **Green** and back to **White**; **J** goes the other way.
+   Press **K** to move the cursor to the speed row: its label and the filled part of its bar
+   turn white. **L** adds 25, up to 200, and the greeting circles faster; **J** takes 25 away,
+   down to 0, where the greeting stops and the arrows no longer move it. Each press moves a row
+   by one step; holding a key down does not repeat. Press **Escape**: the greeting dims behind
+   the *Really quit?* question, and when you answer no with Escape again, it comes back in the
+   colour the row chose.
+
+</Steps>
+
+## What the numbers mean
+
+The option row is built from these, in this order. Its header, your `game\components\option_row.h`,
+says the same above each part:
+
+<SourceFile
+	path="samples/components/option_row.h"
+	from="OptionRow(const std::string& name,"
+	to="bool wrap = true);"
+/>
+
+In step 5's call, `"colour"` is a name for the row, used in error messages, and `L"Colour"` is
+the label you see; the `L` before the quotation mark makes it the kind of text the engine
+draws. The list is the choices, and `0` is the one it starts on, counted from 0, so `White`.
+`Vector2F(24.0f, 24.0f)` is where the label's top-left corner goes, 24 pixels from the window's
+left edge and 24 down from the top, and `160.0f` is how far from the left edge the value is
+drawn. `font_name` and `resources` are the starter's own font and the engine's table of loaded
+pictures and fonts. Then comes the code run on a change. `wrap` is left out, so it is `true`: L
+on the last choice goes back to the first. Pass `false` after the change code, as in
+`}, false));`, and the row stops at either end, which suits a list such as Easy, Normal, Hard.
+
+The slider is built from these:
+
+<SourceFile
+	path="samples/components/slider.h"
+	from="Slider(const std::string& name,"
+	to="Changed on_change = nullptr);"
+/>
+
+In step 5's call, the four numbers `0, 200, 25, 100` are the lowest value, the highest, how much
+one press changes it, and the value it starts at. The slider never wraps: at 200 another L does
+nothing. `RectangleF(160.0f, 68.0f, 200.0f, 10.0f)` is the bar: its left edge, its top, its
+width and its height, in pixels. The number is drawn 16 pixels after the bar's right end.
+`resolve_texture(white_texture_name)` is the engine's one-pixel white picture, which the slider
+stretches and tints to draw its bar, so the bar needs no picture of your own. The slider has its
+own code-on-change at the end too; this page leaves it out and reads `value()` on every step
+instead.
+
+## Changing the rows
+
+**Another colour.** Add a name to the row's list in `init()` and a colour to the list in
+`greeting_colour`, at the same place in each. The two lists must stay the same length and in
+the same order: the row passes the number of its choice, and `greeting_colour` uses it to pick
+from its own list. A choice with no colour beside it asks for a colour past the end of the list,
+and the game stops; [If something fails](#if-something-fails) shows the message.
+The engine's colour names, such as `Colour::sky_blue` or `Colour::orange`, are listed in
+`external\labrador\engine\render\colour.h`.
+
+**Another range.** Change the four numbers in the slider's call. The lowest must be below the
+highest, the step above 0, and the starting value between the lowest and the highest, or the
+game stops when it starts; [If something fails](#if-something-fails) shows the message.
+
+**Other keys.** Change `Key::i`, `Key::k`, `Key::j` and `Key::l` in step 5's fourth change. The
+key names are in `external\labrador\engine\input\keyboard.h`. The arrows and WASD already move
+the greeting, which is why this page uses I, J, K and L. Avoid **Tab** and **F1** to **F12**:
+in the browser build the game sees them, but the browser acts on them too. Tab moves the
+keyboard off the game, so the keys after it stop arriving, and F5 reloads the page. The
+components sample's own screen also repeats a held key and takes the gamepad's d-pad; its
+`GalleryState::update` in
+<RepoLink path="samples/components/gallery_state.cpp">`samples/components/gallery_state.cpp`</RepoLink>
+shows how.
+
+**Their look.** The colours are at the top of your copies, which is what they are there for. In
+`game\components\option_row.cpp`, `value_colour(235, 190, 90)` is the amber of the value; in
+`game\components\slider.cpp`, `track_colour(60, 66, 80)` is the empty part of the bar and
+`number_colour(235, 190, 90)` the number. The three numbers are red, green and blue, from 0 to
+255. Change them and build; the engine's copies are not affected.
+
+## How errors show
+
+A mistake in this page's files shows in one of four places:
+
+- **The build stops** with an `error` line from the compiler: a slip in the C++ code, or an
+  include line that names the wrong file. [Read a build
+  error](/docs/get-started/build-errors/) shows how to find the line that matters.
+- **The build stops at `Linking`**, with `LNK2019` in a Windows build or `undefined symbol` in
+  the browser build. Every file compiled, but one of the two new `.cpp` files is missing from a
+  list in step 3.
+- **The start-up test fails.** The build worked, but the game stopped while building a row. The
+  `ctest` output shows `***Failed` for `MyGameSmokeTests` and, under it, a line starting
+  `startup failure:` that says why. Started on its own, the game shows the same reason in a box
+  titled `Sample - startup failure`, and closes when you click **OK**.
+- **The game stops while you play**, with a `Debug Assertion Failed!` box. The build and the
+  tests passed, because the start-up test presses no keys; a key press asked a list for
+  something past its end.
+
+Each message is below.
+
+## If something fails
+
+<Aside type="caution" title="The system cannot find the path specified.">
+A `copy` line in step 1 found no folder where it looked. If the prompt does not end `mygame>`,
+it is in the wrong folder: run the `cd /d C:\dev\mygame` line, then step 1 again. If it does,
+the `mkdir game\components` line was skipped or spelt differently, and `copy` also prints
+`0 file(s) copied.`: run the `mkdir` line, then the `copy` lines.
+</Aside>
+
+<Aside type="caution" title="fatal error C1083: Cannot open include file: 'game/component/option_row.h': No such file or directory">
+An include line names a file that is not there: here `component` is missing its `s`. The full
+line starts with the file and line the include is in, such as
+`C:\dev\mygame\game\components\option_row.cpp(1)`. Correct the spelling to match step 2 or
+step 4, and check with `dir game\components` that the four files are there under those names.
+[Troubleshooting](/docs/troubleshooting/#c1083-cannot-open-include-file) has more on this error.
+</Aside>
+
+<Aside type="caution" title="error C2039: 'step_right': is not a member of 'components::OptionRow', with a note naming external\labrador\samples">
+This appears after you add something to your copy of a header, here a function `step_right`
+added to `game\components\option_row.h` and written in `option_row.cpp`:
+
+```text title="Output"
+C:\dev\mygame\game\components\option_row.cpp(102): error C2039: 'step_right': is not a member of 'components::OptionRow'
+C:\dev\mygame\external\labrador\samples/components/option_row.h(33): note: see declaration of 'components::OptionRow'
+```
+
+The line numbers depend on where you added it, and more errors can follow from this one.
+
+The `note` gives it away: the class it read is in `external\labrador\samples`, the engine's
+copy, not yours. The `.cpp` file's first line still includes
+`"samples/components/option_row.h"`. Change it as in step 2, and run the `findstr` line from
+step 2 to find any other.
+</Aside>
+
+<Aside type="caution" title="error C2653: 'components': is not a class or namespace name">
+```text title="Output"
+C:\dev\mygame\game/states/hello_state.h(61): error C2653: 'components': is not a class or namespace name
+C:\dev\mygame\game/states/hello_state.h(61): error C2143: syntax error: missing ';' before '*'
+```
+
+Several more errors follow on the same lines; they come from this one.
+`hello_state.h` uses `components::OptionRow` and `components::Slider` without including their
+headers. Add the two `#include "game/components/..."` lines from step 4.
+</Aside>
+
+<Aside type="caution" title="error LNK2019: unresolved external symbol ... components::Slider ...">
+```text title="Output"
+hello_state.cpp.obj : error LNK2019: unresolved external symbol "public: bool __cdecl components::Slider::adjust(enum labrador::Direction)" (?adjust@Slider@components@@QEAA_NW4Direction@labrador@@@Z) referenced in function "public: virtual void __cdecl HelloState::update(float)" (?update@HelloState@@UEAAXM@Z)
+hello_state.cpp.obj : error LNK2019: unresolved external symbol "public: int __cdecl components::Slider::value(void)const " (?value@Slider@components@@QEBAHXZ) referenced in function "public: virtual void __cdecl HelloState::update(float)" (?update@HelloState@@UEAAXM@Z)
+game\MyGame.exe : fatal error LNK1120: 3 unresolved externals
+```
+
+A first, much longer line names `components::Slider::Slider`. `slider.cpp` is not in the Windows
+list, `add_executable(MyGame WIN32`, in `game\CMakeLists.txt`: add
+`components/slider.cpp` after `main.cpp` there, as in step 3, save and build again. The same
+error naming `components::OptionRow` means `option_row.cpp` is the one missing.
+[Troubleshooting](/docs/troubleshooting/#lnk2019-unresolved-external-symbol) has the other
+causes of this error.
+</Aside>
+
+<Aside type="caution" title="wasm-ld: error: ... undefined symbol: components::Slider::adjust(labrador::Direction)">
+```text title="Output"
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: components::Slider::adjust(labrador::Direction)
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: components::Slider::value() const
+```
+
+The browser build's form of the error above, with a first, longer line for the constructor:
+`slider.cpp` is in the Windows list but not in the browser list, the `add_executable(MyGame`
+inside `if(EMSCRIPTEN)`. The Windows build works and this one does not. Add
+`components/slider.cpp` after `main_web.cpp` there, as in step 3, and build again.
+[Troubleshooting](/docs/troubleshooting/#wasm-ld-error--undefined-symbol) has more.
+</Aside>
+
+<Aside type="caution" title="startup failure: Slider 'speed' needs minimum < maximum, a positive step and a value inside the range">
+The four numbers in the slider's call do not make a range: here the starting value was `300`,
+above the highest, `200`. Check them against [What the numbers mean](#what-the-numbers-mean).
+The name in quotation marks is the first value in the call, so with several sliders it says
+which one.
+</Aside>
+
+<Aside type="caution" title="startup failure: OptionRow 'colour' needs a non-empty choice list and an index inside it">
+The number the row starts on is not one of its choices: here it was `4`, and the four choices
+are numbered 0 to 3. Use a number from 0 to one less than the number of choices, or check that
+the list of choices is not empty.
+</Aside>
+
+<Aside type="caution" title="Debug Assertion Failed! ... Expression: vector subscript out of range">
+The game was running and stopped when the colour row moved onto a choice, with a box titled
+`Microsoft Visual C++ Runtime Library`:
+
+```text title="Output"
+Debug Assertion Failed!
+
+Program:
+C:\dev\mygame\out\build\x64-debug\game\MyGame.exe
+File: C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\vector
+Line: 1949
+
+Expression: vector subscript out of range
+```
+
+The row has more names than `greeting_colour` has colours, so it asked for a colour past the end
+of its list; here `L"Blue"` was added to the row with no colour beside it, and the fourth L
+stopped the game. Click **Abort**, then add a colour to the list in `greeting_colour` at the
+same place as the new name, or take the name out, and build again. The build and the tests do
+not catch this, because the start-up test presses no keys.
+</Aside>
+
+## In the browser build
+
+Both new files must be in the browser list in `game\CMakeLists.txt` as well as the Windows one,
+as step 3 does; nothing else changes. The rows draw the same in a browser page as in the
+Windows game. The components use no content files of their own, so there is no copy line or
+`LINK_DEPENDS` line to add. Tab and F1 to F12 reach the game but the browser acts on them as
+well, which is why the keys on this page are letters.
+
+## Where to go next
+
+- [Menus](/docs/guides/menus/) explains the focus group and the engine's widgets, and how a
+  menu that is a screen of its own is put together.
+- [Settings and saves](/docs/guides/settings-and-saves/#apply-settings-to-the-running-game)
+  connects a copied slider to the game's sound volume and an option row to full screen.
+- The components sample's
+  <RepoLink path="samples/components/README.md">README</RepoLink> describes the other two
+  components, the nine-slice and the animation preview, which are copied the same way.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at `C:\dev\h5\mygame`,
+with Visual Studio 2026's compiler 19.51, every step above ran as shown, with
+`C:\dev\h5\mygame` in the quoted output changed to `C:\dev\mygame`, and each edit made exactly
+as the steps word it, by an agent with an editor rather than Notepad. The tests and
+`--smoke-test` passed. The game was then driven with synthetic key presses and its window
+captured: it drew both rows and the help line at the top left, with the cursor on **Colour**;
+K moved the cursor to **Speed**, three L presses filled the bar to **175**, and I then L turned
+the row to **Gold** and the greeting gold; two J presses from **Gold** went to **White** and
+then wrapped to **Green**. Escape dimmed the greeting behind *Really quit?*, and a second
+Escape brought it back gold. With the slider at **0**, two captures 1.5 seconds apart were the
+same, pixel for pixel. Each message under [If something fails](#if-something-fails) was made on
+purpose: a `copy` from the wrong folder and to a missing folder, a misspelt include, a function
+added to the header with `option_row.cpp` still including the engine's copy, the two header
+includes removed, `slider.cpp` left out of each list in turn, a starting value of `300` for the
+slider and `4` for the row. With the include lines not rewritten and nothing else changed, the
+game built, passed its tests and drew the same. The `wasm-debug` build compiled both components
+and `HelloState` with clang, its tests passed under Node, and the page, served locally and
+loaded in headless Chrome, drew the two rows and the greeting; keys were not driven in the
+browser.
+
+A second agent then followed the page as worded, in a fresh starter made from the same ZIP. Its
+build output, test results, screenshots and failure messages matched the page, including a held
+J moving the slider only one step and L clamping at 200. It found five things, which were
+corrected: the warning about a choice with no colour had no message, so it added `L"Blue"` with
+no colour, pressed L four times and captured the `Debug Assertion Failed!` box now shown above;
+the page said Tab and F1 to F12 never reach the game in the browser, which the engine's web
+window does not do (it passes them to the game and lets the browser act on them as well); the
+`findstr` check prints two lines before the edits, not one; the `step_right` error's line
+numbers depend on where the function goes; and the value's colour is amber, not orange. The
+`greeting_colour` list was also changed to spell `labrador::Colour::` like the rest of the file,
+and both `x64-debug` and `wasm-debug` were built again with it, with no warnings and their tests
+passing.

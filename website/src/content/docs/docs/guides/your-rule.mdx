@@ -1,0 +1,777 @@
+---
+title: Add a rule and a test
+description: Write a rule that keeps the greeting inside the window, test it with doctest, list both files in the build and read a passing and a failing test run, in the starter project, step by step.
+sidebar:
+  order: 0.94
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+In the game from [Get the starter project](/docs/get-started/starter/), the arrow keys can steer
+the greeting off the edge of the window, and it is lost until you steer it back. This page adds a
+**rule** that stops that: a small piece of the game's own arithmetic, in a file of its own, that
+works out where the greeting is allowed to be. Then it adds a **test** of that rule, a file of
+checks that run without opening the game, and shows what a passing and a failing test look like.
+It goes through every file that changes: two new files for the rule, one for its test, two lines
+in the build file and two edits in `HelloState`. It takes about 20 minutes.
+
+Before you start:
+
+- Do [Make a first change](/docs/get-started/first-change/), so that you know the edit, build
+  and run loop and have a copy of your game to go back to. Make a fresh copy now with that
+  page's step 1 line.
+
+This page does not depend on [Put a picture in your game](/docs/guides/your-picture/), [Animate a
+sprite sheet](/docs/guides/your-animation/) or [Fonts and text in your
+game](/docs/guides/your-font/), and works whether or not you have done them. Every command runs
+in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+## Where rules and tests live
+
+The starter's `game` folder keeps two kinds of code apart:
+
+- **The states**, in `game\states`, talk to the engine: they read the keyboard and the pads, make
+  the text and draw it. `HelloState` is one.
+- **The rules**, in `game\rules`, decide things: where the greeting goes, how fast it moves. They
+  are handed plain numbers and hand plain numbers back. `motion.h` and `motion.cpp` are the
+  starter's rules.
+
+The build makes the rules into a library of their own, `MyGameRules`, that can use the engine's
+maths, such as `Vector2F` and `RectangleF`, and nothing else of the engine. That is what lets
+`MyGameTests`, the program in `game\tests`, run the rules with no window, no graphics and no
+keyboard. [Test your game](/docs/guides/testing/#rules-in-a-library-of-their-own) explains the
+idea in more depth.
+
+**Rules and tests are each listed once** in `game\CMakeLists.txt`: a rule's `.cpp` file in
+`add_library(MyGameRules`, a test's `.cpp` file in `add_executable(MyGameTests`. The game's
+states are different: each of their `.cpp` files is listed twice, once for the browser build and
+once for Windows. This page adds no state, so it changes neither of those two lists.
+
+<Steps>
+
+1. **Make the rule's header.** A header, a `.h` file, says what functions a file of code offers,
+   so that other files can call them. First make the empty file, then open it:
+
+   ```bat
+   if not exist game\rules\bounds.h type nul > game\rules\bounds.h
+   notepad game\rules\bounds.h
+   ```
+
+   The first line makes an empty file and prints nothing; it leaves the file alone if it is
+   already there. Notepad opens the empty file. Paste all of this into it, then save and close
+   Notepad:
+
+   ```cpp title="game\rules\bounds.h"
+   #pragma once
+
+   #include "engine/math/rectanglef.h"
+   #include "engine/math/vector2f.h"
+
+   // Keeping the greeting inside the window. Like motion.h, these work only on
+   // values the state hands them, so a test can check them with no window.
+
+   // Where the greeting's centre may be, so that a greeting of greeting_size,
+   // circling the centre orbit_radius away, stays inside a window of
+   // window_size. (0, 0) is the window's top-left corner.
+   labrador::RectangleF centre_area(const labrador::Vector2F& window_size,
+   	const labrador::Vector2F& greeting_size);
+
+   // The point moved the shortest way into the area. A point already inside is
+   // returned as it is.
+   labrador::Vector2F keep_inside(const labrador::Vector2F& point,
+   	const labrador::RectangleF& area);
+   ```
+
+   It names two functions. `centre_area` works out a rectangle: the part of the window the point
+   the greeting circles can be in without any of the text going over an edge. `keep_inside`
+   takes a point and a rectangle and moves the point into the rectangle if it is outside. Each
+   line that ends in `;` after its brackets is a **declaration**: it says the function exists,
+   what it takes and what it gives back, but not what it does. The next step writes that.
+
+2. **Write the rule.** Make the second file, the code, and open it:
+
+   ```bat
+   if not exist game\rules\bounds.cpp type nul > game\rules\bounds.cpp
+   notepad game\rules\bounds.cpp
+   ```
+
+   Paste all of this into the empty file, then save and close Notepad:
+
+   ```cpp title="game\rules\bounds.cpp"
+   #include "game/rules/bounds.h"
+
+   #include "engine/math/scalar.h"
+   #include "game/rules/motion.h"
+
+   using namespace labrador;
+
+   RectangleF centre_area(const Vector2F& window_size,
+   	const Vector2F& greeting_size)
+   {
+   	// The greeting's top-left corner swings up to orbit_radius from the
+   	// centre on every side, and the text reaches greeting_size beyond it.
+   	return RectangleF(orbit_radius, orbit_radius,
+   		window_size.x - greeting_size.x - 2.0f * orbit_radius,
+   		window_size.y - greeting_size.y - 2.0f * orbit_radius);
+   }
+
+   Vector2F keep_inside(const Vector2F& point, const RectangleF& area)
+   {
+   	return Vector2F(clamp(point.x, area.left(), area.right()),
+   		clamp(point.y, area.top(), area.bottom()));
+   }
+   ```
+
+   The greeting circles a point, `motion_.centre`, 24 pixels away from it: that is
+   `orbit_radius`, from `motion.h`. Its top-left corner can therefore be up to 24 pixels left,
+   right, above or below the centre, and the text goes on to the right and down from that corner.
+   `centre_area` makes a `RectangleF`, which takes its left edge, top edge, width and height in
+   that order: it starts 24 pixels in from the window's left and top, and stops early enough on
+   the right and at the bottom to leave room for the text and the 24 pixels. `keep_inside` uses
+   the engine's `clamp`, from `engine/math/scalar.h`, which gives back a number moved inside a
+   range: below the range it gives the low end, above it the high end, and otherwise the number
+   itself. Doing that to `x` and to `y` moves the point into the rectangle.
+
+   Everything this file uses is either the engine's maths or the starter's other rule,
+   `motion.h`, which is what a rule may use.
+
+3. **List the rule in the build.** Open the build file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   Search with **Ctrl+F** for `rules/motion.cpp`. It is near the top, in the list of the rules'
+   files:
+
+   ```cmake
+   add_library(MyGameRules STATIC
+       rules/motion.cpp
+   )
+   ```
+
+   Click at the end of `rules/motion.cpp`, press **Enter**, and type the new file's name, with
+   the same four spaces in front, so that the three lines read:
+
+   ```cmake
+   add_library(MyGameRules STATIC
+       rules/motion.cpp
+       rules/bounds.cpp
+   )
+   ```
+
+   The name is written from the `game` folder, with a forward slash. This is the only place a
+   rule is listed: the game and the tests both use this library. Leave Notepad open for the next
+   change.
+
+4. **Make the test file.** A test calls a rule with numbers you chose and checks that what comes
+   back is what you expected. Make the file and open it:
+
+   ```bat
+   if not exist game\tests\bounds_tests.cpp type nul > game\tests\bounds_tests.cpp
+   notepad game\tests\bounds_tests.cpp
+   ```
+
+   Paste all of this into the empty file, then save and close Notepad:
+
+   ```cpp title="game\tests\bounds_tests.cpp"
+   // The tests of game/rules/bounds.h. doctest's main is in motion_tests.cpp,
+   // and a program has only one, so this file includes doctest without it.
+
+   #include <doctest/doctest.h>
+
+   #include "game/rules/bounds.h"
+   #include "game/rules/motion.h"
+
+   using namespace labrador;
+
+   TEST_CASE("a point inside the area stays where it is")
+   {
+   	const RectangleF area(10.0f, 20.0f, 100.0f, 50.0f);
+
+   	const Vector2F inside = keep_inside(Vector2F(60.0f, 40.0f), area);
+   	CHECK(inside.x == doctest::Approx(60.0f));
+   	CHECK(inside.y == doctest::Approx(40.0f));
+   }
+
+   TEST_CASE("a point outside the area moves to its nearest edge")
+   {
+   	const RectangleF area(10.0f, 20.0f, 100.0f, 50.0f);
+
+   	// Far off the left: x moves to the left edge, and y stays.
+   	const Vector2F left = keep_inside(Vector2F(-500.0f, 40.0f), area);
+   	CHECK(left.x == doctest::Approx(10.0f));
+   	CHECK(left.y == doctest::Approx(40.0f));
+
+   	// Past the bottom-right corner: both move, to the corner.
+   	const Vector2F corner = keep_inside(Vector2F(900.0f, 900.0f), area);
+   	CHECK(corner.x == doctest::Approx(110.0f));
+   	CHECK(corner.y == doctest::Approx(70.0f));
+   }
+
+   TEST_CASE("a greeting circling the centre's area stays in the window")
+   {
+   	const Vector2F window_size(1280.0f, 720.0f);
+   	const Vector2F greeting_size(200.0f, 20.0f);
+   	const RectangleF area = centre_area(window_size, greeting_size);
+
+   	// From the area's top-left corner, the greeting swings out to the
+   	// window's top and left edges and no further.
+   	CHECK(area.left() - orbit_radius == doctest::Approx(0.0f));
+   	CHECK(area.top() - orbit_radius == doctest::Approx(0.0f));
+
+   	// From its bottom-right corner, the text's far edges reach the window's.
+   	CHECK(area.right() + orbit_radius + greeting_size.x ==
+   		doctest::Approx(window_size.x));
+   	CHECK(area.bottom() + orbit_radius + greeting_size.y ==
+   		doctest::Approx(window_size.y));
+   }
+   ```
+
+   The tests use **doctest**, a test library the starter already has. Each `TEST_CASE("...")` is
+   one test, named by the sentence in its quotation marks, which is what doctest prints when it
+   fails. Each `CHECK(...)` inside it is one check: if what is between its brackets is not true,
+   the test fails, and doctest says which line and what the values were. `doctest::Approx(60.0f)`
+   means "60, give or take a tiny rounding error", which is how to compare `float` numbers.
+
+   The rectangle in the first two tests starts at `10, 20` and is 100 wide and 50 high, so its
+   right edge is at 110 and its bottom at 70; those are the numbers the corner is checked
+   against. The third test checks `centre_area` against the window's edges using `orbit_radius`
+   by name, so changing that number in `motion.h` later does not break the test.
+
+   **The file does not start with `#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN`**, though
+   `motion_tests.cpp` does. That line makes doctest write `main`, the function a program starts
+   in, and a program can have only one. `motion_tests.cpp` already has it, so every other test
+   file leaves it out; copying it in gives a page of `LNK2005` errors, which
+   [If something fails](#if-something-fails) shows.
+
+5. **List the test file in the build.** In `game\CMakeLists.txt`, which is still open, search for
+   `tests/motion_tests.cpp`. It is a little lower, in the list of the tests' files:
+
+   ```cmake
+   add_executable(MyGameTests
+       tests/motion_tests.cpp
+   )
+   ```
+
+   Click at the end of `tests/motion_tests.cpp`, press **Enter**, and type the new name, so that
+   the three lines read:
+
+   ```cmake
+   add_executable(MyGameTests
+       tests/motion_tests.cpp
+       tests/bounds_tests.cpp
+   )
+   ```
+
+   This, too, is the only place a test file is listed. Save and close Notepad.
+
+6. **Use the rule in `HelloState`.** Open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `game/states/confirm_state.h` and add a line above it, so the two read:
+
+   ```cpp
+   #include "game/rules/bounds.h"
+   #include "game/states/confirm_state.h"
+   ```
+
+   That lets this file call the two new functions. Then search for
+   `keyboard_direction(keyboard), dt);`. It is the end of the lines, in `update()`, that move the
+   greeting's centre on every step of the game:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->motion_ = step_motion(this->motion_,"
+   	to="keyboard_direction(keyboard), dt);"
+   />
+
+   Click at the end of `keyboard_direction(keyboard), dt);`, after the `;`, press **Enter** twice,
+   and paste these lines:
+
+   ```cpp
+   	// Keep the greeting inside the window, however far it is steered.
+   	const Vector2F window_size =
+   		this->app_->resolution_manager()->resolution_vec();
+   	this->motion_.centre = keep_inside(this->motion_.centre,
+   		centre_area(window_size, this->greeting_->bounds().size()));
+   ```
+
+   The first line asks the engine for the window's size, 1280 by 720 in the starter.
+   `this->greeting_->bounds()` is the rectangle the greeting's text covers on screen, and
+   `.size()` is its width and height. The last two lines move the centre back inside the area
+   the rule works out, so the greeting is drawn there. This is the split the starter keeps:
+   the state asks the engine for the numbers and hands them to the rule. Save and close Notepad.
+
+7. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The build first runs CMake again, because `game\CMakeLists.txt` changed. That prints
+   `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
+   packages; they are expected, not errors. Then it compiles the three files you made or
+   changed. On a fast desktop the whole line took 6 to 7 seconds before the game opened. After
+   the lines from vcpkg and CMake, it ends like this:
+
+   ```text title="Output"
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   [1/9] Running utility command for game_content
+   [2/9] Checking that no engine file includes a game header
+   [3/9] Building CXX object game\CMakeFiles\MyGameRules.dir\rules\bounds.cpp.obj
+   [4/9] Building CXX object game\CMakeFiles\MyGameTests.dir\tests\bounds_tests.cpp.obj
+   [5/9] Linking CXX static library game\MyGameRules.lib
+   [6/9] Linking CXX executable game\MyGameTests.exe
+   [7/9] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   [8/9] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.03 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.69 sec
+
+   100% tests passed, 0 tests failed out of 2
+
+   Total Test time (real) =   0.76 sec
+   ```
+
+   Then the game opens. Hold an arrow key, or W, A, S or D: the greeting moves to that edge of
+   the window and stops there, still circling, instead of going off it. At the bottom it stops
+   over the controls line; [Changing the rule](#changing-the-rule) below moves that edge up.
+
+   ctest still says `out of 2`: it counts test programs, and `MyGameTests` is still one program.
+   The new tests run inside it. The next step shows them.
+
+8. **Run the tests on their own.** The tests are a program you can run directly, which shows how
+   many tests and checks it ran:
+
+   ```bat
+   out\build\x64-debug\game\MyGameTests.exe
+   ```
+
+   ```text title="Output"
+   [doctest] doctest version is "2.5.3"
+   [doctest] run with "--help" for options
+   ===============================================================================
+   [doctest] test cases:  5 |  5 passed | 0 failed | 0 skipped
+   [doctest] assertions: 19 | 19 passed | 0 failed |
+   [doctest] Status: SUCCESS!
+   ```
+
+   It takes well under a second. `test cases: 5` is the starter's two tests in
+   `motion_tests.cpp` and your three; `assertions: 19` counts every `CHECK`, the starter's 9 and
+   your 10. **If it says `test cases: 2`**, your test file is not in the program: step 5's line is
+   missing or misspelt, and nothing warns about that, because a file that is not listed is simply
+   not built. To see the tests' names, add `--list-test-cases`:
+
+   ```bat
+   out\build\x64-debug\game\MyGameTests.exe --list-test-cases
+   ```
+
+   ```text title="Output"
+   [doctest] listing all test case names
+   ===============================================================================
+   a point inside the area stays where it is
+   a point outside the area moves to its nearest edge
+   a greeting circling the centre's area stays in the window
+   the stick and the keys add up to at most one unit
+   a step moves the centre and turns the greeting
+   ===============================================================================
+   [doctest] unskipped test cases passing the current filters: 5
+   ```
+
+</Steps>
+
+## When a test fails
+
+A test is worth having because it fails when the rule stops doing what the test expects. To see
+what that looks like, break one check on purpose. Open the test file:
+
+```bat
+notepad game\tests\bounds_tests.cpp
+```
+
+Search for `Approx(110.0f)`. The line reads:
+
+```cpp
+	CHECK(corner.x == doctest::Approx(110.0f));
+```
+
+Change `110.0f` to `100.0f`, save and close Notepad, and run the build line from step 7 again. The
+build compiles the test file again, then ctest reports the failure, and the game does not start,
+because `&&` runs the next command only when the one before it worked:
+
+```text title="Output"
+[3/4] Building CXX object game\CMakeFiles\MyGameTests.dir\tests\bounds_tests.cpp.obj
+[4/4] Linking CXX executable game\MyGameTests.exe
+Test project C:/dev/mygame/out/build/x64-debug
+    Start 1: MyGameTests
+1/2 Test #1: MyGameTests ......................***Failed    0.03 sec
+[doctest] doctest version is "2.5.3"
+[doctest] run with "--help" for options
+===============================================================================
+C:\dev\mygame\game\tests\bounds_tests.cpp(20):
+TEST CASE:  a point outside the area moves to its nearest edge
+
+C:\dev\mygame\game\tests\bounds_tests.cpp(31): ERROR: CHECK( corner.x == doctest::Approx(100.0f) ) is NOT correct!
+  values: CHECK( 110 == Approx( 100 ) )
+
+===============================================================================
+[doctest] test cases:  5 |  4 passed | 1 failed | 0 skipped
+[doctest] assertions: 19 | 18 passed | 1 failed |
+[doctest] Status: FAILURE!
+
+    Start 2: MyGameSmokeTests
+2/2 Test #2: MyGameSmokeTests .................   Passed    0.70 sec
+
+50% tests passed, 1 tests failed out of 2
+
+Total Test time (real) =   0.75 sec
+
+The following tests FAILED:
+	  1 - MyGameTests (Failed)
+Errors while running CTest
+```
+
+How to read it:
+
+- `***Failed` next to `MyGameTests` says the rules' tests failed. The lines under it are what the
+  test program printed.
+- `bounds_tests.cpp(20)` and `TEST CASE:` name the test that failed: the file, the line the test
+  starts on in brackets, and its name.
+- `bounds_tests.cpp(31): ERROR:` is the check that failed, at line 31, written out as it is in
+  the file. To go there, open the file in Notepad, press **Ctrl+G**, type `31` and press
+  **Enter**.
+- `values:` is the same check with the numbers filled in: the rule gave back `110`, and the test
+  expected `100`. That is the line to think about. Either the rule is wrong, or the test expects
+  the wrong thing; here the test does.
+- The counts at the end say how many tests and checks failed, out of how many.
+
+The starter's test preset has `"outputOnFailure": true`, which is why ctest printed the test
+program's lines under `***Failed`. `ctest --preset x64-debug --output-on-failure` asks for the
+same thing by name, and printed the same lines here; use it in a project whose preset does not
+have that setting. The test program run on its own, as in step 8, prints the same failure and
+ends `Status: FAILURE!`.
+
+Put the line back to `110.0f`, save, and run the build line again: both tests pass and the game
+opens.
+
+To run only some tests, which helps once there are many, give the test program part of their name
+between asterisks. This runs only the one about the nearest edge:
+
+```bat
+out\build\x64-debug\game\MyGameTests.exe --test-case="*nearest edge*"
+```
+
+Its counts say `test cases: 1 | 1 passed | 0 failed | 4 skipped`, and it ends
+`Status: SUCCESS!`.
+
+## The wall around the rules
+
+A rule may use the engine's maths and nothing else of it, and the build enforces that. Suppose you
+want holding **Space** to let the greeting leave the window, and you write the key check in the
+rule's file. Open it:
+
+```bat
+notepad game\rules\bounds.cpp
+```
+
+Search for `engine/math/scalar.h` and add a line above it, so the two read:
+
+```cpp
+#include "engine/input/keyboard.h"
+#include "engine/math/scalar.h"
+```
+
+Then click at the very end of the file, press **Enter**, and paste these lines:
+
+```cpp
+
+// Holding Space lets the greeting leave the window.
+bool leaving_allowed(const Keyboard& keyboard)
+{
+	return keyboard.held(Key::space);
+}
+```
+
+Save, close Notepad, and run the build line. Every file compiles, but the tests do not link:
+
+```text title="Output"
+[3/6] Building CXX object game\CMakeFiles\MyGameRules.dir\rules\bounds.cpp.obj
+[4/6] Linking CXX static library game\MyGameRules.lib
+[5/6] Linking CXX executable game\MyGameTests.exe
+FAILED: [code=4294967295] game/MyGameTests.exe
+MyGameRules.lib(bounds.cpp.obj) : error LNK2019: unresolved external symbol "public: bool __cdecl labrador::Keyboard::held(enum labrador::Key)const " (?held@Keyboard@labrador@@QEBA_NW4Key@2@@Z) referenced in function "bool __cdecl leaving_allowed(class labrador::Keyboard const &)" (?leaving_allowed@@YA_NAEBVKeyboard@labrador@@@Z)
+game\MyGameTests.exe : fatal error LNK1120: 1 unresolved externals
+[6/6] Linking CXX executable game\MyGame.exe
+ninja: build stopped: subcommand failed.
+```
+
+Two long lines after `FAILED:` have been left out here: the command that failed, and a line
+saying that the linker failed. The error lines come after them. The game itself, `MyGame.exe`, linked, because it has the whole
+engine. The tests have only the engine's maths, so the linker finds nothing for
+`Keyboard::held`, and says so with `MyGameRules.lib(bounds.cpp.obj)`: a rule's file asked for
+something outside the wall. The `#include` line was not the problem. The engine's headers can be
+read from the rules; it is calling the engine's code that fails.
+
+The answer is to keep the rule free of the engine and do the engine's part in the state, which
+reads the keyboard already. Open `game\rules\bounds.cpp` again, delete the
+`#include "engine/input/keyboard.h"` line and the lines you pasted at the end, save and close
+Notepad. Then open the state:
+
+```bat
+notepad game\states\hello_state.cpp
+```
+
+Search for `// Keep the greeting inside the window`. Select the five lines you added in step 6:
+
+```cpp
+	// Keep the greeting inside the window, however far it is steered.
+	const Vector2F window_size =
+		this->app_->resolution_manager()->resolution_vec();
+	this->motion_.centre = keep_inside(this->motion_.centre,
+		centre_area(window_size, this->greeting_->bounds().size()));
+```
+
+and paste these in their place:
+
+```cpp
+	// Keep the greeting inside the window, however far it is steered,
+	// unless Space is held.
+	const Vector2F window_size =
+		this->app_->resolution_manager()->resolution_vec();
+	if (!keyboard.held(Key::space))
+	{
+		this->motion_.centre = keep_inside(this->motion_.centre,
+			centre_area(window_size, this->greeting_->bounds().size()));
+	}
+```
+
+`keyboard` is the state's view of the keyboard, which `update()` already has a few lines higher.
+`!` means "not", so the greeting is kept inside unless Space is held. Save, close Notepad and
+run the build line. Both tests pass. In the game, hold **Space** and an arrow key together and
+the greeting goes past the edge; let go of Space and it jumps back to the edge. The rule did not
+change, so its tests did not need to.
+
+## Changing the rule
+
+**Keep the greeting above the controls line.** The text along the bottom of the window starts 40
+pixels above its bottom edge. To stop the greeting before it, tell the rule the window is 48
+pixels shorter than it is. In `game\states\hello_state.cpp`, search for
+`// Keep the greeting inside the window`. Just below that comment are these two lines:
+
+```cpp
+	const Vector2F window_size =
+		this->app_->resolution_manager()->resolution_vec();
+```
+
+Change them to these three:
+
+```cpp
+	const Vector2F window_size =
+		this->app_->resolution_manager()->resolution_vec() -
+		Vector2F(0.0f, 48.0f);
+```
+
+Build and run: held down, the greeting now stops just above the controls line. The tests still
+pass, because the rule works on whatever size it is given.
+
+**A rule of your own.** The same five steps make any rule: a header in `game\rules` that declares
+it, a `.cpp` beside it that writes it, its name in `add_library(MyGameRules`, a test file in
+`game\tests` without the `#define` line, and its name in `add_executable(MyGameTests`. A rule
+that needs something from the engine, such as a key, the window's size or the time since the
+last frame, is handed it by the state as a number, a flag or a `Vector2F`, the way
+`keep_inside` is handed the window's size and `step_motion` is handed `dt`.
+
+**A new state is listed twice.** A `.cpp` file in `game\states`, such as a title screen, goes in
+both `add_executable(MyGame` lists: the one inside `if(EMSCRIPTEN)` for the browser and the
+`add_executable(MyGame WIN32` one for Windows. Missing it from the Windows list gives
+[`LNK2019`](/docs/troubleshooting/#lnk2019-unresolved-external-symbol), and missing it from the
+browser list gives [`undefined symbol`](/docs/troubleshooting/#wasm-ld-error--undefined-symbol).
+
+## How errors show
+
+A mistake in this page's files shows in one of three places:
+
+- **The build stops at a compile error**, an `error C` line naming a file and line: a slip in the
+  C++ code. [Read a build error](/docs/get-started/build-errors/) shows how to find the line
+  that matters.
+- **The build stops at a link error**, an `error LNK` line: every file compiled, but a function
+  has no code anywhere the program can see. A name after `FAILED:` says which program:
+  `game/MyGameTests.exe` is the tests, `game/MyGame.exe` the game.
+- **A test fails.** The build worked, and ctest shows `***Failed` next to `MyGameTests`, with the
+  check that failed under it, as in [When a test fails](#when-a-test-fails).
+
+Each message is below.
+
+## If something fails
+
+<Aside type="caution" title="error LNK2019: unresolved external symbol ... centre_area ... referenced in function ... DOCTEST_ANON_FUNC_5">
+`bounds.cpp` is not in the build: step 3's line is missing from `add_library(MyGameRules`, or is
+misspelt. The tests call the rule, and the linker finds no code for it:
+
+```text title="Output"
+[4/7] Linking CXX executable game\MyGameTests.exe
+FAILED: [code=4294967295] game/MyGameTests.exe
+bounds_tests.cpp.obj : error LNK2019: unresolved external symbol "struct labrador::RectangleF __cdecl centre_area(struct labrador::Vector2F const &,struct labrador::Vector2F const &)" (?centre_area@@YA?AURectangleF@labrador@@AEBUVector2F@2@0@Z) referenced in function "void __cdecl DOCTEST_ANON_FUNC_5(void)" (?DOCTEST_ANON_FUNC_5@@YAXXZ)
+bounds_tests.cpp.obj : error LNK2019: unresolved external symbol "struct labrador::Vector2F __cdecl keep_inside(struct labrador::Vector2F const &,struct labrador::RectangleF const &)" (?keep_inside@@YA?AUVector2F@labrador@@AEBU12@AEBURectangleF@2@@Z) referenced in function "void __cdecl DOCTEST_ANON_FUNC_1(void)" (?DOCTEST_ANON_FUNC_1@@YAXXZ)
+game\MyGameTests.exe : fatal error LNK1120: 2 unresolved externals
+[5/7] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+ninja: build stopped: subcommand failed.
+```
+
+`DOCTEST_ANON_FUNC_5` is the name doctest gives a `TEST_CASE` inside. The build may stop at the
+first program that fails, so the first run can name only the tests. The game fails the same way,
+either further down in the same output or when you run the build again: `hello_state.cpp.obj : error LNK2019` naming `HelloState::update(float)`, ending
+`game\MyGame.exe : fatal error LNK1120: 2 unresolved externals`. Both programs use the rules
+library, so one missing line breaks both. Add `rules/bounds.cpp` as in step 3, save and build
+again. [Troubleshooting](/docs/troubleshooting/#lnk2019-unresolved-external-symbol) shows how to
+search your files for a function's name when the cause is not a missing line.
+</Aside>
+
+<Aside type="caution" title="MyGameRules.lib(bounds.cpp.obj) : error LNK2019: unresolved external symbol ... labrador::Keyboard::held ...">
+A rule's file calls engine code that is not maths, here `Keyboard::held`, and the tests, which
+have only the maths, cannot link it. `MyGameRules.lib(` in front of the file's name is the sign.
+Move the call into the state and hand the rule its answer, as in [The wall around the
+rules](#the-wall-around-the-rules). The same message names whatever was called: a `Label`, the
+renderer or the sound bank are all outside the wall.
+</Aside>
+
+<Aside type="caution" title="error LNK2005: main already defined in motion_tests.cpp.obj">
+`bounds_tests.cpp` starts with `#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN`, copied from
+`motion_tests.cpp`. Each file with that line gets its own copy of doctest's code, so the linker
+finds two of everything: about 300 `LNK2005` lines, each `already defined in
+motion_tests.cpp.obj`, with `main` among them, ending:
+
+```text title="Output"
+game\MyGameTests.exe : fatal error LNK1169: one or more multiply defined symbols found
+```
+
+Delete the `#define` line from `bounds_tests.cpp`, leaving `#include <doctest/doctest.h>`, save
+and build again. Only `motion_tests.cpp` keeps it. To find which files have it:
+
+```bat
+findstr /s /n "DOCTEST_CONFIG_IMPLEMENT" game\tests\*.cpp
+```
+</Aside>
+
+<Aside type="caution" title="error C3861: 'keep_inside': identifier not found">
+`hello_state.cpp` calls the rule but does not include its header, so the compiler has not heard of
+it. The same build also says `'centre_area': identifier not found`:
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(163): error C3861: 'centre_area': identifier not found
+C:\dev\mygame\game\states\hello_state.cpp(162): error C3861: 'keep_inside': identifier not found
+```
+
+Add `#include "game/rules/bounds.h"` above `#include "game/states/confirm_state.h"`, as in
+step 6.
+</Aside>
+
+<Aside type="caution" title="fatal error C1083: Cannot open include file: 'game/rules/bound.h': No such file or directory">
+An `#include` line names a file that is not there under that name, here `bound.h` for
+`bounds.h`. Compare the name with `dir game\rules`. Windows hides known file extensions in File
+Explorer, so a file that shows there as `bounds.h` can really be `bounds.h.txt`; `dir` shows its
+whole name.
+</Aside>
+
+**`test cases: 2` where you expected 5.** The test file is not in the build: step 5's line is
+missing from `add_executable(MyGameTests`, or misspelt. The build and ctest both pass, since a
+file that is not listed is simply not built, so the count is the only sign. Add the line, save
+and build again.
+
+**`ERROR: CHECK( ... ) is NOT correct!`** A test ran and one of its checks was false. [When a test
+fails](#when-a-test-fails) reads the message.
+
+## In the browser build
+
+Nothing on this page needs a browser-only line. The rules library and the tests are listed once
+and the browser build uses the same lists, so `rules/bounds.cpp` and `tests/bounds_tests.cpp`
+are in it already. In the prompt where you ran `emsdk_env.bat`, as in [Build for the
+browser](/docs/guides/browser/), run the line below. If you have not built for the browser in this
+project yet, there is no `out\build\wasm-debug` folder and the line fails: run
+`cmake --preset wasm-debug` first, as that page does.
+
+```bat
+cmake --build --preset wasm-debug && ctest --preset wasm-debug
+```
+
+ctest runs `MyGameTests` under Node and ends `100% tests passed, 0 tests failed out of 1`. The
+browser build has no start-up test, so it counts one. The page,
+`out\build\wasm-debug\game\MyGame.html`, is built from the same `hello_state.cpp` and rules.
+
+The browser build's linker reports the same mistakes in its own words. With `rules/bounds.cpp`
+missing from `MyGameRules`, both programs fail:
+
+```text title="Output"
+FAILED: [code=1] game/MyGameTests.js
+wasm-ld: error: game/CMakeFiles/MyGameTests.dir/tests/bounds_tests.cpp.o: undefined symbol: keep_inside(labrador::Vector2F const&, labrador::RectangleF const&)
+wasm-ld: error: game/CMakeFiles/MyGameTests.dir/tests/bounds_tests.cpp.o: undefined symbol: keep_inside(labrador::Vector2F const&, labrador::RectangleF const&)
+wasm-ld: error: game/CMakeFiles/MyGameTests.dir/tests/bounds_tests.cpp.o: undefined symbol: keep_inside(labrador::Vector2F const&, labrador::RectangleF const&)
+wasm-ld: error: game/CMakeFiles/MyGameTests.dir/tests/bounds_tests.cpp.o: undefined symbol: centre_area(labrador::Vector2F const&, labrador::Vector2F const&)
+FAILED: [code=1] game/MyGame.html
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: centre_area(labrador::Vector2F const&, labrador::Vector2F const&)
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: keep_inside(labrador::Vector2F const&, labrador::RectangleF const&)
+```
+
+A name is listed once for each place that calls it, so `keep_inside` appears three times for the
+tests. Each `FAILED:` line is followed by a long command line, and each program's errors by a long
+`em++: error:` line ending `failed (returned 1)`; those are left out here.
+
+With the `#define` line in a second test file, it prints `wasm-ld: error: duplicate symbol:`
+followed by a doctest name, and `>>> defined in` both test files, then stops after 20 with
+`too many errors emitted`. The fixes are the ones above.
+
+One mistake shows only on Windows: the browser build linked the `leaving_allowed` function from
+[The wall around the rules](#the-wall-around-the-rules) without an error, because no test calls
+it. Build for Windows too before trusting that a rule keeps to its wall.
+
+## Where to go next
+
+- [Test your game](/docs/guides/testing/) covers the start-up test, tests that check what the
+  game draws, and driving the game with pressed keys.
+- [Read a build error](/docs/get-started/build-errors/) reads compile and link errors in more
+  depth, and [Troubleshooting](/docs/troubleshooting/#errors-in-your-own-code) lists them.
+- LineSweeper, in [Examples](/examples/), is a whole game built the same way: its rules are a
+  library with no engine in it, and its tests play whole games with no window.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at `C:\dev\h4\mygame`,
+with Visual Studio 2026's compiler 19.51, every step above ran as shown, with `C:\dev\h4\mygame`
+in the quoted output changed to `C:\dev\mygame`. The edits were made by an agent exactly as the
+steps word them, with an editing tool rather than Notepad. Before the edits, the right arrow held
+for three seconds took the greeting off the window; after them, each of the four arrows held for
+three seconds left it at that edge, in screenshots of the window, and with the change under
+[Changing the rule](#changing-the-rule) it stopped above the controls line. Holding Space with
+the right arrow took it past the edge and releasing Space brought it back. The test program and
+ctest gave the output shown, passing and with the broken check, and `--output-on-failure` gave
+the same lines. Each message under [If something fails](#if-something-fails) was made on purpose:
+`rules/bounds.cpp` left out of `MyGameRules`, the Space check written in the rule, the `#define`
+line copied into the second test file, the `#include` line left out and misspelt, and the test
+file left out of `MyGameTests`, which still passed with two test cases. The `wasm-debug` build
+compiled and passed with the new files, ran the tests under Node with five test cases, gave the
+`undefined symbol` and `duplicate symbol` messages shown, and linked the rule with the Space check
+in it without an error.
+
+A second agent then followed this page as worded in a fresh starter at `C:\dev\h4v\mygame`, with
+keys sent to the game and screenshots of its window. Every edit target was found once, the code
+compiled without warnings for Windows and the browser, and the outputs, the screenshots and every
+message above matched. It found six smaller differences, which are corrected here: the wall's
+output numbering, which is `[3/6]` to `[6/6]` once the test file has been rebuilt after the broken
+check (re-run and re-captured); a first link failure that can name the game as well as the tests;
+the repeated `undefined symbol` lines and the `em++: error:` lines in the browser build; the
+`Total Test time` line at the end of step 7, whose output is now that second run's, with its folder changed the
+same way; the last lines
+of the one-test run; and the `cmake --preset wasm-debug` line for a project not yet built for the
+browser.

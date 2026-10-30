@@ -84,10 +84,30 @@ In order of impact on a beginner who wants to play around. Each unit is one
    gained `--ignore-srgb`: without it texconv linearizes a PNG's sRGB colours
    into the `UNORM` texture and the engine draws them darker. Each page's
    *What was checked* records the runs.
-6. **`GUIDE#6` Adding a source file, screen, level or menu.** A new state, a
-   level change, a title menu, rules and tests, copying components, adapting
-   collision, settings and saves, custom levels. Each says a source is listed
-   twice in `game\CMakeLists.txt` and shows the LNK2019 of missing one.
+6. **`GUIDE#6` Adding a source file, screen, level or menu.** Done on
+   2026-10-30: seven guides take the starter project further. *Add a screen
+   to your game* writes a title state, starts the game on it in both entry
+   points and goes back to it from the quit question; *Make a title menu*
+   turns it into Start and Quit rows with a focus group and direction repeat,
+   and a click; *Add a second level* adds a goal box and reads every level's
+   goal from a `levels.json` the reader edits without compiling; *Add a rule
+   and a test* keeps the greeting in the window with a rule, a doctest file,
+   a passing and a failing run and the rules wall's error; *Copy the
+   components into your game* copies the option row and slider; *Put
+   collision in your game* adds a wall that stops a box; *Save settings in
+   your game* writes and reads `%LOCALAPPDATA%\MyGame\settings.json`. Every
+   page that adds a game source says it is listed in both of
+   `game\CMakeLists.txt`'s lists and quotes the `LNK2019` and wasm-ld
+   `undefined symbol` of leaving out each; rules and tests are listed once.
+   Each page's steps, output and failures were run in a fresh starter, then
+   followed as worded by a second agent in another, and corrected; each
+   *What was checked* records the runs. Found on the way: the template's
+   `--smoke-test` wraps the first state, so a first state that replaces
+   itself without input leaves the wrapper and the test times out (*Add a
+   second level* documents the timeout); the starter's error box keeps the
+   title `Sample - startup failure`; a game file that keeps a
+   `samples/components/` include still builds against the engine's copy,
+   because `LabradorEngine` puts the engine root on the include path.
 7. **`GUIDE#7` Playing a sound in your own game.** First with the audio
    sample's tones and no tools, then the manifest, CMake and code; xwbtool's
    `-y`; "has no wave named".

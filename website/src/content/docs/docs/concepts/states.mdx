@@ -115,7 +115,8 @@ and has not left, so the pads go on reading and no state is told.
   audio sample, the components gallery and the local-multiplayer sample do exactly this: the
   state owns a `Scene`, `init()` fills it, `update()` steps it, `draw()` draws it. The collision
   sample's state owns an `Arena` that owns the scene, so its tests step the arena with no state
-  at all.
+  at all. [Add a screen to your game](/docs/guides/your-screen/) and
+  [Add a second level](/docs/guides/your-level/) write such states in the starter project.
 - **Menus are states.** A main menu at the bottom of the stack, a match pushed above it, and a
   pause menu pushed above that. Leaving the match pops back to the menu, which was never
   destroyed.

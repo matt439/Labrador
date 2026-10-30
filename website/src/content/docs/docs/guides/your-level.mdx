@@ -1,0 +1,842 @@
+---
+title: Add a second level
+description: Give the starter game a goal box to reach, move to the next level when the greeting touches it, and read every level from a file you edit without touching the C++, step by step.
+sidebar:
+  order: 0.92
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+This page turns the game from [Get the starter project](/docs/get-started/starter/) into a game
+with levels. Each level has a green **goal** box somewhere in the window. When the greeting
+touches it, the game goes on to the next level, where the box is somewhere else, and after the
+last level it says `You win!`. The levels are not written in the C++: they are in a small file,
+`levels.json`, that you can change, and add levels to, and see the change after a build that
+compiles nothing. It takes about 25 minutes.
+
+The page adds four new files and changes three:
+
+| File | New or changed | What it is |
+| --- | --- | --- |
+| `game\content\levels.json` | New | The levels: where each goal box is, and how big. |
+| `game\states\levels.h` and `levels.cpp` | New | The code that reads `levels.json` and checks it. |
+| `game\states\goal.h` | New | The green box. |
+| `game\CMakeLists.txt` | Changed | Copies `levels.json` beside the game, and lists `levels.cpp`, **twice**. |
+| `game\states\hello_state.h` and `.cpp` | Changed | The starter's screen, which now knows its level number, draws the goal and moves on. |
+
+Before you start:
+
+- Do [Make a first change](/docs/get-started/first-change/), so that you know the edit, build
+  and run loop and have a copy of your game to go back to. Make a fresh copy now with that
+  page's step 1 line.
+- Read [Read a build error](/docs/get-started/build-errors/) if you have not: this page adds
+  enough C++ that a slip is likely, and that page shows how to find the line that matters.
+
+This page does not depend on the picture, animation or font pages, and works whether or not you
+have done them. Every command runs in the x64 Native Tools Command Prompt, in your project's
+folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+## A goal and a second level
+
+<Steps>
+
+1. **Make the levels file.** First make the empty file, then open it:
+
+   ```bat
+   if not exist game\content\levels.json type nul > game\content\levels.json
+   notepad game\content\levels.json
+   ```
+
+   The first line makes an empty file and prints nothing; it leaves the file alone if it is
+   already there. Paste all of this into it, then save and close Notepad:
+
+   ```json title="game\content\levels.json"
+   {
+       "levels": [
+           { "x": 1000, "y": 300, "width": 120, "height": 120 },
+           { "x": 120, "y": 100, "width": 80, "height": 80 }
+       ]
+   }
+   ```
+
+   Each line between the square brackets is one level, in the order they are played, with a
+   comma after every line but the last. The four numbers place that level's goal box, in pixels:
+   `x` is how far its left edge is from the window's left edge, `y` how far its top edge is
+   below the window's top, and `width` and `height` its size. The window is 1280 pixels wide and
+   720 high. So level 1's goal is a 120-pixel square on the right, and level 2's an 80-pixel
+   square near the top-left corner.
+
+2. **Copy the file beside the game.** The game reads its files from the folder its `.exe` is
+   in, and the build copies only the files it is told to. Three changes go in the build file, in
+   the order they come in it, from the top. Open it:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   First, search with **Ctrl+F** for `jetbrains_mono_bold_16.spritefont`, near the top in the
+   part for the browser build, and add a line after it, so the two read:
+
+   ```cmake
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/jetbrains_mono_bold_16.spritefont"
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/levels.json"
+   ```
+
+   That makes the [browser build](/docs/guides/browser/) package the page again when
+   `levels.json` changes; [In the browser build](#in-the-browser-build) says more. If another
+   page has already added lines after the `.spritefont` one, add this one after them; the order
+   does not matter.
+
+   Next, search for `add_custom_target(game_content ALL)`. Under it is the block that copies the
+   manifest beside the game:
+
+   <SourceFile
+   	path="website/src/walkthrough/game-CMakeLists.txt"
+   	from="add_custom_target(game_content ALL)"
+   	to=")"
+   	mark="manifest.json"
+   />
+
+   Click at the end of its last line, `)`, press **Enter**, and paste this block below it:
+
+   ```cmake
+   add_custom_command(TARGET game_content POST_BUILD
+       COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/levels.json"
+           "$<TARGET_FILE_DIR:MyGame>/levels.json"
+       VERBATIM
+   )
+   ```
+
+   It is the manifest's block with `manifest.json` changed to `levels.json` twice. It copies the
+   file into `out\build\x64-debug\game` on every build, if it has changed.
+
+   Last, search for `install(FILES content/manifest.json` and add a line after it, so the two
+   read:
+
+   ```cmake
+   install(FILES content/manifest.json DESTINATION .)
+   install(FILES content/levels.json DESTINATION .)
+   ```
+
+   That puts the file in a [Windows release](/docs/guides/windows-release/). Leave Notepad open
+   on this file: step 4 changes it again.
+
+3. **Make the code that reads the levels.** It is two files. A `.h` file, the **header**, says
+   what the code offers to the rest of the game; the `.cpp` file is the code itself. Make both
+   empty files, then open the header:
+
+   ```bat
+   if not exist game\states\levels.h type nul > game\states\levels.h
+   if not exist game\states\levels.cpp type nul > game\states\levels.cpp
+   notepad game\states\levels.h
+   ```
+
+   Paste all of this into it, then save and close Notepad:
+
+   ```cpp title="game\states\levels.h"
+   #pragma once
+
+   #include "engine/math/rectanglef.h"
+
+   #include <string>
+   #include <vector>
+
+   // One level: where its goal box is, in pixels from the window's top-left
+   // corner.
+   struct Level
+   {
+   	labrador::RectangleF goal;
+   };
+
+   // Reads every level from a levels file, in order. Throws, naming the file
+   // and the level, if the file is missing, is not valid JSON, has no levels,
+   // or has a goal that is not inside the window.
+   std::vector<Level> read_levels(const std::string& path);
+   ```
+
+   `struct Level` is what one level is to the game: one rectangle, its goal. A game with more in
+   a level, such as a start point or walls, adds them here. `read_levels` is a function that
+   takes the file's path and gives back a list of levels, a `std::vector<Level>`. Then open the
+   other file:
+
+   ```bat
+   notepad game\states\levels.cpp
+   ```
+
+   Paste all of this into it, then save and close Notepad:
+
+   ```cpp title="game\states\levels.cpp"
+   #include "game/states/levels.h"
+
+   #include "engine/assets/json.h"
+
+   #include <cstddef>
+   #include <stdexcept>
+   #include <string>
+
+   using namespace labrador;
+
+   namespace
+   {
+   	// The window's size, as main.cpp sets it.
+   	constexpr int window_width = 1280;
+   	constexpr int window_height = 720;
+   }
+
+   std::vector<Level> read_levels(const std::string& path)
+   {
+   	const JsonDocument document = read_json_file(path.c_str());
+   	const JsonValue list = document.root().array("levels");
+   	if (list.size() == 0)
+   	{
+   		throw std::runtime_error(list.where() +
+   			" is empty: the game needs at least one level");
+   	}
+
+   	std::vector<Level> levels;
+   	for (size_t i = 0; i < list.size(); ++i)
+   	{
+   		const JsonValue entry = list.at(i);
+   		const int x = entry.integer("x");
+   		const int y = entry.integer("y");
+   		const int width = entry.integer("width");
+   		const int height = entry.integer("height");
+
+   		// A goal with no size, or off the window, could never be reached.
+   		if (width <= 0 || height <= 0 || x < 0 || y < 0 ||
+   			x + width > window_width || y + height > window_height)
+   		{
+   			throw std::runtime_error(entry.where() + ": the goal of level " +
+   				std::to_string(i + 1) +
+   				" is not inside the window, 1280 by 720");
+   		}
+
+   		Level level;
+   		level.goal = RectangleF(static_cast<float>(x), static_cast<float>(y),
+   			static_cast<float>(width), static_cast<float>(height));
+   		levels.push_back(level);
+   	}
+   	return levels;
+   }
+   ```
+
+   `read_json_file` is the engine's reader for JSON files, the same one that reads the manifest.
+   It stops the game with a message naming the file if the file is missing or its punctuation is
+   wrong. `array("levels")` finds the list, and `integer("x")` reads one whole number from a
+   level, again stopping with a message if it is missing or is not a whole number. The `if` in
+   the middle is the game's own check: a goal outside the window could never be reached, so the
+   game refuses it and says which level it is. [If something fails](#if-something-fails) shows
+   every one of these messages.
+
+4. **List `levels.cpp` in the build, twice.** Every `.cpp` file of the game is listed by name in
+   `game\CMakeLists.txt`, and the game's own files are listed **twice**: once for the browser
+   build and once for Windows. A `.h` file is not listed, which is why the picture and animation
+   pages needed no change to these lists. Go back to Notepad with `game\CMakeLists.txt` in it, or
+   open it again:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   Press **Ctrl+Home** to go to the top of the file, because Notepad searches down from where the
+   cursor is, then search for `states/hello_state.cpp`. The first match is in the browser build's
+   list, inside `if(EMSCRIPTEN)`:
+
+   <SourceFile
+   	path="website/src/walkthrough/game-CMakeLists.txt"
+   	from="target_link_options(MyGameTests PRIVATE -sENVIRONMENT=node)"
+   	to=")"
+   	mark="states/hello_state.cpp"
+   />
+
+   Add a line after it, with the same eight spaces in front, so the three `states` lines read:
+
+   ```cmake
+           states/confirm_state.cpp
+           states/hello_state.cpp
+           states/levels.cpp
+   ```
+
+   Then press **Find Next** in the search box, or **F3**, to go to the second match, in the
+   Windows build's list, further down:
+
+   <SourceFile
+   	path="website/src/walkthrough/game-CMakeLists.txt"
+   	from="add_executable(MyGame WIN32"
+   	to=")"
+   	mark="states/hello_state.cpp"
+   />
+
+   Add a line after it here too, with four spaces in front, so the lines read:
+
+   ```cmake
+       states/confirm_state.cpp
+       states/hello_state.cpp
+       states/levels.cpp
+       dpi_aware.manifest
+   ```
+
+   Save and close Notepad. The Windows build reads only the second list and the browser build
+   only the first, so a file missing from one of them breaks only that build, at the very end:
+   [If you leave out one of the lists](#if-you-leave-out-one-of-the-lists) shows what that looks
+   like.
+
+5. **Make the goal box.** Every object in the starter's scene is a class with three jobs:
+   `update` moves it on each step of the game, `draw` draws it, and `bounds` says where it is.
+   This one draws a solid rectangle. The engine has no rectangle-drawing call; instead it keeps a
+   picture one white pixel across, and the box stretches that pixel over itself and tints it
+   ([Solid rectangles](/docs/guides/sprites-and-text/#solid-rectangles) explains). Make the
+   empty file, then open it:
+
+   ```bat
+   if not exist game\states\goal.h type nul > game\states\goal.h
+   notepad game\states\goal.h
+   ```
+
+   Paste all of this into it, then save and close Notepad:
+
+   ```cpp title="game\states\goal.h"
+   #pragma once
+
+   #include "engine/core/game_object.h"
+   #include "engine/math/rectanglef.h"
+   #include "engine/math/rectanglei.h"
+   #include "engine/math/vector2f.h"
+   #include "engine/render/colour.h"
+   #include "engine/render/render_resources.h"
+   #include "engine/render/renderer.h"
+   #include "engine/render/resource_factory.h"
+
+   // A box of one colour: the engine's one-pixel white texture, stretched
+   // over the box and tinted.
+   class Goal : public labrador::GameObject
+   {
+   public:
+   	Goal(const labrador::RectangleF& box, const labrador::Colour& colour,
+   		const labrador::RenderResources& resources) :
+   		texture_(resources.resolve_texture(labrador::white_texture_name)),
+   		box_(box), colour_(colour)
+   	{
+   	}
+
+   	void update(float /*dt*/) override
+   	{
+   	}
+
+   	void draw(labrador::DrawList& draw_list) const override
+   	{
+   		draw_list.draw_sprite(this->texture_,
+   			labrador::RectangleI(0, 0, 1, 1), this->box_, this->colour_,
+   			0.0f, labrador::Vector2F::zero, labrador::SpriteFlip::none, 0.0f);
+   	}
+
+   	labrador::RectangleF bounds() const override
+   	{
+   		return this->box_;
+   	}
+
+   private:
+   	labrador::TextureHandle texture_;
+   	labrador::RectangleF box_;
+   	labrador::Colour colour_;
+   };
+   ```
+
+   The whole class is in this one `.h` file, so the build file does not list it.
+   `white_texture_name` is the name of the engine's white pixel, which every game has without
+   listing it in the manifest. `draw` passes `draw_sprite` the part of the texture to draw (its
+   one pixel, `0, 0, 1, 1`), where to draw it (the box), the colour to tint it with, and no
+   rotation, origin, flip or layer. `update` does nothing, because the box does not move; the
+   name of its argument is in `/* */` so that the compiler does not stop on an unused name.
+
+6. **Give the screen a level number.** Open the header of the state that runs the starter's
+   screen:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `game/rules/motion.h` and add a line after it, so the two read:
+
+   ```cpp
+   #include "game/rules/motion.h"
+   #include "game/states/goal.h"
+   ```
+
+   Search for `explicit HelloState(`. The line reads:
+
+   ```cpp
+   	explicit HelloState(labrador::Application* app);
+   ```
+
+   Change it so that it reads:
+
+   ```cpp
+   	explicit HelloState(labrador::Application* app, int level = 1);
+   ```
+
+   This is the state's **constructor**, what makes one. It now also takes the level number.
+   `= 1` means that code which does not give a number gets level 1, so `main.cpp` and
+   `main_web.cpp`, which start the game with `HelloState(&app)`, need no change.
+
+   Then search for `hint_ = nullptr;` and paste these lines after it, with an empty line before
+   them:
+
+   ```cpp
+
+   	// Which level this is, counting from 1, how many the levels file has,
+   	// this level's goal, the label at the top, and whether the last goal
+   	// has been reached.
+   	int level_ = 1;
+   	int level_count_ = 0;
+   	Goal* goal_ = nullptr;
+   	labrador::Label* level_label_ = nullptr;
+   	bool won_ = false;
+   ```
+
+   These are what each level's screen remembers. Save and close Notepad.
+
+7. **Draw the goal and move on when it is reached.** Open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Four small changes come first, near the top. Search for `engine/core/state_context.h` and add
+   a line above it, so the two read:
+
+   ```cpp
+   #include "engine/app/content_root.h"
+   #include "engine/core/state_context.h"
+   ```
+
+   Search for `game/states/confirm_state.h` and add a line after it, so the two read:
+
+   ```cpp
+   #include "game/states/confirm_state.h"
+   #include "game/states/levels.h"
+   ```
+
+   Search for `#include <string>` and add a line after it, so the two read:
+
+   ```cpp
+   #include <string>
+   #include <vector>
+   ```
+
+   If other `#include` lines are already near them from another page, leave them; the order
+   does not matter. [Fonts and text in your game](/docs/guides/your-font/#text-from-a-file)
+   adds the same `content_root.h` line: if it is there already, one is enough, though a second
+   does no harm. Then search for `HelloState::HelloState(`. The line reads:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="HelloState::HelloState(Application* app) : app_(app)"
+   	to="HelloState::HelloState(Application* app) : app_(app)"
+   />
+
+   Change that one line into these two, leaving the `{` and `}` under it as they are:
+
+   ```cpp
+   HelloState::HelloState(Application* app, int level) :
+   	app_(app), level_(level)
+   ```
+
+   That keeps the level number the state was made with in `level_`.
+
+   Now the goal. Search for `std::make_unique<Scene>`. This is the line, in `init()`, that makes
+   the scene everything on the screen goes in:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->scene_ = std::make_unique<Scene>(nullptr, nullptr);"
+   	to="this->scene_ = std::make_unique<Scene>(nullptr, nullptr);"
+   />
+
+   Click at the end of that line, after the `;`, press **Enter**, and paste these lines:
+
+   ```cpp
+
+   	// This level's goal, from levels.json beside the game. Added before the
+   	// greeting, so the greeting draws over it.
+   	const std::string levels_path =
+   		resolved_under(executable_directory(), "levels.json");
+   	const std::vector<Level> levels = read_levels(levels_path);
+   	this->level_count_ = static_cast<int>(levels.size());
+   	if (this->level_ > this->level_count_)
+   	{
+   		this->level_ = 1;
+   	}
+   	this->goal_ = this->scene_->add(std::make_unique<Goal>(
+   		levels[this->level_ - 1].goal, labrador::Colour::forest_green,
+   		*resources));
+   	this->level_label_ = this->scene_->add(std::make_unique<Label>(
+   		L"Level " + std::to_wstring(this->level_) + L" of " +
+   		std::to_wstring(this->level_count_), font_name,
+   		Vector2F(24.0f, 24.0f), resources, labrador::Colour::gold));
+   ```
+
+   `resolved_under(executable_directory(), "levels.json")` is the path of `levels.json` in the
+   folder the game's `.exe` is in, wherever the game was started from. The list counts from 0,
+   so level 1 is `levels[0]`, which is why the goal is `levels[this->level_ - 1]`. The `if`
+   starts again at level 1 if the file now has fewer levels than this number. The last line adds
+   `Level 1 of 2`, in gold, to the top-left corner. Things in a scene are drawn in the order they
+   were added, so the box, added first, is under the greeting.
+
+   Last, search for `this->greeting_->set_position(`. This line, in `update()`, moves the
+   greeting on every frame:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->greeting_->set_position(greeting_position(this->motion_));"
+   	to="this->greeting_->set_position(greeting_position(this->motion_));"
+   />
+
+   Click at the end of that line, after the `;`, press **Enter**, and paste these lines:
+
+   ```cpp
+
+   	// The greeting touching the goal: the next level, or, after the last
+   	// one, the end of the game.
+   	if (!this->won_ &&
+   		this->greeting_->bounds().intersects(this->goal_->bounds()))
+   	{
+   		if (this->level_ < this->level_count_)
+   		{
+   			this->context()->transition_to(
+   				std::make_unique<HelloState>(this->app_, this->level_ + 1));
+   			return;
+   		}
+   		this->won_ = true;
+   		this->scene_->remove(this->goal_);
+   		this->goal_ = nullptr;
+   		this->level_label_->set_text(L"You win! Press Enter to play again.");
+   	}
+   	if (this->won_ && keyboard.pressed(Key::enter))
+   	{
+   		this->context()->transition_to(
+   			std::make_unique<HelloState>(this->app_, 1));
+   		return;
+   	}
+   ```
+
+   `bounds()` is the box round the greeting's text, and `intersects` asks whether it overlaps
+   the goal's box. When it does and there is another level, `transition_to` replaces this
+   screen with a new `HelloState` for the next level: a fresh screen, with the greeting back at
+   its starting point and the next goal in place. After the last level the goal is taken out of
+   the scene, the label says `You win! Press Enter to play again.`, and **Enter** starts level
+   1 again. Save and close Notepad.
+
+8. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The build first runs CMake again, because `game\CMakeLists.txt` changed. That prints
+   `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
+   packages and lines such as `find_package(doctest CONFIG REQUIRED)`; they are expected, not
+   errors. Then it compiles the new `levels.cpp`, and `hello_state.cpp` and `main.cpp`, which
+   include the files you changed. On a fast desktop the whole build took 7 seconds. It ends like
+   this:
+
+   ```text title="Output"
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   [1/7] Running utility command for game_content
+   [2/7] Checking that no engine file includes a game header
+   [3/7] Building CXX object game\CMakeFiles\MyGame.dir\states\levels.cpp.obj
+   [4/7] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   [5/7] Building CXX object game\CMakeFiles\MyGame.dir\main.cpp.obj
+   [6/7] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.01 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.69 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   Then the game opens, with `Level 1 of 2` in gold in the top-left corner and a green square
+   on the right. Move the greeting right, with the right arrow or **D**, until its text touches
+   the square: the screen starts again with `Level 2 of 2`, the greeting back in the middle, and
+   a smaller square near the top-left. Let go of the key when the screen changes: a key still
+   held keeps moving the greeting on the new level, and it can leave the window. Touch the
+   smaller square, and the top-left corner says
+   `You win! Press Enter to play again.` Press **Enter** for level 1. **Escape** still asks to
+   quit on every level.
+
+</Steps>
+
+## Make your own levels
+
+The levels are in `game\content\levels.json`, so changing them needs no C++. Open the file:
+
+```bat
+notepad game\content\levels.json
+```
+
+To add a third level, put a comma at the end of the second level's line, after its `}`, and add
+a line after it, so the file reads:
+
+```json title="game\content\levels.json"
+{
+    "levels": [
+        { "x": 1000, "y": 300, "width": 120, "height": 120 },
+        { "x": 120, "y": 100, "width": 80, "height": 80 },
+        { "x": 560, "y": 560, "width": 160, "height": 40 }
+    ]
+}
+```
+
+Save and close Notepad, quit the game if it is open, and run the build line from step 8 again.
+The build copies the new file beside the game and compiles nothing; it took 2 seconds:
+
+```text title="Output"
+[1/2] Running utility command for game_content
+[2/2] Checking that no engine file includes a game header
+Test project C:/dev/mygame/out/build/x64-debug
+    Start 1: MyGameTests
+1/2 Test #1: MyGameTests ......................   Passed    0.01 sec
+    Start 2: MyGameSmokeTests
+2/2 Test #2: MyGameSmokeTests .................   Passed    0.73 sec
+
+100% tests passed, 0 tests failed out of 2
+```
+
+The game now says `Level 1 of 3`, and the third level's goal is a wide, flat bar below the
+middle of the window. The count comes from the file, so nothing else needs to change. Some
+things to know when you make levels:
+
+- **Keep each goal inside the window.** `x` plus `width` must be 1280 or less, and `y` plus
+  `height` 720 or less, and neither can be negative. The game refuses a level that breaks this,
+  with a message naming it.
+- **Keep goals away from where the greeting starts.** Every level starts with the greeting in
+  the middle of the window, circling a point 520 pixels across and 360 down, so that its text
+  covers about 490 to 840 pixels across and 330 to 410 down. A goal that covers that place is
+  touched at once, and the level is over before you see it. If it is any level but the last,
+  the start-up test also stops working: see the `Timeout` entry under
+  [If something fails](#if-something-fails).
+- **The order of the lines is the order of the levels.** To take a level out, delete its line,
+  and the comma after the line before it if it was the last.
+- **Use whole numbers.** `120.5` is refused, because the reader asks for whole numbers.
+- **The build must run.** The game reads the copy beside the `.exe`, not the file in
+  `game\content`, so a change shows only after a build.
+
+To check a file for mistakes without playing every level, run the build line: the start-up test
+reads the whole file, and fails with the message if any level in it is wrong.
+
+## If you leave out one of the lists
+
+Step 4 lists `levels.cpp` twice, and leaving out either line breaks one build. Both breakages
+come at the very end, when the build joins the compiled files together (it **links** them), and
+not when it compiles: every file compiles, but the code that `read_levels` names is not there to
+join.
+
+On Windows, without the line in the `add_executable(MyGame WIN32` list, the build stops with:
+
+```text title="Output"
+hello_state.cpp.obj : error LNK2019: unresolved external symbol "class std::vector<struct Level,class std::allocator<struct Level> > __cdecl read_levels(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?read_levels@@YA?AV?$vector@ULevel@@V?$allocator@ULevel@@@std@@@std@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@@Z) referenced in function "public: virtual void __cdecl HelloState::init(void)" (?init@HelloState@@UEAAXXZ)
+game\MyGame.exe : fatal error LNK1120: 1 unresolved externals
+```
+
+The line is long, but the part that matters is the name in it, `read_levels`, and where it was
+used, `HelloState::init`. The Windows build works again once the line is added to that list.
+
+In the [browser build](/docs/guides/browser/), without the line in the list inside
+`if(EMSCRIPTEN)`, the Windows build still works, and the browser build stops with:
+
+```text title="Output"
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: read_levels(std::__2::basic_string<char, std::__2::char_traits<char>, std::__2::allocator<char>> const&)
+```
+
+Troubleshooting has both, as
+[`LNK2019: unresolved external symbol`](/docs/troubleshooting/#lnk2019-unresolved-external-symbol)
+and [`wasm-ld: error: ... undefined symbol`](/docs/troubleshooting/#wasm-ld-error--undefined-symbol),
+with the other causes and how to tell them apart. Every new `.cpp` file in `game\states` or
+`game` itself goes in both lists, beside `states/hello_state.cpp`.
+
+## How errors show
+
+A mistake in this page's files shows in one of four places:
+
+- **The build stops** with an `error` line from the compiler: a slip in the C++ code. [Read a
+  build error](/docs/get-started/build-errors/) shows how to find the line that matters. If the
+  errors start with `hello_state.h(66): error C2143: syntax error: missing ';' before '*'` and
+  go on to `'Goal': undeclared identifier`, the `#include "game/states/goal.h"` line is missing
+  from `hello_state.h`. If one says `Cannot open include file: 'game/states/goals.h'`, the name
+  in an `#include` line does not match the file's: check with `dir game\states`.
+- **The build stops at the end** with `LNK2019` or `wasm-ld: error`: a `.cpp` file missing from
+  one of the two lists. [If you leave out one of the lists](#if-you-leave-out-one-of-the-lists)
+  is above.
+- **The build stops** with `Error copying file`: the file the copy block names is not there.
+- **The start-up test fails.** The build worked, but the game stopped while loading. The `ctest`
+  output shows `***Failed` for `MyGameSmokeTests` and, under it, a line starting
+  `startup failure:` that says why, and the game does not start:
+
+  ```text title="Output"
+  2/2 Test #2: MyGameSmokeTests .................***Failed    0.22 sec
+  startup failure: 'C:\dev\mygame\out\build\x64-debug\game\levels.json': levels[1] has no 'y'
+
+  50% tests passed, 1 tests failed out of 2
+  ```
+
+  Started on its own, the game shows the same reason in a box titled
+  `Sample - startup failure`, whatever your game is called, and closes when you click **OK**.
+
+The messages about the levels file name the level as the reader counts, from 0: `levels[0]` is
+the first line of levels in the file, and `levels[1]` the second. Each message is below.
+
+## If something fails
+
+<Aside type="caution" title="error LNK2019: unresolved external symbol ... read_levels ... referenced in function ... HelloState::init">
+`levels.cpp` is not in the Windows build's list, `add_executable(MyGame WIN32`. Add
+`states/levels.cpp` after `states/hello_state.cpp` there, as in step 4, and build again.
+</Aside>
+
+<Aside type="caution" title="wasm-ld: error: ... undefined symbol: read_levels(...)">
+`levels.cpp` is not in the browser build's list, the `add_executable(MyGame` inside
+`if(EMSCRIPTEN)`. Add `states/levels.cpp` after `states/hello_state.cpp` there, as in step 4.
+</Aside>
+
+<Aside type="caution" title='Error copying file (if different) from "C:/dev/mygame/game/content/levels.json" to ...: No such file or directory'>
+The copy block from step 2 names `levels.json`, and there is no file of that name in
+`game\content`. The build stops before compiling anything, with `FAILED:` and a long command
+line above this message. Check the file's name with `dir game\content`. Windows hides known file
+extensions in File Explorer, so a file that shows there as `levels.json` can really be
+`levels.json.txt`; `dir` shows its whole name. Rename it with
+`ren game\content\levels.json.txt levels.json`.
+</Aside>
+
+<Aside type="caution" title="startup failure: read_json_file - cannot open '...\game\levels.json'">
+The game found no `levels.json` beside itself. The copy block from step 2 is missing from
+`game\CMakeLists.txt`, or names the file differently: check it, and that
+`dir out\build\x64-debug\game\levels.json` lists the file after a build.
+</Aside>
+
+<Aside type="caution" title="startup failure: read_json_file - '...levels.json' is not valid JSON: Missing a comma or ']' after an array element. (offset ...)">
+The file's punctuation is wrong: a comma is missing, or there is one too many. The number after
+`offset` counts characters from the start of the file to where the reader gave up, which is
+after the mistake. The number depends on where the mistake is and on how the file was saved:
+with the comma missing after the first level's `}`, the file from step 1 saved from Notepad
+gives `(offset 90)`. Every level's line but the last ends with a comma, and the last has
+none. The easiest repair is to paste the file from step 1 again, then add your levels.
+</Aside>
+
+<Aside type="caution" title="startup failure: '...levels.json': levels[1].x is not a whole number">
+The second level's `x` has a decimal point, such as `120.5`, or is in quotation marks, such as
+`"120"`. Write each of the four numbers as a plain whole number.
+</Aside>
+
+<Aside type="caution" title="startup failure: '...levels.json': levels[1] has no 'y'">
+The second level's line is missing one of the four names, or spells it differently. Names are
+case-sensitive: `"Y"` is not `"y"`. Each level needs `x`, `y`, `width` and `height`, spelt
+exactly so.
+</Aside>
+
+<Aside type="caution" title="startup failure: '...levels.json': levels[1]: the goal of level 2 is not inside the window, 1280 by 720">
+The game's own check, from `levels.cpp`: part of that goal is outside the window, or its width
+or height is 0 or less. Here `x` was 1250 with `width` 80, which ends at 1330, past the right
+edge at 1280. Make `x` plus `width` at most 1280 and `y` plus `height` at most 720.
+</Aside>
+
+<Aside type="caution" title="startup failure: '...levels.json': levels is empty: the game needs at least one level">
+The square brackets after `"levels":` have nothing between them. Put at least one level's line
+there.
+</Aside>
+
+<Aside type="caution" title="startup failure: '...levels.json': the document has no 'levels'">
+The file has no list called `levels`, usually because the name is misspelt, such as `"level"`.
+The first line inside the outer `{` must start `"levels": [`.
+</Aside>
+
+<Aside type="caution" title="2/2 Test #2: MyGameSmokeTests .................***Timeout  60.03 sec">
+The start-up test waited a minute and gave up. In this page's game that means level 1's goal,
+or another level's but the last, covers the place where the greeting starts. The start-up test
+runs the first level for 30 frames and then stops the game; but the greeting touches that goal
+at once, the game moves on to a new level's screen, and the start-up test is left behind, so the
+hidden game never stops until `ctest` stops it. Move that goal away from the middle of the
+window, as [Make your own levels](#make-your-own-levels) says. When the test is run on its own
+with `start /wait out\build\x64-debug\game\MyGame.exe --smoke-test`, it does not return either:
+close it with `taskkill /im MyGame.exe /f`.
+</Aside>
+
+**The game skips a level as soon as it starts.** That level's goal covers the greeting's start;
+see the entry above.
+
+**The greeting is gone on the new level.** The arrow key was still held when the level changed,
+and it carried the greeting out of the window; move it back with the opposite key.
+
+**The square is not where you expected.** `x` and `y` place its top-left corner, not its middle,
+and `y` counts down from the top of the window.
+
+[Troubleshooting](/docs/troubleshooting/) lists messages from every part of the engine.
+
+## In the browser build
+
+The browser build packs the whole `game\content` folder into the page when it links, so
+`levels.json` needs no copy block there, and the code finds it without a change: in a browser,
+`executable_directory()` is the root of the page's packed files. The line you added in step 2
+after the `.spritefont` line makes the page link again when `levels.json` changes. Without it,
+the page keeps the old levels until something else changes.
+
+A mistake in the file stops the page instead of showing a box. The template's page writes the
+message in its status line and in the browser's console, with the path as the page sees it:
+
+```text title="Output"
+MinimalSample: read_json_file - '/levels.json' is not valid JSON: Missing a comma or ']' after an array element. (offset 90)
+```
+
+## Where to go next
+
+- [Put a picture in your game](/docs/guides/your-picture/) draws a picture from a file; use it
+  in place of the green box by giving `Picture` the goal's position.
+- [Fonts and text in your game](/docs/guides/your-font/) makes a bigger font, for a `Level 2`
+  title or a larger `You win!`.
+- [Menus](/docs/guides/menus/) and [Settings and saves](/docs/guides/settings-and-saves/)
+  explain the engine's menus and saved files, for a level-select screen or remembering the
+  highest level reached.
+- [States and the stack](/docs/concepts/states/) explains `transition_to` and the other ways one screen
+  leads to another.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at `C:\dev\h2\mygame`,
+built and tested once as it came, with Visual Studio 2026's compiler 19.51, every step above was
+made by an agent exactly as the steps word it rather than in Notepad, and ran as shown, with
+`C:\dev\h2\mygame` in the quoted output changed to `C:\dev\mygame`. The game was driven with key
+messages and its window captured: it drew `Level 1 of 2` and the green square on the right;
+holding the right arrow reached `Level 2 of 2` with the smaller square at the top-left; left and
+up then gave `You win! Press Enter to play again.` with the square gone; and **Enter** gave
+`Level 1 of 2` again. With the third level added, a build compiled nothing, and the game reached
+`Level 3 of 3` with the bar below the middle. Each message under [If something
+fails](#if-something-fails) was made on purpose: `levels.cpp` left out of each list in turn, the
+`goal.h` include deleted and misspelt, the file renamed, the copy block removed with the build
+folder's copy deleted, a missing comma, `120.5`, `"Y"`, `x` 1250, an empty list, `"level"`, and
+level 1's goal over the greeting's start, which gave the `Timeout`. The
+`Sample - startup failure` box was seen, with a level missing its `height`. The `wasm-debug`
+build compiled the page under clang, Labrador's page runner loaded it in headless Chrome, which
+pressed Escape and Enter and saw it quit without errors, the page linked again after
+`levels.json` changed, and with the missing comma the runner reported the message through `Module.onError`. The
+`x64-release` build installed with `cmake --install` had `levels.json` in its folder, and the
+installed game passed `--smoke-test`.
+
+A second agent then followed the page as worded, in a fresh starter at `C:\dev\h2v\mygame`. Its
+step 8 output matched line for line, the wasm-debug page loaded and quit cleanly, changing
+`levels.json` relinked the page, the screenshots showed every screen described above, and each
+message under [If something fails](#if-something-fails) matched. It found five things, which
+were corrected: the missing-comma offset is 87 only for a file saved with Unix line endings, as
+the agents' tools save it, and 90 for the same file saved from Notepad (both runs reproduced 90
+with Windows line endings, and the browser block above is from that run); step 4's search
+started below both lists unless the cursor was moved to the top first; step 2's search for the
+manifest block also matched a line in the browser part; a key held through a change of level
+carried the greeting out of the window; and one sentence in step 4 was misleading. Neither run
+had a gamepad, so Enter is the only way checked to start again after winning, and Notepad's
+Find Next and **F3** were not driven.
