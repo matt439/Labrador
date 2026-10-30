@@ -219,8 +219,8 @@ TEST_CASE("CONTRACT: a positive rotation turns the sprite clockwise on screen")
 	// implementation, and Vulkan specifies it again - so this is a term the
 	// three specifications do NOT agree on, and the golden image is what says
 	// whether the four devices do. They do, and the check has to be byte
-	// identity rather than a passing run: allowed_channel_drift is 8, which is
-	// enough to hide a one-row tie-break disagreement, so what settles it is
+	// identity rather than a passing run: allowed_channel_drift is not zero,
+	// so a pass does not say no pixel moved, and what settles it is
 	// regenerating the set on each backend and finding the file unchanged.
 	// All four write this frame byte for byte on this machine's adapter. What
 	// that does not settle is another driver, which is why the tie-break stays
