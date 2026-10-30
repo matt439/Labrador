@@ -138,10 +138,60 @@ In order of impact on a beginner who wants to play around. Each unit is one
    page's main steps and corrected one quoted JSON offset. The page's *What
    was checked* records the runs: nobody listened, and the output's peak
    level was read instead.
-8. **`GUIDE#8` Sharing the game.** One free web host end to end; a GitHub
-   account, repository, remote, push and sign-in; reading a CI run; what a
-   player sees from a Windows release (extracting, SmartScreen) and a zip
-   command; the release's second GL program with full JSON.
+8. **`GUIDE#8` Sharing the game.** Done on 2026-10-31: three guides take the
+   starter project to other people. *Send your game to a friend* builds and
+   tests `x64-release`, empties and installs `C:\dev\mygame-release` with its
+   21 `-- Installing:` lines, checks it with `--smoke-test` and `type
+   "%TEMP%\startup.txt"`, zips it with Windows' `tar -a -c -f`, warns that
+   Gmail refuses `.exe` and `.dll` even inside a ZIP, and gives the friend's
+   steps: **Extract All...**, not running from inside the ZIP, which copies
+   out only the program and stops on `DirectXTK.dll was not found`, and
+   SmartScreen's *Windows protected your PC* with **More info** and **Run
+   anyway**; Smart App Control and antivirus false positives are covered from
+   Microsoft's documentation; its second-program section gives the whole
+   `CMakePresets.json` with the `x64-release-gl` configure, build and test
+   presets, the commands to `MyGame-gl.exe`, and CMake's preset-file errors.
+   *Put your project on GitHub* commits a starter project with the engine as
+   plain files, renames the branch `main`, makes the account and an empty
+   repository, adds the remote, pushes through Git Credential Manager's
+   **Connect to GitHub** window, sends later changes, and reads a run on the
+   Actions tab, a failed run by step, re-running and build minutes; it quotes
+   `src refspec main does not match any`, `remote origin already exists`,
+   `Authentication failed`, `Repository not found`, the `(fetch first)`
+   rejection and its `--force` recovery for a new repository, a misspelt
+   remote and host. *Put your game on the web* links `NOTICE.txt` from
+   `shell.html`, saves a `web-release.bat` that builds, tests and bundles
+   `wasm-release` with the page named `index.html` and copies it with
+   `.nojekyll` to `C:\dev\mygame-web`, checks it served from `C:\dev` at
+   `/mygame-web/` as Pages serves it, pushes it to a public `mygame-web`
+   repository, turns on Pages from `main` and `/ (root)`, checks the `.wasm`
+   type in DevTools and updates it, with GitHub Pages' 404 pages and
+   ten-minute caching. GitHub Pages is the one host because the same account
+   serves the push and CI steps, it sends `application/wasm`, and a separate
+   public repository lets the game's own stay private. Build the release
+   folder in *Ship a Windows release* gains the empty, test, zip and `type`
+   steps, with `startup.txt` in `%TEMP%`, and the startup box's line in
+   `main.cpp`; *Put your game on a web host* shows the notices line and the
+   script tag to change; *Check your game in CI* says a plain-files project
+   runs it, adds where a run appears and a 40-character name limit, and the
+   workflow's checkout comment, which the starter ZIP copies, no longer says
+   the engine is a submodule; *Put your project in Git*, *Build for the
+   browser*, Make a first change, the guides index and Troubleshooting's new
+   *Sharing the game* section link the pages. The steps, output and failures
+   were run in a fresh starter made from this tree, then followed as worded by
+   a second agent in another starter, who pressed no SmartScreen button; that
+   run corrected the install's count to 21 lines, the 0-byte ZIP a misspelt
+   `tar -C` folder leaves, the presets file's second error, a `startup.txt`
+   that `git add .` recorded, the CI test log's run, a first `wasm-release`
+   configure of about five minutes, the sign-in window on the web page's push
+   and the two files its script leaves for the game's repository. Each page's
+   *What was checked* records the runs and names the account-bound steps
+   written from documentation. Found on the way: renaming the page to
+   `index.html` is safe, as the bundler's `--file index.html=...` does it and
+   the script loads the module from its own folder; a starter committed as
+   plain files builds from a clone at a runner's depth; and after scripted
+   SmartScreen clicks, Microsoft Defender flagged that build of `MyGame.exe`
+   as `Behavior:Win32/DefenseEvasion.A!ml` and blocked it.
 9. **`GUIDE#9` Editing and debugging in Visual Studio.** First launch, preset
    and startup selectors, configure finishing, opening a file, F9/F10/F11,
    Shift+F5, Locals, the Error List, Ctrl+Shift+B, and the startup-failure
@@ -236,8 +286,21 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   storing the font's missing-letter box. Explorer's **Install** menu entry
   was read from the shell's verb list, not clicked.
 - emsdk from a ZIP, Python installer defaults, browser caching.
-- Whether renaming `MyGame.html` to `index.html` is safe; private-repository
-  CI minutes.
+- Private-repository CI minutes beyond GitHub's billing page. `GUIDE#8`
+  found renaming the page to `index.html` safe, and wrote these
+  account-bound steps from GitHub's documentation without running them: the
+  sign-up, creating a repository, the first push and Git Credential
+  Manager's sign-in window (its labels read from its source), `Repository
+  not found`, the Actions pages, re-running a run, billing, turning on Pages,
+  the *pages build and deployment* run, the **Visit site** button, the
+  visibility setting, and the game served from GitHub Pages. Pushes went to
+  a local stand-in repository; what GitHub Pages sends was read from a public
+  Pages site with `curl`. SmartScreen and the ZIP dialogs were seen on the
+  owner's desktop with a set `Zone.Identifier`, not a real download, and not
+  on a clean machine or with Smart App Control on; their buttons were pressed
+  by script, not by hand, and the second agent pressed none. Explorer's
+  **Send to > Compressed (zipped) folder** was not clicked, and no email was
+  sent.
 - Every download size and time.
 
 ## Findings

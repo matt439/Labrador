@@ -1,0 +1,451 @@
+---
+title: Put your game on the web
+description: Publish the browser build of your game free with GitHub Pages, so a friend plays it from a link with no download, step by step - the release files, a check on your own machine served as Pages serves it, the repository, the Pages setting, and what each failure means.
+sidebar:
+  order: 0.99
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+This page puts the game from [Get the starter project](/docs/get-started/starter/) on the
+internet as a web page, at an address such as `https://your-name.github.io/mygame-web/`, which
+anyone can open and play in a current browser on a computer, with nothing to download or install.
+It uses **GitHub Pages**, GitHub's free hosting for static pages, from the same GitHub account
+that [Put your project on GitHub](/docs/guides/your-github/) makes. The page goes in a repository
+of its own, `mygame-web`, which holds only the five files the page needs, so your game's own
+repository can stay private. It takes about 30 minutes the first time, and 3 for each update
+after.
+
+You need:
+
+- The browser build working: [Build for the browser](/docs/guides/browser/) installs Emscripten,
+  and its `wasm-debug` build and page should work in your project. This page builds
+  `wasm-release`, the smaller and faster version, the same way.
+- A GitHub account, and Git signed in to it: steps 1 and 6 of
+  [Put your project on GitHub](/docs/guides/your-github/). Your game's own repository does not
+  have to be on GitHub.
+
+Every command runs in an x64 Native Tools Command Prompt where Emscripten's `emsdk_env.bat` has
+run, in your project's folder, as on the browser page:
+
+```bat
+C:\dev\emsdk\emsdk_env.bat
+cd /d C:\dev\mygame
+```
+
+GitHub Pages serves a repository's files over HTTPS, as they are, with `.wasm` files marked as
+WebAssembly, which is what [Put your game on a web host](/docs/guides/web-host/) asks of a host.
+It is free for a public repository. A repository published with it **must be public** on a free
+account, so anyone can read the five files; that is true of every web page anyway.
+
+<Steps>
+
+1. **Link the notices from your page.** The release carries a `NOTICE.txt` with the licences of
+   the engine, the font and Emscripten's libraries, and the page should link it. Open the page's
+   template:
+
+   ```bat
+   notepad game\web\shell.html
+   ```
+
+   Search with **Ctrl+F** for `<p id="status">`. Below that line, add:
+
+   ```html
+     <p><a href="NOTICE.txt" style="color: #8cf">Third-party notices</a></p>
+   ```
+
+   so that the two lines read:
+
+   ```html
+     <p id="status">Loading...</p>
+     <p><a href="NOTICE.txt" style="color: #8cf">Third-party notices</a></p>
+   ```
+
+   Save and close Notepad. While you are there, you can change the `<title>` line near the top,
+   `Labrador - minimal sample`, to your game's name: it is the browser tab's title.
+
+2. **Configure the release build.** This is needed once:
+
+   ```bat
+   cmake --preset wasm-release
+   ```
+
+   It ends `-- Build files have been written to: C:/dev/mygame/out/build/wasm-release`, after
+   about 10 seconds, or about five minutes the first time, when vcpkg fetches its list of packages
+   from GitHub: leave it running. It prints three
+   warnings that this version of CMake *does not support emscripten shared libraries*; the game
+   uses none, so they do not matter. If it stops with `include could not find requested file:`
+   and a path starting `/upstream/emscripten`, `emsdk_env.bat` has not run in this prompt: run it,
+   delete `out\build\wasm-release` with `rmdir /s /q out\build\wasm-release`, and configure again.
+
+3. **Save the release script.** Building the page, gathering it with its notices and copying it
+   to the folder you publish is a long command, so it goes in a file you run each time. First make
+   the empty file, then open it:
+
+   ```bat
+   if not exist web-release.bat type nul > web-release.bat
+   notepad web-release.bat
+   ```
+
+   The first line makes an empty file and prints nothing; it leaves the file alone if it is
+   already there. Notepad opens the empty file. Paste this whole box into it, then save and close
+   Notepad:
+
+   ```bat title="web-release.bat"
+   @echo off
+   rem Builds the browser release of the game, gathers it with its notices in
+   rem out\web-release, and copies it to C:\dev\mygame-web, the folder that
+   rem GitHub Pages publishes. Run it from the project's folder, in an x64 Native
+   rem Tools Command Prompt where C:\dev\emsdk\emsdk_env.bat has run.
+   if not defined EMSDK (
+     echo EMSDK is not set. Run C:\dev\emsdk\emsdk_env.bat in this prompt, then this again.
+     exit /b 1
+   )
+   if not exist game\web\shell.html (
+     echo Run this from your project's folder: cd /d C:\dev\mygame
+     exit /b 1
+   )
+   cmake --build --preset wasm-release || exit /b 1
+   ctest --preset wasm-release || exit /b 1
+   if not exist game\web\Microsoft-LICENSE.txt copy external\labrador\tools\web_bundle\Microsoft-LICENSE.txt game\web\ >nul
+   set "engine=external\labrador"
+   set "emscripten=%EMSDK%\upstream\emscripten"
+   "%EMSDK_NODE%" "%engine%\tools\web_bundle\bundle.mjs" ^
+     --out out\web-release ^
+     --repository . ^
+     --emscripten "%emscripten%" ^
+     --build-type Release ^
+     --file "index.html=out\build\wasm-release\game\MyGame.html" ^
+     --file "MyGame.js=out\build\wasm-release\game\MyGame.js" ^
+     --file "MyGame.wasm=out\build\wasm-release\game\MyGame.wasm" ^
+     --notice "%engine%\NOTICE" ^
+     --licence "Labrador=%engine%\LICENSE" ^
+     --licence "Microsoft sample code=game\web\Microsoft-LICENSE.txt" ^
+     --licence "RapidJSON=%engine%\external\rapidjson\license.txt" ^
+     --licence "JetBrains Mono=game\content\fonts\OFL.txt" ^
+     --licence "Emscripten=%emscripten%\LICENSE" ^
+     --licence "libc++=%emscripten%\system\lib\libcxx\LICENSE.TXT" ^
+     --licence "libc++abi=%emscripten%\system\lib\libcxxabi\LICENSE.TXT" ^
+     --licence "libunwind=%emscripten%\system\lib\libunwind\LICENSE.TXT" ^
+     --licence "compiler-rt=%emscripten%\system\lib\compiler-rt\LICENSE.TXT" ^
+     --licence "musl=%emscripten%\system\lib\libc\musl\COPYRIGHT" || exit /b 1
+   if not exist C:\dev\mygame-web mkdir C:\dev\mygame-web
+   copy /y out\web-release\* C:\dev\mygame-web >nul || exit /b 1
+   type nul > C:\dev\mygame-web\.nojekyll
+   echo The web release is in C:\dev\mygame-web:
+   dir /b /a-d C:\dev\mygame-web
+   ```
+
+   What it does, in order: builds the `wasm-release` page and runs its test; copies Microsoft's
+   licence for the engine's timer code into `game\web` the first time; runs Labrador's bundler,
+   which puts the page, its script and its module in `out\web-release` with `NOTICE.txt` and
+   `BUILD.json`, a record of what was built, naming the page **`index.html`**, the name a web
+   server sends when an address ends in a folder; and copies the five files to
+   `C:\dev\mygame-web`. The empty `.nojekyll` file tells GitHub Pages to publish the files as
+   they are, without running *Jekyll*, the site builder it otherwise runs over a repository.
+   Renaming the page is safe: it loads `MyGame.js` and `MyGame.wasm` by name from its own folder.
+
+4. **Run it:**
+
+   ```bat
+   web-release.bat
+   ```
+
+   The first run builds the engine for the browser, about 90 steps, and took 13 seconds on the
+   fast desktop where this page was checked; expect longer on a slower machine. Later runs rebuild
+   only what changed, in a few seconds. The end of its output is the test, the bundler's list of
+   files with their sizes, and the folder:
+
+   ```text title="Output"
+   100% tests passed, 0 tests failed out of 1
+
+   Total Test time (real) =   0.05 sec
+     MyGame.js      119887 bytes,   27539 under Brotli
+     MyGame.wasm    388334 bytes,  120166 under Brotli
+     NOTICE.txt     102282 bytes,   12468 under Brotli
+     index.html       1259 bytes,     568 under Brotli
+     from 192d43d83b1ec128b1eca491f0bfd29939366a23 with uncommitted changes
+   The web release is in C:\dev\mygame-web:
+   .nojekyll
+   BUILD.json
+   index.html
+   MyGame.js
+   MyGame.wasm
+   NOTICE.txt
+   ```
+
+   The two numbers are each file's size and its size compressed, which is roughly what a player
+   downloads, about 160 KB in all for the starter; the line after them names the commit of your
+   game's Git repository, or says `unknown` if it is not one, and `with uncommitted changes` when
+   it has changes not yet committed, as it does here after step 1's edit. `BUILD.json` records the
+   same. If the script stops before this, its last lines say why: see
+   [If something fails](#if-something-fails).
+
+   If your game's project is a Git repository, `git status` in its folder now also lists
+   two new files:
+
+   ```text title="Output"
+   ?? game/web/Microsoft-LICENSE.txt
+   ?? web-release.bat
+   ```
+
+   They are part of the game's project: commit them with it, as in
+   [Sending the next change](/docs/guides/your-github/#sending-the-next-change).
+
+5. **Check it on your own machine, as GitHub Pages will serve it.** Pages serves the site under
+   a folder named after the repository, `/mygame-web/`, and sends `index.html` for the folder
+   itself. Serving `C:\dev` does the same here, with the Python that came with Emscripten:
+
+   ```bat
+   "%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory C:\dev
+   ```
+
+   It prints `Serving HTTP on 127.0.0.1 port 8000 (http://127.0.0.1:8000/) ...` and keeps the
+   prompt. Open **`http://127.0.0.1:8000/mygame-web/`** in Chrome, Edge or Firefox, with the `/`
+   at the end: the greeting draws, the keys work, and *Third-party notices* below the game opens
+   the notices. The prompt prints a line for each file the browser asks for, ending `200` when it
+   was sent:
+
+   ```text title="Output"
+   127.0.0.1 - - [31/Oct/2026 00:09:40] "GET /mygame-web/ HTTP/1.1" 200 -
+   127.0.0.1 - - [31/Oct/2026 00:09:40] "GET /mygame-web/MyGame.js HTTP/1.1" 200 -
+   127.0.0.1 - - [31/Oct/2026 00:09:40] "GET /mygame-web/MyGame.wasm HTTP/1.1" 200 -
+   127.0.0.1 - - [31/Oct/2026 00:09:41] code 404, message File not found
+   127.0.0.1 - - [31/Oct/2026 00:09:41] "GET /favicon.ico HTTP/1.1" 404 -
+   ```
+
+   The `404` for `/favicon.ico` is the browser asking for a tab icon the page does not have, and
+   is harmless. A `404` for one of the game's own files means it is not in `C:\dev\mygame-web`:
+   run step 4 again. When you have played it, click the prompt and press **Ctrl+C** to stop the
+   server; it says `Keyboard interrupt received, exiting.` Because of `--bind 127.0.0.1`, only
+   this machine can reach the server while it runs.
+
+6. **Make the site folder a Git repository** and record the five files:
+
+   ```bat
+   cd /d C:\dev\mygame-web
+   git init
+   git add .
+   git commit -m "Publish my game"
+   git branch -M main
+   ```
+
+   `git add .` warns that `LF will be replaced by CRLF` for `BUILD.json`, `MyGame.js` and
+   `NOTICE.txt`, which is harmless: Git stores them as they are and GitHub serves them so.
+   `git commit` prints:
+
+   ```text title="Output"
+   [master (root-commit) 8cd3822] Publish my game
+    6 files changed, 2007 insertions(+)
+    create mode 100644 .nojekyll
+    create mode 100644 BUILD.json
+    create mode 100644 MyGame.js
+    create mode 100644 MyGame.wasm
+    create mode 100644 NOTICE.txt
+    create mode 100644 index.html
+   ```
+
+   with your own seven characters after `root-commit`. `git branch -M main` prints nothing.
+
+7. **Make the repository on GitHub.** On [github.com](https://github.com), click the **+** at the
+   top right, then **New repository**. Name it `mygame-web`; choose **Public**; leave it empty,
+   with no README, `.gitignore` or licence; and click **Create repository**, as in step 4 of
+   [Put your project on GitHub](/docs/guides/your-github/). The repository's name is part of the
+   page's address.
+
+8. **Send the files to it.** Paste the first line, change `your-name` to your GitHub username
+   before pressing Enter, then run the second:
+
+   ```bat
+   git remote add origin https://github.com/your-name/mygame-web.git
+   git push -u origin main
+   ```
+
+   If this is your first push from this machine, the **Connect to GitHub** window opens: click
+   **Sign in with your browser**, as in step 6 of
+   [Put your project on GitHub](/docs/guides/your-github/), which also lists what each failure
+   means. The push uploads about 195 KB and ends `* [new branch]      main -> main` and
+   `branch 'main' set up to track 'origin/main'.`
+
+9. **Turn on GitHub Pages.** On the repository's page on GitHub, click **Settings**, under the
+   repository's name; in the list on the left, under *Code, planning, and automation*, click
+   **Pages**. Under
+   *Build and deployment*, set **Source** to **Deploy from a branch**; under **Branch**, choose
+   `main` and `/ (root)`, and click **Save**.
+
+   GitHub then publishes the site, which takes a minute or two and can take up to ten. The
+   repository's **Actions** tab shows it as a run called *pages build and deployment*, with a
+   yellow dot while it works and a green tick when it is done. Reload the **Pages** settings page:
+   it then says the site is live, gives its address, and has a **Visit site** button.
+
+10. **Play it on the web.** The address is `https://your-name.github.io/mygame-web/`, with your
+    username, in lower case. Open it: the game loads as it did on your machine. Send the address
+    to your friend.
+
+</Steps>
+
+## Check what the browser received
+
+GitHub Pages sends the files the way the game needs, but checking takes a minute and shows where
+to look when something is wrong. On the game's page, press **F12** to open the browser's
+developer tools:
+
+- **Console**: nothing in red. A red line is a problem; [If something
+  fails](#if-something-fails) has the common ones.
+- **Network**: press **F5** to reload with the tab open. The list shows `mygame-web/` (the page),
+  `MyGame.js` and `MyGame.wasm`, each with status `200`. Click `MyGame.wasm` and, under
+  **Headers**, *Response Headers*, `Content-Type` is `application/wasm`. With another type the
+  game still starts, more slowly, and the console says `wasm streaming compile failed`; [Put
+  your game on a web host](/docs/guides/web-host/#what-the-server-must-send) explains.
+
+## Updating the game
+
+After changing the game, in the prompt where `emsdk_env.bat` has run:
+
+```bat
+cd /d C:\dev\mygame
+web-release.bat
+cd /d C:\dev\mygame-web
+git add .
+git commit -m "Update my game"
+git push
+```
+
+GitHub publishes the new version a minute or two after the push. GitHub Pages tells browsers to
+keep each file for up to ten minutes (`Cache-Control: max-age=600`), so a browser that opened the
+page shortly before may show the old version, or for a moment a new page with the old module,
+which may stop it with an error in the console. Wait ten minutes, or press **Ctrl+F5** to reload
+everything.
+
+## If something fails
+
+<Aside type="caution" title="404 - There isn't a GitHub Pages site here.">
+GitHub has no site at the address. Either Pages is not turned on (step 9), the first publish has
+not finished (the **Actions** tab shows *pages build and deployment* still running), or the
+username or repository name in the address is wrong. The address is
+`https://` + username + `.github.io/` + repository name + `/`.
+</Aside>
+
+<Aside type="caution" title="404 - File not found">
+With *The site configured at this address does not contain the requested file*: Pages is on, and
+the file is not in the repository. For the site's own address, there is no `index.html`: check
+that `C:\dev\mygame-web` has it with `dir C:\dev\mygame-web`, and that step 6's `git add .` and
+`git commit` recorded it, then push. Names on GitHub Pages are case-sensitive: `Index.html` or
+`mygame.wasm` is not found.
+</Aside>
+
+<Aside type="caution" title="The Pages settings offer an upgrade instead of a Source">
+The repository is private, and a free account publishes Pages only from a public repository.
+Make it public: under **Settings**, **General**, at the bottom in the *Danger Zone*, **Change
+visibility**.
+</Aside>
+
+<Aside type="caution" title="The page stays at Loading..., and the console says Failed to load resource: the server responded with a status of 404">
+For `MyGame.js` or `MyGame.wasm`: the page is there and its script or module is not. Run `dir C:\dev\mygame-web` and check all five
+files are listed, then `git status` there: a file listed as untracked was not committed. Commit
+and push it.
+</Aside>
+
+<Aside type="caution" title="EMSDK is not set. Run C:\dev\emsdk\emsdk_env.bat in this prompt, then this again.">
+The script's own check: this prompt has not run Emscripten's environment script. Run
+`C:\dev\emsdk\emsdk_env.bat`, then `cd /d C:\dev\mygame` and `web-release.bat` again.
+</Aside>
+
+<Aside type="caution" title="Run this from your project's folder: cd /d C:\dev\mygame">
+The script's own check: the prompt is not in the project's folder, so there is no
+`game\web\shell.html` below it. Run the `cd` line, then the script.
+</Aside>
+
+<Aside type="caution" title="Error: C:/dev/mygame/out/build/wasm-release is not a directory">
+The release build was never configured, or its folder was deleted: run step 2, then the script
+again.
+</Aside>
+
+<Aside type="caution" title="'web-release.bat' is not recognized as an internal or external command">
+There is no `web-release.bat` in the folder the prompt is in. Check the prompt ends `mygame>`, and
+that `dir web-release.bat` lists the file; if it does not, do step 3 again from its first line.
+</Aside>
+
+A build error, a failing test or a Git message is the same as elsewhere:
+[Read a build error](/docs/get-started/build-errors/), [Build for the
+browser](/docs/guides/browser/), and [Put your project on
+GitHub](/docs/guides/your-github/#if-something-fails).
+[Troubleshooting](/docs/troubleshooting/#sharing-the-game) lists this page's messages too.
+
+## What players need
+
+A current Chrome, Edge, Firefox or Safari with WebGL2, on a computer. The game has been checked in
+desktop Chrome and, for LineSweeper's page, Firefox; Safari, phones, touchscreens and physical
+gamepads have not been checked, as [Platform support](/why/#platform-support) says. Sound starts
+after the player's first key press or click, which is a browser rule. GitHub Pages limits a site to
+1 GB and about 100 GB of downloads a month, far more than a game of a few hundred kilobytes needs,
+and its terms do not allow it to run a business such as a shop.
+
+## Where to go next
+
+- [Put your game on a web host](/docs/guides/web-host/) says what any other host must send, for
+  when you outgrow Pages or want your own domain.
+- [Send your game to a friend](/docs/guides/your-release/) is the Windows download instead.
+
+## What was checked
+
+On 2026-10-30 and 31, in a starter project made from a starter ZIP of this tree at
+`C:\dev\g8-author\exact\mygame`, with Emscripten 6.0.12, Visual Studio 2026's CMake 4.3.1 and Git
+for Windows 2.52.0, steps 1 to 6 and 8 ran as shown, with `C:\dev\g8-author\exact` in place of
+`C:\dev` in the script and the commands, and the output above is from those runs with the folder
+changed back. Step 1's line was added to `shell.html` as worded, and `web-release.bat` saved with
+Windows' line ends, as Notepad saves it. The configure took 11 seconds; the first run of the
+script 13, and a run after changing the page's title 6, after which `git add`, `git commit` and
+`git push` sent the two changed files, `index.html` and `BUILD.json`. On another configure the
+same day vcpkg spent six minutes fetching its list of packages from GitHub, which is why step 2
+allows for longer.
+
+The local check of step 5 served the folder with Emscripten's Python 3.13 at
+`http://127.0.0.1:8000/mygame-web/`: `/mygame-web` without the slash answered `301` to the
+address with it, `index.html` was sent for the folder, and `MyGame.wasm` as `application/wasm`.
+Labrador's page runner, pointed at that address, loaded the page in headless Chrome 156, saw 60
+frames, pressed Escape and Enter and saw the page's `Module.onQuit`; its only complaint was the
+`favicon.ico` 404, and with an empty `favicon.ico` beside the folder it passed. A headless
+screenshot showed the greeting and the *Third-party notices* link. With `MyGame.js` moved away,
+the runner reported `Failed to load resource: the server responded with a status of 404 (File not
+found)` for it before the game started. The script's two refusals, an unconfigured
+`wasm-release`, and `web-release.bat` typed in a folder without it gave the messages quoted. Two
+servers started on port 8000 both started, without an error, so the page does not quote one.
+
+**No GitHub repository was created, nothing was pushed to GitHub, and Pages was not turned on.**
+Step 8's push went to an empty repository on the same machine, standing in for GitHub, with the
+address line changed: it sent 8 objects, 194.47 KiB. Steps 7, 9 and 10, the *pages build and
+deployment* run, the **Visit site** button and the visibility setting are written from GitHub's
+documentation as it stood on 2026-10-30: *Creating a GitHub Pages site*, *Configuring a publishing
+source for your GitHub Pages site*, *About GitHub Pages* and *GitHub Pages limits*, which give the
+public-repository rule, the branch and folder choices, `.nojekyll`, the ten minutes a publish can
+take, and the 1 GB and 100 GB limits. What GitHub Pages sends was read from a public Pages site,
+`mdn.github.io/webassembly-examples`, with `curl`: `Content-Type: application/wasm` for a `.wasm`
+file, `Cache-Control: max-age=600` on every file, a `301` from a repository's address without the
+slash to the address with it, and the two 404 pages quoted under [If something
+fails](#if-something-fails), *There isn't a GitHub Pages site here.* for an unknown repository and
+*File not found* for a missing file. The game itself has not been served from GitHub Pages.
+
+On 2026-10-31 a second agent followed the page as worded in another fresh starter at
+`C:\dev\g8-follow\mygame`, with `C:\dev\g8-follow` in place of `C:\dev` in the script and the
+commands and the machine's `C:\Tools\emsdk` in place of `C:\dev\emsdk`. The script's three
+refusals, the missing-`emsdk_env` configure and its recovery, the three shared-library warnings,
+the first script run, 12 seconds and 92 steps, with the bundler's sizes exactly as above, the
+served check's `301`, `200`s, `application/wasm` and favicon `404`, a headless screenshot with the
+greeting and the notices link, and step 6's warnings and commit all matched; the push went to a
+local stand-in, as before. Four points were corrected from that run. Its first `wasm-release`
+configure took 283 seconds, so step 2 now says about five minutes the first time; step 8 now says
+the **Connect to GitHub** window opens for a reader who has not pushed from this machine before;
+step 4 now names the two files the script leaves for the game's own repository, which `git status`
+in the first starter listed as `?? game/web/Microsoft-LICENSE.txt` and `?? web-release.bat`; and
+the follower stopped the server by ending its process, so it did not see step 5's Ctrl+C line.
+That line was then seen in the first starter: Emscripten's Python server, started in a console of
+its own and sent Ctrl+C there by `GenerateConsoleCtrlEvent`, printed
+`Keyboard interrupt received, exiting.` and exited.
+
+On 2026-10-31 a reviewer ran steps 1 to 6 again in a third fresh starter, with the script copied
+from this page: 92 build steps, the bundler's sizes exactly as above, the six files, the two new
+files in `git status`, and step 6's three warnings and six-file commit. Served at
+`/mygame-web/`, the folder gave the `301`, `index.html` and `application/wasm`, and Labrador's page
+runner, given the published `index.html`, saw the page quit through `Module.onQuit` in headless
+Chrome.

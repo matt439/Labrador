@@ -825,3 +825,49 @@ not, because it reads banks with the engine's own reader. Pack it again with
 A wave in the bank is at a sample rate the browser will not make a buffer for. Export it at a
 rate between 8,000 and 96,000 Hz, which every browser accepts, and pack the bank again
 ([Exporting sounds both platforms play](/docs/guides/audio/#exporting-sounds-both-platforms-play)).
+
+## Sharing the game
+
+These come from [Send your game to a friend](/docs/guides/your-release/),
+[Put your project on GitHub](/docs/guides/your-github/) and
+[Put your game on the web](/docs/guides/your-web-page/), which give each in full.
+
+### `error: src refspec main does not match any`
+
+The project has no branch called `main`: the branch is still `master`, or there is no commit yet.
+Run `git branch -M main`, or make the first commit, then push again
+([Put your project on GitHub](/docs/guides/your-github/#if-something-fails)).
+
+### `fatal: Authentication failed`, after `Invalid username or token. Password authentication is not supported`
+
+Git sent a username and password, which GitHub does not accept from Git. Push again and use
+**Sign in with your browser** in the **Connect to GitHub** window
+([Put your project on GitHub](/docs/guides/your-github/#if-something-fails)).
+
+### `remote: Repository not found.`
+
+The address in `git remote -v` names no repository your sign-in can see: a misspelt username or
+name, or a repository not yet made. Fix it with `git remote set-url origin` and the right address.
+
+### `! [rejected] main -> main (fetch first)`
+
+The repository on GitHub was made with a README, `.gitignore` or licence. For a new repository
+holding nothing else, `git push -u --force origin main` replaces them
+([Put your project on GitHub](/docs/guides/your-github/#if-something-fails)).
+
+### `Windows protected your PC`
+
+SmartScreen's warning on a program downloaded from the internet and not signed. The player
+clicks **More info**, then **Run anyway**
+([What your friend does](/docs/guides/your-release/#what-your-friend-does)).
+
+### `The code execution cannot proceed because DirectXTK.dll was not found.`
+
+The game was started without the files beside it, usually from inside the ZIP. Extract the ZIP
+with **Extract All...** and start the game from the extracted folder.
+
+### `404` and `There isn't a GitHub Pages site here.`
+
+GitHub Pages is not turned on for the repository yet, its first publish has not finished, or the
+address is wrong. It is `https://` + username + `.github.io/` + repository + `/`
+([Put your game on the web](/docs/guides/your-web-page/#if-something-fails)).
