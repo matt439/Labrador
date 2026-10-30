@@ -11,7 +11,8 @@ import RepoLink from '~/components/RepoLink.astro';
 The application owns four input devices and lends them to your states: `app->keyboard()`,
 `app->gamepads()`, `app->mouse()` and `app->touch()`. All four are read once at the start of
 every step, before any state updates ([The tick](/docs/concepts/tick/#input-is-read-first)),
-and you ask them questions from `update()`.
+and you ask them questions from `update()`. If a build fails after you change your input code,
+[Read a build error](/docs/get-started/build-errors/) shows how to read the error.
 
 ## Held, pressed and released
 

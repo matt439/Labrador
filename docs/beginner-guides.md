@@ -44,11 +44,16 @@ In order of impact on a beginner who wants to play around. Each unit is one
    Restoring with a plain `copy` keeps the copy's older time and the build
    does not compile the file again, so the restore boxes give the file the
    current time; Make a first change's *What was checked* records the runs.
-3. **`GUIDE#3` Reading a build error.** A guide and Troubleshooting section:
-   an annotated Ninja and cl failure, `file(line)`, Notepad's Ctrl+G, and the
-   common errors (C2001, C2143, C2065/C3861, C2039, C2664, LNK2019, LNK1168,
-   the `/WX` warnings and C2220), clang's form in the browser build. Linked
-   from every guide that changes code.
+3. **`GUIDE#3` Reading a build error.** Done on 2026-10-30: Get Started's
+   *Read a build error* annotates a Ninja and cl failure, cascades, a missing
+   brace whose cause comes last, an error that starts in the standard
+   library, warnings as errors, the linker and clang's form; Troubleshooting's
+   *Errors in your own code* has C2001, C2143, C2065/C3861, C2039,
+   C2664/C2665, C2660, C1083, C1075, C3668/C2511, C2220 with C4189, C4100,
+   C4305 and C4244, LNK2019 and wasm-ld's `undefined symbol`. Every message
+   was made on purpose in a starter project with both presets, and C3646
+   with C4430 for an unqualified type in a header. Make a first change, the guides
+   index and every guide that has the reader change code link it.
 4. **`GUIDE#4` Running the samples from a starter project.** One "Where to
    run this" block (folder, preset, build, exe path, time and disk) linked
    from examples, collision, audio, local-multiplayer, the guides index,
@@ -137,10 +142,16 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
 
 ## Not verified by the audit
 
-- The exact text of the MSVC, linker and CMake messages the units quote.
-  `GUIDE#2` captured C2001 (`newline in string literal` in compiler 19.51,
+- The exact text of the CMake messages the units quote, and of compiler and
+  linker messages beyond those below. `GUIDE#2` captured C2001 (`newline in string literal` in compiler 19.51,
   not the `newline in constant` the findings guess), C2143, C2059 and LNK1168,
   and that ctest reports a pass on the old program after a failed build.
+  `GUIDE#3` captured the compiler and linker errors its pages quote, under
+  MSVC 19.51 and Emscripten 6.0.12's clang: leaving out a string's `L` gives
+  C2665 starting in `<memory>`, not C2664, when it is a `make_unique`
+  argument, and a missing `}` gives C1075 at the outermost unmatched `{`.
+  LNK2001 was not produced. Notepad's Ctrl+G opens **Go to line** on
+  Windows 11.
   Single-file `tar -xf` from the ZIP works with forward slashes under
   `mygame/` and says `Not found in archive` with backslashes.
 - Visual Studio's first-launch dialogs, `devenv .`, and whether an exception

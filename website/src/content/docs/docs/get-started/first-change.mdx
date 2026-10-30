@@ -163,10 +163,12 @@ each file.
    build: skip it. The **first** line with `error` in it is the one to read. It names the file,
    the line number in brackets, and what the compiler expected. The lines after it are
    usually the same slip seen again, and go away when it is fixed. Here, line 88 of
-   `hello_state.cpp` has a quotation mark that is never closed. Open the file again and move
-   down with the arrow keys until the bar along the bottom of Notepad says `Ln 88`, the line's
-   number. Compare that line with this page: the usual slip is a quotation mark, `L`, `f`, comma or semicolon missing or doubled.
-   Fix it, save, and run the line above again. If the message is not about your edit, look it
+   `hello_state.cpp` has a quotation mark that is never closed. Open the file again, press
+   **Ctrl+G**, type `88` in the **Go to line** box and press **Enter**; the bar along the bottom
+   of Notepad then says `Ln 88`. Compare that line with this page: the usual slip is a quotation mark, `L`, `f`, comma or semicolon missing or doubled.
+   Fix it, save, and run the line above again.
+   [Read a build error](/docs/get-started/build-errors/) has more on reading the output and
+   what the common errors mean. If the message is not about your edit, look it
    up in [Troubleshooting](/docs/troubleshooting/#building). If you cannot find the slip,
    [put the file back](#getting-a-file-back) and make the edit again.
 
@@ -261,6 +263,7 @@ are the best next thing to read. [Reading the C++ in minimal](/docs/concepts/rea
 explains the language features, ownership and rendering terms used there. After that:
 
 <CardGrid>
+	<LinkCard title="Read a build error" description="Find the line that matters in a failed build, and what the common errors mean." href="/docs/get-started/build-errors/" />
 	<LinkCard title="Debug your game" description="Open your project in Visual Studio, stop at a breakpoint and inspect an update." href="/docs/get-started/debug-your-game/" />
 	<LinkCard title="Guides" description="How to grow the game: sprites and text, input, collision, audio, menus, assets and split screen." href="/docs/guides/" />
 	<LinkCard title="Examples" description="LineSweeper: a whole game, and the order to read it in." href="/examples/" />

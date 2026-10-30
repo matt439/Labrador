@@ -24,6 +24,10 @@ ctest --preset x64-debug
 says the game's arithmetic is right; the second says the game still starts, which is what an
 engine upgrade or a moved content file breaks first. Neither is a test framework of Labrador's:
 the first is doctest, the second is a switch in your `main.cpp`, and both are yours to change.
+A test that does not compile fails the build, and ctest run after a failed build runs the tests
+from the last build that worked, so build first and run ctest only if the build passed, as
+[Make a first change](/docs/get-started/first-change/)'s one line does.
+[Read a build error](/docs/get-started/build-errors/) shows how to read the build's error.
 
 ## Rules in a library of their own
 

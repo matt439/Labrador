@@ -60,6 +60,7 @@ export default defineConfig({
 						{ label: 'Install the tools', link: '/docs/get-started/prerequisites/' },
 						{ label: 'Get the starter project', link: '/docs/get-started/starter/' },
 						{ label: 'Make a first change', link: '/docs/get-started/first-change/' },
+						{ label: 'Read a build error', link: '/docs/get-started/build-errors/' },
 						{ label: 'Debug your game', link: '/docs/get-started/debug-your-game/' },
 						// The route for readers who use Git, which makes the same project.
 						{

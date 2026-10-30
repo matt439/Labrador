@@ -100,7 +100,7 @@ move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
    Configure installs whatever a changed baseline or a new dependency needs. The build applies
    the engine's compiler settings to your code as well, `/W4 /WX` among them, so a
    warning a newer engine header causes in your code stops it, as any other warning would; fix
-   the code, and keep the settings, which come from `labrador_settings` and are the same walls
+   the code, as [Read a build error](/docs/get-started/build-errors/) describes, and keep the settings, which come from `labrador_settings` and are the same walls
    the engine's own code builds behind. Build `x64-release` too if you ship it.
 
 7. **Commit the pin**, with whatever you changed to match it:
