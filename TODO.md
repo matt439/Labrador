@@ -21,7 +21,7 @@ BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
-**Beginner guides are ready work:** take `GUIDE#7` to `GUIDE#13` in their
+**Beginner guides are ready work:** take `GUIDE#8` to `GUIDE#13` in their
 order in [Beginner guides](docs/beginner-guides.md), which ranks them by
 impact on the owner's 2026-10-30 reader.
 
@@ -61,7 +61,6 @@ impact on the owner's 2026-10-30 reader.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `GUIDE#7` | OPEN | should | M | Play a sound in your own game, first from the audio sample's tones with no tools. |
 | `GUIDE#8` | OPEN | must | L | Share the game: one free web host end to end, GitHub account to push, reading a CI run, what a player sees from a Windows release. |
 | `GUIDE#9` | OPEN | should | M | Edit and debug in Visual Studio step by step: selectors, breakpoints, stepping, Error List; `OCA-18`'s session checks the same page. |
 | `GUIDE#10` | OPEN | should | M | The browser build for a beginner: emsdk's Git need against the starter's promise, Python, sizes and times, build output, serving and refreshing. |

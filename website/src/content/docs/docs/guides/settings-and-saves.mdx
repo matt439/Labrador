@@ -71,8 +71,11 @@ audio->set_group_volume(effects, 1.0f);
 
 Include `engine/audio/audio_resources.h` and `engine/audio/sound_bank.h`;
 `app` here points to the Application. Create each group once, then keep its
-handle or resolve it by name. A group spans banks, so assign any other banks'
-music/effects to those same handles.
+handle or resolve it by name: `add_sound_group` throws for a name already added, and a state's
+`init()` runs again each time the game makes that state again. A group spans banks, so assign
+any other banks' music/effects to those same handles. In a starter project these lines need two
+guides done first: [Play a sound in your game](/docs/guides/your-sound/) loads the `tones` bank,
+and [Copy the components into your game](/docs/guides/your-components/) copies the slider.
 
 For a copied slider ranging from 0 to 100, pass this as its `on_change`
 callback, in place of the gallery's status-only callback:

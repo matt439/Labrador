@@ -115,7 +115,10 @@ cd /d C:\dev\mygame
    place, then save and close Notepad. The first tab is for a reader who did
    [Put a picture in your game](/docs/guides/your-picture/) and nothing else; the others keep
    the `hero` picture or the fonts from
-   [Fonts and text in your game](/docs/guides/your-font/) only if you have them.
+   [Fonts and text in your game](/docs/guides/your-font/) only if you have them. If you have
+   done [Play a sound in your game](/docs/guides/your-sound/), none of these versions has its
+   `sound_bank` group: after pasting, add the group back with that page's second manifest tab,
+   or the game stops with `SoundBank 'tones' was never loaded.`
 
    <Tabs>
    <TabItem label="Picture">
@@ -472,4 +475,6 @@ output and captures matched. It also showed that a `hero.dds` line with no `hero
 browser build with `missing and no known rule to make it`, which is why the route without the
 picture leaves that line out. The
 `wasm-debug` build compiled the page with this class under clang and loaded it in Chrome without
-errors.
+errors. The note in step 4 about Play a sound in your game was checked in that page's run: a manifest
+without the sound group, with that page's sound code in place, stopped the game with
+`SoundBank 'tones' was never loaded.`, and that page's second manifest tab put the group back.

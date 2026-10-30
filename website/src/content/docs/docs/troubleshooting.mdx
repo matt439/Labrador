@@ -530,15 +530,22 @@ The messages below and under [Content](#content) are that reason.
 
 ### `read_json_file - cannot open '...manifest.json'`, or a file in the manifest is missing
 
-The content was not copied beside the executable. The build copies it with a custom target
+The content was not copied beside the executable. A sound bank's `.json` file, such as
+`read_json_file - cannot open '...\game\.\./sounds/tones.json'`, is the same: a folder not
+copied, or a misspelt name or `directory` in the manifest. The build copies it with a custom target
 ([Getting content beside the executable](/docs/guides/assets/#getting-content-beside-the-executable));
 check that your `CMakeLists.txt` has the copy lines for every content folder, and build again.
+[Put a picture in your game](/docs/guides/your-picture/) and
+[Play a sound in your game](/docs/guides/your-sound/) each give the whole block for a new folder,
+made from the fonts one, and `dir out\build\x64-debug\game` shows what was copied.
 
 ### `... was never loaded`
 
-Code resolved a name that is not in the manifest, such as `Texture 'heroo' was never loaded.` or
-`Font 'jetbrains_mono_bold32' was never loaded.` The message names the asset; check its spelling
-in the code and in `manifest.json`, which must match exactly and leave off the file extension.
+Code resolved a name that is not in the manifest, such as `Texture 'heroo' was never loaded.`,
+`Font 'jetbrains_mono_bold32' was never loaded.` or `SoundBank 'tone' was never loaded.` The
+message names the asset; check its spelling in the code and in `manifest.json`, which must match
+exactly and leave off the file extension. `SoundEffect 'drone_lop' was never loaded.` names an
+effect instance the bank's `.json` file does not list under `sound_effect_instances`.
 
 ### `... was read through an unresolved handle`
 
@@ -555,6 +562,15 @@ is ignored on Windows, check that it is XInput-compatible: a controller using an
 does not appear. Then check which slots the game reads. A lone pad can occupy a higher slot,
 and a replug can change its slot; the input guide's
 [single-player pattern](/docs/guides/input/#a-single-player-game-accepts-every-slot) reads all four.
+
+### No sound, and no error
+
+The game runs and a sound it plays is not heard. Check that the game's window is in front when
+the key is pressed, that Windows' volume is up and not muted and its output is the one you are
+listening to, that the game is not turned down in the Volume mixer, and that the build is not a
+`-null` preset, which plays nothing on purpose. With no output device when it starts, the game
+runs silently, and the engine looks for one again once a second.
+[No sound, and no error](/docs/guides/your-sound/#no-sound-and-no-error) has the whole list.
 
 ### `No Direct3D hardware device found` in a release build
 
@@ -655,8 +671,9 @@ states the contract and how it applies to the game's sounds.
 ## Content
 
 [Put a picture in your game](/docs/guides/your-picture/#if-something-fails),
-[Animate a sprite sheet](/docs/guides/your-animation/#if-something-fails) and
-[Fonts and text in your game](/docs/guides/your-font/#if-something-fails) show where each of
+[Animate a sprite sheet](/docs/guides/your-animation/#if-something-fails),
+[Fonts and text in your game](/docs/guides/your-font/#if-something-fails) and
+[Play a sound in your game](/docs/guides/your-sound/#if-something-fails) show where each of
 these messages comes from in a starter project, made on purpose.
 
 ### `'texconv' is not recognized as an internal or external command`
@@ -678,7 +695,8 @@ The folder after texconv's `-o` does not exist. Make it with `mkdir`, then run t
 
 ### `ERROR: Output file already exists, use -y to overwrite:`
 
-texconv will not replace a file unless the command has `-y`. Add it.
+texconv will not replace a file unless the command has `-y`. Add it. xwbtool says the same as
+`ERROR: Output file ... already exists, use -y to overwrite!`, and needs the same `-y`.
 
 ### `... uses the DX10 extended header, which this engine does not read.`
 
@@ -764,6 +782,37 @@ not premultiply a texture at load, so convert it again with texconv's `-pmalpha`
 ([Colours and blending](/docs/guides/sprites-and-text/#colours-and-blending)). The same cause
 shows a fully transparent area as a coloured box. Edges that come out darker than they should
 are the opposite mistake: a source that was already premultiplied, premultiplied again.
+
+### `Failed to open wave bank: ...`
+
+The sound bank's `.json` file is beside the game and its `.xwb` file is not, or the `.xwb` is
+not a wave bank. Copy or pack the bank again
+([Play a sound in your game](/docs/guides/your-sound/)) and build. In the browser build the
+same words begin the reader's own messages, such as the compact-entries one below.
+
+### `Wave bank '...' has no wave named '...'.`
+
+A name in the bank's `.json` file's `waves` is not in the `.xwb`: either xwbtool was run without
+`-f`, so the bank holds no names, or the name is not the WAV file's name without `.wav`, spelt
+exactly, capitals included. Pack the bank again with `xwbtool -f -nc -y`, or fix the name.
+
+### `Wave '...' is not in this sound bank.`
+
+The name in the code's `resolve_wave` is not one in the bank's `.json` file's `waves`. Fix the
+spelling in the code.
+
+### `... the document has no '...'`
+
+A JSON file lacks an entry the engine needs, which the message names. A sound bank's `.json` file
+needs all three of `waves`, `create_effect_instance_for_each_wave` and
+`sound_effect_instances`, even when the last is `[]`.
+
+### `ERROR: Wave banks do not support IEEE float PCM data`, `... only support 8-bit or 16-bit integer PCM data`, or `ERROR: Failed to load file (80004005: Unspecified error )`
+
+xwbtool takes WAV files holding 8-bit or 16-bit PCM. The first two are a 32-bit float or a 24-bit
+WAV; the third a file that is not a WAV at all, such as an MP3, whatever its name ends with.
+Export the sound again as 16-bit PCM, or convert it with FFmpeg
+([Sounds xwbtool will not take](/docs/guides/your-sound/#sounds-xwbtool-will-not-take)).
 
 ### `... uses compact entries, which this engine does not read`
 

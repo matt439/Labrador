@@ -1,0 +1,982 @@
+---
+title: Play a sound in your game
+description: Copy the audio sample's sounds into the starter project and play them on keys, then pack a WAV of your own with xwbtool, step by step, with what each failure means.
+sidebar:
+  order: 0.905
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+This page puts sound into the game from [Get the starter project](/docs/get-started/starter/). It
+has two parts. The first needs no tools: it copies the ready-made sounds of the engine's audio
+sample into your game, plays a short beep when you press **P**, and starts and stops a hum that
+keeps playing with **M**. The second makes a sound of your own from a WAV file and plays it with
+**Y**. It goes through every file that changes: the sound files, the manifest that lists them,
+the build file that copies them, and the lines in `HelloState` that play them. The first part
+takes about 15 minutes, the second about 10 more.
+
+Before you start, do [Make a first change](/docs/get-started/first-change/), so that you know
+the edit, build and run loop and have a copy of your game to go back to. Make a fresh copy now
+with that page's step 1 line. This page works whether or not you have done the picture, font,
+screen or other guides; where one of them changed the same file, the step says what to do.
+
+You need speakers or headphones that Windows plays through. A game with no sound output still
+runs, silently; [No sound, and no error](#no-sound-and-no-error) has the list of things to check.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+## Part 1: the sample's sounds
+
+A game's sounds are kept in a **wave bank**: one `.xwb` file holding several sounds, and a `.json`
+file beside it with the same name that lists the sounds' names. The engine's
+[audio sample](/docs/guides/audio/) has a bank called `tones`, with three sounds made for it:
+`ping`, a short high beep; `chime`, three rising notes; and `drone`, a low hum one second long
+that is meant to repeat. The starter project already has it, in the engine's folder.
+
+<Steps>
+
+1. **Copy the bank into your game.** Make the folder the game's sounds live in, then copy the
+   two files:
+
+   ```bat
+   mkdir game\content\sounds
+   copy external\labrador\samples\audio\content\sounds\tones.* game\content\sounds
+   ```
+
+   ```text title="Output"
+   external\labrador\samples\audio\content\sounds\tones.json
+   external\labrador\samples\audio\content\sounds\tones.xwb
+           2 file(s) copied.
+   ```
+
+   `tones.*` means every file whose name is `tones` with any ending. Check them with
+   `dir game\content\sounds`: `tones.json` is 182 bytes and `tones.xwb` 70,092. The sounds
+   are the engine's own, made for it by a program and free to use under the same licence as
+   the engine.
+
+   `mkdir` says `A subdirectory or file game\content\sounds already exists.` if you run it again,
+   which is harmless. If `copy` says `The system cannot find the path specified.`, the prompt is
+   not in your project's folder: run the `cd /d C:\dev\mygame` line, then this box again.
+
+2. **List the bank in the manifest.** The manifest lists the pictures, fonts and sounds the
+   engine loads for the game when it starts. Open it:
+
+   ```bat
+   notepad game\content\manifest.json
+   ```
+
+   If no other guide has changed it, press **Ctrl+A** to select everything in it, paste the
+   first tab's version in its place, then save and close Notepad. If any other guide has changed
+   the manifest, such as [Put a picture in your game](/docs/guides/your-picture/) adding a
+   `texture` group or [Fonts and text in your game](/docs/guides/your-font/) adding fonts, take
+   the second tab instead: it adds the sounds to whatever the file already holds.
+
+   <Tabs>
+   <TabItem label="Starter project">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16"
+               ]
+           },
+           {
+               "kind": "sound_bank",
+               "directory": "./sounds/",
+               "names": [
+                   "tones"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   <TabItem label="Manifest with more groups">
+
+   The sounds go in a new group at the end. The file ends with the closing `}` of its last
+   group, then `]` and `}`:
+
+   ```json
+           }
+       ]
+   }
+   ```
+
+   Click just after that first `}`, the one on a line of its own before the `]`, type a comma,
+   press **Enter**, and paste this group:
+
+   ```json
+           {
+               "kind": "sound_bank",
+               "directory": "./sounds/",
+               "names": [
+                   "tones"
+               ]
+           }
+   ```
+
+   The end of the file then reads:
+
+   ```json
+           },
+           {
+               "kind": "sound_bank",
+               "directory": "./sounds/",
+               "names": [
+                   "tones"
+               ]
+           }
+       ]
+   }
+   ```
+
+   Save and close Notepad.
+
+   </TabItem>
+   </Tabs>
+
+   The new group is of kind `sound_bank`, read from the `sounds` folder, holding one bank called
+   `tones`. The name is the files' name without `.json` or `.xwb`; the engine loads both.
+
+   The picture, font and animation guides have you replace the whole manifest with a version
+   they give, and theirs have no `sound_bank` group. If you do one of them after this page, add
+   the group back afterwards with the second tab here, or the game stops at start-up with
+   `SoundBank 'tones' was never loaded.`
+
+3. **Copy the sounds folder beside the game.** The game reads its content from the folder its
+   `.exe` is in, and the build copies it there. The starter's build copies only the manifest and
+   the fonts, so it needs a block for `sounds`, and three more lines go in for later. The three
+   changes below are in the order they come in the file, from the top. Open the build file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   First, search with **Ctrl+F** for `jetbrains_mono_bold_16.spritefont`, near the top in the
+   part for the browser build, and add two lines after it, so the three read:
+
+   ```cmake
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/jetbrains_mono_bold_16.spritefont"
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/tones.json"
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/tones.xwb"
+   ```
+
+   That makes the [browser build](/docs/guides/browser/) package the page again when either file
+   changes. It does not change the Windows game you build on this page. If another page has
+   already added lines after the `.spritefont` one, add these after them; the order does not
+   matter.
+
+   Next, search for `content/fonts"` (with the quotation mark). You are in the block that copies
+   the fonts:
+
+   ```cmake
+   add_custom_command(TARGET game_content POST_BUILD
+       COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts"
+           "$<TARGET_FILE_DIR:MyGame>/fonts"
+       VERBATIM
+   )
+   ```
+
+   Click at the end of its last line, `)`, press **Enter**, and paste the same block for
+   `sounds` below it:
+
+   ```cmake
+   add_custom_command(TARGET game_content POST_BUILD
+       COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds"
+           "$<TARGET_FILE_DIR:MyGame>/sounds"
+       VERBATIM
+   )
+   ```
+
+   Last, search for `install(DIRECTORY content/fonts` and add a line after it, so the two read:
+
+   ```cmake
+   install(DIRECTORY content/fonts DESTINATION .)
+   install(DIRECTORY content/sounds DESTINATION .)
+   ```
+
+   That puts the sounds in a [Windows release](/docs/guides/windows-release/). Save and close
+   Notepad.
+
+4. **Give `HelloState` a place to keep the sound.** Open the header of the state that runs the
+   starter's screen:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `#include "engine/app/application.h"` and add a line after it, so the two read:
+
+   ```cpp
+   #include "engine/app/application.h"
+   #include "engine/audio/sound_bank.h"
+   ```
+
+   Then search for `hint_ = nullptr;` and add two lines after it, so the three read:
+
+   ```cpp
+   	labrador::Label* hint_ = nullptr;
+   	labrador::SoundBank* tones_ = nullptr;
+   	labrador::SoundBank::WaveHandle ping_;
+   ```
+
+   `tones_` is where `HelloState` keeps the bank, and `ping_` the answer to "which sound in it is
+   `ping`?", a **handle**, worked out once when the game starts so that playing it later is
+   quick. Save and close Notepad.
+
+5. **Look the sound up, and play it on a key.** Open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `RenderResources* resources =`. This line is near the start of `init()`, the
+   function the engine runs once when the screen starts:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="RenderResources* resources = this->app_->render_resources();"
+   	to="RenderResources* resources = this->app_->render_resources();"
+   />
+
+   Click at the end of that line, after the `;`, press **Enter** twice, and paste these lines:
+
+   ```cpp
+   	this->tones_ = this->app_->audio_resources()->sound_bank("tones");
+   	this->ping_ = this->tones_->resolve_wave("ping");
+   ```
+
+   The first asks the engine for the bank the manifest named `tones`. The second finds the sound
+   called `ping` in it. If either name is wrong, the game stops when it starts and says which
+   name, rather than playing nothing later.
+
+   Next, search for `= *this->app_->keyboard();`. This line is at the start of `update()`, which
+   runs 60 times a second:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="const Keyboard& keyboard = *this->app_->keyboard();"
+   	to="const Keyboard& keyboard = *this->app_->keyboard();"
+   />
+
+   Click at the end of that line, press **Enter** twice, and paste these lines:
+
+   ```cpp
+   	if (keyboard.pressed(Key::p))
+   	{
+   		this->tones_->play_wave(this->ping_);
+   	}
+   ```
+
+   `keyboard.pressed(Key::p)` is true on the one step on which **P** goes down, so holding it
+   plays the sound once. `play_wave` starts the sound and forgets it: each press starts another,
+   and quick presses overlap. Save and close Notepad.
+
+6. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The build first runs CMake again, because `game\CMakeLists.txt` changed. That prints
+   `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
+   packages and lines such as `find_package(doctest CONFIG REQUIRED)`; they are expected, not
+   errors. Then it copies the sounds and compiles `hello_state.cpp` and `main.cpp`, which include
+   the files you changed. On a fast desktop the build and the tests together took 8 seconds. It ends like this:
+
+   ```text title="Output"
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   [1/6] Running utility command for game_content
+   [2/6] Checking that no engine file includes a game header
+   [3/6] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   [4/6] Building CXX object game\CMakeFiles\MyGame.dir\main.cpp.obj
+   [5/6] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.03 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.74 sec
+
+   100% tests passed, 0 tests failed out of 2
+
+   Total Test time (real) =   0.82 sec
+   ```
+
+   `MyGameSmokeTests` starts the game hidden, so it loads the bank: a missing file or a wrong
+   name fails it, with the reason under it. Then the game opens, looking as it did. Press **P**:
+   a short, high beep plays, about a sixth of a second long. Press it several times quickly and
+   the beeps overlap. The hint along the bottom of the window still names only the keys the
+   starter had; the keys this page adds are not shown on screen.
+
+</Steps>
+
+## A sound that keeps playing
+
+`play_wave` is for sounds that play once and are forgotten: a jump, a hit, a menu click. A sound
+the game has to stop, pause or repeat, such as music, is an **effect instance**: one voice the
+bank keeps, which plays one sound. The `tones` bank has one, called `drone_loop`, which plays
+the `drone` hum; `tones.json` names it. These steps start and stop it with **M**, and pause it
+while the "Really quit?" question is up.
+
+<Steps>
+
+1. **Keep a handle for it.** Open the header again:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `ping_;` and add a line after it, so the two read:
+
+   ```cpp
+   	labrador::SoundBank::WaveHandle ping_;
+   	labrador::SoundBank::EffectHandle drone_;
+   ```
+
+   It is an `EffectHandle`, not a `WaveHandle`: the two are different types, so the compiler
+   stops you passing one where the other is meant. Save and close Notepad.
+
+2. **Look it up, and start and stop it.** Open the code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `resolve_wave("ping");` and add a line after it, so the two read:
+
+   ```cpp
+   	this->ping_ = this->tones_->resolve_wave("ping");
+   	this->drone_ = this->tones_->resolve_effect("drone_loop");
+   ```
+
+   Then search for `play_wave(this->ping_);`. Below it is the `}` that ends the **P** block.
+   Click at the end of that `}` line, press **Enter**, and paste these lines:
+
+   ```cpp
+   	if (keyboard.pressed(Key::m))
+   	{
+   		if (this->tones_->effect_state(this->drone_) == SoundState::stopped)
+   		{
+   			this->tones_->play_effect(this->drone_, true, 0.5f);
+   		}
+   		else
+   		{
+   			this->tones_->stop_effect(this->drone_, true);
+   		}
+   	}
+   ```
+
+   If the hum is stopped, **M** starts it; otherwise **M** stops it. In `play_effect`, `true`
+   means play it again from the start each time it ends, so it never stops by itself, and `0.5f`
+   is the volume, half of full. In `stop_effect`, `true` means stop at once; `false` would let
+   the sound play to the end of its current time through, which for the one-second `drone` is
+   at most a second.
+
+3. **Pause it while the game asks to quit.** Still in `hello_state.cpp`, search for
+   `void HelloState::on_suspend()`. The engine runs `on_suspend` when another screen opens on
+   top of this one, such as the quit question, and `on_resume` when it closes:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="void HelloState::on_suspend()"
+   	to="this->greeting_->set_colour(labrador::Colour::white);"
+   />
+
+   Click at the end of the line `this->greeting_->set_colour(labrador::Colour::dim_gray);`, press
+   **Enter**, and paste:
+
+   ```cpp
+   	if (this->tones_->effect_state(this->drone_) == SoundState::playing)
+   	{
+   		this->tones_->pause_effect(this->drone_);
+   	}
+   ```
+
+   Then click at the end of the line `this->greeting_->set_colour(labrador::Colour::white);`,
+   press **Enter**, and paste:
+
+   ```cpp
+   	if (this->tones_->effect_state(this->drone_) == SoundState::paused)
+   	{
+   		this->tones_->resume_effect(this->drone_);
+   	}
+   ```
+
+   A paused effect keeps its place, and `resume_effect` carries on from there. Save and close
+   Notepad.
+
+4. **Build, test and run** with the same line as before:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   CMake does not run again this time, because no build file changed. The build compiles the
+   same two files, `[3/5]` and `[4/5]`, links at `[5/5]`, and both tests pass.
+
+   Press **M**: a low, steady hum starts and goes on. Press **Escape**: the quit question
+   appears and the hum stops. Press **Escape** again to answer no: the question goes and the hum
+   carries on. Press **M** to stop it. **P** still plays the beep, over the hum or without it.
+
+</Steps>
+
+## Part 2: a sound of your own
+
+The engine does not load WAV files directly: it loads a wave bank made from them by `xwbtool`,
+a free program from Microsoft. Do [Install the content tools](/docs/guides/content-tools/)
+first, which puts it at `C:\dev\tools\xwbtool.exe`. These steps make a bank called `effects`
+holding one sound, `jump`, and play it with **Y**. The `tones` bank from part 1 stays.
+
+<Steps>
+
+1. **Get a sound.** It must be a WAV file named `jump.wav` in `C:\dev\mygame`. If you have no
+   sound yet, this line makes one, a quarter-second rising blip that fades out:
+
+   ```bat
+   powershell -NoProfile -Command "$r = 22050; $n = 5512; $w = New-Object IO.BinaryWriter ([IO.File]::Create('jump.wav')); $w.Write([Text.Encoding]::ASCII.GetBytes('RIFF')); $w.Write([int](36 + 2 * $n)); $w.Write([Text.Encoding]::ASCII.GetBytes('WAVEfmt ')); $w.Write([int]16); $w.Write([int16]1); $w.Write([int16]1); $w.Write([int]$r); $w.Write([int](2 * $r)); $w.Write([int16]2); $w.Write([int16]16); $w.Write([Text.Encoding]::ASCII.GetBytes('data')); $w.Write([int](2 * $n)); for ($i = 0; $i -lt $n; $i++) { $t = $i / $r; $w.Write([int16](9000 * (1 - $i / $n) * [Math]::Sin(2 * [Math]::PI * (300 * $t + 1200 * $t * $t)))) }; $w.Close()"
+   ```
+
+   It is one line. It prints nothing, takes under a second, and writes `jump.wav`, 11,068 bytes:
+   a sound wave worked out number by number, 22,050 numbers a second, which is the format the
+   engine's sample uses. To use your own sound instead, copy it into the project's folder with
+   the name `jump.wav`, for example from your Downloads folder:
+
+   ```bat
+   copy /y "%USERPROFILE%\Downloads\my sound.wav" jump.wav
+   ```
+
+   Change `my sound.wav` to your file's name before you press Enter. It prints
+   `1 file(s) copied.` `/y` replaces a `jump.wav` that is already there, such as the blip from
+   the line above, without asking; without it, `copy` asks `Overwrite jump.wav? (Yes/No/All):`,
+   and typing **y** and Enter does the same. If it prints `The system cannot find the file specified.`, the sound is
+   not where the line looked. In File Explorer, right-click the file, choose **Copy as path**,
+   and paste that in place of the first quoted path, quotation marks included. A sound that is
+   not a WAV, such as an MP3, needs converting first:
+   [Sounds xwbtool will not take](#sounds-xwbtool-will-not-take) does that.
+
+   `jump.wav` stays in the project's folder, outside `game`, so the backup line from
+   [Make a first change](/docs/get-started/first-change/) does not copy it; the bank made from it
+   in the next step is inside `game` and is copied. Keep the original of any sound you made or
+   chose somewhere of your own as well.
+
+2. **Pack it into a wave bank:**
+
+   ```bat
+   C:\dev\tools\xwbtool.exe -f -nc -y -o game\content\sounds\effects.xwb jump.wav
+   ```
+
+   ```text title="Output"
+   Microsoft (R) XACT-style Wave Bank Tool [DirectXTK] Version 2026.5.8.1
+   Copyright (C) Microsoft Corp.
+
+   reading jump.wav (PCM 1 channels, 16-bit, 22050 Hz)
+   writing in-memory wavebank game\content\sounds\effects.xwb w/ 1 entries
+   ```
+
+   It takes under a second. **Read the part in brackets after `reading jump.wav`**: it says what kind
+   of sound the file holds. Both platforms play it if it says `PCM` with `8-bit` or `16-bit`,
+   `1 channels` or `2 channels`, and a number of Hz from 8000 to 96000; a sound from your own
+   collection, such as `(PCM 2 channels, 16-bit, 44100 Hz)`, is fine. xwbtool refuses some
+   other kinds with an error, and [If something fails](#if-something-fails) has each one.
+
+   | Option | Why it is there |
+   | --- | --- |
+   | `-f` | Keeps each sound's name, the file's name without `.wav`, in the bank. The engine finds sounds by these names. Without it the game stops at start-up: `has no wave named 'jump'`. |
+   | `-nc` | Writes the bank in the form the browser build reads. Without it xwbtool may write a smaller form, which Windows plays and the browser build refuses. |
+   | `-y` | Replaces `effects.xwb` if it is already there, so you can run the line again after changing the sound. Without it xwbtool stops with `ERROR: Output file ... already exists, use -y to overwrite!`. |
+   | `-o game\content\sounds\effects.xwb` | The file to write. Its folder must already exist; part 1 made it. |
+   | `jump.wav` | The sounds to put in the bank. List several, separated by spaces, to put several in one bank. |
+
+3. **Write the bank's list of sounds.** The engine reads a `.json` file beside the bank, with
+   the same name, that lists the names it holds. Make the empty file, then open it:
+
+   ```bat
+   if not exist game\content\sounds\effects.json type nul > game\content\sounds\effects.json
+   notepad game\content\sounds\effects.json
+   ```
+
+   Paste all of this into it, then save and close Notepad:
+
+   ```json title="game\content\sounds\effects.json"
+   {
+       "waves": ["jump"],
+       "create_effect_instance_for_each_wave": false,
+       "sound_effect_instances": []
+   }
+   ```
+
+   `waves` lists the sounds, each the WAV file's name without `.wav`, spelt exactly so, capitals
+   included. The other two make no effect instances: `jump` is only ever played with
+   `play_wave`. Both must be there even so. `tones.json`, from part 1, shows a list with an
+   effect instance in it.
+
+4. **Add the bank to the manifest.** Open it:
+
+   ```bat
+   notepad game\content\manifest.json
+   ```
+
+   Find the `sound_bank` group you added in part 1, and add `"effects"` to its list of names,
+   with a comma after `"tones"`, so the group reads:
+
+   ```json
+           {
+               "kind": "sound_bank",
+               "directory": "./sounds/",
+               "names": [
+                   "tones",
+                   "effects"
+               ]
+           }
+   ```
+
+   Save and close Notepad. The `sounds` folder is already copied beside the game and into a
+   release, by the lines from part 1.
+
+5. **Make the browser build notice the new files.** Open the build file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   Search for `content/sounds/tones.xwb` and add two lines after it, so the four read:
+
+   ```cmake
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/tones.json"
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/tones.xwb"
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/effects.json"
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/effects.xwb"
+   ```
+
+   Save and close Notepad.
+
+6. **Play it on a key.** Open the header:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `ping_;` and add two lines below that line, or below the `drone_` line under it if
+   you did [A sound that keeps playing](#a-sound-that-keeps-playing), so they read:
+
+   ```cpp
+   	labrador::SoundBank::WaveHandle ping_;
+   	labrador::SoundBank::EffectHandle drone_;
+   	labrador::SoundBank* effects_ = nullptr;
+   	labrador::SoundBank::WaveHandle jump_;
+   ```
+
+   Without the `drone_` line, the `ping_` line comes straight before the two new ones. Save and
+   close Notepad, then open the code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `resolve_wave("ping");` and add two lines after it, below the `drone_` line if you
+   have one:
+
+   ```cpp
+   	this->effects_ = this->app_->audio_resources()->sound_bank("effects");
+   	this->jump_ = this->effects_->resolve_wave("jump");
+   ```
+
+   Then search for `play_wave(this->ping_);`, click at the end of the `}` line below it, press
+   **Enter**, and paste:
+
+   ```cpp
+   	if (keyboard.pressed(Key::y))
+   	{
+   		this->effects_->play_wave(this->jump_);
+   	}
+   ```
+
+   Save and close Notepad.
+
+7. **Build, test and run:**
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   CMake runs again, because `game\CMakeLists.txt` changed, and the output ends as in part 1's
+   step 6, with both tests passed. Press **Y**: the blip plays, a short sound sliding upwards,
+   or your own sound. **P** and **M** still work.
+
+</Steps>
+
+## Changing and adding sounds
+
+To change the sound, replace `jump.wav`, with part 2's step 1 `copy /y` line or its PowerShell
+line, run the `xwbtool` line from part 2's step 2 again, then the build line. `-y` replaces the
+old bank, and the build copies the new one beside the game. The names stay the same, so nothing
+else changes.
+
+To add a second sound to the `effects` bank, put its WAV in the project's folder, say
+`coin.wav`, and list every sound in the bank on the one `xwbtool` line, because it writes the
+whole bank each time:
+
+```bat
+C:\dev\tools\xwbtool.exe -f -nc -y -o game\content\sounds\effects.xwb jump.wav coin.wav
+```
+
+It prints a `reading` line for each sound and `w/ 2 entries`. Add the name to `effects.json`'s
+`waves`, with a comma between names: `"waves": ["jump", "coin"]`. Then, as for `jump`, add a
+`WaveHandle` line such as `labrador::SoundBank::WaveHandle coin_;` to `hello_state.h`, a
+`resolve_wave("coin")` line in `init()`, and a `play_wave` where the game should play it.
+
+To play a sound when something happens in the game rather than on a key, call `play_wave` there,
+in `update()`. A sound is never played from `draw()`. To make a sound quieter, louder, higher or
+lower, or move it left or right, `play_wave` takes three more numbers after the handle: volume
+from 0 to 1, pitch from -1 (an octave lower) to 1 (an octave higher), and pan from -1 (left) to
+1 (right). `this->effects_->play_wave(this->jump_, 0.5f, 0.2f, 0.0f)` plays it at half volume,
+a little higher. The keys are named in lower case, as `Key::y` is: `Key::digit_1`, `Key::f5`,
+`Key::tab`. The starter already uses the arrows, **W**, **A**, **S**, **D** and **Escape**, and
+other guides use **Enter**, **Space**, **I**, **J**, **K** and **L**, so this page leaves them
+alone; **Enter** also answers yes to the quit question.
+
+## Sounds xwbtool will not take
+
+xwbtool reads WAV files holding 8-bit or 16-bit PCM, the plainest kind. An MP3, an OGG or other
+compressed sound, or a WAV saved as 24-bit or 32-bit float, needs converting first. FFmpeg, a
+free program, converts nearly any sound. Install it once, with Windows' own installer, `winget`,
+in any prompt:
+
+```bat
+winget install Gyan.FFmpeg
+```
+
+The first time `winget` runs it may ask you to agree to its source's terms: type **Y** and press
+Enter. It downloads FFmpeg from its publisher's release on GitHub, unpacks it, and ends by
+saying it installed it. FFmpeg's folder is several hundred megabytes. **Close the prompt and
+open a new x64 Native Tools Command Prompt**, because only a new one finds the program, then
+check it:
+
+```bat
+ffmpeg -version
+```
+
+The first line starts `ffmpeg version` and a number. Then, in your project's folder, convert
+the sound, changing `my sound.mp3` to your file's path:
+
+```bat
+ffmpeg -i "%USERPROFILE%\Downloads\my sound.mp3" -ac 1 -ar 22050 -c:a pcm_s16le jump.wav
+```
+
+FFmpeg prints a page of details about the two files. A quarter-second sound took under a second;
+the output ends with a line starting `size=` that gives the new file's size. `-ac 1` makes it one
+channel, `-ar 22050` 22,050 numbers a second, the rate the engine's own sounds use, and
+`-c:a pcm_s16le` 16-bit PCM. Then run part 2's `xwbtool` line again. For music, which can use
+both speakers, leave out `-ac 1`, and read
+[Music, bank memory and the page download](/docs/guides/audio/#music-bank-memory-and-the-page-download)
+first: a long track in a bank costs a lot of memory.
+
+If `jump.wav` is already there, FFmpeg asks `File 'jump.wav' already exists. Overwrite? [y/N]`:
+type **y** and press Enter to replace it. Any other answer leaves the file alone, and FFmpeg says
+`Not overwriting - exiting`, then `Error opening output file jump.wav.`, which only means that
+nothing was written. If it says `Error opening input file`, the path after `-i` is wrong:
+put it in quotation marks, or use **Copy as path** as in part 2's step 1. If the prompt says
+`'ffmpeg' is not recognized as an internal or external command`, it was opened before FFmpeg was
+installed: open a new one.
+
+## How errors show
+
+A mistake on this page shows in one of four places:
+
+- **`xwbtool` prints `ERROR:`**, and no new bank is written. A `reading` or `writing` line can
+  come before it; the `ERROR` still means the bank was not written.
+- **The build stops** with an `error` line: a slip in the C++ code. [Read a build
+  error](/docs/get-started/build-errors/) shows how to find the line that matters.
+- **The start-up test fails.** The build worked, but the game stopped while loading. The `ctest`
+  output shows `***Failed` for `MyGameSmokeTests` and, under it, a line starting
+  `startup failure:` that says why, and the game does not start:
+
+  ```text title="Output"
+  2/2 Test #2: MyGameSmokeTests .................***Failed    0.24 sec
+  startup failure: Wave 'pingg' is not in this sound bank.
+
+
+  50% tests passed, 1 tests failed out of 2
+
+  Total Test time (real) =   0.27 sec
+
+  The following tests FAILED:
+  	  2 - MyGameSmokeTests (Failed)
+  Errors while running CTest
+  ```
+
+  The lines after the `startup failure:` line only repeat that one test failed:
+  `Errors while running CTest` is not a second problem.
+
+  Started on its own, the game shows the same reason in a box titled
+  `Sample - startup failure`, whatever your game is called, and closes when you click **OK**.
+- **Nothing plays**, with no message at all: see [No sound, and no error](#no-sound-and-no-error).
+
+Each message is below. In a path in a message, the folder is your build's, such as
+`C:\dev\mygame\out\build\x64-debug\game\.\./sounds/tones.xwb`; the `.\./` is the manifest's
+folder followed by the group's `./sounds/`, and is not a mistake.
+
+## If something fails
+
+<Aside type="caution" title="startup failure: read_json_file - cannot open '...\game\.\./sounds/tones.json'">
+The game found no `tones.json` beside itself. Read the end of the path:
+- If the name is misspelt, such as `tone.json`, fix the name in `manifest.json`'s `names`.
+- If the folder is, such as `sound/tones.json`, fix `"directory": "./sounds/"` in
+  `manifest.json`.
+- If both are right, the build is not copying the `sounds` folder: check the block you added in
+  part 1's step 3, and that `game\content\sounds\tones.json` exists. `dir
+  out\build\x64-debug\game\sounds` shows what was copied.
+
+For `effects.json`, check that you made it in part 2's step 3, in `game\content\sounds`.
+</Aside>
+
+<Aside type="caution" title="startup failure: Failed to open wave bank: ...\game\.\./sounds/tones.xwb">
+The `.json` file is there and the `.xwb` file is not, or it is not a wave bank. For `tones.xwb`,
+run part 1's `copy` line again; for `effects.xwb`, part 2's `xwbtool` line. Then build again.
+</Aside>
+
+<Aside type="caution" title="startup failure: Wave bank '...\game\.\./sounds/effects.xwb' has no wave named 'jump'.">
+A name in the bank's `.json` file's `waves` is not in the `.xwb`. Either `xwbtool` was run
+without `-f`, so the bank holds no names, or the name in `waves` is not the WAV file's name
+without `.wav`, spelt exactly the same, capitals included: `"Jump"` gives `has no wave named
+'Jump'`. Run the `xwbtool` line from part 2's step 2 as it is, or fix the name in the `.json`
+file, and build again.
+</Aside>
+
+<Aside type="caution" title="startup failure: SoundBank 'tone' was never loaded.">
+The bank's name in the code, in `sound_bank("tone")`, is not one the manifest lists. They must be
+spelt the same, without `.json` or `.xwb`. If the name is right in the code, check that the
+manifest lists it: leaving `"effects"` out of the manifest gives `SoundBank 'effects' was never
+loaded.`
+</Aside>
+
+<Aside type="caution" title="startup failure: Wave 'pingg' is not in this sound bank.">
+The sound's name in `resolve_wave("pingg")` is not one in the bank's `.json` file's `waves`. Fix
+the spelling in the code. The names in `tones` are `ping`, `chime` and `drone`.
+</Aside>
+
+<Aside type="caution" title="startup failure: SoundEffect 'drone_lop' was never loaded.">
+The effect's name in `resolve_effect("drone_lop")` is not one in the bank's
+`sound_effect_instances`. The one in `tones` is `drone_loop`. `resolve_effect` takes an effect
+instance's name, not a sound's: `resolve_effect("drone")` gives the same message.
+</Aside>
+
+<Aside type="caution" title="startup failure: '...\game\.\./sounds/effects.json': the document has no 'sound_effect_instances'">
+The `.json` file lacks one of its three entries. Paste the whole file from part 2's step 3
+again. The message names whichever is missing.
+</Aside>
+
+<Aside type="caution" title="startup failure: read_json_file - '...\game\.\./sounds/effects.json' is not valid JSON: Missing a name for object member. (offset 110)">
+The `.json` file's punctuation is wrong: here a comma after `[]`, the last entry, where none may
+go. The number after `offset` counts characters from the start of the file to where the reader
+gave up, which is after the mistake; Notepad ends each line with two characters, so the same
+mistake in a file saved another way can give a slightly different number. The easiest repair is to paste the whole file again. The
+same kind of message about `manifest.json` means the manifest's punctuation, often a missing
+comma between two groups.
+</Aside>
+
+<Aside type="caution" title="startup failure: Asset 'tones' in '...manifest.json' is of kind 'soundbank', which nothing registered.">
+The `kind` is misspelt. The engine knows `texture`, `font`, `sprite_sheet` and `sound_bank`,
+spelt exactly so.
+</Aside>
+
+<Aside type="caution" title="error C2039: 'tones_': is not a member of 'HelloState'">
+The build stopped in `hello_state.cpp` because `hello_state.h` has no `tones_`: the lines from
+part 1's step 4 are missing or misspelt. The same message names `ping_`, `drone_`, `effects_` or
+`jump_` for the others. It comes once for each line that uses the name.
+</Aside>
+
+<Aside type="caution" title="error C2838: 'Y': illegal qualified name in member declaration">
+With `error C2065: 'Y': undeclared identifier` after it, on the same line: a key was written in
+capitals, `Key::Y`. Keys are lower case: `Key::y`.
+</Aside>
+
+<Aside type="caution" title="'C:\dev\tools\xwbtool.exe' is not recognized as an internal or external command">
+With `operable program or batch file.` on the next line: there is no `xwbtool.exe` in
+`C:\dev\tools`. Do [Install the content tools](/docs/guides/content-tools/), or, if you did, run
+`dir C:\dev\tools` and compare it with that page's step 3. If the message is
+`The system cannot find the path specified.` instead, there is no `C:\dev\tools` folder at all,
+and the same page makes it. Nothing was written, so run the `xwbtool` line again afterwards.
+</Aside>
+
+<Aside type="caution" title="ERROR: Output file game\content\sounds\effects.xwb already exists, use -y to overwrite!">
+The `xwbtool` line was run without `-y` and there is already a bank. Nothing was written. Add
+`-y`, as in part 2's step 2.
+</Aside>
+
+<Aside type="caution" title="ERROR: Failed to load file (80070002: The system cannot find the file specified. )">
+After `reading jump.wav`: xwbtool found no `jump.wav` in the folder the prompt is in. Check that
+the prompt ends `mygame>` and that `dir jump.wav` lists the file. Windows hides known file
+extensions in File Explorer, so a file that shows there as `jump.wav` can really be
+`jump.wav.wav`; `dir` shows its whole name.
+</Aside>
+
+<Aside type="caution" title="ERROR: Failed to load file (80004005: Unspecified error )">
+The file is not a WAV, though its name may end `.wav`: an MP3 renamed, for example. Convert it as
+in [Sounds xwbtool will not take](#sounds-xwbtool-will-not-take).
+</Aside>
+
+<Aside type="caution" title="ERROR: Wave banks do not support IEEE float PCM data">
+The WAV holds 32-bit float numbers, as some audio editors save by default. Its `reading` line
+says `IEEE float`. Export it again as 16-bit PCM, or convert it with FFmpeg as in [Sounds
+xwbtool will not take](#sounds-xwbtool-will-not-take).
+</Aside>
+
+<Aside type="caution" title="ERROR: Wave banks only support 8-bit or 16-bit integer PCM data (24)">
+The WAV is 24-bit, the number in brackets. Export it again as 16-bit PCM, or convert it with
+FFmpeg as in [Sounds xwbtool will not take](#sounds-xwbtool-will-not-take).
+</Aside>
+
+<Aside type="caution" title="ERROR: Failed opening output file game\content\sound\effects.xwb, 3">
+The folder after `-o` does not exist, here because `sounds` is misspelt. xwbtool prints its
+`reading` and `writing` lines first, but nothing was written. Fix the folder, or make it with
+part 1's `mkdir` line, and run the `xwbtool` line again.
+</Aside>
+
+<Aside type="caution" title="writing compact in-memory wavebank ...">
+Not an error on Windows: the line has `compact` in it because `xwbtool` was run without `-nc`.
+The Windows game plays the bank. The browser build refuses it when the page starts, with
+`Failed to open wave bank: /././sounds/effects.xwb uses compact entries, which this engine does
+not read. Re-pack it with xwbtool -nc.` Run the line from part 2's step 2, with `-nc`.
+</Aside>
+
+### No sound, and no error
+
+The tests pass, the game runs, and pressing the key plays nothing you can hear. In order:
+
+- **Is the window in front?** Keys go to the window you clicked last. Click the game's window,
+  then press the key again.
+- **Does Windows play sound?** Click the speaker icon on the taskbar: check the volume is up and
+  not muted, and, with the arrow beside the volume, that the output chosen is the speakers or
+  headphones you are listening to. Right-click the icon and choose **Open volume mixer** to check
+  that the game is not turned down; it is listed there only while it is running.
+- **Is it the right build?** A build with a `-null` preset, such as `x64-debug-null` in the
+  engine's folder, plays no sound on purpose. The starter's `x64-debug` and `x64-release` play
+  through XAudio2.
+- **Was there an output when the game started?** With no speakers or headphones connected, or
+  the sound device turned off, the game runs silently rather than stopping. Connect them; the
+  engine looks for an output again once a second, and the next sound you play is heard.
+- **Is the key read?** Check the `if (keyboard.pressed(Key::p))` block is in `update()`, as in
+  part 1's step 5, and that the key is lower case.
+- **Is the sound itself quiet?** Open the WAV in Windows Media Player or another player and
+  listen to it. A volume below about `0.2` in `play_wave` or `play_effect` can be hard to hear.
+
+In the browser build, nothing plays until the page has had a key press, click or touch; see
+below.
+
+[Troubleshooting](/docs/troubleshooting/#content) lists these messages too, with the others the
+engine can give about content.
+
+## In the browser build
+
+The [browser build](/docs/guides/browser/) packs the whole `game\content` folder into the page
+when it links, so the sounds need no copy line there, and plays them through the browser's Web
+Audio. The lines you added after the `.spritefont` line make the page link again when a sound
+file changes; without one, the page keeps the old sound until something else changes. Each new
+content file the game loads needs a line like them.
+
+A browser plays nothing until the page has had a key press, click or touch, other than
+**Escape**. The first **P**, **M** or **Y** counts, and plays its sound. A sound the game plays
+before that, such as one in `init()`, is dropped and never played; an effect started then waits,
+and starts with the first key.
+[Browser audio and the first gesture](/docs/guides/audio/#browser-audio-and-the-first-gesture)
+gives the whole rule.
+
+## Where to go next
+
+- [Audio](/docs/guides/audio/) explains banks, effect instances, volume, pitch, pan and sound
+  groups in more depth, and the formats and sizes a sound can be.
+- [Settings and saves](/docs/guides/settings-and-saves/#volume-slider-callbacks) connects a
+  volume slider to groups of sounds, such as music and effects, with these same `tones` sounds.
+- [Put a picture in your game](/docs/guides/your-picture/) draws a picture beside the greeting.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at
+`C:\dev\g7-author\mygame`, built and tested once as it came, with Visual Studio 2026's compiler
+19.51 and the `may2026` xwbtool, every step above ran as shown, with
+`C:\dev\g7-author\mygame` in the quoted output changed to `C:\dev\mygame`. The edits were made by
+an agent exactly as the steps word them rather than in Notepad. Nobody listened: the game was
+driven with key presses sent to its window, and the peak level of Windows' default output was
+read while it ran. It stayed at 0 with no key pressed; **P** raised it to 0.30, the `ping`
+sound's own peak; **Y** to 0.24 with the blip from part 2's line; **M** to 0.11, the hum at half
+volume, which fell to 0 while the quit question was up, came back after **Escape**, and fell to
+0 again at the second **M**. The same level read 0.15 for Windows' own `tada.wav`, played as a
+check that the reading worked.
+
+Each message under [If something fails](#if-something-fails) was made on purpose: the bank's
+name misspelt in the code, in the manifest and in the manifest's `directory`; the kind misspelt;
+the copy block removed with the build folder's `sounds` deleted; each of `tones.xwb` and
+`tones.json` taken away; a wave the bank lacks added to `tones.json`; the bank packed without
+`-f`; `"Jump"` in `effects.json`; its last entry removed and a comma added after it; `"effects"`
+left out of the manifest; the wave and effect names misspelt in the code; the header's lines
+removed; `Key::Y`; and `xwbtool` without `-y`, with a misspelt WAV and a misspelt output folder,
+with a WAV converted to 32-bit float and to 24-bit, and with an MP3 and an MP3 renamed to
+`.wav`. A bank packed without `-nc` printed `compact` and passed the Windows tests. A stereo,
+44,100 Hz WAV packed without complaint.
+
+The `wasm-debug` build compiled the page with these files under clang, and Labrador's page
+runner loaded it in headless Chrome, pressed **P**, **Y**, **M** twice, Escape and Enter, and saw
+it quit without errors. With the compact bank, the runner reported the quoted message through
+`Module.onError`. Repacking the bank relinked the page; with its line taken out of the build
+file, repacking it did not. The `x64-release` build installed with `cmake --install` had the
+four sound files in its `sounds` folder, and the installed game passed `--smoke-test`.
+
+FFmpeg 8.1.2 was already installed on the machine from `winget`, so `winget install
+Gyan.FFmpeg` was not run here and its output is not quoted; `winget show Gyan.FFmpeg` on the
+same day offered version 9.0.2, a portable ZIP from the publisher's GitHub release. The FFmpeg
+line converted an MP3 made from the blip, and its `Overwrite?` question, its answer `N` and a
+misspelt input gave the messages quoted.
+
+A second agent then followed the page as worded in another fresh starter, at
+`C:\dev\g7-follow\mygame`, checking before each key press that the game's window was in front.
+Every command, output, size and message matched, and the output's peak level read 0.30 for **P**,
+0.107 for **M**, falling to 0 under the quit question and back after **Escape**, and 0.274 for
+**Y**, a different measurement of the same blip. It found what the first version of the page left
+out, and the page was corrected: which manifest tab to take after the fonts page, which changes
+the manifest without adding a group; that the picture, font and animation pages' whole manifests
+drop the sound group if done after this one, which it reproduced as
+`SoundBank 'tones' was never loaded.`; a box for `xwbtool.exe` not being installed; the last line
+of step 6's output and the failing test's whole output; `copy` asking `Overwrite jump.wav?`; FFmpeg's
+`Error opening output file` line after `N`; **Enter** among the keys other guides use; the source
+WAV outside the backup; the on-screen hint; and what `stop_effect`'s `false` waits for. The follower
+also confirmed that the second manifest tab gives valid JSON on the picture page's manifest, that
+the game run on its own shows the `Sample - startup failure` box, that a second `coin.wav` packs as
+`w/ 2 entries` and builds with `play_wave(..., 0.5f, 0.2f, 0.0f)`, and that deleting only
+`game\content\sounds\tones.xwb` still passes the tests, because the build folder keeps its copy,
+until that copy is deleted too.
+
+Each corrected step was run again in a third fresh starter, at `C:\dev\g7-fixer\mygame`: part 1
+as worded, whose build and tests gave step 6's output and took 7.6 seconds; `"pingg"` in
+`resolve_wave`, which gave the failing output under [How errors show](#how-errors-show); the
+starter's own manifest with the sound code in place, which gave `SoundBank 'tones' was never
+loaded.`, then the second tab followed on it, after which both tests passed; the `xwbtool` line
+naming a folder without `xwbtool.exe` and a folder that does not exist; the blip line;
+`copy /y` from another folder with a space in the file's name; and the FFmpeg line answered `N`.
+
+A review then ran the page again in a fourth fresh starter, at `C:\dev\g7-review\mygame`: part 1,
+the effect and part 2 as worded, each build and test giving the output above; the blip line's
+11,068 bytes; the `xwbtool` line, without `-y`, with a misspelt WAV and with a misspelt folder;
+`Key::Y`; and `effects.json` without its last entry. The output's peak level read 0.30 for **P**,
+0.274 for **Y** and 0.107 for **M**, 0 under the quit question, 0.107 after **Escape** and 0
+after the second **M**. A comma after `[]` in `effects.json` saved with Windows' line ends, as
+Notepad saves it, gave `offset 110`, where the first version of the page had said 114; the box's
+title now gives 110.
+
+The speaker icon, the volume mixer and an unplugged output were not tried: the advice about a
+missing output comes from the engine's XAudio2 code, which looks for one again each second.
+Copying from the Downloads folder itself was not tried, and no run listened to the browser build's
+sound after its first key.

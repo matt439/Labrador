@@ -51,8 +51,10 @@ or calling `stop_effect(effect, true)` cancels its pending start. If a
 title-screen jingle must be heard, play it after the player starts the game, or use a persistent
 effect instance that can wait for the gesture.
 
-The sections below show the sample's code for using a bank. If a build fails after you put some
-of it into your own game, [Read a build error](/docs/get-started/build-errors/) shows how to read
+[Play a sound in your game](/docs/guides/your-sound/) puts these sounds into a starter project
+step by step, with no tools, then a WAV of your own: the files, the manifest, the build file's
+lines and the code, with what each failure means. The sections below show the sample's code for
+using a bank. If a build fails after you put some of it into your own game, [Read a build error](/docs/get-started/build-errors/) shows how to read
 the error.
 
 ## Declare a required bank
@@ -174,8 +176,15 @@ that page's [Typing the programs' names](/docs/guides/content-tools/#typing-the-
 sets up:
 
 ```bat
-xwbtool -f -nc -o tones.xwb ping.wav chime.wav drone.wav
+xwbtool -f -nc -y -o tones.xwb ping.wav chime.wav drone.wav
 ```
+
+It prints a `reading` line for each WAV, with its format, and then
+`writing in-memory wavebank tones.xwb w/ 3 entries`. **`-y`** replaces an existing
+`tones.xwb`; without it xwbtool stops with `ERROR: Output file tones.xwb already exists, use -y
+to overwrite!` and writes nothing. Write the bank into the folder the manifest's group names,
+beside a `.json` definition of the same name whose `waves` are the WAV files' names without
+`.wav`.
 
 The **`-f` is required**: it retains each file's stem as a friendly name in the
 bank, which is how Labrador checks and resolves waves. **So is `-nc`**: without
@@ -224,15 +233,26 @@ same sound at 44,100 Hz, which short effects rarely need. An audio editor's
 ffmpeg -i source.wav -ac 1 -ar 22050 -c:a pcm_s16le ping.wav
 ```
 
+`winget install Gyan.FFmpeg` installs FFmpeg; a prompt opened afterwards finds it, and
+`ffmpeg -version` checks it.
+[Sounds xwbtool will not take](/docs/guides/your-sound/#sounds-xwbtool-will-not-take) has the
+install and the conversion step by step, with their messages.
+
 MS-ADPCM is the choice when the download matters more than the memory. It is
 about a quarter the size of 16-bit PCM in the bank and slightly lossy. XWBTool
 does not encode it. `adpcmencode3` does, from the Windows SDK that Visual
 Studio installs, on the Native Tools prompt's path beside `fxc`; it reads a PCM
-WAV and writes an ADPCM one, so give the output the name the bank should use:
+WAV and writes an ADPCM one, so give the output the name the bank should use. Keep the PCM
+files in a folder of their own, here `pcm`, so the two do not share a name:
 
 ```bat
+mkdir pcm
+move ping.wav pcm\ping.wav
 adpcmencode3 pcm\ping.wav ping.wav
 ```
+
+It prints `Encoding pcm\ping.wav (PCM mono 22050Hz 16bit, ...) to ping.wav (ADPCM 128
+samples/block).` and the number of bytes it produced.
 
 It writes 128 samples a block, and XAudio2 makes a voice only when that count
 is a multiple of 32. FFmpeg's `adpcm_ms` encoder cannot write such a block, so
@@ -241,7 +261,16 @@ plays. `adpcmencode3` fits a
 wave to a whole number of blocks by changing its sample rate, so export each
 sound a multiple of 128 samples long, or XWBTool's `reading` line will show a
 rate a little off the one exported and the sound will play that much sharp or
-flat.
+flat. FFmpeg pads a sound with silence to a whole number of 128-sample blocks; run it on the PCM
+file before encoding:
+
+```bat
+ffmpeg -i pcm\ping.wav -af asetnsamples=n=128 -c:a pcm_s16le pcm\ping128.wav
+adpcmencode3 pcm\ping128.wav ping.wav
+```
+
+A quarter-second sound of 5,512 samples at 22,050 Hz, encoded as it was, read back at 22,018 Hz;
+padded to 5,632 samples first, it read back at 22,050 Hz.
 
 ## Music, bank memory and the page download
 
