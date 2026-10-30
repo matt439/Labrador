@@ -21,7 +21,7 @@ BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
-**Beginner guides are ready work:** take `GUIDE#2` to `GUIDE#13` in their
+**Beginner guides are ready work:** take `GUIDE#3` to `GUIDE#13` in their
 order in [Beginner guides](docs/beginner-guides.md), which ranks them by
 impact on the owner's 2026-10-30 reader.
 
@@ -61,7 +61,6 @@ impact on the owner's 2026-10-30 reader.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `GUIDE#2` | OPEN | should | S | Get Started's edit, build and run loop: split first-change's one-box rebuild, quit the game first (LNK1168), link Troubleshooting, backup and restore without Git. |
 | `GUIDE#3` | OPEN | should | M | A "Reading a build error" guide and Troubleshooting section with the common MSVC, linker and `/WX` errors, linked from every guide that changes code. |
 | `GUIDE#4` | OPEN | must | M | Run the samples from a starter project: one "Where to run this" block linked from every sample guide and README. |
 | `GUIDE#5` | OPEN | must | L | Install texconv, MakeSpriteFont and xwbtool; draw a plain texture with complete code; whole manifests; asset errors; sheets, animation, fonts and strings. |

@@ -35,11 +35,15 @@ In order of impact on a beginner who wants to play around. Each unit is one
 1. **`GUIDE#1` Configure inside a starter's `external\labrador`.** Done:
    every desktop sample and the browser build work there without Git; see
    [the engine inside a starter project](#the-engine-inside-a-starter-project).
-2. **`GUIDE#2` The edit, build and run loop in Get Started.** first-change's
-   step 4 pastes build, ctest and the game as one box, so after a failed build
-   the old `MyGame.exe` runs. Split or chain it; "quit the game first" and
-   LNK1168; link Troubleshooting from the build step; backup and restore
-   without Git; `mkdir C:\dev` in the starter page.
+2. **`GUIDE#2` The edit, build and run loop in Get Started.** Done on
+   2026-10-30: Make a first change keeps a copy of `game` first, chains build,
+   tests and game with `&&`, shows a real failure and how to read it, and
+   puts files back from the copy or the starter ZIP; LNK1168 has a
+   Troubleshooting entry; the starter page makes `C:\dev`, links
+   Troubleshooting from its build step and says to quit before rebuilding.
+   Restoring with a plain `copy` keeps the copy's older time and the build
+   does not compile the file again, so the restore boxes give the file the
+   current time; Make a first change's *What was checked* records the runs.
 3. **`GUIDE#3` Reading a build error.** A guide and Troubleshooting section:
    an annotated Ninja and cl failure, `file(line)`, Notepad's Ctrl+G, and the
    common errors (C2001, C2143, C2065/C3861, C2039, C2664, LNK2019, LNK1168,
@@ -133,9 +137,12 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
 
 ## Not verified by the audit
 
-- The exact text of the MSVC, linker and CMake messages the units quote, and
-  whether ctest reports a pass after a failed build.
-- Single-file `tar -xf` from the ZIP, and the ZIP's internal paths.
+- The exact text of the MSVC, linker and CMake messages the units quote.
+  `GUIDE#2` captured C2001 (`newline in string literal` in compiler 19.51,
+  not the `newline in constant` the findings guess), C2143, C2059 and LNK1168,
+  and that ctest reports a pass on the old program after a failed build.
+  Single-file `tar -xf` from the ZIP works with forward slashes under
+  `mygame/` and says `Not found in archive` with backslashes.
 - Visual Studio's first-launch dialogs, `devenv .`, and whether an exception
   breaks into the debugger.
 - MakeSpriteFont with a missing font and its .NET needs; SmartScreen or

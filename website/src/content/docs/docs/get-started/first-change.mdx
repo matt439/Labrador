@@ -5,9 +5,11 @@ description: Change what your game says, how fast it moves and what its window i
 
 import { Steps, LinkCard, CardGrid } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import StarterDownload from '~/components/StarterDownload.astro';
 
 Everything in `game\` is yours now. This page changes three things you can see, so you know the
-whole loop works: edit, build, test, run.
+whole loop works: edit, build, test, run. It starts by keeping a copy of the game, so that any
+edit you make here or later can be undone.
 
 The commands run in the x64 Native Tools Command Prompt, in your project's folder, the one
 [Get the starter project](/docs/get-started/starter/) or
@@ -24,7 +26,25 @@ each file.
 
 <Steps>
 
-1. **Change the greeting.** Open the file that draws it:
+1. **Keep a copy of your game.** This copies the `game` folder, everything that is yours, to a
+   folder beside the project named after it with `-backup` on the end: `C:\dev\mygame-backup`
+   for `C:\dev\mygame`. It is one line:
+
+   ```bat
+   if not exist game\main.cpp (echo This is not your project's folder. Nothing was changed.) else (rmdir /s /q "%CD%-backup" 2>nul & xcopy game "%CD%-backup\game" /E /I /Q)
+   ```
+
+   `%CD%` is the folder the prompt is in. The line first deletes the copy you made last time,
+   if there is one, then `xcopy` prints how many files it copied, `16 File(s) copied` for the
+   game a starter project begins with. If it prints `This is not your project's folder.`
+   instead, it changed nothing: run the `cd /d C:\dev\mygame` line above, then this line
+   again.
+
+   Run this line again whenever the game works and you want to keep it as it is now. Each run
+   replaces the copy before it, so do not run it while the game is broken. [Getting a file back](#getting-a-file-back) below puts files
+   back from the copy.
+
+2. **Change the greeting.** Open the file that draws it:
 
    ```bat
    notepad game\states\hello_state.cpp
@@ -48,9 +68,11 @@ each file.
 
    Change only the words between the quotation marks, and keep the quotation marks, the `L`
    before them and the comma after them. The `L` makes it a wide string, which is what the
-   engine's text drawing takes. Save and close Notepad.
+   engine's text drawing takes. Use plain English letters, digits and punctuation: the game's
+   font has no other characters, and an accented letter, a curly quotation mark pasted from a
+   web page or an emoji draws as `?`. Save and close Notepad.
 
-2. **Make it spin faster.** How the greeting moves is your game's rules, in
+3. **Make it spin faster.** How the greeting moves is your game's rules, in
    `game\rules\motion.h`, and the speed is a constant beside the rules it configures:
 
    ```bat
@@ -68,7 +90,7 @@ each file.
    Change `1.2f` to `3.0f`, keeping the `f` and the semicolon after it. The unit is radians per
    second. Save and close Notepad.
 
-3. **Name the window.** In `game\main.cpp`, change the window's class name and title:
+4. **Name the window.** In `game\main.cpp`, change the window's class name and title:
 
    ```bat
    notepad game\main.cpp
@@ -88,24 +110,149 @@ each file.
    options.window_title = L"My game";
    ```
 
-4. **Rebuild, test and run:**
+5. **Rebuild, test and run.** First quit the game if it is still open from the previous page:
+   click its window, so that the keys go to the game rather than to the prompt, then press
+   **Escape**, then **Enter**. A game that is running cannot be replaced by the new one,
+   and the build stops with
+   [`LNK1168`](/docs/troubleshooting/#lnk1168-cannot-open-gamemygameexe-for-writing). Then run
+   this, which is one line:
 
    ```bat
-   cmake --build --preset x64-debug
-   ctest --preset x64-debug
-   out\build\x64-debug\game\MyGame.exe
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
    ```
 
-   Only the files you changed, and the ones that include them, are compiled again. Both tests
-   still pass: the rules test reads `spin_speed` rather than repeating `1.2f`, and the start-up
-   check opens the game hidden, runs it for a moment and quits. The window has your title, and your
-   greeting circles faster.
+   `&&` runs the command after it only if the one before it worked, so the tests run only after
+   a good build, and the game starts only after the tests pass. Only the files you changed, and
+   the ones that include them, are compiled again; on a fast desktop this took 7 seconds. It
+   ends like this:
 
-   If the build stops with `error` and a file name and line number, the edit in that file has a
-   typing slip: a quotation mark, `L`, `f`, comma or semicolon missing or doubled. Open the file
-   again, compare the line with this page, save, and run the three lines again.
+   ```text title="Output"
+   [8/9] Linking CXX executable game\MyGameTests.exe
+   [9/9] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.03 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.77 sec
+
+   100% tests passed, 0 tests failed out of 2
+
+   Total Test time (real) =   0.84 sec
+   ```
+
+   Both tests still pass: the rules test reads `spin_speed` rather than repeating `1.2f`, and
+   the start-up check opens the game hidden, runs it for a moment and quits. Then the game opens.
+   The window has your title, and your greeting circles faster.
+
+   **If the build fails**, nothing after it runs, and the build's last lines say where it
+   stopped. Deleting the greeting's closing quotation mark, for example, ends like this:
+
+   ```text title="Output"
+   [3/4] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   FAILED: [code=2] game/CMakeFiles/MyGame.dir/states/hello_state.cpp.obj
+   C:\PROGRA~1\MICROS~1\18\COMMUN~1\VC\Tools\MSVC\1451~1.362\bin\Hostx64\x64\cl.exe  /nologo /TP ...
+   C:\dev\mygame\game\states\hello_state.cpp(88): error C2001: newline in string literal
+   C:\dev\mygame\game\states\hello_state.cpp(89): error C2143: syntax error: missing ')' before 'labrador::Colour::white'
+   C:\dev\mygame\game\states\hello_state.cpp(89): error C2143: syntax error: missing ';' before 'labrador::Colour::white'
+   C:\dev\mygame\game\states\hello_state.cpp(89): error C2059: syntax error: ')'
+   C:\dev\mygame\game\states\hello_state.cpp(89): error C2059: syntax error: ')'
+   ninja: build stopped: subcommand failed.
+   ```
+
+   The line after `FAILED:` is the command that failed, hundreds of characters long in a real
+   build: skip it. The **first** line with `error` in it is the one to read. It names the file,
+   the line number in brackets, and what the compiler expected. The lines after it are
+   usually the same slip seen again, and go away when it is fixed. Here, line 88 of
+   `hello_state.cpp` has a quotation mark that is never closed. Open the file again and move
+   down with the arrow keys until the bar along the bottom of Notepad says `Ln 88`, the line's
+   number. Compare that line with this page: the usual slip is a quotation mark, `L`, `f`, comma or semicolon missing or doubled.
+   Fix it, save, and run the line above again. If the message is not about your edit, look it
+   up in [Troubleshooting](/docs/troubleshooting/#building). If you cannot find the slip,
+   [put the file back](#getting-a-file-back) and make the edit again.
+
+   If you build, test and run with separate commands instead, read the build's last lines before
+   going on. After a failed build the tests still pass and the game still starts, but they are
+   the program from the last good build: the game looks as if your edit did nothing.
 
 </Steps>
+
+## Getting a file back
+
+If an edit breaks the game and you cannot see why, put the file back as it was in the copy from
+step 1. Paste this line, but **before you press Enter, change the path** to the file you want
+back, starting `game\`, as [Typing the commands](/docs/get-started/prerequisites/#typing-the-commands)
+shows:
+
+```bat
+set "FILE=game\states\hello_state.cpp"
+```
+
+It prints nothing. Then, in your project's folder:
+
+```bat
+copy /y "%CD%-backup\%FILE%" "%FILE%" && copy /b "%FILE%" +,, "%FILE%"
+```
+
+It prints `1 file(s) copied.` twice. The first `copy` puts the file back. The second gives it
+the current time without changing what is in it. Without that, the file keeps the time it had
+when you made the copy, which is older than the build's own files, so the build would think
+nothing had changed and keep the broken program. If it prints
+`The system cannot find the file specified.` or `The system cannot find the path specified.`,
+the copy has no file at that path: check the `set` line's spelling, or that you made the copy
+in step 1. Nothing was changed. Then build, test and run as in step 5.
+
+To put the whole `game` folder back as it was in the copy, run this line. It deletes your
+`game` folder, files you added since the copy included, and copies the copy back in its place,
+but only if the copy is there:
+
+```bat
+if not exist "%CD%-backup\game\main.cpp" (echo There is no copy in %CD%-backup. Nothing was deleted.) else (rmdir /s /q game & xcopy "%CD%-backup\game" game /E /I /Q)
+```
+
+It prints a count such as `16 File(s) copied`, or `There is no copy in` and the folder it
+looked for, having changed nothing. Then configure and build everything again:
+
+```bat
+cmake --preset x64-debug
+cmake --build --preset x64-debug --clean-first
+```
+
+The configure reads `game\CMakeLists.txt` again, in case the copy lists other source files
+than the folder did. `--clean-first` deletes everything the build made and builds it all again,
+the engine too, for the same reason as the second `copy` above. The two took 17 seconds on a
+fast desktop. Then build, test and run as in step 5.
+
+**The file as it came in the starter project.** If you made the project from
+[the starter ZIP](/docs/get-started/starter/) and it is still in `C:\dev`, the ZIP holds every
+file as the project began. After the `set` line above, in your project's folder, this empties
+`C:\dev\original`, extracts that one file into it and copies it over yours:
+
+<StarterDownload part="original" />
+
+`tar` itself prints nothing when it works, and the `copy` line prints `1 file(s) copied.`
+twice. If `tar` says `Not found in archive`, the `set` line names a file the starter did not
+have. If `tar` says `Error opening archive`, or `copy` alone says
+`The system cannot find the path specified.`, the starter ZIP is not in `C:\dev`. In each of
+those cases your file was not changed.
+
+If your project is in Git, [Start your own project](/docs/get-started/your-project/) or
+[Put your project in Git](/docs/guides/starter-to-git/) made a commit of it, and this puts one
+file back as it was at your last commit, whether or not you have run `git add` since:
+
+```bat
+git restore --source=HEAD --staged --worktree game\states\hello_state.cpp
+```
+
+## What was checked
+
+On 30 October 2026, in a starter project made from a starter ZIP at `C:\dev\mygame`, with
+Visual Studio 2026's compiler 19.51, the edits above were made and the one-line build, test
+and run worked as shown. The failure output above was captured by deleting the greeting's closing
+quotation mark, and the same build with separate commands showed both tests passing on the
+old program. Each box on this page that copies or restores files was run, in the project's
+folder and, for the guarded lines, in the wrong folder and with no copy, where each printed its
+message and changed nothing. The build after each restore compiled the restored file again; a
+plain `copy` without the second line was also tried, and the build did not compile it again.
 
 ## Where to go next
 

@@ -23,11 +23,13 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
 1. **Go to your projects folder.** Open the x64 Native Tools Command Prompt and run:
 
    ```bat
+   if not exist C:\dev mkdir C:\dev
    cd /d C:\dev
    dir /b
    ```
 
-   The prompt now ends `C:\dev>`, and `dir /b` lists what is already in the folder, which may
+   The first line makes the folder `C:\dev` if it is not there yet, and prints nothing either
+   way. The prompt now ends `C:\dev>`, and `dir /b` lists what is already in the folder, which may
    be nothing, or `File Not Found`. If the list has `mygame` in it, you already have a project
    called `mygame`: extracting another starter here would overwrite its files with the
    starter's. Do step 2 to download the ZIP, then follow [A second project](#a-second-project)
@@ -124,6 +126,15 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    number with no line saying `FAILED`. Warnings are errors in this project, so a successful
    build has none.
 
+   If a line says `FAILED`, the build stopped there. The lines under it name the reason: skip
+   the long line that starts with the compiler's path, find the first line with `error` in it,
+   and look up its message in [Troubleshooting](/docs/troubleshooting/#building). On a first
+   build the usual ones are
+   [a folder too deep for the compiler](/docs/troubleshooting/#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument)
+   and [a 32-bit prompt](/docs/troubleshooting/#a-32-bit-prompt-x86-windows-hostx86-or-warning-c4309).
+   Do not go on to the next step until the build works: the tests and the game need the
+   program it makes.
+
 7. **Run the tests:**
 
    ```bat
@@ -145,7 +156,9 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    along the bottom. Move the point with the left stick of a gamepad, the arrow keys or WASD.
    Press **B** or **Escape** and the game asks whether you really want to quit; **A** or
    **Enter** quits, and **B** or **Escape** goes back. The prompt is ready for the next command
-   as soon as the window opens.
+   as soon as the window opens, but **quit the game before you build again**: a program that is
+   running cannot be replaced, and the build stops with
+   [`LNK1168`](/docs/troubleshooting/#lnk1168-cannot-open-gamemygameexe-for-writing).
 
    If the prompt answers `'out\build\x64-debug\game\MyGame.exe' is not recognized as an
    internal or external command, operable program or batch file.` or
