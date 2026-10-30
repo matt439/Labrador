@@ -610,8 +610,8 @@ include could not find requested file:
 ```
 
 `EMSDK` should be the part before `/upstream`. Run `emsdk_env.bat` in the same x64 Native Tools
-Command Prompt as CMake, check `echo %EMSDK%` and `emcc --version`, then delete the incomplete
-browser build folder and configure again. [Set EMSDK in your build prompt](/docs/guides/browser/#set-emsdk-in-your-build-prompt)
+Command Prompt as CMake, check `echo %EMSDK%` and `emcc --version`, then configure again; the
+half-made browser build folder does not need deleting. [Set EMSDK in your build prompt](/docs/guides/browser/#set-emsdk-in-your-build-prompt)
 has the commands. Address the missing toolchain before investigating the Ninja and compiler
 errors that follow it.
 
@@ -619,6 +619,46 @@ The same lines in Visual Studio's Output, after `CMake generation started for co
 'wasm-debug-wasm-debug'.`, mean its configuration box says `wasm-debug`: choose `x64-debug`
 there, as [Edit and debug in Visual Studio](/docs/get-started/debug-your-game/#the-output-says-cmake-error-and-upstreamemscripten)
 says. The browser build is built from the prompt.
+
+### Installing Emscripten: `'git'`, `'python'` or `'emsdk'` is not recognized
+
+`'git' is not recognized` comes from cloning emsdk without Git: download its ZIP with `curl`
+and `tar` instead, as [Install Emscripten](/docs/guides/browser/#install-emscripten) does.
+`'python' is not recognized`, or `Python was not found; run without arguments to install from the
+Microsoft Store`, from `emsdk install` means emsdk's first run found no Python: install it as
+that page's step 1 says and open a new prompt. `'emsdk' is not recognized` means the prompt is
+not in `C:\dev\emsdk`. Each of emsdk's own `error:` lines, a duplicate folder and a failed
+download are under [If something fails](/docs/guides/browser/#if-something-fails).
+
+### `PermissionError: [WinError 10013]` when serving the page
+
+Python's server could not use port 8000, because another program holds it. Use `8001` in the
+command and in the address. Started with `start`, the server's window closes at once instead:
+run the command without `start "MyGame server"` to see the message. A second Python server on a
+port one already uses starts with no error, and the first goes on answering;
+[Serve it and open it](/docs/guides/browser/#serve-it-and-open-it) has the commands.
+
+### `'"%EMSDK_PYTHON%"' is not recognized`, or `Windows cannot find '%EMSDK_PYTHON%'`
+
+The prompt has not run `emsdk_env.bat`, as in a new prompt or the next day; `"%EMSDK_NODE%"` gives
+the same from the page runner or the bundler. The second message is a box that `start` opens in
+place of the server's window: click **OK**. Run `C:\dev\emsdk\emsdk_env.bat` in this prompt and
+the command again, as [If something fails](/docs/guides/browser/#if-something-fails) says.
+
+### The page shows the old game after a rebuild
+
+F5 asks the server again only for the page, and the browser keeps the old `.js` and `.wasm`.
+Reload with **Ctrl+F5**. [Change it, rebuild and
+refresh](/docs/guides/browser/#change-it-rebuild-and-refresh) says what was measured.
+
+### `Error response`, `Error code: 404`, `Message: File not found.`
+
+The browser shows this when the server has no such file: it was started from another folder, so
+its `--directory` points at nothing, or the page is not built. Close the server, `cd /d
+C:\dev\mygame`, check `dir out\build\wasm-debug\game\MyGame.html`, and start it again. An older
+server still open on the same port gives it too, for the samples' pages as
+[Run the samples](/docs/guides/samples/#in-a-browser) says. A `404` for `favicon.ico` alone is
+harmless.
 
 ### The page stays at `Loading...` when opened from `file://`
 

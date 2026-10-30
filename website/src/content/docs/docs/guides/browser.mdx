@@ -1,96 +1,231 @@
 ---
 title: Build for the browser
-description: Build, test and serve your game with Emscripten, and give its browser module a canvas and the four page callbacks.
+description: Install Emscripten without Git, build your game as a web page, serve it, and change, rebuild and refresh it, step by step, with what each command prints, how long it takes and what each failure means; then the release page, its notices and the page's contract.
 sidebar:
-  order: 11
+  order: 0.988
 ---
 
 import { Code, Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
-import RepoLink from '~/components/RepoLink.astro';
 import { EMSDK_VERSION } from '~/lib/emscripten';
 
 The game you started from the [starter project](/docs/get-started/starter/) or
-[Start your own project](/docs/get-started/your-project/) builds for a
-browser as well as for Windows. The same states, rules and content are compiled to WebAssembly by
-Emscripten, the renderer draws through WebGL2, and the result is a web page. Nothing in your game's
-code changes: the browser build uses a second entry point, `main_web.cpp`, and a page,
-`web/shell.html`, both of which came with your copy of the minimal sample.
+[Start your own project](/docs/get-started/your-project/) builds for a browser as well as for
+Windows. The same states, rules and content are compiled to WebAssembly by **Emscripten**, the
+renderer draws through WebGL2, and the result is a web page you open in Chrome, Edge or Firefox.
+Nothing in your game's code changes: the browser build uses a second entry point,
+`main_web.cpp`, and a page, `web/shell.html`, both of which came with your project.
 
-This page adds the browser build to that project. You need the project as Get Started leaves it,
-and one more install. To then put the page on the internet for a friend to play,
-[Put your game on the web](/docs/guides/your-web-page/) continues from here.
+This page installs Emscripten, builds the page, serves it from your own machine and opens it,
+then changes the game and sees the change. The first time takes about 20 minutes, most of it
+the download; you need about **2.2 GB** of free disk, and no Git. To then put the page on the
+internet for a friend to play, [Put your game on the web](/docs/guides/your-web-page/)
+continues from here.
+
+You need the project as [Get the starter project](/docs/get-started/starter/) leaves it, in
+`C:\dev\mygame`, and the x64 Native Tools Command Prompt from
+[Install the tools](/docs/get-started/prerequisites/). Every command on this page runs in that
+prompt, one box at a time.
 
 ## Install Emscripten
 
 Labrador's browser build is built and tested with **Emscripten {EMSDK_VERSION}**, the version its
 CI pins. Install that version rather than the latest: the engine compiles with warnings as errors,
-and a newer compiler can warn about something the pinned one does not. Emscripten is installed
-with its own installer, `emsdk`, which needs Git and, the first time it runs, Python 3 on your
-`PATH`. Neither Visual Studio nor Git brings Python, and on a new Windows 11 machine `python` is a
-stub that offers the Microsoft Store rather than running anything, so check it first:
+and a newer compiler can warn about something the pinned one does not. Emscripten comes with its
+own installer, `emsdk`, which needs Python the first time it runs and then brings its own.
 
-```bat
-python --version
-```
+<Steps>
 
-If that does not print `Python 3` and a version, install Python from
-[python.org](https://www.python.org/downloads/windows/) or with
-`winget install Python.Python.3.13`, open a new prompt and check again. Then, in the x64 Native
-Tools Command Prompt:
+1. **Check that Python runs.** In the x64 Native Tools Command Prompt:
 
-<Code
-	lang="bat"
-	code={`cd C:\\dev
-git clone https://github.com/emscripten-core/emsdk.git
-cd emsdk
-emsdk install ${EMSDK_VERSION}
-emsdk activate ${EMSDK_VERSION}`}
-/>
+   ```bat
+   python --version
+   ```
 
-`emsdk install` downloads the compiler, and the Node and Python it runs on, into `C:\dev\emsdk`.
-From then on `emsdk` runs on its own Python rather than yours. Nothing is installed anywhere else,
-and deleting the folder uninstalls it.
+   If it prints `Python 3.10` or a later version, such as `Python 3.14.2`, go on to step 2.
+   emsdk refuses an older Python, such as `Python 3.9.13`: install a new one as below. Otherwise
+   it prints one of these:
+
+   - `'python' is not recognized as an internal or external command, operable program or batch
+     file.`: Python is not installed.
+   - `Python was not found; run without arguments to install from the Microsoft Store, or disable
+     this shortcut from Settings > Manage App Execution Aliases.`: Python is not installed, and
+     `python` is Windows' shortcut to the Microsoft Store. Typing `python` alone opens the Store.
+
+   Then install the **Python install manager**, which is what python.org now gives Windows: open
+   [its page in the Microsoft Store](https://apps.microsoft.com/detail/9NQ7512CXL7T) and click
+   **Install**, or run this in the prompt:
+
+   ```bat
+   winget install 9NQ7512CXL7T -e --accept-package-agreements --accept-source-agreements --disable-interactivity
+   ```
+
+   Close the prompt, open a new x64 Native Tools Command Prompt, and run `python --version`
+   again. With the install manager and no Python yet, Python's documentation says the first
+   `python` downloads and installs the latest Python before it answers, so it can take a while. If `python` still opens the
+   Store, open **Start**, type `Manage app execution aliases`, open it, and turn the **Python
+   (default)** entries off and on again, as Python's documentation says. Python's
+   [Using Python on Windows](https://docs.python.org/3/using/windows.html) has the other ways to
+   install it.
+
+2. **Download emsdk.** It is a ZIP of about 210 KB from GitHub, and Windows' own `curl` and
+   `tar` fetch and extract it, so you do not need Git or a browser:
+
+   <Code
+   	lang="bat"
+   	code={`if not exist C:\\dev mkdir C:\\dev
+   cd /d C:\\dev
+   curl.exe --fail --location --output emsdk.zip https://github.com/emscripten-core/emsdk/archive/refs/tags/${EMSDK_VERSION}.zip
+   tar -xf emsdk.zip
+   ren emsdk-${EMSDK_VERSION} emsdk
+   del emsdk.zip
+   dir /b emsdk\\emsdk.bat`}
+   />
+
+   `curl` shows a small table of progress and is done in a second; `tar`, `ren` and `del` print
+   nothing when they work. The ZIP holds one folder, `emsdk-` and the version, which `ren`
+   renames to `C:\dev\emsdk`. The last line checks it, and prints:
+
+   ```text title="Output"
+   emsdk.bat
+   ```
+
+   <Aside title="If you use Git">
+   `git clone https://github.com/emscripten-core/emsdk.git` in `C:\dev` makes the same
+   `C:\dev\emsdk` folder, about 4 MB, in two seconds. Emscripten's own instructions use it, and
+   say the ZIP works as well; the steps below are the same either way.
+   </Aside>
+
+3. **Install Emscripten {EMSDK_VERSION}.** This downloads the compiler, and the Node and Python it
+   runs on, about **770 MB**, and unpacks them to about **2.1 GB**, all inside `C:\dev\emsdk`:
+
+   <Code
+   	lang="bat"
+   	code={`cd /d C:\\dev\\emsdk
+   emsdk install ${EMSDK_VERSION}`}
+   />
+
+   It took a minute on the fast connection where this page was checked. On a 25 Mbit/s
+   connection the download alone takes about four minutes; leave it running. While each of the
+   three downloads runs, a line under its `Downloading:` line counts the bytes and the per cent,
+   such as `786432  [2.11%]`, and the `Unpacking` line then takes its place. It ends:
+
+   ```text title="Output"
+   Resolving SDK version '6.0.12' to 'sdk-releases-6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-64bit'
+   Installing SDK 'sdk-releases-6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-64bit'..
+   Installing tool 'node-24.19.0-64bit'..
+   Downloading: C:/dev/emsdk/downloads/node-v24.19.0-win-x64.zip from https://storage.googleapis.com/webassembly/emscripten-releases-builds/deps/node-v24.19.0-win-x64.zip, 37304352 Bytes
+   Unpacking 'C:/dev/emsdk/downloads/node-v24.19.0-win-x64.zip' to 'C:/dev/emsdk/node/24.19.0_64bit'
+   Done installing tool 'node-24.19.0-64bit'.
+   Installing tool 'python-3.13.3-64bit'..
+   Downloading: C:/dev/emsdk/downloads/python-3.13.3-0-win-amd64.zip from https://storage.googleapis.com/webassembly/emscripten-releases-builds/deps/python-3.13.3-0-win-amd64.zip, 29736374 Bytes
+   Unpacking 'C:/dev/emsdk/downloads/python-3.13.3-0-win-amd64.zip' to 'C:/dev/emsdk/python/3.13.3_64bit'
+   Done installing tool 'python-3.13.3-64bit'.
+   Installing tool 'releases-6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-64bit'..
+   Downloading: C:/dev/emsdk/downloads/6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-wasm-binaries.zip from https://storage.googleapis.com/webassembly/emscripten-releases-builds/win/6e9f6885cb17a3d6c8fd488a5cff730f50aba61d/wasm-binaries.zip, 700727317 Bytes
+   Unpacking 'C:/dev/emsdk/downloads/6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-wasm-binaries.zip' to 'C:/dev/emsdk/upstream'
+   Done installing tool 'releases-6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-64bit'.
+   Done installing SDK 'sdk-releases-6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-64bit'.
+   ```
+
+   The long numbers are the release's name inside Emscripten; they are the same on every
+   machine. If it stops with `error:` instead, see [If something fails](#if-something-fails).
+
+4. **Make it the version emsdk uses:**
+
+   <Code lang="bat" code={`emsdk activate ${EMSDK_VERSION}`} />
+
+   It takes a second or two and prints this, with the very long `PATH =` line shortened here:
+
+   ```text title="Output"
+   Resolving SDK version '6.0.12' to 'sdk-releases-6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-64bit'
+   Setting the following tools as active:
+      node-24.19.0-64bit
+      python-3.13.3-64bit
+      releases-6e9f6885cb17a3d6c8fd488a5cff730f50aba61d-64bit
+
+   Next steps:
+   - Consider running `emsdk activate` with --permanent or --system
+     to have emsdk settings available on startup.
+   Adding directories to PATH:
+   PATH += C:\dev\emsdk
+   PATH += C:\dev\emsdk\upstream\emscripten
+
+   Setting environment variables:
+   PATH = C:\dev\emsdk;C:\dev\emsdk\upstream\emscripten;C:\Program Files\Microsoft Visual Studio\18\Communit...
+   EMSDK = C:/dev/emsdk
+   EMSDK_NODE = C:\dev\emsdk\node\24.19.0_64bit\node.exe
+   EMSDK_PYTHON = C:\dev\emsdk\python\3.13.3_64bit\python.exe
+   Clearing existing environment variable: EMSDK_PY
+   The changes made to environment variables only apply to the currently running shell instance. Use the 'emsdk_env.bat' to re-enter this environment later, or if you'd like to register this environment permanently, rerun this command with the option --permanent.
+   ```
+
+   **Do not add `--permanent`.** It would put Emscripten's compiler, Node and Python in front of
+   every prompt on the machine, the Windows build's included. The next section sets them up in
+   the one prompt that needs them instead.
+
+</Steps>
+
+Nothing is installed outside `C:\dev\emsdk`, and from now on emsdk runs on its own Python, not
+the one from step 1. To uninstall Emscripten, delete the folder: `rmdir /s /q C:\dev\emsdk`.
 
 ### Set EMSDK in your build prompt
 
-The browser build needs two environments at once. The x64 Native Tools Command Prompt puts CMake
-and Ninja on your `PATH` and sets `VCPKG_ROOT`, which the browser build still uses, and
-Emscripten's `emsdk_env.bat` sets `EMSDK` and puts `emcc` on your `PATH`. Open the Native Tools
-prompt as before, then run Emscripten's script in it:
+The browser build needs two set-ups in one prompt. The x64 Native Tools Command Prompt puts
+CMake and Ninja on your `PATH` and sets `VCPKG_ROOT`, which the browser build still uses;
+Emscripten's `emsdk_env.bat` sets `EMSDK` and puts its compiler, `emcc`, on your `PATH`. Open the
+Native Tools prompt as always, then run Emscripten's script in it, and go to your project:
 
 ```bat
 C:\dev\emsdk\emsdk_env.bat
+cd /d C:\dev\mygame
 ```
 
-Do this every time you open a prompt for a browser build. The settings last until you close the
-prompt, and the Windows build is not affected by them. Check that it worked:
+**Do this in every new prompt you use for a browser build.** The settings last until you close
+the prompt, and do not change the Windows build. The script prints a screenful, which is normal;
+the `PATH =` line is very long, and is shortened here:
+
+```text title="Output"
+Setting up EMSDK environment (suppress these messages with EMSDK_QUIET=1)
+Adding directories to PATH:
+PATH += C:\dev\emsdk
+PATH += C:\dev\emsdk\upstream\emscripten
+
+Setting environment variables:
+PATH = C:\dev\emsdk;C:\dev\emsdk\upstream\emscripten;C:\Program Files\Microsoft Visual Studio\18\Communit...
+EMSDK = C:/dev/emsdk
+EMSDK_NODE = C:\dev\emsdk\node\24.19.0_64bit\node.exe
+EMSDK_PYTHON = C:\dev\emsdk\python\3.13.3_64bit\python.exe
+Clearing existing environment variable: EMSDK_PY
+```
+
+Run in the same prompt a second time, it prints only three lines: the first, `Setting environment
+variables:` and the last. It prints the same three lines the first time if you run it in the
+prompt where you have just run `emsdk activate`, because activate has already set everything.
+Check that it worked:
 
 ```bat
 echo %EMSDK%
 emcc --version
 ```
 
-The first should print `C:/dev/emsdk`, and the second should name {EMSDK_VERSION}.
-
-If you configure without `EMSDK` set, the preset cannot find Emscripten's toolchain file, and
-configure stops with:
-
-```text
-include could not find requested file:
-  /upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+```text title="Output"
+C:/dev/emsdk
+shared:INFO: (Emscripten: Running sanity checks)
+emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.12 (5488e0871d46d19a3209988190fa6a653126256f)
+Copyright (C) 2026 the Emscripten authors (see AUTHORS.txt)
+This is free and open source software under the MIT license.
+There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```
 
-The path starts at `/upstream` because `EMSDK`, which should come before it, is empty. Run
-`emsdk_env.bat` in that prompt, delete the build folder, and configure again.
+The `sanity checks` line appears only the first time `emcc` runs. If `echo %EMSDK%` prints
+`%EMSDK%`, the script has not run in this prompt.
 
-## Add a browser preset
+## Build the game as a page
 
-Add three configure presets to your `CMakePresets.json`: a hidden `wasm-base` and the two you
-use, `wasm-debug` and `wasm-release`. Add a build preset and a test preset for each of the two,
-as for the x64 ones. The project's
-[CMakePresets.json](/docs/get-started/your-project/) on the Get Started page already has them;
-these are its three wasm entries in the `configurePresets` array, as a fragment of it:
+Your `CMakePresets.json` already has two browser presets, `wasm-debug` and `wasm-release`, with
+a build and a test preset for each. They are its three `wasm` entries in the `configurePresets`
+array:
 
 <SourceFile
 	path="website/src/walkthrough/CMakePresets.json"
@@ -98,20 +233,15 @@ these are its three wasm entries in the `configurePresets` array, as a fragment 
 	to={'"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }'}
 />
 
-The toolchain is still vcpkg's, so vcpkg still installs the engine's dependencies.
+The toolchain is still vcpkg's, so vcpkg still installs the game's libraries.
 `VCPKG_CHAINLOAD_TOOLCHAIN_FILE` tells vcpkg to hand over to Emscripten's toolchain after it, and
-`VCPKG_TARGET_TRIPLET` builds those dependencies for WebAssembly instead of x64. The Windows-only
-packages in your `vcpkg.json`, DirectXTK and XAudio2, are skipped for this triplet.
+`VCPKG_TARGET_TRIPLET` builds those libraries for WebAssembly instead of x64. The Windows-only
+packages in your `vcpkg.json`, DirectXTK and XAudio2, are skipped for this triplet. In a browser
+build Labrador chooses the only renderer, audio and input that work there: OpenGL drawing through
+WebGL2, Web Audio, and the browser's Gamepad API.
 
-The preset does not name a renderer, an audio backend or an input backend. In a browser build
-Labrador chooses the only ones that work there: the OpenGL renderer, which draws through WebGL2,
-Web Audio, and the browser's Gamepad API. If a preset asks for a Direct3D or Vulkan renderer in a
-browser build, configure stops and says that it must be `gl` or `null`.
-
-## Build the game as a page
-
-The `game/CMakeLists.txt` from Get Started already has the browser half of the build. It is the
-`if(EMSCRIPTEN)` block, which a browser build reads in place of everything below it:
+`game/CMakeLists.txt` has the browser half of the build too. It is the `if(EMSCRIPTEN)` block,
+which a browser build reads in place of everything below it:
 
 <SourceFile path="website/src/walkthrough/game-CMakeLists.txt" from="if(EMSCRIPTEN)" to="endif()" />
 
@@ -128,19 +258,355 @@ The `game/CMakeLists.txt` from Get Started already has the browser half of the b
 - **The rules' tests run under Node**, which Emscripten's toolchain gives ctest. The start-up
   check is not in this branch, because it needs a command line and a page has none.
 
-Then configure, build and test it, in the prompt where you ran `emsdk_env.bat`:
+<Steps>
+
+1. **Configure the browser build**, in the prompt where you ran `emsdk_env.bat`, in
+   `C:\dev\mygame`. This is needed once:
+
+   ```bat
+   cmake --preset wasm-debug
+   ```
+
+   **The first browser configure can take a quarter of an hour**, sitting for minutes at
+   `Fetching registry information from https://github.com/microsoft/vcpkg (HEAD)...` or at
+   `Detecting compiler hash for triplet x64-windows...` with nothing else happening; leave it
+   running. Where this page was checked, the first configure took 860 seconds in one fresh
+   project, 297 in another and 11 in a third; later configures take seconds. vcpkg builds doctest, the tests' library, again for WebAssembly, and
+   prints its usual lines. The configure also prints this warning
+   three times, which does not matter, because the game uses no shared libraries:
+
+   ```text title="Output"
+   CMake Warning at C:/dev/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake:26 (message):
+     This version of cmake (4.3.1-msvc1) does not support emscripten shared
+     libraries.  Use cmake < 4.2.0 or cmake > 4.3.3 if you need shared library
+     support
+   ```
+
+   It ends:
+
+   ```text title="Output"
+   -- Configuring done (11.1s)
+   -- Generating done (0.1s)
+   -- Build files have been written to: C:/dev/mygame/out/build/wasm-debug
+   ```
+
+   The time on the `Configuring done` line is your own. If it stops with `include could not find requested file:`, `emsdk_env.bat` has not
+   run in this prompt: see [If something fails](#if-something-fails).
+
+2. **Build it and run its test:**
+
+   ```bat
+   cmake --build --preset wasm-debug && ctest --preset wasm-debug
+   ```
+
+   The first build compiles the engine with Emscripten's compiler, clang, in 92 steps, and took
+   9 seconds here; expect a minute or more on a slower machine. It ends as below, with the two
+   `Linking` lines in either order:
+
+   ```text title="Output"
+   [90/92] Building CXX object game/CMakeFiles/MyGameTests.dir/tests/motion_tests.cpp.o
+   [91/92] Linking CXX executable game\MyGameTests.js
+   [92/92] Linking CXX executable game\MyGame.html
+   Test project C:/dev/mygame/out/build/wasm-debug
+       Start 1: MyGameTests
+   1/1 Test #1: MyGameTests ......................   Passed    0.15 sec
+
+   100% tests passed, 0 tests failed out of 1
+
+   Total Test time (real) =   0.17 sec
+   ```
+
+   The page is three files in `out\build\wasm-debug\game`: `MyGame.html` (2 KB), `MyGame.js`
+   (270 KB) and `MyGame.wasm` (11 MB, a debug build; the release one below is under 400 KB). The
+   folder `out\build\wasm-debug` takes about 60 MB.
+
+   If the build ends `ninja: build stopped: subcommand failed.`, find the first `error:` line
+   above it. Clang's errors look a little different from Visual Studio's:
+   [In the browser build](/docs/get-started/build-errors/#in-the-browser-build) reads one. A test
+   failure looks as on Windows.
+
+</Steps>
+
+## Serve it and open it
+
+A browser will not run a WebAssembly module from a file opened by double-clicking: opened that
+way the page stays at `Loading...`. It has to come from a web server, and the Python that came
+with Emscripten has one. Start it in a window of its own, from the prompt in `C:\dev\mygame`:
 
 ```bat
-cmake --preset wasm-debug
-cmake --build --preset wasm-debug
-ctest --preset wasm-debug
+start "MyGame server" "%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory out\build\wasm-debug\game
 ```
 
-The first configure installs doctest again, built for WebAssembly; it is the only package the
-browser build needs, so this is quick. The browser build compiles with clang rather than
-Visual Studio's compiler, and its errors look different:
-[In the browser build](/docs/get-started/build-errors/#in-the-browser-build) reads one. ctest runs `MyGameTests` and reports `100% tests passed, 0 tests failed out of 1`. The page is
-`out\build\wasm-debug\game\MyGame.html`.
+A new window titled **MyGame server** opens and prints:
+
+```text title="Output"
+Serving HTTP on 127.0.0.1 port 8000 (http://127.0.0.1:8000/) ...
+```
+
+and your prompt is free for the next command. Leave that window open: the server runs until you
+close it. If the window closes at once, the server could not start; run the same command
+without `start "MyGame server"` to read why in your prompt, as in [If something
+fails](#if-something-fails). Now open **`http://127.0.0.1:8000/MyGame.html`** in Chrome, Edge or Firefox. The page
+shows the same greeting as the Windows build in a black box, with a line of help below it, and
+the same keys work once you click the game. The server's window prints a line for each file the
+browser asks for: `200` when it was sent, and on a later visit `304` when the browser's copy was
+still current:
+
+```text title="Output"
+127.0.0.1 - - [31/Oct/2026 04:12:31] "GET /MyGame.html HTTP/1.1" 200 -
+127.0.0.1 - - [31/Oct/2026 04:12:31] "GET /MyGame.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Oct/2026 04:12:31] "GET /MyGame.wasm HTTP/1.1" 200 -
+127.0.0.1 - - [31/Oct/2026 04:12:31] code 404, message File not found
+127.0.0.1 - - [31/Oct/2026 04:12:31] "GET /favicon.ico HTTP/1.1" 404 -
+```
+
+The `404` for `favicon.ico` is the browser asking for a tab icon the page does not have, and is
+harmless. Opened without `MyGame.html`, `http://127.0.0.1:8000/` shows *Directory listing for
+/*, the build folder's files; click `MyGame.html` there. Because of `--bind 127.0.0.1`, only this
+machine can reach the server. If a browser is ended abruptly, the window can print a
+`Traceback` ending `ConnectionResetError: [WinError 10054] An existing connection was forcibly
+closed by the remote host`; that is harmless, and the server goes on serving.
+
+Sound starts after your first key press or click on the page, which is a browser rule. To stop
+the server, close the **MyGame server** window, or click in it and press **Ctrl+C**, which prints
+`Keyboard interrupt received, exiting.`
+
+<Aside title="Without start">
+The same command without `start "MyGame server"` runs the server in this prompt, which then
+does nothing else until you press Ctrl+C. To build while it runs, open a second x64 Native Tools
+Command Prompt and run `C:\dev\emsdk\emsdk_env.bat` and `cd /d C:\dev\mygame` in it first.
+</Aside>
+
+## Change it, rebuild and refresh
+
+With the server still running, change the game as in
+[Make a first change](/docs/get-started/first-change/), for example the greeting in
+`game\states\hello_state.cpp`. Then, in the prompt:
+
+```bat
+cmake --build --preset wasm-debug && ctest --preset wasm-debug
+```
+
+A one-file change is three steps, compiling that file and linking the page, and took 8 seconds
+here. The server does not need restarting; it sends whatever is in the folder.
+
+**Then reload the page with Ctrl+F5, not F5.** The server does not tell the browser how long it
+may keep a file, so the browser guesses, and F5 asks the server again only for `MyGame.html`: it
+keeps the old `MyGame.js` and `MyGame.wasm` and runs the old game. The server's window shows it:
+after F5 only `GET /MyGame.html` appears, and after Ctrl+F5 all three files. When this page was
+checked, Chrome and Edge kept the old game through F5, a second F5 20 seconds later and opening the
+address again, and Ctrl+F5 loaded the new one. Ctrl+F5 is the full reload in Edge and Firefox
+too.
+
+### When you add a file
+
+The browser build has its own list of the game's `.cpp` files and its own list of the content
+files that make it link again:
+
+- **A new `.cpp` file** goes in both `add_executable(MyGame` lists in `game\CMakeLists.txt`, the
+  one inside `if(EMSCRIPTEN)` and the Windows one. Without it the Windows build works and this
+  one stops with `wasm-ld: error: ... undefined symbol`. [Add a screen to your
+  game](/docs/guides/your-screen/) does it step by step.
+- **A new content file**, such as a picture, a sound or a font, needs no copy line, because
+  `--embed-file` packs the whole `game\content` folder. It does need a line in the
+  `LINK_DEPENDS` list inside `if(EMSCRIPTEN)`, beside the `.spritefont` line. Without it, a change
+  to that file alone does not rebuild the page, and the page keeps the old picture or sound.
+  [Put a picture in your game](/docs/guides/your-picture/) gives the line.
+- **`web\shell.html`, `content\manifest.json` and the starter's font** are in that list already:
+  a change to any of them rebuilds the page.
+
+## Check the page loads and quits
+
+Labrador's page runner opens your page in a hidden browser, lets it draw, presses keys and
+checks that it quits with nothing in the console. It is the check CI runs on the starter
+project's page, and it takes about ten seconds. It needs the full path of Chrome or Edge; check
+that the one you have is there:
+
+```bat
+dir "C:\Program Files\Google\Chrome\Application\chrome.exe"
+dir "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+```
+
+Each prints the file's date and size if it is there, or `File Not Found`. Every Windows 11
+machine has Edge. Set `browser` to one that is there, Chrome:
+
+```bat
+set "browser=C:\Program Files\Google\Chrome\Application\chrome.exe"
+```
+
+or Edge:
+
+```bat
+set "browser=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+```
+
+Then, in the prompt where you ran `emsdk_env.bat`, in `C:\dev\mygame`:
+
+```bat
+"%EMSDK_NODE%" "external\labrador\tests\render\web\run_page.mjs" ^
+  --browser "%browser%" ^
+  --page out\build\wasm-debug\game\MyGame.html ^
+  --quit-keys Escape,Enter --timeout 60
+echo %errorlevel%
+```
+
+The runner starts its own web server and a browser with a temporary profile, and closes both
+when it finishes; it does not need the **MyGame server** window. It waits for the game to
+start, lets 60 frames draw, presses Escape and then Enter, and waits for the page's
+`Module.onQuit` callback. A pass, here with Edge, prints:
+
+```text title="Output"
+run_page: 60 animation frames
+run_page: pressed Escape
+run_page: pressed Enter
+run_page: Module.onQuit was called
+run_page: browser: Edg/156.0.4314.50 (DevTools 1.3, revision @af2ba23ae0ecf7084d900446fc59d5119dd5fd5e)
+run_page: WebGL2 renderer: ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)
+0
+```
+
+with your own browser's version and graphics card. **A pass is the `0` at the end.** A console
+error or warning, a failed assertion, an uncaught exception, a browser warning or error, or a call
+to `Module.onError` fails the run and prints the message, even if the page also quits; the last
+line is then `1`. A missing `Module.onQuit` fails, and a page that never starts or quits stops
+after the 60 seconds. If you change the game's quit keys, change `--quit-keys` to match: it
+takes `Escape`, `Enter`, `Space`, the four `Arrow` directions, and `KeyA` to `KeyZ`. This checks
+start-up and the quit path; it does not compare pictures or replace playing the game.
+
+To see a failure, add `console.error("deliberate page-check failure");` just after the opening
+`<script>` tag in the built `out\build\wasm-debug\game\MyGame.html` and run the same command: it
+prints that message and `1`. A build with no source change does not replace the file: it prints
+only `[1/1] Checking that no engine file includes a game header`, and the check fails again. To
+put it right, delete the page and build again:
+
+```bat
+del out\build\wasm-debug\game\MyGame.html
+cmake --build --preset wasm-debug
+```
+
+The build ends `[2/2] Linking CXX executable game\MyGame.html`, and the check passes again.
+
+## The release page
+
+`wasm-debug` is for trying the game: its module is large and slow to start. `wasm-release` is
+the one to give people. It builds the same way, into its own folder:
+
+```bat
+cmake --preset wasm-release
+cmake --build --preset wasm-release && ctest --preset wasm-release
+```
+
+Here the configure took 9 seconds and the build 10, again 92 steps, ending as in the debug build
+with `100% tests passed, 0 tests failed out of 1`. The page is in `out\build\wasm-release\game`:
+`MyGame.html` (1 KB), `MyGame.js` (117 KB) and `MyGame.wasm` (379 KB). Serve it as above with
+`out\build\wasm-release\game` in place of `out\build\wasm-debug\game`, after closing the first
+server, or with `8001` in place of `8000` in the command and the address.
+
+[Put your game on the web](/docs/guides/your-web-page/) builds, gathers and publishes the
+release with one script. The next section is what that script does, by hand.
+[Put your game on a web host](/docs/guides/web-host/) says what any host must send with the
+files.
+
+## Gather the browser release and its notices
+
+The template's build writes the page, script and module; it does not gather their notices.
+After building `wasm-release`, run this in `C:\dev\mygame`, in the prompt where you ran
+`emsdk_env.bat`. It uses Labrador's bundler and the Node that came with Emscripten; there is
+nothing else to install.
+
+First put Microsoft's licence for the engine's timer code in your game's `web` folder. The
+engine inside your project has a copy:
+
+```bat
+copy external\labrador\tools\web_bundle\Microsoft-LICENSE.txt game\web\
+```
+
+It prints `1 file(s) copied.` Keep the file with your game and reuse it for later releases. If
+it prints `The system cannot find the file specified.`, your engine is older than this file,
+such as the `v0.2.0` pin of the Git route; fetch the same text from this fixed upstream
+revision instead:
+
+```bat
+curl.exe --fail --location https://raw.githubusercontent.com/microsoft/DirectXTK/a0a1ab67d9d8f1a41b76c0950eb37f27d6bf355d/LICENSE --output game\web\Microsoft-LICENSE.txt
+```
+
+**The bundler empties `out\web-release` first.** Keep that folder for generated release files
+only; do not point `--out` at your project, source or build folder. Paste the whole box; each
+line ending `^` continues on the next, so a missed line or a space after a `^` breaks it:
+
+```bat
+set "engine=external\labrador"
+set "emscripten=%EMSDK%\upstream\emscripten"
+"%EMSDK_NODE%" "%engine%\tools\web_bundle\bundle.mjs" ^
+  --out out\web-release ^
+  --repository . ^
+  --emscripten "%emscripten%" ^
+  --build-type Release ^
+  --file "MyGame.html=out\build\wasm-release\game\MyGame.html" ^
+  --file "MyGame.js=out\build\wasm-release\game\MyGame.js" ^
+  --file "MyGame.wasm=out\build\wasm-release\game\MyGame.wasm" ^
+  --notice "%engine%\NOTICE" ^
+  --licence "Labrador=%engine%\LICENSE" ^
+  --licence "Microsoft sample code=game\web\Microsoft-LICENSE.txt" ^
+  --licence "RapidJSON=%engine%\external\rapidjson\license.txt" ^
+  --licence "JetBrains Mono=game\content\fonts\OFL.txt" ^
+  --licence "Emscripten=%emscripten%\LICENSE" ^
+  --licence "libc++=%emscripten%\system\lib\libcxx\LICENSE.TXT" ^
+  --licence "libc++abi=%emscripten%\system\lib\libcxxabi\LICENSE.TXT" ^
+  --licence "libunwind=%emscripten%\system\lib\libunwind\LICENSE.TXT" ^
+  --licence "compiler-rt=%emscripten%\system\lib\compiler-rt\LICENSE.TXT" ^
+  --licence "musl=%emscripten%\system\lib\libc\musl\COPYRIGHT"
+```
+
+It takes under a second and prints each file's size and its size compressed, roughly what a
+player downloads:
+
+```text title="Output"
+  MyGame.html      1193 bytes,     525 under Brotli
+  MyGame.js      119887 bytes,   27539 under Brotli
+  MyGame.wasm    388334 bytes,  120166 under Brotli
+  NOTICE.txt     102282 bytes,   12468 under Brotli
+  from unknown
+```
+
+The last line names your project's Git commit, or says `unknown` when it is not a Git
+repository, as a starter project is not. If it prints a block starting `node:fs` instead, read
+its `Error:` line: `ENOENT: no such file or directory, copyfile` and a path in
+`out\build\wasm-release` means the release is not built, so build it as in [The release
+page](#the-release-page); `open` and a path in `game\web` means the licence file is missing, so do
+the `copy` above.
+
+Upload all five files in `out\web-release`: `MyGame.html`, `MyGame.js`, `MyGame.wasm`,
+`NOTICE.txt` and `BUILD.json`. Keep a link to `NOTICE.txt` on your hosting page so players can
+read it. The notices cover the template's default WebGL2/Web Audio build:
+
+| Component | Where the notice comes from |
+| --- | --- |
+| Labrador, Microsoft's shared timer code and the collision routines adapted from *Real-Time Collision Detection* | The engine's `NOTICE` attribution record, its MIT `LICENSE`, and the preserved Microsoft MIT text |
+| RapidJSON | The vendored `license.txt` |
+| The template's JetBrains Mono atlas | The game's `content/fonts/OFL.txt`, in full even though it is also embedded with the atlas |
+| Emscripten's JavaScript runtime and system libraries | `LICENSE` in the same Emscripten install that built the module |
+| libc++, libc++abi, libunwind and compiler-rt | Their licence texts in that install's `system/lib`, including the LLVM Exceptions |
+| The musl-derived C library and dlmalloc | musl's `COPYRIGHT`; the engine's `NOTICE` also records dlmalloc's public-domain dedication |
+
+The generated `NOTICE.txt` starts with Labrador's third-party record and appends the full licence
+texts. Identical texts are written once, with each later component pointing to the first.
+`BUILD.json` records the project's Git commit and tracked dirty state, the supplied build type,
+the installed Emscripten version, and the files' sizes and hashes. A failed Git lookup is
+recorded as `unknown`; it still packages. Run this immediately after the release build:
+the record describes the checkout when packaging, and does not prove which
+sources or flags an older module used.
+
+Windows DLLs, DirectXTK, DirectXMath, XAudio2Redist and the MSVC runtime are absent from this
+browser release. The rules-test framework, doctest, is used only by the test program, and
+lodepng only by the engine's render tests. Neither test program is in the folder you upload.
+
+Your game's own code and content have their own terms. Add a `--licence "Your game=LICENSE"`
+argument if you have a licence file to include, and add the notices of any libraries or content
+you introduce. If you replace the font, change its licence argument too. If you change the
+allocator or toolchain, recheck its notice inputs against that build. Read the licence texts
+for their terms; the command assembles the template's inputs and does not choose your game's
+licence. Rebuild and rerun it when the engine pin, toolchain or content changes.
 
 ## The page, and what it owes the module
 
@@ -194,171 +660,243 @@ Reload the template's page to play again. An ES-module host such as LineSweeper'
 module instance and a fresh canvas for each game, then drops the old canvas after quit, so a
 finished instance can be collected.
 
-## Check the page loads and quits
+## If something fails
 
-Run Labrador's page runner by hand against your built page. From your project's root, in the
-prompt where you ran `emsdk_env.bat`, use Node from Emscripten and an installed Chrome or Edge:
+### Installing Emscripten
 
-```bat
-set "browser=C:\Program Files\Google\Chrome\Application\chrome.exe"
-"%EMSDK_NODE%" "external\labrador\tests\render\web\run_page.mjs" ^
-  --browser "%browser%" ^
-  --page out\build\wasm-debug\game\MyGame.html ^
-  --quit-keys Escape,Enter --timeout 60
-echo %errorlevel%
-```
+<Aside type="caution" title="'git' is not recognized as an internal or external command, operable program or batch file.">
+You ran `git clone` without Git installed. Use step 2's `curl` and `tar` lines instead, which
+need no Git.
+</Aside>
 
-Replace `browser` with your Chromium executable's path if it is elsewhere. The runner starts
-its own loopback HTTP server and a headless browser with a temporary profile, then closes both
-when it finishes. You do not need to start the Python server from the next section. The page,
-script, module and any other files the page fetches must be in the page's folder or below it.
+<Aside type="caution" title="'python' is not recognized as an internal or external command, operable program or batch file.">
+From `emsdk install`: emsdk's first run needs Python, and there is none on your `PATH`. Do step 1,
+open a new prompt, and run `cd /d C:\dev\emsdk` and `emsdk install` again. Once installed,
+Emscripten brings its own Python and `emsdk` no longer needs yours.
+</Aside>
 
-For the copied template, the runner waits for `Module.onRuntimeInitialized`, allows 60 animation
-frames, presses Escape and then Enter, and waits for the page's own `Module.onQuit` callback.
-**A pass prints `run_page: Module.onQuit was called` and exits 0.** It also waits a few frames
-after quit so a failure on the way out is caught. The command has a 60-second deadline for the
-whole run.
+<Aside type="caution" title="Python was not found; run without arguments to install from the Microsoft Store...">
+`python` is Windows' shortcut to the Store, not Python. Install Python as in step 1, then open a
+new prompt.
+</Aside>
 
-**A console error or warning, a failed assertion, an uncaught exception, a browser warning or
-error, or a call to `Module.onError` fails the run**, even if the page also quits. A missing
-`Module.onQuit` callback fails, and a page that never initializes or quits times out. Read the
-diagnostic and check the exit code; seeing the quit message alone does not prove a pass.
+<Aside type="caution" title="error: emsdk requires python 3.10 or above">
+From `emsdk install`, followed by the path and version of the Python it found: that Python is too
+old for emsdk. Install a current one as in step 1, open a new prompt, check that `python
+--version` prints `Python 3.10` or later, and run `cd /d C:\dev\emsdk` and `emsdk install` again.
+If it still prints the old version, the old Python comes first on your `PATH`: uninstall it in
+**Settings > Apps > Installed apps** and open a new prompt.
+</Aside>
 
-To check that you can detect a failure, temporarily add
-`console.error("deliberate page-check failure");` just after the opening `<script>` tag in the
-built `MyGame.html` and run the same command. It must print that message and exit with a nonzero
-code. Remove the line afterwards; rebuilding the page also replaces that generated HTML.
+<Aside type="caution" title="curl: (6) Could not resolve host: github.com">
+No internet connection, or a network that blocks GitHub. Connect and run step 2's box again.
+`curl: (22) The requested URL returned error: 404` instead means the address in the box was
+changed: paste the box again as it is.
+</Aside>
 
-The template exposes a global `Module` object with the callbacks the runner observes. Keep that
-shape for this command, and change `--quit-keys` to your own game's keyboard quit sequence if you
-change it. The supported codes are `Escape`, `Enter`, `Space`, the four `Arrow` directions, and
-`KeyA` through `KeyZ`. This checks startup and the quit path; it does not compare rendered pixels
-or replace playing the game. The runner remains Labrador's repository tool and is not added to
-your project's CMake or ctest entries.
+<Aside type="caution" title="A duplicate file name exists, or the file cannot be found.">
+From `ren`: there is already a `C:\dev\emsdk`, from an earlier try. If that earlier try
+finished, use it and skip to step 3. Otherwise delete both folders and do step 2 again:
+`rmdir /s /q C:\dev\emsdk` and <code>rmdir /s /q C:\dev\emsdk-{EMSDK_VERSION}</code>. With Git, the same mistake
+gives `fatal: destination path 'emsdk' already exists and is not an empty directory.`
+</Aside>
 
-## Serve it and open it
+<Aside type="caution" title="tar: Error opening archive: Failed to open 'emsdk.zip'">
+The download did not happen, or the prompt is not in `C:\dev`. Run step 2's box again from its
+first line, and read `curl`'s output.
+</Aside>
 
-A browser will not run a WebAssembly module opened from `file://`, so serve the folder over HTTP.
-Emscripten came with a Python, which can do it:
+<Aside type="caution" title="'emsdk' is not recognized as an internal or external command, operable program or batch file.">
+The prompt is not in `C:\dev\emsdk`. Run `cd /d C:\dev\emsdk` first; the prompt then ends
+`C:\dev\emsdk>`.
+</Aside>
 
-```bat
-"%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory out\build\wasm-debug\game
-```
+<Aside type="caution" title="error: tool or SDK not found: '6.0.99'">
+The version was mistyped. It must be {EMSDK_VERSION} exactly, as in step 3's box.
+</Aside>
 
-Then open `http://127.0.0.1:8000/MyGame.html` in Chrome, Edge or Firefox. You should see the same
-greeting as the Windows build, and the same keys work. Press Ctrl+C in the prompt to stop the
-server.
+<Aside type="caution" title="Error: Downloading URL '...': <urlopen error ...> and error: installation failed!">
+The download stopped: the connection dropped, or a firewall, proxy or antivirus blocked it. Here
+it was `[WinError 10061] No connection could be made because the target machine actively refused
+it`, through a proxy that was not there. Check the connection and run `emsdk install` again. If it fails the same way twice, delete the folder with
+`rmdir /s /q C:\dev\emsdk` and start again from step 2.
+</Aside>
 
-For a page to put on a site, build `wasm-release` the same way. Its page is
-`out\build\wasm-release\game\MyGame.html`. Gather its release files and notices as below before
-uploading. [Put your game on a web host](/docs/guides/web-host/) says what the host must send with
-them, and [Put your game on the web](/docs/guides/your-web-page/) does all of it step by step with
-GitHub Pages, from a script that builds the release, gathers it and names the page `index.html`.
+<Aside type="caution" title="error: error: tool is not installed and therefore cannot be activated: 'node-24.19.0-64bit'">
+`emsdk activate` ran before `emsdk install` finished. Run step 3 again, then step 4.
+</Aside>
 
-## Gather the browser release and its notices
+### Building and serving
 
-The template's build writes the page, script and module; it does not gather their notices.
-After building `wasm-release`, run this from your project's root in the same Native Tools prompt
-where you ran `emsdk_env.bat`. It uses Labrador's existing bundler and Node from Emscripten;
-there is nothing else to install.
+<Aside type="caution" title="include could not find requested file: /upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake">
+From `cmake --preset wasm-debug`: this prompt has not run `emsdk_env.bat`, so `EMSDK`, which
+should come before `/upstream`, is empty. Run `C:\dev\emsdk\emsdk_env.bat` in it and configure
+again; the half-made build folder does not need deleting.
+</Aside>
 
-First put Microsoft's sample-code licence in your game's `web` folder, unchanged. Windows'
-`curl.exe` can fetch this fixed upstream revision:
+<Aside type="caution" title={`'"%EMSDK_PYTHON%"' is not recognized as an internal or external command, operable program or batch file.`}>
+From the server command typed without `start`, or with `"%EMSDK_NODE%"` from the page runner or
+the bundler: this prompt has not run `emsdk_env.bat`, as in a new prompt or the next day. With
+`start`, no server window opens; a box titled `%EMSDK_PYTHON%` says `Windows cannot find
+'%EMSDK_PYTHON%'. Make sure you typed the name correctly, and then try again.` Click **OK**, run
+`C:\dev\emsdk\emsdk_env.bat` in this prompt, and run the command again.
+</Aside>
 
-```bat
-curl.exe --fail --location https://raw.githubusercontent.com/microsoft/DirectXTK/a0a1ab67d9d8f1a41b76c0950eb37f27d6bf355d/LICENSE --output game\web\Microsoft-LICENSE.txt
-```
+<Aside type="caution" title="The system cannot find the path specified.">
+After `C:\dev\emsdk\emsdk_env.bat`: there is no Emscripten at `C:\dev\emsdk`: do [Install Emscripten](#install-emscripten). If you
+put it somewhere else, use that folder's `emsdk_env.bat`.
+</Aside>
 
-Check that the command succeeds before continuing. Keep the file with your game and reuse it
-for later releases. This also works with the `v0.2.0` engine pin from Get Started; newer engine
-trees carry the same file at `tools/web_bundle/Microsoft-LICENSE.txt`, which you can copy instead.
+<Aside type="caution" title="'cmake' is not recognized as an internal or external command, operable program or batch file.">
+The prompt is a plain Command Prompt, not the x64 Native Tools Command Prompt. Open that one, then
+run `emsdk_env.bat` and `cd /d C:\dev\mygame` in it again.
+</Aside>
 
-**The bundler empties `out\web-release` first.** Keep that folder for generated release files
-only; do not point `--out` at your project, source or build folder.
+<Aside type="caution" title="PermissionError: [WinError 10013] An attempt was made to access a socket in a way forbidden by its access permissions">
+At the end of a long `Traceback`, from the server command run without `start`; with `start`, the
+**MyGame server** window just closes at once. Port 8000 is taken by another program. Use another port, such as 8001, in the
+command and in the address: `--directory` stays the same, `8000` becomes `8001`, and the page is
+`http://127.0.0.1:8001/MyGame.html`.
+</Aside>
 
-```bat
-set "engine=external\labrador"
-set "emscripten=%EMSDK%\upstream\emscripten"
-"%EMSDK_NODE%" "%engine%\tools\web_bundle\bundle.mjs" ^
-  --out out\web-release ^
-  --repository . ^
-  --emscripten "%emscripten%" ^
-  --build-type Release ^
-  --file "MyGame.html=out\build\wasm-release\game\MyGame.html" ^
-  --file "MyGame.js=out\build\wasm-release\game\MyGame.js" ^
-  --file "MyGame.wasm=out\build\wasm-release\game\MyGame.wasm" ^
-  --notice "%engine%\NOTICE" ^
-  --licence "Labrador=%engine%\LICENSE" ^
-  --licence "Microsoft sample code=game\web\Microsoft-LICENSE.txt" ^
-  --licence "RapidJSON=%engine%\external\rapidjson\license.txt" ^
-  --licence "JetBrains Mono=game\content\fonts\OFL.txt" ^
-  --licence "Emscripten=%emscripten%\LICENSE" ^
-  --licence "libc++=%emscripten%\system\lib\libcxx\LICENSE.TXT" ^
-  --licence "libc++abi=%emscripten%\system\lib\libcxxabi\LICENSE.TXT" ^
-  --licence "libunwind=%emscripten%\system\lib\libunwind\LICENSE.TXT" ^
-  --licence "compiler-rt=%emscripten%\system\lib\compiler-rt\LICENSE.TXT" ^
-  --licence "musl=%emscripten%\system\lib\libc\musl\COPYRIGHT"
-```
+<Aside type="caution" title="Error response: Error code: 404, Message: File not found.">
+The browser shows this for `MyGame.html`, and the server's window prints `code 404, message File
+not found`: the server is serving the wrong folder, because the prompt was not in
+`C:\dev\mygame` when you started it, or `wasm-debug` is not built. Close the server's window,
+run `cd /d C:\dev\mygame`, check that `dir out\build\wasm-debug\game\MyGame.html` lists the file,
+and start the server again.
+</Aside>
 
-Upload all five files in `out\web-release`: `MyGame.html`, `MyGame.js`, `MyGame.wasm`,
-`NOTICE.txt` and `BUILD.json`. Keep a link to `NOTICE.txt` on your hosting page so players can
-read it. The notices cover the template's default WebGL2/Web Audio build:
+<Aside type="caution" title="The page shows an old version, or not the folder you served">
+After a rebuild: reload with **Ctrl+F5**, as in [Change it, rebuild and
+refresh](#change-it-rebuild-and-refresh). If it is still old, an older server may be answering:
+a second server started on a port that one already uses prints `Serving HTTP` with no error,
+and the first goes on answering, from whatever folder it serves. Close every server window,
+start one, and press Ctrl+F5.
+</Aside>
 
-| Component | Where the notice comes from |
-| --- | --- |
-| Labrador, Microsoft's shared timer code and the collision routines adapted from *Real-Time Collision Detection* | The engine's `NOTICE` attribution record, its MIT `LICENSE`, and the preserved Microsoft MIT text |
-| RapidJSON | The vendored `license.txt` |
-| The template's JetBrains Mono atlas | The game's `content/fonts/OFL.txt`, in full even though it is also embedded with the atlas |
-| Emscripten's JavaScript runtime and system libraries | `LICENSE` in the same Emscripten install that built the module |
-| libc++, libc++abi, libunwind and compiler-rt | Their licence texts in that install's `system/lib`, including the LLVM Exceptions |
-| The musl-derived C library and dlmalloc | musl's `COPYRIGHT`; the engine's `NOTICE` also records dlmalloc's public-domain dedication |
+<Aside type="caution" title="The page stays at Loading...">
+The address starts `file://`: the page was opened from Explorer. Open it from the server, at
+`http://127.0.0.1:8000/MyGame.html`. Otherwise press **F12** and read the **Console**: the first
+red line that is not about `favicon.ico` says what failed. [Troubleshooting](/docs/troubleshooting/#browser-builds) lists the
+browser messages.
+</Aside>
 
-The generated `NOTICE.txt` starts with Labrador's third-party record and appends the full licence
-texts. Identical texts are written once, with each later component pointing to the first.
-`BUILD.json` records the project's Git commit and tracked dirty state, the supplied build type,
-the installed Emscripten version, and the files' sizes and hashes. A failed Git lookup is
-recorded as `unknown`; it still packages. Run this immediately after the release build:
-the record describes the checkout when packaging, and does not prove which
-sources or flags an older module used.
+<Aside type="caution" title="run_page: spawn C:\Program Files\Google\Chrome\Application\chrom.exe ENOENT">
+From the page runner, with `run_page: browser: unknown (DevTools did not answer)` among the other
+lines and `1` at the end: there is no browser at the path in `browser`. Check it with `dir "%browser%"`,
+and set it again from [Check the page loads and quits](#check-the-page-loads-and-quits).
+</Aside>
 
-Windows DLLs, DirectXTK, DirectXMath, XAudio2Redist and the MSVC runtime are absent from this
-browser release. The rules-test framework, doctest, is used only by the test program, and
-lodepng only by the engine's render tests. Neither test program is in the folder you upload.
+<Aside type="caution" title="run_page: <your page> did not finish within 60 s">
+After a minute, naming the file given to `--page`, often with `run_page: browser error: Failed to
+load resource: the server responded with a status of 404`: the `--page` path is wrong, or the page never started or never
+quit. Check the path with `dir out\build\wasm-debug\game\MyGame.html`, and that the prompt is in
+`C:\dev\mygame`.
+</Aside>
 
-Your game's own code and content have their own terms. Add a `--licence "Your game=LICENSE"`
-argument if you have a licence file to include, and add the notices of any libraries or content
-you introduce. If you replace the font, change its licence argument too. If you change the
-allocator or toolchain, recheck its notice inputs against that build. Read the licence texts
-for their terms; the command assembles the template's inputs and does not choose your game's
-licence. Rebuild and rerun it when the engine pin, toolchain or content changes.
-
-## What has and has not been checked
-
-On 25 October 2026 this page was followed on Windows 11: Emscripten {EMSDK_VERSION} installed into
-an empty folder by the commands above, on a machine that already had Python 3 on its `PATH`, and
-the project from Get Started configured with it, built under both presets, its test run under Node, and its page served and loaded in headless Chrome,
-which drew the greeting, took Escape and Enter, and quit with nothing in the console. Installing
-Python first, on a machine or account without it, has not been followed. CI's `wasm-consumer` job builds that
-project's `wasm-release` page and loads it the same way on every pull request to Labrador.
-
-On 28 October 2026 the release command above was followed from a fresh copy of that project,
-built with Emscripten {EMSDK_VERSION}. The staged page drew and quit on Escape and Enter in
-headless Chrome. Its five-file release set, licence texts and recorded file hashes were checked;
-this was a local packaging check, with no upload.
-
-On 28 October 2026 the page-runner command was checked against a copy of that project's built
-minimal page in a separate temporary folder, using Emscripten's Node and headless Chrome. The
-unchanged page reached `Module.onQuit` and exited 0. With the deliberate `console.error` line
-above added to the copied HTML, the same command reported the diagnostic and exited 1. The
-original project's page was unchanged.
-
-The browser build has been checked in desktop Chrome and, for LineSweeper's page, Firefox. It has
-not been checked in Safari, on a phone, with a real touchscreen or with a physical gamepad.
-[Platform support](/why/#platform-support) says where each of those stands; say the same on your
-own page until you have checked them yourself.
+A build error in your own code is the same as on Windows, in clang's words:
+[Read a build error](/docs/get-started/build-errors/#in-the-browser-build).
+[Troubleshooting](/docs/troubleshooting/#browser-builds) lists this page's messages too.
 
 <Aside title="The Windows build is unchanged">
 The browser presets build into their own folders under `out\build`, so the Windows build and its
 two tests are exactly as before. [Check your game in CI](/docs/guides/ci/) builds only the Windows
 preset.
 </Aside>
+
+## What players need
+
+A current Chrome, Edge, Firefox or Safari with WebGL2, on a computer. The browser build has been
+checked in desktop Chrome and Edge and, for LineSweeper's page, Firefox. It has not been checked
+in Safari, on a phone, with a real touchscreen or with a physical gamepad.
+[Platform support](/why/#platform-support) says where each of those stands; say the same on your
+own page until you have checked them yourself.
+
+## What was checked
+
+On 2026-10-31, in a starter project made from a starter ZIP of this tree at
+`C:\dev\g10-author\mygame`, on Windows 11 with Visual Studio 2026's CMake 4.3.1, every step on
+this page was run as worded with `C:\dev\g10-author` in place of `C:\dev`, and the output above is
+from those runs with the folder changed back. Every Git folder was removed from the prompt's
+`PATH` for the install and the builds, so `where git` found nothing. The machine already had
+Python 3.14.2, through the Python install manager, so installing Python and **Manage app
+execution aliases** are written from Python's *Using Python on Windows* and were not followed,
+and the Store shortcut's `Python was not found` message, which Windows prints, was not reproduced
+here. The emsdk ZIP was 212,350 bytes, and `emsdk install` fetched 767,768,043
+bytes in three downloads and took 66 seconds on a fast connection; the four-minute figure is that
+size at 25 Mbit/s, not a measurement. The folder then took 2.12 GB. Emscripten's own page,
+*Download and install*, says Git is needed only for development branches and that the ZIP from
+GitHub works; `git clone` took 2 seconds and made a 4.3 MB folder.
+
+The first `wasm-debug` configure ran with an empty vcpkg binary cache, so vcpkg built doctest for
+WebAssembly; its sources and vcpkg's list of packages were already on the machine, which is why
+the page allows for a fetch of several minutes. The configure took 11 seconds, the build of 92
+steps 9 and the test 0.2; `wasm-release` took 9 and 10. A rebuild after changing the greeting was
+three steps. These are a fast desktop's times, not the low tier's.
+
+The server was started with Emscripten's Python 3.13.3 by the `start` line, which opened a
+Windows Terminal window titled **MyGame server**; it served `MyGame.wasm` as `application/wasm`
+and printed the request lines above when headless Chrome 156 loaded the page, which drew the
+greeting. Closing it was done by ending its process, which closed the window; the Ctrl+C line was
+seen by [Put your game on the web](/docs/guides/your-web-page/#what-was-checked). The refresh
+behaviour was measured over Chrome's DevTools protocol with a persistent profile, the server
+running and the build changing the greeting between loads. Built and loaded at once, F5 kept the
+old `.js` and `.wasm` for about a tenth of the time since the build, then fetched them; with the
+build's files dated a day earlier, as when you come back to a page built yesterday, F5, a second
+F5 20 seconds later and opening the address again all showed the old greeting, the server's log
+showing only `MyGame.html`, and Ctrl+F5, sent as a reload that ignores the cache, showed the new
+one. Edge 156 did the same in the same test. Firefox was not tried; Ctrl+F5 is its documented
+full reload.
+
+The failures were made on purpose: `git clone` with no Git, `python` hidden from `PATH`, a second
+`ren` onto an existing folder, `tar` with no ZIP, a mistyped version, a download through a proxy
+that was not there, `activate` before `install`, configuring without `emsdk_env.bat`, port 8000
+held by another program, which gave `WinError 10013`, a second Python server on the same port,
+which started without an error while the first went on answering, the server started from the
+wrong folder, the page opened from `file://`, which stayed at `Loading...` with
+`Aborted(both async and sync fetching of the wasm failed)` in the console, a misspelt browser
+path and a misspelt page for the runner, and the bundler with no release build and with no
+licence file. `curl` was given a host that does not exist, which printed `curl: (6) Could not
+resolve host:` and the host, and a tag that does not exist, which printed the `404`; a machine
+with no connection was not tried. The `copy` of the licence ran; its `curl` fallback for an
+older engine did not. The page runner passed with Chrome 156 and Edge 156. Safari, a phone and a slow machine
+were not used.
+
+The same day the page was followed again as worded, in a second fresh starter at
+`C:\dev\g10-follow\mygame` with Git hidden from `PATH`. There `emsdk install` took 78 seconds and
+left 2,120,288,634 bytes, and the first `wasm-debug` configure took 297 seconds, with vcpkg's
+packages restored from its binary cache; the other outputs matched. That run found what this page
+then corrected: the middle of `emsdk activate`'s output, captured with Python unbuffered so the
+lines come in a console's order; the three lines `emsdk_env.bat` prints after activate in the
+same prompt; the first configure's time and the `Detecting compiler hash` line; `304` and the
+harmless `ConnectionResetError` in the server's window, the second seen only when headless Chrome
+was ended by force; the `%EMSDK_PYTHON%` message and its `start` dialog in a prompt without
+`emsdk_env.bat`; and the deliberate page-check failure, which an ordinary build does not undo.
+`--accept-source-agreements` was added to the `winget` line because `--disable-interactivity`
+cannot answer msstore's terms; it is in `winget install --help`, but no `winget install` ran.
+Configuring again after `emsdk_env.bat` worked without deleting the build folder, in 5 seconds.
+After the corrections, a third fresh starter at `C:\dev\g10-fixer\mygame` reran `emsdk activate`
+and `emsdk_env.bat` in one prompt, the deliberate failure, the build that left it, and the delete
+and build that removed it, the server and runner lines without `emsdk_env.bat`, and a request
+that drew `304`; each printed what this page shows. Its first configure took 8 seconds, and its
+two `Linking` lines came in the other order. The `start` dialog was seen only in the second run.
+
+A review the same day, in a fourth fresh starter at `C:\dev\g10-reviewer\mygame`, downloaded the
+tag ZIP and ran `emsdk install` and `emsdk activate` with Git hidden from `PATH`; the install took
+3 minutes 15 seconds on that connection, and printed what this page shows. Its first `wasm-debug`
+configure took 860 seconds, nearly all of it at `Fetching registry information`, while vcpkg's
+fetch of its registry sat idle; nothing was pressed, and it finished on its own. The build, its
+sizes, the no-change build's one line, the `wasm-release` sizes, the bundler's output, a page
+runner pass with Chrome 156, `WinError 10013` with the port held by another program, a second
+server starting silently while the first answered, and configuring again after a configure
+without `emsdk_env.bat` all matched the page. The review found that emsdk {EMSDK_VERSION} refuses
+Python older than 3.10, where the page had said 3.8; the refusal's message is quoted from
+`emsdk.py`, since no older Python was run.
+
+Earlier, on 25 October 2026, this page's procedure was followed with Emscripten installed by
+`git clone`, the project configured, built under both presets, tested under Node and its page
+loaded in headless Chrome; on 28 October the release command was followed from a fresh copy of
+that project and its five files, licences and hashes checked, with no upload. CI's
+`wasm-consumer` job builds the starter project's `wasm-release` page and loads it the same way on
+every pull request to Labrador.

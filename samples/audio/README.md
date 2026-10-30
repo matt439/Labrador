@@ -62,17 +62,22 @@ page, `AudioSample.html`, beside its `.js` and `.wasm`, playing through the
 engine's Web Audio backend. `main_web.cpp` is the browser's entry point and
 `web/shell.html` the development page; the manifest, the bank and the font are
 embedded in the module at the paths the Windows build copies them to. In a
-shell where vcvars and `emsdk_env.bat` have both run:
+shell where vcvars and `emsdk_env.bat` have both run, from the engine's folder
+([Install Emscripten](https://labradorengine.com/docs/guides/browser/#install-emscripten)
+sets it up, and
+[Run the samples](https://labradorengine.com/docs/guides/samples/#in-a-browser)
+says what each step prints):
 
 ```bat
 cmake --preset wasm-debug
 cmake --build --preset wasm-debug --target AudioSample AudioSampleTests
 ctest --preset wasm-debug -R "^AudioSampleTests$" --output-on-failure
-python -m http.server --directory out\build\wasm-debug\samples\audio
+start "Sample server" "%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory out\build\wasm-debug\samples\audio
 ```
 
-Then open `AudioSample.html` from that server, because a browser will not
-compile a module read from `file://`. The controls are the table above.
+Then open `http://127.0.0.1:8000/AudioSample.html` from that server, because
+a browser will not compile a module read from `file://`, and reload it with
+Ctrl+F5 after a rebuild. The controls are the table above.
 **Nothing sounds until the page receives a key press, click or touch that
 grants user activation; Escape does not count.** The backend unlocks audio
 inside that event, and the key that does it is still read by the sample, so a

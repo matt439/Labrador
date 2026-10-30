@@ -26,7 +26,17 @@ working directory. Resize the window and the camera fits the same arena into it.
 It also runs in a browser. Under the `wasm-debug` or `wasm-release` preset the
 same build produces `CollisionSample.html` beside its `.js` and `.wasm` in
 `out/build/<preset>/samples/collision/`, with the manifest and font packed
-into the module. Serve that folder over HTTP and open the page.
+into the module. Serve that folder over HTTP and open the page; from the
+engine's folder, in a prompt where `emsdk_env.bat` has run:
+
+```bat
+start "Sample server" "%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory out\build\wasm-debug\samples\collision
+```
+
+then open `http://127.0.0.1:8000/CollisionSample.html`, and reload with
+Ctrl+F5 after a rebuild.
+[Build for the browser](https://labradorengine.com/docs/guides/browser/)
+installs Emscripten and says what each step prints.
 `main_web.cpp` is its entry point and `web/shell.html` its page; the state
 both entry points run is `collision_state.cpp`. The page has no smoke test or
 capture, which need a command line and WIC, and `CollisionSampleTests` runs
