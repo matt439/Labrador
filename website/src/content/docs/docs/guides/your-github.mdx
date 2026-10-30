@@ -1,0 +1,459 @@
+---
+title: Put your project on GitHub
+description: Make a GitHub account and a repository, connect your starter project to it, push it with the browser sign-in, and read the CI run that builds and tests it, step by step, with what each failure means.
+sidebar:
+  order: 0.985
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+GitHub keeps a copy of your project on the internet. With it you can get your work back if your
+machine fails, share the code, and have GitHub build and test the game every time you send it a
+change: the starter project already has the instructions for that, in
+`.github\workflows\ci.yml`. This page takes the project from
+[Get the starter project](/docs/get-started/starter/) from your machine to GitHub and reads the
+first build GitHub runs. It takes about 20 minutes, most of it making the account and waiting for
+the first build.
+
+You need **Git**: step 2 of [Install the tools](/docs/get-started/prerequisites/#install-git) installs
+it, and step 5 there, [Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are),
+gives it your name and an email address. Do both first if the starter page let you skip them.
+Check Git in the x64 Native Tools Command Prompt:
+
+```bat
+git --version
+```
+
+It prints a version, such as `git version 2.52.0.windows.1`. If it says `'git' is not
+recognized`, Git is not installed, or was installed after this prompt opened: open a new prompt
+and try again.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Aside title="What is public">
+A **public** repository can be read by anyone, along with its whole history, including the name
+and email address in every commit. A **private** one only by you and the people you invite.
+Step 4 makes the choice, and you can change it later in the repository's settings. If you will
+make it public, consider giving Git the private address GitHub makes for you instead of your own:
+on GitHub, click your picture at the top right, then **Settings**, then **Emails**, tick **Keep my
+email addresses private**, and use the address ending `users.noreply.github.com` that it shows in
+[Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are)'s second line.
+</Aside>
+
+<Steps>
+
+1. **Make a GitHub account**, if you do not have one. It is free. Open
+   [github.com/signup](https://github.com/signup) in your browser and follow the prompts: an email
+   address, a password and a **username**. Choose the username with care: it is in the address of
+   everything you put on GitHub, such as `https://github.com/your-name/mygame`, and these pages
+   write it as `your-name`. During sign-up GitHub asks you to verify the email address, with a
+   message it sends there. **Continue with Google** on the same page signs up with a Google account
+   instead.
+
+2. **Make your project a Git repository.** If you have already done
+   [Put your project in Git](/docs/guides/starter-to-git/), skip to step 3. Otherwise, these three
+   lines record every file of the project, the engine's included, as the first *commit*, the first
+   saved version in its history:
+
+   ```bat
+   git init
+   git add .
+   git commit -m "Start my game from Labrador's starter project"
+   ```
+
+   `git init` answers `Initialized empty Git repository in C:/dev/mygame/.git/`, and may add a few
+   lines of hints about the name of the first branch, which you can ignore. `git add .` takes about
+   five seconds and prints about 175 warnings like this one, which are harmless:
+
+   ```text title="Output"
+   warning: in the working copy of 'external/labrador/TODO.md', LF will be replaced by CRLF the next time Git touches it
+   ```
+
+   They say only that Git will store the file's line ends in its own way. `git commit` then prints
+   one `create mode` line for each file and starts with:
+
+   ```text title="Output"
+   [master (root-commit) 618880c] Start my game from Labrador's starter project
+    1125 files changed, 306730 insertions(+)
+   ```
+
+   Your seven characters after `root-commit` differ, and the counts depend on the engine's version
+   and grow with your game. The build folder, `out`, is not among the files: the project's
+   `.gitignore` leaves it out.
+
+   If you have opened the project in Visual Studio, check before the `commit` line that its
+   `.vs` folder is not among them either, because that folder is Visual Studio's own and changes
+   every time it opens:
+
+   ```bat
+   git status --short .vs
+   ```
+
+   It prints nothing when the folder is not recorded. If it prints lines starting `A  .vs/`, these
+   three lines leave the folder out; adding `.vs/` to `.gitignore` alone does not, because
+   `git add .` has already recorded its files:
+
+   ```bat
+   echo .vs/>> .gitignore
+   git rm -r --cached -q .vs
+   git add .
+   ```
+
+   The `git add .` prints its line-end warnings again, and `git status --short .vs` then prints
+   nothing. Run the `git commit` line now.
+
+   If `git commit` says `Author identity unknown`, do
+   [Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are), then run the
+   `git commit` line again.
+
+   This keeps the engine's files in your repository as plain files, as the ZIP gave them. To move
+   to a newer Labrador later, follow
+   [Move a starter project to a newer Labrador](/docs/guides/starter-update/) and commit the
+   result. [Put your project in Git](/docs/guides/starter-to-git/) makes the engine a pointer to
+   Labrador's repository instead; either works with GitHub and its build.
+
+3. **Name the branch `main`.** A repository's history is kept on a *branch*, and Git names the
+   first one `master` unless it was told otherwise. GitHub names it `main`, and the next steps do
+   too:
+
+   ```bat
+   git branch -M main
+   git branch --show-current
+   ```
+
+   The first prints nothing; the second prints `main`.
+
+4. **Make an empty repository on GitHub.** Signed in on [github.com](https://github.com), click
+   the **+** at the top right of any page, then **New repository**. On the form:
+
+   - **Owner** is your username.
+   - **Repository name**: `mygame`, or your game's name, short. Letters, digits, `-`, `_` and `.`
+     only. GitHub's build checks the project out in a folder named twice after the repository,
+     such as `D:\a\mygame\mygame`, and that folder must stay under 100 characters for the
+     reason [Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder) gives,
+     so keep the name under 40 characters; `mygame` is 6.
+   - **Description** is optional.
+   - **Public** or **Private**: see *What is public* at the top of this page and
+     [Build minutes](#build-minutes) below.
+   - **Leave the repository empty.** Do not add a README, a `.gitignore` or a licence: your project
+     already has its files, and a repository that starts with one of these refuses your first push
+     ([If something fails](#if-something-fails) has the fix).
+
+   Click **Create repository**. GitHub opens a *Quick setup* page for the empty repository. Under
+   it, the **HTTPS** address is the one to use, such as `https://github.com/your-name/mygame.git`;
+   the copy button beside it copies it. The page also lists commands for *push an existing
+   repository from the command line*: they are the ones in steps 3, 5 and 6 here.
+
+5. **Tell your project where the repository is.** Paste this line, and **before you press Enter,
+   change `your-name` to your GitHub username**, and `mygame` too if you named the repository
+   differently, as [Typing the commands](/docs/get-started/prerequisites/#typing-the-commands)
+   shows; or delete the address and paste the one you copied:
+
+   ```bat
+   git remote add origin https://github.com/your-name/mygame.git
+   ```
+
+   It prints nothing. `origin` is the name your project now uses for the repository on GitHub.
+   Check it:
+
+   ```bat
+   git remote -v
+   ```
+
+   ```text title="Output"
+   origin	https://github.com/your-name/mygame.git (fetch)
+   origin	https://github.com/your-name/mygame.git (push)
+   ```
+
+   with your username. If the address is wrong, fix it as
+   [If something fails](#if-something-fails) shows, rather than adding it again.
+
+6. **Send the project to GitHub**, which Git calls a *push*:
+
+   ```bat
+   git push -u origin main
+   ```
+
+   The first push to GitHub from this machine asks who you are. A window titled
+   **Connect to GitHub** opens, from Git Credential Manager, which came with Git for Windows. Click
+   **Sign in with your browser**. Your browser opens a GitHub page asking you to authorize
+   *Git Credential Manager*; sign in there if it asks, and click **Authorize**. The browser then
+   shows *Authentication Succeeded. You may now close this tab and return to the application.*
+   Close the tab: the push carries on in the prompt. Windows keeps the sign-in, so later pushes
+   do not ask again. The window's **Sign in with a code** button does the same through a code
+   you type on a GitHub page, for when the browser does not open.
+
+   The prompt then shows the upload, about 8.4 MB for the starter, and ends:
+
+   ```text title="Output"
+   Enumerating objects: 1245, done.
+   Counting objects: 100% (1245/1245), done.
+   Delta compression using up to 32 threads
+   Compressing objects: 100% (1201/1201), done.
+   Writing objects: 100% (1245/1245), 8.35 MiB | 9.64 MiB/s, done.
+   Total 1245 (delta 56), reused 0 (delta 0), pack-reused 0 (from 0)
+   remote: Resolving deltas: 100% (56/56), done.
+   To https://github.com/your-name/mygame.git
+    * [new branch]      main -> main
+   branch 'main' set up to track 'origin/main'.
+   ```
+
+   The numbers depend on your project and your connection: at 1 MB a second the upload takes
+   about ten seconds. `-u` makes `origin`'s `main` the place a plain `git push` sends to from now
+   on. If it fails, the message is under [If something fails](#if-something-fails).
+
+7. **Look at it on GitHub.** Reload the repository's page in your browser. It now lists your
+   project's folders and files: `.github`, `external`, `game`, `CMakeLists.txt` and the rest, with
+   your commit's message beside them. Your project is on GitHub.
+
+</Steps>
+
+## Sending the next change
+
+After you change the game and it builds and passes its tests, record the change and send it, in
+the same folder:
+
+```bat
+git add .
+git commit -m "Say what you changed"
+git push
+```
+
+Change the message between the quotation marks to one line that says what you changed; you can
+edit it there before pressing Enter. `git status` shows what `git add .` will record, and prints
+`nothing to commit, working tree clean` when everything is already committed. `git push` prints
+the same kind of output as step 6, shorter, and ends `main -> main`. A `git commit` that prints
+`nothing to commit` recorded nothing, because nothing changed since the last commit.
+
+## Watch GitHub build it
+
+Every push starts a *run* of the workflow in `.github\workflows\ci.yml`: GitHub borrows a Windows
+machine with Visual Studio on it, called a *runner*, checks your project out there, and runs the
+same configure, build and test commands you run, then reports. You do nothing to start it. The
+workflow and each of its steps are explained in [Check your game in CI](/docs/guides/ci/).
+
+<Steps>
+
+1. **Open the run.** On your repository's page, click **Actions**, under the repository's name. The
+   page lists runs, newest first, each named after its commit's message: the first is
+   *Start my game from Labrador's starter project*, from the workflow named *build and test*. A
+   run that is still going has a yellow dot or a turning circle; it becomes a green tick when it
+   passes, or a red cross when it fails. The same mark appears beside the commit on the
+   repository's front page, and clicking it lists the run too.
+
+2. **Wait for it.** The first run of the starter takes two to three minutes: the first run on
+   GitHub of the same project, with the engine as a submodule rather than plain files, took 2
+   minutes 31 seconds, of which configure took about a minute and a half, because it builds the
+   engine's libraries from vcpkg and keeps them for next time. Later runs reuse them and took
+   under two minutes.
+
+3. **Read it.** Click the run's name. Its page shows one job, **windows**; click it. The job's
+   steps are listed in order, each with a tick or a cross, and a step that never ran in grey:
+
+   ```text title="The windows job's steps"
+   Set up job
+   Run actions/checkout@v4
+   Point at the runner's vcpkg
+   Cache vcpkg's binaries
+   Find vcvars64
+   Configure
+   Build
+   Test
+   Post Cache vcpkg's binaries
+   Post Run actions/checkout@v4
+   Complete job
+   ```
+
+   Click **Test** to open its log. The end is your two tests passing, as on your machine:
+
+   ```text title="Test"
+   Test project D:/a/mygame/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.33 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.75 sec
+
+   100% tests passed out of 2
+   ```
+
+   `D:\a\mygame\mygame` is where the runner keeps your project. The run's summary page may also
+   show a yellow note that `actions/checkout@v4` and `actions/cache@v4` target Node.js 20, which
+   GitHub now runs on Node.js 24. It is about those two steps, not your game, and nothing fails
+   because of it.
+
+</Steps>
+
+## A failed run
+
+A red cross means a step failed, and the steps after it were skipped. On the run's page, click
+the **windows** job: the failed step has a cross and its log is already open, ending in a red
+line such as `Process completed with exit code 1.`. That line only says the step failed; the
+reason is above it. Scroll up to the first line that says `error`, `FAILED` or `***Failed`, or
+type `error` in the **Search logs** box at the top right of the log. The step tells you where to
+look:
+
+| The step with the cross | What happened | What to do |
+| --- | --- | --- |
+| **Configure** | CMake stopped before building, as it would on your machine. Read the log's `CMake Error` lines. If it says `does not contain a CMakeLists.txt file` about `external/labrador`, the engine folder was not pushed: run `dir external\labrador` on your machine, then `git status`. | Fix it on your machine, check that `cmake --preset x64-debug` works there, then commit and push. |
+| **Build** | The compiler or linker stopped. The log's `error` lines are the same as on your machine; [Read a build error](/docs/get-started/build-errors/) shows how to find the one that matters. A change that builds at home but not here is usually a file you created and did not commit: `git status` lists it as untracked. | Fix it, check that it builds at home, commit and push. For a missing file, `git add .`, commit and push. |
+| **Test** | A test failed: the log shows `***Failed` and, for the start-up test, the `startup failure:` line that says why. The step ends `Process completed with exit code 8.`, ctest's code for failed tests. | Run `ctest --preset x64-debug` on your machine. If it passes there, the runner lacks something your machine has, most often a content file that is not committed: `git status` lists it. |
+| **Build**, with `C1083` or `Cannot open compiler generated file` | A path is longer than the compiler allows, because the repository's name is long. | Rename the repository shorter, under its **Settings**, then run `git remote set-url origin` with the new address, as below. |
+| **Set up job**, or the run never starts | GitHub could not give the job a runner. For a private repository, the month's included build minutes may be used up; GitHub's message on the run says so. | See [Build minutes](#build-minutes). |
+
+To run the same commit again, for example after a failure that was GitHub's rather than yours, open
+the run, click **Re-run jobs** at the top right, and **Re-run failed jobs** or **Re-run all
+jobs**. A fix to your project is a new commit and push instead, which starts a new run.
+
+### Build minutes
+
+GitHub's runners are free for a **public** repository. A **private** repository's runs come out of
+a monthly allowance that a free account includes, worth US$12 a month at the time of writing; a
+Windows runner costs US$0.010 a minute, so that is about 1,200 minutes, or about 400 runs of the
+starter at three minutes each. When it is used up, GitHub stops starting runs until the next
+month, unless you add a payment method and allow more. The current figures are on GitHub's
+[GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+page; your account's **Settings**, then **Billing and licensing**, shows what you have used.
+
+## If something fails
+
+<Aside type="caution" title="error: src refspec main does not match any">
+With `error: failed to push some refs to 'https://github.com/your-name/mygame.git'` after it:
+your project has no branch called `main`. Either step 3 was not run, so the branch is still
+`master`, or there is no commit yet, because step 2's `git commit` failed. `git branch
+--show-current` names the branch; `git log --oneline` lists commits, and says
+`does not have any commits yet` if there are none. Run the step that is missing, then push again.
+</Aside>
+
+<Aside type="caution" title="error: remote origin already exists.">
+`git remote add` was run a second time. To change the address instead, paste this line, change
+`your-name` and `mygame` before pressing Enter, and check it with `git remote -v`:
+
+```bat
+git remote set-url origin https://github.com/your-name/mygame.git
+```
+</Aside>
+
+<Aside type="caution" title="remote: Repository not found.">
+With `fatal: repository 'https://github.com/your-name/mygame.git/' not found` after it: there is
+no repository at that address that your sign-in can see. Check the address with `git remote -v`
+against the one on the repository's Quick setup page, letter by letter, the username included:
+a misspelt name, a repository not yet created, or a sign-in to a different GitHub account all
+give this. Fix the address with `git remote set-url origin` as above.
+</Aside>
+
+<Aside type="caution" title="fatal: Authentication failed for 'https://github.com/your-name/mygame.git/'">
+After `remote: Invalid username or token. Password authentication is not supported for Git
+operations.`: Git sent a username and password, and GitHub accepts neither a password nor a
+username alone from Git. It happens when the sign-in window was closed, or a prompt asked
+`Username for 'https://github.com':` and was answered. Run `git push -u origin main` again and,
+in the **Connect to GitHub** window, click **Sign in with your browser**. If no window opens and
+the same message comes back, Windows has kept a wrong sign-in: open **Credential Manager** from
+the Start menu, click **Windows Credentials**, find `git:https://github.com` under *Generic
+Credentials*, click it, click **Remove**, and push again.
+</Aside>
+
+<Aside type="caution" title="! [rejected] main -> main (fetch first)">
+With `error: failed to push some refs` and hints that *the remote contains work that you do not
+have locally*: the repository on GitHub is not empty, usually because a README, `.gitignore` or
+licence was added when it was made. If the repository is new and holds nothing you want to keep,
+replace what is there with your project:
+
+```bat
+git push -u --force origin main
+```
+
+It ends `+ ... main -> main (forced update)`. **`--force` throws away whatever the repository on
+GitHub has that your project does not**, so use it only for this first push to a new
+repository, never later.
+</Aside>
+
+<Aside type="caution" title="fatal: 'orign' does not appear to be a git repository">
+With `fatal: Could not read from remote repository.` and a line about access rights after it: the
+name after `git push -u` is misspelt, or step 5 was not run, so there is no `origin`. `git remote
+-v` lists the names your project has. Run step 5, or correct the spelling.
+</Aside>
+
+<Aside type="caution" title="fatal: unable to access 'https://github.con/your-name/mygame.git/': Could not resolve host: github.con">
+The address is misspelt before the username, here `github.con`, or the machine is not on the
+internet. Fix the address with `git remote set-url origin` as above, or check the connection.
+</Aside>
+
+<Aside type="caution" title="'git' is not recognized as an internal or external command">
+Git is not installed, or the prompt was opened before it was. Install it as at the top of this
+page, open a new x64 Native Tools Command Prompt, run the `cd /d` line, and carry on.
+</Aside>
+
+[Troubleshooting](/docs/troubleshooting/#sharing-the-game) lists these messages too.
+
+## Where to go next
+
+- [Put your game on the web](/docs/guides/your-web-page/) publishes the browser build with
+  GitHub Pages, from this account, so a friend can play it from a link.
+- [Send your game to a friend](/docs/guides/your-release/) zips the Windows release.
+- [Check your game in CI](/docs/guides/ci/) explains each step of the workflow, and what to change
+  as the project grows.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at
+`C:\dev\g8-author\mygame`, with Git for Windows 2.52.0 and its Git Credential Manager 2.6.1, the
+commands of steps 2, 3 and 5 ran as shown, and their output is quoted from that run with the folder
+changed to `C:\dev\mygame`. `git add .` printed 175 line-end warnings; the commit recorded 1,125
+files and left `git status` clean.
+
+**No GitHub account was made or signed in to, no repository was created on GitHub, and nothing
+was pushed there.** Steps 1, 4 and 6's sign-in, the Actions pages and the billing figures are
+written from GitHub's documentation as it stood on 2026-10-30: *Creating an account on GitHub*,
+*Creating a new repository*, *Adding locally hosted code to GitHub*, *Using workflow run logs*,
+*Re-running workflows and jobs* and *GitHub Actions billing*. The **Connect to GitHub** window's
+title, its **Sign in with your browser** and **Sign in with a code** buttons and the browser's
+*Authentication Succeeded* page are read from Git Credential Manager's own source and the copy
+installed here; the window was not opened. The push output in step 6 is a real push of this
+project, to an empty repository on the same machine standing in for GitHub, with the address
+line changed: the counts and size are this project's, and GitHub's own extra lines, if any, were
+not seen.
+
+The failure messages were made on purpose with the credential helper turned off, so that nothing
+could sign in: `src refspec main does not match any` with the branch left as `master` and with no
+commit; `remote origin already exists`; `Authentication failed` and `Invalid username or token`
+from a push to GitHub with a made-up username and password in the address; `Could not resolve
+host` for `github.con`; `'orign' does not appear to be a git repository`; and `[rejected] (fetch
+first)` and the `--force` recovery against a local repository holding a README commit, which is
+the same refusal Git prints for GitHub. `Repository not found` needs a sign-in, so its wording is
+GitHub's documentation's. The Credential Manager removal steps were not followed.
+
+The CI run's steps, times and log lines are read, with `gh run view`, from the workflow's
+recorded runs on the public repository
+[matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), which holds the project
+*Start your own project* builds; its first run took 2 minutes 31 seconds and the next 1 minute 38
+seconds. The test log above is the first run's, run 40242503246, which its push started, with
+the repository's name, `labrador-mygame`, changed to `mygame` in its path. `Process completed with
+exit code 8.` is from a failed test step in a run of Labrador's own CI. That a starter project
+pushed as plain files, with no submodule, runs the same workflow was checked by cloning the commit
+above from the stand-in repository into a fresh folder, as a runner's checkout does, and
+configuring, building and testing it there; it was not run on GitHub.
+
+On 2026-10-31 a second agent followed the page as worded in another fresh starter at
+`C:\dev\g8-follow\mygame`, with the credential helper off and a local stand-in repository in place
+of GitHub. Git printed `git version 2.52.0.windows.1`; `git add .` took 5.5 seconds and printed 188
+line-end warnings, within the page's *about 175*; the commit, `git branch -M main`, `git remote
+-v`, the push to an empty stand-in, *Sending the next change*, and every failure above except
+`Repository not found` and `'git' is not recognized` gave the output quoted, `Authentication failed` included from GitHub
+itself; and `gh run view` listed the same eleven job steps. Two points were corrected: the test
+log had been the second, manually started run's, with times of 0.41 and 0.90 seconds, and is now
+the first run's; and the follower's commit recorded a `startup.txt` that
+[Send your game to a friend](/docs/guides/your-release/) had written into the project's folder,
+which that page now writes to `%TEMP%`. The follower also found the starter's own `ci.yml`
+saying the engine is a submodule, which is false for a project committed as this page commits
+it; its comment now covers both.
+
+On 2026-10-31 a reviewer ran steps 2, 3 and 5 again in a third fresh starter: 187 warnings, 1,128
+files, and the `remote origin already exists`, `'orign'`, `src refspec` and `github.con` messages
+as quoted. The reviewer also found that adding `.vs/` to `.gitignore` after `git add .` leaves the
+folder's files recorded, as a scratch repository with a `.vs` file showed; step 2 now takes them
+out with `git rm -r --cached`, which that repository confirmed. Visual Studio itself was not opened
+for it.

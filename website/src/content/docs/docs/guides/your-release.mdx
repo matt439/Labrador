@@ -1,0 +1,551 @@
+---
+title: Send your game to a friend
+description: Build the Windows release folder, check it starts on its own, zip it with one command, and what your friend sees when they download, extract and start it, SmartScreen's warning included, step by step, with what each failure means.
+sidebar:
+  order: 0.98
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+This page turns the game from [Get the starter project](/docs/get-started/starter/) into a ZIP
+file that a friend with a Windows PC can download, extract and play, with nothing else to
+install. It builds the game's **release** version, which is faster than the one you have been
+running and is the one Microsoft lets you give away, puts it in a folder with only the files a
+player needs, checks that it starts from there, and zips it. Then it goes through what your friend
+does and sees. It takes about 10 minutes the first time and 2 after that.
+
+[Ship a Windows release](/docs/guides/windows-release/) explains what is in the folder and why;
+this page is the steps. To share the game as a web page instead, which needs no download and
+works on any computer with a current browser, see
+[Put your game on the web](/docs/guides/your-web-page/).
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+Quit the game first if it is running: a running game cannot be rebuilt.
+
+<Steps>
+
+1. **Build the release version and run its tests.** The release build has its own folder,
+   `out\build\x64-release`, beside the `x64-debug` one you have been using, so the first time
+   it configures as well:
+
+   ```bat
+   cmake --preset x64-release
+   cmake --build --preset x64-release
+   ctest --preset x64-release
+   ```
+
+   On a fast desktop the three took 17 seconds the first time: 10 to configure, 6 to build and 1
+   to test. The configure can take several minutes when vcpkg first fetches its list of packages
+   from GitHub. Its output looks like the `x64-debug` configure you ran in Get Started, ending
+   `-- Build files have been written to: C:/dev/mygame/out/build/x64-release`. The build compiles
+   the engine again, optimised, in about 100 steps. `ctest` ends:
+
+   ```text title="Output"
+   1/2 Test #1: MyGameTests ......................   Passed    0.02 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.74 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   Later releases need only the second and third lines. If the build or a test fails, fix it as
+   you would in the `x64-debug` build: [Read a build error](/docs/get-started/build-errors/).
+
+2. **Empty the release folder.** The release goes in `C:\dev\mygame-release`, outside your
+   project. Installing adds and replaces files but never deletes one, so a file left there from
+   an earlier release would be zipped too. This line deletes the folder and everything in it, if
+   it exists:
+
+   ```bat
+   if exist C:\dev\mygame-release rmdir /s /q C:\dev\mygame-release
+   ```
+
+   It prints nothing. **Check the path before pressing Enter**: `rmdir /s /q` deletes without
+   asking and without using the Recycle Bin. Never point it at your project folder,
+   `C:\dev\mygame`. If it prints lines such as
+   `C:\dev\mygame-release\MyGame.exe - Access is denied.`, the game is running from that folder,
+   and those files were not deleted: quit the game and run the line again.
+
+3. **Install the release into it.** *Install* here means copy: CMake copies the game, the DLLs it
+   needs, its content and its licence notices into the folder:
+
+   ```bat
+   cmake --install out\build\x64-release --prefix C:\dev\mygame-release
+   ```
+
+   It takes under a second and prints a line for each file:
+
+   ```text title="Output"
+   -- Install configuration: "Release"
+   -- Installing: C:\dev\mygame-release/./MyGame.exe
+   -- Installing: C:\dev\mygame-release/./DirectXTK.dll
+   -- Installing: C:\dev\mygame-release/./xaudio2_9redist.dll
+   -- Installing: C:\dev\mygame-release/./msvcp140.dll
+   -- Installing: C:\dev\mygame-release/./msvcp140_1.dll
+   -- Installing: C:\dev\mygame-release/./msvcp140_2.dll
+   -- Installing: C:\dev\mygame-release/./msvcp140_atomic_wait.dll
+   -- Installing: C:\dev\mygame-release/./msvcp140_codecvt_ids.dll
+   -- Installing: C:\dev\mygame-release/./vcruntime140_1.dll
+   -- Installing: C:\dev\mygame-release/./vcruntime140.dll
+   -- Installing: C:\dev\mygame-release/./concrt140.dll
+   -- Installing: C:\dev\mygame-release/./manifest.json
+   -- Installing: C:\dev\mygame-release/./fonts
+   -- Installing: C:\dev\mygame-release/./fonts/jetbrains_mono_bold_16.spritefont
+   -- Installing: C:\dev\mygame-release/./fonts/OFL.txt
+   -- Installing: C:\dev\mygame-release/notices/Labrador.txt
+   -- Installing: C:\dev\mygame-release/notices/Labrador-NOTICE.txt
+   -- Installing: C:\dev\mygame-release/notices/rapidjson.txt
+   -- Installing: C:\dev\mygame-release/notices/DirectXTK.txt
+   -- Installing: C:\dev\mygame-release/notices/DirectXMath.txt
+   -- Installing: C:\dev\mygame-release/notices/XAudio2Redist.txt
+   ```
+
+   That is 21 lines: one for each of the 20 files, about 4 MB in all, and one for the `fonts`
+   folder. The mix of `\` and `/` in the paths is CMake's and does no harm.
+   A game with pictures or sounds has more lines: [Put a picture in your
+   game](/docs/guides/your-picture/) and [Play a sound in your game](/docs/guides/your-sound/)
+   each add an `install` line for their folder to `game\CMakeLists.txt`. If yours has a content
+   folder of its own that is not listed here, add a line for it as
+   [Ship a Windows release](/docs/guides/windows-release/#build-the-release-folder) shows, or the
+   release stops at start-up naming the missing file.
+
+4. **Check that it starts on its own.** This starts the game from the release folder with
+   `--smoke-test`, which opens it hidden, draws a few frames and quits, and writes the reason to
+   `startup.txt` in Windows' folder for temporary files, `%TEMP%`, if it cannot start:
+
+   ```bat
+   start /wait /b "" C:\dev\mygame-release\MyGame.exe --smoke-test 2> "%TEMP%\startup.txt"
+   echo %errorlevel%
+   ```
+
+   The file goes in `%TEMP%` rather than the project's folder so that it is not recorded with the
+   project when you [put it in Git](/docs/guides/your-github/).
+
+   It takes about a second and prints `0`: the release works. `1` means the game stopped while
+   starting. Read why:
+
+   ```bat
+   type "%TEMP%\startup.txt"
+   ```
+
+   It holds one line beginning `startup failure:`, the same message the start-up test shows on the
+   other pages. A folder missing from the release, for example the fonts, gives:
+
+   ```text title="startup.txt"
+   startup failure: No file at C:\dev\mygame-release\.\./fonts/jetbrains_mono_bold_16.spritefont.
+   ```
+
+   Add the missing `install` line as in step 3, then do steps 1 to 4 again.
+
+   Then play it from there once, as your friend will:
+
+   ```bat
+   C:\dev\mygame-release\MyGame.exe
+   ```
+
+   The prompt comes back at once, as it does for any windowed program, and the game's window
+   opens with your greeting, as in the `x64-debug` build. Escape asks whether to quit, and Enter
+   answers yes.
+
+5. **Zip it.** This makes `C:\dev\mygame-release.zip`, holding the folder and everything in it:
+
+   ```bat
+   tar -a -c -f C:\dev\mygame-release.zip -C C:\dev mygame-release
+   dir C:\dev\mygame-release.zip
+   ```
+
+   `tar` is Windows' own archiving program. `-a -c -f` makes (`-c`) a file (`-f`) whose kind
+   follows its name (`-a`), here a ZIP; `-C C:\dev mygame-release` takes the folder
+   `mygame-release` from `C:\dev`, so the ZIP holds one folder rather than loose files. It prints
+   nothing; `dir` then shows the ZIP, about 1.6 MB for the starter:
+
+   ```text title="Output"
+    Volume in drive C has no label.
+    Volume Serial Number is 640A-A82B
+
+    Directory of C:\dev
+
+   31/10/26  00:06         1,620,658 mygame-release.zip
+                  1 File(s)      1,620,658 bytes
+                  0 Dir(s)  765,646,843,904 bytes free
+   ```
+
+   Your volume number, date, time and free space differ, and the date and time are in your own
+   format. Running the line again replaces the ZIP. In File Explorer
+   you can make the same ZIP instead: right-click `C:\dev\mygame-release`, choose **Show more
+   options** if the menu is short, then **Send to** and **Compressed (zipped) folder**.
+
+6. **Send the ZIP.** Put it somewhere your friend can download it: a link from a cloud drive such
+   as OneDrive or Google Drive, a USB stick, or a
+   [release on GitHub](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)
+   if your project is there. **Not as an email attachment**: Gmail refuses `.exe` and `.dll`
+   files even inside a ZIP, and other services may too.
+
+</Steps>
+
+## What your friend does
+
+Send these steps with the ZIP. They need 64-bit Windows 10, version 1607 or later, or Windows 11,
+and a graphics card with Direct3D 11, which nearly every Windows PC since about 2010 has;
+[Ship a Windows release](/docs/guides/windows-release/#what-players-need) has the details.
+
+<Steps>
+
+1. **Download the ZIP**, usually into the **Downloads** folder.
+
+2. **Extract it.** In File Explorer, right-click the ZIP and choose **Extract All...**. A window
+   titled *Extract Compressed (Zipped) Folders* offers a folder beside the ZIP named after it,
+   such as `Downloads\mygame-release`; click **Extract**. The ZIP holds a folder, so the game ends
+   up one level further in, at `Downloads\mygame-release\mygame-release\MyGame.exe`.
+
+   **Do not start the game from inside the ZIP**, by opening the ZIP and double-clicking
+   `MyGame.exe` there. Windows then asks, in a box titled *Compressed (zipped) Folders*: *This
+   application may depend on other compressed files in this folder. For the application to run
+   properly, it is recommended that you first extract all files.* Its **Run** button copies only
+   `MyGame.exe` out of the ZIP, and the game stops before its window opens, with
+   *The code execution cannot proceed because DirectXTK.dll was not found. Reinstalling the
+   program may fix this problem.* Choose **Extract all** instead.
+
+3. **Start `MyGame.exe`** by double-clicking it in the extracted folder. The first time, Windows
+   is likely to stop it with a blue box:
+
+   > **Windows protected your PC**
+   >
+   > Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app
+   > might put your PC at risk.
+   >
+   > More info
+
+   with a single **Don't run** button. Click **More info**: the box adds `App: MyGame.exe` and
+   `Publisher: Unknown publisher`, and a **Run anyway** button. Click **Run anyway**, and the game
+   starts. Windows does not ask again for that copy of the program.
+
+4. **Play.** Escape asks whether to quit, and Enter answers yes.
+
+</Steps>
+
+### Why Windows warns
+
+Windows marks every file downloaded from the internet, and File Explorer's **Extract All** passes
+the mark on to every file it extracts. When a marked program starts, Microsoft Defender
+SmartScreen checks whether it is *recognised*: signed with a code-signing certificate, or
+downloaded and run by enough people already. A game you built yourself is neither, so SmartScreen
+warns. Nothing is wrong with the game; the warning is about not knowing it.
+
+The warning goes away only when the program is signed with a code-signing certificate, which
+costs money every year and is beyond these pages, or has built up a reputation with Microsoft over
+many downloads. Your friend can check where the ZIP came from by asking you, which is what the
+warning is for.
+
+Two cases are stricter than the blue box:
+
+- **Smart App Control**, which new installations of Windows 11 can have turned on, blocks an
+  unsigned program it does not recognise with no **Run anyway** button. Microsoft says there is no
+  way to allow one program through it: the player would have to turn Smart App Control off, under
+  **Windows Security**, **App & browser control**, **Smart App Control settings**. Offer such a
+  friend the web version instead.
+- **An antivirus program**, Microsoft Defender's own included, can decide a new unsigned program is
+  harmful when it is not, and remove it or refuse to open it. Windows then says *Operation did not
+  complete successfully because the file contains a virus or potentially unwanted software.*
+  Microsoft takes reports of such mistakes on its
+  [Submit a file for malware analysis](https://www.microsoft.com/en-us/wdsi/filesubmission) page.
+  Do not ask a friend to turn their antivirus off.
+
+## A second program for older graphics cards
+
+On the rare machine whose graphics driver refuses Direct3D 11, the game stops at start-up with a
+box such as `No Direct3D hardware device found`. The same game built with the OpenGL renderer may
+start there. [Which renderer to ship](/docs/guides/windows-release/#which-renderer-to-ship) says
+which machines that helps, and which it does not. To ship it as `MyGame-gl.exe` beside
+`MyGame.exe`:
+
+<Steps>
+
+1. **Add an OpenGL preset.** Open the presets file:
+
+   ```bat
+   notepad CMakePresets.json
+   ```
+
+   If you have not changed it, press **Ctrl+A** and paste this whole file in its place, then save
+   and close Notepad. It is the starter's file with three entries added, each called
+   `x64-release-gl`: a configure preset that asks for the OpenGL renderer, and a build and a test
+   preset that use it.
+
+   ```json title="CMakePresets.json"
+   {
+     "version": 6,
+     "cmakeMinimumRequired": { "major": 3, "minor": 26, "patch": 0 },
+     "configurePresets": [
+       {
+         "name": "base",
+         "hidden": true,
+         "condition": {
+           "type": "equals",
+           "lhs": "${hostSystemName}",
+           "rhs": "Windows"
+         },
+         "generator": "Ninja",
+         "binaryDir": "${sourceDir}/out/build/${presetName}",
+         "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+         "architecture": { "value": "x64", "strategy": "external" }
+       },
+       {
+         "name": "x64-debug",
+         "inherits": "base",
+         "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+       },
+       {
+         "name": "x64-release",
+         "inherits": "base",
+         "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+       },
+       {
+         "name": "x64-release-gl",
+         "inherits": "x64-release",
+         "cacheVariables": { "LABRADOR_RENDER_BACKEND": "gl" }
+       },
+       {
+         "name": "wasm-base",
+         "hidden": true,
+         "generator": "Ninja",
+         "binaryDir": "${sourceDir}/out/build/${presetName}",
+         "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+         "cacheVariables": {
+           "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+           "VCPKG_TARGET_TRIPLET": "wasm32-emscripten"
+         }
+       },
+       {
+         "name": "wasm-debug",
+         "inherits": "wasm-base",
+         "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+       },
+       {
+         "name": "wasm-release",
+         "inherits": "wasm-base",
+         "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+       }
+     ],
+     "buildPresets": [
+       { "name": "x64-debug", "configurePreset": "x64-debug" },
+       { "name": "x64-release", "configurePreset": "x64-release" },
+       { "name": "x64-release-gl", "configurePreset": "x64-release-gl" },
+       { "name": "wasm-debug", "configurePreset": "wasm-debug" },
+       { "name": "wasm-release", "configurePreset": "wasm-release" }
+     ],
+     "testPresets": [
+       {
+         "name": "x64-debug",
+         "configurePreset": "x64-debug",
+         "output": { "outputOnFailure": true }
+       },
+       {
+         "name": "x64-release",
+         "configurePreset": "x64-release",
+         "output": { "outputOnFailure": true }
+       },
+       {
+         "name": "x64-release-gl",
+         "configurePreset": "x64-release-gl",
+         "output": { "outputOnFailure": true }
+       },
+       {
+         "name": "wasm-debug",
+         "configurePreset": "wasm-debug",
+         "output": { "outputOnFailure": true }
+       },
+       {
+         "name": "wasm-release",
+         "configurePreset": "wasm-release",
+         "output": { "outputOnFailure": true }
+       }
+     ]
+   }
+   ```
+
+   If you have changed the file yourself, add the three entries by hand where they are above:
+   each goes after the `x64-release` entry of its own list. Every entry in a list but the last
+   ends with a comma after its closing `}`, and the last has none.
+
+2. **Build it, test it and install it into a second folder:**
+
+   ```bat
+   cmake --preset x64-release-gl
+   cmake --build --preset x64-release-gl
+   ctest --preset x64-release-gl
+   if exist C:\dev\mygame-release-gl rmdir /s /q C:\dev\mygame-release-gl
+   cmake --install out\build\x64-release-gl --prefix C:\dev\mygame-release-gl
+   ```
+
+   The output is like steps 1 and 3 above, with `x64-release-gl` and `mygame-release-gl` in the
+   paths; the start-up test now draws with OpenGL, and needs a graphics driver with OpenGL 3.3,
+   which this machine's has if the test passes.
+
+3. **Copy the OpenGL program into the release folder** under its own name, and check it starts
+   from there:
+
+   ```bat
+   copy C:\dev\mygame-release-gl\MyGame.exe C:\dev\mygame-release\MyGame-gl.exe
+   start /wait /b "" C:\dev\mygame-release\MyGame-gl.exe --smoke-test 2> "%TEMP%\startup.txt"
+   echo %errorlevel%
+   ```
+
+   `copy` says `1 file(s) copied.` and the check prints `0`. Every other file in the second folder
+   is the same as in the first, so only the program is copied. Do step 5 of the first list again
+   to zip both, and tell your friend to start `MyGame-gl.exe` if `MyGame.exe` shows a Direct3D
+   message.
+
+</Steps>
+
+## If something fails
+
+<Aside type="caution" title="CMake Error: Could not read presets from C:/dev/mygame:">
+The presets file is not valid JSON, usually a comma. The next lines give the line number and what
+the reader expected:
+
+```text
+CMakePresets.json:33: Missing ',' or ']' in array declaration
+    {
+    ^
+```
+
+is a missing comma after the `}` before line 33. The first error is the one that matters: a second
+one, `CMakePresets.json:56: Extra non-whitespace after JSON value.`, follows from it. And
+
+```text
+CMakePresets.json:61: Syntax error: value, object or array expected.
+  ],
+  ^
+```
+
+is a comma after the last entry of a list, before its `]`. `Duplicate preset: "x64-release-gl"`
+means the entry was pasted twice. The quickest repair is to paste the whole file from the first
+step again.
+</Aside>
+
+<Aside type="caution" title="CMake Error: No such preset in C:/dev/mygame: &quot;x64-release-gll&quot;">
+The preset's name is misspelt on the command line, or the preset is not in the file. CMake lists
+the names it has after the message. `No such build preset` instead means the configure preset is
+there and the build preset is not: add the `buildPresets` line.
+</Aside>
+
+<Aside type="caution" title="CMake Error at out/build/x64-debug/game/cmake_install.cmake:36 (message): Install the x64-release build.">
+The install line names the `x64-debug` build folder. A debug build loads Microsoft's debug
+runtime, which may not be given away, so the project refuses to install it. Use
+`out\build\x64-release`, as in step 3.
+</Aside>
+
+<Aside type="caution" title="CMake Error: Not a file: C:/dev/mygame/out/build/x64-relase/cmake_install.cmake">
+The build folder in the install line is misspelt, or the release was never built: do step 1 and
+check the spelling.
+</Aside>
+
+<Aside type="caution" title="Windows cannot find 'C:\dev\mygame-releas\MyGame.exe'. Make sure you typed the name correctly, and then try again.">
+A box with this message, after step 4's `start` line: the path is misspelt, or the folder is not
+there because step 3 was not run or failed. Click **OK**; `echo %errorlevel%` prints `9059`.
+Check the path with `dir C:\dev\mygame-release`.
+</Aside>
+
+<Aside type="caution" title="tar: could not chdir to 'C:\dev\mygamee'">
+The folder after `-C` does not exist. It must be the folder that holds `mygame-release`, here
+`C:\dev`. It leaves an empty ZIP of 0 bytes; correct the folder and run the line again, which
+replaces it.
+</Aside>
+
+<Aside type="caution" title="tar: ...: Couldn't visit directory: No such file or directory">
+With `Error exit delayed from previous errors` after it: the folder name at the end of the line is
+misspelt. The text before `Couldn't visit` can be a jumble of unrelated characters. `tar` still
+writes a ZIP of 22 bytes with nothing in it; correct the name and run the line again, and delete
+the empty ZIP with `del` and its name.
+</Aside>
+
+<Aside type="caution" title="The code execution cannot proceed because DirectXTK.dll was not found.">
+In a box titled `MyGame.exe - System Error`: the program was started without the DLLs beside it,
+either from inside the ZIP or copied out of the release folder on its own. Start it from the
+extracted or installed folder, where every file of the release is beside it.
+</Aside>
+
+[Troubleshooting](/docs/troubleshooting/#sharing-the-game) lists these messages too.
+
+## Where to go next
+
+- [Put your game on the web](/docs/guides/your-web-page/) shares it as a page that needs no
+  download and no warning.
+- [Ship a Windows release](/docs/guides/windows-release/) explains the folder, the MSVC runtime,
+  the licence notices, the renderers and what players need.
+- [Put your project on GitHub](/docs/guides/your-github/) keeps the project itself safe.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at
+`C:\dev\g8-author\mygame`, with Visual Studio 2026's compiler 19.51, steps 1 to 5 ran as shown,
+into `C:\dev\g8-author\mygame-release`, and the output above is from those runs with the folder
+changed to `C:\dev\mygame` and `C:\dev\mygame-release`. In a second fresh starter at
+`C:\dev\g8-author\exact\mygame`, they ran again in order with the timings step 1 gives; an earlier
+`x64-release` configure in the first starter took 628 seconds, almost all of it vcpkg fetching its
+package list from GitHub, which is why step 1 allows for longer. The ZIP was 1,620,658 bytes and
+held the folder with its 20 files. A copy of the release without its `fonts` folder gave exit code
+1 and the `startup.txt` line quoted; `rmdir` with the game running from the folder gave `Access is
+denied.` for the program and the five DLLs it had loaded, and deleted the rest. The OpenGL section
+ran as worded with the whole presets file pasted: configure 9 seconds, build 5, both tests passed,
+the install wrote the same 21 lines, `MyGame-gl.exe` passed `--smoke-test` from the first folder,
+every other file of the two folders compared equal, and the ZIP of both programs was 1,761,676
+bytes. The OpenGL program links `opengl32.dll` and not `d3d11.dll`. The misspelt preset, preset files with a
+missing comma, an extra comma and a pasted-twice entry, the debug and misspelt install folders,
+the misspelt `start` path and both misspelt `tar` folders gave the messages quoted.
+
+On 2026-10-31 a second agent followed the page as worded in another fresh starter at
+`C:\dev\g8-follow\mygame`, with `C:\dev\g8-follow` in place of `C:\dev` throughout. Step 1 took 19
+seconds; the release, the ZIP's 1,620,658 bytes, the fonts-missing line, the OpenGL section's
+times, `1 file(s) copied.`, the 1,761,676-byte ZIP of both programs and every error above matched,
+except three points the page then corrected: the install prints 21 `-- Installing:` lines, one of
+them the `fonts` folder, where the page had said 20; `tar` with a misspelt `-C` folder leaves an
+empty ZIP of 0 bytes, which the page had not said; and the missing comma's error is followed by a
+second, about line 56. The follower also found that `2> startup.txt`, run from the project's
+folder, left a `startup.txt` there that a later `git add .` recorded, so step 4 now writes it to
+`%TEMP%`. After those changes, in the first starter, both smoke tests to `"%TEMP%\startup.txt"`
+printed `0` and left `git status` as it was, a copy without its fonts printed `1` and the quoted
+line from `type "%TEMP%\startup.txt"`, the misspelt `-C` folder gave
+`tar: could not chdir to` and a 0-byte ZIP that the corrected line replaced, and a presets file
+missing the comma after the `x64-release-gl` entry gave the line 33 and line 56 errors quoted. The
+follower pressed no SmartScreen button, given the Defender detection above, and did not start the
+game from inside the ZIP; it did confirm that File Explorer's extractor passed `ZoneId=3` to both
+programs in the nested folder.
+
+The player's side was followed on the same desktop, Windows 11 build 26200 with Microsoft
+Defender SmartScreen on and Smart App Control off. The ZIP was given the mark a browser writes on
+a download, a `Zone.Identifier` with `ZoneId=3`, rather than downloaded. File Explorer's own
+extractor, which **Extract All** runs, passed the mark to every extracted file; Windows' `tar` and
+PowerShell's `Expand-Archive` did not. Started by File Explorer, the marked `MyGame.exe` showed the
+SmartScreen box above; **More info** and **Run anyway** started the game, which drew its greeting,
+and removed the mark from `MyGame.exe`, so a second start showed no box. Started from inside the
+ZIP, it showed the *Compressed (zipped) Folders* box, then SmartScreen's, then the `DirectXTK.dll`
+box. The *Extract Compressed (Zipped) Folders* window's text and its proposed folder were read
+from the window. The buttons were pressed by a script through Windows' accessibility interface,
+not by hand. Started from a program other than File Explorer, a marked `MyGame.exe` shows the
+older *Open File - Security Warning* box with **Run** and **Cancel** instead; a player
+double-clicking it does not see that one.
+
+After those scripted runs, Microsoft Defender reported `Behavior:Win32/DefenseEvasion.A!ml` against
+that build of `MyGame.exe` and blocked every copy of it on the machine, with the antivirus message
+quoted above. The cause was not established: the detection is of behaviour, and a script pressing
+SmartScreen's **Run anyway** and starting a program from a temporary folder is a likely trigger
+that a player's hand would not be. The game was rebuilt, which gives a different file, and the
+flagged copies deleted. The Smart App Control and file-submission advice is from Microsoft's
+documentation, *What is Smart App Control?*; no machine with Smart App Control on was tried, nor
+a clean machine or a real download. Gmail's refusal is from Google's help page on blocked file
+types; no email was sent. The OpenGL steps ran here with this machine's driver; a machine that
+refuses Direct3D 11 and accepts OpenGL was not available.
+
+On 2026-10-31 a reviewer ran steps 1 to 5 again in a third fresh starter: 97 build steps, both
+tests, the 21 install lines, exit code `0`, a ZIP of 1,620,657 bytes holding the one folder, and the
+0-byte ZIP and `could not chdir` line for a misspelt `-C` folder. The installed `MyGame.exe`,
+started from the prompt, opened its window with the greeting and the controls line. With the ZIP
+given a `ZoneId=3` mark, the Windows shell's own ZIP extractor, driven by script, passed the mark
+to `MyGame.exe`, and `tar` and `Expand-Archive` did not; SmartScreen was not opened.

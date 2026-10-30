@@ -45,7 +45,7 @@ folder holds exactly what `release-files.txt` lists, and starts the
 installed game with `--smoke-test` from there. It does not
 use Git or clone the public repository, and does not run `ci.yml`: its steps
 are the job's own, which is what the guide says. `ci.yml` itself ran
-unchanged on 26 October 2026 in
+on 26 October 2026, with the steps it has now, in
 [matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), the
 walkthrough project at `v0.2.0`, twice and green, the second run restoring the
 first's vcpkg cache; *Check your game in CI* links both runs. CI's `wasm-consumer` job extracts a ZIP of the

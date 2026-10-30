@@ -19,6 +19,10 @@ CMake's own files, and a debug build's runtime may not be given away. The projec
 [Start your own project](/docs/get-started/your-project/) has install rules that make the release
 folder for you, so you do not pick the files out of the build tree by hand.
 
+[Send your game to a friend](/docs/guides/your-release/) is this page as steps: every command with
+its output and time, a ZIP, what the player sees when they download and start it, SmartScreen's
+warning included, and the second program below with the whole presets file.
+
 ## What the release package holds
 
 This is every file the install puts in the release folder of the Get Started project, and nothing
@@ -36,25 +40,39 @@ In the x64 Native Tools Command Prompt, from your project's folder:
 ```bat
 cmake --preset x64-release
 cmake --build --preset x64-release
+ctest --preset x64-release
+if exist C:\dev\mygame-release rmdir /s /q C:\dev\mygame-release
 cmake --install out\build\x64-release --prefix C:\dev\mygame-release
 ```
 
-`--prefix` is the folder to fill. Install into an empty folder: the install adds and replaces
-files, but it never deletes one, so a file left from an earlier release would stay. Then check
-that the folder starts on its own, from anywhere:
+On a fast desktop the first configure, build and tests took 17 seconds, and the install under a
+second, printing 21 `-- Installing:` lines: one for each of the 20 files and one for the `fonts`
+folder. `--prefix` is the folder to fill. Install into an empty folder: the install adds and
+replaces files, but it never deletes one, so a file left from an earlier release would stay. The
+`rmdir` line empties it first, without asking, so check its path. Then check that the folder
+starts on its own, from anywhere:
 
 ```bat
-start /wait /b "" C:\dev\mygame-release\MyGame.exe --smoke-test 2> startup.txt
+start /wait /b "" C:\dev\mygame-release\MyGame.exe --smoke-test 2> "%TEMP%\startup.txt"
 echo %errorlevel%
 ```
 
 `start /wait` makes the prompt wait for the game to quit, which it does not do for a windowed
 program otherwise. `0` means the game opened its window hidden, drew its first frames and quit;
 `1` means it stopped at start-up. The game writes why to standard error, and shows no message box
-under `--smoke-test`, and a windowed program has no console of its own, so `2> startup.txt` puts
-the reason in a file you can read. `/b` is what hands the game that redirect: without it, `start`
-gives the game no standard error and `startup.txt` stays empty. Zip the folder and
-that is the release. These are the rules in `game/CMakeLists.txt` that make it:
+under `--smoke-test`, and a windowed program has no console of its own, so
+`2> "%TEMP%\startup.txt"` puts the reason in a file you can read, in Windows' folder for temporary
+files rather than the project's, where Git would record it. `/b` is what hands the game that
+redirect: without it, `start` gives the game no standard error and `startup.txt` stays empty. On
+`1`, `type "%TEMP%\startup.txt"` shows the line beginning `startup failure:` that says why. Zip the
+folder and that is the release:
+
+```bat
+tar -a -c -f C:\dev\mygame-release.zip -C C:\dev mygame-release
+```
+
+`tar` is Windows' own; the ZIP holds the folder `mygame-release` and everything in it, about
+1.6 MB for the template. These are the rules in `game/CMakeLists.txt` that make the folder:
 
 <SourceFile
 	path="website/src/walkthrough/game-CMakeLists.txt"
@@ -180,7 +198,9 @@ the least of the player's hardware (feature level 10_0, below), it needs nothing
 and its display driver, and it is the renderer CI installs and starts the Get Started project
 with. The renderer is `LABRADOR_RENDER_BACKEND`, set in a configure preset's `cacheVariables`:
 `d3d11`, `d3d12`, `gl` or `vulkan`. This preset, added to your `CMakePresets.json` with a build
-preset to match, builds the same game with OpenGL:
+preset to match, builds the same game with OpenGL;
+[A second program for older graphics cards](/docs/guides/your-release/#a-second-program-for-older-graphics-cards)
+gives the whole file with it and the build and test presets, and every command:
 
 ```json
 {
@@ -197,7 +217,9 @@ per frame would cost a virtual call per sprite
 renderer stops the game at start-up, and the engine says why
 ([T6](/docs/design/philosophy/#t6-loud-failure-over-graceful-degradation)): the template's `main.cpp` catches the failure and
 shows it in a message box titled `Sample - startup failure`, which you should change to your
-game's name. What the message says:
+game's name: it is the text in quotation marks in the `MessageBoxA` line near the end of
+`game\main.cpp`, `MessageBoxA(nullptr, e.what(), "Sample - startup failure",`, and the change
+takes effect at the next build. What the message says:
 
 | Renderer | When | The message |
 | --- | --- | --- |

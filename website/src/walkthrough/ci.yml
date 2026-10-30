@@ -25,8 +25,10 @@ jobs:
         shell: cmd
 
     steps:
-      # The engine is a submodule, and a checkout without this has an empty
-      # external/labrador. A private submodule needs a token as well.
+      # If the engine is a submodule, a checkout without this has an empty
+      # external/labrador, and a private submodule needs a token as well. With
+      # the engine as plain files, as a starter project is committed, it does
+      # nothing.
       - uses: actions/checkout@v4
         with:
           submodules: recursive

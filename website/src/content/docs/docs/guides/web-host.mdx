@@ -13,6 +13,10 @@ them. This page says what the server has to
 send with them, and what goes wrong if it does not. Labrador's own demo,
 [LineSweeper on mattharding.dev](https://mattharding.dev/demo/linesweeper/), is on such a host.
 
+To put your game on one free host step by step, with every command, see
+[Put your game on the web](/docs/guides/your-web-page/): it publishes the release with GitHub
+Pages, which sends everything this page asks for.
+
 ## The files
 
 | File | What it is | Size for the template, `wasm-release` | Under Brotli |
@@ -25,7 +29,11 @@ send with them, and what goes wrong if it does not. Labrador's own demo,
 
 Use the [browser release command](/docs/guides/browser/#gather-the-browser-release-and-its-notices)
 to gather all five in `out\web-release`, then upload that folder's contents together. Link
-`NOTICE.txt` from your hosting page. The game page names the script and module by relative path,
+`NOTICE.txt` from your hosting page: one line in `game\web\shell.html`, such as
+`<p><a href="NOTICE.txt">Third-party notices</a></p>` after the status line, puts the link on the
+game's own page at the next build, as step 1 of
+[Put your game on the web](/docs/guides/your-web-page/) shows. Edit `shell.html`, not the built
+`MyGame.html`, which every build writes again. The game page names the script and module by relative path,
 so the folder can be anywhere on the site. There is no separate content file to upload, because
 `--embed-file` packs the content into `MyGame.wasm`; a game with more content has a larger
 module rather than more files. The sizes were measured on 25 October 2026 from the project Get
@@ -94,8 +102,11 @@ Emscripten writes the same three file names on every build. If the server tells 
   `Cache-Control: public, max-age=31536000, immutable` and the page with `no-cache`. A new build
   is then a new folder, and the page that names it is never stale. LineSweeper's demo does this.
 
-The page names `MyGame.js` in a script tag. To load it from another folder, change that
-`src` after the build or have your upload step do it.
+The page names `MyGame.js` in a script tag, which the `wasm-release` build writes as
+`<script async src=MyGame.js>`, and the script loads `MyGame.wasm` from its own folder. To put
+both in a folder such as `a1b2c3`, change that tag in the built page to
+`<script async src=a1b2c3/MyGame.js>` after every build and before uploading, or have your upload
+step do it; the edit is lost when the page is built again.
 
 <Aside title="What is not checked">
 The facts on this page were checked in Chrome only. Which browsers the build has been played in

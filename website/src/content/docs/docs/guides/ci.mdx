@@ -13,8 +13,10 @@ project from [Start your own project](/docs/get-started/your-project/) on a GitH
 runner and runs its tests, the rules test and the start-up check from
 [Test your game](/docs/guides/testing/). Save it in your repository as
 `.github/workflows/ci.yml`. A [starter project](/docs/get-started/starter/) has it there
-already; it runs once the project is a Git repository on GitHub with the engine as a
-submodule, which [Put your project in Git](/docs/guides/starter-to-git/) makes it:
+already; it runs once the project is a Git repository on GitHub, whether the engine is in it as
+the plain files the ZIP gave or as a submodule.
+[Put your project on GitHub](/docs/guides/your-github/) takes a starter project there step by
+step, from making the account to reading the first run:
 
 <Code code={workflow} lang="yaml" title=".github/workflows/ci.yml" />
 
@@ -28,7 +30,9 @@ a preset, a dependency or a second platform, the file grows with it.
 
 **The checkout takes the submodule.** Without `submodules`, `external/labrador` is an empty
 folder and configure stops at `add_subdirectory`. When the engine's repository is private, or is
-a private fork, the checkout needs a token that can read it as well.
+a private fork, the checkout needs a token that can read it as well. A project that keeps the
+engine as plain files, as a starter project committed as it came does, has no submodule, and the
+line does nothing.
 
 **`VCPKG_ROOT` points at the runner's vcpkg.** Your `CMakePresets.json` reads it for the toolchain
 file, as it does on your machine, and the runner image comes with a vcpkg of its own in
@@ -51,12 +55,30 @@ does not carry over to the next one.
 ctest, which holds your game's tests and none of Labrador's. The start-up check gets a Direct3D
 device on the runner, which has no GPU but still offers Direct3D an adapter.
 
+## See it run
+
+Each push starts a run, listed under the repository's **Actions** tab with its commit's message: a
+yellow dot while it works, a green tick when it passes, a red cross when it fails. Click the run,
+then its **windows** job, to see each step above and its log. The first run of a project takes two
+to three minutes, because configure builds the vcpkg packages; later runs restore them and take
+under two. [Watch GitHub build it](/docs/guides/your-github/#watch-github-build-it) goes through a
+run, and [A failed run](/docs/guides/your-github/#a-failed-run) says how to find the error, what
+each failed step means, and how to run it again.
+
+The runs are free for a public repository. A private repository's come out of a monthly allowance,
+and a Windows runner's minutes cost more of it than Linux's:
+[Build minutes](/docs/guides/your-github/#build-minutes) has the figures.
+
 ## Keep the path short
 
 The runner checks your repository out at `D:\a\<repository>\<repository>`, and the build's object
-files sit far below that. A short repository name keeps the whole path inside the 260 characters
-the compiler allows, for the reason
-[Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder) gives.
+files sit far below that. Keep that folder under the 100 characters
+[Choose a short folder](/docs/get-started/prerequisites/#choose-a-short-folder) asks for, which
+means a repository name under 40 characters; `mygame` is 6. One long enough to push the build's
+paths past the compiler's limit fails the Build step with
+`fatal error C1083: Cannot open compiler generated file: '': Invalid argument`, which
+[Troubleshooting](/docs/troubleshooting/#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument)
+explains; rename the repository under its **Settings** to fix it.
 
 ## What has been checked
 
@@ -65,7 +87,7 @@ engine, and it runs most of these steps: the runner's vcpkg, vcvars found throug
 configure, build and the game's ctest. That job takes the engine from the change being checked
 rather than from a submodule, and it restores the vcpkg binary cache the engine's own Windows jobs
 save without ever saving one, so it does not run this file's save step.
-The file itself has run, unchanged, as the workflow of a repository of its own:
+The file itself has run, with the steps it has now, as the workflow of a repository of its own:
 [matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), which holds the project
 Start your own project builds, with Labrador at `v0.2.0`. On 26 October 2026 its
 [first run](https://github.com/matt439/labrador-mygame/actions/runs/40242503246) found no cache,
@@ -75,3 +97,12 @@ vcpkg restored its six packages instead of building them and configure took 42 s
 run took about two and a half minutes on `windows-latest`, with MSVC 19.51. Both runs warn that
 `actions/checkout@v4` and `actions/cache@v4` target Node.js 20, which GitHub now runs on
 Node.js 24; nothing fails because of it.
+
+That a starter project committed as plain files builds from a checkout was checked on 30 October
+2026 by committing a starter project made from a development tree, cloning that commit into
+`C:\dev\g8-author\a\mygame\mygame`, a folder as deep as the runner's, and running the workflow's
+configure, build and test commands there, with Git's line-end conversion on as on the runner;
+both tests passed. Such a project has not yet run the workflow on GitHub itself. On 31 October the
+comment above the checkout step, which had said the engine is a submodule, was reworded to cover
+such a project, after a reader following [Put your project on GitHub](/docs/guides/your-github/)
+found it false for theirs; the file's steps are the ones that ran.
