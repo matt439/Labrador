@@ -69,8 +69,12 @@ the arena.
 
 The `wasm-debug` and `wasm-release` presets build the same arena from
 `main_web.cpp`, with the content embedded in the module and
-`web/shell.html` as the page. With Emscripten set up as the root README
-describes:
+`web/shell.html` as the page. From the engine's folder, in a prompt where
+vcvars and `emsdk_env.bat` have both run
+([Install Emscripten](https://labradorengine.com/docs/guides/browser/#install-emscripten)
+sets it up, and
+[Run the samples](https://labradorengine.com/docs/guides/samples/#in-a-browser)
+says what each step prints):
 
 ```bat
 cmake --preset wasm-release
@@ -78,7 +82,14 @@ cmake --build --preset wasm-release --target LocalMultiplayerSample
 ```
 
 Serve `out\build\wasm-release\samples\local_multiplayer\` over HTTP and open
-`LocalMultiplayerSample.html`. A browser will not compile a module read from
+`LocalMultiplayerSample.html`:
+
+```bat
+start "Sample server" "%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory out\build\wasm-release\samples\local_multiplayer
+```
+
+then `http://127.0.0.1:8000/LocalMultiplayerSample.html`, reloading with
+Ctrl+F5 after a rebuild. A browser will not compile a module read from
 `file://`. The keyboard controls are the same. The pads come from the
 browser's Gamepad API rather than XInput, and no pad has driven that path
 yet. Escape stops the loop and the page says

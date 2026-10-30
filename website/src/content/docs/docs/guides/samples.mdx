@@ -244,11 +244,62 @@ Any other message: [Troubleshooting](/docs/troubleshooting/) lists them, and
 
 LineSweeper plays in a desktop browser at
 [the hosted demo](https://mattharding.dev/demo/linesweeper/), with nothing to build. Building
-the samples for a browser needs Emscripten as well; [Build for the browser](/docs/guides/browser/)
-installs it. Under a `wasm-debug` preset, from the same engine folder, each sample is a page
-such as `out\build\wasm-debug\samples\collision\CollisionSample.html` instead of an `.exe`, with
-its content packed into the module. Serve the folder over HTTP and open the page, as
-[Serve it and open it](/docs/guides/browser/#serve-it-and-open-it) shows.
+the samples for a browser needs Emscripten as well; do [Install
+Emscripten](/docs/guides/browser/#install-emscripten) on the browser page first. Then, in an x64
+Native Tools Command Prompt, set up Emscripten and go to the engine's folder:
+
+```bat
+C:\dev\emsdk\emsdk_env.bat
+cd /d C:\dev\mygame\external\labrador
+```
+
+and configure, build and test the browser build, a separate `out\build\wasm-debug` folder beside
+the Windows one:
+
+```bat
+cmake --preset wasm-debug
+cmake --build --preset wasm-debug
+ctest --preset wasm-debug
+```
+
+Where this page was checked, in a fresh starter with vcpkg's packages cached, the configure took
+9 seconds, the build 296 steps, and the three about two minutes together; the folder took
+381 MB, and ctest ended `100% tests passed, 0 tests failed out of 32`. That count includes the six
+samples' page tests, which configure registers only when it finds Chrome; without it, configure
+says `No Chromium found` and ctest runs 19. The configure also prints the three shared-library
+warnings the browser page describes. The first configure of a browser build can take a quarter of
+an hour at vcpkg's `Fetching registry information` or `Detecting compiler hash` line; leave it
+running.
+
+Each sample is then a page, beside its `.js` and `.wasm`, with its content packed into the
+module. Serve the folder that holds all six, from the same prompt. If the **MyGame server** from
+the browser page is still open, close its window first: a second server on port 8000 starts
+with no error, but the first goes on answering, and every sample's address says `404`. Or use
+`8001` in place of `8000`, in the command and the addresses.
+
+```bat
+start "Samples server" "%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory out\build\wasm-debug\samples
+```
+
+A window titled **Samples server** opens and prints `Serving HTTP on 127.0.0.1 port 8000`. Open
+each sample's address in Chrome, Edge or Firefox:
+
+| Sample | Address |
+| --- | --- |
+| Minimal | `http://127.0.0.1:8000/minimal/MinimalSample.html` |
+| LineSweeper | `http://127.0.0.1:8000/linesweeper/LineSweeperSample.html` |
+| Collision | `http://127.0.0.1:8000/collision/CollisionSample.html` |
+| Audio | `http://127.0.0.1:8000/audio/AudioSample.html` |
+| Local multiplayer | `http://127.0.0.1:8000/local_multiplayer/LocalMultiplayerSample.html` |
+| Components | `http://127.0.0.1:8000/components/ComponentsGallery.html` |
+
+The keys are the Windows ones. A page cannot close its tab, so quitting stops the game and
+leaves the page; reload to play again, and reload with
+**Ctrl+F5** after a rebuild. Close the **Samples server** window to stop the server. A page that
+says `404` means an older server is answering on the same port, or the prompt was not in
+`external\labrador` when you started the server: close every server window, `cd /d
+C:\dev\mygame\external\labrador`, and start it again. If the window closes at once, or another
+message appears, [Build for the browser](/docs/guides/browser/#if-something-fails) says why.
 
 ## What was checked
 
@@ -262,3 +313,16 @@ the one-file restore ran as shown, and the restored file matched the copy. The f
 second messages under [If something fails](#if-something-fails) were made on purpose: the build
 run in `mygame`, and the engine's build run after its build folder was deleted. The third was
 starting the collision sample from `mygame`.
+
+On 2026-10-31 [In a browser](#in-a-browser) was followed as worded in a fresh starter at
+`C:\dev\g10-follow\mygame\external\labrador`, with Emscripten's `emsdk_env.bat` run and
+Chrome 156 installed: the configure ended `-- Configuring done (8.7s)`, the build ran 296 steps,
+ctest passed 32 of 32, the three took 119 seconds, and the folder took 381 MB. Served on a free
+port, all six addresses answered `200`. With the **MyGame server** still open on port 8000, the
+**Samples server** started without an error and the old server answered, `404` for each sample
+and `200` for `MyGame.html`; the page now says to close it or use 8001. That was rerun after the
+correction, and then the same build served on 8001 answered `200` at all six addresses. The
+collision sample's address drew its arena in headless Chrome 156. Earlier that day, two fresh
+configures in another starter spent minutes at `Fetching registry information` and then waited
+at `Detecting compiler hash for triplet x64-windows` until they were stopped; why was not found.
+An earlier run, on 2026-10-30, took 137 seconds and 378 MB.

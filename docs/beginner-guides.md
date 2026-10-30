@@ -242,10 +242,73 @@ In order of impact on a beginner who wants to play around. Each unit is one
    than the template's since `GUIDE#5` removed a line from it: deleting the
    greeting's closing quotation mark now reports line 87, not 88. `OCA-18`,
    a person following the page, stays open.
-10. **`GUIDE#10` The browser build for a beginner.** emsdk needs Git, against
-    the starter's promise; Python, install size and time, `cd /d`; build
-    output and times; what serving prints, a second prompt, a port in use,
-    refreshing after a rebuild.
+10. **`GUIDE#10` The browser build for a beginner.** Done on 2026-10-31:
+    *Build for the browser* checks `python --version` for 3.10 or later, the
+    oldest emsdk accepts, and installs the Python install manager from the Store or `winget` when it is missing; downloads
+    emsdk's tag ZIP, 212,350 bytes, with Windows' `curl.exe` and `tar`, so the
+    browser build needs no Git, with `git clone` as an aside; quotes `emsdk
+    install`'s three downloads, 767,768,043 bytes in about a minute here,
+    leaving 2.12 GB, `emsdk activate`'s whole output with a warning against
+    `--permanent`, `emsdk_env.bat`'s screenful and its three lines in a
+    prompt that has already run it or activate, and `emcc --version`. It
+    configures, builds and tests `wasm-debug` and `wasm-release` with their
+    output, times, steps and file sizes, warns that a first configure can sit
+    for a quarter of an hour at vcpkg's registry fetch or compiler hash, and reads a
+    clang failure through *Read a build error*. It serves the build folder
+    with Emscripten's own Python by `start "MyGame server" "%EMSDK_PYTHON%"`
+    and quotes what the window prints, `200`, `304`, the favicon `404`, the
+    directory listing and a harmless `ConnectionResetError`; gives the
+    second-prompt alternative; and has the reader reload with Ctrl+F5 after a
+    rebuild, because Chrome 156 and Edge 156 kept the old `.js` and `.wasm`
+    through F5, a second F5 and opening the address again when the build was
+    a day old, re-fetching only `MyGame.html`. *When you add a file* names
+    both source lists and `LINK_DEPENDS`. The page runner gains Edge's path, a
+    `dir` check and its pass and failure output; the deliberate failure is
+    undone by deleting the page and building, since a build with no change
+    leaves it. Gathering the release copies the engine's Microsoft licence
+    first, with `curl` for an older pin, and quotes the bundler's output and
+    its two `ENOENT` failures. *If something fails* has 20 entries, among
+    them a port held by another program, which gives `PermissionError:
+    [WinError 10013]`, not the `WinError 10048` the finding expected; a second
+    Python server on the same port, which starts with no error while the
+    first goes on answering; a `start` window that closes at once; and
+    `'"%EMSDK_PYTHON%"' is not recognized` or its `start` dialog in a prompt
+    without `emsdk_env.bat`. *Run the samples* gains *In a browser*: the
+    engine's `wasm-debug` build in `external\labrador`, 296 steps and 32
+    tests in about two minutes and 381 MB, served from the samples folder with
+    a table of the six addresses and a warning that a **MyGame server** still
+    on port 8000 answers instead. Troubleshooting gains five *Browser builds*
+    entries; the guides index moves the page among the step-by-step guides;
+    Install the tools says the browser build needs no Git; Examples links
+    *In a browser*; the collision, local-multiplayer and audio READMEs give
+    the serve command, the address and Ctrl+F5. The steps, output and
+    failures were run in a fresh starter with Git hidden from `PATH`, then
+    followed as worded by a second agent in another starter, and corrected:
+    a backspace byte in the collision README's command, the deliberate
+    failure's recovery, the samples server's port, the missing `%EMSDK_PYTHON%`
+    entry, activate's middle lines, `emsdk_env.bat` after activate, the first
+    configure's 297 seconds, `304`, `--accept-source-agreements` on the
+    `winget` line, the runner's timeout title and the samples' times; each
+    corrected step ran again in a third starter. The pages' *What was
+    checked* sections record the runs. `GUIDE#9`'s question was weighed and
+    declined: a `condition` on the starter's `wasm-*` presets that hides them
+    when `EMSDK` is empty makes `cmake --preset wasm-debug` fail with `Could
+    not use disabled preset "wasm-debug"` instead of naming Emscripten,
+    hides them from `--list-presets`, still lets build and test presets run
+    against an existing folder, and would change the release guide's whole
+    presets file, the Visual Studio guide and two Troubleshooting entries,
+    while that it stops Visual Studio offering `wasm-debug` was not seen; the
+    presets are unchanged. Found on the way: two fresh configures of the
+    engine's `wasm-debug` build in the first starter sat idle at `Detecting
+    compiler hash for triplet x64-windows` until they were stopped, while
+    the same build in the second starter configured in 9 seconds; the cause
+    was not found. A review in a fourth starter then reran the ZIP install
+    with Git hidden, both builds, the bundler, the page runner, the held port
+    and the second server, found that emsdk refuses Python older than 3.10
+    where the page had said 3.8, and saw a first configure take 860 seconds
+    at `Fetching registry information` before finishing on its own; the
+    page, *Run the samples* and Troubleshooting's `EMSDK` entry, which had
+    said to delete the half-made folder, were corrected.
 11. **`GUIDE#11` Git and engine versions.** starter-to-git deletes the engine
     before cloning with no recovery; `.vs/` missing from `.gitignore`;
     day-to-day Git; move-pin's output, pager and steps 3 and 4; going back to
@@ -338,7 +401,15 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   `/CharacterRegion` for a letter the font lacks still reports it captured,
   storing the font's missing-letter box. Explorer's **Install** menu entry
   was read from the shell's verb list, not clicked.
-- emsdk from a ZIP, Python installer defaults, browser caching.
+- Installing Python. `GUIDE#10` found that emsdk's tag ZIP installs and
+  activates 6.0.12 with no Git on `PATH`, measured Chrome's and Edge's
+  caching of a served page, and that a held port gives `WinError 10013`;
+  the machine already had Python, so the install manager's Store and
+  `winget` installs, the Store shortcut's `Python was not found` message and
+  **Manage app execution aliases** are written from Python's documentation.
+  Firefox, Safari, a machine with no connection and the release licence's
+  `curl` fallback were not tried, and Ctrl+C in the server's window was not
+  pressed.
 - Private-repository CI minutes beyond GitHub's billing page. `GUIDE#8`
   found renaming the page to `index.html` safe, and wrote these
   account-bound steps from GitHub's documentation without running them: the
@@ -354,7 +425,8 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   by script, not by hand, and the second agent pressed none. Explorer's
   **Send to > Compressed (zipped) folder** was not clicked, and no email was
   sent.
-- Every download size and time.
+- Every download size and time other than emsdk's, which `GUIDE#10`
+  measured on one fast connection.
 
 ## Findings
 
