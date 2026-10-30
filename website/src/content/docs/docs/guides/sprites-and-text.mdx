@@ -427,3 +427,25 @@ are premultiplied by the tool.
 `DrawList::set_filter` chooses between smooth (linear) and blocky (point) sampling when a texture
 is scaled, for every draw after it in that view. Pixel art usually wants point sampling. Changing
 the filter partway through a view is allowed and costs a little, so group draws by filter.
+
+**Point is the default.** Every view starts each frame with `TextureFilter::point`, so pixel art
+drawn bigger than its texture is already blocky, and a starter project needs no line for it.
+For a picture that should be smoothed instead, such as a photograph drawn at twice its size,
+set linear in that object's `draw`, just before its sprite, and set point back after it, so the
+objects drawn after it in the view stay blocky. In the `Picture` class from
+[Put a picture in your game](/docs/guides/your-picture/), `draw` becomes:
+
+```cpp
+void draw(labrador::DrawList& draw_list) const override
+{
+	draw_list.set_filter(labrador::TextureFilter::linear);
+	draw_list.draw_sprite(this->texture_,
+		labrador::RectangleI(0, 0, this->width_, this->height_),
+		this->bounds(), labrador::Colour::white, 0.0f,
+		labrador::Vector2F::zero, labrador::SpriteFlip::none, 0.0f);
+	draw_list.set_filter(labrador::TextureFilter::point);
+}
+```
+
+At its own size a picture looks the same under either filter; the difference shows only when
+`bounds()` makes it bigger or smaller than the texture.

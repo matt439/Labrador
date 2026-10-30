@@ -40,7 +40,13 @@ LineSweeper does: every duration in its rules is a number of ticks, and its `mai
 
 When your game blocks on purpose (loading a level, say), call `app.reset_elapsed_time()`
 afterwards. Otherwise the time spent loading is owed as steps, and the next frame runs them all
-on a world nobody has seen yet.
+on a world nobody has seen yet. A state reaches the application through the pointer it keeps,
+`app_` in the starter's states, so in a state's `update()`, after the slow part:
+
+```cpp
+this->load_next_level(); // a slow load, here a function of your own
+this->app_->reset_elapsed_time();
+```
 
 ## Input is read first
 

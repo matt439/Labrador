@@ -57,13 +57,47 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
    - **vcpkg package manager**
    - a **Windows 11 SDK** (any version)
 
-   Current versions tick all three by default. Click **Install** and wait; it downloads several
-   gigabytes. Restart Windows if the installer asks you to. That workload brings the compiler,
-   CMake, Ninja, vcpkg and the Windows SDK, whose shader compiler the build needs.
+   Current versions tick all three by default. That workload brings the compiler, CMake, Ninja,
+   vcpkg and the Windows SDK, whose shader compiler the build needs.
+
+   Before you click **Install**, look at the bottom of the installer's window, which shows the
+   space the selection needs on each drive. Microsoft's
+   [system requirements](https://learn.microsoft.com/en-us/visualstudio/releases/2026/vs-system-requirements)
+   say a typical installation needs 20 to 50 GB free. On the desktop these pages were checked
+   on, Visual Studio Community 2026 with this workload and four others takes 9.4 GB in
+   `C:\Program Files\Microsoft Visual Studio\18\Community`, of which one version of the C++
+   compiler is 2.4 GB; the Windows SDK takes 2.1 GB in `C:\Program Files (x86)\Windows Kits\10`;
+   and the installer keeps 4.2 GB of downloaded packages in
+   `C:\ProgramData\Microsoft\VisualStudio\Packages`: about 16 GB on drive `C:` in all. The
+   download is several gigabytes, and on a home connection the install takes from tens of
+   minutes to a couple of hours; how long it took was not measured here. Click **Install** and
+   wait. The installer shows each step's progress, and you can use the computer meanwhile.
+
+   When it has finished, the installer's **Installed** tab lists your Visual Studio with
+   **Modify** and **Launch** buttons beside it, and may first ask you to restart Windows. Restart
+   if it asks; you do not need to click **Launch**, as these pages open Visual Studio only when
+   they need it. Close the installer.
 
    If Visual Studio is already installed, open **Visual Studio Installer** from the Start menu,
    click **Modify** beside your Visual Studio, and check the same workload and the same three
    items.
+
+   **If the install fails**, the installer says so and names the step that failed:
+
+   - **Not enough space** on a drive: the installer warns about that drive before it starts, or
+     stops partway with a message about disk space. Free space on that drive, for example by emptying the
+     Recycle Bin or uninstalling programs you no longer use in **Settings > Apps > Installed
+     apps**, then open the installer again from the Start menu and click **Modify** or
+     **Install**.
+   - **A restart is needed**, because Windows is still finishing an update or an earlier
+     install: restart, then open **Visual Studio Installer** from the Start menu and click
+     **Modify**, then **Modify** again at the bottom right, or **Install** if it is not listed
+     yet. It carries on from where it stopped.
+   - **A download or package failed**: check your connection and click **Retry** if the
+     installer offers it. If Visual Studio is listed but a later step fails, click **More**
+     beside it and then **Repair**. Microsoft's
+     [installation troubleshooting](https://learn.microsoft.com/en-us/troubleshoot/developer/visualstudio/installation/troubleshoot-installation-issues)
+     page has the further steps, from deleting the installer's own folder to its live chat.
 
 2. <a id="install-git"></a>**For the Git route: install [Git for Windows](https://git-scm.com/download/win)**,
    if you do not have it.
@@ -89,6 +123,15 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
 3. **Open the x64 Native Tools Command Prompt.** Click Start, type `x64 Native Tools`, and click
    the result whose name begins **x64 Native Tools Command Prompt**. It is installed with Visual
    Studio. Every command in this guide runs in it.
+
+   Right after an install, Start's search can take a while to find it. It is also in Start's
+   app list: click Start, then **All** (or **All apps**) at the top right of the pinned apps,
+   scroll to **Visual Studio 2026** (or **Visual Studio 2022**), open that folder and click
+   **x64 Native Tools Command Prompt for VS** (with the version after it on Visual Studio 2022).
+   On disk the shortcut is in
+   `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2026\Visual Studio Tools\VC`,
+   and Explorer opens it from there too. Every later page opens this prompt, so pin it:
+   right-click it and choose **Pin to Start** or **Pin to taskbar**.
 
    The window it opens starts with lines like these, and the last of them must say `'x64'`:
 
@@ -294,3 +337,18 @@ it. To build the Vulkan renderer as well, install the
 [Vulkan SDK](https://vulkan.lunarg.com/) and make sure `VULKAN_SDK` is set. It is the one
 dependency that does not come with Visual Studio or Windows.
 </Aside>
+
+## What was checked
+
+On 31 October 2026 the sizes in step 1 were measured on the owner's desktop, which has Visual
+Studio Community 2026 18.9 with the **Desktop development with C++**, **Game development with
+C++**, **Python development**, **.NET desktop development** and core editor workloads, and two
+versions of the C++ compiler. The C++ workload alone needs less than the 16 GB total measured
+there. The installer was not run for these pages: how long a fresh install takes, the finished
+**Installed** tab and the installer's failures are written from Microsoft's
+[system requirements](https://learn.microsoft.com/en-us/visualstudio/releases/2026/vs-system-requirements)
+and [installation troubleshooting](https://learn.microsoft.com/en-us/troubleshoot/developer/visualstudio/installation/troubleshoot-installation-issues)
+pages. The **x64 Native Tools Command Prompt for VS** shortcut was found in the Start menu
+folder step 3 names. A second agent measured the same three sizes, found the shortcut under
+`Visual Studio Tools\VC`, and read the same 20 to 50 GB on Microsoft's page; neither agent
+clicked through the Start menu's **All** list.

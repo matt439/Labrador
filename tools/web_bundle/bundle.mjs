@@ -131,11 +131,14 @@ function verify_bundle(folder) {
 	if (build.build_type !== 'Release') {
 		throw new Error('build_type must be Release');
 	}
-	if (build.dirty !== false) {
-		throw new Error('dirty must be false');
-	}
+	// The commit before dirty: a bundle from a source tree with no .git of its
+	// own, such as a starter project's engine, records both as unknown, and
+	// the commit is the rule that says why.
 	if (typeof build.commit !== 'string' || !/^[0-9a-f]{40}$/.test(build.commit)) {
 		throw new Error('commit must be a full Git revision, not unknown');
+	}
+	if (build.dirty !== false) {
+		throw new Error('dirty must be false');
 	}
 	if (typeof build.emscripten !== 'string' ||
 		!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(build.emscripten)) {

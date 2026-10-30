@@ -722,7 +722,10 @@ size is a packaging estimate, not recomputed by another Node/Brotli version.
 Every folder entry except `BUILD.json` must be recorded; stale files, subfolders
 and symbolic links fail. Additional recorded files receive the same checks.
 Missing or malformed metadata, unknown provenance and any failed rule
-produce a diagnostic and a nonzero exit. The Debug
+produce a diagnostic and a nonzero exit. The commit is checked before
+`dirty`, so a bundle built from a source tree with no `.git` of its own,
+such as a starter project's `external/labrador`, which records both as
+unknown, is refused with the commit's rule. The Debug
 bundle fails the build-type rule. No Git checkout, compiler, browser or
 network access is needed to verify a copied bundle.
 

@@ -6,14 +6,20 @@
 # many frames and the release comes in a later one. Keys go in as set-1 scan
 # codes, which is how the Win32 window reads them, and only reach the
 # foreground window, so the script brings the game forward first and refuses to
-# continue if it cannot.
+# continue if it cannot. Windows lets a program take the foreground only just
+# after a key or click, so the script taps Alt before asking for it.
 #
+# From an engine checkout:
 #   powershell -ExecutionPolicy Bypass -File tools\input_drive\hold_key.ps1 `
 #       -Exe out\build\x64-release\samples\minimal\MinimalSample.exe -Key Right
+# From a starter project, whose engine is in external\labrador:
+#   powershell -ExecutionPolicy Bypass -File external\labrador\tools\input_drive\hold_key.ps1 `
+#       -Exe out\build\x64-debug\game\MyGame.exe -Key Right
+# The pictures go to out\input-drive under the folder the command runs in.
 
 param(
     [Parameter(Mandatory = $true)] [string] $Exe,
-    [ValidateSet('Left', 'Right', 'Up', 'Down', 'Enter', 'Space')] [string] $Key = 'Right',
+    [ValidateSet('Left', 'Right', 'Up', 'Down', 'Enter', 'Space', 'Escape')] [string] $Key = 'Right',
     [int] $HoldMilliseconds = 500,
     [string] $OutDirectory = 'out\input-drive'
 )
@@ -82,6 +88,7 @@ public static class InputDrive
 $scans = @{
     Left = @(0x4B, $true); Right = @(0x4D, $true); Up = @(0x48, $true)
     Down = @(0x50, $true); Enter = @(0x1C, $false); Space = @(0x39, $false)
+    Escape = @(0x01, $false)
 }
 
 # Physical pixels, so the capture rectangle matches the window at any scaling.
@@ -111,6 +118,12 @@ try {
         $game.Refresh()
     }
     $window = $game.MainWindowHandle
+    # A key event makes this script's input the last the system saw, which is
+    # what lets SetForegroundWindow succeed when the script was not started
+    # from the window in front. It reaches that window, not the game, and Alt
+    # pressed and released alone types nothing.
+    [InputDrive]::Key(0x38, $false, $false)
+    [InputDrive]::Key(0x38, $false, $true)
     [void][InputDrive]::SetForegroundWindow($window)
     Start-Sleep -Milliseconds 1000
     if ([InputDrive]::GetForegroundWindow() -ne $window) {

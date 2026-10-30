@@ -5,6 +5,7 @@ sidebar:
   order: 8
 ---
 
+import { Aside, Steps } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
 import Capture from '~/components/Capture.astro';
@@ -13,11 +14,35 @@ import holdAfter from '~/assets/captures/minimal-hold-after.png';
 
 A project started from the [starter project](/docs/get-started/starter/) or
 [Start your own project](/docs/get-started/your-project/) is tested from
-its first commit. It has two tests, and ctest runs them:
+its first commit. It has two tests, and ctest runs them, in the x64 Native Tools Command Prompt,
+in the project's folder, after a build:
 
 ```bat
+cd /d C:\dev\mygame
 ctest --preset x64-debug
 ```
+
+It takes about a second, and ends:
+
+```text title="Output"
+Test project C:/dev/mygame/out/build/x64-debug
+    Start 1: MyGameTests
+1/2 Test #1: MyGameTests ......................   Passed    0.01 sec
+    Start 2: MyGameSmokeTests
+2/2 Test #2: MyGameSmokeTests .................   Passed    0.69 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.73 sec
+```
+
+A failed test says `***Failed` in place of `Passed`, and the lines under it say why. A failed
+`MyGameSmokeTests` prints a `startup failure:` line, as [The start-up check](#the-start-up-check)
+below shows, which [Troubleshooting](/docs/troubleshooting/#running) looks up by message, and
+the summary ends `50% tests passed, 1 tests failed out of 2`. A failed `MyGameTests` prints
+doctest's report; [Add a rule and a test](/docs/guides/your-rule/) reads one line by line. If
+ctest says `Could not read presets`, the prompt is not in the project's folder: run the `cd` line
+above.
 
 `MyGameTests` runs the game's rules with no window, no graphics device and no input device.
 `MyGameSmokeTests` starts the game itself, hidden, lets it draw a few frames and quits. The first
@@ -88,39 +113,172 @@ why it is arranged that way.
 
 ## Inspect draws with the null backend
 
-Use a second configure with `LABRADOR_RENDER_BACKEND=null` and
-`LABRADOR_AUDIO_BACKEND=null` for tests that inspect draw requests. Backend
-selection happens at configure time; keep the regular build for playing and
-give the recording build its own directory.
+**This section is for later.** It tests what a game draws without drawing it, which matters once
+a game has many things on screen; a game with a few labels can skip it.
 
-In the consumer `CMakePresets.json` from the walkthrough, add this object to
-`configurePresets`. It inherits the existing Debug toolchain/settings, and
-the base's `${presetName}` binary directory gives it a separate build tree:
+It uses a second build of the game with the null renderer and null audio, which draw and play
+nothing and keep a record of what they were asked to do. Which renderer a build uses is chosen
+when it is configured, so the second build has a preset and a build folder of its own, beside
+the regular one you play.
 
-```json
-{
-  "name": "x64-debug-null",
-  "inherits": "x64-debug",
-  "cacheVariables": {
-    "LABRADOR_RENDER_BACKEND": "null",
-    "LABRADOR_AUDIO_BACKEND": "null"
-  }
-}
+<Steps>
+
+1. **Add the null presets.** Open the presets file, in your project's folder:
+
+   ```bat
+   notepad CMakePresets.json
+   ```
+
+   If you have not changed it, press **Ctrl+A** and paste this whole file in its place, then save
+   and close Notepad. It is the starter's file with three entries added, each called
+   `x64-debug-null`: a configure preset that inherits everything from `x64-debug` and asks for
+   the null renderer and null audio, and a build and a test preset that use it.
+
+   ```json title="CMakePresets.json"
+   {
+     "version": 6,
+     "cmakeMinimumRequired": { "major": 3, "minor": 26, "patch": 0 },
+     "configurePresets": [
+       {
+         "name": "base",
+         "hidden": true,
+         "condition": {
+           "type": "equals",
+           "lhs": "${hostSystemName}",
+           "rhs": "Windows"
+         },
+         "generator": "Ninja",
+         "binaryDir": "${sourceDir}/out/build/${presetName}",
+         "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+         "architecture": { "value": "x64", "strategy": "external" }
+       },
+       {
+         "name": "x64-debug",
+         "inherits": "base",
+         "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+       },
+       {
+         "name": "x64-debug-null",
+         "inherits": "x64-debug",
+         "cacheVariables": {
+           "LABRADOR_RENDER_BACKEND": "null",
+           "LABRADOR_AUDIO_BACKEND": "null"
+         }
+       },
+       {
+         "name": "x64-release",
+         "inherits": "base",
+         "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+       },
+       {
+         "name": "wasm-base",
+         "hidden": true,
+         "generator": "Ninja",
+         "binaryDir": "${sourceDir}/out/build/${presetName}",
+         "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+         "cacheVariables": {
+           "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+           "VCPKG_TARGET_TRIPLET": "wasm32-emscripten"
+         }
+       },
+       {
+         "name": "wasm-debug",
+         "inherits": "wasm-base",
+         "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+       },
+       {
+         "name": "wasm-release",
+         "inherits": "wasm-base",
+         "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+       }
+     ],
+     "buildPresets": [
+       { "name": "x64-debug", "configurePreset": "x64-debug" },
+       { "name": "x64-debug-null", "configurePreset": "x64-debug-null" },
+       { "name": "x64-release", "configurePreset": "x64-release" },
+       { "name": "wasm-debug", "configurePreset": "wasm-debug" },
+       { "name": "wasm-release", "configurePreset": "wasm-release" }
+     ],
+     "testPresets": [
+       {
+         "name": "x64-debug",
+         "configurePreset": "x64-debug",
+         "output": { "outputOnFailure": true }
+       },
+       {
+         "name": "x64-debug-null",
+         "configurePreset": "x64-debug-null",
+         "output": { "outputOnFailure": true }
+       },
+       {
+         "name": "x64-release",
+         "configurePreset": "x64-release",
+         "output": { "outputOnFailure": true }
+       },
+       {
+         "name": "wasm-debug",
+         "configurePreset": "wasm-debug",
+         "output": { "outputOnFailure": true }
+       },
+       {
+         "name": "wasm-release",
+         "configurePreset": "wasm-release",
+         "output": { "outputOnFailure": true }
+       }
+     ]
+   }
+   ```
+
+   If you have changed the file, for example with the `x64-release-gl` entries from
+   [Send your game to a friend](/docs/guides/your-release/#a-second-program-for-older-graphics-cards),
+   add the three `x64-debug-null` entries by hand where they are above: each goes after the
+   `x64-debug` entry of its own list. Every entry in a list but the last ends with a comma after
+   its closing `}`, and the last has none.
+
+2. **Configure, build and test it:**
+
+   ```bat
+   cmake --preset x64-debug-null
+   cmake --build --preset x64-debug-null
+   ctest --preset x64-debug-null
+   ```
+
+   The configure makes `out\build\x64-debug-null`, beside `out\build\x64-debug`, and builds the
+   engine again there: 94 steps in a starter project you have not added files to, and more
+   when your game has more source files or tests. The build took between 4 and 12 seconds on a fast
+   desktop with every library already in vcpkg's cache, and the folder takes 120 to 150 MB. The
+   configure's last lines are:
+
+   ```text title="Output"
+   -- Configuring done (7.4s)
+   -- Generating done (0.1s)
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug-null
+   ```
+
+   and the tests pass as in the regular build. `MyGameSmokeTests` passes too: the game starts
+   with nothing drawn and no window shown.
+
+</Steps>
+
+<Aside type="caution" title="CMake Error: Could not read presets from C:/dev/mygame:">
+The presets file is not valid JSON, usually a comma. With the comma after the new configure
+entry's `}` missing, the next lines are:
+
+```text
+CMakePresets.json:31: Missing ',' or ']' in array declaration
+    {
+    ^
+CMakePresets.json:59: Extra non-whitespace after JSON value.
+    { "name": "x64-debug", "configurePreset": "x64-debug" },
+                                                           ^
 ```
 
-Add the matching objects to `buildPresets` and `testPresets`, respectively:
+The first error is the one to read: a comma is missing after the `}` before line 31. The second
+follows from it. `Duplicate preset: "x64-debug-null"` under the same first line means an entry
+was pasted twice. The quickest repair is to paste the whole file from step 1 again.
+</Aside>
 
-```json
-{ "name": "x64-debug-null", "configurePreset": "x64-debug-null" }
-```
-
-```json
-{
-  "name": "x64-debug-null",
-  "configurePreset": "x64-debug-null",
-  "output": { "outputOnFailure": true }
-}
-```
+The draw test below runs only in this build.
 
 The <RepoLink path="engine/render/null/recording.h">recording inspector</RepoLink>
 is a **backend-internal, test-only interface**, not a published portable render
@@ -134,7 +292,14 @@ view pixels, with the camera already applied; the viewport offset is separate.
 Read after `submit()`. The renderer owns the returned vector and clears it at
 the next `begin_frame()`, so copy entries needed across frames or its lifetime.
 
-Put this complete example in `game/tests/draw_tests.cpp`. It creates no window,
+Make the test file and open it, in your project's folder:
+
+```bat
+if not exist game\tests\draw_tests.cpp type nul > game\tests\draw_tests.cpp
+notepad game\tests\draw_tests.cpp
+```
+
+and paste this complete example into it. It creates no window,
 Application, graphics API device or audio endpoint. Its texture is supplied
 from memory and the null renderer records the draws. In your game, call your view's `draw` with these
 DrawLists and check the texture, order or geometry your presentation should
@@ -222,7 +387,9 @@ TEST_CASE("drawing preserves view order, call order and sprite state")
 }
 ```
 
-Add a separate target to `game/CMakeLists.txt`, where doctest is already found:
+With that file saved, open `game\CMakeLists.txt`, search for
+`add_test(NAME MyGameTests COMMAND MyGameTests)`, and paste this on the line after it, where
+doctest has already been found:
 
 ```cmake
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
@@ -238,13 +405,26 @@ The guard keeps this inspector-specific source out of other render builds.
 List the view sources under test in this target too, or link your presentation
 library. The project-root include path admits the walkthrough's `game/...`
 headers. The existing rules target still links only maths. Configure, build and run
-the draw test from your project root in the Native Tools prompt:
+the draw test from your project's folder in the Native Tools prompt:
 
 ```bat
 cmake --preset x64-debug-null
 cmake --build --preset x64-debug-null --target MyGameDrawTests
 ctest --preset x64-debug-null -R "^MyGameDrawTests$" --output-on-failure
 ```
+
+The test ends:
+
+```text title="Output"
+1/1 Test #2: MyGameDrawTests ..................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.03 sec
+```
+
+and a plain `ctest --preset x64-debug-null` now runs three tests. The regular `x64-debug` build
+does not build it, and still runs two.
 
 Recordings prove the submitted commands and geometry. Pixel tests cover actual
 rasterization; this backend produces no pixels and `read_back_buffer` throws
@@ -298,12 +478,32 @@ another window takes focus is released at the next poll.
 
 This script starts a game, brings its window forward, holds one key and saves the window
 before and after. It sends set-1 scan codes through `SendInput`, which is how the Windows
-window reads keys, so it presses the same physical key whatever the keyboard layout:
+window reads keys, so it presses the same physical key whatever the keyboard layout. Windows
+lets a program bring a window forward only just after a key press, so it taps Alt first:
 
 <SourceFile path="tools/input_drive/hold_key.ps1" collapsed />
 
-Run against the Release minimal sample, holding the right arrow for half a second moves its
-greeting about 200 pixels, its speed of 400 pixels a second for 0.5 seconds:
+The script comes with the engine, so a starter project has it in `external\labrador\tools`.
+Build the game first, then run this in the x64 Native Tools Command Prompt, in your project's
+folder, with nothing else of yours open over the game's window:
+
+```bat
+cd /d C:\dev\mygame
+powershell -ExecutionPolicy Bypass -File external\labrador\tools\input_drive\hold_key.ps1 -Exe out\build\x64-debug\game\MyGame.exe -Key Right
+```
+
+The game's window opens, the greeting moves right for half a second, and the window closes again
+by itself, about two seconds in all. The script prints one line:
+
+```text title="Output"
+Held Right for 500 ms; wrote before.png and after.png to out\input-drive.
+```
+
+The two pictures are the game's window before the key and after it, in
+`C:\dev\mygame\out\input-drive`. Open the folder with `explorer out\input-drive` and
+double-click each to see it. Holding the right arrow for half a second moves the greeting about
+200 pixels, its speed of 400 pixels a second for 0.5 seconds; the minimal sample, in an engine
+checkout, looks like this:
 
 ```bat
 powershell -ExecutionPolicy Bypass -File tools\input_drive\hold_key.ps1 -Exe out\build\x64-release\samples\minimal\MinimalSample.exe -Key Right
@@ -321,7 +521,37 @@ powershell -ExecutionPolicy Bypass -File tools\input_drive\hold_key.ps1 -Exe out
 	caption="After holding the right arrow for 500 ms."
 />
 
-For a title screen that waits for Enter, pass `-Key Enter`. The script is yours to change;
+`-Key` takes `Left`, `Right`, `Up`, `Down`, `Enter`, `Space` or `Escape`. `-Key Escape` on the
+starter's game shows the quit question in `after.png`, unless you changed its quit key in
+[Change a control in your game](/docs/guides/input/#change-a-control-in-your-game). For a title screen that waits for Enter,
+such as the one [Add a screen to your game](/docs/guides/your-screen/) writes, pass
+`-Key Enter`. `-HoldMilliseconds 1000` holds the key for a second, and `-OutDirectory` names
+another folder for the pictures. Each run replaces the two pictures.
+
+<Aside type="caution" title="The game is not the foreground window, so it would not receive the key.">
+Windows did not let the script bring the game's window to the front, so it stopped before
+pressing anything and closed the game. Click the command prompt's window, so that it is the one
+in front, and run the line again without touching the mouse or keyboard until it has finished.
+</Aside>
+
+<Aside type="caution" title="Cannot validate argument on parameter 'Key'. The argument &quot;Q&quot; does not belong to the set &quot;Left,Right,Up,Down,Enter,Space,Escape&quot;">
+The script knows only those seven keys. Pass one of them, spelt as there; capitals do not matter.
+To hold another key, add its set-1 scan code to the `$scans` list and the `ValidateSet` line in
+the script; `0x10` is Q.
+</Aside>
+
+<Aside type="caution" title="Resolve-Path : Cannot find path 'out\build\x64-release\game\MyGame.exe' because it does not exist.">
+The `-Exe` path names a program that is not there: here the release build, which a starter project
+has only after [Send your game to a friend](/docs/guides/your-release/). Build the game, and give
+the path from your project's folder, `out\build\x64-debug\game\MyGame.exe`.
+</Aside>
+
+<Aside type="caution" title="The argument 'external\labrador\tools\input_drive\hold_key.ps1' to the -File parameter does not exist.">
+PowerShell prints its banner after this and exits. The prompt is not in your project's folder:
+run the `cd /d C:\dev\mygame` line, then the command again.
+</Aside>
+
+The script is yours to change;
 the engine has no replay or input-injection mechanism of its own. Labrador's browser pages are
 driven the same way through Chrome's DevTools protocol, with real key events dispatched
 through the page's shell:
@@ -331,3 +561,37 @@ through the page's shell:
 
 The same `ctest` runs on every push with the workflow in
 [Check your game in CI](/docs/guides/ci/).
+
+## What was checked
+
+On 31 October 2026, in a starter project made from a starter ZIP of this tree, with Visual Studio
+2026's compiler 19.51, the commands on this page ran as shown, with the project's folder shown
+as `C:\dev\mygame`: `ctest --preset x64-debug` passing, and failing with the build's `fonts`
+folder moved away; the whole presets file from [Inspect draws](#inspect-draws-with-the-null-backend),
+whose configure, build and three tests passed, and the same file with the comma removed and with
+the build entry pasted twice; the draw test's file and `CMake` block, built and run with the
+commands given, and the regular build afterwards, which still ran two tests. `hold_key.ps1` ran
+from the starter's folder with `-Key Right`, `right` and `Escape`, and its pictures showed the
+greeting moved about 200 pixels and the quit question. Run by an agent whose prompt was not the
+window in front, the script before this page's change stopped with the foreground message; with
+the Alt tap it brought the game forward in each of that day's runs but one, which stopped with
+the same message and passed when run again, as the box above says to. The `Q`, missing-program and wrong-folder
+messages were made on purpose. The pictures on this page are from an earlier run against the
+engine's own minimal sample.
+
+A second agent then followed the page as worded in another fresh starter. The passing and
+failing `ctest` output, the pasted presets file, the missing-comma and `Duplicate preset`
+messages, the draw test and the regular build's two tests, `hold_key.ps1`'s output, its moved
+greeting and Alt tap, and its three failure messages matched. Its null build, in a starter with
+no files added, ran 94 steps in about 4 seconds where the first starter's had run 96, and its
+folder was 123 MB where the first's was 143 MB; the page now gives 94 steps and that range. It
+also found that `-Key Escape` shows no question once the quit key is changed, which the page now
+says.
+
+A review in a third fresh starter wrote the presets file, the draw test and its `CMake` block
+from this page's text by script. The null configure, build and three tests passed, 96 steps with
+the draw test's two, in a 143 MB folder; the draw test alone passed, and the regular build still
+ran two tests. Removing the comma gave the two errors quoted, and `cmake --preset` and `ctest
+--preset` from the folder above the project gave `Could not read presets`. `hold_key.ps1` with
+`-Key Right`, from a prompt that was not the window in front, printed its line and moved the
+greeting, and `-Key Q`, the wrong folder and the release path gave the three messages quoted.

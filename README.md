@@ -115,6 +115,13 @@ at configure time. rapidjson is vendored in `external/`.
 
 ### Configure, build, test
 
+If you have not built C++ from a command prompt before, follow
+[Get Started](https://labradorengine.com/docs/get-started/) instead: it gives
+every step, what each prints and what each failure means. These are the short
+commands for people who have. They run in Visual Studio's x64 Native Tools
+Command Prompt (or a shell where `vcvars64.bat` has run), from the root of a
+clone of this repository:
+
 ```
 cmake --preset x64-debug          # or x64-release, x64-debug-d3d12,
                                   # x64-release-d3d12, and the gl/vulkan/null
@@ -280,13 +287,14 @@ the line.
 ctest --preset x64-debug
 ```
 
-Twenty entries on the Windows presets: eighteen doctest targets, the minimal
-sample's start-up check and the benchmark. The `-null` presets have nineteen,
-because the pixel tests need a device, and a `wasm-*` build has twenty-eight
-where Chrome is found, the extra ones being pages run in headless Chrome, one
-for each sample among them, and no start-up check, because a page has no
-command line. How
-many cases ran is what `ctest` prints.
+What to check is `ctest`'s last line, `100% tests passed, 0 tests failed out
+of N`. N is 20 on the Direct3D 11, OpenGL and Vulkan presets: eighteen doctest
+targets, the minimal sample's start-up check and the benchmark. The Direct3D 12
+presets have 21, with a synchronization test of their own. The `-null` presets
+have 19, because the pixel tests need a device. A `wasm-*` build has 19 without
+a Chromium and, where one is found, 32 in Debug and 33 in Release, the extra
+ones being pages run in headless Chrome, one for each sample among them, and no
+start-up check, because a page has no command line.
 
 The benchmark (`bench/`) asserts on **complexity class** rather than on
 wall-clock: a phase that is linear in the object count must stay linear when

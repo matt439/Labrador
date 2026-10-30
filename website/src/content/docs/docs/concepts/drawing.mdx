@@ -166,6 +166,10 @@ for all of them. Nothing above the renderer names a graphics API.
 
 ## Capturing a frame
 
+To take a picture of your game to share, use Windows: **Win+Shift+S** opens the Snipping Tool's
+bar, where you drag a box round the window, and the picture is copied, ready to paste. What
+follows is for a program that captures its own frames, such as a test.
+
 There is no hook between the engine's `submit` and its present, and a screenshot does not need
 one. Because `draw()` only reads, drawing the stack a second time between two updates draws
 exactly the frame the engine would draw. So a capture is a frame of your own, taken from an
