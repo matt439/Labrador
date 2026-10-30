@@ -238,6 +238,27 @@ because they compile the shader to SPIR-V with the SDK's `dxc`. Windows also shi
 without SPIR-V support, which is why the build looks only in the SDK. If you do not need Vulkan,
 use the default `x64-debug` preset (Direct3D 11).
 
+### Configure sits at `Detecting compiler hash for triplet x64-windows...`
+
+vcpkg prints this line and then nothing for many minutes. Where these pages were checked it
+happened while another configure on the same machine was also running Visual Studio's vcpkg,
+and why was not found. One such wait ended by itself after 19 minutes, with
+`Configuring done (1161.8s)`; another was stopped after half an hour, and the same configure run
+again later finished in 3 seconds. Leave it running for a while; if it is still there after half
+an hour, close the prompt with the window's **X**, wait for any other build on the machine to
+finish, open a new prompt and configure again.
+
+### `Cannot find source file: dpi_aware.manifest`, or another file, after moving to a newer Labrador
+
+The new release's `game\CMakeLists.txt` lists a file your `game` folder does not have yet.
+[Update your code for a newer Labrador](/docs/guides/migrate/) says where to copy it from.
+
+### `Failed to load manifest` and `vcpkg.json:13:5: error: Unexpected character in middle of array`
+
+A comma is missing in `vcpkg.json`, here before the entry on line 13. Every entry in a list but
+the last ends with a comma. [A worked merge](/docs/guides/starter-update/#a-worked-merge) shows
+the list as it should be.
+
 ## Building
 
 ### A warning stops the build in engine code
@@ -293,6 +314,12 @@ links the engine should link the engine's copy rather than declare another
 Includes in a Labrador project are written from the project's root, so the folder *above*
 `game\` has to be on the include path. The `target_include_directories` line in
 [Start your own project](/docs/get-started/your-project/) adds it.
+
+### `C2653: 'mattmath': is not a class or namespace name` after moving to a newer Labrador
+
+The engine's math library moved from `mattmath::` to `labrador::` after `v0.2.0`, and its
+constants were spelt in lower case. [Update your code for a newer
+Labrador](/docs/guides/migrate/) makes every rename in your `game` folder with one line.
 
 ## Errors in your own code
 

@@ -21,7 +21,7 @@ BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
-**Beginner guides are ready work:** take `GUIDE#11` to `GUIDE#13` in their
+**Beginner guides are ready work:** take `GUIDE#12` and `GUIDE#13` in their
 order in [Beginner guides](docs/beginner-guides.md), which ranks them by
 impact on the owner's 2026-10-30 reader.
 
@@ -61,7 +61,6 @@ impact on the owner's 2026-10-30 reader.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `GUIDE#11` | OPEN | should | M | Git and engine versions: starter-to-git's unrecoverable delete, `.vs/` ignore, day-to-day Git, move-pin output and rollback, starter-update's `fc`. |
 | `GUIDE#12` | OPEN | should | S | Small fixes: whole preset JSON, a control in both states, `hold_key.ps1` paths, bundle folder and `--verify`, install size, the minor gaps. |
 | `GUIDE#13` | OPEN | should | M | Procedures with no guide: colours, window size, background, renaming the game, two players, camera follow (`IDEA#4`), asking for help, matching docs to a version. |
 

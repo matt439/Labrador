@@ -38,6 +38,11 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-31.** The project's `.gitignore` also ignores `.vs/`, the folder
+  Visual Studio makes when it opens the project, so `git add .` does not
+  record its databases. A copy adds the line `.vs/` to its own `.gitignore`;
+  if `git status --short .vs` lists files already recorded, it also runs
+  `git rm -r --cached -q .vs` and commits.
 - **2026-10-30.** `states/hello_state.cpp` said `using namespace labrador;`
   twice in a row; the second line is deleted. A copy can delete its own. It
   changes nothing the compiler does.

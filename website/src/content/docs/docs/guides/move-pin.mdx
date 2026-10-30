@@ -1,6 +1,6 @@
 ---
 title: Move your engine pin
-description: The commands and the order of checks for moving the Labrador commit your project builds against, the compiler it needs, and how to run the engine's own tests at your pin.
+description: Move the Labrador release your project builds against, step by step - fetch and choose a tag, read CHANGES.md, compare the manifest and the template, check out, build, test and commit - with each command's output, the pager, going back, and how a teammate takes the new pin.
 sidebar:
   order: 13
 ---
@@ -9,14 +9,32 @@ import { Aside, Steps } from '@astrojs/starlight/components';
 
 Your project pins Labrador: `external/labrador` is a submodule, and your repository records the
 one commit of it you build against. Nothing moves that pin for you. To move the pin to a newer
-release, follow the steps below in order. Each one checks something before the next relies on it.
+release, follow the steps below in order. Each one checks something before the next relies on it,
+and until step 7 nothing is recorded, so [going back](#go-back-to-your-old-pin) is one line. It
+takes about 20 minutes, most of it reading, and the build after it a few minutes.
 
 This page is for a project in Git. If your project came from the
 [starter ZIP](/docs/get-started/starter/) and `external\labrador` is a plain folder, follow
-[Move a starter project to a newer Labrador](/docs/guides/starter-update/) instead.
+[Move a starter project to a newer Labrador](/docs/guides/starter-update/) instead, or first
+[Put your project in Git](/docs/guides/starter-to-git/).
 
-The commands are for the x64 Native Tools Command Prompt in your project's folder. The examples
-move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
+The commands are for the x64 Native Tools Command Prompt in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+The examples move from `v0.1.0` to `v0.2.0`, and the output shown is from that move. Use your own
+pin, which step 1 shows, and the tag you are moving to. Before you start, commit or undo any
+change you have not recorded, so that `git status` says `nothing to commit, working tree clean`:
+[Save and undo changes with Git](/docs/guides/your-git/) shows how.
+
+<Aside title="Long output and the pager">
+A Git command whose output is longer than the window shows it a screen at a time, with `:` on the
+bottom line, and waits. **Space** shows more and **q** gives the prompt back; see
+[The pager](/docs/guides/your-git/#the-pager). The boxes below avoid it: they put `--no-pager`
+after `git`, or write long output to a file in your `%TEMP%` folder and open it in Notepad.
+</Aside>
 
 <Steps>
 
@@ -28,61 +46,247 @@ move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
    git -C external/labrador tag --list "v*" --sort=-v:refname
    ```
 
-   `describe` names your current pin, and `tag --list` lists the releases newest first. Move to
-   a release tag rather than to `master`: a tag's notes and its CHANGES.md heading say what it
-   holds, and `master` can change under you.
+   `fetch` downloads what Labrador's repository has that your copy does not, which takes a few
+   seconds. It prints nothing when there is nothing new. Otherwise it prints
+   `From https://github.com/matt439/Labrador` and a line for each new release, such as:
+
+   ```text title="Output"
+    * [new tag]         v0.2.0     -> v0.2.0
+   ```
+
+   `describe` names your current pin and `tag --list` lists the releases, newest first:
+
+   ```text title="Output"
+   v0.1.0
+   v0.2.0
+   v0.1.0
+   ```
+
+   The first line is your pin. If it is longer, such as `v0.2.0-214-g47be5a3`, your pin is not a
+   release: it is 214 commits after `v0.2.0`, at the commit whose name starts `47be5a3`. Read
+   CHANGES.md from that release's heading in step 2.
+
+   Move to a release tag rather than to `master`: a tag's notes and its CHANGES.md heading say
+   what it holds, and `master` can change under you. Moving several releases at once is one move:
+   choose the newest, and read every release between in step 2.
+
+   If `fetch` says `fatal: unable to access 'https://github.com/matt439/Labrador.git/': Could not
+   resolve host: github.com`, the machine could not reach GitHub; check the connection and run it
+   again. `describe` and `tag --list` still work without it, but list only the releases you had.
 
 2. **Read CHANGES.md between the two.** Every change a game can see between two releases is an
    entry there, under the newer release's heading, with what to do about it where there is
-   something to do. Read every heading above your current tag's:
+   something to do. These lines write the new release's copy to a file and list its headings:
 
    ```bat
-   git -C external/labrador show v0.2.0:CHANGES.md
+   git -C external/labrador show v0.2.0:CHANGES.md > "%TEMP%\CHANGES-v0.2.0.md"
+   findstr /b /c:"## " /c:"### " /c:"#### " "%TEMP%\CHANGES-v0.2.0.md"
    ```
 
-   or the same file on GitHub at the new tag, for example
-   <a href="https://github.com/matt439/Labrador/blob/v0.2.0/CHANGES.md" data-release-example>CHANGES.md at v0.2.0</a>. Before
-   1.0 a release can break your code, and when it does, the entry says how: the old spelling,
-   the new one, and the change to the samples that made the same move.
+   ```text title="Output"
+   ## The rule
+   ## Entries
+   ## v0.2.0 (2026-10-25)
+   #### Add a browser build to the Get Started project
+   #### Keep a debug build running where there is no audio endpoint
+   #### Keep a scene's collision objects in the order they were added
+   #### Re-point sprites and animations by a resolved sheet pair
+   #### Name every key, so a game can save a binding and read it back
+   #### Windows 10 version 1607 is the floor
+   #### Keep the client size in a per-monitor-aware process
+   #### Let F10 and Alt alone be keys, not the system menu
+   #### Keep a hidden window hidden when it changes full screen
+   ## v0.1.0 (2026-10-13)
+   ### Backfill: from 4cefb68 to 65116c3
+   #### Moving a pin from 4cefb68, in short
+   ...
+   ```
 
-3. **Compare the engine's manifest with yours.**
+   The entries to read are those under every release heading above your pin's, here the nine
+   under `## v0.2.0`. Releases after `v0.2.0` head each entry with `###` and its date, such as
+   `### 2026-10-29 - Keep a Win32 window shown through full screen`. Open the file to read them:
 
    ```bat
-   git -C external/labrador diff v0.1.0 v0.2.0 -- vcpkg.json
+   notepad "%TEMP%\CHANGES-v0.2.0.md"
    ```
 
-   vcpkg reads only your `vcpkg.json`, so a dependency the engine adds, or a `builtin-baseline`
-   it moves, reaches your build only when you copy it across. Compare your `dependencies` and
-   your `builtin-baseline` with `external/labrador/vcpkg.json` at the new tag: the dependencies
-   are the engine's, without `lodepng`, which only the engine's own tests use, and with
-   `doctest` if your tests use it, and the baseline is the engine's, exactly. Until step 5 the
-   file in `external/labrador` is still your old pin's, so read the new one with
-   `git -C external/labrador show v0.2.0:vcpkg.json`. The `vcpkg.json`
-   [Start your own project](/docs/get-started/your-project/) shows is derived from this site's revision,
-   not from your pin, so compare with the engine's file at the tag, not with that page.
-   A diff that shows only `version-string` changing has nothing for you to copy.
+   In Notepad, **Ctrl+F** finds a heading. Each entry says what kind of change it is in its
+   first lines. A **source break** means code that compiled before may not compile after, and
+   names the old spelling and the new; a **behaviour change** means the game compiles as before
+   and does something different. Many entries end with *Nothing to migrate* or *No migration is
+   needed*. Note the ones that ask something of you for step 6;
+   [Update your code for a newer Labrador](/docs/guides/migrate/) has copyable boxes for the
+   source breaks a starter project meets. Numbers such as `SM-57` in an entry are the owner's
+   references to other records, not things for you to do.
+
+   The same file is on GitHub at the new tag, for example
+   <a href="https://github.com/matt439/Labrador/blob/v0.2.0/CHANGES.md" data-release-example>CHANGES.md at v0.2.0</a>,
+   which shows it formatted.
+
+   If `git show` says `fatal: invalid object name 'v0.2'.`, the tag is misspelt, here missing its
+   last `.0`: check it against step 1's list.
+
+3. **Compare the engine's manifest with yours.** vcpkg reads only your `vcpkg.json`, so a
+   dependency the engine adds, or a `builtin-baseline` it moves, reaches your build only when you
+   copy it across. First see whether the engine's changed between the two releases:
+
+   ```bat
+   git -C external/labrador --no-pager diff v0.1.0 v0.2.0 -- vcpkg.json
+   ```
+
+   ```text title="Output"
+   diff --git a/vcpkg.json b/vcpkg.json
+   index 0b32861..7b9e002 100644
+   --- a/vcpkg.json
+   +++ b/vcpkg.json
+   @@ -1,6 +1,6 @@
+    {
+      "name": "labrador",
+   -  "version-string": "0.1.0",
+   +  "version-string": "0.2.0",
+      "dependencies": [
+        {
+          "name": "directxtk",
+   ```
+
+   A `-` line is the old release's and a `+` line the new one's; the rest is shown around them.
+   Here only `version-string` changed, so there is nothing to copy, and you can go on to step 4.
+   If it prints nothing, the file did not change at all.
+
+   If the diff shows another line changing, compare the new file with yours:
+
+   ```bat
+   git -C external/labrador show v0.2.0:vcpkg.json
+   type vcpkg.json
+   ```
+
+   Make yours match by these rules, in Notepad (`notepad vcpkg.json`):
+
+   - Your `dependencies` are the engine's, without `lodepng`, which only the engine's own tests
+     use; with `doctest` if your project has tests, as every project made since `v0.2.0` does;
+     and with any library you added yourself. Copy an entry the engine gained, with its `{ }`
+     and `features` if it has them, into your list, and put a comma after the entry before it.
+   - Your `builtin-baseline` is the engine's, exactly: copy its 40 characters between the
+     quotation marks.
+   - Leave your `name` and `version-string` as they are.
+
+   The `vcpkg.json` [Start your own project](/docs/get-started/your-project/) shows is derived
+   from this site's revision, not from your pin, so compare with the engine's file at the tag, not
+   with that page. Step 6's configure checks the result: a missing comma stops it with an error
+   naming `vcpkg.json` and the line.
 
 4. **See what changed in the template.** Your `game` folder began as a copy of
-   `samples/minimal`, and a copy is yours: nothing updates it. The sample's README keeps a list,
-   newest first, of the changes to it that a copy taken before them would want, and the files
-   Start your own project gives you are in the engine's `website/src/walkthrough/`:
+   `samples/minimal`, and your project's own files as copies of the files in the engine's
+   `website/src/walkthrough/`. A copy is yours: nothing updates it. The sample's README keeps a
+   list, newest first, of the changes to it that a copy taken before them would want. Write the
+   part of it that is new between your tag and the new one to a file, and open it:
 
    ```bat
-   git -C external/labrador diff v0.1.0 v0.2.0 -- samples/minimal/README.md
-   git -C external/labrador diff --stat v0.1.0 v0.2.0 -- samples/minimal website/src/walkthrough
+   git -C external/labrador --no-pager diff v0.1.0 v0.2.0 -- samples/minimal/README.md > "%TEMP%\template-changes.txt"
+   notepad "%TEMP%\template-changes.txt"
    ```
 
-   The first shows the entries the list gained between your tag and the new one, which are the
-   ones your copy has not seen. Each names the files it changes; to see one file's change, give
-   its path, for example
-   `git -C external/labrador diff v0.1.0 v0.2.0 -- website/src/walkthrough/CMakePresets.json`.
-   Take the entries you want and leave the rest. None of them is needed to build against the
-   new tag unless CHANGES.md says so.
+   The new entries are the lines that start `+- **`, each dated, such as
+   `+- **2026-10-25.** Tests, from the start.` The `+` only marks them as new. Each names the files
+   it changes. To see which files changed in all, with how many lines each:
+
+   ```bat
+   git -C external/labrador --no-pager diff --stat v0.1.0 v0.2.0 -- samples/minimal website/src/walkthrough
+   ```
+
+   ```text title="Output"
+    samples/minimal/CMakeLists.txt              |  90 +++++++++++++++++++++--
+    samples/minimal/README.md                   |  73 ++++++++++++++++++-
+    samples/minimal/main.cpp                    | 107 ++++++++++++++++++++++++++--
+    samples/minimal/rules/motion.cpp            |  37 ++++++++++
+    samples/minimal/rules/motion.h              |  53 ++++++++++++++
+    samples/minimal/states/hello_state.cpp      |  59 ++++-----------
+    samples/minimal/states/hello_state.h        |  15 ++--
+    samples/minimal/tests/motion_tests.cpp      |  48 +++++++++++++
+    samples/minimal/web/shell.html              |   2 +-
+    website/src/walkthrough/CMakePresets.json   |  47 +++++++++++-
+    website/src/walkthrough/README.md           |  84 ++++++++++++++++++++--
+    website/src/walkthrough/ci.yml              |  73 +++++++++++++++++++
+    website/src/walkthrough/game-CMakeLists.txt | 105 ++++++++++++++++++++++++++-
+    website/src/walkthrough/release-files.txt   |  24 +++++++
+    website/src/walkthrough/root-CMakeLists.txt |   9 ++-
+    15 files changed, 748 insertions(+), 78 deletions(-)
+   ```
+
+   None of these is needed to build against the new tag unless CHANGES.md says so. Take the
+   entries you want and leave the rest. Each template file is one of yours:
+
+   | Template file, in `external/labrador` | Your file |
+   | --- | --- |
+   | `website/src/walkthrough/CMakePresets.json` | `CMakePresets.json` |
+   | `website/src/walkthrough/root-CMakeLists.txt` | `CMakeLists.txt` |
+   | `website/src/walkthrough/game-CMakeLists.txt` | `game\CMakeLists.txt` |
+   | `website/src/walkthrough/gitignore.txt` | `.gitignore` |
+   | `website/src/walkthrough/ci.yml` | `.github\workflows\ci.yml`, which a starter project has, and another project if it took it from [Check your game in CI](/docs/guides/ci/) |
+   | `samples/minimal/...` | `game\...`, but with `#include "game/...` where the template has `#include "samples/minimal/...` |
+
+   The folder's `README.md` and `release-files.txt` are not copied into a project: the first
+   describes the folder, and the second lists what a release build installs.
+
+   **To take one file's change**, here `CMakePresets.json`, which at `v0.2.0` gained test
+   presets and the browser build's presets, first find out whether you ever changed your copy, by
+   comparing it with the template at your old tag:
+
+   ```bat
+   git -C external/labrador show v0.1.0:website/src/walkthrough/CMakePresets.json > "%TEMP%\template-old.txt"
+   fc CMakePresets.json "%TEMP%\template-old.txt"
+   ```
+
+   ```text title="Output"
+   Comparing files CMakePresets.json and C:\USERS\YOU\APPDATA\LOCAL\TEMP\TEMPLATE-OLD.TXT
+   FC: no differences encountered
+   ```
+
+   with your own user name in the path. *No differences* means your file is still the
+   template's, so the new template's can replace it:
+
+   ```bat
+   git -C external/labrador show v0.2.0:website/src/walkthrough/CMakePresets.json > "%TEMP%\template-new.txt"
+   copy /y "%TEMP%\template-new.txt" CMakePresets.json
+   ```
+
+   `copy` prints `1 file(s) copied.` If the first `fc` listed differences instead, those are
+   your own changes, and replacing the file would lose them. See what the release changed, and
+   make the same edits in your file with Notepad:
+
+   ```bat
+   fc "%TEMP%\template-old.txt" "%TEMP%\template-new.txt"
+   ```
+
+   [Move a starter project to a newer Labrador](/docs/guides/starter-update/#reading-fc) shows
+   how to read `fc`'s output. A source file in `game` always differs from the template in its
+   `#include` lines; compare the template's two versions, as in this last box, and make the
+   change it shows. Large entries, such as *Tests, from the start* at `v0.2.0`, touch many
+   files; leave one you cannot follow, since nothing needs it.
 
 5. **Check out the new tag.**
 
    ```bat
    git -C external/labrador checkout v0.2.0
+   ```
+
+   ```text title="Output"
+   Previous HEAD position was c369e8b Version releases now, and say how a public name leaves
+   HEAD is now at 1e60fb2 Prepare v0.2.0
+   ```
+
+   The engine folder now holds the new release. `git status` shows
+   `modified:   external/labrador (new commits)`, with any file you changed in steps 3 and 4,
+   until step 7 records them.
+
+   If it says `error: Your local changes to the following files would be overwritten by
+   checkout:`, with a file name, `Please commit your changes or stash them before you switch
+   branches.` and `Aborting`, a file inside the engine was changed, and nothing was checked out.
+   The engine is not yours to edit; this puts it back as your pin has it, and then the checkout
+   works:
+
+   ```bat
+   git -C external/labrador restore .
    ```
 
 6. **Configure, build and run your tests.**
@@ -93,27 +297,134 @@ move from `v0.1.0` to `v0.2.0`; use your own pin and the tag you are moving to.
    ctest --preset x64-debug
    ```
 
-   A project started before v0.2.0 has no test presets and no tests, so `ctest --preset` stops
-   with `No such test preset`; run `ctest --test-dir out\build\x64-debug` instead, or take the
-   template list's *Tests, from the start* entry, which adds both.
+   Configure installs whatever a changed baseline or a new dependency needs, and ends
+   `-- Build files have been written to:` and your build folder. The build compiles the engine
+   again, 55 steps from `v0.1.0` to `v0.2.0`, which took 5 seconds on a fast desktop, and ends
+   `Linking CXX executable game\MyGame.exe`. Then run the game and check it:
 
-   Configure installs whatever a changed baseline or a new dependency needs. The build applies
-   the engine's compiler settings to your code as well, `/W4 /WX` among them, so a
-   warning a newer engine header causes in your code stops it, as any other warning would; fix
-   the code, as [Read a build error](/docs/get-started/build-errors/) describes, and keep the settings, which come from `labrador_settings` and are the same walls
-   the engine's own code builds behind. Build `x64-release` too if you ship it.
+   ```bat
+   out\build\x64-debug\game\MyGame.exe
+   ```
+
+   Its window opens with your game as it was before the move; the template's says
+   `Hello from the engine.`. Try what your game does, then quit as it quits: the template's asks
+   `Really quit?` on **Escape**, and **Enter** answers yes and closes the window, which gives you
+   the prompt back.
+
+   A project started before `v0.2.0` has no tests. Without test presets, `ctest --preset`
+   stops with `CMake Error: No such test preset in C:/dev/mygame: "x64-debug"`; with the presets
+   of step 4 and still no tests, it prints `No tests were found!!!`. Neither is a failure of the
+   move. Add tests with the template list's *Tests, from the start* entry, or
+   [Add a rule and a test](/docs/guides/your-rule/).
+
+   The build applies the engine's compiler settings to your code as well, `/W4 /WX` among them,
+   so a warning a newer engine header causes in your code stops it, as any other warning would.
+   When the build fails:
+
+   - Find the first error, as [Read a build error](/docs/get-started/build-errors/) shows. An
+     error naming something CHANGES.md renamed or removed, such as `'mattmath': is not a class or
+     namespace name`, is a source break:
+     [Update your code for a newer Labrador](/docs/guides/migrate/) has the edits.
+   - An error you cannot trace to an entry, or an engine file that fails: go back, as below, and
+     report it in [Labrador's issues](https://github.com/matt439/Labrador/issues) with the two
+     tags and the first error.
+
+   Keep the settings, which come from `labrador_settings` and are the same walls the engine's
+   own code builds behind. Build `x64-release` too if you ship it.
 
 7. **Commit the pin**, with whatever you changed to match it:
 
    ```bat
-   git add external/labrador
+   git add external/labrador CMakePresets.json
    git commit -m "Move Labrador to v0.2.0"
    ```
 
-   Add `vcpkg.json` and any other file you changed in steps 3, 4 and 6. Someone who already has your project
-   takes the new pin with `git pull` then `git submodule update`.
+   Name every file you changed in steps 3, 4 and 6 after `git add`, or use `git add .` to take
+   them all. `git add` may print
+   `warning: in the working copy of 'CMakePresets.json', LF will be replaced by CRLF the next time Git touches it`:
+   a file written by `git show`, as in step 4, has the line ends Git stores, and the warning
+   says only that Git will write it back the Windows way. It is harmless. `git commit` prints:
+
+   ```text title="Output"
+   [main 27ed059] Move Labrador to v0.2.0
+    2 files changed, 47 insertions(+), 2 deletions(-)
+   ```
+
+   `git submodule status` then names the new release in brackets, and `git status` says
+   `nothing to commit, working tree clean`. If your project is on GitHub, `git status` also says
+   `Your branch is ahead of 'origin/main' by 1 commit.` until you send it there with `git push`,
+   and then GitHub's CI builds the new pin.
 
 </Steps>
+
+## Go back to your old pin
+
+**Before step 7**, nothing is recorded. Check out your old tag again, put back the files you
+changed in steps 3 and 4, and configure and build:
+
+```bat
+git -C external/labrador checkout v0.1.0
+git restore CMakePresets.json
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+```
+
+The checkout prints `Previous HEAD position was 1e60fb2 Prepare v0.2.0` and
+`HEAD is now at c369e8b ...`, and `git status` is clean again. Name every file you changed after
+`git restore`, or `git restore .` for all of them.
+
+**After step 7**, take the commit back with a new one, then put the engine folder at the pin it
+records:
+
+```bat
+git revert --no-edit HEAD
+git submodule update
+```
+
+```text title="Output"
+[main 6b9049f] Revert "Move Labrador to v0.2.0"
+ Date: Sat Oct 31 07:51:56 2026 +1000
+ 2 files changed, 2 insertions(+), 47 deletions(-)
+Submodule path 'external/labrador': checked out 'c369e8b9dde6f17502029955d11e97dc6d1da376'
+```
+
+The `Date:` line, with your date and time, may be there or not; either is fine. Between the two
+lines, `git status` shows `modified:   external/labrador (new commits)`:
+`git revert` puts back what the commit records, but leaves the engine folder as it is until
+`git submodule update` checks out the recorded commit. Then configure and build as above. If the
+pin commit is not the newest, use its short name from `git log --oneline` in place of `HEAD`.
+[Take back a commit](/docs/guides/your-git/#take-back-a-commit) says more about `git revert`.
+
+## A teammate takes the new pin
+
+Someone who already has your project, you included on another machine, takes the commit and then
+the engine it names:
+
+```bat
+git pull
+git submodule update --init --recursive
+```
+
+```text title="Output"
+From https://github.com/you/mygame
+   1646a04..27ed059  main       -> origin/main
+Updating 1646a04..27ed059
+Fast-forward
+ CMakePresets.json | 47 ++++++++++++++++++++++++++++++++++++++++++++++-
+ external/labrador |  2 +-
+ 2 files changed, 47 insertions(+), 2 deletions(-)
+Submodule path 'external/labrador': checked out '1e60fb26c4fdfcd1582c35c6862d8a06cc4c9b09'
+```
+
+The first line names the repository the commit came from, with your own user name and
+repository's name in place of `you/mygame`; the second says your copy of `main` moved from the
+old commit to the new one. `git pull` alone moves the record but not the engine folder, so `git status` shows
+`(new commits)` until the second line runs. `--init` also downloads the engine on a clone made
+without `--recurse-submodules`, whose `external\labrador` is an empty folder and whose
+`git submodule status` line starts with `-`; there it prints
+`Submodule 'external/labrador' (https://github.com/matt439/Labrador.git) registered for path 'external/labrador'`
+and `Cloning into` first. A new clone gets everything at once with
+`git clone --recurse-submodules` and the repository's address.
 
 ## The reference at your pin
 
@@ -161,7 +472,53 @@ The engine's tests build far below `external\labrador\out`, so a long project pa
 
 ## What has been checked
 
-The procedure was followed once, as written, on 2026-10-26: a project made by Start your own
-project at `v0.1.0` was moved to `v0.2.0`. Its build had no warnings, and the engine's own tests
-at the pin passed all twenty entries with the project's `git status` and the submodule's both
-clean afterwards. That walk found the missing test presets step 6 now mentions.
+The procedure was first followed, as written then, on 2026-10-26: a project made by Start your
+own project at `v0.1.0` was moved to `v0.2.0`. Its build had no warnings, and the engine's own
+tests at the pin passed all twenty entries with the project's `git status` and the submodule's
+both clean afterwards. That walk found the missing test presets step 6 mentions.
+
+On 2026-10-31 the page as it is now was run, with Git for Windows 2.52.0, on a project made at
+`v0.1.0` by that release's own `assemble.py` and put in Git with the engine as a submodule from
+GitHub by [Put your project in Git](/docs/guides/starter-to-git/), at
+`C:\dev\g11-author\pin\mygame`. Every box ran in a command prompt and the output quoted is from
+it. Step 1's fetch found nothing new, and printed the `[new tag]` line, after `From
+https://github.com/matt439/Labrador`, once the local `v0.2.0` tag had been deleted; the
+`v0.2.0-214-g47be5a3` form is what `describe` printed for a submodule at `master` before its
+checkout. Step 3's diff showed only `version-string`. Step
+4's first `fc` found no differences and the new presets were copied in; the `fc` of the two
+templates listed two pairs of blocks, the browser presets and the test presets. Step 5's refusal was
+made by adding a line to the engine's `CHANGES.md`, and `restore` cleared it. Step 6's configure
+ended as quoted, the build ran 55 steps in about 5 seconds, and `ctest` printed both messages,
+before and after the presets; the game, a `v0.1.0` template with no `--smoke-test`, was started
+and then stopped by its process number. Its configure that day took 1,162 seconds, sitting at vcpkg's `Detecting compiler hash`
+line while another project on the machine ran Visual Studio's vcpkg too; why it waited was not
+found. Going back before the commit, the commit, going
+back after it with `git revert` and `git submodule update`, and the teammate's `git pull` and
+`git submodule update --init --recursive`, in clones of a local bare repository standing in for
+GitHub, gave the output quoted; after going back, the project configured in 3 seconds and built
+53 steps at `v0.1.0`. `fatal: invalid object name` was made with `v0.2`, and the fetch's `Could not resolve host` by
+fetching from `github.con`. These
+commands ran with output to a file, where Git does not use the pager; the pager was seen in a
+console window in the review below.
+
+A second person then followed the page as worded on their own `v0.1.0` project, and steps 1 to 7,
+the refusal, `No tests were found!!!`, going back before and after the commit and the teammate's
+two commands gave the output quoted, hashes included. They found four things, since corrected:
+step 6 said to run the game without a command; `git add` in step 7 printed the `LF will be
+replaced` warning for `CMakePresets.json`; `git revert` printed a `Date:` line the box had left
+out; and `git pull` printed two lines before `Updating`. These were run again the same day on a
+third `v0.1.0` project, made by `v0.1.0`'s `assemble.py` and put in Git as before, at
+`C:\dev\g11-fixer\pin\mygame`, with a local bare repository standing in for GitHub and a clone of
+it standing in for the teammate: step 6's configure took 3 seconds and the build 55 steps; the
+game opened its window with `Hello from the engine.`, **Escape** showed `Really quit?` and
+**Enter** closed it with exit code 0; `git add` printed the warning quoted; `git revert` printed
+the `Date:` line; and the teammate's `git pull` printed `From` and the folder of the stand-in
+repository, then the `main -> origin/main` line, then what is quoted. The `From` line in the box
+has a GitHub address in place of that folder: GitHub itself was not used.
+
+A review the same day ran steps 2 to 5's commands against the tags in a clone of Labrador and got
+the output quoted. It added `### ` to step 2's `findstr`, which had listed none of the entries
+of a release after `v0.2.0`, since those are headed `###`; for `v0.2.0` that adds only the
+`Backfill` line quoted. It also added `ci.yml`, which the `--stat` lists, to step 4's table. In a
+console window, a `git log --oneline` longer than the window stopped with `:` on its bottom line,
+and **q** gave the prompt back with the lines shown still on screen.

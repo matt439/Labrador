@@ -1,11 +1,11 @@
 ---
 title: Put your project in Git
-description: Turn a project made from the starter ZIP into a Git repository with the engine as a submodule, the same shape Start your own project makes.
+description: Turn a project made from the starter ZIP into a Git repository with the engine as a submodule, keeping the ZIP's engine until the new one builds, with what each failure means and how to put everything back.
 sidebar:
   order: 15
 ---
 
-import { Steps } from '@astrojs/starlight/components';
+import { Steps, Aside } from '@astrojs/starlight/components';
 
 A project made from the [starter ZIP](/docs/get-started/starter/) works without Git, and you
 can keep it that way. Git becomes worth learning when you want a history of your changes to go
@@ -15,8 +15,23 @@ Labrador's own repository, rather than a copy of its files. That is the shape
 [Start your own project](/docs/get-started/your-project/) makes, so from then on every page
 written for that shape applies, [Move your engine pin](/docs/guides/move-pin/) among them.
 
-Nothing here changes your game. The engine folder is replaced by the same release of the
-engine, fetched by Git, and the build carries on as before.
+If all you want is a history and a copy on GitHub, there is a shorter way:
+[Put your project on GitHub](/docs/guides/your-github/) commits the engine as the plain files
+the ZIP gave you, and moving to a newer Labrador then stays
+[the starter ZIP's way](/docs/guides/starter-update/). A submodule is worth the extra steps when
+you want to move between releases with Git, one command at a time.
+
+Nothing here changes your game. The engine folder the ZIP gave you is moved aside, not deleted,
+and the same release of the engine is downloaded in its place. Only when the project builds and
+its tests pass with the downloaded engine do you delete the old one, so a failed download or a
+wrong release costs nothing: [Putting it back](#putting-it-back) restores the project as the ZIP
+made it. It takes about ten minutes, and downloads about 20 MB.
+
+**Before you start**, close Visual Studio, your game, and any File Explorer window that shows the
+project. A program that has a file open in the engine folder stops step 4. The project should
+build and pass its tests as it is, as in
+[Get the starter project](/docs/get-started/starter/), so that you know a failure later is this
+page's.
 
 <Steps>
 
@@ -28,17 +43,28 @@ engine, fetched by Git, and the build carries on as before.
    git --version
    ```
 
-   It prints a version, such as `git version 2.54.0.windows.1`. If it says
-   `'git' is not recognized`, open a new x64 Native Tools Command Prompt and try again.
+   It prints a version, such as `git version 2.52.0.windows.1`. If it says
+   `'git' is not recognized`, Git is not installed, or was installed after this prompt opened:
+   open a new x64 Native Tools Command Prompt and try again.
 
-2. **See which release your engine folder is.** In the x64 Native Tools Command Prompt:
+2. **Go to your project and see which release its engine is.** In the x64 Native Tools Command
+   Prompt:
 
    ```bat
    cd /d C:\dev\mygame
    type README.txt
    ```
 
-   The line `Labrador version:` names it, for example `v0.3.0`. Step 5 uses it.
+   Among the lines it prints is this one, naming the release:
+
+   ```text title="Output"
+   Labrador version: v0.2.0
+   ```
+
+   Yours may name another, such as `v0.3.0`. Write it down: step 6 uses it. If the line says
+   `a development build, not a release`, your ZIP was not a release's, and there is no tag to
+   choose in step 6; use a release's ZIP from [Get the starter project](/docs/get-started/starter/)
+   instead.
 
 3. **Make the folder a repository:**
 
@@ -47,72 +73,358 @@ engine, fetched by Git, and the build carries on as before.
    ```
 
    Git answers `Initialized empty Git repository in C:/dev/mygame/.git/`. It may also print a
-   few lines of hints about the name of the first branch, which you can ignore.
+   few lines starting `hint:` about the name of the first branch, which you can ignore. The
+   `.git` folder it makes is hidden, and holds the history. If it says
+   `Reinitialized existing Git repository`, the project was already a repository, perhaps from
+   [Put your project on GitHub](/docs/guides/your-github/); carry on, and read the note in step
+   5.
 
-4. **Replace the engine folder with a submodule.** The first line deletes the copy of the
-   engine the ZIP gave you; the second downloads the engine's repository into the same place:
+4. **Move the ZIP's engine aside.** This moves `external\labrador` out of the project, to a
+   folder beside it named `labrador-from-zip`, which is `C:\dev\labrador-from-zip` for
+   `C:\dev\mygame`. It moves nothing if you are in the wrong folder, or if that folder is
+   already there:
 
    ```bat
-   rmdir /s /q external\labrador
+   if not exist external\labrador\CMakeLists.txt (echo There is no engine in external\labrador here. Nothing was moved.) else if exist ..\labrador-from-zip (echo There is already a folder ..\labrador-from-zip. Nothing was moved.) else (move external\labrador ..\labrador-from-zip)
+   ```
+
+   It prints:
+
+   ```text title="Output"
+           1 dir(s) moved.
+   ```
+
+   `external` is now an empty folder. What the other messages mean:
+
+   - `There is no engine in external\labrador here.`: the prompt is not in your project's
+     folder, or the engine has already been moved. Run `cd /d C:\dev\mygame` and `dir external`.
+     If `external` is empty and `C:\dev\labrador-from-zip` exists, the move has already been
+     made: go on to step 5.
+   - `There is already a folder ..\labrador-from-zip.`: it is left from an earlier try, or made
+     by hand. Look in it with `dir ..\labrador-from-zip`. If it holds an engine (the list has
+     `CMakeLists.txt`, `engine` and `samples`) and your `external\labrador` is still there, you
+     do not need the old one. If it is empty (the list ends `0 File(s)` and shows only `.` and
+     `..`) or holds no engine, nothing in it is the project's. Either way, delete it with
+     `rmdir /s /q ..\labrador-from-zip`, and run the box again.
+   - `Access is denied.` and `0 dir(s) moved.`: a program has a file in the engine open, most
+     often Visual Studio, the game, another command prompt whose folder is inside it, or File
+     Explorer. Close it and run the box again. Nothing was moved.
+
+5. **Download the engine's repository** into the place the old one was:
+
+   ```bat
    git submodule add https://github.com/matt439/Labrador.git external/labrador
    ```
 
-   Check that the prompt ends `mygame>` before you run them. The second prints
-   `Cloning into 'C:/dev/mygame/external/labrador'...` and, after a moment, the prompt. It may
-   also warn that `LF will be replaced by CRLF` in `.gitmodules`, which is harmless.
+   It downloads about 20 MB: that took 3 seconds on a fast connection, and at 1 MB a second
+   takes about 20. It prints:
 
-5. **Choose the same release.** Replace `v0.3.0` with the version from step 2:
-
-   ```bat
-   git -C external/labrador checkout v0.3.0
+   ```text title="Output"
+   Cloning into 'C:/dev/mygame/external/labrador'...
+   warning: in the working copy of '.gitmodules', LF will be replaced by CRLF the next time Git touches it
    ```
 
-   It prints a long note that begins `Note: switching to` and mentions `'detached HEAD'
-   state`, and ends `HEAD is now at` followed by a commit. That is expected: the engine folder
-   is now fixed at that release, which is what you want.
+   and then the prompt. The warning is harmless: it says only that Git stores the file's line
+   ends its own way. The new file `.gitmodules` records where the engine comes from.
+
+   What a failure means:
+
+   - `fatal: unable to access 'https://github.com/matt439/Labrador.git/': Could not resolve host: github.com`,
+     then `fatal: clone of ... failed`: the machine could not reach GitHub, because it is off
+     the internet or something between it and GitHub stopped the download. Nothing was
+     downloaded. Check the connection and run the box again; Git starts over. If you want to
+     stop for now, [put the project back](#putting-it-back).
+   - `fatal: 'external/labrador' already exists and is not a valid git repo`: the old engine is
+     still in the project, because step 4 did not move it. Do step 4, then this one.
+   - `fatal: 'external/labrador' already exists in the index`: the project was already a
+     repository with the engine committed as plain files, as
+     [Put your project on GitHub](/docs/guides/your-github/) commits it. Tell Git to stop
+     tracking those files, which leaves your other files and your history as they are, then run
+     the box again:
+
+     ```bat
+     git rm -r --cached -q external/labrador
+     ```
+
+     It prints nothing. Step 9's commit then records the engine's change from plain files to a
+     submodule, as that step shows.
+   - `fatal: please make sure that the .gitmodules file is in the working tree`: an earlier try
+     got as far as step 9's commit and was put back without the last part of
+     [Putting it back](#putting-it-back). Nothing was downloaded. Run that section's line, finish
+     as its *After step 9* says, and start again where it tells you.
+
+6. **Choose the same release.** Paste this line, but **before you press Enter, change `v0.2.0`
+   to the version from step 2**, as
+   [Typing the commands](/docs/get-started/prerequisites/#typing-the-commands) shows:
+
+   ```bat
+   git -C external/labrador checkout v0.2.0
+   ```
+
+   It prints a long note and ends with the release's commit:
+
+   ```text title="Output"
+   Note: switching to 'v0.2.0'.
+
+   You are in 'detached HEAD' state. You can look around, make experimental
+   changes and commit them, and you can discard any commits you make in this
+   state without impacting any branches by switching back to a branch.
+
+   If you want to create a new branch to retain commits you create, you may
+   do so (now or later) by using -c with the switch command. Example:
+
+     git switch -c <new-branch-name>
+
+   Or undo this operation with:
+
+     git switch -
+
+   Turn off this advice by setting config variable advice.detachedHead to false
+
+   HEAD is now at 1e60fb2 Prepare v0.2.0
+   ```
+
+   *Detached HEAD* is expected: the engine folder is now fixed at that release, which is what you
+   want, and you will not make commits inside it.
    [Start your own project](/docs/get-started/your-project/), step 2, says more about it.
 
-6. **Make the first commit:**
+   If it says `error: pathspec 'v0.2' did not match any file(s) known to git`, there is no
+   release of that name: here `v0.2` is missing its last `.0`. Check the spelling against step 2
+   and run the line again. Nothing was changed.
+
+7. **Check that Git leaves Visual Studio's folder out.** The project's `.gitignore` names the
+   folders Git does not record:
 
    ```bat
-   git add .
-   git commit -m "Start from Labrador's starter project"
+   type .gitignore
    ```
 
-   Git may warn that `LF will be replaced by CRLF` for some files, which is harmless. It then
-   prints a line beginning `[master (root-commit)` or `[main (root-commit)` and how many files
-   it recorded. Your build folder, `out`, is not among them: the project's `.gitignore` leaves
-   it out. If Git says `Author identity unknown`, do
-   [Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are) and run the
-   `git commit` line again.
+   ```text title="Output"
+   out/
+   .vs/
+   ```
 
-7. **Check the build still works:**
+   `out/` is the build folder, and `.vs/` is the folder Visual Studio makes when it opens the
+   project: about 60 MB of its own databases, which change every time it opens and which it
+   keeps open while it runs. A starter made before 31 October 2026 lists only `out/`; if yours
+   does, add the second line, then check again:
+
+   ```bat
+   echo .vs/>> .gitignore
+   ```
+
+   It prints nothing. Without that line, a `git add .` with Visual Studio open stops with
+   `error: open(".vs/CMake Overview"): Permission denied` and `fatal: adding files failed`, and
+   with it closed records the databases.
+
+8. **Build and test with the downloaded engine:**
 
    ```bat
    cmake --build --preset x64-debug
    ctest --preset x64-debug
    ```
 
-   The engine's files are new copies, so the build may compile the engine again before your game.
-   Both tests pass as before.
+   The engine's files are new copies, so the build runs CMake again and compiles the engine
+   before your game: 100 steps, about 10 seconds on a fast desktop. It starts with
+   `[0/1] Re-running CMake...` and some vcpkg lines, ends with
+   `[99/100] Linking CXX executable game\MyGame.exe`, and the tests end:
+
+   ```text title="Output"
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   If the build fails where it passed before step 4, the release you chose in step 6 is not the
+   engine the ZIP held: check it against step 2 and run step 6 again with the right one. If you
+   cannot find why, [put the project back](#putting-it-back). [Read a build
+   error](/docs/get-started/build-errors/) shows how to find the line that matters.
+
+9. **Make the first commit**, the project's first saved version in its history:
+
+   ```bat
+   git add .
+   git commit -m "Start from Labrador's starter project"
+   ```
+
+   `git add .` may print warnings that `LF will be replaced by CRLF` for some files, which are
+   harmless. `git commit` then prints one `create mode` line for each file it recorded, after
+   a first line like this one:
+
+   ```text title="Output"
+   [master (root-commit) bb9b5d9] Start from Labrador's starter project
+    23 files changed, 1449 insertions(+)
+   ```
+
+   Your seven characters after `root-commit` differ, and so can the counts; the line may say
+   `main` instead of `master`. The engine is one of those files, the pointer to its commit,
+   rather than its thousand files. `out` and `.vs` are not among them. If Git says
+   `Author identity unknown`, do
+   [Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are) and run the
+   `git commit` line again.
+
+   In a project that was already a repository, with the engine committed as plain files, the
+   first line has no `(root-commit)`, and the commit records the engine's change from those
+   files to a submodule:
+
+   ```text title="Output"
+   [main 31dfe51] Start from Labrador's starter project
+    887 files changed, 5 insertions(+), 250151 deletions(-)
+    create mode 100644 .gitmodules
+    create mode 160000 external/labrador
+    delete mode 100644 external/labrador/.gitattributes
+   ```
+
+   and a `delete mode` line for each of the engine's other files, 884 in all. Those are the
+   plain copies the submodule replaces: the engine is still in `external\labrador`, and nothing
+   of your game is deleted.
+
+10. **Delete the engine you moved aside.** The project no longer needs it:
+
+    ```bat
+    rmdir /s /q ..\labrador-from-zip
+    ```
+
+    It deletes the folder and everything in it without asking, and prints nothing. If it prints
+    `The system cannot find the file specified.`, there is nothing to delete.
 
 </Steps>
 
-`git status` now prints `nothing to commit, working tree clean`, and
-`git submodule status` names the engine's commit with your release beside it in brackets. To put
-the repository on GitHub, follow [Put your project on GitHub](/docs/guides/your-github/), whose
-step 2 this page has already done: it makes the account and an empty repository, connects your
-project to it and pushes, with what each failure means. Anyone who clones it, you included
-on another machine, needs `--recurse-submodules`, as
-[Start your own project](/docs/get-started/your-project/) explains.
+Your project is a Git repository now. Check it:
 
-From here, move to a newer Labrador with [Move your engine pin](/docs/guides/move-pin/), not
-with the starter ZIP.
+```bat
+git status
+git submodule status
+```
+
+```text title="Output"
+On branch master
+nothing to commit, working tree clean
+ 1e60fb26c4fdfcd1582c35c6862d8a06cc4c9b09 external/labrador (v0.2.0)
+```
+
+with your branch's name and your release. The long number is the engine's commit, and the
+release in brackets is the tag you chose.
+
+## Putting it back
+
+Until step 10, the engine the ZIP gave you is in `C:\dev\labrador-from-zip`. If a step fails and
+you want to stop, or to start this page again later, this one line puts the engine back as the
+ZIP made it, in your project's folder. It deletes the downloaded engine, if there is one, moves
+the old one back, deletes `.gitmodules` and the downloaded history in `.git\modules`, and tells
+Git to forget what it was about to record. It changes nothing if the old engine is not there:
+
+```bat
+if not exist ..\labrador-from-zip\CMakeLists.txt (echo There is no engine in ..\labrador-from-zip. Nothing was changed.) else (rmdir /s /q external\labrador 2>nul & move ..\labrador-from-zip external\labrador & del .gitmodules 2>nul & rmdir /s /q .git\modules\external 2>nul & git reset -q)
+```
+
+It prints `1 dir(s) moved.`.
+
+**Before step 9**, that is all. `git status` then lists your project's files as untracked, as
+after step 3; for a project that was already a repository, it prints
+`nothing to commit, working tree clean`, as before you started. The build works as it did
+before step 4. To leave Git altogether, also delete its folder with `rmdir /s /q .git`, which
+deletes the history with it; do that only in a project you made a repository of on this page.
+
+**After step 9**, the commit still records the submodule, and `git status` says so:
+
+```text title="Output"
+On branch master
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	deleted:    .gitmodules
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+Finish with one of these two, or a later try stops at step 5 with
+`fatal: please make sure that the .gitmodules file is in the working tree`:
+
+- **In a project you made a repository of in step 3**, delete the repository, and step 9's
+  commit with it:
+
+  ```bat
+  rmdir /s /q .git
+  ```
+
+  It prints nothing, and `git status` then says `fatal: not a git repository`: the project is
+  as the ZIP made it, with `.vs/` in `.gitignore` if step 7 added it. To try again, start at
+  step 3.
+
+- **In a project that was already a repository**, record the engine as plain files again, in a
+  new commit that keeps your history:
+
+  ```bat
+  git rm -r --cached -q external/labrador
+  git add .
+  git commit -m "Put the engine back as plain files"
+  ```
+
+  The commit prints `886 files changed, 250151 insertions(+), 4 deletions(-)`, then
+  `delete mode` lines for `.gitmodules` and `external/labrador`, and a `create mode` line for
+  each of the engine's files. `git status` is then clean. To try again, start at step 4; step 5
+  then says `already exists in the index`, and its answer there works as before.
+
+If it says `There is no engine in ..\labrador-from-zip`, the old engine is not there: either
+step 4 did not move it, and `external\labrador` still holds it, or step 10 has deleted it, and
+the downloaded engine is the only one. Do not delete `external\labrador` then.
+
+## Where to go next
+
+- [Save and undo changes with Git](/docs/guides/your-git/) is what you do with the repository
+  every day: see what changed, record it, undo a broken edit and go back to an earlier version.
+- [Put your project on GitHub](/docs/guides/your-github/) makes the account and an empty
+  repository, connects your project to it and pushes, with what each failure means. Its step 2
+  is done already: skip to its step 3. Anyone who clones it, you included on another machine,
+  needs `--recurse-submodules`, as [Start your own project](/docs/get-started/your-project/)
+  explains, because the engine is a submodule.
+- From here, move to a newer Labrador with [Move your engine pin](/docs/guides/move-pin/), not
+  with the starter ZIP.
 
 ## What was checked
 
-On 30 October 2026 these commands were run as written on a project extracted from a starter ZIP
-of a development revision, with `v0.2.0`, the newest release then, in step 5: the submodule was
-added from GitHub, the commit recorded 24 files, and `git status` was clean afterwards. Because
-that ZIP's engine was not `v0.2.0`, step 7 was not run there; with a release's own ZIP the
-engine is the same in both.
+On 31 October 2026, with Git for Windows 2.52.0, the steps were run as worded in a project
+extracted with Windows' `tar` from a starter ZIP that `starter_zip.py` made of a clean clone at
+`v0.2.0`, at `C:\dev\g11-author\s2g\mygame`, and built and tested there first. No release with
+a starter ZIP existed yet, so this stood in for one; its `README.txt` named `v0.2.0` and its
+`.gitignore` held only `out/`, so step 7's added line was needed. The quoted output is from that
+run, with the folder changed to `C:\dev\mygame`. Step 4 moved the folder; step 5 downloaded the
+engine from GitHub in 3.3 seconds into a `.git\modules` folder of 19 MB; step 6 checked out
+`v0.2.0`; step 8's build ran 100 steps in 9 seconds and both tests passed; step 9 recorded 23
+files; step 10 deleted the old engine, and `git status` and `git submodule status` printed what
+is quoted. In a starter made from this tree, whose `.gitignore` already lists `.vs/`, steps 3 to
+10 with the engine checked out at the public `master`, there being no release of it, recorded 24
+files and left `git status` clean. The same steps on a project made at `v0.1.0` by that release's own
+`assemble.py`, at `C:\dev\g11-author\pin\mygame`, checked out `v0.1.0` and built.
+
+With that project open in Visual Studio 2026, its `.vs` folder held 60 MB, `git status` stayed
+clean, and a `git add` of `.vs` with its files not ignored stopped with the `Permission denied`
+message in step 7. Each failure was made on purpose in other projects from the same ZIP:
+`Access is denied` by holding `CHANGES.md` open in another process during step 4; the guard's
+messages with the prompt in the wrong place and with `..\labrador-from-zip` already there;
+`Could not resolve host` with the address's `github.com` changed to `github.con`, after which the
+right address downloaded without any cleaning up; `already exists and is not a valid git repo`
+with step 4 left out; `already exists in the index`, and the `git rm --cached` line, in a project
+first committed as plain files as Put your project on GitHub does, whose commit after step 6
+recorded the submodule and 884 deleted engine files; and `pathspec 'v0.2'`. The line under
+[Putting it back](#putting-it-back) was run after the failed download, after a successful download
+and checkout, and in the project committed as plain files; each time the engine came back and
+`git status` was as the section says, and after the last the project configured, built and passed
+both tests.
+Its two messages were seen too. The `hint:` lines of step 3 were not seen: this machine's Git
+names the first branch itself.
+
+A second person then followed the page as worded, in fresh projects from the same ZIP, and every
+box and failure gave the output quoted, except three places the page has since been corrected
+for: the line under Putting it back, run after step 9's commit, left `.gitmodules` listed as
+deleted, and a second try then stopped at step 5 on `.gitmodules`; step 5's note promised a
+`git status` in step 9, where a project committed as plain files instead sees the commit quoted
+there; and an empty `..\labrador-from-zip` had no advice. The corrections were run the same day
+in fresh projects at `C:\dev\g11-fixer`: an empty `..\labrador-from-zip` gave step 4's second
+message and `0 File(s)` in `dir`, and the box worked after `rmdir`; in a project made a
+repository on this page, the line after step 9 printed the `git status` quoted, a second try
+stopped at step 5 with the `.gitmodules` error, and the line followed by `rmdir /s /q .git` put
+the project back so that steps 3 to 10 then ran cleanly to the status quoted above; in a project
+first committed as plain files, step 9's commit printed what step 9 quotes, and after the line
+the three lines recording the engine as plain files printed the counts quoted, left `git status`
+clean, and let steps 4 and 5 run again with `already exists in the index` and its answer;
+put back once more, the project configured, built and passed both tests.
