@@ -32,9 +32,9 @@ guide at all.
 In order of impact on a beginner who wants to play around. Each unit is one
 `GUIDE#` row in TODO.md; the findings below give its pages and lines.
 
-1. **`GUIDE#1` Configure inside a starter's `external\labrador`.** Run a
-   top-level configure of the engine from an extracted starter ZIP, which has
-   no `.git`, and record what works. `GUIDE#4` and `GUIDE#7` depend on it.
+1. **`GUIDE#1` Configure inside a starter's `external\labrador`.** Done:
+   every desktop sample and the browser build work there without Git; see
+   [the engine inside a starter project](#the-engine-inside-a-starter-project).
 2. **`GUIDE#2` The edit, build and run loop in Get Started.** first-change's
    step 4 pastes build, ctest and the game as one box, so after a failed build
    the old `MyGame.exe` runs. Split or chain it; "quit the game first" and
@@ -90,10 +90,49 @@ In order of impact on a beginner who wants to play around. Each unit is one
     controls, build errors, backups, samples, Visual Studio, Git, GitHub and
     sharing are covered by the units above.
 
+## The engine inside a starter project
+
+Checked on 2026-10-30 at commit `0690ffc` on the owner's desktop, for
+`GUIDE#1`. `starter_zip.py` made `labrador-starter-dev.zip`, Windows' `tar`
+extracted it to `C:\dev\g1\mygame`, and every command below ran in
+`mygame\external\labrador`, which has no `.git`, from vcvars' environment
+with every Git folder removed from `PATH`:
+
+```bat
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+ctest --preset x64-debug
+```
+
+- The configure finished in 12 seconds. `source_revision.cmake` finds no
+  `.git` marker and leaves the engine's revision `unknown` without asking Git.
+  vcpkg restored every package from this machine's binary cache; on a machine
+  whose cache holds only the starter's own packages, it also builds
+  `lodepng`, which the engine's tests need and the starter's manifest does not
+  list.
+- The build of 326 steps took 26 seconds and all 20 tests passed in 30, the
+  Direct3D pixel tests among them. `out\build\x64-debug` takes 1.0 GB.
+- All six samples are under `out\build\x64-debug\samples\<sample>\`, with
+  their content beside each `.exe`. Started from another folder, the minimal,
+  collision, audio and local-multiplayer samples each passed `--smoke-test`
+  with exit code 0; LineSweeper and the components gallery, which have no
+  smoke test, opened their windows and stayed up until closed.
+- Afterwards the starter game's own configure, build and tests in `mygame`
+  were unchanged: `ctest -N` listed only `MyGameTests` and
+  `MyGameSmokeTests`, and both passed. The engine's `out\` folder inside
+  `external\labrador` is not part of the game's build.
+- From the same prompt with Emscripten's `emsdk_env.bat` also run, the
+  `wasm-debug` preset configured, built and passed all 32 tests in 137
+  seconds, the six sample page tests among them; its pages are
+  `out\build\wasm-debug\samples\<sample>\<Sample>.html` and the folder takes
+  378 MB. Its configure prints three warnings from Emscripten that CMake
+  4.3.1 does not support Emscripten shared libraries; the engine builds none.
+
+These are times on a fast desktop, not on the low tier, and Git was hidden
+rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
+
 ## Not verified by the audit
 
-- Whether a top-level configure works inside a starter's `external\labrador`
-  without `.git` (`GUIDE#1`).
 - The exact text of the MSVC, linker and CMake messages the units quote, and
   whether ctest reports a pass after a failed build.
 - Single-file `tar -xf` from the ZIP, and the ZIP's internal paths.
