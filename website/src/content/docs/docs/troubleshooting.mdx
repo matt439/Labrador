@@ -521,7 +521,14 @@ A game started from Visual Studio, a shortcut or the command line behaves the sa
 paths are relative to the executable, not to the folder it was started from.
 </Aside>
 
-### `read_json_file - cannot open './manifest.json'`, or a file in the manifest is missing
+On Windows, a problem the game finds while it loads shows in two places. `ctest`'s start-up
+test fails, with a line under it starting `startup failure:` that gives the reason. Started on
+its own, the game shows the same reason in a box titled `Sample - startup failure`, whatever the
+game is called, and closes when **OK** is clicked. In the browser build the page shows the
+reason in red in place of the game, and the browser's console has it after `MinimalSample:`.
+The messages below and under [Content](#content) are that reason.
+
+### `read_json_file - cannot open '...manifest.json'`, or a file in the manifest is missing
 
 The content was not copied beside the executable. The build copies it with a custom target
 ([Getting content beside the executable](/docs/guides/assets/#getting-content-beside-the-executable));
@@ -529,9 +536,9 @@ check that your `CMakeLists.txt` has the copy lines for every content folder, an
 
 ### `... was never loaded`
 
-Code resolved a name that is not in the manifest. The message names the asset; check its
-spelling in the code and in `manifest.json`, which must match exactly and leave off the file
-extension.
+Code resolved a name that is not in the manifest, such as `Texture 'heroo' was never loaded.` or
+`Font 'jetbrains_mono_bold32' was never loaded.` The message names the asset; check its spelling
+in the code and in `manifest.json`, which must match exactly and leave off the file extension.
 
 ### `... was read through an unresolved handle`
 
@@ -646,6 +653,109 @@ or use a persistent effect when waiting is intended.
 states the contract and how it applies to the game's sounds.
 
 ## Content
+
+[Put a picture in your game](/docs/guides/your-picture/#if-something-fails),
+[Animate a sprite sheet](/docs/guides/your-animation/#if-something-fails) and
+[Fonts and text in your game](/docs/guides/your-font/#if-something-fails) show where each of
+these messages comes from in a starter project, made on purpose.
+
+### `'texconv' is not recognized as an internal or external command`
+
+The prompt cannot find the program by its short name. Either it is not downloaded yet, or it is
+in `C:\dev\tools` and the prompt was not told to look there. Run it by its full path,
+`C:\dev\tools\texconv.exe`, or follow
+[Install the content tools](/docs/guides/content-tools/). The same goes for `MakeSpriteFont` and
+`xwbtool`.
+
+### `reading ... FAILED (80070002: The system cannot find the file specified. )`
+
+texconv found no file with that name in the folder the prompt is in. Check the folder with `cd`
+and the name with `dir`, which shows the whole name, including an extension File Explorer hides.
+
+### `writing ... FAILED (80070003: The system cannot find the path specified. )`
+
+The folder after texconv's `-o` does not exist. Make it with `mkdir`, then run texconv again.
+
+### `ERROR: Output file already exists, use -y to overwrite:`
+
+texconv will not replace a file unless the command has `-y`. Add it.
+
+### `... uses the DX10 extended header, which this engine does not read.`
+
+The texture was converted without `-f R8G8B8A8_UNORM`, so texconv kept the PNG's sRGB format,
+which needs that header. Convert it again with the command in
+[Put a picture in your game](/docs/guides/your-picture/), which also has `--ignore-srgb`.
+
+### `... is not a .dds`, `... is a 32-bit image with channel masks`, `... is in fourCC format`, or `... stores 16 bits a pixel`
+
+The texture is in a form the engine does not read: a PNG or other picture renamed to `.dds`, a
+picture with no transparency channel, or a format such as BC4 or a 16-bit one. Convert the
+picture again with the command in [Put a picture in your game](/docs/guides/your-picture/),
+which writes a format the engine reads.
+
+### `No file at ...`
+
+The manifest names a file the game cannot find beside itself; the path in the message is where it
+looked. A misspelt name or `directory` in `manifest.json`, a file never converted, or a folder
+the build does not copy all give this. A new content folder needs a copy line in
+`game\CMakeLists.txt`, as
+[Put a picture in your game](/docs/guides/your-picture/) adds for `textures`.
+
+### `read_json_file - ... is not valid JSON:`
+
+A JSON file, such as the manifest or a sprite sheet's `.json`, has a punctuation mistake: a
+missing or extra comma, quotation mark or bracket. The words after it say what the reader
+expected, and `offset` counts characters from the start of the file to where it gave up, which is
+after the mistake. `Missing a comma or ']' after an array element.` is often a missing comma
+between two groups; `Invalid value.` is often a comma after a list's last entry.
+
+### `Asset ... is of kind ..., which nothing registered.`
+
+The manifest's `kind` is misspelt. The engine knows `texture`, `font`, `sprite_sheet` and
+`sound_bank`; any other kind is one the game registers itself
+([A kind of asset of your own](/docs/guides/assets/#a-kind-of-asset-of-your-own)).
+
+### `... has unknown key ...`
+
+A sprite sheet's `.json` has a field the engine does not read, usually a misspelling, such as
+`animation_strips[0] has unknown key 'frame_cont'`. The message names the list and the entry,
+counting from 0. [Sprites from a sheet](/docs/guides/sprites-and-text/#sprites-from-a-sheet)
+lists the fields.
+
+### `no animation strip named ...`, or `no sprite frame named ...`
+
+The name in the code does not match one in the sprite sheet's `.json`.
+
+### `Animation frame index 0 is outside a strip of 0.`
+
+A strip in a sprite sheet's `.json` has a `frame_count` of 0. Make it the number of frames in
+the strip.
+
+### `Error: Can't find font '...'.`
+
+MakeSpriteFont found no installed font with that family name. Install the font, and give its
+family name, such as `"JetBrains Mono"`, not a face's full name such as `"JetBrains Mono Bold"`
+([Fonts and text in your game](/docs/guides/your-font/)).
+
+### Text draws `?` in place of a letter
+
+The font atlas the text uses has no glyph for that letter. The starter's holds only printable
+English characters. Make an atlas with a `/CharacterRegion` that covers the letter
+([Letters beyond English](/docs/guides/your-font/#letters-beyond-english)). A letter read from a
+file also draws as `?` when the file was not saved as UTF-8.
+
+### `This font has no glyph for ... and no stand-in to draw instead.`
+
+The atlas has neither the letter nor a `?` or space to draw in its place, which happens when it
+was made with `/CharacterRegion` options that leave out the English range. Make it again with
+`/CharacterRegion:0x20-0x7e` as well
+([Letters beyond English](/docs/guides/your-font/#letters-beyond-english)).
+
+### A picture's colours are darker than in the PNG
+
+The texture was converted without `--ignore-srgb`, so texconv darkened every colour between full
+and none. Convert it again with the command in
+[Put a picture in your game](/docs/guides/your-picture/).
 
 ### A sprite has a fringe or halo round its soft edges
 

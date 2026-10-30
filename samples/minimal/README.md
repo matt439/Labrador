@@ -38,6 +38,9 @@ list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
 copy taken before them would want.
 
+- **2026-10-30.** `states/hello_state.cpp` said `using namespace labrador;`
+  twice in a row; the second line is deleted. A copy can delete its own. It
+  changes nothing the compiler does.
 - **2026-10-29.** `labrador_settings` selects UTF-8 source and ordinary narrow
   literal encoding for MSVC. Keep linking that target, and save game source as
   UTF-8. Convert files saved in another encoding before rebuilding; the

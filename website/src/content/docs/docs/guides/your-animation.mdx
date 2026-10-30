@@ -1,0 +1,475 @@
+---
+title: Animate a sprite sheet
+description: Draw several pictures from one sprite sheet, describe them in its JSON file, and play them as an animation in the starter project.
+sidebar:
+  order: 0.8
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+A sprite sheet is one picture holding several smaller ones, with a JSON file beside it that
+says where each of them is. An animation is a row of same-sized pictures in a sheet, shown one
+after another. This page makes a sheet of four coloured lamps, plays them as an animation in the
+top-right corner of the starter game, and draws one of them on its own below it. It takes about
+15 minutes.
+
+Before you start, do [Put a picture in your game](/docs/guides/your-picture/). This page uses
+the `textures` folder it makes and the block it adds to `game\CMakeLists.txt` to copy that
+folder beside the game. To do this page without the picture, do only these parts of that page:
+
+- From its step 2, only the `mkdir game\content\textures` line. Do not run its `texconv` line.
+- Skip its step 3. Step 4 below gives you a manifest without the picture.
+- From its step 4, add the `textures` copy block and the `install` line, but **not** the
+  `hero.dds` line: a line naming a file that does not exist stops the browser build.
+
+Then come back here.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Make the sheet.** This line draws `lamp.png`, 128 pixels wide and 32 high: four lamps,
+   each 32 pixels square, side by side in red, orange, yellow and green.
+
+   ```bat
+   powershell -NoProfile -Command "Add-Type -AssemblyName System.Drawing; $b = New-Object Drawing.Bitmap 128,32; $g = [Drawing.Graphics]::FromImage($b); $g.SmoothingMode = 'AntiAlias'; $c = 'Red','Orange','Yellow','LimeGreen'; for ($i = 0; $i -lt 4; $i++) { $g.FillEllipse((New-Object Drawing.SolidBrush ([Drawing.Color]::FromName($c[$i]))), $i * 32 + 2, 2, 28, 28) }; $b.Save('lamp.png'); $g.Dispose(); $b.Dispose()"
+   ```
+
+   It prints nothing. To draw your own sheet instead, use any paint program: make the picture
+   as wide as all the frames together, and draw each frame in its own square, left to right,
+   with no gaps. Save it as `lamp.png` in `C:\dev\mygame`. Paint shows the position of the
+   mouse pointer in pixels in its bottom bar, which is how to read where each frame starts.
+
+2. **Convert it,** with the same line as for a single picture, and a different name:
+
+   ```bat
+   C:\dev\tools\texconv.exe -f R8G8B8A8_UNORM -m 1 -pmalpha --ignore-srgb -y -o game\content\textures lamp.png
+   ```
+
+   ```text title="Output"
+   reading lamp.png (128x32 B8G8R8A8_UNORM 2D) as (128x32 R8G8B8A8_UNORM 2D a:PM)
+   writing game\content\textures\lamp.dds
+   ```
+
+   It also prints texconv's two-line banner first, as in
+   [Put a picture in your game](/docs/guides/your-picture/). The numbers after
+   `reading lamp.png (` are the sheet's width and height.
+
+   **If you drew your own sheet**, work out a frame's size from them: its height is the sheet's
+   height, and its width is the sheet's width divided by the number of frames. The steps below
+   assume 32 by 32 and four frames. Use your numbers in place of every `32` in steps 3 and 6 and
+   of the `4` in step 3, and in step 6 put the animation at 1280 minus the frame width minus 48
+   across, in place of `1200.0f`, so that it fits in the window.
+
+3. **Describe the sheet.** The JSON file goes beside the `.dds`, with the same name:
+
+   ```bat
+   if not exist game\content\textures\lamp.json type nul > game\content\textures\lamp.json
+   notepad game\content\textures\lamp.json
+   ```
+
+   Paste this into the empty file, then save and close Notepad:
+
+   ```json title="game\content\textures\lamp.json"
+   {
+       "sprite_frames": [
+           { "name": "red", "position": { "x": 0, "y": 0 }, "size": { "w": 32, "h": 32 } }
+       ],
+       "animation_strips": [
+           { "name": "cycle", "first_frame": { "x": 0, "y": 0, "w": 32, "h": 32 },
+             "frame_count": 4, "frame_time": 0.25, "looping": true }
+       ]
+   }
+   ```
+
+   It describes two things, each with a name the code uses:
+
+   - A **frame** called `red`: one picture, at `x` 0 and `y` 0 in the sheet (its top-left
+     corner), `w` 32 wide and `h` 32 high. A sheet can have as many frames as you like, each
+     with its own name, position and size.
+   - An **animation strip** called `cycle`: its first frame is the 32 by 32 square at 0, 0, and
+     it has `frame_count` 4 frames, the next ones each directly to the right of the one before.
+     Each shows for `frame_time` 0.25 seconds. `looping` says whether it starts again after the
+     last; the file must have it, but the class in step 5 always starts again, whatever it says.
+     `frame_time` must be more than 0 and `frame_count` at least 1, and the sheet must be wide
+     enough for that many frames. The engine does not check those numbers when it loads the
+     file, and step 5's class needs them.
+
+   Positions count pixels from the sheet's top-left corner, with `y` growing downwards. Both
+   lists must be there, even if one is empty: `"sprite_frames": []`. The engine checks every
+   name in the file and stops the game naming any it does not know, so a misspelling does not
+   go unnoticed.
+
+4. **List the sheet in the manifest.** Open it:
+
+   ```bat
+   notepad game\content\manifest.json
+   ```
+
+   Press **Ctrl+A** and paste the version below that matches the pages you have done in its
+   place, then save and close Notepad. The first tab is for a reader who did
+   [Put a picture in your game](/docs/guides/your-picture/) and nothing else; the others keep
+   the `hero` picture or the fonts from
+   [Fonts and text in your game](/docs/guides/your-font/) only if you have them.
+
+   <Tabs>
+   <TabItem label="Picture">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16"
+               ]
+           },
+           {
+               "kind": "texture",
+               "directory": "./textures/",
+               "names": [
+                   "hero"
+               ]
+           },
+           {
+               "kind": "sprite_sheet",
+               "directory": "./textures/",
+               "names": [
+                   "lamp"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   <TabItem label="Picture and fonts">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16",
+                   "jetbrains_mono_bold_32",
+                   "menu_bold_16"
+               ]
+           },
+           {
+               "kind": "texture",
+               "directory": "./textures/",
+               "names": [
+                   "hero"
+               ]
+           },
+           {
+               "kind": "sprite_sheet",
+               "directory": "./textures/",
+               "names": [
+                   "lamp"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   <TabItem label="No picture">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16"
+               ]
+           },
+           {
+               "kind": "sprite_sheet",
+               "directory": "./textures/",
+               "names": [
+                   "lamp"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   <TabItem label="Fonts, no picture">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16",
+                   "jetbrains_mono_bold_32",
+                   "menu_bold_16"
+               ]
+           },
+           {
+               "kind": "sprite_sheet",
+               "directory": "./textures/",
+               "names": [
+                   "lamp"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   The new group is of kind `sprite_sheet`. Its name, `lamp`, loads both `lamp.dds` and
+   `lamp.json` from the `textures` folder, which the build copies beside the game because of
+   the block [Put a picture in your game](/docs/guides/your-picture/)'s step 4 added.
+
+5. **Make the class that plays an animation.** Make the file and open it:
+
+   ```bat
+   if not exist game\states\animated_sprite.h type nul > game\states\animated_sprite.h
+   notepad game\states\animated_sprite.h
+   ```
+
+   Paste all of this into it, then save and close Notepad:
+
+   ```cpp title="game\states\animated_sprite.h"
+   #pragma once
+
+   #include "engine/core/game_object.h"
+   #include "engine/math/rectanglef.h"
+   #include "engine/math/rectanglei.h"
+   #include "engine/math/vector2f.h"
+   #include "engine/render/animation_strip.h"
+   #include "engine/render/render_resources.h"
+   #include "engine/render/renderer.h"
+   #include "engine/render/sprite_sheet.h"
+
+   #include <cmath>
+   #include <string>
+
+   // An animation strip from a sprite sheet in the manifest, played over and
+   // over, at its own size, with its top-left corner at a position.
+   class AnimatedSprite : public labrador::GameObject
+   {
+   public:
+   	AnimatedSprite(const std::string& sheet_name,
+   		const std::string& strip_name, const labrador::Vector2F& position,
+   		const labrador::RenderResources& resources) :
+   		resources_(&resources),
+   		strip_(resources.resolve_sheet_strip(sheet_name, strip_name)),
+   		position_(position)
+   	{
+   	}
+
+   	void set_position(const labrador::Vector2F& position)
+   	{
+   		this->position_ = position;
+   	}
+
+   	void update(float dt) override
+   	{
+   		const labrador::AnimationStrip& strip = this->animation_strip();
+   		const float length =
+   			strip.frame_time() * static_cast<float>(strip.frame_count());
+   		this->elapsed_ = std::fmod(this->elapsed_ + dt, length);
+   	}
+
+   	void draw(labrador::DrawList& draw_list) const override
+   	{
+   		const labrador::SpriteSheet* sheet =
+   			this->resources_->sprite_sheet(this->strip_.sheet());
+   		const labrador::AnimationStrip& strip = this->animation_strip();
+   		const int frame = static_cast<int>(this->elapsed_ / strip.frame_time()) %
+   			strip.frame_count();
+   		sheet->draw(draw_list, strip.frame_rect(frame), this->bounds());
+   	}
+
+   	labrador::RectangleF bounds() const override
+   	{
+   		const labrador::RectangleI& first = this->animation_strip().frame_rect(0);
+   		return labrador::RectangleF(this->position_.x, this->position_.y,
+   			static_cast<float>(first.width), static_cast<float>(first.height));
+   	}
+
+   private:
+   	const labrador::AnimationStrip& animation_strip() const
+   	{
+   		return this->resources_->sprite_sheet(this->strip_.sheet())
+   			->animation_strip(this->strip_.strip());
+   	}
+
+   	const labrador::RenderResources* resources_ = nullptr;
+   	labrador::RenderResources::SheetStrip strip_;
+   	labrador::Vector2F position_;
+   	float elapsed_ = 0.0f;
+   };
+   ```
+
+   The scene calls `update` 60 times a second, with `dt` the length of one of those steps in
+   seconds, 1/60. `update` adds it to `elapsed_`, the time since the strip started, and wraps it round to 0 at the end
+   of the strip with `std::fmod`. `draw` works out from the time which frame is showing, asks
+   the strip where that frame is in the sheet (`frame_rect`), and draws that part of the sheet.
+   This class always loops; it does not stop at the last frame, whatever `looping` says.
+
+6. **Add the animation and a still frame to the scene.** Open the state's header:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `game/rules/motion.h` and add a line after it, so that the lines read as below.
+   If you did [Put a picture in your game](/docs/guides/your-picture/), the `picture.h` line is
+   already there; the order of the `#include` lines does not matter.
+
+   ```cpp
+   #include "game/rules/motion.h"
+   #include "game/states/animated_sprite.h"
+   ```
+
+   Save and close Notepad, then open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `engine/math/vector2f.h` and add a line after it, so the two read:
+
+   ```cpp
+   #include "engine/math/vector2f.h"
+   #include "engine/render/visual.h"
+   ```
+
+   Then search for `this->hint_ = this->scene_->add(`, the line that adds the controls hint:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->hint_ = this->scene_->add("
+   	to="this->hint_ = this->scene_->add("
+   />
+
+   Click at the start of that line and paste these lines above it, with an empty line after
+   them:
+
+   ```cpp
+   	this->scene_->add(std::make_unique<AnimatedSprite>(
+   		"lamp", "cycle", Vector2F(1200.0f, 24.0f), *resources));
+
+   	this->scene_->add(std::make_unique<Visual>(
+   		"lamp", "red", RectangleF(1200.0f, 72.0f, 32.0f, 32.0f), resources));
+   ```
+
+   The first adds the animation: the sheet's name from the manifest, the strip's name from the
+   JSON file, and where its top-left corner goes, near the window's top-right corner. The second
+   adds the frame called `red`, still, below it. `Visual` is the engine's own class for one frame
+   of a sheet, so a still frame needs no class of your own; the four numbers are where it goes
+   and its width and height. Neither line keeps what `add` returns, because nothing moves them
+   later. Save and close Notepad.
+
+7. **Build, test and run.** Quit the game if it is open, then:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The tests end with `100% tests passed, 0 tests failed out of 2`, and the game opens. In the
+   top-right corner a lamp turns red, orange, yellow and green, a quarter of a second each, over
+   and over. Below it a red lamp stays red.
+
+</Steps>
+
+## Changing the animation
+
+- **Faster or slower:** change `frame_time` in `lamp.json`, in seconds. The build copies the
+  new file; nothing needs converting.
+- **More frames:** make the sheet wider, convert it again with the `texconv` line, and change
+  `frame_count`.
+- **Several animations in one sheet:** put each strip on its own row of the picture and add an
+  entry for each to `animation_strips`, with its own name and a `first_frame` whose `y` is the
+  row's top. Then add one `AnimatedSprite` per strip in `init()`.
+- **Moving it:** keep what `add` returns, as [Put a picture in your game](/docs/guides/your-picture/)
+  does for the picture, and call its `set_position` from `update()`.
+
+## If something fails
+
+The ways the build, the start-up test and the game report a problem are the same as in
+[Put a picture in your game](/docs/guides/your-picture/#how-errors-show), and so are its
+`texconv` and manifest messages. These are the ones a sheet adds:
+
+<Aside type="caution" title="startup failure: '...textures/lamp.json': animation_strips[0] has unknown key 'frame_cont'.">
+A name in the JSON file is misspelt or not one the engine reads. The message says which list and
+which entry, counting from 0, and the key it did not expect. Compare that entry with step 3.
+</Aside>
+
+<Aside type="caution" title="startup failure: read_json_file - '...textures/lamp.json' is not valid JSON: Invalid value. (offset 118)">
+The JSON file's punctuation is wrong, here a comma after the last entry in a list. The number
+counts characters from the start of the file to where the reader gave up. Paste the file from
+step 3 again and make your change once more.
+</Aside>
+
+<Aside type="caution" title="startup failure: read_json_file - cannot open '...textures/lamp.json'">
+There is no `lamp.json` beside `lamp.dds`. Run `dir game\content\textures` and check that both
+files are listed, with exactly these names. If `lamp.json` is missing, make it again with the two
+lines in step 3.
+</Aside>
+
+<Aside type="caution" title="startup failure: no animation strip named 'cylce' in sprite sheet 'lamp'">
+The strip's name in the code, in step 6, does not match the name in `lamp.json`.
+</Aside>
+
+<Aside type="caution" title="startup failure: no sprite frame named 'rde'">
+The frame's name in the `Visual` line does not match a frame in `lamp.json`.
+</Aside>
+
+<Aside type="caution" title="startup failure: Animation frame index 0 is outside a strip of 0.">
+`frame_count` in `lamp.json` is 0. Make it the number of frames in the strip, at least 1.
+</Aside>
+
+A sheet's whole format, including the optional `origin` of a frame, is in
+[Sprites from a sheet](/docs/guides/sprites-and-text/#sprites-from-a-sheet).
+
+## In the browser build
+
+Add both of the sheet's files to the `LINK_DEPENDS` list near the top of `game\CMakeLists.txt`,
+after the `hero.dds` line from [Put a picture in your game](/docs/guides/your-picture/), so the
+lines read:
+
+```cmake
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/hero.dds"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/lamp.dds"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/lamp.json"
+```
+
+If you did this page without the picture, there is no `hero.dds` line: add the two `lamp` lines
+after the line ending `jetbrains_mono_bold_16.spritefont"` instead. The page then links again
+when either file changes. The Windows build does not use the list.
+
+## What was checked
+
+On 2026-10-30, in the same starter project as [Put a picture in your
+game](/docs/guides/your-picture/#what-was-checked), the steps above ran as shown. Two captures of
+the window a moment apart showed the animated lamp green and then red, at exactly the PNG's
+colours, and the still lamp red in both. Each message under [If something fails](#if-something-fails)
+was made on purpose: a misspelt key, a comma after a list's last entry, `lamp.json` deleted from
+both the content and build folders, misspelt strip and frame names in the code, and a
+`frame_count` of 0. An agent then ran this page again in a fresh starter after
+[Put a picture in your game](/docs/guides/your-picture/), making each edit as worded, and its
+output and captures matched. It also showed that a `hero.dds` line with no `hero.dds` stops the
+browser build with `missing and no known rule to make it`, which is why the route without the
+picture leaves that line out. The
+`wasm-debug` build compiled the page with this class under clang and loaded it in Chrome without
+errors.

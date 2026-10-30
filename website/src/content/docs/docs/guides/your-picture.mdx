@@ -1,0 +1,548 @@
+---
+title: Put a picture in your game
+description: Turn a PNG into a texture, list it in the manifest, copy it beside the game and draw it in the starter project, step by step, with what each failure means.
+sidebar:
+  order: 0.7
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+This page puts a picture into the game from [Get the starter project](/docs/get-started/starter/)
+and makes it follow the greeting around the window. It goes through every file that changes:
+the picture itself, the manifest that lists it, the build file that copies it, a small class
+that draws it, and the lines in `HelloState` that use that class. It takes about 15 minutes.
+
+Before you start:
+
+- Do [Make a first change](/docs/get-started/first-change/), so that you know the edit, build
+  and run loop and have a copy of your game to go back to. Make a fresh copy now with that
+  page's step 1 line.
+- [Install the content tools](/docs/guides/content-tools/), which puts `texconv.exe` in
+  `C:\dev\tools`.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Get a picture.** It must be a PNG file named `hero.png` in `C:\dev\mygame`. If you have no
+   picture yet, this line draws one, an orange face 64 pixels across:
+
+   ```bat
+   powershell -NoProfile -Command "Add-Type -AssemblyName System.Drawing; $b = New-Object Drawing.Bitmap 64,64; $g = [Drawing.Graphics]::FromImage($b); $g.SmoothingMode = 'AntiAlias'; $g.FillEllipse([Drawing.Brushes]::Orange, 2, 2, 60, 60); $g.FillEllipse([Drawing.Brushes]::Black, 18, 20, 8, 12); $g.FillEllipse([Drawing.Brushes]::Black, 38, 20, 8, 12); $b.Save('hero.png'); $g.Dispose(); $b.Dispose()"
+   ```
+
+   It is one line. It prints nothing and takes about a second. To use your own picture instead,
+   copy it into the project's folder with the name `hero.png`, for example from your Pictures
+   folder:
+
+   ```bat
+   copy "%USERPROFILE%\Pictures\my picture.png" hero.png
+   ```
+
+   Change `my picture.png` to your file's name before you press Enter. It prints
+   `1 file(s) copied.` If it prints `The system cannot find the file specified.`, the picture is
+   not where the line looked. On a computer that backs up to OneDrive, the Pictures folder is
+   `%USERPROFILE%\OneDrive\Pictures`. Or, in File Explorer, right-click the picture, choose
+   **Copy as path**, and paste that in place of the first quoted path, quotation marks included.
+
+   Paint can make one too: draw, then save it as `hero.png` in `C:\dev\mygame`, choosing PNG as
+   the type. Keep it small to start with, a few hundred pixels across at most, because it is
+   drawn at its own size in a window 1280 pixels wide.
+
+2. **Convert it to a texture.** Make the folder the game's pictures live in, then convert:
+
+   ```bat
+   mkdir game\content\textures
+   C:\dev\tools\texconv.exe -f R8G8B8A8_UNORM -m 1 -pmalpha --ignore-srgb -y -o game\content\textures hero.png
+   ```
+
+   ```text title="Output"
+   Microsoft (R) DirectX Texture Converter [DirectXTex] Version 2026.5.8.1
+   Copyright (C) Microsoft Corp.
+
+   reading hero.png (64x64 B8G8R8A8_UNORM 2D) as (64x64 R8G8B8A8_UNORM 2D a:PM)
+   writing game\content\textures\hero.dds
+   ```
+
+   **Write down the two numbers after `reading hero.png (`**: they are the picture's width and
+   height in pixels, `64x64` here. Step 6 needs them.
+
+   This wrote `game\content\textures\hero.dds`. What the options do:
+
+   | Option | Why it is there |
+   | --- | --- |
+   | `-f R8G8B8A8_UNORM` | Stores 8 bits each of red, green, blue and transparency, a format the engine reads. Without it the engine refuses the file. |
+   | `-m 1` | One copy of the picture at full size, rather than extra smaller copies the starter game does not use. |
+   | `-pmalpha` | Prepares the transparent edges the way the engine blends them. Without it, soft edges show a light fringe. |
+   | `--ignore-srgb` | Keeps the colours as they are in the PNG. Without it, colours between full and none come out darker. |
+   | `-y` | Replaces `hero.dds` if it is already there, so you can run the line again after changing the picture. |
+   | `-o game\content\textures` | The folder to write to. It must already exist, which is what the `mkdir` line is for. |
+
+   `mkdir` says `A subdirectory or file game\content\textures already exists.` if you run it
+   again, which is harmless.
+
+3. **List it in the manifest.** The manifest lists the pictures, fonts and sounds the engine
+   loads for the game when it starts. Open it:
+
+   ```bat
+   notepad game\content\manifest.json
+   ```
+
+   Press **Ctrl+A** to select everything in it, then paste this in its place, save and close
+   Notepad. If you have already done [Fonts and text in your game](/docs/guides/your-font/), take
+   the second tab's version, which keeps that page's two extra fonts:
+
+   <Tabs>
+   <TabItem label="Starter project">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16"
+               ]
+           },
+           {
+               "kind": "texture",
+               "directory": "./textures/",
+               "names": [
+                   "hero"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   <TabItem label="After Fonts and text">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16",
+                   "jetbrains_mono_bold_32",
+                   "menu_bold_16"
+               ]
+           },
+           {
+               "kind": "texture",
+               "directory": "./textures/",
+               "names": [
+                   "hero"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   The first group is the font the starter already had. The second is new: a group of kind
+   `texture`, read from the `textures` folder, holding one picture called `hero`. The name is
+   the file's name without `.dds`. To add a second picture later, add its name to that list,
+   with a comma between names: `"hero", "tree"`.
+
+4. **Copy the textures folder beside the game.** The game reads its content from the folder its
+   `.exe` is in, and the build copies it there. The starter's build copies only the manifest and
+   the fonts, so it needs a block for `textures`, and two more lines go in for later. The three
+   changes below are in the order they come in the file, from the top. Open the build file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   First, search with **Ctrl+F** for `jetbrains_mono_bold_16.spritefont`, near the top in the
+   part for the browser build, and add a line after it, so the two read:
+
+   ```cmake
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/jetbrains_mono_bold_16.spritefont"
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/textures/hero.dds"
+   ```
+
+   That makes the [browser build](/docs/guides/browser/) package the page again when
+   `hero.dds` changes. It does not change the Windows game you build on this page.
+
+   Next, search for `content/fonts"` (with the quotation mark). You are in the block that copies
+   the fonts:
+
+   ```cmake
+   add_custom_command(TARGET game_content POST_BUILD
+       COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts"
+           "$<TARGET_FILE_DIR:MyGame>/fonts"
+       VERBATIM
+   )
+   ```
+
+   Click at the end of its last line, `)`, press **Enter**, and paste the same block for
+   `textures` below it:
+
+   ```cmake
+   add_custom_command(TARGET game_content POST_BUILD
+       COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/textures"
+           "$<TARGET_FILE_DIR:MyGame>/textures"
+       VERBATIM
+   )
+   ```
+
+   Last, search for `install(DIRECTORY content/fonts` and add a line after it, so the two read:
+
+   ```cmake
+   install(DIRECTORY content/fonts DESTINATION .)
+   install(DIRECTORY content/textures DESTINATION .)
+   ```
+
+   That puts the pictures in a [Windows release](/docs/guides/windows-release/). Save and close
+   Notepad.
+
+5. **Make the class that draws a picture.** Every object in the starter's scene is a class with
+   three jobs: `update` moves it on each step of the game, 60 times a second, `draw` draws it, and
+   `bounds` says where it is.
+   This one draws a whole texture at its own size. First make the empty file, then open it:
+
+   ```bat
+   if not exist game\states\picture.h type nul > game\states\picture.h
+   notepad game\states\picture.h
+   ```
+
+   The first line makes an empty file and prints nothing; it leaves the file alone if it is
+   already there. Notepad opens the empty file. Paste all of this into it, then save and close
+   Notepad:
+
+   ```cpp title="game\states\picture.h"
+   #pragma once
+
+   #include "engine/core/game_object.h"
+   #include "engine/math/rectanglef.h"
+   #include "engine/math/rectanglei.h"
+   #include "engine/math/vector2f.h"
+   #include "engine/render/colour.h"
+   #include "engine/render/render_resources.h"
+   #include "engine/render/renderer.h"
+
+   #include <string>
+
+   // A picture from the manifest, drawn whole, at its own size, with its
+   // top-left corner at a position.
+   class Picture : public labrador::GameObject
+   {
+   public:
+   	Picture(const std::string& texture_name, int width, int height,
+   		const labrador::Vector2F& position,
+   		const labrador::RenderResources& resources) :
+   		texture_(resources.resolve_texture(texture_name)),
+   		width_(width), height_(height), position_(position)
+   	{
+   	}
+
+   	void set_position(const labrador::Vector2F& position)
+   	{
+   		this->position_ = position;
+   	}
+
+   	void update(float /*dt*/) override
+   	{
+   	}
+
+   	void draw(labrador::DrawList& draw_list) const override
+   	{
+   		draw_list.draw_sprite(this->texture_,
+   			labrador::RectangleI(0, 0, this->width_, this->height_),
+   			this->bounds(), labrador::Colour::white, 0.0f,
+   			labrador::Vector2F::zero, labrador::SpriteFlip::none, 0.0f);
+   	}
+
+   	labrador::RectangleF bounds() const override
+   	{
+   		return labrador::RectangleF(this->position_.x, this->position_.y,
+   			static_cast<float>(this->width_),
+   			static_cast<float>(this->height_));
+   	}
+
+   private:
+   	labrador::TextureHandle texture_;
+   	int width_ = 0;
+   	int height_ = 0;
+   	labrador::Vector2F position_;
+   };
+   ```
+
+   The whole class is in this one `.h` file, so `game\CMakeLists.txt` does not need to list it.
+   The constructor looks the picture's name up once, when the game starts, and keeps the
+   answer, a texture handle. `draw` passes `draw_sprite` the part of the texture to draw (all
+   of it, from its top-left corner `0, 0`), where on screen to draw it (`bounds()`), a colour
+   to tint it with (white leaves it as it is), and no rotation, origin, flip or layer.
+
+6. **Put a picture in the scene.** Open the header of the state that runs the starter's screen:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `game/rules/motion.h` and add a line after it, so the two read:
+
+   ```cpp
+   #include "game/rules/motion.h"
+   #include "game/states/picture.h"
+   ```
+
+   Then search for `hint_ = nullptr;` and add a line after it, so the two read:
+
+   ```cpp
+   	labrador::Label* hint_ = nullptr;
+   	Picture* picture_ = nullptr;
+   ```
+
+   `picture_` is where `HelloState` keeps the picture, so that it can move it later. Save and
+   close Notepad, then open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `this->hint_ = this->scene_->add(`. This is the line, in `init()`, that adds the
+   controls hint at the bottom of the window:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->hint_ = this->scene_->add("
+   	to="labrador::Colour::dark_gray));"
+   	mark="this->hint_ = this->scene_->add("
+   />
+
+   Click at the start of that line and paste these lines above it, with an empty line after
+   them:
+
+   ```cpp
+   	this->picture_ = this->scene_->add(std::make_unique<Picture>(
+   		"hero", 64, 64, Vector2F(100.0f, 100.0f), *resources));
+   ```
+
+   `"hero"` is the name in the manifest. `64, 64` are the width and height you wrote down in
+   step 2: if your picture is a different size, put its numbers here. `Vector2F(100.0f, 100.0f)`
+   is where its top-left corner starts, 100 pixels from the window's left edge and 100 down
+   from its top.
+
+7. **Make it follow the greeting.** In the same file, search for
+   `this->greeting_->set_position(`. This line, in `update()`, moves the greeting on every
+   frame:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->greeting_->set_position(greeting_position(this->motion_));"
+   	to="this->greeting_->set_position(greeting_position(this->motion_));"
+   />
+
+   Click at the end of that line, after the `;`, press **Enter**, and paste these lines:
+
+   ```cpp
+   	this->picture_->set_position(greeting_position(this->motion_) +
+   		Vector2F(-80.0f, -24.0f));
+   ```
+
+   They put the picture 80 pixels left of the greeting and 24 pixels higher, so that the 64-pixel
+   face sits beside the text and moves with it. For a wider picture, use its width plus 16 in
+   place of the 80, such as `-216.0f` for one 200 pixels wide; otherwise it covers the greeting.
+   Save and close Notepad.
+
+8. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The build first runs CMake again, because `game\CMakeLists.txt` changed. That prints
+   `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
+   packages and lines such as `find_package(doctest CONFIG REQUIRED)`; they are expected, not
+   errors. Then it compiles `hello_state.cpp` and `main.cpp`, which include the files you
+   changed. On a fast desktop the whole build took 14 seconds. It ends like this:
+
+   ```text title="Output"
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   [1/6] Running utility command for game_content
+   [2/6] Checking that no engine file includes a game header
+   [3/6] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   [4/6] Building CXX object game\CMakeFiles\MyGame.dir\main.cpp.obj
+   [5/6] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.02 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.83 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   Then the game opens.
+
+   The orange face, or your picture, is to the left of the greeting and moves with it when you
+   press the arrow keys or WASD. Its corners are transparent: the black behind it shows
+   through.
+
+</Steps>
+
+## Changing the picture
+
+To change the picture, change `hero.png` and run the `texconv` line from step 2 again, then the
+build line from step 8. `-y` replaces the old `hero.dds`, and the build copies the new one beside
+the game. If the new picture is a different size, change the `64, 64` in step 6 to its numbers.
+
+To leave the picture where it is instead of following the greeting, delete the two lines you
+added in step 7. It then stays at the position in step 6. The window is 1280 pixels wide and
+720 high, with `0, 0` at its top-left corner and the second number growing downwards.
+
+To draw a second picture, convert it the same way with its own name, add the name to the
+manifest's `texture` group, and add a second `Picture` in `init()` with that name. To keep it in
+a variable as well, add a second `Picture*` line in `hello_state.h` with another name, such as
+`tree_`.
+
+## How errors show
+
+A mistake in this page's files shows in one of three places:
+
+- **The build stops** with an `error` line: a slip in the C++ code. [Read a build
+  error](/docs/get-started/build-errors/) shows how to find the line that matters. If the error
+  says `'Picture': undeclared identifier`, the `#include "game/states/picture.h"` line is
+  missing from `hello_state.h`. If it says `Cannot open include file: 'game/states/picture.h'`,
+  the file is not in `game\states` under that name: check with `dir game\states`.
+- **The start-up test fails.** The build worked, but the game stopped while loading. The `ctest`
+  output shows `***Failed` for `MyGameSmokeTests` and, under it, a line starting
+  `startup failure:` that says why, and the game does not start:
+
+  ```text title="Output"
+  2/2 Test #2: MyGameSmokeTests .................***Failed    0.24 sec
+  startup failure: Texture 'heroo' was never loaded.
+
+  50% tests passed, 1 tests failed out of 2
+  ```
+
+  Started on its own, the game shows the same reason in a box titled
+  `Sample - startup failure`, whatever your game is called, and closes when you click **OK**.
+- **`texconv` prints `FAILED` or `ERROR`**, and no new `hero.dds` is written. A `writing`
+  line can come before the `ERROR` line; the `ERROR` still means nothing was written.
+
+Each message is below.
+
+## If something fails
+
+<Aside type="caution" title="reading hero.png FAILED (80070002: The system cannot find the file specified. )">
+`texconv` found no `hero.png` in the folder the prompt is in. Check that the prompt ends
+`mygame>` and that `dir hero.png` lists the file. Windows hides known file extensions in File
+Explorer, so a file that shows there as `hero.png` can really be `hero.png.png`; `dir` shows its
+whole name.
+</Aside>
+
+<Aside type="caution" title="writing game\content\textures\hero.dds FAILED (80070003: The system cannot find the path specified. )">
+The folder after `-o` does not exist, usually because the `mkdir` line was skipped or spelt
+differently. Run the `mkdir` line from step 2, then the `texconv` line again.
+</Aside>
+
+<Aside type="caution" title="ERROR: Output file already exists, use -y to overwrite:">
+The `texconv` line was run without `-y` and there is already a `hero.dds`. texconv prints its
+`reading` and `writing` lines first, but the old file is left as it was. Add `-y`, as in
+step 2.
+</Aside>
+
+<Aside type="caution" title="startup failure: ... textures/hero.dds uses the DX10 extended header, which this engine does not read.">
+The full message goes on to suggest a DXT file; the cause here is that the `texconv` line was
+run without `-f R8G8B8A8_UNORM`. Run the line from step 2 as it is, then build again. The same
+line is the answer when the message says the file `is not a .dds`, `is a 32-bit image with
+channel masks`, `is in fourCC format` or `stores 16 bits a pixel`: the file was made some other
+way, renamed from a PNG, or converted to a format the engine does not read.
+</Aside>
+
+<Aside type="caution" title="startup failure: No file at C:\dev\mygame\out\build\x64-debug\game\.\./textures/hero.dds.">
+The manifest names a file the game cannot find beside itself. Read the end of the path:
+- If the name is misspelt, such as `heroo.dds`, fix the name in `manifest.json`.
+- If the folder is, such as `texture/hero.dds`, fix `"directory": "./textures/"` in
+  `manifest.json`.
+- If both are right, the build is not copying the `textures` folder: check the block you added
+  in step 4, and that `game\content\textures\hero.dds` exists. `dir out\build\x64-debug\game\textures`
+  shows what was copied.
+</Aside>
+
+<Aside type="caution" title="startup failure: Texture 'heroo' was never loaded.">
+The name in the code, in step 6, does not match any name in the manifest. They must be spelt the
+same, without `.dds`.
+</Aside>
+
+<Aside type="caution" title="startup failure: read_json_file - '...manifest.json' is not valid JSON: Missing a comma or ']' after an array element. (offset 189)">
+The manifest's punctuation is wrong: here a comma is missing between the two groups, `},` before
+the second `{`. The number after `offset` counts characters from the start of the file to where
+the reader gave up, which is after the mistake. The easiest repair is to paste the whole manifest
+from step 3 again.
+</Aside>
+
+<Aside type="caution" title="startup failure: Asset 'hero' in '...manifest.json' is of kind 'textures', which nothing registered.">
+The `kind` is misspelt. The engine knows `texture`, `font`, `sprite_sheet` and `sound_bank`,
+spelt exactly so.
+</Aside>
+
+**The colours are darker than in the PNG.** The `texconv` line was run without
+`--ignore-srgb`. Without it, texconv treats a PNG's colours as needing correction and darkens
+the ones between full and none: an orange of red 255, green 165 became green 96. Run the line
+from step 2 again and build.
+
+**The picture has a light fringe round its edges, or a box round it.** The `texconv` line was
+run without `-pmalpha`; see [Colours and blending](/docs/guides/sprites-and-text/#colours-and-blending).
+
+**Only part of the picture shows, or its edges are stretched into stripes.** The width and
+height in step 6 do not match the picture's. Numbers too small draw only its top-left part.
+Numbers too large repeat its last column and row to fill the extra space, which shows as stripes
+unless those edges are transparent. Use the numbers `texconv` printed in step 2.
+
+[Troubleshooting](/docs/troubleshooting/#content) lists these messages too, with the others the
+engine can give about content.
+
+## In the browser build
+
+The browser build packs the whole `game\content` folder into the page when it links, so the
+picture needs no copy line there. The line you added in step 4 after the `.spritefont` line makes
+the page link again when `hero.dds` changes; without it, the page keeps the old picture until
+something else changes. Each new content file the game loads needs a line like it.
+
+## Where to go next
+
+- [Animate a sprite sheet](/docs/guides/your-animation/) draws several pictures from one file,
+  and plays them one after another.
+- [Fonts and text in your game](/docs/guides/your-font/) makes a bigger font for a title and
+  reads text from a file.
+- [Sprites and text](/docs/guides/sprites-and-text/) explains the files, formats and drawing in
+  more depth.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at `C:\dev\g5\mygame`,
+with Visual Studio 2026's compiler 19.51 and the `may2026` texconv, every step above ran as
+shown, with `C:\dev\g5\mygame` in the quoted output changed to `C:\dev\mygame`, and the game drew the face beside the greeting, following it. Its pixels on screen had
+the PNG's colour, red 255 and green 165; the same picture converted without `--ignore-srgb` drew
+green 96. Each message under [If something fails](#if-something-fails) was made on purpose: a
+missing PNG, a misspelt output folder, no `-y`, no `-f`, a misspelt name in the manifest and in
+the code, a misspelt folder and kind, a missing comma, and the copy block removed with the build
+folder's `textures` deleted. A copy of `hero.png` named `hero.dds`, and textures converted to
+`B8G8R8X8_UNORM`, `BC4_UNORM` with `-dx9` and `B5G6R5_UNORM`, gave the other messages the DX10
+entry names. The `Sample - startup failure` box was seen with the misspelt name in
+the code. The `wasm-debug` build compiled the page with these files, loaded it in Chrome without
+errors, and linked it again after `hero.dds` changed. A second run of the same steps in a fresh
+starter, by an agent making each edit exactly as the steps word it rather than in Notepad,
+matched the output and the picture's colour. A texture with seven levels from texconv
+without `-m 1`, and a `BC3_UNORM` texture, also loaded. With `32, 32` in place of `64, 64` the
+game drew the face's top-left quarter; with `128, 128` it drew the face at its own size in the
+corner of a larger, otherwise transparent rectangle, the face's edges being transparent. The
+`x64-release` build installed with `cmake --install` had `textures` in its folder, and the
+installed game started and drew.

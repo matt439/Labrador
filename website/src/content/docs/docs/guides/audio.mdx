@@ -167,7 +167,11 @@ tool version, provenance, regeneration commands and content verifier. Neither
 Python nor an authoring tool is needed to run the existing example.
 
 For your own bank, Microsoft's
-[XWBTool](https://github.com/microsoft/DirectXTK/wiki/XWBTool) combines WAV files:
+[XWBTool](https://github.com/microsoft/DirectXTK/wiki/XWBTool) combines WAV files.
+[Install the content tools](/docs/guides/content-tools/) downloads it to
+`C:\dev\tools\xwbtool.exe`; the command below assumes it can be found by its short name, as
+that page's [Typing the programs' names](/docs/guides/content-tools/#typing-the-programs-names)
+sets up:
 
 ```bat
 xwbtool -f -nc -o tones.xwb ping.wav chime.wav drone.wav
