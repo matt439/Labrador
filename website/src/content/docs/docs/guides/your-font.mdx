@@ -125,7 +125,10 @@ cd /d C:\dev\mygame
    Press **Ctrl+A** and paste the version below that matches the pages you have done in its
    place, then save and close Notepad. Each has the font group with the two new names, which
    are the files' names without `.spritefont`, and keeps the picture or sprite sheet from the
-   other pages only if you have them.
+   other pages only if you have them. If you have done
+   [Play a sound in your game](/docs/guides/your-sound/), none of these versions has its
+   `sound_bank` group: after pasting, add the group back with that page's second manifest tab,
+   or the game stops with `SoundBank 'tones' was never loaded.`
 
    <Tabs>
    <TabItem label="Starter project">
@@ -557,4 +560,7 @@ the starter's own atlas from step 3's command at 16 points byte for byte. The se
 different font ran with Courier Prime, installed for the user only, and the greeting and hint
 drew in it, and an `x64-release` build installed with `cmake --install` had the
 three atlases and `strings\en.json` in its folder and drew the title. Explorer's right-click menu was not driven: its **Install** and
-**Install for all users** entries were read from Windows' list of the file's commands.
+**Install for all users** entries were read from Windows' list of the file's commands. The note in step 5 about Play a
+sound in your game was checked in that page's run: a manifest without the sound group, with that page's
+sound code in place, stopped the game with `SoundBank 'tones' was never loaded.`, and that
+page's second manifest tab put the group back.

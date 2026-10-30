@@ -95,7 +95,10 @@ cd /d C:\dev\mygame
 
    Press **Ctrl+A** to select everything in it, then paste this in its place, save and close
    Notepad. If you have already done [Fonts and text in your game](/docs/guides/your-font/), take
-   the second tab's version, which keeps that page's two extra fonts:
+   the second tab's version, which keeps that page's two extra fonts. If you have done
+   [Play a sound in your game](/docs/guides/your-sound/), neither version has its `sound_bank`
+   group: after pasting, add the group back with that page's second manifest tab, or the game
+   stops with `SoundBank 'tones' was never loaded.`
 
    <Tabs>
    <TabItem label="Starter project">
@@ -545,4 +548,7 @@ without `-m 1`, and a `BC3_UNORM` texture, also loaded. With `32, 32` in place o
 game drew the face's top-left quarter; with `128, 128` it drew the face at its own size in the
 corner of a larger, otherwise transparent rectangle, the face's edges being transparent. The
 `x64-release` build installed with `cmake --install` had `textures` in its folder, and the
-installed game started and drew.
+installed game started and drew. The note in step 3 about Play a sound in your game was checked
+in that page's run: the starter's manifest with that page's sound code in place stopped the game with
+`SoundBank 'tones' was never loaded.`, and that page's second manifest tab put the group back;
+followed on this page's manifest, the same tab gave valid JSON.

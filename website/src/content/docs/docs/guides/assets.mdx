@@ -88,6 +88,15 @@ The browser build has no copy to go stale. Its `--embed-file` is the web equival
 it packs the content directory into the module each time the module links, from the directory as
 it stands, so a deleted file is gone from the next link.
 
+A content file is not a source, so changing one does not by itself make the module link again.
+The template's browser target lists the files that should, in its `LINK_DEPENDS` property: the
+manifest and the font. Each content file a game adds needs a line there, such as
+`"${CMAKE_CURRENT_SOURCE_DIR}/content/textures/hero.dds"` or, for a sound bank, both
+`"${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/tones.json"` and its `.xwb`. Without one, the page
+keeps the old file after the new one is made, until something else makes it link.
+[Put a picture in your game](/docs/guides/your-picture/) and
+[Play a sound in your game](/docs/guides/your-sound/) add the lines for their files.
+
 ## Reading JSON
 
 Content is the one input a person types by hand, so the engine reads JSON through a checked

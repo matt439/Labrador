@@ -108,9 +108,36 @@ In order of impact on a beginner who wants to play around. Each unit is one
    title `Sample - startup failure`; a game file that keeps a
    `samples/components/` include still builds against the engine's copy,
    because `LabradorEngine` puts the engine root on the include path.
-7. **`GUIDE#7` Playing a sound in your own game.** First with the audio
-   sample's tones and no tools, then the manifest, CMake and code; xwbtool's
-   `-y`; "has no wave named".
+7. **`GUIDE#7` Playing a sound in your own game.** Done on 2026-10-30: the
+   guide *Play a sound in your game* copies the audio sample's `tones` bank
+   into a starter project with no tools, lists it in the whole manifest or
+   as a group added to a longer one, adds the copy, install and
+   `LINK_DEPENDS` lines, and plays `ping` on **P** from `HelloState`; starts
+   and stops the `drone_loop` effect on **M** and pauses it while the quit
+   question is up; then makes a WAV with a one-line PowerShell tone or the
+   reader's own, packs it with `xwbtool -f -nc -y`, writes its definition
+   and plays it on **Y**. FFmpeg's `winget` install and a conversion cover
+   sounds xwbtool refuses. Every `startup failure:` message, including
+   `has no wave named`, `Failed to open wave bank`, `is not in this sound
+   bank` and `was never loaded` for a bank and an effect, every xwbtool and
+   FFmpeg message, and the browser build's compact-entries refusal were made
+   on purpose; Troubleshooting gains them and a *No sound, and no error*
+   entry. Audio gains the `-y` and its refusal, FFmpeg's install, and
+   adpcmencode3's folder and a padding command that keeps the sample rate;
+   the audio sample's README gains Python's Store stub, the tools' install
+   and the verifier's output; Assets, Ship a Windows release and Settings
+   and saves give the exact `LINK_DEPENDS` and install lines and the volume
+   slider's prerequisites; placing that slider's lines in a whole state, the
+   rest of that minor finding, stays with `GUIDE#12`. The steps, output and failures were run in a
+   fresh starter, then followed as worded by a second agent in another and
+   corrected, and each corrected step run again in a third. Found on the
+   way: the picture, font and animation guides replace the whole manifest,
+   so one done after this page drops its `sound_bank` group and the game
+   stops with `SoundBank 'tones' was never loaded.`; each of those pages now
+   says to add the group back. A review in a fourth starter repeated the
+   page's main steps and corrected one quoted JSON offset. The page's *What
+   was checked* records the runs: nobody listened, and the output's peak
+   level was read instead.
 8. **`GUIDE#8` Sharing the game.** One free web host end to end; a GitHub
    account, repository, remote, push and sign-in; reading a CI run; what a
    player sees from a Windows release (extracting, SmartScreen) and a zip
@@ -197,7 +224,10 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   `mygame/` and says `Not found in archive` with backslashes.
 - Visual Studio's first-launch dialogs, `devenv .`, and whether an exception
   breaks into the debugger.
-- Whether xwbtool needs `-y` to overwrite. `GUIDE#5` found that
+- `GUIDE#7` found that xwbtool refuses to replace a bank without `-y`,
+  with `ERROR: Output file ... already exists, use -y to overwrite!`, and
+  that FFmpeg 8.1.2 from `winget` takes about 700 MB; `winget install` itself
+  was not run. `GUIDE#5` found that
   MakeSpriteFont stops with `Can't find font` for a family that is not
   installed, finds fonts installed for the user only, and ran with the .NET
   Framework that Windows 11 includes; that all three tools carry Microsoft's

@@ -119,7 +119,16 @@ distributed here. The retained bank was built with the
 tool version `2026.5.8.1`, whose x64 `XWBTool.exe` SHA-256 is
 `cfeddaf86b2a55b3497fbbc5757d218b25a75dd731547fd6cb7fd5ffc5688b7f`.
 
-To regenerate with that tool on `PATH`, from the repository root:
+Regenerating needs Python 3 and XWBTool, neither of which building or running
+the sample needs. On a new Windows 11 machine `python` is a stub that offers
+the Microsoft Store rather than running anything; `python --version` tells
+them apart, and the browser guide's
+[Install Emscripten](https://labradorengine.com/docs/guides/browser/#install-emscripten)
+says how to install Python.
+[Install the content tools](https://labradorengine.com/docs/guides/content-tools/)
+downloads XWBTool to `C:\dev\tools`, and its *Typing the programs' names* puts
+that folder on a prompt's `PATH`. Then, from the repository root, which is
+`external\labrador` in a starter project:
 
 ```bat
 python samples\audio\source\generate_waves.py
@@ -128,6 +137,21 @@ xwbtool -f -nc -y -o samples\audio\content\sounds\tones.xwb ^
     samples\audio\source\drone.wav
 python samples\audio\source\verify_content.py
 ```
+
+The generator prints nothing. XWBTool prints a `reading` line for each WAV,
+`(PCM 1 channels, 16-bit, 22050 Hz)`, then
+`writing in-memory wavebank ... w/ 3 entries`. The verifier prints a line for
+each wave and exits with 0:
+
+```text
+ping: 3528 samples; source PCM matches named XWB entry
+chime: 9261 samples; source PCM matches named XWB entry
+drone: 22050 samples; source PCM matches named XWB entry
+```
+
+[Play a sound in your game](https://labradorengine.com/docs/guides/your-sound/)
+copies this bank into a starter project with no tools, then packs a WAV of
+the reader's own.
 
 `-f` retains each filename stem in the bank's name table: Labrador resolves those
 names, so omitting it is a load error. `-nc` selects standard entries so the
