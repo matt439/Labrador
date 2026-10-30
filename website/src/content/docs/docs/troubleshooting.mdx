@@ -256,6 +256,30 @@ Move the checkout to a folder whose path is under 100 characters, or reach it th
 letter as in [Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder),
 then configure and build again from there.
 
+### `LNK1168: cannot open game\MyGame.exe for writing`
+
+The build's last step stopped with these lines among others:
+
+```text title="Output"
+LINK : fatal error LNK1168: cannot open game\MyGame.exe for writing
+
+ninja: build stopped: subcommand failed.
+```
+
+The game is still running, from an earlier command, a double-click or Visual Studio, and
+Windows does not let a running program be replaced. Quit it: click its window, then press
+**Escape**, then **Enter**. If Visual Studio started it, stop it there with **Shift+F5**
+instead. Then build again. If you cannot find its window,
+this closes it:
+
+```bat
+taskkill /im MyGame.exe
+```
+
+It prints `SUCCESS: Sent termination signal to the process "MyGame.exe"` and a number, or
+`ERROR: The process "MyGame.exe" not found.` if the game was not running after all. Your code
+was compiled before the link failed, so the build that follows only links.
+
 ### `labrador_settings` is defined twice
 
 A project defined its own target with that name. The engine defines it, and every target that

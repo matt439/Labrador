@@ -11,8 +11,9 @@ import { sitePath } from '../lib/site-path';
 interface Props {
 	// download: into C:\dev; extract: tar in C:\dev; second-name: the name of a
 	// second project; second: extracted aside and moved to that name; update:
-	// extracted into C:\dev\new.
-	part: 'download' | 'extract' | 'second-name' | 'second' | 'update';
+	// extracted into C:\dev\new; original: the file %FILE% names, extracted into an
+	// emptied C:\dev\original and copied over the project's with the current time.
+	part: 'download' | 'extract' | 'second-name' | 'second' | 'update' | 'original';
 }
 
 const { part } = Astro.props;
@@ -43,6 +44,13 @@ const commands: Record<Exclude<Props['part'], 'download'>, string> = {
 		`cd /d "C:\\dev\\%NAME%"`,
 	].join('\n'),
 	update: [`mkdir C:\\dev\\new`, extract('C:\\dev\\new')].join('\n'),
+	// tar names a file inside the ZIP with forward slashes; %FILE:\=/% turns them round.
+	original: [
+		`if exist C:\\dev\\original rmdir /s /q C:\\dev\\original`,
+		`mkdir C:\\dev\\original`,
+		`${extract('C:\\dev\\original')} "mygame/%FILE:\\=/%"`,
+		`copy /y "C:\\dev\\original\\mygame\\%FILE%" "%FILE%" && copy /b "%FILE%" +,, "%FILE%"`,
+	].join('\n'),
 };
 const gitRoute = sitePath('/docs/get-started/build-labrador/');
 const installGit = sitePath('/docs/get-started/prerequisites/#install-git');
