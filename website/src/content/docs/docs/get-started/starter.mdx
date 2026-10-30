@@ -146,6 +146,30 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    hidden, lets it draw a few frames and quits, so it also tells you the game can start on your
    machine. [Test your game](/docs/guides/testing/) explains both.
 
+   A test that fails says `***Failed` in place of `Passed`, and the summary counts it. The
+   lines under the failed test say why. A game that cannot load a file, for example, ends:
+
+   ```text title="Output"
+   2/2 Test #2: MyGameSmokeTests .................***Failed    0.21 sec
+   startup failure: No file at C:\dev\mygame\out\build\x64-debug\game\.\./fonts/jetbrains_mono_bold_16.spritefont.
+
+
+   50% tests passed, 1 tests failed out of 2
+
+   Total Test time (real) =   0.24 sec
+
+   The following tests FAILED:
+   	  2 - MyGameSmokeTests (Failed)
+   Errors while running CTest
+   ```
+
+   `MyGameSmokeTests` failing means the game cannot start on this machine, and the line starting
+   `startup failure:` is the reason: look it up in
+   [Troubleshooting's Running section](/docs/troubleshooting/#running). On a fresh starter
+   project the usual cause is a build in step 6 that did not finish, so run step 6 again and read
+   its last lines first. `MyGameTests` failing on a project you have not changed would be a fault
+   in the starter; report it as the top of Troubleshooting says.
+
 8. **Play it:**
 
    ```bat
@@ -187,12 +211,32 @@ sample.
   - external/
     - labrador/ the engine, which you do not edit
   - game/ yours: the code and content of your game
-    - main.cpp
+    - CMakeLists.txt the game's build: its source files, tests, content and release
+    - README.md how the template is arranged, and what changed in it
+    - main.cpp starts the game on Windows
+    - main_web.cpp starts it in a browser
+    - dpi_aware.manifest tells Windows not to stretch the window on a scaled display
     - states/
+      - hello_state.h the screen with the circling greeting
+      - hello_state.cpp
+      - confirm_state.h the "Really quit?" question
+      - confirm_state.cpp
     - rules/
+      - motion.h how the greeting moves, with no window or device
+      - motion.cpp
     - content/
+      - manifest.json every file the game loads, by name
+      - fonts/
+        - jetbrains_mono_bold_16.spritefont the font the text is drawn with
+        - OFL.txt the font's licence
     - tests/
+      - motion_tests.cpp the rules' tests
+    - web/
+      - shell.html the page around the game in a browser
 </FileTree>
+
+The guides that add a source file to the game say to list it in `game\CMakeLists.txt`, the one
+under `game`, not the one beside `CMakePresets.json`.
 
 [Start your own project](/docs/get-started/your-project/) explains each of these files, since
 it makes them one at a time. Everything you change is in `game`. Leave `external\labrador` as
@@ -264,6 +308,10 @@ extract it by the start of its name, make a second project, and move a project o
 folder **Extract All** suggests were run as written in a command prompt, with a drive letter
 standing in for `C:\dev`, the ZIP renamed as a release's would be, and the command prompt's
 `USERPROFILE` pointed at a stand-in for the Downloads folder's parent.
+
+On 31 October 2026 the failed test in step 7 was made in a fresh starter by moving the build's
+`fonts` folder away, and the file tree's sixteen files in `game` were listed from it; a second
+agent did both again in another fresh starter, and the output and the files matched.
 
 No release has carried a starter ZIP yet, so the download step has not been run against a real
 release, and the **Extract All** dialog itself was not clicked through. CI makes a starter ZIP

@@ -20,9 +20,12 @@ there first:
 cd /d C:\dev\mygame
 ```
 
-The edits use Notepad, which every copy of Windows has; any text editor or IDE does as well.
-In Notepad, **Ctrl+F** finds a piece of text and **Ctrl+S** saves. Close Notepad after saving
-each file.
+The edits use Notepad, which every copy of Windows has; any text editor or IDE does as well,
+if it saves files as **UTF-8**, which the build reads them as. Windows 11's Notepad, Visual
+Studio and Visual Studio Code all do unless told otherwise, and Notepad shows the encoding at
+the right of the bar along its bottom: `UTF-8`. A file saved as `ANSI` or another encoding
+builds, but any letter outside plain English in it comes out wrong. In Notepad, **Ctrl+F** finds
+a piece of text and **Ctrl+S** saves. Close Notepad after saving each file.
 
 <Steps>
 
@@ -151,26 +154,34 @@ each file.
    [3/4] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
    FAILED: [code=2] game/CMakeFiles/MyGame.dir/states/hello_state.cpp.obj
    C:\PROGRA~1\MICROS~1\18\COMMUN~1\VC\Tools\MSVC\1451~1.362\bin\Hostx64\x64\cl.exe  /nologo /TP ...
-   C:\dev\mygame\game\states\hello_state.cpp(88): error C2001: newline in string literal
-   C:\dev\mygame\game\states\hello_state.cpp(89): error C2143: syntax error: missing ')' before 'labrador::Colour::white'
-   C:\dev\mygame\game\states\hello_state.cpp(89): error C2143: syntax error: missing ';' before 'labrador::Colour::white'
-   C:\dev\mygame\game\states\hello_state.cpp(89): error C2059: syntax error: ')'
-   C:\dev\mygame\game\states\hello_state.cpp(89): error C2059: syntax error: ')'
+   C:\dev\mygame\game\states\hello_state.cpp(87): error C2001: newline in string literal
+   C:\dev\mygame\game\states\hello_state.cpp(88): error C2143: syntax error: missing ')' before 'labrador::Colour::white'
+   C:\dev\mygame\game\states\hello_state.cpp(88): error C2143: syntax error: missing ';' before 'labrador::Colour::white'
+   C:\dev\mygame\game\states\hello_state.cpp(88): error C2059: syntax error: ')'
+   C:\dev\mygame\game\states\hello_state.cpp(88): error C2059: syntax error: ')'
    ninja: build stopped: subcommand failed.
    ```
 
    The line after `FAILED:` is the command that failed, hundreds of characters long in a real
    build: skip it. The **first** line with `error` in it is the one to read. It names the file,
    the line number in brackets, and what the compiler expected. The lines after it are
-   usually the same slip seen again, and go away when it is fixed. Here, line 88 of
+   usually the same slip seen again, and go away when it is fixed. Here, line 87 of
    `hello_state.cpp` has a quotation mark that is never closed. Open the file again, press
-   **Ctrl+G**, type `88` in the **Go to line** box and press **Enter**; the bar along the bottom
-   of Notepad then says `Ln 88`. Compare that line with this page: the usual slip is a quotation mark, `L`, `f`, comma or semicolon missing or doubled.
+   **Ctrl+G**, type `87` in the **Go to line** box and press **Enter**; the bar along the bottom
+   of Notepad then says `Ln 87`. Compare that line with this page: the usual slip is a quotation mark, `L`, `f`, comma or semicolon missing or doubled.
    Fix it, save, and run the line above again.
    [Read a build error](/docs/get-started/build-errors/) has more on reading the output and
    what the common errors mean. If the message is not about your edit, look it
    up in [Troubleshooting](/docs/troubleshooting/#building). If you cannot find the slip,
    [put the file back](#getting-a-file-back) and make the edit again.
+
+   **If a test fails**, the game does not start, and ctest's summary counts the failure, such
+   as `50% tests passed, 1 tests failed out of 2`. The lines under the failed test say why. A
+   failed `MyGameSmokeTests` prints a `startup failure:` line, which
+   [Troubleshooting](/docs/troubleshooting/#running) looks up by message. A failed
+   `MyGameTests` means a change to `game\rules` broke what a test checks, such as changing what
+   `step_motion` does rather than its speed; [Add a rule and a test](/docs/guides/your-rule/)
+   reads that output line by line.
 
    If you build, test and run with separate commands instead, read the build's last lines before
    going on. After a failed build the tests still pass and the game still starts, but they are
@@ -254,8 +265,11 @@ On 30 October 2026, in a starter project made from a starter ZIP at `C:\dev\myga
 Visual Studio 2026's compiler 19.51, the edits above were made and the one-line build, test
 and run worked as shown. The failure output above was captured by deleting the greeting's closing
 quotation mark, and the same build with separate commands showed both tests passing on the
-old program. Each box on this page that copies or restores files was run, in the project's
-folder and, for the guarded lines, in the wrong folder and with no copy, where each printed its
+old program. On 31 October 2026 the slip was made again in a fresh starter, which put its lines
+one earlier than the first run had, and the output above was corrected to it; a second agent
+then checked every `hello_state.cpp` line number this page, Read a build error and
+Troubleshooting quote against another fresh starter, and each matched. Each box on this page
+that copies or restores files was run, in the project's folder and, for the guarded lines, in the wrong folder and with no copy, where each printed its
 message and changed nothing. The build after each restore compiled the restored file again; a
 plain `copy` without the second line was also tried, and the build did not compile it again.
 
@@ -268,6 +282,7 @@ explains the language features, ownership and rendering terms used there. After 
 <CardGrid>
 	<LinkCard title="Put a picture in your game" description="Convert a PNG into a texture and draw it beside the greeting, step by step." href="/docs/guides/your-picture/" />
 	<LinkCard title="Play a sound in your game" description="Copy the audio sample's sounds and play one on a key, with no tools, then a sound of your own." href="/docs/guides/your-sound/" />
+	<LinkCard title="Change a control in your game" description="Move with other keys, and ask to quit with another, on both of the starter's screens." href="/docs/guides/input/#change-a-control-in-your-game" />
 	<LinkCard title="Add a screen to your game" description="Write a title screen as a new state and start the game on it, step by step." href="/docs/guides/your-screen/" />
 	<LinkCard title="Add a rule and a test" description="Write a rule of your own and test it with doctest, step by step." href="/docs/guides/your-rule/" />
 	<LinkCard title="Save and undo changes with Git" description="Put the project in Git, then record each working version and go back to any of them." href="/docs/guides/your-git/" />

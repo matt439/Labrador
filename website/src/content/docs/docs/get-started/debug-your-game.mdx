@@ -583,15 +583,33 @@ rules in `game\CMakeLists.txt` if they are absent. The
 
 ## Direct3D diagnostics
 
-Windows' optional **Graphics Tools** feature supplies the Direct3D debug layers. Install it
-when you want graphics validation, then read the Output's **Debug** view for messages about API
-use. Labrador's Debug Direct3D backends enable the layer when available and report a warning
-when it is unavailable. Ordinary C++ breakpoints work independently of that feature.
+Windows' optional **Graphics Tools** feature supplies the Direct3D debug layers, which check
+every call the renderer makes and say in the Output window when one is wrong. Nothing on this
+page needs them, and a beginner can leave them out. Labrador's Debug Direct3D builds use them
+when they are there. Without them, the Output's **Debug** view, chosen in **Show output from**,
+has this line when the game starts under F5, and the game runs as before:
+
+```text title="Output"
+WARNING: Direct3D Debug Device is not available
+```
+
+To install them, as Microsoft's
+[Graphics Tools page](https://learn.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features)
+describes: open **Settings**, choose **System**, then **Optional features**. If **Graphics
+Tools** is already listed under **Added features**, it is installed. Otherwise click the button
+for adding a feature (**View features** on current Windows 11, **Add a feature** on older
+versions), type `Graphics Tools` in the search box, tick it, and click **Next** and **Add**, or
+**Add** alone. Windows downloads it and lists it under **Added features** when it is done. Start the game under F5 again: the warning is gone, and
+any message from the layer appears in the same **Debug** view, starting `D3D11 ERROR:` or
+`D3D11 WARNING:` with the call it is about. Ordinary C++ breakpoints work with or without it.
 
 The copied project uses Direct3D 11 by default. Selecting `x64-release` does not enable the
 Debug layer and can make stepping harder because the compiler optimizes the code.
 
 ## Keep matching symbols
+
+**A beginner can skip this section.** It matters only when you want to debug a crash in a copy
+of the game you have already given to players.
 
 For a shipped build that produces PDB symbol files, retain those exact PDBs with the matching
 executable, DLLs and source revision in your release archive. A later rebuild or a Debug PDB
@@ -709,6 +727,11 @@ nothing, until **Project > Configure Cache** configured `wasm-debug` and failed 
 quoted above. The menus' names and keys in the page were read from that Visual Studio's menus,
 where **View > Output** shows **Alt+2**, which opened it, and **Edit > Go To** names Ctrl+G's
 entry **Go To...**.
+
+On 31 October 2026 the [Direct3D diagnostics](#direct3d-diagnostics) section gained Graphics
+Tools' steps. They are written from Microsoft's page, which a second agent read again and found
+to agree; Graphics Tools was not added or removed on this machine for them. The warning quoted
+there is the engine's own string, read from its source.
 
 No person has followed this page yet: `OCA-18` is that session, someone at Visual Studio
 following the page in a fresh starter project, and it remains open.

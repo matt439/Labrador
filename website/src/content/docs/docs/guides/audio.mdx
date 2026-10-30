@@ -297,6 +297,27 @@ while keeping the same source-to-filesystem mappings. Ship the generated
 `.data` file beside the page, JavaScript and wasm and keep its URL resolvable
 by the generated loader.
 
+In a starter project that is one word in `game\CMakeLists.txt`. Search for `--embed-file`,
+inside `if(EMSCRIPTEN)`, and change it to `--preload-file`, so that the line reads:
+
+```cmake
+        "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/content@/"
+```
+
+Build `wasm-debug` again as [Build for the browser](/docs/guides/browser/) does. The build
+folder `out\build\wasm-debug\game` then has a fourth file beside `MyGame.html`, `MyGame.js`
+and `MyGame.wasm`: `MyGame.data`, which holds the content folder, 99,711 bytes for a starter with
+the `tones` bank of [Play a sound in your game](/docs/guides/your-sound/). Serve and open the
+page as before, or run that guide's page check; the game starts as it did, and the server's
+window shows a `GET /MyGame.data` line. Copy `MyGame.data` with the other three wherever you
+put the page. Without it the game never starts, and the browser's console, opened with **F12**,
+shows `Failed to load resource: the server responded with a status of 404 (Not Found)` for
+`MyGame.data`, then an uncaught `Error: 404:` with its address.
+
+The browser build was checked this way on 31 October 2026 in a starter project with the `tones`
+bank: the page built, passed the page check from Build for the browser, and with `MyGame.data`
+moved away the check reported the 404 above and failed.
+
 Preloading separates the content download from the wasm module. The generated
 loader still fetches that data before startup, and `load_manifest` still reads
 whole banks from the same filesystem paths. It does not wait until the track's

@@ -21,9 +21,9 @@ BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
-**Beginner guides are ready work:** take `GUIDE#12` and `GUIDE#13` in their
-order in [Beginner guides](docs/beginner-guides.md), which ranks them by
-impact on the owner's 2026-10-30 reader.
+**Beginner guides are ready work:** take `GUIDE#13` in
+[Beginner guides](docs/beginner-guides.md), which ranks the work by impact on
+the owner's 2026-10-30 reader.
 
 **Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which with a green CI run of the changed consumer jobs closes `OCA-78`. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
@@ -61,7 +61,6 @@ impact on the owner's 2026-10-30 reader.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `GUIDE#12` | OPEN | should | S | Small fixes: whole preset JSON, a control in both states, `hold_key.ps1` paths, bundle folder and `--verify`, install size, the minor gaps. |
 | `GUIDE#13` | OPEN | should | M | Procedures with no guide: colours, window size, background, renaming the game, two players, camera follow (`IDEA#4`), asking for help, matching docs to a version. |
 
 ## CI

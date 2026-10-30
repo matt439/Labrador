@@ -25,7 +25,7 @@ shows:
 [3/4] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
 FAILED: [code=2] game/CMakeFiles/MyGame.dir/states/hello_state.cpp.obj
 C:\PROGRA~1\MICROS~1\18\COMMUN~1\VC\Tools\MSVC\1451~1.362\bin\Hostx64\x64\cl.exe  /nologo /TP ...
-C:\dev\mygame\game\states\hello_state.cpp(88): error C2065: 'font_nam': undeclared identifier
+C:\dev\mygame\game\states\hello_state.cpp(87): error C2065: 'font_nam': undeclared identifier
 ninja: build stopped: subcommand failed.
 ```
 
@@ -39,7 +39,7 @@ text rather than the starter's. The rest is the same.
   characters long and fills several lines of the window. Skip it.
 - The next line starting with a file name and `error` is the one to read. Its parts are:
   - `C:\dev\mygame\game\states\hello_state.cpp`: the file.
-  - `(88)`: the line in that file, counting from 1 at the top.
+  - `(87)`: the line in that file, counting from 1 at the top.
   - `error C2065`: the kind of error. Every error has a code: `C` for the compiler, `LNK` for
     the linker. You can search the web for the code, or look it up below.
   - `'font_nam': undeclared identifier`: what the compiler found. Here it met the name
@@ -71,11 +71,11 @@ and which program is linked last, can differ.
    it, check the path against the error, and try again.
 
 3. **Go to the line.** Press **Ctrl+G**. A box titled **Go to line** opens; type the line's
-   number, here `88`, and press **Enter**. The bar along the bottom of Notepad then says
-   `Ln 88`. If there is no bar, turn it on with **View > Status bar**.
+   number, here `87`, and press **Enter**. The bar along the bottom of Notepad then says
+   `Ln 87`. If there is no bar, turn it on with **View > Status bar**.
 4. **Compare the line with what you meant to write.** The message tells you what to look for.
    Here, `font_nam` is one letter short of `font_name`, which is spelt correctly where it is
-   made, on line 23 near the top of the file, and where it is used again a few lines below. The
+   made, on line 22 near the top of the file, and where it is used again a few lines below. The
    slip can also be on the line before the one named: a missing `;` is noticed only when the
    compiler reaches the next line.
 5. **Save, close Notepad, and build again.** Use the same build line as before. The build
@@ -93,31 +93,31 @@ is never closed makes it misread everything after it. Deleting the closing quota
 greeting gives five errors:
 
 ```text title="Output"
-C:\dev\mygame\game\states\hello_state.cpp(88): error C2001: newline in string literal
-C:\dev\mygame\game\states\hello_state.cpp(89): error C2143: syntax error: missing ')' before 'labrador::Colour::white'
-C:\dev\mygame\game\states\hello_state.cpp(89): error C2143: syntax error: missing ';' before 'labrador::Colour::white'
-C:\dev\mygame\game\states\hello_state.cpp(89): error C2059: syntax error: ')'
-C:\dev\mygame\game\states\hello_state.cpp(89): error C2059: syntax error: ')'
+C:\dev\mygame\game\states\hello_state.cpp(87): error C2001: newline in string literal
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2143: syntax error: missing ')' before 'labrador::Colour::white'
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2143: syntax error: missing ';' before 'labrador::Colour::white'
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2059: syntax error: ')'
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2059: syntax error: ')'
 ```
 
 Only the first is the slip. The four after it are the compiler confused by it, and they go away
 when it is fixed. Fix the first error, build again, and read whatever comes first then.
 
 One slip breaks this rule: a missing closing brace `}`. Deleting the `}` that ends one of the
-`if` blocks in `keyboard_direction`, at line 63, gives errors about correct code further down,
+`if` blocks in `keyboard_direction`, at line 62, gives errors about correct code further down,
 and a last line that names a brace higher up:
 
 ```text title="Output"
-C:\dev\mygame\game\states\hello_state.cpp(69): error C2888: 'HelloState::HelloState(labrador::Application *)': symbol cannot be defined within namespace 'anonymous-namespace'
+C:\dev\mygame\game\states\hello_state.cpp(67): error C2888: 'HelloState::HelloState(labrador::Application *)': symbol cannot be defined within namespace 'anonymous-namespace'
 ...
-C:\dev\mygame\game\states\hello_state.cpp(19): fatal error C1075: '{': no matching token found
+C:\dev\mygame\game\states\hello_state.cpp(18): fatal error C1075: '{': no matching token found
 ```
 
 The compiler pairs each `}` with the nearest `{` still open, so after one goes missing every
 `}` below it closes the wrong block, and the `{` left over at the end is the outermost one. Line
-19 is the `{` that opens the block around `keyboard_direction`, not the block whose `}` was
+18 is the `{` that opens the `namespace` block around `keyboard_direction`, not the block whose `}` was
 deleted. The missing `}` is somewhere between the line `C1075` names and the line of the first
-error, here between lines 19 and 69. In the files you were given, each `}` sits directly below
+error, here between lines 18 and 67. In the files you were given, each `}` sits directly below
 its `{`, at the same indent; look in that range, in code you changed, for a `{` with no `}`
 under it.
 
@@ -136,13 +136,13 @@ C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\
 C:\dev\mygame\external\labrador\engine/render/label.h(42): note: could be 'labrador::Label::Label(const std::wstring &,const std::string &,const labrador::Vector2F &,labrador::RenderResources *,const labrador::Colour &,float,float,const labrador::Vector2F &,float)'
 C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\memory(3666): note: 'labrador::Label::Label(...)': cannot convert argument 1 from 'const char [23]' to 'const std::wstring &'
 ...
-C:\dev\mygame\game\states\hello_state.cpp(87): note: see reference to function template instantiation 'std::unique_ptr<labrador::Label,...> std::make_unique<labrador::Label,const char(&)[23],...>(...)' being compiled
+C:\dev\mygame\game\states\hello_state.cpp(86): note: see reference to function template instantiation 'std::unique_ptr<labrador::Label,...> std::make_unique<labrador::Label,const char(&)[23],...>(...)' being compiled
 ```
 
 The file in `Microsoft Visual Studio`, and anything under `external\labrador`, is not where the
 slip is: those are the standard library and the engine, and they are not wrong. Look down the
 notes for the first line that names a file in your `game` folder. Here it is the last line,
-`hello_state.cpp(87)`, the line that makes the greeting. Then read the note that says what could
+`hello_state.cpp(86)`, the line that makes the greeting. Then read the note that says what could
 not be done: `cannot convert argument 1 from 'const char [23]' to 'const std::wstring &'`.
 Argument 1 is the first thing between the brackets, the text. `const char [23]` is a plain
 string, and its number is the length of the text plus one. `std::wstring` is a wide string,
@@ -159,8 +159,8 @@ Labrador builds your game with warnings turned into errors, so a warning stops t
 It comes as a `C2220` line followed by one or more warning lines, with the same file and line:
 
 ```text title="Output"
-C:\dev\mygame\game\states\hello_state.cpp(82): error C2220: the following warning is treated as an error
-C:\dev\mygame\game\states\hello_state.cpp(82): warning C4189: 'unused_scale': local variable is initialized but not referenced
+C:\dev\mygame\game\states\hello_state.cpp(81): error C2220: the following warning is treated as an error
+C:\dev\mygame\game\states\hello_state.cpp(81): warning C4189: 'unused_scale': local variable is initialized but not referenced
 ```
 
 `C2220` only says that the line after it is being treated as an error. Read the `warning` line
@@ -204,19 +204,19 @@ compiler, clang, and its errors look different. The `font_nam` slip gives:
 
 ```text title="Output"
 FAILED: [code=1] game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o
-C:/dev/mygame/game/states/hello_state.cpp:88:30: error: use of undeclared identifier 'font_nam'; did you mean 'font_name'?
-   88 |                 L"Hello from the engine.", font_nam, this->motion_.centre, resources,
+C:/dev/mygame/game/states/hello_state.cpp:87:30: error: use of undeclared identifier 'font_nam'; did you mean 'font_name'?
+   87 |                 L"Hello from the engine.", font_nam, this->motion_.centre, resources,
       |                                            ^~~~~~~~
       |                                            font_name
-C:/dev/mygame/game/states/hello_state.cpp:23:20: note: 'font_name' declared here
-   23 |         const std::string font_name = "jetbrains_mono_bold_16";
+C:/dev/mygame/game/states/hello_state.cpp:22:20: note: 'font_name' declared here
+   22 |         const std::string font_name = "jetbrains_mono_bold_16";
       |                           ^
 1 error generated.
 ninja: build stopped: subcommand failed.
 ```
 
-The file and line are separated by colons rather than brackets, `hello_state.cpp:88:30` meaning
-line 88, the 30th character along. Under it, clang prints the line itself with a `^` under the
+The file and line are separated by colons rather than brackets, `hello_state.cpp:87:30` meaning
+line 87, the 30th character along. Under it, clang prints the line itself with a `^` under the
 place it means, and often suggests a fix, here `font_name`. There is no error code. A warning
 turned into an error ends with its name in square brackets, such as
 `[-Werror,-Wunused-variable]`. Read the first `error:` line as before.
@@ -235,8 +235,8 @@ browser one. Build both before you rely on code built in only one of them. The b
 alone stopped at a loop counter declared `int` and compared with a container's size:
 
 ```text title="Output"
-C:/dev/mygame/game/states/hello_state.cpp:165:20: error: comparison of integers of different signs: 'int' and 'size_type' (aka 'unsigned long') [-Werror,-Wsign-compare]
-  165 |         for (int i = 0; i < this->touch_markers_.size(); ++i)
+C:/dev/mygame/game/states/hello_state.cpp:164:20: error: comparison of integers of different signs: 'int' and 'size_type' (aka 'unsigned long') [-Werror,-Wsign-compare]
+  164 |         for (int i = 0; i < this->touch_markers_.size(); ++i)
       |                         ~ ^ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
@@ -276,7 +276,10 @@ in `game\` one at a time, and the project was built with the `x64-debug` and `wa
 presets. The messages are the ones those builds printed, with the project's folder shown as
 `C:\dev\mygame`, the failed command lines shortened and, where marked `...`, notes left out.
 Line numbers are those of the starter's files at the time and move as the files change. After
-each slip the file was put back and the build passed again. Notepad on Windows 11 opened a path
+each slip the file was put back and the build passed again. On 31 October 2026 the slips were
+made again in a fresh starter, whose `hello_state.cpp` puts each line one earlier, and the
+numbers above were corrected to it, the `C1075` case's 67 and 18 and clang's note on line 22
+included; a second agent checked each against another fresh starter, and each matched. Notepad on Windows 11 opened a path
 mixing `\` and `/`, and Ctrl+G moved to the line typed.
 
 ## Where to go next

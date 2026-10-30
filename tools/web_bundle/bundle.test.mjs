@@ -64,6 +64,7 @@ for (const [label, change, message] of [
 	['string dirty state', (b) => { b.dirty = 'false'; }, /dirty must be false/],
 	['unknown commit', (b) => { b.commit = 'unknown'; }, /commit must be a full Git revision/],
 	['abbreviated commit', (b) => { b.commit = 'abcdef0'; }, /commit must be a full Git revision/],
+	['source tree without Git', (b) => { b.commit = 'unknown'; b.dirty = null; }, /commit must be a full Git revision/],
 	['missing toolchain', (b) => { delete b.emscripten; }, /emscripten must name/],
 	['unknown toolchain', (b) => { b.emscripten = 'unknown'; }, /emscripten must name/],
 	['missing file inventory', (b) => { delete b.files; }, /files must be an object/],

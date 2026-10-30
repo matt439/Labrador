@@ -5,6 +5,7 @@ sidebar:
   order: 13
 ---
 
+import { Steps, Aside } from '@astrojs/starlight/components';
 import RepoLink from '~/components/RepoLink.astro';
 
 LineSweeper can run inside a page you own. Build Labrador with `wasm-release`, then take the
@@ -12,6 +13,95 @@ folder `out/build/wasm-release/web-dist/linesweeper/`. Its `index.html` is a wor
 can serve as it is, or replace with your own page. This guide is the public contract of that
 bundle; [Build for the browser](/docs/guides/browser/#the-page-and-what-it-owes-the-module)
 describes the same canvas and callbacks for your own game's module.
+
+## Build the bundle
+
+The bundle is built with the engine, by the engine's own `wasm-release` preset, so it needs
+Emscripten as [Build for the browser](/docs/guides/browser/#install-emscripten) installs it, and
+an x64 Native Tools Command Prompt where `emsdk_env.bat` has run:
+
+```bat
+C:\dev\emsdk\emsdk_env.bat
+```
+
+<Steps>
+
+1. **Go to the engine's folder.** For a Git clone of Labrador, made as
+   [Build Labrador](/docs/get-started/build-labrador/) shows:
+
+   ```bat
+   cd /d C:\dev\Labrador
+   ```
+
+   A starter project has the engine in `external\labrador`, and builds the bundle there too:
+
+   ```bat
+   cd /d C:\dev\mygame\external\labrador
+   ```
+
+   but that copy has no `.git` folder, so its bundle records its commit as `unknown`, and the
+   check in [Check the bundle](#check-the-bundle) refuses it. It plays the same, and is fine for
+   trying a host page on your own machine. A bundle you put on a site should come from a Git
+   clone, whose check names the exact commit it was built from.
+
+2. **Configure and build `wasm-release`:**
+
+   ```bat
+   cmake --preset wasm-release
+   cmake --build --preset wasm-release
+   ```
+
+   The configure prints a `CMake Warning` that this version of CMake `does not support emscripten
+   shared libraries` three times, which does not matter here, as in
+   [Build for the browser](/docs/guides/browser/#build-the-game-as-a-page), and ends:
+
+   ```text title="Output"
+   -- Configuring done (7.5s)
+   -- Generating done (0.3s)
+   -- Build files have been written to: C:/dev/mygame/external/labrador/out/build/wasm-release
+   ```
+
+   with `C:/dev/Labrador/out/build/wasm-release` in a clone. If it
+   stops with `include could not find requested file:`, `emsdk_env.bat` has not run in this
+   prompt: run the line above the steps, then configure again.
+
+   The build has 296 steps and builds the engine, every sample and their tests. On a fast desktop
+   with Emscripten's libraries already built, the configure took 10 seconds and the build about 40;
+   a first configure on a new machine can take up to a quarter of an hour, as Build for the
+   browser says.
+   The folder `out\build\wasm-release` takes 33 MB. One step of the build is the bundle, which
+   prints each file with its size raw and under Brotli, and the commit:
+
+   ```text title="Output"
+   [261/296] Bundling LineSweeper for a host page
+     NOTICE.txt          104616 bytes,   13037 under Brotli
+     index.html           18145 bytes,    5136 under Brotli
+     linesweeper.js      120545 bytes,   27753 under Brotli
+     linesweeper.wasm    426100 bytes,  132288 under Brotli
+     poster.png           15063 bytes,   10896 under Brotli
+     from 7ae6dbe3278f44ce7dc23b8b72237b82b7c2feff
+   ```
+
+   The step number and the commit differ from build to build. `from unknown` is the starter
+   project's copy, and `with uncommitted changes` after the commit means the clone has changes
+   that commit does not hold. `ctest --preset wasm-release` then runs the engine's tests in the
+   browser build, one of which loads this bundle's page, plays it and quits it; it needs a
+   Chromium browser, as [Run the samples](/docs/guides/samples/#in-a-browser) says.
+
+3. **Copy it to a folder of your own.** The build empties
+   `out\build\wasm-release\web-dist\linesweeper` and writes it again on every build, so anything
+   you add there, such as a host page, is deleted by the next one. Copy the six files out:
+
+   ```bat
+   if exist C:\dev\ls-host rmdir /s /q C:\dev\ls-host
+   xcopy out\build\wasm-release\web-dist\linesweeper C:\dev\ls-host\ /E /I /Q
+   ```
+
+   The first line deletes the copy you made last time, if there is one; check the path before
+   you run it. `xcopy` prints `6 File(s) copied`. Work on your host page in `C:\dev\ls-host`, and
+   run these two lines again to take a newer build.
+
+</Steps>
 
 ## The factory
 
@@ -43,9 +133,27 @@ visible until restoration or a new page load.
 
 ## A host page to copy
 
-Save this as `host.html` beside the bundle's files and
-[serve it over HTTP](/docs/guides/browser/#serve-it-and-open-it). Play imports the loader on the
-first click and starts each game on a fresh canvas. Escape opens the pause menu; choose QUIT to
+Save this as `host.html` in `C:\dev\ls-host`, beside the bundle's files from
+[Copy it to a folder of your own](#build-the-bundle), not in the build folder, which the next
+build empties. These two lines make the empty file, if it is not there yet, and open it:
+
+```bat
+if not exist C:\dev\ls-host\host.html type nul > C:\dev\ls-host\host.html
+notepad C:\dev\ls-host\host.html
+```
+
+Paste the HTML at the end of this section into Notepad, then save and close it. Then serve that
+folder over HTTP with the Python that came with Emscripten, from the prompt where
+`emsdk_env.bat` ran:
+
+```bat
+start "LineSweeper server" "%EMSDK_PYTHON%" -m http.server 8000 --bind 127.0.0.1 --directory C:\dev\ls-host
+```
+
+and open **`http://127.0.0.1:8000/host.html`**. The page shows a **Play LineSweeper** button, the
+status line and a *Third-party notices* link; the server's window, its messages and how to stop
+it are as in [Serve it and open it](/docs/guides/browser/#serve-it-and-open-it). Play imports
+the loader on the first click and starts each game on a fresh canvas. Escape opens the pause menu; choose QUIT to
 return to the page. The example is for desktop keyboard play; the bundle's supplied `index.html`
 also has a poster, controls, accessibility information and the current phone gate.
 
@@ -151,17 +259,50 @@ This record describes the checkout when packaging runs; it cannot prove the sour
 used by an older module. Build immediately before packaging, check the record and preserve it
 with the release. A dirty or Debug bundle is for development.
 
-Before copying a LineSweeper bundle to a host, run this from the Labrador checkout's root,
-in the prompt where you loaded Emscripten's environment:
+### Check the bundle
+
+Before copying a LineSweeper bundle to a host, check it. Run this from the Labrador clone's
+folder, `C:\dev\Labrador`, in the prompt where you loaded Emscripten's environment:
 
 ```bat
 "%EMSDK_NODE%" tools\web_bundle\bundle.mjs --verify out\build\wasm-release\web-dist\linesweeper
 ```
 
-The check reads the folder without changing it. It rejects dirty, Debug or unknown source
-metadata, missing required files, mismatched hashes or raw sizes, and unrecorded entries.
-Exit 0 prints the verified revision; compare it with the one you intend to deploy. The
-<RepoLink path="docs/port/web.md">port record, section 7.1</RepoLink>
+The check reads the folder without changing it, and takes under a second. A bundle that passes
+prints one line, with the commit it was built from:
+
+```text title="Output"
+Verified clean Release LineSweeper bundle from 7ae6dbe3278f44ce7dc23b8b72237b82b7c2feff
+```
+
+Compare that commit with the one you mean to put on the site. The commit the clone is at now is
+what this prints:
+
+```bat
+git rev-parse HEAD
+```
+
+If they differ, the clone has moved since the bundle was built: build again, then check again.
+To check the copy you will upload instead, give its folder, `C:\dev\ls-host`, in place of the
+build folder. It passes until you add `host.html` to it; then the check reports that file, as
+below, and a host page of your own belongs beside the copy you upload, not inside the folder you
+check.
+
+A bundle that fails prints `bundle: verification failed:` and the rule it broke, and nothing
+after it:
+
+| The rest of the line | What it means, and what to do |
+| --- | --- |
+| `commit must be a full Git revision, not unknown` | The engine it was built from has no `.git` folder, as in a starter project's `external\labrador`. Build it from a Git clone. |
+| `dirty must be false` | The clone had changes that its commit does not hold when the bundle was built; the build printed `with uncommitted changes`. Commit them, or undo them with `git restore .`, and build again. |
+| `build_type must be Release` | The folder is from a `Debug` build, such as `wasm-debug`'s. Build `wasm-release` and check its folder. |
+| `unrecorded bundle entry: host.html` | The folder has a file the bundle did not write, here a host page saved into it. Check the build folder, or a copy without your own files. |
+| `index.html: SHA-256 does not match BUILD.json` | A file was changed after the build, here `index.html`. Build again rather than editing the bundle's files. |
+| `ENOENT: no such file or directory, lstat '...\BUILD.json'` | There is no bundle at that path: a misspelt folder, or a preset that was never built. |
+
+`Error: Cannot find module 'C:\dev\tools\web_bundle\bundle.mjs'`, with a list of Node's own
+files under it, means the prompt is not in the clone's folder: run `cd /d C:\dev\Labrador` first.
+The <RepoLink path="docs/port/web.md">port record, section 7.1</RepoLink>
 states every verification rule and its provenance limits. Verification does not upload the bundle.
 
 ## What the host sends
@@ -179,6 +320,40 @@ new build points to a new folder. Keep the notices and build record with the rel
 [hosting guide's caching rules](/docs/guides/web-host/#caching) explain the revalidation alternative.
 
 ## What has been checked
+
+On 31 October 2026, `wasm-release` was configured and built as [Build the bundle](#build-the-bundle)
+says, with Emscripten 6.0.12, in a local Git clone of this repository at its last commit and in
+the `external\labrador` of a starter project made from a starter ZIP of this tree; the bundle
+step printed the lines quoted, `from unknown` in the starter. The check passed in the clone and
+gave the commit message in the starter. The copy with `xcopy` printed `6 File(s) copied`, and
+the copy passed the check until `host.html` was saved in it. `host.html` saved in the build
+folder was gone after the next build. An empty line added to the clone's `README.md` gave
+`with uncommitted changes` and `dirty must be false`, and undoing it and building again passed.
+The missing-module and `ENOENT` messages were made in the wrong folder and with an unbuilt
+preset; the `build_type` and SHA-256 rows are the tool's own messages, which its tests check.
+`C:\dev\ls-host` was served with Emscripten's Python: `host.html`, `linesweeper.js`,
+`linesweeper.wasm` (as `application/wasm`) and `NOTICE.txt` were each fetched with a `200`, and
+headless Edge showed the Play button, the status line and the notices link. The game was not
+played from that copy on that day.
+
+A second agent then followed the page as worded, in a fresh starter's `external\labrador` and in
+a local Git clone at the same commit. Configure took 8 seconds and the build 33, the bundle's
+file sizes matched those quoted, the starter's bundle was refused with `commit must be a full
+Git revision, not unknown`, and the clone's passed with the commit `git rev-parse HEAD` printed.
+`xcopy`'s count, the `unrecorded bundle entry: host.html` refusal, the emptied build folder, the
+dirty case and its recovery, and the missing-module and `ENOENT` messages matched, and every file
+of the served copy returned `200`. It found that this section named no command to make and open
+`host.html`, and Notepad asks whether to create a file that is not there; the two lines above
+were added, and run in an empty folder, where they made an empty `host.html` and, run again,
+left it as it was. It did not play the game from `host.html` either, or run
+`ctest --preset wasm-release`.
+
+A review in a third fresh starter's `external\labrador` repeated the configure, build, check and
+copy: the configure printed the shared-libraries warning three times and the last lines quoted,
+the build ran 296 steps with the bundle's lines and `from unknown`, the check refused it with the
+commit's rule, `xcopy` printed `6 File(s) copied`, and the build folder took 33 MB. The same
+configure in a prompt where `emsdk_env.bat` had not run stopped with `include could not find
+requested file:`.
 
 On 28 October 2026 the HTML example above was saved outside the engine checkout, beside a
 locally built Release loader and module. Headless Chrome loaded it over HTTP, drew the game,

@@ -364,13 +364,71 @@ In order of impact on a beginner who wants to play around. Each unit is one
     in a fresh `v0.2.0` starter, and added the `###` entry headings of
     releases after `v0.2.0` to move-pin's `findstr` and `ci.yml` to its
     template table.
-12. **`GUIDE#12` Small fixes.** Whole preset JSON in testing; changing a
-    control in both states; `hold_key.ps1` paths from a starter; the
-    LineSweeper bundle folder wiped on rebuild and `--verify` needing Git;
-    Visual Studio install time and disk; a wrong-folder `cmake` error; the
-    `hello_state.cpp` line numbers that Make a first change, Read a build
-    error and Troubleshooting quote, one higher than the template's since
-    `GUIDE#5` (found by `GUIDE#9`); the minor gaps below.
+12. **`GUIDE#12` Small fixes.** Done on 2026-10-31: *Input* gains *Change a
+    control in your game*, which moves the greeting with IJKL, makes Q ask to
+    quit in `HelloState` and answer no in `ConfirmState`, changes both screens'
+    lines and `shell.html`'s, and quotes `Key::Q`'s `C2838` and clang's `no
+    member named 'Q'`; the page check needs `--quit-keys KeyQ,Enter`, and times
+    out with the old keys. *Test your game* gives the whole `CMakePresets.json`
+    with `x64-debug-null`, its build (94 steps in an unchanged starter, 120 to
+    150 MB), the missing-comma
+    and duplicate-preset errors, the draw test's file and the line its CMake
+    block follows, `ctest`'s passing and failing output, and `hold_key.ps1` run
+    from `external\labrador` with its picture folder, its seven keys and four
+    failures. The script now taps Alt before taking the foreground: run by a
+    process whose window was not in front it stopped with `The game is not the
+    foreground window`, and with the tap it brought the game forward each time;
+    it also takes `-Key Escape`. *Embed the LineSweeper bundle* builds the
+    bundle from a clone or a starter's `external\labrador`, copies it to
+    `C:\dev\ls-host` because each build empties the build folder, serves
+    `host.html` there, and gives `--verify`'s pass, `git rev-parse HEAD` and
+    each refusal. `bundle.mjs --verify` checks the commit before `dirty`, so a
+    starter's bundle, which records both as unknown, is refused with `commit
+    must be a full Git revision` rather than `dirty must be false`; a test
+    holds the order, and the port record says so. *Install the tools* gives
+    Microsoft's 20 to 50 GB, this desktop's 9.4 GB of Visual Studio, 2.1 GB of
+    SDK and 4.2 GB of package cache with five workloads, the finished
+    installer, its failures from Microsoft's pages, and Start's **All** list;
+    Troubleshooting gains `Could not read presets` for the wrong folder and the
+    exact copy block for a content folder. The `hello_state.cpp` line numbers
+    in Make a first change, Read a build error and Troubleshooting were made
+    again: one lower, the `C1075` case's two and the clang note's included.
+    *Settings and saves* puts the volume slider in a whole `init()` after the
+    sound and components guides, with its errors and the output's peak level
+    at 100, 50 and 0, and gives the starter's IDBFS link options. The minor
+    gaps: Get the starter project quotes a failed test and lists every file in
+    `game`; Make a first change says to save as UTF-8 and what a failed test
+    means; Input has a vibration example and calls a binding table optional;
+    Audio gives the starter's `--preload-file` line and the missing `.data`
+    file's 404; Sprites and text says point filtering is the default and shows
+    linear in `Picture::draw`; Collision says its sample reads pad slot 0;
+    Menus links the starter's mouse code; Edit and debug in Visual Studio gives
+    Graphics Tools' steps and the warning without them, and marks the symbols
+    section skippable; Tick shows `reset_elapsed_time` from a state; Reading
+    the C++ in minimal says the guides need none of it; Drawing gives
+    Win+Shift+S; Why Labrador and the documentation index match the owner's
+    reader and the guides; Examples sends the match replays to Run the samples;
+    the README points beginners to Get Started and gives each preset's test
+    count. The other minor gaps were closed by `GUIDE#4` to `GUIDE#11`, and
+    renaming, window size, background, two players, asking for help and
+    matching a page to a version are `GUIDE#13`'s. Left open: saving through
+    IDBFS from the starter, the page button and exported function, is not
+    walked through, and the null draw test still tests a texture rather than
+    the starter's own label. A second agent then followed every new or changed
+    procedure as worded in another fresh starter, and the pages were corrected
+    for what it found: the pasted `add_sound_group` line is a `C2374` build
+    error, and only a second call gives `already added`; the label of a row left
+    out of the focus group stays white; the old page check times out after the
+    `60 s` its command gives; `GamepadButton::b` sits inside the pads' loop; the
+    null build's step count and size; the shorter quit question, now re-centred
+    with `286.0f`, measured from screenshots; `hold_key.ps1`'s Escape after the
+    quit key changes; and the lines that make and open `host.html`. Each page's
+    *What was checked* records the runs. A review in a third fresh starter
+    repeated the control change with its screenshots and `Key::Q` error, the
+    null presets with the missing-comma error and the draw test,
+    `hold_key.ps1` and its three failures, and the starter's `wasm-release`
+    bundle; it added the bundle configure's warning, last lines and the error
+    without `emsdk_env.bat`, and ctest's last line to two outputs.
 13. **`GUIDE#13` Procedures with no guide.** Colours, positions, window size,
     full screen and the background (no clear colour; draw it first); renaming
     the game; two players in your own game; a camera that follows the player
@@ -434,6 +492,17 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   Windows 11.
   Single-file `tar -xf` from the ZIP works with forward slashes under
   `mygame/` and says `Not found in archive` with backslashes.
+- The Visual Studio installer. `GUIDE#12` measured an installed Visual Studio
+  Community 2026 with five workloads on the owner's desktop and did not run
+  the installer, so install time, the finished window and its failures are
+  from Microsoft's pages; a second agent measured the same sizes, and
+  neither clicked through Start's **All** list. `GUIDE#12` also felt no pad
+  vibrate, listened to no effects volume (it read Windows' output peak
+  level), played no LineSweeper from `host.html`, and saved nothing across
+  a browser reload in the starter. `hold_key.ps1`'s Alt tap brought the
+  game forward in all but one of its runs from a window that was not in
+  front; that one stopped with the foreground message and passed when run
+  again.
 - Visual Studio's first-launch dialogs. `GUIDE#9` ran `devenv .` and found
   that a caught exception does not stop the debugger unless C++ Exceptions
   is ticked in Exception Settings, while an access violation does; its

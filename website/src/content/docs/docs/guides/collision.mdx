@@ -32,7 +32,11 @@ out\build\x64-debug\samples\collision\CollisionSample.exe
 ```
 
 Use **WASD, arrows or the left stick** to move, **R or gamepad Y** to reset,
-and **Escape or gamepad B** to quit. The content is copied beside the executable,
+and **Escape or gamepad B** to quit. The sample reads only the first gamepad slot, slot 0, so a
+pad Windows has put in another slot, as it can after another pad is unplugged, does nothing
+here; unplug every pad and plug the one in again, or use the keys.
+[A single-player game accepts every slot](/docs/guides/input/#a-single-player-game-accepts-every-slot)
+shows how the starter reads all four instead. The content is copied beside the executable,
 so it can start from any working directory. The whole arena fits the window
 when it is resized.
 
