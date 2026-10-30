@@ -1,0 +1,560 @@
+---
+title: Fonts and text in your game
+description: Install a font, make a bigger atlas for a title, add letters such as é, and read text from a file, in the starter project, step by step.
+sidebar:
+  order: 0.9
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
+import SourceFile from '~/components/SourceFile.astro';
+
+The engine draws text from a **font atlas**: a `.spritefont` file holding a picture of every
+letter the game can draw, at one size, made from a font installed on Windows. The starter has
+one, JetBrains Mono Bold at 16 points, holding the 95 printable English letters, digits and
+punctuation. This page makes two more from the same font: a 32-point one for a title, and a
+16-point one that also has the letter `é`. Then it reads a line of text from a file of the
+game's own instead of writing it in the code. It takes about 20 minutes.
+
+Before you start:
+
+- Do [Make a first change](/docs/get-started/first-change/), and make a fresh copy of your game
+  with its step 1 line.
+- [Install the content tools](/docs/guides/content-tools/), which puts `MakeSpriteFont.exe` in
+  `C:\dev\tools`.
+
+This page does not depend on [Put a picture in your game](/docs/guides/your-picture/) or
+[Animate a sprite sheet](/docs/guides/your-animation/), and works whether or not you have done
+them. Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+## A bigger font for a title
+
+<Steps>
+
+1. **Download the font.** MakeSpriteFont reads a font installed on Windows, so the first job is
+   to install JetBrains Mono, version 2.304, the version the starter's atlas was made from. These
+   lines download it, 5.4 MB, which `curl` shows as `5.36M`, and take its Bold face out of the
+   ZIP:
+
+   ```bat
+   mkdir C:\dev\fonts
+   curl -L --fail -o C:\dev\fonts\JetBrainsMono-2.304.zip https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip
+   tar -xf C:\dev\fonts\JetBrainsMono-2.304.zip -C C:\dev\fonts fonts/ttf/JetBrainsMono-Bold.ttf
+   ```
+
+   `curl` shows its progress table and ends with a row starting `100`; it took a second here.
+   `tar` prints nothing when it works, and leaves the font at
+   `C:\dev\fonts\fonts\ttf\JetBrainsMono-Bold.ttf`.
+
+2. **Install it.** Open the folder it is in:
+
+   ```bat
+   explorer C:\dev\fonts\fonts\ttf
+   ```
+
+   In the window that opens, right-click `JetBrainsMono-Bold.ttf` and choose **Install**. Windows
+   11's first, shorter menu may not list it; then choose **Show more options**, where the list
+   has **Install** and **Install for all users**. Either works. To check that it worked, run the
+   line for the one you chose in the prompt:
+
+   ```bat
+   dir /b "%LOCALAPPDATA%\Microsoft\Windows\Fonts\JetBrains*"
+   ```
+
+   ```bat
+   dir /b C:\Windows\Fonts\JetBrains*
+   ```
+
+   The first is for **Install**, the second for **Install for all users**. The right one prints
+   `JetBrainsMono-Bold.ttf`; `File Not Found` means the font is not installed that way yet.
+
+3. **Make the 32-point atlas:**
+
+   ```bat
+   C:\dev\tools\MakeSpriteFont.exe "JetBrains Mono" game\content\fonts\jetbrains_mono_bold_32.spritefont /FontSize:32 /FontStyle:Bold
+   ```
+
+   ```text title="Output"
+   Importing JetBrains Mono
+   Captured 95 glyphs
+   Cropping glyph borders
+   Packing glyphs into sprite sheet
+   Packing efficiency 90.7144%
+   Premultiplying alpha
+   Writing game\content\fonts\jetbrains_mono_bold_32.spritefont (CompressedMono format)
+   ```
+
+   It took about a second. `"JetBrains Mono"` is the font's **family** name, not its file
+   name and not `JetBrains Mono Bold`: the face is chosen by `/FontStyle:Bold`. `/FontSize:32` is
+   the size in points. One atlas holds one size; drawing an atlas bigger blurs or blocks its
+   letters, so a new size needs a new atlas. The atlas goes in the `fonts` folder, which the
+   build already copies beside the game.
+
+4. **Make a 16-point atlas with `é` in it.** The starter's atlas has only English letters, and
+   [Text from a file](#text-from-a-file) below draws `café`. This makes one with the same
+   letters as the starter's plus `é`:
+
+   ```bat
+   C:\dev\tools\MakeSpriteFont.exe "JetBrains Mono" game\content\fonts\menu_bold_16.spritefont /FontSize:16 /FontStyle:Bold /CharacterRegion:0x20-0x7e /CharacterRegion:0xe9
+   ```
+
+   ```text title="Output"
+   Importing JetBrains Mono
+   Captured 96 glyphs
+   Cropping glyph borders
+   Packing glyphs into sprite sheet
+   Packing efficiency 92.98238%
+   Premultiplying alpha
+   Writing game\content\fonts\menu_bold_16.spritefont (CompressedMono format)
+   ```
+
+   `Captured 96 glyphs` is the 95 English ones and `é`.
+   [Letters beyond English](#letters-beyond-english) explains the two `/CharacterRegion`
+   options. Nothing draws with this atlas until [Text from a file](#text-from-a-file).
+
+5. **List both atlases in the manifest.** Open it:
+
+   ```bat
+   notepad game\content\manifest.json
+   ```
+
+   Press **Ctrl+A** and paste the version below that matches the pages you have done in its
+   place, then save and close Notepad. Each has the font group with the two new names, which
+   are the files' names without `.spritefont`, and keeps the picture or sprite sheet from the
+   other pages only if you have them.
+
+   <Tabs>
+   <TabItem label="Starter project">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16",
+                   "jetbrains_mono_bold_32",
+                   "menu_bold_16"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   <TabItem label="Picture">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16",
+                   "jetbrains_mono_bold_32",
+                   "menu_bold_16"
+               ]
+           },
+           {
+               "kind": "texture",
+               "directory": "./textures/",
+               "names": [
+                   "hero"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   <TabItem label="Picture and sheet">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16",
+                   "jetbrains_mono_bold_32",
+                   "menu_bold_16"
+               ]
+           },
+           {
+               "kind": "texture",
+               "directory": "./textures/",
+               "names": [
+                   "hero"
+               ]
+           },
+           {
+               "kind": "sprite_sheet",
+               "directory": "./textures/",
+               "names": [
+                   "lamp"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   <TabItem label="Sheet, no picture">
+
+   ```json title="game\content\manifest.json"
+   {
+       "assets": [
+           {
+               "kind": "font",
+               "directory": "./fonts/",
+               "names": [
+                   "jetbrains_mono_bold_16",
+                   "jetbrains_mono_bold_32",
+                   "menu_bold_16"
+               ]
+           },
+           {
+               "kind": "sprite_sheet",
+               "directory": "./textures/",
+               "names": [
+                   "lamp"
+               ]
+           }
+       ]
+   }
+   ```
+
+   </TabItem>
+   </Tabs>
+
+6. **Draw a title with the 32-point atlas.** Open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `this->hint_ = this->scene_->add(`, the line in `init()` that adds the controls
+   hint:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->hint_ = this->scene_->add("
+   	to="this->hint_ = this->scene_->add("
+   />
+
+   Click at the start of that line and paste these lines above it, with an empty line after
+   them:
+
+   ```cpp
+   	this->scene_->add(std::make_unique<Label>(L"My game",
+   		"jetbrains_mono_bold_32", Vector2F(24.0f, 24.0f), resources,
+   		labrador::Colour::goldenrod));
+   ```
+
+   A `Label` is a line of text in the scene, the same kind as the greeting. Its arguments are the
+   text, with the `L` before the quotation marks that every text in the engine needs, the atlas's
+   name from the manifest, where the top-left of the text goes, the table of loaded content, and
+   the colour. Save and close Notepad.
+
+7. **Build, test and run.** Quit the game if it is open, then:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The tests end with `100% tests passed, 0 tests failed out of 2`, and the game opens with
+   `My game` in large gold letters in its top-left corner.
+
+</Steps>
+
+## Letters beyond English
+
+An atlas holds only the letters it was made with, and the starter's holds U+0020 to U+007E:
+the space, `A` to `Z`, `a` to `z`, the digits and the punctuation on an English keyboard. Any
+other letter, such as `é`, draws as `?`. To draw one, make an atlas that includes it, with
+`/CharacterRegion`, as step 4 does. Each region is a range of Unicode numbers, written in
+hexadecimal with `0x` in front: `0x20-0x7e` is the English range, and `0xe9` is the one number
+for `é`. Windows' Character Map (`charmap`) shows a letter's number as `U+00E9` when you click
+it.
+
+Give MakeSpriteFont every region the atlas needs, the English one included, because a command
+with `/CharacterRegion` holds only the regions it names: `/CharacterRegion:0xe9` alone captures
+one glyph, and text drawn with that atlas stops the game with `This font has no glyph for
+U+0057 and no stand-in to draw instead.`, because it has not even a `?` to draw in place of a
+`W`. The font must have the letters too. MakeSpriteFont does not say when it lacks one: it
+stores the font's shape for a missing letter, a box, in that letter's place, and the game then
+draws the box. Look at the letters on screen after drawing with a new atlas.
+
+What the text path can draw at all, whatever the atlas holds, is in
+[Which languages the text path can draw](/docs/guides/sprites-and-text/#which-languages-the-text-path-can-draw).
+
+## Text from a file
+
+Text written in the code needs a rebuild to change, and an `é` in C++ source is easy to get
+wrong. A game can keep its text in a JSON file of its own instead, and read it when it starts.
+This puts one line of text in a file and draws it with the `menu_bold_16` atlas from
+[step 4](#a-bigger-font-for-a-title) above, so do those steps first.
+
+<Steps>
+
+1. **Make the file:**
+
+   ```bat
+   mkdir game\content\strings
+   if not exist game\content\strings\en.json type nul > game\content\strings\en.json
+   notepad game\content\strings\en.json
+   ```
+
+   Paste this into the empty file:
+
+   ```json title="game\content\strings\en.json"
+   {
+       "title": "Welcome to the café"
+   }
+   ```
+
+   Save and close Notepad. Notepad saves as UTF-8, which is what the game reads, unless
+   **Encoding** in its **Save as** box is changed; **UTF-8 with BOM** works as well. Saved as
+   **ANSI**, the `é` draws as `?`. The file names one piece of text, `title`; a game adds more
+   lines of the same form, with a comma after each but the last.
+
+2. **Copy the strings folder beside the game.** The game reads the file from the folder its
+   `.exe` is in, and the build copies only the folders it is told to. Open the build file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   Search for `content/fonts"` (with the quotation mark). You are in the block that copies the
+   fonts. Click at the end of its last line, `)`, press **Enter**, and paste this block below it:
+
+   ```cmake
+   add_custom_command(TARGET game_content POST_BUILD
+       COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+           "${CMAKE_CURRENT_SOURCE_DIR}/content/strings"
+           "$<TARGET_FILE_DIR:MyGame>/strings"
+       VERBATIM
+   )
+   ```
+
+   Then search for `install(DIRECTORY content/fonts` and add a line after it, so the two read:
+
+   ```cmake
+   install(DIRECTORY content/fonts DESTINATION .)
+   install(DIRECTORY content/strings DESTINATION .)
+   ```
+
+   That puts the file in a [Windows release](/docs/guides/windows-release/) too. Save and close
+   Notepad.
+
+3. **Read the file and draw its text.** Open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `engine/core/state_context.h` and add two lines above it, so the three read:
+
+   ```cpp
+   #include "engine/app/content_root.h"
+   #include "engine/assets/json.h"
+   #include "engine/core/state_context.h"
+   ```
+
+   Search for `engine/math/vector2f.h` and add a line after it, so the two read:
+
+   ```cpp
+   #include "engine/math/vector2f.h"
+   #include "engine/render/text_encoding.h"
+   ```
+
+   If other `#include` lines are already between them from another page, leave them; the order
+   does not matter. Then search for `this->hint_ = this->scene_->add(` again, click at the
+   start of that line, and paste these lines above it, with an empty line after them:
+
+   ```cpp
+   	const std::string strings_path =
+   		resolved_under(executable_directory(), "strings/en.json");
+   	const JsonDocument strings = read_json_file(strings_path.c_str());
+   	this->scene_->add(std::make_unique<Label>(
+   		widen(strings.root().string("title")), "menu_bold_16",
+   		Vector2F(24.0f, 80.0f), resources, labrador::Colour::white));
+   ```
+
+   The first line works out where the file is: in the `strings` folder beside the game's `.exe`,
+   wherever the game was started from. The second reads the whole file. The last adds a `Label`
+   whose text is the file's `title`. JSON text is UTF-8, and the engine draws wide text, so
+   `widen` converts it. Save and close Notepad.
+
+4. **Build, test and run:**
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The build first runs CMake again, because `game\CMakeLists.txt` changed: it prints
+   `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
+   packages, which are expected. The game opens with `Welcome to the café` under the title,
+   with its `é`. To change the text
+   now, edit `en.json`, save it and run the same line: the build copies the new file, and no
+   C++ is compiled again.
+
+</Steps>
+
+## A different font
+
+Any font installed on Windows can be made into an atlas. This changes the font of all the
+starter's own text, the greeting, the hint and the quit question, to another one. The example
+uses Courier Prime, a free font under the SIL Open Font License; use the font you want.
+
+<Steps>
+
+1. **Install the font** as in step 2 above, from its `.ttf` file. **Settings > Personalization
+   > Fonts** lists the installed fonts by family name, the name the next step needs.
+
+2. **Make a 16-point atlas from it:**
+
+   ```bat
+   C:\dev\tools\MakeSpriteFont.exe "Courier Prime" game\content\fonts\courier_prime_bold_16.spritefont /FontSize:16 /FontStyle:Bold
+   ```
+
+   It prints the same kind of lines as step 3 above, ending with `Writing` and the file's name.
+   `/FontStyle:Bold` takes the font's bold face, which must be installed; leave it out for the
+   regular face. Keep to 16 points for the starter's text: at 32 the hint along the bottom is
+   wider than the window.
+
+3. **List it in the manifest.** Open `game\content\manifest.json` with Notepad, and add the
+   new name to the font group's `names` list, after the last name there, with a comma after the
+   name before it:
+
+   ```json
+               "names": [
+                   "jetbrains_mono_bold_16",
+                   "jetbrains_mono_bold_32",
+                   "menu_bold_16",
+                   "courier_prime_bold_16"
+               ]
+   ```
+
+   Keep the starter's own `jetbrains_mono_bold_16` in the list unless you also take it out of
+   every line of code that names it. Save and close Notepad.
+
+4. **Use it for the starter's text.** Two files name the starter's font, once each:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `const std::string font_name`. The line reads:
+
+   ```cpp
+   	const std::string font_name = "jetbrains_mono_bold_16";
+   ```
+
+   Change the name between the quotation marks, so that it reads:
+
+   ```cpp
+   	const std::string font_name = "courier_prime_bold_16";
+   ```
+
+   Save and close Notepad, then make the same change in the quit question's file:
+
+   ```bat
+   notepad game\states\confirm_state.cpp
+   ```
+
+5. **Build, test and run** with the line from step 7 above. The greeting, the hint and, after
+   **Escape**, the quit question are in the new font. The title and the café line keep the atlases
+   their own lines name.
+
+</Steps>
+
+Read a font's licence before you give a game with an atlas made from it to anyone else: the
+atlas is a copy of the font's letters. JetBrains Mono is under the SIL Open Font License 1.1,
+which allows this, provided its licence travels with the atlas. That is why the starter's
+`fonts` folder has `OFL.txt` beside its atlas, and the atlases this page makes from the same
+font are covered by it. A font that came with Windows is licensed to you as part of Windows;
+check its terms before shipping an atlas made from it.
+
+## If something fails
+
+The ways the build, the start-up test and the game report a problem are in
+[Put a picture in your game](/docs/guides/your-picture/#how-errors-show), and its manifest
+messages apply here too.
+
+<Aside type="caution" title="Error: Can't find font '...'.">
+MakeSpriteFont found no installed font with the family name it shows between the quotation
+marks, and wrote nothing. Either the font is not installed (step 2), or the name is not its
+family name: `"JetBrains Mono Bold"` gives `Can't find font 'JetBrains Mono Bold'.` Check the spelling, spaces and capitals against **Settings > Personalization >
+Fonts**.
+</Aside>
+
+<Aside type="caution" title="startup failure: Font 'jetbrains_mono_bold32' was never loaded.">
+The atlas name in the code does not match any name in the manifest's font group.
+</Aside>
+
+<Aside type="caution" title="startup failure: No file at ...\game\.\./fonts/menu_bold_61.spritefont.">
+The manifest names an atlas that is not in `game\content\fonts`. Check its spelling against
+`dir game\content\fonts`, or run the MakeSpriteFont command that makes it.
+</Aside>
+
+<Aside type="caution" title="startup failure: '...strings/en.json': the document has no 'titel'">
+The name in `string("...")` in the code is not one of the names in the file. They must match
+exactly.
+</Aside>
+
+<Aside type="caution" title="startup failure: read_json_file - cannot open '...strings/en.json'">
+The file is not beside the game. Check that `game\content\strings\en.json` exists and that the
+copy block from step 2 of [Text from a file](#text-from-a-file) is in `game\CMakeLists.txt`.
+</Aside>
+
+**A letter draws as `?`.** The atlas the text uses does not have that letter. Check which atlas
+name the code passes, and make that atlas with a `/CharacterRegion` covering the letter. If the
+letter comes from a file, the file may not be UTF-8: save it again with **UTF-8** chosen as the
+**Encoding**.
+
+## In the browser build
+
+Add each new file to the `LINK_DEPENDS` list near the top of `game\CMakeLists.txt`, after the
+line ending
+`jetbrains_mono_bold_16.spritefont"`, so the page links again when one changes:
+
+```cmake
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/jetbrains_mono_bold_16.spritefont"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/jetbrains_mono_bold_32.spritefont"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/menu_bold_16.spritefont"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/strings/en.json"
+```
+
+In the browser, the folder beside the game is the page's own packed files, so the code above
+finds `strings/en.json` there without a change.
+
+## What was checked
+
+On 2026-10-30, on Windows 11 with the `may2026` MakeSpriteFont, before JetBrains Mono was
+installed, step 3's command gave `Can't find font 'JetBrains Mono'.` The 2.304 ZIP and its Bold
+file matched the checksums the
+<RepoLink path="samples/minimal/README.md">minimal sample's README</RepoLink> records. The font was then installed for the user only, as **Install** does, and the 16-point
+command remade the starter's atlas byte for byte, which shows the install and command are the
+ones the starter's atlas came from. A font installed for the user only, Courier Prime, also
+worked. The commands above wrote the atlases shown. A region for U+4E00, which JetBrains Mono
+does not have, still reported the glyph captured, and the atlas held the font's missing-letter
+box in its place. In the starter project from
+[Put a picture in your game](/docs/guides/your-picture/#what-was-checked) the game drew the gold
+title and `Welcome to the café` with its `é`. The `é` drew as `?` with the 16-point starter atlas
+and with the file saved as ANSI; a file saved with a byte-order mark worked. Each message under
+[If something fails](#if-something-fails) was made on purpose, and the `wasm-debug` page loaded in
+Chrome with the strings file. An agent then ran this page again in a fresh starter with neither
+picture page done, making each edit as worded, and its output and captures matched; it remade
+the starter's own atlas from step 3's command at 16 points byte for byte. The section on a
+different font ran with Courier Prime, installed for the user only, and the greeting and hint
+drew in it, and an `x64-release` build installed with `cmake --install` had the
+three atlases and `strings\en.json` in its folder and drew the title. Explorer's right-click menu was not driven: its **Install** and
+**Install for all users** entries were read from Windows' list of the file's commands.

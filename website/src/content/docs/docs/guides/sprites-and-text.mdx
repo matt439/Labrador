@@ -10,8 +10,13 @@ import SourceFile from '~/components/SourceFile.astro';
 
 Everything Labrador draws is a textured rectangle: a sprite. Text is sprites cut from a font's
 glyph atlas, and a solid rectangle is a sprite from a texture one pixel across. This guide covers
-the files, the classes that draw them, and the colours. If a build fails after you change your
-drawing code, [Read a build error](/docs/get-started/build-errors/) shows how to read the error.
+the files, the classes that draw them, and the colours. To put a first picture, animation or
+font into the starter project step by step, follow
+[Put a picture in your game](/docs/guides/your-picture/),
+[Animate a sprite sheet](/docs/guides/your-animation/) and
+[Fonts and text in your game](/docs/guides/your-font/) instead; this page is the reference
+behind them. If a build fails after you change your drawing code,
+[Read a build error](/docs/get-started/build-errors/) shows how to read the error.
 
 ## The files
 
@@ -30,42 +35,50 @@ extension.
 
 Both tools are free Windows programs from Microsoft, each a single executable attached to its
 project's releases. Neither is needed to build or run the samples, and neither is a dependency of
-the engine. The commands below were checked with the `may2026` release of each.
+the engine. [Install the content tools](/docs/guides/content-tools/) downloads both to
+`C:\dev\tools`, and the commands below assume they can be found by their short names, as its
+[Typing the programs' names](/docs/guides/content-tools/#typing-the-programs-names) sets up.
+They were checked with the `may2026` release of each.
 
 - [`texconv`](https://github.com/microsoft/DirectXTex/wiki/Texconv): `texconv.exe` from the
   [DirectXTex releases](https://github.com/microsoft/DirectXTex/releases).
 - [`MakeSpriteFont`](https://github.com/microsoft/DirectXTK/wiki/MakeSpriteFont):
   `MakeSpriteFont.exe` from the [DirectX Tool Kit releases](https://github.com/microsoft/DirectXTK/releases).
 
-**A texture from a PNG**, run from your game's folder:
+**A texture from a PNG**, run from a starter project's folder, `C:\dev\mygame`:
 
 ```bat
-texconv -f R8G8B8A8_UNORM -m 1 -pmalpha -y -o content\textures hero.png
+texconv -f R8G8B8A8_UNORM -m 1 -pmalpha --ignore-srgb -y -o game\content\textures hero.png
 ```
 
-This writes `content\textures\hero.dds`, and the folder must already exist. The `-f` is required:
-without it texconv keeps the PNG's sRGB format, which only the DX10 extended header can describe,
-and the engine refuses that header at load. `-m 1` writes one level rather than a mip chain.
-`-pmalpha` multiplies each colour by its alpha, which is what the engine's blending expects
-([Colours and blending](#colours-and-blending), below). `-y` overwrites an existing file.
+This writes `game\content\textures\hero.dds`, and the folder must already exist. The `-f` is
+required: without it texconv keeps the PNG's sRGB format, which only the DX10 extended header can
+describe, and the engine refuses that header at load. `--ignore-srgb` keeps the PNG's colour
+values as they are. Without it texconv reads a PNG as sRGB and converts it to linear values on
+the way to the `UNORM` format, which the engine then draws as stored, so every colour between
+full and none comes out darker: an orange of red 255, green 165 is stored and drawn as green 96.
+`-m 1` writes one level rather than a mip chain. `-pmalpha` multiplies each colour by its alpha,
+which is what the engine's blending expects ([Colours and blending](#colours-and-blending),
+below). `-y` overwrites an existing file.
 
 **A font from an installed font:**
 
 ```bat
-MakeSpriteFont "JetBrains Mono" content\fonts\jetbrains_mono_bold_16.spritefont /FontSize:16 /FontStyle:Bold
+MakeSpriteFont "JetBrains Mono" game\content\fonts\jetbrains_mono_bold_16.spritefont /FontSize:16 /FontStyle:Bold
 ```
 
-The first argument is the family name of a font installed on the machine; a path to a font file
-is not accepted. With no `/CharacterRegion` the atlas holds the 95 printable ASCII characters,
+The first argument is the family name of a font installed on the machine, for the user or for
+all users; a path to a font file is not accepted, and neither is a face's full name such as
+`JetBrains Mono Bold`. A name it cannot find stops it with `Can't find font`, writing nothing. With no `/CharacterRegion` the atlas holds the 95 printable ASCII characters,
 U+0020 to U+007E. The tool premultiplies the alpha itself and writes a BC2 atlas, which the engine
 reads as it is. The template's own atlas was built at these settings from the Bold face of
 JetBrains Mono 2.304, and the
 <RepoLink path="samples/minimal/README.md">minimal sample's README</RepoLink> records the font's
 and the atlas's checksums, so a rebuild can be compared byte for byte.
 
-Then list the new file in `content\manifest.json`. On Windows a folder of content is copied beside
-the executable by a line in your `CMakeLists.txt`, and a new folder such as `textures` needs a line
-of its own ([Assets](/docs/guides/assets/)).
+Then list the new file in `game\content\manifest.json`. On Windows a folder of content is copied
+beside the executable by a line in `game\CMakeLists.txt`, and a new folder such as `textures`
+needs a line of its own ([Assets](/docs/guides/assets/)).
 
 ### The template's font and its licence
 

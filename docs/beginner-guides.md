@@ -67,11 +67,23 @@ In order of impact on a beginner who wants to play around. Each unit is one
    multiplayer, run-minimal and five sample READMEs link it; the three guides'
    command boxes start with the starter's `cd`, and LineSweeper's README has a
    build-and-play block. Its *What was checked* records the run.
-5. **`GUIDE#5` Content tools and a picture on screen.** Installing texconv,
-   MakeSpriteFont and xwbtool; drawing a plain texture with a complete class,
-   its CMake line and the code in `HelloState`; starter-relative paths; the
-   whole `manifest.json` after an edit; DDS and asset-load errors; sprite
-   sheets, animation, fonts and string tables.
+5. **`GUIDE#5` Content tools and a picture on screen.** Done on 2026-10-30:
+   the guides *Install the content tools*, *Put a picture in your game*,
+   *Animate a sprite sheet* and *Fonts and text in your game* download the
+   three tools to `C:\dev\tools` and run them by full path; convert a PNG,
+   with a one-line PowerShell drawing for a reader with none; list it in a
+   whole manifest; add the copy, install and `LINK_DEPENDS` lines; draw it
+   with a complete header-only `Picture` class and two `HelloState` edits;
+   play a strip with a header-only `AnimatedSprite` and draw a still frame
+   with the engine's `Visual`; install JetBrains Mono, make a 32-point title
+   atlas and one with `é` by `/CharacterRegion`, and read a string table.
+   Each page quotes the start-up test's `startup failure:` line and the
+   `Sample - startup failure` box, and gives every texconv, MakeSpriteFont,
+   manifest, sheet and font message made on purpose; Troubleshooting's
+   Content section lists them too. The texconv command in Sprites and text
+   gained `--ignore-srgb`: without it texconv linearizes a PNG's sRGB colours
+   into the `UNORM` texture and the engine draws them darker. Each page's
+   *What was checked* records the runs.
 6. **`GUIDE#6` Adding a source file, screen, level or menu.** A new state, a
    level change, a title menu, rules and tests, copying components, adapting
    collision, settings and saves, custom levels. Each says a source is listed
@@ -165,8 +177,14 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   `mygame/` and says `Not found in archive` with backslashes.
 - Visual Studio's first-launch dialogs, `devenv .`, and whether an exception
   breaks into the debugger.
-- MakeSpriteFont with a missing font and its .NET needs; SmartScreen or
-  Mark-of-the-Web on the tools; whether xwbtool needs `-y` to overwrite.
+- Whether xwbtool needs `-y` to overwrite. `GUIDE#5` found that
+  MakeSpriteFont stops with `Can't find font` for a family that is not
+  installed, finds fonts installed for the user only, and ran with the .NET
+  Framework that Windows 11 includes; that all three tools carry Microsoft's
+  signature and run from the prompt with a Mark of the Web; and that a
+  `/CharacterRegion` for a letter the font lacks still reports it captured,
+  storing the font's missing-letter box. Explorer's **Install** menu entry
+  was read from the shell's verb list, not clicked.
 - emsdk from a ZIP, Python installer defaults, browser caching.
 - Whether renaming `MyGame.html` to `index.html` is safe; private-repository
   CI minutes.

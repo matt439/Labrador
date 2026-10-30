@@ -1,0 +1,140 @@
+---
+title: Install the content tools
+description: Download texconv, MakeSpriteFont and xwbtool, the three free Microsoft programs that turn pictures, fonts and sounds into files Labrador loads.
+sidebar:
+  order: 0.6
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Labrador does not load PNG pictures, font files or WAV sounds directly. It loads files made from
+them by three free command-line programs from Microsoft:
+
+| Program | Turns | Into | Used by |
+| --- | --- | --- | --- |
+| `texconv` | a picture, such as a PNG | a `.dds` texture | [Put a picture in your game](/docs/guides/your-picture/), [Animate a sprite sheet](/docs/guides/your-animation/) |
+| `MakeSpriteFont` | a font installed on Windows | a `.spritefont` atlas | [Fonts and text in your game](/docs/guides/your-font/) |
+| `xwbtool` | WAV sounds | a `.xwb` wave bank | [Audio](/docs/guides/audio/) |
+
+Each is one `.exe` file with nothing to install. This page downloads all three into one folder,
+`C:\dev\tools`, and checks that each one runs. It takes under a minute; the three files are about
+1.1 MB together. You need them only to make content: building and running your game does not
+use them.
+
+<Steps>
+
+1. **Open the x64 Native Tools Command Prompt** from
+   [Install the tools](/docs/get-started/prerequisites/). Any command prompt works for this page,
+   but the guides that use the tools run in that one.
+
+2. **Download the three programs.** Copy these four lines and paste them into the prompt
+   together:
+
+   ```bat
+   mkdir C:\dev\tools
+   curl -L --fail -o C:\dev\tools\texconv.exe https://github.com/microsoft/DirectXTex/releases/download/may2026/texconv.exe
+   curl -L --fail -o C:\dev\tools\MakeSpriteFont.exe https://github.com/microsoft/DirectXTK/releases/download/may2026/MakeSpriteFont.exe
+   curl -L --fail -o C:\dev\tools\xwbtool.exe https://github.com/microsoft/DirectXTK/releases/download/may2026/XWBTool.exe
+   ```
+
+   `mkdir` makes the folder. If it already exists, `mkdir` says
+   `A subdirectory or file C:\dev\tools already exists.`, which is harmless. Each `curl` prints
+   a table of numbers while it downloads; the last row starts `100` when the file has arrived.
+   On a fast connection the three took 4 seconds.
+
+3. **Check that all three are there:**
+
+   ```bat
+   dir C:\dev\tools
+   ```
+
+   ```text title="Output"
+    Directory of C:\dev\tools
+
+   30/10/26  11:40    <DIR>          .
+   30/10/26  11:40    <DIR>          ..
+   30/10/26  11:40            41,848 MakeSpriteFont.exe
+   30/10/26  11:40           966,480 texconv.exe
+   30/10/26  11:40           127,864 xwbtool.exe
+                  3 File(s)      1,136,192 bytes
+   ```
+
+   `dir` also prints two lines about the drive above these, and the free space below them,
+   which are left out here. Your dates and times differ. The sizes are those of the `may2026`
+   release.
+
+4. **Run each one once.** With nothing after it, each prints its name and how to use it, and
+   does nothing else:
+
+   ```bat
+   C:\dev\tools\texconv.exe
+   ```
+
+   ```text title="Output"
+   Microsoft (R) DirectX Texture Converter [DirectXTex] Version 2026.5.8.1
+   Copyright (C) Microsoft Corp.
+
+   Usage: texconv <options> [--] <files>
+   ```
+
+   `C:\dev\tools\xwbtool.exe` prints the same kind of banner, starting
+   `Microsoft (R) XACT-style Wave Bank Tool`. `C:\dev\tools\MakeSpriteFont.exe` prints
+   `Missing argument 'SourceFont'` and a list of its options, which is what it does when it is
+   not told which font to use. All three are working.
+
+</Steps>
+
+## Typing the programs' names
+
+The guides run each program by its full path, such as `C:\dev\tools\texconv.exe`, so they work
+in any new prompt. Typing only `texconv` gives
+`'texconv' is not recognized as an internal or external command`, because Windows does not look
+in `C:\dev\tools` for programs. If you would rather type the short names, run this once in a
+prompt:
+
+```bat
+set PATH=C:\dev\tools;%PATH%
+```
+
+It prints nothing, and lasts until that prompt is closed. A new prompt needs it again.
+
+## If something fails
+
+<Aside type="caution" title="curl: (22) The requested URL returned error: 404">
+The address is wrong, usually from a line that was cut short or changed while pasting. Copy the
+whole box again. The `may2026` releases are on GitHub as
+[DirectXTex may2026](https://github.com/microsoft/DirectXTex/releases/tag/may2026) and
+[DirectXTK may2026](https://github.com/microsoft/DirectXTK/releases/tag/may2026), if you want to
+compare the addresses.
+</Aside>
+
+<Aside type="caution" title="curl: (6) Could not resolve host: github.com">
+The computer is not connected to the internet, or something on it is blocking `curl`. Check
+that a browser can open github.com, then run the box again.
+</Aside>
+
+<Aside type="caution" title="'C:\dev\tools\texconv.exe' is not recognized as an internal or external command">
+The file is not in `C:\dev\tools`. Run `dir C:\dev\tools` and compare it with step 3. If a file
+is missing, run its `curl` line again.
+</Aside>
+
+**Downloading with a browser instead.** On each release page above, under **Assets**, click the
+file to download it, then move it from your `Downloads` folder to `C:\dev\tools`. Take
+`texconv.exe`, `MakeSpriteFont.exe` and `XWBTool.exe`, not the files ending `_arm64.exe`, which
+are for Windows on ARM computers. The last one is spelt `XWBTool.exe` there and in `dir`;
+Windows does not care about capitals in file names, so `C:\dev\tools\xwbtool.exe` still runs
+it. A file downloaded by a browser ran from the prompt in the same
+way as one downloaded by `curl`: all three are signed by Microsoft.
+
+The guides use the `may2026` releases, and their commands and output were checked with them.
+A later release may print different version numbers or messages.
+
+## What was checked
+
+On 2026-10-30, on the owner's desktop running Windows 11, the box in step 2 downloaded the three
+files in 4 seconds, with the sizes shown, and each ran as shown in step 4. `where` found all
+three after the `set PATH` line, and a bare `texconv` before it gave the message quoted. A
+misspelt file name gave the `404` message, and a misspelt host name gave `Could not resolve
+host` with that name in place of `github.com`. Each
+`.exe` has a valid Microsoft signature. Copies marked as downloaded from the internet, as a
+browser marks them, ran from the prompt with the same output.
