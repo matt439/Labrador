@@ -6,7 +6,10 @@ response in `Body::on_contact`, with no game-specific collision code in the
 engine.
 
 From the repository root, in the x64 Native Tools Command Prompt, which has
-`VCPKG_ROOT` and the Windows SDK shader compiler available:
+`VCPKG_ROOT` and the Windows SDK shader compiler available. In a starter
+project the repository root is `external\labrador`, and
+[Run the samples](https://labradorengine.com/docs/guides/samples/) has every
+step with its time, output and failures:
 
 ```bat
 cmake --preset x64-debug

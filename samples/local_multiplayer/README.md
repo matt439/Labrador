@@ -7,7 +7,10 @@ appear in both panes whenever the camera can see them. Move toward the purple
 cross to meet, or apart to watch each camera follow its own player.
 
 From the repository root, in the x64 Native Tools Command Prompt, with the
-prerequisites in the root README:
+prerequisites in the root README. In a starter project the repository root is
+`external\labrador`, and
+[Run the samples](https://labradorengine.com/docs/guides/samples/) has every
+step with its time, output and failures:
 
 ```bat
 cmake --preset x64-debug

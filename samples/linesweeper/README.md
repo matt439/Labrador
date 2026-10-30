@@ -17,6 +17,21 @@ phone gets a poster and a recording of the game to tap and watch, not the game
 itself, until real iPhone checks and the host page's phone layout pass. Android
 remains unverified.
 
+To build and play it on Windows, from the repository root in the x64 Native
+Tools Command Prompt (in a starter project, the engine's folder
+`external\labrador`; [Run the samples](https://labradorengine.com/docs/guides/samples/)
+has every step with its time, output and failures):
+
+```bat
+cmake --preset x64-debug
+cmake --build --preset x64-debug --target LineSweeperSample
+out\build\x64-debug\samples\linesweeper\LineSweeperSample.exe
+```
+
+Escape or P pauses; choose QUIT with Down and press Enter to quit. After a
+top-out Escape does nothing: press R for a new match first. The other
+controls are in [Examples](https://labradorengine.com/examples/#controls).
+
 `LineSweeperBundlePageTests` loads the packaged `web-dist/linesweeper/index.html`
 in headless Chromium when configure finds one in a rasterizing browser build.
 It clicks Play, observes rendered frames, loses and restores the WebGL context,

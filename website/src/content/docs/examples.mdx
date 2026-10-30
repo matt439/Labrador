@@ -177,7 +177,10 @@ review remains separate from those headless checks.
 
 ## Running them
 
-All samples build with the engine. After [building Labrador](/docs/get-started/build-labrador/),
+The samples are in the engine's folder, not in your game, and your game's build does not make
+them. [Run the samples](/docs/guides/samples/) builds them from a starter project, in
+`C:\dev\mygame\external\labrador`, or from a clone, where
+[Build Labrador](/docs/get-started/build-labrador/) has already built them. From that folder,
 they are at:
 
 ```text
@@ -189,7 +192,8 @@ out\build\x64-debug\samples\local_multiplayer\LocalMultiplayerSample.exe
 out\build\x64-debug\samples\components\ComponentsGallery.exe
 ```
 
-Each copies its content beside its executable, so you can start it from anywhere. Under a
+Each copies its content beside its executable, so you can start it from anywhere. That page
+also says how long the build takes, how to quit each sample and what each failure means. Under a
 `wasm-*` preset each is a page instead, such as
 `out\build\wasm-debug\samples\collision\CollisionSample.html`, with its content packed into
 the module; serve the folder over HTTP and open the page, as

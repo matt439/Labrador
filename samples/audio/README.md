@@ -6,7 +6,10 @@ pause, resume, immediate stop, volume, pitch and stereo pan. The original PCM
 content and its ready-to-play XWB container are checked in; a fresh clone needs
 no audio authoring tools.
 
-Build and run from the repository root in the x64 Native Tools Command Prompt:
+Build and run from the repository root in the x64 Native Tools Command Prompt.
+In a starter project the repository root is `external\labrador`, and
+[Run the samples](https://labradorengine.com/docs/guides/samples/) has every
+step with its time, output and failures:
 
 ```bat
 cmake --preset x64-debug
