@@ -61,7 +61,7 @@ export default defineConfig({
 						{ label: 'Get the starter project', link: '/docs/get-started/starter/' },
 						{ label: 'Make a first change', link: '/docs/get-started/first-change/' },
 						{ label: 'Read a build error', link: '/docs/get-started/build-errors/' },
-						{ label: 'Debug your game', link: '/docs/get-started/debug-your-game/' },
+						{ label: 'Edit and debug in Visual Studio', link: '/docs/get-started/debug-your-game/' },
 						// The route for readers who use Git, which makes the same project.
 						{
 							label: 'With Git instead',

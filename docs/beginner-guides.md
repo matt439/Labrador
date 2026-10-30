@@ -192,10 +192,56 @@ In order of impact on a beginner who wants to play around. Each unit is one
    plain files builds from a clone at a runner's depth; and after scripted
    SmartScreen clicks, Microsoft Defender flagged that build of `MyGame.exe`
    as `Behavior:Win32/DefenseEvasion.A!ml` and blocked it.
-9. **`GUIDE#9` Editing and debugging in Visual Studio.** First launch, preset
-   and startup selectors, configure finishing, opening a file, F9/F10/F11,
-   Shift+F5, Locals, the Error List, Ctrl+Shift+B, and the startup-failure
-   box's title. `OCA-18`'s session checks the same page.
+9. **`GUIDE#9` Editing and debugging in Visual Studio.** Done on 2026-10-31:
+   Get Started's *Debug your game* became *Edit and debug in Visual Studio*,
+   at the same address. It starts Visual Studio with `devenv .`, which gives
+   the prompt back at once, gives the first-launch sign-in and theme from
+   Microsoft's page, closes what the page does not use, quotes the CMake
+   output to `CMake generation finished.`, and has the reader choose
+   **x64-debug** and **MyGame.exe (game\MyGame.exe)** on the toolbar. It
+   opens a file from Solution Explorer or Ctrl+T, where the engine's copy of
+   `hello_state.cpp` is listed first and shows `Miscellaneous Files`; builds
+   with Ctrl+Shift+B, which saves first; runs with Ctrl+F5; reads a failed
+   build in the Output and the Error List, double-clicks a row to the line
+   and filters IntelliSense's guesses with **Build Only**; sets a breakpoint
+   with F9, says that F5 builds first and that the dot moves to the line the
+   statement's code is on, reads Locals with Alt+4, steps with F10, F11 and
+   Shift+F11, reads Call Stack, and stops with Shift+F5. *When the game shows
+   an error* gives the `Sample - startup failure` box, its title's source
+   and the `Exception thrown` line, then ticks C++ Exceptions to stop at the
+   throw, finds `HelloState::init() Line 86` in Call Stack and restores the
+   default; *When the game closes with no message* makes a null-pointer crash
+   and finds it under F5, with exit code `-1073741819` on its own. The page
+   ends with the keys and their menus and a failure section. Troubleshooting
+   gains *The game closes with no message* and links the page from
+   *Running*, `LNK1168` and the `/upstream/emscripten` entry; the guides
+   index, Make a first change and Read a build error link it. Every step and
+   failure was run in a fresh starter by an agent driving Visual Studio
+   Community 2026 18.9.2, then followed as worded by a second agent in
+   another starter; that run corrected the **CMake Overview Pages** tab and
+   the remote-development strip on a first open, the `Find and Replace` box
+   that **Enter** opens in the search box, **Build Only** before reading the
+   Error List's first row, the Call Stack's `.dll` and `[External Code]`
+   rows and its scrolling, **Restore Defaults**' hover text, a `.vs` folder
+   that is not hidden, an empty Output on reopening, the startup item after
+   the `wasm-debug` failure, and the exit-code commands, which the page now
+   gives in a box. The corrections were checked again in a third starter,
+   which found that a crashed game's window and `start /wait` can take from
+   seconds to over two minutes while Windows Error Reporting runs. The page's
+   *What was checked* says how and what was not seen. Found on the way: Visual Studio's configuration box lists the
+   presets alphabetically and shows `wasm-debug` on a project's first open
+   while configuring `x64-debug`, saves `wasm-debug`, and on the next open
+   configures the browser build and fails, or configures nothing until
+   **Project > Configure Cache**, so the page has the reader choose
+   **x64-debug** once; a `condition` on the starter's `wasm-*` presets could
+   hide them from Visual Studio, at the cost of changing the browser build's
+   error without Emscripten, which is `GUIDE#10`'s to weigh. Visual Studio
+   2026 supplies its own `VCPKG_ROOT`, so started without vcvars it
+   configures the project. The line numbers that Make a first change, Read a
+   build error and Troubleshooting quote for `hello_state.cpp` are one higher
+   than the template's since `GUIDE#5` removed a line from it: deleting the
+   greeting's closing quotation mark now reports line 87, not 88. `OCA-18`,
+   a person following the page, stays open.
 10. **`GUIDE#10` The browser build for a beginner.** emsdk needs Git, against
     the starter's promise; Python, install size and time, `cd /d`; build
     output and times; what serving prints, a second prompt, a port in use,
@@ -208,7 +254,9 @@ In order of impact on a beginner who wants to play around. Each unit is one
     control in both states; `hold_key.ps1` paths from a starter; the
     LineSweeper bundle folder wiped on rebuild and `--verify` needing Git;
     Visual Studio install time and disk; a wrong-folder `cmake` error; the
-    minor gaps below.
+    `hello_state.cpp` line numbers that Make a first change, Read a build
+    error and Troubleshooting quote, one higher than the template's since
+    `GUIDE#5` (found by `GUIDE#9`); the minor gaps below.
 13. **`GUIDE#13` Procedures with no guide.** Colours, positions, window size,
     full screen and the background (no clear colour; draw it first); renaming
     the game; two players in your own game; a camera that follows the player
@@ -272,8 +320,13 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   Windows 11.
   Single-file `tar -xf` from the ZIP works with forward slashes under
   `mygame/` and says `Not found in archive` with backslashes.
-- Visual Studio's first-launch dialogs, `devenv .`, and whether an exception
-  breaks into the debugger.
+- Visual Studio's first-launch dialogs. `GUIDE#9` ran `devenv .` and found
+  that a caught exception does not stop the debugger unless C++ Exceptions
+  is ticked in Exception Settings, while an access violation does; its
+  Visual Studio profiles skipped the sign-in and theme windows, so those
+  are still written from Microsoft's documentation, as are the Start
+  menu's **Open a local folder**, **File > Exit** and **Update now**,
+  none of which was used.
 - `GUIDE#7` found that xwbtool refuses to replace a bank without `-y`,
   with `ERROR: Output file ... already exists, use -y to overwrite!`, and
   that FFmpeg 8.1.2 from `winget` takes about 700 MB; `winget install` itself

@@ -544,9 +544,14 @@ written.
   preset/MyGame target, quotes the actual init/update/manifest statements,
   follows executable-relative content and explains Graphics Tools and matching
   symbols. Stock Release does not request a game PDB; no new build flags or
-  IDE configuration are added. The clean copied-project IDE walkthrough and
-  breakpoint/content observation remain unrun; they need a person at the IDE.
-  The IDE to record is Visual Studio Community 2026 18.9.2 (installation
+  IDE configuration are added. On 2026-10-31 `GUIDE#9` rewrote the page as a
+  step-by-step guide; an agent ran every step in a fresh starter in that
+  Visual Studio, by keys, screenshots and Windows' accessibility interface,
+  with the breakpoints hit and the content loaded, and a second agent
+  followed the page as worded in another starter, whose corrections were
+  applied and checked again; the page's *What was checked* records the runs.
+  A person following the page at the IDE has not; that session is what
+  remains. The IDE to record is Visual Studio Community 2026 18.9.2 (installation
   18.9.12120.119), read with vswhere on 2026-10-29. The story stays unchecked.
   Source review, all seven standalone checks, website check (zero diagnostics),
   160 website tests and the 144-page/433-file build pass. The generated page's
