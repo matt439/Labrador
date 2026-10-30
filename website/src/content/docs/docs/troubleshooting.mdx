@@ -524,7 +524,10 @@ paths are relative to the executable, not to the folder it was started from.
 On Windows, a problem the game finds while it loads shows in two places. `ctest`'s start-up
 test fails, with a line under it starting `startup failure:` that gives the reason. Started on
 its own, the game shows the same reason in a box titled `Sample - startup failure`, whatever the
-game is called, and closes when **OK** is clicked. In the browser build the page shows the
+game is called, and closes when **OK** is clicked. Started from Visual Studio, the box is the
+same, and the debugger can show the line of yours that led to it:
+[When the game shows an error](/docs/get-started/debug-your-game/#when-the-game-shows-an-error).
+In the browser build the page shows the
 reason in red in place of the game, and the browser's console has it after `MinimalSample:`.
 The messages below and under [Content](#content) are that reason.
 
@@ -572,6 +575,23 @@ listening to, that the game is not turned down in the Volume mixer, and that the
 runs silently, and the engine looks for one again once a second.
 [No sound, and no error](/docs/guides/your-sound/#no-sound-and-no-error) has the whole list.
 
+### The game closes with no message
+
+The window opens, or the game runs for a while, and then it is gone with no box. The game has
+crashed: most often it used an object through a pointer that holds `nullptr`. The window can
+stay, not answering, for half a minute or more first, while Windows records the crash. Started
+from the prompt in `C:\dev\mygame` with these two lines, the first of which waits until the game
+has ended:
+
+```bat
+start /wait "" out\build\x64-debug\game\MyGame.exe
+echo %ERRORLEVEL%
+```
+
+the exit code printed is `-1073741819`, Windows' code for a program that used memory it may not
+use. Run it under Visual Studio's debugger with **F5**, which stops on the line where it happened:
+[When the game closes with no message](/docs/get-started/debug-your-game/#when-the-game-closes-with-no-message).
+
 ### `No Direct3D hardware device found` in a release build
 
 The release build does not fall back to Microsoft's software renderer, WARP; the debug build does.
@@ -594,6 +614,11 @@ Command Prompt as CMake, check `echo %EMSDK%` and `emcc --version`, then delete 
 browser build folder and configure again. [Set EMSDK in your build prompt](/docs/guides/browser/#set-emsdk-in-your-build-prompt)
 has the commands. Address the missing toolchain before investigating the Ninja and compiler
 errors that follow it.
+
+The same lines in Visual Studio's Output, after `CMake generation started for configuration:
+'wasm-debug-wasm-debug'.`, mean its configuration box says `wasm-debug`: choose `x64-debug`
+there, as [Edit and debug in Visual Studio](/docs/get-started/debug-your-game/#the-output-says-cmake-error-and-upstreamemscripten)
+says. The browser build is built from the prompt.
 
 ### The page stays at `Loading...` when opened from `file://`
 

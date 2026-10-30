@@ -1,96 +1,562 @@
 ---
-title: Debug your game in Visual Studio
-description: Open the project from Get Started, select its debug preset, stop at a source breakpoint and inspect an update.
+title: Edit and debug in Visual Studio
+description: Open your project in Visual Studio, choose x64-debug and MyGame, edit, build and read the Error List, stop at a breakpoint, step and read variables, and find the line behind an error box or a crash, step by step.
 ---
 
+import { Steps } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 
-Once your project builds, from [Get the starter project](/docs/get-started/starter/) or
-[Start your own project](/docs/get-started/your-project/), you can debug it as an
-ordinary C++ program. This optional follow-on uses their `mygame` project and its
-`MyGame` executable. The source excerpts come from the minimal sample you copied into `game`.
+Everything so far used Notepad and the command prompt. Visual Studio, which you installed in
+[Install the tools](/docs/get-started/prerequisites/), can do the same edit, build and run in one
+window, and it adds a **debugger**: it can stop your game on a line you choose, show what every
+variable holds at that moment, and go on one line at a time. It is also the quickest way to find
+the line behind an error box or a crash. This page opens your project in it and goes through each
+of those, with what you see at every step. It takes about 30 minutes.
 
-## Open the project and select the program
+Before you start, do [Make a first change](/docs/get-started/first-change/), so that your project
+in `C:\dev\mygame` builds and you have a copy of your game to go back to. Make a fresh copy now
+with that page's step 1 line. The edits on this page are undone as you go; if one is left behind,
+[Getting a file back](/docs/get-started/first-change/#getting-a-file-back) puts the file back.
 
-Open the `mygame` folder in Visual Studio: the folder containing your top-level
-`CMakeLists.txt` and `CMakePresets.json`. Opening `game` or `external/labrador` selects a
-different build. The surest way is to start Visual Studio from the x64 Native Tools Command
-Prompt, in that folder, so that it has the same settings as the prompt, `VCPKG_ROOT` included:
+The pictures of Visual Studio on this page are in words. Positions are as Visual Studio 2026 lays
+its window out the first time: if you have moved windows around, the menu commands and keys given
+with each one still reach it.
 
-```bat
-cd /d C:\dev\mygame
-devenv .
+## Open the project
+
+<Steps>
+
+1. **Quit the game** if it is open: click its window, then press **Escape**, then **Enter**.
+
+2. **Start Visual Studio in your project's folder.** In the x64 Native Tools Command Prompt:
+
+   ```bat
+   cd /d C:\dev\mygame
+   devenv .
+   ```
+
+   The `.` means *this folder*. `devenv` prints nothing and gives the prompt back within a few
+   seconds; the prompt stays free for other commands while Visual Studio is open. Visual Studio's
+   window appears within half a minute.
+
+   Open the `mygame` folder itself, the one that holds `CMakeLists.txt`, `CMakePresets.json` and
+   `game`, not `game` or `external\labrador`, which are parts of the project rather than the
+   whole of it.
+
+   To start it from the Start menu instead, open **Visual Studio 2026**, choose **Open a local
+   folder** in the window it starts with (or **File > Open > Folder** if that window is gone), and
+   choose `C:\dev\mygame`. Visual Studio 2026 sets up its own copy of vcpkg either way, so the
+   project configures the same.
+
+3. **The first time Visual Studio starts on a computer**, Microsoft's
+   [sign-in page](https://learn.microsoft.com/en-us/visualstudio/ide/signing-in-to-visual-studio)
+   says it asks you to sign in, then to choose a colour theme. Signing in is not needed for
+   anything on this page: the window has a link to skip it, which in Visual Studio 2022's window
+   reads **Skip and add accounts later**. Any theme will do; this page describes the dark one.
+   Visual Studio Community may ask you to sign in again some days later, and that is when you
+   would make or use a Microsoft account.
+
+4. **Close what you do not need.** Visual Studio opens with things this page does not use:
+   - two tabs in the middle: **CMake Overview Pages**, which is in front, so the window's title
+     reads `mygame - CMake Overview Pages - Microsoft Visual Studio`, and **What's new**. Close
+     each with the **×** on its tab;
+   - a **GitHub Copilot Chat** panel on the left, with **Solution Explorer** as a tab at the
+     bottom of that panel, its name cut short to `Solution E...`; click that tab to show
+     Solution Explorer instead;
+   - a strip under the toolbar with a round blue `i` that says `This project may be compatible
+     for remote development. Would you like to install Visual Studio's Linux and Mac support?`
+     This page does not need that support. The **×** at the strip's right-hand end hides it until
+     the project is next opened; **Do not ask again**, in the strip, stops it coming back;
+   - sometimes a box in the bottom right corner titled `Visual Studio 2026 will update when
+     closed`. **Postpone** keeps the version you have; **Update now** closes Visual Studio and
+     updates it, which takes several minutes. Either is fine, but update another time if you
+     are following this page.
+
+5. **Wait for the configure to finish.** Visual Studio runs the same configure as
+   `cmake --preset x64-debug` by itself. Its output is in the **Output** window, across the
+   bottom, with **Show output from:** set to **CMake**. If the Output window is not there, open
+   it with **View > Output** (**Alt+2**). It ends like this:
+
+   ```text title="Output"
+   1> [CMake] -- Configuring done (3.0s)
+   1> [CMake] -- Generating done (0.1s)
+   1> [CMake] -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   1> Extracted CMake variables.
+   1> Extracted source files and headers.
+   1> Extracted code model.
+   1> Extracted toolchain configurations.
+   1> Extracted includes paths.
+   1> CMake generation finished.
+   ```
+
+   `CMake generation finished.` is the line that says it is done. In a project that the prompt has
+   already built it came about half a minute after `devenv .`; in one check it took a minute and
+   a half, with `Configuring done (83.3s)`, while vcpkg updated its list of packages from the
+   internet. Above it are a long list of
+   `Environment settings:` and vcpkg's list of packages; neither needs reading. If the output
+   ends with `CMake Error` instead, go on to the next step anyway: the usual cause is the box it
+   tells you to check.
+
+6. **Check the two boxes on the toolbar.** Under the menu bar, from the left, are the toolbar's
+   buttons, then a box that says **Local Machine**, then the **configuration** box, then a box
+   with a green triangle, the **startup item**. After it is a box that says
+   `No command-line arguments`, which this page does not use.
+
+   - The configuration box must say **x64-debug**. **The first time a project is opened it can
+     say `wasm-debug` although the Output just configured `x64-debug`**: the box lists the
+     project's presets in alphabetical order and shows the first. Click it and choose
+     **x64-debug** even if it already seems right. The Output then says
+     `Switching to configuration x64-debug-x64-debug.` Visual Studio keeps that choice for this
+     project from then on. Left at `wasm-debug`, the next time the project is opened Visual Studio
+     configures the browser build, which fails as
+     [below](#the-output-says-cmake-error-and-upstreamemscripten), or configures nothing, so that
+     **Ctrl+Shift+B** does nothing.
+   - The startup item must say **MyGame.exe (game\MyGame.exe)**. If it says
+     **Select Startup Item...**, click the small arrow at its right. The list begins with
+     `Show/Hide Debug Targets...` and `Current Document`, which may be ticked, and then may say
+     `No recent Startup Items`; this page uses none of those. Below them are the project's
+     programs. Choose
+     **MyGame.exe (game\MyGame.exe)**. Not **MyGame.exe (Install)**, which installs the game
+     before starting it, and not **MyGameTests.exe (game\MyGameTests.exe)**, which is the rules
+     test.
+
+7. **Find your files.** **Solution Explorer** shows the project's folder as it is on disk:
+   `.github`, `external`, `game`, then the files `.gitignore`, `CMakeLists.txt`,
+   `CMakePresets.json`, `README.txt` and `vcpkg.json`. If it is not showing, **View > Solution
+   Explorer** (**Ctrl+Alt+L**) brings it back. Click the arrow beside `game`, then beside
+   `states`, and double-click `hello_state.cpp`. It opens in a tab in the middle.
+
+   The quicker way to open a file is **Ctrl+T**, which opens a **Code Search** box. Type
+   `hello_state.cpp`. **It lists two files with that name**, and under them lines of other files
+   that mention it. The first file, `external\labrador\samples\minimal\states\hello_state.cpp`, is
+   the engine's own minimal sample, which your game was copied from and which your game does not
+   build. Choose the one under `game\states\hello_state.cpp`, with the **Down** arrow and
+   **Enter** or by clicking it.
+
+   Above the code is a strip that names what the file belongs to. In your game's file it says
+   `MyGame.exe (game\MyGame.exe) - x64-debug`. In the engine's copy it says
+   `Miscellaneous Files - No Configurations`: that means the file is not part of what this
+   project builds, and nothing you change there or set there does anything. That strip can take
+   half a minute or more to appear the first time the engine's copy is opened. If you opened
+   both, two tabs are named `hello_state.cpp`, and the strip is the way to tell them apart;
+   close the engine's with the **×** on its tab.
+
+</Steps>
+
+The line numbers are along the left of the code, and the bar along the bottom of the code says
+where the cursor is, such as `Ln: 75, Ch: 2`. **Ctrl+G** opens **Go to line**: type a number
+and press **Enter**.
+
+## Edit, build and run
+
+<Steps>
+
+1. **Make an edit.** In `game\states\hello_state.cpp`, press **Ctrl+F** and type `Hello from`
+   in the search box that opens at the top right of the code. The words are found and selected
+   on line 87 as you type; **do not press Enter**, which looks for the next one and, as there is
+   none, opens a box titled `Find and Replace` that says
+   `The following specified text was not found: Hello from`. If that box opens, click **OK**:
+   the words are still selected. Press **Escape** to close the search box, then change the
+   greeting's words as in [Make a first change](/docs/get-started/first-change/), keeping the
+   quotation marks, the `L` before them and the comma after them. A `*` appears
+   after the file's name on its tab and in the window's title until the file is saved; **Ctrl+S**
+   saves it.
+
+2. **Build: Ctrl+Shift+B**, or **Build > Build All**, which the menu shows with its other key,
+   **F7**. This saves every file you have changed first, so a forgotten **Ctrl+S** does not
+   matter. The Output window switches to **Show output from: Build**:
+
+   ```text title="Output"
+   >------ Build All started: Project: mygame, Configuration: x64-debug-x64-debug ------
+     [1/4] Running utility command for game_content
+     [2/4] Checking that no engine file includes a game header
+     [3/4] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+     [4/4] Linking CXX executable game\MyGame.exe
+
+   Build All succeeded.
+   ```
+
+   The bar along the very bottom of the window also says `Build All succeeded.` It is the same
+   build as `cmake --build --preset x64-debug` in the prompt, into the same
+   `out\build\x64-debug` folder, so either one can build after the other. A build with nothing
+   changed ends `Build All succeeded.` after its first two lines.
+
+3. **Run: Ctrl+F5**, or **Debug > Start Without Debugging**. The game opens with your greeting,
+   as it does from the prompt. If a file has changed since the last build, Visual Studio builds
+   first. That build's Output begins
+   `>------ Build started: Project: CMakeLists, Configuration: Debug ------` rather than the
+   `Build All` line above, and the bar along the bottom says `Build succeeded.`: it is the same
+   `x64-debug` build, named another way. Quit the game as usual: **Escape**, then **Enter**.
+
+4. **Run the tests** in the prompt, as before. Visual Studio's build and the prompt's use the same
+   folder, so this tests what Visual Studio built:
+
+   ```bat
+   ctest --preset x64-debug
+   ```
+
+</Steps>
+
+## When the build fails: the Error List
+
+Make a slip on purpose to see it: in `hello_state.cpp`, delete the quotation mark after your
+greeting's last word, the one before the comma. Then press **Ctrl+Shift+B**. The Output ends:
+
+```text title="Output"
+  [3/4] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+  FAILED: [code=2] game/CMakeFiles/MyGame.dir/states/hello_state.cpp.obj 
+  C:\PROGRA~1\MICROS~1\18\COMMUN~1\VC\Tools\MSVC\1451~1.362\bin\Hostx64\x64\cl.exe  /nologo /TP ...
+C:\dev\mygame\game\states\hello_state.cpp(87): error C2001: newline in string literal
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2143: syntax error: missing ')' before 'labrador::Colour::white'
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2143: syntax error: missing ';' before 'labrador::Colour::white'
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2059: syntax error: ')'
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2059: syntax error: ')'
+  ninja: build stopped: subcommand failed.
+
+Build All failed.
 ```
 
-The `.` means *this folder*. From the Start menu instead, start Visual Studio, choose
-**Open a local folder** (or **File > Open > Folder**), and pick `C:\dev\mygame`. Use Visual Studio's CMake preset support and select **x64-debug**. Wait for
-configuration to finish, then choose **MyGame** as the startup program to debug. The preset
-and startup selectors can look different between Visual Studio versions; the names to
-select are the ones in your project's presets and CMake targets.
+These are the lines the prompt prints, and [Read a build error](/docs/get-started/build-errors/)
+says how to read them: the first line with `error` in it is the one that matters. Visual Studio
+also lists them in the **Error List**. Open it with **View > Error List**, or **Ctrl+\\** and
+then **E**: hold **Ctrl**, press the **\\** key, let go of both, then press **E**. It opens where
+the Output was, with a tab for each along the bottom.
 
-`MyGameTests` is the rules test program. Select `MyGame` to debug the game itself. Its output
-is `out\build\x64-debug\game\MyGame.exe`. Build that target before starting the debugger;
-the equivalent commands, from the `mygame` folder in the x64 Native Tools Command Prompt, are:
+- **First choose Build Only.** The Error List's toolbar counts the errors, then has a box that
+  says **Build + IntelliSense**. **IntelliSense** is Visual Studio guessing at errors while you
+  type, and it underlines what it suspects with red squiggles. With the slip above, its guesses
+  can already be in the list when it opens, at the top: the count says `9 Errors`, and the first
+  rows have codes beginning `E`,
+  such as `E0304 no instance of function template "labrador::Scene::add" matches the argument
+  list` and `E0008 missing closing quote`. They are guesses: they can be wrong, especially while
+  a configure is running, and they do not stop the build. Click that box and choose
+  **Build Only** to see just what the compiler said.
+- The toolbar then counts `5 Errors`, `0 Warnings`, `0 Messages`, and each row has the error's
+  **Code**, such as `C2001`, its **Description**, the **File** and the **Line**. The first row
+  is `C2001 newline in string literal`, on line 87.
+- **Double-click a row** and Visual Studio opens that file with the cursor on that line. Start
+  with the first row.
 
-```bat
-cmake --preset x64-debug
-cmake --build --preset x64-debug --target MyGame
-```
+Put the quotation mark back and build again with **Ctrl+Shift+B**: the Output ends
+`Build All succeeded.`
 
-Visual Studio's configure also needs `VCPKG_ROOT` to name the vcpkg installation. Started
-with `devenv .` from the prompt, it has the prompt's. Started from the Start menu, it does not
-have the prompt's settings, so if its configure fails with
-`Could not find toolchain file`, make the setting permanent with `setx` as
-[If VCPKG_ROOT is not set](/docs/get-started/prerequisites/#if-vcpkg_root-is-not-set) describes,
-then close and reopen Visual Studio. If configuration fails, read its output first: a missing
-toolchain or compiler can prevent the program from appearing in the startup choices.
-[Troubleshooting](/docs/troubleshooting/) explains those errors.
+## Stop at a breakpoint
 
-## Stop at a source breakpoint
+A **breakpoint** is a line where the debugger stops the game before that line runs.
 
-Open `game\states\hello_state.cpp` and find `HelloState::init()`. Put the cursor on its first
-statement, beginning `const Vector2F resolution =`, and press **F9** to toggle a breakpoint:
+<Steps>
 
-<SourceFile
-	path="samples/minimal/states/hello_state.cpp"
-	from="void HelloState::init()"
-	to="RenderResources* resources = this->app_->render_resources();"
-/>
+1. **Set one.** In `game\states\hello_state.cpp`, press **Ctrl+G**, type `75` and press
+   **Enter**. That is the first line of `HelloState::init()`, which runs once when the game
+   starts:
 
-Press **F5** to start debugging. Execution should stop at the breakpoint before that statement
-runs. Use **F10** until the next statement, beginning `this->motion_.centre =`, is highlighted,
-then inspect `resolution.x` and `resolution.y` in the debugger's locals or watch view.
-They come from the resolution selected in `game\main.cpp`;
-the unmodified template selects 1280 by 720.
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="void HelloState::init()"
+   	to="RenderResources* resources = this->app_->render_resources();"
+   />
 
-F9, F5 and F10 are the default shortcuts for toggling a breakpoint, starting or continuing
-debugging, and stepping over a statement. Use the corresponding debugger commands if your
-keyboard profile changes those bindings.
+   Press **F9**. A red dot appears in the margin to the left of the line number. **F9** again
+   takes it away; so does clicking the dot. (**Debug > Toggle Breakpoint** is the same.)
 
-The window, renderer and content are initialized before `HelloState::init()` is called. If
-startup fails before the breakpoint, read the startup error before investigating the state.
-If the breakpoint does not bind, check that the selected preset is `x64-debug`, the startup
-program is `MyGame`, and the open source belongs to this copy of the project; then rebuild.
+2. **Start debugging: F5**, or **Debug > Start Debugging**, or the green triangle beside
+   **MyGame.exe**. If anything has changed since the last build, Visual Studio builds first and
+   then starts the game. About four seconds later Visual Studio comes to the front, stopped:
+
+   - the window's title ends `(Debugging)` and the bar along the bottom turns orange;
+   - a yellow arrow in the margin points at the line that runs next. **The red dot has moved
+     down to line 76**, `this->app_->resolution_manager()->resolution_vec();`, because that is
+     where the compiler put the code for the statement that starts on line 75;
+   - the game's window is open and does not answer. Windows may add
+     `(Not Responding)` to its title. That is the debugger holding it, not a fault;
+   - new windows open: **Autos** and **Locals** at the bottom left, **Call Stack** at the
+     bottom right, and **Diagnostic Tools** on the right, whose graphs this page does not use.
+     A second row of boxes, `Process:`, `Thread:` and `Stack Frame:`, appears under the
+     toolbar while debugging; this page does not use them either.
+
+   If the game runs and never stops, see
+   [The breakpoint is never hit](#the-breakpoint-is-never-hit).
+
+3. **Read a variable.** Press **Alt+4**, or **Debug > Windows > Locals**, to show **Locals**:
+   every variable of the function where the debugger stopped, with its value and type. It lists
+   `this`, the state itself, and `resources` as well as `resolution`. `resolution` shows `{x=-107374176. y=-107374176.}`: it has not been set yet, and that number is
+   what an unset `float` holds in a debug build. Press **Escape** to send the keys back to the
+   code.
+
+4. **Step over a line: F10**, or **Debug > Step Over**. The yellow arrow moves to line 77,
+   `this->motion_.centre =`, and grey text after line 76 says
+   `resolution_vec returned: {x=1280.00000 y=720.000000}`. In Locals, `resolution` is now
+   `{x=1280.00000 y=720.000000}`, the window size `game\main.cpp` chooses.
+
+5. **Carry on: F5** again. The game runs on and draws its greeting, until a breakpoint stops it
+   again.
+
+</Steps>
 
 ## Follow one update
 
-Remove the initialization breakpoint with F9 on the same statement. In `HelloState::update`,
-put a breakpoint on the assignment that calls `step_motion`:
+`HelloState::update` runs once a frame, sixty times a second, so a breakpoint there stops it
+every time it is reached.
 
-<SourceFile
-	path="samples/minimal/states/hello_state.cpp"
-	from="this->motion_ = step_motion(this->motion_,"
-	to="keyboard_direction(keyboard), dt);"
-/>
+<Steps>
 
-Continue with F5. When stopped here, inspect `dt` and `this->motion_.spin`. Use F10 until the
-complete assignment has executed, then inspect spin again: the rules advance it by `spin_speed * dt`.
-`this->motion_.centre` changes with the combined stick and keyboard direction. You can step
-into `step_motion` if you want to follow those calculations in `game\rules\motion.cpp`.
+1. **Move the breakpoint.** After **F5** the game's window comes to the front and can cover
+   Visual Studio, and keys go to whichever window is in front: click in Visual Studio's code
+   first. Go to line 76 with **Ctrl+G** and press **F9** to take its dot away.
+   Then go to line 155 and press **F9** there. It is the line that moves the greeting:
 
-The game is paused while the debugger is stopped. An update breakpoint will stop again on
-later frames, so disable it with F9 before continuing normal play with F5. Escape followed by
-Enter quits the sample through its confirmation screen.
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->motion_ = step_motion(this->motion_,"
+   	to="keyboard_direction(keyboard), dt);"
+   />
+
+   If the game is still running, it stops at once: you can set a breakpoint at any time. If not,
+   press **F5**. The yellow arrow is on line 155. Locals shows `dt`, the time this frame stands
+   for, as `0.0166666005`: a sixtieth of a second. Locals can open scrolled down, at names such
+   as `pads` and `points`; scroll it to the top if `dt` is not in sight.
+
+2. **Step into a function: F11**, or **Debug > Step Into**. It goes *into* the next function
+   called, rather than over it. The next one is not `step_motion` but `keyboard_direction`, at
+   line 44: C++ works out a call's values before making it, so the function that reads the keys
+   runs first. Locals shows `keyboard`.
+
+3. **Step out: Shift+F11**, or **Debug > Step Out**. It runs to the end of the function and
+   stops back on line 155, where grey text says
+   `keyboard_direction returned: {x=0.00000000 y=0.00000000}`: no key was held.
+
+4. **F11** again goes into `step_motion`, in `game\rules\motion.cpp`, which opens in a new tab at
+   the right of the tab row. Locals shows what it was given: `motion`, such as
+   `{centre={x=520.000000 y=360.000000} spin=29.3600960 }`, `stick`, `keys` and `dt`. The
+   small arrow to the left of `motion` opens it to show its parts. **F10** steps through its lines;
+   **Shift+F11** goes back to `update`.
+
+</Steps>
+
+**Call Stack**, at the bottom right, lists which function called which to get here, the
+current one at the top: `MyGame.exe!step_motion(...) Line 19`, then
+`MyGame.exe!HelloState::update(float dt) Line 155`, then the engine's functions that run every
+frame. **Debug > Windows > Call Stack** (**Ctrl+Alt+C**) shows it if it is hidden; like Locals,
+it is in that menu only while the debugger is running.
+
+## Stop debugging
+
+- **Shift+F5**, or **Debug > Stop Debugging**, or the red square on the toolbar, ends the game
+  at once, wherever it is. The Output's **Debug** view ends
+  `The program '[57996] MyGame.exe' has exited with code 0 (0x0).`, with another number in the
+  brackets, and the window's title loses `(Debugging)`.
+- **Ctrl+Shift+F9**, or **Debug > Delete All Breakpoints**, which is dimmed when there are
+  none, asks `Do you want to delete all breakpoints?`; **Yes** removes every red dot. A breakpoint left in
+  `update` stops the game on its first frame the next time you press **F5**.
+- While the game runs under the debugger, Visual Studio's **Ctrl+Shift+B** does nothing, and a
+  build in the prompt stops at the link with
+  [`LNK1168: cannot open game\MyGame.exe for writing`](/docs/troubleshooting/#lnk1168-cannot-open-gamemygameexe-for-writing).
+  Stop debugging first, then build.
+
+The Output's **Debug** view also lists every DLL the game loads, and has lines from Windows' own
+DirectX code such as `ReturnHr(1) tid(a050) 80070002 The system cannot find the file specified.`
+They come from Windows' own DirectX files, not from your game's code; they appeared on every run
+behind this page and did not stop the game. After the game has been held at a breakpoint, a line
+such as `XAUDIO2: WARNING: Glitch at output sample 870720` can appear too: the sound stopped while
+the game was held, and it is not a fault either.
+
+## When the game shows an error
+
+Most of the problems a game meets while it starts, such as a misspelt picture or font name, stop
+it with a box like this one, which comes from the `catch` at the end of `game\main.cpp`:
+
+<SourceFile path="samples/minimal/main.cpp" from="catch (const std::exception& e)" to="}" />
+
+To see one, change `"jetbrains_mono_bold_16"` near the top of `hello_state.cpp` to
+`"jetbrains_mono_bold16"`, without the second `_`, and press **F5**. The game builds and starts,
+and a box opens:
+
+- its title is `Sample - startup failure`, whatever your game is called. That title is the text
+  in quotation marks in the `MessageBoxA` line above, and
+  [Ship a Windows release](/docs/guides/windows-release/#which-renderer-to-ship) says to change
+  it to your game's name. The box appears for a problem found during play too, not only at
+  start-up;
+- inside it is the reason, here `Font 'jetbrains_mono_bold16' was never loaded.` That text is
+  what to look up in [Troubleshooting](/docs/troubleshooting/#running);
+- **OK** closes it and the game ends. Under the debugger the Output's Debug view then says
+  `The program '[6884] MyGame.exe' has exited with code 1 (0x1).`
+
+The Debug view also has, from the moment the problem was found,
+`Exception thrown at 0x00007FFB5772408A in MyGame.exe: Microsoft C++ exception: std::out_of_range at memory location 0x000000884458ED30.`
+The numbers differ each time. The message names the font but not your line. The debugger can
+stop at the moment the engine finds the problem, and show which line of yours led there:
+
+<Steps>
+
+1. **Ask it to stop on C++ errors.** Press **Ctrl+Alt+E**, or **Debug > Windows > Exception
+   Settings**. The **Exception Settings** window opens at the bottom. Its first row is
+   **C++ Exceptions**, with a box that shows a dash, `–`. Click that box once so that it shows a
+   tick.
+
+2. **F5.** This time Visual Studio stops before the box appears. It opens an engine file,
+   `registry.h`, with the arrow on the line that reports the problem, and a box beside it titled
+   **Exception Thrown**:
+
+   ```text title="Exception Thrown"
+   Exception thrown at 0x00007FFB5772408A in MyGame.exe:
+   Microsoft C++ exception: std::out_of_range at memory location
+   0x000000619456EC20.
+   ```
+
+   The box also has buttons such as **Show Call Stack**, **Copy Details** and
+   **Analyze with Copilot**; this page uses none of them. Locals there shows `name`,
+   `"jetbrains_mono_bold16"`: the name that was asked for.
+
+3. **Find your line in Call Stack.** Its rows, from the top, are where the error was raised, then
+   each function that called the one above it:
+
+   ```text title="Call Stack"
+   [std::out_of_range thrown]
+   KernelBase.dll!00007ffb5772408a()
+   vcruntime140d.dll!00007ffa64bb93a2()
+   MyGame.exe!labrador::Registry<...>::resolve(const std::string & name) Line 105
+   MyGame.exe!labrador::RenderResources::resolve_sprite_font(const std::string & font_name) Line 41
+   MyGame.exe!labrador::TextObject::TextObject(...) Line 27
+   MyGame.exe!labrador::Text::Text(...) Line 21
+   MyGame.exe!labrador::Label::Label(...) Line 22
+   [External Code]
+   MyGame.exe!HelloState::init() Line 86
+   MyGame.exe!labrador::StateContext::enter(labrador::State * state) Line 365
+   ```
+
+   The longest names are cut short here with `...`, and the numbers after `.dll!` differ from
+   one computer to another. Call Stack shows only four to six rows at a time: scroll down in
+   it, or drag its top edge up, to see the rest. The `.dll` rows are Windows' and the C++
+   library's code, and `[External Code]` stands for more of the C++ library, here
+   `std::make_unique`. The first row that starts `MyGame.exe!` and has no `labrador::` or
+   `std::` in it is yours: `MyGame.exe!HelloState::init() Line 86`. **Double-click it**. `hello_state.cpp` opens at line 86,
+   `this->greeting_ = this->scene_->add(`, with a green curved arrow in the margin: the greeting
+   is made there, with the misspelt `font_name`.
+
+4. **Stop with Shift+F5**, which also closes the box if you went on with **F5**. Put the `_`
+   back in the font's name.
+
+5. **Turn the setting back.** With C++ Exceptions ticked, the debugger stops at every C++ error
+   any part of the program raises, including ones that are handled on purpose. The Exception
+   Settings window has a row of five small buttons at the left above its list. Rest the pointer
+   on the fifth and it says `Restore the list to the default settings`; click it, and the dash is back
+   at once, with no question asked.
+
+</Steps>
+
+## When the game closes with no message
+
+A game that disappears with no box has crashed: something the code did could not be done at all,
+most often using an object through a pointer that holds `nullptr`. To see one, add these two
+lines to `HelloState::init()` in `hello_state.cpp`, just before the line
+`this->scene_->end_tick();` that comes before the comment beginning `// One view`:
+
+```cpp
+	Label* missing = nullptr;
+	missing->set_text(L"crash");
+```
+
+`missing` points at nothing, and the second line asks it to change its text.
+
+- **On its own**, with **Ctrl+F5** or from the prompt, the game's window opens and then is gone,
+  with no message. It can go within a few seconds, or stay, not answering, for half a minute or
+  more while Windows records the crash. To see why it ended, build with **Ctrl+Shift+B**, then
+  start it from the prompt in `C:\dev\mygame` with these two lines. The first waits until the
+  game has ended, which can take a minute or two, and the second prints the code it ended with:
+
+  ```bat
+  start /wait "" out\build\x64-debug\game\MyGame.exe
+  echo %ERRORLEVEL%
+  ```
+
+  It prints `-1073741819`, which is Windows' code for a program that used memory it may not
+  use. A game that ended normally prints `0`.
+- **Under the debugger, with F5**, Visual Studio stops instead, in a file of the C++ library
+  named `xstring`, with a box titled **Exception Thrown** that says
+  `Exception thrown: read access violation.` and `this was 0x40.`: a small number such as
+  `0x40` or `nullptr` where an object should be is the sign of this kind of crash. As above, go
+  down the Call Stack, scrolling it if needed, past the first row, which repeats the error, and
+  the `std::` and `labrador::` rows, here `std::wstring::_Assign`, `TextObject::set_text` and
+  `Text::set_text`, to `MyGame.exe!HelloState::init() Line 105`, six or seven rows down, and
+  double-click it: the arrow points at `missing->set_text(L"crash");`.
+
+Stop with **Shift+F5** and delete the two lines.
+
+## Opening the project again
+
+Close Visual Studio with **File > Exit** or the **×** at the top right. Next time, run
+`devenv .` in `C:\dev\mygame` again. Visual Studio remembers the configuration box, the startup
+item, the open tabs and the breakpoints for this project. When nothing in the project's CMake
+files has changed, it may not configure again, and the Output can stay empty, with no **CMake**
+in its **Show output from:** list: that is normal. The configuration box saying **x64-debug** and
+the startup item saying **MyGame.exe (game\MyGame.exe)** mean the project is ready, and
+**Ctrl+Shift+B** builds it as before.
+
+It keeps all of that in a folder named `.vs` in your project's folder, which Solution Explorer
+does not show. It is Visual Studio's alone, not part of your game. Microsoft's
+[CMake presets page](https://learn.microsoft.com/en-us/cpp/build/cmake-presets-vs#troubleshoot)
+gives deleting it, with Visual Studio closed, as a way to start over when Visual Studio's view of
+a project goes wrong; choose **x64-debug** again afterwards, as in step 6.
+
+## If something goes wrong
+
+### The Output says `CMake Error` and `/upstream/emscripten`
+
+The configuration box says `wasm-debug` or `wasm-release`, which are the browser build's presets,
+and the Output's CMake view says, among other lines:
+
+```text title="Output"
+1> CMake generation started for configuration: 'wasm-debug-wasm-debug'.
+1> [CMake] CMake Error at C:/Program Files/Microsoft Visual Studio/18/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake:209 (include):
+1> [CMake]   include could not find requested file:
+1> [CMake] 
+1> [CMake]     /upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+1> [CMake] -- Running vcpkg install - failed
+1> [CMake] CMake Error: CMAKE_CXX_COMPILER not set, after EnableLanguage
+1> [CMake] -- Configuring incomplete, errors occurred!
+```
+
+and the startup item can say **Select Startup Item...**. On another open there may be no CMake
+lines at all, and **Ctrl+Shift+B** does nothing, because Visual Studio has not configured the
+browser build yet; the **Build** menu then has no **Build All**. The cause and the fix are the
+same. The browser build needs Emscripten's
+settings, which Visual Studio does not have, and it is built from the prompt
+([Build for the browser](/docs/guides/browser/)). Choose **x64-debug** in the configuration box.
+The Output says `Switching to configuration x64-debug-x64-debug.` If the startup item still
+says **Select Startup Item...**, it has not filled itself in: open its list with the small arrow
+at its right and choose **MyGame.exe (game\MyGame.exe)**, as in step 6 above. Visual Studio
+remembers **x64-debug** from then on. Visual Studio makes a folder `out\build\wasm-debug` the
+first time it opens the project, and a failed configure adds to it; it does no harm.
+
+### MyGame is not in the startup item's list
+
+The configure did not finish. Read the Output's **CMake** view from its first `CMake Error`
+line. The errors are the prompt's, and [Troubleshooting's Configuring](/docs/troubleshooting/#configuring)
+section explains them. If the message names `VCPKG_ROOT` or `Could not find toolchain file`,
+this Visual Studio did not supply vcpkg's location. Visual Studio 2026 18.9 supplied its own when
+this page was checked; one that does not needs
+[the `setx` line](/docs/get-started/prerequisites/#if-vcpkg_root-is-not-set), after which
+Visual Studio has to be closed and opened again. Once fixed, **Project > Configure Cache**
+configures again, and **Project > Delete Cache and Reconfigure** starts it from nothing.
+
+### The breakpoint is never hit
+
+- While the game runs, the breakpoint is a hollow circle with a small yellow warning triangle on
+  it, not a solid red dot, and the strip above the code says
+  `Miscellaneous Files - No Configurations`: the breakpoint is in a file the game does not build,
+  usually the engine's copy of the sample opened from Code Search. Open
+  `game\states\hello_state.cpp` and set it there.
+- The configuration box is not **x64-debug**, or the startup item is not
+  **MyGame.exe (game\MyGame.exe)**: correct them, then **F5**.
+- The game was started with **Ctrl+F5**, which ignores breakpoints. Use **F5**.
+- The line never runs: `init()` runs once, at the start, so a breakpoint added there after the
+  game has started is not reached until the next start.
+
+### `LNK1168: cannot open game\MyGame.exe for writing`
+
+The game is still running, under the debugger or on its own, while something builds. Stop it
+with **Shift+F5** or quit it, then build again;
+[Troubleshooting](/docs/troubleshooting/#lnk1168-cannot-open-gamemygameexe-for-writing) has more.
 
 ## Where content comes from
 
@@ -103,21 +569,22 @@ The copied `main.cpp` loads the manifest before starting the first state:
 />
 
 That relative path is resolved under the executable's directory. The manifest's relative
-asset directories are resolved under the manifest's own directory. The debugger's working
-directory does not change either rule; an absolute path is kept as given.
+asset directories are resolved under the manifest's own directory. Starting the game from
+Visual Studio changes neither rule; an absolute path is kept as given.
 
 The `game_content` target copies `manifest.json` and the `fonts` folder beside `MyGame.exe`,
-and building `MyGame` builds that dependency too. If an error names a missing manifest or
-font, check the path in the message and the selected executable's folder. For this preset,
-expect `out\build\x64-debug\game\manifest.json` and
-`out\build\x64-debug\game\fonts\jetbrains_mono_bold_16.spritefont`. Rebuild the target and
-check the copy rules in `game\CMakeLists.txt` if they are absent. The
+and building `MyGame` builds that dependency too: it is the `Running utility command for
+game_content` line in every build. If an error names a missing manifest or font, check the path
+in the message and the executable's folder. For this preset, expect
+`out\build\x64-debug\game\manifest.json` and
+`out\build\x64-debug\game\fonts\jetbrains_mono_bold_16.spritefont`. Rebuild and check the copy
+rules in `game\CMakeLists.txt` if they are absent. The
 [content guide](/docs/guides/assets/#getting-content-beside-the-executable) explains those rules.
 
 ## Direct3D diagnostics
 
 Windows' optional **Graphics Tools** feature supplies the Direct3D debug layers. Install it
-when you want graphics validation, then read the debugger's output for messages about API
+when you want graphics validation, then read the Output's **Debug** view for messages about API
 use. Labrador's Debug Direct3D backends enable the layer when available and report a warning
 when it is unavailable. Ordinary C++ breakpoints work independently of that feature.
 
@@ -136,3 +603,112 @@ The stock `x64-release` preset does not request a game PDB. Producing symbols fo
 release is an explicit build choice to make before shipping; keep the resulting matching
 files when you make that choice. The `x64-debug` build used above supplies the debug
 information for this walkthrough.
+
+## The keys on this page
+
+| Key | Menu | What it does |
+| --- | --- | --- |
+| **Ctrl+T** | **Edit > Go To > Go To All...** | Find a file by name |
+| **Ctrl+G** | **Edit > Go To > Go To...** | Go to a line number |
+| **Ctrl+Shift+B**, or **F7** | **Build > Build All** | Save and build |
+| **Ctrl+F5** | **Debug > Start Without Debugging** | Build if needed, then run |
+| **F5** | **Debug > Start Debugging**; **Debug > Continue** while debugging | Build if needed, then run under the debugger |
+| **F9** | **Debug > Toggle Breakpoint** | Set or remove a breakpoint on the cursor's line |
+| **F10** | **Debug > Step Over** | Run the next line |
+| **F11** | **Debug > Step Into** | Go into the next function called |
+| **Shift+F11** | **Debug > Step Out**, while debugging | Run to the end of this function |
+| **Shift+F5** | **Debug > Stop Debugging**, while debugging | End the game |
+| **Ctrl+Shift+F9** | **Debug > Delete All Breakpoints** | Remove every breakpoint |
+| **Alt+4** | **Debug > Windows > Locals**, while debugging | The variables where it stopped |
+| **Ctrl+Alt+C** | **Debug > Windows > Call Stack**, while debugging | Which function called which |
+| **Ctrl+Alt+E** | **Debug > Windows > Exception Settings** | Which errors stop the debugger |
+| **Ctrl+\\**, **E** | **View > Error List** | The build's errors, one per row |
+
+## What was checked
+
+On 31 October 2026, in a starter project made from a starter ZIP of this tree at
+`C:\dev\g9-author\mygame`, with Visual Studio Community 2026 18.9.2 and its compiler 19.51, every
+step above was done in a Visual Studio started by `devenv .` from a prompt with vcvars, by an
+agent sending keys to that window and reading it through screenshots and Windows' accessibility
+interface, with `C:\dev\g9-author\mygame` in the quoted output changed to `C:\dev\mygame`. The
+project had been configured and built in the prompt first. Some clicks were made through the
+accessibility interface rather than the mouse: choosing in the configuration and startup boxes,
+the C++ Exceptions box, **Restore Defaults**, and selecting a stack frame, which was done through
+Visual Studio's automation interface in place of a double-click; double-clicking an Error List row
+was done with the mouse. Edits were made in Visual Studio's editor and, for the deliberate
+failures, with tools. The configuration box showed `wasm-debug` after the first open, in this
+project and again in a second starter extracted beside it; that second project, opened again,
+configured `wasm-debug` and failed with the lines quoted above, and choosing **x64-debug** fixed it
+for the opens after. The second project was opened with `devenv.exe` started from an environment
+without vcvars or `VCPKG_ROOT`, as the Start menu would, and configured with Visual Studio's own
+vcpkg; it had not been built in the prompt, and its first **F5** built 95 steps in about 8
+seconds on a fast desktop. The **Open a local folder** button and the Start menu itself were not
+used.
+
+This Visual Studio was started with a separate settings profile, and it did not show the
+first-launch sign-in or theme windows, because the computer already had an account in Visual
+Studio; step 3 is written from Microsoft's page and was not seen. The update notice appeared and
+**Postpone** was chosen; **Update now** was not, and so that the update would not run, Visual
+Studio was ended by ending its process rather than with **File > Exit**. What it remembered was
+seen on the next open. Each failure in the page was made: the missing
+quotation mark in the Error List, IntelliSense's extra entries, the misspelt font with and
+without C++ Exceptions ticked, the null pointer with **Ctrl+F5**, from the prompt and with **F5**,
+the build in the prompt while debugging, **Ctrl+Shift+B** while debugging, and a breakpoint set
+in the engine's copy of `hello_state.cpp`, which did not stop the game. Stepping into an engine
+file of this machine's checkout once brought up an **Inconsistent Line Endings** question, which
+was answered **No**; a starter ZIP made from a clean checkout has no such file.
+
+The same day a second agent followed the page as then worded, in another fresh starter, with
+the same Visual Studio and its own settings profile, sending keys and reading screenshots, and
+then made the `wasm-debug` failure in a further starter. Every quoted Output, Build and Debug
+line matched. That run found what the page now says: the **CMake Overview Pages** tab in front
+on a first open; the remote-development strip's colour and its **Do not ask again**; the
+`Find and Replace` box that **Enter** brings up in the search box; IntelliSense's rows already
+at the top of the Error List, so **Build Only** comes first; the Call Stack's `.dll` and
+`[External Code]` rows, so the rule for your row names `MyGame.exe!`, and that Call Stack needs
+scrolling; the **Restore Defaults** button's hover text; `.vs` is not a hidden folder; an empty
+Output on opening the project again; the startup item left at **Select Startup Item...** after
+the `wasm-debug` failure; the game's window in front after **F5**; Locals scrolled away from
+`dt`; the missing command box for the exit code; the engine copy's strip appearing late; the
+hollow breakpoint in a file the game does not build; the two `hello_state.cpp` tabs; the
+`Build started: Project: CMakeLists` line before **Ctrl+F5**; the `XAUDIO2` warning; and the
+smaller things the page now names.
+
+The corrections were then checked in a third fresh starter, configured and built in the prompt
+first, in a Visual Studio of its own profile, through Windows' accessibility interface and
+Visual Studio's automation interface, with keys only for the search box: the tab and the
+strip's text on the first open; **Do not ask again** keeping the strip away on the next open;
+the `Find and Replace` box, `Passed end of document` and the words still selected after **OK**;
+the Error List at `9 Errors` with `E0304` first while `hello_state.cpp` was open, and `5 Errors`
+with `C2001` first after **Build Only**; every row of the Call Stack quoted above, read by
+scrolling it; the hover text and the dash coming back at once; `.vs` listed by `dir /b` with no
+hidden attribute; the configuration box at `wasm-debug` on the first open and the startup item
+filling itself in after choosing **x64-debug** there, the configure having succeeded; the startup
+item's list; an empty Output, with only `GitHub Copilot` to show, after opening the project
+again, then **Ctrl+Shift+B** succeeding; **Ctrl+F5**'s `Build started: Project: CMakeLists`
+line and `Build succeeded.`; the null-pointer crash's Call Stack and box; and the two
+`start /wait` lines printing `-1073741819`. The crashed window was gone after about 4 seconds in
+the second agent's run and after 35 seconds in one of the third's, on a busy desktop, and
+`start /wait` came back after 48 and 136 seconds while Windows Error Reporting ran, which is why
+the page gives no single time. The
+game's window coming to the front after **F5**, Locals' scrolling, the engine copy's late strip,
+the hollow breakpoint, the two tabs, the debugging toolbar row and the `XAUDIO2` warning are as
+the second agent saw them and were not seen again.
+
+A review the same day, in a fourth starter configured and built in the prompt first (its
+`Configuring done` took 597 seconds, nearly all of it vcpkg fetching its package list), repeated
+the missing quotation mark's five errors at lines 87 and 88 and the null pointer's `-1073741819`
+from the prompt, where `start /wait` came back in under a second. It started Visual Studio with
+`devenv .` and another new settings profile, which also showed no sign-in or theme window:
+`devenv` gave the prompt back in 10 seconds, and the first open showed the remote-development
+strip, the **CMake Overview Pages** and **What's new** tabs, `wasm-debug` in the configuration box
+while the Output configured `x64-debug`, and `CMake generation finished.`. Opened again with
+`wasm-debug` saved, after Visual Studio had been ended by ending its process, it configured
+nothing: the Output was empty, the **Build** menu had no **Build All**, and **Ctrl+Shift+B** did
+nothing, until **Project > Configure Cache** configured `wasm-debug` and failed with the lines
+quoted above. The menus' names and keys in the page were read from that Visual Studio's menus,
+where **View > Output** shows **Alt+2**, which opened it, and **Edit > Go To** names Ctrl+G's
+entry **Go To...**.
+
+No person has followed this page yet: `OCA-18` is that session, someone at Visual Studio
+following the page in a fresh starter project, and it remains open.

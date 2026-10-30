@@ -111,7 +111,7 @@ recommended way to make them.
 
 | Section | Proposal |
 | --- | --- |
-| Get Started | As built: eight pages, checked against a real build. Since 2026-10-30 a starter-ZIP route leads (the introduction, Install the tools, Get the starter project, Make a first change and Debug your game), with the Git route's three pages (Build Labrador, Run the minimal sample, Start your own project) kept beside it. |
+| Get Started | As built: eight pages, checked against a real build. Since 2026-10-30 a starter-ZIP route leads (the introduction, Install the tools, Get the starter project, Make a first change and Edit and debug in Visual Studio), with the Git route's three pages (Build Labrador, Run the minimal sample, Start your own project) kept beside it. |
 | Concepts | Five pages: what a game is to the engine; states; the tick; drawing, views and cameras; names, handles and resources. All from the material above. |
 | Guides | Sprites and text, input, menus, and assets, each from a sample that already does it. Collision, audio and local multiplayer each wait on a worked example. |
 | API Reference | Decide first whether header history is published or removed; then publish module by module, starting with `core` and `scene`. |
