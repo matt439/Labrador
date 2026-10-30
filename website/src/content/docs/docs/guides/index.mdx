@@ -1,6 +1,6 @@
 ---
 title: Guides
-description: Task-by-task guides to drawing, input, menus, settings and saves, content, collision, audio, local multiplayer, testing, CI, a Windows release, the browser build, moving to a newer engine and putting a starter project in Git, each backed by runnable code.
+description: Task-by-task guides to running the samples, drawing, input, menus, settings and saves, content, collision, audio, local multiplayer, testing, CI, a Windows release, the browser build, moving to a newer engine and putting a starter project in Git, each backed by runnable code.
 sidebar:
   order: 0
   label: Introduction
@@ -10,10 +10,17 @@ import { LinkCard, CardGrid } from '@astrojs/starlight/components';
 
 Each guide takes one job and shows how a sample in the repository does it, quoting the sample's
 code as it is at the revision this site was built from. Where the samples do not cover part of a job,
-the guide says so. They assume the model described in [Concepts](/docs/concepts/). When a build fails after you
+the guide says so. The quoted code is in the engine's `samples` folder, not in your game. In a
+starter project that is `C:\dev\mygame\external\labrador\samples`, and
+[Run the samples](/docs/guides/samples/) builds and starts them from there. They assume the model described in [Concepts](/docs/concepts/). When a build fails after you
 change your game, [Read a build error](/docs/get-started/build-errors/) shows how to find the line that matters.
 
 <CardGrid>
+	<LinkCard
+		title="Run the samples"
+		description="Build the engine's six samples from a starter project or a clone, start each one, and quit it."
+		href="/docs/guides/samples/"
+	/>
 	<LinkCard
 		title="Sprites and text"
 		description="Textures, fonts and sprite sheets; the engine's drawables; drawing a solid rectangle."

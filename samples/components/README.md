@@ -105,6 +105,11 @@ overlay, point filter and R press/hold behavior with the delivered manifest.
 
 ## The gallery
 
+From the repository root in the x64 Native Tools Command Prompt. In a starter
+project the repository root is `external\labrador`, and
+[Run the samples](https://labradorengine.com/docs/guides/samples/) has every
+step with its time, output and failures:
+
 ```bat
 cmake --preset x64-debug
 cmake --build --preset x64-debug --target ComponentsGallery ComponentsTests

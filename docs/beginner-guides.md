@@ -54,10 +54,19 @@ In order of impact on a beginner who wants to play around. Each unit is one
    was made on purpose in a starter project with both presets, and C3646
    with C4430 for an unqualified type in a header. Make a first change, the guides
    index and every guide that has the reader change code link it.
-4. **`GUIDE#4` Running the samples from a starter project.** One "Where to
-   run this" block (folder, preset, build, exe path, time and disk) linked
-   from examples, collision, audio, local-multiplayer, the guides index,
-   run-minimal and the sample READMEs. After `GUIDE#1`.
+4. **`GUIDE#4` Running the samples from a starter project.** Done on
+   2026-10-30: the guide *Run the samples* gives the engine's folder for each
+   route, the configure, build and test steps with their times, output and
+   disk, every sample's path and how to quit it, a one-sample target and the
+   test targets' names, LineSweeper's match replays under the null preset, a
+   backup and one-file restore before editing a sample, deleting the build
+   folder, the wrong-folder and unconfigured-build failures, and a pointer to
+   the browser pages, whose serving stays `GUIDE#10`'s. The guides'
+   `--smoke-test` lines use `start /wait` and print the exit code, since a
+   `WIN32` program does not hold the prompt. Examples, the guides index, collision, audio, local
+   multiplayer, run-minimal and five sample READMEs link it; the three guides'
+   command boxes start with the starter's `cd`, and LineSweeper's README has a
+   build-and-play block. Its *What was checked* records the run.
 5. **`GUIDE#5` Content tools and a picture on screen.** Installing texconv,
    MakeSpriteFont and xwbtool; drawing a plain texture with a complete class,
    its CMake line and the code in `HelloState`; starter-relative paths; the

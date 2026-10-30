@@ -21,7 +21,7 @@ BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
-**Beginner guides are ready work:** take `GUIDE#4` to `GUIDE#13` in their
+**Beginner guides are ready work:** take `GUIDE#5` to `GUIDE#13` in their
 order in [Beginner guides](docs/beginner-guides.md), which ranks them by
 impact on the owner's 2026-10-30 reader.
 
@@ -61,7 +61,6 @@ impact on the owner's 2026-10-30 reader.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `GUIDE#4` | OPEN | must | M | Run the samples from a starter project: one "Where to run this" block linked from every sample guide and README. |
 | `GUIDE#5` | OPEN | must | L | Install texconv, MakeSpriteFont and xwbtool; draw a plain texture with complete code; whole manifests; asset errors; sheets, animation, fonts and strings. |
 | `GUIDE#6` | OPEN | must | L | Add a source file, screen, level, menu, rules and tests, each naming both source lists in `game\CMakeLists.txt` and the LNK2019 of missing one. |
 | `GUIDE#7` | OPEN | should | M | Play a sound in your own game, first from the audio sample's tones with no tools. |
