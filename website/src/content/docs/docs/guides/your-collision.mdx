@@ -1,0 +1,688 @@
+---
+title: Put collision in your game
+description: Add a wall and a box the keys move to the starter project, with a new source file listed in both of the game's builds, and see the wall stop the box, step by step, with what each failure means.
+sidebar:
+  order: 0.96
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+This page puts something to bump into in the game from [Get the starter project](/docs/get-started/starter/):
+a grey wall, and a blue box that the arrow keys, WASD and the left stick move. The box stops
+at the wall and slides along it, and turns gold while it touches. It uses the engine's
+collision: the scene finds where two objects overlap and tells each of them, and your code
+decides what that means. It goes through every file that changes: a new class in a header and
+a `.cpp` file, the two lines in `game\CMakeLists.txt` that add that `.cpp` file to the build,
+and the lines in `HelloState` that put a wall and a box in the scene and move the box. It takes
+about 20 minutes.
+
+Before you start, do [Make a first change](/docs/get-started/first-change/), so that you know
+the edit, build and run loop and have a copy of your game to go back to. Make a fresh copy now
+with that page's step 1 line. Nothing else is needed: the wall and the box are plain rectangles
+drawn from a white texture the engine always has, so there is no picture to convert and the
+manifest does not change. If you have done [Put a picture in your game](/docs/guides/your-picture/)
+or the pages after it, this page works on top of them; your files then have their lines too,
+next to the ones this page shows, and that is expected.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Make the class's header.** Every object in the starter's scene is a class with three jobs:
+   `update` moves it on each step of the game, 60 times a second, `draw` draws it, and `bounds`
+   says where it is. An object the collision can see has six more: its shape, which group it
+   belongs to, which groups it bumps into, what kind of thing it is, what to do when it touches
+   something, and whether it should be removed. This class, `Block`, is both the wall and the box. First make the empty
+   file, then open it:
+
+   ```bat
+   if not exist game\states\block.h type nul > game\states\block.h
+   notepad game\states\block.h
+   ```
+
+   The first line makes an empty file and prints nothing; it leaves the file alone if it is
+   already there. Notepad opens the empty file. Paste all of this into it, then save and close
+   Notepad:
+
+   ```cpp title="game\states\block.h"
+   #pragma once
+
+   #include "engine/collision/collision_object.h"
+   #include "engine/math/rectanglef.h"
+   #include "engine/math/vector2f.h"
+   #include "engine/render/colour.h"
+   #include "engine/render/renderer.h"
+
+   // What a block is to the game. The engine carries this through untouched, so
+   // that on_contact can tell what it touched.
+   enum class BlockKind : labrador::CollisionTag
+   {
+   	player,
+   	wall
+   };
+
+   // A rectangle in one colour that the scene's collision sweep can see. A wall
+   // stands still. The player moves at its velocity, and a wall it runs into
+   // pushes it back out.
+   class Block : public labrador::CollisionObject
+   {
+   public:
+   	Block(BlockKind kind, const labrador::RectangleF& rectangle,
+   		const labrador::Colour& colour, labrador::TextureHandle texture);
+
+   	void set_velocity(const labrador::Vector2F& velocity);
+
+   	void update(float dt) override;
+   	void draw(labrador::DrawList& draw_list) const override;
+   	labrador::RectangleF bounds() const override;
+   	const labrador::Shape* shape() const override;
+   	labrador::CollisionLayer layer() const override;
+   	labrador::CollisionMask mask() const override;
+   	labrador::CollisionTag tag() const override;
+   	bool for_deletion() const override;
+   	void on_contact(const labrador::CollisionObject& other,
+   		const labrador::Vector2F& normal, float penetration) override;
+
+   private:
+   	BlockKind kind_;
+   	labrador::RectangleF rectangle_;
+   	labrador::Colour colour_;
+   	labrador::TextureHandle texture_;
+   	labrador::Vector2F velocity_ = labrador::Vector2F::zero;
+   	bool touching_wall_ = false;
+   };
+   ```
+
+   A header says what a class has; the code of each function goes in the `.cpp` file in the next
+   step. Each line ending in `override` is a function the engine calls on every collision
+   object.
+
+2. **Make the class's code.** Make the second empty file and open it:
+
+   ```bat
+   if not exist game\states\block.cpp type nul > game\states\block.cpp
+   notepad game\states\block.cpp
+   ```
+
+   Paste all of this into it, then save and close Notepad:
+
+   ```cpp title="game\states\block.cpp"
+   #include "game/states/block.h"
+
+   #include "engine/collision/resolve.h"
+   #include "engine/math/rectanglei.h"
+
+   using namespace labrador;
+
+   namespace
+   {
+   	// Which group each kind belongs to: one bit each.
+   	constexpr CollisionLayer player_layer = 1u << 0;
+   	constexpr CollisionLayer wall_layer = 1u << 1;
+   }
+
+   Block::Block(BlockKind kind, const RectangleF& rectangle,
+   	const Colour& colour, TextureHandle texture) :
+   	kind_(kind), rectangle_(rectangle), colour_(colour), texture_(texture)
+   {
+   }
+
+   void Block::set_velocity(const Vector2F& velocity)
+   {
+   	this->velocity_ = velocity;
+   }
+
+   void Block::update(float dt)
+   {
+   	this->touching_wall_ = false;
+   	this->rectangle_.x += this->velocity_.x * dt;
+   	this->rectangle_.y += this->velocity_.y * dt;
+   }
+
+   void Block::draw(DrawList& draw_list) const
+   {
+   	// Gold while the player touches a wall, so you can see the contact.
+   	const Colour tint = this->touching_wall_ ? Colour::goldenrod : this->colour_;
+   	draw_list.draw_sprite(this->texture_, RectangleI(0, 0, 1, 1),
+   		this->rectangle_, tint, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
+   }
+
+   RectangleF Block::bounds() const
+   {
+   	return this->rectangle_;
+   }
+
+   const Shape* Block::shape() const
+   {
+   	return &this->rectangle_;
+   }
+
+   CollisionLayer Block::layer() const
+   {
+   	return this->kind_ == BlockKind::player ? player_layer : wall_layer;
+   }
+
+   // The groups each kind collides with. A pair is tested only when each is in
+   // the other's mask: the player and a wall are, two walls are not.
+   CollisionMask Block::mask() const
+   {
+   	return this->kind_ == BlockKind::player ? wall_layer : player_layer;
+   }
+
+   CollisionTag Block::tag() const
+   {
+   	return static_cast<CollisionTag>(this->kind_);
+   }
+
+   bool Block::for_deletion() const
+   {
+   	return false;
+   }
+
+   void Block::on_contact(const CollisionObject& other,
+   	const Vector2F& normal, float penetration)
+   {
+   	if (this->kind_ != BlockKind::player ||
+   		other.tag() != static_cast<CollisionTag>(BlockKind::wall))
+   	{
+   		return;
+   	}
+
+   	// Move out of the wall, and stop moving into it. Movement along the wall
+   	// is kept, so the player slides.
+   	const Vector2F movement = separation(normal, penetration);
+   	this->rectangle_.x += movement.x;
+   	this->rectangle_.y += movement.y;
+   	this->velocity_ = slide(this->velocity_, normal);
+   	this->touching_wall_ = true;
+   }
+   ```
+
+   [How it works](#how-it-works), after the steps, goes through what each part does.
+
+3. **Add the `.cpp` file to the build, twice.** Every `.cpp` file in the game is listed by name in
+   `game\CMakeLists.txt`, and the game's own files are listed **twice**: once for the
+   [browser build](/docs/guides/browser/) and once for Windows. A file missing from the Windows
+   list stops the Windows build; one missing from the browser list stops only the browser
+   build, so the mistake can hide until much later. A header needs no line. Open the build
+   file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   Search with **Ctrl+F** for `states/confirm_state.cpp`. The first one Notepad finds is in the
+   list for the browser build, inside `if(EMSCRIPTEN)`:
+
+   ```cmake
+       add_executable(MyGame
+           main_web.cpp
+           states/confirm_state.cpp
+           states/hello_state.cpp
+       )
+   ```
+
+   Click at the end of the `main_web.cpp` line, press **Enter**, and type `states/block.cpp`
+   with the same spaces in front as the lines around it, so the list reads:
+
+   ```cmake
+       add_executable(MyGame
+           main_web.cpp
+           states/block.cpp
+           states/confirm_state.cpp
+           states/hello_state.cpp
+       )
+   ```
+
+   Then press **F3**, or **Find next** in the search box, to find the second
+   `states/confirm_state.cpp`, further down. This is the list for Windows, with `WIN32` on its
+   first line:
+
+   ```cmake
+   add_executable(MyGame WIN32
+       main.cpp
+       states/confirm_state.cpp
+       states/hello_state.cpp
+       dpi_aware.manifest
+   )
+   ```
+
+   Click at the end of the `main.cpp` line, press **Enter** and type `states/block.cpp` again,
+   so it reads:
+
+   ```cmake
+   add_executable(MyGame WIN32
+       main.cpp
+       states/block.cpp
+       states/confirm_state.cpp
+       states/hello_state.cpp
+       dpi_aware.manifest
+   )
+   ```
+
+   The paths are written from the `game` folder, with forward slashes. Save and close Notepad.
+   [Leaving out one of the two lines](#leaving-out-one-of-the-two-lines) shows what each build
+   says when it is missing.
+
+4. **Put a wall and a box in the scene.** Open the header of the state that runs the starter's
+   screen:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `game/rules/motion.h` and add a line after it, so the two read:
+
+   ```cpp
+   #include "game/rules/motion.h"
+   #include "game/states/block.h"
+   ```
+
+   Then search for `hint_ = nullptr;` and add a line after it, so the two read:
+
+   ```cpp
+   	labrador::Label* hint_ = nullptr;
+   	Block* player_ = nullptr;
+   ```
+
+   `player_` is where `HelloState` keeps the box, so that it can move it on every frame. Save and
+   close Notepad, then open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `engine/math/vector2f.h` and add a line after it, so the two read:
+
+   ```cpp
+   #include "engine/math/vector2f.h"
+   #include "engine/render/resource_factory.h"
+   ```
+
+   That header names the engine's white texture. Next, search for `this->hint_ = this->scene_->add(`.
+   This is the line, in `init()`, that adds the controls hint at the bottom of the window:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->hint_ = this->scene_->add("
+   	to="labrador::Colour::dark_gray));"
+   	mark="this->hint_ = this->scene_->add("
+   />
+
+   Click at the start of that line and paste these lines above it, with an empty line after
+   them:
+
+   ```cpp
+   	const TextureHandle white = resources->resolve_texture(white_texture_name);
+   	this->scene_->add(std::make_unique<Block>(BlockKind::wall,
+   		RectangleF(800.0f, 160.0f, 40.0f, 400.0f), labrador::Colour::gray, white));
+   	this->player_ = this->scene_->add(std::make_unique<Block>(BlockKind::player,
+   		RectangleF(560.0f, 420.0f, 32.0f, 32.0f), labrador::Colour::deep_sky_blue, white));
+   ```
+
+   The first line looks up the engine's white texture, a single white pixel that every
+   rectangle here is drawn from in its own colour. The next two add the wall, and the last two
+   add the box and keep it in `player_`. The four numbers in each `RectangleF` are its left
+   edge, its top edge, its width and its height, in pixels. The window is 1280 pixels wide and
+   720 high, with `0, 0` at its top-left corner and the second number growing downwards, so the
+   wall is a grey bar 40 pixels wide and 400 high to the right of the middle, and the box is 32
+   pixels square, below the greeting.
+
+5. **Move the box, and let the wall stop it.** In the same file, search for
+   `this->greeting_->set_position(`. This line, in `update()`, moves the greeting on every
+   frame:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->greeting_->set_position(greeting_position(this->motion_));"
+   	to="this->greeting_->set_position(greeting_position(this->motion_));"
+   />
+
+   Click at the end of that line, after the `;`, press **Enter**, and paste these lines:
+
+   ```cpp
+   	this->player_->set_velocity(combined_direction(stick_direction,
+   		keyboard_direction(keyboard)) * move_speed);
+   ```
+
+   They give the box the same direction the greeting gets from the stick and the keys, at the
+   same speed, 400 pixels a second, which `game\rules\motion.h` sets. Then search for
+   `this->scene_->update(dt);`. These are the last two lines of `update()`:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->scene_->update(dt);"
+   	to="this->scene_->end_tick();"
+   />
+
+   Click at the end of `this->scene_->update(dt);`, press **Enter**, and type the line between
+   them, so the three read:
+
+   ```cpp
+   	this->scene_->update(dt);
+   	this->scene_->resolve();
+   	this->scene_->end_tick();
+   ```
+
+   `update` moves every object, which moves the box into the wall when you push it there.
+   `resolve` finds every pair of objects that overlap and calls `on_contact` on both, and the
+   box's `on_contact` moves it back out. Without that line, the game builds and runs, and the box
+   goes straight through the wall. Save and close Notepad.
+
+6. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The build first runs CMake again, because `game\CMakeLists.txt` changed. That prints
+   `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
+   packages and lines such as `find_package(doctest CONFIG REQUIRED)`; they are expected, not
+   errors. Then it compiles `block.cpp`, and `hello_state.cpp` and `main.cpp`, which include the
+   headers you changed. On a fast desktop the whole build took 7 seconds. It ends like this:
+
+   ```text title="Output"
+   -- Build files have been written to: C:/dev/mygame/out/build/x64-debug
+   [1/7] Running utility command for game_content
+   [2/7] Checking that no engine file includes a game header
+   [3/7] Building CXX object game\CMakeFiles\MyGame.dir\states\block.cpp.obj
+   [4/7] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   [5/7] Building CXX object game\CMakeFiles\MyGame.dir\main.cpp.obj
+   [6/7] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.02 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.70 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   Then the game opens. The grey wall stands to the right of the middle, and the blue box is
+   below the greeting. Press the right arrow or **D**: the box and the greeting both move right,
+   the box stops against the wall and turns gold, and the greeting goes on through it, because
+   the greeting is not a collision object. Hold the right arrow and press the up arrow as well:
+   the box slides up along the wall. Let go of the keys and the box turns blue again.
+
+</Steps>
+
+## How it works
+
+**The scene knows a collision object when it is added.** `Block` derives from the engine's
+`CollisionObject`, which derives from the `GameObject` every object in the scene is, so
+`Scene::add` puts it in the list that `resolve()` checks. The greeting and the hint are `Label`s,
+plain `GameObject`s, and nothing collides with them.
+
+**`bounds()` and `shape()` say where it is.** Both return the block's rectangle. The scene uses
+`bounds()` to skip pairs that are far apart and `shape()` to measure the overlap, and `draw`
+draws the same rectangle, so what you see is what collides.
+
+**`layer()` and `mask()` say who bumps into whom.** A layer is one bit: the player is
+`1u << 0`, the first bit, and a wall `1u << 1`, the second. A mask is the bits an object
+accepts. The scene measures a pair only when each one's layer is in the other's mask, so the
+player and a wall are measured, and two walls are not. The engine gives the bits no names; the
+names are in `block.cpp`.
+
+**`tag()` says what kind of thing it is.** It is `BlockKind` turned into a number. The engine
+carries it without reading it, so that `on_contact` can ask what it touched.
+
+**`on_contact` decides what a touch means.** The scene calls it on both objects in a pair, once
+each. `normal` is a direction one unit long, pointing from this object towards the other, and
+`penetration` is how far they overlap along it. The engine's `separation` turns the two into the
+smallest move that takes the box out of the wall, and `slide` takes away the part of the
+velocity that points into the wall and keeps the rest, which is why the box slides. The wall's
+`on_contact` returns at once: walls do not move.
+
+**`for_deletion()` answers `false`**, so the scene never removes a block on its own.
+[Collision](/docs/guides/collision/#say-how-an-object-is-retired) explains when an object, such
+as a bullet, should answer otherwise.
+
+**The order in `update()` matters.** Move, then `resolve`, then `end_tick`: the box moves into
+the wall, is pushed out before anything is drawn, and you never see it inside. The scene only
+looks at where things are after each step, so a box that moved further in one step than its own
+width and the wall's together could jump from one side to the other without ever overlapping it.
+At 400 pixels a second the box moves less than 7 pixels a step, against 72 pixels of box and
+wall, so this wall stops it.
+
+## Changing it
+
+**Move or resize the wall** by changing its four numbers in step 4. `RectangleF(400.0f, 600.0f, 480.0f, 40.0f)`
+is a floor-like bar near the bottom of the window.
+
+**Add another wall** by pasting another two lines like the wall's, under it, with other numbers:
+
+```cpp
+	this->scene_->add(std::make_unique<Block>(BlockKind::wall,
+		RectangleF(400.0f, 160.0f, 400.0f, 40.0f), labrador::Colour::gray, white));
+```
+
+With that one too, the two walls make a corner the box can be pushed into.
+
+**Keep the box in the window** with four walls along its edges, pasted under the first wall the
+same way. These are the top, the bottom, the left and the right:
+
+```cpp
+	this->scene_->add(std::make_unique<Block>(BlockKind::wall,
+		RectangleF(0.0f, 0.0f, 1280.0f, 20.0f), labrador::Colour::gray, white));
+	this->scene_->add(std::make_unique<Block>(BlockKind::wall,
+		RectangleF(0.0f, 660.0f, 1280.0f, 20.0f), labrador::Colour::gray, white));
+	this->scene_->add(std::make_unique<Block>(BlockKind::wall,
+		RectangleF(0.0f, 0.0f, 20.0f, 720.0f), labrador::Colour::gray, white));
+	this->scene_->add(std::make_unique<Block>(BlockKind::wall,
+		RectangleF(1260.0f, 0.0f, 20.0f, 720.0f), labrador::Colour::gray, white));
+```
+
+The bottom wall is at `660.0f`, not `700.0f` at the very edge, so that it stays above the
+controls hint along the bottom of the window; at `700.0f` it covers the bottom of the hint's
+text. The greeting is not a collision object, so it still goes off the edge.
+
+**Change a colour** by changing `labrador::Colour::gray` or `labrador::Colour::deep_sky_blue`.
+The engine's colours have the web's names, written in lower case with `_` between words, such as
+`labrador::Colour::orange` or `labrador::Colour::dark_green`. `Colour(200, 80, 40)` is red 200,
+green 80 and blue 40, each from 0 to 255.
+
+**Change the speed** of the box without changing the greeting's by putting a number in place of
+`move_speed` in step 5, such as `200.0f` for half as fast.
+
+After each change, build, test and run as in step 6. Only `hello_state.cpp` is compiled again.
+
+## Leaving out one of the two lines
+
+If `states/block.cpp` is in the browser list but not the Windows one, the Windows build compiles
+every file and then stops when it links them into `MyGame.exe`, because no file it was given
+holds `Block`'s code:
+
+```text title="Output"
+[5/6] Linking CXX executable game\MyGame.exe
+FAILED: [code=4294967295] game/MyGame.exe
+...
+hello_state.cpp.obj : error LNK2019: unresolved external symbol "public: __cdecl Block::Block(enum BlockKind,struct labrador::RectangleF const &,struct labrador::Colour const &,class labrador::Handle<class labrador::Texture>)" (??0Block@@QEAA@W4BlockKind@@AEBURectangleF@labrador@@AEBUColour@3@V?$Handle@VTexture@labrador@@@3@@Z) referenced in function ...
+hello_state.cpp.obj : error LNK2019: unresolved external symbol "public: void __cdecl Block::set_velocity(struct labrador::Vector2F const &)" (?set_velocity@Block@@QEAAXAEBUVector2F@labrador@@@Z) referenced in function "public: virtual void __cdecl HelloState::update(float)" (?update@HelloState@@UEAAXM@Z)
+game\MyGame.exe : fatal error LNK1120: 2 unresolved externals
+ninja: build stopped: subcommand failed.
+```
+
+The `...` stand for two lines hundreds of characters long, the linker's command, and the end of
+the first error. Read the name in quotation marks after `unresolved external symbol`: here
+`Block::Block`, the code that makes a block, and `Block::set_velocity`, both in `block.cpp`. The
+cure is the missing line in the `add_executable(MyGame WIN32` list, as in step 3. Save, and run
+the build line again; it reads the changed list by itself.
+
+If it is in the Windows list but not the browser one, the Windows build works and the
+[browser build](/docs/guides/browser/) stops in the same place, with clang's linker, `wasm-ld`:
+
+```text title="Output"
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: Block::Block(BlockKind, labrador::RectangleF const&, labrador::Colour const&, labrador::Handle<labrador::Texture>)
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: Block::set_velocity(labrador::Vector2F const&)
+```
+
+The cure is the line in the `add_executable(MyGame` list inside `if(EMSCRIPTEN)`. Troubleshooting's
+[`LNK2019`](/docs/troubleshooting/#lnk2019-unresolved-external-symbol) and
+[`undefined symbol`](/docs/troubleshooting/#wasm-ld-error--undefined-symbol) entries list the
+other causes of both messages.
+
+Every `.cpp` file you add to the game later goes in both lists the same way. A file of rules
+that the tests use goes in `add_library(MyGameRules` instead, once, as `rules/motion.cpp` does.
+
+## How errors show
+
+A mistake in this page's files shows in one of three places:
+
+- **The build stops** with an `error` line. A slip in the C++ code shows as a line naming a file
+  and a line number; [Read a build error](/docs/get-started/build-errors/) shows how to find the
+  line that matters. A slip in `game\CMakeLists.txt` shows as `CMake Error`, and a missing list
+  line as `LNK2019`, or `wasm-ld: error: ... undefined symbol` in the browser build, above.
+- **The start-up test fails.** The build worked, but the game stopped as it started. The
+  `ctest` output shows `***Exception: SegFault` for `MyGameSmokeTests`, and the game does not
+  start.
+- **Nothing fails, but the box does not stop.** Every check passes and the box goes through the
+  wall: the scene was never asked to check for collisions. See the last entry below.
+
+Each message is below.
+
+## If something fails
+
+<Aside type="caution" title="error LNK2019: unresolved external symbol ... Block::Block(...)">
+`block.cpp` is not in the Windows list in `game\CMakeLists.txt`. See
+[Leaving out one of the two lines](#leaving-out-one-of-the-two-lines). If both lists have it,
+check the spelling: `states/block.cpp`, with a forward slash, and that `dir game\states` shows a
+file named `block.cpp`.
+</Aside>
+
+<Aside type="caution" title="wasm-ld: error: ... undefined symbol: Block::Block(...)">
+The browser build's form of the same thing: `block.cpp` is missing from the list inside
+`if(EMSCRIPTEN)`. See [Leaving out one of the two lines](#leaving-out-one-of-the-two-lines).
+</Aside>
+
+<Aside type="caution" title="CMake Error at ... (_add_executable): Cannot find source file: states/block.cpp">
+`game\CMakeLists.txt` lists `states/block.cpp`, but there is no file of that name in
+`game\states`. The whole message is:
+
+```text title="Output"
+CMake Error at C:/Program Files/Microsoft Visual Studio/18/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake:614 (_add_executable):
+  Cannot find source file:
+
+    states/block.cpp
+Call Stack (most recent call first):
+  game/CMakeLists.txt:65 (add_executable)
+```
+
+A second `CMake Error` after it, `No SOURCES given to target: MyGame`, is the same mistake seen
+again. Run `dir game\states`. If `block.cpp` is not there, do step 2 again. If the name is
+different, such as `Block.cpp` or `block.cpp.txt`, rename it:
+
+```bat
+ren game\states\block.cpp.txt block.cpp
+```
+
+Then run the build line again.
+</Aside>
+
+<Aside type="caution" title="ninja: error: '.../game/states/block.cpp', needed by '...block.cpp.obj', missing and no known rule to make it">
+The same as the entry above, when `block.cpp` went missing or was renamed after a build that
+had it. The full line names the path:
+`ninja: error: 'C:/dev/mygame/game/states/block.cpp', needed by 'game/CMakeFiles/MyGame.dir/states/block.cpp.obj', missing and no known rule to make it`.
+Put the file back under that name and build again.
+</Aside>
+
+<Aside type="caution" title="hello_state.h(60): error C2143: syntax error: missing ';' before '*'">
+The `#include "game/states/block.h"` line from step 4 is missing from `hello_state.h`, so the
+compiler does not know `Block` when it reaches `Block* player_`. The build prints many errors
+for this one slip, starting:
+
+```text title="Output"
+C:\dev\mygame\game/states/hello_state.h(60): error C2143: syntax error: missing ';' before '*'
+C:\dev\mygame\game/states/hello_state.h(60): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\dev\mygame\game/states/hello_state.h(60): error C2238: unexpected token(s) preceding ';'
+C:\dev\mygame\game\states\hello_state.cpp(92): error C2065: 'Block': undeclared identifier
+C:\dev\mygame\game\states\hello_state.cpp(92): error C2653: 'BlockKind': is not a class or namespace name
+```
+
+and the same lines again for `main.cpp`, which includes `hello_state.h` too. Add the include
+line and build again. If the error is `Cannot open include file: 'game/states/block.h'`, the
+line is there but the file is not, or has another name: check with `dir game\states`.
+</Aside>
+
+<Aside type="caution" title="hello_state.cpp(90): error C2065: 'white_texture_name': undeclared identifier">
+The `#include "engine/render/resource_factory.h"` line from step 4 is missing from
+`hello_state.cpp`. Add it after `#include "engine/math/vector2f.h"` and build again.
+</Aside>
+
+<Aside type="caution" title="2/2 Test #2: MyGameSmokeTests .................***Exception: SegFault">
+The build worked, and the game crashed as soon as it started:
+
+```text title="Output"
+1/2 Test #1: MyGameTests ......................   Passed    0.01 sec
+2/2 Test #2: MyGameSmokeTests .................***Exception: SegFault  4.39 sec
+
+
+50% tests passed, 1 tests failed out of 2
+```
+
+The usual cause on this page is that `this->player_ = ` is missing from the start of the box's
+`add` line in step 4. The box is still added to the scene, but `player_` stays empty, and the
+first `this->player_->set_velocity` in `update()`, before anything is drawn, uses nothing. Make
+the line read as in step 4 and build again.
+</Aside>
+
+**The box goes through the wall, and every test passes.** The `this->scene_->resolve();` line
+from step 5 is missing. The scene moves the box but never looks for overlaps, so `on_contact` is
+never called. Put it between the two lines as step 5 shows. Placed after `end_tick()` instead,
+it still stops the box, because it still runs before the frame is drawn, but keep it before
+`end_tick()`: that is the order the engine's `Scene` describes, and anything that reads the
+scene's contacts later in the step needs it there.
+
+## In the browser build
+
+The browser build compiles the same files, with clang instead of Visual Studio's compiler, so it
+needs `states/block.cpp` in the `if(EMSCRIPTEN)` list from step 3. Nothing else changes: the
+white texture is the engine's own, so there is no content file to add. Build it as
+[Build for the browser](/docs/guides/browser/) says. If the list line is missing, the build
+stops with the `wasm-ld` error in [Leaving out one of the two lines](#leaving-out-one-of-the-two-lines).
+
+## Where to go next
+
+- [Collision](/docs/guides/collision/) explains the engine's collision in more depth, with a
+  sample that adds a trigger zone that counts entries and an object that the player passes
+  through.
+- [Put a picture in your game](/docs/guides/your-picture/) draws a picture; to make the box a
+  picture, draw it in `Block::draw` from a texture of your own, with the picture's width and
+  height in place of the `1, 1`.
+- [Read a build error](/docs/get-started/build-errors/) has more on finding the line that matters.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at `C:\dev\h6\mygame`,
+with Visual Studio 2026's compiler 19.51, every step above ran as shown, with `C:\dev\h6\mygame`
+in the quoted output changed to `C:\dev\mygame`. Driven with the arrow keys sent to its window
+and captured from the screen, the game drew the grey wall and the blue box; held right, the box
+stopped against the wall and turned gold while the greeting went on through; with the up arrow
+added, it slid up along the wall; released, it turned blue. Each message under
+[If something fails](#if-something-fails) and
+[Leaving out one of the two lines](#leaving-out-one-of-the-two-lines) was made on purpose:
+`states/block.cpp` left out of each list in turn, `block.cpp` renamed before and after a build,
+each include line removed, and `this->player_ = ` removed. With the `resolve()` line removed, both
+tests passed and the box went through the wall on screen. The `wasm-debug` build compiled and
+linked the page with these files and its test passed, and Labrador's page runner loaded the page
+in headless Chrome, pressed Escape and Enter and saw it quit without errors.
+
+A second run, by an agent following this page as worded in another fresh starter at
+`C:\dev\h6v\mygame`, making each edit exactly as the steps word it rather than in Notepad,
+matched: the build output in step 6 line for line, the picture on screen at each key, a
+warning-free `wasm-debug` build whose test passed, and every message on this page, each made
+again by doing what the page says causes it. It also built the second wall, the floor-like bar,
+`Colour(200, 80, 40)` and `200.0f` from [Changing it](#changing-it), which compiled only
+`hello_state.cpp` again. It found that `resolve()` placed after `end_tick()` still stops the
+box, which the last entry under [If something fails](#if-something-fails) had said it did not,
+and that a bottom wall at `700.0f` covers the controls hint; both are corrected above, along
+with smaller wording. In that starter, the four edge walls as given in
+[Changing it](#changing-it) were then built and run: only `hello_state.cpp` compiled again, both
+tests passed, the hint stayed clear, and the box, held down and then left, stopped gold in the
+bottom-left corner. The website's `astro check` and `astro build` compiled this page without
+errors.

@@ -1,0 +1,678 @@
+---
+title: Make a title menu
+description: Turn the title screen into a menu with Start and Quit rows, moved with the arrow keys, W and S or a pad and chosen with Enter or A, step by step, with what each failure means.
+sidebar:
+  order: 0.93
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+This page turns the title screen from [Add a screen to your game](/docs/guides/your-screen/) into
+a menu. Under the game's name there are two rows, **Start** and **Quit**. **Up** and **Down**,
+**W** and **S**, or a pad's d-pad or left stick move between them, and the row you are on is drawn
+white while the other is grey. **Enter** or **A** chooses: Start goes to the starter's greeting,
+and Quit asks `Really quit?` with the starter's question screen. The engine does the moving and
+the colouring; the page goes through the two files that change, the title screen's header and its
+code, and says what each part does. It takes about 10 minutes.
+
+Before you start:
+
+- Do [Add a screen to your game](/docs/guides/your-screen/) to the end of its step 6, so that
+  your game opens on a title screen and **Enter** starts it. This page replaces both of that
+  page's new files, `title_state.h` and `title_state.cpp`, whole. Going back to the title, from
+  that page, changes only `hello_state.cpp`, so it is kept, and it now goes back to the menu. If
+  you made [A smoother title](/docs/guides/your-screen/#a-smoother-title), make its two-line
+  change again after step 2: the lines it changes are the same in the new file.
+- Make a fresh copy of your game with the step 1 line of
+  [Make a first change](/docs/get-started/first-change/), so that you can go back to the title
+  screen as it is now.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Replace the state's header.** Open it:
+
+   ```bat
+   notepad game\states\title_state.h
+   ```
+
+   Press **Ctrl+A** to select everything in it, then paste all of this in its place, save and
+   close Notepad:
+
+   ```cpp title="game\states\title_state.h"
+   #pragma once
+
+   #include "engine/app/application.h"
+   #include "engine/core/state.h"
+   #include "engine/input/direction.h"
+   #include "engine/scene/scene.h"
+   #include "engine/ui/focus.h"
+   #include "engine/ui/widget.h"
+
+   #include <memory>
+
+   // The title screen: the game's name and a menu of two rows, Start and Quit.
+   // Up and Down, W and S, or a pad's d-pad or stick move between the rows;
+   // Enter or A chooses one. Escape or B asks to quit.
+   class TitleState : public labrador::State
+   {
+   public:
+   	explicit TitleState(labrador::Application* app);
+
+   	void init() override;
+   	void update(float dt) override;
+   	void draw(labrador::Renderer& renderer) const override;
+
+   private:
+   	// Which way the keyboard or a pad is being pushed now.
+   	labrador::Direction held_direction() const;
+
+   	// Asks "Really quit?" over the title, and quits on yes.
+   	void ask_to_quit();
+
+   	labrador::Application* app_ = nullptr;
+
+   	// What is on screen: the title, the two rows and the line under them.
+   	std::unique_ptr<labrador::Scene> scene_ = nullptr;
+
+   	// The rows, kept so that the menu can be told about them.
+   	labrador::UiText* start_row_ = nullptr;
+   	labrador::UiText* quit_row_ = nullptr;
+
+   	// Which row is chosen, and what each row does.
+   	labrador::FocusGroup focus_;
+
+   	// Turns a held key or stick into one move, then repeated moves.
+   	labrador::DirectionRepeat repeat_;
+   };
+   ```
+
+   What is new, compared with the header from Add a screen:
+
+   - **Three more `#include` lines.** `engine/ui/focus.h` brings in `FocusGroup`, the engine's
+     record of which row is chosen. `engine/ui/widget.h` brings in `UiText`, a line of text that
+     a focus group can colour. `engine/input/direction.h` brings in `Direction`, which is one of
+     up, down, left, right or none, and `DirectionRepeat`.
+   - **Two functions of the state's own** under `private:`. `held_direction` says which way the
+     keyboard or a pad is pushed; `ask_to_quit` opens the quit question. Only the state's own
+     code calls them, so they have no `override`.
+   - **Four more things the state keeps.** `start_row_` and `quit_row_` are the two rows, kept so
+     that they can be handed to the focus group. `focus_` is the focus group. `repeat_` turns a
+     key held down into one move, then more moves while it stays down.
+
+2. **Replace the state's code.** Open it:
+
+   ```bat
+   notepad game\states\title_state.cpp
+   ```
+
+   Press **Ctrl+A**, paste all of this in its place, then save and close Notepad:
+
+   ```cpp title="game\states\title_state.cpp"
+   #include "game/states/title_state.h"
+
+   #include "engine/core/state_context.h"
+   #include "engine/input/keyboard.h"
+   #include "engine/math/rectanglef.h"
+   #include "engine/math/vector2f.h"
+   #include "engine/render/label.h"
+   #include "engine/render/text.h"
+   #include "game/states/confirm_state.h"
+   #include "game/states/hello_state.h"
+
+   #include <memory>
+   #include <string>
+
+   using namespace labrador;
+
+   namespace
+   {
+   	// The fonts, as content/manifest.json names them, and how many times
+   	// bigger than its font the title and the rows are drawn.
+   	const std::string font_name = "jetbrains_mono_bold_16";
+   	const std::string title_font_name = "jetbrains_mono_bold_16";
+   	constexpr float title_scale = 3.0f;
+   	constexpr float row_scale = 2.0f;
+
+   	// Moves a line of text across so that its middle is at the middle of
+   	// the window, and down to y.
+   	void centre_across(Text& text, float window_width, float y)
+   	{
+   		text.set_position(
+   			Vector2F((window_width - text.text_bounds().width) * 0.5f, y));
+   	}
+   }
+
+   TitleState::TitleState(Application* app) : app_(app)
+   {
+   }
+
+   void TitleState::init()
+   {
+   	const Vector2F resolution =
+   		this->app_->resolution_manager()->resolution_vec();
+   	RenderResources* resources = this->app_->render_resources();
+
+   	this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
+
+   	Label* title = this->scene_->add(std::make_unique<Label>(
+   		L"My game", title_font_name, Vector2F::zero, resources,
+   		labrador::Colour::goldenrod, title_scale));
+   	centre_across(*title, resolution.x, resolution.y * 0.5f - 160.0f);
+
+   	// The rows. The colour given here does not last: the focus group
+   	// paints the chosen row white and the other grey.
+   	this->start_row_ = this->scene_->add(std::make_unique<UiText>(
+   		"start", L"Start", font_name, Vector2F::zero, resources,
+   		labrador::Colour::white, false, row_scale));
+   	centre_across(*this->start_row_, resolution.x,
+   		resolution.y * 0.5f - 60.0f);
+
+   	this->quit_row_ = this->scene_->add(std::make_unique<UiText>(
+   		"quit", L"Quit", font_name, Vector2F::zero, resources,
+   		labrador::Colour::white, false, row_scale));
+   	centre_across(*this->quit_row_, resolution.x,
+   		resolution.y * 0.5f - 10.0f);
+
+   	// What each row does when it is chosen. The first row added is the
+   	// one chosen when the screen opens.
+   	this->focus_.add(this->start_row_, [this]()
+   		{
+   			this->context()->transition_to(
+   				std::make_unique<HelloState>(this->app_));
+   		});
+   	this->focus_.add(this->quit_row_, [this]()
+   		{
+   			this->ask_to_quit();
+   		});
+
+   	Label* prompt = this->scene_->add(std::make_unique<Label>(
+   		L"Up and Down choose. Enter picks. Escape quits.",
+   		font_name, Vector2F::zero, resources, labrador::Colour::dark_gray));
+   	centre_across(*prompt, resolution.x, resolution.y - 60.0f);
+
+   	this->scene_->end_tick();
+   	this->scene_->add_view(Viewport(RectangleF(Vector2F::zero, resolution)));
+   }
+
+   void TitleState::update(float dt)
+   {
+   	const Gamepads& pads = *this->app_->gamepads();
+   	const Keyboard& keyboard = *this->app_->keyboard();
+
+   	// Every pad slot, as in HelloState: the only pad need not be in slot 0.
+   	bool choose_requested = keyboard.pressed(Key::enter);
+   	bool quit_requested = keyboard.pressed(Key::escape);
+   	for (int slot = 0; slot < Gamepads::max_count; ++slot)
+   	{
+   		choose_requested |= pads.pressed(slot, GamepadButton::a);
+   		quit_requested |= pads.pressed(slot, GamepadButton::b);
+   	}
+
+   	if (quit_requested)
+   	{
+   		this->ask_to_quit();
+   		return;
+   	}
+
+   	// Up and down move between the rows: once straight away, then again
+   	// and again while held. The rows are one column, so left and right do nothing.
+   	const Direction direction =
+   		this->repeat_.update(this->held_direction(), dt);
+   	if (direction == Direction::up || direction == Direction::down)
+   	{
+   		this->focus_.move(0, direction);
+   	}
+
+   	if (choose_requested)
+   	{
+   		// Runs the chosen row's action, from init().
+   		this->focus_.activate(0);
+   		return;
+   	}
+
+   	this->scene_->update(dt);
+   	this->scene_->end_tick();
+   }
+
+   void TitleState::draw(Renderer& renderer) const
+   {
+   	this->scene_->draw(renderer);
+   }
+
+   Direction TitleState::held_direction() const
+   {
+   	const Keyboard& keyboard = *this->app_->keyboard();
+
+   	if (keyboard.held(Key::up) || keyboard.held(Key::w))
+   	{
+   		return Direction::up;
+   	}
+   	if (keyboard.held(Key::down) || keyboard.held(Key::s))
+   	{
+   		return Direction::down;
+   	}
+
+   	// The first pad pushed up or down, on its d-pad or its left stick.
+   	const Gamepads& pads = *this->app_->gamepads();
+   	for (int slot = 0; slot < Gamepads::max_count; ++slot)
+   	{
+   		const Direction direction = pad_direction(pads.state(slot));
+   		if (direction != Direction::none)
+   		{
+   			return direction;
+   		}
+   	}
+
+   	return Direction::none;
+   }
+
+   void TitleState::ask_to_quit()
+   {
+   	this->context()->push<bool>(
+   		std::make_unique<ConfirmState>(this->app_, L"Really quit?"),
+   		[this](const bool& quit)
+   		{
+   			if (quit)
+   			{
+   				this->app_->quit();
+   			}
+   		});
+   }
+   ```
+
+   What each part does:
+
+   - **`centre_across`** now takes any line of text, a `Text`, rather than a `Label`, because the
+     rows are `UiText` and not `Label`; that is why `engine/render/text.h` is included. It measures
+     the text with `text_bounds()`, which both kinds have.
+   - **`init`** adds the title, as before, then the two rows. Each row is a `UiText` rather than
+     a `Label`, because a focus group colours only widgets, and `UiText` is the engine's text
+     widget. Its first argument is a name, `"start"` or `"quit"`, which nothing here uses; the
+     arguments after the colour are `false`, for not hidden, and `row_scale`, which draws the rows
+     at twice the font's size. The title is 160 pixels above the middle of the window and the
+     rows are below it, 50 pixels apart, leaving room under them for the quit question, which the
+     starter draws 60 pixels below the middle.
+   - **The two `this->focus_.add` lines** give the focus group each row and what choosing it does.
+     The part from `[this]()` to the `}` before `);` is a **lambda**, a piece of code kept to be run
+     later: the group runs it when that row is chosen. `[this]` lets it use the state's own
+     things. Start's lambda replaces the title with `HelloState`, as **Enter** did before; Quit's
+     calls `ask_to_quit`. The first row added, Start, is the one chosen when the screen opens.
+   - **The colour given to each row does not last.** The focus group paints the rows itself: white
+     for the chosen row and grey for the other.
+   - **`update`** reads **Escape** and **B** first, which ask to quit whichever row is chosen.
+     Then `this->repeat_.update` turns the direction held now into a move, which is
+     `Direction::none` on most frames. On a frame with up or down, `this->focus_.move(0,
+     direction)` moves to the next row that way and repaints both rows. The `0` is the slot, the
+     player whose cursor it is; a menu with one cursor always uses slot 0. **Enter** or **A**
+     calls `this->focus_.activate(0)`, which runs the chosen row's lambda.
+   - **`held_direction`** reads the arrow keys and **W** and **S** first, then every pad.
+     `pad_direction` turns a pad's d-pad and left stick into one direction, and ignores a stick
+     pushed less than half way, so that a thumb resting on it does not move the menu.
+   - **`ask_to_quit`** is the starter's quit question, as `HelloState` first had it: it puts
+     `ConfirmState` on top of the title, and quits when the answer is yes. The title stays drawn
+     under the question.
+
+   No file was added, so `game\CMakeLists.txt` does not change: `title_state.cpp` is already in
+   both of its lists from Add a screen.
+
+3. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   It compiles `title_state.cpp`, and `main.cpp`, which includes the header. If you made Going
+   back to the title, `hello_state.cpp` includes the header too, so it is compiled as well and the
+   steps count to 6 instead of 5. On a fast desktop the whole line took 3 seconds. It ends like
+   this:
+
+   ```text title="Output"
+   [1/5] Running utility command for game_content
+   [2/5] Checking that no engine file includes a game header
+   [3/5] Building CXX object game\CMakeFiles\MyGame.dir\states\title_state.cpp.obj
+   [4/5] Building CXX object game\CMakeFiles\MyGame.dir\main.cpp.obj
+   [5/5] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.02 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.77 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   Then the game opens on the title: `My game` in large gold letters, `Start` in white and `Quit`
+   in grey under it, and `Up and Down choose. Enter picks. Escape quits.` along the bottom. Click
+   the window, so that the keys go to the game, and press **Down**: `Quit` turns white and
+   `Start` grey. **Down** again goes back to `Start`, because the menu wraps round from the
+   bottom row to the top; **Up**, **W** and **S** work the same way. With `Quit` chosen, **Enter**
+   shows `Really quit?   A or Enter = yes, B or Escape = no` under the rows: **Enter** closes the
+   game, and **Escape** goes back to the menu. With `Start` chosen, **Enter** shows the circling
+   greeting, which works as before.
+
+</Steps>
+
+## How the menu moves
+
+`move` does not count rows. It looks at where each row is on the screen, its `bounds()`, and goes
+to the nearest one in the direction pressed. That is why the rows need no numbers: a third row
+added under `Quit` would be reached by **Down** from `Quit` with no other change to `update`.
+When nothing is that way, it wraps round to the row furthest the other way. To stop at the top
+and bottom instead, pass `false` as a third argument: `this->focus_.move(0, direction, false)`.
+[Menus](/docs/guides/menus/) has the whole rule.
+
+Holding **Down** moves once straight away, then again after 0.4 seconds, then every 0.1 seconds
+while it stays down. Those are `DirectionRepeat`'s defaults; `repeat_` in the header takes other
+times in brackets, the first delay and then the gap, such as
+`labrador::DirectionRepeat repeat_ = labrador::DirectionRepeat(0.5f, 0.2f);`.
+
+## Other colours
+
+The focus group's colours are a `FocusStyle`, from `engine/ui/focus.h`:
+
+<SourceFile path="engine/ui/focus.h" from="struct FocusStyle" to="};" />
+
+`disabled` is for a row that is shown but cannot be chosen yet, which this menu does not have. To
+draw the chosen row light green instead of white, open `game\states\title_state.cpp`, search for
+`// What each row does when it is chosen.`, click at the very left of that line, before its
+indent, and paste these lines there, with an empty line after them:
+
+```cpp
+	// The chosen row light green, the others grey.
+	this->focus_.set_style(FocusStyle{ labrador::Colour::light_green,
+		labrador::Colour::gray, labrador::Colour::dim_gray });
+```
+
+The three colours are in the order of the `FocusStyle` above: chosen, not chosen, and disabled.
+Any colour name from `engine/render/colour.h` works, such as `labrador::Colour::gold` or
+`labrador::Colour::sky_blue`. Build and run with the line from step 3; `Start` is light green when
+the game opens.
+
+## Choose a row with the mouse
+
+The engine leaves the mouse to your game: it says where the pointer is and when a button goes
+down, and the game decides which row that is. This section makes a left click on a row choose it,
+as **Enter** does. It changes both files again. Open the header:
+
+```bat
+notepad game\states\title_state.h
+```
+
+Search for `void ask_to_quit();` and add three lines after it, an empty line first, so that they
+read:
+
+```cpp
+	void ask_to_quit();
+
+	// The row under the mouse, if its left button went down this frame.
+	labrador::UiText* clicked_row() const;
+```
+
+Save and close Notepad, then open the code:
+
+```bat
+notepad game\states\title_state.cpp
+```
+
+Search for `#include "engine/input/keyboard.h"` and add a line after it; then search for
+`#include <memory>` and add a line before it, so that the two places read:
+
+```cpp
+#include "engine/input/keyboard.h"
+#include "engine/input/mouse.h"
+```
+
+```cpp
+#include <array>
+#include <memory>
+```
+
+Then search for `this->focus_.activate(0);`. It is in `update`:
+
+```cpp
+	if (choose_requested)
+	{
+		// Runs the chosen row's action, from init().
+		this->focus_.activate(0);
+		return;
+	}
+```
+
+Click after the `}` on the last of those lines, press **Enter** twice, and paste:
+
+```cpp
+	// A left click on a row chooses it, as Enter does.
+	UiText* clicked = this->clicked_row();
+	if (clicked != nullptr)
+	{
+		this->focus_.set_focused(0, clicked);
+		this->focus_.activate(0);
+		return;
+	}
+```
+
+Last, press **Ctrl+End** to go to the end of the file, and paste the new function there, after an
+empty line:
+
+```cpp
+UiText* TitleState::clicked_row() const
+{
+	const Mouse& mouse = *this->app_->mouse();
+	if (!mouse.pressed(MouseButton::left))
+	{
+		return nullptr;
+	}
+
+	// The mouse's position is in the window's pixels, which are the
+	// scene's too: its one view is the whole window and does not move.
+	const Vector2F point(static_cast<float>(mouse.position().x),
+		static_cast<float>(mouse.position().y));
+	const std::array<UiText*, 2> rows = { this->start_row_, this->quit_row_ };
+	for (UiText* row : rows)
+	{
+		const RectangleF box = row->bounds();
+		if (point.x >= box.left() && point.x < box.right() &&
+			point.y >= box.top() && point.y < box.bottom())
+		{
+			return row;
+		}
+	}
+
+	return nullptr;
+}
+```
+
+`clicked_row` answers `nullptr`, meaning no row, unless the left button went down on this frame.
+Then it turns the pointer's position into the same kind of point the rows use and tests it
+against each row's `bounds()`, the rectangle round its letters. `update` makes the clicked row the
+chosen one with `set_focused` before running it with `activate`, so that the row clicked is the
+row that runs. The mouse's position is in the window's pixels, which are the scene's too, because
+its one view is the whole window and does not move; a game with a camera turns the point through
+the camera first, as [Menus](/docs/guides/menus/#choosing-a-row-with-a-click-or-tap) shows.
+
+Build and run with the line from step 3. A click on `Quit` shows `Really quit?`, a click on
+`Start` shows the greeting, and a click beside the rows does nothing. The rows are small targets,
+only the size of their letters; Menus shows how LineSweeper makes each row's target wider and
+taller than its text, and how it reads a finger on a touchscreen.
+
+## What the start-up test checks now
+
+The start-up test runs the title screen for 30 frames in a hidden window, and nobody presses
+anything in it. It checks that the menu starts and draws, not what Start or Quit does: a mistake in
+a row's lambda still passes `ctest`. Choose each row yourself after a change to them. To run the
+start-up test by itself:
+
+```bat
+start /wait out\build\x64-debug\game\MyGame.exe --smoke-test
+echo %ERRORLEVEL%
+```
+
+It shows no window and prints `0` when the title screen starts and draws.
+
+## How errors show
+
+A mistake in this page's files shows in one of two places:
+
+- **The compiler stops** with an `error` line naming `title_state.h` or `title_state.cpp` and a
+  line number: a slip in the code. [Read a build error](/docs/get-started/build-errors/) shows how
+  to find the line that matters. A mistake in the header is reported again under `main.cpp`, and
+  under `hello_state.cpp` if you made Going back to the title, because they include it. The same
+  error can therefore appear two or three times.
+- **It builds, but the menu does not work.** Nothing prints; the menu does not move, or both rows
+  stay white. These are under [If something fails](#if-something-fails) by what you see.
+
+There is no new `.cpp` file on this page, so no list in `game\CMakeLists.txt` changes. If the
+linker stops with `LNK2019` or `wasm-ld: error: ... undefined symbol` naming `TitleState`,
+`title_state.cpp` is missing from one of the two lists:
+[Add a screen](/docs/guides/your-screen/#if-something-fails) shows both messages and the fix, and
+[Troubleshooting](/docs/troubleshooting/#lnk2019-unresolved-external-symbol) has more.
+
+Each message is below. The line numbers are those of the files as this page gives them, with the
+mistake made; a missing line moves the lines after it up by one.
+
+## If something fails
+
+<Aside type="caution" title="title_state.h(40): error C2039: 'FocusGroup': is not a member of 'labrador'">
+The `#include "engine/ui/focus.h"` line is missing from `title_state.h`, so the compiler has not
+heard of `FocusGroup`. It is followed by `C3646: 'focus_': unknown override specifier`, `C4430:
+missing type specifier - int assumed`, and a `C2039: 'focus_': is not a member of 'TitleState'`
+for each line of `title_state.cpp` that uses `focus_`; the same first three appear again under
+`main.cpp` (and `hello_state.cpp`, after Going back to the title). They all go when the line is put back, with the other `#include` lines at the top of
+the header. The browser build says `error: no type named 'FocusGroup' in namespace 'labrador'`.
+</Aside>
+
+<Aside type="caution" title="title_state.h(36): error C2039: 'UiText': is not a member of 'labrador'">
+The `#include "engine/ui/widget.h"` line is missing from `title_state.h`. A screenful of errors
+follows, among them `C2065: 'UiText': undeclared identifier` and `C2039: 'start_row_': is not a
+member of 'TitleState'` in `title_state.cpp`; they all come from the first. Put the line back.
+</Aside>
+
+<Aside type="caution" title="title_state.cpp(75): error C3493: 'this' cannot be implicitly captured because no default capture mode has been specified">
+A row's lambda starts `[]()` instead of `[this]()`, so the code inside it cannot use the state's
+things: here `this->ask_to_quit()` in Quit's. A second error, `C2039: 'ask_to_quit': is not a
+member of 'TitleState::init::<lambda_2>'`, follows from it. Put `this` back between the square
+brackets. The browser build says `error: 'this' cannot be implicitly captured in this context`.
+</Aside>
+
+<Aside type="caution" title="title_state.cpp(161): error C2065: 'ConfirmState': undeclared identifier">
+The `#include "game/states/confirm_state.h"` line is missing from the top of `title_state.cpp`, so
+`ask_to_quit` names a class the compiler has not heard of. `C2672: 'std::make_unique': no matching
+overloaded function found` follows from it. Put the line back, before
+`#include "game/states/hello_state.h"`.
+</Aside>
+
+<Aside type="caution" title="title_state.cpp(113): error C2660: 'labrador::FocusGroup::move': function does not take 1 arguments">
+`move` was given only the direction, as `this->focus_.move(direction)`. It needs the slot first:
+`this->focus_.move(0, direction)`. The same goes for `activate`, which takes the slot alone:
+`this->focus_.activate(0)`.
+</Aside>
+
+**Up and Down do nothing, and Enter always starts the game.** The line
+`this->focus_.move(0, direction);` in `update` is missing, so the focus group is never told to
+move. Everything builds and the start-up test passes, because nothing is wrong with the code the
+compiler can see; `Start` simply stays white. Put the line back between the `{` and `}` under
+`if (direction == Direction::up || direction == Direction::down)`.
+
+**Both rows are white, and Down does nothing.** A row is drawn but was never given to the focus
+group: one of the two `this->focus_.add` parts in `init` is missing. The group paints only the rows
+it holds, so the missing one keeps the white it was made with, and `move` has nowhere to go.
+Put the missing part back, from `this->focus_.add(` to `});`, as in step 2.
+
+<Aside type="caution" title="error C2039: 'clicked_row': is not a member of 'TitleState'">
+From [Choose a row with the mouse](#choose-a-row-with-the-mouse): the code uses `clicked_row`, but
+the line declaring it is not in `title_state.h`. More errors follow at the new function itself,
+such as `C2270: 'clicked_row': modifiers not allowed on nonmember functions`. Add the
+`labrador::UiText* clicked_row() const;` line to the header, after `void ask_to_quit();`.
+</Aside>
+
+## In the browser build
+
+Build the page as [Build for the browser](/docs/guides/browser/) shows, in a prompt where you have
+run `emsdk_env.bat`:
+
+```bat
+cmake --build --preset wasm-debug && ctest --preset wasm-debug
+```
+
+It compiles `title_state.cpp` with clang. clang's wording is given in the `FocusGroup` and `this`
+entries; the others name the same line in clang's own words.
+The page opens on the menu, and the keys are the same. The canvas in the page is smaller than the
+Windows window, so the menu is laid out from the canvas's size, which is what `resolution` is; the
+line along the bottom is kept short so that it fits. The mouse section works in the page too.
+
+The page check from that guide still passes with `--quit-keys Escape,Enter`: **Escape** asks
+`Really quit?` on the title and **Enter** says yes. To check the Quit row itself, use
+`--quit-keys ArrowDown,Enter,Enter`.
+
+The line under the game in the page, set in `game\web\shell.html`, still describes the greeting.
+To change it, open that file and search for `statusLine.textContent =`. The first match is the
+one; the words to change are on the line under it, between the quotation marks. Change them, for
+example to:
+
+```js
+        "Arrows, W and S or the left stick choose Start or Quit; Enter picks. Escape asks to quit; Enter says yes.";
+```
+
+## Where to go next
+
+- [Menus](/docs/guides/menus/) follows LineSweeper's pause menu: more rows, a row that changes a
+  setting in place, a menu that answers with a choice, and touch.
+- [States and the stack](/docs/concepts/states/) explains `push`, `pop` and `transition_to`.
+- [Input](/docs/guides/input/#directions-for-menus) has more on `pad_direction` and
+  `DirectionRepeat`.
+- [Read a build error](/docs/get-started/build-errors/) has more on compiler messages.
+
+## What was checked
+
+On 2026-10-30, in a starter project made from a starter ZIP of this tree at `C:\dev\h3\mygame`,
+with Visual Studio 2026's compiler 19.51 and Emscripten 6.0.12, the steps of Add a screen to your
+game were made to the end of its step 6 and then every step above was made as worded, by an agent
+editing the files with tools rather than Notepad. The build and tests ran as shown, with
+`C:\dev\h3\mygame` in the quoted output changed to `C:\dev\mygame`, and the `--smoke-test` line
+printed `0`. The game was started and driven with key presses, and screenshots showed `Start`
+white and `Quit` grey at first, the two swapping on **Down**, **Up**, **S** and **W**, the wrap
+from `Quit` back to `Start`, `Really quit?` under the rows after **Enter** on `Quit` and after
+**Escape**, the menu again after **Escape** at the question, the game closing with exit code 0 on
+**Enter** there, and the greeting after **Enter** on `Start`. Holding a key, for the repeat, was
+not timed. `move` with `false` was built and stopped at `Quit` on a second **Down**, and the
+`DirectionRepeat(0.5f, 0.2f)` line built on Windows and in `wasm-debug`. The light green colours
+were seen in a screenshot. The mouse section was built on Windows and in `wasm-debug`; on Windows
+a click on `Quit` showed the question, a click beside the rows did nothing, and a click on an
+unchosen `Start` showed the greeting, and in headless Chrome a click on `Quit` showed the
+question.
+
+Each message under [If something fails](#if-something-fails) was made on purpose, one at a time:
+each of the three includes removed, `this` removed from Quit's lambda, the slot left out of
+`move`, and the mouse function's declaration removed. The focus and lambda messages were also made
+in `wasm-debug`. Removing the mouse section's `engine/input/mouse.h` line still built, because the
+engine's own headers bring it in; the page keeps it so that the file names what it uses. The
+`move` line removed and Quit's `this->focus_.add` part removed both built and passed `ctest`, and
+screenshots after **Down** showed `Start` still white over a grey `Quit`, and both rows white. The
+`wasm-debug` page was loaded in headless Chrome by the page runner from Build for the browser with
+`--quit-keys Escape,Enter`, `ArrowDown,Enter,Enter` and `Enter,Escape,Enter`, and called
+`Module.onQuit` with no errors each time; a screenshot after **ArrowDown** showed `Quit` chosen.
+
+A second agent then followed this page as worded in another fresh starter, at
+`C:\dev\h3v\mygame`, after Add a screen's steps 1 to 6, its Going back to the title and its own
+change to `shell.html`. Both files compiled without warnings on Windows and in `wasm-debug`. The
+build matched step 3, apart from `hello_state.cpp` being compiled as well, which step 3 now says.
+Screenshots matched each claim on the page, including the light green colours, the menu stopping
+at `Quit` with `false`, and the mouse clicks on Windows. After **Enter**, **Escape** and **Enter**
+in the game, the menu came back with `Start` chosen. Each compiler message above was made again
+and matched, with the same line numbers, and with Going back to the title each header mistake was
+reported under `title_state.cpp`, `hello_state.cpp` and `main.cpp`, which the page now says. The
+page runner passed with `Escape,Enter` and `ArrowDown,Enter,Enter`. That run found the
+`shell.html` search text gone after Add a screen's own browser change, so the search is now for
+`statusLine.textContent =`, and it led to a few clearer words: where to paste the colour lines,
+the link to A smoother title and the note on `centre_across`.
+
+A gamepad was not used: A, B, the d-pad and the stick were read from the code, which reads them
+as `HelloState`, `ConfirmState` and LineSweeper's pause menu do.
