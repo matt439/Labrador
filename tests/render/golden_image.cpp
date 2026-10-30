@@ -342,9 +342,13 @@ namespace
 	// sixty. This machine's GPU writes every frame byte for byte through
 	// all four desktop backends and through Chrome's ANGLE. SwiftShader writes
 	// every frame byte for byte too. WARP differs on two frames, both of them
-	// blend cases, by 1. So 8 is eight times what any rasteriser measured here
-	// needs, and the margin is for the one nobody has measured: CI's Direct3D
-	// adapter.
+	// blend cases, by 1. CI's run 41053232985 measured the runner's two:
+	// its Direct3D adapter, under x64-debug, x64-debug-d3d12 and x64-release
+	// alike, differs on five frames by 1 - the two blend cases and the three
+	// frames drawn over a never-presented one, where a half is rounded the
+	// other way - and its SwiftShader, in Chrome 156, on those three by 1,
+	// though on the desktop it is exact. No frame anywhere moved by 2. So the
+	// allowance is 1: exactly what the rasterisers measured here need.
 	//
 	// THE TEXT FRAMES ARE AMONG THE EXACT ONES BECAUSE THEIR ATLAS IS DECODED
 	// BEFORE A DEVICE SEES IT. Decoded by each device, the font's BC2 atlas put
@@ -362,15 +366,13 @@ namespace
 	// catch is a hand-copied term going wrong in one backend and not the other
 	// - a pixels-to-clip constant, an index winding, a camera prologue, a blend
 	// factor. Every one of those moves a glyph edge from 0 to 200-odd or blacks
-	// a destination out entirely. Nothing in that class hides under 8.
+	// a destination out entirely. Nothing in that class hides under 1.
 	//
 	// IF A RASTERISER EVER NEEDS MORE THAN THIS, the answer is to look at the
 	// images and find the term that moved, not to raise the number. A
 	// tolerance that grows to fit whatever failed is not a tolerance, and this
-	// one is already the only inexact statement in the pixel contract. The
-	// direction it should move is down, once CI's Direct3D adapter has been
-	// measured against the set.
-	constexpr int allowed_channel_drift = 8;
+	// one is already the only inexact statement in the pixel contract.
+	constexpr int allowed_channel_drift = 1;
 }
 
 void golden::check_frame(int width, int height,

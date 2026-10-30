@@ -34,8 +34,11 @@ and amend `web.md` §9 with the result.
       names the commit CI built, clean. On a pull request that is GitHub's
       merge commit for it rather than the branch head, since that is what the
       job checks out.
-- [ ] Optional: one run with `allowed_channel_drift` at 0 to measure the
-      runner's adapter, so the allowance can come down from 8.
+- [x] One run with `allowed_channel_drift` at 0 measures the runner's
+      adapters: run 41053232985 (2026-10-30) failed `RenderPixelTests` on
+      five frames by 1 under all three Direct3D jobs and on three by 1 in
+      Chrome 156's SwiftShader, and nothing moved by 2. The allowance is 1
+      (`tests/render/golden_image.cpp`).
 
 ## Needs Safari (M3's done-when)
 
