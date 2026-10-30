@@ -1,0 +1,466 @@
+---
+title: Save and undo changes with Git
+description: The everyday Git loop in a starter project, step by step - see what changed, record it as a commit, read the history, undo a broken edit, take back a commit and get an old version of a file - with Git's output, its pager and editor, and what each failure means.
+sidebar:
+  order: 0.984
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Once your project is a Git repository, every working version of your game can be kept, and any
+edit that breaks it can be undone in one line. This page is the loop you use every day: change
+the game, see what changed, record it, and when something goes wrong, go back. It makes one real
+change to the starter's greeting, then undoes it in each of the ways Git offers. It takes about
+15 minutes.
+
+Your project has to be in Git first, with at least one commit. Either of these makes it so:
+
+- [Put your project on GitHub](/docs/guides/your-github/), step 2, commits the project with the
+  engine as plain files, as the ZIP gave them.
+- [Put your project in Git](/docs/guides/starter-to-git/) commits it with the engine as a
+  submodule.
+
+Everything here is the same for both, and none of it needs GitHub or the internet: Git keeps the
+history in the project's hidden `.git` folder. Every command runs in the x64 Native Tools Command
+Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+The words this page uses: a **commit** is one saved version of the whole project, with a message
+saying what changed. The **history** is the list of commits, newest first. A file is
+**modified** when it differs from the last commit.
+
+<Steps>
+
+1. **Check that everything is recorded.**
+
+   ```bat
+   git status
+   ```
+
+   ```text title="Output"
+   On branch main
+   nothing to commit, working tree clean
+   ```
+
+   The branch may be `master` rather than `main`; either is fine. *Working tree clean* means
+   every file is as the last commit has it. If Git lists files instead, they changed since the
+   last commit: record them first, as in step 5, or undo them, as in
+   [Undo an edit you have not recorded](#undo-an-edit-you-have-not-recorded).
+
+2. **Change something.** Open the file that draws the greeting:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Press **Ctrl+F**, search for `Hello from the engine.`, change those words to
+   `Hello from my game.`, keeping the quotation marks around them, then save with **Ctrl+S** and
+   close Notepad.
+
+3. **See what changed.** First, which files:
+
+   ```bat
+   git status
+   ```
+
+   ```text title="Output"
+   On branch main
+   Changes not staged for commit:
+     (use "git add <file>..." to update what will be committed)
+     (use "git restore <file>..." to discard changes in working directory)
+   	modified:   game/states/hello_state.cpp
+
+   no changes added to commit (use "git add" and/or "git commit -a")
+   ```
+
+   Git writes paths with `/` where Windows writes `\`; both name the same file. Then the lines
+   themselves:
+
+   ```bat
+   git diff
+   ```
+
+   ```text title="Output"
+   diff --git a/game/states/hello_state.cpp b/game/states/hello_state.cpp
+   index 5494d17..8528d7e 100644
+   --- a/game/states/hello_state.cpp
+   +++ b/game/states/hello_state.cpp
+   @@ -84,7 +84,7 @@ void HelloState::init()
+    	this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
+
+    	this->greeting_ = this->scene_->add(std::make_unique<Label>(
+   -		L"Hello from the engine.", font_name, this->motion_.centre, resources,
+   +		L"Hello from my game.", font_name, this->motion_.centre, resources,
+    		labrador::Colour::white));
+
+    	this->hint_ = this->scene_->add(std::make_unique<Label>(
+   ```
+
+   How to read it: `---` is the file as the last commit has it and `+++` the file as it is now.
+   `@@ -84,7 +84,7 @@` says the lines shown start at line 84 in both; in a project from another
+   release the numbers there, and the two short names on the `index` line, can differ from these,
+   such as `@@ -85,7 +85,7 @@`. A line starting `-` was
+   taken out, a line starting `+` was put in, so a changed line is a `-` and a `+` together. The
+   lines with a space in front are unchanged and are shown around the change so you can see where
+   it is. In the prompt, Git colours `-` lines red and `+` lines green. For only the names of the
+   changed files and how many lines changed in each, run `git diff --stat`.
+
+   A long diff does not scroll past: see [The pager](#the-pager) for what the `:` at the bottom
+   of the window means, and press **q** to get the prompt back.
+
+4. **Build and test** the change, as in
+   [Make a first change](/docs/get-started/first-change/):
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The window shows `Hello from my game.`. Quit with **Escape**, then **Enter**. Record a change
+   once it builds and passes its tests, so that every commit in the history is a version that
+   works.
+
+5. **Record it.** Two lines: `git add .` chooses everything that changed in the project for the
+   next commit, and `git commit` records it with a message:
+
+   ```bat
+   git add .
+   git commit -m "Change the greeting"
+   ```
+
+   `git add .` prints nothing, or warnings that `LF will be replaced by CRLF`, which are
+   harmless. `git commit` prints:
+
+   ```text title="Output"
+   [main 750d649] Change the greeting
+    1 file changed, 1 insertion(+), 1 deletion(-)
+   ```
+
+   `750d649` is the commit's short name, which Git makes from its contents, so yours differs.
+   Change the message between the quotation marks to one line that says what you changed; you
+   can edit it before pressing Enter. Always give `-m` and a message: without it, Git opens a
+   text editor for the message, which [The editor](#the-editor) explains how to leave.
+
+   Between the two lines, `git status` shows the file under `Changes to be committed:`, which is
+   what `git add` did.
+
+6. **Look at the history.**
+
+   ```bat
+   git log --oneline
+   ```
+
+   ```text title="Output"
+   750d649 Change the greeting
+   5cf553c Start my game from Labrador's starter project
+   ```
+
+   One line per commit, newest first: its short name and its message. Every one of them can be
+   got back. For one file's history only, name it at the end:
+   `git log --oneline -- game\states\hello_state.cpp`.
+
+</Steps>
+
+That is the loop: change, `git status` and `git diff`, build and test, `git add .` and
+`git commit -m`. Run `git status` whenever you are not sure where you are. If your project is on
+GitHub, `git push` after a commit sends it there, as
+[Sending the next change](/docs/guides/your-github/#sending-the-next-change) shows.
+
+## Undo an edit you have not recorded
+
+An edit has broken the build, or the game, and you have not committed it. This puts one file
+back as the last commit has it, throwing your edit to it away:
+
+```bat
+git restore game\states\hello_state.cpp
+```
+
+It prints nothing, and `git status` then says `nothing to commit, working tree clean` if that was
+the only change. The next build compiles the file again, because Git gives it the current time,
+so build and test as in step 4. Before you run it, `git diff` shows exactly what you are about to
+lose.
+
+To put back **every** file that changed since the last commit:
+
+```bat
+git restore .
+```
+
+It also prints nothing. It does not touch files you created since the last commit, which Git has
+never recorded and lists under `Untracked files:` in `git status`, such as `game/notes.txt` here:
+
+```text title="Output"
+On branch main
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	game/notes.txt
+
+nothing added to commit but untracked files present (use "git add" to track)
+```
+
+Delete such a file yourself with `del` if you do not want it, or record it with `git add .` and a
+commit.
+
+If you had already run `git add .` on the edit, but not `git commit`, `git restore` alone leaves
+the added version in place. This puts the file back as the last commit has it either way:
+
+```bat
+git restore --staged --worktree game\states\hello_state.cpp
+```
+
+If `git restore` says `error: pathspec 'game\states\helo_state.cpp' did not match any file(s)
+known to git`, there is no such file in the history: here `hello` is misspelt. Nothing was
+changed. `git status` lists the changed files with their exact names.
+
+## Take back a commit
+
+You committed a change and later found it was a mistake. Do not try to delete the commit: make a
+new one that undoes it, so the history keeps both and you can change your mind again. For the
+newest commit:
+
+```bat
+git revert --no-edit HEAD
+```
+
+```text title="Output"
+[main c18133f] Revert "Change the greeting"
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+```
+
+`HEAD` means the newest commit. It may also print a line starting `Date:`. The file is back as it
+was before that commit, `Hello from the engine.` here, and `git log --oneline` shows the new
+commit on top:
+
+```text title="Output"
+c18133f Revert "Change the greeting"
+750d649 Change the greeting
+5cf553c Start my game from Labrador's starter project
+```
+
+Build and test as in step 4. To take back an older commit, give its short name from
+`git log --oneline` in place of `HEAD`, such as `git revert --no-edit 750d649`. `--no-edit` takes
+the message Git writes, `Revert` and the old message; without it, Git opens
+[the editor](#the-editor) for you to change it.
+
+If you have changes you have not committed in a file that commit changed, `git revert` changes
+nothing and says so:
+
+```text title="Output"
+error: Your local changes to the following files would be overwritten by merge:
+	game/states/hello_state.cpp
+Please commit your changes or stash them before you merge.
+Aborting
+fatal: revert failed
+```
+
+Record them or undo them, as above, and run it again. If a later commit changed the same lines,
+it stops with this instead:
+
+```text title="Output"
+Auto-merging game/states/hello_state.cpp
+CONFLICT (content): Merge conflict in game/states/hello_state.cpp
+error: could not revert c18133f... Revert "Change the greeting"
+```
+
+followed by `hint:` lines. Git cannot tell which version of those lines you want. The safe way
+out puts everything back as it was before the `git revert`:
+
+```bat
+git revert --abort
+```
+
+It prints nothing, and `git status` is clean again. Then get the file you want as the next
+section shows, and change it by hand.
+
+## Get a file as it was in an earlier commit
+
+Find the commit that has the version you want. This lists only the commits that changed the
+file, newest first:
+
+```bat
+git log --oneline -- game\states\hello_state.cpp
+```
+
+Then paste this line, but **before you press Enter, change `750d649`** to that commit's short
+name, as [Typing the commands](/docs/get-started/prerequisites/#typing-the-commands) shows:
+
+```bat
+git restore --source=750d649 game\states\hello_state.cpp
+```
+
+It prints nothing. The file is now as that commit had it, and the rest of the project is as it
+was. `git status` shows the file as modified: build and test it, then record it as in step 5, or
+undo it with `git restore game\states\hello_state.cpp` if it was not the one you wanted.
+
+If it says `fatal: could not resolve 750d649`, the line still has this page's example name, or a
+name your history does not have. Nothing was changed. Run the `git log` line above and put one of
+the short names it prints in place of `750d649`.
+
+To look at an old version without changing your file, write it to a separate file and open that.
+In this line the path is written with `/`, which this command needs, and again
+**change `750d649`** before you press Enter:
+
+```bat
+git show 750d649:game/states/hello_state.cpp > "%TEMP%\hello_state-old.cpp"
+notepad "%TEMP%\hello_state-old.cpp"
+```
+
+When `git show` fails, it prints one of these, and the `>` has still made
+`hello_state-old.cpp`, empty, so Notepad shows a blank page. Correct the first line and run both
+again:
+
+- `fatal: invalid object name '750d649'.`: the example name is still there, or the name is not
+  one of your commits.
+- `fatal: path 'game\states\hello_state.cpp' exists on disk, but not in '750d649'`: the path has
+  `\` where this command needs `/`.
+
+## The pager
+
+When a command's output is longer than the window, such as `git log` after many commits or a
+large `git diff`, Git shows it one screen at a time in a program called `less`. The prompt does
+not come back; instead the bottom line of the window shows `:`, or `(END)` at the end.
+
+- **Space** shows the next screen, **b** the one before, and the arrow keys move a line.
+- **q** leaves it and gives you the prompt back. A command typed there is not run: press **q**
+  first.
+
+Output that fits in the window is printed as usual and the prompt comes back at once. To have Git
+print everything without the pager, put `--no-pager` straight after `git`:
+
+```bat
+git --no-pager log --oneline
+```
+
+## The editor
+
+`git commit` without `-m`, and `git revert` without `--no-edit`, open a text editor for the
+message and wait until it closes. Git for Windows' installer chooses **Vim** unless you picked
+another. Vim fills the prompt window, shows the message with lines starting `#` under it, and
+does not respond to typing as Notepad does. To leave it without committing:
+
+1. Press **Esc**.
+2. Type `:q!`, which appears at the bottom left.
+3. Press **Enter**.
+
+Git then says `Aborting commit due to empty commit message.`, nothing is recorded, and you can
+run the command again with `-m`. If your editor is Notepad, close it without saving for the same
+result.
+
+## The engine in git status
+
+If your engine is a submodule, from [Put your project in Git](/docs/guides/starter-to-git/),
+`git status` can show `external/labrador` with a note in brackets:
+
+- `modified:   external/labrador (modified content)` means a file inside the engine was
+  changed. The engine is not yours to edit: this puts it back, and the note goes away.
+
+  ```bat
+  git -C external/labrador restore .
+  ```
+
+- `modified:   external/labrador (untracked content)` means a file was created inside the
+  engine, such as `notes.txt` here. `git restore` does not touch new files, so the note stays
+  after the line above. This lists them, each after `??`:
+
+  ```bat
+  git -C external/labrador status --short
+  ```
+
+  ```text title="Output"
+  ?? notes.txt
+  ```
+
+  Move any you want to keep out of `external\labrador`, delete the rest with `del`, such as
+  `del external\labrador\notes.txt`, and the note goes away.
+
+- `modified:   external/labrador (new commits)` means the engine is at a different commit from
+  the one your last commit records. That is expected in the middle of
+  [Move your engine pin](/docs/guides/move-pin/), whose last step records it; anywhere else,
+  `git submodule update` puts the engine back at the recorded one.
+
+With the engine as plain files, a change inside `external\labrador` is listed like any other
+file, and `git restore` puts it back the same way.
+
+## If something fails
+
+<Aside type="caution" title="fatal: not a git repository (or any of the parent directories): .git">
+The prompt is not in your project's folder, or the project is not a repository yet. Run
+`cd /d C:\dev\mygame`. If it still says this, the project has no `.git` folder: do
+[Put your project in Git](/docs/guides/starter-to-git/) or step 2 of
+[Put your project on GitHub](/docs/guides/your-github/) first.
+</Aside>
+
+<Aside type="caution" title="nothing to commit, working tree clean">
+From `git commit`: nothing changed since the last commit, so nothing was recorded. If you did
+change a file, check that you saved it in Notepad, and that `git status` lists it.
+</Aside>
+
+<Aside type="caution" title="Author identity unknown">
+Git does not know your name and email yet. Do
+[Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are), then run the
+`git commit` line again.
+</Aside>
+
+<Aside type="caution" title="error: pathspec '...' did not match any file(s) known to git">
+The path names no file Git has recorded: a misspelling, or a file created since the last commit.
+`git status` lists the files with their exact names. Nothing was changed.
+</Aside>
+
+<Aside type="caution" title="Aborting commit due to empty commit message.">
+The editor was closed without a message: see [The editor](#the-editor). Nothing was recorded. Run
+`git commit` again with `-m "..."`.
+</Aside>
+
+Some Git commands throw work away for good, or rewrite the history: `git reset --hard`,
+`git clean`, `git checkout` with a file name, and `git push --force`. Nothing on this page needs
+them, and a web page or answer that suggests one for a beginner's problem usually has a safer
+form above.
+
+## What was checked
+
+On 31 October 2026, in a starter project extracted from a starter ZIP of this tree at
+`C:\dev\g11-author\mygame`, committed with the engine as plain files and its branch renamed `main`
+as Put your project on GitHub's steps 2 and 3 do, with Git for Windows 2.52.0, every command on
+this page was run in a command prompt and the quoted output is from that run, with the folder
+changed to `C:\dev\mygame`. The edit in step 2 was made with a tool rather than Notepad; the
+build and both tests passed after it, and the build after `git restore` compiled
+`hello_state.cpp` again. A broken edit, with the greeting's closing quotation mark deleted, failed
+to build with `C2001`, and `git restore` of the file brought back a build that passed. `git
+restore .` left a new `game\notes.txt` untracked, as quoted. `git revert --no-edit HEAD`, the
+`git log` after it, the `CONFLICT` from reverting a commit whose lines a later commit had changed,
+and `git revert --abort` gave the output quoted; `git restore --source` with a short name, `git
+show` to a file and its `\` refusal, `pathspec`, `not a git repository` and `nothing to commit`
+were all seen. `Aborting commit due to empty commit message.` was made with an editor that changes
+nothing, standing in for leaving Vim with `:q!`. The `(modified content)` and `(new commits)`
+notes were seen in a project whose engine is a submodule, in
+[Move your engine pin](/docs/guides/move-pin/)'s run.
+
+Those commands ran with their output going to a file, where Git does not use the pager. A
+review the same day saw both in a console window, with Git for Windows 2.52.0's own `less` and
+Vim: `git log --oneline` in a repository with more commits than the window has lines stopped with
+`:` on the bottom line, and **q** gave the prompt back, leaving the lines shown on screen; and
+`git commit` with no `-m`, with Vim as the editor, filled the window with an empty first line,
+the `#` lines under it and `~` down the left, and **Esc**, `:q!` and **Enter** gave the prompt
+back after `Aborting commit due to empty commit message.` **Space**, **b** and the arrow keys were
+not pressed; what they do is from the `less` manual. Git for Windows' installer's default
+editor is from its installer page; the machine's own Git names another editor, so Vim was chosen
+for that one command. That Git prints short output without the pager is Git's default for
+`less`, the `LESS=FRX` its documentation gives under `core.pager`.
+
+The review also ran, in a project put in Git by
+[Put your project in Git](/docs/guides/starter-to-git/) from a `v0.2.0` stand-in ZIP, the diff,
+commit, `git revert --no-edit HEAD` with its `Date:` line, the refusal with a changed file, the
+`CONFLICT` and `--abort`, both `git show` messages, `could not resolve 750d649` and the
+misspelt `pathspec`, and each gave what is quoted, the diff with `@@ -85,7 +85,7 @@`.
+
+A second person then followed the page as worded in a starter from a `v0.2.0` stand-in ZIP, and
+every box gave the output quoted, the refusal, `CONFLICT`, `--abort`, the `\` refusal and both
+notes in brackets among them, except that the diff's header read `@@ -85,7 +85,7 @@` with other
+`index` names, which step 3 now allows for. They found three cases the page did not cover, since
+added and run at `C:\dev\g11-fixer` in a project with the engine as a submodule: `git restore
+--source` and `git show` with the example name `750d649` left in printed the two messages quoted,
+and `hello_state-old.cpp` was left at 0 bytes, as it was after the `\` refusal; and a new file in
+the engine gave `(untracked content)`, which `git -C external/labrador restore .` left, `status
+--short` listed as quoted, and `del` cleared.

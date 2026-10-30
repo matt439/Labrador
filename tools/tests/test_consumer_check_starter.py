@@ -198,5 +198,25 @@ class StarterZipTests(unittest.TestCase):
         self.assertEqual(sorted(on_disk + ["README.txt"]), zipped)
 
 
+@unittest.skipUnless(shutil.which("git"), "git is required to ask which paths it ignores")
+class StarterGitignoreTests(unittest.TestCase):
+    """The .gitignore the project gets keeps the build and Visual Studio's own folder out of `git add .`."""
+
+    def test_project_gitignore_ignores_build_and_visual_studio_folders_only(self):
+        with tempfile.TemporaryDirectory(prefix="labrador-gitignore-") as name:
+            project = Path(name)
+            target = assemble.PLACED["gitignore.txt"]
+            shutil.copyfile(REPOSITORY / assemble.WALKTHROUGH / "gitignore.txt", project / target)
+            git(project, "init", "--quiet")
+            ignored = ["out/build/x64-debug/game/MyGame.exe", ".vs/slnx.sqlite", ".vs/mygame/v18/.wsuo"]
+            kept = ["game/main.cpp", "game/states/hello_state.cpp", "CMakePresets.json", "vcpkg.json",
+                    "external/labrador/engine/core/state.h", ".github/workflows/ci.yml", ".gitignore"]
+            result = subprocess.run(
+                ["git", "-C", str(project), "check-ignore", "--no-index", "--stdin"],
+                input="".join(path + "\n" for path in ignored + kept).encode("utf-8"), capture_output=True,
+            )
+            self.assertEqual(result.stdout.decode("utf-8").split(), ignored, result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -14,9 +14,12 @@ interface Props {
 	// extracted into C:\dev\new; original: the file %FILE% names, extracted into an
 	// emptied C:\dev\original and copied over the project's with the current time.
 	part: 'download' | 'extract' | 'second-name' | 'second' | 'update' | 'original';
+	// With part="download" only: the reader already has a starter project and is moving it to a
+	// newer release, so a release with no starter ZIP means there is nothing to move to this way.
+	moving?: boolean;
 }
 
-const { part } = Astro.props;
+const { part, moving = false } = Astro.props;
 const starter = starterRelease();
 // One line that extracts the starter ZIP in C:\dev into folder, or into the current folder.
 const extract = (folder?: string) => {
@@ -55,6 +58,8 @@ const commands: Record<Exclude<Props['part'], 'download'>, string> = {
 const gitRoute = sitePath('/docs/get-started/build-labrador/');
 const installGit = sitePath('/docs/get-started/prerequisites/#install-git');
 const tellGit = sitePath('/docs/get-started/prerequisites/#tell-git-who-you-are');
+const starterToGit = sitePath('/docs/guides/starter-to-git/');
+const movePin = sitePath('/docs/guides/move-pin/');
 ---
 
 {part === 'download' && starter && (
@@ -90,13 +95,22 @@ const tellGit = sitePath('/docs/get-started/prerequisites/#tell-git-who-you-are'
 			<strong>Assets</strong> list, near the bottom of the page, for a file whose name begins <code>labrador-starter-</code>,
 			such as <code>labrador-starter-v0.3.0.zip</code>. Releases up to <code>v0.2.0</code> have no starter ZIP.
 		</p>
-		<p>
-			<strong>If the newest release has none</strong>, the first release with one has not come out yet, and the way to
-			start is <a href={gitRoute}>the Git route</a>, which makes the same project but needs Git. Do steps{' '}
-			<a href={installGit}>2, Install Git</a>, and <a href={tellGit}>5, Tell Git who you are</a>, of Install the tools,
-			close this command prompt, open a new x64 Native Tools Command Prompt, so that it finds Git, and begin at{' '}
-			<a href={gitRoute}>Build Labrador</a>.
-		</p>
+		{moving ? (
+			<p>
+				<strong>If the newest release has none</strong>, no release has a starter ZIP to move your project to yet, and
+				this page has nothing more to do: keep using your project as it is. To take a newer release before one has a
+				starter ZIP, <a href={starterToGit}>put your project in Git</a> with the engine as a submodule, then{' '}
+				<a href={movePin}>move your engine pin</a> to that release.
+			</p>
+		) : (
+			<p>
+				<strong>If the newest release has none</strong>, the first release with one has not come out yet, and the way to
+				start is <a href={gitRoute}>the Git route</a>, which makes the same project but needs Git. Do steps{' '}
+				<a href={installGit}>2, Install Git</a>, and <a href={tellGit}>5, Tell Git who you are</a>, of Install the tools,
+				close this command prompt, open a new x64 Native Tools Command Prompt, so that it finds Git, and begin at{' '}
+				<a href={gitRoute}>Build Labrador</a>.
+			</p>
+		)}
 		<p>
 			<strong>If it is there</strong>, click it. Your browser saves it in your <strong>Downloads</strong> folder. This box
 			moves it to <code>C:\dev</code>. Its first line deletes any starter ZIP already in <code>C:\dev</code> from an

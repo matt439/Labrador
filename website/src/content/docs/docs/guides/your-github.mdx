@@ -87,7 +87,8 @@ email addresses private**, and use the address ending `users.noreply.github.com`
 
    If you have opened the project in Visual Studio, check before the `commit` line that its
    `.vs` folder is not among them either, because that folder is Visual Studio's own and changes
-   every time it opens:
+   every time it opens. A starter made since 31 October 2026 lists `.vs/` in its `.gitignore`,
+   and this prints nothing; an older one lists only `out/`:
 
    ```bat
    git status --short .vs
@@ -228,6 +229,8 @@ edit it there before pressing Enter. `git status` shows what `git add .` will re
 `nothing to commit, working tree clean` when everything is already committed. `git push` prints
 the same kind of output as step 6, shorter, and ends `main -> main`. A `git commit` that prints
 `nothing to commit` recorded nothing, because nothing changed since the last commit.
+[Save and undo changes with Git](/docs/guides/your-git/) shows the rest of the everyday loop:
+`git diff`, the history, and undoing an edit or a commit.
 
 ## Watch GitHub build it
 

@@ -309,10 +309,61 @@ In order of impact on a beginner who wants to play around. Each unit is one
     at `Fetching registry information` before finishing on its own; the
     page, *Run the samples* and Troubleshooting's `EMSDK` entry, which had
     said to delete the half-made folder, were corrected.
-11. **`GUIDE#11` Git and engine versions.** starter-to-git deletes the engine
-    before cloning with no recovery; `.vs/` missing from `.gitignore`;
-    day-to-day Git; move-pin's output, pager and steps 3 and 4; going back to
-    the old pin; starter-update's `fc` output and runnable migrations.
+11. **`GUIDE#11` Git and engine versions.** Done on 2026-10-31: *Put your
+    project in Git* moves the ZIP's engine to `..\labrador-from-zip` with a
+    guarded line instead of deleting it, downloads the submodule (19 MB, 3
+    seconds here), checks out the release with the standard wording and
+    `pathspec`, checks `.gitignore` for `.vs/`, builds and tests before the
+    first commit, and deletes the old engine last; one guarded line puts the
+    project back as the ZIP made it after a failed download, a wrong release
+    or in a project first committed as plain files, whose `already exists in
+    the index` it answers with `git rm --cached`. *Save and undo changes with
+    Git* is the everyday loop: `git status`, a `git diff` read line by line,
+    `git add .` and `git commit -m`, `git log --oneline`, `git restore` of one
+    file, of all and of an added file, `git revert --no-edit` with its
+    refusal, its `CONFLICT` and `--abort`, `git restore --source`, `git show`
+    to a file, the pager and leaving Vim. *Move your engine pin* shows each
+    command's real output from `v0.1.0` to `v0.2.0`, avoids the pager with
+    `--no-pager` or a file in `%TEMP%`, gives the manifest's merge rules,
+    takes one template file with `git show` and `fc`, quotes the checkout and
+    its `would be overwritten` refusal, and gains going back before and after
+    the commit and a teammate's `git submodule update --init --recursive`.
+    *Move a starter project to a newer Labrador* compares the ZIP's version,
+    explains `fc`'s blocks on real output, merges a library into the new
+    `vcpkg.json`, and sends step 7 and step 9's failures to the new *Update
+    your code for a newer Labrador*, whose one-line PowerShell rename, removed
+    names finder and `dpi_aware.manifest` copy take a `v0.2.0` game to the
+    next release. The template's `.gitignore` lists `.vs/`, held by a test of
+    `git check-ignore`, and the template README's list says so. The steps,
+    output and failures were run in fresh starters and a `v0.1.0` project,
+    then followed as worded by a second agent in its own projects, and
+    corrected: Putting it back after step 9's commit, which left
+    `.gitmodules` deleted and stopped a second try at step 5, now ends by
+    deleting `.git` or by committing the engine as plain files again, and
+    step 5 lists that error; step 9 quotes the commit of a project first
+    committed as plain files (887 files, 884 deletions); an empty
+    `..\labrador-from-zip`; the example commit name left in `git restore
+    --source` and `git show`, which leaves an empty file; the engine's
+    `(untracked content)`; `migrate`'s wrong-folder `Cannot find path`
+    block, its second CMake error and the doubled `using namespace
+    labrador;`; move-pin's game run and quit, `git add`'s CRLF warning,
+    `git revert`'s `Date:` line and `git pull`'s `From` lines; and
+    starter-update's step 2 with no release ZIP, which had sent the reader
+    to start again on the Git route, and the `mygame-new` *Going back*
+    leaves. Each corrected step ran again in a third set of projects; each
+    page's *What was checked* records the runs. Found on the way: four
+    configures sat at `Detecting compiler hash`, as `GUIDE#10`'s did, while
+    another project on the machine was also configuring with Visual Studio's
+    vcpkg: one finished by itself after 19 minutes, and three were stopped
+    after 10 to 30 minutes, one of them with the `vcvarsall` that vcpkg
+    starts to identify the compiler idle at no CPU, and another while a later
+    configure of the other project got past the same line. The same
+    configures run again afterwards finished in seconds. The cause was not
+    found; Troubleshooting has the symptom. A review then saw the pager and
+    Vim on screen, ran *Put your project in Git* and the everyday loop again
+    in a fresh `v0.2.0` starter, and added the `###` entry headings of
+    releases after `v0.2.0` to move-pin's `findstr` and `ci.yml` to its
+    template table.
 12. **`GUIDE#12` Small fixes.** Whole preset JSON in testing; changing a
     control in both states; `hold_key.ps1` paths from a starter; the
     LineSweeper bundle folder wiped on rebuild and `--verify` needing Git;
@@ -389,7 +440,17 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   Visual Studio profiles skipped the sign-in and theme windows, so those
   are still written from Microsoft's documentation, as are the Start
   menu's **Open a local folder**, **File > Exit** and **Update now**,
-  none of which was used.
+  none of which was used. `GUIDE#11` opened a starter in Visual Studio
+  2026 and found its `.vs` folder at 60 MB, and that with `.vs/` not
+  ignored, `git add .` while it is open stops with `Permission denied`.
+- Git's pager keys and GitHub's side of a push. `GUIDE#11`'s review saw
+  the pager and Vim in a console window: a long `git log` stopped at `:`
+  and **q** gave the prompt back; `git commit` without `-m` opened Vim, and
+  **Esc**, `:q!`, **Enter** gave `Aborting commit due to empty commit
+  message.` The pager's **Space**, **b** and arrow keys were not pressed
+  and are from `less`'s manual. Its pushes and a teammate's `git pull`
+  went to and from local bare repositories, so GitHub's `From` line in
+  move-pin is written from Git's format, not seen.
 - `GUIDE#7` found that xwbtool refuses to replace a bank without `-y`,
   with `ERROR: Output file ... already exists, use -y to overwrite!`, and
   that FFmpeg 8.1.2 from `winget` takes about 700 MB; `winget install` itself
@@ -426,7 +487,8 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   **Send to > Compressed (zipped) folder** was not clicked, and no email was
   sent.
 - Every download size and time other than emsdk's, which `GUIDE#10`
-  measured on one fast connection.
+  measured on one fast connection, and the engine's submodule, which
+  `GUIDE#11` measured at 19 MB in about 3 seconds on the same one.
 
 ## Findings
 

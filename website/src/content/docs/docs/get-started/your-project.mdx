@@ -246,6 +246,9 @@ preset in `CMakePresets.json` with them.
 
    <Code code={gitignore} lang="text" title=".gitignore" />
 
+   It keeps two folders out of Git: `out`, the build, and `.vs`, which Visual Studio makes when
+   it opens the project and keeps open while it runs.
+
 7. **Build, test and run it**, from the `mygame` folder:
 
    ```bat
@@ -282,7 +285,8 @@ preset in `CMakePresets.json` with them.
    the files it recorded. If it says `Author identity unknown` instead, do
    [Tell Git who you are](/docs/get-started/prerequisites/#tell-git-who-you-are) and run the
    `git commit` line again. Git may also print warnings that `LF will be replaced by CRLF`;
-   they are harmless.
+   they are harmless. [Save and undo changes with Git](/docs/guides/your-git/) is what to do with
+   the repository from here: record each working version and go back to any of them.
 
 </Steps>
 

@@ -1,0 +1,220 @@
+---
+title: Update your code for a newer Labrador
+description: The edits a newer Labrador release asks of your game, as boxes to copy - the renames from v0.2.0 to the next release made in one command, the removed names found, and what each release's CHANGES.md entries mean for a starter project.
+sidebar:
+  order: 13.5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A newer Labrador can rename or remove something your game uses. Before version 1.0 any release
+may, and when it does, its entry in `CHANGES.md` is marked **Source break** and names the old
+spelling and the new one. Your game then stops building with the newer engine until the same
+edit is made in your code. This page gives those edits as commands, for the source breaks a game
+made from the starter project meets, so you do not make them by hand file by file.
+
+You come here from step 7 of
+[Move a starter project to a newer Labrador](/docs/guides/starter-update/) or step 6 of
+[Move your engine pin](/docs/guides/move-pin/). Every command runs in the x64 Native Tools Command
+Prompt, in the project whose `game` folder you are updating: `C:\dev\new\mygame` during *Move a
+starter project*, before its step 8 swaps the folders, or your project's folder in *Move your
+engine pin*. Each section below is one move between two releases; do every section between the
+release you had and the one you are moving to, oldest first.
+
+<Aside type="caution" title="Keep a copy first">
+These commands change your files in place. *Move a starter project* keeps your old project
+untouched until you delete it, and in Git, `git diff` shows every change they made and
+`git restore .` takes them all back ([Save and undo changes with Git](/docs/guides/your-git/)).
+Otherwise, make a copy of `game` as in
+[Make a first change](/docs/get-started/first-change/), step 1, before you start.
+</Aside>
+
+## From v0.2.0 to the next release
+
+Under the heading `## Unreleased` in CHANGES.md until the release is made, these changes are
+waiting for the next release, and every project on `v0.2.0` meets the first two.
+
+### The math library's namespace and constants
+
+**What changed.** The math types (`Vector2F`, `RectangleF` and the rest of `engine/math/`)
+moved from `namespace mattmath` to `namespace labrador`, and the library's CMake target from
+`MattMath` to `LabradorMath`. Constants are spelt in lower case: `Vector2F::ZERO` became
+`Vector2F::zero`, `PI` became `pi`, `EPSILON` became `default_epsilon`, and so on. The template's
+`game\CMakeLists.txt` links `MattMath`, and its sources say `mattmath::`,
+`using namespace mattmath;` and `Vector2F::ZERO`, so a project on `v0.2.0` stops at the first.
+
+**What you see without the edit.** The build stops at the first source file that names the old
+namespace, the rules library's `motion.cpp`, and prints about 85 more errors that follow from
+the first:
+
+```text title="Output"
+FAILED: [code=2] game/CMakeFiles/MyGameRules.dir/rules/motion.cpp.obj
+...
+C:\dev\mygame\game/rules/motion.h(24): error C2653: 'mattmath': is not a class or namespace name
+C:\dev\mygame\game/rules/motion.h(24): error C3646: 'centre': unknown override specifier
+```
+
+The `...` stands for the long compiler command line. Only the first error matters: the name
+`mattmath` is no longer there. A `game\CMakeLists.txt` of your own that still links `MattMath`
+would fail at the link step too, once the code compiled; the line below changes it as well.
+
+**The edit.** This one line makes every rename in the `game` folder's `.h`, `.cpp` and
+`CMakeLists.txt` files, and prints the name of each file it changed:
+
+```bat
+powershell -NoProfile -Command "$renames = @(@('\bmattmath::', 'labrador::'), @('using namespace mattmath;', 'using namespace labrador;'), @('\bMattMath\b', 'LabradorMath'), @('::ZERO\b', '::zero'), @('::ONE\b', '::one'), @('\bPI_OVER_2\b', 'pi_over_2'), @('\bPI\b', 'pi'), @('\bEPSILON\b', 'default_epsilon'), @('\bMIN_AXIS_ALIGNMENT\b', 'min_axis_alignment'), @('\bDEFAULT_CAMERA\b', 'default_camera')); Get-ChildItem game -Recurse -Include *.h,*.cpp,CMakeLists.txt | ForEach-Object { $t = [IO.File]::ReadAllText($_.FullName); $n = $t; foreach ($r in $renames) { $n = $n -creplace $r[0], $r[1] }; $n = [regex]::Replace($n, '\bDIRECTION_[A-Z_]+\b', { param($m) $m.Value.ToLower() }); if ($n -ne $t) { [IO.File]::WriteAllText($_.FullName, $n); 'Changed ' + $_.FullName } }"
+```
+
+For the template's `game` folder at `v0.2.0` it prints six lines:
+
+```text title="Output"
+Changed C:\dev\new\mygame\game\rules\motion.cpp
+Changed C:\dev\new\mygame\game\rules\motion.h
+Changed C:\dev\new\mygame\game\states\confirm_state.cpp
+Changed C:\dev\new\mygame\game\states\hello_state.cpp
+Changed C:\dev\new\mygame\game\tests\motion_tests.cpp
+Changed C:\dev\new\mygame\game\CMakeLists.txt
+```
+
+`CMakeLists.txt` is not among them if you already took the new release's
+`game\CMakeLists.txt`, which links `LabradorMath`; then it prints the first five. Run it again
+and it prints nothing, because nothing is left to change.
+
+If the prompt is not in the project's folder, it changes nothing and prints a block in red that
+starts like this one, from a prompt in `C:\dev`:
+
+```text title="Output"
+Get-ChildItem : Cannot find path 'C:\dev\game' because it does not exist.
+```
+
+Go to the project with `cd /d` and its folder, such as `cd /d C:\dev\new\mygame`, and run the
+line again. The box under [Removed names](#removed-names) prints the same block there.
+
+In `game\states\hello_state.cpp`, a `v0.2.0` template's file named both namespaces, so after the
+line it says `using namespace labrador;` on two lines in a row. It builds as it is; the template's
+own list, in its entry dated 2026-10-30, deletes the second line, and your copy can too.
+
+It changes only whole names, as CHANGES.md's table lists them: `Vector2F::ZERO` and
+`RectangleF::ZERO`, but not a `ZERO` of your own without `::` before it; `PI`, `EPSILON` and the
+others wherever they stand alone, which is right unless your game has a name of its own spelt
+exactly that way. Text inside quotation marks is changed too. `git diff` in a Git project, or
+`fc` against the old project's file, shows each change if you want to check them. A file saved in
+another encoding than UTF-8 is written back as UTF-8, which the engine's settings expect.
+
+### Removed names
+
+**What changed.** Some members and types that nothing in the engine or its samples used were
+removed, with no replacement. The template uses none of them, so a game made from it meets this
+only if it called one itself. This line lists each line in the `game` folder that names one,
+with its file and line number, and prints nothing when there is none:
+
+```bat
+powershell -NoProfile -Command "Get-ChildItem game -Recurse -Include *.h,*.cpp | Select-String -CaseSensitive -Pattern '\b(set_position_x|set_position_y|set_position_x_from_right|set_position_y_from_bottom|set_position_from_bottom_left|set_position_from_bottom_right|from_top_left_bottom_right|rectangle_i|set_left|set_top|set_right|set_bottom|set_top_left|set_bottom_right|set_top_left_and_bottom_right|saturate|darken|invert|make_opaque|make_transparent|calculate_intermediate_camera|remove_all_children|set_texture|set_position_from_top_right_origin|has_action|MovingObject|RotationOrigin|SoundBankObject|AnimationObject|CameraTools|TextDropShadow|UiTextDropShadow)\b' | ForEach-Object { $_.Path + '(' + $_.LineNumber + '): ' + $_.Line.Trim() }"
+```
+
+A line it prints may be a name of your own that happens to be spelt the same, such as your own
+`invert`: check whether the call is on an engine type. For each one that is, CHANGES.md's
+entries *Remove public members that nothing calls or tests* and *Remove engine types nothing
+uses* say what to do instead: set the fields directly, such as `rectangle.x = 10.0f;` or
+`colour.a = 1.0f;`, or keep a copy of the removed function or class from the old release in
+your own game.
+
+### Template changes the new game\CMakeLists.txt needs
+
+These are not engine changes but changes to the template, listed in its README under
+*A copy is yours*. One matters when you take the new release's `game\CMakeLists.txt`, as
+*Move a starter project* step 6 does when you never changed yours: it lists a file,
+`dpi_aware.manifest`, that a `game` folder from `v0.2.0` does not have, and configure stops:
+
+```text title="Output"
+CMake Error at C:/Program Files/Microsoft Visual Studio/18/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake:614 (_add_executable):
+  Cannot find source file:
+
+    dpi_aware.manifest
+Call Stack (most recent call first):
+  game/CMakeLists.txt:64 (add_executable)
+```
+
+A second error follows from the first, and the configure ends:
+
+```text title="Output"
+CMake Error at C:/Program Files/Microsoft Visual Studio/18/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake:614 (_add_executable):
+  No SOURCES given to target: MyGame
+Call Stack (most recent call first):
+  game/CMakeLists.txt:64 (add_executable)
+
+
+CMake Generate step failed.  Build files cannot be regenerated correctly.
+```
+
+The file tells Windows not to stretch the game's window on a scaled display. Copy it from the
+engine's copy of the template:
+
+```bat
+copy external\labrador\samples\minimal\dpi_aware.manifest game\
+```
+
+It prints `1 file(s) copied.` If you kept your own `game\CMakeLists.txt`, you can leave both
+out, and the game builds as before.
+
+## From v0.1.0 to v0.2.0
+
+No change in `v0.2.0` stops a game made from the template from building, and its CHANGES.md
+entries ask nothing of such a game. One source break meets a game that wrote a function of its
+own named `key_name` taking a `labrador::Key`: the engine now has one too, and an unqualified
+call matches both. This lists any such line:
+
+```bat
+findstr /s /n /c:"key_name(" game\*.h game\*.cpp
+```
+
+It prints nothing when there is none. If it lists your own function and a call to it, and the
+build says `error C2668: 'key_name': ambiguous call to overloaded function`, rename your function,
+or delete it and call `labrador::key_name(key)`, whose names are the keys' own spellings.
+
+The template's README lists optional changes from `v0.2.0`, such as tests and the browser build;
+[Move your engine pin](/docs/guides/move-pin/), step 4, shows how to take one.
+
+## When an entry asks for something you cannot follow
+
+A release can ask for a change these boxes do not make. If you cannot see how to make it, stay on
+your release: *Move a starter project* keeps your old project, and *Move your engine pin* has
+[Go back to your old pin](/docs/guides/move-pin/#go-back-to-your-old-pin). Then ask in
+[Labrador's issues](https://github.com/matt439/Labrador/issues), naming the two releases, the
+entry's heading and the first error the build printed. Your game keeps working on the release it
+has; nothing makes you move.
+
+## What was checked
+
+On 31 October 2026 a project extracted from a starter ZIP of a clean `v0.2.0`, standing in for a
+release's ZIP, with its own greeting and `lodepng` added to `vcpkg.json`, was moved to a starter
+ZIP of this tree by [Move a starter project to a newer Labrador](/docs/guides/starter-update/),
+at `C:\dev\g11-author\up`, taking the new `game\CMakeLists.txt`. Without the manifest,
+configure stopped with the error quoted. With it, the build stopped with 89 error lines, the
+first as quoted. The removed-names line printed nothing; the rename line printed five files, the
+new `game\CMakeLists.txt` already linking `LabradorMath`, and nothing when run again; the project
+then built with no warning, passed both tests, and its smoke test exited 0. On a copy of the old
+`game` folder, the rename line printed the six files quoted and made exactly the edits the
+template made between the two releases, as `diff` showed, and the removed-names line printed the
+line of a `darken` call added to test it. The `key_name` check printed nothing for the template;
+the ambiguous call is the error the CHANGES.md entry describes and was not made here. While these
+ran, vcpkg's install on this machine sat at `Detecting compiler hash` for up to 30 minutes at a
+time, so the builds after the manifest was copied were configured with the packages vcpkg had
+already installed there and `-DVCPKG_MANIFEST_INSTALL=OFF`, which changes nothing the compiler
+sees. Configured again later as the page gives it, with vcpkg's install, the migrated project
+configured in 3 seconds, built and passed both tests.
+
+A second person then followed the page as worded in their own projects from the same two ZIPs,
+and the manifest error, the 89 error lines, the rename line (five files, then nothing), the
+removed-names line and the `key_name` check gave what is quoted, with the renamed files matching
+the new template's. They found three things, since corrected: from the wrong folder both lines
+print the red `Cannot find path` block rather than nothing, as the page had said; the configure
+without the manifest goes on to the second error quoted; and the renamed `hello_state.cpp` says
+`using namespace labrador;` twice. Each was run again on the same day at `C:\dev\g11-fixer`:
+both lines from a folder with no `game` in it printed the block, whose first line is quoted with
+the folder changed to `C:\dev`, and exited 1; a starter of this tree with
+`game\dpi_aware.manifest` deleted, configured with vcpkg's install, printed both errors and the
+last line quoted, and configured in 3 seconds once the `copy` line had put the file back; and
+the rename line on a fresh `v0.2.0` starter printed the six files quoted, turned lines 15 and 16
+of `hello_state.cpp` from `mattmath` and `labrador` into `labrador` twice, and printed nothing
+the second time.
