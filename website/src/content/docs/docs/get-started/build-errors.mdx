@@ -1,0 +1,289 @@
+---
+title: Read a build error
+description: Find the line that matters in a failed build, go to it, and fix the most common C++ compiler, linker and warning errors.
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Every change to your game's code ends with a build, and sooner or later a build fails. This page
+shows what a failed build looks like, which of its lines to read, how to get to the line it
+names, and what the errors you are most likely to cause mean. Every message on this page was
+made on purpose in a starter project, by the slip it describes.
+
+It follows on from [Make a first change](/docs/get-started/first-change/). The commands run in
+the x64 Native Tools Command Prompt, in your project's folder, `C:\dev\mygame` on these pages.
+
+## What a failed build looks like
+
+This is the build from step 5 of Make a first change, in a starter project as it came, after
+one slip: in `game\states\hello_state.cpp`, `font_name` was typed as `font_nam`. The prompt
+shows:
+
+```text title="Output"
+[1/4] Running utility command for game_content
+[2/4] Checking that no engine file includes a game header
+[3/4] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+FAILED: [code=2] game/CMakeFiles/MyGame.dir/states/hello_state.cpp.obj
+C:\PROGRA~1\MICROS~1\18\COMMUN~1\VC\Tools\MSVC\1451~1.362\bin\Hostx64\x64\cl.exe  /nologo /TP ...
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2065: 'font_nam': undeclared identifier
+ninja: build stopped: subcommand failed.
+```
+
+If you made the edits in Make a first change, a line of your code quoted in a message has your
+text rather than the starter's. The rest is the same.
+
+- The lines with numbers in square brackets, such as `[3/4]`, are the build's progress.
+- `FAILED:` is where it went wrong. It names the file being made, here the compiled form of
+  `hello_state.cpp`.
+- The line after `FAILED:` is the command that failed. In a real build it is hundreds of
+  characters long and fills several lines of the window. Skip it.
+- The next line starting with a file name and `error` is the one to read. Its parts are:
+  - `C:\dev\mygame\game\states\hello_state.cpp`: the file.
+  - `(88)`: the line in that file, counting from 1 at the top.
+  - `error C2065`: the kind of error. Every error has a code: `C` for the compiler, `LNK` for
+    the linker. You can search the web for the code, or look it up below.
+  - `'font_nam': undeclared identifier`: what the compiler found. Here it met the name
+    `font_nam`, and nothing it knows is called that.
+- `ninja: build stopped: subcommand failed.` means the build did not finish. Nothing was made
+  from your change, and the game in `out\build\x64-debug\game` is still the one from the last
+  build that worked.
+
+Other lines can come between the error and `ninja: build stopped`: progress lines for other
+files the build was already working on, or a second `FAILED:` for another file. Read from the
+first `FAILED:` down, not from the bottom up. A build with no error has no `FAILED:` line and
+ends with a `Linking` line, such as `[4/4] Linking CXX executable game\MyGame.exe`; the numbers,
+and which program is linked last, can differ.
+
+## Fix it and build again
+
+1. **Find the first line with `error` in it**, under the first `FAILED:`. Scroll up if the
+   window has moved on. If there are several errors, the first is nearly always the one to fix:
+   [Many errors from one slip](#many-errors-from-one-slip) says why.
+2. **Open the file it names.** Type `notepad`, a space, and the file's path as the error prints
+   it, up to the bracket. For a file in your project you can start from `game\`:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Some paths in errors mix `\` and `/`, such as `C:\dev\mygame\game/rules/motion.h`. Notepad
+   opens them as they are. If Notepad says it cannot find the file, the path is mistyped: close
+   it, check the path against the error, and try again.
+
+3. **Go to the line.** Press **Ctrl+G**. A box titled **Go to line** opens; type the line's
+   number, here `88`, and press **Enter**. The bar along the bottom of Notepad then says
+   `Ln 88`. If there is no bar, turn it on with **View > Status bar**.
+4. **Compare the line with what you meant to write.** The message tells you what to look for.
+   Here, `font_nam` is one letter short of `font_name`, which is spelt correctly where it is
+   made, on line 23 near the top of the file, and where it is used again a few lines below. The
+   slip can also be on the line before the one named: a missing `;` is noticed only when the
+   compiler reaches the next line.
+5. **Save, close Notepad, and build again.** Use the same build line as before. The build
+   compiles only the files you changed, so it takes seconds. If it fails again, read the new
+   first error: a fix often lets the compiler get further and find the next slip.
+
+If you cannot find the slip, put the file back as in
+[Getting a file back](/docs/get-started/first-change/#getting-a-file-back), and make your
+change again.
+
+## Many errors from one slip
+
+When the compiler meets a slip it tries to carry on, and a slip such as a quotation mark that
+is never closed makes it misread everything after it. Deleting the closing quotation mark of the
+greeting gives five errors:
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2001: newline in string literal
+C:\dev\mygame\game\states\hello_state.cpp(89): error C2143: syntax error: missing ')' before 'labrador::Colour::white'
+C:\dev\mygame\game\states\hello_state.cpp(89): error C2143: syntax error: missing ';' before 'labrador::Colour::white'
+C:\dev\mygame\game\states\hello_state.cpp(89): error C2059: syntax error: ')'
+C:\dev\mygame\game\states\hello_state.cpp(89): error C2059: syntax error: ')'
+```
+
+Only the first is the slip. The four after it are the compiler confused by it, and they go away
+when it is fixed. Fix the first error, build again, and read whatever comes first then.
+
+One slip breaks this rule: a missing closing brace `}`. Deleting the `}` that ends one of the
+`if` blocks in `keyboard_direction`, at line 63, gives errors about correct code further down,
+and a last line that names a brace higher up:
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(69): error C2888: 'HelloState::HelloState(labrador::Application *)': symbol cannot be defined within namespace 'anonymous-namespace'
+...
+C:\dev\mygame\game\states\hello_state.cpp(19): fatal error C1075: '{': no matching token found
+```
+
+The compiler pairs each `}` with the nearest `{` still open, so after one goes missing every
+`}` below it closes the wrong block, and the `{` left over at the end is the outermost one. Line
+19 is the `{` that opens the block around `keyboard_direction`, not the block whose `}` was
+deleted. The missing `}` is somewhere between the line `C1075` names and the line of the first
+error, here between lines 19 and 69. In the files you were given, each `}` sits directly below
+its `{`, at the same indent; look in that range, in code you changed, for a `{` with no `}`
+under it.
+
+The same error can also come from several files at once. When the slip is in a header, a file
+ending `.h`, every file that includes it fails with the same message, each under a `FAILED:`
+line of its own. The file and line to fix are the same in each.
+
+## When the error names a file you did not write
+
+The error that comes first is not always in your code. Leaving out the `L` before the greeting's
+quotation marks gives an error that starts with a file in Visual Studio's own folder, then more
+than sixty lines of notes:
+
+```text title="Output"
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\memory(3666): error C2665: 'labrador::Label::Label': no overloaded function could convert all the argument types
+C:\dev\mygame\external\labrador\engine/render/label.h(42): note: could be 'labrador::Label::Label(const std::wstring &,const std::string &,const labrador::Vector2F &,labrador::RenderResources *,const labrador::Colour &,float,float,const labrador::Vector2F &,float)'
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include\memory(3666): note: 'labrador::Label::Label(...)': cannot convert argument 1 from 'const char [23]' to 'const std::wstring &'
+...
+C:\dev\mygame\game\states\hello_state.cpp(87): note: see reference to function template instantiation 'std::unique_ptr<labrador::Label,...> std::make_unique<labrador::Label,const char(&)[23],...>(...)' being compiled
+```
+
+The file in `Microsoft Visual Studio`, and anything under `external\labrador`, is not where the
+slip is: those are the standard library and the engine, and they are not wrong. Look down the
+notes for the first line that names a file in your `game` folder. Here it is the last line,
+`hello_state.cpp(87)`, the line that makes the greeting. Then read the note that says what could
+not be done: `cannot convert argument 1 from 'const char [23]' to 'const std::wstring &'`.
+Argument 1 is the first thing between the brackets, the text. `const char [23]` is a plain
+string, and its number is the length of the text plus one. `std::wstring` is a wide string,
+which is what the engine's text takes and what the `L` makes. Put the `L` back.
+
+Two kinds of line in these notes can be skipped: blocks that start `with` and list names in
+square brackets, which spell out what a short name such as `_Elem` stands for, and long names
+starting `std::basic_string`, which is the full name of `std::wstring`.
+
+## Warnings stop the build
+
+A warning is the compiler pointing at code that is allowed but probably not what you meant.
+Labrador builds your game with warnings turned into errors, so a warning stops the build too.
+It comes as a `C2220` line followed by one or more warning lines, with the same file and line:
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(82): error C2220: the following warning is treated as an error
+C:\dev\mygame\game\states\hello_state.cpp(82): warning C4189: 'unused_scale': local variable is initialized but not referenced
+```
+
+`C2220` only says that the line after it is being treated as an error. Read the `warning` line
+under it: here a variable is made and never used. Fix what the warning says, here by using
+the variable or deleting it. Do not turn the setting off. The warnings it catches are often real
+mistakes, and the engine, the samples and the tests are all built this way.
+
+The warnings you are most likely to see are in
+[Troubleshooting](/docs/troubleshooting/#c2220-the-following-warning-is-treated-as-an-error).
+
+## Errors from the linker
+
+Once every file has compiled, the linker joins them into `MyGame.exe`. Its errors start with
+`LNK` and come after a `FAILED:` line naming the program rather than a file:
+
+```text title="Output"
+FAILED: [code=4294967295] game/MyGame.exe
+C:\WINDOWS\system32\cmd.exe /C "cd . && "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E vs_link_exe ...
+LINK Pass 1: command "C:\PROGRA~1\MICROS~1\18\COMMUN~1\VC\Tools\MSVC\1451~1.362\bin\Hostx64\x64\link.exe /nologo ..." failed (exit code 1120) with the following output:
+hello_state.cpp.obj : error LNK2019: unresolved external symbol "int __cdecl starting_score(void)" (?starting_score@@YAHXZ) referenced in function "public: virtual void __cdecl HelloState::init(void)" (?init@HelloState@@UEAAXXZ)
+
+game\MyGame.exe : fatal error LNK1120: 1 unresolved externals
+```
+
+Here two long lines follow `FAILED:`: the command, and `LINK Pass 1: command ... failed`, which
+only introduces the linker's own output. Skip both. A linker error has no line number. It
+names a function: here `starting_score`, which `HelloState::init` uses, and which the linker
+found nowhere. Skip the part in brackets starting `?`, which is the same names in the linker's
+own spelling. `LNK1120` only counts the `LNK2019` lines above it. The usual causes, and a
+command that finds every place the name is written, are in
+[Troubleshooting](/docs/troubleshooting/#lnk2019-unresolved-external-symbol).
+
+The linker error you are most likely to see first is
+[`LNK1168`](/docs/troubleshooting/#lnk1168-cannot-open-gamemygameexe-for-writing): the game is
+still running, so it cannot be replaced.
+
+## In the browser build
+
+[Build for the browser](/docs/guides/browser/) compiles the same code with a different
+compiler, clang, and its errors look different. The `font_nam` slip gives:
+
+```text title="Output"
+FAILED: [code=1] game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o
+C:/dev/mygame/game/states/hello_state.cpp:88:30: error: use of undeclared identifier 'font_nam'; did you mean 'font_name'?
+   88 |                 L"Hello from the engine.", font_nam, this->motion_.centre, resources,
+      |                                            ^~~~~~~~
+      |                                            font_name
+C:/dev/mygame/game/states/hello_state.cpp:23:20: note: 'font_name' declared here
+   23 |         const std::string font_name = "jetbrains_mono_bold_16";
+      |                           ^
+1 error generated.
+ninja: build stopped: subcommand failed.
+```
+
+The file and line are separated by colons rather than brackets, `hello_state.cpp:88:30` meaning
+line 88, the 30th character along. Under it, clang prints the line itself with a `^` under the
+place it means, and often suggests a fix, here `font_name`. There is no error code. A warning
+turned into an error ends with its name in square brackets, such as
+`[-Werror,-Wunused-variable]`. Read the first `error:` line as before.
+
+The linker's error for a function it cannot find is one line:
+
+```text title="Output"
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: starting_score()
+```
+
+It has the same causes as `LNK2019`.
+
+The two compilers do not warn about the same things. In these checks, writing `1.2` where a
+`float` was meant, or putting a `float` into an `int`, stopped the Windows build and not the
+browser one. Build both before you rely on code built in only one of them. The browser build
+alone stopped at a loop counter declared `int` and compared with a container's size:
+
+```text title="Output"
+C:/dev/mygame/game/states/hello_state.cpp:165:20: error: comparison of integers of different signs: 'int' and 'size_type' (aka 'unsigned long') [-Werror,-Wsign-compare]
+  165 |         for (int i = 0; i < this->touch_markers_.size(); ++i)
+      |                         ~ ^ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+
+A size is never negative and an `int` can be, so comparing them is a warning. Declare the
+counter as `size_t`, as the starter's own loop does: `for (size_t i = 0; ...`.
+
+## Common errors
+
+The [Errors in your own code](/docs/troubleshooting/#errors-in-your-own-code) section of
+Troubleshooting has each of these with a real example, what usually causes it and how to fix it.
+
+| Code | The message starts | What it usually means |
+|---|---|---|
+| [`C2001`](/docs/troubleshooting/#c2001-newline-in-string-literal) | `newline in string literal` | A quotation mark is missing. |
+| [`C2143`](/docs/troubleshooting/#c2143-syntax-error-missing--before-) | `syntax error: missing ';' before` | A `;` or bracket is missing, on this line or the one before. |
+| [`C2065`, `C3861`](/docs/troubleshooting/#c2065-undeclared-identifier-or-c3861-identifier-not-found) | `undeclared identifier`, `identifier not found` | A name is misspelt, or its header is not included. |
+| [`C3646`, `C4430`](/docs/troubleshooting/#c3646-unknown-override-specifier-and-c4430-missing-type-specifier) | `unknown override specifier`, `missing type specifier` | A type in a header is misspelt or lacks its `labrador::`. |
+| [`C2039`](/docs/troubleshooting/#c2039-is-not-a-member-of) | `is not a member of` | The name after `.`, `->` or `::` is misspelt. |
+| [`C2664`, `C2665`](/docs/troubleshooting/#c2664-cannot-convert-argument-or-c2665-no-overloaded-function-could-convert) | `cannot convert argument` | A value of the wrong type, such as text without its `L`. |
+| [`C2660`](/docs/troubleshooting/#c2660-function-does-not-take-n-arguments) | `function does not take` | A call has too many or too few values between its brackets. |
+| [`C1083`](/docs/troubleshooting/#c1083-cannot-open-include-file) | `Cannot open include file` | An `#include` names a file that is not there. |
+| [`C1075`](/docs/troubleshooting/#c1075--no-matching-token-found) | `'{': no matching token found` | A `}` is missing. |
+| [`C3668`, `C2511`](/docs/troubleshooting/#c3668-did-not-override-any-base-class-methods-or-c2511-overloaded-member-function-not-found) | `did not override`, `overloaded member function not found` | A function's header and `.cpp` disagree. |
+| [`C2220`](/docs/troubleshooting/#c2220-the-following-warning-is-treated-as-an-error) | `the following warning is treated as an error` | Read the warning on the next line. |
+| [`LNK2019`](/docs/troubleshooting/#lnk2019-unresolved-external-symbol) | `unresolved external symbol` | A `.cpp` file is not in the build, or a function was never written. |
+| [`LNK1168`](/docs/troubleshooting/#lnk1168-cannot-open-gamemygameexe-for-writing) | `cannot open ... for writing` | The game is still running. |
+
+An error that is not about your code, such as `'cmake' is not recognized`, a missing `fxc` or
+`C1083: Cannot open compiler generated file`, is about the tools or the folder. Look it up by its
+message in the rest of [Troubleshooting](/docs/troubleshooting/).
+
+## What was checked
+
+On 30 October 2026, in a starter project made from a starter ZIP, with Visual Studio 2026's
+compiler 19.51 and Emscripten 6.0.12, each slip this page and Troubleshooting describe was made
+in `game\` one at a time, and the project was built with the `x64-debug` and `wasm-debug`
+presets. The messages are the ones those builds printed, with the project's folder shown as
+`C:\dev\mygame`, the failed command lines shortened and, where marked `...`, notes left out.
+Line numbers are those of the starter's files at the time and move as the files change. After
+each slip the file was put back and the build passed again. Notepad on Windows 11 opened a path
+mixing `\` and `/`, and Ctrl+G moved to the line typed.
+
+## Where to go next
+
+<CardGrid>
+	<LinkCard title="Troubleshooting" description="Every error on this page, and the ones about tools and folders, by message." href="/docs/troubleshooting/" />
+	<LinkCard title="Debug your game" description="Open your project in Visual Studio, stop at a breakpoint and inspect an update." href="/docs/get-started/debug-your-game/" />
+	<LinkCard title="Reading the C++ in minimal" description="The language features behind the names in these messages." href="/docs/concepts/reading-minimal/" />
+	<LinkCard title="Guides" description="How to grow the game: sprites and text, input, collision, audio, menus, assets and split screen." href="/docs/guides/" />
+</CardGrid>

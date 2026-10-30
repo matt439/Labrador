@@ -136,7 +136,9 @@ ctest --preset wasm-debug
 ```
 
 The first configure installs doctest again, built for WebAssembly; it is the only package the
-browser build needs, so this is quick. ctest runs `MyGameTests` and reports `100% tests passed, 0 tests failed out of 1`. The page is
+browser build needs, so this is quick. The browser build compiles with clang rather than
+Visual Studio's compiler, and its errors look different:
+[In the browser build](/docs/get-started/build-errors/#in-the-browser-build) reads one. ctest runs `MyGameTests` and reports `100% tests passed, 0 tests failed out of 1`. The page is
 `out\build\wasm-debug\game\MyGame.html`.
 
 ## The page, and what it owes the module

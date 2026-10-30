@@ -240,11 +240,13 @@ use the default `x64-debug` preset (Direct3D 11).
 
 ## Building
 
-### A warning stops the build
+### A warning stops the build in engine code
 
 Labrador builds with warnings as errors (`/W4 /WX`), and a game that links `labrador_settings`
-does too. That is deliberate: fix the warning rather than turning the setting off. If the warning
-is in engine code you have not changed, please report it with your compiler version.
+does too. A warning in your own code is in
+[`C2220`](#c2220-the-following-warning-is-treated-as-an-error) below. If the warning is in
+engine code, under `external\labrador`, and you have not changed it, please report it with
+your compiler version, which the first line of `cl` prints.
 
 ### `fatal error C1083: Cannot open compiler generated file: '': Invalid argument`
 
@@ -291,6 +293,226 @@ links the engine should link the engine's copy rather than declare another
 Includes in a Labrador project are written from the project's root, so the folder *above*
 `game\` has to be on the include path. The `target_include_directories` line in
 [Start your own project](/docs/get-started/your-project/) adds it.
+
+## Errors in your own code
+
+These are the errors a change to your game's code is most likely to cause, each made on purpose
+in a starter project. [Read a build error](/docs/get-started/build-errors/) shows how to find
+the line that matters in a failed build and get to it. Fix the **first** error in the output and
+build again: the ones after it are often the same slip seen again.
+
+### `C2001: newline in string literal`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2001: newline in string literal
+```
+
+A string's closing quotation mark is missing, so the string runs on to the end of the line.
+Errors such as `C2143` and `C2059` on the next line usually follow it and go away with it. Put
+the quotation mark back on the line named. A string has to start and end on the same line.
+
+### `C2143: syntax error: missing ';' before ...`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(51): error C2143: syntax error: missing ';' before '}'
+```
+
+The compiler reached the thing after `before` while it was still expecting the end of a
+statement. Look at the end of the line **before** the one named, and the line itself: here line
+50, `direction.x -= 1.0f`, had lost its `;`. The same message with `')'` or `'}'` in place of
+`';'` means a bracket of that kind is missing. After [`C2001`](#c2001-newline-in-string-literal)
+it is a consequence: fix that first.
+
+### `C2065: undeclared identifier`, or `C3861: identifier not found`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(88): error C2065: 'font_nam': undeclared identifier
+C:\dev\mygame\game\states\hello_state.cpp(158): error C3861: 'keyboard_directon': identifier not found
+```
+
+The name in quotation marks is not one the compiler knows at that point. `C2065` is said of a
+variable, `C3861` of a function. In order of likelihood:
+
+- **It is misspelt**, or differs in capitals: `Font_name` is not `font_name`. Find where it is
+  declared and copy its spelling.
+- **It is declared further down the file** than where you use it. Move the use, or the
+  declaration, so the declaration comes first.
+- **Its header is not included.** A name from the engine or from another of your files needs
+  that file's `#include` at the top. The [API reference](/docs/reference/) gives the header
+  for each engine name.
+- **It is in the engine and needs `labrador::`** in a file that has no
+  `using namespace labrador;` line.
+
+### `C3646: unknown override specifier`, and `C4430: missing type specifier`
+
+```text title="Output"
+C:\dev\mygame\game/states/hello_state.h(74): error C3646: 'target_': unknown override specifier
+C:\dev\mygame\game/states/hello_state.h(74): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+```
+
+These two together mean the type in front of a name in a header, usually a member variable, is
+not one the compiler knows. Here `Vector2F target_;` was added to `hello_state.h`. A state's
+header has no `using namespace labrador;` line, unlike its `.cpp`, so every engine type in it
+needs `labrador::` in front: `labrador::Vector2F target_;`. Otherwise the type is misspelt, or
+its header is not included at the top. The message names the variable rather than the type,
+and appears once for each file that includes the header.
+
+### `C2039: is not a member of`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(89): error C2039: 'whte': is not a member of 'labrador::Colour'
+C:\dev\mygame\external\labrador\engine/render/colour.h(26): note: see declaration of 'labrador::Colour'
+C:\dev\mygame\game\states\hello_state.cpp(89): error C2065: 'whte': undeclared identifier
+```
+
+The name after `.`, `->` or `::` is not part of the type the error names: here `Colour` has no
+`whte`. It is usually misspelt. The engine and the starter use British spellings, so
+`motion_.center` gives `'center': is not a member of 'Motion'`, where the name is `centre`, and
+the colour type is `Colour`. The `note` line names the file that declares the type: open it to
+see the names it has, or, for an engine type, its page in the [API reference](/docs/reference/).
+
+### `C2664: cannot convert argument`, or `C2665: no overloaded function could convert`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(178): error C2664: 'void labrador::Text::set_text(const std::wstring &)': cannot convert argument 1 from 'const char [1]' to 'const std::wstring &'
+```
+
+A value between a call's brackets is of a type the function does not take. The message names
+the function, which argument, counting from 1, and both types. The commonest cause in a
+Labrador game is text without its `L`: the engine's text is `std::wstring`, a wide string, so
+write `L""` and `L"Score"`, not `""` and `"Score"`.
+
+`C2665` is the same mistake made through `std::make_unique`, which a scene's `add` line uses. It
+starts with a file in Visual Studio's own folder, such as `...\include\memory(3666)`, and is
+followed by dozens of notes. Look down them for the first that names a file in `game\`, and for
+the note that says `cannot convert argument`; [Read a build error](/docs/get-started/build-errors/#when-the-error-names-a-file-you-did-not-write)
+works through one.
+
+### `C2660: function does not take N arguments`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(156): error C2660: 'step_motion': function does not take 3 arguments
+C:\dev\mygame\game/rules/motion.h(48): note: see declaration of 'step_motion'
+```
+
+The call has more or fewer values between its brackets than the function takes. The `note` names
+the line that declares the function: open it, count what it takes, and make the call match.
+Here `dt` had been left off the end of the call.
+
+### `C1083: Cannot open include file`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(8): fatal error C1083: Cannot open include file: 'game/states/confirm_states.h': No such file or directory
+```
+
+An `#include` names a file that is not there. Check its spelling against the file in Explorer
+or with `dir game\states`. Includes in a Labrador project are written from the project's folder,
+starting `game/` for your files and `engine/` for the engine's, with forward slashes. If the
+spelling is right, check that the file is in the folder the include names: a new file of yours
+saved in `game\` itself, rather than in `game\states\`, is included as `game/score.h`, not
+`game/states/score.h`. `C1083` with
+`Cannot open compiler generated file` is a different problem, about the folder's depth:
+[see above](#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument).
+
+### `C1075: '{': no matching token found`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(69): error C2888: 'HelloState::HelloState(labrador::Application *)': symbol cannot be defined within namespace 'anonymous-namespace'
+...
+C:\dev\mygame\game\states\hello_state.cpp(19): fatal error C1075: '{': no matching token found
+```
+
+A `}` is missing. This is the one case where the first error is not the one to read: the
+compiler pairs each `}` with the nearest `{` still open, so after one goes missing every `}`
+below it closes the wrong block, and it complains about correct code below the slip. The
+`C1075` line comes last and names the `{` left over at the end, which is the outermost one, not
+the one whose `}` is missing. Here the `}` deleted was at line 63, ending an `if` block, and line
+19 is the `{` of the block around the whole of `keyboard_direction`. The missing `}` is between
+the line `C1075` names and the first error's line. In the files you were given, each `}` sits
+directly below its `{` at the same indent; look in that range, in code you changed, for a `{`
+with no `}` under it.
+[Read a build error](/docs/get-started/build-errors/#many-errors-from-one-slip) shows the
+whole case.
+
+### `C3668: did not override any base class methods`, or `C2511: overloaded member function not found`
+
+```text title="Output"
+C:\dev\mygame\game/states/hello_state.h(33): error C3668: 'HelloState::draw': method with override specifier 'override' did not override any base class methods
+C:\dev\mygame\game\states\hello_state.cpp(205): error C2511: 'void HelloState::draw(labrador::Renderer &) const': overloaded member function not found in 'HelloState'
+```
+
+A function is written differently in two places that have to agree. `C3668` means a function
+marked `override` in a state's header does not match the one it replaces in the engine's
+`State`: here `const` had been removed from `draw`. A state's `init`, `update`, `draw`,
+`on_suspend` and `on_resume` must keep the engine's spelling exactly; `draw` ends `const` and
+`update` takes `float dt`. `C2511` means the `.cpp` file defines a function the header does not
+declare, the same way: for example `update(double dt)` in the `.cpp` where the header says
+`update(float dt)`. Copy the line from the header to the `.cpp`, or the other way round.
+Many errors about `this` pointers after a `C2511` are its consequences.
+
+### `C2220: the following warning is treated as an error`
+
+```text title="Output"
+C:\dev\mygame\game\states\hello_state.cpp(82): error C2220: the following warning is treated as an error
+C:\dev\mygame\game\states\hello_state.cpp(82): warning C4189: 'unused_scale': local variable is initialized but not referenced
+```
+
+Your game builds with warnings as errors, so `C2220` stops the build because of the warning on
+the line after it. Fix what that warning says; do not turn the setting off. The warnings these
+pages' checks met:
+
+| Warning | What it means | Fix |
+|---|---|---|
+| `C4189: local variable is initialized but not referenced` | A variable is made and never used. | Use it, or delete it. |
+| `C4100: unreferenced parameter` | A function takes a value it never uses. | Use it, or delete its name and keep its type: `void flash(float)`. |
+| `C4305: 'initializing': truncation from 'double' to 'const float'` | A number without `f` where a `float` is meant. | Write `1.2f`, not `1.2`. |
+| `C4244: conversion from 'float' to 'int', possible loss of data` | A `float` put into an `int`, which drops the fraction. | Keep it a `float`, or write `static_cast<int>(...)` to say the fraction should go. |
+
+A warning in a header, such as `game\rules\motion.h`, appears once for every file that includes
+it, each under its own `FAILED:` line. It is one warning to fix.
+
+### `LNK2019: unresolved external symbol`
+
+```text title="Output"
+hello_state.cpp.obj : error LNK2019: unresolved external symbol "int __cdecl starting_score(void)" (?starting_score@@YAHXZ) referenced in function "public: virtual void __cdecl HelloState::init(void)" (?init@HelloState@@UEAAXXZ)
+
+game\MyGame.exe : fatal error LNK1120: 1 unresolved externals
+```
+
+Every file compiled, but the linker found no body for a function the game uses: here
+`starting_score`, used in `HelloState::init`. `LNK1120` counts these lines. The causes, in
+order of likelihood:
+
+- **A new `.cpp` file is not in the build.** Every source file is listed by name in
+  `game\CMakeLists.txt`, and the game's sources are listed **twice**: in the `add_executable(MyGame`
+  inside `if(EMSCRIPTEN)`, for the browser, and in the `add_executable(MyGame WIN32` after it,
+  for Windows. Add the file's name, such as `states/score.cpp`, beside
+  `states/hello_state.cpp` in both, save, and build again. The build reads the changed list by
+  itself.
+- **The function is declared in a header but never written** in any `.cpp`, or the `.cpp`
+  spells it differently: a different name, different parameter types, or a member function
+  written without its class, `int score()` where `int HelloState::score()` was meant.
+
+To tell which, list every line in your game that has the function's name, with this, from your
+project's folder and with the name from the error in place of `starting_score`:
+
+```bat
+findstr /s /n "starting_score" game\*.cpp game\*.h
+```
+
+Each line it prints is a file, a line number and the line. Where the name is used, as in
+`starting_score();`, is the call. Where it ends in `;` after its brackets in a `.h` file is the
+declaration. Where it is followed by a `{` on the next line, in a `.cpp` file, is the body. If
+there is no body, write it. If there is one, compare its first line with the declaration, then
+check that its `.cpp` file is in both lists. If `findstr` prints nothing, the name in the error
+is spelt differently from what you searched for.
+- **The tests need a file that only the game lists.** When the `FAILED:` line names
+  `game/MyGameTests.exe` rather than `game/MyGame.exe`, the function is in a file the tests
+  also use. Such a file goes in `add_library(MyGameRules`, as `rules/motion.cpp` does, and not
+  in the two game lists.
+
+The browser build's linker says the same thing as
+[`undefined symbol`](#wasm-ld-error--undefined-symbol).
 
 ## Running
 
@@ -399,6 +621,18 @@ GPU. Check the browser's graphics settings and driver, then reload. The browser 
 WebGL2; WebGL1 is not a fallback. If it still fails, report the browser version and its graphics
 diagnostics with the error. A successful CMake build does not prove that the browser can make
 a graphics context.
+
+### `wasm-ld: error: ... undefined symbol`
+
+```text title="Output"
+wasm-ld: error: game/CMakeFiles/MyGame.dir/states/hello_state.cpp.o: undefined symbol: starting_score()
+```
+
+The browser build's form of [`LNK2019`](#lnk2019-unresolved-external-symbol), with the same
+causes. The commonest is a new `.cpp` file listed for Windows in `game\CMakeLists.txt` but not in
+the `add_executable(MyGame` inside `if(EMSCRIPTEN)`, so the Windows build works and this one does
+not. Clang's compiler errors look different from the Windows ones too:
+[In the browser build](/docs/get-started/build-errors/#in-the-browser-build) reads one.
 
 ### A title-screen sound is silent, and does not play after the first key
 
