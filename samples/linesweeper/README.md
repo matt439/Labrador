@@ -880,8 +880,8 @@ window is counted, at every position of the field. The tool reports the
 concurrent count beside the pixel bound; the pixel bound is the verdict. The
 file's header has the full definitions and
 `node --test tools/flash_check/flash_check.test.mjs` holds them to synthetic
-frames. The CI workflow's Windows `lint` job runs that suite on every push
-CI handles and every pull request (`CI#2`), beside the offline tooling tests.
+frames. The CI workflow's Windows `lint` job runs that suite on every pull
+request and every push CI builds (`CI#2`), beside the offline tooling tests.
 
 **Result**, the worst one-second window in each run, in flashes:
 

@@ -283,7 +283,8 @@ npm run versions:verify -- --base <commit>
 [verify-published-versions.mjs](../website/scripts/verify-published-versions.mjs)
 compares the manifest with the one at the base commit. The workflow passes the
 pull request's base, or the previous commit of a push to `master` that was not
-forced; every other run passes an empty base, because a branch push may be
+forced; a push to `master` whose tree its merged pull request's run already
+passed skips every step, as `tools/ci_tested_tree.py` decides; every other run passes an empty base, because a branch push may be
 forced and a forced push names an old tip the checkout no longer has. An empty
 or zero base, or one that does not resolve in the checkout, falls back to
 `git merge-base HEAD origin/master` with a message saying so, and a base with

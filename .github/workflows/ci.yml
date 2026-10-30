@@ -20,8 +20,17 @@ on:
 
 # A second push to a pull request's branch cancels the first. A queue of stale
 # runs on a repository with one maintainer is a queue nobody reads. A push to
-# master does not: every commit there gets a whole run, so a red master names
-# its commit rather than the one after it.
+# master does not: a red master names its commit rather than the one after it.
+#
+# A PUSH TO MASTER THAT MERGES A PULL REQUEST BUILDS NOTHING, because that
+# pull request's run has already built and tested the tree it lands. The
+# `changes` job proves that with tools/ci_tested_tree.py and every other job
+# then skips. A push it cannot prove that for - a direct push, one whose pull
+# request run did not pass, or one changing vcpkg.json or .github/, which the
+# caches pull requests restore from master are keyed on - runs everything.
+# The cost is ccache: master's objects are refreshed by such pushes and the
+# weekly scheduled run rather than every merge, so a pull request's first
+# browser build hits less the longer it has been since one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -56,19 +65,42 @@ jobs:
   # accepts. The windows matrix cannot be skipped that way - a matrix skipped
   # before it expands reports one check under its unexpanded name, and none of
   # the six it is required as - so it runs, and each of its steps is skipped.
+  #
+  # AND WHETHER A PULL REQUEST HAS ALREADY TESTED THIS TREE, on a push to
+  # master alone. Nothing is required of a push, so there every job, the
+  # matrix included, is skipped whole.
   changes:
     name: changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      actions: read
     outputs:
-      code: ${{ steps.diff.outputs.code }}
+      tested: ${{ steps.tested.outputs.tested }}
+      build: ${{ steps.diff.outputs.code }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Has a pull request already passed this tree
+        id: tested
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          BEFORE: ${{ github.event.before }}
+          FORCED: ${{ github.event.forced }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 tools/ci_tested_tree.py --workflow-path .github/workflows/ci.yml
+          --before "$BEFORE" --head "$GITHUB_SHA" --forced "$FORCED"
+          --refresh vcpkg.json --refresh .github/ --output "$GITHUB_OUTPUT"
+
       - name: Is anything but documentation changed
         id: diff
+        if: steps.tested.outputs.tested != 'true'
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -94,6 +126,8 @@ jobs:
   # their standard libraries and need no package installation.
   lint:
     name: lint
+    needs: changes
+    if: needs.changes.outputs.tested != 'true'
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
@@ -165,6 +199,7 @@ jobs:
     # waiting on a context that never reports (CONTRIBUTING.md).
     name: windows (${{ matrix.preset }})
     needs: changes
+    if: needs.changes.outputs.tested != 'true'
     runs-on: windows-latest
     # Bounded well above a cold vcpkg cache, so a stalled step fails the check
     # rather than holding every pull request for GitHub's six-hour default.
@@ -275,13 +310,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.build == 'true'
 
       # CMakePresets.json reads $env{VCPKG_ROOT} for the toolchain file and
       # configuring fails without it. This is the same one-time step the README
       # asks a person to do.
       - name: Point at the runner's vcpkg
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.build == 'true'
         shell: pwsh
         run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
@@ -289,7 +324,7 @@ jobs:
       # of this job's wall clock. Keyed on vcpkg.json, so a run that changes no
       # dependency reuses the last one's binaries.
       - name: Cache vcpkg binaries
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.build == 'true'
         uses: actions/cache@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
@@ -312,7 +347,7 @@ jobs:
       # cmake/compile_shaders.cmake with VULKAN_SDK named and nothing wrong
       # with VULKAN_SDK.
       - name: Install the Vulkan SDK
-        if: needs.changes.outputs.code == 'true' && matrix.vulkan_sdk
+        if: needs.changes.outputs.build == 'true' && matrix.vulkan_sdk
         # A download and an install that take a minute or two; the installer
         # can stall without exiting, and this is what turns that into a failure.
         timeout-minutes: 15
@@ -340,12 +375,12 @@ jobs:
           echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
 
       - name: Find vcvars64
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.build == 'true'
         run: |
           for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
       - name: Configure
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.build == 'true'
         run: |
           call "%VCVARS%"
           cmake --preset ${{ matrix.preset }}
@@ -353,7 +388,7 @@ jobs:
       # This includes cmake/check_engine_includes.cmake, so an engine file that
       # includes a game header fails here as well as locally.
       - name: Build
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.build == 'true'
         run: |
           call "%VCVARS%"
           cmake --build --preset ${{ matrix.preset }}
@@ -362,7 +397,7 @@ jobs:
       # running them needs hardware a runner has not got. Compiling them does
       # not, and keeps the evidence docs/review/INDEX.md cites from rotting.
       - name: Build the opt-in probes
-        if: needs.changes.outputs.code == 'true' && matrix.probes != ''
+        if: needs.changes.outputs.build == 'true' && matrix.probes != ''
         run: |
           call "%VCVARS%"
           cmake --build --preset ${{ matrix.preset }} --target ${{ matrix.probes }}
@@ -371,7 +406,7 @@ jobs:
       # rather than wall-clock, so it is a real test on a shared runner where an
       # absolute timing would be noise.
       - name: Test
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.build == 'true'
         run: |
           call "%VCVARS%"
           ctest --preset ${{ matrix.preset }} ${{ matrix.skip_tests }}
@@ -395,7 +430,7 @@ jobs:
       # all. A shared runner's absolute timings are not comparable to a
       # developer machine's and are not meant to be.
       - name: Benchmark numbers
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.build == 'true'
         run: out\build\${{ matrix.preset }}\bench\LabradorBench.exe
 
   # The browser build, configured, built and tested. It compiles gl/ against
@@ -423,7 +458,7 @@ jobs:
   wasm:
     name: wasm
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.build == 'true'
     runs-on: windows-latest
     timeout-minutes: 90
 
@@ -571,7 +606,7 @@ jobs:
   wasm-null:
     name: wasm-null
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.build == 'true'
     runs-on: windows-latest
     timeout-minutes: 90
 
@@ -633,7 +668,7 @@ jobs:
   wasm-consumer:
     name: wasm-consumer
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.build == 'true'
     runs-on: windows-latest
     timeout-minutes: 90
 
@@ -766,7 +801,7 @@ jobs:
   consumer:
     name: consumer
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.build == 'true'
     runs-on: windows-latest
     # The windows jobs' bound, for their reason: this job restores their vcpkg
     # cache and never saves one, so after a vcpkg.json change or an evicted

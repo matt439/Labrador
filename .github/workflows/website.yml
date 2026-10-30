@@ -40,7 +40,13 @@
 # push may be forced, and a forced push names an old tip the checkout no
 # longer has. The script then compares with the merge base on origin/master,
 # as it also does when a named base does not resolve. The token only reads
-# release metadata.
+# release metadata, pull requests and workflow runs.
+#
+# A push to master that merges a pull request builds nothing, because that
+# pull request's run has already checked the tree it lands, versions:verify
+# included; tools/ci_tested_tree.py proves it, as ci.yml's changes job does.
+# A push it cannot prove that for, or one changing the lockfile npm's cache
+# is keyed on, or .github/, runs every step.
 
 name: website
 
@@ -60,6 +66,11 @@ jobs:
   website:
     name: website
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      actions: read
     defaults:
       run:
         working-directory: website
@@ -69,23 +80,41 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Has a pull request already passed this tree
+        id: tested
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        working-directory: ${{ github.workspace }}
+        env:
+          BEFORE: ${{ github.event.before }}
+          FORCED: ${{ github.event.forced }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 tools/ci_tested_tree.py --workflow-path .github/workflows/website.yml
+          --before "$BEFORE" --head "$GITHUB_SHA" --forced "$FORCED"
+          --refresh website/package-lock.json --refresh .github/ --output "$GITHUB_OUTPUT"
+
       - uses: actions/setup-node@v4
+        if: steps.tested.outputs.tested != 'true'
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: website/package-lock.json
 
       - run: npm ci
+        if: steps.tested.outputs.tested != 'true'
 
       # Types first: a mistake in the code that reads the checkout is cheaper
       # to read here than as a failed page.
       - run: npm run check
+        if: steps.tested.outputs.tested != 'true'
 
       - run: npm test
+        if: steps.tested.outputs.tested != 'true'
 
       # The base reaches the script through the environment, not the command
       # line text, so no event value is ever parsed as shell.
       - name: Verify published versions
+        if: steps.tested.outputs.tested != 'true'
         run: npm run versions:verify -- --base "$BASE"
         env:
           BASE: ${{ github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/master' && !github.event.forced && github.event.before) || '' }}
@@ -95,16 +124,19 @@ jobs:
       # on a quoted passage whose first or last line has gone, and on a header
       # the reference reader does not understand.
       - run: npm run build
+        if: steps.tested.outputs.tested != 'true'
 
       # Only errata this change appends: their links are immutable once merged,
       # so checking old ones on every build would let one renamed page block
       # every later deployment.
       - name: Verify appended errata links
+        if: steps.tested.outputs.tested != 'true'
         run: npm run versions:verify -- --base "$BASE" --dist dist
         env:
           BASE: ${{ github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/master' && !github.event.forced && github.event.before) || '' }}
 
       - uses: actions/upload-artifact@v4
+        if: steps.tested.outputs.tested != 'true'
         with:
           name: website
           path: website/dist

@@ -60,7 +60,8 @@ runs:
     # The compiler check is the pinned version rather than clang's mtime,
     # because emsdk installs a fresh clang on every run and an mtime check
     # would miss every time. The cache key is the run, so every run saves,
-    # and restores the newest; a pull request reads master's.
+    # and restores the newest; a pull request reads master's, which a merge
+    # whose tree its pull request already tested does not refresh (ci.yml).
     - name: Install ccache
       shell: pwsh
       run: |

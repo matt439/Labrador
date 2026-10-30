@@ -149,6 +149,18 @@ Manual dispatches of the CI workflow and its weekly Monday 03:17 UTC schedule
 always run the full build matrix, so runner/browser drift gets a run without
 a source edit.
 
+**A merge is tested once, by its pull request.** On a push to `master`, both
+workflows run [tools/ci_tested_tree.py](tools/ci_tested_tree.py) first. When
+a pull request merged into `master` has the pushed tree at its head, that head
+contains the `master` the push replaced, and the workflow's newest run on it
+succeeded, the push run builds nothing and says which pull request passed the
+tree. Strict required checks are what make that the usual case. Anything
+unproven builds everything: a forced or direct push, a failed or missing pull
+request run, an API error, and a change to `vcpkg.json`, `.github/` or, for the
+website, its lockfile, because a run on `master` is what refreshes the caches
+pull requests restore. Browser ccache objects on `master` are therefore
+refreshed by those runs and the weekly schedule rather than by every merge.
+
 For a deliberate dependency or toolchain bump, follow
 [Moving dependency and toolchain pins](docs/dependency-updates.md). It lists
 fixed inputs and moving selectors, the derived consumer manifest, coupled
@@ -218,7 +230,9 @@ cut once PHILOSOPHY's settle criterion has run.
 3. **Merge it, then wait for its push runs.** The commit's hash on `master`
    differs from the pull request's head, so find it there, and run
    `gh run list --branch master --commit <sha> --json workflowName,conclusion`
-   until both workflows, `build and test` and `website`, have succeeded. Merge nothing else meanwhile:
+   until both workflows, `build and test` and `website`, have succeeded. A run
+   that finds the pull request already passed the tree succeeds in under a
+   minute without building. Merge nothing else meanwhile:
    both workflows cancel a run in progress when `master` moves. A run cancelled
    anyway is re-run with `gh run rerun <id>`, never re-merged. Only a `master`
    commit whose push runs are green is tagged. `git show <sha>:vcpkg.json`
