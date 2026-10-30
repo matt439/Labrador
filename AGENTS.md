@@ -199,7 +199,8 @@ header must be published or explicitly left out in `website/src/lib/published.ts
 `website/published-versions.json` is append-only canonical text; once it lists
 a release, `npm run build` downloads that snapshot from its GitHub release.
 The website workflow runs on every pull request and on pushes to master and
-`review-*` branches. Citation checking skips `website/`.
+`review-*` branches; both workflows skip a master push whose tree its merged
+pull request already passed. Citation checking skips `website/`.
 
 ## Build checks
 

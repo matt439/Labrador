@@ -31,7 +31,7 @@ listed here because the page reads them from the sample
 included, which only the `wasm` presets compile.
 
 **What checks them.** CI's `consumer` job makes a starter ZIP of the project
-from these files on every pull request and every push CI runs on, with
+from these files on every pull request and every push CI builds, with
 `tools/consumer_check/starter_zip.py`, which takes the project from
 `assemble.py`'s rules: Labrador at `external/labrador` from that run's own
 checkout, `samples/minimal` copied to `game/`, every include the page lists

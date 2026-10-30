@@ -60,7 +60,8 @@ wrong (PHILOSOPHY T6):
 `.github/workflows/website.yml` runs the check, the tests, `versions:verify`
 and the build, then checks appended errata links with
 `versions:verify -- --dist dist`, on every pull request and on pushes to
-master and `review-*` branches.
+master and `review-*` branches. A push to master whose tree its merged pull
+request's run already passed skips those steps and keeps no artifact.
 
 ## Where things are
 
@@ -283,7 +284,7 @@ from a regression that already deployed is a separate action in the
 [preview and recovery procedure](#preview-and-recovery).
 
 These build settings live in Cloudflare's dashboard. The separate
-`.github/workflows/website.yml` continues to check, build and retain an artifact;
+`.github/workflows/website.yml` checks, builds and retains an artifact for each pull request;
 Cloudflare performs production deployment.
 
 ## Preview and recovery

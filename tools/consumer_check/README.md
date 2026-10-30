@@ -38,7 +38,7 @@ the tag's commit, and nothing may be modified or untracked. Without it, it is
 CONTRIBUTING.md's *Cutting a release* attaches one to each release.
 
 CI's `consumer` job (`.github/workflows/ci.yml`) makes that ZIP on every pull
-request and every push CI runs on, from that run's own checkout, extracts it
+request and every push CI builds, from that run's own checkout, extracts it
 to `C:\dev\mygame` with Windows' own `tar`, and keeps it as the run's
 `labrador-starter` artifact. It then does the configure and build of the
 page's step 7 in the project as it came out of the ZIP and checks that the
