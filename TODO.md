@@ -34,7 +34,7 @@ the player* links, waits on the owner.
 - Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling).
 - Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `OCA-18` (the Visual Studio breakpoint session).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
-- New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction.
+- New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction. `IDEA#7` to `IDEA#19`, from the engine review of 2026-10-31: circle collision, scene queries, contact edges, arbitrary window sizes, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
 
 ## Input, menus, settings and saves
 
@@ -158,6 +158,19 @@ ready queue above.
 | `IDEA#4` | DECISION | could | S | A dead-zone/bounded camera-follow component in the local-multiplayer sample. |
 | `IDEA#5` | DECISION | could | S | A deterministic grid-sheet JSON authoring command using the current asset schema. |
 | `IDEA#6` | DECISION | could | S | Extend OCA-50 with gallery click/tap rows and slider dragging; keep capture policy in the page. |
+| `IDEA#7` | DECISION | should | S | Circle collision in the narrow phase, which throws for a Circle today: the closest-point axis, under the same Manifold contract. |
+| `IDEA#8` | DECISION | could | M | Scene queries: the first collision object along a segment, and every object overlapping a rectangle, mask-filtered and allocation-free. |
+| `IDEA#9` | DECISION | could | S | A contact begin/continue/end helper over two ticks' contact lists; the collision sample derives trigger entry by hand. Needs a second client. |
+| `IDEA#10` | DECISION | should | S | Arbitrary client sizes: a Vector2I set_resolution and options field beside the four 16:9 presets, which are all a game can request today. |
+| `IDEA#11` | DECISION | could | M | Sounds from WAV files and from in-memory PCM through one new seam verb on all three audio backends, so a first sound needs no XWBTool. |
+| `IDEA#12` | DECISION | could | M | Animation sequences of named frames with per-frame durations beside today's horizontal, uniformly timed strips. |
+| `IDEA#13` | DECISION | could | S | A pointer hit test over a focus group's enabled bounds, which LineSweeper's pause menu and IDEA#6 would each write by hand. |
+| `IDEA#14` | DECISION | could | M | A requested present interval and an unfocused render-rate cap; vsync is a constant the pacing records assume. The owner's call first. |
+| `IDEA#15` | DECISION | could | S | The display's refresh rate on RenderDeviceInfo and in the frame bench's record, in place of the pacing method's operator note. |
+| `IDEA#16` | DECISION | could | S | A run-time window title, and a window icon named in options, diagnosed when absent, in the template's resource file and the release guide. |
+| `IDEA#17` | DECISION | could | S | System cursor shapes (hand, text, crosshair, move) on Win32 and the canvas; today the pointer is the arrow or hidden. |
+| `IDEA#18` | DECISION | could | XS | A side-by-side two-player layout in ViewportManager, which stacks the panes today. |
+| `IDEA#19` | DECISION | could | XS | RectangleF::intersection_of and shortest-arc angle helpers; could ride GAP#8. |
 
 ## Ports
 
