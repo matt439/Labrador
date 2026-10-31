@@ -1,0 +1,165 @@
+---
+title: Which Labrador you have
+description: Find the version and commit of the engine in your project, read which one a page of this site describes, and check whether a name a page uses is in your copy of the engine, step by step.
+sidebar:
+  order: 0.992
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Your game is built against the copy of the engine inside your project, in `external\labrador`,
+as it was when you made the project or last moved it to a newer Labrador. This site describes the
+engine at one commit, named at the foot of every page, and is rebuilt as the engine changes. When
+the two differ, a page can show code that names something your copy does not have, and the build
+then stops with an error that looks like a typing slip. This page finds both versions, compares
+them, and checks a name against your copy. It takes about five minutes.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Find your engine's version.** A project made from the
+   [starter ZIP](/docs/get-started/starter/) has a `README.txt` that says which engine it came
+   with:
+
+   ```bat
+   findstr /b /c:"Labrador " README.txt
+   ```
+
+   It prints the three lines of the file that start `Labrador `. From a starter made between
+   releases, they read:
+
+   ```text title="Output"
+   Labrador starter project
+   Labrador version: a development build, not a release (its vcpkg.json says 0.2.0)
+   Labrador commit: 8bebb672648ba41af8f165ebeddb86be8cc3dfd5
+   ```
+
+   From a release's starter ZIP, the `Labrador version:` line names the release, such as
+   `v0.3.0`. The `Labrador commit:` line is the engine's **commit**, the name of that exact
+   version of its files: 40 letters and digits, of which the first 7 are enough to tell it
+   apart. Write both down.
+
+   If it prints `FINDSTR: Cannot open README.txt`, the prompt is not in your project's folder,
+   or the project has no `README.txt` because it was made with Git. If you used
+   [Start your own project](/docs/get-started/your-project/) or
+   [Put your project in Git](/docs/guides/starter-to-git/), the engine is a Git submodule, and
+   Git says which commit it is at:
+
+   ```bat
+   git -C external\labrador describe --tags
+   ```
+
+   It prints the newest release before your engine and how far past it it is, such as
+   `v0.2.0-221-g8bebb67`: 221 commits after `v0.2.0`, at commit `8bebb67`, the part after the
+   `g`. Exactly at a release, it prints only the release, such as `v0.2.0`.
+
+2. **Find the page's version.** Scroll to the foot of the page you are following. The line in
+   small grey text there names the engine the page describes:
+
+   ```text
+   Development documentation (unreleased). Built from Labrador 8bebb67 of 2026-10-31.
+   ```
+
+   `8bebb67` is the commit, and a link to it on GitHub; the date is the day that commit was made,
+   not the day the page was built.
+   **Development documentation** means the page describes the engine as it is being written,
+   ahead of the newest release. A page of a release's own documentation says instead
+   `Documentation for Labrador` and the release, such as `v0.3.0`. The link under it,
+   **All documentation versions**, lists every version the site has; until the first release's
+   documentation is published, that is Development alone, and every page on the site is
+   Development.
+
+3. **Compare them.** If the first 7 letters and digits of your `Labrador commit:` are the commit
+   at the foot of the page, the page describes exactly your engine. If they differ, the page
+   describes another version, usually a newer one, and most of it still applies: the engine
+   changes a little at a time. What can differ is a name the page uses, the arguments a function
+   takes, or a file's place, which step 4 checks.
+
+   Every change a game can notice is listed in the engine's `CHANGES.md`, newest first, under
+   the release that made it, with what to do about it. Your copy has the list up to your engine:
+
+   ```bat
+   notepad external\labrador\CHANGES.md
+   ```
+
+   The site's own is on GitHub, through
+   [Changes in the repository](https://github.com/matt439/Labrador/blob/master/CHANGES.md). The
+   entries in that one and not in yours are what changed since your engine.
+
+4. **Check a name in your engine.** The engine's headers in `external\labrador\engine` are the
+   reference for your version; the [API reference](/docs/reference/) is the same headers at the
+   page's commit. To see whether your engine has a name a page uses, search every header for it.
+   Paste this line, but **before you press Enter, change `set_fullscreen`** to the name:
+
+   ```bat
+   findstr /s /n /c:"set_fullscreen" external\labrador\engine\*.h
+   ```
+
+   It prints each line of a header with the name, after the file and its line number:
+
+   ```text title="Output"
+   external\labrador\engine\app\application.h:55:		// nothing on screen and no focus taken, set_fullscreen included. The
+   external\labrador\engine\app\application.h:217:		void set_fullscreen(bool fullscreen);
+   external\labrador\engine\app\application.h:219:		// Whether the window is full screen: what set_fullscreen last asked,
+   ```
+
+   The line that declares it, here `void set_fullscreen(bool fullscreen);`, shows what it takes.
+   Open the header to read the comment above it, which is the same text its reference page
+   shows:
+
+   ```bat
+   notepad external\labrador\engine\app\application.h
+   ```
+
+   If `findstr` prints nothing, no header in your engine has that name: the page is ahead of
+   your engine, or the name is misspelt. Search for part of it, such as `fullscreen`, to find a
+   name close to it.
+
+</Steps>
+
+## When a page is ahead of your engine
+
+Code from a page that names something your engine does not have stops the build with the same
+messages a misspelling gives: `C2039: 'name': is not a member of`, `C3861: identifier not found`
+or `C2065: undeclared identifier`, and in the browser build `no member named` or
+`use of undeclared identifier`. [Troubleshooting](/docs/troubleshooting/#c2039-is-not-a-member-of)
+reads them. If the name is spelt as the page spells it and step 4 finds nothing, there are two
+ways on:
+
+- **Move your project to the engine the page describes.** For a starter project,
+  [Move a starter project to a newer Labrador](/docs/guides/starter-update/) does it, keeping the
+  old project until the new one works; for a project in Git,
+  [Move your engine pin](/docs/guides/move-pin/). Releases are the steps a project moves by:
+  between releases, the development documentation can describe more than any release has.
+- **Read the page as it was for your engine.** Each release from `v0.3.0` on will have its own
+  documentation under **All documentation versions**, and the version selector beside the
+  sidebar then switches a page to it. Until then, every file of the engine at your commit,
+  the guides' own source among them, is on GitHub at
+  `https://github.com/matt439/Labrador/tree/` followed by your whole commit, such as
+  `https://github.com/matt439/Labrador/tree/8bebb672648ba41af8f165ebeddb86be8cc3dfd5`. The
+  guides are in `website/src/content/docs/docs/guides` there, as text.
+
+If you ask for help, give your `Labrador version:` and `Labrador commit:` lines; [Ask for
+help](/docs/guides/ask-for-help/) says what else to include.
+
+## What was checked
+
+On 31 October 2026, in a starter project made from a starter ZIP of this tree at commit
+`8bebb67`, the `findstr` lines of steps 1 and 4 printed what is shown, and `findstr` for a name
+no header has printed nothing and set the error level to 1. Run in `C:\dev`, the first printed
+`FINDSTR: Cannot open README.txt`. `git describe --tags` was run in a clone of the repository at
+the same commit, which printed `v0.2.0-221-g8bebb67`; it was not run in a project made with Git,
+whose submodule gives the same form. The footer's wording is that of the site's `Revision`
+component, and the list of versions that of `website/published-versions.json`, which lists no
+releases yet; no release's documentation has been published, so the release form of the footer
+and the version selector's other entries were read from the site's code and
+`docs/website-versioning.md`, not seen.
+
+A second agent then ran the page's commands as worded in another fresh starter, with the same
+results. Step 2 was corrected for what it found: the date in the footer is the day the commit was
+made, the committer's date that the site reads from Git, not the day the page was built.

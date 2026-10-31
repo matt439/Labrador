@@ -21,9 +21,11 @@ BACKLOG's L36 to L54 let it run alongside product work.
 `SM-25` still needs observation of a scheduled run; no manual dispatch is
 required by this plan.
 
-**Beginner guides are ready work:** take `GUIDE#13` in
-[Beginner guides](docs/beginner-guides.md), which ranks the work by impact on
-the owner's 2026-10-30 reader.
+**Beginner guides are done:** every `GUIDE#` unit of
+[Beginner guides](docs/beginner-guides.md) has closed. What the runs could not
+check is in its *Not verified by the audit*; `GUIDE#12` left saving through
+IDBFS from the starter unguided, and `IDEA#4`, which *A camera that follows
+the player* links, waits on the owner.
 
 **Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which with a green CI run of the changed consumer jobs closes `OCA-78`. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
@@ -54,14 +56,6 @@ the owner's 2026-10-30 reader.
 | `OCA-18` | DECISION | could | S | Visual Studio guide is implemented. A person follows it in a clean copied project in Visual Studio Community 2026 18.9.2, hits the breakpoint, sees content load and records the date. [Evidence](docs/product/BACKLOG.md#later). |
 
 `SM-30`, the owner-only gate follow-up in [BACKLOG.md, Later](docs/product/BACKLOG.md#later), is ready now that `SM-29` is closed.
-
-## Beginner guides
-
-**Owner:** [Beginner guides](docs/beginner-guides.md): the 2026-10-30 audit of every published procedure against the owner's reader, its work list and the findings with pages and lines. Blockers are `must`, the rest `should`.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `GUIDE#13` | OPEN | should | M | Procedures with no guide: colours, window size, background, renaming the game, two players, camera follow (`IDEA#4`), asking for help, matching docs to a version. |
 
 ## CI
 
@@ -190,6 +184,7 @@ A new row for one of these gets its section back.
 | The EC2 performance lane | [tools/cloud_performance/README.md](tools/cloud_performance/README.md) | a new declared reference run, or a regression question |
 | round-2 plan, the RTCD list, the first review, backend-equivalence | [docs/review/round-2/PLAN.md](docs/review/round-2/PLAN.md), [docs/review/rtcd/](docs/review/rtcd/), [docs/review/IMPLEMENTED.md](docs/review/IMPLEMENTED.md) | nothing: all landed or superseded; the game-side rows live in ColourWars |
 | The 2026-09-26 review's numbered findings and hardening candidates | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and [the review index](docs/review/INDEX.md#hardening-verification) | nothing: all 23 implemented and four hardening candidates addressed; `REV#12` remains |
+| Beginner guides (`GUIDE#1` to `GUIDE#13`) | [Beginner guides](docs/beginner-guides.md) | a new procedure a beginner cannot follow, or a page that stops matching the starter |
 | The historical repository split, file-length tripwire and survey decisions | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md), [docs/survey/2026-08-26-status.md](docs/survey/2026-08-26-status.md) | nothing: original work and StateContext's keep verdict stand; current hygiene work is indexed above |
 
 ---

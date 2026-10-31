@@ -13,6 +13,9 @@ two-player join screen, then puts both players in one arena. The top pane follow
 orange player. Both panes show the same world: head toward the purple cross to meet, or move
 apart to see each camera follow its own player. If a build fails after you bring some of it into
 your own game, [Read a build error](/docs/get-started/build-errors/) shows how to read the error.
+To make your own starter game two-player, step by step, see
+[Two players in your game](/docs/guides/your-two-players/), which ends with this split screen;
+[A camera that follows the player](/docs/guides/your-camera/) does the camera for one player.
 
 ## Run it
 
@@ -112,7 +115,9 @@ this puts the player at the pane centre:
 
 The viewport's back-buffer offset is separate. In particular, the bottom player's camera does
 not add the bottom pane's y-offset: the camera maps into pane coordinates, and the viewport
-places that pane on the buffer. Near an arena edge the camera shows the empty space beyond it.
+places that pane on the buffer. Near an arena edge the camera shows the empty space beyond it;
+[A camera that follows the player](/docs/guides/your-camera/#stop-at-the-edge-of-the-world)
+stops a camera at the world's edge.
 
 `ApplicationOptions::view_capacity` is 2, reserving exactly the two recordings the layout needs.
 The thread pool ceiling is a separate choice, capped at two workers for this sample:

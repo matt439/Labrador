@@ -373,7 +373,8 @@ actual rendered-frame review.
 ## Solid rectangles
 
 There is no rectangle-drawing call, because a solid rectangle is a sprite from a texture one
-white pixel across, stretched and tinted. The engine puts that texture in every game's table, so
+white pixel across, stretched and tinted. [Colours, the window and the background](/docs/guides/your-window/#a-colour-behind-everything)
+uses one as the starter game's background. The engine puts that texture in every game's table, so
 no content file is needed: resolve it by `white_texture_name`, from
 `engine/render/resource_factory.h`, as the collision sample does:
 

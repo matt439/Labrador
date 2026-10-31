@@ -429,13 +429,53 @@ In order of impact on a beginner who wants to play around. Each unit is one
     `hold_key.ps1` and its three failures, and the starter's `wasm-release`
     bundle; it added the bundle configure's warning, last lines and the error
     without `emsdk_env.bat`, and ctest's last line to two outputs.
-13. **`GUIDE#13` Procedures with no guide.** Colours, positions, window size,
-    full screen and the background (no clear colour; draw it first); renaming
-    the game; two players in your own game; a camera that follows the player
-    (see `IDEA#4`); asking for help without a commit hash; telling whether a
-    page matches the reader's engine version. Pictures, sounds, screens,
-    controls, build errors, backups, samples, Visual Studio, Git, GitHub and
-    sharing are covered by the units above.
+13. **`GUIDE#13` Procedures with no guide.** Done on 2026-10-31: six guides
+    on the reader's own starter, with no engine API added. *Colours, the
+    window and the background* changes the greeting's colour in `init()` and
+    `on_resume`, lists the 148 named colours from `colour.h` and a colour from
+    three numbers, doubles the text, moves the start point, gives the four
+    window sizes, starts full screen and leaves it with Escape and Enter,
+    Alt+F4 or Alt+Tab, switches on F11 with `Camera::frame` keeping 16:9 at
+    any size, and draws a colour or a picture first because the engine
+    clears to black and has no clear colour. *A camera that follows the
+    player* adds signposts across a world 4000 pixels wide, a camera in
+    `update()` on the point the greeting circles, the hint drawn after the
+    world with `Camera::default_camera`, and a stop at the world's edge with
+    `std::clamp`; it links `IDEA#4`, which stays an owner decision, as a
+    possible future. *Two players in your game* splits the keys into WASD and
+    the arrows, gives pad 0 and pad 1 a player each, and then splits the
+    window between two cameras. *Rename your game* renames `MyGame` in both
+    `CMakeLists.txt` files and `vcpkg.json` with one guarded PowerShell line
+    (27 places in a fresh starter), then the window title, the error box and
+    the web page by hand, deletes `out`, rebuilds, and lists every `MyGame`
+    on other pages; renaming the project's folder gives both `CMakeCache.txt`
+    messages and a guarded line for the empty old folder a stale build makes.
+    *Which Labrador you have* reads `README.txt`'s `Labrador version:` and
+    `Labrador commit:` lines, or `git describe --tags` in a Git project,
+    compares the commit with each page's footer, and searches the project's
+    own headers with `findstr`. *Ask for help* finds the message first, saves
+    the whole output with `> build-log.txt 2>&1`, gives `ver` and the
+    compiler's version, and fills the repository's real bug and question
+    forms box by box, with `SECURITY.md` for anything harmful; the bug form's
+    revision help names the starter's `Labrador commit:` line. The guides
+    index, Make a first change, Get Started, Get the starter project,
+    Troubleshooting, the API reference index, Drawing, Sprites and text,
+    Local multiplayer and Windows release link the pages. Each page's steps,
+    output and failures were run in a fresh starter, desktop and `wasm-debug`,
+    the rename also on `x64-release`, then followed as worded by a second
+    agent in another, and corrected, and the corrected steps were run again
+    in a third; each page's *What was checked* records the runs. Found on the
+    way: the template's `ConfirmState` lays the quit question out at the
+    window's size when it opens and draws into view 0, so a game scaled up to
+    full screen draws it off the screen and a split screen clips it to the
+    top half; the window and two-players pages fix both in the reader's game.
+    A `cmake --build` run in a renamed project folder with the old `out`
+    recreates the old folder, empty. The review found that the split screen
+    on top of the camera page's world's edge leaves `world_min` and
+    `world_max` unused, which builds on Windows and stops the browser build,
+    and that the hint's end is spelt with one `)` after the camera page; the
+    two-players page now deletes the limits and says so. Make a first change
+    links *Which Labrador you have*, as the finding asked.
 
 ## The engine inside a starter project
 
@@ -492,6 +532,15 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   Windows 11.
   Single-file `tar -xf` from the ZIP works with forward slashes under
   `mygame/` and says `Not found in archive` with backslashes.
+  `GUIDE#13` captured CMake's two `CMakeCache.txt` messages in a renamed
+  project folder, one from `cmake --preset` and another from `cmake
+  --build`, and vcpkg's refusal of a package name with capitals.
+- GitHub's issue pages and the rest of `GUIDE#13`'s gaps. *Ask for help*
+  follows the repository's own issue forms; the **Get started** and **Submit
+  new issue** buttons, attaching a file and its limits, and the notification
+  are from GitHub's documentation, and no issue was opened. Copying a
+  message box with Ctrl+C, F11 inside a browser, touch and a pad were not
+  tried, and `git describe` ran in a clone, not in a starter put in Git.
 - The Visual Studio installer. `GUIDE#12` measured an installed Visual Studio
   Community 2026 with five workloads on the owner's desktop and did not run
   the installer, so install time, the finished window and its failures are
