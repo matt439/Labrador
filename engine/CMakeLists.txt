@@ -110,8 +110,10 @@ endif()
 # choice fails at link rather than at run time (T5). This is where that choice
 # is made, and it is the whole of what selecting a backend involves - three
 # translation units, at most one more for the part of the API that is not about
-# drawing (for gl/, one of its two context files, chosen by platform below;
-# docs/port/web.md, D1), and whatever that backend needs to build its shader.
+# drawing (device_resources.cpp, or for gl/ one of its two context files, chosen
+# by platform below; docs/port/web.md, D1), d3d12/'s sprite_pipeline.cpp for its
+# root signature and pipeline state, and whatever that backend needs to build
+# its shader.
 #
 # Nothing outside engine/render/<backend>/ names any of the five folders, which
 # is what makes this a list of files rather than a set of #ifdefs.
@@ -395,9 +397,10 @@ target_include_directories(LabradorEngine SYSTEM PRIVATE
 # No public engine header names a DirectX:: type: the audio seam
 # (engine/audio/audio_device.h) and the input seam
 # (engine/input/gamepad_reader.h) keep them behind backend folders, so nothing
-# above one needs its headers - which is the same claim the Vulkan block above makes, checked
-# the same way, and the reason cmake/check_engine_includes.cmake guards
-# engine/audio/<backend>/ as well as engine/render/<backend>/.
+# above one needs its headers - which is the same claim the Vulkan block above
+# makes, checked the same way, and the reason cmake/check_engine_includes.cmake
+# guards the audio, input and app backend folders as well as
+# engine/render/<backend>/.
 target_link_libraries(LabradorEngine
     PUBLIC LabradorMath
     PRIVATE labrador_settings

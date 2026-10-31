@@ -129,10 +129,10 @@ namespace labrador
 		const Vector2I size =
 			this->resolution_manager_->resolution_ivec();
 
-		// The layout's number, not the pool's. A thread count here builds one
-		// deferred context and one dynamic vertex buffer per thread the machine
-		// might ever run, to draw a frame that has four panes at the very most -
-		// see ApplicationOptions::view_capacity.
+		// The layout's number, not the pool's. A thread count here builds the
+		// backend's per-view recording state once per thread the machine might
+		// ever run, to draw a frame that has four panes at the very most - see
+		// ApplicationOptions::view_capacity.
 		this->renderer_->create_device(this->window_->handle(), size.x, size.y,
 			this->options_.view_capacity);
 

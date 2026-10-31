@@ -70,7 +70,7 @@ namespace render_tests::pixel
 			"./content/", "quad");
 		this->quad = this->resources_.resolve_texture("quad");
 
-		// The font is a copy of the one both samples use rather than a
+		// The font is a copy of the one every sample uses rather than a
 		// reference to it, for the same reason quad.dds is not a sample
 		// texture: a sample that restyles itself must not be able to move a
 		// pin in here. It is monospaced and bold, which is not decoration -

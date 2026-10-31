@@ -64,8 +64,8 @@ using namespace linesweeper;
 
 namespace
 {
-	// The size both samples ask for, and the only one the sample's layout is
-	// drawn for (presentation/layout.h).
+	// The size the sample asks for, desktop and browser, and the only one its
+	// layout is drawn for (presentation/layout.h).
 	constexpr int frame_width = 1280;
 	constexpr int frame_height = 720;
 

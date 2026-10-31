@@ -21,12 +21,13 @@
 // This is that include.
 //
 // EVERY CLIENT OF IT IS IN THIS FOLDER, and that is the rule rather than a
-// count. cmake/check_engine_includes.cmake fails the build for any file outside
-// engine/render/<backend>/ that includes any header inside it - the folder, not
-// one filename in it, because device_resources.h was how the wall was climbed
-// last time. The three .cpp beside this file include it; nothing else in the
-// tree may, and nothing else does - the two generated shader headers are fxc
-// /Fh output, which is a comment and a byte array with no #include in it.
+// count. cmake/check_engine_includes.cmake fails the build for any engine file
+// outside engine/render/<backend>/ that includes any header inside it - the
+// folder, not one filename in it, because device_resources.h was how the wall
+// was climbed last time. The three .cpp beside this file include it; nothing
+// else in the engine may, and nothing else in the tree does - the two
+// generated shader headers are fxc /Fh output, which is a comment and a byte
+// array with no #include in it.
 // Stated as the rule and not as a list of names, because a list goes stale.
 // Everything that draws goes through DrawList, and the whole point of the seam
 // is that draw code never learns which backend it is talking to.
