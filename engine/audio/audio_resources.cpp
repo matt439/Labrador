@@ -9,8 +9,6 @@
 #include <utility>
 #include <vector>
 
-using namespace labrador;
-
 namespace labrador
 {
 	AudioResources::SoundBankHandle AudioResources::resolve_sound_bank(

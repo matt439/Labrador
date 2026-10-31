@@ -6,8 +6,6 @@
 #include <cmath>
 #include <vector>
 
-using namespace labrador;
-
 namespace labrador
 {
 	namespace

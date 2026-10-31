@@ -34,7 +34,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	Glyph cell(char32_t character)
 	{

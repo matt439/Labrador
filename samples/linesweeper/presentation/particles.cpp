@@ -9,7 +9,6 @@
 #include <cstddef>
 
 using namespace labrador;
-using namespace labrador;
 
 namespace linesweeper
 {

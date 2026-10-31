@@ -4,8 +4,6 @@
 
 #include <cmath>
 
-using namespace labrador;
-
 namespace labrador
 {
 	DrawObject::DrawObject(RenderResources* render_resources,

@@ -8,7 +8,6 @@
 #include <utility>
 
 using namespace labrador;
-using namespace labrador;
 
 namespace components
 {

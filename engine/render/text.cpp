@@ -3,8 +3,6 @@
 
 #include <string>
 
-using namespace labrador;
-
 namespace labrador
 {
 	Text::Text(const std::wstring& text,

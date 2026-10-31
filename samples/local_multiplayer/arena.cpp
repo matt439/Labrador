@@ -5,7 +5,6 @@
 #include <algorithm>
 
 using namespace labrador;
-using namespace labrador;
 
 namespace multiplayer
 {

@@ -22,7 +22,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	constexpr uint64_t completion_timeout_ns = 5'000'000'000;
 	constexpr int initial_size = 64;

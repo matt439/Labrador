@@ -11,7 +11,6 @@
 #include <memory>
 
 using namespace labrador;
-using namespace labrador;
 using namespace multiplayer;
 
 TEST_CASE("both views draw the same shared players and parallel draw preserves the serial recording")

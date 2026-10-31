@@ -102,7 +102,6 @@ namespace
 	void draw_two_runs(labrador::Renderer& renderer, labrador::TextureHandle texture)
 	{
 		using namespace labrador;
-		using namespace labrador;
 		renderer.set_view_count(1);
 		DrawList list = renderer.view(0);
 		list.draw_sprite(texture, RectangleI(0, 0, 2, 2),

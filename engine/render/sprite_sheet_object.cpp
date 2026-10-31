@@ -3,8 +3,6 @@
 
 #include <string>
 
-using namespace labrador;
-
 namespace labrador
 {
 	SpriteSheetObject::SpriteSheetObject(const std::string& sheet_name,

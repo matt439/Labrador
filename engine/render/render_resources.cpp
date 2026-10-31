@@ -7,8 +7,6 @@
 #include <string>
 #include <string_view>
 
-using namespace labrador;
-
 namespace labrador
 {
 	// The half of RenderResources that names no backend type, compiled once.

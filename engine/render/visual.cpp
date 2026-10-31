@@ -4,8 +4,6 @@
 
 #include <string>
 
-using namespace labrador;
-
 namespace labrador
 {
 	Visual::Visual(const std::string& sheet_name,
