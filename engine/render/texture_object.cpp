@@ -6,8 +6,6 @@
 #include <string>
 #include <tuple>
 
-using namespace labrador;
-
 namespace labrador
 {
 	namespace

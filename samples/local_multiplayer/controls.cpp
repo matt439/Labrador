@@ -3,7 +3,6 @@
 #include "engine/input/gamepad.h"
 
 using namespace labrador;
-using namespace labrador;
 
 namespace multiplayer
 {

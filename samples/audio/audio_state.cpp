@@ -10,7 +10,6 @@
 #include <string>
 
 using namespace labrador;
-using namespace labrador;
 
 namespace audio_sample
 {

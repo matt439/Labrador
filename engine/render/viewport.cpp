@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-using namespace labrador;
-
 namespace labrador
 {
 	Viewport::Viewport(float x, float y, float width, float height,

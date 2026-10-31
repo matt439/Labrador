@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <stdexcept>
 
-using namespace labrador;
-
 namespace labrador
 {
 	Camera::Camera(const Vector2F& translation, float scale) :

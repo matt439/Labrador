@@ -3,8 +3,6 @@
 #include <stdexcept>
 #include <string>
 
-using namespace labrador;
-
 namespace labrador
 {
 	ResolutionManager::ResolutionManager()

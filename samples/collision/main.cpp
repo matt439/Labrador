@@ -17,7 +17,6 @@
 
 using namespace collisiondemo;
 using namespace labrador;
-using namespace labrador;
 
 namespace
 {

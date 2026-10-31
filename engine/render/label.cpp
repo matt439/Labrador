@@ -4,8 +4,6 @@
 
 #include <string>
 
-using namespace labrador;
-
 namespace labrador
 {
 	Label::Label(const std::wstring& text,

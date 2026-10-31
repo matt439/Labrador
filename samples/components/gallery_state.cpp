@@ -18,7 +18,6 @@
 #include <vector>
 
 using namespace labrador;
-using namespace labrador;
 
 namespace components
 {

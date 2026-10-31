@@ -23,7 +23,6 @@
 #include <string>
 
 using namespace labrador;
-using namespace labrador;
 
 namespace linesweeper
 {

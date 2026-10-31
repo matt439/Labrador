@@ -1,7 +1,6 @@
 #include "samples/linesweeper/presentation/arrangement.h"
 
 using namespace labrador;
-using namespace labrador;
 
 namespace linesweeper
 {

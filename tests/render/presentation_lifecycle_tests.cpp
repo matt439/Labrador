@@ -24,7 +24,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	constexpr int initial_size = 64;
 	constexpr int resized_size = 32;

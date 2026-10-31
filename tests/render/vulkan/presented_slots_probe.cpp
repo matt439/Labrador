@@ -23,7 +23,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	constexpr int width = 1280;
 	constexpr int height = 720;

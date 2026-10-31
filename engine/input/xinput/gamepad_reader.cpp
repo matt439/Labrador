@@ -6,8 +6,6 @@
 #include <GamePad.h>
 #include <memory>
 
-using namespace labrador;
-
 namespace labrador
 {
 	namespace

@@ -27,7 +27,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	// Every object draws one 1x1 sprite at x = its id, so the recording's x
 	// coordinates spell the order it was drawn in.

@@ -3,8 +3,6 @@
 #include <stdexcept>
 #include <vector>
 
-using namespace labrador;
-
 namespace labrador
 {
 	ViewportManager::ViewportManager(ResolutionManager* resolution_manager) :

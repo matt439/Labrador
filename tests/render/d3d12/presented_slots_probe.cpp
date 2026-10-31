@@ -21,7 +21,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 	using Microsoft::WRL::ComPtr;
 
 	constexpr DWORD completion_timeout_ms = 5000;

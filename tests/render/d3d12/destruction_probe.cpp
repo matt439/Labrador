@@ -26,7 +26,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 	using Microsoft::WRL::ComPtr;
 
 	constexpr std::size_t message_capacity = 128;

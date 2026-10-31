@@ -23,8 +23,6 @@
 #include <tuple>
 #include <vector>
 
-using namespace labrador;
-
 namespace labrador
 {
 	namespace

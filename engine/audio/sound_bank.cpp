@@ -10,8 +10,6 @@
 #include <utility>
 #include <vector>
 
-using namespace labrador;
-
 namespace labrador
 {
 	SoundBank::SoundBank(const AudioDevice* device,

@@ -62,7 +62,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	// A renderer, a table, and content loaded through the real load path.
 	//

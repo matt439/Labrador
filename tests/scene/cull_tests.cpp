@@ -46,7 +46,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	// A renderer with no graphics API, a two-texel texture, and a sheet with
 	// one frame whose authored origin is its own far corner - the shape a

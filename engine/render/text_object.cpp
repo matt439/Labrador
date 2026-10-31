@@ -7,8 +7,6 @@
 
 #include <string>
 
-using namespace labrador;
-
 namespace labrador
 {
 	TextObject::TextObject(const std::wstring& text,

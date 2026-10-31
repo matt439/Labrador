@@ -36,7 +36,6 @@
 
 using namespace labrador;
 using namespace linesweeper;
-using namespace labrador;
 
 namespace
 {

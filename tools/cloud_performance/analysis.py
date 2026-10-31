@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .common import canonical, deadline, digest, safe_relative, validate_config
+from .common import _integer, canonical, deadline, digest, safe_relative, validate_config
 
 PHASES = (
     "update_ns", "begin_ns", "record_submit_ns", "present_ns", "whole_frame_ns",
@@ -31,12 +31,6 @@ def _json(path: Path) -> Any:
 
 def _withheld(reason: str, **evidence: Any) -> dict[str, Any]:
     return {"schema_version": 1, "complete": False, "analysis_withheld": reason, **evidence}
-
-
-def _integer(value: Any, name: str, *, minimum: int = 0) -> int:
-    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
-        raise ValueError(f"{name} must be an integer >= {minimum}")
-    return value
 
 
 def _vendor_id(value: Any) -> int:

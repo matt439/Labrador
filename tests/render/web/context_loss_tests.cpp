@@ -96,7 +96,6 @@ EM_JS(int, labrador_page_heard, (int index), {
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	constexpr int buffer_side = 64;
 

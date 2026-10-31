@@ -26,7 +26,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	constexpr std::size_t message_capacity = 2048;
 	constexpr std::size_t description_capacity = 512;

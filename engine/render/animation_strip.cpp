@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-using namespace labrador;
-
 namespace labrador
 {
 	AnimationStrip::AnimationStrip(const RectangleI& first_frame,

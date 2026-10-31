@@ -1,7 +1,5 @@
 #include "engine/render/sprite_frame.h"
 
-using namespace labrador;
-
 namespace labrador
 {
 	SpriteFrame::SpriteFrame(const RectangleI& source_rectangle,

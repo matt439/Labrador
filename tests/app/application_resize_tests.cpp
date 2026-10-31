@@ -18,7 +18,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 
 	Vector2I client_size(HWND window)
 	{

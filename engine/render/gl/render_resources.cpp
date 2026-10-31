@@ -4,8 +4,6 @@
 #include <memory>
 #include <string>
 
-using namespace labrador;
-
 namespace labrador
 {
 	namespace

@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <cstring>
 
-using namespace labrador;
-
 namespace labrador
 {
 	namespace

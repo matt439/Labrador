@@ -15,8 +15,6 @@
 #include <string_view>
 #include <utility>
 
-using namespace labrador;
-
 namespace labrador
 {
 #define LABRADOR_GL_DEFINE(result, name, parameters)                          \

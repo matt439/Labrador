@@ -3,8 +3,6 @@
 
 #include <cstdint>
 
-using namespace labrador;
-
 namespace labrador
 {
 	namespace

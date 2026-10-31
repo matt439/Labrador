@@ -3,7 +3,6 @@
 #include <memory>
 
 using namespace labrador;
-using namespace labrador;
 
 namespace collisiondemo
 {

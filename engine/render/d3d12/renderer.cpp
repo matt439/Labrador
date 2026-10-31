@@ -17,7 +17,6 @@
 #include <tuple>
 #include <vector>
 
-using namespace labrador;
 using Microsoft::WRL::ComPtr;
 
 namespace labrador

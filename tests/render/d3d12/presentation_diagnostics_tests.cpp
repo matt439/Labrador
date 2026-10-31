@@ -17,7 +17,6 @@
 namespace
 {
 	using namespace labrador;
-	using namespace labrador;
 	using Microsoft::WRL::ComPtr;
 
 	constexpr int initial_size = 64;
