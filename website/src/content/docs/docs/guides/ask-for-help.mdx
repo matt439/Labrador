@@ -1,0 +1,176 @@
+---
+title: Ask for help
+description: Look the message up first, then gather your engine's version, the command, the whole output and your Windows and Visual Studio versions, and open a question or a bug report on GitHub, step by step.
+sidebar:
+  order: 0.993
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
+
+When a step does not do what its page says and the page's own *If something fails* does not
+cover it, ask. Labrador's questions and bug reports go in its
+[issue tracker on GitHub](https://github.com/matt439/Labrador/issues), in the open, so that the
+answer is there for the next person. One person maintains the project, and no answer time is
+promised. This page gets what someone needs to answer you, then opens the right form. It takes
+about 15 minutes.
+
+<Aside type="caution" title="A security problem is not an issue">
+If you have found a way to make the engine or a page do something harmful, do not open an issue:
+report it privately as <RepoLink path="SECURITY.md">SECURITY.md</RepoLink> describes.
+</Aside>
+
+<Steps>
+
+1. **Look it up first.** Search the site for the first line with `error` in it, or the words of
+   the message box: the search box is at the top of every page, and
+   [Troubleshooting](/docs/troubleshooting/) is ordered by message.
+   [Read a build error](/docs/get-started/build-errors/) shows which line of a failed build is
+   the one that matters. If the page you were following says what to do, and that did not work,
+   say so in the report.
+
+2. **Find your engine's version.** In the x64 Native Tools Command Prompt, in your project's
+   folder:
+
+   ```bat
+   cd /d C:\dev\mygame
+   findstr /b /c:"Labrador " README.txt
+   ```
+
+   The `Labrador version:` and `Labrador commit:` lines are your engine's version and commit.
+   For a project made with Git, `git -C external\labrador describe --tags` prints them instead.
+   [Which Labrador you have](/docs/guides/your-version/) says what they mean, and how to tell
+   whether the page you followed describes your engine; if it does not, that may be the answer.
+
+3. **Save the whole output to a file.** Run the command that failed again, with
+   `> build-log.txt 2>&1` on the end, which writes everything it prints into `build-log.txt` in
+   the project's folder instead of the prompt. For a failed build:
+
+   ```bat
+   cmake --build --preset x64-debug > build-log.txt 2>&1
+   ```
+
+   It prints nothing, because everything went to the file, and takes as long as the build. Open
+   the file to check it:
+
+   ```bat
+   notepad build-log.txt
+   ```
+
+   It holds the whole failure, the long command line and the `error` lines included, such as:
+
+   ```text title="build-log.txt"
+   [1/4] Running utility command for game_content
+   [2/4] Checking that no engine file includes a game header
+   [3/4] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   FAILED: [code=2] game/CMakeFiles/MyGame.dir/states/hello_state.cpp.obj
+   C:\PROGRA~1\MICROS~1\18\COMMUN~1\VC\Tools\MSVC\1451~1.362\bin\Hostx64\x64\cl.exe  /nologo /TP ...
+   C:\dev\mygame\game\states\hello_state.cpp(129): error C2039: 'whte': is not a member of 'labrador::Colour'
+   C:\dev\mygame\external\labrador\engine/render/colour.h(26): note: see declaration of 'labrador::Colour'
+   C:\dev\mygame\game\states\hello_state.cpp(129): error C2065: 'whte': undeclared identifier
+   ninja: build stopped: subcommand failed.
+   ```
+
+   For a failed test, use `ctest --preset x64-debug > test-log.txt 2>&1`; for the configure,
+   `cmake --preset x64-debug > configure-log.txt 2>&1`. The paths in it include your project's
+   folder, and if that is under your user folder, your Windows user name; replace it in the file
+   if you do not want it public.
+
+   For an error box from the game, such as `Sample - startup failure`, click the box and press
+   **Ctrl+C**: Windows copies its title and text, which you can paste with **Ctrl+V**. Or take a
+   picture of the screen with **Win+Shift+S**.
+
+4. **Note your Windows and tools.** Still in the prompt:
+
+   ```bat
+   ver
+   cl 2>&1 | findstr Version
+   ```
+
+   They print the Windows version and the compiler's, such as:
+
+   ```text title="Output"
+   Microsoft Windows [Version 10.0.26200.9711]
+   Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36256 for x64
+   ```
+
+   For a browser build, note the browser and its version too: in Chrome or Edge, **Settings**,
+   then **About**.
+
+5. **Get a GitHub account**, if you do not have one. It is free:
+   [Put your project on GitHub](/docs/guides/your-github/)'s step 1 makes one. Opening an issue
+   needs nothing else from that page.
+
+6. **Choose the form.** Signed in, open
+   [the new-issue page](https://github.com/matt439/Labrador/issues/new/choose). It offers three
+   forms, each with a **Get started** button, and a fourth entry, **Report a security
+   vulnerability**, which is the private report from the box at the top of this page and not a
+   form:
+
+   - **Bug or build problem**: a step, the engine, a sample, the build, a page of this site or
+     the site itself does not do what it says. A step that fails as written is this one.
+   - **Question**: whether the engine fits what you want to make, or how something in it is meant
+     to be used.
+   - **Engine request**: a change to the engine itself. It asks for the code your game uses to
+     get around the missing part; [CONTRIBUTING.md](https://github.com/matt439/Labrador/blob/master/CONTRIBUTING.md#asking-a-question-or-requesting-a-change)
+     says how a request is weighed.
+
+7. **Fill it in.** The bug form's boxes, and what goes in each:
+
+   | Box | What to put |
+   | --- | --- |
+   | **Title** | The message's first line, or what went wrong in a few words. |
+   | **What happened** | The page and step you were following, what you expected, and what happened. Paste the first `error` line and the lines after it. |
+   | **How to reproduce it** | The commands you ran, in order, or for a page, its address and the step. |
+   | **Engine revision** | Your `Labrador commit:` line, then your `Labrador version:` line after it on the same line. |
+   | **Preset and platform** | The preset in the command, such as `x64-debug` or `wasm-debug`, then the two lines from step 4, all on one line. |
+
+   **Engine revision** and **Preset and platform** are boxes one line high, which hold one line
+   of text: paste or type each line after the one before, with `; ` between them, and check the
+   box shows them as you meant. The help under **Engine
+   revision** also asks whether current master still does it; master is the engine as it is
+   being written, and checking it needs a newer project, so leave that out unless you know.
+
+   Attach the log: drag `build-log.txt` from the project's folder in File Explorer into the
+   **What happened** box, or a picture of the screen. GitHub takes `.txt` and `.log` files up to
+   25 MB and pictures up to 10 MB. The **Question** form has two boxes: the question, and what you
+   have read or tried. Then click **Submit new issue**.
+
+   Once the issue is open, delete the log from your project's folder, so that it is not saved
+   with your game, by [Git](/docs/guides/your-git/) for example:
+
+   ```bat
+   del build-log.txt
+   ```
+
+   It prints nothing.
+
+</Steps>
+
+## What happens next
+
+The issue is public at once, with its own address. GitHub notifies you when someone answers, by
+email unless you have changed its settings, and the answer is a comment on the issue. The owner may ask for more, such as another log, or for you to try
+something. When it is answered or fixed, the issue is closed; a fix to a page or the engine names
+the commit that made it, and a request that is declined says why. Your own project and files are
+not sent anywhere: only what you typed or attached is in the issue.
+
+## What was checked
+
+On 31 October 2026, in a starter project made from a starter ZIP of this tree, the `findstr`,
+`ver` and `cl` lines printed what is shown, and the build line with `> build-log.txt 2>&1`
+printed nothing and wrote the 1,226-byte file quoted, with a misspelt colour made on purpose and
+the project's folder in it changed to `C:\dev\mygame`. The three forms, their boxes and the
+security note are those in the repository's `.github/ISSUE_TEMPLATE`; GitHub's **Get started**
+and **Submit new issue** buttons, attaching by dragging a file in, and the 25 MB and 10 MB limits
+are from GitHub's own documentation on creating an issue and attaching files, read that day. No
+account was made, no issue was opened, and copying an error box with **Ctrl+C** was not tried.
+
+A second agent then ran the page's commands as worded in another fresh starter, with the same
+results, and compared the steps with the forms. The page was corrected for what it found: the
+new-issue page also lists **Report a security vulnerability**, from the forms' `config.yml`; the
+**Engine revision** and **Preset and platform** boxes are one line high, so the two lines go on
+one; the form's question about current master is one a starter's reader cannot check, and may be
+left out; and `build-log.txt` stays in the project's folder, where `git add .` would save it with
+the game, so the page now deletes it. The bug form's own help under **Engine revision** says the
+same about one line and master.

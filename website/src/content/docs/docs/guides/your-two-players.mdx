@@ -1,0 +1,485 @@
+---
+title: Two players in your game
+description: Give the starter game a second greeting for a second player, on the arrow keys and the second pad while the first player has WASD and the first pad, then split the window between two cameras, step by step, with what each failure means.
+sidebar:
+  order: 0.966
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+The starter game has one greeting, which the arrow keys, WASD and every pad move together. This
+page gives it a second greeting for a second player: player 1 moves the first with **WASD** or
+the first pad, and player 2 the second with the **arrow keys** or the second pad, on one keyboard
+or two pads. Then, optionally, it splits the window in two, each half following one player, as
+the engine's local-multiplayer sample does. It is all in your game's code; the engine reads the
+keys and pads and draws the views. It takes about 20 minutes, and the split screen 15 more.
+
+Before you start, do [Make a first change](/docs/get-started/first-change/), so that you know the
+edit, build and run loop and have a copy of your game to go back to. Make a fresh copy now with
+that page's step 1 line.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Give the state a second greeting.** The state's header lists what it keeps. Open it:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search with **Ctrl+F** for `hint_ = nullptr;` and add a line after it, so the two read:
+
+   ```cpp
+   	labrador::Label* hint_ = nullptr;
+   	labrador::Label* second_greeting_ = nullptr;
+   ```
+
+   Then search for `Motion motion_;`, near the end, and add a line after it:
+
+   ```cpp
+   	Motion motion_;
+   	Motion second_motion_;
+   ```
+
+   A `Motion` is where a greeting is: the point it circles and how far round it is. Player 2's
+   greeting needs its own. Save and close Notepad.
+
+2. **Split the keyboard in two.** Open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `Vector2F keyboard_direction(`. This function turns the keys into a direction, and
+   reads both the arrows and WASD:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="Vector2F keyboard_direction(const Keyboard& keyboard)"
+   	to="return direction;"
+   />
+
+   Select from `Vector2F keyboard_direction(` down to the `}` after `return direction;`, and paste
+   these two functions in its place:
+
+   ```cpp
+   	Vector2F wasd_direction(const Keyboard& keyboard)
+   	{
+   		Vector2F direction = Vector2F::zero;
+
+   		if (keyboard.held(Key::a))
+   		{
+   			direction.x -= 1.0f;
+   		}
+   		if (keyboard.held(Key::d))
+   		{
+   			direction.x += 1.0f;
+   		}
+   		if (keyboard.held(Key::w))
+   		{
+   			direction.y -= 1.0f;
+   		}
+   		if (keyboard.held(Key::s))
+   		{
+   			direction.y += 1.0f;
+   		}
+
+   		return direction;
+   	}
+
+   	// The same for player 2, on the arrow keys.
+   	Vector2F arrows_direction(const Keyboard& keyboard)
+   	{
+   		Vector2F direction = Vector2F::zero;
+
+   		if (keyboard.held(Key::left))
+   		{
+   			direction.x -= 1.0f;
+   		}
+   		if (keyboard.held(Key::right))
+   		{
+   			direction.x += 1.0f;
+   		}
+   		if (keyboard.held(Key::up))
+   		{
+   			direction.y -= 1.0f;
+   		}
+   		if (keyboard.held(Key::down))
+   		{
+   			direction.y += 1.0f;
+   		}
+
+   		return direction;
+   	}
+   ```
+
+   Make sure the old function is gone: one left behind and no longer used builds on Windows and
+   stops the [browser build](#in-the-browser-build).
+
+3. **Place and add the second greeting.** In `init()`, search for `this->motion_.centre =`. Its
+   two lines put player 1's greeting 120 pixels left of the middle:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->motion_.centre = Vector2F("
+   	to="resolution.y * 0.5f);"
+   />
+
+   Click at the end of the second, after `;`, press **Enter**, and paste:
+
+   ```cpp
+   	this->second_motion_.centre = Vector2F(resolution.x * 0.5f - 120.0f,
+   		resolution.y * 0.5f + 100.0f);
+   ```
+
+   That starts player 2 100 pixels below player 1. Then search for `labrador::Colour::dark_gray));`,
+   the end of the lines that add the hint; if you have done
+   [A camera that follows the player](/docs/guides/your-camera/), it ends
+   `labrador::Colour::dark_gray);`, with one `)`, so search for that. Click at the end of that
+   line, press **Enter** twice, and paste:
+
+   ```cpp
+   	this->second_greeting_ = this->scene_->add(std::make_unique<Label>(
+   		L"Hello from player 2.", font_name, this->second_motion_.centre,
+   		resources, labrador::Colour::light_sky_blue));
+   ```
+
+   While you are there, change the hint's words, two lines above, so that the line reads:
+
+   ```cpp
+   		L"Player 1: WASD or pad 1. Player 2: arrows or pad 2. B or Escape asks to quit.", font_name,
+   ```
+
+4. **Give each player a pad.** In `update()`, search for `A single-player game accepts`. These
+   lines, a comment and then the code it describes, read every pad:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="// A single-player game accepts every slot"
+   	to="stick_deadzone);"
+   />
+
+   followed by a line with `}`. The starter adds every pad's stick together, so that one player's
+   pad works in whichever slot Windows put it. With two players, each needs a pad of their own,
+   and the comment is no longer true. Replace those lines, from the comment's first line down to
+   and including the `}`, with:
+
+   ```cpp
+   	bool quit_requested = keyboard.pressed(Key::escape);
+   	for (int slot = 0; slot < Gamepads::max_count; ++slot)
+   	{
+   		quit_requested |= pads.pressed(slot, GamepadButton::b);
+   	}
+
+   	// One pad each: player 1's is the pad in slot 0, player 2's the pad in
+   	// slot 1. An empty slot reads as a stick at rest.
+   	const Vector2F first_stick =
+   		apply_deadzone(pads.state(0).left_stick, stick_deadzone);
+   	const Vector2F second_stick =
+   		apply_deadzone(pads.state(1).left_stick, stick_deadzone);
+   ```
+
+   **B** on any pad still asks to quit. Windows numbers pads from slot 0 in the order they were
+   connected; the first pad plugged in is player 1's.
+
+5. **Move both.** Search for `this->motion_ = step_motion(`:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->motion_ = step_motion(this->motion_,"
+   	to="keyboard_direction(keyboard), dt);"
+   />
+
+   Replace those three lines with:
+
+   ```cpp
+   	this->motion_ = step_motion(this->motion_,
+   		first_stick, wasd_direction(keyboard), dt);
+   	this->second_motion_ = step_motion(this->second_motion_,
+   		second_stick, arrows_direction(keyboard), dt);
+   ```
+
+   Both use the same rules, `step_motion` from `game\rules\motion.h`, each with its own player's
+   stick and keys. Then search for `this->greeting_->set_position(` and add two lines after it,
+   so the three read:
+
+   ```cpp
+   	this->greeting_->set_position(greeting_position(this->motion_));
+   	this->second_greeting_->set_position(
+   		greeting_position(this->second_motion_));
+   ```
+
+6. **Dim and restore both.** Search for `labrador::Colour::dim_gray);`, in `on_suspend()`, and add
+   a line after it; then in `on_resume()`, just below, do the same, so that the two functions
+   read:
+
+   ```cpp
+   void HelloState::on_suspend()
+   {
+   	this->greeting_->set_colour(labrador::Colour::dim_gray);
+   	this->second_greeting_->set_colour(labrador::Colour::dim_gray);
+   }
+
+   void HelloState::on_resume()
+   {
+   	this->greeting_->set_colour(labrador::Colour::white);
+   	this->second_greeting_->set_colour(labrador::Colour::light_sky_blue);
+   }
+   ```
+
+   Save and close Notepad.
+
+7. **Build, test and run.** Quit the game if it is open, then run the line from
+   [Make a first change](/docs/get-started/first-change/)'s step 5:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\MyGame.exe
+   ```
+
+   It compiles `hello_state.cpp` and `main.cpp`, which includes the header; on a fast desktop the
+   line took 5 seconds before the game opened. It ends like this:
+
+   ```text title="Output"
+   [3/5] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj
+   [4/5] Building CXX object game\CMakeFiles\MyGame.dir\main.cpp.obj
+   [5/5] Linking CXX executable game\MyGame.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/2 Test #1: MyGameTests ......................   Passed    0.02 sec
+       Start 2: MyGameSmokeTests
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.78 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   The game opens with two greetings circling, the white one above and the blue
+   `Hello from player 2.` below it. Hold **W** and the right arrow together: the white one goes
+   up and the blue one right, at the same time. **Escape** dims both under the quit question.
+
+</Steps>
+
+Some keyboards cannot report many keys held at once: with three or four keys down, one more is
+ignored until another is let go. This is the keyboard, not the game. Two pads, or a second
+keyboard's keys, do not share that limit; two keyboards plugged into one computer act as one.
+
+## Split the screen
+
+With the two players far apart, one window cannot show both. This section gives each player half
+the window, the top for player 1 and the bottom for player 2, each with a camera that follows
+its own player. Do [A camera that follows the player](/docs/guides/your-camera/) first: it adds
+the signposts that show each half moving, takes the hint out of the world and adds the camera
+lines that this section changes. Its steps work on top of this page's.
+
+<Steps>
+
+1. **Make room for two views.** Each view costs memory set aside when the game starts, and the
+   starter sets aside one. Open `game\main.cpp`:
+
+   ```bat
+   notepad game\main.cpp
+   ```
+
+   Search for `view_capacity` and change the `1` to `2`, so the line reads:
+
+   ```cpp
+   		options.view_capacity = 2;
+   ```
+
+   Save and close Notepad, then make the same change in `game\main_web.cpp`, for the browser:
+
+   ```bat
+   notepad game\main_web.cpp
+   ```
+
+2. **Choose the two-player layout.** Open `game\states\hello_state.cpp`, search for
+   `this->scene_ = std::make_unique<Scene>(`, in `init()`, and add a line after it, so the two
+   read:
+
+   ```cpp
+   	this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
+   	this->app_->viewport_manager()->set_layout(ScreenLayout::two_player);
+   ```
+
+   The engine's two-player layout is the window cut across the middle, with a line two pixels
+   thick between the halves. Then search for `Vector2F(24.0f, resolution.y - 40.0f)`, where the
+   hint is placed, and change it to `Vector2F(24.0f, 12.0f)`: each half is only half as high, so
+   the hint goes at the top of each half.
+
+3. **One camera per player.** Search for `// The camera: the point the greeting circles`, the
+   lines the camera page added at the end of `update()`, and replace them, from that comment down
+   to the `);` after `Camera(`, with:
+
+   ```cpp
+   	// Split screen: player 1 in the top half, player 2 in the bottom, each
+   	// half with a camera on its own player.
+   	const ViewportManager& viewports = *this->app_->viewport_manager();
+   	const Viewport top = viewports.player_viewport(0);
+   	const Viewport bottom = viewports.player_viewport(1);
+   	this->scene_->clear_views();
+   	this->scene_->add_view(top,
+   		Camera(this->motion_.centre - top.size() * 0.5f, 1.0f));
+   	this->scene_->add_view(bottom,
+   		Camera(this->second_motion_.centre - bottom.size() * 0.5f, 1.0f));
+   ```
+
+   If you added the world's edge from the camera page, these lines replace that too, and nothing
+   uses its limits any more: search for `constexpr float world_min`, near the top, and delete that
+   line, the `world_max` line under it and the two comment lines above them. Left in, they build
+   on Windows and stop the [browser build](#in-the-browser-build). The hint is drawn into each
+   half by the lines in `draw`, which run once per view. Save and close Notepad.
+
+4. **Show the quit question over both halves.** The question draws into the first view, which is
+   now only the top half, and it sits below the middle of the window, so it would not show. Open
+   its code:
+
+   ```bat
+   notepad game\states\confirm_state.cpp
+   ```
+
+   Search for `DrawList list = renderer.view(0);` and add lines after it, so that they read:
+
+   ```cpp
+   	DrawList list = renderer.view(0);
+
+   	// Over the whole window, not just the top half of a split screen, and
+   	// with no camera.
+   	list.set_viewport(this->app_->viewport_manager()->fullscreen_viewport());
+   	list.set_camera(Camera::default_camera);
+   ```
+
+   Save and close Notepad.
+
+5. **Build, test and run** with the line from step 7. It compiles `main.cpp`,
+   `hello_state.cpp` and `confirm_state.cpp`, about 5 seconds. The window is cut in two, each
+   half with the hint along its top and its own signposts. The white greeting is in the middle
+   of the top half and the blue one in the middle of the bottom half; each half also shows the
+   other player when they are close. Hold **W** and the left arrow: the top half's signposts move
+   down and the bottom half's move right. **Escape** shows the question across the middle.
+
+</Steps>
+
+Touch markers are placed through the first view only, so in the bottom half they land in the
+wrong place; the camera page's line for them uses `this->scene_->view(0)`. The
+[local-multiplayer sample](/docs/guides/local-multiplayer/) goes further: a lobby where each
+player joins with a key or a pad of their choice, a title bar in each half, and one world updated
+once for both.
+
+## If something fails
+
+The line numbers in these messages are those of a starter with only
+[Make a first change](/docs/get-started/first-change/) and this page's steps done; changes from
+other pages move them.
+
+<Aside type="caution" title="hello_state.cpp(122): error C2039: 'second_greeting_': is not a member of 'HelloState'">
+The header does not have the line from step 1, or it was not saved: the same error follows for
+every line that names `second_greeting_`. `second_motion_` missing gives the same for it. Add the
+line in `hello_state.h`.
+</Aside>
+
+<Aside type="caution" title="hello_state.cpp(187): error C2065: 'stick_direction': undeclared identifier">
+The `step_motion` lines from step 5 were not changed: they still use the starter's
+`stick_direction`, which step 4 replaced. The next line is
+`hello_state.cpp(188): error C3861: 'keyboard_direction': identifier not found`, for the old
+function, which step 2 replaced. Change the lines as step 5 shows: `first_stick` and
+`wasd_direction` for player 1, `second_stick` and `arrows_direction` for player 2.
+</Aside>
+
+<Aside type="caution" title="hello_state.cpp:43:11: error: unused function 'keyboard_direction' [-Werror,-Wunused-function]">
+Only in the browser build: the old `keyboard_direction` is still in the file beside the two new
+functions, and nothing calls it. The Windows compiler builds it; clang, the browser's compiler,
+stops. `43` is the line the old function starts on, where the starter has it; `11` is the place
+of its name in that line. Delete the old function, as step 2 says.
+</Aside>
+
+<Aside type="caution" title="hello_state.cpp:37:18: error: unused variable 'world_min' [-Werror,-Wunused-const-variable]">
+Only in the browser build, after the split screen on top of the camera page's world's edge: the
+split screen's camera lines no longer use `world_min` and `world_max`, and clang stops on each,
+`world_max` on the next line. `37` is the line the constant is on in a starter with the camera
+page and this page done; yours can differ. Delete the two lines and their comment, as the split
+screen's step 3 says.
+</Aside>
+
+<Aside type="caution" title="startup failure: Renderer::set_view_count(2) is outside the capacity of 1 create_device was given.">
+The start-up test fails with this, and the game shows it in its error box. The split screen
+adds two views, and `main.cpp` still sets aside room for one. Change
+`view_capacity` to `2` in `main.cpp`, and in `main_web.cpp` for the browser.
+</Aside>
+
+If one greeting does not move, check its keys in step 2 and which function each `step_motion` line
+in step 5 calls. If the quit question does not show in the split screen, step 4 is missing.
+
+## In the browser build
+
+Build the page as [Build for the browser](/docs/guides/browser/) shows, in a prompt where you have
+run `emsdk_env.bat`:
+
+```bat
+cmake --build --preset wasm-debug && ctest --preset wasm-debug
+```
+
+The keys are the same in the page. The line under the game, in `game\web\shell.html`, still
+describes one player: search for `Escape asks to quit; Enter says yes.` and change the words
+between the quotation marks on that line, for example to:
+
+```js
+        "Player 1: WASD or pad 1. Player 2: the arrows or pad 2. Escape asks to quit; Enter says yes.";
+```
+
+## Where to go next
+
+- [A camera that follows the player](/docs/guides/your-camera/) if you have not done it.
+- [Local multiplayer](/docs/guides/local-multiplayer/) reads the engine's two-player sample:
+  choosing a device, one world, two cameras.
+- [Input](/docs/guides/input/) lists the keys and pad buttons, and
+  [Change a control in your game](/docs/guides/input/#change-a-control-in-your-game) changes them.
+- [Add a rule and a test](/docs/guides/your-rule/) writes a rule, such as what happens when the two
+  greetings meet, with a test.
+
+## What was checked
+
+On 31 October 2026, in a starter project made from a starter ZIP of this tree, with Visual
+Studio 2026's compiler 19.51 and Emscripten 6.0.12, every step above was made as worded by an
+agent editing the files with tools rather than Notepad, and the build and tests ran as shown,
+with the project's folder in the quoted output changed to `C:\dev\mygame`. The game was started
+and driven with key presses from a script, and screenshots showed both greetings, the white one
+moved up and the blue one right after **W** and the right arrow were held together for half a
+second, and both dimmed under the quit question. The split screen was made on top of these steps
+and the camera page's, and screenshots showed the two halves with their signposts and hints,
+each half following its player after **W** and the left arrow, and, once step 4 was added, the
+quit question across the middle; before step 4 the question did not show. The page was built
+under `wasm-debug`, its test passed, and headless Chrome showed both greetings moved after `KeyW`
+and `ArrowRight` were held together, and the split screen with both halves moved and the quit
+question across the middle. Each message above was made on purpose, the
+`stick_direction` one and the start-up test's `set_view_count(2)` failure included. No gamepad
+was available: the pads' lines were built, and which
+pad moves which player is read from the code.
+
+A second agent then followed the page as worded in another fresh starter, after
+[Make a first change](/docs/get-started/first-change/)'s steps 2 to 4 and the camera page. It
+built and tested the result on `x64-debug` and `wasm-debug`; in headless Chrome both players
+moved together, and the split screen showed the quit question only once step 4 of that section
+was done. It sent no keys to Windows windows after its first runs. The page was corrected for
+what it found: step 4 left the starter's comment about every slot sharing one greeting, which is
+no longer true, so it now replaces the comment with the lines; and the browser build's
+`unused function` message named line 67, where the old function is only if the new ones are
+pasted above it. The agent that made the corrections repeated steps 1 to 7 as now worded in a
+third fresh starter: they built and passed on `x64-debug` and `wasm-debug`, and a screenshot of
+the game's own window, taken without sending it keys, showed both greetings and the new hint.
+With the comment replaced, step 5 left undone gives `C2065` for `stick_direction` at line 187 and
+then `C3861` at 188; the header's line left out gives `C2039` at 122; and the old function left
+where it was builds on Windows and stops the browser build at `43:11`.
+
+A reviewer then did the camera page, its world's edge included, then this page and the split
+screen, in another fresh starter. On Windows each stage built and passed, and screenshots showed
+the second greeting, player 1 followed up after **W**, and the split screen with the top half's
+signposts moved down and the bottom half's right after **W** and the left arrow, both greetings
+dimmed and the question across the middle. After the camera page, step 3's search for the
+hint's end found nothing, since that page leaves one `)`, and the browser build stopped with
+`unused variable 'world_min'` at `37:18` and `'world_max'` at `38:18` until the world's limits
+were deleted; the page was corrected for both, and the browser build then passed its test.

@@ -24,7 +24,7 @@ body:
     id: revision
     attributes:
       label: Engine revision
-      description: The commit hash you saw it on. If that is not current master, say whether master still does it.
+      description: The commit hash you saw it on. A project made from a starter ZIP has it in its README.txt, on the line starting "Labrador commit:"; paste that line and the "Labrador version:" line, both on this one line. If you can, say whether current master still does it.
       placeholder: "e.g. 65116c3"
     validations:
       required: true

@@ -1,0 +1,332 @@
+---
+title: Rename your game
+description: Change MyGame to your game's name everywhere it lives, the program, its tests, the build's targets, the window title, the error box, the web page and the release, then build again from nothing, step by step, with what a partial rename does.
+sidebar:
+  order: 0.975
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+import SourceFile from '~/components/SourceFile.astro';
+
+The starter project's game is called `MyGame`: the program is `MyGame.exe`, its tests are
+`MyGameTests` and `MyGameSmokeTests`, and the browser build makes `MyGame.html`. This page renames
+all of it to your game's name. The name lives in five files, and the build folder remembers the old
+one, so the last step builds everything again. It takes about 15 minutes, most of it the build.
+
+Before you start, do [Make a first change](/docs/get-started/first-change/), so that you know the
+edit, build and run loop and have a copy of your game to go back to. Make a fresh copy now with
+that page's step 1 line. Quit the game if it is running.
+
+Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+<Steps>
+
+1. **Choose the name.** It is used for the program's file and the build's own names, so it must
+   be letters and digits only, starting with a letter: no spaces, dashes or dots. Join words
+   with capitals, such as `SkyHopper`. The window's title, in step 3, can be anything. Paste this
+   line, but **before you press Enter, change `SkyHopper`** to your name, as
+   [Typing the commands](/docs/get-started/prerequisites/#typing-the-commands) shows:
+
+   ```bat
+   set "NAME=SkyHopper"
+   ```
+
+   It prints nothing. It lasts until you close this prompt; if you open a new one, run it again.
+
+2. **Rename it in the build files.** This one line replaces `MyGame` with your name in the
+   project's two `CMakeLists.txt` files, and `mygame` with it in lower case in `vcpkg.json`:
+
+   ```bat
+   powershell -NoProfile -Command "if ($env:NAME -notmatch '^[A-Za-z][A-Za-z0-9]*$') { 'The name must be letters and digits only, starting with a letter. Nothing was changed.'; exit 1 }; if (-not (Test-Path game\main.cpp)) { 'This is not your project''s folder. Nothing was changed.'; exit 1 }; $n = 0; foreach ($f in 'CMakeLists.txt', 'game\CMakeLists.txt') { $p = (Resolve-Path $f).Path; $t = [IO.File]::ReadAllText($p); $n += ([regex]::Matches($t, 'MyGame')).Count; [IO.File]::WriteAllText($p, $t.Replace('MyGame', $env:NAME)) }; $p = (Resolve-Path vcpkg.json).Path; $t = [IO.File]::ReadAllText($p); [IO.File]::WriteAllText($p, $t.Replace('\"name\": \"mygame\"', '\"name\": \"' + $env:NAME.ToLower() + '\"')); 'Replaced MyGame ' + $n + ' times.'"
+   ```
+
+   It is one line, and takes about a second. In a starter project it prints:
+
+   ```text title="Output"
+   Replaced MyGame 27 times.
+   ```
+
+   What it changed:
+
+   | File | What has the name |
+   | --- | --- |
+   | `CMakeLists.txt` | `project(MyGame ...)`, the project's own name. |
+   | `game\CMakeLists.txt` | The program, `add_executable(MyGame ...)`, in both the browser's list and the Windows list; the rules library `MyGameRules` and the test program `MyGameTests`; the two tests `MyGameTests` and `MyGameSmokeTests`; the folder the content is copied beside, `$<TARGET_FILE_DIR:MyGame>`; and the release's `install(TARGETS MyGame ...)` and its DLLs. |
+   | `vcpkg.json` | `"name": "mygame"`, which vcpkg wants in lower case. |
+
+   `CMakePresets.json` does not name the game: its presets are named for the build, such as
+   `x64-debug` and `wasm-debug`, and stay as they are.
+
+   If you have added lines from other guides, such as the textures folder from
+   [Put a picture in your game](/docs/guides/your-picture/), their `MyGame` is replaced too, and
+   the count is higher. Run again, the line prints `Replaced MyGame 0 times.` and changes
+   nothing more. To check, `findstr /n MyGame CMakeLists.txt game\CMakeLists.txt` prints
+   nothing once every one is gone, and each line still naming `MyGame` with its number if not.
+
+3. **Name the window and the error box.** These are in `game\main.cpp`, as text the player
+   reads, so they can have spaces:
+
+   ```bat
+   notepad game\main.cpp
+   ```
+
+   Search with **Ctrl+F** for `window_class_name`. These are the lines, unless you changed them in
+   [Make a first change](/docs/get-started/first-change/):
+
+   <SourceFile path="samples/minimal/main.cpp" from="options.window_class_name" to="options.window_title" />
+
+   Change the text between the quotation marks in the first and last of them, for example to:
+
+   ```cpp
+   		options.window_class_name = L"SkyHopperWindowClass";
+   		// ...
+   		options.window_title = L"Sky Hopper";
+   ```
+
+   The class name is a name Windows keeps for the window, never shown; the title is on the
+   window's title bar and the taskbar. Then search for `startup failure`:
+
+   <SourceFile path="samples/minimal/main.cpp" from="MessageBoxA(" to="MB_OK | MB_ICONERROR);" />
+
+   `"Sample - startup failure"` is the title of the box that shows when the game cannot start.
+   Change it, for example to `"Sky Hopper - startup failure"`. Save and close Notepad.
+
+4. **Name the web page.** The browser's tab shows the page's title, in `game\web\shell.html`:
+
+   ```bat
+   notepad game\web\shell.html
+   ```
+
+   Search for `<title>` and change the words between `<title>` and `</title>`, so that the line
+   reads, for example:
+
+   ```html
+   <title>Sky Hopper</title>
+   ```
+
+   In `game\main_web.cpp`, the line `std::fprintf(stderr, "MinimalSample: %s\n", e.what());`
+   starts the message a failed browser start writes to the browser's console; change
+   `MinimalSample` there too if you like. Save and close Notepad.
+
+5. **Build everything again.** The build folder still has the old names in it, and the old
+   `MyGame.exe`, which a build with the new names leaves where it is. Delete the whole `out`
+   folder, then configure, build, test and run. Paste these lines, but **before you press Enter
+   on the last, change `SkyHopper`** to your name:
+
+   ```bat
+   rmdir /s /q out
+   cmake --preset x64-debug
+   cmake --build --preset x64-debug && ctest --preset x64-debug && out\build\x64-debug\game\SkyHopper.exe
+   ```
+
+   `rmdir` prints nothing. The configure and build are those of
+   [Get the starter project](/docs/get-started/starter/)'s steps 5 to 7, the engine included:
+   vcpkg restores its packages from the copies it kept, and on a fast desktop the three lines
+   took 17 seconds. The build ends:
+
+   ```text title="Output"
+   [96/97] Linking CXX static library external\labrador\engine\LabradorEngine.lib
+   [97/97] Linking CXX executable game\SkyHopper.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: SkyHopperTests
+   1/2 Test #1: SkyHopperTests ...................   Passed    0.02 sec
+       Start 2: SkyHopperSmokeTests
+   2/2 Test #2: SkyHopperSmokeTests ..............   Passed    0.84 sec
+
+   100% tests passed, 0 tests failed out of 2
+   ```
+
+   The game opens with your title on its window. The program is now
+   `out\build\x64-debug\game\SkyHopper.exe`, and `MyGame.exe` is gone.
+
+</Steps>
+
+## The new name on other pages
+
+The other pages write `MyGame`, and you now write your name in its place. The rule is simple:
+**every `MyGame` in a command, a file name or a CMake line on another page is your name**, and
+`mygame` in a folder name, such as `C:\dev\mygame`, is only a folder's name. The ones you will
+meet:
+
+| On those pages | After renaming to `SkyHopper` |
+| --- | --- |
+| `out\build\x64-debug\game\MyGame.exe` | `out\build\x64-debug\game\SkyHopper.exe` |
+| `MyGameTests`, `MyGameSmokeTests` in test output | `SkyHopperTests`, `SkyHopperSmokeTests` |
+| `MyGameRules`, the rules library, in [Test your game](/docs/guides/testing/) and [Add a rule and a test](/docs/guides/your-rule/) | `SkyHopperRules` |
+| `MyGame.exe` in the release folder from [Send your game to a friend](/docs/guides/your-release/) | `SkyHopper.exe` |
+| `out\build\wasm-debug\game\MyGame.html`, `MyGame.js`, `MyGame.wasm` from [Build for the browser](/docs/guides/browser/) | `SkyHopper.html`, `SkyHopper.js`, `SkyHopper.wasm` |
+| `out\build\wasm-release\game\MyGame.html` and its `.js` and `.wasm`, in the `--file` lines of [Build for the browser](/docs/guides/browser/) and [Your game on a web page](/docs/guides/your-web-page/) | `out\build\wasm-release\game\SkyHopper.html`, `.js` and `.wasm` |
+| `MyGame.data`, the browser build's packed content, in [Audio](/docs/guides/audio/) | `SkyHopper.data` |
+| The startup item **MyGame.exe (game\MyGame.exe)** in [Edit and debug in Visual Studio](/docs/get-started/debug-your-game/) | **SkyHopper.exe (game\SkyHopper.exe)** |
+| `add_executable(MyGame` when a guide adds a source file | `add_executable(SkyHopper` |
+| `$<TARGET_FILE_DIR:MyGame>` in the copy lines the picture, font and sound pages add to `game\CMakeLists.txt` | `$<TARGET_FILE_DIR:SkyHopper>`; step 2's line already changed the ones that were there |
+| `target_link_libraries(MyGame` and `set_property(TARGET MyGame` in [Settings and saves](/docs/guides/settings-and-saves/) | `target_link_libraries(SkyHopper` and `set_property(TARGET SkyHopper` |
+
+Deleting `out` also deleted any release or browser build; build them again as their pages say,
+from their configure step. Folder names such as `C:\dev\mygame-release` are only folders, and
+can keep their names or take yours. The workflow in `.github\workflows\ci.yml` does not name the
+game, so [Check your game in CI](/docs/guides/ci/) needs no change.
+
+## Renaming the project's folder
+
+The folder `C:\dev\mygame` can have your name too. Close Visual Studio and any prompt or Explorer
+window inside the folder, quit the game, then:
+
+```bat
+cd /d C:\dev
+ren mygame skyhopper
+cd /d C:\dev\skyhopper
+```
+
+`ren` prints nothing. A prompt that is still inside the folder stops it with
+`The process cannot access the file because it is being used by another process.`, which is why
+the first line leaves it. Then delete `out` and build again as in step 5: the build folder
+remembers the folder it was made in. [Make a first change](/docs/get-started/first-change/)'s copy
+of your game is named after the folder, so the next copy is `C:\dev\skyhopper-backup`, and the old
+`C:\dev\mygame-backup` stays where it is until you delete it. A project in Git or on GitHub keeps
+its history; the repository's name on GitHub is separate and changed in its settings.
+
+## If something fails
+
+<Aside type="caution" title="The name must be letters and digits only, starting with a letter. Nothing was changed.">
+The name in the `set` line has a space, a dash or another sign, or starts with a digit, such as
+`Sky Hopper` or `2Hop`. Run the `set` line again with a name like `SkyHopper`, then the
+replacement line.
+</Aside>
+
+<Aside type="caution" title="This is not your project's folder. Nothing was changed.">
+The prompt is not in the project's folder. Run the `cd /d C:\dev\mygame` line from the top of
+the page, then the replacement line again.
+</Aside>
+
+<Aside type="caution" title="CMake Error at game/CMakeLists.txt:89 (add_custom_command): Error evaluating generator expression: $<TARGET_FILE_DIR:MyGame> No target &quot;MyGame&quot;">
+One `MyGame` in `game\CMakeLists.txt` was not renamed, here in the lines that copy the fonts,
+which happens when it is renamed by hand. The build stops before compiling anything, ending:
+
+```text title="Output"
+CMake Error at game/CMakeLists.txt:89 (add_custom_command):
+  Error evaluating generator expression:
+
+    $<TARGET_FILE_DIR:MyGame>
+
+  No target "MyGame"
+
+
+CMake Generate step failed.  Build files cannot be regenerated correctly.
+ninja: error: rebuilding 'build.ninja': subcommand failed
+```
+
+The number after `CMakeLists.txt:` is the line. Run the replacement line from step 2 again: it
+renames whatever `MyGame` is left.
+</Aside>
+
+<Aside type="caution" title="Unable to find executable: MyGame">
+The build worked, and `ctest` cannot run the start-up test, which still names `MyGame` in
+`add_test(NAME ... COMMAND MyGame --smoke-test)`. It prints where it looked, then
+`2/2 Test #2: SkyHopperSmokeTests ..............***Not Run` and
+`50% tests passed, 1 tests failed out of 2`. Run the replacement line from step 2 again, then
+build and test. If `out` was not deleted, the old `MyGame.exe` is still there and this test runs
+the old program instead, and passes, which is why step 5 deletes it.
+</Aside>
+
+<Aside type="caution" title="vcpkg.json: error: $.name (a package name): &quot;SkyHopper&quot; is not a valid package name. Package names must be lowercase alphanumeric+hyphens and not reserved">
+The name in `vcpkg.json` has capitals, which happens when it is changed by hand. The configure
+then fails with `vcpkg install failed`. Change it to lower case, `"name": "skyhopper"`, and
+configure again.
+</Aside>
+
+<Aside type="caution" title="CMake Error: The current CMakeCache.txt directory C:/dev/skyhopper/out/build/x64-debug/CMakeCache.txt is different than the directory c:/dev/mygame/out/build/x64-debug where CMakeCache.txt was created.">
+The project's folder was renamed and `out` was not deleted. What follows depends on the command.
+After `cmake --preset x64-debug`, the second line is
+`CMake Error: The source "C:/dev/skyhopper/CMakeLists.txt" does not match the source "C:/dev/mygame/CMakeLists.txt" used to generate cache.`
+After `cmake --build --preset x64-debug`, the build line that is run most, it ends instead:
+
+```text title="Output"
+[0/1] Re-running CMake...
+CMake Error: The source directory "C:/dev/mygame" does not appear to contain CMakeLists.txt.
+Specify --help for usage, or press the help button on the CMake GUI.
+FAILED: [code=1] build.ninja ...
+ninja: error: rebuilding 'build.ninja': subcommand failed
+```
+
+Delete `out` and build again as in step 5. The failed build also makes a folder with the old
+name, `C:\dev\mygame`, holding only empty folders under `out`. It is not your project, which is
+in the new folder; this line deletes it, but only if it has no `game` folder in it:
+
+```bat
+if exist C:\dev\mygame\game (echo C:\dev\mygame has a game in it. Nothing was deleted.) else (rmdir /s /q C:\dev\mygame)
+```
+
+It prints nothing when it deletes the folder.
+</Aside>
+
+<Aside type="caution" title="'out\build\x64-debug\game\MyGame.exe' is not recognized as an internal or external command, operable program or batch file.">
+The program has your name now. Use `out\build\x64-debug\game\SkyHopper.exe`, with your name.
+</Aside>
+
+If `rmdir /s /q out` says a file is being used, the game or Visual Studio still has a file in
+`out` open: quit the game, close Visual Studio, and run it again.
+
+## In the browser build
+
+In a prompt where you have run `emsdk_env.bat`, configure the browser preset again, since `out` is
+new, then build and test:
+
+```bat
+cmake --preset wasm-debug
+cmake --build --preset wasm-debug && ctest --preset wasm-debug
+```
+
+On a fast desktop this took 18 seconds, and `ctest` runs `SkyHopperTests`. The page is
+`out\build\wasm-debug\game\SkyHopper.html`, beside `SkyHopper.js` and `SkyHopper.wasm`, and its
+tab is titled with the words from step 4. The page check from
+[Build for the browser](/docs/guides/browser/) takes the new page's name:
+`--page out\build\wasm-debug\game\SkyHopper.html`.
+
+## What was checked
+
+On 31 October 2026, in a starter project made from a starter ZIP of this tree, with Visual
+Studio 2026's compiler 19.51 and Emscripten 6.0.12, the steps above were made as worded with the
+name `SkyHopper`, by an agent editing `main.cpp`, `main_web.cpp` and `shell.html` with tools
+rather than Notepad, and the outputs are as shown, with the project's folder in them changed to
+`C:\dev\mygame`. The replacement line printed `Replaced MyGame 27 times.` and changed the 24
+lines of `game\CMakeLists.txt` and one each of `CMakeLists.txt` and `vcpkg.json`; in another
+fresh starter it refused `Sky Hopper`, `2Hop` and the wrong folder, changing nothing. Built
+without deleting `out`, the project built `SkyHopper.exe` and left `MyGame.exe` and
+`MyGameTests.exe` beside it. After deleting `out`, the build, tests and game ran as in step 5,
+and the window's title was `Sky Hopper`. `x64-release` built, passed its tests and installed
+with `cmake --install` to a folder holding `SkyHopper.exe` and no `MyGame.exe`. `wasm-debug`
+built `SkyHopper.html`, `.js` and `.wasm` and passed its test; the page runner from Build for the
+browser passed with `--quit-keys Escape,Enter`, and the page's title read `Sky Hopper` in
+headless Chrome. The project's folder was renamed with `out` kept, giving the `CMakeCache.txt`
+error, and built again after deleting `out`; `ren` was tried from inside the folder, giving the
+`being used by another process` message. Each failure above was made on purpose by one change at
+a time, except the file in use in `out`, which was not tried.
+
+A second agent then followed the page as worded in another fresh starter, after
+[Make a first change](/docs/get-started/first-change/)'s steps 2 to 4. The line's count and
+refusals matched, and the renamed game built and passed on `x64-debug`, `x64-release`, whose
+installed folder held `SkyHopper.exe`, and `wasm-debug`, whose page check passed with the tab
+titled `Sky Hopper`. The page was corrected for what it found: with the folder renamed and `out`
+kept, `cmake --build` gives a different second message from `cmake --preset`'s, and makes an empty
+folder with the old name; and the table of names on other pages left out the rules library, the
+`wasm-release` page's files, `MyGame.data`, the Visual Studio startup item and the settings page's
+CMake lines, so it now starts with the rule that covers them all. The agent that made the
+corrections renamed a third fresh starter with the line, built it, renamed its folder with `out`
+kept, and saw both messages as quoted and the old folder come back holding no files, only
+empty folders under `out`; the deleting line refused the renamed project's folder, which has a `game` folder, and
+deleted the empty one; and deleting `out`, configuring, building and testing took 17 seconds and
+passed. The renamed startup item in Visual Studio was not looked at: it is the program's name,
+as the item for `MyGame` is.
+
+A reviewer then ran the replacement line as worded, through `cmd`, in a fourth fresh starter
+that already had the camera and two-player pages' changes: it refused `Sky Hopper`, printed
+`Replaced MyGame 27 times.` and then `Replaced MyGame 0 times.`, and left `"name": "skyhopper"`
+in `vcpkg.json`. Deleting `out` and step 5's lines took 20 seconds and passed both tests, the
+folder held `SkyHopper.exe` and `SkyHopperTests.exe` only, and a screenshot showed `Sky Hopper` on
+the title bar; `wasm-debug` then made `SkyHopper.html`, `.js` and `.wasm`, with
+`<title>Sky Hopper</title>`, and passed `SkyHopperTests`.
