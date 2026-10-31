@@ -362,8 +362,10 @@ Git. L55 takes OCA-78 next, ahead of the ready-work order above; it waits on
 no hardware or outside event. The Get Started pages were made exhaustive for
 that reader first, in the commit that added this story.
 
-The [feature candidates](../feature-candidates.md) add six proposals beyond
-the existing `GAP#` comparison. They need selection before implementation and
+The [feature candidates](../feature-candidates.md) add nineteen proposals
+beyond the existing `GAP#` comparison: six from a read of the samples and
+guides, and thirteen from the engine review of 2026-10-31 (`IDEA#7` to
+`IDEA#19`). They need selection before implementation and
 are not counted as ready stories. A selected proposal gets a story here, with
 its acceptance and dependencies; the dated STORIES.md and comparison stay as
 written.
