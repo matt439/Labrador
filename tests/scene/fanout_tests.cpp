@@ -24,16 +24,16 @@
 #include <stdexcept>
 #include <vector>
 
-// What the per-view render fan-out owes, asserted for the first time.
+// What the per-view render fan-out owes.
 //
-// PHILOSOPHY commits to one axis of parallelism "and that one alone" and
-// AGENTS.md calls the const draw() discipline guarding it "load-bearing, not
-// a convenience" - and until this file the fan-out had never run. scene.cpp
-// returns before it when the view count is one, or the pool is null, or the
-// partitioner is null; both samples construct Scene(nullptr, nullptr); and
-// scene_tests.cpp beside this one builds every scene the same way. So the
-// early-out was the only branch ever taken, and the guarantee draw()'s
-// constness exists to provide had never been asked for.
+// PHILOSOPHY commits to one axis of parallelism "and that one alone", and
+// AGENTS.md's const draw() rule exists because several views can call draw on
+// the same object concurrently. scene.cpp returns before the fan-out when the
+// view count is one, or the pool is null, or the partitioner is null; every
+// sample scene but local_multiplayer's play state is Scene(nullptr, nullptr),
+// and scene_tests.cpp beside this one builds every scene the same way. So this
+// file is where the fan-out branch runs headlessly and the guarantee draw()'s
+// constness exists to provide is asked for.
 // docs/survey/2026-08-26.md 2.1 is the finding; bench/fanout_bench_null.cpp
 // measures what the path costs and this file pins what it must produce.
 //

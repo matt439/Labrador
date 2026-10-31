@@ -14,7 +14,8 @@ namespace labrador
 	// answer (T5), a vtable on the frame path is a tax nothing has asked to
 	// pay (T8), and promoting a concrete class to an interface later is
 	// mechanical and changes no call site. The DirectXTK/XInput implementation
-	// is engine/input/xinput/, and nothing outside that folder names a pad API.
+	// is engine/input/xinput/, the browser Gamepad API's is engine/input/web/,
+	// and nothing outside those two folders names a pad API.
 	class GamepadReader
 	{
 	public:

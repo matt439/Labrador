@@ -44,8 +44,9 @@
 // thousand sprites to sixty-five thousand. Ten thousand of them is therefore
 // about 354 microseconds of arithmetic in a 16.7 ms frame - a fiftieth of the
 // budget - and that number is why this file does not bother with a spatial
-// index, a sort, or a second submission path. README, Particles, records what
-// it actually measured against that prediction.
+// index, a sort, or a second submission path. README, What it costs, measured
+// against what was predicted, records how far that prediction has been
+// checked and what is still unmeasured.
 namespace linesweeper
 {
 	// The whole field, and it is a compile-time bound rather than a capacity

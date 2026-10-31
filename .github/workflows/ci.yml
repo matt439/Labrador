@@ -386,7 +386,8 @@ jobs:
           cmake --preset ${{ matrix.preset }}
 
       # This includes cmake/check_engine_includes.cmake, so an engine file that
-      # includes a game header fails here as well as locally.
+      # includes a game header, or reaches into another folder's backend,
+      # fails here as well as locally.
       - name: Build
         if: needs.changes.outputs.build == 'true'
         run: |

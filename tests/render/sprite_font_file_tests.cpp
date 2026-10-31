@@ -18,7 +18,7 @@
 // Reading a .spritefont, with no device.
 //
 // AGAINST THE REAL FILE, not a fixture built to be read. The one in
-// tests/render/content/ is the font both samples ship and is exactly what
+// tests/render/content/ is the font minimal and LineSweeper ship and is what
 // MakeSpriteFont writes when nobody chooses anything: 95 glyphs, U+0020 to
 // U+007E, no default character, and a BC2 atlas. Every assertion below that
 // names a number is naming a property of that file, and a fixture would have

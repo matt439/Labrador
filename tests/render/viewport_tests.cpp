@@ -14,8 +14,8 @@
 // projection two different viewport sizes, and scales every sprite in a
 // fractional pane by the ratio between them. D3D11 cannot have that bug - it
 // passes one D3D11_VIEWPORT to both consumers - which is precisely why it is
-// hard to catch: RenderPixelTests creates one integral 64x64 view, both samples
-// take their resolution from a Vector2I, and set_viewport has exactly one
+// hard to catch: RenderPixelTests creates one integral 64x64 view, every sample
+// takes its resolution from a Vector2I, and set_viewport has exactly one
 // caller in the whole tree. The trigger is split-screen on an odd client
 // extent, which lives in a client repository and not in this one.
 //

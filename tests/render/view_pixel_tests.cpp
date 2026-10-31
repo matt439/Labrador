@@ -51,7 +51,7 @@ namespace
 //
 // NOTHING HERE CALLED set_viewport UNTIL NOW, which is why the two device
 // backends were able to disagree about a pane for as long as they did. The
-// harness above builds one integral 64x64 view, both samples take their
+// harness above builds one integral 64x64 view, every sample takes its
 // resolution from a Vector2I, and the seam's only production caller of
 // set_viewport is engine/scene/scene.cpp, which no test reached when this was
 // written. So the pane arithmetic was exercised by neither the pixel contract

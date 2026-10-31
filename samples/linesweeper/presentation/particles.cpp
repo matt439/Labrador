@@ -419,9 +419,9 @@ namespace linesweeper
 
 			// Shrinking as it fades is what makes a flat quad read as a spark
 			// instead of a square, and it costs one multiply where a soft
-			// radial texture would have cost an atlas. README, Particles,
-			// records that the atlas the sample predicted it would need turned
-			// out not to be needed for this.
+			// radial texture would have cost an atlas. README, The particle
+			// field, records that the atlas the sample predicted it would need
+			// turned out not to be needed for this.
 			const float side = particle.size * (0.35f + 0.65f * particle.life);
 			const float half = side * 0.5f;
 

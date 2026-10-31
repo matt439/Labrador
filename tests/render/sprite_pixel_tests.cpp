@@ -381,7 +381,7 @@ TEST_CASE("CONTRACT: the blend equation is premultiplied alpha")
 	// (1-0.5)*(0,0,0) = white. Straight alpha would give mid grey. The engine
 	// therefore expects textures whose colour is already multiplied by their
 	// alpha, and a backend that picks SRC_ALPHA here is wrong even though every
-	// opaque sprite in both samples would still look exactly right.
+	// opaque sprite in the samples would still look exactly right.
 	CHECK(harness.at(4, 4) == white_pixel);
 }
 

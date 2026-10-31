@@ -19,7 +19,7 @@
 // THESE ARE THE ASSERTIONS RenderPixelTests CANNOT MAKE. That file draws a
 // string and reads the pixels back, so it can only see the terms that reach
 // the screen, only through one real font, and only on a machine that can build
-// a Direct3D device. Every quirk in the walk is arithmetic; here it is
+// a rasterising device. Every quirk in the walk is arithmetic; here it is
 // arithmetic over a font invented for the question being asked, where a glyph
 // can be exactly one texel wide and a line spacing can be a round number.
 //

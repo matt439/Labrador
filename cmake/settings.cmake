@@ -48,14 +48,14 @@ else()
         -Werror
 
         # /fp:precise, argued again rather than translated, because clang
-        # has no switch that means it. Two things the MSVC build does not do
-        # - /fp:precise has left contraction to its own /fp:contract switch
-        # since Visual Studio 2022 - are live under clang. Reassociation and
-        # NaN elimination come only with
+        # has no switch that means it. Of what the MSVC build does not do,
+        # reassociation and NaN elimination come under clang only with
         # -ffast-math or its parts, which this tree never asks for, and that
         # absence is the decision - the same deletion-not-blank argument as
         # above, made by this comment rather than by a flag. Contraction is
-        # the other one, and it is ON by default: clang fuses a * b + c into
+        # the one that is live: MSVC has left it to its own /fp:contract
+        # switch since Visual Studio 2022, which this build does not pass,
+        # and under clang it is ON by default. clang fuses a * b + c into
         # one fused multiply-add wherever the target has one, rounding once
         # where the source rounds twice. Core WebAssembly has no scalar FMA,
         # so it would change nothing there yet - and "nothing yet" is exactly

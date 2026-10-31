@@ -23,8 +23,8 @@
 // beside it, the context files included, and nothing else. sprite_shader.h is
 // not one: it includes nothing, being two raw-string GLSL constants under a
 // #pragma once, and renderer.cpp includes both headers. And
-// cmake/check_engine_includes.cmake fails the build for anything outside the
-// folder that names any header in it.
+// cmake/check_engine_includes.cmake fails the build for any engine file outside
+// the folder that names any header in it.
 //
 // ONE BACKEND, TWO CONTEXTS (docs/port/web.md, D1). WebGL2 is GLES 3.0, and
 // this backend was authored to the intersection of that and 3.3 core, so the

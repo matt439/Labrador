@@ -14,10 +14,9 @@
 
 // The null backend: everything the seam requires, and no graphics API at all.
 //
-// EVERY CLIENT OF IT IS IN THIS FOLDER, as with every other backend's header:
-// the three .cpp beside it, and recording.h. What a test includes is
-// recording.h and not this, because that file names no backend type - it
-// explains the difference itself.
+// EVERY CLIENT OF IT IS IN THIS FOLDER: the three .cpp beside it. What a test
+// includes is recording.h, which this header includes, and not this, because
+// that file names no backend type - it explains the difference itself.
 //
 // THERE IS NO DEVICE, WHICH IS THE ENTIRE POINT. create_device takes a window
 // handle and ignores it; nothing here calls an API that could fail, so this

@@ -33,11 +33,11 @@ using namespace render_tests::pixel;
 //
 // AND WHY IT DOES NOT MAKE THE NULL BACKEND UNNECESSARY. WARP is a D3D-only
 // luxury: an in-box, fully conformant software rasteriser that no other API
-// gets on Windows. A second backend either ships a software rasteriser of its
-// own alongside it - Mesa's llvmpipe is not in the box - or these tests run
-// against it only on a machine with a working driver. The null backend is
-// still what makes the seam testable everywhere; this file is what tells it
-// what the right answers are.
+// gets on Windows. Desktop OpenGL and Vulkan have none there - Mesa's llvmpipe
+// and lavapipe are not in the box - so natively these tests run against them
+// only on a machine with a working driver; the browser build draws through
+// Chrome's SwiftShader instead. The null backend is still what makes the seam
+// testable everywhere; this file is what tells it what the right answers are.
 //
 // WHAT THESE PIN. Every term below is one a backend could differ on with
 // nothing else saying so - the samples would simply look slightly wrong, and
@@ -51,10 +51,10 @@ using namespace render_tests::pixel;
 // this font has, so no assertion here can reach it.
 //
 // Most frames are also checked against the PNG set in tests/render/golden/,
-// holding every rasterising backend to the same fixed reference. Sixty-three
-// frames have those references. Three resize cases opt out because their size
-// changes or differs by backend; the scene-composition and off-buffer viewport
-// cases instead assert every pixel against analytically known red/blue images.
+// holding every rasterising backend to the same fixed reference. Three resize
+// cases opt out because their size changes or differs by backend; the
+// scene-composition and off-buffer viewport cases instead assert every pixel
+// against analytically known red/blue images.
 // No reference is generated from the output being tested.
 // Harness::end_not_comparable marks these exceptions explicitly.
 //
@@ -176,8 +176,8 @@ TEST_CASE("CONTRACT: a frame that is never submitted contributes nothing")
 		Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 
 	// AND NO end(), which is the whole case. A client reaches this state by
-	// letting an exception out of its draw walk and carrying on; both samples
-	// exit instead, so nothing in the tree reaches it, which is why the
+	// letting an exception out of its draw walk and carrying on; every sample
+	// exits instead, so nothing in the tree reaches it, which is why the
 	// backends were free to disagree about it. See
 	// docs/review/backend-equivalence/README.md, defect B.
 
@@ -285,10 +285,11 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// THE WINDOW IS RESIZED TOO, AND NOT ONLY THE RENDERER TOLD, because
 	// otherwise this case would be asking one backend a different question
 	// from the other three. back_buffer_size is answered from the swap chain on the
-	// Direct3D backends and from the window on the OpenGL one - renderer.h
-	// says so, and the drag-resize case above is built on the difference - so
-	// telling the renderer about a resize the window never had would leave GL
-	// drawing into 64x64 while the other three moved to 32x32. A real resize
+	// Direct3D backends, from the engine-owned target on Vulkan and from the
+	// window on the OpenGL one - SEAM.md#6 says so, and the drag-resize case
+	// above is built on the difference - so telling the renderer about a
+	// resize the window never had would leave GL drawing into 64x64 while the
+	// other three moved to 32x32. A real resize
 	// moves both, in this order: the window changes, then the shell says so.
 	harness.resize_window(buffer_side / 2, buffer_side / 2);
 	CHECK(renderer.window_size_changed(buffer_side / 2, buffer_side / 2));
@@ -350,10 +351,9 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 	renderer.begin_frame();
 
 	// The window first and then the renderer, in that order and for the reason
-	// the case above gives: back_buffer_size is answered from the swap chain
-	// on the Direct3D backends and from the window on the OpenGL one, so a
-	// resize the window never had would ask two backends a different question
-	// from the third.
+	// the case above gives: back_buffer_size is answered from the window on
+	// the OpenGL backend and not on the other three, so a resize the window
+	// never had would ask GL a different question from the rest.
 	harness.resize_window(buffer_side / 2, buffer_side / 2);
 	CHECK(renderer.window_size_changed(buffer_side / 2, buffer_side / 2));
 

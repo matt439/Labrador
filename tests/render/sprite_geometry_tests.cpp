@@ -16,7 +16,7 @@
 // THE SAME TERMS RenderPixelTests PINS, ASKED A DIFFERENT WAY. That file draws
 // and reads the pixels back, which is the only proof that the whole path agrees
 // - but it can only see a term through a rasteriser, at whole-pixel resolution,
-// on a machine that can build a Direct3D device. This file reads the four
+// on a machine that can build a rasterising device. This file reads the four
 // corners directly, so it can assert a fractional position, a rotation, and a
 // texture coordinate, none of which a 64x64 read-back can separate from its
 // neighbours.

@@ -2,8 +2,8 @@
 // std::basic_ostream rather than including anything, which is fine until an
 // assertion compares a std::string_view: reporting the failure would call the
 // standard library's operator<< for one, and that needs the stream type
-// complete. This is the only test in the tree that compares strings, so this
-// is the only file that has met it.
+// complete. Any test file whose assertions compare a std::string_view needs
+// the same include for the same reason.
 #include <ostream>
 
 #include <doctest/doctest.h>

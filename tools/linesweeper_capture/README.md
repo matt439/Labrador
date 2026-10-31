@@ -65,8 +65,8 @@ flag may come anywhere on the command line. Captures in
 the three colour-vision palettes are for review and for the flash check, not for
 the website.
 
-The images are 1280x720, the size both samples ask for. The tool refuses to run
-if the back buffer is any other size.
+The images are 1280x720, the size the sample asks for on desktop and in the
+browser. The tool refuses to run if the back buffer is any other size.
 
 ### Footage
 

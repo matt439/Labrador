@@ -13,12 +13,9 @@
 // the day those two disagree about where column three is, the sparks come off
 // the wrong square and nothing says so.
 //
-// EVERYTHING HERE IS constexpr float RATHER THAN Vector2F, and that is not
-// style. Vector2F's constructor is not constexpr, so a namespace-scope one in
-// a header is dynamically initialised in every translation unit that includes
-// it - which is an initialisation order across units that the standard does
-// not fix. Two floats have no such question, and the one Vector2F a caller
-// wants is one it builds inside a function.
+// EVERYTHING HERE IS constexpr float RATHER THAN Vector2F. Most callers want
+// one axis at a time - a rectangle's left edge, a banner's middle - and the
+// one Vector2F a caller wants is one it builds itself.
 //
 // Only the WELL is here. The hold slot, the preview column, the HUD rows and
 // the banner are board_view.cpp's alone, and stay there: a constant belongs

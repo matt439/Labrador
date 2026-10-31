@@ -19,10 +19,12 @@
 //
 // renderer.h promises that reaching for the device is "a deliberate include of
 // engine/render/<backend>/ and not something a game file can do by accident".
-// This is that include, and EVERY CLIENT OF IT IS IN THIS FOLDER - which is the
-// rule rather than a count. cmake/check_engine_includes.cmake fails the build
-// for any file outside engine/render/<backend>/ that names any header inside
-// it: the folder, not one filename in it.
+// This is that include, and EVERY ENGINE CLIENT OF IT IS IN THIS FOLDER - which
+// is the rule rather than a count; backend-specific tests include it
+// deliberately to inspect resources. cmake/check_engine_includes.cmake scans
+// engine sources and fails the build for any engine file outside
+// engine/render/<backend>/ that names any header inside it: the folder, not one
+// filename in it.
 //
 // WHY THIS BACKEND EXISTS. docs/port/android.md is the reason and it is not
 // "Vulkan is modern": it is the one API which reaches Android, Linux and -
@@ -33,9 +35,9 @@
 // in CI exactly as the OpenGL one does.
 //
 // WHAT THIS BACKEND ANSWERS THAT NONE OF THE OTHER FOUR COULD. Every one of
-// them learns about a resize from Win32 and from nowhere else; renderer.h's
-// window_size_changed is written entirely in terms of a caller who already
-// knows the size changed. Vulkan is the first API behind this seam where the
+// them learns about a resize from the window and from nowhere else;
+// renderer.h's window_size_changed is written entirely in terms of a caller
+// who already knows the size changed. Vulkan is the first API behind this seam where the
 // PRESENTATION ENGINE says so instead - VK_ERROR_OUT_OF_DATE_KHR comes back
 // from an acquire or a present, on a frame no window message touched. The seam's
 // contract has the right shape for that (device_resources.h), because what goes

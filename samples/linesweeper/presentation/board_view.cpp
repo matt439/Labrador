@@ -34,8 +34,9 @@ namespace linesweeper
 
 		constexpr float hud_line_height = 26.0f;
 
-		// Vector2F construction is not constexpr. These values depend only on
-		// literals and constexpr layout fields, with no cross-unit initialization.
+		// Vector2F's two-float constructor is constexpr, and these values
+		// depend only on literals and constexpr layout fields, so each is
+		// constant-initialised, with no cross-unit initialisation order.
 		const Vector2F well_origin(well_origin_x, well_origin_y);
 		const Vector2F hold_origin(344.0f, 104.0f);
 		const Vector2F next_origin(816.0f, 104.0f);
