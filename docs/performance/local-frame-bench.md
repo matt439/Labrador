@@ -132,6 +132,53 @@ A run on a desktop GPU is not low-tier evidence: the low-tier box in
 configuration that is. Results stay under ignored `out/`; a run quoted as
 evidence names its JSON, machine file and commit.
 
+## Reading a run
+
+The ratchet's lock verdict and the pooled summaries come from the same
+analyzer the EC2 lane uses, without its host attestation: a local run has no
+`nvidia-smi`, declaration or release manifest, so any adapter vendor is read.
+Give it one or more results of one executable per backend:
+
+```powershell
+python -m tools.cloud_performance analyze-local `
+    --input out/performance/local/2026-10-29/local-fed37d1dc21e-d3d12-1.json `
+            out/performance/local/2026-10-29/local-fed37d1dc21e-vulkan-1.json `
+    --out out/performance/local/2026-10-29/analysis-fed37d1dc21e.json
+```
+
+It prints each run's `presentation_lock` verdict and each backend's pooled
+p99s, and writes the whole report, with every repetition's diagnostics and
+the `cadence_pools`, to `--out`, which must not exist. Repetitions of one
+backend are numbered in the order given and must share the executable's
+hash, the adapter, the presentation mode and the pacing. A result that
+contradicts itself, such as a summary its samples do not give, is refused:
+the printed record names the file, the same record is written to `--out`,
+and the command exits 1, so a rerun needs a new `--out`.
+
+Under presentation pacing there is no software pacer, so the verdict reads
+the pacer as idle from the gap between one frame's end and the next start.
+Any gap of 1 % of a period or more ends the tail there, so the signature holds
+when frames in the tail start one period apart with no such gap.
+`presentation_wait_candidate` then says `begin_ns` plus `present_ns` take most
+of the period, which is where synchronised presentation's wait is expected to
+fall; `work_limited` says `update_ns` plus `record_submit_ns` take the period,
+which on the low tier is the finding to look for. Both are CPU durations that
+include work and waits, so neither establishes a cause. `not_locked` follows
+from a gap between frames late in the run, from a cadence that does not
+average the period, or from the period itself: it is the JSON's
+`target_frame_ns`, 60 Hz, not the display's, and on a display more than 2 %
+away from it every run reads `not_locked` unless `--refresh-hz` states the
+display's rate (1 to 1,000, the bench's own range). The machine file's
+`CurrentRefreshRate` is a whole number (59 on this desktop, whose runs average
+a 16.7 ms interval), so check it against the run's mean interval before
+passing it. A software-paced result keeps its pacer's period, and
+`--refresh-hz` refuses it.
+
+The verdict classifies means over the tail. Read it beside the repetition's
+`long_begin_or_present` record: the held Vulkan run below is a
+`presentation_wait_candidate` because its pairs average one period, and its
+`either.longest_alternating_count` of 3,600 is where the pairing shows.
+
 ## First run, 2026-10-29
 
 Followed verbatim at `71b6af38c112` on the RTX 5080 desktop (Windows driver

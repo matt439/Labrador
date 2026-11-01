@@ -24,6 +24,41 @@ PRESENTATION_FIELDS = (
 DEVICE_FIELDS = ("api", "device_name", "vendor_id", "device_id", "kind")
 
 
+INTERPRETATION = {
+    "pooled_summary": (
+        "All declared samples and repetitions are retained. Pooled percentiles can "
+        "hide differences between processes; inspect cadence_pools, repetitions "
+        "and repetition_ranges."),
+    "cadence_pools": (
+        "Separate raw-sample summaries for whole repetitions with the same "
+        "presentation_lock verdict. Every repetition and sample appears in exactly "
+        "one pool, including samples before a tail's onset; empty verdicts are omitted. "
+        "The verdict classifies the retained tail, not every frame or the cause of "
+        "a wait. not_locked can include split cadence and does not mean wait-free. "
+        "The existing all-repetition summary is unchanged; no p99 column is selected."),
+    "long_begin_or_present": (
+        "CPU-observed begin/present durations exceeding half the target frame period. "
+        "These include work and waits; their cause and GPU time are not measured. "
+        "Episode sample indices are zero-based within each retained repetition. "
+        "Alternating spans include both short and long samples; ties retain the first span."),
+    "cadence": (
+        "Frame-start intervals, not display scan-out. Realized Hz uses the mean "
+        "interval; a median alone can hide alternating short and long intervals."),
+    "presentation_lock": (
+        "A repetition whose pacer never waits from tail_first_sample to the end "
+        "while whole frame and interval both average one period has a cadence "
+        "signature, not an established cause. If update plus record/submit uses "
+        "at least 98% of the budget it is work_limited. If begin plus present "
+        "dominates more than half a period while update plus record/submit stays "
+        "below half, it is a presentation_wait_candidate; other signatures are "
+        "ambiguous_cadence. CPU phase durations include work and waits and do not "
+        "prove presentation pacing or GPU cost. Inspect the phases and repetitions "
+        "before attributing whole_frame_ns to work or presentation. "
+        "docs/performance/2026-09-19-g6f-ratchet.md#2 describes one independently "
+        "investigated mechanism."),
+}
+
+
 def _json(path: Path) -> Any:
     with path.open("r", encoding="utf-8-sig") as stream:
         return json.load(stream)
@@ -498,6 +533,12 @@ def _validate_result(result: dict[str, Any], backend: dict[str, Any],
     if pacing_recorded != presentation_recorded:
         raise ValueError("benchmark pacing and presentation metadata must be recorded together")
     phase_names = PHASES + PACING_PHASES if pacing_recorded else PHASES
+    return _sample_phases(samples, timing, reported, phase_names)
+
+
+def _sample_phases(samples: list[Any], timing: dict[str, Any], reported: dict[str, Any],
+                   phase_names: tuple[str, ...]) -> dict[str, list[int]]:
+    """Read the raw samples and refuse a summary or phase sum they do not support."""
     phases: dict[str, list[int]] = {phase: [] for phase in phase_names}
     for ordinal, sample in enumerate(samples):
         if not isinstance(sample, dict) or sample.get("ordinal") != ordinal:
@@ -514,6 +555,72 @@ def _validate_result(result: dict[str, Any], backend: dict[str, Any],
         if reported.get(phase) != _summary(samples_for_phase):
             raise ValueError(f"benchmark {phase} summary differs from raw samples")
     return phases
+
+
+def _device_identity(device: dict[str, Any], presentation_recorded: bool) -> tuple[Any, ...]:
+    fields = DEVICE_FIELDS + (PRESENTATION_FIELDS if presentation_recorded else ())
+    return tuple(device.get(key) for key in fields)
+
+
+def _observation(repetition: int, source: str, result: dict[str, Any],
+                 phases: dict[str, list[int]], target_frame_ns: int,
+                 recorded: tuple[bool, bool]) -> dict[str, Any]:
+    return {
+        "repetition": repetition,
+        "source": source,
+        "started_utc": result["started_utc"],
+        "finished_utc": result["finished_utc"],
+        "sample_count": len(phases["whole_frame_ns"]),
+        "render_device": result["render_device"],
+        "pacing_measurement": "recorded" if recorded[0] else "unrecorded_legacy",
+        "presentation_measurement": "recorded" if recorded[1] else "unrecorded_legacy",
+        "timing": {key: value for key, value in result["timing"].items()
+                   if key != "scheduled_interval_ns"},
+        "summary": {phase: _summary(values) for phase, values in phases.items()},
+        **_diagnostics(phases, target_frame_ns),
+    }
+
+
+def _backend_summary(entries: list[tuple[dict[str, Any], dict[str, list[int]]]],
+                     device_identity: tuple[Any, ...], target_frame_ns: int) -> dict[str, Any]:
+    """Pool one backend's repetitions, and pool them again by their lock verdict."""
+    observations = [observation for observation, _ in entries]
+    first = observations[0]
+    device_fields = DEVICE_FIELDS + (
+        PRESENTATION_FIELDS if first["presentation_measurement"] == "recorded" else ())
+    pooled: dict[str, list[int]] = {}
+    cadence_pooled: dict[str, dict[str, list[int]]] = {}
+    cadence_repetitions: dict[str, list[int]] = {}
+    for observation, phases in entries:
+        verdict = observation["presentation_lock"]["verdict"]
+        cadence_repetitions.setdefault(verdict, []).append(observation["repetition"])
+        cadence_phases = cadence_pooled.setdefault(verdict, {})
+        for phase, values in phases.items():
+            pooled.setdefault(phase, []).extend(values)
+            cadence_phases.setdefault(phase, []).extend(values)
+    return {
+        "render_device": dict(zip(device_fields, device_identity)),
+        "pacing_measurement": first["pacing_measurement"],
+        "presentation_measurement": first["presentation_measurement"],
+        "sample_count": len(pooled["whole_frame_ns"]),
+        "target_frame_ns": target_frame_ns,
+        "over_target_scheduled_count": sum(
+            value > target_frame_ns for value in pooled["scheduled_interval_ns"]),
+        "summary": {phase: _summary(values) for phase, values in pooled.items()},
+        "repetition_ranges": _repetition_ranges(observations),
+        "presentation_wait_candidate_repetitions": sorted(
+            item["repetition"] for item in observations
+            if item["presentation_lock"]["verdict"] == "presentation_wait_candidate"),
+        "cadence_pools": {
+            verdict: {
+                "repetitions": sorted(cadence_repetitions[verdict]),
+                "sample_count": len(group["whole_frame_ns"]),
+                "summary": {phase: _summary(values) for phase, values in group.items()},
+            }
+            for verdict, group in sorted(cadence_pooled.items())
+        },
+        "repetitions": sorted(observations, key=lambda item: item["repetition"]),
+    }
 
 
 def analyze(folder: str | Path) -> dict[str, Any]:
@@ -562,15 +669,8 @@ def analyze(folder: str | Path) -> dict[str, Any]:
         return _withheld("fixed_sample_incomplete", expected_results=expected_count,
                          observed_results=len(result_files))
     declared = {item["name"]: item for item in config["workload"]["backends"]}
-    observations: dict[str, list[dict[str, Any]]] = {name: [] for name in declared}
-    pooled: dict[str, dict[str, list[int]]] = {
-        name: {phase: [] for phase in PHASES} for name in declared
-    }
-    cadence_pooled: dict[str, dict[str, dict[str, list[int]]]] = {
-        name: {} for name in declared
-    }
-    cadence_repetitions: dict[str, dict[str, list[int]]] = {
-        name: {} for name in declared
+    entries: dict[str, list[tuple[dict[str, Any], dict[str, list[int]]]]] = {
+        name: [] for name in declared
     }
     devices: dict[str, tuple[Any, ...]] = {}
     measurement_identity: tuple[bool, bool] | None = None
@@ -604,34 +704,14 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             if measurement_identity is not None and measurement_identity != recorded:
                 raise ValueError("recorded and legacy measurement policies are mixed in one run")
             measurement_identity = recorded
-            device_fields = DEVICE_FIELDS + (PRESENTATION_FIELDS if recorded[1] else ())
-            device_identity = tuple(device.get(key) for key in device_fields)
+            device_identity = _device_identity(device, recorded[1])
             if backend_name in devices and devices[backend_name] != device_identity:
                 raise ValueError("render device identity changed between repetitions")
             devices[backend_name] = device_identity
-            diagnostics = _diagnostics(phases, target_frame_ns)
-            observations[backend_name].append({
-                "repetition": repetition,
-                "source": path.relative_to(root).as_posix(),
-                "started_utc": result["started_utc"],
-                "finished_utc": result["finished_utc"],
-                "sample_count": len(phases["whole_frame_ns"]),
-                "render_device": device,
-                "pacing_measurement": (
-                    "recorded" if recorded[0] else "unrecorded_legacy"),
-                "presentation_measurement": (
-                    "recorded" if recorded[1] else "unrecorded_legacy"),
-                "timing": {key: value for key, value in result["timing"].items()
-                           if key != "scheduled_interval_ns"},
-                "summary": {phase: _summary(values) for phase, values in phases.items()},
-                **diagnostics,
-            })
-            verdict = diagnostics["presentation_lock"]["verdict"]
-            cadence_repetitions[backend_name].setdefault(verdict, []).append(repetition)
-            cadence_phases = cadence_pooled[backend_name].setdefault(verdict, {})
-            for phase, values in phases.items():
-                pooled[backend_name].setdefault(phase, []).extend(values)
-                cadence_phases.setdefault(phase, []).extend(values)
+            entries[backend_name].append((
+                _observation(repetition, path.relative_to(root).as_posix(), result, phases,
+                             target_frame_ns, recorded),
+                phases))
         expected_seen = {
             (name, repetition)
             for name in declared
@@ -641,70 +721,14 @@ def analyze(folder: str | Path) -> dict[str, Any]:
             raise ValueError("fixed repetition matrix is incomplete")
     except (OSError, ValueError, KeyError, TypeError) as exc:
         return _withheld("result_validation_failed", error=str(exc))
-    summaries: dict[str, Any] = {}
-    for name, phases in pooled.items():
-        first = observations[name][0]
-        device_fields = DEVICE_FIELDS + (
-            PRESENTATION_FIELDS if first["presentation_measurement"] == "recorded" else ())
-        summaries[name] = {
-            "render_device": dict(zip(device_fields, devices[name])),
-            "pacing_measurement": first["pacing_measurement"],
-            "presentation_measurement": first["presentation_measurement"],
-            "sample_count": len(phases["whole_frame_ns"]),
-            "target_frame_ns": target_frame_ns,
-            "over_target_scheduled_count": sum(
-                value > target_frame_ns for value in phases["scheduled_interval_ns"]),
-            "summary": {phase: _summary(values) for phase, values in phases.items()},
-            "repetition_ranges": _repetition_ranges(observations[name]),
-            "presentation_wait_candidate_repetitions": sorted(
-                item["repetition"] for item in observations[name]
-                if item["presentation_lock"]["verdict"] == "presentation_wait_candidate"),
-            "cadence_pools": {
-                verdict: {
-                    "repetitions": sorted(cadence_repetitions[name][verdict]),
-                    "sample_count": len(group["whole_frame_ns"]),
-                    "summary": {phase: _summary(values) for phase, values in group.items()},
-                }
-                for verdict, group in sorted(cadence_pooled[name].items())
-            },
-            "repetitions": sorted(observations[name], key=lambda item: item["repetition"]),
-        }
+    summaries = {
+        name: _backend_summary(entries[name], devices[name], target_frame_ns)
+        for name in declared
+    }
     return {
         "schema_version": 1,
         "complete": True,
-        "interpretation": {
-            "pooled_summary": (
-                "All declared samples and repetitions are retained. Pooled percentiles can "
-                "hide differences between processes; inspect cadence_pools, repetitions "
-                "and repetition_ranges."),
-            "cadence_pools": (
-                "Separate raw-sample summaries for whole repetitions with the same "
-                "presentation_lock verdict. Every repetition and sample appears in exactly "
-                "one pool, including samples before a tail's onset; empty verdicts are omitted. "
-                "The verdict classifies the retained tail, not every frame or the cause of "
-                "a wait. not_locked can include split cadence and does not mean wait-free. "
-                "The existing all-repetition summary is unchanged; no p99 column is selected."),
-            "long_begin_or_present": (
-                "CPU-observed begin/present durations exceeding half the target frame period. "
-                "These include work and waits; their cause and GPU time are not measured. "
-                "Episode sample indices are zero-based within each retained repetition. "
-                "Alternating spans include both short and long samples; ties retain the first span."),
-            "cadence": (
-                "Frame-start intervals, not display scan-out. Realized Hz uses the mean "
-                "interval; a median alone can hide alternating short and long intervals."),
-            "presentation_lock": (
-                "A repetition whose pacer never waits from tail_first_sample to the end "
-                "while whole frame and interval both average one period has a cadence "
-                "signature, not an established cause. If update plus record/submit uses "
-                "at least 98% of the budget it is work_limited. If begin plus present "
-                "dominates more than half a period while update plus record/submit stays "
-                "below half, it is a presentation_wait_candidate; other signatures are "
-                "ambiguous_cadence. CPU phase durations include work and waits and do not "
-                "prove presentation pacing or GPU cost. Inspect the phases and repetitions "
-                "before attributing whole_frame_ns to work or presentation. "
-                "docs/performance/2026-09-19-g6f-ratchet.md#2 describes one independently "
-                "investigated mechanism."),
-        },
+        "interpretation": INTERPRETATION,
         "run_id": config["run_id"],
         "bundle_sha256": config["bundle"]["sha256"],
         "release_sha256": config["bundle"]["release_sha256"],
@@ -712,4 +736,169 @@ def analyze(folder: str | Path) -> dict[str, Any]:
         "workload": config["workload"],
         "host": host,
         "backends": summaries,
+    }
+
+
+LOCAL_BACKENDS = ("d3d11", "d3d12", "gl", "vulkan")
+# pacer -> (deadline_policy, interval_scope, whether the pacer's own phases are recorded)
+LOCAL_PACERS = {
+    "presentation_driven": (
+        "none", "presentation-driven frame-start interval; not display scan-out", False),
+    "win32_high_resolution_waitable_timer": (
+        "absolute_catch_up", "software-paced frame-start interval; not display scan-out", True),
+}
+LOCAL_INTERPRETATION = (
+    "A local capture is checked against its own contract only: no host, release, adapter "
+    "or deadline declaration exists, so any vendor is accepted and the machine file the "
+    "local procedure writes names the session. Repetitions are numbered in command-line "
+    "order within each backend. The verdict rule is the cloud lane's. Under "
+    "presentation_driven pacing there is no software pacer, so pacer idle is read from the "
+    "gap between one frame's end and the next start; any gap of 1% of a period or more "
+    "ends the tail there. The signature therefore holds when frames in the tail start one "
+    "target period apart with no such gap. work_limited then says update plus "
+    "record/submit takes the period; presentation_wait_candidate says begin plus present "
+    "takes most of it, which is where synchronised presentation's wait is expected to fall, "
+    "but these CPU durations include work and waits and do not establish the cause. "
+    "not_locked follows from a gap between frames late in the run, from a cadence that does "
+    "not average the period, or from a display whose refresh differs from target_frame_ns "
+    "by more than 2%, for which --refresh-hz states the display's rate. A software-paced "
+    "capture's period is its pacer's.")
+MAX_REFRESH_HZ = 1000
+
+
+def _refresh_valid(refresh_hz: Any) -> bool:
+    """The bench's own range, so that the period is never rounded to zero."""
+    return (isinstance(refresh_hz, int) and not isinstance(refresh_hz, bool)
+            and 0 < refresh_hz <= MAX_REFRESH_HZ)
+
+
+def _target_frame_ns(refresh_hz: int) -> int:
+    return (1_000_000_000 + refresh_hz // 2) // refresh_hz
+
+
+def _validate_local_result(result: Any) -> tuple[dict[str, list[int]], bool]:
+    """Validate one capture without a declaration; return its phases and pacing kind."""
+    if not isinstance(result, dict):
+        raise TypeError("benchmark result must be an object")
+    if (result.get("schema_version") != 1
+            or result.get("scope") != "linesweeper_frame_benchmark"
+            or result.get("status") != "complete"):
+        raise ValueError("benchmark result has the wrong schema, scope or status")
+    if (not isinstance(result.get("run"), str) or not result["run"]
+            or not isinstance(result.get("release_sha256"), str)
+            or re.fullmatch(r"[0-9a-f]{64}", result["release_sha256"]) is None):
+        raise ValueError("benchmark run identifier or release hash is absent")
+    started = _utc(result.get("started_utc"), "benchmark started_utc")
+    finished = _utc(result.get("finished_utc"), "benchmark finished_utc")
+    if finished < started:
+        raise ValueError("benchmark finished before it started")
+    build = result.get("build")
+    if not isinstance(build, dict):
+        raise TypeError("benchmark build identity must be an object")
+    if (build.get("configuration") != "release"
+            or build.get("render_backend") not in LOCAL_BACKENDS
+            or result.get("measurement_class") != "hardware_raster"):
+        raise ValueError("benchmark was not a Release hardware-raster measurement")
+    device = result.get("render_device")
+    if not isinstance(device, dict):
+        raise TypeError("benchmark render_device must be an object")
+    if device.get("kind") != "hardware":
+        raise ValueError("benchmark device kind is not hardware")
+    if not _validate_presentation(device, build["render_backend"]):
+        raise ValueError("benchmark presentation metadata is absent")
+    if (not all(isinstance(device.get(field), str) and device[field]
+                for field in ("api", "device_name"))
+            or any(isinstance(device.get(field), bool) or not isinstance(device.get(field), int)
+                   for field in ("vendor_id", "device_id"))):
+        raise ValueError("benchmark adapter identity is incomplete")
+    workload = result.get("workload")
+    if not isinstance(workload, dict):
+        raise TypeError("benchmark workload must be an object")
+    refresh_hz = workload.get("refresh_hz")
+    if (workload.get("name") != "full_well_top_out"
+            or not _refresh_valid(refresh_hz)
+            or workload.get("target_frame_ns") != _target_frame_ns(refresh_hz)):
+        raise ValueError("benchmark workload is not the top-out or its period differs")
+    timing = result.get("timing")
+    if not isinstance(timing, dict):
+        raise TypeError("benchmark timing must be an object")
+    pacing = LOCAL_PACERS.get(timing.get("pacer"))
+    if (timing.get("clock") != "std::chrono::steady_clock"
+            or timing.get("unit") != "nanoseconds"
+            or timing.get("summary_method") != "nearest-rank"
+            or pacing is None
+            or (timing.get("deadline_policy"), timing.get("interval_scope")) != pacing[:2]):
+        raise ValueError("benchmark timing or pacing contract differs")
+    software = pacing[2]
+    samples = result.get("samples")
+    if (not isinstance(samples, list) or not samples
+            or len(samples) != workload.get("sample_frames")):
+        raise ValueError("raw benchmark sample count differs from its workload")
+    reported = result.get("summary")
+    if not isinstance(reported, dict):
+        raise TypeError("benchmark summary must be an object")
+    if not software and (
+            any(phase in reported for phase in PACING_PHASES)
+            or any(isinstance(sample, dict) and any(phase in sample for phase in PACING_PHASES)
+                   for sample in samples)):
+        raise ValueError("a presentation-driven capture records software pacer phases")
+    return _sample_phases(samples, timing, reported,
+                          PHASES + PACING_PHASES if software else PHASES), software
+
+
+def analyze_local(paths: list[str | Path], refresh_hz: int | None = None) -> dict[str, Any]:
+    """Apply the cloud lane's lock verdict and pooled summaries to local captures.
+
+    The cloud host attestation is not applied: a local run has no nvidia-smi,
+    configuration or release manifest. Everything a capture states about
+    itself is still checked, and a failure withholds the analysis.
+    """
+    if not paths:
+        return _withheld("no_results")
+    if refresh_hz is not None and not _refresh_valid(refresh_hz):
+        return _withheld("refresh_invalid", refresh_hz=refresh_hz)
+    entries: dict[str, list[tuple[dict[str, Any], dict[str, list[int]]]]] = {}
+    identities: dict[str, tuple[Any, ...]] = {}
+    targets: dict[str, int] = {}
+    runs: set[str] = set()
+    source = None
+    try:
+        for path in paths:
+            source = str(path)
+            result = _json(Path(path))
+            phases, software = _validate_local_result(result)
+            if result["run"] in runs:
+                raise ValueError("the same run identifier is given twice")
+            runs.add(result["run"])
+            if refresh_hz is not None and software:
+                raise ValueError("--refresh-hz applies only to presentation-driven captures")
+            target = (_target_frame_ns(refresh_hz) if refresh_hz is not None
+                      else result["workload"]["target_frame_ns"])
+            backend = result["build"]["render_backend"]
+            identity = (result["timing"]["pacer"], result.get("release_sha256"),
+                        *_device_identity(result["render_device"], True))
+            if backend in identities and (identities[backend], targets[backend]) != (
+                    identity, target):
+                raise ValueError(
+                    "executable, render device, pacing or period differs within a backend")
+            identities[backend], targets[backend] = identity, target
+            backend_entries = entries.setdefault(backend, [])
+            observation = _observation(len(backend_entries) + 1, source, result, phases,
+                                       target, (software, True))
+            observation["run"] = result["run"]
+            backend_entries.append((observation, phases))
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return _withheld("result_validation_failed", error=str(exc), source=source)
+    return {
+        "schema_version": 1,
+        "complete": True,
+        "scope": "local_captures",
+        "interpretation": {**INTERPRETATION, "local_capture": LOCAL_INTERPRETATION},
+        "target_frame_source": ("refresh_hz_argument" if refresh_hz is not None
+                                else "workload.target_frame_ns"),
+        "backends": {
+            name: {"pacer": identities[name][0], "release_sha256": identities[name][1],
+                   **_backend_summary(entries[name], identities[name][2:], targets[name])}
+            for name in sorted(entries)
+        },
     }

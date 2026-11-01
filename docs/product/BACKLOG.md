@@ -468,7 +468,17 @@ written.
   also records the adapter, driver, display mode and commit. Followed verbatim
   at `71b6af3` on the RTX 5080, it wrote complete 3,600-frame results for both
   backends with no other step. Desktop evidence only; SM-07's Radeon run stays open.
-- [ ] **[SM-05](STORIES.md#sm-05)** Should · S · The Sole Owner-Maintainer: Apply the ratchet's lock verdict to a non-NVIDIA local run — after SM-04
+- [x] **[SM-05](STORIES.md#sm-05)** Should · S · The Sole Owner-Maintainer: Apply the ratchet's lock verdict to a non-NVIDIA local run — after SM-04
+  Closed 2026-11-01: `python -m tools.cloud_performance analyze-local`, in
+  [the local procedure](../performance/local-frame-bench.md#reading-a-run),
+  applies the unchanged verdict function and pooled summaries to local
+  results without the EC2 host attestation, checking each result against its
+  own contract. In `tools/tests`, synthetic Radeon results with vendor
+  `0x1002` and no `nvidia-smi` get `presentation_wait_candidate` and
+  `work_limited` verdicts and pooled p99s, and the command prints a verdict
+  and p99s; inside otherwise valid EC2 evidence, `analyze` still refuses the
+  vendor and the missing `nvidia-smi`. Applied to the four 2026-10-29 RTX 5080
+  results, every run is a `presentation_wait_candidate`. No Radeon run exists.
 - [x] **[SM-02](STORIES.md#sm-02)** Should · S · The Sole Owner-Maintainer: Reproduce the four-core hold, and say what the bench's fan-out measures — after SM-03
   Closed 2026-10-29: [the local procedure](../performance/local-frame-bench.md)
   launches each run held to the first four physical cores and their SMT

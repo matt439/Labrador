@@ -34,6 +34,22 @@ def _write_new(path: str | Path, data: bytes) -> None:
         stream.write(data)
 
 
+def _local_readout(result: dict[str, Any]) -> dict[str, Any]:
+    """The verdict per repetition and the pooled p99s; the written file has the rest."""
+    if not result["complete"]:
+        return result
+    return {
+        name: {
+            "target_frame_ns": backend["target_frame_ns"],
+            "verdicts": {item["run"]: item["presentation_lock"]["verdict"]
+                         for item in backend["repetitions"]},
+            "pooled_p99_ns": {phase: summary["p99"]
+                              for phase, summary in backend["summary"].items()},
+        }
+        for name, backend in result["backends"].items()
+    }
+
+
 def _stack_name(run_id: str) -> str:
     return "labrador-performance-" + run_id
 
@@ -478,7 +494,18 @@ def main() -> int:
     analyze = commands.add_parser("analyze", help="validate and summarize downloaded evidence")
     analyze.add_argument("--input", required=True)
     analyze.add_argument("--out", required=True)
+    local = commands.add_parser(
+        "analyze-local", help="apply the lock verdict and pooled summaries to local captures")
+    local.add_argument("--input", required=True, nargs="+")
+    local.add_argument("--out", required=True)
+    local.add_argument("--refresh-hz", type=int)
     args = parser.parse_args()
+
+    if args.command == "analyze-local":
+        result = analysis.analyze_local(args.input, args.refresh_hz)
+        _write_new(args.out, json.dumps(result, indent=2).encode("utf-8") + b"\n")
+        print(json.dumps(_local_readout(result), indent=2))
+        return 0 if result["complete"] else 1
 
     if args.command == "bundle":
         result = release.bundle(args.payload, args.out, root=args.root)
